@@ -1,0 +1,22 @@
+{
+  "name": "project-diamond-soul",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/windows"
+  ],
+  "scripts": {
+    "build:swift": "swift build --package-path packages/simulation-core",
+    "test:swift": "swift test --package-path packages/simulation-core",
+    "test:web": "npm run test --workspace @diamond-soul/windows",
+    "build:web": "npm run build --workspace @diamond-soul/windows",
+    "prepare:sidecar": "node tools/build-sidecar.mjs",
+    "check:tauri": "node tools/run-cargo.mjs check --manifest-path apps/windows/src-tauri/Cargo.toml",
+    "desktop:dev": "npm run prepare:sidecar && node tools/run-tauri.mjs dev",
+    "desktop:build": "npm run prepare:sidecar && node tools/run-tauri.mjs build",
+    "check": "npm run test:swift && npm run test:web && npm run build:web && npm run check:tauri"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

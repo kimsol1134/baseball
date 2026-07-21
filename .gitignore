@@ -1,0 +1,13 @@
+.DS_Store
+.toolchains/
+.swiftpm/
+.build/
+DerivedData/
+node_modules/
+dist/
+target/
+apps/windows/src-tauri/binaries/*
+!apps/windows/src-tauri/binaries/.gitkeep
+apps/windows/src-tauri/gen/
+*.xcuserstate
+*.log
