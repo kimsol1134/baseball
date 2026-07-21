@@ -17,6 +17,8 @@
 - sidecar 비정상 종료 표시와 재연결 경로
 - JSON fixture 골든 테스트를 포함한 Swift 단위·결정론·프로토콜 테스트
 - TypeScript 프로토콜·연결 테스트
+- JSON+ZIP portable save archive와 SHA-256·CRC32 무결성 검증
+- 임시 파일 검증, 정상 백업 3개 순환, 손상 원본 보존·복구
 - macOS·Windows Swift 및 데스크톱 구성 CI
 
 ## 요구 환경
@@ -62,12 +64,18 @@ npm run check
 swift run --package-path packages/simulation-core simulation-cli --iterations 10000
 ```
 
+샘플 저장 아카이브 생성과 재검증:
+
+```sh
+swift run --package-path packages/simulation-core save-archive-cli --output prototype.dscareer
+```
+
 ## 주요 경로
 
 ```text
 apps/windows/                  React + Tauri 데스크톱 앱
 packages/simulation-core/     Swift 코어, JSON-RPC sidecar, CLI, 테스트
-schemas/                      JSON-RPC 및 투구 요청 스키마
+schemas/                      JSON-RPC, 투구 요청, 저장 manifest·checksum 스키마
 docs/adr/                     아키텍처 결정 기록
 tools/                        sidecar 빌드와 로컬 도구 체인 실행기
 ```
@@ -82,12 +90,11 @@ tools/                        sidecar 빌드와 로컬 도구 체인 실행기
 - 한 투구 세로 관통 데모와 결정론적 이벤트 해시
 - 이벤트와 UI용 스냅숏 분리
 - sidecar 오류 감지·사용자 재연결 경로
+- portable save archive 쓰기·읽기와 강제 종료 복구 테스트
 - macOS 로컬 테스트·릴리스 빌드와 Windows CI 구성
 
 남은 P0 항목:
 
-- JSON+ZIP portable save archive 쓰기·읽기
-- 원자적 교체, 정상 백업 보존, 강제 종료 복구 테스트
 - 원격 Windows CI의 실제 통과 확인
 
 실제 포수 추천 엔진과 타석 상태 전이는 P1에서 구현한다.

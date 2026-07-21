@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-soul.local/schemas/save-checksums.schema.json",
+  "title": "Diamond Soul Save Checksums",
+  "type": "object",
+  "required": ["algorithm", "files"],
+  "properties": {
+    "algorithm": { "const": "sha256" },
+    "files": {
+      "type": "object",
+      "minProperties": 7,
+      "propertyNames": {
+        "pattern": "^(manifest\\.json|world\\.snapshot\\.json|career\\.snapshot\\.json|meta\\.snapshot\\.json|rng\\.json|events\\.ndjson|content-lock\\.json|optional/thumbnail\\.png)$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  },
+  "additionalProperties": false
+}
