@@ -307,6 +307,7 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
     public let outcome: PitchOutcome
     public let selectionQuality: SelectionQuality
     public let recommendationAccepted: Bool
+    public let fatigueAfterPitch: Int
     public let execution: PitchExecution
     public let battedBall: BattedBall?
     public let reasonCodes: [String]
@@ -324,6 +325,7 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
         outcome: PitchOutcome,
         selectionQuality: SelectionQuality,
         recommendationAccepted: Bool,
+        fatigueAfterPitch: Int,
         execution: PitchExecution,
         battedBall: BattedBall?,
         reasonCodes: [String],
@@ -340,6 +342,7 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
         self.outcome = outcome
         self.selectionQuality = selectionQuality
         self.recommendationAccepted = recommendationAccepted
+        self.fatigueAfterPitch = fatigueAfterPitch
         self.execution = execution
         self.battedBall = battedBall
         self.reasonCodes = reasonCodes

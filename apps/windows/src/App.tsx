@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { checkCoreHealth, preparePitch, submitPitch } from "./simulationClient";
+import {
+  checkCoreHealth,
+  listPitcherPresets,
+  preparePitch,
+  submitPitch,
+} from "./simulationClient";
 import type {
   BatterScoutingSnapshot,
   BatterSnapshot,
@@ -9,23 +14,15 @@ import type {
   PitchKernelResult,
   PitchOutcome,
   PitchPreparation,
+  PitchProfileSnapshot,
   PitchType,
-  PitcherSnapshot,
+  PitcherPresetSnapshot,
   PitchZone,
   PlateAppearanceContext,
   PlateAppearanceResult,
   SelectionQuality,
   ZoneIntent,
 } from "./simulationTypes";
-
-const PITCHER: PitcherSnapshot = {
-  id: "pitcher-1",
-  name: "김도윤",
-  stuff: 62,
-  command: 54,
-  movement: 58,
-  stamina: 60,
-};
 
 const BATTER: BatterSnapshot = {
   id: "batter-1",
@@ -60,12 +57,11 @@ const INITIAL_CONTEXT: PlateAppearanceContext = {
 const PITCH_OPTIONS: ReadonlyArray<{
   value: PitchType;
   label: string;
-  hint: string;
 }> = [
-  { value: "four_seam", label: "포심", hint: "구위 + / 무브먼트 -" },
-  { value: "slider", label: "슬라이더", hint: "무브먼트 + / 제구 -" },
-  { value: "curveball", label: "커브", hint: "무브먼트 ++ / 제구 --" },
-  { value: "changeup", label: "체인지업", hint: "균형형" },
+  { value: "four_seam", label: "포심" },
+  { value: "slider", label: "슬라이더" },
+  { value: "curveball", label: "커브" },
+  { value: "changeup", label: "체인지업" },
 ];
 
 const INTENSITY_OPTIONS: ReadonlyArray<{
@@ -191,14 +187,23 @@ function recommendationTitle(recommendation: CatcherRecommendationSnapshot) {
   return `${zoneLabel(recommendation.call.zone)} ${pitchLabel(recommendation.call.pitchType)} · ${intentLabel(recommendation.call.zoneIntent)}`;
 }
 
-function fatigueCost(intensity: PitchIntensity) {
-  if (intensity === "max_effort") return 2;
-  if (intensity === "normal") return 1;
-  return 0;
+function roleLabel(profile: PitchProfileSnapshot) {
+  switch (profile.role) {
+    case "primary": return "주력";
+    case "secondary": return "보조";
+    case "development": return "개발 중";
+  }
+}
+
+function pitchHint(profile?: PitchProfileSnapshot) {
+  if (!profile) return "프로필 없음";
+  return `${roleLabel(profile)} · ${(profile.velocityTenthsKPH / 10).toFixed(0)} km/h`;
 }
 
 export function App() {
   const [coreStatus, setCoreStatus] = useState<CoreStatus>({ state: "checking" });
+  const [presets, setPresets] = useState<ReadonlyArray<PitcherPresetSnapshot>>([]);
+  const [selectedPresetID, setSelectedPresetID] = useState<string>();
   const [pitchType, setPitchType] = useState<PitchType>("slider");
   const [intensity, setIntensity] = useState<PitchIntensity>("normal");
   const [zoneIntent, setZoneIntent] = useState<ZoneIntent>("edge");
@@ -210,6 +215,12 @@ export function App() {
   const [lastResult, setLastResult] = useState<PitchKernelResult>();
   const [history, setHistory] = useState<ReadonlyArray<HistoryItem>>([]);
   const [error, setError] = useState<string>();
+
+  const selectedPreset = presets.find((preset) => preset.id === selectedPresetID);
+  const pitcher = selectedPreset?.pitcher;
+  const selectedPitchProfile = pitcher?.pitchProfiles?.find(
+    (profile) => profile.pitchType === pitchType,
+  );
 
   const applyRecommendation = useCallback(
     (recommendation: CatcherRecommendationSnapshot) => {
@@ -225,16 +236,21 @@ export function App() {
     setCoreStatus({ state: "checking" });
     setError(undefined);
     try {
-      const [health, initialPreparation] = await Promise.all([
+      const [health, availablePresets] = await Promise.all([
         checkCoreHealth(),
-        preparePitch({
-          seed: INITIAL_SEED,
-          pitcher: PITCHER,
-          batter: BATTER,
-          scouting: SCOUTING,
-          context: INITIAL_CONTEXT,
-        }),
+        listPitcherPresets(),
       ]);
+      const initialPreset = availablePresets[0];
+      if (!initialPreset) throw new Error("사용 가능한 투수 프리셋이 없습니다.");
+      const initialPreparation = await preparePitch({
+        seed: INITIAL_SEED,
+        pitcher: initialPreset.pitcher,
+        batter: BATTER,
+        scouting: SCOUTING,
+        context: INITIAL_CONTEXT,
+      });
+      setPresets(availablePresets);
+      setSelectedPresetID(initialPreset.id);
       setSeed(INITIAL_SEED);
       setContext(INITIAL_CONTEXT);
       setPreparation(initialPreparation);
@@ -253,13 +269,13 @@ export function App() {
   }, [connectCore]);
 
   const handlePitch = useCallback(async () => {
-    if (!preparation) return;
+    if (!preparation || !pitcher) return;
     setIsRunning(true);
     setError(undefined);
     try {
       const result = await submitPitch({
         seed,
-        pitcher: PITCHER,
+        pitcher,
         batter: BATTER,
         scouting: SCOUTING,
         context,
@@ -282,7 +298,7 @@ export function App() {
         balls: result.snapshot.balls,
         strikes: result.snapshot.strikes,
         pitchNumber: result.nextPreparation ? current.pitchNumber + 1 : current.pitchNumber,
-        fatigue: Math.min(100, current.fatigue + fatigueCost(intensity)),
+        fatigue: result.snapshot.fatigueAfterPitch,
       }));
       setPreparation(result.nextPreparation);
     } catch (caught) {
@@ -290,16 +306,17 @@ export function App() {
         caught instanceof Error ? caught.message : "투구 결과를 계산하지 못했습니다.";
       setError(message);
       try {
-        setPreparation(await preparePitch({ seed, pitcher: PITCHER, batter: BATTER, scouting: SCOUTING, context }));
+        setPreparation(await preparePitch({ seed, pitcher, batter: BATTER, scouting: SCOUTING, context }));
       } catch {
         setCoreStatus({ state: "offline", message });
       }
     } finally {
       setIsRunning(false);
     }
-  }, [context, intensity, pitchType, preparation, seed, zone, zoneIntent]);
+  }, [context, intensity, pitchType, pitcher, preparation, seed, zone, zoneIntent]);
 
   const handleNewPlateAppearance = useCallback(async () => {
+    if (!pitcher) return;
     setIsRunning(true);
     setError(undefined);
     const nextContext: PlateAppearanceContext = {
@@ -309,7 +326,7 @@ export function App() {
     try {
       const nextPreparation = await preparePitch({
         seed,
-        pitcher: PITCHER,
+        pitcher,
         batter: BATTER,
         scouting: SCOUTING,
         context: nextContext,
@@ -323,7 +340,37 @@ export function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [applyRecommendation, seed]);
+  }, [applyRecommendation, pitcher, seed]);
+
+  const handlePresetChange = useCallback(async (presetID: string) => {
+    const nextPreset = presets.find((preset) => preset.id === presetID);
+    if (!nextPreset || nextPreset.id === selectedPresetID) return;
+    setIsRunning(true);
+    setError(undefined);
+    const nextContext: PlateAppearanceContext = {
+      ...INITIAL_CONTEXT,
+      plateAppearanceID: `pa-preset-${nextPreset.id}-${Date.now()}`,
+    };
+    try {
+      const nextPreparation = await preparePitch({
+        seed,
+        pitcher: nextPreset.pitcher,
+        batter: BATTER,
+        scouting: SCOUTING,
+        context: nextContext,
+      });
+      setSelectedPresetID(nextPreset.id);
+      setContext(nextContext);
+      setPreparation(nextPreparation);
+      setLastResult(undefined);
+      setHistory([]);
+      applyRecommendation(nextPreparation.primaryRecommendation);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "투수 프리셋을 바꾸지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, [applyRecommendation, presets, seed, selectedPresetID]);
 
   const online = coreStatus.state === "online";
   const primaryRecommendation = preparation?.primaryRecommendation;
@@ -356,7 +403,7 @@ export function App() {
             <strong>무사 1루 · B {context.balls} / S {context.strikes} · {context.pitchNumber}구</strong>
           </div>
           <div className="matchup">
-            <span>{PITCHER.name}</span><b>VS</b><span>{BATTER.name}</span>
+            <span>{pitcher?.name ?? "투수 준비 중"}</span><b>VS</b><span>{BATTER.name}</span>
           </div>
           <div className="scoreboard" aria-label="현재 점수 2 대 2">
             <span>한빛고</span><strong>2 : 2</strong><span>대명고</span>
@@ -366,19 +413,42 @@ export function App() {
         <div className="workspace-grid">
           <aside className="panel player-panel" aria-label="선수 정보">
             <div className="panel-heading">
-              <div><p className="eyebrow">YOUR PITCHER</p><h2>{PITCHER.name}</h2></div>
-              <span className="role-badge">우완 선발</span>
+              <div><p className="eyebrow">YOUR PITCHER</p><h2>{pitcher?.name ?? "불러오는 중"}</h2></div>
+              <span className="role-badge">{selectedPreset?.name ?? "프리셋"}</span>
             </div>
+            <label className="preset-picker">
+              <span>투수 프리셋</span>
+              <select
+                value={selectedPresetID ?? ""}
+                disabled={isRunning || presets.length === 0}
+                onChange={(event) => void handlePresetChange(event.target.value)}
+              >
+                {presets.map((preset) => (
+                  <option key={preset.id} value={preset.id}>{preset.name}</option>
+                ))}
+              </select>
+            </label>
+            {selectedPreset ? (
+              <div className="preset-summary">
+                <p>{selectedPreset.tagline}</p>
+                <div className="strength-chips">
+                  {selectedPreset.strengths.map((strength) => <span key={strength}>{strength}</span>)}
+                </div>
+                <small>{selectedPreset.tradeoff}</small>
+              </div>
+            ) : null}
             <div className="player-summary">
               <div className="avatar" aria-hidden="true">17</div>
               <div><strong>2학년 · 184cm</strong><span>피로 {context.fatigue} · 컨디션 좋음</span></div>
             </div>
-            <div className="stat-list" aria-label="현재 능력치">
-              <StatRow label="구위" value={PITCHER.stuff} />
-              <StatRow label="제구" value={PITCHER.command} />
-              <StatRow label="무브먼트" value={PITCHER.movement} />
-              <StatRow label="체력" value={PITCHER.stamina} />
-            </div>
+            {pitcher ? (
+              <div className="stat-list" aria-label="현재 능력치">
+                <StatRow label="구위" value={pitcher.stuff} />
+                <StatRow label="제구" value={pitcher.command} />
+                <StatRow label="무브먼트" value={pitcher.movement} />
+                <StatRow label="체력" value={pitcher.stamina} />
+              </div>
+            ) : null}
             <div className="scouting-card">
               <span>상대 타자 리포트</span>
               <strong>{BATTER.name} · 우타</strong>
@@ -419,13 +489,33 @@ export function App() {
             <fieldset className="choice-group">
               <legend>1. 구종</legend>
               <div className="pitch-options">
-                {PITCH_OPTIONS.map((option) => (
-                  <button key={option.value} type="button" className={pitchType === option.value ? "is-selected" : undefined}
-                    aria-pressed={pitchType === option.value} onClick={() => setPitchType(option.value)}>
-                    <strong>{option.label}</strong><span>{option.hint}</span>
-                  </button>
-                ))}
+                {PITCH_OPTIONS.map((option) => {
+                  const profile = pitcher?.pitchProfiles?.find(
+                    (candidate) => candidate.pitchType === option.value,
+                  );
+                  return (
+                    <button key={option.value} type="button" className={pitchType === option.value ? "is-selected" : undefined}
+                      disabled={!profile} aria-pressed={pitchType === option.value} onClick={() => setPitchType(option.value)}>
+                      <strong>{option.label}</strong><span>{pitchHint(profile)}</span>
+                    </button>
+                  );
+                })}
               </div>
+              {selectedPitchProfile ? (
+                <div className="pitch-profile" aria-label={`${pitchLabel(pitchType)} 구종 능력치`}>
+                  <span className={`pitch-role pitch-role--${selectedPitchProfile.role}`}>
+                    {roleLabel(selectedPitchProfile)}
+                  </span>
+                  <dl>
+                    <div><dt>구속</dt><dd>{(selectedPitchProfile.velocityTenthsKPH / 10).toFixed(1)}</dd></div>
+                    <div><dt>제구</dt><dd>{selectedPitchProfile.control}</dd></div>
+                    <div><dt>커맨드</dt><dd>{selectedPitchProfile.command}</dd></div>
+                    <div><dt>무브</dt><dd>{selectedPitchProfile.movement}</dd></div>
+                    <div><dt>헛스윙</dt><dd>{selectedPitchProfile.whiff}</dd></div>
+                    <div><dt>약한 타구</dt><dd>{selectedPitchProfile.weakContact}</dd></div>
+                  </dl>
+                </div>
+              ) : null}
             </fieldset>
 
             <div className="location-and-intensity">

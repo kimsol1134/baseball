@@ -8,7 +8,7 @@
 
 - 정수 연산 기반 SplitMix64 결정론적 RNG
 - 투수·타자·카운트·피로·구종·3×3 코스·강도 모델
-- `health`, `simulatePitch`, `preparePitch`, `submitPitch` JSON-RPC 2.0 메서드
+- `health`, `listPitcherPresets`, `simulatePitch`, `preparePitch`, `submitPitch` JSON-RPC 2.0 메서드
 - 결과, 원인 피드백, 다음 시드, 이벤트 해시
 - 표시 문구와 분리된 불변 이벤트·화면 스냅숏 응답
 - Swift sidecar와 1,000구 이상 배치 실행 CLI
@@ -23,6 +23,8 @@
 - 공개 정보만 사용하는 포수 주 추천·대안 추천
 - 존 의도, 실제 위치·구속·무브먼트, ABS, 스윙·접촉·타구 모델
 - 볼카운트, 파울, 삼진, 볼넷, 인플레이까지 이어지는 완전한 타석 루프
+- 네 가지 투수 프리셋과 구종별 구속·제구·커맨드·무브먼트·헛스윙·약한 타구·피로 프로필
+- 프리셋 선택과 구종별 20~80 능력치를 보여주는 플레이 화면
 - macOS·Windows Swift 및 데스크톱 구성 CI
 
 ## 요구 환경
@@ -65,10 +67,10 @@ npm run check
 배치 타석 시뮬레이션:
 
 ```sh
-swift run -c release --package-path packages/simulation-core simulation-cli --iterations 10000 --strategy primary
+swift run -c release --package-path packages/simulation-core simulation-cli --iterations 10000 --strategy primary --preset power_prospect
 ```
 
-`--strategy`는 `primary`, `alternative`, `fixed`를 지원한다.
+`--strategy`는 `primary`, `alternative`, `fixed`를 지원한다. `--preset`은 `power_prospect`, `precision_commander`, `breaking_ball_artist`, `innings_eater`를 지원한다.
 
 샘플 저장 아카이브 생성과 재검증:
 
@@ -113,9 +115,10 @@ tools/                        sidecar 빌드와 로컬 도구 체인 실행기
 - 삼진·볼넷·인플레이까지의 타석 상태 전이
 - 선택·실행·결과를 분리한 reason code와 화면 피드백
 - 전략별 10만 타석 배치 비교 도구
+- 네 가지 투수 프리셋과 16개 구종별 개별 프로필
+- 프리셋별 구속·목표 오차·헛스윙·피로 차이를 검증하는 통계 테스트
 
 다음 구현:
 
-- 네 가지 투수 프리셋과 구종별 개별 프로필
 - 반복 패턴을 학습하는 라이벌 타자와 재대결 메모리
 - 수비·주자·구장 단순 모델과 경기 후 분석

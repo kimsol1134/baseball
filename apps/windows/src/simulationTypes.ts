@@ -22,6 +22,30 @@ export interface PitcherSnapshot {
   command: number;
   movement: number;
   stamina: number;
+  pitchProfiles?: ReadonlyArray<PitchProfileSnapshot>;
+}
+
+export type PitchUsageRole = "primary" | "secondary" | "development";
+
+export interface PitchProfileSnapshot {
+  pitchType: PitchType;
+  role: PitchUsageRole;
+  velocityTenthsKPH: number;
+  control: number;
+  command: number;
+  movement: number;
+  whiff: number;
+  weakContact: number;
+  fatigueCost: number;
+}
+
+export interface PitcherPresetSnapshot {
+  id: string;
+  name: string;
+  tagline: string;
+  strengths: ReadonlyArray<string>;
+  tradeoff: string;
+  pitcher: PitcherSnapshot;
 }
 
 export interface BatterSnapshot {
@@ -184,6 +208,7 @@ export interface PlateAppearanceSnapshot {
   outcome: PitchOutcome;
   selectionQuality: SelectionQuality;
   recommendationAccepted: boolean;
+  fatigueAfterPitch: number;
   execution: PitchExecution;
   battedBall?: BattedBall;
   reasonCodes: ReadonlyArray<string>;

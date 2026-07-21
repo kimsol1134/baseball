@@ -8,6 +8,7 @@ struct BatchReport: Codable {
     let plateAppearanceResults: [String: Int]
     let pitchOutcomes: [String: Int]
     let strategy: String
+    let pitcherPreset: String
 }
 
 enum BatchStrategy: String {
@@ -31,15 +32,19 @@ let strategy: BatchStrategy = {
     guard arguments.indices.contains(valueIndex) else { return .primary }
     return BatchStrategy(rawValue: arguments[valueIndex]) ?? .primary
 }()
+let presetID: String = {
+    guard let index = arguments.firstIndex(of: "--preset") else { return "power_prospect" }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex) else { return "power_prospect" }
+    return arguments[valueIndex]
+}()
 
-let pitcher = PitcherSnapshot(
-    id: "pitcher-1",
-    name: "김도윤",
-    stuff: 62,
-    command: 54,
-    movement: 58,
-    stamina: 60
-)
+guard let preset = PitcherPresetCatalog.all.first(where: { $0.id == presetID }) else {
+    let available = PitcherPresetCatalog.all.map(\.id).joined(separator: ", ")
+    FileHandle.standardError.write(Data("Unknown preset '\(presetID)'. Available: \(available)\n".utf8))
+    exit(2)
+}
+let pitcher = preset.pitcher
 let batter = BatterSnapshot(
     id: "batter-1",
     name: "이준호",
@@ -54,8 +59,9 @@ let scouting = BatterScoutingSnapshot(
     pitchWeakness: .slider,
     chaseTendency: 48
 )
+let fixedPitch = pitcher.pitchProfiles?.first(where: { $0.role == .primary })?.pitchType ?? .slider
 let fixedCall = PitchCall(
-    pitchType: .slider,
+    pitchType: fixedPitch,
     zone: PitchZone(row: 2, column: 0),
     zoneIntent: .edge,
     intensity: .normal
@@ -128,7 +134,7 @@ for index in 1...iterations {
             pitchNumber: context.pitchNumber + 1,
             scoreDifferential: context.scoreDifferential,
             leverage: context.leverage,
-            fatigue: min(100, context.fatigue + 1)
+            fatigue: result.snapshot.fatigueAfterPitch
         )
         guard let nextPreparation = result.nextPreparation else {
             fatalError("Active plate appearance did not provide the next preparation")
@@ -143,7 +149,8 @@ let report = BatchReport(
     averagePitchesPerPlateAppearance: Double(totalPitches) / Double(iterations),
     plateAppearanceResults: plateAppearanceResults,
     pitchOutcomes: pitchOutcomes,
-    strategy: strategy.rawValue
+    strategy: strategy.rawValue,
+    pitcherPreset: preset.id
 )
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

@@ -190,15 +190,119 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertTrue(outcomes.contains(.homeRun))
     }
 
+    func testPitcherPresetCatalogHasFourDistinctCompleteBuilds() throws {
+        let presets = PitcherPresetCatalog.all
+
+        XCTAssertEqual(presets.count, 4)
+        XCTAssertEqual(Set(presets.map(\.id)).count, 4)
+        for preset in presets {
+            let profiles = try XCTUnwrap(preset.pitcher.pitchProfiles)
+            XCTAssertEqual(Set(profiles.map { $0.pitchType.rawValue }), Set(PitchType.allCases.map(\.rawValue)))
+            XCTAssertEqual(profiles.filter { $0.role == .development }.count, 1)
+        }
+    }
+
+    func testPresetProfilesChangeVelocityCommandAndFatigueInExpectedDirections() throws {
+        let power = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "power_prospect" })
+        let commander = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "precision_commander" })
+        let inningsEater = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "innings_eater" })
+        let call = PitchCall(
+            pitchType: .fourSeam,
+            zone: PitchZone(row: 0, column: 2),
+            zoneIntent: .edge,
+            intensity: .normal
+        )
+        var powerMiss = 0
+        var commanderMiss = 0
+        var powerVelocity = 0
+        var commanderVelocity = 0
+
+        for seed in 1...2_000 {
+            let powerResult = try submitPresetPitch(
+                seed: seed,
+                pitcher: power.pitcher,
+                call: call
+            )
+            let commanderResult = try submitPresetPitch(
+                seed: seed,
+                pitcher: commander.pitcher,
+                call: call
+            )
+            powerMiss += targetMiss(powerResult.snapshot.execution)
+            commanderMiss += targetMiss(commanderResult.snapshot.execution)
+            powerVelocity += powerResult.snapshot.execution.velocityTenthsKPH
+            commanderVelocity += commanderResult.snapshot.execution.velocityTenthsKPH
+        }
+
+        XCTAssertGreaterThan(powerVelocity, commanderVelocity)
+        XCTAssertLessThan(commanderMiss, powerMiss)
+
+        let powerFatigue = try submitPresetPitch(seed: 99, pitcher: power.pitcher, call: call)
+        let staminaFatigue = try submitPresetPitch(seed: 99, pitcher: inningsEater.pitcher, call: call)
+        XCTAssertGreaterThan(
+            powerFatigue.snapshot.fatigueAfterPitch,
+            staminaFatigue.snapshot.fatigueAfterPitch
+        )
+    }
+
+    func testBreakingBallArtistSliderCreatesMoreWhiffsThanInningsEater() throws {
+        let artist = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "breaking_ball_artist" })
+        let inningsEater = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "innings_eater" })
+        let call = PitchCall(
+            pitchType: .slider,
+            zone: PitchZone(row: 2, column: 0),
+            zoneIntent: .edge,
+            intensity: .normal
+        )
+        var artistWhiffs = 0
+        var inningsEaterWhiffs = 0
+
+        for seed in 1...5_000 {
+            if try submitPresetPitch(seed: seed, pitcher: artist.pitcher, call: call).snapshot.outcome == .swingingStrike {
+                artistWhiffs += 1
+            }
+            if try submitPresetPitch(seed: seed, pitcher: inningsEater.pitcher, call: call).snapshot.outcome == .swingingStrike {
+                inningsEaterWhiffs += 1
+            }
+        }
+
+        XCTAssertGreaterThan(artistWhiffs, inningsEaterWhiffs)
+    }
+
+    private func submitPresetPitch(
+        seed: Int,
+        pitcher: PitcherSnapshot,
+        call: PitchCall
+    ) throws -> PitchKernelResult {
+        let params = makePrepareParams(seed: String(seed), pitcher: pitcher)
+        let preparation = try engine.preparePitch(params)
+        return try engine.submitPitch(
+            SubmitPitchParams(
+                seed: params.seed,
+                pitcher: params.pitcher,
+                batter: params.batter,
+                scouting: params.scouting,
+                context: params.context,
+                preparationToken: preparation.preparationToken,
+                call: call
+            )
+        )
+    }
+
+    private func targetMiss(_ execution: PitchExecution) -> Int {
+        abs(execution.actualX - execution.targetX) + abs(execution.actualY - execution.targetY)
+    }
+
     private func makePrepareParams(
         seed: String,
         leverage: Int = 600,
         balls: Int = 1,
-        strikes: Int = 1
+        strikes: Int = 1,
+        pitcher: PitcherSnapshot? = nil
     ) -> PreparePitchParams {
         PreparePitchParams(
             seed: seed,
-            pitcher: PitcherSnapshot(
+            pitcher: pitcher ?? PitcherSnapshot(
                 id: "pitcher-1",
                 name: "김도윤",
                 stuff: 62,

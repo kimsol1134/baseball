@@ -45,10 +45,15 @@ public struct RPCServer: Sendable {
             case "health":
                 let health = HealthResult(
                     status: "ok",
-                    protocolVersion: "1.1",
-                    coreVersion: "0.2.0"
+                    protocolVersion: "1.2",
+                    coreVersion: "0.3.0"
                 )
                 response = RPCResponse(id: request.id, result: try JSONValue.from(health))
+            case "listPitcherPresets":
+                response = RPCResponse(
+                    id: request.id,
+                    result: try JSONValue.from(PitcherPresetCatalog.all)
+                )
             case "simulatePitch":
                 guard let rawParams = request.params else {
                     return encode(

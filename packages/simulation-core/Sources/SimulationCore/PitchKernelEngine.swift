@@ -11,26 +11,37 @@ public struct CatcherRecommendationEngine: Sendable {
     ) -> (primary: CatcherRecommendation, alternative: CatcherRecommendation) {
         let twoStrikes = context.strikes == 2
         let protectZone = context.balls == 3
+        let primaryPitch = recommendedPrimaryPitch(pitcher: pitcher, desired: scouting.pitchWeakness)
+        let primaryProfile = pitcher.profile(for: primaryPitch)
         let primary = CatcherRecommendation(
             call: PitchCall(
-                pitchType: scouting.pitchWeakness,
+                pitchType: primaryPitch,
                 zone: scouting.coldZone,
                 zoneIntent: protectZone ? .strike : (twoStrikes ? .chase : .edge),
-                intensity: protectZone ? .controlled : .normal
+                intensity: protectZone || primaryProfile?.role == .development ? .controlled : .normal
             ),
             confidence: clamp(
-                520 + (pitcher.command - 50) * 4 + (batter.discipline < 50 ? 45 : 0),
+                520
+                    + (pitcher.command - 50) * 4
+                    + ((primaryProfile?.command ?? 50) - 50) * 2
+                    + (batter.discipline < 50 ? 45 : 0),
                 350,
                 850
             ),
             reasonCodes: [
-                "scouting.pitch_weakness",
+                primaryPitch == scouting.pitchWeakness
+                    ? "scouting.pitch_weakness"
+                    : "arsenal.best_available",
                 "scouting.cold_zone",
                 twoStrikes ? "count.two_strikes" : "count.standard"
             ]
         )
 
-        let alternativePitch: PitchType = scouting.pitchWeakness == .fourSeam ? .slider : .fourSeam
+        let alternativePitch = recommendedAlternativePitch(
+            pitcher: pitcher,
+            excluding: primaryPitch,
+            legacyDesired: scouting.pitchWeakness == .fourSeam ? .slider : .fourSeam
+        )
         let mirroredZone = PitchZone(
             row: 2 - scouting.hotZone.row,
             column: 2 - scouting.hotZone.column
@@ -53,6 +64,39 @@ public struct CatcherRecommendationEngine: Sendable {
             ]
         )
         return (primary, alternative)
+    }
+
+    private func recommendedPrimaryPitch(
+        pitcher: PitcherSnapshot,
+        desired: PitchType
+    ) -> PitchType {
+        guard let profiles = pitcher.pitchProfiles,
+              let desiredProfile = pitcher.profile(for: desired) else {
+            return desired
+        }
+        if desiredProfile.role != .development || profileScore(desiredProfile) >= 145 {
+            return desired
+        }
+        return profiles
+            .filter { $0.role != .development }
+            .max { profileScore($0) < profileScore($1) }?
+            .pitchType ?? desired
+    }
+
+    private func recommendedAlternativePitch(
+        pitcher: PitcherSnapshot,
+        excluding primary: PitchType,
+        legacyDesired: PitchType
+    ) -> PitchType {
+        guard let profiles = pitcher.pitchProfiles else { return legacyDesired }
+        return profiles
+            .filter { $0.pitchType != primary && $0.role != .development }
+            .max { profileScore($0) < profileScore($1) }?
+            .pitchType ?? legacyDesired
+    }
+
+    private func profileScore(_ profile: PitchProfileSnapshot) -> Int {
+        profile.command + profile.whiff + profile.weakContact
     }
 
     private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
@@ -116,7 +160,7 @@ public struct PitchKernelEngine: Sendable {
             context: params.context
         )
         let seed = try validate(prepareParams)
-        try validate(call: params.call)
+        try validate(call: params.call, pitcher: params.pitcher)
         let plan = commitBatterPlan(params: prepareParams, seed: seed)
         let recommendations = recommendationEngine.recommend(
             pitcher: params.pitcher,
@@ -147,6 +191,7 @@ public struct PitchKernelEngine: Sendable {
         )
         let selection = selectionQuality(
             call: params.call,
+            pitcher: params.pitcher,
             scouting: params.scouting,
             context: params.context
         )
@@ -235,6 +280,11 @@ public struct PitchKernelEngine: Sendable {
 
         let nextSeed = deriveNextSeed(seed)
         let revision = params.context.revision + 1
+        let fatigueAfterPitch = min(
+            100,
+            params.context.fatigue
+                + fatigueCost(params.call.intensity, profile: params.pitcher.profile(for: params.call.pitchType))
+        )
         let snapshot = PlateAppearanceSnapshot(
             revision: revision,
             balls: state.balls,
@@ -245,6 +295,7 @@ public struct PitchKernelEngine: Sendable {
             outcome: resolution.outcome,
             selectionQuality: selection,
             recommendationAccepted: recommendationAccepted,
+            fatigueAfterPitch: fatigueAfterPitch,
             execution: execution,
             battedBall: resolution.battedBall,
             reasonCodes: reasonCodes,
@@ -265,7 +316,7 @@ public struct PitchKernelEngine: Sendable {
                 pitchNumber: params.context.pitchNumber + 1,
                 scoreDifferential: params.context.scoreDifferential,
                 leverage: params.context.leverage,
-                fatigue: min(100, params.context.fatigue + fatigueCost(params.call.intensity))
+                fatigue: fatigueAfterPitch
             )
             nextPreparation = try preparePitch(
                 PreparePitchParams(
@@ -285,6 +336,7 @@ public struct PitchKernelEngine: Sendable {
                 params.seed,
                 plan.commitment,
                 canonical(params.call),
+                canonical(params.pitcher.profile(for: params.call.pitchType)),
                 String(execution.targetX),
                 String(execution.targetY),
                 String(execution.actualX),
@@ -323,6 +375,38 @@ public struct PitchKernelEngine: Sendable {
         for (field, value) in ratings where !(20...80).contains(value) {
             throw SimulationError.invalidRating(field: field, value: value)
         }
+        if let profiles = params.pitcher.pitchProfiles {
+            guard !profiles.isEmpty else {
+                throw SimulationError.invalidPitchProfile("pitchProfiles cannot be empty")
+            }
+            guard Set(profiles.map { $0.pitchType.rawValue }).count == profiles.count else {
+                throw SimulationError.invalidPitchProfile("pitch types must be unique")
+            }
+            for profile in profiles {
+                let profileRatings = [
+                    ("control", profile.control),
+                    ("command", profile.command),
+                    ("movement", profile.movement),
+                    ("whiff", profile.whiff),
+                    ("weakContact", profile.weakContact)
+                ]
+                guard profileRatings.allSatisfy({ (20...80).contains($0.1) }) else {
+                    throw SimulationError.invalidPitchProfile(
+                        "\(profile.pitchType.rawValue) ratings must be between 20 and 80"
+                    )
+                }
+                guard (1_000...1_700).contains(profile.velocityTenthsKPH) else {
+                    throw SimulationError.invalidPitchProfile(
+                        "\(profile.pitchType.rawValue) velocity must be between 100.0 and 170.0 km/h"
+                    )
+                }
+                guard (0...3).contains(profile.fatigueCost) else {
+                    throw SimulationError.invalidPitchProfile(
+                        "\(profile.pitchType.rawValue) fatigueCost must be between 0 and 3"
+                    )
+                }
+            }
+        }
         guard isValidZone(params.scouting.hotZone), isValidZone(params.scouting.coldZone) else {
             throw SimulationError.invalidScouting("hot and cold zones must be within the 3x3 grid")
         }
@@ -343,9 +427,14 @@ public struct PitchKernelEngine: Sendable {
         return seed
     }
 
-    private func validate(call: PitchCall) throws {
+    private func validate(call: PitchCall, pitcher: PitcherSnapshot) throws {
         guard isValidZone(call.zone) else {
             throw SimulationError.invalidZone(row: call.zone.row, column: call.zone.column)
+        }
+        if pitcher.pitchProfiles != nil, pitcher.profile(for: call.pitchType) == nil {
+            throw SimulationError.invalidPitchProfile(
+                "\(call.pitchType.rawValue) is not in this pitcher's repertoire"
+            )
         }
     }
 
@@ -420,6 +509,7 @@ public struct PitchKernelEngine: Sendable {
                 String(params.context.pitchNumber),
                 String(params.context.balls),
                 String(params.context.strikes),
+                canonical(params.pitcher),
                 planCommitment,
                 canonical(primary.call),
                 canonical(alternative.call)
@@ -445,8 +535,12 @@ public struct PitchKernelEngine: Sendable {
             intensityPenalty = 130
             velocityBonus = 32
         }
+        let profile = params.pitcher.profile(for: params.call.pitchType)
+        let commandRating = profile.map {
+            (params.pitcher.command * 4 + $0.control * 4 + $0.command * 2) / 10
+        } ?? params.pitcher.command
         let effectiveCommand = clamp(
-            params.pitcher.command * 10 - params.context.fatigue * 2 - intensityPenalty,
+            commandRating * 10 - params.context.fatigue * 2 - intensityPenalty,
             100,
             900
         )
@@ -455,7 +549,7 @@ public struct PitchKernelEngine: Sendable {
         var offsetY = generator.nextInt(upperBound: spread * 2 + 1) - spread
         let wildChance = clamp(
             8 + params.context.fatigue / 10 + (params.call.intensity == .maxEffort ? 4 : 0)
-                - (params.pitcher.command - 50) / 4,
+                - (commandRating - 50) / 4,
             3,
             20
         )
@@ -493,12 +587,11 @@ public struct PitchKernelEngine: Sendable {
             horizontalBreak = 105
             verticalBreak = -45
         }
-        let velocity = baseVelocity
-            + (params.pitcher.stuff - 50) * 4
+        let velocity = (profile?.velocityTenthsKPH ?? baseVelocity + (params.pitcher.stuff - 50) * 4)
             + velocityBonus
             - params.context.fatigue
             + generator.nextInt(upperBound: 21) - 10
-        let movementScale = params.pitcher.movement - 50
+        let movementScale = (profile?.movement ?? params.pitcher.movement) - 50
         return PitchExecution(
             targetX: target.x,
             targetY: target.y,
@@ -545,9 +638,18 @@ public struct PitchKernelEngine: Sendable {
             return (wasInZone ? .calledStrike : .ball, nil)
         }
 
-        let pitchDifficulty = (params.pitcher.stuff - 50) * 6
-            + (params.pitcher.movement - 50) * 5
-            + max(0, execution.executionQuality - 500) / 2
+        let profile = params.pitcher.profile(for: params.call.pitchType)
+        let pitchDifficulty: Int
+        if let profile {
+            pitchDifficulty = (params.pitcher.stuff - 50) * 2
+                + (profile.whiff - 50) * 3
+                + (profile.movement - 50) * 2
+                + max(0, execution.executionQuality - 500) / 2
+        } else {
+            pitchDifficulty = (params.pitcher.stuff - 50) * 6
+                + (params.pitcher.movement - 50) * 5
+                + max(0, execution.executionQuality - 500) / 2
+        }
         let contactChance = clamp(
             560
                 + (params.batter.contact - 50) * 8
@@ -562,7 +664,7 @@ public struct PitchKernelEngine: Sendable {
         }
 
         let foulChance = clamp(
-            230 + (params.pitcher.movement - params.batter.contact) * 3,
+            230 + ((profile?.movement ?? params.pitcher.movement) - params.batter.contact) * 3,
             120,
             390
         )
@@ -576,6 +678,7 @@ public struct PitchKernelEngine: Sendable {
                 + (params.batter.contact - 50) * 4
                 + (pitchMatched ? 90 : -70)
                 + (zoneMatched ? 45 : -35)
+                - ((profile?.weakContact ?? 50) - 50) * 2
                 - max(0, execution.executionQuality - 500) / 3
                 + generator.nextInt(upperBound: 301) - 150,
             0,
@@ -619,6 +722,7 @@ public struct PitchKernelEngine: Sendable {
 
     private func selectionQuality(
         call: PitchCall,
+        pitcher: PitcherSnapshot,
         scouting: BatterScoutingSnapshot,
         context: PlateAppearanceContext
     ) -> SelectionQuality {
@@ -631,6 +735,12 @@ public struct PitchKernelEngine: Sendable {
         if context.balls == 3, call.zoneIntent == .chase { score -= 260 }
         if context.fatigue >= 60, call.intensity == .maxEffort { score -= 140 }
         if call.zoneIntent == .edge { score += 35 }
+        if let profile = pitcher.profile(for: call.pitchType) {
+            if profile.role == .primary { score += 45 }
+            if profile.role == .development { score -= 120 }
+            if call.zoneIntent == .edge { score += (profile.command - 50) * 3 }
+            if call.zoneIntent == .chase { score += (profile.whiff - 50) * 2 }
+        }
         switch score {
         case ..<340: return .poor
         case 340..<540: return .risky
@@ -673,7 +783,7 @@ public struct PitchKernelEngine: Sendable {
         }
         let shortReason: String
         if recommendation.reasonCodes.contains("scouting.pitch_weakness") {
-            shortReason = "타자의 약점인 \(zoneName) \(pitchName)을 \(intent)로 공략합니다."
+            shortReason = "타자의 약점인 \(zoneName) \(pitchName)\(pitchObjectParticle(recommendation.call.pitchType)) \(intent)로 공략합니다."
         } else {
             shortReason = "강한 코스를 피해 \(zoneName) \(pitchName)으로 타이밍을 바꿉니다."
         }
@@ -755,6 +865,36 @@ public struct PitchKernelEngine: Sendable {
         ].joined(separator: ":")
     }
 
+    private func canonical(_ pitcher: PitcherSnapshot) -> String {
+        let profiles = pitcher.pitchProfiles?
+            .sorted { $0.pitchType.rawValue < $1.pitchType.rawValue }
+            .map { canonical(Optional($0)) }
+            .joined(separator: ",") ?? "legacy"
+        return [
+            pitcher.id,
+            String(pitcher.stuff),
+            String(pitcher.command),
+            String(pitcher.movement),
+            String(pitcher.stamina),
+            profiles
+        ].joined(separator: ":")
+    }
+
+    private func canonical(_ profile: PitchProfileSnapshot?) -> String {
+        guard let profile else { return "legacy" }
+        return [
+            profile.pitchType.rawValue,
+            profile.role.rawValue,
+            String(profile.velocityTenthsKPH),
+            String(profile.control),
+            String(profile.command),
+            String(profile.movement),
+            String(profile.whiff),
+            String(profile.weakContact),
+            String(profile.fatigueCost)
+        ].joined(separator: ":")
+    }
+
     private func zonesAreNear(_ first: PitchZone, _ second: PitchZone) -> Bool {
         abs(first.row - second.row) + abs(first.column - second.column) <= 1
     }
@@ -770,7 +910,19 @@ public struct PitchKernelEngine: Sendable {
         return generator.next()
     }
 
-    private func fatigueCost(_ intensity: PitchIntensity) -> Int {
+    private func fatigueCost(
+        _ intensity: PitchIntensity,
+        profile: PitchProfileSnapshot?
+    ) -> Int {
+        if let profile {
+            let intensityModifier: Int
+            switch intensity {
+            case .controlled: intensityModifier = -1
+            case .normal: intensityModifier = 0
+            case .maxEffort: intensityModifier = 1
+            }
+            return max(0, profile.fatigueCost + intensityModifier)
+        }
         switch intensity {
         case .controlled: return 0
         case .normal: return 1
@@ -792,6 +944,13 @@ public struct PitchKernelEngine: Sendable {
         case .slider: return "슬라이더"
         case .curveball: return "커브"
         case .changeup: return "체인지업"
+        }
+    }
+
+    private func pitchObjectParticle(_ pitchType: PitchType) -> String {
+        switch pitchType {
+        case .fourSeam, .changeup: return "을"
+        case .slider, .curveball: return "를"
         }
     }
 

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import {
   checkCoreHealth,
+  listPitcherPresets,
   preparePitch,
   simulatePitch,
   submitPitch,
@@ -42,6 +43,20 @@ describe("simulation client", () => {
     await expect(checkCoreHealth()).rejects.toThrow("sidecar exited");
     await expect(checkCoreHealth()).resolves.toMatchObject({ status: "ok" });
     expect(invokeMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("loads pitcher presets from the simulation core", async () => {
+    invokeMock.mockResolvedValue(
+      '{"id":"desktop-3","jsonrpc":"2.0","result":[{"id":"power_prospect","name":"강속구 원석","tagline":"빠른 포심","strengths":["포심"],"tradeoff":"제구","pitcher":{"id":"p1","name":"김도윤","stuff":72,"command":44,"movement":52,"stamina":52,"pitchProfiles":[]}}]}',
+    );
+
+    const presets = await listPitcherPresets();
+
+    expect(presets[0]?.id).toBe("power_prospect");
+    expect(invokeMock).toHaveBeenCalledWith(
+      "execute_core",
+      expect.objectContaining({ request: expect.stringContaining('"method":"listPitcherPresets"') }),
+    );
   });
 
   it("sends a typed pitch command and returns the event", async () => {

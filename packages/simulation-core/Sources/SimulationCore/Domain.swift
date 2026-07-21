@@ -13,6 +13,46 @@ public enum PitchIntensity: String, Codable, CaseIterable, Sendable {
     case maxEffort = "max_effort"
 }
 
+public enum PitchUsageRole: String, Codable, CaseIterable, Sendable {
+    case primary
+    case secondary
+    case development
+}
+
+public struct PitchProfileSnapshot: Codable, Equatable, Sendable {
+    public let pitchType: PitchType
+    public let role: PitchUsageRole
+    public let velocityTenthsKPH: Int
+    public let control: Int
+    public let command: Int
+    public let movement: Int
+    public let whiff: Int
+    public let weakContact: Int
+    public let fatigueCost: Int
+
+    public init(
+        pitchType: PitchType,
+        role: PitchUsageRole,
+        velocityTenthsKPH: Int,
+        control: Int,
+        command: Int,
+        movement: Int,
+        whiff: Int,
+        weakContact: Int,
+        fatigueCost: Int
+    ) {
+        self.pitchType = pitchType
+        self.role = role
+        self.velocityTenthsKPH = velocityTenthsKPH
+        self.control = control
+        self.command = command
+        self.movement = movement
+        self.whiff = whiff
+        self.weakContact = weakContact
+        self.fatigueCost = fatigueCost
+    }
+}
+
 public struct PitchZone: Codable, Equatable, Sendable {
     public let row: Int
     public let column: Int
@@ -30,6 +70,7 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
     public let command: Int
     public let movement: Int
     public let stamina: Int
+    public let pitchProfiles: [PitchProfileSnapshot]?
 
     public init(
         id: String,
@@ -39,12 +80,37 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
         movement: Int,
         stamina: Int
     ) {
+        self.init(
+            id: id,
+            name: name,
+            stuff: stuff,
+            command: command,
+            movement: movement,
+            stamina: stamina,
+            pitchProfiles: nil
+        )
+    }
+
+    public init(
+        id: String,
+        name: String,
+        stuff: Int,
+        command: Int,
+        movement: Int,
+        stamina: Int,
+        pitchProfiles: [PitchProfileSnapshot]?
+    ) {
         self.id = id
         self.name = name
         self.stuff = stuff
         self.command = command
         self.movement = movement
         self.stamina = stamina
+        self.pitchProfiles = pitchProfiles
+    }
+
+    public func profile(for pitchType: PitchType) -> PitchProfileSnapshot? {
+        pitchProfiles?.first { $0.pitchType == pitchType }
     }
 }
 
@@ -220,6 +286,7 @@ public enum SimulationError: Error, Equatable, LocalizedError, Sendable {
     case invalidPlateAppearance(String)
     case invalidScouting(String)
     case invalidPreparationToken
+    case invalidPitchProfile(String)
 
     public var errorDescription: String? {
         switch self {
@@ -239,6 +306,8 @@ public enum SimulationError: Error, Equatable, LocalizedError, Sendable {
             return "Batter scouting is invalid: \(detail)"
         case .invalidPreparationToken:
             return "Pitch preparation token is invalid or stale"
+        case .invalidPitchProfile(let detail):
+            return "Pitch profile is invalid: \(detail)"
         }
     }
 }

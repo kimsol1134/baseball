@@ -13,8 +13,20 @@ final class RPCServerTests: XCTestCase {
         XCTAssertNil(response.error)
         let health = try XCTUnwrap(response.result).decode(HealthResult.self)
         XCTAssertEqual(health.status, "ok")
-        XCTAssertEqual(health.protocolVersion, "1.1")
-        XCTAssertEqual(health.coreVersion, "0.2.0")
+        XCTAssertEqual(health.protocolVersion, "1.2")
+        XCTAssertEqual(health.coreVersion, "0.3.0")
+    }
+
+    func testListsFourPitcherPresetsWithCompleteRepertoires() throws {
+        let response = try decodeResponse(
+            server.handle(
+                line: #"{"jsonrpc":"2.0","id":"presets-1","method":"listPitcherPresets"}"#
+            )
+        )
+
+        let presets = try XCTUnwrap(response.result).decode([PitcherPresetSnapshot].self)
+        XCTAssertEqual(presets.count, 4)
+        XCTAssertTrue(presets.allSatisfy { $0.pitcher.pitchProfiles?.count == 4 })
     }
 
     func testUnknownMethodReturnsStandardError() throws {

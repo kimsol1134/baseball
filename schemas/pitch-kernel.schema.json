@@ -17,6 +17,22 @@
       },
       "additionalProperties": false
     },
+    "pitchProfile": {
+      "type": "object",
+      "required": ["pitchType", "role", "velocityTenthsKPH", "control", "command", "movement", "whiff", "weakContact", "fatigueCost"],
+      "properties": {
+        "pitchType": { "enum": ["four_seam", "slider", "curveball", "changeup"] },
+        "role": { "enum": ["primary", "secondary", "development"] },
+        "velocityTenthsKPH": { "type": "integer", "minimum": 1000, "maximum": 1700 },
+        "control": { "$ref": "#/$defs/rating" },
+        "command": { "$ref": "#/$defs/rating" },
+        "movement": { "$ref": "#/$defs/rating" },
+        "whiff": { "$ref": "#/$defs/rating" },
+        "weakContact": { "$ref": "#/$defs/rating" },
+        "fatigueCost": { "type": "integer", "minimum": 0, "maximum": 3 }
+      },
+      "additionalProperties": false
+    },
     "pitcher": {
       "type": "object",
       "required": ["id", "name", "stuff", "command", "movement", "stamina"],
@@ -26,7 +42,13 @@
         "stuff": { "$ref": "#/$defs/rating" },
         "command": { "$ref": "#/$defs/rating" },
         "movement": { "$ref": "#/$defs/rating" },
-        "stamina": { "$ref": "#/$defs/rating" }
+        "stamina": { "$ref": "#/$defs/rating" },
+        "pitchProfiles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/pitchProfile" }
+        }
       },
       "additionalProperties": false
     },

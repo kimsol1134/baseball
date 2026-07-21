@@ -4,6 +4,7 @@ import type {
   HealthResult,
   PitchKernelResult,
   PitchPreparation,
+  PitcherPresetSnapshot,
   PreparePitchParams,
   SimulatePitchResult,
   SimulatePitchParams,
@@ -24,6 +25,10 @@ async function executeRPC<TResult, TParams>(
 
 export function checkCoreHealth(): Promise<HealthResult> {
   return executeRPC<HealthResult, undefined>("health");
+}
+
+export function listPitcherPresets(): Promise<ReadonlyArray<PitcherPresetSnapshot>> {
+  return executeRPC<ReadonlyArray<PitcherPresetSnapshot>, undefined>("listPitcherPresets");
 }
 
 export function simulatePitch(
