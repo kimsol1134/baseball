@@ -1,0 +1,15 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad=0.25, nodesep=0.25, ranksep=0.38, fontname="Noto Sans CJK KR"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK KR", fontsize=10, color="#476478", penwidth=1.0, fillcolor="#F7F9FB", fontcolor="#17232E", margin="0.17,0.10"];
+  edge [color="#71899A", penwidth=0.9, arrowsize=0.6];
+  root [label="앱 셸", fillcolor="#EAF1FB", color="#2B65D9", fontsize=12];
+  home [label="오늘 / 홈\n상태·일정·추천 행동\n다음 중요 이벤트 진행"];
+  player [label="선수\n현재 세부 스탯\n잠재력 범위·변화 로그\n구종·포지션·부상"];
+  career [label="커리어\n주간 훈련\n관계·감독·포수\n중요 경기 / 투구\n드래프트·계약·FA"];
+  league [label="리그\n순위·기록·뉴스\n라이벌·팀·역사"];
+  meta [label="야구혼\n야구혼 트리\n전생 기억 3장\n환생 / 세계 계승"];
+  system [label="설정 / 구매\n접근성·난이도\n프로 커리어 해금\n저장·복구·모드"];
+  {rank=same; home; player; career;}
+  {rank=same; league; meta; system;}
+  root -> home; root -> player; root -> career; root -> league; root -> meta; root -> system;
+}

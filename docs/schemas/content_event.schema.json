@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/diamond-soul/content-event.schema.json",
+  "title": "Diamond Soul Content Event",
+  "type": "object",
+  "required": ["id", "version", "stage", "text", "choices"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9._-]+$"},
+    "version": {"type": "integer", "minimum": 1},
+    "stage": {"enum": ["middle_school", "high_school", "professional", "retired", "any"]},
+    "tags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "conditions": {"type": "object", "additionalProperties": true},
+    "cast": {"type": "object", "additionalProperties": true},
+    "text": {
+      "type": "object",
+      "required": ["title", "body"],
+      "properties": {
+        "title": {"type": "string"},
+        "body": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "choices": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "effects"],
+        "properties": {
+          "id": {"type": "string"},
+          "text": {"type": "string"},
+          "effects": {"type": "array", "items": {"type": "object"}}
+        }
+      }
+    },
+    "cooldownDays": {"type": "integer", "minimum": 0},
+    "exclusiveGroup": {"type": "string"}
+  },
+  "additionalProperties": false
+}

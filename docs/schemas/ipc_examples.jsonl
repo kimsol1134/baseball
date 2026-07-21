@@ -1,0 +1,3 @@
+{"jsonrpc":"2.0","id":"req-1","method":"session.create","params":{"worldSeed":123456789,"contentPacks":["base"]},"protocolVersion":1}
+{"jsonrpc":"2.0","id":"req-2","method":"session.submitCommand","params":{"sessionID":"s-1","expectedRevision":118,"command":{"type":"SubmitPitchCall","pitchType":"slider","sector":"awayLow","zoneIntent":"chase","effort":"standard"}},"protocolVersion":1}
+{"jsonrpc":"2.0","method":"event.autosaveCompleted","params":{"sessionID":"s-1","revision":119,"path":"career.dscareer"},"protocolVersion":1}

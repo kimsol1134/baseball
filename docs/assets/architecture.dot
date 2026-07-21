@@ -1,0 +1,26 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad=0.25, nodesep=0.32, ranksep=0.48, fontname="Noto Sans CJK KR"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK KR", fontsize=10.5, color="#27465F", penwidth=1.1, fillcolor="#F7F9FB", fontcolor="#17232E", margin="0.20,0.12"];
+  edge [fontname="Noto Sans CJK KR", fontsize=8.5, color="#526D82", fontcolor="#526D82", penwidth=1.0, arrowsize=0.7];
+
+  win [label="Windows UI\nReact + TypeScript + Tauri"];
+  ios [label="iPhone / iPad UI\nSwiftUI + Canvas"];
+  {rank=same; win; ios;}
+  adapter [label="Application Adapters\n라우팅 · 표시 모델 · 권한 · 파일 · 오디오", fillcolor="#EEF4FF", color="#2B65D9"];
+  protocol [label="Command / Event / Snapshot Protocol\nCodable + 버전 규칙", fillcolor="#EEF4FF", color="#2B65D9"];
+  core [label="BaseballSimCore (Swift Package)\n도메인 · 경기 엔진 · 성장 · 커리어 · RNG", fillcolor="#EEF8F1", color="#2F8F5B", penwidth=1.4];
+  content [label="Content Packs\nYAML/JSON 이벤트 · 학교 · 구단 · 문장"];
+  save [label="Portable Save Archive\nmanifest + snapshots + event tail + checksum"];
+  store [label="Entitlement Adapter\nWindows DLC / StoreKit 비소모성 IAP", fillcolor="#FFF5E8", color="#C86A21"];
+  telemetry [label="Local Telemetry / Opt-in Export\n밸런스 · QA · 플레이테스트"];
+  {rank=same; content; save;}
+  {rank=same; store; telemetry;}
+
+  win -> adapter [label="JSON-RPC · Swift sidecar"];
+  ios -> adapter [label="직접 링크"];
+  adapter -> protocol -> core;
+  content -> core [dir=both, label="검증·로딩"];
+  save -> core [dir=both, label="저장·복원"];
+  store -> adapter [dir=both, label="권한"];
+  telemetry -> adapter [dir=both, label="이벤트"];
+}

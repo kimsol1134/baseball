@@ -1,0 +1,19 @@
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad=0.22, nodesep=0.35, ranksep=0.55, fontname="Noto Sans CJK KR"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK KR", fontsize=10, color="#3F5E72", fillcolor="#F7F9FB", fontcolor="#17232E", margin="0.17,0.09"];
+  edge [fontname="Noto Sans CJK KR", fontsize=8.5, color="#607A8C", fontcolor="#607A8C", arrowsize=0.7];
+  ui [label="UI Intent\n예: 슬라이더·바깥쪽·경계"];
+  cmd [label="GameCommand\nexpectedRevision 포함", fillcolor="#EAF1FB", color="#2B65D9"];
+  validate [shape=diamond, label="규칙·권한·상태 검증", fillcolor="#FFF5E8", color="#C86A21"];
+  rng [label="결정론 RNG 스트림\n타자 계획 → 추천 → 실행"];
+  events [label="DomainEvent[]\nBatterPlanCommitted\nPitchResolved ...", fillcolor="#EEF8F1", color="#2F8F5B"];
+  reduce [label="Reducer\nGameState 갱신"];
+  snap [label="ViewSnapshot\n표시용 요약·피드백"];
+  persist [label="자동 저장\nSnapshot + Event Tail"];
+  reject [label="DomainError\n상태 불일치·권한 없음", fillcolor="#FDEEEE", color="#B74A4A"];
+  ui -> cmd -> validate;
+  validate -> rng [label="통과"];
+  validate -> reject [label="실패"];
+  rng -> events -> reduce -> snap -> ui;
+  reduce -> persist;
+}

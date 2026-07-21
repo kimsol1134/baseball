@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/diamond-soul/save-manifest.schema.json",
+  "title": "Diamond Soul Save Manifest",
+  "type": "object",
+  "required": ["format", "schemaVersion", "engineVersion", "contentVersion", "worldID", "revision", "createdAt", "lastSavedAt"],
+  "properties": {
+    "format": {"const": "DiamondSoulSave"},
+    "schemaVersion": {"type": "integer", "minimum": 1},
+    "engineVersion": {"type": "string"},
+    "contentVersion": {"type": "string"},
+    "worldID": {"type": "string"},
+    "careerID": {"type": ["string", "null"]},
+    "revision": {"type": "integer", "minimum": 0},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "lastSavedAt": {"type": "string", "format": "date-time"},
+    "activeContentPacks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "version"],
+        "properties": {
+          "id": {"type": "string"},
+          "version": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

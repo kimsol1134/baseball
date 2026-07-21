@@ -1,0 +1,19 @@
+digraph G {
+  graph [rankdir=TB, bgcolor="white", pad=0.25, nodesep=0.30, ranksep=0.45, fontname="Noto Sans CJK KR"];
+  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK KR", fontsize=11, color="#27465F", penwidth=1.2, fillcolor="#F5F8FA", fontcolor="#17232E", margin="0.20,0.13"];
+  edge [fontname="Noto Sans CJK KR", fontsize=9, color="#526D82", fontcolor="#526D82", penwidth=1.1, arrowsize=0.75];
+  create [label="선수 생성\n전생 기억 3장 · 배경 · 초기 포인트"];
+  hs [label="고교 로그라이트\n60~90분 · 8개 챕터"];
+  draft [shape=diamond, label="프로 지명?", fillcolor="#FFF5E8", color="#C86A21"];
+  fail [label="미지명 분석\n야구혼·기억 획득", fillcolor="#FDEEEE", color="#B74A4A"];
+  contract [label="프로 계약 경계\n무료 → 일회성 구매", fillcolor="#EDF4FF", color="#2B65D9"];
+  pro [label="프로 장기 커리어\n2군 · 1군 · FA · 국가대표"];
+  retire [label="은퇴·명예의 전당\n커리어 회고"];
+  rebirth [label="환생 또는 세계 계승\n새 선수로 재시작", fillcolor="#EEF8F1", color="#2F8F5B"];
+  create -> hs -> draft;
+  draft -> fail [label="아니오"];
+  draft -> contract [label="예"];
+  contract -> pro -> retire -> rebirth;
+  fail -> rebirth;
+  rebirth -> create [constraint=false, style=dashed, label="다음 삶"];
+}
