@@ -1,0 +1,39 @@
+{
+  "params": {
+    "seed": "20260721",
+    "pitcher": {
+      "id": "pitcher-1",
+      "name": "김도윤",
+      "stuff": 62,
+      "command": 54,
+      "movement": 58,
+      "stamina": 60
+    },
+    "batter": {
+      "id": "batter-1",
+      "name": "이준호",
+      "contact": 56,
+      "discipline": 52,
+      "power": 58
+    },
+    "count": {
+      "balls": 1,
+      "strikes": 1
+    },
+    "fatigue": 12,
+    "selection": {
+      "pitchType": "slider",
+      "zone": {
+        "row": 2,
+        "column": 0
+      },
+      "intensity": "normal"
+    }
+  },
+  "expected": {
+    "outcome": "swinging_strike",
+    "nextSeed": "15755400384280304560",
+    "executionScore": 268,
+    "eventHash": "f364eac495291948"
+  }
+}

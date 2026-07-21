@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-soul.local/schemas/json-rpc.schema.json",
+  "title": "Diamond Soul JSON-RPC request",
+  "type": "object",
+  "required": ["jsonrpc", "id", "method"],
+  "properties": {
+    "jsonrpc": { "const": "2.0" },
+    "id": { "type": ["string", "integer"] },
+    "method": { "type": "string", "minLength": 1 },
+    "params": { "type": ["object", "array", "null"] }
+  },
+  "additionalProperties": false
+}
+

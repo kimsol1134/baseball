@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-soul.local/schemas/simulate-pitch.schema.json",
+  "title": "Simulate pitch parameters",
+  "type": "object",
+  "required": ["seed", "pitcher", "batter", "count", "fatigue", "selection"],
+  "properties": {
+    "seed": { "type": "string", "pattern": "^[0-9]+$" },
+    "pitcher": { "$ref": "#/$defs/pitcher" },
+    "batter": { "$ref": "#/$defs/batter" },
+    "count": {
+      "type": "object",
+      "required": ["balls", "strikes"],
+      "properties": {
+        "balls": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "strikes": { "type": "integer", "minimum": 0, "maximum": 2 }
+      },
+      "additionalProperties": false
+    },
+    "fatigue": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "selection": {
+      "type": "object",
+      "required": ["pitchType", "zone", "intensity"],
+      "properties": {
+        "pitchType": {
+          "enum": ["four_seam", "slider", "curveball", "changeup"]
+        },
+        "zone": {
+          "type": "object",
+          "required": ["row", "column"],
+          "properties": {
+            "row": { "type": "integer", "minimum": 0, "maximum": 2 },
+            "column": { "type": "integer", "minimum": 0, "maximum": 2 }
+          },
+          "additionalProperties": false
+        },
+        "intensity": { "enum": ["controlled", "normal", "max_effort"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "rating": { "type": "integer", "minimum": 20, "maximum": 80 },
+    "pitcher": {
+      "type": "object",
+      "required": ["id", "name", "stuff", "command", "movement", "stamina"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "stuff": { "$ref": "#/$defs/rating" },
+        "command": { "$ref": "#/$defs/rating" },
+        "movement": { "$ref": "#/$defs/rating" },
+        "stamina": { "$ref": "#/$defs/rating" }
+      },
+      "additionalProperties": false
+    },
+    "batter": {
+      "type": "object",
+      "required": ["id", "name", "contact", "discipline", "power"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "contact": { "$ref": "#/$defs/rating" },
+        "discipline": { "$ref": "#/$defs/rating" },
+        "power": { "$ref": "#/$defs/rating" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
