@@ -3,9 +3,14 @@ import SimulationCore
 
 public struct RPCServer: Sendable {
     private let engine: SimulationEngine
+    private let pitchKernel: PitchKernelEngine
 
-    public init(engine: SimulationEngine = SimulationEngine()) {
+    public init(
+        engine: SimulationEngine = SimulationEngine(),
+        pitchKernel: PitchKernelEngine = PitchKernelEngine()
+    ) {
         self.engine = engine
+        self.pitchKernel = pitchKernel
     }
 
     public func handle(line: String) -> String {
@@ -40,8 +45,8 @@ public struct RPCServer: Sendable {
             case "health":
                 let health = HealthResult(
                     status: "ok",
-                    protocolVersion: "1.0",
-                    coreVersion: "0.1.0"
+                    protocolVersion: "1.1",
+                    coreVersion: "0.2.0"
                 )
                 response = RPCResponse(id: request.id, result: try JSONValue.from(health))
             case "simulatePitch":
@@ -57,6 +62,32 @@ public struct RPCServer: Sendable {
                 let params = try rawParams.decode(SimulatePitchParams.self)
                 let result = try engine.simulatePitch(params)
                 response = RPCResponse(id: request.id, result: try JSONValue.from(result))
+            case "preparePitch":
+                guard let rawParams = request.params else {
+                    return encode(
+                        RPCResponse(
+                            id: request.id,
+                            error: RPCError(code: -32602, message: "Invalid params")
+                        ),
+                        with: encoder
+                    )
+                }
+                let params = try rawParams.decode(PreparePitchParams.self)
+                let result = try pitchKernel.preparePitch(params)
+                response = RPCResponse(id: request.id, result: try JSONValue.from(result))
+            case "submitPitch":
+                guard let rawParams = request.params else {
+                    return encode(
+                        RPCResponse(
+                            id: request.id,
+                            error: RPCError(code: -32602, message: "Invalid params")
+                        ),
+                        with: encoder
+                    )
+                }
+                let params = try rawParams.decode(SubmitPitchParams.self)
+                let result = try pitchKernel.submitPitch(params)
+                response = RPCResponse(id: request.id, result: try JSONValue.from(result))
             default:
                 response = RPCResponse(
                     id: request.id,
@@ -64,6 +95,18 @@ public struct RPCServer: Sendable {
                 )
             }
             return encode(response, with: encoder)
+        } catch SimulationError.invalidPreparationToken {
+            return encode(
+                RPCResponse(
+                    id: request.id,
+                    error: RPCError(
+                        code: -32010,
+                        message: "Invalid preparation token",
+                        data: .string("Prepare the pitch again before submitting a call")
+                    )
+                ),
+                with: encoder
+            )
         } catch let error as SimulationError {
             return encode(
                 RPCResponse(
@@ -101,4 +144,3 @@ public struct RPCServer: Sendable {
         return encoder
     }
 }
-

@@ -217,6 +217,9 @@ public enum SimulationError: Error, Equatable, LocalizedError, Sendable {
     case invalidZone(row: Int, column: Int)
     case invalidCount(balls: Int, strikes: Int)
     case invalidFatigue(Int)
+    case invalidPlateAppearance(String)
+    case invalidScouting(String)
+    case invalidPreparationToken
 
     public var errorDescription: String? {
         switch self {
@@ -230,6 +233,12 @@ public enum SimulationError: Error, Equatable, LocalizedError, Sendable {
             return "Count is invalid: \(balls)-\(strikes)"
         case .invalidFatigue(let fatigue):
             return "Fatigue must be between 0 and 100: \(fatigue)"
+        case .invalidPlateAppearance(let detail):
+            return "Plate appearance context is invalid: \(detail)"
+        case .invalidScouting(let detail):
+            return "Batter scouting is invalid: \(detail)"
+        case .invalidPreparationToken:
+            return "Pitch preparation token is invalid or stale"
         }
     }
 }

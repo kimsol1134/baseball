@@ -408,6 +408,37 @@ main {
   line-height: 1.45;
 }
 
+.catcher-call--loading {
+  min-height: 112px;
+  place-content: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.recommendation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.recommendation-actions button {
+  border: 1px solid #4e693e;
+  border-radius: 7px;
+  padding: 5px 8px;
+  color: #d8eac7;
+  background: #22331d;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.recommendation-actions button + button {
+  border-color: var(--line-strong);
+  color: var(--muted);
+  background: var(--surface-raised);
+}
+
 fieldset {
   min-width: 0;
   margin: 0;
@@ -485,6 +516,12 @@ legend {
 
 .location-group legend {
   justify-self: stretch;
+}
+
+.pitch-modifiers {
+  display: grid;
+  align-content: start;
+  gap: 16px;
 }
 
 .strike-zone {
@@ -621,6 +658,40 @@ legend {
   font-size: 13px;
   font-weight: 700;
   line-height: 1.55;
+}
+
+.decision-grade {
+  width: fit-content;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--amber);
+  background: #211d14;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.decision-grade span {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.decision-grade--good,
+.decision-grade--excellent {
+  border-color: #45633a;
+  color: var(--lime);
+  background: #172218;
+}
+
+.decision-grade--poor {
+  border-color: #6f403c;
+  color: var(--red);
+  background: #261816;
+}
+
+.batted-ball-facts {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
 }
 
 .result-detail {
@@ -839,4 +910,3 @@ footer {
     transition-duration: 0.01ms !important;
   }
 }
-

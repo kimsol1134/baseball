@@ -1,0 +1,818 @@
+import Foundation
+
+public struct CatcherRecommendationEngine: Sendable {
+    public init() {}
+
+    public func recommend(
+        pitcher: PitcherSnapshot,
+        batter: BatterSnapshot,
+        scouting: BatterScoutingSnapshot,
+        context: PlateAppearanceContext
+    ) -> (primary: CatcherRecommendation, alternative: CatcherRecommendation) {
+        let twoStrikes = context.strikes == 2
+        let protectZone = context.balls == 3
+        let primary = CatcherRecommendation(
+            call: PitchCall(
+                pitchType: scouting.pitchWeakness,
+                zone: scouting.coldZone,
+                zoneIntent: protectZone ? .strike : (twoStrikes ? .chase : .edge),
+                intensity: protectZone ? .controlled : .normal
+            ),
+            confidence: clamp(
+                520 + (pitcher.command - 50) * 4 + (batter.discipline < 50 ? 45 : 0),
+                350,
+                850
+            ),
+            reasonCodes: [
+                "scouting.pitch_weakness",
+                "scouting.cold_zone",
+                twoStrikes ? "count.two_strikes" : "count.standard"
+            ]
+        )
+
+        let alternativePitch: PitchType = scouting.pitchWeakness == .fourSeam ? .slider : .fourSeam
+        let mirroredZone = PitchZone(
+            row: 2 - scouting.hotZone.row,
+            column: 2 - scouting.hotZone.column
+        )
+        let alternativeZone = mirroredZone == scouting.hotZone
+            ? PitchZone(row: 0, column: 2)
+            : mirroredZone
+        let alternative = CatcherRecommendation(
+            call: PitchCall(
+                pitchType: alternativePitch,
+                zone: alternativeZone,
+                zoneIntent: protectZone ? .strike : .edge,
+                intensity: context.fatigue >= 60 ? .controlled : .normal
+            ),
+            confidence: clamp(430 + (pitcher.stuff - 50) * 3, 300, 760),
+            reasonCodes: [
+                "scouting.avoid_hot_zone",
+                "sequence.change_speed",
+                protectZone ? "count.avoid_walk" : "count.alternative"
+            ]
+        )
+        return (primary, alternative)
+    }
+
+    private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
+        min(max(value, lower), upper)
+    }
+}
+
+public struct PitchKernelEngine: Sendable {
+    private enum BatterApproach: String {
+        case patient
+        case aggressive
+        case protect
+        case power
+    }
+
+    private struct BatterPlan {
+        let expectedPitch: PitchType
+        let expectedZone: PitchZone
+        let approach: BatterApproach
+        let commitment: String
+    }
+
+    private let recommendationEngine: CatcherRecommendationEngine
+
+    public init(recommendationEngine: CatcherRecommendationEngine = CatcherRecommendationEngine()) {
+        self.recommendationEngine = recommendationEngine
+    }
+
+    public func preparePitch(_ params: PreparePitchParams) throws -> PitchPreparation {
+        let seed = try validate(params)
+        let plan = commitBatterPlan(params: params, seed: seed)
+        let recommendations = recommendationEngine.recommend(
+            pitcher: params.pitcher,
+            batter: params.batter,
+            scouting: params.scouting,
+            context: params.context
+        )
+        let token = preparationToken(
+            params: params,
+            planCommitment: plan.commitment,
+            primary: recommendations.primary,
+            alternative: recommendations.alternative
+        )
+        return PitchPreparation(
+            seed: params.seed,
+            revision: params.context.revision,
+            pitchNumber: params.context.pitchNumber,
+            preparationToken: token,
+            planCommitment: plan.commitment,
+            primaryRecommendation: recommendationSnapshot(recommendations.primary),
+            alternativeRecommendation: recommendationSnapshot(recommendations.alternative)
+        )
+    }
+
+    public func submitPitch(_ params: SubmitPitchParams) throws -> PitchKernelResult {
+        let prepareParams = PreparePitchParams(
+            seed: params.seed,
+            pitcher: params.pitcher,
+            batter: params.batter,
+            scouting: params.scouting,
+            context: params.context
+        )
+        let seed = try validate(prepareParams)
+        try validate(call: params.call)
+        let plan = commitBatterPlan(params: prepareParams, seed: seed)
+        let recommendations = recommendationEngine.recommend(
+            pitcher: params.pitcher,
+            batter: params.batter,
+            scouting: params.scouting,
+            context: params.context
+        )
+        let expectedToken = preparationToken(
+            params: prepareParams,
+            planCommitment: plan.commitment,
+            primary: recommendations.primary,
+            alternative: recommendations.alternative
+        )
+        guard params.preparationToken == expectedToken else {
+            throw SimulationError.invalidPreparationToken
+        }
+
+        let execution = executePitch(params: params, seed: seed)
+        let wasInZone = abs(execution.actualX) <= 500 && abs(execution.actualY) <= 500
+        let planPitchMatched = plan.expectedPitch == params.call.pitchType
+        let planZoneMatched = zonesAreNear(plan.expectedZone, params.call.zone)
+        let resolution = resolvePitch(
+            params: params,
+            plan: plan,
+            execution: execution,
+            wasInZone: wasInZone,
+            seed: seed
+        )
+        let selection = selectionQuality(
+            call: params.call,
+            scouting: params.scouting,
+            context: params.context
+        )
+        let recommendationAccepted = params.call == recommendations.primary.call
+        let state = advanceCount(
+            context: params.context,
+            outcome: resolution.outcome
+        )
+        let reasonCodes = resolutionReasons(
+            outcome: resolution.outcome,
+            wasInZone: wasInZone,
+            planPitchMatched: planPitchMatched,
+            planZoneMatched: planZoneMatched,
+            selectionQuality: selection,
+            executionQuality: execution.executionQuality
+        )
+        let feedback = feedback(
+            outcome: resolution.outcome,
+            selection: selection,
+            execution: execution,
+            planPitchMatched: planPitchMatched,
+            planZoneMatched: planZoneMatched,
+            battedBall: resolution.battedBall
+        )
+
+        var events: [PitchKernelEvent] = []
+        events.append(
+            PitchKernelEvent(
+                eventType: "batter_plan_committed",
+                sequence: events.count,
+                planCommitment: plan.commitment
+            )
+        )
+        events.append(
+            PitchKernelEvent(
+                eventType: "catcher_recommendations_generated",
+                sequence: events.count,
+                primaryRecommendation: recommendations.primary,
+                alternativeRecommendation: recommendations.alternative,
+                reasonCodes: recommendations.primary.reasonCodes
+            )
+        )
+        events.append(
+            PitchKernelEvent(
+                eventType: "pitch_call_committed",
+                sequence: events.count,
+                call: params.call
+            )
+        )
+        events.append(
+            PitchKernelEvent(
+                eventType: "pitch_executed",
+                sequence: events.count,
+                execution: execution,
+                reasonCodes: executionReasonCodes(execution.executionQuality)
+            )
+        )
+        events.append(
+            PitchKernelEvent(
+                eventType: "pitch_resolved",
+                sequence: events.count,
+                outcome: resolution.outcome,
+                reasonCodes: reasonCodes
+            )
+        )
+        if let battedBall = resolution.battedBall {
+            events.append(
+                PitchKernelEvent(
+                    eventType: "batted_ball_created",
+                    sequence: events.count,
+                    battedBall: battedBall,
+                    reasonCodes: ["contact.quality.\(contactBand(battedBall.contactQuality))"]
+                )
+            )
+        }
+        if let plateAppearanceResult = state.result {
+            events.append(
+                PitchKernelEvent(
+                    eventType: "plate_appearance_ended",
+                    sequence: events.count,
+                    plateAppearanceResult: plateAppearanceResult,
+                    reasonCodes: ["plate_appearance.\(plateAppearanceResult.rawValue)"]
+                )
+            )
+        }
+
+        let nextSeed = deriveNextSeed(seed)
+        let revision = params.context.revision + 1
+        let snapshot = PlateAppearanceSnapshot(
+            revision: revision,
+            balls: state.balls,
+            strikes: state.strikes,
+            pitchNumber: params.context.pitchNumber,
+            ended: state.result != nil,
+            result: state.result,
+            outcome: resolution.outcome,
+            selectionQuality: selection,
+            recommendationAccepted: recommendationAccepted,
+            execution: execution,
+            battedBall: resolution.battedBall,
+            reasonCodes: reasonCodes,
+            shortFeedback: feedback.short,
+            detailFeedback: feedback.detail,
+            accessibilitySummary: "\(feedback.short) \(feedback.detail)"
+        )
+
+        let nextPreparation: PitchPreparation?
+        if state.result == nil {
+            let nextContext = PlateAppearanceContext(
+                plateAppearanceID: params.context.plateAppearanceID,
+                revision: revision,
+                inning: params.context.inning,
+                outs: params.context.outs,
+                balls: state.balls,
+                strikes: state.strikes,
+                pitchNumber: params.context.pitchNumber + 1,
+                scoreDifferential: params.context.scoreDifferential,
+                leverage: params.context.leverage,
+                fatigue: min(100, params.context.fatigue + fatigueCost(params.call.intensity))
+            )
+            nextPreparation = try preparePitch(
+                PreparePitchParams(
+                    seed: nextSeed,
+                    pitcher: params.pitcher,
+                    batter: params.batter,
+                    scouting: params.scouting,
+                    context: nextContext
+                )
+            )
+        } else {
+            nextPreparation = nil
+        }
+
+        let eventHash = StableHash.fnv1a64(
+            [
+                params.seed,
+                plan.commitment,
+                canonical(params.call),
+                String(execution.targetX),
+                String(execution.targetY),
+                String(execution.actualX),
+                String(execution.actualY),
+                String(execution.velocityTenthsKPH),
+                resolution.outcome.rawValue,
+                String(state.balls),
+                String(state.strikes),
+                state.result?.rawValue ?? "active",
+                nextSeed
+            ].joined(separator: "|")
+        )
+        return PitchKernelResult(
+            revision: revision,
+            nextSeed: nextSeed,
+            events: events,
+            snapshot: snapshot,
+            nextPreparation: nextPreparation,
+            eventHash: eventHash
+        )
+    }
+
+    private func validate(_ params: PreparePitchParams) throws -> UInt64 {
+        guard let seed = UInt64(params.seed) else {
+            throw SimulationError.invalidSeed(params.seed)
+        }
+        let ratings = [
+            ("pitcher.stuff", params.pitcher.stuff),
+            ("pitcher.command", params.pitcher.command),
+            ("pitcher.movement", params.pitcher.movement),
+            ("pitcher.stamina", params.pitcher.stamina),
+            ("batter.contact", params.batter.contact),
+            ("batter.discipline", params.batter.discipline),
+            ("batter.power", params.batter.power)
+        ]
+        for (field, value) in ratings where !(20...80).contains(value) {
+            throw SimulationError.invalidRating(field: field, value: value)
+        }
+        guard isValidZone(params.scouting.hotZone), isValidZone(params.scouting.coldZone) else {
+            throw SimulationError.invalidScouting("hot and cold zones must be within the 3x3 grid")
+        }
+        guard (20...80).contains(params.scouting.chaseTendency) else {
+            throw SimulationError.invalidScouting("chaseTendency must be between 20 and 80")
+        }
+        let context = params.context
+        guard !context.plateAppearanceID.isEmpty,
+              (1...20).contains(context.inning),
+              (0...2).contains(context.outs),
+              (0...3).contains(context.balls),
+              (0...2).contains(context.strikes),
+              context.pitchNumber >= 1,
+              (0...1_000).contains(context.leverage),
+              (0...100).contains(context.fatigue) else {
+            throw SimulationError.invalidPlateAppearance("one or more fields are out of range")
+        }
+        return seed
+    }
+
+    private func validate(call: PitchCall) throws {
+        guard isValidZone(call.zone) else {
+            throw SimulationError.invalidZone(row: call.zone.row, column: call.zone.column)
+        }
+    }
+
+    private func isValidZone(_ zone: PitchZone) -> Bool {
+        (0...2).contains(zone.row) && (0...2).contains(zone.column)
+    }
+
+    private func commitBatterPlan(params: PreparePitchParams, seed: UInt64) -> BatterPlan {
+        var generator = SplitMix64(
+            seed: derivedSeed(seed, domain: 0x504c_414e, ordinal: params.context.pitchNumber)
+        )
+        let pitchRoll = generator.nextInt(upperBound: 100)
+        let expectedPitch: PitchType
+        if pitchRoll < 34 {
+            expectedPitch = .fourSeam
+        } else if pitchRoll < 60 {
+            expectedPitch = .slider
+        } else if pitchRoll < 80 {
+            expectedPitch = .changeup
+        } else {
+            expectedPitch = .curveball
+        }
+
+        let expectedZone: PitchZone
+        if generator.nextInt(upperBound: 100) < 45 {
+            expectedZone = params.scouting.hotZone
+        } else {
+            expectedZone = PitchZone(
+                row: generator.nextInt(upperBound: 3),
+                column: generator.nextInt(upperBound: 3)
+            )
+        }
+        let approach: BatterApproach
+        if params.context.strikes == 2 {
+            approach = .protect
+        } else if params.context.balls == 3 {
+            approach = .patient
+        } else {
+            approach = generator.nextInt(upperBound: 100) < 55 ? .aggressive : .power
+        }
+        let commitment = StableHash.fnv1a64(
+            [
+                params.context.plateAppearanceID,
+                String(params.context.pitchNumber),
+                expectedPitch.rawValue,
+                String(expectedZone.row),
+                String(expectedZone.column),
+                approach.rawValue,
+                String(generator.next())
+            ].joined(separator: "|")
+        )
+        return BatterPlan(
+            expectedPitch: expectedPitch,
+            expectedZone: expectedZone,
+            approach: approach,
+            commitment: commitment
+        )
+    }
+
+    private func preparationToken(
+        params: PreparePitchParams,
+        planCommitment: String,
+        primary: CatcherRecommendation,
+        alternative: CatcherRecommendation
+    ) -> String {
+        StableHash.fnv1a64(
+            [
+                "pitch-preparation-v1",
+                params.seed,
+                params.context.plateAppearanceID,
+                String(params.context.revision),
+                String(params.context.pitchNumber),
+                String(params.context.balls),
+                String(params.context.strikes),
+                planCommitment,
+                canonical(primary.call),
+                canonical(alternative.call)
+            ].joined(separator: "|")
+        )
+    }
+
+    private func executePitch(params: SubmitPitchParams, seed: UInt64) -> PitchExecution {
+        var generator = SplitMix64(
+            seed: derivedSeed(seed, domain: 0x4558_4543, ordinal: params.context.pitchNumber)
+        )
+        let target = targetCoordinates(for: params.call)
+        let intensityPenalty: Int
+        let velocityBonus: Int
+        switch params.call.intensity {
+        case .controlled:
+            intensityPenalty = -70
+            velocityBonus = -18
+        case .normal:
+            intensityPenalty = 0
+            velocityBonus = 0
+        case .maxEffort:
+            intensityPenalty = 130
+            velocityBonus = 32
+        }
+        let effectiveCommand = clamp(
+            params.pitcher.command * 10 - params.context.fatigue * 2 - intensityPenalty,
+            100,
+            900
+        )
+        let spread = clamp(520 - effectiveCommand / 2, 70, 470)
+        var offsetX = generator.nextInt(upperBound: spread * 2 + 1) - spread
+        var offsetY = generator.nextInt(upperBound: spread * 2 + 1) - spread
+        let wildChance = clamp(
+            8 + params.context.fatigue / 10 + (params.call.intensity == .maxEffort ? 4 : 0)
+                - (params.pitcher.command - 50) / 4,
+            3,
+            20
+        )
+        if generator.nextInt(upperBound: 100) < wildChance {
+            let wildOffset = 240 + generator.nextInt(upperBound: 321)
+            if generator.nextInt(upperBound: 2) == 0 {
+                offsetX += generator.nextInt(upperBound: 2) == 0 ? -wildOffset : wildOffset
+            } else {
+                offsetY += generator.nextInt(upperBound: 2) == 0 ? -wildOffset : wildOffset
+            }
+        }
+        let executionQuality = clamp(
+            1_000 - abs(offsetX) - abs(offsetY) + effectiveCommand / 5,
+            0,
+            1_000
+        )
+        let baseVelocity: Int
+        let horizontalBreak: Int
+        let verticalBreak: Int
+        switch params.call.pitchType {
+        case .fourSeam:
+            baseVelocity = 1_420
+            horizontalBreak = 70
+            verticalBreak = 160
+        case .slider:
+            baseVelocity = 1_275
+            horizontalBreak = -145
+            verticalBreak = 35
+        case .curveball:
+            baseVelocity = 1_165
+            horizontalBreak = -65
+            verticalBreak = -185
+        case .changeup:
+            baseVelocity = 1_285
+            horizontalBreak = 105
+            verticalBreak = -45
+        }
+        let velocity = baseVelocity
+            + (params.pitcher.stuff - 50) * 4
+            + velocityBonus
+            - params.context.fatigue
+            + generator.nextInt(upperBound: 21) - 10
+        let movementScale = params.pitcher.movement - 50
+        return PitchExecution(
+            targetX: target.x,
+            targetY: target.y,
+            actualX: target.x + offsetX,
+            actualY: target.y + offsetY,
+            velocityTenthsKPH: velocity,
+            horizontalBreakTenthsCM: horizontalBreak + movementScale * 2,
+            verticalBreakTenthsCM: verticalBreak + movementScale * 2,
+            executionQuality: executionQuality
+        )
+    }
+
+    private func resolvePitch(
+        params: SubmitPitchParams,
+        plan: BatterPlan,
+        execution: PitchExecution,
+        wasInZone: Bool,
+        seed: UInt64
+    ) -> (outcome: PitchOutcome, battedBall: BattedBall?) {
+        var generator = SplitMix64(
+            seed: derivedSeed(seed, domain: 0x5245_534f, ordinal: params.context.pitchNumber)
+        )
+        let pitchMatched = plan.expectedPitch == params.call.pitchType
+        let zoneMatched = zonesAreNear(plan.expectedZone, params.call.zone)
+        let recognitionBonus = (pitchMatched ? 95 : -65) + (zoneMatched ? 70 : -35)
+        let approachSwingBonus: Int
+        switch plan.approach {
+        case .patient: approachSwingBonus = -150
+        case .aggressive: approachSwingBonus = 120
+        case .protect: approachSwingBonus = 80
+        case .power: approachSwingBonus = 35
+        }
+        let swingChance = clamp(
+            (wasInZone ? 610 : 110)
+                + params.scouting.chaseTendency * (wasInZone ? 1 : 4)
+                - params.batter.discipline * 2
+                + recognitionBonus
+                + approachSwingBonus,
+            25,
+            960
+        )
+        let batterSwung = generator.nextInt(upperBound: 1_000) < swingChance
+        if !batterSwung {
+            return (wasInZone ? .calledStrike : .ball, nil)
+        }
+
+        let pitchDifficulty = (params.pitcher.stuff - 50) * 6
+            + (params.pitcher.movement - 50) * 5
+            + max(0, execution.executionQuality - 500) / 2
+        let contactChance = clamp(
+            560
+                + (params.batter.contact - 50) * 8
+                + (pitchMatched ? 100 : -80)
+                + (zoneMatched ? 55 : -40)
+                - pitchDifficulty,
+            70,
+            930
+        )
+        guard generator.nextInt(upperBound: 1_000) < contactChance else {
+            return (.swingingStrike, nil)
+        }
+
+        let foulChance = clamp(
+            230 + (params.pitcher.movement - params.batter.contact) * 3,
+            120,
+            390
+        )
+        if generator.nextInt(upperBound: 1_000) < foulChance {
+            return (.foul, nil)
+        }
+
+        let contactQuality = clamp(
+            430
+                + (params.batter.power - 50) * 7
+                + (params.batter.contact - 50) * 4
+                + (pitchMatched ? 90 : -70)
+                + (zoneMatched ? 45 : -35)
+                - max(0, execution.executionQuality - 500) / 3
+                + generator.nextInt(upperBound: 301) - 150,
+            0,
+            1_000
+        )
+        let battedBall = BattedBall(
+            exitVelocityTenthsKPH: 1_050 + contactQuality / 2,
+            launchAngleTenthsDegrees: -50 + generator.nextInt(upperBound: 430),
+            directionTenthsDegrees: -450 + generator.nextInt(upperBound: 901),
+            contactQuality: contactQuality
+        )
+        let outcome: PitchOutcome
+        switch contactQuality {
+        case ..<500: outcome = .inPlayOut
+        case 500..<690: outcome = .single
+        case 690..<790: outcome = .double
+        default: outcome = .homeRun
+        }
+        return (outcome, battedBall)
+    }
+
+    private func advanceCount(
+        context: PlateAppearanceContext,
+        outcome: PitchOutcome
+    ) -> (balls: Int, strikes: Int, result: PlateAppearanceResult?) {
+        switch outcome {
+        case .ball:
+            if context.balls == 3 { return (3, context.strikes, .walk) }
+            return (context.balls + 1, context.strikes, nil)
+        case .calledStrike, .swingingStrike:
+            if context.strikes == 2 { return (context.balls, 2, .strikeout) }
+            return (context.balls, context.strikes + 1, nil)
+        case .foul:
+            return (context.balls, min(2, context.strikes + 1), nil)
+        case .inPlayOut:
+            return (context.balls, context.strikes, .inPlayOut)
+        case .single, .double, .homeRun:
+            return (context.balls, context.strikes, .hit)
+        }
+    }
+
+    private func selectionQuality(
+        call: PitchCall,
+        scouting: BatterScoutingSnapshot,
+        context: PlateAppearanceContext
+    ) -> SelectionQuality {
+        var score = 500
+        if call.pitchType == scouting.pitchWeakness { score += 170 }
+        if call.pitchType == scouting.pitchStrength { score -= 190 }
+        if call.zone == scouting.coldZone { score += 130 }
+        if call.zone == scouting.hotZone { score -= 170 }
+        if context.strikes == 2, call.zoneIntent == .chase { score += 90 }
+        if context.balls == 3, call.zoneIntent == .chase { score -= 260 }
+        if context.fatigue >= 60, call.intensity == .maxEffort { score -= 140 }
+        if call.zoneIntent == .edge { score += 35 }
+        switch score {
+        case ..<340: return .poor
+        case 340..<540: return .risky
+        case 540..<740: return .good
+        default: return .excellent
+        }
+    }
+
+    private func targetCoordinates(for call: PitchCall) -> (x: Int, y: Int) {
+        var x = (call.zone.column - 1) * 330
+        var y = (1 - call.zone.row) * 330
+        switch call.zoneIntent {
+        case .strike:
+            x = x * 7 / 10
+            y = y * 7 / 10
+        case .edge:
+            break
+        case .chase:
+            if abs(x) >= abs(y), x != 0 {
+                x = x > 0 ? 650 : -650
+            } else if y != 0 {
+                y = y > 0 ? 650 : -650
+            } else {
+                y = -650
+            }
+        }
+        return (x, y)
+    }
+
+    private func recommendationSnapshot(
+        _ recommendation: CatcherRecommendation
+    ) -> CatcherRecommendationSnapshot {
+        let pitchName = pitchDisplayName(recommendation.call.pitchType)
+        let zoneName = zoneDisplayName(recommendation.call.zone)
+        let intent: String
+        switch recommendation.call.zoneIntent {
+        case .strike: intent = "존 안"
+        case .edge: intent = "경계"
+        case .chase: intent = "유인구"
+        }
+        let shortReason: String
+        if recommendation.reasonCodes.contains("scouting.pitch_weakness") {
+            shortReason = "타자의 약점인 \(zoneName) \(pitchName)을 \(intent)로 공략합니다."
+        } else {
+            shortReason = "강한 코스를 피해 \(zoneName) \(pitchName)으로 타이밍을 바꿉니다."
+        }
+        return CatcherRecommendationSnapshot(
+            call: recommendation.call,
+            confidence: recommendation.confidence,
+            reasonCodes: recommendation.reasonCodes,
+            shortReason: shortReason
+        )
+    }
+
+    private func feedback(
+        outcome: PitchOutcome,
+        selection: SelectionQuality,
+        execution: PitchExecution,
+        planPitchMatched: Bool,
+        planZoneMatched: Bool,
+        battedBall: BattedBall?
+    ) -> (short: String, detail: String) {
+        let short: String
+        switch outcome {
+        case .ball: short = "타자가 골라내 볼이 됐습니다."
+        case .calledStrike: short = "ABS가 스트라이크를 선언했습니다."
+        case .swingingStrike: short = "타자의 배트를 끌어내 헛스윙을 만들었습니다."
+        case .foul: short = "타자가 걷어내 파울이 됐습니다."
+        case .inPlayOut: short = "약한 타구를 유도해 아웃을 만들었습니다."
+        case .single: short = "타구가 수비 사이를 빠져나가 단타가 됐습니다."
+        case .double: short = "강한 타구가 외야를 갈라 2루타가 됐습니다."
+        case .homeRun: short = "정타를 허용해 홈런이 됐습니다."
+        }
+        let planText: String
+        switch (planPitchMatched, planZoneMatched) {
+        case (true, true): planText = "타자가 구종과 코스를 모두 예상했습니다"
+        case (true, false): planText = "구종은 읽혔지만 코스는 노림수를 벗어났습니다"
+        case (false, true): planText = "코스는 예상 범위였지만 구종으로 타이밍을 흔들었습니다"
+        case (false, false): planText = "구종과 코스 모두 타자의 노림수를 벗어났습니다"
+        }
+        let contactText = battedBall.map {
+            " 타구 속도는 \(String(format: "%.1f", Double($0.exitVelocityTenthsKPH) / 10))km/h였습니다."
+        } ?? ""
+        let detail = "선택은 \(selectionDisplayName(selection)), 실행 품질은 \(execution.executionQuality)입니다. \(planText).\(contactText)"
+        return (short, detail)
+    }
+
+    private func resolutionReasons(
+        outcome: PitchOutcome,
+        wasInZone: Bool,
+        planPitchMatched: Bool,
+        planZoneMatched: Bool,
+        selectionQuality: SelectionQuality,
+        executionQuality: Int
+    ) -> [String] {
+        [
+            "outcome.\(outcome.rawValue)",
+            wasInZone ? "abs.in_zone" : "abs.out_of_zone",
+            planPitchMatched ? "batter_plan.pitch_matched" : "batter_plan.pitch_missed",
+            planZoneMatched ? "batter_plan.zone_matched" : "batter_plan.zone_missed",
+            "selection.\(selectionQuality.rawValue)",
+            executionReasonCodes(executionQuality)[0]
+        ]
+    }
+
+    private func executionReasonCodes(_ quality: Int) -> [String] {
+        switch quality {
+        case ..<350: return ["execution.missed_target"]
+        case 350..<600: return ["execution.location_vulnerable"]
+        case 600..<800: return ["execution.near_target"]
+        default: return ["execution.precise"]
+        }
+    }
+
+    private func canonical(_ call: PitchCall) -> String {
+        [
+            call.pitchType.rawValue,
+            String(call.zone.row),
+            String(call.zone.column),
+            call.zoneIntent.rawValue,
+            call.intensity.rawValue
+        ].joined(separator: ":")
+    }
+
+    private func zonesAreNear(_ first: PitchZone, _ second: PitchZone) -> Bool {
+        abs(first.row - second.row) + abs(first.column - second.column) <= 1
+    }
+
+    private func deriveNextSeed(_ seed: UInt64) -> String {
+        var generator = SplitMix64(seed: seed)
+        _ = generator.next()
+        return String(generator.state)
+    }
+
+    private func derivedSeed(_ seed: UInt64, domain: UInt64, ordinal: Int) -> UInt64 {
+        var generator = SplitMix64(seed: seed ^ domain ^ (UInt64(ordinal) &* 0x9E37_79B9))
+        return generator.next()
+    }
+
+    private func fatigueCost(_ intensity: PitchIntensity) -> Int {
+        switch intensity {
+        case .controlled: return 0
+        case .normal: return 1
+        case .maxEffort: return 2
+        }
+    }
+
+    private func contactBand(_ quality: Int) -> String {
+        switch quality {
+        case ..<350: return "weak"
+        case 350..<650: return "average"
+        default: return "hard"
+        }
+    }
+
+    private func pitchDisplayName(_ pitchType: PitchType) -> String {
+        switch pitchType {
+        case .fourSeam: return "포심"
+        case .slider: return "슬라이더"
+        case .curveball: return "커브"
+        case .changeup: return "체인지업"
+        }
+    }
+
+    private func zoneDisplayName(_ zone: PitchZone) -> String {
+        let vertical = ["높은", "가운데", "낮은"][zone.row]
+        let horizontal = ["몸쪽", "가운데", "바깥쪽"][zone.column]
+        return vertical == "가운데" && horizontal == "가운데"
+            ? "가운데"
+            : "\(vertical) \(horizontal)"
+    }
+
+    private func selectionDisplayName(_ quality: SelectionQuality) -> String {
+        switch quality {
+        case .poor: return "위험했습니다"
+        case .risky: return "다소 위험했습니다"
+        case .good: return "좋았습니다"
+        case .excellent: return "매우 좋았습니다"
+        }
+    }
+
+    private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
+        min(max(value, lower), upper)
+    }
+}

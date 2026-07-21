@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-soul.local/schemas/pitch-kernel.schema.json",
+  "title": "Pitch Kernel command parameters",
+  "oneOf": [
+    { "$ref": "#/$defs/preparePitchParams" },
+    { "$ref": "#/$defs/submitPitchParams" }
+  ],
+  "$defs": {
+    "rating": { "type": "integer", "minimum": 20, "maximum": 80 },
+    "zone": {
+      "type": "object",
+      "required": ["row", "column"],
+      "properties": {
+        "row": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "column": { "type": "integer", "minimum": 0, "maximum": 2 }
+      },
+      "additionalProperties": false
+    },
+    "pitcher": {
+      "type": "object",
+      "required": ["id", "name", "stuff", "command", "movement", "stamina"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "stuff": { "$ref": "#/$defs/rating" },
+        "command": { "$ref": "#/$defs/rating" },
+        "movement": { "$ref": "#/$defs/rating" },
+        "stamina": { "$ref": "#/$defs/rating" }
+      },
+      "additionalProperties": false
+    },
+    "batter": {
+      "type": "object",
+      "required": ["id", "name", "contact", "discipline", "power"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "contact": { "$ref": "#/$defs/rating" },
+        "discipline": { "$ref": "#/$defs/rating" },
+        "power": { "$ref": "#/$defs/rating" }
+      },
+      "additionalProperties": false
+    },
+    "scouting": {
+      "type": "object",
+      "required": ["hotZone", "coldZone", "pitchStrength", "pitchWeakness", "chaseTendency"],
+      "properties": {
+        "hotZone": { "$ref": "#/$defs/zone" },
+        "coldZone": { "$ref": "#/$defs/zone" },
+        "pitchStrength": { "enum": ["four_seam", "slider", "curveball", "changeup"] },
+        "pitchWeakness": { "enum": ["four_seam", "slider", "curveball", "changeup"] },
+        "chaseTendency": { "$ref": "#/$defs/rating" }
+      },
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "required": ["plateAppearanceID", "revision", "inning", "outs", "balls", "strikes", "pitchNumber", "scoreDifferential", "leverage", "fatigue"],
+      "properties": {
+        "plateAppearanceID": { "type": "string", "minLength": 1 },
+        "revision": { "type": "integer", "minimum": 0 },
+        "inning": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "outs": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "balls": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "strikes": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "pitchNumber": { "type": "integer", "minimum": 1 },
+        "scoreDifferential": { "type": "integer" },
+        "leverage": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "fatigue": { "type": "integer", "minimum": 0, "maximum": 100 }
+      },
+      "additionalProperties": false
+    },
+    "pitchCall": {
+      "type": "object",
+      "required": ["pitchType", "zone", "zoneIntent", "intensity"],
+      "properties": {
+        "pitchType": { "enum": ["four_seam", "slider", "curveball", "changeup"] },
+        "zone": { "$ref": "#/$defs/zone" },
+        "zoneIntent": { "enum": ["strike", "edge", "chase"] },
+        "intensity": { "enum": ["controlled", "normal", "max_effort"] }
+      },
+      "additionalProperties": false
+    },
+    "preparePitchParams": {
+      "type": "object",
+      "required": ["seed", "pitcher", "batter", "scouting", "context"],
+      "properties": {
+        "seed": { "type": "string", "pattern": "^[0-9]+$" },
+        "pitcher": { "$ref": "#/$defs/pitcher" },
+        "batter": { "$ref": "#/$defs/batter" },
+        "scouting": { "$ref": "#/$defs/scouting" },
+        "context": { "$ref": "#/$defs/context" }
+      },
+      "additionalProperties": false
+    },
+    "submitPitchParams": {
+      "type": "object",
+      "required": ["seed", "pitcher", "batter", "scouting", "context", "preparationToken", "call"],
+      "properties": {
+        "seed": { "type": "string", "pattern": "^[0-9]+$" },
+        "pitcher": { "$ref": "#/$defs/pitcher" },
+        "batter": { "$ref": "#/$defs/batter" },
+        "scouting": { "$ref": "#/$defs/scouting" },
+        "context": { "$ref": "#/$defs/context" },
+        "preparationToken": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+        "call": { "$ref": "#/$defs/pitchCall" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

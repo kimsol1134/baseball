@@ -1,6 +1,6 @@
 # Project Diamond Soul
 
-데이터 중심 야구 로그라이트 RPG의 P0 관통 프로토타입이다. 현재 구현은 한 투구를 `React → Tauri → Swift sidecar`로 전달하고, 고정 시드에서 결정론적 결과 이벤트를 반환한다.
+데이터 중심 야구 로그라이트 RPG의 P1 Pitch Kernel 프로토타입이다. 현재 구현은 한 타석의 투구 선택을 `React → Tauri → Swift sidecar`로 전달하고, 고정 시드에서 결정론적 이벤트 스트림과 결과를 반환한다.
 
 전체 개발 기준선은 [DEVELOPMENT_PLAN.md](./docs/docs/DEVELOPMENT_PLAN.md)를 따른다. 상세 PRD·TRD·프로토타입·QA 문서는 [개발 문서 패키지](./docs/README.md)에서 찾을 수 있다.
 
@@ -8,7 +8,7 @@
 
 - 정수 연산 기반 SplitMix64 결정론적 RNG
 - 투수·타자·카운트·피로·구종·3×3 코스·강도 모델
-- `health`, `simulatePitch` JSON-RPC 2.0 메서드
+- `health`, `simulatePitch`, `preparePitch`, `submitPitch` JSON-RPC 2.0 메서드
 - 결과, 원인 피드백, 다음 시드, 이벤트 해시
 - 표시 문구와 분리된 불변 이벤트·화면 스냅숏 응답
 - Swift sidecar와 1,000구 이상 배치 실행 CLI
@@ -19,6 +19,10 @@
 - TypeScript 프로토콜·연결 테스트
 - JSON+ZIP portable save archive와 SHA-256·CRC32 무결성 검증
 - 임시 파일 검증, 정상 백업 3개 순환, 손상 원본 보존·복구
+- 타자 계획 commitment와 stale 준비 토큰 검증
+- 공개 정보만 사용하는 포수 주 추천·대안 추천
+- 존 의도, 실제 위치·구속·무브먼트, ABS, 스윙·접촉·타구 모델
+- 볼카운트, 파울, 삼진, 볼넷, 인플레이까지 이어지는 완전한 타석 루프
 - macOS·Windows Swift 및 데스크톱 구성 CI
 
 ## 요구 환경
@@ -58,11 +62,13 @@ npm run check:tauri
 npm run check
 ```
 
-배치 시뮬레이션:
+배치 타석 시뮬레이션:
 
 ```sh
-swift run --package-path packages/simulation-core simulation-cli --iterations 10000
+swift run -c release --package-path packages/simulation-core simulation-cli --iterations 10000 --strategy primary
 ```
+
+`--strategy`는 `primary`, `alternative`, `fixed`를 지원한다.
 
 샘플 저장 아카이브 생성과 재검증:
 
@@ -75,7 +81,7 @@ swift run --package-path packages/simulation-core save-archive-cli --output prot
 ```text
 apps/windows/                  React + Tauri 데스크톱 앱
 packages/simulation-core/     Swift 코어, JSON-RPC sidecar, CLI, 테스트
-schemas/                      JSON-RPC, 투구 요청, 저장 manifest·checksum 스키마
+schemas/                      JSON-RPC, Pitch Kernel, 저장 manifest·checksum 스키마
 docs/adr/                     아키텍처 결정 기록
 tools/                        sidecar 빌드와 로컬 도구 체인 실행기
 ```
@@ -97,4 +103,19 @@ tools/                        sidecar 빌드와 로컬 도구 체인 실행기
 
 - 원격 Windows CI의 실제 통과 확인
 
-실제 포수 추천 엔진과 타석 상태 전이는 P1에서 구현한다.
+## P1 진행 상태
+
+현재 완료:
+
+- 타자 계획 선확정과 포수 추천 정보 차단
+- 주·대안 추천, 구종·3×3 코스·존 의도·강도 입력
+- 투구 실행 분포, ABS, 스윙, 접촉, 타구 속도·발사각·방향
+- 삼진·볼넷·인플레이까지의 타석 상태 전이
+- 선택·실행·결과를 분리한 reason code와 화면 피드백
+- 전략별 10만 타석 배치 비교 도구
+
+다음 구현:
+
+- 네 가지 투수 프리셋과 구종별 개별 프로필
+- 반복 패턴을 학습하는 라이벌 타자와 재대결 메모리
+- 수비·주자·구장 단순 모델과 경기 후 분석

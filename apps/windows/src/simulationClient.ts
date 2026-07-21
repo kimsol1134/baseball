@@ -2,8 +2,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { createRPCRequest, parseRPCResponse } from "./rpc";
 import type {
   HealthResult,
+  PitchKernelResult,
+  PitchPreparation,
+  PreparePitchParams,
   SimulatePitchResult,
   SimulatePitchParams,
+  SubmitPitchParams,
 } from "./simulationTypes";
 
 async function executeRPC<TResult, TParams>(
@@ -29,4 +33,12 @@ export function simulatePitch(
     "simulatePitch",
     params,
   );
+}
+
+export function preparePitch(params: PreparePitchParams): Promise<PitchPreparation> {
+  return executeRPC<PitchPreparation, PreparePitchParams>("preparePitch", params);
+}
+
+export function submitPitch(params: SubmitPitchParams): Promise<PitchKernelResult> {
+  return executeRPC<PitchKernelResult, SubmitPitchParams>("submitPitch", params);
 }
