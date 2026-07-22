@@ -90,6 +90,7 @@ public struct PreparePitchParams: Codable, Equatable, Sendable {
     public let batter: BatterSnapshot
     public let scouting: BatterScoutingSnapshot
     public let context: PlateAppearanceContext
+    public let rivalMemory: RivalMemorySnapshot?
 
     public init(
         seed: String,
@@ -98,11 +99,30 @@ public struct PreparePitchParams: Codable, Equatable, Sendable {
         scouting: BatterScoutingSnapshot,
         context: PlateAppearanceContext
     ) {
+        self.init(
+            seed: seed,
+            pitcher: pitcher,
+            batter: batter,
+            scouting: scouting,
+            context: context,
+            rivalMemory: nil
+        )
+    }
+
+    public init(
+        seed: String,
+        pitcher: PitcherSnapshot,
+        batter: BatterSnapshot,
+        scouting: BatterScoutingSnapshot,
+        context: PlateAppearanceContext,
+        rivalMemory: RivalMemorySnapshot?
+    ) {
         self.seed = seed
         self.pitcher = pitcher
         self.batter = batter
         self.scouting = scouting
         self.context = context
+        self.rivalMemory = rivalMemory
     }
 }
 
@@ -114,6 +134,7 @@ public struct SubmitPitchParams: Codable, Equatable, Sendable {
     public let context: PlateAppearanceContext
     public let preparationToken: String
     public let call: PitchCall
+    public let rivalMemory: RivalMemorySnapshot?
 
     public init(
         seed: String,
@@ -124,6 +145,28 @@ public struct SubmitPitchParams: Codable, Equatable, Sendable {
         preparationToken: String,
         call: PitchCall
     ) {
+        self.init(
+            seed: seed,
+            pitcher: pitcher,
+            batter: batter,
+            scouting: scouting,
+            context: context,
+            preparationToken: preparationToken,
+            call: call,
+            rivalMemory: nil
+        )
+    }
+
+    public init(
+        seed: String,
+        pitcher: PitcherSnapshot,
+        batter: BatterSnapshot,
+        scouting: BatterScoutingSnapshot,
+        context: PlateAppearanceContext,
+        preparationToken: String,
+        call: PitchCall,
+        rivalMemory: RivalMemorySnapshot?
+    ) {
         self.seed = seed
         self.pitcher = pitcher
         self.batter = batter
@@ -131,6 +174,7 @@ public struct SubmitPitchParams: Codable, Equatable, Sendable {
         self.context = context
         self.preparationToken = preparationToken
         self.call = call
+        self.rivalMemory = rivalMemory
     }
 }
 
@@ -173,6 +217,7 @@ public struct PitchPreparation: Codable, Equatable, Sendable {
     public let planCommitment: String
     public let primaryRecommendation: CatcherRecommendationSnapshot
     public let alternativeRecommendation: CatcherRecommendationSnapshot
+    public let rivalAdaptation: RivalAdaptationSnapshot
 
     public init(
         seed: String,
@@ -181,7 +226,8 @@ public struct PitchPreparation: Codable, Equatable, Sendable {
         preparationToken: String,
         planCommitment: String,
         primaryRecommendation: CatcherRecommendationSnapshot,
-        alternativeRecommendation: CatcherRecommendationSnapshot
+        alternativeRecommendation: CatcherRecommendationSnapshot,
+        rivalAdaptation: RivalAdaptationSnapshot
     ) {
         self.seed = seed
         self.revision = revision
@@ -190,6 +236,7 @@ public struct PitchPreparation: Codable, Equatable, Sendable {
         self.planCommitment = planCommitment
         self.primaryRecommendation = primaryRecommendation
         self.alternativeRecommendation = alternativeRecommendation
+        self.rivalAdaptation = rivalAdaptation
     }
 }
 
@@ -268,6 +315,7 @@ public struct PitchKernelEvent: Codable, Equatable, Sendable {
     public let outcome: PitchOutcome?
     public let battedBall: BattedBall?
     public let plateAppearanceResult: PlateAppearanceResult?
+    public let rivalAdaptation: RivalAdaptationSnapshot?
     public let reasonCodes: [String]
 
     public init(
@@ -281,6 +329,7 @@ public struct PitchKernelEvent: Codable, Equatable, Sendable {
         outcome: PitchOutcome? = nil,
         battedBall: BattedBall? = nil,
         plateAppearanceResult: PlateAppearanceResult? = nil,
+        rivalAdaptation: RivalAdaptationSnapshot? = nil,
         reasonCodes: [String] = []
     ) {
         self.eventType = eventType
@@ -293,6 +342,7 @@ public struct PitchKernelEvent: Codable, Equatable, Sendable {
         self.outcome = outcome
         self.battedBall = battedBall
         self.plateAppearanceResult = plateAppearanceResult
+        self.rivalAdaptation = rivalAdaptation
         self.reasonCodes = reasonCodes
     }
 }
@@ -358,6 +408,8 @@ public struct PitchKernelResult: Codable, Equatable, Sendable {
     public let events: [PitchKernelEvent]
     public let snapshot: PlateAppearanceSnapshot
     public let nextPreparation: PitchPreparation?
+    public let rivalMemory: RivalMemorySnapshot
+    public let rivalAdaptation: RivalAdaptationSnapshot
     public let eventHash: String
 
     public init(
@@ -366,6 +418,8 @@ public struct PitchKernelResult: Codable, Equatable, Sendable {
         events: [PitchKernelEvent],
         snapshot: PlateAppearanceSnapshot,
         nextPreparation: PitchPreparation?,
+        rivalMemory: RivalMemorySnapshot,
+        rivalAdaptation: RivalAdaptationSnapshot,
         eventHash: String
     ) {
         self.revision = revision
@@ -373,6 +427,8 @@ public struct PitchKernelResult: Codable, Equatable, Sendable {
         self.events = events
         self.snapshot = snapshot
         self.nextPreparation = nextPreparation
+        self.rivalMemory = rivalMemory
+        self.rivalAdaptation = rivalAdaptation
         self.eventHash = eventHash
     }
 }

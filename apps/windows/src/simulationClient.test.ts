@@ -139,10 +139,10 @@ describe("simulation client", () => {
     };
     invokeMock
       .mockResolvedValueOnce(
-        '{"id":"desktop-3","jsonrpc":"2.0","result":{"seed":"1","revision":0,"pitchNumber":1,"preparationToken":"token","planCommitment":"commitment","primaryRecommendation":{"call":{"pitchType":"slider","zone":{"row":2,"column":0},"zoneIntent":"edge","intensity":"normal"},"confidence":600,"reasonCodes":["scouting.cold_zone"],"shortReason":"낮은 몸쪽을 공략합니다."},"alternativeRecommendation":{"call":{"pitchType":"four_seam","zone":{"row":0,"column":2},"zoneIntent":"edge","intensity":"normal"},"confidence":500,"reasonCodes":["sequence.change_speed"],"shortReason":"다른 속도를 보여줍니다."}}}',
+        '{"id":"desktop-3","jsonrpc":"2.0","result":{"seed":"1","revision":0,"pitchNumber":1,"preparationToken":"token","planCommitment":"commitment","primaryRecommendation":{"call":{"pitchType":"slider","zone":{"row":2,"column":0},"zoneIntent":"edge","intensity":"normal"},"confidence":600,"reasonCodes":["scouting.cold_zone"],"shortReason":"낮은 몸쪽을 공략합니다."},"alternativeRecommendation":{"call":{"pitchType":"four_seam","zone":{"row":0,"column":2},"zoneIntent":"edge","intensity":"normal"},"confidence":500,"reasonCodes":["sequence.change_speed"],"shortReason":"다른 속도를 보여줍니다."},"rivalAdaptation":{"level":0,"band":"no_data","evidenceCount":0,"confidence":0,"warning":"표본 없음"}}}',
       )
       .mockResolvedValueOnce(
-        '{"id":"desktop-4","jsonrpc":"2.0","result":{"revision":1,"nextSeed":"2","events":[{"eventType":"batter_plan_committed","sequence":0,"planCommitment":"commitment","reasonCodes":[]},{"eventType":"pitch_call_committed","sequence":1,"reasonCodes":[]}],"snapshot":{"revision":1,"balls":1,"strikes":2,"pitchNumber":1,"ended":false,"outcome":"called_strike","selectionQuality":"excellent","recommendationAccepted":true,"execution":{"targetX":-400,"targetY":-400,"actualX":-390,"actualY":-410,"velocityTenthsKPH":1300,"horizontalBreakTenthsCM":-140,"verticalBreakTenthsCM":30,"executionQuality":800},"reasonCodes":["outcome.called_strike"],"shortFeedback":"스트라이크","detailFeedback":"좋은 선택","accessibilitySummary":"스트라이크 좋은 선택"},"eventHash":"hash"}}',
+        '{"id":"desktop-4","jsonrpc":"2.0","result":{"revision":1,"nextSeed":"2","events":[{"eventType":"batter_plan_committed","sequence":0,"planCommitment":"commitment","reasonCodes":[]},{"eventType":"pitch_call_committed","sequence":1,"reasonCodes":[]}],"snapshot":{"revision":1,"balls":1,"strikes":2,"pitchNumber":1,"ended":false,"outcome":"called_strike","selectionQuality":"excellent","recommendationAccepted":true,"fatigueAfterPitch":13,"execution":{"targetX":-400,"targetY":-400,"actualX":-390,"actualY":-410,"velocityTenthsKPH":1300,"horizontalBreakTenthsCM":-140,"verticalBreakTenthsCM":30,"executionQuality":800},"reasonCodes":["outcome.called_strike"],"shortFeedback":"스트라이크","detailFeedback":"좋은 선택","accessibilitySummary":"스트라이크 좋은 선택"},"rivalMemory":{"matchupID":"p1:b1","revision":1,"plateAppearancesSeen":0,"totalPitchesSeen":1,"recentObservations":[]},"rivalAdaptation":{"level":10,"band":"watching","evidenceCount":1,"confidence":50,"warning":"관찰 중"},"eventHash":"hash"}}',
       );
 
     const preparation = await preparePitch(baseParams);
@@ -154,6 +154,7 @@ describe("simulation client", () => {
 
     expect(preparation.planCommitment).toBe("commitment");
     expect(result.snapshot.strikes).toBe(2);
+    expect(result.rivalMemory.totalPitchesSeen).toBe(1);
     expect(invokeMock.mock.calls[0]?.[1]).toEqual(
       expect.objectContaining({ request: expect.stringContaining('"method":"preparePitch"') }),
     );

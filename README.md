@@ -25,6 +25,8 @@
 - 볼카운트, 파울, 삼진, 볼넷, 인플레이까지 이어지는 완전한 타석 루프
 - 네 가지 투수 프리셋과 구종별 구속·제구·커맨드·무브먼트·헛스윙·약한 타구·피로 프로필
 - 프리셋 선택과 구종별 20~80 능력치를 보여주는 플레이 화면
+- 같은 매치업의 최근 24구를 학습하는 라이벌 적응과 반복 패턴 경고
+- 준비 전에 확정되는 라이벌 노림수와 기억 변조 방지 토큰
 - macOS·Windows Swift 및 데스크톱 구성 CI
 
 ## 요구 환경
@@ -67,10 +69,10 @@ npm run check
 배치 타석 시뮬레이션:
 
 ```sh
-swift run -c release --package-path packages/simulation-core simulation-cli --iterations 10000 --strategy primary --preset power_prospect
+swift run -c release --package-path packages/simulation-core simulation-cli --iterations 10000 --strategy primary --preset power_prospect --memory persistent
 ```
 
-`--strategy`는 `primary`, `alternative`, `fixed`를 지원한다. `--preset`은 `power_prospect`, `precision_commander`, `breaking_ball_artist`, `innings_eater`를 지원한다.
+`--strategy`는 `primary`, `alternative`, `fixed`를 지원한다. `--preset`은 `power_prospect`, `precision_commander`, `breaking_ball_artist`, `innings_eater`를 지원한다. `--memory`는 타석마다 초기화하는 `reset`과 같은 라이벌에게 이어지는 `persistent`를 지원한다.
 
 샘플 저장 아카이브 생성과 재검증:
 
@@ -117,8 +119,9 @@ tools/                        sidecar 빌드와 로컬 도구 체인 실행기
 - 전략별 10만 타석 배치 비교 도구
 - 네 가지 투수 프리셋과 16개 구종별 개별 프로필
 - 프리셋별 구속·목표 오차·헛스윙·피로 차이를 검증하는 통계 테스트
+- 라이벌의 타석 간 최근 24구 기억과 구종·코스 반복 학습
+- 반복 전략이 혼합 전략보다 평균적으로 더 많은 인플레이를 허용하는 통계 테스트
 
 다음 구현:
 
-- 반복 패턴을 학습하는 라이벌 타자와 재대결 메모리
 - 수비·주자·구장 단순 모델과 경기 후 분석

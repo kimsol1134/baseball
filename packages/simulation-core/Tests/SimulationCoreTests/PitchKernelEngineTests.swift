@@ -113,7 +113,8 @@ final class PitchKernelEngineTests: XCTestCase {
                     scoreDifferential: params.context.scoreDifferential,
                     leverage: params.context.leverage,
                     fatigue: min(100, params.context.fatigue + 1)
-                )
+                ),
+                rivalMemory: result.rivalMemory
             )
             preparation = next
         }
@@ -160,7 +161,7 @@ final class PitchKernelEngineTests: XCTestCase {
 
     func testEveryBattedBallOutcomeIsReachableAcrossFixedSeeds() throws {
         var outcomes = Set<PitchOutcome>()
-        for seed in 1...20_000 {
+        for seed in 1...50_000 {
             let params = makePrepareParams(seed: String(seed), balls: 0, strikes: 0)
             let preparation = try engine.preparePitch(params)
             let result = try engine.submitPitch(
@@ -188,6 +189,149 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertTrue(outcomes.contains(.single))
         XCTAssertTrue(outcomes.contains(.double))
         XCTAssertTrue(outcomes.contains(.homeRun))
+    }
+
+    func testRivalMemoryLearnsRepeatedPatternMoreThanMixedSequence() throws {
+        let params = makePrepareParams(seed: "1", balls: 0, strikes: 0)
+        let repeated = makeRivalMemory(params: params, repeated: true)
+        let mixed = makeRivalMemory(params: params, repeated: false)
+        let memoryEngine = RivalMemoryEngine()
+
+        let repeatedAdaptation = memoryEngine.analyze(repeated, context: params.context)
+        let mixedAdaptation = memoryEngine.analyze(mixed, context: params.context)
+
+        XCTAssertEqual(repeated.recentObservations.count, RivalMemoryEngine.maximumObservations)
+        XCTAssertEqual(repeatedAdaptation.detectedPitch, .slider)
+        XCTAssertEqual(repeatedAdaptation.detectedZone, PitchZone(row: 2, column: 0))
+        XCTAssertGreaterThan(repeatedAdaptation.level, mixedAdaptation.level)
+        XCTAssertEqual(repeatedAdaptation.band, .lockedOn)
+    }
+
+    func testChangingMemoryAfterPreparationInvalidatesToken() throws {
+        let base = makePrepareParams(seed: "701", balls: 0, strikes: 0)
+        let firstMemory = makeRivalMemory(params: base, repeated: true, observations: 8)
+        let preparedParams = makePrepareParams(
+            seed: "701",
+            balls: 0,
+            strikes: 0,
+            rivalMemory: firstMemory
+        )
+        let preparation = try engine.preparePitch(preparedParams)
+        let changedMemory = RivalMemoryEngine().record(
+            firstMemory,
+            pitcher: preparedParams.pitcher,
+            batter: preparedParams.batter,
+            context: preparedParams.context,
+            call: preparation.primaryRecommendation.call,
+            outcome: .calledStrike,
+            plateAppearanceEnded: false
+        )
+
+        XCTAssertThrowsError(
+            try engine.submitPitch(
+                SubmitPitchParams(
+                    seed: preparedParams.seed,
+                    pitcher: preparedParams.pitcher,
+                    batter: preparedParams.batter,
+                    scouting: preparedParams.scouting,
+                    context: preparedParams.context,
+                    preparationToken: preparation.preparationToken,
+                    call: preparation.primaryRecommendation.call,
+                    rivalMemory: changedMemory
+                )
+            )
+        ) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidPreparationToken)
+        }
+    }
+
+    func testRepeatingReadPatternAllowsMoreDamageThanMixedHistory() throws {
+        let base = makePrepareParams(seed: "1", balls: 0, strikes: 0)
+        let repeatedMemory = makeRivalMemory(params: base, repeated: true)
+        let mixedMemory = makeRivalMemory(params: base, repeated: false)
+        let call = PitchCall(
+            pitchType: .slider,
+            zone: PitchZone(row: 2, column: 0),
+            zoneIntent: .edge,
+            intensity: .normal
+        )
+        var repeatedDamage = 0
+        var mixedDamage = 0
+
+        for seed in 1...8_000 {
+            let repeatedParams = makePrepareParams(
+                seed: String(seed),
+                balls: 0,
+                strikes: 0,
+                rivalMemory: repeatedMemory
+            )
+            let mixedParams = makePrepareParams(
+                seed: String(seed),
+                balls: 0,
+                strikes: 0,
+                rivalMemory: mixedMemory
+            )
+            let repeatedPreparation = try engine.preparePitch(repeatedParams)
+            let mixedPreparation = try engine.preparePitch(mixedParams)
+            let repeated = try engine.submitPitch(
+                SubmitPitchParams(
+                    seed: repeatedParams.seed,
+                    pitcher: repeatedParams.pitcher,
+                    batter: repeatedParams.batter,
+                    scouting: repeatedParams.scouting,
+                    context: repeatedParams.context,
+                    preparationToken: repeatedPreparation.preparationToken,
+                    call: call,
+                    rivalMemory: repeatedMemory
+                )
+            )
+            let mixed = try engine.submitPitch(
+                SubmitPitchParams(
+                    seed: mixedParams.seed,
+                    pitcher: mixedParams.pitcher,
+                    batter: mixedParams.batter,
+                    scouting: mixedParams.scouting,
+                    context: mixedParams.context,
+                    preparationToken: mixedPreparation.preparationToken,
+                    call: call,
+                    rivalMemory: mixedMemory
+                )
+            )
+            if repeated.snapshot.battedBall != nil { repeatedDamage += 1 }
+            if mixed.snapshot.battedBall != nil { mixedDamage += 1 }
+        }
+
+        XCTAssertGreaterThan(repeatedDamage, mixedDamage)
+    }
+
+    private func makeRivalMemory(
+        params: PreparePitchParams,
+        repeated: Bool,
+        observations: Int = 30
+    ) -> RivalMemorySnapshot {
+        let memoryEngine = RivalMemoryEngine()
+        var memory: RivalMemorySnapshot?
+        for index in 0..<observations {
+            let pitchType = repeated ? PitchType.slider : PitchType.allCases[index % PitchType.allCases.count]
+            let zone = repeated
+                ? PitchZone(row: 2, column: 0)
+                : PitchZone(row: (index / 3) % 3, column: index % 3)
+            memory = memoryEngine.record(
+                memory,
+                pitcher: params.pitcher,
+                batter: params.batter,
+                context: params.context,
+                call: PitchCall(
+                    pitchType: pitchType,
+                    zone: zone,
+                    zoneIntent: .edge,
+                    intensity: .normal
+                ),
+                outcome: .calledStrike,
+                plateAppearanceEnded: index % 5 == 4
+            )
+        }
+        return memory!
     }
 
     func testPitcherPresetCatalogHasFourDistinctCompleteBuilds() throws {
@@ -298,7 +442,8 @@ final class PitchKernelEngineTests: XCTestCase {
         leverage: Int = 600,
         balls: Int = 1,
         strikes: Int = 1,
-        pitcher: PitcherSnapshot? = nil
+        pitcher: PitcherSnapshot? = nil,
+        rivalMemory: RivalMemorySnapshot? = nil
     ) -> PreparePitchParams {
         PreparePitchParams(
             seed: seed,
@@ -335,7 +480,8 @@ final class PitchKernelEngineTests: XCTestCase {
                 scoreDifferential: 0,
                 leverage: leverage,
                 fatigue: 12
-            )
+            ),
+            rivalMemory: rivalMemory
         )
     }
 
@@ -350,7 +496,8 @@ final class PitchKernelEngineTests: XCTestCase {
             scouting: prepareParams.scouting,
             context: prepareParams.context,
             preparationToken: preparation.preparationToken,
-            call: preparation.primaryRecommendation.call
+            call: preparation.primaryRecommendation.call,
+            rivalMemory: prepareParams.rivalMemory
         )
     }
 }

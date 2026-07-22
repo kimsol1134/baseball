@@ -20,6 +20,8 @@ import type {
   PitchZone,
   PlateAppearanceContext,
   PlateAppearanceResult,
+  RivalAdaptationBand,
+  RivalMemorySnapshot,
   SelectionQuality,
   ZoneIntent,
 } from "./simulationTypes";
@@ -107,6 +109,13 @@ const PLATE_RESULT_LABELS: Record<PlateAppearanceResult, string> = {
   walk: "볼넷",
   in_play_out: "범타",
   hit: "출루 허용",
+};
+
+const ADAPTATION_LABELS: Record<RivalAdaptationBand, string> = {
+  no_data: "첫 대결",
+  watching: "관찰 중",
+  learning: "패턴 학습",
+  locked_on: "노림수 형성",
 };
 
 const ZONE_LABELS = [
@@ -214,6 +223,7 @@ export function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [lastResult, setLastResult] = useState<PitchKernelResult>();
   const [history, setHistory] = useState<ReadonlyArray<HistoryItem>>([]);
+  const [rivalMemory, setRivalMemory] = useState<RivalMemorySnapshot>();
   const [error, setError] = useState<string>();
 
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetID);
@@ -256,6 +266,7 @@ export function App() {
       setPreparation(initialPreparation);
       setLastResult(undefined);
       setHistory([]);
+      setRivalMemory(undefined);
       applyRecommendation(initialPreparation.primaryRecommendation);
       setCoreStatus({ state: "online", health });
     } catch (caught) {
@@ -281,8 +292,10 @@ export function App() {
         context,
         preparationToken: preparation.preparationToken,
         call: { pitchType, zone, zoneIntent, intensity },
+        rivalMemory,
       });
       setLastResult(result);
+      setRivalMemory(result.rivalMemory);
       setHistory((current) => [
         {
           eventHash: result.eventHash,
@@ -306,14 +319,14 @@ export function App() {
         caught instanceof Error ? caught.message : "투구 결과를 계산하지 못했습니다.";
       setError(message);
       try {
-        setPreparation(await preparePitch({ seed, pitcher, batter: BATTER, scouting: SCOUTING, context }));
+        setPreparation(await preparePitch({ seed, pitcher, batter: BATTER, scouting: SCOUTING, context, rivalMemory }));
       } catch {
         setCoreStatus({ state: "offline", message });
       }
     } finally {
       setIsRunning(false);
     }
-  }, [context, intensity, pitchType, pitcher, preparation, seed, zone, zoneIntent]);
+  }, [context, intensity, pitchType, pitcher, preparation, rivalMemory, seed, zone, zoneIntent]);
 
   const handleNewPlateAppearance = useCallback(async () => {
     if (!pitcher) return;
@@ -330,6 +343,7 @@ export function App() {
         batter: BATTER,
         scouting: SCOUTING,
         context: nextContext,
+        rivalMemory,
       });
       setContext(nextContext);
       setPreparation(nextPreparation);
@@ -340,7 +354,7 @@ export function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [applyRecommendation, pitcher, seed]);
+  }, [applyRecommendation, pitcher, rivalMemory, seed]);
 
   const handlePresetChange = useCallback(async (presetID: string) => {
     const nextPreset = presets.find((preset) => preset.id === presetID);
@@ -364,6 +378,7 @@ export function App() {
       setPreparation(nextPreparation);
       setLastResult(undefined);
       setHistory([]);
+      setRivalMemory(undefined);
       applyRecommendation(nextPreparation.primaryRecommendation);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "투수 프리셋을 바꾸지 못했습니다.");
@@ -376,6 +391,7 @@ export function App() {
   const primaryRecommendation = preparation?.primaryRecommendation;
   const alternativeRecommendation = preparation?.alternativeRecommendation;
   const plateEnded = lastResult?.snapshot.ended ?? false;
+  const rivalAdaptation = preparation?.rivalAdaptation ?? lastResult?.rivalAdaptation;
 
   return (
     <div className="app-shell">
@@ -456,6 +472,22 @@ export function App() {
               <div className="mini-stats">
                 <span>컨택 {BATTER.contact}</span><span>선구 {BATTER.discipline}</span><span>파워 {BATTER.power}</span>
               </div>
+              {rivalAdaptation ? (
+                <div className={`rival-adaptation rival-adaptation--${rivalAdaptation.band}`}>
+                  <div>
+                    <span>라이벌 적응</span>
+                    <strong>{ADAPTATION_LABELS[rivalAdaptation.band]}</strong>
+                  </div>
+                  <div className="adaptation-track" aria-label={`라이벌 적응도 ${rivalAdaptation.level} / 900`}>
+                    <span style={{ width: `${Math.min(100, rivalAdaptation.level / 9)}%` }} />
+                  </div>
+                  <p>{rivalAdaptation.warning}</p>
+                  <small>
+                    현재 승부 유효 표본 {rivalAdaptation.evidenceCount}구
+                    {rivalMemory ? ` · 재대결 ${rivalMemory.plateAppearancesSeen}회` : ""}
+                  </small>
+                </div>
+              ) : null}
             </div>
           </aside>
 
@@ -642,7 +674,7 @@ export function App() {
 
       <footer>
         <span>P1 Pitch Kernel</span>
-        <span>타자 계획 선확정 · ABS · 선택/실행/결과 분리</span>
+        <span>타자 계획 선확정 · 라이벌 패턴 기억 · ABS · 선택/실행/결과 분리</span>
       </footer>
     </div>
   );

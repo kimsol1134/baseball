@@ -9,12 +9,19 @@ struct BatchReport: Codable {
     let pitchOutcomes: [String: Int]
     let strategy: String
     let pitcherPreset: String
+    let rivalMemoryMode: String
+    let finalRivalAdaptationLevel: Int
 }
 
 enum BatchStrategy: String {
     case primary
     case alternative
     case fixed
+}
+
+enum RivalMemoryMode: String {
+    case reset
+    case persistent
 }
 
 let arguments = Array(CommandLine.arguments.dropFirst())
@@ -37,6 +44,12 @@ let presetID: String = {
     let valueIndex = arguments.index(after: index)
     guard arguments.indices.contains(valueIndex) else { return "power_prospect" }
     return arguments[valueIndex]
+}()
+let rivalMemoryMode: RivalMemoryMode = {
+    guard let index = arguments.firstIndex(of: "--memory") else { return .reset }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex) else { return .reset }
+    return RivalMemoryMode(rawValue: arguments[valueIndex]) ?? .reset
 }()
 
 guard let preset = PitcherPresetCatalog.all.first(where: { $0.id == presetID }) else {
@@ -70,8 +83,11 @@ let engine = PitchKernelEngine()
 var plateAppearanceResults: [String: Int] = [:]
 var pitchOutcomes: [String: Int] = [:]
 var totalPitches = 0
+var persistentMemory: RivalMemorySnapshot?
+var finalAdaptationLevel = 0
 
 for index in 1...iterations {
+    var plateMemory = rivalMemoryMode == .persistent ? persistentMemory : nil
     var seed = String(index)
     var context = PlateAppearanceContext(
         plateAppearanceID: "batch-pa-\(index)",
@@ -91,7 +107,8 @@ for index in 1...iterations {
             pitcher: pitcher,
             batter: batter,
             scouting: scouting,
-            context: context
+            context: context,
+            rivalMemory: plateMemory
         )
     )
 
@@ -113,13 +130,19 @@ for index in 1...iterations {
                 scouting: scouting,
                 context: context,
                 preparationToken: preparation.preparationToken,
-                call: call
+                call: call,
+                rivalMemory: plateMemory
             )
         )
+        plateMemory = result.rivalMemory
+        finalAdaptationLevel = result.rivalAdaptation.level
         totalPitches += 1
         pitchOutcomes[result.snapshot.outcome.rawValue, default: 0] += 1
         if let finalResult = result.snapshot.result {
             plateAppearanceResults[finalResult.rawValue, default: 0] += 1
+            if rivalMemoryMode == .persistent {
+                persistentMemory = result.rivalMemory
+            }
             break
         }
 
@@ -150,7 +173,9 @@ let report = BatchReport(
     plateAppearanceResults: plateAppearanceResults,
     pitchOutcomes: pitchOutcomes,
     strategy: strategy.rawValue,
-    pitcherPreset: preset.id
+    pitcherPreset: preset.id,
+    rivalMemoryMode: rivalMemoryMode.rawValue,
+    finalRivalAdaptationLevel: finalAdaptationLevel
 )
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

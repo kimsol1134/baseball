@@ -287,6 +287,7 @@ public enum SimulationError: Error, Equatable, LocalizedError, Sendable {
     case invalidScouting(String)
     case invalidPreparationToken
     case invalidPitchProfile(String)
+    case invalidRivalMemory(String)
 
     public var errorDescription: String? {
         switch self {
@@ -308,6 +309,8 @@ public enum SimulationError: Error, Equatable, LocalizedError, Sendable {
             return "Pitch preparation token is invalid or stale"
         case .invalidPitchProfile(let detail):
             return "Pitch profile is invalid: \(detail)"
+        case .invalidRivalMemory(let detail):
+            return "Rival memory is invalid: \(detail)"
         }
     }
 }

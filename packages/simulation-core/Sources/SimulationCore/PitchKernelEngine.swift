@@ -7,11 +7,21 @@ public struct CatcherRecommendationEngine: Sendable {
         pitcher: PitcherSnapshot,
         batter: BatterSnapshot,
         scouting: BatterScoutingSnapshot,
-        context: PlateAppearanceContext
+        context: PlateAppearanceContext,
+        adaptation: RivalAdaptationSnapshot? = nil
     ) -> (primary: CatcherRecommendation, alternative: CatcherRecommendation) {
         let twoStrikes = context.strikes == 2
         let protectZone = context.balls == 3
-        let primaryPitch = recommendedPrimaryPitch(pitcher: pitcher, desired: scouting.pitchWeakness)
+        let desiredPitch = recommendedPrimaryPitch(pitcher: pitcher, desired: scouting.pitchWeakness)
+        let repetitionAvoided = (adaptation?.level ?? 0) >= 500
+            && adaptation?.detectedPitch == desiredPitch
+        let primaryPitch = repetitionAvoided
+            ? recommendedAlternativePitch(
+                pitcher: pitcher,
+                excluding: desiredPitch,
+                legacyDesired: desiredPitch == .fourSeam ? .slider : .fourSeam
+            )
+            : desiredPitch
         let primaryProfile = pitcher.profile(for: primaryPitch)
         let primary = CatcherRecommendation(
             call: PitchCall(
@@ -29,7 +39,9 @@ public struct CatcherRecommendationEngine: Sendable {
                 850
             ),
             reasonCodes: [
-                primaryPitch == scouting.pitchWeakness
+                repetitionAvoided
+                    ? "rival.pattern_detected"
+                    : primaryPitch == scouting.pitchWeakness
                     ? "scouting.pitch_weakness"
                     : "arsenal.best_available",
                 "scouting.cold_zone",
@@ -37,11 +49,13 @@ public struct CatcherRecommendationEngine: Sendable {
             ]
         )
 
-        let alternativePitch = recommendedAlternativePitch(
-            pitcher: pitcher,
-            excluding: primaryPitch,
-            legacyDesired: scouting.pitchWeakness == .fourSeam ? .slider : .fourSeam
-        )
+        let alternativePitch = repetitionAvoided
+            ? desiredPitch
+            : recommendedAlternativePitch(
+                pitcher: pitcher,
+                excluding: primaryPitch,
+                legacyDesired: scouting.pitchWeakness == .fourSeam ? .slider : .fourSeam
+            )
         let mirroredZone = PitchZone(
             row: 2 - scouting.hotZone.row,
             column: 2 - scouting.hotZone.column
@@ -120,19 +134,26 @@ public struct PitchKernelEngine: Sendable {
     }
 
     private let recommendationEngine: CatcherRecommendationEngine
+    private let rivalMemoryEngine: RivalMemoryEngine
 
-    public init(recommendationEngine: CatcherRecommendationEngine = CatcherRecommendationEngine()) {
+    public init(
+        recommendationEngine: CatcherRecommendationEngine = CatcherRecommendationEngine(),
+        rivalMemoryEngine: RivalMemoryEngine = RivalMemoryEngine()
+    ) {
         self.recommendationEngine = recommendationEngine
+        self.rivalMemoryEngine = rivalMemoryEngine
     }
 
     public func preparePitch(_ params: PreparePitchParams) throws -> PitchPreparation {
         let seed = try validate(params)
-        let plan = commitBatterPlan(params: params, seed: seed)
+        let adaptation = rivalMemoryEngine.analyze(params.rivalMemory, context: params.context)
+        let plan = commitBatterPlan(params: params, adaptation: adaptation, seed: seed)
         let recommendations = recommendationEngine.recommend(
             pitcher: params.pitcher,
             batter: params.batter,
             scouting: params.scouting,
-            context: params.context
+            context: params.context,
+            adaptation: adaptation
         )
         let token = preparationToken(
             params: params,
@@ -147,7 +168,8 @@ public struct PitchKernelEngine: Sendable {
             preparationToken: token,
             planCommitment: plan.commitment,
             primaryRecommendation: recommendationSnapshot(recommendations.primary),
-            alternativeRecommendation: recommendationSnapshot(recommendations.alternative)
+            alternativeRecommendation: recommendationSnapshot(recommendations.alternative),
+            rivalAdaptation: adaptation
         )
     }
 
@@ -157,16 +179,19 @@ public struct PitchKernelEngine: Sendable {
             pitcher: params.pitcher,
             batter: params.batter,
             scouting: params.scouting,
-            context: params.context
+            context: params.context,
+            rivalMemory: params.rivalMemory
         )
         let seed = try validate(prepareParams)
         try validate(call: params.call, pitcher: params.pitcher)
-        let plan = commitBatterPlan(params: prepareParams, seed: seed)
+        let adaptation = rivalMemoryEngine.analyze(params.rivalMemory, context: params.context)
+        let plan = commitBatterPlan(params: prepareParams, adaptation: adaptation, seed: seed)
         let recommendations = recommendationEngine.recommend(
             pitcher: params.pitcher,
             batter: params.batter,
             scouting: params.scouting,
-            context: params.context
+            context: params.context,
+            adaptation: adaptation
         )
         let expectedToken = preparationToken(
             params: prepareParams,
@@ -187,18 +212,52 @@ public struct PitchKernelEngine: Sendable {
             plan: plan,
             execution: execution,
             wasInZone: wasInZone,
+            adaptation: adaptation,
             seed: seed
         )
         let selection = selectionQuality(
             call: params.call,
             pitcher: params.pitcher,
             scouting: params.scouting,
-            context: params.context
+            context: params.context,
+            adaptation: adaptation
         )
         let recommendationAccepted = params.call == recommendations.primary.call
         let state = advanceCount(
             context: params.context,
             outcome: resolution.outcome
+        )
+        let nextSeed = deriveNextSeed(seed)
+        let revision = params.context.revision + 1
+        let fatigueAfterPitch = min(
+            100,
+            params.context.fatigue
+                + fatigueCost(params.call.intensity, profile: params.pitcher.profile(for: params.call.pitchType))
+        )
+        let updatedMemory = rivalMemoryEngine.record(
+            params.rivalMemory,
+            pitcher: params.pitcher,
+            batter: params.batter,
+            context: params.context,
+            call: params.call,
+            outcome: resolution.outcome,
+            plateAppearanceEnded: state.result != nil
+        )
+        let adaptationContext = PlateAppearanceContext(
+            plateAppearanceID: params.context.plateAppearanceID,
+            revision: revision,
+            inning: params.context.inning,
+            outs: params.context.outs,
+            balls: state.result == nil ? state.balls : 0,
+            strikes: state.result == nil ? state.strikes : 0,
+            pitchNumber: state.result == nil ? params.context.pitchNumber + 1 : 1,
+            scoreDifferential: params.context.scoreDifferential,
+            leverage: params.context.leverage,
+            fatigue: fatigueAfterPitch
+        )
+        let updatedAdaptation = rivalMemoryEngine.analyze(
+            updatedMemory,
+            context: adaptationContext
         )
         let reasonCodes = resolutionReasons(
             outcome: resolution.outcome,
@@ -206,7 +265,8 @@ public struct PitchKernelEngine: Sendable {
             planPitchMatched: planPitchMatched,
             planZoneMatched: planZoneMatched,
             selectionQuality: selection,
-            executionQuality: execution.executionQuality
+            executionQuality: execution.executionQuality,
+            adaptation: adaptation
         )
         let feedback = feedback(
             outcome: resolution.outcome,
@@ -214,7 +274,8 @@ public struct PitchKernelEngine: Sendable {
             execution: execution,
             planPitchMatched: planPitchMatched,
             planZoneMatched: planZoneMatched,
-            battedBall: resolution.battedBall
+            battedBall: resolution.battedBall,
+            adaptation: adaptation
         )
 
         var events: [PitchKernelEvent] = []
@@ -267,6 +328,17 @@ public struct PitchKernelEngine: Sendable {
                 )
             )
         }
+        events.append(
+            PitchKernelEvent(
+                eventType: "rival_memory_updated",
+                sequence: events.count,
+                rivalAdaptation: updatedAdaptation,
+                reasonCodes: [
+                    "rival.adaptation.\(updatedAdaptation.band.rawValue)",
+                    "rival.evidence.\(updatedAdaptation.evidenceCount)"
+                ]
+            )
+        )
         if let plateAppearanceResult = state.result {
             events.append(
                 PitchKernelEvent(
@@ -278,13 +350,6 @@ public struct PitchKernelEngine: Sendable {
             )
         }
 
-        let nextSeed = deriveNextSeed(seed)
-        let revision = params.context.revision + 1
-        let fatigueAfterPitch = min(
-            100,
-            params.context.fatigue
-                + fatigueCost(params.call.intensity, profile: params.pitcher.profile(for: params.call.pitchType))
-        )
         let snapshot = PlateAppearanceSnapshot(
             revision: revision,
             balls: state.balls,
@@ -306,25 +371,14 @@ public struct PitchKernelEngine: Sendable {
 
         let nextPreparation: PitchPreparation?
         if state.result == nil {
-            let nextContext = PlateAppearanceContext(
-                plateAppearanceID: params.context.plateAppearanceID,
-                revision: revision,
-                inning: params.context.inning,
-                outs: params.context.outs,
-                balls: state.balls,
-                strikes: state.strikes,
-                pitchNumber: params.context.pitchNumber + 1,
-                scoreDifferential: params.context.scoreDifferential,
-                leverage: params.context.leverage,
-                fatigue: fatigueAfterPitch
-            )
             nextPreparation = try preparePitch(
                 PreparePitchParams(
                     seed: nextSeed,
                     pitcher: params.pitcher,
                     batter: params.batter,
                     scouting: params.scouting,
-                    context: nextContext
+                    context: adaptationContext,
+                    rivalMemory: updatedMemory
                 )
             )
         } else {
@@ -346,6 +400,8 @@ public struct PitchKernelEngine: Sendable {
                 String(state.balls),
                 String(state.strikes),
                 state.result?.rawValue ?? "active",
+                canonical(updatedMemory),
+                String(updatedAdaptation.level),
                 nextSeed
             ].joined(separator: "|")
         )
@@ -355,6 +411,8 @@ public struct PitchKernelEngine: Sendable {
             events: events,
             snapshot: snapshot,
             nextPreparation: nextPreparation,
+            rivalMemory: updatedMemory,
+            rivalAdaptation: updatedAdaptation,
             eventHash: eventHash
         )
     }
@@ -413,6 +471,11 @@ public struct PitchKernelEngine: Sendable {
         guard (20...80).contains(params.scouting.chaseTendency) else {
             throw SimulationError.invalidScouting("chaseTendency must be between 20 and 80")
         }
+        try rivalMemoryEngine.validate(
+            params.rivalMemory,
+            pitcher: params.pitcher,
+            batter: params.batter
+        )
         let context = params.context
         guard !context.plateAppearanceID.isEmpty,
               (1...20).contains(context.inning),
@@ -442,24 +505,40 @@ public struct PitchKernelEngine: Sendable {
         (0...2).contains(zone.row) && (0...2).contains(zone.column)
     }
 
-    private func commitBatterPlan(params: PreparePitchParams, seed: UInt64) -> BatterPlan {
+    private func commitBatterPlan(
+        params: PreparePitchParams,
+        adaptation: RivalAdaptationSnapshot,
+        seed: UInt64
+    ) -> BatterPlan {
         var generator = SplitMix64(
             seed: derivedSeed(seed, domain: 0x504c_414e, ordinal: params.context.pitchNumber)
         )
-        let pitchRoll = generator.nextInt(upperBound: 100)
-        let expectedPitch: PitchType
-        if pitchRoll < 34 {
-            expectedPitch = .fourSeam
-        } else if pitchRoll < 60 {
-            expectedPitch = .slider
-        } else if pitchRoll < 80 {
-            expectedPitch = .changeup
-        } else {
-            expectedPitch = .curveball
+        var pitchWeights: [(pitchType: PitchType, weight: Int)] = [
+            (.fourSeam, 340),
+            (.slider, 260),
+            (.changeup, 200),
+            (.curveball, 200)
+        ]
+        if let detectedPitch = adaptation.detectedPitch,
+           let index = pitchWeights.firstIndex(where: { $0.pitchType == detectedPitch }) {
+            pitchWeights[index].weight += adaptation.level * 2
+        }
+        let totalPitchWeight = pitchWeights.reduce(0) { $0 + $1.weight }
+        var pitchRoll = generator.nextInt(upperBound: totalPitchWeight)
+        var expectedPitch = PitchType.fourSeam
+        for candidate in pitchWeights {
+            if pitchRoll < candidate.weight {
+                expectedPitch = candidate.pitchType
+                break
+            }
+            pitchRoll -= candidate.weight
         }
 
         let expectedZone: PitchZone
-        if generator.nextInt(upperBound: 100) < 45 {
+        if let detectedZone = adaptation.detectedZone,
+           generator.nextInt(upperBound: 100) < min(78, 32 + adaptation.level / 18) {
+            expectedZone = detectedZone
+        } else if generator.nextInt(upperBound: 100) < 45 {
             expectedZone = params.scouting.hotZone
         } else {
             expectedZone = PitchZone(
@@ -510,6 +589,7 @@ public struct PitchKernelEngine: Sendable {
                 String(params.context.balls),
                 String(params.context.strikes),
                 canonical(params.pitcher),
+                canonical(params.rivalMemory),
                 planCommitment,
                 canonical(primary.call),
                 canonical(alternative.call)
@@ -609,6 +689,7 @@ public struct PitchKernelEngine: Sendable {
         plan: BatterPlan,
         execution: PitchExecution,
         wasInZone: Bool,
+        adaptation: RivalAdaptationSnapshot,
         seed: UInt64
     ) -> (outcome: PitchOutcome, battedBall: BattedBall?) {
         var generator = SplitMix64(
@@ -616,7 +697,11 @@ public struct PitchKernelEngine: Sendable {
         )
         let pitchMatched = plan.expectedPitch == params.call.pitchType
         let zoneMatched = zonesAreNear(plan.expectedZone, params.call.zone)
-        let recognitionBonus = (pitchMatched ? 95 : -65) + (zoneMatched ? 70 : -35)
+        let patternRecognitionBonus = (pitchMatched ? adaptation.level / 6 : 0)
+            + (zoneMatched ? adaptation.level / 10 : 0)
+        let recognitionBonus = (pitchMatched ? 95 : -65)
+            + (zoneMatched ? 70 : -35)
+            + patternRecognitionBonus
         let approachSwingBonus: Int
         switch plan.approach {
         case .patient: approachSwingBonus = -150
@@ -655,6 +740,7 @@ public struct PitchKernelEngine: Sendable {
                 + (params.batter.contact - 50) * 8
                 + (pitchMatched ? 100 : -80)
                 + (zoneMatched ? 55 : -40)
+                + (pitchMatched ? adaptation.level / 5 : 0)
                 - pitchDifficulty,
             70,
             930
@@ -678,6 +764,7 @@ public struct PitchKernelEngine: Sendable {
                 + (params.batter.contact - 50) * 4
                 + (pitchMatched ? 90 : -70)
                 + (zoneMatched ? 45 : -35)
+                + (pitchMatched ? adaptation.level / 8 : 0)
                 - ((profile?.weakContact ?? 50) - 50) * 2
                 - max(0, execution.executionQuality - 500) / 3
                 + generator.nextInt(upperBound: 301) - 150,
@@ -724,7 +811,8 @@ public struct PitchKernelEngine: Sendable {
         call: PitchCall,
         pitcher: PitcherSnapshot,
         scouting: BatterScoutingSnapshot,
-        context: PlateAppearanceContext
+        context: PlateAppearanceContext,
+        adaptation: RivalAdaptationSnapshot
     ) -> SelectionQuality {
         var score = 500
         if call.pitchType == scouting.pitchWeakness { score += 170 }
@@ -740,6 +828,12 @@ public struct PitchKernelEngine: Sendable {
             if profile.role == .development { score -= 120 }
             if call.zoneIntent == .edge { score += (profile.command - 50) * 3 }
             if call.zoneIntent == .chase { score += (profile.whiff - 50) * 2 }
+        }
+        if adaptation.detectedPitch == call.pitchType {
+            score -= adaptation.level / 3
+        }
+        if adaptation.detectedZone == call.zone {
+            score -= adaptation.level / 5
         }
         switch score {
         case ..<340: return .poor
@@ -782,7 +876,9 @@ public struct PitchKernelEngine: Sendable {
         case .chase: intent = "유인구"
         }
         let shortReason: String
-        if recommendation.reasonCodes.contains("scouting.pitch_weakness") {
+        if recommendation.reasonCodes.contains("rival.pattern_detected") {
+            shortReason = "라이벌이 반복 구종을 읽고 있어 \(zoneName) \(pitchName)으로 패턴을 바꿉니다."
+        } else if recommendation.reasonCodes.contains("scouting.pitch_weakness") {
             shortReason = "타자의 약점인 \(zoneName) \(pitchName)\(pitchObjectParticle(recommendation.call.pitchType)) \(intent)로 공략합니다."
         } else {
             shortReason = "강한 코스를 피해 \(zoneName) \(pitchName)으로 타이밍을 바꿉니다."
@@ -801,7 +897,8 @@ public struct PitchKernelEngine: Sendable {
         execution: PitchExecution,
         planPitchMatched: Bool,
         planZoneMatched: Bool,
-        battedBall: BattedBall?
+        battedBall: BattedBall?,
+        adaptation: RivalAdaptationSnapshot
     ) -> (short: String, detail: String) {
         let short: String
         switch outcome {
@@ -824,7 +921,10 @@ public struct PitchKernelEngine: Sendable {
         let contactText = battedBall.map {
             " 타구 속도는 \(String(format: "%.1f", Double($0.exitVelocityTenthsKPH) / 10))km/h였습니다."
         } ?? ""
-        let detail = "선택은 \(selectionDisplayName(selection)), 실행 품질은 \(execution.executionQuality)입니다. \(planText).\(contactText)"
+        let adaptationText = adaptation.band == .lockedOn && (planPitchMatched || planZoneMatched)
+            ? " 라이벌이 이전 대결의 반복을 활용했습니다."
+            : ""
+        let detail = "선택은 \(selectionDisplayName(selection)), 실행 품질은 \(execution.executionQuality)입니다. \(planText).\(adaptationText)\(contactText)"
         return (short, detail)
     }
 
@@ -834,9 +934,10 @@ public struct PitchKernelEngine: Sendable {
         planPitchMatched: Bool,
         planZoneMatched: Bool,
         selectionQuality: SelectionQuality,
-        executionQuality: Int
+        executionQuality: Int,
+        adaptation: RivalAdaptationSnapshot
     ) -> [String] {
-        [
+        var reasons = [
             "outcome.\(outcome.rawValue)",
             wasInZone ? "abs.in_zone" : "abs.out_of_zone",
             planPitchMatched ? "batter_plan.pitch_matched" : "batter_plan.pitch_missed",
@@ -844,6 +945,10 @@ public struct PitchKernelEngine: Sendable {
             "selection.\(selectionQuality.rawValue)",
             executionReasonCodes(executionQuality)[0]
         ]
+        if adaptation.detectedPitch != nil || adaptation.detectedZone != nil {
+            reasons.append("rival.pattern.\(adaptation.band.rawValue)")
+        }
+        return reasons
     }
 
     private func executionReasonCodes(_ quality: Int) -> [String] {
@@ -893,6 +998,28 @@ public struct PitchKernelEngine: Sendable {
             String(profile.weakContact),
             String(profile.fatigueCost)
         ].joined(separator: ":")
+    }
+
+    private func canonical(_ memory: RivalMemorySnapshot?) -> String {
+        guard let memory else { return "no-rival-memory" }
+        let observations = memory.recentObservations.map {
+            [
+                $0.pitchType.rawValue,
+                String($0.zone.row),
+                String($0.zone.column),
+                $0.zoneIntent.rawValue,
+                String($0.balls),
+                String($0.strikes),
+                $0.outcome.rawValue
+            ].joined(separator: ":")
+        }.joined(separator: ",")
+        return [
+            memory.matchupID,
+            String(memory.revision),
+            String(memory.plateAppearancesSeen),
+            String(memory.totalPitchesSeen),
+            observations
+        ].joined(separator: "|")
     }
 
     private func zonesAreNear(_ first: PitchZone, _ second: PitchZone) -> Bool {

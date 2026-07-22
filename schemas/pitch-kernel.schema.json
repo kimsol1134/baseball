@@ -93,6 +93,35 @@
       },
       "additionalProperties": false
     },
+    "rivalObservation": {
+      "type": "object",
+      "required": ["pitchType", "zone", "zoneIntent", "balls", "strikes", "outcome"],
+      "properties": {
+        "pitchType": { "enum": ["four_seam", "slider", "curveball", "changeup"] },
+        "zone": { "$ref": "#/$defs/zone" },
+        "zoneIntent": { "enum": ["strike", "edge", "chase"] },
+        "balls": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "strikes": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "outcome": { "enum": ["ball", "called_strike", "swinging_strike", "foul", "in_play_out", "single", "double", "home_run"] }
+      },
+      "additionalProperties": false
+    },
+    "rivalMemory": {
+      "type": "object",
+      "required": ["matchupID", "revision", "plateAppearancesSeen", "totalPitchesSeen", "recentObservations"],
+      "properties": {
+        "matchupID": { "type": "string", "minLength": 3 },
+        "revision": { "type": "integer", "minimum": 0 },
+        "plateAppearancesSeen": { "type": "integer", "minimum": 0 },
+        "totalPitchesSeen": { "type": "integer", "minimum": 0 },
+        "recentObservations": {
+          "type": "array",
+          "maxItems": 24,
+          "items": { "$ref": "#/$defs/rivalObservation" }
+        }
+      },
+      "additionalProperties": false
+    },
     "pitchCall": {
       "type": "object",
       "required": ["pitchType", "zone", "zoneIntent", "intensity"],
@@ -112,7 +141,8 @@
         "pitcher": { "$ref": "#/$defs/pitcher" },
         "batter": { "$ref": "#/$defs/batter" },
         "scouting": { "$ref": "#/$defs/scouting" },
-        "context": { "$ref": "#/$defs/context" }
+        "context": { "$ref": "#/$defs/context" },
+        "rivalMemory": { "$ref": "#/$defs/rivalMemory" }
       },
       "additionalProperties": false
     },
@@ -125,6 +155,7 @@
         "batter": { "$ref": "#/$defs/batter" },
         "scouting": { "$ref": "#/$defs/scouting" },
         "context": { "$ref": "#/$defs/context" },
+        "rivalMemory": { "$ref": "#/$defs/rivalMemory" },
         "preparationToken": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
         "call": { "$ref": "#/$defs/pitchCall" }
       },

@@ -425,6 +425,69 @@ main {
   font-size: 9px;
 }
 
+.rival-adaptation {
+  display: grid;
+  gap: 6px;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.rival-adaptation > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rival-adaptation > div:first-child span,
+.rival-adaptation small {
+  color: var(--subtle);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.rival-adaptation > div:first-child strong {
+  display: inline;
+  margin: 0;
+  color: var(--blue);
+  font-size: 9px;
+}
+
+.adaptation-track {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #26312e;
+}
+
+.adaptation-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--blue);
+}
+
+.rival-adaptation p {
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.rival-adaptation--learning > div:first-child strong,
+.rival-adaptation--locked_on > div:first-child strong {
+  color: var(--amber);
+}
+
+.rival-adaptation--learning .adaptation-track span,
+.rival-adaptation--locked_on .adaptation-track span {
+  background: var(--amber);
+}
+
+.rival-adaptation--locked_on p {
+  color: #efc880;
+}
+
 .decision-panel {
   border-color: #385044;
   background:

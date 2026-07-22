@@ -113,6 +113,7 @@ export interface HealthResult {
 export type ZoneIntent = "strike" | "edge" | "chase";
 export type SelectionQuality = "poor" | "risky" | "good" | "excellent";
 export type PlateAppearanceResult = "strikeout" | "walk" | "in_play_out" | "hit";
+export type RivalAdaptationBand = "no_data" | "watching" | "learning" | "locked_on";
 
 export interface PitchCall {
   pitchType: PitchType;
@@ -142,12 +143,40 @@ export interface PlateAppearanceContext {
   fatigue: number;
 }
 
+export interface RivalPitchObservation {
+  pitchType: PitchType;
+  zone: PitchZone;
+  zoneIntent: ZoneIntent;
+  balls: number;
+  strikes: number;
+  outcome: PitchOutcome;
+}
+
+export interface RivalMemorySnapshot {
+  matchupID: string;
+  revision: number;
+  plateAppearancesSeen: number;
+  totalPitchesSeen: number;
+  recentObservations: ReadonlyArray<RivalPitchObservation>;
+}
+
+export interface RivalAdaptationSnapshot {
+  level: number;
+  band: RivalAdaptationBand;
+  evidenceCount: number;
+  detectedPitch?: PitchType;
+  detectedZone?: PitchZone;
+  confidence: number;
+  warning: string;
+}
+
 export interface PreparePitchParams {
   seed: string;
   pitcher: PitcherSnapshot;
   batter: BatterSnapshot;
   scouting: BatterScoutingSnapshot;
   context: PlateAppearanceContext;
+  rivalMemory?: RivalMemorySnapshot;
 }
 
 export interface SubmitPitchParams extends PreparePitchParams {
@@ -170,6 +199,7 @@ export interface PitchPreparation {
   planCommitment: string;
   primaryRecommendation: CatcherRecommendationSnapshot;
   alternativeRecommendation: CatcherRecommendationSnapshot;
+  rivalAdaptation: RivalAdaptationSnapshot;
 }
 
 export interface PitchExecution {
@@ -196,6 +226,7 @@ export interface PitchKernelEvent {
   planCommitment?: string;
   outcome?: PitchOutcome;
   reasonCodes: ReadonlyArray<string>;
+  rivalAdaptation?: RivalAdaptationSnapshot;
 }
 
 export interface PlateAppearanceSnapshot {
@@ -223,5 +254,7 @@ export interface PitchKernelResult {
   events: ReadonlyArray<PitchKernelEvent>;
   snapshot: PlateAppearanceSnapshot;
   nextPreparation?: PitchPreparation;
+  rivalMemory: RivalMemorySnapshot;
+  rivalAdaptation: RivalAdaptationSnapshot;
   eventHash: string;
 }
