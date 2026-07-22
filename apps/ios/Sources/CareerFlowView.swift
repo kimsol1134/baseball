@@ -65,11 +65,13 @@ private struct CareerSummary: View {
                 Section("최근 이정표") {
                     ForEach(Array(state.milestones.suffix(6).reversed()), id: \.self) { milestone in
                         Label(milestone, systemImage: milestone == state.milestones.last ? "star.fill" : "circle.fill")
-                            .foregroundStyle(milestone == state.milestones.last ? .primary : .secondary)
+                            .foregroundStyle(milestone == state.milestones.last ? BaseballTheme.milestone : BaseballTheme.textSecondary)
                     }
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(BaseballTheme.canvas)
         .navigationTitle("커리어")
     }
 
@@ -97,16 +99,19 @@ private struct WeeklyPlanView: View {
                     Text("회복 · 등판 감소 / 피로↓").tag(ProWeekPlan.recover)
                     Text("맡은 보직 · 신뢰 / 성장 없음").tag(ProWeekPlan.earnTrust)
                 }
-                Button("1주 진행", action: career.advanceWeek).frame(minHeight: 44)
+                Button("1주 진행", action: career.advanceWeek).buttonStyle(.borderedProminent).frame(minHeight: 44)
                 Button(action: career.advanceBlock) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("같은 계획으로 3주 진행")
-                        Text("중요 경기나 보직 변화가 생기면 멈춥니다.").font(.caption).foregroundStyle(.secondary)
+                        Text("중요 경기나 보직 변화가 생기면 멈춥니다.").font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                     }
                 }
+                .buttonStyle(.bordered)
                 .frame(minHeight: 44)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(BaseballTheme.canvas)
         .accessibilityElement(children: .contain)
     }
 
@@ -125,22 +130,25 @@ private struct ImportantMomentView: View {
                 Text("IMPORTANT MOMENT · WEEK \(state.week)").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.milestone)
                 Text(state.level == .major ? "1군에서 자리를 정할 승부" : state.managerTrust < 55 ? "보직 경쟁 평가전" : "다음 보직을 결정할 경기")
                     .font(.largeTitle.bold())
-                Text("한 점 차 · 1사 2루 · 최정우 타석\n현재 피로 \(state.fatigue), 감독 신뢰 \(state.managerTrust)")
-                    .foregroundStyle(.secondary)
+                BaseballCard(title: "승부 상황", tone: .milestone) {
+                    Text("한 점 차 · 1사 2루 · 최정우 타석\n현재 피로 \(state.fatigue), 감독 신뢰 \(state.managerTrust)")
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
                 VStack(spacing: 10) {
                     ForEach(MobileCareerStore.ImportantApproach.allCases) { approach in
                         Button { career.selectedApproach = approach } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: career.selectedApproach == approach ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(career.selectedApproach == approach ? BaseballTheme.selection : .secondary)
+                                    .foregroundStyle(career.selectedApproach == approach ? BaseballTheme.selection : BaseballTheme.textSecondary)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(approach.title).font(.headline)
-                                    Text(approach.detail).font(.caption).foregroundStyle(.secondary)
+                                    Text(approach.detail).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                                 }
                                 Spacer()
                             }
                             .padding().frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-                            .background(career.selectedApproach == approach ? BaseballTheme.selection.opacity(0.12) : Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                            .background(career.selectedApproach == approach ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12))
+                            .overlay { RoundedRectangle(cornerRadius: 12).stroke(career.selectedApproach == approach ? BaseballTheme.selection : BaseballTheme.border, lineWidth: 1) }
                         }
                         .buttonStyle(.plain).accessibilityAddTraits(career.selectedApproach == approach ? .isSelected : [])
                     }
@@ -150,6 +158,7 @@ private struct ImportantMomentView: View {
             }
             .padding()
         }
+        .background(BaseballTheme.canvas)
     }
 }
 
@@ -162,5 +171,6 @@ private struct ActionCard: View {
         ContentUnavailableView { Label(title, systemImage: "baseball.fill") } description: { Text(copy) } actions: {
             Button(button, action: action).buttonStyle(.borderedProminent).frame(minHeight: 44)
         }
+        .background(BaseballTheme.canvas)
     }
 }
