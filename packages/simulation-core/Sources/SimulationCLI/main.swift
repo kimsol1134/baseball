@@ -17,6 +17,10 @@ struct BatchReport: Codable {
     let expectedDamage: Int
     let actualDamage: Int
     let analysisConfidence: String
+    let stealAttempts: Int
+    let stolenBases: Int
+    let doublePlays: Int
+    let halfInningsCompleted: Int
 }
 
 enum BatchStrategy: String {
@@ -101,6 +105,16 @@ let fixedCall = PitchCall(
     zoneIntent: .edge,
     intensity: .normal
 )
+let batchFielders = FielderPosition.allCases.map {
+    FielderSnapshot(
+        id: "batch-\($0.rawValue)",
+        name: $0.rawValue,
+        position: $0,
+        range: defenseRating,
+        glove: defenseRating,
+        arm: defenseRating
+    )
+}
 let engine = PitchKernelEngine()
 var plateAppearanceResults: [String: Int] = [:]
 var pitchOutcomes: [String: Int] = [:]
@@ -109,7 +123,19 @@ var persistentMemory: RivalMemorySnapshot?
 var persistentGameLog: GameLogSnapshot?
 var finalAdaptationLevel = 0
 var totalRunsAllowed = 0
+var persistentRunsAllowed = 0
 var finalAnalysis: PostgameAnalysisSnapshot?
+var persistentInningState = InningStateSnapshot(inning: 7, half: .bottom, outs: 0)
+var persistentRunners = BaserunnerStateSnapshot(
+    firstOccupied: true,
+    secondOccupied: false,
+    thirdOccupied: false,
+    leadRunnerSpeed: 55
+)
+var stealAttempts = 0
+var stolenBases = 0
+var doublePlays = 0
+var halfInningsCompleted = 0
 
 for index in 1...iterations {
     var plateMemory = rivalMemoryMode == .persistent ? persistentMemory : nil
@@ -117,7 +143,8 @@ for index in 1...iterations {
         defense: DefenseSnapshot(
             infield: defenseRating,
             outfield: defenseRating,
-            arm: defenseRating
+            arm: defenseRating,
+            fielders: batchFielders
         ),
         park: ParkSnapshot(
             id: "batch-park",
@@ -125,13 +152,9 @@ for index in 1...iterations {
             hitFactor: parkFactor,
             homeRunFactor: parkFactor
         ),
-        runners: BaserunnerStateSnapshot(
-            firstOccupied: true,
-            secondOccupied: false,
-            thirdOccupied: false,
-            leadRunnerSpeed: 55
-        ),
-        runsAllowed: 0
+        runners: persistentRunners,
+        runsAllowed: persistentRunsAllowed,
+        inningState: persistentInningState
     )
     var gameLog = persistentGameLog ?? GameLogSnapshot(
         gameID: "batch-game",
@@ -143,8 +166,8 @@ for index in 1...iterations {
     var context = PlateAppearanceContext(
         plateAppearanceID: "batch-pa-\(index)",
         revision: 0,
-        inning: 7,
-        outs: 0,
+        inning: persistentInningState.inning,
+        outs: persistentInningState.outs,
         balls: 0,
         strikes: 0,
         pitchNumber: 1,
@@ -193,13 +216,40 @@ for index in 1...iterations {
         gameState = result.gameState
         gameLog = result.gameLog
         finalAnalysis = result.postgameAnalysis
+        if let stealAttempt = result.snapshot.stealAttempt {
+            stealAttempts += 1
+            if stealAttempt.succeeded { stolenBases += 1 }
+        }
+        if result.snapshot.inningTransition?.doublePlayCompleted == true {
+            doublePlays += 1
+        }
+        if result.snapshot.inningTransition?.inningEnded == true {
+            halfInningsCompleted += 1
+        }
         finalAdaptationLevel = result.rivalAdaptation.level
         totalPitches += 1
         pitchOutcomes[result.snapshot.outcome.rawValue, default: 0] += 1
         if let finalResult = result.snapshot.result {
             plateAppearanceResults[finalResult.rawValue, default: 0] += 1
+        } else if result.snapshot.ended {
+            plateAppearanceResults["inning_ended", default: 0] += 1
+        }
+        if result.snapshot.ended {
             totalRunsAllowed += result.snapshot.runsScored
+            persistentRunsAllowed = result.gameState.runsAllowed
             persistentGameLog = result.gameLog
+            persistentInningState = result.gameState.inningState ?? persistentInningState
+            persistentRunners = result.gameState.runners
+            if persistentInningState.inning > 9 {
+                persistentInningState = InningStateSnapshot(inning: 7, half: .bottom, outs: 0)
+                persistentRunners = BaserunnerStateSnapshot(
+                    firstOccupied: true,
+                    secondOccupied: false,
+                    thirdOccupied: false,
+                    leadRunnerSpeed: 55
+                )
+                persistentRunsAllowed = 0
+            }
             if rivalMemoryMode == .persistent {
                 persistentMemory = result.rivalMemory
             }
@@ -210,8 +260,8 @@ for index in 1...iterations {
         context = PlateAppearanceContext(
             plateAppearanceID: context.plateAppearanceID,
             revision: result.revision,
-            inning: context.inning,
-            outs: context.outs,
+            inning: result.gameState.inningState?.inning ?? context.inning,
+            outs: result.gameState.inningState?.outs ?? context.outs,
             balls: result.snapshot.balls,
             strikes: result.snapshot.strikes,
             pitchNumber: context.pitchNumber + 1,
@@ -241,7 +291,11 @@ let report = BatchReport(
     runsAllowed: totalRunsAllowed,
     expectedDamage: finalAnalysis?.expectedDamage ?? 0,
     actualDamage: finalAnalysis?.actualDamage ?? 0,
-    analysisConfidence: finalAnalysis?.confidence.rawValue ?? AnalysisConfidenceBand.low.rawValue
+    analysisConfidence: finalAnalysis?.confidence.rawValue ?? AnalysisConfidenceBand.low.rawValue,
+    stealAttempts: stealAttempts,
+    stolenBases: stolenBases,
+    doublePlays: doublePlays,
+    halfInningsCompleted: halfInningsCompleted
 )
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

@@ -1,0 +1,7 @@
+{
+  "id": "official.example.clubhouse.1",
+  "schemaVersion": 1,
+  "title": "비어 있는 불펜",
+  "body": "훈련이 끝난 뒤 포수가 공 하나를 건넨다.",
+  "choices": ["오늘의 의도를 설명한다", "다음 경기의 첫 공을 함께 정한다"]
+}

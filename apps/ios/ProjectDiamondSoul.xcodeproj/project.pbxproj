@@ -1,0 +1,375 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		22E9F28B15A71F503C1BB86C /* RecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7340CD72D2CA5325B3987DC4 /* RecordView.swift */; };
+		6DD613F1386362365ADC0F19 /* SimulationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 48F6D6D28E28E9D17352C6CB /* SimulationCore */; };
+		8C45FAD1BA2BA6ACFFEACAFB /* CareerFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28318EAFD1E0C8B71B219F81 /* CareerFlowView.swift */; };
+		C0E07B84DBA4D211E616AF51 /* AppShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC86469C367B3D6D1FD34329 /* AppShell.swift */; };
+		F591504869CA28416ABD125D /* MobileCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BDE90266AE4123B75F85B0 /* MobileCareerStore.swift */; };
+		F6D8BA7C781E81C1603CE278 /* DiamondSoulApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18CF252F1EB557784ED7D619 /* DiamondSoulApp.swift */; };
+		FE9935FF0DFA3A006A620352 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 68251EC026E542D931505DE3 /* PrivacyInfo.xcprivacy */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		18CF252F1EB557784ED7D619 /* DiamondSoulApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiamondSoulApp.swift; sourceTree = "<group>"; };
+		28318EAFD1E0C8B71B219F81 /* CareerFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerFlowView.swift; sourceTree = "<group>"; };
+		56BDE90266AE4123B75F85B0 /* MobileCareerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileCareerStore.swift; sourceTree = "<group>"; };
+		68251EC026E542D931505DE3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7340CD72D2CA5325B3987DC4 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
+		90C5C6C52CA536FA4485F647 /* DiamondSoulIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DiamondSoulIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC86469C367B3D6D1FD34329 /* AppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShell.swift; sourceTree = "<group>"; };
+		E9C0D2E1CACA38D20D47DE82 /* simulation-core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "simulation-core"; path = "../../packages/simulation-core"; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C4FFB9F4B23A84EA125F6B74 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6DD613F1386362365ADC0F19 /* SimulationCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2E4DF0D8D6AC4A8AC711522A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				90C5C6C52CA536FA4485F647 /* DiamondSoulIOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6EC51CF3CEB66116125ED07E = {
+			isa = PBXGroup;
+			children = (
+				86DE0A5472F565D4C6992B0E /* Packages */,
+				7315F39820A00BAB07D2B90F /* Sources */,
+				2E4DF0D8D6AC4A8AC711522A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7315F39820A00BAB07D2B90F /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				AC86469C367B3D6D1FD34329 /* AppShell.swift */,
+				28318EAFD1E0C8B71B219F81 /* CareerFlowView.swift */,
+				18CF252F1EB557784ED7D619 /* DiamondSoulApp.swift */,
+				56BDE90266AE4123B75F85B0 /* MobileCareerStore.swift */,
+				68251EC026E542D931505DE3 /* PrivacyInfo.xcprivacy */,
+				7340CD72D2CA5325B3987DC4 /* RecordView.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		86DE0A5472F565D4C6992B0E /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				E9C0D2E1CACA38D20D47DE82 /* simulation-core */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0DA8374CF96D0F812B28A77C /* DiamondSoulIOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 952472CE6DBF4D1624A6302E /* Build configuration list for PBXNativeTarget "DiamondSoulIOS" */;
+			buildPhases = (
+				EFC684115AA7DCDF367CEFDF /* Sources */,
+				39FEEA0E4F762ADACE1B619B /* Resources */,
+				C4FFB9F4B23A84EA125F6B74 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DiamondSoulIOS;
+			packageProductDependencies = (
+				48F6D6D28E28E9D17352C6CB /* SimulationCore */,
+			);
+			productName = DiamondSoulIOS;
+			productReference = 90C5C6C52CA536FA4485F647 /* DiamondSoulIOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		28CDB3F14DAE678E774C6BDF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					0DA8374CF96D0F812B28A77C = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 1D80B859235C7B229925CA7D /* Build configuration list for PBXProject "ProjectDiamondSoul" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 6EC51CF3CEB66116125ED07E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1488D2AADAF7F3513D10B192 /* XCLocalSwiftPackageReference "../../packages/simulation-core" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0DA8374CF96D0F812B28A77C /* DiamondSoulIOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		39FEEA0E4F762ADACE1B619B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FE9935FF0DFA3A006A620352 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		EFC684115AA7DCDF367CEFDF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C0E07B84DBA4D211E616AF51 /* AppShell.swift in Sources */,
+				8C45FAD1BA2BA6ACFFEACAFB /* CareerFlowView.swift in Sources */,
+				F6D8BA7C781E81C1603CE278 /* DiamondSoulApp.swift in Sources */,
+				F591504869CA28416ABD125D /* MobileCareerStore.swift in Sources */,
+				22E9F28B15A71F503C1BB86C /* RecordView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0D68AF38B0EC2C45BCAD1CC2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		2FABF31F4520DDF9E30FEDA4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Diamond Soul";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.diamondsoul.ios;
+				PRODUCT_NAME = "Diamond Soul";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6376051AAC2231BD555D6C2F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Diamond Soul";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.diamondsoul.ios;
+				PRODUCT_NAME = "Diamond Soul";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FD0938759877DFF30538736D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1D80B859235C7B229925CA7D /* Build configuration list for PBXProject "ProjectDiamondSoul" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0D68AF38B0EC2C45BCAD1CC2 /* Debug */,
+				FD0938759877DFF30538736D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		952472CE6DBF4D1624A6302E /* Build configuration list for PBXNativeTarget "DiamondSoulIOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6376051AAC2231BD555D6C2F /* Debug */,
+				2FABF31F4520DDF9E30FEDA4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		1488D2AADAF7F3513D10B192 /* XCLocalSwiftPackageReference "../../packages/simulation-core" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../packages/simulation-core";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		48F6D6D28E28E9D17352C6CB /* SimulationCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SimulationCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 28CDB3F14DAE678E774C6BDF /* Project object */;
+}

@@ -1,0 +1,55 @@
+import { useState } from "react";
+import type { OffseasonDecision, ProCareerResult, ProWeekPlan } from "./simulationTypes";
+
+const PLANS: ReadonlyArray<{ id: ProWeekPlan; title: string; copy: string }> = [
+  { id: "develop_weapon", title: "결정구 불펜", copy: "변화구와 구위가 오르지만 피로가 쌓인다" },
+  { id: "refine_command", title: "코너워크", copy: "볼넷을 줄이고 코스 재현을 다듬는다" },
+  { id: "build_stamina", title: "긴 이닝 훈련", copy: "선발 체력을 키우지만 피로가 쌓인다" },
+  { id: "recover", title: "회복", copy: "등판을 줄이고 피로와 부상을 회복한다" },
+  { id: "earn_trust", title: "맡은 보직에 집중", copy: "성장보다 이번 주 경기와 감독 지시를 우선한다" },
+];
+
+const ROLE_LABELS: Record<ProCareerResult["snapshot"]["role"], string> = {
+  starter: "선발", long_relief: "롱릴리프", setup: "셋업맨", closer: "마무리",
+};
+
+interface Props {
+  result: ProCareerResult;
+  isRunning: boolean;
+  error?: string;
+  onSign: () => Promise<void>;
+  onPlan: (plan: ProWeekPlan) => Promise<void>;
+  onPlanBlock: (plan: ProWeekPlan) => Promise<void>;
+  onGame: () => Promise<void>;
+  onReview: () => Promise<void>;
+  onOffseason: (decision: OffseasonDecision) => Promise<void>;
+  onBack: () => void;
+}
+
+export function ProCareerView({ result, isRunning, error, onSign, onPlan, onPlanBlock, onGame, onReview, onOffseason, onBack }: Props) {
+  const state = result.snapshot;
+  const [plan, setPlan] = useState<ProWeekPlan>("earn_trust");
+  const era = state.currentStats.inningsOuts === 0 ? "-.--" : (state.currentStats.runsAllowed * 27 / state.currentStats.inningsOuts).toFixed(2);
+  return <main className="career-shell pro-career-shell">
+    <section className="career-hero"><div><p className="eyebrow">PRO CAREER · SEASON {state.season}</p><h2>{state.team.name} · {state.age}세</h2><p>{state.level === "major" ? "1군" : "2군"} {ROLE_LABELS[state.role]} · {state.week}/24주</p></div>
+      <div className="career-vitals"><div><span>감독 신뢰</span><strong>{state.managerTrust}</strong></div><div><span>피로</span><strong>{state.fatigue}</strong></div><div><span>1군 등록</span><strong>{state.serviceYears}년</strong></div><button type="button" onClick={onBack}>고교 기록</button></div></section>
+    <div className="career-grid">
+      <section className="career-panel career-player"><div className="lab-card-heading"><span>시즌 기록</span><small>{state.level === "major" ? "MAJOR" : "MINOR"}</small></div>
+        <div className="career-rating-grid"><div><span>경기</span><strong>{state.currentStats.games}</strong></div><div><span>선발</span><strong>{state.currentStats.starts}</strong></div><div><span>탈삼진</span><strong>{state.currentStats.strikeouts}</strong></div><div><span>ERA</span><strong>{era}</strong></div></div>
+        <div className="career-personnel"><span>계약</span><strong>{state.contract ? `${state.contract.yearsRemaining}년 · ${Math.round(state.contract.annualSalary / 10_000)}만원` : "서명 전"}</strong><span>부상</span><strong>{state.injuryWeeks > 0 ? `${state.injuryWeeks}주 회복` : "정상"}</strong><span>통산</span><strong>{state.careerStats.length}시즌 · 수상 {state.awards.length}회</strong></div>
+        <div className="career-timeline"><span>커리어 이정표</span>{[...state.milestones].reverse().slice(0, 6).map((milestone, index) => <div key={milestone} className={index === 0 ? "is-latest" : undefined}><i aria-hidden="true" /><strong>{milestone}</strong></div>)}</div>
+      </section>
+      <section className="career-panel career-decision"><div className="lab-card-heading"><span>지금 할 일</span><small>{state.phase === "weekly_plan" ? "이번 주" : state.phase === "important_game" ? "중요 경기" : state.phase === "season_review" ? "시즌 마무리" : state.phase === "offseason_decision" ? "오프시즌" : state.phase === "contract_offer" ? "신인 계약" : "커리어"}</small></div>
+        {state.phase === "contract_offer" ? <div className="career-milestone"><span>ROOKIE CONTRACT</span><h3>지명 구단과 첫 계약을 맺습니다.</h3><p>계약 뒤 2군 선발 경쟁부터 시작하며, 고교 기록과 구종은 그대로 이어집니다.</p><button className="lab-primary" disabled={isRunning} onClick={() => void onSign()}>신인 계약 서명</button></div> : null}
+        {state.phase === "weekly_plan" ? <><h3>{state.week + 1}주차</h3><p>현재 피로 {state.fatigue}, 감독 신뢰 {state.managerTrust}. 성장, 회복, 보직 경쟁 중 이번 구간의 우선순위를 고르세요.</p><div className="career-training-grid">{PLANS.map((item) => <button key={item.id} className={plan === item.id ? "is-selected" : undefined} aria-pressed={plan === item.id} onClick={() => setPlan(item.id)}><strong>{item.title}</strong><span>{item.copy}</span></button>)}</div><div className="pro-plan-actions"><button className="lab-primary" disabled={isRunning} onClick={() => void onPlan(plan)}>1주 진행</button><button type="button" disabled={isRunning} onClick={() => void onPlanBlock(plan)}>같은 계획으로 3주 진행<small>중요 경기·보직 변화에서 자동으로 멈춤</small></button></div></> : null}
+        {state.phase === "important_game" ? <div className="career-milestone"><span>IMPORTANT GAME · WEEK {state.week}</span><h3>{state.level === "major" ? "1군에서 자리를 정할 승부" : state.managerTrust < 55 ? "보직 경쟁 평가전" : "다음 보직을 결정할 경기"}</h3><p>한 점 차, 1사 2루. 이 결과는 감독 신뢰와 다음 보직에 바로 반영됩니다. 정현우부터 직접 상대합니다.</p><button className="lab-primary" disabled={isRunning} onClick={() => void onGame()}>마운드로 나가기</button></div> : null}
+        {state.phase === "season_review" ? <div className="career-milestone"><span>SEASON COMPLETE</span><h3>{state.season}시즌이 끝났습니다.</h3><button className="lab-primary" disabled={isRunning} onClick={() => void onReview()}>시즌 기록 확인</button></div> : null}
+        {state.phase === "offseason_decision" ? <><h3>내년에는 어디에서 던질까요?</h3><div className="relationship-options"><button disabled={isRunning} onClick={() => void onOffseason("continue")}><strong>현재 구단에 남는다</strong><span>같은 팀에서 보직 경쟁을 계속한다</span></button><button disabled={isRunning || state.militaryCompleted} onClick={() => void onOffseason("military_service")}><strong>군 복무를 시작한다</strong><span>두 시즌 뒤 복귀한다</span></button><button disabled={isRunning || state.serviceYears < 6} onClick={() => void onOffseason("free_agency")}><strong>FA 시장에 나간다</strong><span>1군 등록 6년부터 선택 가능</span></button><button disabled={isRunning} onClick={() => void onOffseason("retire")}><strong>은퇴한다</strong><span>이 선수의 통산 기록을 확정한다</span></button></div></> : null}
+        {state.phase === "retirement_decision" ? <div className="career-milestone"><span>FINAL SEASON</span><h3>마지막 공을 기록에 남깁니다.</h3><button className="lab-primary" disabled={isRunning} onClick={() => void onOffseason("retire")}>은퇴식 진행</button></div> : null}
+        {state.phase === "completed" ? <div className="draft-result is-drafted"><span>CAREER COMPLETE</span><h3>{state.hallOfFameScore && state.hallOfFameScore >= 70 ? "명예의 전당 헌액" : "프로 커리어 종료"}</h3><p>통산 평가 {state.hallOfFameScore} · {state.careerStats.length}시즌 · 수상 {state.awards.length}회</p></div> : null}
+        {error ? <p className="error-message" role="alert">{error}</p> : null}
+      </section>
+      <aside className="career-panel career-news"><div className="lab-card-heading"><span>구단·리그 뉴스</span><small>자동 저장됨</small></div>{state.awards.length > 0 ? <div className="award-strip"><span>수상</span>{state.awards.slice(-3).reverse().map((award) => <strong key={award}>{award}</strong>)}</div> : null}{state.news.slice(0, 9).map((item, index) => <article key={`${index}-${item}`}><span>{index === 0 ? "최신" : "이전"}</span><p>{item}</p></article>)}</aside>
+    </div>
+  </main>;
+}

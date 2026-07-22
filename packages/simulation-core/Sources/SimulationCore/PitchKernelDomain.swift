@@ -332,6 +332,8 @@ public struct PitchKernelEvent: Codable, Equatable, Sendable {
     public let battedBall: BattedBall?
     public let fieldingResolution: FieldingResolutionSnapshot?
     public let baserunnerAdvance: BaserunnerAdvanceSnapshot?
+    public let stealAttempt: StealAttemptSnapshot?
+    public let inningTransition: InningTransitionSnapshot?
     public let plateAppearanceResult: PlateAppearanceResult?
     public let rivalAdaptation: RivalAdaptationSnapshot?
     public let postgameAnalysis: PostgameAnalysisSnapshot?
@@ -349,6 +351,8 @@ public struct PitchKernelEvent: Codable, Equatable, Sendable {
         battedBall: BattedBall? = nil,
         fieldingResolution: FieldingResolutionSnapshot? = nil,
         baserunnerAdvance: BaserunnerAdvanceSnapshot? = nil,
+        stealAttempt: StealAttemptSnapshot? = nil,
+        inningTransition: InningTransitionSnapshot? = nil,
         plateAppearanceResult: PlateAppearanceResult? = nil,
         rivalAdaptation: RivalAdaptationSnapshot? = nil,
         postgameAnalysis: PostgameAnalysisSnapshot? = nil,
@@ -365,6 +369,8 @@ public struct PitchKernelEvent: Codable, Equatable, Sendable {
         self.battedBall = battedBall
         self.fieldingResolution = fieldingResolution
         self.baserunnerAdvance = baserunnerAdvance
+        self.stealAttempt = stealAttempt
+        self.inningTransition = inningTransition
         self.plateAppearanceResult = plateAppearanceResult
         self.rivalAdaptation = rivalAdaptation
         self.postgameAnalysis = postgameAnalysis
@@ -388,6 +394,8 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
     public let fieldingResolution: FieldingResolutionSnapshot?
     public let runnersAfter: BaserunnerStateSnapshot
     public let runsScored: Int
+    public let stealAttempt: StealAttemptSnapshot?
+    public let inningTransition: InningTransitionSnapshot?
     public let reasonCodes: [String]
     public let shortFeedback: String
     public let detailFeedback: String
@@ -409,6 +417,8 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
         fieldingResolution: FieldingResolutionSnapshot? = nil,
         runnersAfter: BaserunnerStateSnapshot = .empty,
         runsScored: Int = 0,
+        stealAttempt: StealAttemptSnapshot? = nil,
+        inningTransition: InningTransitionSnapshot? = nil,
         reasonCodes: [String],
         shortFeedback: String,
         detailFeedback: String,
@@ -429,6 +439,8 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
         self.fieldingResolution = fieldingResolution
         self.runnersAfter = runnersAfter
         self.runsScored = runsScored
+        self.stealAttempt = stealAttempt
+        self.inningTransition = inningTransition
         self.reasonCodes = reasonCodes
         self.shortFeedback = shortFeedback
         self.detailFeedback = detailFeedback

@@ -290,6 +290,8 @@ public enum SimulationError: Error, Equatable, LocalizedError, Sendable {
     case invalidRivalMemory(String)
     case invalidGameState(String)
     case invalidGameLog(String)
+    case invalidPitcherLab(String)
+    case invalidProCareer(String)
 
     public var errorDescription: String? {
         switch self {
@@ -317,6 +319,10 @@ public enum SimulationError: Error, Equatable, LocalizedError, Sendable {
             return "Game state is invalid: \(detail)"
         case .invalidGameLog(let detail):
             return "Game log is invalid: \(detail)"
+        case .invalidPitcherLab(let detail):
+            return "Pitcher Lab state is invalid: \(detail)"
+        case .invalidProCareer(let detail):
+            return "Pro career state is invalid: \(detail)"
         }
     }
 }

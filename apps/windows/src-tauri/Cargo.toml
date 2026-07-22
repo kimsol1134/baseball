@@ -1,6 +1,6 @@
 [package]
 name = "diamond-soul"
-version = "0.1.0"
+version = "1.0.0"
 description = "Project Diamond Soul desktop shell"
 authors = ["Project Diamond Soul"]
 edition = "2021"
@@ -15,4 +15,3 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
-

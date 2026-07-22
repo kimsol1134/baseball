@@ -137,6 +137,7 @@ public struct PitchKernelEngine: Sendable {
     private let rivalMemoryEngine: RivalMemoryEngine
     private let ballInPlayEngine: BallInPlayEngine
     private let baserunnerEngine: BaserunnerEngine
+    private let inningStateEngine: InningStateEngine
     private let gameAnalysisEngine: GameAnalysisEngine
 
     public init(
@@ -144,12 +145,14 @@ public struct PitchKernelEngine: Sendable {
         rivalMemoryEngine: RivalMemoryEngine = RivalMemoryEngine(),
         ballInPlayEngine: BallInPlayEngine = BallInPlayEngine(),
         baserunnerEngine: BaserunnerEngine = BaserunnerEngine(),
+        inningStateEngine: InningStateEngine = InningStateEngine(),
         gameAnalysisEngine: GameAnalysisEngine = GameAnalysisEngine()
     ) {
         self.recommendationEngine = recommendationEngine
         self.rivalMemoryEngine = rivalMemoryEngine
         self.ballInPlayEngine = ballInPlayEngine
         self.baserunnerEngine = baserunnerEngine
+        self.inningStateEngine = inningStateEngine
         self.gameAnalysisEngine = gameAnalysisEngine
     }
 
@@ -265,20 +268,42 @@ public struct PitchKernelEngine: Sendable {
             outcome: outcome,
             plateAppearanceEnded: state.result != nil
         )
+        let stealResolution = baserunnerEngine.resolveSteal(
+            currentGameState.runners,
+            defense: currentGameState.defense,
+            context: params.context,
+            seed: seed
+        )
+        let inningTransition = inningStateEngine.resolve(
+            context: params.context,
+            gameState: currentGameState,
+            plateAppearanceResult: state.result,
+            battedBall: neutralResolution.battedBall,
+            fielding: fieldingResolution,
+            runners: stealResolution.runnersAfter,
+            stealOuts: stealResolution.outsRecorded,
+            seed: seed
+        )
+        let appearanceSessionEnded = state.result != nil || inningTransition.inningEnded
         let baserunnerAdvance = state.result.map {
             baserunnerEngine.advance(
-                currentGameState.runners,
+                stealResolution.runnersAfter,
                 outcome: outcome,
                 plateAppearanceResult: $0,
                 defense: currentGameState.defense,
-                seed: seed
+                seed: seed,
+                doublePlayCompleted: inningTransition.doublePlayCompleted
             )
         }
+        let runnersAfterPlay = inningTransition.inningEnded
+            ? BaserunnerStateSnapshot.empty
+            : baserunnerAdvance?.after ?? stealResolution.runnersAfter
         let updatedGameState = GameStateSnapshot(
             defense: currentGameState.defense,
             park: currentGameState.park,
-            runners: baserunnerAdvance?.after ?? currentGameState.runners,
-            runsAllowed: currentGameState.runsAllowed + (baserunnerAdvance?.runsScored ?? 0)
+            runners: runnersAfterPlay,
+            runsAllowed: currentGameState.runsAllowed + (baserunnerAdvance?.runsScored ?? 0),
+            inningState: inningTransition.after
         )
         let updatedGameLog = gameAnalysisEngine.record(
             params.gameLog,
@@ -298,8 +323,8 @@ public struct PitchKernelEngine: Sendable {
         let adaptationContext = PlateAppearanceContext(
             plateAppearanceID: params.context.plateAppearanceID,
             revision: revision,
-            inning: params.context.inning,
-            outs: params.context.outs,
+            inning: inningTransition.after.inning,
+            outs: inningTransition.after.outs,
             balls: state.result == nil ? state.balls : 0,
             strikes: state.result == nil ? state.strikes : 0,
             pitchNumber: state.result == nil ? params.context.pitchNumber + 1 : 1,
@@ -330,7 +355,9 @@ public struct PitchKernelEngine: Sendable {
             battedBall: neutralResolution.battedBall,
             adaptation: adaptation,
             fielding: fieldingResolution,
-            baserunnerAdvance: baserunnerAdvance
+            baserunnerAdvance: baserunnerAdvance,
+            stealAttempt: stealResolution.attempt,
+            inningTransition: inningTransition
         )
 
         var events: [PitchKernelEvent] = []
@@ -373,6 +400,19 @@ public struct PitchKernelEngine: Sendable {
                 reasonCodes: reasonCodes
             )
         )
+        if let stealAttempt = stealResolution.attempt {
+            events.append(
+                PitchKernelEvent(
+                    eventType: "steal_attempt_resolved",
+                    sequence: events.count,
+                    stealAttempt: stealAttempt,
+                    reasonCodes: [
+                        stealAttempt.succeeded ? "steal.success" : "steal.caught",
+                        "steal.\(stealAttempt.fromBase)_to_\(stealAttempt.toBase)"
+                    ]
+                )
+            )
+        }
         if let battedBall = neutralResolution.battedBall {
             events.append(
                 PitchKernelEvent(
@@ -427,6 +467,23 @@ public struct PitchKernelEngine: Sendable {
                 )
             )
         }
+        if inningTransition.outsRecorded > 0 || inningTransition.inningEnded {
+            events.append(
+                PitchKernelEvent(
+                    eventType: inningTransition.inningEnded
+                        ? "half_inning_ended"
+                        : "outs_recorded",
+                    sequence: events.count,
+                    inningTransition: inningTransition,
+                    reasonCodes: [
+                        "outs.recorded.\(inningTransition.outsRecorded)",
+                        inningTransition.doublePlayCompleted
+                            ? "defense.double_play"
+                            : "defense.standard_out"
+                    ]
+                )
+            )
+        }
         events.append(
             PitchKernelEvent(
                 eventType: "game_analysis_updated",
@@ -444,7 +501,7 @@ public struct PitchKernelEngine: Sendable {
             balls: state.balls,
             strikes: state.strikes,
             pitchNumber: params.context.pitchNumber,
-            ended: state.result != nil,
+            ended: appearanceSessionEnded,
             result: state.result,
             outcome: outcome,
             selectionQuality: selection,
@@ -455,6 +512,8 @@ public struct PitchKernelEngine: Sendable {
             fieldingResolution: fieldingResolution,
             runnersAfter: updatedGameState.runners,
             runsScored: baserunnerAdvance?.runsScored ?? 0,
+            stealAttempt: stealResolution.attempt,
+            inningTransition: inningTransition,
             reasonCodes: reasonCodes,
             shortFeedback: feedback.short,
             detailFeedback: feedback.detail,
@@ -462,7 +521,7 @@ public struct PitchKernelEngine: Sendable {
         )
 
         let nextPreparation: PitchPreparation?
-        if state.result == nil {
+        if !appearanceSessionEnded {
             nextPreparation = try preparePitch(
                 PreparePitchParams(
                     seed: nextSeed,
@@ -589,6 +648,27 @@ public struct PitchKernelEngine: Sendable {
                   (700...1_300).contains(gameState.park.homeRunFactor),
                   (0...99).contains(gameState.runsAllowed) else {
                 throw SimulationError.invalidGameState("defense, park, runner, or score values are out of range")
+            }
+            if let fielders = gameState.defense.fielders {
+                guard fielders.count <= FielderPosition.allCases.count,
+                      Set(fielders.map(\.position)).count == fielders.count,
+                      fielders.allSatisfy({
+                          !$0.id.isEmpty
+                              && !$0.name.isEmpty
+                              && (20...80).contains($0.range)
+                              && (20...80).contains($0.glove)
+                              && (20...80).contains($0.arm)
+                      }) else {
+                    throw SimulationError.invalidGameState("fielder positions or ratings are invalid")
+                }
+            }
+            if let inningState = gameState.inningState {
+                guard (1...20).contains(inningState.inning),
+                      (0...2).contains(inningState.outs),
+                      inningState.inning == params.context.inning,
+                      inningState.outs == params.context.outs else {
+                    throw SimulationError.invalidGameState("inning state does not match the plate appearance context")
+                }
             }
         }
         try gameAnalysisEngine.validate(params.gameLog)
@@ -1018,7 +1098,9 @@ public struct PitchKernelEngine: Sendable {
         battedBall: BattedBall?,
         adaptation: RivalAdaptationSnapshot,
         fielding: FieldingResolutionSnapshot?,
-        baserunnerAdvance: BaserunnerAdvanceSnapshot?
+        baserunnerAdvance: BaserunnerAdvanceSnapshot?,
+        stealAttempt: StealAttemptSnapshot?,
+        inningTransition: InningTransitionSnapshot
     ) -> (short: String, detail: String) {
         let short: String
         switch outcome {
@@ -1046,7 +1128,11 @@ public struct PitchKernelEngine: Sendable {
             : ""
         let fieldingText = fielding.map { " \($0.shortExplanation)" } ?? ""
         let runnerText = baserunnerAdvance.map { " \($0.shortExplanation)" } ?? ""
-        let detail = "선택은 \(selectionDisplayName(selection)), 실행 품질은 \(execution.executionQuality)입니다. \(planText).\(adaptationText)\(contactText)\(fieldingText)\(runnerText)"
+        let stealText = stealAttempt.map { " \($0.shortExplanation)" } ?? ""
+        let inningText = inningTransition.outsRecorded > 0
+            ? " \(inningTransition.shortExplanation)"
+            : ""
+        let detail = "선택은 \(selectionDisplayName(selection)), 실행 품질은 \(execution.executionQuality)입니다. \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
         return (short, detail)
     }
 
@@ -1153,10 +1239,26 @@ public struct PitchKernelEngine: Sendable {
 
     private func canonical(_ state: GameStateSnapshot?) -> String {
         guard let state else { return "standard-game-state" }
+        let fielders = state.defense.fielders?
+            .sorted { $0.position.rawValue < $1.position.rawValue }
+            .map {
+                [
+                    $0.id,
+                    $0.position.rawValue,
+                    String($0.range),
+                    String($0.glove),
+                    String($0.arm)
+                ].joined(separator: ":")
+            }
+            .joined(separator: ",") ?? "aggregate-defense"
+        let inning = state.inningState.map {
+            "\($0.inning):\($0.half.rawValue):\($0.outs)"
+        } ?? "context-inning"
         return [
             String(state.defense.infield),
             String(state.defense.outfield),
             String(state.defense.arm),
+            fielders,
             state.park.id,
             String(state.park.hitFactor),
             String(state.park.homeRunFactor),
@@ -1164,7 +1266,8 @@ public struct PitchKernelEngine: Sendable {
             state.runners.secondOccupied ? "1" : "0",
             state.runners.thirdOccupied ? "1" : "0",
             String(state.runners.leadRunnerSpeed),
-            String(state.runsAllowed)
+            String(state.runsAllowed),
+            inning
         ].joined(separator: ":")
     }
 

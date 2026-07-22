@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-soul.local/schemas/pro-career.schema.json",
+  "title": "Diamond Soul pro career snapshot",
+  "type": "object",
+  "required": ["proCareerID", "revision", "phase", "identity", "pitcher", "team", "entitlement", "age", "season", "week", "level", "role", "managerTrust", "fatigue", "currentStats", "careerStats", "commitment"],
+  "properties": {
+    "proCareerID": { "type": "string", "pattern": "^pro-" },
+    "revision": { "type": "integer", "minimum": 0 },
+    "phase": { "enum": ["contract_offer", "weekly_plan", "important_game", "season_review", "offseason_decision", "retirement_decision", "completed"] },
+    "age": { "type": "integer", "minimum": 18, "maximum": 50 },
+    "season": { "type": "integer", "minimum": 1, "maximum": 20 },
+    "week": { "type": "integer", "minimum": 0, "maximum": 24 },
+    "level": { "enum": ["minor", "major"] },
+    "role": { "enum": ["starter", "long_relief", "setup", "closer"] },
+    "managerTrust": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "fatigue": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "entitlement": { "type": "object", "required": ["productID", "status", "source", "verifiedAt"] },
+    "identity": { "type": "object" }, "pitcher": { "type": "object" }, "team": { "type": "object" },
+    "currentStats": { "type": "object" }, "careerStats": { "type": "array" }, "commitment": { "type": "string", "minLength": 16 }
+  }
+}

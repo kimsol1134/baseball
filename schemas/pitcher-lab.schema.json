@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-soul.local/schemas/pitcher-lab.schema.json",
+  "title": "Pitcher Lab RPC state",
+  "type": "object",
+  "required": ["revision", "nextSeed", "events", "snapshot", "eventHash"],
+  "properties": {
+    "revision": { "type": "integer", "minimum": 0 },
+    "nextSeed": { "type": "string", "pattern": "^[0-9]+$" },
+    "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+    "snapshot": { "$ref": "#/$defs/snapshot" },
+    "eventHash": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "rating": { "type": "integer", "minimum": 20, "maximum": 80 },
+    "phase": {
+      "enum": ["training", "important_inning", "relationship", "awakening", "scouting", "reflection", "completed"]
+    },
+    "pitcher": {
+      "type": "object",
+      "required": ["id", "name", "stuff", "command", "movement", "stamina"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "stuff": { "$ref": "#/$defs/rating" },
+        "command": { "$ref": "#/$defs/rating" },
+        "movement": { "$ref": "#/$defs/rating" },
+        "stamina": { "$ref": "#/$defs/rating" },
+        "pitchProfiles": { "type": "array" }
+      },
+      "additionalProperties": false
+    },
+    "performance": {
+      "type": "object",
+      "required": ["importantInningsCompleted", "pitches", "strikeouts", "walks", "runsAllowed", "expectedDamage", "actualDamage", "recommendationAccepted"],
+      "properties": {
+        "importantInningsCompleted": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "pitches": { "type": "integer", "minimum": 0 },
+        "strikeouts": { "type": "integer", "minimum": 0 },
+        "walks": { "type": "integer", "minimum": 0 },
+        "runsAllowed": { "type": "integer", "minimum": 0 },
+        "expectedDamage": { "type": "integer", "minimum": 0 },
+        "actualDamage": { "type": "integer", "minimum": 0 },
+        "recommendationAccepted": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "snapshot": {
+      "type": "object",
+      "required": ["runID", "revision", "lifeNumber", "presetID", "phase", "pitcher", "trainingSessionsCompleted", "relationshipEventsCompleted", "selectedAwakenings", "awakeningOptions", "readiness", "fatigue", "catcherTrust", "developmentSignals", "potentialRanges", "performance", "legacyOptions", "stateCommitment"],
+      "properties": {
+        "runID": { "type": "string", "minLength": 1 },
+        "revision": { "type": "integer", "minimum": 0 },
+        "lifeNumber": { "type": "integer", "minimum": 1 },
+        "presetID": { "type": "string" },
+        "phase": { "$ref": "#/$defs/phase" },
+        "pitcher": { "$ref": "#/$defs/pitcher" },
+        "trainingSessionsCompleted": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "relationshipEventsCompleted": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "selectedAwakenings": { "type": "array", "maxItems": 2, "items": { "type": "string" } },
+        "awakeningOptions": { "type": "array", "maxItems": 2, "items": { "type": "string" } },
+        "readiness": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "fatigue": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "catcherTrust": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "developmentSignals": { "type": "object" },
+        "potentialRanges": { "type": "array", "minItems": 4, "maxItems": 4 },
+        "performance": { "$ref": "#/$defs/performance" },
+        "lastTraining": { "type": "object" },
+        "scoutingEvaluation": { "type": "object" },
+        "legacyOptions": { "type": "array", "maxItems": 2, "items": { "type": "string" } },
+        "legacySelection": { "type": "object" },
+        "stateCommitment": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "required": ["eventType", "sequence", "reasonCodes"],
+      "properties": {
+        "eventType": { "type": "string" },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "training": { "type": "object" },
+        "importantInning": { "type": "object" },
+        "relationshipChoice": { "type": "string" },
+        "awakening": { "type": "string" },
+        "scouting": { "type": "object" },
+        "legacy": { "type": "object" },
+        "reasonCodes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}

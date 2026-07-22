@@ -13,8 +13,8 @@ final class RPCServerTests: XCTestCase {
         XCTAssertNil(response.error)
         let health = try XCTUnwrap(response.result).decode(HealthResult.self)
         XCTAssertEqual(health.status, "ok")
-        XCTAssertEqual(health.protocolVersion, "1.4")
-        XCTAssertEqual(health.coreVersion, "0.5.0")
+        XCTAssertEqual(health.protocolVersion, "3.0")
+        XCTAssertEqual(health.coreVersion, "1.0.0")
     }
 
     func testListsFourPitcherPresetsWithCompleteRepertoires() throws {
@@ -127,6 +127,7 @@ final class RPCServerTests: XCTestCase {
         XCTAssertEqual(result.gameLog.totalPitches, 1)
         XCTAssertEqual(result.postgameAnalysis.sampleSize, 1)
         XCTAssertTrue(result.events.contains { $0.eventType == "game_analysis_updated" })
+        XCTAssertNotNil(result.snapshot.inningTransition)
         XCTAssertFalse(result.eventHash.isEmpty)
     }
 
@@ -155,6 +156,99 @@ final class RPCServerTests: XCTestCase {
         let response = try decodeResponse(server.handle(line: try encodeRequest(request)))
 
         XCTAssertEqual(response.error?.code, -32010)
+    }
+
+    func testPitcherLabStartAndTrainingRoundTrip() throws {
+        let startRequest = RPCRequest(
+            id: .string("lab-start"),
+            method: "startPitcherLab",
+            params: try JSONValue.from(
+                StartPitcherLabParams(
+                    seed: "20260722",
+                    presetID: "power_prospect",
+                    inheritedSoulDomain: nil
+                )
+            )
+        )
+        let startResponse = try decodeResponse(
+            server.handle(line: try encodeRequest(startRequest))
+        )
+        let start = try XCTUnwrap(startResponse.result).decode(PitcherLabResult.self)
+
+        XCTAssertEqual(start.snapshot.phase, .training)
+        XCTAssertEqual(start.snapshot.trainingSessionsCompleted, 0)
+
+        let trainingRequest = RPCRequest(
+            id: .string("lab-training"),
+            method: "commitTraining",
+            params: try JSONValue.from(
+                CommitTrainingParams(
+                    seed: start.nextSeed,
+                    state: start.snapshot,
+                    focus: .velocity,
+                    intensity: .standard
+                )
+            )
+        )
+        let trainingResponse = try decodeResponse(
+            server.handle(line: try encodeRequest(trainingRequest))
+        )
+        let training = try XCTUnwrap(trainingResponse.result).decode(PitcherLabResult.self)
+
+        XCTAssertEqual(training.snapshot.trainingSessionsCompleted, 1)
+        XCTAssertEqual(training.events.first?.eventType, "training_session_resolved")
+        XCTAssertFalse(training.snapshot.stateCommitment.isEmpty)
+    }
+
+    func testHighSchoolCareerStartAndSchoolSelectionRoundTrip() throws {
+        let startRequest = RPCRequest(
+            id: .string("career-start"),
+            method: "startHighSchoolCareer",
+            params: try JSONValue.from(
+                StartHighSchoolCareerParams(seed: "20260723", presetID: "precision_commander")
+            )
+        )
+        let startResponse = try decodeResponse(server.handle(line: try encodeRequest(startRequest)))
+        let start = try XCTUnwrap(startResponse.result).decode(HighSchoolCareerResult.self)
+        XCTAssertEqual(start.snapshot.phase, .prologue)
+        XCTAssertEqual(start.snapshot.schoolOptions.count, 4)
+
+        let prologueRequest = RPCRequest(
+            id: .string("career-prologue"),
+            method: "completeMiddleSchoolPrologue",
+            params: try JSONValue.from(
+                AdvanceCareerChapterParams(seed: start.nextSeed, state: start.snapshot)
+            )
+        )
+        let prologueResponse = try decodeResponse(server.handle(line: try encodeRequest(prologueRequest)))
+        let prologue = try XCTUnwrap(prologueResponse.result).decode(HighSchoolCareerResult.self)
+        XCTAssertEqual(prologue.snapshot.phase, .schoolSelection)
+
+        let schoolRequest = RPCRequest(
+            id: .string("career-school"),
+            method: "chooseSchool",
+            params: try JSONValue.from(
+                ChooseSchoolParams(
+                    seed: prologue.nextSeed,
+                    state: prologue.snapshot,
+                    schoolID: .miraeAnalytics
+                )
+            )
+        )
+        let schoolResponse = try decodeResponse(server.handle(line: try encodeRequest(schoolRequest)))
+        let school = try XCTUnwrap(schoolResponse.result).decode(HighSchoolCareerResult.self)
+        XCTAssertEqual(school.snapshot.phase, .training)
+        XCTAssertEqual(school.snapshot.school?.id, .miraeAnalytics)
+    }
+
+    func testProCareerStartAndContractRoundTrip() throws {
+        let draft = DraftResultSnapshot(outcome: .drafted, evaluationScore: 72, projectedRange: "2~3라운드", team: ProCareerEngine.proTeams[0], round: 2, overallPick: 18, signingBonus: 120_000_000, firstSeasonGoal: "2군 선발", summary: "지명")
+        let params = StartProCareerParams(seed: "77", identity: .defaultPitcher, pitcher: PitcherSnapshot(id: "p", name: "김도윤", stuff: 58, command: 56, movement: 55, stamina: 57), draftResult: draft, entitlement: ProEntitlementSnapshot(status: .active, source: .development, verifiedAt: "2026-07-22"))
+        let start = try decodeResponse(server.handle(line: try encodeRequest(RPCRequest(id: .string("pro-start"), method: "startProCareer", params: try JSONValue.from(params)))))
+        let result = try XCTUnwrap(start.result).decode(ProCareerResult.self)
+        XCTAssertEqual(result.snapshot.phase, .contractOffer)
+        let signed = try decodeResponse(server.handle(line: try encodeRequest(RPCRequest(id: .string("pro-sign"), method: "signProContract", params: try JSONValue.from(ProStateParams(seed: result.nextSeed, state: result.snapshot))))))
+        XCTAssertEqual(try XCTUnwrap(signed.result).decode(ProCareerResult.self).snapshot.phase, .weeklyPlan)
     }
 
     private func makePrepareParams() -> PreparePitchParams {

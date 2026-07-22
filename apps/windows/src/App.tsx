@@ -1,40 +1,116 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   checkCoreHealth,
+  advanceCareerChapter,
+  chooseCareerAwakening,
+  chooseSchool,
+  chooseAwakening,
+  chooseRelationship,
+  commitTraining,
+  commitCareerTraining,
+  completeMiddleSchoolPrologue,
+  finalizeScouting,
   listPitcherPresets,
   preparePitch,
+  recordImportantInning,
+  recordCareerGame,
+  resolveCareerRelationship,
+  resolveDraft,
+  selectLegacy,
+  selectCareerLegacy,
+  startHighSchoolCareer,
+  startPitcherLab,
   submitPitch,
+  startProCareer,
+  signProContract,
+  planProWeek,
+  resolveProImportantGame,
+  reviewProSeason,
+  chooseProOffseason,
 } from "./simulationClient";
+import { PitcherLabSetup, PitcherLabView } from "./PitcherLabView";
+import { HighSchoolCareerSetup, HighSchoolCareerView } from "./HighSchoolCareerView";
+import { ProCareerView } from "./ProCareerView";
+import {
+  clearPitcherLabAutosave,
+  loadPitcherLabAutosave,
+  savePitcherLabAutosave,
+  type LabInningStats,
+  type PitchHistoryItem,
+  type PitcherLabAutosavePayload,
+} from "./pitcherLabAutosave";
+import {
+  clearHighSchoolCareer,
+  loadHighSchoolCareer,
+  saveHighSchoolCareer,
+  type HighSchoolCareerAutosavePayload,
+} from "./highSchoolCareerAutosave";
+import { clearProCareer, loadProCareer, saveProCareer } from "./proCareerAutosave";
+import { feedbackCueForResult, GameFeedback } from "./gameFeedback";
+import {
+  createAnonymousDiagnosticPackage,
+  downloadTextFile,
+  readLocalAnalytics,
+  recordLocalAnalytics,
+} from "./p4Services";
 import type {
+  AwakeningID,
   BatterScoutingSnapshot,
   BatterSnapshot,
   BaserunnerStateSnapshot,
   CatcherRecommendationSnapshot,
+  CareerDifficultySnapshot,
+  CreationAllocationSnapshot,
+  FielderPosition,
   GameLogSnapshot,
   GameStateSnapshot,
   HealthResult,
+  HighSchoolCareerResult,
+  ImportantInningReport,
+  KarmaID,
+  MemoryCardID,
   PitchIntensity,
+  PitchCall,
   PitchKernelResult,
+  PitcherLabResult,
   PitchOutcome,
   PitchPreparation,
   PitchProfileSnapshot,
   PitchType,
   PitcherPresetSnapshot,
+  ProCareerResult,
+  ProWeekPlan,
+  OffseasonDecision,
   PitchZone,
+  PlayerIdentitySnapshot,
   PlateAppearanceContext,
   PlateAppearanceResult,
   RivalAdaptationBand,
   RivalMemorySnapshot,
+  RelationshipChoice,
+  RelationshipResponse,
   SelectionQuality,
+  SoulDomain,
+  SchoolID,
+  TrainingFocus,
+  TrainingIntensity,
   ZoneIntent,
 } from "./simulationTypes";
 
 const BATTER: BatterSnapshot = {
   id: "batter-1",
-  name: "이준호",
+  name: "서준혁",
   contact: 56,
   discipline: 52,
   power: 58,
+};
+
+const PRO_BATTER: BatterSnapshot = {
+  id: "pro-opponent-cleanup",
+  name: "정현우",
+  contact: 66,
+  discipline: 61,
+  power: 69,
 };
 
 const SCOUTING: BatterScoutingSnapshot = {
@@ -60,7 +136,22 @@ const INITIAL_CONTEXT: PlateAppearanceContext = {
 };
 
 const INITIAL_GAME_STATE: GameStateSnapshot = {
-  defense: { infield: 58, outfield: 55, arm: 57 },
+  defense: {
+    infield: 58,
+    outfield: 55,
+    arm: 57,
+    fielders: [
+      { id: "f-p", name: "김도윤", position: "pitcher", range: 51, glove: 54, arm: 64 },
+      { id: "f-c", name: "한도윤", position: "catcher", range: 48, glove: 61, arm: 67 },
+      { id: "f-1b", name: "문지환", position: "first_base", range: 52, glove: 60, arm: 51 },
+      { id: "f-2b", name: "오승재", position: "second_base", range: 61, glove: 64, arm: 57 },
+      { id: "f-3b", name: "백민석", position: "third_base", range: 57, glove: 58, arm: 66 },
+      { id: "f-ss", name: "박현우", position: "shortstop", range: 67, glove: 65, arm: 63 },
+      { id: "f-lf", name: "신재민", position: "left_field", range: 54, glove: 53, arm: 56 },
+      { id: "f-cf", name: "윤서진", position: "center_field", range: 65, glove: 61, arm: 59 },
+      { id: "f-rf", name: "강주원", position: "right_field", range: 56, glove: 55, arm: 65 },
+    ],
+  },
   park: {
     id: "hanbit-school-park",
     name: "한빛고 야구장",
@@ -74,6 +165,7 @@ const INITIAL_GAME_STATE: GameStateSnapshot = {
     leadRunnerSpeed: 62,
   },
   runsAllowed: 0,
+  inningState: { inning: 7, half: "bottom", outs: 0 },
 };
 
 const INITIAL_GAME_LOG: GameLogSnapshot = {
@@ -145,6 +237,18 @@ const ADAPTATION_LABELS: Record<RivalAdaptationBand, string> = {
   locked_on: "노림수 형성",
 };
 
+const FIELDER_LABELS: Record<FielderPosition, string> = {
+  pitcher: "투수",
+  catcher: "포수",
+  first_base: "1루수",
+  second_base: "2루수",
+  third_base: "3루수",
+  shortstop: "유격수",
+  left_field: "좌익수",
+  center_field: "중견수",
+  right_field: "우익수",
+};
+
 const ZONE_LABELS = [
   "높은 몸쪽",
   "높은 가운데",
@@ -162,11 +266,15 @@ type CoreStatus =
   | { state: "online"; health: HealthResult }
   | { state: "offline"; message: string };
 
-interface HistoryItem {
-  eventHash: string;
-  outcome: PitchOutcome;
-  count: string;
-}
+const EMPTY_LAB_INNING_STATS: LabInningStats = {
+  pitches: 0,
+  strikeouts: 0,
+  walks: 0,
+  runsAllowed: 0,
+  expectedDamage: 0,
+  actualDamage: 0,
+  recommendationAccepted: 0,
+};
 
 function StatRow({ label, value }: { label: string; value: number }) {
   return (
@@ -180,14 +288,58 @@ function StatRow({ label, value }: { label: string; value: number }) {
   );
 }
 
+function AccessibilityControls({ highContrast, reducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled, onContrast, onMotion, onFontScale, onAnalytics, onSound, onHaptics, onDiagnostics }: {
+  highContrast: boolean;
+  reducedMotion: boolean;
+  fontScale: number;
+  analyticsOptIn: boolean;
+  soundEnabled: boolean;
+  hapticsEnabled: boolean;
+  onContrast: () => void;
+  onMotion: () => void;
+  onFontScale: () => void;
+  onAnalytics: () => void;
+  onSound: () => void;
+  onHaptics: () => void;
+  onDiagnostics: () => void;
+}) {
+  return <div className="accessibility-controls" aria-label="접근성 설정">
+    <button type="button" aria-pressed={highContrast} onClick={onContrast}>고대비 {highContrast ? "켜짐" : "꺼짐"}</button>
+    <button type="button" aria-pressed={reducedMotion} onClick={onMotion}>모션 감소 {reducedMotion ? "켜짐" : "꺼짐"}</button>
+    <button type="button" onClick={onFontScale}>글자 {fontScale === 1 ? "보통" : fontScale === 1.15 ? "크게" : "매우 크게"}</button>
+    <button type="button" aria-pressed={soundEnabled} onClick={onSound}>효과음 {soundEnabled ? "켜짐" : "꺼짐"}</button>
+    <button type="button" aria-pressed={hapticsEnabled} onClick={onHaptics}>햅틱 {hapticsEnabled ? "켜짐" : "꺼짐"}</button>
+    <button type="button" aria-pressed={analyticsOptIn} onClick={onAnalytics}>로컬 분석 {analyticsOptIn ? "동의" : "미동의"}</button>
+    <button type="button" onClick={onDiagnostics}>익명 진단 저장</button>
+  </div>;
+}
+
+function PitchTrajectory({ result }: { result: PitchKernelResult }) {
+  const execution = result.snapshot.execution;
+  const coordinate = (value: number) => Math.max(7, Math.min(93, 50 + value / 20));
+  const targetX = coordinate(execution.targetX);
+  const targetY = coordinate(-execution.targetY);
+  const actualX = coordinate(execution.actualX);
+  const actualY = coordinate(-execution.actualY);
+  return <div className="pitch-trajectory" aria-label={`목표 지점과 실제 도착 지점. 실행 품질 ${execution.executionQuality}`}>
+    <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+      <rect x="25" y="22" width="50" height="56" rx="3" className="trajectory-zone" />
+      <path d={`M 50 96 Q ${targetX} 58 ${actualX} ${actualY}`} className="trajectory-path" />
+      <circle cx={targetX} cy={targetY} r="5" className="trajectory-target" />
+      <circle cx={actualX} cy={actualY} r="4" className={`trajectory-actual trajectory-actual--${outcomeTone(result.snapshot.outcome)}`} />
+    </svg>
+    <div><span>목표</span><strong>실제 도착</strong><small>실행 {execution.executionQuality}</small></div>
+  </div>;
+}
+
 function statusMessage(status: CoreStatus) {
   switch (status.state) {
     case "checking":
-      return "코어 확인 중";
+      return "게임 준비 중";
     case "online":
-      return `코어 ${status.health.coreVersion} 연결됨`;
+      return "게임 준비 완료";
     case "offline":
-      return "코어 연결 필요";
+      return "연결이 끊겼습니다";
   }
 }
 
@@ -227,7 +379,7 @@ function roleLabel(profile: PitchProfileSnapshot) {
   switch (profile.role) {
     case "primary": return "주력";
     case "secondary": return "보조";
-    case "development": return "개발 중";
+    case "development": return "연마 중";
   }
 }
 
@@ -240,6 +392,24 @@ function runnerLabel(runners: BaserunnerStateSnapshot) {
   return occupied.length > 0 ? `주자 ${occupied.join("·")}` : "주자 없음";
 }
 
+function halfInningLabel(gameState: GameStateSnapshot) {
+  const inningState = gameState.inningState;
+  if (!inningState) return `${INITIAL_CONTEXT.inning}회말`;
+  return `${inningState.inning}회${inningState.half === "top" ? "초" : "말"}`;
+}
+
+function outsLabel(gameState: GameStateSnapshot) {
+  switch (gameState.inningState?.outs ?? 0) {
+    case 1: return "1사";
+    case 2: return "2사";
+    default: return "무사";
+  }
+}
+
+function fielderLabel(position?: FielderPosition) {
+  return position ? FIELDER_LABELS[position] : "담당 야수";
+}
+
 function rateLabel(value: number) {
   return `${(value / 10).toFixed(1)}%`;
 }
@@ -247,7 +417,7 @@ function rateLabel(value: number) {
 function confidenceLabel(value: PitchKernelResult["postgameAnalysis"]["confidence"]) {
   switch (value) {
     case "low": return "신뢰도 낮음";
-    case "developing": return "표본 형성 중";
+    case "developing": return "패턴을 살피는 중";
     case "reliable": return "분석 신뢰 가능";
   }
 }
@@ -258,6 +428,7 @@ function pitchHint(profile?: PitchProfileSnapshot) {
 }
 
 export function App() {
+  const developmentProAccess = import.meta.env.DEV;
   const [coreStatus, setCoreStatus] = useState<CoreStatus>({ state: "checking" });
   const [presets, setPresets] = useState<ReadonlyArray<PitcherPresetSnapshot>>([]);
   const [selectedPresetID, setSelectedPresetID] = useState<string>();
@@ -270,26 +441,69 @@ export function App() {
   const [preparation, setPreparation] = useState<PitchPreparation>();
   const [isRunning, setIsRunning] = useState(false);
   const [lastResult, setLastResult] = useState<PitchKernelResult>();
-  const [history, setHistory] = useState<ReadonlyArray<HistoryItem>>([]);
+  const [history, setHistory] = useState<ReadonlyArray<PitchHistoryItem>>([]);
   const [rivalMemory, setRivalMemory] = useState<RivalMemorySnapshot>();
   const [gameState, setGameState] = useState<GameStateSnapshot>(INITIAL_GAME_STATE);
   const [gameLog, setGameLog] = useState<GameLogSnapshot>(INITIAL_GAME_LOG);
+  const [screenMode, setScreenMode] = useState<"lab" | "pitch">("lab");
+  const [experienceMode, setExperienceMode] = useState<"lab" | "career">("lab");
+  const [labResult, setLabResult] = useState<PitcherLabResult>();
+  const [previousLifeResult, setPreviousLifeResult] = useState<PitcherLabResult>();
+  const [careerResult, setCareerResult] = useState<HighSchoolCareerResult>();
+  const [proResult, setProResult] = useState<ProCareerResult>();
+  const [proVisible, setProVisible] = useState(false);
+  const [labInningStats, setLabInningStats] = useState<LabInningStats>(EMPTY_LAB_INNING_STATS);
   const [error, setError] = useState<string>();
+  const [saveNotice, setSaveNotice] = useState<string>();
+  const [highContrast, setHighContrast] = useState(() => window.localStorage.getItem("diamond-soul.a11y.contrast") === "true");
+  const [reducedMotion, setReducedMotion] = useState(() => window.localStorage.getItem("diamond-soul.a11y.motion") === "true");
+  const [fontScale, setFontScale] = useState(() => Number(window.localStorage.getItem("diamond-soul.a11y.font-scale") ?? "1"));
+  const [analyticsOptIn, setAnalyticsOptIn] = useState(() => window.localStorage.getItem("diamond-soul.analytics.opt-in") === "true");
+  const [tutorialDismissed, setTutorialDismissed] = useState(() => window.localStorage.getItem("diamond-soul.tutorial.completed") === "true");
+  const [soundEnabled, setSoundEnabled] = useState(() => window.localStorage.getItem("diamond-soul.feedback.sound") !== "false");
+  const [hapticsEnabled, setHapticsEnabled] = useState(() => window.localStorage.getItem("diamond-soul.feedback.haptics") !== "false");
+  const [lastCall, setLastCall] = useState<PitchCall>();
+  const [resultStage, setResultStage] = useState<"idle" | "impact" | "summary">("idle");
+  const [showResultDetails, setShowResultDetails] = useState(false);
+  const [feedback] = useState(() => new GameFeedback());
+  const pitchDecisionStartedAt = useRef(performance.now());
+  const pitchInteractionCount = useRef(0);
+  const careerDecisionStartedAt = useRef(performance.now());
+  const proDecisionStartedAt = useRef(performance.now());
+  const lastCareerTelemetryRevision = useRef<number | undefined>(undefined);
+  const lastProTelemetryRevision = useRef<number | undefined>(undefined);
 
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetID);
-  const pitcher = selectedPreset?.pitcher;
+  const pitcher = experienceMode === "career"
+    ? proVisible && proResult ? proResult.snapshot.pitcher : careerResult?.snapshot.pitcher ?? selectedPreset?.pitcher
+    : labResult?.snapshot.pitcher ?? selectedPreset?.pitcher;
+  const activeBatter: BatterSnapshot = experienceMode === "career" && proVisible && proResult
+    ? PRO_BATTER
+    : experienceMode === "career" && careerResult ? {
+        id: careerResult.snapshot.rival.id,
+        name: careerResult.snapshot.rival.name,
+        contact: careerResult.snapshot.rival.contact,
+        discipline: careerResult.snapshot.rival.discipline,
+        power: careerResult.snapshot.rival.power,
+      }
+    : BATTER;
   const selectedPitchProfile = pitcher?.pitchProfiles?.find(
     (profile) => profile.pitchType === pitchType,
   );
 
+  const applyPitchCall = useCallback((call: PitchCall) => {
+    setPitchType(call.pitchType);
+    setZone(call.zone);
+    setZoneIntent(call.zoneIntent);
+    setIntensity(call.intensity);
+  }, []);
+  const applyManualPitchCall = useCallback((call: PitchCall) => {
+    pitchInteractionCount.current += 1;
+    applyPitchCall(call);
+  }, [applyPitchCall]);
   const applyRecommendation = useCallback(
-    (recommendation: CatcherRecommendationSnapshot) => {
-      setPitchType(recommendation.call.pitchType);
-      setZone(recommendation.call.zone);
-      setZoneIntent(recommendation.call.zoneIntent);
-      setIntensity(recommendation.call.intensity);
-    },
-    [],
+    (recommendation: CatcherRecommendationSnapshot) => applyPitchCall(recommendation.call),
+    [applyPitchCall],
   );
 
   const connectCore = useCallback(async () => {
@@ -302,6 +516,79 @@ export function App() {
       ]);
       const initialPreset = availablePresets[0];
       if (!initialPreset) throw new Error("사용 가능한 투수 프리셋이 없습니다.");
+      const restored = loadPitcherLabAutosave(window.localStorage);
+      const restoredCareer = loadHighSchoolCareer(window.localStorage);
+      const restoredProCandidate = loadProCareer(window.localStorage);
+      const restoredPro = restoredProCandidate
+        && (developmentProAccess || restoredProCandidate.payload.proCareer.snapshot.entitlement.source !== "development")
+        ? restoredProCandidate
+        : undefined;
+      const proIsNewest = restoredPro && (!restored || Date.parse(restoredPro.payload.savedAt) >= Date.parse(restored.payload.savedAt))
+        && (!restoredCareer || Date.parse(restoredPro.payload.savedAt) >= Date.parse(restoredCareer.payload.savedAt));
+      if (proIsNewest) {
+        const saved = restoredPro.payload;
+        const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
+        if (!savedPreset) throw new Error("저장된 프로 커리어의 투수 프리셋을 찾을 수 없습니다.");
+        setPresets(availablePresets); setSelectedPresetID(saved.selectedPresetID); setCareerResult(saved.highSchoolCareer);
+        setProResult(saved.proCareer); setProVisible(true); setScreenMode("lab"); setExperienceMode("career");
+        setSaveNotice(restoredPro.source === "backup" ? "손상된 프로 저장 대신 마지막 정상 백업을 복구했습니다." : "프로 커리어 자동 저장에서 이어서 시작했습니다.");
+        setCoreStatus({ state: "online", health }); return;
+      }
+      const careerIsNewest = restoredCareer && (
+        !restored
+        || Date.parse(restoredCareer.payload.savedAt) > Date.parse(restored.payload.savedAt)
+      );
+      if (careerIsNewest) {
+        const saved = restoredCareer.payload;
+        const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
+        if (!savedPreset) throw new Error("저장된 고교 커리어의 투수 프리셋을 찾을 수 없습니다.");
+        setPresets(availablePresets);
+        setSelectedPresetID(saved.selectedPresetID);
+        setSeed(saved.seed);
+        setContext(saved.context);
+        setPreparation(saved.preparation);
+        setLastResult(saved.lastResult);
+        setHistory(saved.history);
+        setRivalMemory(saved.rivalMemory);
+        setGameState(saved.gameState);
+        setGameLog(saved.gameLog);
+        setCareerResult(saved.careerResult);
+        setLabInningStats(saved.inningStats);
+        setScreenMode(saved.screenMode === "pitch" && saved.preparation ? "pitch" : "lab");
+        setExperienceMode("career");
+        if (saved.preparation) applyRecommendation(saved.preparation.primaryRecommendation);
+        setSaveNotice(restoredCareer.source === "backup"
+          ? "손상된 고교 커리어 저장 대신 마지막 정상 백업을 복구했습니다."
+          : "고교 커리어 자동 저장에서 이어서 시작했습니다.");
+        setCoreStatus({ state: "online", health });
+        return;
+      }
+      if (restored) {
+        const saved = restored.payload;
+        const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
+        if (!savedPreset) throw new Error("저장된 선수의 투수 유형을 찾을 수 없습니다.");
+        setPresets(availablePresets);
+        setSelectedPresetID(saved.selectedPresetID);
+        setSeed(saved.seed);
+        setContext(saved.context);
+        setPreparation(saved.preparation);
+        setLastResult(saved.lastResult);
+        setHistory(saved.history);
+        setRivalMemory(saved.rivalMemory);
+        setGameState(saved.gameState);
+        setGameLog(saved.gameLog);
+        setLabResult(saved.labResult);
+        setExperienceMode("lab");
+        setPreviousLifeResult(saved.previousLifeResult);
+        setLabInningStats(saved.labInningStats);
+        setScreenMode(saved.screenMode === "pitch" && saved.preparation ? "pitch" : "lab");
+        if (saved.preparation) applyRecommendation(saved.preparation.primaryRecommendation);
+        setSaveNotice(restored.source === "backup"
+          ? "손상된 최신 저장 대신 마지막 정상 백업을 복구했습니다."
+          : "자동 저장에서 이어서 시작했습니다.");
+        setCoreStatus({ state: "online", health });
+        return;
+      }
       const initialPreparation = await preparePitch({
         seed: INITIAL_SEED,
         pitcher: initialPreset.pitcher,
@@ -321,6 +608,13 @@ export function App() {
       setRivalMemory(undefined);
       setGameState(INITIAL_GAME_STATE);
       setGameLog(INITIAL_GAME_LOG);
+      setLabResult(undefined);
+      setPreviousLifeResult(undefined);
+      setCareerResult(undefined);
+      setLabInningStats(EMPTY_LAB_INNING_STATS);
+      setScreenMode("lab");
+      setExperienceMode("lab");
+      setSaveNotice(undefined);
       applyRecommendation(initialPreparation.primaryRecommendation);
       setCoreStatus({ state: "online", health });
     } catch (caught) {
@@ -333,24 +627,180 @@ export function App() {
     void connectCore();
   }, [connectCore]);
 
+  useEffect(() => {
+    document.body.classList.toggle("high-contrast", highContrast);
+    document.body.classList.toggle("reduce-motion", reducedMotion);
+    document.documentElement.style.setProperty("--font-scale", String(fontScale));
+    window.localStorage.setItem("diamond-soul.a11y.contrast", String(highContrast));
+    window.localStorage.setItem("diamond-soul.a11y.motion", String(reducedMotion));
+    window.localStorage.setItem("diamond-soul.a11y.font-scale", String(fontScale));
+  }, [fontScale, highContrast, reducedMotion]);
+
+  useEffect(() => {
+    window.localStorage.setItem("diamond-soul.analytics.opt-in", String(analyticsOptIn));
+  }, [analyticsOptIn]);
+
+  useEffect(() => {
+    window.localStorage.setItem("diamond-soul.feedback.sound", String(soundEnabled));
+    window.localStorage.setItem("diamond-soul.feedback.haptics", String(hapticsEnabled));
+  }, [hapticsEnabled, soundEnabled]);
+
+  useEffect(() => {
+    setShowResultDetails(false);
+    if (!lastResult) { setResultStage("idle"); return; }
+    if (reducedMotion) { setResultStage("summary"); return; }
+    setResultStage("impact");
+    const timer = window.setTimeout(() => setResultStage("summary"), 360);
+    return () => window.clearTimeout(timer);
+  }, [lastResult?.eventHash, reducedMotion]);
+
+  useEffect(() => {
+    pitchDecisionStartedAt.current = performance.now();
+    pitchInteractionCount.current = 0;
+  }, [preparation?.preparationToken]);
+
+  useEffect(() => {
+    if (!careerResult) {
+      lastCareerTelemetryRevision.current = undefined;
+      careerDecisionStartedAt.current = performance.now();
+      return;
+    }
+    const revision = careerResult.snapshot.revision;
+    if (lastCareerTelemetryRevision.current === undefined) {
+      lastCareerTelemetryRevision.current = revision;
+      careerDecisionStartedAt.current = performance.now();
+      return;
+    }
+    if (lastCareerTelemetryRevision.current === revision) return;
+    recordLocalAnalytics(window.localStorage, analyticsOptIn, {
+      name: "career_decision_completed",
+      occurredAt: new Date().toISOString(),
+      properties: { event: careerResult.events[0]?.eventType ?? "unknown", phase: careerResult.snapshot.phase, revision, decisionMs: Math.round(performance.now() - careerDecisionStartedAt.current), life: careerResult.snapshot.lifeNumber, chapter: careerResult.snapshot.chapter.number, trainings: careerResult.snapshot.totalTrainingsCompleted, relationships: careerResult.snapshot.relationshipsCompleted, games: careerResult.snapshot.performance.importantGamesCompleted, awakenings: careerResult.snapshot.selectedAwakenings.length },
+    });
+    lastCareerTelemetryRevision.current = revision;
+    careerDecisionStartedAt.current = performance.now();
+  }, [analyticsOptIn, careerResult]);
+
+  useEffect(() => {
+    if (!proResult) {
+      lastProTelemetryRevision.current = undefined;
+      proDecisionStartedAt.current = performance.now();
+      return;
+    }
+    const revision = proResult.snapshot.revision;
+    if (lastProTelemetryRevision.current === undefined) {
+      lastProTelemetryRevision.current = revision;
+      proDecisionStartedAt.current = performance.now();
+      return;
+    }
+    if (lastProTelemetryRevision.current === revision) return;
+    recordLocalAnalytics(window.localStorage, analyticsOptIn, {
+      name: "pro_decision_completed",
+      occurredAt: new Date().toISOString(),
+      properties: { event: proResult.events[0] ?? "unknown", phase: proResult.snapshot.phase, revision, decisionMs: Math.round(performance.now() - proDecisionStartedAt.current), season: proResult.snapshot.season, week: proResult.snapshot.week, level: proResult.snapshot.level, role: proResult.snapshot.role },
+    });
+    lastProTelemetryRevision.current = revision;
+    proDecisionStartedAt.current = performance.now();
+  }, [analyticsOptIn, proResult]);
+
+  useEffect(() => {
+    if (experienceMode !== "lab" || coreStatus.state !== "online" || !labResult || !selectedPresetID) return;
+    const payload: PitcherLabAutosavePayload = {
+      format: "DiamondSoulPitcherLabAutosave",
+      schemaVersion: 1,
+      savedAt: new Date().toISOString(),
+      selectedPresetID,
+      screenMode,
+      labResult,
+      previousLifeResult,
+      seed,
+      context,
+      preparation,
+      lastResult,
+      history,
+      rivalMemory,
+      gameState,
+      gameLog,
+      labInningStats,
+    };
+    try {
+      savePitcherLabAutosave(window.localStorage, payload);
+      setSaveNotice("자동 저장 완료");
+    } catch (caught) {
+      setSaveNotice(caught instanceof Error ? `자동 저장 실패 · ${caught.message}` : "자동 저장 실패");
+    }
+  }, [context, coreStatus.state, experienceMode, gameLog, gameState, history, labInningStats, labResult, lastResult, preparation, previousLifeResult, rivalMemory, screenMode, seed, selectedPresetID]);
+
+  useEffect(() => {
+    if (experienceMode !== "career" || coreStatus.state !== "online" || !careerResult || !selectedPresetID) return;
+    const payload: HighSchoolCareerAutosavePayload = {
+      format: "DiamondSoulHighSchoolCareerAutosave",
+      schemaVersion: 2,
+      savedAt: new Date().toISOString(),
+      selectedPresetID,
+      screenMode,
+      careerResult,
+      seed,
+      context,
+      preparation,
+      lastResult,
+      history,
+      rivalMemory,
+      gameState,
+      gameLog,
+      inningStats: labInningStats,
+    };
+    try {
+      saveHighSchoolCareer(window.localStorage, payload);
+      setSaveNotice("고교 커리어 자동 저장 완료");
+    } catch (caught) {
+      setSaveNotice(caught instanceof Error ? `고교 커리어 자동 저장 실패 · ${caught.message}` : "고교 커리어 자동 저장 실패");
+    }
+  }, [careerResult, context, coreStatus.state, experienceMode, gameLog, gameState, history, labInningStats, lastResult, preparation, rivalMemory, screenMode, seed, selectedPresetID]);
+
+  useEffect(() => {
+    if (coreStatus.state !== "online" || !proResult || !careerResult || !selectedPresetID) return;
+    try {
+      saveProCareer(window.localStorage, { format: "DiamondSoulProCareerAutosave", schemaVersion: 1, savedAt: new Date().toISOString(), selectedPresetID, highSchoolCareer: careerResult, proCareer: proResult });
+      setSaveNotice("프로 커리어 자동 저장 완료");
+    } catch (caught) { setSaveNotice(caught instanceof Error ? `프로 자동 저장 실패 · ${caught.message}` : "프로 자동 저장 실패"); }
+  }, [careerResult, coreStatus.state, proResult, selectedPresetID]);
+
+  const handleNewExperiment = useCallback(() => {
+    if (!window.confirm("현재 선수의 훈련 기록을 지우고 새 선수를 만들까요?")) return;
+    clearPitcherLabAutosave(window.localStorage);
+    setLabResult(undefined);
+    setPreviousLifeResult(undefined);
+    setScreenMode("lab");
+    setRivalMemory(undefined);
+    setGameLog(INITIAL_GAME_LOG);
+    setGameState(INITIAL_GAME_STATE);
+    setLabInningStats(EMPTY_LAB_INNING_STATS);
+    setLastResult(undefined);
+    setHistory([]);
+    setSaveNotice("새 선수를 만들 수 있습니다.");
+  }, []);
+
   const handlePitch = useCallback(async () => {
     if (!preparation || !pitcher) return;
     setIsRunning(true);
     setError(undefined);
     try {
+      const submittedCall: PitchCall = { pitchType, zone, zoneIntent, intensity };
       const result = await submitPitch({
         seed,
         pitcher,
-        batter: BATTER,
+        batter: activeBatter,
         scouting: SCOUTING,
         context,
         preparationToken: preparation.preparationToken,
-        call: { pitchType, zone, zoneIntent, intensity },
+        call: submittedCall,
         rivalMemory,
         gameState,
         gameLog,
       });
       setLastResult(result);
+      setLastCall(submittedCall);
       setRivalMemory(result.rivalMemory);
       setGameState(result.gameState);
       setGameLog(result.gameLog);
@@ -366,12 +816,37 @@ export function App() {
       setContext((current) => ({
         ...current,
         revision: result.revision,
+        inning: result.gameState.inningState?.inning ?? current.inning,
+        outs: result.gameState.inningState?.outs ?? current.outs,
         balls: result.snapshot.balls,
         strikes: result.snapshot.strikes,
         pitchNumber: result.nextPreparation ? current.pitchNumber + 1 : current.pitchNumber,
         fatigue: result.snapshot.fatigueAfterPitch,
       }));
       setPreparation(result.nextPreparation);
+      if (result.nextPreparation) applyRecommendation(result.nextPreparation.primaryRecommendation);
+      feedback.play(feedbackCueForResult(result), soundEnabled, hapticsEnabled);
+      recordLocalAnalytics(window.localStorage, analyticsOptIn, {
+        name: "pitch_resolved",
+        occurredAt: new Date().toISOString(),
+        properties: { outcome: result.snapshot.outcome, ended: result.snapshot.ended, acceptedCatcherCall: result.snapshot.recommendationAccepted, selectionQuality: result.snapshot.selectionQuality, pitchNumber: context.pitchNumber, decisionMs: Math.round(performance.now() - pitchDecisionStartedAt.current), interactionsBeforeThrow: pitchInteractionCount.current + 1, mode: experienceMode, importantGame: screenMode === "pitch" },
+      });
+      if (screenMode === "pitch" && (
+        (experienceMode === "lab" && labResult?.snapshot.phase === "important_inning")
+        || (experienceMode === "career" && careerResult?.snapshot.phase === "important_game" && !proVisible)
+        || (experienceMode === "career" && proResult?.snapshot.phase === "important_game" && proVisible)
+      )) {
+        const latestEntry = result.gameLog.entries[result.gameLog.entries.length - 1];
+        setLabInningStats((current) => ({
+          pitches: current.pitches + 1,
+          strikeouts: current.strikeouts + (result.snapshot.result === "strikeout" ? 1 : 0),
+          walks: current.walks + (result.snapshot.result === "walk" ? 1 : 0),
+          runsAllowed: current.runsAllowed + result.snapshot.runsScored,
+          expectedDamage: current.expectedDamage + (latestEntry?.expectedDamage ?? 0),
+          actualDamage: current.actualDamage + (latestEntry?.actualDamage ?? 0),
+          recommendationAccepted: current.recommendationAccepted + (result.snapshot.recommendationAccepted ? 1 : 0),
+        }));
+      }
     } catch (caught) {
       const message =
         caught instanceof Error ? caught.message : "투구 결과를 계산하지 못했습니다.";
@@ -380,7 +855,7 @@ export function App() {
         setPreparation(await preparePitch({
           seed,
           pitcher,
-          batter: BATTER,
+          batter: activeBatter,
           scouting: SCOUTING,
           context,
           rivalMemory,
@@ -393,7 +868,7 @@ export function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [context, gameLog, gameState, intensity, pitchType, pitcher, preparation, rivalMemory, seed, zone, zoneIntent]);
+  }, [activeBatter, analyticsOptIn, applyRecommendation, careerResult?.snapshot.phase, context, experienceMode, feedback, gameLog, gameState, hapticsEnabled, intensity, labResult?.snapshot.phase, pitchType, pitcher, preparation, proResult?.snapshot.phase, proVisible, rivalMemory, screenMode, seed, soundEnabled, zone, zoneIntent]);
 
   const handleNewPlateAppearance = useCallback(async () => {
     if (!pitcher) return;
@@ -402,12 +877,15 @@ export function App() {
     const nextContext: PlateAppearanceContext = {
       ...INITIAL_CONTEXT,
       plateAppearanceID: `pa-prototype-${Date.now()}`,
+      inning: gameState.inningState?.inning ?? context.inning,
+      outs: gameState.inningState?.outs ?? context.outs,
+      fatigue: context.fatigue,
     };
     try {
       const nextPreparation = await preparePitch({
         seed,
         pitcher,
-        batter: BATTER,
+        batter: activeBatter,
         scouting: SCOUTING,
         context: nextContext,
         rivalMemory,
@@ -424,7 +902,7 @@ export function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [applyRecommendation, gameLog, gameState, pitcher, rivalMemory, seed]);
+  }, [activeBatter, applyRecommendation, context.fatigue, context.inning, context.outs, gameLog, gameState, pitcher, rivalMemory, seed]);
 
   const handlePresetChange = useCallback(async (presetID: string) => {
     const nextPreset = presets.find((preset) => preset.id === presetID);
@@ -443,7 +921,7 @@ export function App() {
       const nextPreparation = await preparePitch({
         seed,
         pitcher: nextPreset.pitcher,
-        batter: BATTER,
+        batter: activeBatter,
         scouting: SCOUTING,
         context: nextContext,
         gameState: INITIAL_GAME_STATE,
@@ -465,11 +943,599 @@ export function App() {
     }
   }, [applyRecommendation, presets, seed, selectedPresetID]);
 
+  const runLabAction = useCallback(async (action: () => Promise<PitcherLabResult>) => {
+    setIsRunning(true);
+    setError(undefined);
+    try {
+      setLabResult(await action());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Pitcher Lab 결정을 처리하지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, []);
+
+  const handleStartLab = useCallback(async (
+    presetID: string,
+    creationAllocation: CreationAllocationSnapshot,
+  ) => {
+    await runLabAction(() => startPitcherLab({
+      seed: "20260722",
+      presetID,
+      lifeNumber: 1,
+      inheritedSoulPoints: 0,
+      creationAllocation,
+    }));
+    setSelectedPresetID(presetID);
+  }, [runLabAction]);
+
+  const handleTraining = useCallback(async (focus: TrainingFocus, trainingIntensity: TrainingIntensity) => {
+    if (!labResult) return;
+    await runLabAction(() => commitTraining({
+      seed: labResult.nextSeed,
+      state: labResult.snapshot,
+      focus,
+      intensity: trainingIntensity,
+    }));
+  }, [labResult, runLabAction]);
+
+  const handleRelationship = useCallback(async (choice: RelationshipChoice) => {
+    if (!labResult) return;
+    await runLabAction(() => chooseRelationship({
+      seed: labResult.nextSeed,
+      state: labResult.snapshot,
+      choice,
+    }));
+  }, [labResult, runLabAction]);
+
+  const handleAwakening = useCallback(async (awakening: AwakeningID) => {
+    if (!labResult) return;
+    await runLabAction(() => chooseAwakening({
+      seed: labResult.nextSeed,
+      state: labResult.snapshot,
+      awakening,
+    }));
+  }, [labResult, runLabAction]);
+
+  const handleFinalizeScouting = useCallback(async () => {
+    if (!labResult) return;
+    await runLabAction(() => finalizeScouting({
+      seed: labResult.nextSeed,
+      state: labResult.snapshot,
+    }));
+  }, [labResult, runLabAction]);
+
+  const handleSelectLegacy = useCallback(async (soulDomain: SoulDomain, memoryCard: MemoryCardID) => {
+    if (!labResult) return;
+    await runLabAction(() => selectLegacy({
+      seed: labResult.nextSeed,
+      state: labResult.snapshot,
+      soulDomain,
+      memoryCard,
+    }));
+  }, [labResult, runLabAction]);
+
+  const handleStartSecondLife = useCallback(async () => {
+    const legacy = labResult?.snapshot.legacySelection;
+    if (!labResult || !legacy) return;
+    await runLabAction(() => startPitcherLab({
+      seed: labResult.nextSeed,
+      presetID: labResult.snapshot.presetID,
+      lifeNumber: labResult.snapshot.lifeNumber + 1,
+      inheritedSoulPoints: legacy.soulPointsGranted,
+      inheritedSoulDomain: legacy.soulDomain,
+      inheritedMemory: legacy.memoryCard,
+      creationAllocation: { stuff: 2, command: 1, movement: 1, stamina: 1 },
+    }));
+    setPreviousLifeResult(labResult);
+    setRivalMemory(undefined);
+    setGameLog(INITIAL_GAME_LOG);
+    setLabInningStats(EMPTY_LAB_INNING_STATS);
+  }, [labResult, runLabAction]);
+
+  const handleStartImportantInning = useCallback(async () => {
+    if (!labResult) return;
+    const scenario = labResult.snapshot.performance.importantInningsCompleted + 1;
+    const scenarioInning = scenario === 1 ? 3 : scenario === 2 ? 5 : 7;
+    const scenarioOuts = scenario === 1 ? 0 : 1;
+    const scenarioRunners: BaserunnerStateSnapshot = scenario === 1
+      ? { firstOccupied: false, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 55 }
+      : scenario === 2
+        ? { firstOccupied: true, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 62 }
+        : { firstOccupied: true, secondOccupied: false, thirdOccupied: true, leadRunnerSpeed: 64 };
+    const scenarioContext: PlateAppearanceContext = {
+      ...INITIAL_CONTEXT,
+      plateAppearanceID: `lab-${labResult.snapshot.runID}-inning-${scenario}-pa-1`,
+      inning: scenarioInning,
+      outs: scenarioOuts,
+      leverage: scenario === 1 ? 420 : scenario === 2 ? 720 : 930,
+      fatigue: labResult.snapshot.fatigue,
+    };
+    const scenarioState: GameStateSnapshot = {
+      ...INITIAL_GAME_STATE,
+      runners: scenarioRunners,
+      runsAllowed: 0,
+      inningState: { inning: scenarioInning, half: "bottom", outs: scenarioOuts },
+    };
+    const scenarioLog: GameLogSnapshot = {
+      ...INITIAL_GAME_LOG,
+      gameID: `${labResult.snapshot.runID}-important-inning-${scenario}`,
+    };
+    setIsRunning(true);
+    setError(undefined);
+    try {
+      const nextPreparation = await preparePitch({
+        seed: labResult.nextSeed,
+        pitcher: labResult.snapshot.pitcher,
+        batter: BATTER,
+        scouting: SCOUTING,
+        context: scenarioContext,
+        rivalMemory,
+        gameState: scenarioState,
+        gameLog: scenarioLog,
+      });
+      setSeed(labResult.nextSeed);
+      setContext(scenarioContext);
+      setGameState(scenarioState);
+      setGameLog(scenarioLog);
+      setPreparation(nextPreparation);
+      setLastResult(undefined);
+      setHistory([]);
+      setLabInningStats(EMPTY_LAB_INNING_STATS);
+      applyRecommendation(nextPreparation.primaryRecommendation);
+      setScreenMode("pitch");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "중요 이닝을 시작하지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, [activeBatter, applyRecommendation, labResult, rivalMemory]);
+
+  const handleCompleteImportantInning = useCallback(async () => {
+    if (!labResult || labInningStats.pitches === 0) return;
+    const report: ImportantInningReport = {
+      scenarioNumber: labResult.snapshot.performance.importantInningsCompleted + 1,
+      ...labInningStats,
+    };
+    setIsRunning(true);
+    setError(undefined);
+    try {
+      const nextLab = await recordImportantInning({
+        seed: labResult.nextSeed,
+        state: labResult.snapshot,
+        report,
+      });
+      setLabResult(nextLab);
+      setScreenMode("lab");
+      setLastResult(undefined);
+      setHistory([]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "중요 이닝 결과를 반영하지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, [labInningStats, labResult]);
+
+  const runCareerAction = useCallback(async (action: () => Promise<HighSchoolCareerResult>) => {
+    setIsRunning(true);
+    setError(undefined);
+    try {
+      setCareerResult(await action());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "고교 커리어 결정을 처리하지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, []);
+
+  const handleStartCareer = useCallback(async (presetID: string, creationAllocation: CreationAllocationSnapshot,
+    identity: PlayerIdentitySnapshot, difficulty: CareerDifficultySnapshot, karmas: ReadonlyArray<KarmaID>) => {
+    await runCareerAction(() => startHighSchoolCareer({
+      seed: "20260723",
+      presetID,
+      lifeNumber: 1,
+      creationAllocation,
+      inheritedSoulPoints: 0,
+      inheritedMemories: [],
+      identity,
+      difficulty,
+      karmas,
+    }));
+    setSelectedPresetID(presetID);
+    setExperienceMode("career");
+  }, [runCareerAction]);
+
+  const handleCompleteCareerPrologue = useCallback(async () => {
+    if (!careerResult) return;
+    await runCareerAction(() => completeMiddleSchoolPrologue({ seed: careerResult.nextSeed, state: careerResult.snapshot }));
+  }, [careerResult, runCareerAction]);
+
+  const handleCareerSchool = useCallback(async (schoolID: SchoolID) => {
+    if (!careerResult) return;
+    await runCareerAction(() => chooseSchool({ seed: careerResult.nextSeed, state: careerResult.snapshot, schoolID }));
+  }, [careerResult, runCareerAction]);
+
+  const handleCareerTraining = useCallback(async (focus: TrainingFocus, trainingIntensity: TrainingIntensity) => {
+    if (!careerResult) return;
+    await runCareerAction(() => commitCareerTraining({ seed: careerResult.nextSeed, state: careerResult.snapshot, focus, intensity: trainingIntensity }));
+  }, [careerResult, runCareerAction]);
+
+  const handleCareerRelationship = useCallback(async (response: RelationshipResponse) => {
+    if (!careerResult) return;
+    await runCareerAction(() => resolveCareerRelationship({ seed: careerResult.nextSeed, state: careerResult.snapshot, response }));
+  }, [careerResult, runCareerAction]);
+
+  const handleCareerAwakening = useCallback(async (awakening: AwakeningID) => {
+    if (!careerResult) return;
+    await runCareerAction(() => chooseCareerAwakening({ seed: careerResult.nextSeed, state: careerResult.snapshot, awakening }));
+    feedback.play("milestone", soundEnabled, hapticsEnabled);
+  }, [careerResult, feedback, hapticsEnabled, runCareerAction, soundEnabled]);
+
+  const handleAdvanceCareerChapter = useCallback(async () => {
+    if (!careerResult) return;
+    await runCareerAction(() => advanceCareerChapter({ seed: careerResult.nextSeed, state: careerResult.snapshot }));
+  }, [careerResult, runCareerAction]);
+
+  const handleCareerDraft = useCallback(async () => {
+    if (!careerResult) return;
+    recordLocalAnalytics(window.localStorage, analyticsOptIn, { name: "draft_reveal_started", occurredAt: new Date().toISOString(), properties: { life: careerResult.snapshot.lifeNumber, evaluationBand: careerResult.snapshot.difficulty.informationClarity } });
+    await runCareerAction(() => resolveDraft({ seed: careerResult.nextSeed, state: careerResult.snapshot }));
+  }, [analyticsOptIn, careerResult, runCareerAction]);
+
+  const handleCareerLegacy = useCallback(async (memoryCards: ReadonlyArray<MemoryCardID>) => {
+    if (!careerResult) return;
+    await runCareerAction(() => selectCareerLegacy({ seed: careerResult.nextSeed, state: careerResult.snapshot, memoryCards }));
+  }, [careerResult, runCareerAction]);
+
+  const handleStartCareerGame = useCallback(async () => {
+    if (!careerResult) return;
+    const scenario = careerResult.snapshot.performance.importantGamesCompleted + 1;
+    const careerBatter: BatterSnapshot = {
+      id: careerResult.snapshot.rival.id,
+      name: careerResult.snapshot.rival.name,
+      contact: careerResult.snapshot.rival.contact,
+      discipline: careerResult.snapshot.rival.discipline,
+      power: careerResult.snapshot.rival.power,
+    };
+    const content = careerResult.snapshot.currentGameScenario;
+    const inning = content?.inning ?? Math.min(9, 2 + scenario);
+    const outs = content?.outs ?? scenario % 2;
+    const runners: BaserunnerStateSnapshot = content?.runners ?? (scenario === 1
+      ? { firstOccupied: false, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 58 }
+      : scenario % 2 === 0
+        ? { firstOccupied: true, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 64 }
+        : { firstOccupied: true, secondOccupied: false, thirdOccupied: true, leadRunnerSpeed: 66 });
+    const nextContext: PlateAppearanceContext = {
+      ...INITIAL_CONTEXT,
+      plateAppearanceID: `${careerResult.snapshot.careerID}-game-${scenario}-pa-1`,
+      inning,
+      outs,
+      leverage: content?.leverage ?? Math.min(980, 380 + scenario * 120),
+      fatigue: careerResult.snapshot.fatigue,
+    };
+    const nextState: GameStateSnapshot = {
+      ...INITIAL_GAME_STATE,
+      runners,
+      runsAllowed: 0,
+      inningState: { inning, half: "bottom", outs },
+    };
+    const nextLog: GameLogSnapshot = {
+      ...INITIAL_GAME_LOG,
+      gameID: `${careerResult.snapshot.careerID}-important-game-${scenario}`,
+    };
+    setIsRunning(true);
+    setError(undefined);
+    try {
+      const nextPreparation = await preparePitch({
+        seed: careerResult.nextSeed,
+        pitcher: careerResult.snapshot.pitcher,
+        batter: careerBatter,
+        scouting: SCOUTING,
+        context: nextContext,
+        rivalMemory,
+        gameState: nextState,
+        gameLog: nextLog,
+      });
+      setSeed(careerResult.nextSeed);
+      setContext(nextContext);
+      setGameState(nextState);
+      setGameLog(nextLog);
+      setPreparation(nextPreparation);
+      setLastResult(undefined);
+      setHistory([]);
+      setLabInningStats(EMPTY_LAB_INNING_STATS);
+      applyRecommendation(nextPreparation.primaryRecommendation);
+      setScreenMode("pitch");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "중요 경기를 시작하지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, [applyRecommendation, careerResult, rivalMemory]);
+
+  const handleCompleteCareerGame = useCallback(async () => {
+    if (!careerResult || labInningStats.pitches === 0) return;
+    const report: ImportantInningReport = {
+      scenarioNumber: careerResult.snapshot.performance.importantGamesCompleted + 1,
+      ...labInningStats,
+    };
+    setIsRunning(true);
+    setError(undefined);
+    try {
+      setCareerResult(await recordCareerGame({ seed: careerResult.nextSeed, state: careerResult.snapshot, report }));
+      setScreenMode("lab");
+      setLastResult(undefined);
+      setHistory([]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "중요 경기 결과를 반영하지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, [careerResult, labInningStats]);
+
+  const handleNextCareerLife = useCallback(async () => {
+    if (!careerResult || !selectedPresetID || careerResult.snapshot.selectedMemories.length !== careerResult.snapshot.memorySlots) return;
+    await runCareerAction(() => startHighSchoolCareer({
+      seed: careerResult.nextSeed,
+      presetID: selectedPresetID,
+      lifeNumber: careerResult.snapshot.lifeNumber + 1,
+      creationAllocation: { stuff: 2, command: 1, movement: 1, stamina: 1 },
+      inheritedSoulPoints: 2,
+      inheritedSoulDomain: "game",
+      inheritedMemories: careerResult.snapshot.selectedMemories,
+      identity: careerResult.snapshot.identity,
+      difficulty: careerResult.snapshot.difficulty,
+      karmas: careerResult.snapshot.karmas,
+    }));
+    setRivalMemory(undefined);
+    setGameLog(INITIAL_GAME_LOG);
+  }, [careerResult, runCareerAction, selectedPresetID]);
+
+  const handleOpenCareer = useCallback(() => {
+    setExperienceMode("career");
+    setScreenMode("lab");
+    setError(undefined);
+  }, []);
+
+  const handleNewCareer = useCallback(() => {
+    if (!window.confirm("현재 고교 커리어 진행을 지우고 새 삶을 시작할까요?")) return;
+    clearHighSchoolCareer(window.localStorage);
+    clearProCareer(window.localStorage);
+    setCareerResult(undefined);
+    setProResult(undefined);
+    setProVisible(false);
+    setScreenMode("lab");
+    setRivalMemory(undefined);
+    setGameLog(INITIAL_GAME_LOG);
+    setGameState(INITIAL_GAME_STATE);
+    setLabInningStats(EMPTY_LAB_INNING_STATS);
+    setLastResult(undefined);
+    setHistory([]);
+    setSaveNotice("새 고교 커리어를 준비했습니다.");
+  }, []);
+
+  const handleBackToLab = useCallback(() => {
+    setExperienceMode("lab");
+    setScreenMode("lab");
+    setError(undefined);
+  }, []);
+
+  const runProAction = useCallback(async (action: () => Promise<ProCareerResult>) => {
+    setIsRunning(true); setError(undefined);
+    try { setProResult(await action()); } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
+    finally { setIsRunning(false); }
+  }, []);
+  const handleStartPro = useCallback(async () => {
+    if (proResult) { setProVisible(true); return; }
+    if (!careerResult?.snapshot.draftResult || careerResult.snapshot.draftResult.outcome !== "drafted") return;
+    if (!developmentProAccess) {
+      setError("프로 커리어는 검증된 구매 또는 복원 권한이 연결된 뒤 이용할 수 있습니다.");
+      return;
+    }
+    setProVisible(true);
+    await runProAction(() => startProCareer({ seed: careerResult.nextSeed, identity: careerResult.snapshot.identity, pitcher: careerResult.snapshot.pitcher,
+      draftResult: careerResult.snapshot.draftResult!, entitlement: { productID: "diamond_soul_pro_career", status: "active", source: "development", verifiedAt: new Date().toISOString(), offlineValidUntil: new Date(Date.now() + 30 * 86_400_000).toISOString() } }));
+  }, [careerResult, developmentProAccess, proResult, runProAction]);
+  const handleSignPro = useCallback(async () => { if (proResult) await runProAction(() => signProContract({ seed: proResult.nextSeed, state: proResult.snapshot })); }, [proResult, runProAction]);
+  const handlePlanPro = useCallback(async (plan: ProWeekPlan) => { if (proResult) await runProAction(() => planProWeek({ seed: proResult.nextSeed, state: proResult.snapshot, plan })); }, [proResult, runProAction]);
+  const handlePlanProBlock = useCallback(async (plan: ProWeekPlan) => {
+    if (!proResult) return;
+    setIsRunning(true); setError(undefined);
+    try {
+      let current = proResult;
+      for (let index = 0; index < 3 && current.snapshot.phase === "weekly_plan"; index += 1) {
+        current = await planProWeek({ seed: current.nextSeed, state: current.snapshot, plan });
+      }
+      setProResult(current);
+      if (current.events.includes("major_call_up")) feedback.play("milestone", soundEnabled, hapticsEnabled);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
+    finally { setIsRunning(false); }
+  }, [feedback, hapticsEnabled, proResult, soundEnabled]);
+  const handleProGame = useCallback(async () => {
+    if (!proResult) return;
+    const inning = proResult.snapshot.role === "starter" ? 7 : proResult.snapshot.role === "closer" ? 9 : 8;
+    const proContext: PlateAppearanceContext = {
+      ...INITIAL_CONTEXT,
+      plateAppearanceID: `${proResult.snapshot.proCareerID}-season-${proResult.snapshot.season}-week-${proResult.snapshot.week}-pa-1`,
+      inning,
+      outs: 1,
+      leverage: 920,
+      fatigue: proResult.snapshot.fatigue,
+    };
+    const proState: GameStateSnapshot = {
+      ...INITIAL_GAME_STATE,
+      runners: { firstOccupied: false, secondOccupied: true, thirdOccupied: false, leadRunnerSpeed: 67 },
+      runsAllowed: 0,
+      inningState: { inning, half: "bottom", outs: 1 },
+    };
+    const proLog: GameLogSnapshot = {
+      ...INITIAL_GAME_LOG,
+      gameID: `${proResult.snapshot.proCareerID}-season-${proResult.snapshot.season}-week-${proResult.snapshot.week}`,
+    };
+    setIsRunning(true);
+    setError(undefined);
+    try {
+      const nextPreparation = await preparePitch({
+        seed: proResult.nextSeed,
+        pitcher: proResult.snapshot.pitcher,
+        batter: PRO_BATTER,
+        scouting: SCOUTING,
+        context: proContext,
+        rivalMemory,
+        gameState: proState,
+        gameLog: proLog,
+      });
+      setSeed(proResult.nextSeed);
+      setContext(proContext);
+      setGameState(proState);
+      setGameLog(proLog);
+      setPreparation(nextPreparation);
+      setLastResult(undefined);
+      setHistory([]);
+      setLabInningStats(EMPTY_LAB_INNING_STATS);
+      applyRecommendation(nextPreparation.primaryRecommendation);
+      setScreenMode("pitch");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "중요 경기를 시작하지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, [applyRecommendation, proResult, rivalMemory]);
+  const handleCompleteProGame = useCallback(async () => {
+    if (!proResult || labInningStats.pitches === 0) return;
+    const report: ImportantInningReport = { scenarioNumber: proResult.snapshot.week, ...labInningStats };
+    setIsRunning(true);
+    setError(undefined);
+    try {
+      setProResult(await resolveProImportantGame({ seed: proResult.nextSeed, state: proResult.snapshot, report }));
+      setScreenMode("lab");
+      setLastResult(undefined);
+      setHistory([]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "중요 경기 결과를 반영하지 못했습니다.");
+    } finally {
+      setIsRunning(false);
+    }
+  }, [labInningStats, proResult]);
+  const handleReviewPro = useCallback(async () => { if (proResult) await runProAction(() => reviewProSeason({ seed: proResult.nextSeed, state: proResult.snapshot })); }, [proResult, runProAction]);
+  const handleProOffseason = useCallback(async (decision: OffseasonDecision) => { if (proResult) await runProAction(() => chooseProOffseason({ seed: proResult.nextSeed, state: proResult.snapshot, decision })); }, [proResult, runProAction]);
+
+  const cycleFontScale = useCallback(() => setFontScale((current) => current === 1 ? 1.15 : current === 1.15 ? 1.3 : 1), []);
+  const handleMilestoneFeedback = useCallback(() => feedback.play("milestone", soundEnabled, hapticsEnabled), [feedback, hapticsEnabled, soundEnabled]);
+  const dismissTutorial = useCallback(() => {
+    setTutorialDismissed(true);
+    window.localStorage.setItem("diamond-soul.tutorial.completed", "true");
+  }, []);
+  const downloadDiagnostics = useCallback(() => {
+    const save = loadHighSchoolCareer(window.localStorage)?.payload;
+    const health = coreStatus.state === "online" ? coreStatus.health : undefined;
+    downloadTextFile(`diamond-soul-diagnostic-${new Date().toISOString().slice(0, 10)}.json`, createAnonymousDiagnosticPackage({
+      appVersion: "1.0.0", coreVersion: health?.coreVersion, protocolVersion: health?.protocolVersion,
+      error, save, analytics: readLocalAnalytics(window.localStorage),
+    }));
+    setSaveNotice("이름과 시드를 제외한 익명 진단 파일을 저장했습니다.");
+  }, [coreStatus, error]);
+  const accessibilityProps = {
+    highContrast, reducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled,
+    onContrast: () => setHighContrast((value) => !value),
+    onMotion: () => setReducedMotion((value) => !value),
+    onFontScale: cycleFontScale,
+    onAnalytics: () => setAnalyticsOptIn((value) => !value),
+    onSound: () => setSoundEnabled((value) => !value),
+    onHaptics: () => setHapticsEnabled((value) => !value),
+    onDiagnostics: downloadDiagnostics,
+  };
+
   const online = coreStatus.state === "online";
   const primaryRecommendation = preparation?.primaryRecommendation;
   const alternativeRecommendation = preparation?.alternativeRecommendation;
   const plateEnded = lastResult?.snapshot.ended ?? false;
   const rivalAdaptation = preparation?.rivalAdaptation ?? lastResult?.rivalAdaptation;
+
+  if (screenMode === "lab" && experienceMode === "career") {
+    return (
+      <div className="app-shell app-shell--career">
+        <header className="topbar">
+          <div className="brand-lockup"><div className="brand-mark" aria-hidden="true">DS</div><div>
+            <p className="eyebrow">PROJECT DIAMOND SOUL</p><h1>High School Career</h1>
+          </div></div>
+          <div className={`core-status core-status--${coreStatus.state}`}><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
+            {coreStatus.state === "offline" ? <button type="button" onClick={() => void connectCore()}>다시 연결</button> : null}</div>
+          <AccessibilityControls {...accessibilityProps} />
+        </header>
+        {saveNotice ? <div className="save-notice" role="status">{saveNotice}</div> : null}
+        {proVisible && proResult ? <ProCareerView result={proResult} isRunning={isRunning} error={error} onSign={handleSignPro} onPlan={handlePlanPro} onPlanBlock={handlePlanProBlock}
+          onGame={handleProGame} onReview={handleReviewPro} onOffseason={handleProOffseason} onBack={() => setProVisible(false)} />
+        : careerResult ? <HighSchoolCareerView key={careerResult.snapshot.careerID} result={careerResult} isRunning={isRunning} error={error}
+          showTutorial={!tutorialDismissed && careerResult.snapshot.lifeNumber === 1} onDismissTutorial={dismissTutorial}
+          onSchool={handleCareerSchool} onTraining={handleCareerTraining} onRelationship={handleCareerRelationship}
+          onCompletePrologue={handleCompleteCareerPrologue}
+          onImportantGame={handleStartCareerGame} onAwakening={handleCareerAwakening}
+          onAdvanceChapter={handleAdvanceCareerChapter} onDraft={handleCareerDraft}
+          onLegacy={handleCareerLegacy} onNextLife={handleNextCareerLife} onBackToLab={handleBackToLab}
+          onNewCareer={handleNewCareer} onStartPro={handleStartPro}
+          proAccessAvailable={developmentProAccess || (proResult?.snapshot.entitlement.status === "active" && proResult.snapshot.entitlement.source !== "development")}
+          onMilestoneFeedback={handleMilestoneFeedback} />
+          : <HighSchoolCareerSetup presets={presets} isRunning={isRunning || coreStatus.state === "checking"}
+            error={error} onStart={handleStartCareer} onBack={handleBackToLab} />}
+        <footer><span>고교 커리어{careerResult ? ` · ${careerResult.snapshot.chapter.schoolYear}학년 ${careerResult.snapshot.chapter.season}` : ""}</span>
+          <span>선택이 확정될 때마다 자동 저장됩니다.</span></footer>
+      </div>
+    );
+  }
+
+  if (screenMode === "lab") {
+    return (
+      <div className="app-shell app-shell--lab">
+        <header className="topbar">
+          <div className="brand-lockup">
+            <div className="brand-mark" aria-hidden="true">DS</div>
+            <div>
+              <p className="eyebrow">PROJECT DIAMOND SOUL</p>
+              <h1>Pitcher Lab</h1>
+            </div>
+          </div>
+          <div className={`core-status core-status--${coreStatus.state}`}>
+            <span className="status-dot" aria-hidden="true" />
+            <span>{statusMessage(coreStatus)}</span>
+            {coreStatus.state === "offline" ? (
+              <button type="button" onClick={() => void connectCore()}>다시 연결</button>
+            ) : null}
+          </div>
+          <button className="mode-switch" type="button" onClick={handleOpenCareer}>고교 커리어</button>
+          <AccessibilityControls {...accessibilityProps} />
+        </header>
+        {saveNotice ? <div className="save-notice" role="status">{saveNotice}</div> : null}
+        {labResult ? (
+          <PitcherLabView
+            result={labResult}
+            previousLifeResult={previousLifeResult}
+            isRunning={isRunning}
+            error={error}
+            onTrain={handleTraining}
+            onStartImportantInning={handleStartImportantInning}
+            onRelationship={handleRelationship}
+            onAwakening={handleAwakening}
+            onFinalizeScouting={handleFinalizeScouting}
+            onSelectLegacy={handleSelectLegacy}
+            onStartSecondLife={handleStartSecondLife}
+            onNewExperiment={handleNewExperiment}
+          />
+        ) : (
+          <PitcherLabSetup
+            presets={presets}
+            isRunning={isRunning || coreStatus.state === "checking"}
+            error={error}
+            onStart={handleStartLab}
+          />
+        )}
+        <footer>
+          <span>Pitcher Lab{labResult ? ` · ${labResult.snapshot.lifeNumber}번째 선수` : " · 새 선수"}</span>
+          <span>선택이 확정될 때마다 자동 저장됩니다.</span>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -478,7 +1544,7 @@ export function App() {
           <div className="brand-mark" aria-hidden="true">DS</div>
           <div>
             <p className="eyebrow">PROJECT DIAMOND SOUL</p>
-            <h1>Pitch Kernel</h1>
+            <h1>{experienceMode === "career" ? proVisible ? "Pro Game" : "High School Game" : labResult?.snapshot.phase === "important_inning" ? "Important Inning" : "Pitch Kernel"}</h1>
           </div>
         </div>
         <div className={`core-status core-status--${coreStatus.state}`}>
@@ -488,16 +1554,17 @@ export function App() {
             <button type="button" onClick={() => void connectCore()}>다시 연결</button>
           ) : null}
         </div>
+        <AccessibilityControls {...accessibilityProps} />
       </header>
 
       <main>
         <section className="game-context" aria-label="경기 상황">
           <div>
-            <span className="context-label">고교 연습 경기 · 7회말</span>
-            <strong>무사 · {runnerLabel(gameState.runners)} · B {context.balls} / S {context.strikes} · {context.pitchNumber}구</strong>
+            <span className="context-label">{experienceMode === "career" ? proVisible && proResult ? `${proResult.snapshot.team.name} 중요 경기` : `${careerResult?.snapshot.school?.name ?? "고교"} 중요 경기` : "고교 연습 경기"} · {halfInningLabel(gameState)}</span>
+            <strong>{outsLabel(gameState)} · {runnerLabel(gameState.runners)} · B {context.balls} / S {context.strikes} · {context.pitchNumber}구</strong>
           </div>
           <div className="matchup">
-            <span>{pitcher?.name ?? "투수 준비 중"}</span><b>VS</b><span>{BATTER.name}</span>
+            <span>{pitcher?.name ?? "투수 준비 중"}</span><b>VS</b><span>{activeBatter.name}</span>
           </div>
           <div className="scoreboard" aria-label={`현재 점수 2 대 ${2 + gameState.runsAllowed}`}>
             <span>한빛고</span><strong>2 : {2 + gameState.runsAllowed}</strong><span>대명고</span>
@@ -514,7 +1581,7 @@ export function App() {
               <span>투수 프리셋</span>
               <select
                 value={selectedPresetID ?? ""}
-                disabled={isRunning || presets.length === 0}
+                disabled={isRunning || presets.length === 0 || experienceMode === "career" || labResult?.snapshot.phase === "important_inning"}
                 onChange={(event) => void handlePresetChange(event.target.value)}
               >
                 {presets.map((preset) => (
@@ -545,15 +1612,22 @@ export function App() {
             ) : null}
             <div className="environment-card" aria-label="수비와 구장 환경">
               <div><span>수비 지원</span><strong>내야 {gameState.defense.infield} · 외야 {gameState.defense.outfield}</strong></div>
+              <div className="fielder-strip">
+                {gameState.defense.fielders
+                  ?.filter((fielder) => ["catcher", "shortstop", "center_field"].includes(fielder.position))
+                  .map((fielder) => (
+                    <span key={fielder.id}>{fielderLabel(fielder.position)} {fielder.name} · {fielder.glove}</span>
+                  ))}
+              </div>
               <div><span>구장</span><strong>{gameState.park.name}</strong></div>
               <small>안타 {rateLabel(gameState.park.hitFactor)} · 홈런 {rateLabel(gameState.park.homeRunFactor)}</small>
             </div>
             <div className="scouting-card">
               <span>상대 타자 리포트</span>
-              <strong>{BATTER.name} · 우타</strong>
+              <strong>{activeBatter.name} · 우타</strong>
               <p>가운데 포심에 강하고 낮은 몸쪽 슬라이더 인식이 늦습니다.</p>
               <div className="mini-stats">
-                <span>컨택 {BATTER.contact}</span><span>선구 {BATTER.discipline}</span><span>파워 {BATTER.power}</span>
+                <span>컨택 {activeBatter.contact}</span><span>선구 {activeBatter.discipline}</span><span>파워 {activeBatter.power}</span>
               </div>
               {rivalAdaptation ? (
                 <div className={`rival-adaptation rival-adaptation--${rivalAdaptation.band}`}>
@@ -566,7 +1640,7 @@ export function App() {
                   </div>
                   <p>{rivalAdaptation.warning}</p>
                   <small>
-                    현재 승부 유효 표본 {rivalAdaptation.evidenceCount}구
+                    상대가 본 투구 {rivalAdaptation.evidenceCount}구
                     {rivalMemory ? ` · 재대결 ${rivalMemory.plateAppearancesSeen}회` : ""}
                   </small>
                 </div>
@@ -588,12 +1662,13 @@ export function App() {
                   <strong>{recommendationTitle(primaryRecommendation)}</strong>
                   <p>{primaryRecommendation.shortReason}</p>
                   <div className="recommendation-actions">
-                    <button type="button" onClick={() => applyRecommendation(primaryRecommendation)}>주 추천 적용</button>
+                    <button type="button" onClick={() => applyManualPitchCall(primaryRecommendation.call)}>포수 콜로 되돌리기</button>
                     {alternativeRecommendation ? (
-                      <button type="button" onClick={() => applyRecommendation(alternativeRecommendation)}>
+                      <button type="button" onClick={() => applyManualPitchCall(alternativeRecommendation.call)}>
                         대안: {pitchLabel(alternativeRecommendation.call.pitchType)}
                       </button>
                     ) : null}
+                    {lastCall ? <button type="button" onClick={() => applyManualPitchCall(lastCall)}>직전 선택 반복</button> : null}
                   </div>
                 </div>
               </div>
@@ -610,7 +1685,7 @@ export function App() {
                   );
                   return (
                     <button key={option.value} type="button" className={pitchType === option.value ? "is-selected" : undefined}
-                      disabled={!profile} aria-pressed={pitchType === option.value} onClick={() => setPitchType(option.value)}>
+                      disabled={!profile} aria-pressed={pitchType === option.value} onClick={() => { pitchInteractionCount.current += 1; setPitchType(option.value); }}>
                       <strong>{option.label}</strong><span>{pitchHint(profile)}</span>
                     </button>
                   );
@@ -642,7 +1717,7 @@ export function App() {
                     const selected = zone.row === currentZone.row && zone.column === currentZone.column;
                     return (
                       <button key={label} type="button" className={selected ? "is-selected" : undefined}
-                        aria-label={label} aria-pressed={selected} onClick={() => setZone(currentZone)}>
+                        aria-label={label} aria-pressed={selected} onClick={() => { pitchInteractionCount.current += 1; setZone(currentZone); }}>
                         <span aria-hidden="true" />
                       </button>
                     );
@@ -657,7 +1732,7 @@ export function App() {
                   <div className="intensity-options">
                     {INTENT_OPTIONS.map((option) => (
                       <button key={option.value} type="button" className={zoneIntent === option.value ? "is-selected" : undefined}
-                        aria-pressed={zoneIntent === option.value} onClick={() => setZoneIntent(option.value)}>
+                        aria-pressed={zoneIntent === option.value} onClick={() => { pitchInteractionCount.current += 1; setZoneIntent(option.value); }}>
                         <strong>{option.label}</strong><span>{option.hint}</span>
                       </button>
                     ))}
@@ -668,7 +1743,7 @@ export function App() {
                   <div className="intensity-options">
                     {INTENSITY_OPTIONS.map((option) => (
                       <button key={option.value} type="button" className={intensity === option.value ? "is-selected" : undefined}
-                        aria-pressed={intensity === option.value} onClick={() => setIntensity(option.value)}>
+                        aria-pressed={intensity === option.value} onClick={() => { pitchInteractionCount.current += 1; setIntensity(option.value); }}>
                         <strong>{option.label}</strong><span>{option.hint}</span>
                       </button>
                     ))}
@@ -678,13 +1753,26 @@ export function App() {
             </div>
 
             {plateEnded ? (
-              <button className="primary-action" type="button" disabled={isRunning} onClick={() => void handleNewPlateAppearance()}>
-                {isRunning ? "새 타석 준비 중…" : "다음 타석 시작"}
+              <button className="primary-action" type="button" disabled={isRunning}
+                onClick={() => lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && proVisible && proResult?.snapshot.phase === "important_game"
+                  ? void handleCompleteProGame()
+                  : lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && careerResult?.snapshot.phase === "important_game"
+                    ? void handleCompleteCareerGame()
+                  : lastResult?.snapshot.inningTransition?.inningEnded && labResult?.snapshot.phase === "important_inning"
+                    ? void handleCompleteImportantInning()
+                  : void handleNewPlateAppearance()}>
+                {isRunning
+                  ? "새 타석 준비 중…"
+                  : lastResult?.snapshot.inningTransition?.inningEnded && ((experienceMode === "career" && ((proVisible && proResult?.snapshot.phase === "important_game") || (!proVisible && careerResult?.snapshot.phase === "important_game"))) || labResult?.snapshot.phase === "important_inning")
+                    ? "중요 이닝 종료 · 분석으로 돌아가기"
+                    : lastResult?.snapshot.inningTransition?.inningEnded
+                      ? "다음 수비 이닝 시작"
+                    : "다음 타석 시작"}
               </button>
             ) : (
               <button className="primary-action" type="button" disabled={!online || !preparation || isRunning}
                 onClick={() => void handlePitch()}>
-                {isRunning ? "투구 계산 중…" : online && preparation ? "이 선택으로 투구" : "포수 사인 준비 중"}
+                {isRunning ? "투구 계산 중…" : online && preparation ? "던지기" : "포수 사인 준비 중"}
               </button>
             )}
             {error ? <p className="error-message" role="alert">{error}</p> : null}
@@ -692,12 +1780,12 @@ export function App() {
 
           <aside className="panel result-panel" aria-label="투구 결과">
             <div className="panel-heading">
-              <div><p className="eyebrow">RESULT</p><h2>판단 피드백</h2></div>
-              <span className="seed-label">REV {context.revision}</span>
+              <div><p className="eyebrow">RESULT</p><h2>투구 결과</h2></div>
+                  <span className="seed-label">{context.pitchNumber}구째</span>
             </div>
 
             {lastResult ? (
-              <div className="result-content" aria-live="polite" aria-label={lastResult.snapshot.accessibilitySummary}>
+              <div className={`result-content result-content--${resultStage} ${showResultDetails ? "is-expanded" : ""}`} aria-live="polite" aria-label={lastResult.snapshot.accessibilitySummary}>
                 <div className={`outcome outcome--${outcomeTone(lastResult.snapshot.outcome)}`}>
                   <span>{lastResult.snapshot.ended ? "타석 결과" : "투구 결과"}</span>
                   <strong>
@@ -706,11 +1794,15 @@ export function App() {
                       : OUTCOME_LABELS[lastResult.snapshot.outcome]}
                   </strong>
                 </div>
+                <PitchTrajectory result={lastResult} />
                 <div className={`decision-grade decision-grade--${lastResult.snapshot.selectionQuality}`}>
                   {SELECTION_LABELS[lastResult.snapshot.selectionQuality]}
                   <span>{lastResult.snapshot.recommendationAccepted ? " · 포수 추천 수락" : " · 포수 사인 수정"}</span>
                 </div>
                 <p className="result-summary">{lastResult.snapshot.shortFeedback}</p>
+                {resultStage === "summary" ? <button className="result-details-toggle" type="button" aria-expanded={showResultDetails} onClick={() => setShowResultDetails((value) => !value)}>
+                  {showResultDetails ? "핵심 결과만 보기" : "궤적·타구·분석 자세히 보기"}
+                </button> : null}
                 <p className="result-detail">{lastResult.snapshot.detailFeedback}</p>
                 <dl className="result-facts">
                   <div><dt>ABS</dt><dd>{Math.abs(lastResult.snapshot.execution.actualX) <= 500 && Math.abs(lastResult.snapshot.execution.actualY) <= 500 ? "존 안" : "존 밖"}</dd></div>
@@ -727,7 +1819,7 @@ export function App() {
                 {lastResult.snapshot.fieldingResolution ? (
                   <div className={`fielding-resolution fielding-resolution--${lastResult.snapshot.fieldingResolution.impact}`}>
                     <div>
-                      <span>중립 예상</span>
+                      <span>수비 반영 전</span>
                       <strong>{OUTCOME_LABELS[lastResult.snapshot.fieldingResolution.neutralOutcome]}</strong>
                       <b aria-hidden="true">→</b>
                       <span>최종 결과</span>
@@ -735,9 +1827,36 @@ export function App() {
                     </div>
                     <p>{lastResult.snapshot.fieldingResolution.shortExplanation}</p>
                     <small>
+                      {lastResult.snapshot.fieldingResolution.fielderName
+                        ? `${fielderLabel(lastResult.snapshot.fieldingResolution.fielderPosition)} ${lastResult.snapshot.fieldingResolution.fielderName} · `
+                        : ""}
                       수비 {lastResult.snapshot.fieldingResolution.defenseRating}
                       {` · 구장 보정 ${lastResult.snapshot.fieldingResolution.parkAdjustment >= 0 ? "+" : ""}${lastResult.snapshot.fieldingResolution.parkAdjustment}`}
                     </small>
+                  </div>
+                ) : null}
+                {lastResult.snapshot.stealAttempt ? (
+                  <div className={`situation-resolution situation-resolution--${lastResult.snapshot.stealAttempt.succeeded ? "positive" : "negative"}`}>
+                    <span>주루 승부 · {lastResult.snapshot.stealAttempt.fromBase}루 → {lastResult.snapshot.stealAttempt.toBase}루</span>
+                    <strong>{lastResult.snapshot.stealAttempt.succeeded ? "도루 성공" : "도루 저지"}</strong>
+                    <p>{lastResult.snapshot.stealAttempt.shortExplanation}</p>
+                    <small>주력 {lastResult.snapshot.stealAttempt.runnerSpeed} · 포수 송구 {lastResult.snapshot.stealAttempt.catcherArm}</small>
+                  </div>
+                ) : null}
+                {lastResult.snapshot.inningTransition && (
+                  lastResult.snapshot.inningTransition.outsRecorded > 0
+                  || lastResult.snapshot.inningTransition.inningEnded
+                ) ? (
+                  <div className="situation-resolution situation-resolution--inning">
+                    <span>아웃카운트</span>
+                    <strong>
+                      {lastResult.snapshot.inningTransition.doublePlayCompleted
+                        ? "병살 완성"
+                        : lastResult.snapshot.inningTransition.inningEnded
+                          ? `${halfInningLabel({ ...gameState, inningState: lastResult.snapshot.inningTransition.after })}로 전환`
+                          : `${lastResult.snapshot.inningTransition.outsRecorded}아웃 추가`}
+                    </strong>
+                    <p>{lastResult.snapshot.inningTransition.shortExplanation}</p>
                   </div>
                 ) : null}
                 {lastResult.snapshot.ended ? (
@@ -747,18 +1866,18 @@ export function App() {
                   </div>
                 ) : null}
                 <div className="event-proof">
-                  <span>계획 커밋 → 콜 → 실행 → 결과</span>
+                  <span>타자 노림수 확정 → 사인 → 투구 → 결과</span>
                   <code>{lastResult.eventHash}</code>
                 </div>
               </div>
             ) : (
               <div className="empty-result">
-                <div aria-hidden="true">◇</div><strong>타자 계획이 비공개로 확정됐습니다</strong>
+                <div aria-hidden="true">◇</div><strong>타자의 노림수는 이미 정해졌습니다</strong>
                 <p>포수 추천을 그대로 쓰거나 수정한 뒤 첫 공을 던져보세요.</p>
               </div>
             )}
 
-            {lastResult ? (
+            {lastResult && showResultDetails ? (
               <section className="postgame-analysis" aria-label="경기 후 분석 미리보기">
                 <div className="section-label">
                   <span>경기 후 분석 미리보기</span>
@@ -807,8 +1926,8 @@ export function App() {
       </main>
 
       <footer>
-        <span>P1 Pitch Kernel</span>
-        <span>타자 계획 선확정 · 라이벌 패턴 기억 · 수비/구장/주루 · 경기 후 분석</span>
+        <span>중요 이닝</span>
+        <span>선택이 확정될 때마다 자동 저장됩니다.</span>
       </footer>
     </div>
   );

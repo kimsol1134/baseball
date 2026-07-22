@@ -1,0 +1,25 @@
+{
+  "name": "Project Diamond Soul",
+  "short_name": "Diamond Soul",
+  "description": "학교 선택부터 드래프트까지 이어지는 데이터 기반 야구 RPG",
+  "lang": "ko-KR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b100f",
+  "theme_color": "#111817",
+  "icons": [
+    {
+      "src": "/128x128@2x.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

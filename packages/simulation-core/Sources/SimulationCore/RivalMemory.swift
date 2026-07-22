@@ -134,7 +134,7 @@ public struct RivalMemoryEngine: Sendable {
                 detectedPitch: nil,
                 detectedZone: nil,
                 confidence: 0,
-                warning: "아직 이 투수의 패턴을 읽을 표본이 없습니다."
+                warning: "아직 이 투수의 공을 충분히 보지 못했습니다."
             )
         }
 

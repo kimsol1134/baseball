@@ -1,0 +1,78 @@
+name: Desktop release artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "desktop-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Apple Silicon
+            os: macos-15
+            bundles: app,dmg
+            artifact-name: diamond-soul-macos-arm64
+            artifact-path: |
+              apps/windows/src-tauri/target/release/bundle/macos/*.app
+              apps/windows/src-tauri/target/release/bundle/dmg/*.dmg
+          - name: macOS Intel
+            os: macos-15-intel
+            bundles: app,dmg
+            artifact-name: diamond-soul-macos-x64
+            artifact-path: |
+              apps/windows/src-tauri/target/release/bundle/macos/*.app
+              apps/windows/src-tauri/target/release/bundle/dmg/*.dmg
+          - name: Windows x64
+            os: windows-2022
+            bundles: nsis,msi
+            artifact-name: diamond-soul-windows-x64
+            artifact-path: |
+              apps/windows/src-tauri/target/release/bundle/nsis/*-setup.exe
+              apps/windows/src-tauri/target/release/bundle/msi/*.msi
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: SwiftyLab/setup-swift@v1.13.0
+        with:
+          swift-version: "6.3.3"
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run check
+      - run: npm run desktop:build -- --bundles ${{ matrix.bundles }}
+      - run: npm run smoke:sidecar
+      - name: Verify installed Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./tools/smoke-windows-install.ps1
+      - name: Write macOS checksums
+        if: runner.os == 'macOS'
+        shell: bash
+        run: shasum -a 256 apps/windows/src-tauri/target/release/bundle/dmg/*.dmg > apps/windows/src-tauri/target/release/bundle/SHA256SUMS.txt
+      - name: Write Windows checksums
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Get-ChildItem apps/windows/src-tauri/target/release/bundle/nsis/*-setup.exe,apps/windows/src-tauri/target/release/bundle/msi/*.msi |
+            Get-FileHash -Algorithm SHA256 |
+            ForEach-Object { "$($_.Hash.ToLower())  $($_.Path)" } |
+            Set-Content apps/windows/src-tauri/target/release/bundle/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: |
+            ${{ matrix.artifact-path }}
+            apps/windows/src-tauri/target/release/bundle/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30

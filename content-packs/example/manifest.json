@@ -1,0 +1,12 @@
+{
+  "format": "DiamondSoulContentPack",
+  "schemaVersion": 1,
+  "id": "official.example",
+  "title": "콘텐츠 팩 예제",
+  "version": "1.0.0",
+  "gameVersion": "1.0.0",
+  "author": "Diamond Soul Team",
+  "content": [
+    { "type": "relationship_event", "id": "official.example.clubhouse.1", "path": "events/clubhouse-1.json" }
+  ]
+}

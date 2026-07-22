@@ -18,15 +18,68 @@ public enum AnalysisConfidenceBand: String, Codable, Sendable {
     case reliable
 }
 
+public enum FielderPosition: String, Codable, CaseIterable, Sendable {
+    case pitcher
+    case catcher
+    case firstBase = "first_base"
+    case secondBase = "second_base"
+    case thirdBase = "third_base"
+    case shortstop
+    case leftField = "left_field"
+    case centerField = "center_field"
+    case rightField = "right_field"
+}
+
+public enum HalfInning: String, Codable, Sendable {
+    case top
+    case bottom
+}
+
+public struct FielderSnapshot: Codable, Equatable, Sendable {
+    public let id: String
+    public let name: String
+    public let position: FielderPosition
+    public let range: Int
+    public let glove: Int
+    public let arm: Int
+
+    public init(
+        id: String,
+        name: String,
+        position: FielderPosition,
+        range: Int,
+        glove: Int,
+        arm: Int
+    ) {
+        self.id = id
+        self.name = name
+        self.position = position
+        self.range = range
+        self.glove = glove
+        self.arm = arm
+    }
+}
+
 public struct DefenseSnapshot: Codable, Equatable, Sendable {
     public let infield: Int
     public let outfield: Int
     public let arm: Int
+    public let fielders: [FielderSnapshot]?
 
-    public init(infield: Int, outfield: Int, arm: Int) {
+    public init(
+        infield: Int,
+        outfield: Int,
+        arm: Int,
+        fielders: [FielderSnapshot]? = nil
+    ) {
         self.infield = infield
         self.outfield = outfield
         self.arm = arm
+        self.fielders = fielders
+    }
+
+    public func fielder(at position: FielderPosition) -> FielderSnapshot? {
+        fielders?.first { $0.position == position }
     }
 }
 
@@ -74,22 +127,37 @@ public struct BaserunnerStateSnapshot: Codable, Equatable, Sendable {
     }
 }
 
+public struct InningStateSnapshot: Codable, Equatable, Sendable {
+    public let inning: Int
+    public let half: HalfInning
+    public let outs: Int
+
+    public init(inning: Int, half: HalfInning, outs: Int) {
+        self.inning = inning
+        self.half = half
+        self.outs = outs
+    }
+}
+
 public struct GameStateSnapshot: Codable, Equatable, Sendable {
     public let defense: DefenseSnapshot
     public let park: ParkSnapshot
     public let runners: BaserunnerStateSnapshot
     public let runsAllowed: Int
+    public let inningState: InningStateSnapshot?
 
     public init(
         defense: DefenseSnapshot,
         park: ParkSnapshot,
         runners: BaserunnerStateSnapshot,
-        runsAllowed: Int
+        runsAllowed: Int,
+        inningState: InningStateSnapshot? = nil
     ) {
         self.defense = defense
         self.park = park
         self.runners = runners
         self.runsAllowed = runsAllowed
+        self.inningState = inningState
     }
 
     public static let standard = GameStateSnapshot(
@@ -101,7 +169,8 @@ public struct GameStateSnapshot: Codable, Equatable, Sendable {
             homeRunFactor: 1_000
         ),
         runners: .empty,
-        runsAllowed: 0
+        runsAllowed: 0,
+        inningState: nil
     )
 }
 
@@ -114,6 +183,8 @@ public struct FieldingResolutionSnapshot: Codable, Equatable, Sendable {
     public let defenseAdjustment: Int
     public let parkAdjustment: Int
     public let impact: DefenseImpact
+    public let fielderPosition: FielderPosition?
+    public let fielderName: String?
     public let shortExplanation: String
 
     public init(
@@ -125,6 +196,8 @@ public struct FieldingResolutionSnapshot: Codable, Equatable, Sendable {
         defenseAdjustment: Int,
         parkAdjustment: Int,
         impact: DefenseImpact,
+        fielderPosition: FielderPosition? = nil,
+        fielderName: String? = nil,
         shortExplanation: String
     ) {
         self.neutralOutcome = neutralOutcome
@@ -135,6 +208,58 @@ public struct FieldingResolutionSnapshot: Codable, Equatable, Sendable {
         self.defenseAdjustment = defenseAdjustment
         self.parkAdjustment = parkAdjustment
         self.impact = impact
+        self.fielderPosition = fielderPosition
+        self.fielderName = fielderName
+        self.shortExplanation = shortExplanation
+    }
+}
+
+public struct StealAttemptSnapshot: Codable, Equatable, Sendable {
+    public let fromBase: Int
+    public let toBase: Int
+    public let runnerSpeed: Int
+    public let catcherArm: Int
+    public let succeeded: Bool
+    public let shortExplanation: String
+
+    public init(
+        fromBase: Int,
+        toBase: Int,
+        runnerSpeed: Int,
+        catcherArm: Int,
+        succeeded: Bool,
+        shortExplanation: String
+    ) {
+        self.fromBase = fromBase
+        self.toBase = toBase
+        self.runnerSpeed = runnerSpeed
+        self.catcherArm = catcherArm
+        self.succeeded = succeeded
+        self.shortExplanation = shortExplanation
+    }
+}
+
+public struct InningTransitionSnapshot: Codable, Equatable, Sendable {
+    public let before: InningStateSnapshot
+    public let after: InningStateSnapshot
+    public let outsRecorded: Int
+    public let doublePlayCompleted: Bool
+    public let inningEnded: Bool
+    public let shortExplanation: String
+
+    public init(
+        before: InningStateSnapshot,
+        after: InningStateSnapshot,
+        outsRecorded: Int,
+        doublePlayCompleted: Bool,
+        inningEnded: Bool,
+        shortExplanation: String
+    ) {
+        self.before = before
+        self.after = after
+        self.outsRecorded = outsRecorded
+        self.doublePlayCompleted = doublePlayCompleted
+        self.inningEnded = inningEnded
         self.shortExplanation = shortExplanation
     }
 }
@@ -302,9 +427,16 @@ public struct BallInPlayEngine: Sendable {
         } else {
             sector = .outfield
         }
-        let defenseRating = sector == .infield
+        let fielderPosition = position(
+            for: sector,
+            direction: battedBall.directionTenthsDegrees
+        )
+        let fielder = gameState.defense.fielder(at: fielderPosition)
+        let aggregateRating = sector == .infield
             ? gameState.defense.infield
             : gameState.defense.outfield
+        let defenseRating = fielder.map { ($0.range * 6 + $0.glove * 4) / 10 }
+            ?? aggregateRating
         let defenseScale = sector == .fence ? 1 : 4
         let defenseAdjustment = -(defenseRating - 50) * defenseScale
         let hitAdjustment = (gameState.park.hitFactor - 1_000) / 3
@@ -333,15 +465,21 @@ public struct BallInPlayEngine: Sendable {
         let explanation: String
         switch impact {
         case .helpedPitcher:
-            explanation = "수비 위치와 첫발이 안타성 타구의 결과를 낮췄습니다."
+            explanation = fielder.map {
+                "\($0.name)의 수비 범위와 첫발이 안타성 타구의 결과를 낮췄습니다."
+            } ?? "수비 위치와 첫발이 안타성 타구의 결과를 낮췄습니다."
         case .hurtPitcher:
             explanation = parkAdjustment >= 60
                 ? "구장 환경이 타구를 더 위험한 결과로 키웠습니다."
-                : "수비 범위를 벗어난 타구가 더 큰 결과로 이어졌습니다."
+                : fielder.map {
+                    "\($0.name)의 수비 범위를 벗어난 타구가 더 큰 결과로 이어졌습니다."
+                } ?? "수비 범위를 벗어난 타구가 더 큰 결과로 이어졌습니다."
         case .neutral:
             explanation = abs(parkAdjustment) >= 60
                 ? "구장 효과가 있었지만 최종 결과 단계는 바뀌지 않았습니다."
-                : "타구 질이 예상한 중립 결과로 이어졌습니다."
+                : fielder.map {
+                    "\($0.name) 앞 타구가 예상한 중립 결과로 이어졌습니다."
+                } ?? "타구 질이 예상한 중립 결과로 이어졌습니다."
         }
         return FieldingResolutionSnapshot(
             neutralOutcome: neutralOutcome,
@@ -352,8 +490,28 @@ public struct BallInPlayEngine: Sendable {
             defenseAdjustment: defenseAdjustment,
             parkAdjustment: parkAdjustment,
             impact: impact,
+            fielderPosition: fielderPosition,
+            fielderName: fielder?.name,
             shortExplanation: explanation
         )
+    }
+
+    private func position(for sector: FieldingSector, direction: Int) -> FielderPosition {
+        switch sector {
+        case .infield:
+            switch direction {
+            case ..<(-180): return .thirdBase
+            case -180..<0: return .shortstop
+            case 0..<180: return .secondBase
+            default: return .firstBase
+            }
+        case .outfield, .fence:
+            switch direction {
+            case ..<(-150): return .leftField
+            case -150..<150: return .centerField
+            default: return .rightField
+            }
+        }
     }
 
     private func outcome(for quality: Int) -> PitchOutcome {
@@ -396,14 +554,25 @@ public struct BaserunnerEngine: Sendable {
         outcome: PitchOutcome,
         plateAppearanceResult: PlateAppearanceResult,
         defense: DefenseSnapshot,
-        seed: UInt64
+        seed: UInt64,
+        doublePlayCompleted: Bool = false
     ) -> BaserunnerAdvanceSnapshot {
         let after: BaserunnerStateSnapshot
         let runs: Int
         var generator = SplitMix64(seed: seed ^ 0x5255_4e4e_4552)
         switch plateAppearanceResult {
-        case .strikeout, .inPlayOut:
+        case .strikeout:
             after = runners
+            runs = 0
+        case .inPlayOut:
+            after = doublePlayCompleted
+                ? BaserunnerStateSnapshot(
+                    firstOccupied: false,
+                    secondOccupied: runners.secondOccupied,
+                    thirdOccupied: runners.thirdOccupied,
+                    leadRunnerSpeed: runners.leadRunnerSpeed
+                )
+                : runners
             runs = 0
         case .walk:
             let forcedRun = runners.firstOccupied && runners.secondOccupied && runners.thirdOccupied
@@ -480,8 +649,180 @@ public struct BaserunnerEngine: Sendable {
         )
     }
 
+    public func resolveSteal(
+        _ runners: BaserunnerStateSnapshot,
+        defense: DefenseSnapshot,
+        context: PlateAppearanceContext,
+        seed: UInt64
+    ) -> (
+        attempt: StealAttemptSnapshot?,
+        runnersAfter: BaserunnerStateSnapshot,
+        outsRecorded: Int
+    ) {
+        guard context.outs <= 1 else { return (nil, runners, 0) }
+        let fromBase: Int
+        let toBase: Int
+        if runners.secondOccupied && !runners.thirdOccupied {
+            fromBase = 2
+            toBase = 3
+        } else if runners.firstOccupied && !runners.secondOccupied {
+            fromBase = 1
+            toBase = 2
+        } else {
+            return (nil, runners, 0)
+        }
+        let catcherArm = defense.fielder(at: .catcher)?.arm ?? defense.arm
+        var generator = SplitMix64(
+            seed: seed ^ 0x5354_4541_4c ^ (UInt64(context.pitchNumber) &* 0x9E37_79B9)
+        )
+        let attemptChance = clamp(
+            55 + (runners.leadRunnerSpeed - 50) * 3 + context.leverage / 20,
+            20,
+            260
+        )
+        guard generator.nextInt(upperBound: 1_000) < attemptChance else {
+            return (nil, runners, 0)
+        }
+        let successChance = clamp(
+            650 + (runners.leadRunnerSpeed - catcherArm) * 7,
+            280,
+            900
+        )
+        let succeeded = generator.nextInt(upperBound: 1_000) < successChance
+        let after: BaserunnerStateSnapshot
+        if fromBase == 1 {
+            after = BaserunnerStateSnapshot(
+                firstOccupied: false,
+                secondOccupied: succeeded,
+                thirdOccupied: runners.thirdOccupied,
+                leadRunnerSpeed: runners.leadRunnerSpeed
+            )
+        } else {
+            after = BaserunnerStateSnapshot(
+                firstOccupied: runners.firstOccupied,
+                secondOccupied: false,
+                thirdOccupied: succeeded,
+                leadRunnerSpeed: runners.leadRunnerSpeed
+            )
+        }
+        let explanation = succeeded
+            ? "\(fromBase)루 주자가 스타트를 끊어 \(toBase)루 도루에 성공했습니다."
+            : "포수가 빠른 송구로 \(fromBase)루 주자의 도루를 저지했습니다."
+        return (
+            StealAttemptSnapshot(
+                fromBase: fromBase,
+                toBase: toBase,
+                runnerSpeed: runners.leadRunnerSpeed,
+                catcherArm: catcherArm,
+                succeeded: succeeded,
+                shortExplanation: explanation
+            ),
+            after,
+            succeeded ? 0 : 1
+        )
+    }
+
     private func extraBaseSucceeds(speed: Int, arm: Int, roll: Int, threshold: Int) -> Bool {
         roll + (speed - arm) * 8 >= threshold
+    }
+
+    private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
+        min(max(value, lower), upper)
+    }
+}
+
+public struct InningStateEngine: Sendable {
+    public init() {}
+
+    public func resolve(
+        context: PlateAppearanceContext,
+        gameState: GameStateSnapshot,
+        plateAppearanceResult: PlateAppearanceResult?,
+        battedBall: BattedBall?,
+        fielding: FieldingResolutionSnapshot?,
+        runners: BaserunnerStateSnapshot,
+        stealOuts: Int,
+        seed: UInt64
+    ) -> InningTransitionSnapshot {
+        let before = gameState.inningState ?? InningStateSnapshot(
+            inning: context.inning,
+            half: .bottom,
+            outs: context.outs
+        )
+        let ordinaryOut = plateAppearanceResult == .strikeout
+            || plateAppearanceResult == .inPlayOut
+        var doublePlayCompleted = false
+        if plateAppearanceResult == .inPlayOut,
+           let battedBall,
+           battedBall.launchAngleTenthsDegrees < 90,
+           runners.firstOccupied,
+           before.outs + stealOuts <= 1 {
+            let pivot = pivotFielder(defense: gameState.defense, fielding: fielding)
+            let doublePlayChance = clamp(
+                470
+                    + ((pivot?.glove ?? gameState.defense.infield) - 50) * 5
+                    + ((pivot?.arm ?? gameState.defense.arm) - 50) * 3
+                    - max(0, battedBall.contactQuality - 450) / 2,
+                180,
+                820
+            )
+            var generator = SplitMix64(seed: seed ^ 0x444f_5542_4c45)
+            doublePlayCompleted = generator.nextInt(upperBound: 1_000) < doublePlayChance
+        }
+        let outsFromBall = ordinaryOut ? 1 + (doublePlayCompleted ? 1 : 0) : 0
+        let outsRecorded = min(3 - before.outs, stealOuts + outsFromBall)
+        let totalOuts = before.outs + outsRecorded
+        let inningEnded = totalOuts >= 3
+        let after: InningStateSnapshot
+        if inningEnded {
+            after = before.half == .top
+                ? InningStateSnapshot(inning: before.inning, half: .bottom, outs: 0)
+                : InningStateSnapshot(inning: before.inning + 1, half: .top, outs: 0)
+        } else {
+            after = InningStateSnapshot(
+                inning: before.inning,
+                half: before.half,
+                outs: totalOuts
+            )
+        }
+        let explanation: String
+        if doublePlayCompleted && inningEnded {
+            explanation = "땅볼 병살로 아웃 두 개를 잡아 공수를 전환했습니다."
+        } else if doublePlayCompleted {
+            explanation = "내야진이 땅볼을 병살로 연결해 아웃 두 개를 기록했습니다."
+        } else if inningEnded {
+            explanation = "세 번째 아웃을 잡아 공수가 전환됐습니다."
+        } else if outsRecorded > 0 {
+            explanation = "이번 플레이에서 \(outsRecorded)아웃을 기록했습니다."
+        } else {
+            explanation = "아웃카운트는 유지됐습니다."
+        }
+        return InningTransitionSnapshot(
+            before: before,
+            after: after,
+            outsRecorded: outsRecorded,
+            doublePlayCompleted: doublePlayCompleted,
+            inningEnded: inningEnded,
+            shortExplanation: explanation
+        )
+    }
+
+    private func pivotFielder(
+        defense: DefenseSnapshot,
+        fielding: FieldingResolutionSnapshot?
+    ) -> FielderSnapshot? {
+        if let position = fielding?.fielderPosition,
+           position == .shortstop || position == .secondBase,
+           let fielder = defense.fielder(at: position) {
+            return fielder
+        }
+        return [defense.fielder(at: .shortstop), defense.fielder(at: .secondBase)]
+            .compactMap { $0 }
+            .max { ($0.glove + $0.arm) < ($1.glove + $1.arm) }
+    }
+
+    private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
+        min(max(value, lower), upper)
     }
 }
 
@@ -574,7 +915,7 @@ public struct GameAnalysisEngine: Sendable {
         let topPitch = pitchBreakdowns.max { $0.pitches < $1.pitches }
         let patternWarning: String
         if entries.count < 6 {
-            patternWarning = "표본이 적어 패턴 판단을 보류합니다. 최소 6구가 필요합니다."
+            patternWarning = "아직 본 공이 적습니다. 6구부터 반복되는 승부를 짚어 줍니다."
         } else if let topPitch, topPitch.pitches * 100 >= entries.count * 55 {
             patternWarning = "\(pitchName(topPitch.pitchType)) 비중이 55%를 넘어 반복 노출을 점검해야 합니다."
         } else {
@@ -588,13 +929,13 @@ public struct GameAnalysisEngine: Sendable {
         let averageSelection = average(entries.map { selectionScore($0.selectionQuality) })
         let growthSignal: String
         if averageExecution < 600 {
-            growthSignal = "우선 훈련 후보: 릴리스 재현성과 코스 실행"
+            growthSignal = "우선 훈련 후보: 같은 릴리스 반복과 코스 실행"
         } else if hardHitRate >= 300 {
             growthSignal = "우선 훈련 후보: 약한 타구 유도와 변화구 완성도"
         } else if averageSelection < 650 {
             growthSignal = "우선 훈련 후보: 카운트별 구종 설계"
         } else {
-            growthSignal = "성장 신호: 선택과 실행이 함께 안정되고 있습니다."
+            growthSignal = "다음 훈련: 현재 구종 선택과 코스 재현을 유지"
         }
         let confidence: AnalysisConfidenceBand
         switch entries.count {

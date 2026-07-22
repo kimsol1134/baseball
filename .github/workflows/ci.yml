@@ -33,9 +33,21 @@ jobs:
       - run: npm run test:web
       - run: npm run build:web
 
-  tauri:
-    name: Tauri configuration
-    runs-on: macos-latest
+  desktop:
+    name: Desktop package (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Apple Silicon
+            os: macos-15
+            bundles: app
+            artifact: apps/windows/src-tauri/target/release/bundle/macos/*.app
+          - name: Windows x64
+            os: windows-2022
+            bundles: nsis
+            artifact: apps/windows/src-tauri/target/release/bundle/nsis/*-setup.exe
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,5 +59,15 @@ jobs:
           swift-version: "6.3.3"
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
-      - run: npm run prepare:sidecar
-      - run: npm run check:tauri
+      - run: npm run desktop:build -- --bundles ${{ matrix.bundles }}
+      - run: npm run smoke:sidecar
+      - name: Verify installed Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./tools/smoke-windows-install.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diamond-soul-${{ runner.os }}-ci
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+          retention-days: 7

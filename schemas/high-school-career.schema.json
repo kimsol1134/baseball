@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://diamond-soul.local/schemas/high-school-career.schema.json",
+  "title": "High School Career result",
+  "type": "object",
+  "required": ["revision", "nextSeed", "events", "snapshot", "eventHash"],
+  "properties": {
+    "revision": { "type": "integer", "minimum": 0 },
+    "nextSeed": { "type": "string", "pattern": "^[0-9]+$" },
+    "events": { "type": "array", "items": { "type": "object" } },
+    "eventHash": { "type": "string", "minLength": 1 },
+    "snapshot": {
+      "type": "object",
+      "required": ["careerID", "revision", "lifeNumber", "phase", "identity", "pitcher", "schoolOptions", "rival", "chapter", "chapterTrainingCount", "totalTrainingsCompleted", "milestoneIndex", "relationshipsCompleted", "relationshipTrust", "selectedAwakenings", "awakeningOptions", "fatigue", "performance", "news", "fanInterest", "legacyOptions", "selectedMemories", "stateCommitment"],
+      "properties": {
+        "careerID": { "type": "string" },
+        "revision": { "type": "integer", "minimum": 0 },
+        "lifeNumber": { "type": "integer", "minimum": 1 },
+        "phase": { "enum": ["prologue", "school_selection", "training", "relationship", "important_game", "awakening", "chapter_review", "draft", "legacy", "completed"] },
+        "identity": {
+          "type": "object",
+          "required": ["name", "throwingHand", "bodyType", "region"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "throwingHand": { "enum": ["right", "left"] },
+            "bodyType": { "enum": ["compact", "balanced", "tall"] },
+            "region": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        "pitcher": { "type": "object" },
+        "schoolOptions": { "type": "array", "minItems": 4, "maxItems": 4 },
+        "school": { "type": "object" },
+        "rival": { "type": "object" },
+        "chapter": { "type": "object" },
+        "chapterTrainingCount": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "totalTrainingsCompleted": { "type": "integer", "minimum": 0, "maximum": 16 },
+        "milestoneIndex": { "type": "integer", "minimum": 0 },
+        "relationshipsCompleted": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "relationshipTrust": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "selectedAwakenings": { "type": "array", "maxItems": 3 },
+        "awakeningOptions": { "type": "array", "maxItems": 2 },
+        "fatigue": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "performance": { "type": "object" },
+        "currentGameScenario": { "type": "object" },
+        "lastTraining": { "type": "object" },
+        "news": { "type": "array", "items": { "type": "string" } },
+        "fanInterest": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "draftResult": { "type": "object" },
+        "legacyOptions": { "type": "array", "maxItems": 5 },
+        "selectedMemories": { "type": "array", "maxItems": 3 },
+        "stateCommitment": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

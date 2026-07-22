@@ -1,12 +1,43 @@
 use tauri::AppHandle;
-use tauri_plugin_shell::process::CommandEvent;
+#[cfg(windows)]
+use tauri::Manager;
+use tauri_plugin_shell::process::{Command, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
-async fn run_core_request(app: &AppHandle, request: &str) -> Result<String, String> {
+fn core_command(app: &AppHandle) -> Result<Command, String> {
     let command = app
         .shell()
         .sidecar("simulation-sidecar")
         .map_err(|error| format!("failed to prepare simulation core: {error}"))?;
+
+    #[cfg(windows)]
+    {
+        let runtime = app
+            .path()
+            .resource_dir()
+            .map_err(|error| format!("failed to locate application resources: {error}"))?
+            .join("swift-runtime");
+        if !runtime.join("swiftCore.dll").is_file() {
+            return Err(format!(
+                "Swift runtime is missing from the application package: {}",
+                runtime.display()
+            ));
+        }
+        let mut paths = vec![runtime];
+        if let Some(current) = std::env::var_os("PATH") {
+            paths.extend(std::env::split_paths(&current));
+        }
+        let path = std::env::join_paths(paths)
+            .map_err(|error| format!("failed to prepare Swift runtime path: {error}"))?;
+        return Ok(command.env("PATH", path));
+    }
+
+    #[cfg(not(windows))]
+    Ok(command)
+}
+
+async fn run_core_request(app: &AppHandle, request: &str) -> Result<String, String> {
+    let command = core_command(app)?;
     let (mut events, mut child) = command
         .spawn()
         .map_err(|error| format!("failed to execute simulation core: {error}"))?;

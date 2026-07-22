@@ -417,6 +417,214 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertTrue(result.finalOutcome == .single || result.finalOutcome == .inPlayOut)
     }
 
+    func testFieldingResolutionNamesThePositionSpecificFielder() {
+        let fielders = makeFielders(rating: 50).map {
+            $0.position == .shortstop
+                ? FielderSnapshot(
+                    id: $0.id,
+                    name: "박현우",
+                    position: .shortstop,
+                    range: 78,
+                    glove: 76,
+                    arm: 72
+                )
+                : $0
+        }
+        let state = gameState(
+            defense: 40,
+            hitFactor: 1_000,
+            homeRunFactor: 1_000,
+            fielders: fielders
+        )
+        let result = BallInPlayEngine().resolve(
+            BattedBall(
+                exitVelocityTenthsKPH: 1_280,
+                launchAngleTenthsDegrees: 40,
+                directionTenthsDegrees: -90,
+                contactQuality: 520
+            ),
+            gameState: state,
+            seed: 7,
+            ordinal: 1
+        )
+
+        XCTAssertEqual(result.fielderPosition, .shortstop)
+        XCTAssertEqual(result.fielderName, "박현우")
+        XCTAssertEqual(result.defenseRating, 77)
+    }
+
+    func testFastRunnerStealsMoreOftenAgainstWeakCatcherArm() {
+        let engine = BaserunnerEngine()
+        let context = PlateAppearanceContext(
+            plateAppearanceID: "steal-pa",
+            revision: 0,
+            inning: 7,
+            outs: 0,
+            balls: 0,
+            strikes: 0,
+            pitchNumber: 1,
+            scoreDifferential: 0,
+            leverage: 1_000,
+            fatigue: 10
+        )
+        let fastRunner = BaserunnerStateSnapshot(
+            firstOccupied: true,
+            secondOccupied: false,
+            thirdOccupied: false,
+            leadRunnerSpeed: 80
+        )
+        let slowRunner = BaserunnerStateSnapshot(
+            firstOccupied: true,
+            secondOccupied: false,
+            thirdOccupied: false,
+            leadRunnerSpeed: 20
+        )
+        var fastSuccesses = 0
+        var slowSuccesses = 0
+        let weakCatcher = DefenseSnapshot(
+            infield: 50,
+            outfield: 50,
+            arm: 50,
+            fielders: makeFielders(rating: 20)
+        )
+        let strongCatcher = DefenseSnapshot(
+            infield: 50,
+            outfield: 50,
+            arm: 50,
+            fielders: makeFielders(rating: 80)
+        )
+
+        for seed in 1...4_000 {
+            if engine.resolveSteal(
+                fastRunner,
+                defense: weakCatcher,
+                context: context,
+                seed: UInt64(seed)
+            ).attempt?.succeeded == true {
+                fastSuccesses += 1
+            }
+            if engine.resolveSteal(
+                slowRunner,
+                defense: strongCatcher,
+                context: context,
+                seed: UInt64(seed)
+            ).attempt?.succeeded == true {
+                slowSuccesses += 1
+            }
+        }
+
+        XCTAssertGreaterThan(fastSuccesses, slowSuccesses)
+        XCTAssertGreaterThan(fastSuccesses, 0)
+    }
+
+    func testStrongMiddleInfieldCompletesMoreDoublePlays() {
+        let engine = InningStateEngine()
+        let context = PlateAppearanceContext(
+            plateAppearanceID: "double-play-pa",
+            revision: 0,
+            inning: 7,
+            outs: 0,
+            balls: 0,
+            strikes: 0,
+            pitchNumber: 1,
+            scoreDifferential: 0,
+            leverage: 700,
+            fatigue: 10
+        )
+        let runners = BaserunnerStateSnapshot(
+            firstOccupied: true,
+            secondOccupied: false,
+            thirdOccupied: false,
+            leadRunnerSpeed: 50
+        )
+        let battedBall = BattedBall(
+            exitVelocityTenthsKPH: 1_260,
+            launchAngleTenthsDegrees: 20,
+            directionTenthsDegrees: -80,
+            contactQuality: 480
+        )
+        let strong = gameState(
+            defense: 80,
+            hitFactor: 1_000,
+            homeRunFactor: 1_000,
+            fielders: makeFielders(rating: 80),
+            inningState: InningStateSnapshot(inning: 7, half: .bottom, outs: 0)
+        )
+        let weak = gameState(
+            defense: 20,
+            hitFactor: 1_000,
+            homeRunFactor: 1_000,
+            fielders: makeFielders(rating: 20),
+            inningState: InningStateSnapshot(inning: 7, half: .bottom, outs: 0)
+        )
+        var strongDoublePlays = 0
+        var weakDoublePlays = 0
+
+        for seed in 1...2_000 {
+            if engine.resolve(
+                context: context,
+                gameState: strong,
+                plateAppearanceResult: .inPlayOut,
+                battedBall: battedBall,
+                fielding: nil,
+                runners: runners,
+                stealOuts: 0,
+                seed: UInt64(seed)
+            ).doublePlayCompleted {
+                strongDoublePlays += 1
+            }
+            if engine.resolve(
+                context: context,
+                gameState: weak,
+                plateAppearanceResult: .inPlayOut,
+                battedBall: battedBall,
+                fielding: nil,
+                runners: runners,
+                stealOuts: 0,
+                seed: UInt64(seed)
+            ).doublePlayCompleted {
+                weakDoublePlays += 1
+            }
+        }
+
+        XCTAssertGreaterThan(strongDoublePlays, weakDoublePlays)
+    }
+
+    func testThirdOutAdvancesBottomHalfToNextInningTop() {
+        let context = PlateAppearanceContext(
+            plateAppearanceID: "inning-pa",
+            revision: 0,
+            inning: 7,
+            outs: 2,
+            balls: 0,
+            strikes: 2,
+            pitchNumber: 3,
+            scoreDifferential: 0,
+            leverage: 800,
+            fatigue: 20
+        )
+        let state = gameState(
+            defense: 50,
+            hitFactor: 1_000,
+            homeRunFactor: 1_000,
+            inningState: InningStateSnapshot(inning: 7, half: .bottom, outs: 2)
+        )
+        let transition = InningStateEngine().resolve(
+            context: context,
+            gameState: state,
+            plateAppearanceResult: .strikeout,
+            battedBall: nil,
+            fielding: nil,
+            runners: .empty,
+            stealOuts: 0,
+            seed: 1
+        )
+
+        XCTAssertTrue(transition.inningEnded)
+        XCTAssertEqual(transition.outsRecorded, 1)
+        XCTAssertEqual(transition.after, InningStateSnapshot(inning: 8, half: .top, outs: 0))
+    }
+
     func testGameAnalysisSeparatesExpectedAndActualDamage() {
         let analysisEngine = GameAnalysisEngine()
         var log: GameLogSnapshot?
@@ -694,10 +902,17 @@ final class PitchKernelEngineTests: XCTestCase {
     private func gameState(
         defense: Int,
         hitFactor: Int,
-        homeRunFactor: Int
+        homeRunFactor: Int,
+        fielders: [FielderSnapshot]? = nil,
+        inningState: InningStateSnapshot? = nil
     ) -> GameStateSnapshot {
         GameStateSnapshot(
-            defense: DefenseSnapshot(infield: defense, outfield: defense, arm: defense),
+            defense: DefenseSnapshot(
+                infield: defense,
+                outfield: defense,
+                arm: defense,
+                fielders: fielders
+            ),
             park: ParkSnapshot(
                 id: "test-park",
                 name: "테스트 구장",
@@ -705,7 +920,21 @@ final class PitchKernelEngineTests: XCTestCase {
                 homeRunFactor: homeRunFactor
             ),
             runners: .empty,
-            runsAllowed: 0
+            runsAllowed: 0,
+            inningState: inningState
         )
+    }
+
+    private func makeFielders(rating: Int) -> [FielderSnapshot] {
+        FielderPosition.allCases.map {
+            FielderSnapshot(
+                id: "fielder-\($0.rawValue)",
+                name: $0.rawValue,
+                position: $0,
+                range: rating,
+                glove: rating,
+                arm: rating
+            )
+        }
     }
 }
