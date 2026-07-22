@@ -21,15 +21,15 @@ const METRICS: ReadonlyArray<{ key: keyof CreationAllocationSnapshot; label: str
   { key: "movement", label: "무브먼트" }, { key: "stamina", label: "체력" },
 ];
 
-const KBO_HOME_REGIONS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "서울", label: "서울 · LG / 두산 / 키움" },
-  { value: "인천", label: "인천 · SSG" },
-  { value: "수원", label: "수원 · KT" },
-  { value: "대전", label: "대전 · 한화" },
-  { value: "광주", label: "광주 · KIA" },
-  { value: "대구", label: "대구 · 삼성" },
-  { value: "부산", label: "부산 · 롯데" },
-  { value: "창원", label: "창원 · NC" },
+const PRO_BASEBALL_HOME_CITIES: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "서울", label: "서울" },
+  { value: "인천", label: "인천" },
+  { value: "수원", label: "수원" },
+  { value: "대전", label: "대전" },
+  { value: "광주", label: "광주" },
+  { value: "대구", label: "대구" },
+  { value: "부산", label: "부산" },
+  { value: "창원", label: "창원" },
 ];
 
 const OTHER_REGIONS: ReadonlyArray<{ value: string; label: string }> = [
@@ -259,7 +259,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
         {presets.map((preset) => <button key={preset.id} type="button" aria-pressed={preset.id === effectivePresetID}
           className={preset.id === effectivePresetID ? "is-selected" : undefined} onClick={() => selectPreset(preset)}>
           <span>{preset.name}</span><strong>{preset.pitcher.name}</strong><p>{preset.tagline}</p><small>{preset.tradeoff}</small>
-          <dl className="preset-statline" aria-label={`${preset.name} 기본 능력: ${METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
+          <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
             {METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd></div>)}
           </dl>
         </button>)}
@@ -280,8 +280,8 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
           <small>추천 이름을 그대로 쓰거나 직접 입력하세요.</small></label>
           <label><span>출신 지역</span><select value={identity.region} aria-label="출신 지역"
             onChange={(event) => setIdentity({ ...identity, region: event.target.value })}>
-            <optgroup label="KBO 연고 도시">
-              {KBO_HOME_REGIONS.map((region) => <option key={region.value} value={region.value}>{region.label}</option>)}
+            <optgroup label="프로야구 연고 도시">
+              {PRO_BASEBALL_HOME_CITIES.map((region) => <option key={region.value} value={region.value}>{region.label}</option>)}
             </optgroup>
             <optgroup label="그 외 지역">
               {OTHER_REGIONS.map((region) => <option key={region.value} value={region.value}>{region.label}</option>)}
@@ -303,7 +303,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
             {"id":"erased_memory","title":"지워진 기억","copy":"기억 슬롯 2장 · 보상 +25%"},{"id":"no_last_chance","title":"마지막 기회 없음","copy":"지명 안전망 감소 · 보상 +35%"}] as const).map((karma) =>
             <button key={karma.id} type="button" className={karmas.includes(karma.id) ? "is-selected" : undefined} aria-pressed={karmas.includes(karma.id)} onClick={() => toggleKarma(karma.id)}>
               <strong>{karma.title}</strong><span>{karma.copy}</span></button>)}</div></div>
-        <button className="lab-primary" type="button" disabled={isRunning || spent !== 5 || !identity.name.trim()}
+        <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || spent !== 5 || !identity.name.trim()}
           onClick={() => void onStart(selected.id, allocation, { ...identity, name: identity.name.trim() }, difficulty, karmas)}>
           {isRunning ? "선수 생성 중…" : "고교 커리어 시작"}
         </button>{error ? <p className="error-message" role="alert">{error}</p> : null}
@@ -388,12 +388,12 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     return { label: draft.outcome === "drafted" ? "스카우트 평가" : "다음 기록", title: draft.outcome === "drafted" ? `평가 ${draft.evaluationScore} · ${draft.projectedRange}` : `최종 평가 ${draft.evaluationScore}`, copy: draft.summary };
   })();
 
-  return <main className="career-shell">
+  return <main className="career-shell stage-layout" data-stage={state.phase} data-team={state.draftResult?.team?.id}>
     {showTutorial ? <section className="tutorial-panel" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
       <div><p className="eyebrow">빠른 안내</p><h2 id="tutorial-title">고교 커리어 시작 전</h2></div>
       <ol><li><strong>현재 능력</strong><span>선수 카드에서 구위·커맨드·무브먼트·체력을 확인합니다.</span></li><li><strong>중요 경기</strong><span>승부처에서는 구종·코스·강도를 직접 선택합니다.</span></li>
         <li><strong>선택 확정</strong><span>확정한 훈련과 사건 선택은 되돌릴 수 없습니다.</span></li><li><strong>자동 저장</strong><span>확정한 선택마다 이 기기에 저장됩니다.</span></li></ol>
-      <button className="lab-primary" type="button" autoFocus onClick={onDismissTutorial}>커리어 시작</button>
+      <button className="ds-button ds-button--primary lab-primary" type="button" autoFocus onClick={onDismissTutorial}>커리어 시작</button>
     </section> : null}
     <section className="career-hero">
       <div><p className="eyebrow">{state.lifeNumber}번째 선수 · {state.chapter.schoolYear}학년 {state.chapter.season}</p>
@@ -406,8 +406,8 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
       <div key={chapter} className={chapter === state.chapter.number ? "is-current" : chapter < state.chapter.number ? "is-complete" : undefined}>
         <span>{chapter}</span><small>{chapter < state.chapter.number ? "완료" : chapter === state.chapter.number ? "진행 중" : "잠김"}</small></div>)}</section>
     <div className="career-grid">
-      <section className="career-panel career-player"><div className="lab-card-heading"><span>{state.pitcher.name}</span><small>{state.school?.name ?? "학교 선택 전"}</small></div>
-        <div className="career-rating-grid"><div><span>구위</span><strong>{rating(state.pitcher.stuff)}</strong></div><div><span>커맨드</span><strong>{rating(state.pitcher.command)}</strong></div>
+      <section className="ds-card ds-player-card career-panel career-player"><div className="lab-card-heading"><span>{state.pitcher.name}</span><small>{state.school?.name ?? "학교 선택 전"}</small></div>
+        <div className="ds-record-grid career-rating-grid"><div><span>구위</span><strong>{rating(state.pitcher.stuff)}</strong></div><div><span>커맨드</span><strong>{rating(state.pitcher.command)}</strong></div>
           <div><span>무브먼트</span><strong>{rating(state.pitcher.movement)}</strong></div><div><span>체력</span><strong>{rating(state.pitcher.stamina)}</strong></div></div>
         <small className="information-clarity">정보 정확도 · {state.difficulty.informationClarity === "relaxed" ? "정확한 현재값" : state.difficulty.informationClarity === "standard" ? "스카우트 추정 범위" : "등급만 공개"}</small>
         {state.school ? <div className="career-personnel"><span>감독</span><strong>{state.school.coachName} · {state.school.coachArchetype}</strong><span>포수</span><strong>{state.school.catcherName} · {state.school.catcherArchetype}</strong>
@@ -416,24 +416,24 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <span>관계 {state.relationshipsCompleted}/5</span><span>각성 {state.selectedAwakenings.length}/3</span></div>
       </section>
 
-      <section className="career-panel career-decision"><div className="lab-card-heading"><span>지금 할 일</span><small>{PHASE_LABELS[state.phase]}</small></div>
+      <section className="ds-card ds-card--raised career-panel career-decision"><div className="lab-card-heading"><span>지금 할 일</span><small>{PHASE_LABELS[state.phase]}</small></div>
         {demoComplete ? <div className="career-milestone demo-complete"><span>데모 기록 완료</span>
           <h3>첫 중요 경기를 마쳤습니다.</h3>
           <p>{state.pitcher.name}은 구위 {rating(state.pitcher.stuff)}, 커맨드 {rating(state.pitcher.command)}로 첫 기록을 남겼습니다. 이 저장은 정식판에서 그대로 이어집니다.</p>
           <div className="demo-summary"><div><strong>{state.performance.pitches}</strong><span>투구</span></div><div><strong>{state.performance.strikeouts}</strong><span>삼진</span></div><div><strong>{state.relationshipTrust}</strong><span>관계 신뢰</span></div></div>
           <p className="demo-next">정식판에서는 남은 고교 생활, 드래프트, 프로 입단과 은퇴까지 이어집니다.</p>
-          <button className="lab-primary" type="button" onClick={onNewCareer}>새 선수로 다시 해보기</button>
+          <button className="ds-button ds-button--primary lab-primary" type="button" onClick={onNewCareer}>새 선수로 다시 해보기</button>
         </div> : null}
         {!demoComplete ? <>
         {draftRevealStage !== null && !draftRevealDone ? <div className={`draft-reveal draft-reveal--stage-${draftRevealStage}`} role="dialog" aria-live="polite" aria-label="드래프트 결과 공개">
           <span>{reveal.label}</span><div className="draft-rounds" aria-hidden="true">{[0, 1, 2, 3, 4].map((step) => <i key={step} className={step <= draftRevealStage ? "is-active" : undefined} />)}</div>
           <h3>{reveal.title}</h3><p>{reveal.copy}</p>
-          {draftRevealStage >= 4 ? <button className="lab-primary" type="button" onClick={() => setDraftRevealDone(true)}>결과 화면 확인</button>
+          {draftRevealStage >= 4 ? <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setDraftRevealDone(true)}>결과 화면 확인</button>
             : <button className="draft-skip" type="button" onClick={() => setDraftRevealStage(4)}>바로 결과 보기</button>}
         </div> : null}
         {state.phase === "prologue" ? <div className="career-milestone prologue-card"><span>중학교 마지막 경기</span>
           <h3>{state.identity.region}의 마지막 중학교 대회</h3><p>{state.identity.name} · {state.identity.throwingHand === "right" ? "우투" : "좌투"} · {state.identity.bodyType === "tall" ? "장신" : state.identity.bodyType === "compact" ? "다부진" : "균형"} 체격. 경기를 마치고 나오자 네 고교에서 진학 제안이 도착했습니다. {state.karmas.length > 0 ? `선택한 추가 조건 ${state.karmas.length}개` : "추가 조건 없음"}</p>
-          <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onCompletePrologue()}>고교 진학 제안 확인</button></div> : null}
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onCompletePrologue()}>고교 진학 제안 확인</button></div> : null}
         {state.phase === "school_selection" ? <><h3>어느 학교로 진학할까요?</h3><p>학교마다 잘 가르치는 훈련과 감수해야 할 단점이 다릅니다.</p>
           <div className="school-grid">{state.schoolOptions.map((school) => <button key={school.id} type="button" disabled={isRunning} onClick={() => void onSchool(school.id)}>
             <span>{school.name}</span><strong>{school.philosophy}</strong><p>{school.coachName} 감독 · {school.catcherName} 포수</p><small>{school.tradeoff}</small></button>)}</div></> : null}
@@ -442,23 +442,23 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             className={focus === option.value ? "is-selected" : undefined} onClick={() => setFocus(option.value)}><strong>{option.label}</strong><span>{option.copy}</span></button>)}</div>
           <div className="training-intensity-grid">{(["light", "standard", "intensive"] as const).map((value) => <button key={value} type="button"
             className={intensity === value ? "is-selected" : undefined} aria-pressed={intensity === value} onClick={() => setIntensity(value)}><strong>{value === "light" ? "가볍게" : value === "standard" ? "표준" : "집중"}</strong></button>)}</div>
-          <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity)}>이 훈련 시작</button>
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity)}>이 훈련 시작</button>
           {state.lastTraining ? <div className="career-feedback"><strong>{state.lastTraining.feedback}</strong><span>능력 +{state.lastTraining.growth} · 피로 {state.lastTraining.fatigueChange >= 0 ? "+" : ""}{state.lastTraining.fatigueChange}</span></div> : null}</> : null}
         {state.phase === "relationship" ? <><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3><p>{scene.quote}</p>
           <div className="relationship-options">{scene.choices.map((choice) => <button key={choice.id} type="button" disabled={isRunning} onClick={() => void onRelationship(choice.id)}><strong>{choice.title}</strong><span>{choice.copy}</span></button>)}</div></> : null}
         {state.phase === "important_game" ? <div className="career-milestone"><span>중요 경기 {state.performance.importantGamesCompleted + 1}</span><h3>{state.currentGameScenario?.title ?? `${state.rival.name} 상대 중요 이닝`}</h3>
           <p>{state.currentGameScenario?.narrative ?? `현재 피로 ${state.fatigue}. 직접 구종과 코스를 골라 이닝을 끝내야 합니다.`}</p>
-          <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onImportantGame()}>중요 이닝 직접 투구</button></div> : null}
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onImportantGame()}>중요 이닝 직접 투구</button></div> : null}
         {state.phase === "awakening" ? <><h3>새로 익힌 강점 {state.selectedAwakenings.length + 1}/3</h3><div className="relationship-options">{state.awakeningOptions.map((awakening) =>
           <button key={awakening} type="button" disabled={isRunning} onClick={() => void onAwakening(awakening)}><strong>{AWAKENINGS[awakening]}</strong><span>{AWAKENING_DETAILS[awakening]}</span></button>)}</div></> : null}
         {state.phase === "chapter_review" ? <div className="career-milestone"><span>이번 계절 완료</span><h3>‘{state.chapter.title}’ 종료</h3><p>다음 계절로 넘어가면 이번 계절의 선택은 바꿀 수 없습니다.</p>
-          <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onAdvanceChapter()}>다음 계절로</button></div> : null}
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onAdvanceChapter()}>다음 계절로</button></div> : null}
         {state.phase === "draft" ? <div className="career-milestone draft-stage"><span>드래프트 당일</span><h3>드래프트가 시작됩니다.</h3>
-          <p>{state.difficulty.informationClarity === "challenging" ? "구단의 평가는 이름이 불린 뒤 공개됩니다." : "10개 구단이 능력, 경기 기록, 포수·감독 평가를 함께 확인합니다."}</p><button className="lab-primary" type="button" disabled={isRunning} onClick={() => void startDraftReveal()}>드래프트 시작</button></div> : null}
+          <p>{state.difficulty.informationClarity === "challenging" ? "구단의 평가는 이름이 불린 뒤 공개됩니다." : "10개 구단이 능력, 경기 기록, 포수·감독 평가를 함께 확인합니다."}</p><button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void startDraftReveal()}>드래프트 시작</button></div> : null}
         {state.phase === "legacy" && state.draftResult ? <><div className="draft-result is-undrafted"><span>미지명 · 평가 {state.draftResult.evaluationScore}</span><h3>이번 삶은 여기서 끝났습니다.</h3><p>{state.draftResult.summary}</p></div>
           <h4>다음 삶에 남길 기억 {state.memorySlots}장</h4><div className="memory-grid">{state.legacyOptions.map((memory) => <button key={memory} type="button" className={memories.includes(memory) ? "is-selected" : undefined}
             aria-pressed={memories.includes(memory)} onClick={() => toggleMemory(memory)}><strong>{MEMORIES[memory]}</strong><span>{MEMORY_DETAILS[memory]}</span><small>{memories.includes(memory) ? "선택됨" : "기억하기"}</small></button>)}</div>
-          <button className="lab-primary" type="button" disabled={isRunning || memories.length !== state.memorySlots} onClick={() => void onLegacy(memories)}>기억 {state.memorySlots}장 확정</button></> : null}
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || memories.length !== state.memorySlots} onClick={() => void onLegacy(memories)}>기억 {state.memorySlots}장 확정</button></> : null}
         {state.phase === "completed" && state.draftResult ? <div className={`draft-result ${state.draftResult.outcome === "drafted" ? "is-drafted" : "is-undrafted"}`}>
           <span>{state.draftResult.outcome === "drafted" ? `${state.draftResult.round}라운드 ${state.draftResult.overallPick}순위` : "드래프트 종료"}</span>
           <h3>{state.draftResult.team?.name ?? "다음 삶을 준비합니다"}</h3><p>{state.draftResult.summary}</p>{state.draftResult.team ? <div className="pro-preview">
@@ -468,12 +468,12 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           {state.draftResult.outcome === "drafted" ? <div className="pro-lock"><span>프로 커리어</span><h4>{proAccessAvailable ? "지명 구단과 계약할 차례입니다." : "프로 커리어 확장"}</h4>
             <p>{proAccessAvailable ? "2군 선발 경쟁부터 시작합니다. 고교 기록과 구종은 그대로 이어집니다." : "프로 커리어는 정식판에서 고교 기록 그대로 이어집니다."}</p>
             <button type="button" disabled={isRunning || !proAccessAvailable} onClick={() => void onStartPro()}>{proAccessAvailable ? "프로 입단" : "데모는 여기까지"}</button></div> : null}
-          {state.draftResult.outcome === "undrafted" ? <button className="lab-primary" type="button" onClick={() => void onNextLife()}>기억을 가지고 다음 삶 시작</button> : null}</div> : null}
+          {state.draftResult.outcome === "undrafted" ? <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => void onNextLife()}>기억을 가지고 다음 삶 시작</button> : null}</div> : null}
         </> : null}
         {error ? <p className="error-message" role="alert">{error}</p> : null}
       </section>
 
-      <aside className="career-panel career-news"><div className="lab-card-heading"><span>뉴스·팬 반응</span><small>자동 저장됨</small></div>
+      <aside className="ds-card ds-record-grid career-panel career-news"><div className="lab-card-heading"><span>뉴스·팬 반응</span><small>자동 저장됨</small></div>
         {state.news.slice(0, 7).map((item, index) => <article key={`${index}-${item}`}><span>{index === 0 ? "최신" : "이전"}</span><p>{polishedNews(item)}</p></article>)}
         <div className="career-performance"><span>중요 경기 누적</span><div><b>{state.performance.pitches}</b><small>투구</small></div><div><b>{state.performance.strikeouts}</b><small>삼진</small></div>
           <div><b>{state.performance.walks}</b><small>볼넷</small></div><div><b>{state.performance.runsAllowed}</b><small>실점</small></div></div>
