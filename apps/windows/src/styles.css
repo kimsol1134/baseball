@@ -2011,6 +2011,894 @@ legend {
   to { filter: brightness(1.22); transform: translateY(-1px); }
 }
 
+/* Broadcast presentation: stadium depth and restrained TV-style overlays. */
+.gamecast-replay {
+  grid-template-rows: 54px 48px minmax(0, 1fr) 68px;
+  isolation: isolate;
+  color: #eef4ef;
+  background:
+    radial-gradient(circle at 50% 38%, rgb(77 126 105 / 15%), transparent 38rem),
+    linear-gradient(150deg, #08120f, #03090c 68%);
+}
+
+.gamecast-replay::after {
+  content: "";
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  border: 1px solid rgb(201 226 211 / 11%);
+  box-shadow: inset 0 0 85px rgb(0 0 0 / 36%);
+  pointer-events: none;
+}
+
+.gamecast-header {
+  min-height: 54px;
+  gap: 18px;
+  padding: 7px 12px;
+  border-bottom-color: rgb(170 195 182 / 19%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 4%), transparent),
+    rgb(5 12 15 / 96%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+}
+
+.gamecast-brand {
+  position: relative;
+  gap: 7px;
+  padding-right: 16px;
+  border-right: 1px solid rgb(188 208 197 / 18%);
+}
+
+.gamecast-brand > i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef5b56;
+  box-shadow: 0 0 0 4px rgb(239 91 86 / 12%), 0 0 10px rgb(239 91 86 / 70%);
+  animation: gamecast-live-pulse 1.25s ease-in-out infinite;
+}
+
+.gamecast-brand span {
+  color: #dbe7df;
+  letter-spacing: .04em;
+}
+
+.gamecast-brand strong {
+  color: #e9c875;
+  font-size: .75rem;
+  letter-spacing: .14em;
+}
+
+.gamecast-matchup {
+  gap: 8px;
+}
+
+.gamecast-matchup span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #f5f8f5;
+  font-size: .8125rem;
+}
+
+.gamecast-matchup span small {
+  min-width: 19px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  color: #07110d;
+  background: #d7bc70;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .5625rem;
+  text-align: center;
+}
+
+.gamecast-matchup span:last-child small {
+  color: #eaf6ef;
+  background: #2d6953;
+}
+
+.gamecast-matchup b {
+  padding: 0 4px;
+  color: #70847a;
+}
+
+.gamecast-situation {
+  gap: 12px;
+}
+
+.gamecast-situation span {
+  max-width: 180px;
+  overflow: hidden;
+  color: #8fa198;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gamecast-situation strong {
+  padding: 5px 8px;
+  border: 1px solid rgb(189 207 197 / 17%);
+  border-radius: 5px;
+  color: #dce8e1;
+  background: rgb(255 255 255 / 3%);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .6875rem;
+}
+
+.gamecast-situation strong i {
+  color: #e7c66f;
+  font-style: normal;
+}
+
+.gamecast-playback-controls {
+  gap: 4px;
+}
+
+.gamecast-playback-controls button {
+  min-width: 32px;
+  min-height: 30px;
+  border-color: rgb(169 195 181 / 20%);
+  border-radius: 5px;
+  color: #b8c8bf;
+  background: rgb(255 255 255 / 4%);
+  box-shadow: inset 0 1px rgb(255 255 255 / 4%);
+}
+
+.gamecast-outcome-strip {
+  min-height: 48px;
+  grid-template-columns: minmax(180px, .72fr) 1fr minmax(170px, .72fr);
+  padding: 4px 12px;
+  border-bottom-color: rgb(170 195 182 / 16%);
+  background: rgb(8 18 20 / 92%);
+}
+
+.gamecast-outcome-strip > div:first-child {
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.gamecast-outcome-strip > div:first-child strong {
+  font-size: 1rem;
+  letter-spacing: -.02em;
+}
+
+.gamecast-outcome-strip span,
+.gamecast-telemetry-heading span {
+  font-size: .59375rem;
+  letter-spacing: .13em;
+}
+
+.gamecast-play-sequence {
+  max-width: 410px;
+  justify-self: center;
+}
+
+.gamecast-play-sequence span {
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  font-size: .59375rem;
+  letter-spacing: .05em;
+}
+
+.gamecast-play-sequence i {
+  background: linear-gradient(90deg, #33483f, #61756b, #33483f);
+}
+
+.gamecast-play-sequence .is-current {
+  background: rgb(255 255 255 / 6%);
+  box-shadow: inset 0 0 0 1px rgb(222 235 228 / 12%);
+}
+
+.gamecast-play-sequence .is-complete {
+  color: #b9d984;
+  border: 0;
+  background: transparent;
+}
+
+.gamecast-visuals {
+  position: relative;
+  gap: 0;
+  padding: 0;
+  background: #03080a;
+}
+
+.gamecast-visuals.has-field {
+  grid-template-columns: minmax(470px, 1fr) minmax(245px, 286px);
+}
+
+.gamecast-visuals.has-pitch {
+  grid-template-columns: minmax(430px, 1fr) minmax(245px, 310px);
+}
+
+.gamecast-field-view,
+.gamecast-pitch-view,
+.gamecast-telemetry {
+  border: 0;
+  border-radius: 0;
+  background: #07100f;
+}
+
+.gamecast-field-view,
+.gamecast-pitch-view {
+  isolation: isolate;
+}
+
+.gamecast-field-view::after,
+.gamecast-pitch-view::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0 0 28px;
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 24%), transparent 10%, transparent 90%, rgb(0 0 0 / 24%)),
+    linear-gradient(0deg, rgb(0 0 0 / 22%), transparent 22%);
+  box-shadow: inset 0 0 65px rgb(0 0 0 / 28%);
+  pointer-events: none;
+}
+
+.gamecast-field-view svg,
+.gamecast-pitch-view svg {
+  background: #07100f;
+}
+
+.gamecast-field-view svg {
+  transform: translate(var(--gamecast-camera-x, 0), var(--gamecast-camera-y, 0)) scale(var(--gamecast-camera-scale, 1));
+  transform-origin: center;
+  transition: transform 80ms linear;
+}
+
+.gamecast-phase--contact .gamecast-field-view svg {
+  animation: gamecast-camera-impact 240ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+.gamecast-camera-hud,
+.gamecast-flight-hud {
+  position: absolute;
+  z-index: 5;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid rgb(225 236 230 / 17%);
+  border-radius: 4px;
+  color: #e8f0eb;
+  background: rgb(3 10 13 / 76%);
+  box-shadow: 0 7px 22px rgb(0 0 0 / 28%);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.gamecast-camera-hud {
+  left: 12px;
+}
+
+.gamecast-camera-hud strong {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .625rem;
+  letter-spacing: .08em;
+}
+
+.gamecast-camera-hud small {
+  padding-left: 7px;
+  border-left: 1px solid rgb(215 231 221 / 17%);
+  color: #8fa299;
+  font-size: .59375rem;
+}
+
+.gamecast-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #ff8a84;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .5625rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.gamecast-live-indicator i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #f26560;
+  box-shadow: 0 0 7px rgb(242 101 96 / 80%);
+}
+
+.gamecast-flight-hud {
+  right: 12px;
+  gap: 5px;
+}
+
+.gamecast-flight-hud span,
+.gamecast-flight-hud small {
+  color: #91a49a;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .5625rem;
+}
+
+.gamecast-flight-hud strong {
+  color: #f1cf74;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .9375rem;
+  letter-spacing: -.04em;
+}
+
+.gamecast-stadium-sky-top { stop-color: #020812; }
+.gamecast-stadium-sky-bottom { stop-color: #354854; }
+.gamecast-crowd-base { fill: #11181d; }
+.gamecast-crowd-light { fill: #81918d; opacity: .52; }
+.gamecast-crowd-mid { fill: #34463f; opacity: .8; }
+.gamecast-grass-far { stop-color: #1b4a35; }
+.gamecast-grass-near { stop-color: #123323; }
+
+.gamecast-stadium-plate {
+  opacity: .76;
+  filter: saturate(.62) contrast(1.18) brightness(.5);
+}
+
+.gamecast-grandstand {
+  stroke: rgb(179 199 189 / 17%);
+  stroke-width: 1;
+  opacity: .12;
+}
+
+.gamecast-outfield-wall {
+  fill: #12362f;
+  stroke: #6d8378;
+  stroke-width: 1.5;
+  opacity: .18;
+}
+
+.gamecast-light-rigs path {
+  fill: none;
+  stroke: #718179;
+  stroke-width: 2;
+}
+
+.gamecast-light-rigs {
+  opacity: .14;
+}
+
+.gamecast-light-rigs rect {
+  fill: #dbe7df;
+  stroke: #fff;
+  stroke-width: .7;
+  filter: drop-shadow(0 0 7px rgb(219 238 228 / 75%));
+}
+
+.gamecast-center-scoreboard rect {
+  fill: #050a0f;
+  stroke: #72857b;
+  stroke-width: 1;
+}
+
+.gamecast-center-scoreboard text:first-of-type {
+  fill: #d5c078;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.gamecast-center-scoreboard text:last-of-type {
+  fill: #dfece4;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .2em;
+}
+
+.gamecast-outfield {
+  stroke: #748e7c;
+  stroke-width: 1.25;
+  filter: saturate(1.08);
+  opacity: .4;
+}
+
+.gamecast-warning-track {
+  fill: none;
+  stroke: #805f3e;
+  stroke-width: 13;
+  opacity: .16;
+}
+
+.gamecast-mowing-lines {
+  fill: none;
+  stroke: rgb(184 219 189 / 8%);
+  stroke-width: 20;
+}
+
+.gamecast-foul-lines {
+  fill: none;
+  stroke: rgb(237 240 228 / 34%);
+  stroke-width: 1.25;
+}
+
+.gamecast-infield-dirt {
+  fill: #7d5638;
+  fill-opacity: .12;
+  stroke: #b48a5b;
+  stroke-width: 1.2;
+}
+
+.gamecast-diamond {
+  stroke: #e7e8dd;
+  stroke-opacity: .42;
+  stroke-width: 1.1;
+}
+
+.gamecast-player-shadow {
+  fill: rgb(0 0 0 / 42%);
+}
+
+.gamecast-player-legs,
+.gamecast-player-cap {
+  fill: none;
+  stroke: #dae3dd;
+  stroke-linecap: round;
+  stroke-width: 2.7;
+}
+
+.gamecast-player-body {
+  fill: #d8e1db;
+  stroke: #273a32;
+  stroke-width: .8;
+}
+
+.gamecast-player-head {
+  fill: #b98563;
+  stroke: #23312b;
+  stroke-width: .7;
+}
+
+.gamecast-player-cap {
+  stroke: #275944;
+  stroke-width: 2.2;
+}
+
+.gamecast-player-label rect {
+  fill: rgb(3 11 13 / 78%);
+  stroke: rgb(219 232 224 / 34%);
+  stroke-width: .7;
+}
+
+.gamecast-player-label text {
+  fill: #e7eee9;
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.gamecast-fielder {
+  transition: transform 16ms linear;
+}
+
+.gamecast-fielder.is-responsible .gamecast-player-body {
+  fill: #b8de77;
+  stroke: #f2ffda;
+  filter: drop-shadow(0 0 6px rgb(184 222 119 / 68%));
+}
+
+.gamecast-fielder.is-responsible .gamecast-player-label rect {
+  fill: #243917;
+  stroke: #c9ed8d;
+  stroke-width: 1.1;
+}
+
+.gamecast-fielder.is-responsible .gamecast-player-label text {
+  fill: #f5ffe8;
+}
+
+.gamecast-contact-burst circle {
+  fill: none;
+  stroke: #fff1bb;
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gamecast-contact-ring 430ms cubic-bezier(.1, .8, .2, 1) both;
+}
+
+.gamecast-contact-burst circle:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.gamecast-contact-burst path {
+  fill: none;
+  stroke: rgb(255 236 169 / 72%);
+  stroke-width: 1.4;
+  animation: gamecast-contact-flash 280ms ease-out both;
+}
+
+.gamecast-hit-line {
+  stroke-width: 2.2;
+  stroke-opacity: .84;
+  filter: drop-shadow(0 0 3px rgb(240 230 177 / 26%));
+}
+
+.gamecast-hit-shadow {
+  stroke-width: 5;
+  stroke-opacity: .45;
+}
+
+.gamecast-ball-ghost {
+  fill: #fff7d5;
+  opacity: .24;
+}
+
+.gamecast-ball-shadow {
+  fill: rgb(0 0 0 / 52%);
+  filter: blur(.7px);
+}
+
+.gamecast-height-guide {
+  stroke: rgb(239 246 242 / 22%);
+  stroke-dasharray: 2 3;
+}
+
+.gamecast-live-ball circle {
+  fill: #f5f1df;
+  stroke: #fff;
+  filter: drop-shadow(0 0 4px rgb(255 238 164 / 82%));
+}
+
+.gamecast-view-caption {
+  position: relative;
+  z-index: 4;
+  min-height: 28px;
+  border-top-color: rgb(177 201 187 / 18%);
+  color: #82958b;
+  background: rgb(4 11 13 / 95%);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .59375rem;
+  letter-spacing: .03em;
+}
+
+.gamecast-view-caption strong {
+  color: #c5db95;
+}
+
+.gamecast-pitch-sky-top { stop-color: #050a15; }
+.gamecast-pitch-sky-bottom { stop-color: #344650; }
+.gamecast-pitch-turf-far { stop-color: #1c4934; }
+.gamecast-pitch-turf-near { stop-color: #0f2d20; }
+
+.gamecast-pitch-stands {
+  fill: #12191c;
+  stroke: #53645c;
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+
+.gamecast-pitch-lane {
+  fill: rgb(203 219 207 / 4%);
+  stroke: rgb(226 235 228 / 8%);
+  stroke-width: 1;
+}
+
+.gamecast-pitch-mound {
+  fill: #846246;
+  stroke: #b1936d;
+  stroke-width: 1;
+}
+
+.gamecast-batter-box {
+  fill: none;
+  stroke: rgb(238 239 225 / 37%);
+  stroke-width: 1.3;
+}
+
+.gamecast-pitcher-silhouette ellipse,
+.gamecast-catcher-silhouette ellipse {
+  fill: rgb(0 0 0 / 43%);
+}
+
+.gamecast-pitcher-silhouette path,
+.gamecast-catcher-silhouette path {
+  fill: none;
+  stroke: #17211d;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5;
+}
+
+.gamecast-pitcher-silhouette circle,
+.gamecast-catcher-silhouette circle {
+  fill: #17211d;
+}
+
+.gamecast-strike-grid {
+  fill: rgb(3 8 8 / 15%);
+  stroke: rgb(225 237 230 / 68%);
+  stroke-width: 1;
+  filter: drop-shadow(0 0 3px rgb(0 0 0 / 55%));
+}
+
+.gamecast-target circle {
+  fill: rgb(1 6 7 / 42%);
+  stroke: #dce7df;
+}
+
+.gamecast-pitch-line {
+  stroke: #f6d479;
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 3px rgb(247 211 121 / 56%));
+}
+
+.gamecast-telemetry {
+  border-left: 1px solid rgb(179 202 190 / 18%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 3%), transparent 35%),
+    #07100f;
+}
+
+.gamecast-telemetry-heading {
+  min-height: 40px;
+  border-bottom-color: rgb(176 199 187 / 18%);
+  background: rgb(255 255 255 / 2%);
+}
+
+.gamecast-telemetry-heading strong {
+  color: #e7ece8;
+  font-size: .75rem;
+}
+
+.gamecast-pitch-view.is-compact {
+  min-height: 176px;
+  border-bottom-color: rgb(176 199 187 / 18%);
+}
+
+.gamecast-pitch-view.is-compact .gamecast-camera-hud {
+  top: 7px;
+  left: 7px;
+  transform: scale(.82);
+  transform-origin: top left;
+}
+
+.gamecast-contact-card {
+  display: grid;
+  gap: 5px;
+  padding: 12px 11px 10px;
+  border-bottom: 1px solid rgb(176 199 187 / 18%);
+  background:
+    radial-gradient(circle at 75% 25%, rgb(225 191 99 / 11%), transparent 55%),
+    rgb(255 255 255 / 2%);
+}
+
+.gamecast-contact-card > span,
+.gamecast-contact-card small {
+  color: #80938a;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .5625rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.gamecast-contact-card > div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.gamecast-contact-card strong {
+  color: #f2ce70;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  letter-spacing: -.08em;
+  line-height: .92;
+}
+
+.gamecast-contact-card em {
+  color: #9caea5;
+  font-size: .625rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.gamecast-contact-card small {
+  color: #b2c1b9;
+  letter-spacing: .04em;
+}
+
+.gamecast-metrics > div {
+  padding: 8px 9px;
+  border-color: rgb(159 185 171 / 15%);
+}
+
+.gamecast-metrics span {
+  color: #7c9086;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .5625rem;
+  letter-spacing: .08em;
+}
+
+.gamecast-metrics strong {
+  color: #dae5de;
+  font-size: .6875rem;
+}
+
+.gamecast-metrics .is-accent strong {
+  color: #d9c77d;
+}
+
+.gamecast-rival-read {
+  display: grid;
+  gap: 3px;
+  margin-top: auto;
+  padding: 9px 10px;
+  border-top: 1px solid rgb(159 185 171 / 15%);
+  background:
+    linear-gradient(90deg, rgb(103 182 193 / 8%), transparent 70%),
+    rgb(255 255 255 / 1.5%);
+}
+
+.gamecast-rival-read span {
+  color: #67b6c1;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .5625rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+}
+
+.gamecast-rival-read strong {
+  overflow: hidden;
+  color: #bdcbc4;
+  font-size: .6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gamecast-result-sting {
+  position: absolute;
+  z-index: 12;
+  top: 50%;
+  left: calc((100% - min(286px, 26%)) / 2);
+  width: min(310px, 44%);
+  display: grid;
+  gap: 3px;
+  padding: 12px 18px 14px;
+  border: 1px solid rgb(235 243 238 / 28%);
+  border-left: 4px solid #c9dd93;
+  border-radius: 5px;
+  color: #f5f8f5;
+  background: rgb(3 10 12 / 89%);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 48%), inset 0 1px rgb(255 255 255 / 7%);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: gamecast-result-sting 520ms cubic-bezier(.18, .9, .25, 1.15) both;
+}
+
+.gamecast-result-sting span {
+  color: #93a59b;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .5625rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.gamecast-result-sting strong {
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  letter-spacing: -.07em;
+  line-height: 1;
+}
+
+.gamecast-result-sting small {
+  overflow: hidden;
+  color: #b6c5bd;
+  font-size: .6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gamecast-result-sting--positive { border-left-color: var(--color-positive); }
+.gamecast-result-sting--negative { border-left-color: var(--color-negative); }
+.gamecast-result-sting--neutral { border-left-color: #e1c36f; }
+
+.gamecast-footer {
+  min-height: 68px;
+  border-top-color: rgb(176 199 187 / 18%);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 3%), transparent),
+    #071012;
+}
+
+.gamecast-result-copy {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.gamecast-causality {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 0;
+  padding: 8px 4px;
+  border-top: 1px solid rgb(176 199 187 / 18%);
+  background: rgb(255 255 255 / 1.5%);
+}
+
+.gamecast-causality > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  padding: 0 7px;
+  border-right: 1px solid rgb(176 199 187 / 13%);
+}
+
+.gamecast-causality > span:last-of-type {
+  border-right: 0;
+}
+
+.gamecast-causality small {
+  color: #758a7f;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: .5rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.gamecast-causality b {
+  overflow: hidden;
+  color: #d6e1da;
+  font-size: .625rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gamecast-causality i {
+  display: none;
+}
+
+.gamecast-zone-call {
+  margin: 8px;
+}
+
+.gamecast-result-copy strong {
+  color: #e9f0eb;
+}
+
+.gamecast-result-copy p {
+  color: #84978d;
+}
+
+@keyframes gamecast-live-pulse {
+  50% { opacity: .45; transform: scale(.82); }
+}
+
+@keyframes gamecast-contact-ring {
+  from { opacity: .95; transform: scale(.25); }
+  to { opacity: 0; transform: scale(1.65); }
+}
+
+@keyframes gamecast-contact-flash {
+  from { opacity: 1; transform: scale(.35) rotate(0); transform-box: fill-box; transform-origin: center; }
+  to { opacity: 0; transform: scale(1.15) rotate(18deg); transform-box: fill-box; transform-origin: center; }
+}
+
+@keyframes gamecast-result-sting {
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(.92); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes gamecast-camera-impact {
+  0% { transform: translate(0, 0) scale(1.012); filter: brightness(1); }
+  22% { transform: translate(-2px, 1px) scale(1.025); filter: brightness(1.18); }
+  55% { transform: translate(1px, -1px) scale(1.019); filter: brightness(1.05); }
+  100% { transform: translate(0, 0) scale(1.016); filter: brightness(1); }
+}
+
+body.reduce-motion .gamecast-field-view svg {
+  transform: none;
+  transition: none;
+  animation: none;
+}
+
+body.reduce-motion :is(.gamecast-brand > i, .gamecast-contact-burst circle, .gamecast-contact-burst path, .gamecast-result-sting) {
+  animation: none;
+}
+
 .result-details-toggle {
   width: 100%;
   padding: 8px 10px;
@@ -3805,6 +4693,10 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   .gamecast-visuals.has-pitch {
     grid-template-columns: minmax(390px, 1.45fr) minmax(220px, .65fr);
   }
+
+  .gamecast-result-copy {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
 }
 
 @media (min-width: 781px) and (max-height: 760px) {
@@ -3926,6 +4818,16 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
 
   .gamecast-footer {
     grid-template-columns: 1fr;
+  }
+
+  .gamecast-result-sting {
+    left: 50%;
+    width: min(360px, 80%);
+  }
+
+  .gamecast-camera-hud,
+  .gamecast-flight-hud {
+    top: 8px;
   }
 
   .lab-hero {
@@ -4072,6 +4974,15 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   .gamecast-result-copy {
     grid-template-columns: 1fr;
   }
+
+  .gamecast-camera-hud small {
+    display: none;
+  }
+
+  .gamecast-flight-hud {
+    transform: scale(.88);
+    transform-origin: top right;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4089,5 +5000,15 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing, .gamecast-play-sequence span) {
     opacity: 1;
     transform: none;
+  }
+
+  :is(.gamecast-brand > i, .gamecast-contact-burst circle, .gamecast-contact-burst path, .gamecast-result-sting) {
+    animation: none;
+  }
+
+  .gamecast-field-view svg {
+    transform: none;
+    transition: none;
+    animation: none;
   }
 }
