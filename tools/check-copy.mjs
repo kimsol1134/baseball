@@ -37,6 +37,25 @@ const blockedCopy = [
   "무브먼트",
 ];
 
+// 기본 배포 콘텐츠는 독자적인 가상 야구 세계관만 사용합니다. 약칭 하나만
+// 검사하면 코드 식별자와 충돌할 수 있어, 실제 리그·구단의 식별 가능한 정식
+// 표현을 소스와 사용자 문구에서 차단합니다. 문서와 테스트 fixture는 제외합니다.
+const blockedWorldTerms = [
+  "KBO",
+  "한국야구위원회",
+  "LG 트윈스",
+  "한화 이글스",
+  "SSG 랜더스",
+  "삼성 라이온즈",
+  "롯데 자이언츠",
+  "KIA 타이거즈",
+  "두산 베어스",
+  "KT 위즈",
+  "kt wiz",
+  "NC 다이노스",
+  "키움 히어로즈",
+];
+
 function filesUnder(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
@@ -56,6 +75,11 @@ for (const sourceRoot of sourceRoots) {
         if (line.includes(blocked)) failures.push(`${relative(root, path)}:${index + 1} — ${blocked}`);
       });
     }
+    for (const blocked of blockedWorldTerms) {
+      lines.forEach((line, index) => {
+        if (line.includes(blocked)) failures.push(`${relative(root, path)}:${index + 1} — 실존 야구 IP 직접 지칭: ${blocked}`);
+      });
+    }
   }
 }
 
@@ -65,4 +89,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`문구 품질 검사 통과: 이해하기 어려운 내부 용어 ${blockedCopy.length}종 미노출`);
+console.log(`문구 품질 검사 통과: 내부 용어 ${blockedCopy.length}종·실존 야구 IP ${blockedWorldTerms.length}종 미노출`);
