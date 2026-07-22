@@ -44,9 +44,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - uses: SwiftyLab/setup-swift@v1.13.0
+      - uses: SwiftyLab/setup-swift@v1.14.0
         with:
           swift-version: "6.3.3"
+          check-latest: true
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
       - run: npm run check
