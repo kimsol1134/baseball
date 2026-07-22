@@ -26,6 +26,7 @@
 - Developer ID 인증서가 있으면 서명·공증하고 stapling을 검증하는 CI 경로 구성
 - 원격 Windows CI에서 NSIS 설치 파일 생성, 무인 설치, Swift 런타임 포함과 sidecar 상태 검사 통과
 - 인증서가 없는 macOS Steam 빌드가 빈 키체인 ID 대신 ad-hoc 서명을 사용하도록 수정하고 ARM64 정식판·데모 재검증
+- 공개 GitHub 저장소의 원격 CI에서 Windows x64, macOS Intel·Apple Silicon의 정식판·데모 6개 Steam 데포 생성·검사·업로드 통과
 
 ## 현재 로컬 산출물
 
@@ -59,7 +60,7 @@
 
 - [x] Windows CI에서 SteamPipe용 무설치 데포 폴더를 생성하는 워크플로 구성
 - [x] 원격 Windows CI에서 NSIS 설치 파일 생성·무인 설치·sidecar 상태 검사 통과
-- [ ] 원격 Windows CI의 실제 데포 생성 성공 확인
+- [x] 원격 Windows CI에서 정식판·데모 데포 생성·체크섬·sidecar 검사 통과
 - [ ] 앱과 Swift sidecar 코드 서명
 - [ ] Windows 11 표준 사용자 Steam 설치·실행·업데이트·삭제 확인
 - [ ] SmartScreen, 방화벽, 백신 오탐 확인
@@ -81,7 +82,7 @@
 
 - [x] GitHub 저장소, 릴리스 후보 브랜치, draft PR, `steam-v1.0.0-rc.1` 태그 생성
 - [x] 웹·Swift·macOS 앱·Windows 설치 패키지 P0 원격 검사 통과
-- [ ] GitHub Actions 결제 또는 지출 한도를 복구하고 `Steam depot artifacts` 6개 작업 재실행
+- [x] 저장소 공개 전환과 공개 호스팅 러너에서 `Steam depot artifacts` 6개 작업 통과
 
 ### 이번 Steam 1.0 범위 밖
 
@@ -114,4 +115,4 @@ npm run steam:smoke -- artifacts/steam/demo/macos-arm64
 
 일반 로컬 산출물은 `apps/windows/src-tauri/target/release/bundle/` 아래에 생성한다. 이 파일은 기능 검증용이며 서명·공증 전에는 공개 배포하지 않는다.
 
-Steam 데포는 `artifacts/steam/<edition>/<platform>/` 아래에 생성한다. macOS ARM64 정식판과 데모 데포는 로컬 체크섬·sidecar 검사를 통과했지만 ad-hoc 서명이므로 공개 업로드 대상이 아니다.
+Steam 데포는 `artifacts/steam/<edition>/<platform>/` 아래에 생성한다. Windows x64와 macOS Intel·Apple Silicon의 정식판·데모 6종은 원격 CI에서 체크섬·sidecar 검사를 통과했다. macOS 산출물은 아직 ad-hoc 서명이므로 공개 배포 대상이 아니다.

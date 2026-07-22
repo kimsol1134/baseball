@@ -127,7 +127,7 @@ docs/adr/                     아키텍처 결정 기록
 tools/                        sidecar 빌드와 로컬 도구 체인 실행기
 ```
 
-## P0 범위
+## P0 완료 상태
 
 현재 확률과 결과 분포는 시스템 연결과 재현성을 검증하기 위한 초기값이다.
 
@@ -140,9 +140,7 @@ tools/                        sidecar 빌드와 로컬 도구 체인 실행기
 - portable save archive 쓰기·읽기와 강제 종료 복구 테스트
 - macOS 로컬 테스트·릴리스 빌드와 Windows CI 구성
 
-남은 P0 항목:
-
-- 원격 Windows CI의 실제 통과 확인
+원격 CI에서 Swift·React·Tauri 회귀 검사, Windows NSIS 생성·무인 설치, Windows x64와 macOS Intel·Apple Silicon의 정식판·데모 Steam 데포 생성·검사까지 통과했다. 남은 작업은 P0 구현이 아니라 Steamworks 등록, 실제 Steam 클라이언트 QA, 서명·공증과 외부 플레이테스트 같은 출시 게이트다.
 
 ## P1 완료 상태
 

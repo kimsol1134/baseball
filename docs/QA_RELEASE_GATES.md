@@ -55,8 +55,8 @@ iOS는 `generic/platform=iOS Simulator` 대상 Debug와 Release 빌드가 모두
 
 | 항목 | 상태 | 공개 전 필요한 조치 |
 |---|---|---|
-| macOS Steam 앱 생성 | ARM64 정식판·데모 ad-hoc 서명, manifest·sidecar·엄격 무결성·실제 종료 저장 통과 | Developer ID 서명, Apple 공증, Intel/Apple Silicon Steam QA |
-| Windows Steam 데포 | NSIS 원격 생성·무인 설치·Swift 런타임·sidecar 검사 통과, 무설치 데포 CI는 Actions 지출 한도로 실행 전 차단 | Actions 한도 복구 후 전체판·데모 데포 생성, Steam 설치·업데이트·삭제 검사 |
+| macOS Steam 앱 생성 | Intel·Apple Silicon 정식판·데모 ad-hoc 서명, manifest·sidecar·엄격 무결성·실제 종료 저장 통과 | Developer ID 서명, Apple 공증, Intel/Apple Silicon Steam 설치·업데이트·삭제 검사 |
+| Windows Steam 데포 | NSIS 원격 생성·무인 설치와 정식판·데모 무설치 데포의 Swift 런타임·sidecar·체크섬 검사 통과 | 코드 서명, 깨끗한 Windows 11의 Steam 설치·업데이트·삭제 검사 |
 | 고교 커리어와 데모 | 내부 출시 후보 | 외부 초보자 플레이테스트, 문구·밸런스·크래시 기준 통과 |
 | Steam 정식판·데모 | 빌드별 프로 접근 분리, 첫 중요 경기 종료 게이트, 회전 파일 저장 구현 | App ID 발급, 실제 Auto-Cloud·다른 기기·데모 승계 검증 |
 | iOS 앱 | Steam 1.0 범위 밖 | Steam 출시 뒤 별도 제품 계획에서 재검토 |

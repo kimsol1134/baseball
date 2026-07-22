@@ -25,7 +25,8 @@
 ## 알려진 출시 조건
 
 - macOS 공개 배포에는 Developer ID 서명과 Apple 공증이 필요하다.
-- Windows NSIS 설치 파일은 원격 CI에서 생성·무인 설치·Swift 엔진 상태 검사까지 통과했다. Steam 무설치 데포와 깨끗한 Windows 11 Steam 클라이언트 검증은 남아 있다.
+- Windows NSIS 설치 파일과 정식판·데모 Steam 무설치 데포는 원격 CI에서 생성·검사까지 통과했다. 깨끗한 Windows 11 Steam 클라이언트 검증은 남아 있다.
+- macOS Intel·Apple Silicon 정식판·데모 데포는 ad-hoc 서명 상태로 원격 생성·검사를 통과했다. Developer ID 서명·공증과 Steam 클라이언트 검증 전에는 공개 배포하지 않는다.
 - 게임의 재미와 반복 의향은 외부 플레이테스트를 통과해야 하며 자동 테스트로 대체하지 않는다.
 
 자세한 상태는 [출시 체크리스트](./RELEASE_1_0_CHECKLIST.md)와 [QA 게이트](./QA_RELEASE_GATES.md)에서 확인한다.

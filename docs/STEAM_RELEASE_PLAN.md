@@ -93,8 +93,9 @@ Steam App ID가 발급되기 전에는 코드에 임의 ID를 넣지 않는다. 
 
 - [x] Windows Steam 데포 폴더 생성·검사 CI 구성
 - [x] 원격 Windows CI에서 NSIS 설치 파일 생성, 무인 설치, Swift sidecar 상태 검사 통과
-- [ ] 실제 원격 Windows CI에서 데포 생성 성공 확인
-- [ ] GitHub Actions 결제 또는 지출 한도를 복구한 뒤 `Steam depot artifacts` 6개 작업 재실행
+- [x] 원격 Windows CI에서 정식판·데모 데포 생성, 체크섬·sidecar 검사와 아티팩트 업로드 통과
+- [x] 공개 GitHub 저장소의 호스팅 러너에서 `Steam depot artifacts` 6개 작업 통과
+- [x] macOS Intel·Apple Silicon 정식판·데모의 ad-hoc 빌드, 체크섬·sidecar·번들 무결성 검사 통과
 - [ ] 깨끗한 Windows 11 표준 사용자 계정에서 Steam 설치·실행·업데이트·삭제 통과
 - [ ] sidecar와 Swift 런타임 누락 없이 오프라인 실행 통과
 - [x] 정식판·데모 공용 회전 파일 저장과 단일 기기 손상 복구 통과
@@ -125,12 +126,12 @@ Steam App ID가 발급되기 전에는 코드에 임의 ID를 넣지 않는다. 
 | 항목 | 판정 | 이유 |
 |---|---|---|
 | 게임 기능 | 출시 후보 | 고교·프로 완주 흐름과 자동 테스트가 있으나 외부 테스트가 없음 |
-| Windows Steam판 | 설치형 RC 통과·데포 검증 대기 | 원격 Windows CI에서 NSIS 생성, 무인 설치, Swift 런타임 포함, sidecar 상태 검사를 통과했다. Steam 무설치 데포 작업은 GitHub Actions 지출 한도 때문에 실행 전에 차단됨 |
-| macOS Steam판 | ARM64 내부 RC 통과 | 정식판·데모 체크섬, sidecar, 번들 무결성, 실제 종료 저장을 통과했다. 빈 서명 ID 대신 ad-hoc 서명을 명시하는 수정도 같은 커밋에서 재검증했다. Intel 원격 빌드와 Developer ID 서명·공증은 남아 있음 |
-| Steam 데모 | 내부 RC 통과 | 첫 중요 경기 종료 지점, 정식판과 같은 저장 파일, ARM64 데포와 종료 조건 회귀 테스트를 구현했으나 Steam App ID와 외부 테스트가 없음 |
+| Windows Steam판 | 내부 데포 RC 통과 | 원격 Windows CI에서 NSIS 생성·무인 설치와 정식판·데모 무설치 데포 생성, Swift 런타임·sidecar·체크섬 검사를 통과했다. 깨끗한 Windows 11 Steam 클라이언트 QA와 코드 서명은 남아 있음 |
+| macOS Steam판 | 양 아키텍처 내부 데포 RC 통과 | Intel·Apple Silicon 정식판·데모의 체크섬, sidecar, 번들 무결성과 실제 종료 저장을 통과했다. 현재 산출물은 ad-hoc 서명이므로 Developer ID 서명·공증과 Steam 클라이언트 QA는 남아 있음 |
+| Steam 데모 | 양 플랫폼 내부 RC 통과 | 첫 중요 경기 종료 지점, 정식판과 같은 저장 파일, Windows·macOS 양 아키텍처 데포와 종료 조건 회귀 테스트를 통과했으나 Steam App ID와 외부 테스트가 없음 |
 | 모바일 웹 | 보조 채널 | 반응형·웹 실행 경계의 기반만 유지하고 본편보다 우선하지 않음 |
 
-따라서 지금 앱을 Steam에 바로 제출할 수는 없다. 저장·데모·데포 생성 코드에서 로컬로 끝낼 수 있는 작업과 Windows 설치형 RC 검증은 완료했다. 다음 순서는 **GitHub Actions 결제/지출 한도 복구와 Steam 6종 CI 재실행 → Steamworks 등록과 App ID 발급 → 깨끗한 Windows Steam QA → 외부 데모 테스트 → 스토어·빌드 검토**다. 테스트 운영 기준은 [STEAM_EXTERNAL_TEST_PLAN.md](./STEAM_EXTERNAL_TEST_PLAN.md)를 따른다.
+따라서 지금 앱을 Steam에 바로 제출할 수는 없다. 저장·데모·설치형 패키지와 Windows/macOS 6종 데포의 자동 검증은 완료했다. 다음 순서는 **Steamworks 등록과 App ID 발급 → 깨끗한 Windows Steam QA → macOS Developer ID 서명·공증과 Steam QA → 외부 데모 테스트 → 스토어·빌드 검토**다. 테스트 운영 기준은 [STEAM_EXTERNAL_TEST_PLAN.md](./STEAM_EXTERNAL_TEST_PLAN.md)를 따른다.
 
 ## 8. 공식 근거
 
