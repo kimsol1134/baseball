@@ -3,6 +3,7 @@ import {
   createBattedBallPlot,
   createGameCastTimeline,
   createPitchPlot,
+  shouldCommitReplayFrame,
   createRunnerMotions,
   decodeTrajectorySeries,
   gameCastPhase,
@@ -12,6 +13,11 @@ import {
 } from "./TrajectoryReplay";
 
 describe("trajectory replay geometry", () => {
+  it("caps React replay state commits at 30 frames per second", () => {
+    expect(shouldCommitReplayFrame(1016, 1000, false)).toBe(false);
+    expect(shouldCommitReplayFrame(1034, 1000, false)).toBe(true);
+    expect(shouldCommitReplayFrame(1001, 1000, true)).toBe(true);
+  });
   it("keeps an extreme pitch inside the plotting board", () => {
     const plot = createPitchPlot({
       targetX: -400,

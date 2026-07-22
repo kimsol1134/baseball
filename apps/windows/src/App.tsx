@@ -31,6 +31,7 @@ import {
 } from "./simulationClient";
 import { PitcherLabSetup, PitcherLabView } from "./PitcherLabView";
 import { HighSchoolCareerSetup, HighSchoolCareerView } from "./HighSchoolCareerView";
+import { gameStateForReplay, pitcherCondition } from "./gamePresentation";
 import { ProCareerView } from "./ProCareerView";
 import { GameCastReplay } from "./TrajectoryReplay";
 import {
@@ -293,9 +294,10 @@ function StatRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function AccessibilityControls({ highContrast, reducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled, onContrast, onMotion, onFontScale, onAnalytics, onSound, onHaptics, onDiagnostics }: {
+function AccessibilityControls({ highContrast, reducedMotion, systemReducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled, onContrast, onMotion, onFontScale, onAnalytics, onSound, onHaptics, onDiagnostics }: {
   highContrast: boolean;
   reducedMotion: boolean;
+  systemReducedMotion: boolean;
   fontScale: number;
   analyticsOptIn: boolean;
   soundEnabled: boolean;
@@ -314,7 +316,7 @@ function AccessibilityControls({ highContrast, reducedMotion, fontScale, analyti
     <div className="accessibility-controls" aria-label="접근성 및 환경 설정">
       <span className="settings-menu-label">화면</span>
       <button type="button" aria-pressed={highContrast} onClick={onContrast}>고대비 {highContrast ? "켜짐" : "꺼짐"}</button>
-      <button type="button" aria-pressed={reducedMotion} onClick={onMotion}>모션 감소 {reducedMotion ? "켜짐" : "꺼짐"}</button>
+      <button type="button" disabled={systemReducedMotion} aria-pressed={reducedMotion} onClick={onMotion}>모션 감소 {systemReducedMotion ? "시스템 설정" : reducedMotion ? "켜짐" : "꺼짐"}</button>
       <button type="button" onClick={onFontScale}>글자 {fontScale === 1 ? "보통" : fontScale === 1.15 ? "크게" : "매우 크게"}</button>
       <span className="settings-menu-label">피드백</span>
       <button type="button" aria-pressed={soundEnabled} onClick={onSound}>효과음 {soundEnabled ? "켜짐" : "꺼짐"}</button>
@@ -458,6 +460,7 @@ export function App() {
   const [saveNotice, setSaveNotice] = useState<string>();
   const [highContrast, setHighContrast] = useState(() => appStorage.getItem("baseball.a11y.contrast") === "true");
   const [reducedMotion, setReducedMotion] = useState(() => appStorage.getItem("baseball.a11y.motion") === "true");
+  const [systemReducedMotion, setSystemReducedMotion] = useState(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const [fontScale, setFontScale] = useState(() => Number(appStorage.getItem("baseball.a11y.font-scale") ?? "1"));
   const [analyticsOptIn, setAnalyticsOptIn] = useState(() => appStorage.getItem("baseball.analytics.opt-in") === "true");
   const [tutorialDismissed, setTutorialDismissed] = useState(() => appStorage.getItem("baseball.tutorial.completed") === "true");
@@ -476,6 +479,7 @@ export function App() {
   const proDecisionStartedAt = useRef(performance.now());
   const lastCareerTelemetryRevision = useRef<number | undefined>(undefined);
   const lastProTelemetryRevision = useRef<number | undefined>(undefined);
+  const effectiveReducedMotion = reducedMotion || systemReducedMotion;
 
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetID);
   const pitcher = experienceMode === "career"
@@ -637,13 +641,21 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleChange = (event: MediaQueryListEvent) => setSystemReducedMotion(event.matches);
+    setSystemReducedMotion(query.matches);
+    query.addEventListener("change", handleChange);
+    return () => query.removeEventListener("change", handleChange);
+  }, []);
+
+  useEffect(() => {
     document.body.classList.toggle("high-contrast", highContrast);
-    document.body.classList.toggle("reduce-motion", reducedMotion);
+    document.body.classList.toggle("reduce-motion", effectiveReducedMotion);
     document.documentElement.style.setProperty("--font-scale", String(fontScale));
     appStorage.setItem("baseball.a11y.contrast", String(highContrast));
     appStorage.setItem("baseball.a11y.motion", String(reducedMotion));
     appStorage.setItem("baseball.a11y.font-scale", String(fontScale));
-  }, [fontScale, highContrast, reducedMotion]);
+  }, [effectiveReducedMotion, fontScale, highContrast, reducedMotion]);
 
   useEffect(() => {
     appStorage.setItem("baseball.analytics.opt-in", String(analyticsOptIn));
@@ -658,24 +670,24 @@ export function App() {
     setShowResultDetails(false);
     if (!lastResult) { setResultStage("idle"); setShowGameCast(false); return; }
     setShowGameCast(true);
-    if (reducedMotion) { setResultStage("summary"); return; }
+    if (effectiveReducedMotion) { setResultStage("summary"); return; }
     setResultStage("impact");
     const timer = window.setTimeout(() => setResultStage("summary"), 360);
     return () => window.clearTimeout(timer);
-  }, [lastResult?.eventHash, reducedMotion]);
+  }, [effectiveReducedMotion, lastResult?.eventHash]);
 
   useEffect(() => {
     if (!showGameCast || !lastResult) return;
     const frame = window.requestAnimationFrame(() => {
       const region = gameCastRegionRef.current;
       region?.scrollIntoView({
-        behavior: reducedMotion ? "auto" : "smooth",
+        behavior: effectiveReducedMotion ? "auto" : "smooth",
         block: "start",
       });
       region?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [lastResult?.eventHash, reducedMotion, showGameCast]);
+  }, [effectiveReducedMotion, lastResult?.eventHash, showGameCast]);
 
   useEffect(() => {
     if (showGameCast) {
@@ -1490,7 +1502,7 @@ export function App() {
     setSaveNotice("개인 식별 정보를 제외한 문제 해결 자료를 저장했습니다.");
   }, [coreStatus, error]);
   const accessibilityProps = {
-    highContrast, reducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled,
+    highContrast, reducedMotion: effectiveReducedMotion, systemReducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled,
     onContrast: () => setHighContrast((value) => !value),
     onMotion: () => setReducedMotion((value) => !value),
     onFontScale: cycleFontScale,
@@ -1522,13 +1534,7 @@ export function App() {
           ? "다음 타석 시작"
           : "다음 투구 선택";
   const careerSchool = careerResult?.snapshot.school;
-  const careerOpponent = careerResult?.snapshot.schoolOptions.find((school) => school.id !== careerSchool?.id);
-  const scoreboardHome = experienceMode === "career"
-    ? proVisible && proResult ? proResult.snapshot.team.name : careerSchool?.name ?? "고교"
-    : "연습팀";
-  const scoreboardAway = experienceMode === "career"
-    ? proVisible && proResult ? "상대 구단" : careerOpponent?.name ?? "상대 고교"
-    : "연습 상대";
+  const displayedGameState = gameStateForReplay(gameState, lastResult, showGameCast);
   const handleGameCastContinue = () => {
     if (!plateEnded) { setShowGameCast(false); return; }
     if (lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && proVisible && proResult?.snapshot.phase === "important_game") {
@@ -1655,14 +1661,14 @@ export function App() {
       <main>
         <section className="game-context" aria-label="경기 상황">
           <div>
-            <span className="context-label">{experienceMode === "career" ? proVisible && proResult ? `${proResult.snapshot.team.name} 중요 경기` : `${careerResult?.snapshot.school?.name ?? "고교"} 중요 경기` : "고교 연습 경기"} · {halfInningLabel(gameState)}</span>
-            <strong>{outsLabel(gameState)} · {runnerLabel(gameState.runners)} · B {context.balls} / S {context.strikes} · {context.pitchNumber}구</strong>
+            <span className="context-label">{experienceMode === "career" ? proVisible && proResult ? `${proResult.snapshot.team.name} 중요 경기` : `${careerResult?.snapshot.school?.name ?? "고교"} 중요 경기` : "고교 연습 경기"} · {halfInningLabel(displayedGameState)}</span>
+            <strong>{outsLabel(displayedGameState)} · {runnerLabel(displayedGameState.runners)} · B {context.balls} / S {context.strikes} · {context.pitchNumber}구</strong>
           </div>
           <div className="matchup">
             <span>{pitcher?.name ?? "투수 준비 중"}</span><b>VS</b><span>{activeBatter.name}</span>
           </div>
-          <div className="ds-scoreboard scoreboard" aria-label={`현재 점수 2 대 ${2 + gameState.runsAllowed}`}>
-            <span>{scoreboardHome}</span><strong>2 : {2 + gameState.runsAllowed}</strong><span>{scoreboardAway}</span>
+          <div className="ds-scoreboard scoreboard" aria-label={`현재 허용 실점 ${displayedGameState.runsAllowed}`}>
+            <span>수비 기록</span><strong>{displayedGameState.runsAllowed}실점</strong><span>{displayedGameState.park.name}</span>
           </div>
         </section>
 
@@ -1694,8 +1700,8 @@ export function App() {
               </div>
             ) : null}
             <div className="player-summary">
-              <div className="avatar" aria-hidden="true">17</div>
-              <div><strong>2학년 · 184cm</strong><span>피로 {context.fatigue} · 컨디션 좋음</span></div>
+              <div className="avatar" aria-hidden="true">P</div>
+              <div><strong>선발투수 · {pitchHint(pitcher?.pitchProfiles?.find((profile) => profile.pitchType === "four_seam"))}</strong><span>피로 {context.fatigue} · {pitcherCondition(context.fatigue)}</span></div>
             </div>
             {pitcher ? (
               <div className="stat-list" aria-label="현재 능력치">
@@ -1719,7 +1725,7 @@ export function App() {
             </div>
             <div className="scouting-card">
               <span>상대 타자 리포트</span>
-              <strong>{activeBatter.name} · 우타</strong>
+              <strong>{activeBatter.name}</strong>
               <p>가운데 포심에 강하고 낮은 몸쪽 슬라이더 인식이 늦습니다.</p>
               <div className="mini-stats">
                 <span>공 맞히기 {activeBatter.contact}</span><span>볼 고르기 {activeBatter.discipline}</span><span>장타력 {activeBatter.power}</span>
@@ -1749,12 +1755,12 @@ export function App() {
                 key={lastResult.eventHash}
                 result={lastResult}
                 pitchType={lastCall?.pitchType}
-                situationLabel={`${halfInningLabel(gameState)} · ${outsLabel(gameState)}`}
+                situationLabel={`${halfInningLabel(displayedGameState)} · ${outsLabel(displayedGameState)} · ${runnerLabel(displayedGameState.runners)}`}
                 pitcherName={pitcher?.name ?? "투수"}
                 batterName={activeBatter.name}
                 continueLabel={gameCastContinueLabel}
                 isRunning={isRunning}
-                reducedMotion={reducedMotion}
+                reducedMotion={effectiveReducedMotion}
                 onContinue={handleGameCastContinue}
               />
               {error ? <p className="error-message" role="alert">{error}</p> : null}

@@ -47,6 +47,10 @@ export interface GameCastTimeline {
 
 export type GameCastPhase = "pitch" | "contact" | "field" | "result";
 
+export function shouldCommitReplayFrame(now: number, lastCommit: number, complete: boolean) {
+  return complete || now - lastCommit >= 1000 / 30;
+}
+
 export interface RunnerMotion {
   id: string;
   fromBase: number;
@@ -825,12 +829,17 @@ export function GameCastReplay({
     if (status !== "playing" || reducedMotion) return;
     let frame = 0;
     let previous = performance.now();
+    let lastCommit = previous;
     const tick = (now: number) => {
       const next = Math.min(timeline.total, elapsedRef.current + (now - previous) * playbackRate);
       previous = now;
       elapsedRef.current = next;
-      setElapsed(next);
-      if (next >= timeline.total) {
+      const complete = next >= timeline.total;
+      if (shouldCommitReplayFrame(now, lastCommit, complete)) {
+        lastCommit = now;
+        setElapsed(next);
+      }
+      if (complete) {
         setStatus("complete");
         return;
       }
@@ -839,6 +848,13 @@ export function GameCastReplay({
     frame = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frame);
   }, [playbackRate, reducedMotion, status, timeline.total]);
+
+  useEffect(() => {
+    if (!reducedMotion) return;
+    elapsedRef.current = timeline.total;
+    setElapsed(timeline.total);
+    setStatus("complete");
+  }, [reducedMotion, timeline.total]);
 
   const phase = gameCastPhase(elapsed, timeline, hasContact);
   const phaseLabel = !hasContact && phase === "contact" ? "ABS·스윙 판정 중" : PHASE_LABELS[phase];
