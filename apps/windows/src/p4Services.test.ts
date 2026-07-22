@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readLocalAnalytics, recordLocalAnalytics, validateContentPackManifest } from "./p4Services";
+import { createAnonymousDiagnosticPackage, readLocalAnalytics, recordLocalAnalytics, validateContentPackManifest } from "./p4Services";
 
 class MemoryStorage {
   values = new Map<string, string>();
@@ -15,6 +15,38 @@ describe("P4 release services", () => {
     expect(readLocalAnalytics(storage)).toHaveLength(0);
     recordLocalAnalytics(storage, true, event);
     expect(readLocalAnalytics(storage)).toEqual([event]);
+  });
+
+  it("removes player identity and deterministic secrets from diagnostics", () => {
+    const diagnostics = createAnonymousDiagnosticPackage({
+      appVersion: "1.0.0",
+      analytics: [],
+      save: {
+        schemaVersion: 2,
+        savedAt: "2026-07-22T00:00:00Z",
+        screenMode: "lab",
+        seed: "private-seed",
+        careerResult: {
+          eventHash: "private-event-hash",
+          snapshot: {
+            phase: "training",
+            revision: 3,
+            lifeNumber: 1,
+            chapter: { number: 2 },
+            school: { id: "busan_haenam", name: "부산해남고" },
+            pitcher: { name: "비밀선수" },
+            difficulty: { informationClarity: "clear" },
+            karmas: [],
+            performance: { pitches: 12 },
+          },
+        },
+      } as never,
+    });
+
+    expect(diagnostics).not.toContain("비밀선수");
+    expect(diagnostics).not.toContain("private-seed");
+    expect(diagnostics).not.toContain("private-event-hash");
+    expect(diagnostics).toContain('"schoolID": "busan_haenam"');
   });
 
   it("validates a safe declarative content pack", () => {
