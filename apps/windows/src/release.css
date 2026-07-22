@@ -1,0 +1,101 @@
+.startup-failure {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  color: #eef6ef;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(112 170 104 / 20%), transparent 42%),
+    #07100c;
+}
+
+.startup-failure-card {
+  width: min(560px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 30px;
+  border: 1px solid rgb(169 209 148 / 24%);
+  border-radius: 16px;
+  background: rgb(10 24 17 / 94%);
+  box-shadow: 0 28px 80px rgb(0 0 0 / 42%);
+}
+
+.startup-failure-card span {
+  color: #9ddd68;
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.startup-failure-card h1,
+.startup-failure-card p {
+  margin: 0;
+}
+
+.startup-failure-card h1 {
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  letter-spacing: -.04em;
+}
+
+.startup-failure-card p {
+  color: #b5c4b9;
+  line-height: 1.65;
+}
+
+.startup-failure-card button {
+  min-height: 48px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 9px;
+  color: #07100c;
+  background: #a8e968;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.startup-storage-warning {
+  position: fixed;
+  z-index: 1000;
+  right: 18px;
+  bottom: 18px;
+  width: min(440px, calc(100vw - 36px));
+  padding: 12px 14px;
+  border: 1px solid rgb(241 188 90 / 40%);
+  border-radius: 10px;
+  color: #fff2d0;
+  background: rgb(35 25 10 / 94%);
+  box-shadow: 0 14px 40px rgb(0 0 0 / 35%);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
+.startup-storage-warning button {
+  margin-left: 10px;
+  border: 1px solid rgb(255 242 208 / 30%);
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.settings-explanation,
+.settings-version {
+  grid-column: 1 / -1;
+  color: var(--color-text-subtle, #91a097);
+  font-size: .68rem;
+  line-height: 1.45;
+}
+
+.settings-version {
+  padding-top: 8px;
+  border-top: 1px solid rgb(255 255 255 / 8%);
+}
+
+.event-proof strong {
+  color: var(--color-text-subtle, #91a097);
+  font-size: .68rem;
+  font-weight: 700;
+}

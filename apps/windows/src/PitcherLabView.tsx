@@ -10,7 +10,6 @@ import type {
   TrainingFocus,
   TrainingIntensity,
 } from "./simulationTypes";
-import { downloadPitcherLabAnalysis } from "./pitcherLabAutosave";
 
 const CREATION_METRICS: ReadonlyArray<{
   key: keyof CreationAllocationSnapshot;
@@ -54,7 +53,7 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
   return (
     <main className="lab-setup">
       <section className="lab-setup-intro">
-        <p className="eyebrow">NEW PITCHER</p>
+        <p className="eyebrow">새 선수</p>
         <h2>어떤 투수로 시작할까요?</h2>
         <p>강점과 약점이 다른 네 유형 중 하나를 고른 뒤, 추가 능력 5점을 나눠 주세요.</p>
       </section>
@@ -253,7 +252,7 @@ export function PitcherLabView({
     <main className="lab-shell">
       <section className="lab-hero">
         <div>
-          <p className="eyebrow">PITCHER LAB · LIFE {snapshot.lifeNumber}</p>
+          <p className="eyebrow">투수 성장실 · {snapshot.lifeNumber}번째 선수</p>
           <h2>{snapshot.pitcher.name} · {snapshot.lifeNumber === 1 ? "첫 번째" : "두 번째"} 선수</h2>
           <p>현재 능력은 정확히 보입니다. 어떤 훈련이 잘 맞는지는 직접 훈련한 뒤 반응을 확인해야 합니다.</p>
         </div>
@@ -263,14 +262,11 @@ export function PitcherLabView({
             <div><span>피로</span><strong>{snapshot.fatigue}</strong></div>
             <div><span>포수 신뢰</span><strong>{snapshot.catcherTrust}</strong></div>
           </div>
-          <div className="lab-utility-actions">
-            <button type="button" onClick={() => downloadPitcherLabAnalysis(result)}>분석 JSON 내보내기</button>
-            <button type="button" onClick={onNewExperiment}>새 선수</button>
-          </div>
+          <div className="lab-utility-actions"><button type="button" onClick={onNewExperiment}>새 선수</button></div>
         </div>
       </section>
 
-      <section className="lab-progress" aria-label="Pitcher Lab 진행 상황">
+      <section className="lab-progress" aria-label="투수 성장실 진행 상황">
         <div>
           <span>훈련</span>
           <strong>{snapshot.trainingSessionsCompleted} / 6</strong>
@@ -348,7 +344,7 @@ export function PitcherLabView({
 
           {snapshot.phase === "important_inning" ? (
             <div className="lab-milestone">
-              <span>IMPORTANT INNING {snapshot.performance.importantInningsCompleted + 1}</span>
+              <span>중요 이닝 {snapshot.performance.importantInningsCompleted + 1}</span>
               <h3>{snapshot.performance.importantInningsCompleted === 0 ? "자신의 공을 확인할 첫 등판" : snapshot.performance.importantInningsCompleted === 1 ? "주자와 피로가 겹친 위기" : "라이벌 재대결과 스카우트 관전"}</h3>
               <p>직접 구종과 코스를 골라 이번 훈련 뒤 공이 어떻게 달라졌는지 확인합니다.</p>
               <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onStartImportantInning()}>
@@ -359,7 +355,7 @@ export function PitcherLabView({
 
           {snapshot.phase === "relationship" ? (
             <div className="lab-milestone">
-              <span>BATTERY TALK {snapshot.relationshipEventsCompleted + 1}</span>
+              <span>포수 면담 {snapshot.relationshipEventsCompleted + 1}</span>
               <h3>오늘 엇갈린 사인을 다시 맞춰 봅니다.</h3>
               <p>강민준: “낮은 변화구가 더 안전했어. 그런데 넌 왜 계속 높은 공을 골랐어?”</p>
               <div className="lab-choice-pair">
@@ -375,7 +371,7 @@ export function PitcherLabView({
 
           {snapshot.phase === "awakening" ? (
             <div className="lab-milestone">
-              <span>AWAKENING {snapshot.selectedAwakenings.length + 1}</span>
+              <span>새 강점 {snapshot.selectedAwakenings.length + 1}</span>
               <h3>반복해 온 훈련에서 한 가지 강점이 드러났습니다.</h3>
               <div className="lab-choice-pair">
                 {snapshot.awakeningOptions.map((awakening) => (
@@ -390,7 +386,7 @@ export function PitcherLabView({
 
           {snapshot.phase === "scouting" ? (
             <div className="lab-milestone">
-              <span>FINAL SCOUTING</span>
+              <span>최종 스카우팅</span>
               <h3>스카우트가 세 번의 등판 기록을 펼칩니다.</h3>
               <p>현재 능력과 삼진·볼넷·실점, 훈련 뒤 달라진 점을 함께 평가합니다.</p>
               <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onFinalizeScouting()}>
@@ -436,7 +432,7 @@ export function PitcherLabView({
 
           {snapshot.phase === "completed" && snapshot.legacySelection ? (
             <div className="lab-milestone lab-completed">
-              <span>LIFE {snapshot.lifeNumber} COMPLETE</span>
+              <span>{snapshot.lifeNumber}번째 선수 기록 완료</span>
               <h3>{snapshot.lifeNumber === 1 ? "첫 번째 선수의 스카우팅이 끝났습니다." : "두 번째 선수의 스카우팅도 끝났습니다."}</h3>
               <p>{snapshot.legacySelection.summary}</p>
               <div className="legacy-reward">
@@ -496,7 +492,6 @@ export function PitcherLabView({
               ))}
             </div>
           ) : null}
-          <code>{result.eventHash}</code>
         </aside>
       </div>
     </main>

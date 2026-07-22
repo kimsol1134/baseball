@@ -307,6 +307,7 @@ function AccessibilityControls({ highContrast, reducedMotion, fontScale, analyti
   onHaptics: () => void;
   onDiagnostics: () => void;
 }) {
+  const hapticsSupported = typeof navigator.vibrate === "function";
   return <details className="settings-menu">
     <summary>접근성·설정</summary>
     <div className="accessibility-controls" aria-label="접근성 및 환경 설정">
@@ -316,10 +317,13 @@ function AccessibilityControls({ highContrast, reducedMotion, fontScale, analyti
       <button type="button" onClick={onFontScale}>글자 {fontScale === 1 ? "보통" : fontScale === 1.15 ? "크게" : "매우 크게"}</button>
       <span className="settings-menu-label">피드백</span>
       <button type="button" aria-pressed={soundEnabled} onClick={onSound}>효과음 {soundEnabled ? "켜짐" : "꺼짐"}</button>
-      <button type="button" aria-pressed={hapticsEnabled} onClick={onHaptics}>햅틱 {hapticsEnabled ? "켜짐" : "꺼짐"}</button>
+      <button type="button" disabled={!hapticsSupported} aria-pressed={hapticsSupported ? hapticsEnabled : undefined} onClick={onHaptics}>진동 {hapticsSupported ? hapticsEnabled ? "켜짐" : "꺼짐" : "지원 안 됨"}</button>
       <span className="settings-menu-label">데이터</span>
-      <button type="button" aria-pressed={analyticsOptIn} onClick={onAnalytics}>로컬 분석 {analyticsOptIn ? "동의" : "미동의"}</button>
-      <button type="button" onClick={onDiagnostics}>익명 진단 저장</button>
+      <button type="button" aria-pressed={analyticsOptIn} onClick={onAnalytics}>플레이 기록 {analyticsOptIn ? "저장함" : "저장 안 함"}</button>
+      <button type="button" onClick={onDiagnostics}>문제 해결 자료 저장</button>
+      <small className="settings-explanation">플레이 기록은 동의할 때만 이 기기에 저장되며 외부로 전송되지 않습니다. 문제 해결 자료에도 선수 이름과 자유 입력은 포함하지 않습니다.</small>
+      <span className="settings-menu-label">게임 정보</span>
+      <small className="settings-version">버전 1.0.0 · 선택 확정마다 자동 저장 · Windows와 macOS 지원</small>
     </div>
   </details>;
 }
@@ -984,7 +988,7 @@ export function App() {
     try {
       setLabResult(await action());
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Pitcher Lab 결정을 처리하지 못했습니다.");
+      setError(caught instanceof Error ? caught.message : "선택을 처리하지 못했습니다. 다시 시도해 주세요.");
     } finally {
       setIsRunning(false);
     }
@@ -1473,7 +1477,7 @@ export function App() {
       appVersion: "1.0.0", coreVersion: health?.coreVersion, protocolVersion: health?.protocolVersion,
       error, save, analytics: readLocalAnalytics(appStorage),
     }));
-    setSaveNotice("이름과 시드를 제외한 익명 진단 파일을 저장했습니다.");
+    setSaveNotice("개인 식별 정보를 제외한 문제 해결 자료를 저장했습니다.");
   }, [coreStatus, error]);
   const accessibilityProps = {
     highContrast, reducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled,
@@ -1525,7 +1529,7 @@ export function App() {
       <div className="app-shell app-shell--career">
         <header className="topbar">
           <div className="brand-lockup"><img className="brand-mark" src="/128x128.png" alt="" /><div>
-            <p className="eyebrow">야구 못하면 또 환생함</p><h1>High School Career</h1>
+            <p className="eyebrow">야구 못하면 또 환생함</p><h1>고교 커리어</h1>
           </div></div>
           <div className={`core-status core-status--${coreStatus.state}`}><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" ? <button type="button" onClick={() => void connectCore()}>다시 연결</button> : null}</div>
@@ -1561,7 +1565,7 @@ export function App() {
             <img className="brand-mark" src="/128x128.png" alt="" />
             <div>
               <p className="eyebrow">야구 못하면 또 환생함</p>
-              <h1>Pitcher Lab</h1>
+              <h1>투수 성장실</h1>
             </div>
           </div>
           <div className={`core-status core-status--${coreStatus.state}`}>
@@ -1599,7 +1603,7 @@ export function App() {
           />
         )}
         <footer>
-          <span>Pitcher Lab{labResult ? ` · ${labResult.snapshot.lifeNumber}번째 선수` : " · 새 선수"}</span>
+          <span>투수 성장실{labResult ? ` · ${labResult.snapshot.lifeNumber}번째 선수` : " · 새 선수"}</span>
           <span>선택이 확정될 때마다 자동 저장됩니다.</span>
         </footer>
       </div>
@@ -1613,7 +1617,7 @@ export function App() {
           <img className="brand-mark" src="/128x128.png" alt="" />
           <div>
             <p className="eyebrow">야구 못하면 또 환생함</p>
-            <h1>{experienceMode === "career" ? proVisible ? "Pro Game" : "High School Game" : labResult?.snapshot.phase === "important_inning" ? "Important Inning" : "Pitch Kernel"}</h1>
+            <h1>{experienceMode === "career" ? proVisible ? "프로 중요 경기" : "고교 중요 경기" : labResult?.snapshot.phase === "important_inning" ? "중요 이닝" : "투구 연습"}</h1>
           </div>
         </div>
         <div className={`core-status core-status--${coreStatus.state}`}>
@@ -1643,7 +1647,7 @@ export function App() {
         <div className={`workspace-grid ${showGameCast && lastResult ? "workspace-grid--gamecast" : ""}`}>
           <aside className="panel player-panel" aria-label="선수 정보">
             <div className="panel-heading">
-              <div><p className="eyebrow">YOUR PITCHER</p><h2>{pitcher?.name ?? "불러오는 중"}</h2></div>
+              <div><p className="eyebrow">내 투수</p><h2>{pitcher?.name ?? "불러오는 중"}</h2></div>
               <span className="role-badge">{selectedPreset?.name ?? "프리셋"}</span>
             </div>
             <label className="preset-picker">
@@ -1734,7 +1738,7 @@ export function App() {
               {error ? <p className="error-message" role="alert">{error}</p> : null}
             </> : <>
             <div className="panel-heading">
-              <div><p className="eyebrow">PITCH DECISION</p><h2>어떻게 승부할까요?</h2></div>
+              <div><p className="eyebrow">승부 선택</p><h2>어떻게 승부할까요?</h2></div>
               <span className="count-badge">B {context.balls} · S {context.strikes}</span>
             </div>
 
@@ -1865,7 +1869,7 @@ export function App() {
 
           <aside className="panel result-panel" aria-label="투구 결과">
             <div className="panel-heading">
-              <div><p className="eyebrow">RESULT</p><h2>투구 결과</h2></div>
+              <div><p className="eyebrow">결과</p><h2>투구 결과</h2></div>
                   <span className="seed-label">{context.pitchNumber}구째</span>
             </div>
 
@@ -1950,8 +1954,8 @@ export function App() {
                   </div>
                 ) : null}
                 <div className="event-proof">
-                  <span>타자 노림수 확정 → 사인 → 투구 → 결과</span>
-                  <code>{lastResult.eventHash}</code>
+                  <span>타자 노림수 → 포수 사인 → 나의 선택 → 결과</span>
+                  <strong>선택을 확정한 뒤 결과가 계산됩니다.</strong>
                 </div>
               </div>
             ) : (
@@ -1997,7 +2001,7 @@ export function App() {
                   {history.map((event) => (
                     <li key={event.eventHash}>
                       <span className={`history-dot history-dot--${outcomeTone(event.outcome)}`} aria-hidden="true" />
-                      <div><strong>{OUTCOME_LABELS[event.outcome]} · {event.count}</strong><code>{event.eventHash.slice(0, 8)}</code></div>
+                      <div><strong>{OUTCOME_LABELS[event.outcome]} · {event.count}</strong></div>
                     </li>
                   ))}
                 </ol>
