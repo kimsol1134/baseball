@@ -9,6 +9,17 @@ use tauri_plugin_shell::ShellExt;
 
 const CLOUD_STORAGE_FORMAT: &str = "DiamondSoulSteamCloudStorage";
 const CLOUD_STORAGE_LIMIT: usize = 16 * 1024 * 1024;
+const CLOUD_SAVE_PREFIXES: [&str; 3] = [
+    "diamond-soul.pitcher-lab.autosave.",
+    "diamond-soul.high-school-career.autosave.",
+    "diamond-soul.pro-career.autosave.",
+];
+
+fn is_cloud_save_key(key: &str) -> bool {
+    CLOUD_SAVE_PREFIXES
+        .iter()
+        .any(|prefix| key.starts_with(prefix))
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,7 +51,7 @@ fn validate_payload(contents: &str) -> Result<CloudStoragePayload, String> {
         || payload
             .values
             .iter()
-            .any(|(key, _)| !key.starts_with("diamond-soul.") || key.len() > 256)
+            .any(|(key, _)| !is_cloud_save_key(key) || key.len() > 256)
     {
         return Err("save data contains an invalid key".to_owned());
     }
@@ -61,7 +72,7 @@ fn read_slot(path: &Path) -> Option<CloudStorageFile> {
         || value
             .values
             .keys()
-            .any(|key| !key.starts_with("diamond-soul.") || key.len() > 256)
+            .any(|key| !is_cloud_save_key(key) || key.len() > 256)
     {
         return None;
     }
@@ -277,7 +288,7 @@ mod tests {
         serde_json::json!({
             "format": CLOUD_STORAGE_FORMAT,
             "schemaVersion": 1,
-            "values": { "diamond-soul.career": value }
+            "values": { "diamond-soul.pro-career.autosave.v1": value }
         })
         .to_string()
     }
@@ -292,7 +303,7 @@ mod tests {
             .expect("load")
             .expect("stored payload");
         let value: CloudStoragePayload = serde_json::from_str(&loaded).expect("valid payload");
-        assert_eq!(value.values["diamond-soul.career"], "second");
+        assert_eq!(value.values["diamond-soul.pro-career.autosave.v1"], "second");
         assert!(cloud_slots(&directory).iter().all(|path| path.is_file()));
 
         fs::remove_dir_all(directory).expect("cleanup");
@@ -314,7 +325,7 @@ mod tests {
             .expect("load")
             .expect("backup payload");
         let value: CloudStoragePayload = serde_json::from_str(&loaded).expect("valid payload");
-        assert_eq!(value.values["diamond-soul.career"], "first");
+        assert_eq!(value.values["diamond-soul.pro-career.autosave.v1"], "first");
 
         fs::remove_dir_all(directory).expect("cleanup");
     }

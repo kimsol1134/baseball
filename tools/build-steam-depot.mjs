@@ -59,7 +59,14 @@ execFileSync(process.execPath, [path.join(repositoryRoot, "tools", "build-sideca
 
 const tauriArguments = [path.join(repositoryRoot, "tools", "run-tauri.mjs"), "build"];
 if (process.platform === "win32") tauriArguments.push("--no-bundle");
-else tauriArguments.push("--bundles", "app");
+else {
+  tauriArguments.push("--bundles", "app");
+  if (process.env.APPLE_SIGNING_IDENTITY) {
+    tauriArguments.push("--config", JSON.stringify({
+      bundle: { macOS: { signingIdentity: process.env.APPLE_SIGNING_IDENTITY } },
+    }));
+  }
+}
 execFileSync(process.execPath, tauriArguments, {
   cwd: repositoryRoot,
   env: buildEnvironment,
@@ -71,13 +78,13 @@ if (process.platform === "win32") {
   const releaseDirectory = path.join(tauriRoot, "target", "release");
   const binaryDirectory = path.join(tauriRoot, "binaries");
   const appExecutable = path.join(releaseDirectory, "diamond-soul.exe");
-  const sidecar = path.join(binaryDirectory, `simulation-sidecar-${targetTriple}.exe`);
+  const sidecar = path.join(releaseDirectory, "simulation-sidecar.exe");
   const runtime = path.join(binaryDirectory, "swift-runtime");
   for (const required of [appExecutable, sidecar, path.join(runtime, "swiftCore.dll")]) {
     if (!existsSync(required)) throw new Error(`Steam depot input is missing: ${required}`);
   }
   cpSync(appExecutable, path.join(depotDirectory, "diamond-soul.exe"));
-  cpSync(sidecar, path.join(depotDirectory, path.basename(sidecar)));
+  cpSync(sidecar, path.join(depotDirectory, "simulation-sidecar.exe"));
   cpSync(runtime, path.join(depotDirectory, "swift-runtime"), { recursive: true });
   cpSync(path.join(tauriRoot, "THIRD_PARTY_NOTICES.md"), path.join(depotDirectory, "THIRD_PARTY_NOTICES.md"));
 } else {

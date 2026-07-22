@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { hydrateCloudStorage } from "./cloudStorage";
+import { getAppStorage, hydrateCloudStorage, installCloudSaveCloseGuard } from "./cloudStorage";
 import "./styles.css";
 
 const root = document.getElementById("root");
@@ -12,6 +12,7 @@ if (!root) {
 async function start() {
   try {
     await hydrateCloudStorage(window.localStorage);
+    await installCloudSaveCloseGuard(getAppStorage());
   } catch (caught) {
     console.error("Steam Cloud 저장을 불러오지 못했습니다.", caught);
   }

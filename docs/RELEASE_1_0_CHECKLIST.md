@@ -1,7 +1,8 @@
 # Project Diamond Soul 1.0 출시 체크리스트
 
 기준일: 2026-07-22  
-현재 출시 범위: 무료 고교 커리어 데스크톱 앱  
+현재 출시 범위: Steam 유료 정식판과 별도 무료 데모
+출시 순서: Windows 11 x64 우선, macOS는 서명·공증과 양 아키텍처 QA 후 추가
 버전: 1.0.0
 
 ## 완료된 기술 게이트
@@ -20,15 +21,18 @@
 - Steam 정식판·데모 빌드 권한 분리와 설정 누락 시 데모 기본값 적용
 - Windows·macOS 공용 Steam Cloud 파일 스키마, 두 슬롯 회전 저장과 손상 복구 테스트 통과
 - macOS ARM64 Steam 정식판·데모 데포 생성, 파일 체크섬과 sidecar 상태 검사 통과
+- macOS 실제 앱 종료 시 회전 저장 flush와 접근성·분석 설정 제외 확인
+- 데모가 첫 중요 경기 뒤 종료되고 정식판은 제한되지 않는 회귀 테스트
+- Developer ID 인증서가 있으면 서명·공증하고 stapling을 검증하는 CI 경로 구성
 
 ## 현재 로컬 산출물
 
-- 앱: `apps/windows/src-tauri/target/release/bundle/macos/Project Diamond Soul.app`
-- 설치 이미지: `apps/windows/src-tauri/target/release/bundle/dmg/Project Diamond Soul_1.0.0_aarch64.dmg`
-- DMG 크기: 4,502,789 bytes
-- SHA-256: `9df5e9fe2f6547c473547ade14aea057e02abb7b6b9950a623cabf9e1296dc54`
-- 검증: `codesign --verify --deep --strict` 통과, `hdiutil verify` 통과
-- 예상 제한: ad-hoc 서명이므로 Developer ID 서명·공증 전 Gatekeeper 평가는 거부됨
+- 정식판: `artifacts/steam/full/macos-arm64/Project Diamond Soul.app`
+- 데모: `artifacts/steam/demo/macos-arm64/Project Diamond Soul.app`
+- 각 데포: 5개 파일, 26,599,491 bytes
+- 검증: manifest SHA-256 전수 검사, sidecar health, `codesign --verify --deep --strict` 통과
+- 실제 실행: 정식판 실행·종료와 종료 직전 저장 파일 기록 통과
+- 제한: ad-hoc 서명이므로 Developer ID 서명·공증 전에는 공개 업로드 대상이 아님
 
 ## 공개 전 필수 게이트
 
@@ -39,13 +43,14 @@
 - [ ] 첫 삶 완료율, 다음 삶 시작률, 결과 원인 회상, 기억나는 인물 측정
 - [ ] 치명적 크래시 0건, 저장 유실 0건, 진행 불가 0건
 - [ ] 플레이테스트 결과에 따라 난이도·드래프트 분포 최종 고정
+- [ ] [Steam 외부 테스트 계획](./STEAM_EXTERNAL_TEST_PLAN.md)의 Wave 0~2와 수치 게이트 통과
 
 ### macOS 배포
 
 - [ ] Apple Developer ID Application 인증서로 앱과 sidecar 서명
 - [ ] Hardened Runtime과 필요한 entitlement 최소화 확인
 - [ ] 공증 제출과 stapling 완료
-- [ ] 새 사용자 계정에서 DMG 설치·첫 실행·업데이트·삭제 확인
+- [ ] Steam 비공개 브랜치에서 `.app` 설치·첫 실행·업데이트·삭제 확인
 - [ ] `spctl`과 `codesign --verify --deep --strict` 통과
 
 ### Windows 배포
@@ -66,14 +71,13 @@
 - [x] `localStorage` 자동 저장을 Steam Auto-Cloud용 회전 파일 저장으로 미러링
 - [ ] 데모 저장의 정식판 승계와 다른 기기 복원 확인
 - [ ] 가격·환불·고객지원 문구 검토
+- [ ] 상점 자산과 실제 플레이 트레일러 준비
+- [ ] Valve 스토어·빌드 검토 제출
 
-### iOS
+### 이번 Steam 1.0 범위 밖
 
-- [ ] 무료 고교에서 프로로 이어지는 실제 제품 진입 흐름 확정
-- [ ] StoreKit 2 구매·복원과 현재 entitlement 연동
-- [ ] 실제 iPhone/iPad에서 VoiceOver, Dynamic Type, 햅틱, 백그라운드 저장 확인
-- [ ] 강제 종료·저장 복원·오프라인 실행·구매 복원 확인
-- [ ] App Store 개인정보, 연령 등급, 스크린샷과 심사 노트 완료
+- iOS 정식판과 StoreKit은 Steam 출시 뒤 재검토한다.
+- 모바일 웹은 설치 없는 티저와 Steam 위시리스트 유입에만 사용한다.
 
 ### 법무·운영
 
@@ -93,8 +97,12 @@ xcodebuild -project apps/ios/ProjectDiamondSoul.xcodeproj \
   -destination 'generic/platform=iOS Simulator' \
   CODE_SIGNING_ALLOWED=NO build
 npm run desktop:build -- --bundles app,dmg
+npm run steam:build:full
+npm run steam:smoke -- artifacts/steam/full/macos-arm64
+npm run steam:build:demo
+npm run steam:smoke -- artifacts/steam/demo/macos-arm64
 ```
 
-로컬 산출물은 `apps/windows/src-tauri/target/release/bundle/` 아래에 생성한다. 이 파일은 기능 검증용이며 서명·공증 전에는 공개 배포하지 않는다.
+일반 로컬 산출물은 `apps/windows/src-tauri/target/release/bundle/` 아래에 생성한다. 이 파일은 기능 검증용이며 서명·공증 전에는 공개 배포하지 않는다.
 
 Steam 데포는 `artifacts/steam/<edition>/<platform>/` 아래에 생성한다. macOS ARM64 정식판과 데모 데포는 로컬 체크섬·sidecar 검사를 통과했지만 ad-hoc 서명이므로 공개 업로드 대상이 아니다.

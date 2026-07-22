@@ -14,18 +14,18 @@ class MemoryStorage implements Storage {
 describe("Steam Cloud backed storage", () => {
   it("hydrates only Diamond Soul keys from the newest file", async () => {
     const storage = new MemoryStorage();
-    storage.setItem("diamond-soul.old", "remove-me");
+    storage.setItem("diamond-soul.high-school-career.autosave.old", "remove-me");
     storage.setItem("unrelated", "keep-me");
     const invokeCommand = vi.fn().mockResolvedValue(JSON.stringify({
       format: "DiamondSoulSteamCloudStorage",
       schemaVersion: 1,
-      values: { "diamond-soul.career": "cloud-value" },
+      values: { "diamond-soul.high-school-career.autosave.v1": "cloud-value" },
     }));
 
     await hydrateCloudStorage(storage, { desktop: true, invokeCommand });
 
-    expect(storage.getItem("diamond-soul.old")).toBeNull();
-    expect(storage.getItem("diamond-soul.career")).toBe("cloud-value");
+    expect(storage.getItem("diamond-soul.high-school-career.autosave.old")).toBeNull();
+    expect(storage.getItem("diamond-soul.high-school-career.autosave.v1")).toBe("cloud-value");
     expect(storage.getItem("unrelated")).toBe("keep-me");
   });
 
@@ -34,8 +34,9 @@ describe("Steam Cloud backed storage", () => {
     const invokeCommand = vi.fn().mockResolvedValue(undefined);
     const backed = new CloudBackedStorage(storage, true, invokeCommand);
 
-    backed.setItem("diamond-soul.primary", "one");
-    backed.setItem("diamond-soul.backup", "two");
+    backed.setItem("diamond-soul.pro-career.autosave.v1", "one");
+    backed.setItem("diamond-soul.pro-career.autosave.v1.backup", "two");
+    backed.setItem("diamond-soul.analytics.events.v1", "local-only");
     await Promise.resolve();
     await backed.flush();
 
@@ -43,15 +44,15 @@ describe("Steam Cloud backed storage", () => {
     const lastCall = invokeCommand.mock.calls.at(-1);
     const payload = JSON.parse((lastCall?.[1] as { contents: string }).contents);
     expect(payload.values).toEqual({
-      "diamond-soul.backup": "two",
-      "diamond-soul.primary": "one",
+      "diamond-soul.pro-career.autosave.v1": "one",
+      "diamond-soul.pro-career.autosave.v1.backup": "two",
     });
   });
 
   it("does not write browser-only sessions to the desktop file API", async () => {
     const invokeCommand = vi.fn();
     const backed = new CloudBackedStorage(new MemoryStorage(), false, invokeCommand);
-    backed.setItem("diamond-soul.primary", "one");
+    backed.setItem("diamond-soul.pro-career.autosave.v1", "one");
     await backed.flush();
     expect(invokeCommand).not.toHaveBeenCalled();
   });

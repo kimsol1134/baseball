@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { hasCompletedSteamDemo } from "./demoGate";
 import type {
   AwakeningID,
   CreationAllocationSnapshot,
@@ -289,7 +290,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
   onCompletePrologue, onImportantGame, onAwakening, onAdvanceChapter, onDraft, onLegacy, onNextLife, onBackToLab, onNewCareer,
   showTutorial, onDismissTutorial, onStartPro, proAccessAvailable, demoMode, onMilestoneFeedback }: CareerViewProps) {
   const state = result.snapshot;
-  const demoComplete = demoMode && state.performance.importantGamesCompleted >= 1;
+  const demoComplete = hasCompletedSteamDemo(demoMode, state.performance.importantGamesCompleted);
   const [focus, setFocus] = useState<TrainingFocus>("command");
   const [intensity, setIntensity] = useState<TrainingIntensity>("standard");
   const [memories, setMemories] = useState<ReadonlyArray<MemoryCardID>>([]);

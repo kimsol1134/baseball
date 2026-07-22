@@ -31,7 +31,7 @@
 
 정식 출시 전 `Coming Soon` 페이지와 Steam 데모를 먼저 공개한다. 현재 단계에서는 Early Access로 판매하지 않는다. 외부 테스트에서 프로 커리어의 완주 품질이 정식 출시 기준에 못 미칠 때만 Early Access를 다시 검토한다.
 
-Steam Direct 앱 등록비는 앱마다 미화 100달러이며, 첫 제품은 등록비 결제 후 출시까지 30일 대기와 최소 2주의 공개 `Coming Soon` 기간이 필요하다. 따라서 코드 완성보다 Steamworks 등록과 스토어 페이지 초안을 먼저 시작한다.
+Steam Direct에서 배포할 새 정식 제품의 앱 등록비는 미화 100달러다. 정식 제품 App ID를 만든 뒤 그 제품 관리 페이지에서 별도의 연동 데모 App ID를 추가한다. 첫 제품은 등록비 결제 후 출시까지 30일 대기와 최소 2주의 공개 `Coming Soon` 기간이 필요하므로 Steamworks 등록과 스토어 페이지 준비를 먼저 시작한다.
 
 ## 4. 기술 출시 구조
 
@@ -39,6 +39,7 @@ Steam Direct 앱 등록비는 앱마다 미화 100달러이며, 첫 제품은 �
 
 - SteamPipe에는 NSIS/MSI 설치 파일이 아니라 실행 가능한 게임 폴더를 올린다.
 - 게임 실행 파일, Swift sidecar, 같은 Swift 버전의 런타임 DLL, 고지 문서를 한 데포에 포함한다.
+- sidecar 빌드 입력의 target-triple 접미사는 Tauri 번들 단계에서 제거하고, 실행 시 앱이 찾는 `simulation-sidecar.exe` 이름으로 데포에 넣는다.
 - Steam에서 설치한 일반 사용자 권한으로 첫 실행, 저장, 업데이트, 삭제를 검증한다.
 - WebView2가 없는 환경의 선행 설치 정책을 Steam 설치 스크립트 또는 고정 런타임 번들 중 하나로 확정한다.
 - 코드 서명은 SmartScreen 신뢰와 백신 오탐 감소를 위해 공개 전 적용한다.
@@ -95,6 +96,7 @@ Steam App ID가 발급되기 전에는 코드에 임의 ID를 넣지 않는다. 
 - [ ] 깨끗한 Windows 11 표준 사용자 계정에서 Steam 설치·실행·업데이트·삭제 통과
 - [ ] sidecar와 Swift 런타임 누락 없이 오프라인 실행 통과
 - [x] 정식판·데모 공용 회전 파일 저장과 단일 기기 손상 복구 통과
+- [x] 실제 macOS 앱 종료 직전 저장 flush와 관리 대상 키만 기록되는지 확인
 - [ ] Steam에서 데모 저장을 정식판이 승계
 - [ ] Steam Auto-Cloud 다른 기기 동기화·충돌 복구 통과
 - [ ] macOS는 서명·공증·Steam 실행을 통과한 뒤 지원 OS에 표시
@@ -114,17 +116,19 @@ Steam App ID가 발급되기 전에는 코드에 임의 ID를 넣지 않는다. 
 - [ ] 스토어에 적은 기능이 현재 빌드에 모두 포함됨을 확인
 - [ ] 데모는 별도 체크리스트와 데포 검토 통과
 
+스토어 설명과 자산 범위는 [STEAM_STORE_PAGE_DRAFT.md](./STEAM_STORE_PAGE_DRAFT.md)에서 관리한다.
+
 ## 7. 현재 판정
 
 | 항목 | 판정 | 이유 |
 |---|---|---|
 | 게임 기능 | 출시 후보 | 고교·프로 완주 흐름과 자동 테스트가 있으나 외부 테스트가 없음 |
 | Windows Steam판 | CI 검증 대기 | 무설치 데포 생성기를 구현했으나 원격 Windows 산출물과 Steam 실행을 아직 검증하지 않음 |
-| macOS Steam판 | 내부 데포 통과 | ARM64 데포 체크섬·sidecar 검사는 통과했으나 Developer ID 서명과 Apple 공증이 없음 |
-| Steam 데모 | 내부 데포 통과 | 첫 중요 경기 종료 지점, 저장 파일, ARM64 데포를 구현했으나 Steam App ID와 외부 테스트가 없음 |
+| macOS Steam판 | ARM64 내부 RC 통과 | 정식판·데모 체크섬, sidecar, 번들 무결성, 실제 종료 저장은 통과했다. CI는 인증서가 있으면 Developer ID 서명·공증으로 전환되지만 현재 인증서가 없음 |
+| Steam 데모 | 내부 RC 통과 | 첫 중요 경기 종료 지점, 정식판과 같은 저장 파일, ARM64 데포와 종료 조건 회귀 테스트를 구현했으나 Steam App ID와 외부 테스트가 없음 |
 | 모바일 웹 | 보조 채널 | 반응형·웹 실행 경계의 기반만 유지하고 본편보다 우선하지 않음 |
 
-따라서 지금 앱을 Steam에 바로 제출할 수는 없다. 다음 구현 순서는 **원격 Windows 데포 통과 → 깨끗한 Windows QA → Steamworks 등록과 App ID 연결 → 외부 데모 테스트 → 스토어 검토**다.
+따라서 지금 앱을 Steam에 바로 제출할 수는 없다. 저장·데모·데포 생성 코드에서 로컬로 끝낼 수 있는 작업은 완료했다. 다음 순서는 **Steamworks 등록과 App ID 발급 → 저장소 원격 연결과 Windows CI 실행 → 깨끗한 Windows Steam QA → 외부 데모 테스트 → 스토어·빌드 검토**다. 테스트 운영 기준은 [STEAM_EXTERNAL_TEST_PLAN.md](./STEAM_EXTERNAL_TEST_PLAN.md)를 따른다.
 
 ## 8. 공식 근거
 
@@ -136,3 +140,6 @@ Steam App ID가 발급되기 전에는 코드에 임의 ID를 넣지 않는다. 
 - [Steamworks API는 출시에 필수가 아님](https://partner.steamgames.com/doc/sdk/api?language=english)
 - [Steam Auto-Cloud](https://partner.steamgames.com/doc/features/cloud?language=english)
 - [macOS 64비트·Apple 공증 요건](https://partner.steamgames.com/doc/store/application/platforms?language=english)
+- [Tauri macOS Developer ID 서명과 공증 환경 변수](https://v2.tauri.app/distribute/sign/macos/)
+- [Tauri sidecar 빌드 입력과 런타임 이름 규칙](https://v2.tauri.app/develop/sidecar/)
+- [GitHub-hosted Windows·Intel/Apple Silicon macOS 러너](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)

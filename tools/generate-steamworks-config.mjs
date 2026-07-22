@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { validateSteamDepot } from "./steam-depot-manifest.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
 const edition = process.argv[2];
@@ -25,6 +26,7 @@ const depotEntries = [];
 for (const [platform, rawDepotId] of Object.entries(config?.depots ?? {})) {
   const content = path.join(depotRoot, platform);
   if (!existsSync(path.join(content, "BUILD_MANIFEST.json"))) continue;
+  validateSteamDepot(content, edition === "full" ? "steam_full" : "steam_demo");
   const depotId = numeric(rawDepotId, `${edition}.depots.${platform}`);
   const filename = `depot_build_${depotId}.vdf`;
   const escapedContent = content.replaceAll("\\", "\\\\");

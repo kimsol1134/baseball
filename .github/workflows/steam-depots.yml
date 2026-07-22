@@ -52,15 +52,67 @@ jobs:
           swift-version: "6.3.3"
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
-      - run: npm run steam:build:${{ matrix.edition }}
+      - name: Prepare optional macOS release signing
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [[ -z "$APPLE_CERTIFICATE" ]]; then
+            echo "No Apple certificate configured; producing an internal ad-hoc build."
+            exit 0
+          fi
+
+          for required in APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [[ -z "${!required}" ]]; then
+              echo "Missing required macOS release secret: $required" >&2
+              exit 1
+            fi
+          done
+
+          certificate_path="$RUNNER_TEMP/apple-developer-id.p12"
+          keychain_path="$RUNNER_TEMP/diamond-soul-signing.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$certificate_path"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security default-keychain -s "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -k "$keychain_path"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+          security find-identity -v -p codesigning "$keychain_path" | grep -F "$APPLE_SIGNING_IDENTITY"
+          echo "MACOS_SIGNING_CONFIGURED=1" >> "$GITHUB_ENV"
+          echo "MACOS_SIGNING_KEYCHAIN=$keychain_path" >> "$GITHUB_ENV"
+      - name: Build Steam depot
+        run: npm run steam:build:${{ matrix.edition }}
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ runner.os == 'macOS' && secrets.APPLE_SIGNING_IDENTITY || '' }}
+          APPLE_ID: ${{ runner.os == 'macOS' && secrets.APPLE_ID || '' }}
+          APPLE_PASSWORD: ${{ runner.os == 'macOS' && secrets.APPLE_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ runner.os == 'macOS' && secrets.APPLE_TEAM_ID || '' }}
       - run: npm run steam:smoke -- ${{ matrix.depot-path }}
       - name: Verify macOS bundle integrity
         if: runner.os == 'macOS'
         shell: bash
-        run: codesign --verify --deep --strict --verbose=2 "${{ matrix.depot-path }}/Project Diamond Soul.app"
+        run: |
+          app_path="${{ matrix.depot-path }}/Project Diamond Soul.app"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          if [[ "$MACOS_SIGNING_CONFIGURED" == "1" ]]; then
+            xcrun stapler validate "$app_path"
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: diamond-soul-steam-${{ matrix.edition }}-${{ runner.os }}-${{ runner.arch }}
           path: ${{ matrix.depot-path }}
           if-no-files-found: error
           retention-days: 30
+      - name: Remove temporary macOS signing keychain
+        if: always() && runner.os == 'macOS' && env.MACOS_SIGNING_KEYCHAIN != ''
+        shell: bash
+        run: security delete-keychain "$MACOS_SIGNING_KEYCHAIN"

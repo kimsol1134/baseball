@@ -15,6 +15,8 @@
 
 게임은 같은 내용을 `steam-cloud-a.json`과 `steam-cloud-b.json` 두 파일에 번갈아 기록한다. 최신 파일이 손상되면 이전 파일을 자동 복구한다.
 
+동기화 파일에는 선수·고교·프로 자동 저장과 정상 백업만 들어간다. 접근성 설정, 효과음 설정, 로컬 진단·분석 이벤트는 기기별 로컬 데이터로 남기며 Steam Cloud에 올리지 않는다.
+
 Steamworks Auto-Cloud에서 다음 경로를 연결한다.
 
 | OS | Root | Subdirectory | Pattern |
@@ -31,3 +33,18 @@ Steamworks Auto-Cloud에서 다음 경로를 연결한다.
 ## macOS
 
 Steam에 올리는 파일은 DMG가 아니라 `.app`이다. 공개 데포는 Developer ID 서명과 Apple 공증을 통과해야 한다. 현재 CI의 ad-hoc 서명 산출물은 내부 QA용이다.
+
+GitHub Actions에서 공개 후보를 만들려면 다음 저장소 시크릿을 등록한다.
+
+| Secret | 내용 |
+|---|---|
+| `APPLE_CERTIFICATE` | Developer ID Application `.p12`의 base64 문자열 |
+| `APPLE_CERTIFICATE_PASSWORD` | `.p12` 내보내기 암호 |
+| `APPLE_SIGNING_IDENTITY` | Keychain에 표시되는 `Developer ID Application: …` 전체 이름 |
+| `APPLE_ID` | Apple 계정 이메일 |
+| `APPLE_PASSWORD` | Apple ID의 앱 암호 |
+| `APPLE_TEAM_ID` | Apple Developer Team ID |
+
+인증서가 하나라도 설정되면 누락된 필수값 때문에 워크플로가 실패하도록 구성했다. 인증서가 전혀 없을 때만 내부 QA용 ad-hoc 앱을 만든다. 서명된 빌드는 `codesign --verify --deep --strict`와 `stapler validate`를 모두 통과해야 아티팩트 업로드 단계로 간다.
+
+현재 로컬 Keychain에는 Steam 외부 배포에 필요한 `Developer ID Application` 인증서가 없다. `Apple Development` 또는 `Apple Distribution` 인증서는 이 용도로 대체하지 않는다.

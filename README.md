@@ -1,6 +1,6 @@
 # Project Diamond Soul
 
-데이터 중심 야구 로그라이트 RPG의 무료 고교 커리어 1.0 출시 후보다. 선수 생성·훈련·관계·중요 이닝 직접 투구·행동 기반 각성·드래프트·환생을 `React → Tauri → Swift sidecar`로 실행하며, 고정 시드에서 결정론적 결과와 복구 가능한 자동 저장을 제공한다.
+데이터 중심 야구 로그라이트 RPG의 Steam 1.0 출시 후보다. 선수 생성·훈련·관계·중요 이닝 직접 투구·행동 기반 각성·드래프트·프로 은퇴·환생을 `React → Tauri → Swift sidecar`로 실행하며, 고정 시드에서 결정론적 결과와 복구 가능한 자동 저장을 제공한다.
 
 프로 커리어와 iOS 클라이언트의 기능 구현도 포함한다. 첫 상용 채널은 프로 커리어까지 포함하는 Steam 정식판과 별도 무료 데모로 확정했다. SteamPipe, 파일 저장, 배포 서명, 실제 장치 QA 등 공개 전 게이트는 [Steam 출시 계획](./docs/STEAM_RELEASE_PLAN.md), [출시 체크리스트](./docs/RELEASE_1_0_CHECKLIST.md), [QA 현황](./docs/QA_RELEASE_GATES.md)에서 관리한다.
 

@@ -1,7 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 
-const KEY_PREFIX = "diamond-soul.";
 const FORMAT = "DiamondSoulSteamCloudStorage";
+const SAVE_PREFIXES = [
+  "diamond-soul.pitcher-lab.autosave.",
+  "diamond-soul.high-school-career.autosave.",
+  "diamond-soul.pro-career.autosave.",
+] as const;
 
 interface CloudStoragePayload {
   format: typeof FORMAT;
@@ -24,11 +28,15 @@ function isDesktopRuntime() {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
+function isCloudSaveKey(key: string) {
+  return SAVE_PREFIXES.some((prefix) => key.startsWith(prefix));
+}
+
 function managedKeys(storage: StorageLike): string[] {
   const keys: string[] = [];
   for (let index = 0; index < storage.length; index += 1) {
     const key = storage.key(index);
-    if (key?.startsWith(KEY_PREFIX)) keys.push(key);
+    if (key && isCloudSaveKey(key)) keys.push(key);
   }
   return keys.sort();
 }
@@ -48,7 +56,7 @@ function decode(raw: string): CloudStoragePayload {
     throw new Error("Steam Cloud 저장 형식이 올바르지 않습니다.");
   }
   for (const [key, value] of Object.entries(payload.values)) {
-    if (!key.startsWith(KEY_PREFIX) || typeof value !== "string") {
+    if (!isCloudSaveKey(key) || typeof value !== "string") {
       throw new Error("Steam Cloud 저장 항목이 올바르지 않습니다.");
     }
   }
@@ -92,12 +100,12 @@ export class CloudBackedStorage implements StorageLike {
 
   setItem(key: string, value: string) {
     this.local.setItem(key, value);
-    if (key.startsWith(KEY_PREFIX)) this.schedulePersist();
+    if (isCloudSaveKey(key)) this.schedulePersist();
   }
 
   removeItem(key: string) {
     this.local.removeItem(key);
-    if (key.startsWith(KEY_PREFIX)) this.schedulePersist();
+    if (isCloudSaveKey(key)) this.schedulePersist();
   }
 
   clear() {
@@ -137,4 +145,18 @@ let appStorage: CloudBackedStorage | undefined;
 export function getAppStorage(): CloudBackedStorage {
   if (!appStorage) appStorage = new CloudBackedStorage(window.localStorage);
   return appStorage;
+}
+
+export async function installCloudSaveCloseGuard(storage: CloudBackedStorage) {
+  if (!isDesktopRuntime()) return;
+  const { getCurrentWindow } = await import("@tauri-apps/api/window");
+  const currentWindow = getCurrentWindow();
+  await currentWindow.onCloseRequested(async (event) => {
+    event.preventDefault();
+    try {
+      await storage.flush();
+    } finally {
+      await currentWindow.destroy();
+    }
+  });
 }
