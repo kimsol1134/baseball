@@ -366,6 +366,10 @@ body.high-contrast {
 [data-team="changwon_meteors"] { --team-decoration: var(--team-violet); }
 [data-team="jeonju_hanok"] { --team-decoration: var(--team-teal); }
 [data-team="jeju_storm"] { --team-decoration: var(--team-silver); }
+[data-school="hanbit_traditional"] { --team-decoration: var(--team-gold); }
+[data-school="mirae_analytics"] { --team-decoration: var(--team-blue); }
+[data-school="haedong_power"] { --team-decoration: var(--team-red); }
+[data-school="cheongam_development"] { --team-decoration: var(--team-teal); }
 
 @media (max-width: 900px) {
   .stage-layout[data-stage] .career-player,

@@ -1550,7 +1550,7 @@ export function App() {
 
   if (screenMode === "lab" && experienceMode === "career") {
     return (
-      <div className="app-shell app-shell--career">
+      <div className={`app-shell app-shell--career ${proVisible && proResult ? "app-shell--pro" : "app-shell--high-school"}`}>
         <header className="topbar">
           <div className="brand-lockup"><img className="brand-mark" src="/128x128.png" alt="" /><div>
             <p className="eyebrow">야구 못하면 또 환생함</p><h1>고교 커리어</h1>
@@ -1638,7 +1638,7 @@ export function App() {
   }
 
   return (
-    <div className={`app-shell ${showGameCast && lastResult ? "app-shell--gamecast" : ""}`}
+    <div className={`app-shell app-shell--pitch ${showGameCast && lastResult ? "app-shell--gamecast" : ""}`}
       data-team={proVisible && proResult ? proResult.snapshot.team.id : careerResult?.snapshot.draftResult?.team?.id}>
       <header className="topbar">
         <div className="brand-lockup">

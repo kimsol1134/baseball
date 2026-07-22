@@ -5,9 +5,9 @@ import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
 import { CoreUnavailableState } from "./CoreUnavailableState";
 import { GrowthCelebration } from "./GrowthCelebration";
-import catcherPortrait from "./assets/catcher-portrait.webp";
-import coachPortrait from "./assets/coach-portrait.webp";
-import rivalPortrait from "./assets/rival-portrait.webp";
+import catcherPortrait from "./assets/catcher-portrait-ui.webp";
+import coachPortrait from "./assets/coach-portrait-ui.webp";
+import rivalPortrait from "./assets/rival-portrait-ui.webp";
 import { expectedTrainingFatigue, parseAcknowledgedResult, trainingGrowthOutlook } from "./careerTrainingPresentation";
 import { hasCompletedSteamDemo } from "./demoGate";
 import type {
@@ -550,6 +550,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     setAcknowledgedRelationship(pendingRelationship.number);
   };
   const scene = relationshipScene(relationship, state);
+  const relationshipArt = relationship.category === "coach" ? coachPortrait : relationship.category === "catcher" ? catcherPortrait : rivalPortrait;
   const reveal = (() => {
     const draft = state.draftResult;
     if (draftRevealStage === 0 || !draft) return { label: "지명 후보 명단", title: "10개 구단이 최종 명단을 닫았습니다.", copy: "경기 기록, 현재 구종, 감독과 포수의 평가가 최종 지명 후보표에 올라갑니다." };
@@ -565,7 +566,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     return { label: draft.outcome === "drafted" ? "구단 평가" : "다음 기록", title: draft.outcome === "drafted" ? `구단 평가 점수 ${draft.evaluationScore} · 예상 ${draft.projectedRange}` : `구단 평가 점수 ${draft.evaluationScore}`, copy: draft.summary };
   })();
 
-  return <main className="career-shell stage-layout" data-stage={state.phase} data-team={state.draftResult?.team?.id}>
+  return <main className="career-shell stage-layout" data-stage={state.phase} data-school={state.school?.id} data-team={state.draftResult?.team?.id}>
     {showTutorial ? <AccessibleModal className="tutorial-panel" labelledBy="tutorial-title" onEscape={onDismissTutorial}>
       <div><p className="eyebrow">빠른 안내</p><h2 id="tutorial-title">고교 커리어 시작 전</h2></div>
       <ol><li><strong>현재 능력</strong><span>선수 카드에서 공의 위력·제구·변화구·체력을 확인합니다.</span></li><li><strong>중요 경기</strong><span>승부처에서는 구종·코스·강도를 직접 선택합니다.</span></li>
@@ -597,9 +598,9 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         })}</div>
         <small className="information-clarity">{state.difficulty.informationClarity === "relaxed" ? "정확한 숫자" : state.difficulty.informationClarity === "standard" ? "구단이 예상한 5점 범위" : "상·중·하만 표시"} · 20–80 평가 · 45 평균 · 65 뚜렷한 강점 · 80 세대 최고</small>
         {state.school ? <div className="career-personnel">
-          <CharacterProfile imageSrc={coachPortrait} imageAlt="작전 노트를 든 고교 야구 감독" label="감독" title={`${state.school.coachName} · ${state.school.coachArchetype}`} record={state.school.coachRecord} description={state.school.coachPersonality} />
-          <CharacterProfile imageSrc={catcherPortrait} imageAlt="포수 마스크를 든 고교 야구 포수" label="포수" title={`${state.school.catcherName} · ${state.school.catcherArchetype}`} record={state.school.catcherRecord} description={state.school.catcherPersonality} />
-          <CharacterProfile imageSrc={rivalPortrait} imageAlt="타석을 준비하는 라이벌 선수" label="라이벌" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
+          <CharacterProfile label="감독" title={`${state.school.coachName} · ${state.school.coachArchetype}`} record={state.school.coachRecord} description={state.school.coachPersonality} />
+          <CharacterProfile label="포수" title={`${state.school.catcherName} · ${state.school.catcherArchetype}`} record={state.school.catcherRecord} description={state.school.catcherPersonality} />
+          <CharacterProfile label="라이벌" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
         </div> : null}
         <div className="career-counters"><span>훈련 {state.totalTrainingsCompleted}/16</span><span>경기 {state.performance.importantGamesCompleted}/5</span>
           <span>대화 {state.relationshipsCompleted}/5</span><span>새 강점 {state.selectedAwakenings.length}/3</span></div>
@@ -670,10 +671,10 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             <div><span>훈련 뒤 예상 피로</span><strong>{state.fatigue} → {expectedFatigue.after} <small>({expectedFatigue.change >= 0 ? "+" : ""}{expectedFatigue.change})</small></strong></div>
             <p>성장 여부는 학교 지원, 현재 피로와 훈련 강도에 따라 달라집니다.</p></div>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity)}>{isRunning ? "훈련 결과 계산 중…" : `${selectedTraining.label} 훈련 진행`}</button></> : null}
-        {!hasPendingResult && state.phase === "relationship" ? <><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3><p>{scene.quote}</p>
+        {!hasPendingResult && state.phase === "relationship" ? <><div className="relationship-scene-heading"><div><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3></div><img src={relationshipArt} alt="" width="90" height="112" loading="lazy" decoding="async" /></div><p>{scene.quote}</p>
           <div className="relationship-options">{scene.choices.map((choice) => <button key={choice.id} type="button" disabled={isRunning} onClick={() => void onRelationship(choice.id)}><strong>{choice.title}</strong><span>{choice.copy}</span></button>)}</div></> : null}
         {!hasPendingResult && state.phase === "important_game" ? <div className="career-milestone"><span>중요 경기 {state.performance.importantGamesCompleted + 1}</span><h3>{state.currentGameScenario?.title ?? `${state.rival.name} 상대 중요 이닝`}</h3>
-          <CharacterProfile className="rival-scouting" imageSrc={rivalPortrait} imageAlt="타석을 준비하는 라이벌 선수" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
+          <CharacterProfile className="rival-scouting" imageSrc={rivalPortrait} imageAlt="" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
           <p>{state.currentGameScenario?.narrative ?? `현재 피로 ${state.fatigue}. 직접 구종과 코스를 골라 이닝을 끝내야 합니다.`}</p>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onImportantGame()}>중요 이닝 직접 투구</button></div> : null}
         {!hasPendingResult && state.phase === "awakening" ? <><h3>새로 익힌 강점 {state.selectedAwakenings.length + 1}/3</h3><div className="relationship-options">{state.awakeningOptions.map((awakening) =>

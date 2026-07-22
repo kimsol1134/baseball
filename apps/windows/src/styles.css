@@ -63,12 +63,8 @@ body {
   font-variant-numeric: tabular-nums;
   background-color: var(--color-canvas);
   background-image:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-canvas) 78%, transparent), var(--color-canvas) 76%),
-    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 52%, transparent), transparent 68%),
-    url("./assets/high-school-stadium-night.webp");
-  background-position: center, center, center 36%;
-  background-size: cover;
-  background-attachment: fixed;
+    radial-gradient(circle at 50% -16%, color-mix(in srgb, var(--color-information) 7%, transparent), transparent 42%),
+    linear-gradient(180deg, var(--color-canvas), color-mix(in srgb, var(--color-surface-raised) 34%, var(--color-canvas)));
 }
 
 body.high-contrast {
@@ -102,6 +98,39 @@ button:focus-visible {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+.app-shell--high-school {
+  background-image:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-canvas) 76%, transparent), var(--color-canvas) 78%),
+    url("./assets/high-school-stadium-night.webp");
+  background-position: center, center 32%;
+  background-size: cover;
+}
+
+.app-shell--pro {
+  background-image:
+    linear-gradient(180deg, color-mix(in srgb, var(--color-canvas) 70%, transparent), var(--color-canvas) 76%),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 46%, transparent), transparent 72%),
+    url("./assets/gamecast-field-stadium-night-v2.webp");
+  background-position: center, center, center 34%;
+  background-size: cover;
+}
+
+.app-shell--lab {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-information) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-information) 5%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 74% 12%, color-mix(in srgb, var(--color-information) 12%, transparent), transparent 32%);
+  background-size: 72px 72px, 72px 72px, cover;
+}
+
+.app-shell--pitch {
+  background-image: radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--color-information) 12%, transparent), transparent 44%);
+}
+
+body.high-contrast :is(.app-shell--high-school, .app-shell--pro, .app-shell--lab, .app-shell--pitch) {
+  background-image: none;
 }
 
 .topbar {
@@ -2878,12 +2907,86 @@ legend {
 }
 
 .gamecast-telemetry--result .gamecast-speed {
-  justify-content: flex-start;
-  padding: 13px 11px 11px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  justify-content: stretch;
+  padding: 11px;
 }
 
 .gamecast-telemetry--result .gamecast-speed strong {
-  font-size: clamp(2.15rem, 4.4vw, 3.35rem);
+  font-size: var(--font-size-display);
+}
+
+.gamecast-telemetry--result .gamecast-speed > span {
+  align-self: center;
+  color: var(--color-information);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-scene-xs);
+  font-weight: 850;
+  letter-spacing: .08em;
+}
+
+.gamecast-telemetry--result .gamecast-speed > small {
+  align-self: end;
+  padding-bottom: 2px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-scene-xs);
+  font-weight: 800;
+}
+
+.gamecast-analysis-state {
+  display: grid;
+  gap: 9px;
+  margin: 8px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-information) 27%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-information) 8%, transparent), transparent 62%),
+    color-mix(in srgb, var(--scene-chalk) 2%, transparent);
+}
+
+.gamecast-analysis-state > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gamecast-analysis-state span {
+  color: var(--color-information);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-scene-xs);
+  font-weight: 850;
+  letter-spacing: .08em;
+}
+
+.gamecast-analysis-state strong {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-scene-sm);
+}
+
+.gamecast-analysis-state p {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-scene-sm);
+  line-height: 1.45;
+}
+
+.gamecast-analysis-progress {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text-secondary) 14%, transparent);
+}
+
+.gamecast-analysis-progress i {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: var(--color-information);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-information) 45%, transparent);
+  transition: width 80ms linear;
 }
 
 .gamecast-pitch-sky-top { stop-color: var(--scene-sky); }
@@ -4702,6 +4805,14 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   box-shadow: var(--shadow-card);
 }
 
+.pro-career-shell .career-hero {
+  border-top-color: var(--team-decoration);
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 95%, transparent) 0%, color-mix(in srgb, var(--color-canvas) 73%, transparent) 54%, color-mix(in srgb, var(--color-canvas) 86%, transparent) 100%),
+    url("./assets/gamecast-field-stadium-night-v2.webp");
+  background-position: center 44%;
+}
+
 .career-intro {
   min-height: 250px;
   padding: clamp(24px, 4vw, 52px);
@@ -5136,6 +5247,42 @@ body.high-contrast :is(.career-offline-card, .core-unavailable-state) {
   object-position: center 18%;
   filter: saturate(0.82) contrast(1.05);
   box-shadow: var(--shadow-soft);
+}
+
+.relationship-scene-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px;
+  gap: 14px;
+  align-items: center;
+  min-height: 112px;
+  padding: 10px 10px 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--team-decoration) 38%, var(--color-border));
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--team-decoration) 9%, var(--color-surface-raised)), var(--color-surface));
+}
+
+.relationship-scene-heading h3 {
+  margin: 4px 0 0;
+}
+
+.relationship-scene-heading img {
+  width: 90px;
+  height: 112px;
+  border-left: 1px solid color-mix(in srgb, var(--team-decoration) 40%, var(--color-border));
+  object-fit: cover;
+  object-position: center 18%;
+  filter: saturate(.78) contrast(1.08);
+}
+
+.rival-scouting.has-portrait {
+  grid-template-columns: 86px minmax(0, 1fr);
+  min-height: 112px;
+}
+
+.rival-scouting .character-profile__portrait {
+  width: 86px;
+  height: 112px;
 }
 
 body.high-contrast .character-profile__portrait {

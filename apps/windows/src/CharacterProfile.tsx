@@ -14,7 +14,7 @@ export function CharacterProfile({ label, title, record, description, className,
   const visibleDescription = description?.trim();
 
   return <div className={classes}>
-    {imageSrc ? <img className="character-profile__portrait" src={imageSrc} alt={imageAlt ?? ""} /> : null}
+    {imageSrc ? <img className="character-profile__portrait" src={imageSrc} alt={imageAlt ?? ""} width="58" height="76" loading="lazy" decoding="async" /> : null}
     {label ? <span>{label}</span> : null}
     <strong>{title}</strong>
     {visibleRecord ? <small>{visibleRecord}</small> : null}

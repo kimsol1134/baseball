@@ -966,7 +966,7 @@ export function GameCastReplay({
         <aside className="gamecast-telemetry gamecast-telemetry--result">
           <div className="gamecast-telemetry-heading"><span>투구 리포트</span><strong>{pitchLabel}</strong></div>
           {causalitySummary}
-          <div className="gamecast-speed"><strong>{(execution.velocityTenthsKPH / 10).toFixed(1)}</strong><span>km/h</span></div>
+          <div className="gamecast-speed"><span>구속</span><strong>{(execution.velocityTenthsKPH / 10).toFixed(1)}</strong><small>km/h</small></div>
           <div className="gamecast-metrics gamecast-metrics--stacked">
             <Metric label="비행시간" value={`${execution.flightTimeMilliseconds ?? 0} ms`} />
             <Metric label="수평 움직임" value={`${execution.horizontalBreakTenthsCM >= 0 ? "+" : ""}${(execution.horizontalBreakTenthsCM / 10).toFixed(1)} cm`} />
@@ -974,6 +974,11 @@ export function GameCastReplay({
             <Metric label="코스 정확도" value={revealResult ? `${execution.executionQuality} / 1000` : "계산 중"} accent />
           </div>
           <div className={`gamecast-zone-call gamecast-zone-call--${revealResult ? tone : "pending"}`}><span>ABS 판정</span><strong>{revealResult ? Math.abs(execution.actualX) <= 500 && Math.abs(execution.actualY) <= 500 ? "존 안" : "존 밖" : "판독 중"}</strong></div>
+          {!revealResult ? <div className="gamecast-analysis-state" aria-label={`${phaseLabel}, ${Math.round(pitchProgress * 100)}퍼센트 분석`}>
+            <div><span>현재 분석</span><strong>{phaseLabel}</strong></div>
+            <div className="gamecast-analysis-progress"><i style={{ width: `${Math.round(pitchProgress * 100)}%` }} /></div>
+            <p>선택과 실행의 결과는 판정이 끝난 뒤 공개됩니다.</p>
+          </div> : null}
           <GameCastImpact result={result} revealResult={revealResult} />
         </aside>
       </>}
