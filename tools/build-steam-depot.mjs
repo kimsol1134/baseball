@@ -77,22 +77,22 @@ const tauriRoot = path.join(repositoryRoot, "apps", "windows", "src-tauri");
 if (process.platform === "win32") {
   const releaseDirectory = path.join(tauriRoot, "target", "release");
   const binaryDirectory = path.join(tauriRoot, "binaries");
-  const appExecutable = path.join(releaseDirectory, "diamond-soul.exe");
+  const appExecutable = path.join(releaseDirectory, "baseball.exe");
   const sidecar = path.join(releaseDirectory, "simulation-sidecar.exe");
   const runtime = path.join(binaryDirectory, "swift-runtime");
   for (const required of [appExecutable, sidecar, path.join(runtime, "swiftCore.dll")]) {
     if (!existsSync(required)) throw new Error(`Steam depot input is missing: ${required}`);
   }
-  cpSync(appExecutable, path.join(depotDirectory, "diamond-soul.exe"));
+  cpSync(appExecutable, path.join(depotDirectory, "baseball.exe"));
   cpSync(sidecar, path.join(depotDirectory, "simulation-sidecar.exe"));
   cpSync(runtime, path.join(depotDirectory, "swift-runtime"), { recursive: true });
   cpSync(path.join(tauriRoot, "THIRD_PARTY_NOTICES.md"), path.join(depotDirectory, "THIRD_PARTY_NOTICES.md"));
 } else {
-  const appBundle = path.join(tauriRoot, "target", "release", "bundle", "macos", "Project Diamond Soul.app");
+  const appBundle = path.join(tauriRoot, "target", "release", "bundle", "macos", "야구 못하면 또 환생함.app");
   if (!existsSync(appBundle)) throw new Error(`Steam app bundle is missing: ${appBundle}`);
   cpSync(appBundle, path.join(depotDirectory, path.basename(appBundle)), { recursive: true, preserveTimestamps: true });
-  const executable = path.join(depotDirectory, "Project Diamond Soul.app", "Contents", "MacOS", "diamond-soul");
-  const sidecar = path.join(depotDirectory, "Project Diamond Soul.app", "Contents", "MacOS", "simulation-sidecar");
+  const executable = path.join(depotDirectory, "야구 못하면 또 환생함.app", "Contents", "MacOS", "baseball");
+  const sidecar = path.join(depotDirectory, "야구 못하면 또 환생함.app", "Contents", "MacOS", "simulation-sidecar");
   chmodSync(executable, 0o755);
   chmodSync(sidecar, 0o755);
 }
@@ -115,7 +115,7 @@ const files = listFiles(depotDirectory).map(({ relative, absolute }) => ({
   sha256: createHash("sha256").update(readFileSync(absolute)).digest("hex"),
 }));
 const manifest = {
-  format: "DiamondSoulSteamDepot",
+  format: "BaseballSteamDepot",
   schemaVersion: 1,
   version: packageVersion,
   edition: releaseEdition,

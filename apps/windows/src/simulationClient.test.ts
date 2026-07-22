@@ -111,7 +111,7 @@ describe("simulation client", () => {
       seed: "1", identity: { name: "김도윤", throwingHand: "right", bodyType: "balanced", region: "서울" },
       pitcher: { id: "p", name: "김도윤", stuff: 58, command: 56, movement: 55, stamina: 57 },
       draftResult: { outcome: "drafted", evaluationScore: 72, projectedRange: "2라운드", team: { id: "seoul", name: "서울", need: "command", demand: 60, developmentPlan: "2군", positionCompetitor: "선발", proCoach: "코치" }, summary: "지명" },
-      entitlement: { productID: "diamond_soul_pro_career", status: "active", source: "development", verifiedAt: "2026-07-22" },
+      entitlement: { productID: "baseball_pro_career", status: "active", source: "development", verifiedAt: "2026-07-22" },
     });
     expect(result.snapshot.phase).toBe("contract_offer");
     expect(invokeMock).toHaveBeenCalledWith("execute_core", expect.objectContaining({ request: expect.stringContaining('"method":"startProCareer"') }));

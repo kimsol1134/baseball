@@ -127,6 +127,6 @@ final class MobileCareerStore {
     private var saveURL: URL {
         let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        return root.appendingPathComponent("diamond-soul-mobile-pro-v1.json")
+        return root.appendingPathComponent("baseball-mobile-pro-v1.json")
     }
 }

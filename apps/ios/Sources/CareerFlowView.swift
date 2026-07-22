@@ -40,10 +40,10 @@ private struct ResultBanner: View {
     let summary: String
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "checkmark.seal.fill").foregroundStyle(DiamondSoulTheme.positive)
+            Image(systemName: "checkmark.seal.fill").foregroundStyle(BaseballTheme.positive)
             Text(summary).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding().background(DiamondSoulTheme.positive.opacity(0.1)).accessibilityElement(children: .combine)
+        .padding().background(BaseballTheme.positive.opacity(0.1)).accessibilityElement(children: .combine)
     }
 }
 
@@ -122,7 +122,7 @@ private struct ImportantMomentView: View {
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 18) {
-                Text("IMPORTANT MOMENT · WEEK \(state.week)").font(.caption.weight(.bold)).foregroundStyle(DiamondSoulTheme.milestone)
+                Text("IMPORTANT MOMENT · WEEK \(state.week)").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.milestone)
                 Text(state.level == .major ? "1군에서 자리를 정할 승부" : state.managerTrust < 55 ? "보직 경쟁 평가전" : "다음 보직을 결정할 경기")
                     .font(.largeTitle.bold())
                 Text("한 점 차 · 1사 2루 · 최정우 타석\n현재 피로 \(state.fatigue), 감독 신뢰 \(state.managerTrust)")
@@ -132,7 +132,7 @@ private struct ImportantMomentView: View {
                         Button { career.selectedApproach = approach } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: career.selectedApproach == approach ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(career.selectedApproach == approach ? DiamondSoulTheme.selection : .secondary)
+                                    .foregroundStyle(career.selectedApproach == approach ? BaseballTheme.selection : .secondary)
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(approach.title).font(.headline)
                                     Text(approach.detail).font(.caption).foregroundStyle(.secondary)
@@ -140,7 +140,7 @@ private struct ImportantMomentView: View {
                                 Spacer()
                             }
                             .padding().frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-                            .background(career.selectedApproach == approach ? DiamondSoulTheme.selection.opacity(0.12) : Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                            .background(career.selectedApproach == approach ? BaseballTheme.selection.opacity(0.12) : Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain).accessibilityAddTraits(career.selectedApproach == approach ? .isSelected : [])
                     }

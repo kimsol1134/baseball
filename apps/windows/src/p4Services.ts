@@ -1,6 +1,6 @@
 import type { HighSchoolCareerAutosavePayload } from "./highSchoolCareerAutosave";
 
-const ANALYTICS_KEY = "diamond-soul.analytics.events.v1";
+const ANALYTICS_KEY = "baseball.analytics.events.v1";
 
 export interface LocalAnalyticsEvent {
   name: string;
@@ -37,7 +37,7 @@ export function readLocalAnalytics(storage: Pick<StorageLike, "getItem">): Reado
 }
 
 export interface ContentPackManifest {
-  format: "DiamondSoulContentPack";
+  format: "BaseballContentPack";
   schemaVersion: 1;
   id: string;
   title: string;
@@ -50,7 +50,7 @@ export interface ContentPackManifest {
 export function validateContentPackManifest(value: unknown): ContentPackManifest {
   if (!value || typeof value !== "object") throw new Error("콘텐츠 팩 선언이 객체가 아닙니다.");
   const manifest = value as Partial<ContentPackManifest>;
-  if (manifest.format !== "DiamondSoulContentPack" || manifest.schemaVersion !== 1) throw new Error("지원하지 않는 콘텐츠 팩 형식입니다.");
+  if (manifest.format !== "BaseballContentPack" || manifest.schemaVersion !== 1) throw new Error("지원하지 않는 콘텐츠 팩 형식입니다.");
   for (const field of ["id", "title", "version", "gameVersion", "author"] as const) {
     if (typeof manifest[field] !== "string" || !manifest[field]?.trim()) throw new Error(`${field} 필드가 필요합니다.`);
   }
@@ -95,7 +95,7 @@ export function createAnonymousDiagnosticPackage(input: {
   analytics: ReadonlyArray<LocalAnalyticsEvent>;
 }) {
   return JSON.stringify({
-    format: "DiamondSoulDiagnostic",
+    format: "BaseballDiagnostic",
     schemaVersion: 1,
     createdAt: new Date().toISOString(),
     appVersion: input.appVersion,

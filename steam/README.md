@@ -21,8 +21,8 @@ Steamworks Auto-Cloud에서 다음 경로를 연결한다.
 
 | OS | Root | Subdirectory | Pattern |
 |---|---|---|---|
-| Windows | `WinAppDataRoaming` | `com.solkim.diamondsoul/steam-cloud` | `steam-cloud-*.json` |
-| macOS | `MacAppSupport` | `com.solkim.diamondsoul/steam-cloud` | `steam-cloud-*.json` |
+| Windows | `WinAppDataRoaming` | `com.solkim.baseball/steam-cloud` | `steam-cloud-*.json` |
+| macOS | `MacAppSupport` | `com.solkim.baseball/steam-cloud` | `steam-cloud-*.json` |
 
 정식판과 데모는 같은 저장을 승계해야 하므로 Steamworks의 `Shared cloud APP ID`에 정식판 App ID를 사용한다. Windows Root에 macOS Root Override를 연결해 두 OS가 같은 파일을 동기화하도록 설정한다.
 

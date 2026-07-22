@@ -12,20 +12,20 @@ class MemoryStorage implements Storage {
 }
 
 describe("Steam Cloud backed storage", () => {
-  it("hydrates only Diamond Soul keys from the newest file", async () => {
+  it("hydrates only baseball keys from the newest file", async () => {
     const storage = new MemoryStorage();
-    storage.setItem("diamond-soul.high-school-career.autosave.old", "remove-me");
+    storage.setItem("baseball.high-school-career.autosave.old", "remove-me");
     storage.setItem("unrelated", "keep-me");
     const invokeCommand = vi.fn().mockResolvedValue(JSON.stringify({
-      format: "DiamondSoulSteamCloudStorage",
+      format: "BaseballSteamCloudStorage",
       schemaVersion: 1,
-      values: { "diamond-soul.high-school-career.autosave.v1": "cloud-value" },
+      values: { "baseball.high-school-career.autosave.v1": "cloud-value" },
     }));
 
     await hydrateCloudStorage(storage, { desktop: true, invokeCommand });
 
-    expect(storage.getItem("diamond-soul.high-school-career.autosave.old")).toBeNull();
-    expect(storage.getItem("diamond-soul.high-school-career.autosave.v1")).toBe("cloud-value");
+    expect(storage.getItem("baseball.high-school-career.autosave.old")).toBeNull();
+    expect(storage.getItem("baseball.high-school-career.autosave.v1")).toBe("cloud-value");
     expect(storage.getItem("unrelated")).toBe("keep-me");
   });
 
@@ -34,9 +34,9 @@ describe("Steam Cloud backed storage", () => {
     const invokeCommand = vi.fn().mockResolvedValue(undefined);
     const backed = new CloudBackedStorage(storage, true, invokeCommand);
 
-    backed.setItem("diamond-soul.pro-career.autosave.v1", "one");
-    backed.setItem("diamond-soul.pro-career.autosave.v1.backup", "two");
-    backed.setItem("diamond-soul.analytics.events.v1", "local-only");
+    backed.setItem("baseball.pro-career.autosave.v1", "one");
+    backed.setItem("baseball.pro-career.autosave.v1.backup", "two");
+    backed.setItem("baseball.analytics.events.v1", "local-only");
     await Promise.resolve();
     await backed.flush();
 
@@ -44,15 +44,15 @@ describe("Steam Cloud backed storage", () => {
     const lastCall = invokeCommand.mock.calls.at(-1);
     const payload = JSON.parse((lastCall?.[1] as { contents: string }).contents);
     expect(payload.values).toEqual({
-      "diamond-soul.pro-career.autosave.v1": "one",
-      "diamond-soul.pro-career.autosave.v1.backup": "two",
+      "baseball.pro-career.autosave.v1": "one",
+      "baseball.pro-career.autosave.v1.backup": "two",
     });
   });
 
   it("does not write browser-only sessions to the desktop file API", async () => {
     const invokeCommand = vi.fn();
     const backed = new CloudBackedStorage(new MemoryStorage(), false, invokeCommand);
-    backed.setItem("diamond-soul.pro-career.autosave.v1", "one");
+    backed.setItem("baseball.pro-career.autosave.v1", "one");
     await backed.flush();
     expect(invokeCommand).not.toHaveBeenCalled();
   });

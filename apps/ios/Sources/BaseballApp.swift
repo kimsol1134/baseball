@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct DiamondSoulApp: App {
+struct BaseballApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var career = MobileCareerStore()
 

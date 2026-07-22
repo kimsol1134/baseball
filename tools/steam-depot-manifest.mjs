@@ -21,7 +21,7 @@ export function validateSteamDepot(depotDirectory, expectedEdition) {
   const manifestPath = path.join(root, "BUILD_MANIFEST.json");
   if (!existsSync(manifestPath)) throw new Error(`Missing depot manifest: ${manifestPath}`);
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
-  if (manifest.format !== "DiamondSoulSteamDepot" || manifest.schemaVersion !== 1 || !Array.isArray(manifest.files)) {
+  if (manifest.format !== "BaseballSteamDepot" || manifest.schemaVersion !== 1 || !Array.isArray(manifest.files)) {
     throw new Error("Depot manifest has an unsupported format");
   }
   if (expectedEdition && manifest.edition !== expectedEdition) {

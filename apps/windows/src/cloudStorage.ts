@@ -1,10 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 
-const FORMAT = "DiamondSoulSteamCloudStorage";
+const FORMAT = "BaseballSteamCloudStorage";
 const SAVE_PREFIXES = [
-  "diamond-soul.pitcher-lab.autosave.",
-  "diamond-soul.high-school-career.autosave.",
-  "diamond-soul.pro-career.autosave.",
+  "baseball.pitcher-lab.autosave.",
+  "baseball.high-school-career.autosave.",
+  "baseball.pro-career.autosave.",
 ] as const;
 
 interface CloudStoragePayload {
@@ -65,7 +65,7 @@ function decode(raw: string): CloudStoragePayload {
 
 function announce(state: "saved" | "error", message: string) {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("diamond-soul:cloud-save", {
+  window.dispatchEvent(new CustomEvent("baseball:cloud-save", {
     detail: { state, message },
   }));
 }

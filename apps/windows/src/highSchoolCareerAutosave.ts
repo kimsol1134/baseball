@@ -9,7 +9,7 @@ import type {
 } from "./simulationTypes";
 import type { LabInningStats, PitchHistoryItem } from "./pitcherLabAutosave";
 
-const PRIMARY = "diamond-soul.high-school-career.autosave.v1";
+const PRIMARY = "baseball.high-school-career.autosave.v1";
 const BACKUP = `${PRIMARY}.backup`;
 const CORRUPT = `${PRIMARY}.corrupt`;
 
@@ -20,7 +20,7 @@ interface StorageLike {
 }
 
 export interface HighSchoolCareerAutosavePayload {
-  format: "DiamondSoulHighSchoolCareerAutosave";
+  format: "BaseballHighSchoolCareerAutosave";
   schemaVersion: 2;
   savedAt: string;
   selectedPresetID: string;
@@ -59,7 +59,7 @@ function decode(raw: string): HighSchoolCareerAutosavePayload {
     throw new Error("고교 커리어 자동 저장 체크섬이 일치하지 않습니다.");
   }
   const payload = JSON.parse(envelope.payload) as Omit<Partial<HighSchoolCareerAutosavePayload>, "schemaVersion"> & { schemaVersion?: number };
-  if (payload.format !== "DiamondSoulHighSchoolCareerAutosave" || ![1, 2].includes(payload.schemaVersion ?? 0) || !payload.careerResult) {
+  if (payload.format !== "BaseballHighSchoolCareerAutosave" || ![1, 2].includes(payload.schemaVersion ?? 0) || !payload.careerResult) {
     throw new Error("고교 커리어 자동 저장 형식이 유효하지 않습니다.");
   }
   if (payload.schemaVersion === 1) {

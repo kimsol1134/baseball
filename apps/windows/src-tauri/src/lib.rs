@@ -265,7 +265,7 @@ pub fn run() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running Project Diamond Soul");
+        .expect("error while running 야구 못하면 또 환생함");
 }
 
 #[cfg(test)]

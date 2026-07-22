@@ -9,9 +9,9 @@ import type {
   RivalMemorySnapshot,
 } from "./simulationTypes";
 
-const PRIMARY_KEY = "diamond-soul.pitcher-lab.autosave.v1";
-const BACKUP_KEY = "diamond-soul.pitcher-lab.autosave.v1.backup";
-const CORRUPT_KEY_PREFIX = "diamond-soul.pitcher-lab.autosave.v1.corrupt";
+const PRIMARY_KEY = "baseball.pitcher-lab.autosave.v1";
+const BACKUP_KEY = "baseball.pitcher-lab.autosave.v1.backup";
+const CORRUPT_KEY_PREFIX = "baseball.pitcher-lab.autosave.v1.corrupt";
 
 export interface PitchHistoryItem {
   eventHash: string;
@@ -30,7 +30,7 @@ export interface LabInningStats {
 }
 
 export interface PitcherLabAutosavePayload {
-  format: "DiamondSoulPitcherLabAutosave";
+  format: "BaseballPitcherLabAutosave";
   schemaVersion: 1;
   savedAt: string;
   selectedPresetID: string;
@@ -95,7 +95,7 @@ function decode(raw: string): PitcherLabAutosavePayload {
   }
   const payload = JSON.parse(envelope.payload) as Partial<PitcherLabAutosavePayload>;
   if (
-    payload.format !== "DiamondSoulPitcherLabAutosave"
+    payload.format !== "BaseballPitcherLabAutosave"
     || payload.schemaVersion !== 1
     || !payload.labResult
     || typeof payload.selectedPresetID !== "string"
@@ -150,7 +150,7 @@ export function clearPitcherLabAutosave(storage: StorageLike) {
 export function createPitcherLabAnalysis(result: PitcherLabResult) {
   const snapshot = result.snapshot;
   return {
-    format: "DiamondSoulPitcherLabAnalysis",
+    format: "BaseballPitcherLabAnalysis",
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
     run: {
@@ -177,7 +177,7 @@ export function downloadPitcherLabAnalysis(result: PitcherLabResult) {
   const url = URL.createObjectURL(new Blob([contents], { type: "application/json" }));
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `diamond-soul-lab-${result.snapshot.runID}-life-${result.snapshot.lifeNumber}.json`;
+  anchor.download = `baseball-lab-${result.snapshot.runID}-life-${result.snapshot.lifeNumber}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

@@ -1,4 +1,4 @@
-# Project Diamond Soul 1.0 출시 체크리스트
+# 야구 못하면 또 환생함 1.0 출시 체크리스트
 
 기준일: 2026-07-22  
 현재 출시 범위: Steam 유료 정식판과 별도 무료 데모
@@ -27,8 +27,8 @@
 
 ## 현재 로컬 산출물
 
-- 정식판: `artifacts/steam/full/macos-arm64/Project Diamond Soul.app`
-- 데모: `artifacts/steam/demo/macos-arm64/Project Diamond Soul.app`
+- 정식판: `artifacts/steam/full/macos-arm64/야구 못하면 또 환생함.app`
+- 데모: `artifacts/steam/demo/macos-arm64/야구 못하면 또 환생함.app`
 - 각 데포: 5개 파일, 26,599,491 bytes
 - 검증: manifest SHA-256 전수 검사, sidecar health, `codesign --verify --deep --strict` 통과
 - 실제 실행: 정식판 실행·종료와 종료 직전 저장 파일 기록 통과
@@ -81,7 +81,7 @@
 
 ### 법무·운영
 
-- [ ] `Project Diamond Soul` 명칭과 아이콘 상표 충돌 검토
+- [ ] `야구 못하면 또 환생함` 명칭과 아이콘 상표 충돌 검토
 - [ ] 개인정보 처리방침, 이용약관, 고객지원 주소 게시
 - [ ] 야구 구단·선수·리그의 실제 상표나 식별 요소가 없는지 최종 확인
 - [ ] 크래시·진단 데이터의 옵트인, 보존 기간, 삭제 절차 검토

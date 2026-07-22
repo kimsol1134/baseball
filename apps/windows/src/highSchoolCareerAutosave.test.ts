@@ -10,7 +10,7 @@ class MemoryStorage {
 
 function fixture(revision: number): HighSchoolCareerAutosavePayload {
   return {
-    format: "DiamondSoulHighSchoolCareerAutosave", schemaVersion: 2, savedAt: "2026-07-22T00:00:00Z",
+    format: "BaseballHighSchoolCareerAutosave", schemaVersion: 2, savedAt: "2026-07-22T00:00:00Z",
     selectedPresetID: "power_prospect", screenMode: "lab", seed: "1",
     careerResult: { snapshot: { revision } } as HighSchoolCareerAutosavePayload["careerResult"],
     context: {} as HighSchoolCareerAutosavePayload["context"], history: [],
@@ -45,7 +45,7 @@ describe("High school career autosave", () => {
     const payload = JSON.stringify(old);
     let hash = 0x811c9dc5;
     for (let index = 0; index < payload.length; index += 1) { hash ^= payload.charCodeAt(index); hash = Math.imul(hash, 0x01000193); }
-    storage.setItem("diamond-soul.high-school-career.autosave.v1", JSON.stringify({ checksum: (hash >>> 0).toString(16).padStart(8, "0"), payload }));
+    storage.setItem("baseball.high-school-career.autosave.v1", JSON.stringify({ checksum: (hash >>> 0).toString(16).padStart(8, "0"), payload }));
     const migrated = loadHighSchoolCareer(storage)?.payload;
     expect(migrated?.schemaVersion).toBe(2);
     expect(migrated?.careerResult.snapshot.difficulty.careerHarshness).toBe("standard");

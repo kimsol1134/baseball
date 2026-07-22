@@ -18,22 +18,25 @@ jobs:
         include:
           - name: macOS Apple Silicon
             os: macos-15
+            swift: "6.3.3"
             bundles: app,dmg
-            artifact-name: diamond-soul-macos-arm64
+            artifact-name: baseball-macos-arm64
             artifact-path: |
               apps/windows/src-tauri/target/release/bundle/macos/*.app
               apps/windows/src-tauri/target/release/bundle/dmg/*.dmg
           - name: macOS Intel
             os: macos-15-intel
+            swift: "6.3.3"
             bundles: app,dmg
-            artifact-name: diamond-soul-macos-x64
+            artifact-name: baseball-macos-x64
             artifact-path: |
               apps/windows/src-tauri/target/release/bundle/macos/*.app
               apps/windows/src-tauri/target/release/bundle/dmg/*.dmg
           - name: Windows x64
             os: windows-2022
+            swift: "6.3.2"
             bundles: nsis,msi
-            artifact-name: diamond-soul-windows-x64
+            artifact-name: baseball-windows-x64
             artifact-path: |
               apps/windows/src-tauri/target/release/bundle/nsis/*-setup.exe
               apps/windows/src-tauri/target/release/bundle/msi/*.msi
@@ -46,10 +49,11 @@ jobs:
           cache: npm
       - uses: SwiftyLab/setup-swift@v1.14.0
         with:
-          swift-version: "6.3.3"
+          swift-version: ${{ matrix.swift }}
           check-latest: true
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
+      - run: npm run prepare:sidecar
       - run: npm run check
       - run: npm run desktop:build -- --bundles ${{ matrix.bundles }}
       - run: npm run smoke:sidecar

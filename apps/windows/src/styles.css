@@ -163,14 +163,10 @@ button:focus-visible {
 .brand-mark {
   width: 42px;
   height: 42px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--color-selection);
-  border-radius: 12px 4px 12px 4px;
-  color: var(--color-brand);
-  font-weight: 900;
-  letter-spacing: -0.06em;
-  transform: rotate(-2deg);
+  display: block;
+  border: 1px solid rgb(215 175 92 / 45%);
+  border-radius: 10px;
+  object-fit: cover;
 }
 
 .eyebrow {
@@ -954,7 +950,7 @@ legend {
   animation: result-impact 360ms cubic-bezier(.2, .9, .3, 1);
 }
 
-.result-content--impact > :not(.outcome, .pitch-trajectory),
+.result-content--impact > :not(.outcome, .trajectory-replay),
 .result-content:not(.is-expanded) > :is(.result-detail, .result-facts, .fielding-resolution, .situation-resolution, .runner-resolution, .event-proof) {
   display: none;
 }
@@ -965,31 +961,347 @@ legend {
   100% { opacity: 1; transform: scale(1); }
 }
 
-.pitch-trajectory {
+.trajectory-replay {
+  container-type: inline-size;
   display: grid;
-  grid-template-columns: 116px 1fr;
-  gap: 12px;
-  align-items: center;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: #0d1512;
+  gap: 9px;
+  padding: 9px;
+  border: 1px solid #3e5d50;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgb(113 174 134 / 7%), transparent 36%),
+    #09110e;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 2%);
 }
 
-.pitch-trajectory svg { width: 116px; height: 104px; overflow: visible; }
-.trajectory-zone { fill: rgb(255 255 255 / 2%); stroke: #65746e; stroke-width: 1; stroke-dasharray: 3 3; }
-.trajectory-path { fill: none; stroke: #e4bc60; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 140; animation: trajectory-draw 420ms ease-out both; }
-.trajectory-target { fill: none; stroke: #a5b6af; stroke-width: 1.5; stroke-dasharray: 2 2; }
-.trajectory-actual { stroke: #f3f7f4; stroke-width: 1.5; }
-.trajectory-actual--positive { fill: var(--color-positive); }
-.trajectory-actual--negative { fill: var(--color-negative); }
-.trajectory-actual--neutral { fill: var(--color-information); }
-.pitch-trajectory > div { display: grid; gap: 5px; }
-.pitch-trajectory span { color: var(--subtle); font-size: 0.75rem; }
-.pitch-trajectory strong { color: var(--color-information); font-size: 0.875rem; }
-.pitch-trajectory small { color: var(--muted); font-size: 0.75rem; }
+.trajectory-replay-heading,
+.trajectory-card > header,
+.trajectory-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 
-@keyframes trajectory-draw { from { stroke-dashoffset: 140; opacity: .2; } to { stroke-dashoffset: 0; opacity: 1; } }
+.trajectory-replay-heading {
+  padding: 1px 2px 0;
+}
+
+.trajectory-replay-heading > div,
+.trajectory-card > header > div {
+  display: grid;
+  gap: 1px;
+}
+
+.trajectory-replay-heading span,
+.trajectory-card > header span {
+  color: var(--color-brand);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.625rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+
+.trajectory-replay-heading strong {
+  font-size: 0.875rem;
+  letter-spacing: -0.02em;
+}
+
+.trajectory-replay-heading > small {
+  padding: 3px 6px;
+  border: 1px solid #436153;
+  border-radius: 4px;
+  color: #8da79b;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.trajectory-replay-grid {
+  display: grid;
+  gap: 9px;
+}
+
+.trajectory-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #30483e;
+  border-radius: 9px;
+  background: #0c1511;
+}
+
+.trajectory-card > header {
+  min-height: 40px;
+  padding: 7px 9px;
+  border-bottom: 1px solid #30483e;
+  background: #111d18;
+}
+
+.trajectory-card > header strong {
+  font-size: 0.8125rem;
+}
+
+.trajectory-card > header small {
+  color: var(--subtle);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+}
+
+.trajectory-stage {
+  aspect-ratio: 240 / 158;
+  overflow: hidden;
+  background: #07100c;
+}
+
+.trajectory-stage--field {
+  aspect-ratio: 4 / 3;
+}
+
+.trajectory-stage svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.trajectory-grid-base { fill: #0a1511; }
+.trajectory-grid-check { fill: #101e18; }
+.trajectory-field-base { fill: #0b1a12; }
+.trajectory-field-check { fill: #12251a; }
+.trajectory-grid-rule { fill: none; stroke: rgb(145 185 160 / 10%); stroke-width: 0.55; }
+
+.trajectory-strike-grid {
+  fill: rgb(5 10 8 / 30%);
+  stroke: #6f887c;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.trajectory-home-plate {
+  fill: #d5ddd8;
+  stroke: #07100c;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.trajectory-pitch-shadow,
+.trajectory-pitch-line,
+.trajectory-hit-shadow,
+.trajectory-hit-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  vector-effect: non-scaling-stroke;
+  animation: trajectory-draw 760ms cubic-bezier(.22, .75, .22, 1) forwards;
+}
+
+.trajectory-pitch-shadow,
+.trajectory-hit-shadow {
+  stroke: rgb(0 0 0 / 66%);
+  stroke-width: 5;
+}
+
+.trajectory-pitch-line {
+  stroke: #f0c865;
+  stroke-width: 2.25;
+  filter: drop-shadow(0 0 3px rgb(240 200 101 / 52%));
+}
+
+.trajectory-target-marker circle {
+  fill: rgb(12 21 17 / 72%);
+  stroke: #a9bbb2;
+  stroke-dasharray: 2 2;
+  stroke-width: 1;
+}
+
+.trajectory-target-marker path {
+  stroke: #a9bbb2;
+  stroke-width: 0.75;
+}
+
+.trajectory-ball-marker,
+.trajectory-landing {
+  opacity: 0;
+  animation: trajectory-marker-in 180ms 690ms ease-out forwards;
+}
+
+.trajectory-ball-marker circle {
+  stroke: #f5f8f5;
+  stroke-width: 1.25;
+}
+
+.trajectory-ball-marker path {
+  fill: none;
+  stroke: rgb(18 30 24 / 68%);
+  stroke-width: 0.65;
+}
+
+.trajectory-ball-marker--positive circle,
+.trajectory-landing--positive > circle:first-child { fill: var(--color-positive); }
+.trajectory-ball-marker--negative circle,
+.trajectory-landing--negative > circle:first-child { fill: var(--color-negative); }
+.trajectory-ball-marker--neutral circle,
+.trajectory-landing--neutral > circle:first-child { fill: var(--color-information); }
+
+.trajectory-axis-label {
+  fill: #769083;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.trajectory-foul-lines,
+.trajectory-diamond {
+  fill: none;
+  stroke: #809b88;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.trajectory-infield-dirt {
+  fill: rgb(123 89 56 / 26%);
+  stroke: rgb(181 139 94 / 42%);
+  stroke-width: 0.8;
+}
+
+.trajectory-fielder circle {
+  fill: #16261e;
+  stroke: #5f766a;
+  stroke-width: 1;
+}
+
+.trajectory-fielder text {
+  fill: #9eafa7;
+  font-size: 6px;
+  font-weight: 900;
+}
+
+.trajectory-fielder.is-responsible circle {
+  fill: #29452b;
+  stroke: var(--color-brand);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 3px rgb(183 243 107 / 55%));
+}
+
+.trajectory-fielder.is-responsible text {
+  fill: #eefbdc;
+}
+
+.trajectory-hit-line {
+  stroke-width: 2.5;
+  animation-delay: 80ms;
+}
+
+.trajectory-hit-line--positive { stroke: var(--color-positive); }
+.trajectory-hit-line--negative { stroke: var(--color-negative); }
+.trajectory-hit-line--neutral { stroke: var(--color-information); }
+
+.trajectory-landing > circle:first-child {
+  stroke: #f4f7f3;
+  stroke-width: 1;
+}
+
+.trajectory-landing-ring {
+  fill: none;
+  stroke: rgb(244 247 243 / 65%);
+  stroke-width: 1;
+  animation: trajectory-ring 900ms 710ms ease-out infinite;
+}
+
+.trajectory-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid #30483e;
+}
+
+.trajectory-metrics > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: 7px 8px;
+  border-right: 1px solid #263c33;
+}
+
+.trajectory-metrics > div:last-child {
+  border-right: 0;
+}
+
+.trajectory-metrics span {
+  color: var(--subtle);
+  font-size: 0.5625rem;
+  letter-spacing: 0.04em;
+}
+
+.trajectory-metrics strong {
+  overflow: hidden;
+  color: #dce7e1;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trajectory-legend {
+  min-height: 31px;
+  justify-content: flex-start;
+  padding: 6px 8px;
+  border-top: 1px solid #263c33;
+  color: var(--subtle);
+  font-size: 0.625rem;
+}
+
+.trajectory-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trajectory-legend i {
+  width: 7px;
+  height: 7px;
+  display: block;
+  border-radius: 50%;
+}
+
+.trajectory-legend i.is-target { border: 1px dashed #a9bbb2; }
+.trajectory-legend i.is-actual.is-positive { background: var(--color-positive); }
+.trajectory-legend i.is-actual.is-negative { background: var(--color-negative); }
+.trajectory-legend i.is-actual.is-neutral { background: var(--color-information); }
+
+.trajectory-legend strong {
+  margin-left: auto;
+  color: var(--color-brand);
+  font-size: 0.625rem;
+}
+
+.trajectory-legend--field {
+  flex-wrap: wrap;
+}
+
+@container (min-width: 540px) {
+  .trajectory-replay-grid.has-batted-ball {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@keyframes trajectory-draw {
+  from { stroke-dashoffset: 100; opacity: .28; }
+  to { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes trajectory-marker-in {
+  from { opacity: 0; transform: scale(.35); transform-box: fill-box; transform-origin: center; }
+  to { opacity: 1; transform: scale(1); transform-box: fill-box; transform-origin: center; }
+}
+
+@keyframes trajectory-ring {
+  0% { opacity: .8; transform: scale(.6); transform-box: fill-box; transform-origin: center; }
+  100% { opacity: 0; transform: scale(1.55); transform-box: fill-box; transform-origin: center; }
+}
 
 .result-details-toggle {
   width: 100%;

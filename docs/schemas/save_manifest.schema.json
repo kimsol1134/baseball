@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/diamond-soul/save-manifest.schema.json",
-  "title": "Diamond Soul Save Manifest",
+  "title": "야구 못하면 또 환생함 Save Manifest",
   "type": "object",
   "required": ["format", "schemaVersion", "engineVersion", "contentVersion", "worldID", "revision", "createdAt", "lastSavedAt"],
   "properties": {

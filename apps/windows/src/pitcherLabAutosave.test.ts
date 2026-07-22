@@ -15,7 +15,7 @@ class MemoryStorage {
 
 function fixture(revision: number): PitcherLabAutosavePayload {
   return {
-    format: "DiamondSoulPitcherLabAutosave",
+    format: "BaseballPitcherLabAutosave",
     schemaVersion: 1,
     savedAt: "2026-07-22T00:00:00.000Z",
     selectedPresetID: "power_prospect",

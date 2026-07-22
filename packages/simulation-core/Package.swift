@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "DiamondSoulSimulation",
+    name: "BaseballSimulation",
     platforms: [
         .macOS(.v13),
         .iOS(.v17)

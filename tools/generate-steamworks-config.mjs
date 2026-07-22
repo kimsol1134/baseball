@@ -36,5 +36,5 @@ for (const [platform, rawDepotId] of Object.entries(config?.depots ?? {})) {
 if (depotEntries.length === 0) throw new Error(`No verified ${edition} depots exist under ${depotRoot}`);
 
 const depots = depotEntries.map(({ depotId, filename }) => `    "${depotId}" "${filename}"`).join("\n");
-writeFileSync(path.join(scriptsDirectory, "app_build.vdf"), `"appbuild"\n{\n  "appid" "${appId}"\n  "desc" "Project Diamond Soul ${edition}"\n  "buildoutput" "../output"\n  "preview" "1"\n  "depots"\n  {\n${depots}\n  }\n}\n`);
+writeFileSync(path.join(scriptsDirectory, "app_build.vdf"), `"appbuild"\n{\n  "appid" "${appId}"\n  "desc" "야구 못하면 또 환생함 ${edition}"\n  "buildoutput" "../output"\n  "preview" "1"\n  "depots"\n  {\n${depots}\n  }\n}\n`);
 process.stdout.write(`Steamworks ${edition} preview config ready: ${path.relative(repositoryRoot, scriptsDirectory)}\n`);

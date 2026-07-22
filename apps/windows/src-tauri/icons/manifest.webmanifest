@@ -1,6 +1,6 @@
 {
-  "name": "Project Diamond Soul",
-  "short_name": "Diamond Soul",
+  "name": "야구 못하면 또 환생함",
+  "short_name": "야못또환",
   "description": "학교 선택부터 드래프트까지 이어지는 데이터 기반 야구 RPG",
   "lang": "ko-KR",
   "start_url": "/",

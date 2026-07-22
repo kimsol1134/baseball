@@ -8,7 +8,7 @@ final class SaveStoreTests: XCTestCase {
 
     override func setUpWithError() throws {
         temporaryDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("diamond-soul-save-tests-\(UUID().uuidString)")
+            .appendingPathComponent("baseball-save-tests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(
             at: temporaryDirectory,
             withIntermediateDirectories: true

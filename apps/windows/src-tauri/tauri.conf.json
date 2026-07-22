@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Project Diamond Soul",
+  "productName": "야구 못하면 또 환생함",
   "version": "1.0.0",
-  "identifier": "com.solkim.diamondsoul",
+  "identifier": "com.solkim.baseball",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Project Diamond Soul",
+        "title": "야구 못하면 또 환생함",
         "width": 1360,
         "height": 850,
         "minWidth": 980,

@@ -1,15 +1,20 @@
 {
-  "name": "project-diamond-soul",
+  "name": "baseball",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "npm@10.9.3",
   "workspaces": [
-    "apps/windows"
+    "apps/windows",
+    "apps/landing"
   ],
   "scripts": {
+    "landing:dev": "npm run dev --workspace @baseball/landing",
+    "landing:build": "npm run build --workspace @baseball/landing",
+    "landing:typecheck": "npm run typecheck --workspace @baseball/landing",
     "build:swift": "swift build --package-path packages/simulation-core",
     "test:swift": "swift test --package-path packages/simulation-core",
-    "test:web": "npm run test --workspace @diamond-soul/windows",
-    "build:web": "npm run build --workspace @diamond-soul/windows",
+    "test:web": "npm run test --workspace @baseball/windows",
+    "build:web": "npm run build --workspace @baseball/windows",
     "prepare:sidecar": "node tools/build-sidecar.mjs",
     "smoke:sidecar": "node tools/smoke-sidecar.mjs",
     "check:tauri": "node tools/run-cargo.mjs check --manifest-path apps/windows/src-tauri/Cargo.toml",

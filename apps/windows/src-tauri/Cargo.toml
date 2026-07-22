@@ -1,12 +1,12 @@
 [package]
-name = "diamond-soul"
+name = "baseball"
 version = "1.0.0"
-description = "Project Diamond Soul desktop shell"
-authors = ["Project Diamond Soul"]
+description = "야구 못하면 또 환생함 desktop shell"
+authors = ["야구 못하면 또 환생함"]
 edition = "2021"
 
 [lib]
-name = "diamond_soul_lib"
+name = "baseball_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

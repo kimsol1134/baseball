@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://diamond-soul.local/schemas/content-pack-manifest.schema.json",
-  "title": "Diamond Soul declarative content pack manifest",
+  "title": "야구 못하면 또 환생함 declarative content pack manifest",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "schemaVersion", "id", "title", "version", "gameVersion", "author", "content"],

@@ -10,13 +10,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        include:
+          - os: macos-latest
+            swift: "6.3.3"
+          - os: windows-2022
+            swift: "6.3.2"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: SwiftyLab/setup-swift@v1.14.0
         with:
-          swift-version: "6.3.3"
+          swift-version: ${{ matrix.swift }}
           check-latest: true
       - name: Test simulation packages
         run: swift test --package-path packages/simulation-core
@@ -42,10 +46,12 @@ jobs:
         include:
           - name: macOS Apple Silicon
             os: macos-15
+            swift: "6.3.3"
             bundles: app
             artifact: apps/windows/src-tauri/target/release/bundle/macos/*.app
           - name: Windows x64
             os: windows-2022
+            swift: "6.3.2"
             bundles: nsis
             artifact: apps/windows/src-tauri/target/release/bundle/nsis/*-setup.exe
     runs-on: ${{ matrix.os }}
@@ -57,10 +63,11 @@ jobs:
           cache: npm
       - uses: SwiftyLab/setup-swift@v1.14.0
         with:
-          swift-version: "6.3.3"
+          swift-version: ${{ matrix.swift }}
           check-latest: true
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
+      - run: npm run prepare:sidecar
       - run: npm run test:tauri
       - run: npm run desktop:build -- --bundles ${{ matrix.bundles }}
       - run: npm run smoke:sidecar
@@ -70,7 +77,7 @@ jobs:
         run: ./tools/smoke-windows-install.ps1
       - uses: actions/upload-artifact@v4
         with:
-          name: diamond-soul-${{ runner.os }}-ci
+          name: baseball-${{ runner.os }}-ci
           path: ${{ matrix.artifact }}
           if-no-files-found: error
           retention-days: 7

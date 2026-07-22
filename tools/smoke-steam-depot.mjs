@@ -14,7 +14,7 @@ const manifest = validateSteamDepot(depotDirectory);
 const isWindows = manifest.platform === "windows";
 const sidecar = isWindows
   ? path.join(depotDirectory, "simulation-sidecar.exe")
-  : path.join(depotDirectory, "Project Diamond Soul.app", "Contents", "MacOS", "simulation-sidecar");
+  : path.join(depotDirectory, "야구 못하면 또 환생함.app", "Contents", "MacOS", "simulation-sidecar");
 const runtime = path.join(depotDirectory, "swift-runtime");
 const environment = isWindows
   ? { ...process.env, PATH: `${runtime}${path.delimiter}${process.env.PATH ?? ""}` }

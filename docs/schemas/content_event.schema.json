@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/diamond-soul/content-event.schema.json",
-  "title": "Diamond Soul Content Event",
+  "title": "야구 못하면 또 환생함 Content Event",
   "type": "object",
   "required": ["id", "version", "stage", "text", "choices"],
   "properties": {

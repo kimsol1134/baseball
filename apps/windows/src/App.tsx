@@ -31,6 +31,7 @@ import {
 import { PitcherLabSetup, PitcherLabView } from "./PitcherLabView";
 import { HighSchoolCareerSetup, HighSchoolCareerView } from "./HighSchoolCareerView";
 import { ProCareerView } from "./ProCareerView";
+import { TrajectoryReplay } from "./TrajectoryReplay";
 import {
   clearPitcherLabAutosave,
   loadPitcherLabAutosave,
@@ -321,24 +322,6 @@ function AccessibilityControls({ highContrast, reducedMotion, fontScale, analyti
       <button type="button" onClick={onDiagnostics}>익명 진단 저장</button>
     </div>
   </details>;
-}
-
-function PitchTrajectory({ result }: { result: PitchKernelResult }) {
-  const execution = result.snapshot.execution;
-  const coordinate = (value: number) => Math.max(7, Math.min(93, 50 + value / 20));
-  const targetX = coordinate(execution.targetX);
-  const targetY = coordinate(-execution.targetY);
-  const actualX = coordinate(execution.actualX);
-  const actualY = coordinate(-execution.actualY);
-  return <div className="pitch-trajectory" aria-label={`목표 지점과 실제 도착 지점. 실행 품질 ${execution.executionQuality}`}>
-    <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
-      <rect x="25" y="22" width="50" height="56" rx="3" className="trajectory-zone" />
-      <path d={`M 50 96 Q ${targetX} 58 ${actualX} ${actualY}`} className="trajectory-path" />
-      <circle cx={targetX} cy={targetY} r="5" className="trajectory-target" />
-      <circle cx={actualX} cy={actualY} r="4" className={`trajectory-actual trajectory-actual--${outcomeTone(result.snapshot.outcome)}`} />
-    </svg>
-    <div><span>목표</span><strong>실제 도착</strong><small>실행 {execution.executionQuality}</small></div>
-  </div>;
 }
 
 function statusMessage(status: CoreStatus) {
@@ -1483,8 +1466,8 @@ export function App() {
     return (
       <div className="app-shell app-shell--career">
         <header className="topbar">
-          <div className="brand-lockup"><div className="brand-mark" aria-hidden="true">DS</div><div>
-            <p className="eyebrow">PROJECT DIAMOND SOUL</p><h1>High School Career</h1>
+          <div className="brand-lockup"><img className="brand-mark" src="/128x128.png" alt="" /><div>
+            <p className="eyebrow">야구 못하면 또 환생함</p><h1>High School Career</h1>
           </div></div>
           <div className={`core-status core-status--${coreStatus.state}`}><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" ? <button type="button" onClick={() => void connectCore()}>다시 연결</button> : null}</div>
@@ -1517,9 +1500,9 @@ export function App() {
       <div className="app-shell app-shell--lab">
         <header className="topbar">
           <div className="brand-lockup">
-            <div className="brand-mark" aria-hidden="true">DS</div>
+            <img className="brand-mark" src="/128x128.png" alt="" />
             <div>
-              <p className="eyebrow">PROJECT DIAMOND SOUL</p>
+              <p className="eyebrow">야구 못하면 또 환생함</p>
               <h1>Pitcher Lab</h1>
             </div>
           </div>
@@ -1569,9 +1552,9 @@ export function App() {
     <div className="app-shell">
       <header className="topbar">
         <div className="brand-lockup">
-          <div className="brand-mark" aria-hidden="true">DS</div>
+          <img className="brand-mark" src="/128x128.png" alt="" />
           <div>
-            <p className="eyebrow">PROJECT DIAMOND SOUL</p>
+            <p className="eyebrow">야구 못하면 또 환생함</p>
             <h1>{experienceMode === "career" ? proVisible ? "Pro Game" : "High School Game" : labResult?.snapshot.phase === "important_inning" ? "Important Inning" : "Pitch Kernel"}</h1>
           </div>
         </div>
@@ -1822,7 +1805,7 @@ export function App() {
                       : OUTCOME_LABELS[lastResult.snapshot.outcome]}
                   </strong>
                 </div>
-                <PitchTrajectory result={lastResult} />
+                <TrajectoryReplay key={lastResult.eventHash} result={lastResult} pitchType={lastCall?.pitchType} />
                 <div className={`decision-grade decision-grade--${lastResult.snapshot.selectionQuality}`}>
                   {SELECTION_LABELS[lastResult.snapshot.selectionQuality]}
                   <span>{lastResult.snapshot.recommendationAccepted ? " · 포수 추천 수락" : " · 포수 사인 수정"}</span>
