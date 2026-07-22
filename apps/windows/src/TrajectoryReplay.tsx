@@ -446,20 +446,42 @@ function FielderMarker({
   y,
   short,
   active,
+  muted,
 }: {
   x: number;
   y: number;
   short: string;
   active: boolean;
+  muted: boolean;
 }) {
-  return <g className={`gamecast-fielder ${active ? "is-responsible" : ""}`} transform={`translate(${x} ${y})`}>
-    <circle className="gamecast-fielder-marker-ring" r="11" />
-    <circle className="gamecast-fielder-marker-dot" r="4" />
+  const depthScale = clamp(.7 + ((y - 160) / 230) * .3, .7, 1);
+  return <g className={`gamecast-fielder ${active ? "is-responsible" : ""} ${muted ? "is-muted" : ""}`} transform={`translate(${x} ${y}) scale(${depthScale.toFixed(3)})`}>
+    <ellipse className="gamecast-fielder-ground" cy="8" rx="9" ry="3" />
+    <path className="gamecast-fielder-chevron" d="M 0 -9 L 8 4 L 0 1 L -8 4 Z" />
+    <circle className="gamecast-fielder-core" cy="-1" r="2.4" />
     <g className="gamecast-player-label" transform="translate(0 -19)">
-      <rect x="-9" y="-7" width="18" height="13" rx="6.5" />
+      <rect x="-10" y="-7" width="20" height="13" rx="3" />
       <text y="2" textAnchor="middle">{short}</text>
     </g>
   </g>;
+}
+
+function PitchZoneSummary({ execution, pitchLabel }: { execution: PitchExecution; pitchLabel: string }) {
+  const point = (x: number, y: number) => ({
+    x: clamp(80 + (x / 500) * 40, 22, 138),
+    y: clamp(58 - (y / 500) * 40, 8, 108),
+  });
+  const target = point(execution.targetX, execution.targetY);
+  const actual = point(execution.actualX, execution.actualY);
+  return <div className="gamecast-zone-summary" aria-label={`${pitchLabel} 목표 코스와 실제 위치`}>
+    <div><span>직전 투구 위치</span><strong>{pitchLabel} · {(execution.velocityTenthsKPH / 10).toFixed(1)} km/h</strong></div>
+    <svg viewBox="0 0 160 116" role="img" aria-label="목표 코스와 실제 공 위치">
+      <path d="M 40 18 H 120 V 98 H 40 Z M 66.7 18 V 98 M 93.3 18 V 98 M 40 44.7 H 120 M 40 71.3 H 120" className="gamecast-zone-summary-grid" />
+      <g className="gamecast-zone-summary-target" transform={`translate(${target.x} ${target.y})`}><circle r="6" /><path d="M -9 0 H 9 M 0 -9 V 9" /></g>
+      <g className="gamecast-zone-summary-actual" transform={`translate(${actual.x} ${actual.y})`}><circle r="6" /><circle r="10" /></g>
+    </svg>
+    <footer><span><i className="is-target" /> 목표</span><span><i className="is-actual" /> 실제</span></footer>
+  </div>;
 }
 
 function PitchView({
@@ -603,9 +625,15 @@ function FieldView({
   const currentTime = samples[samples.length - 1].timeMilliseconds * clamp(progress, 0, 1);
   const currentSample = interpolateTrajectory(samples, currentTime) ?? samples[0];
   const currentGround = projectFieldSample(currentSample);
-  const trailPoints = samples.filter((sample) => sample.timeMilliseconds <= currentTime).map(projectFieldSample);
-  if (trailPoints.length === 0) trailPoints.push(projectFieldSample(samples[0]));
-  trailPoints.push(currentGround);
+  const elapsedSamples = samples.filter((sample) => sample.timeMilliseconds <= currentTime);
+  if (elapsedSamples.length === 0) elapsedSamples.push(samples[0]);
+  if (elapsedSamples[elapsedSamples.length - 1].timeMilliseconds !== currentSample.timeMilliseconds) elapsedSamples.push(currentSample);
+  const groundTrailPoints = elapsedSamples.map(projectFieldSample);
+  const flightTrailPoints = elapsedSamples.map((sample) => {
+    const ground = projectFieldSample(sample);
+    const sampleHeightMeters = sample.heightTenthsCM / 1_000;
+    return { x: ground.x, y: ground.y - Math.min(46, sampleHeightMeters * 2.1) };
+  });
   const heightMeters = currentSample.heightTenthsCM / 1_000;
   const ballLift = Math.min(46, heightMeters * 2.1);
   const responsible = fielding.fielderPosition
@@ -626,8 +654,8 @@ function FieldView({
   const displayedRunners = revealResult ? runnersAfter : runnersBefore;
   return <div className="gamecast-field-view">
     <div className="gamecast-camera-hud" aria-hidden="true">
-      <span className="gamecast-live-indicator"><i /> 생중계</span>
-      <strong>외야 카메라</strong>
+      <span className="gamecast-live-indicator"><i /> TRACKLAB</span>
+      <strong>타구 분석 카메라</strong>
       <small>{directionLabel(battedBall.directionTenthsDegrees / 10)}</small>
     </div>
     <div className="gamecast-flight-hud" aria-hidden="true">
@@ -637,11 +665,59 @@ function FieldView({
     </div>
     <svg viewBox="0 0 640 420" style={cameraStyle} role="img" aria-label={`${directionLabel(battedBall.directionTenthsDegrees / 10)} 방향 3D 타구 좌표 ${samples.length}개 재생`}>
       <defs>
+        <linearGradient id="field-tracking-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className="gamecast-tracking-sky-top" />
+          <stop offset="1" className="gamecast-tracking-sky-bottom" />
+        </linearGradient>
+        <linearGradient id="field-tracking-turf" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className="gamecast-tracking-turf-far" />
+          <stop offset="1" className="gamecast-tracking-turf-near" />
+        </linearGradient>
+        <radialGradient id="field-tracking-light" cx="50%" cy="18%" r="74%">
+          <stop offset="0" className="gamecast-tracking-light-core" />
+          <stop offset="1" className="gamecast-tracking-light-edge" />
+        </radialGradient>
+        <pattern id="field-tracking-crowd" width="9" height="7" patternUnits="userSpaceOnUse">
+          <rect width="9" height="7" className="gamecast-tracking-crowd-base" />
+          <circle cx="2" cy="2" r=".7" className="gamecast-tracking-crowd-light" />
+          <circle cx="7" cy="5" r=".8" className="gamecast-tracking-crowd-mid" />
+        </pattern>
+        <filter id="field-tracking-texture" x="-15%" y="-15%" width="130%" height="130%">
+          <feTurbulence type="fractalNoise" baseFrequency=".65" numOctaves="2" seed="23" result="noise" />
+          <feColorMatrix in="noise" type="saturate" values="0" result="mono" />
+          <feComponentTransfer in="mono"><feFuncA type="table" tableValues="0 .065" /></feComponentTransfer>
+        </filter>
         <filter id="live-ball-glow" x="-200%" y="-200%" width="400%" height="400%">
           <feGaussianBlur stdDeviation="5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
+      <g className="gamecast-field-environment">
+        <rect width="640" height="420" fill="url(#field-tracking-sky)" />
+        <ellipse cx="320" cy="92" rx="315" ry="255" fill="url(#field-tracking-light)" />
+        <path d="M 0 56 Q 320 -15 640 56 V 122 Q 320 45 0 122 Z" className="gamecast-tracking-grandstand" />
+        <path d="M 0 70 Q 320 5 640 70 V 116 Q 320 45 0 116 Z" fill="url(#field-tracking-crowd)" className="gamecast-field-crowd" />
+        <path d="M 0 101 Q 320 34 640 101 V 125 Q 320 64 0 125 Z" className="gamecast-tracking-wall" />
+        <g className="gamecast-tracking-light-rigs">
+          <path d="M 58 115 L 43 13 M 582 115 L 597 13" />
+          <rect x="21" y="8" width="44" height="13" rx="2" />
+          <rect x="575" y="8" width="44" height="13" rx="2" />
+        </g>
+        <g className="gamecast-tracking-scoreboard" transform="translate(270 35)">
+          <rect width="100" height="43" rx="3" />
+          <text x="50" y="17" textAnchor="middle">환성 야구장</text>
+          <text x="50" y="33" textAnchor="middle">NIGHT GAME</text>
+        </g>
+        <path d="M 320 380 L 46 92 Q 320 20 594 92 L 320 380 Z" fill="url(#field-tracking-turf)" className="gamecast-tracking-outfield" />
+        <path d="M 74 117 Q 320 52 566 117" className="gamecast-tracking-warning-track" />
+        <path d="M 111 153 Q 320 91 529 153 M 151 204 Q 320 149 489 204 M 197 261 Q 320 215 443 261" className="gamecast-tracking-field-mow" />
+        <path d="M 320 368 L 505 257 320 207 135 257 Z" className="gamecast-tracking-infield" />
+        <path d="M 320 365 L 486 257 320 218 154 257 Z" className="gamecast-diamond" />
+        <path d="M 320 380 L 46 92 M 320 380 L 594 92" className="gamecast-foul-lines" />
+        <ellipse cx="320" cy="270" rx="23" ry="7" className="gamecast-tracking-mound" />
+        <path d="M 306 360 H 334 L 326 371 H 314 Z" className="gamecast-home-plate" />
+        <rect width="640" height="420" filter="url(#field-tracking-texture)" className="gamecast-tracking-texture" />
+      </g>
       <Base x={486} y={257} occupied={displayedRunners.firstOccupied} label="1" />
       <Base x={320} y={218} occupied={displayedRunners.secondOccupied} label="2" />
       <Base x={154} y={257} occupied={displayedRunners.thirdOccupied} label="3" />
@@ -649,18 +725,19 @@ function FieldView({
         const isResponsible = marker.position === fielding.fielderPosition;
         const point = isResponsible && fielderPoint ? fielderPoint : marker;
         const isActive = isResponsible && (progress > 0.58 || revealResult);
-        return <FielderMarker key={marker.position} x={point.x} y={point.y} short={marker.short} active={isActive} />;
+        const isMuted = revealResult ? !isResponsible : progress > .45 && !isResponsible;
+        return <FielderMarker key={marker.position} x={point.x} y={point.y} short={marker.short} active={isActive} muted={isMuted} />;
       })}
       {progress > 0 && progress < 0.22 ? <g className="gamecast-contact-burst" transform={`translate(${FIELD_HOME.x} ${FIELD_HOME.y})`}>
         <circle r="12" /><circle r="25" /><path d="M -34 0 H 34 M 0 -34 V 34 M -24 -24 L 24 24 M 24 -24 L -24 24" />
       </g> : null}
       {progress > 0 ? <>
-        <path d={pointsPath(trailPoints)} className="gamecast-hit-shadow" />
-        <path d={pointsPath(trailPoints)} className={`gamecast-hit-line gamecast-hit-line--${tone}`} />
-        {trailPoints.slice(-5, -1).map((point, index) => <circle key={`${point.x}-${point.y}-${index}`} cx={point.x} cy={point.y} r={1.7 + index * 0.5} className="gamecast-ball-ghost" />)}
+        <path d={pointsPath(groundTrailPoints)} className="gamecast-ground-projection" />
+        <path d={pointsPath(flightTrailPoints)} className="gamecast-flight-path" />
+        {flightTrailPoints.slice(-5, -1).map((point, index) => <circle key={`${point.x}-${point.y}-${index}`} cx={point.x} cy={point.y} r={1.4 + index * 0.42} className="gamecast-ball-ghost" />)}
         <ellipse cx={currentGround.x} cy={currentGround.y + 3} rx={7 + heightMeters * 0.15} ry="4" className="gamecast-ball-shadow" />
         <line x1={currentGround.x} y1={currentGround.y} x2={currentGround.x} y2={currentGround.y - ballLift} className="gamecast-height-guide" />
-        <g className={`gamecast-live-ball gamecast-live-ball--${tone}`} transform={`translate(${currentGround.x} ${currentGround.y - ballLift})`} filter="url(#live-ball-glow)">
+        <g className={`gamecast-live-ball gamecast-live-ball--${revealResult ? tone : "tracking"}`} transform={`translate(${currentGround.x} ${currentGround.y - ballLift})`} filter="url(#live-ball-glow)">
           <circle r="6" />
         </g>
       </> : null}
@@ -674,9 +751,8 @@ function FieldView({
       {revealResult ? <g className={`gamecast-landing gamecast-landing--${tone}`} transform={`translate(${plot.landing.x} ${plot.landing.y})`}>
         <circle r="7" /><circle r="15" className="gamecast-landing-ring" />
       </g> : null}
-      <text x="12" y="411" className="gamecast-axis-label">환생 야구 · 타구 추적</text>
     </svg>
-    <div className="gamecast-view-caption"><span>중계 카메라</span><span>{plot.apexHeightMeters.toFixed(1)} m 최고점</span><span>{plot.hangTimeSeconds.toFixed(1)} s 체공</span><strong>{revealResult ? fielderAction(fielding) : `타구 추적 ${Math.round(progress * 100)}%`}</strong></div>
+    <div className="gamecast-view-caption"><span>공식 타구 좌표</span><span>{plot.apexHeightMeters.toFixed(1)} m 최고점</span><span>{plot.hangTimeSeconds.toFixed(1)} s 체공</span><strong>{revealResult ? fielderAction(fielding) : `타구 분석 ${Math.round(progress * 100)}%`}</strong></div>
   </div>;
 }
 
@@ -782,7 +858,6 @@ export function GameCastReplay({
         : snapshot.result === "in_play_out"
           ? "범타"
           : OUTCOME_LABELS[snapshot.outcome];
-  const cinematicResult = revealResult && (hasContact || snapshot.ended);
   const viewMode = gameCastViewMode(phase, hasContact);
   const showField = viewMode === "field" && Boolean(battedBall && fielding);
   const adjudicationLabel = hasContact && (phase === "field" || phase === "result") ? "02 타격" : "02 판정";
@@ -854,16 +929,16 @@ export function GameCastReplay({
           revealResult={revealResult}
         />
         <aside className="gamecast-telemetry">
-          <div className="gamecast-telemetry-heading"><span>타구 추적</span><strong>{directionLabel(battedBall.directionTenthsDegrees / 10)}</strong></div>
-          <PitchView execution={execution} tone={tone} compact progress={pitchProgress} revealResult={revealResult} />
+          <div className="gamecast-telemetry-heading"><span>타구 리포트</span><strong>{directionLabel(battedBall.directionTenthsDegrees / 10)}</strong></div>
+          <PitchZoneSummary execution={execution} pitchLabel={pitchLabel} />
           <div className="gamecast-contact-card">
             <span>타구 속도</span>
             <div><strong>{(battedBall.exitVelocityTenthsKPH / 10).toFixed(1)}</strong><em>km/h</em></div>
             <small>발사각 {(battedBall.launchAngleTenthsDegrees / 10).toFixed(1)}°</small>
           </div>
           <div className="gamecast-metrics gamecast-metrics--stacked">
-            <Metric label="투구" value={`${pitchLabel} · ${(execution.velocityTenthsKPH / 10).toFixed(1)} km/h`} />
-            <Metric label="방향" value={directionLabel(battedBall.directionTenthsDegrees / 10)} />
+            <Metric label="최고점" value={`${fieldPlot?.apexHeightMeters.toFixed(1)} m`} />
+            <Metric label="체공시간" value={`${fieldPlot?.hangTimeSeconds.toFixed(1)} s`} />
             <Metric label="비거리" value={revealResult ? `${fieldPlot?.distanceMeters.toFixed(1)} m` : "측정 중"} accent />
             <Metric label="수비" value={revealResult ? fielderAction(fielding) : "반응 중"} />
           </div>
@@ -886,11 +961,6 @@ export function GameCastReplay({
           <GameCastImpact result={result} revealResult={revealResult} />
         </aside>
       </>}
-      {cinematicResult ? <div className={`gamecast-result-sting gamecast-result-sting--${tone}`} aria-hidden="true">
-        <span>최종 결과</span>
-        <strong>{outcome}</strong>
-        <small>{fielding?.fielderName ? `${fielding.fielderName} · ${fielderAction(fielding)}` : snapshot.shortFeedback}</small>
-      </div> : null}
     </div>
 
     <footer className="gamecast-footer">
