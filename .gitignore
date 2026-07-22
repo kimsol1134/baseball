@@ -11,3 +11,6 @@ apps/windows/src-tauri/binaries/*
 apps/windows/src-tauri/gen/
 *.xcuserstate
 *.log
+/artifacts/
+/steam/steamworks.local.json
+steam_appid.txt

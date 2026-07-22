@@ -95,7 +95,10 @@ fn write_cloud_storage_at(directory: &Path, contents: &str) -> Result<(), String
     fs::create_dir_all(directory)
         .map_err(|error| format!("failed to create save directory: {error}"))?;
     let slots = cloud_slots(directory);
-    let revisions = slots.map(|ref path| read_slot(path).map(|value| value.revision));
+    let revisions = [
+        read_slot(&slots[0]).map(|value| value.revision),
+        read_slot(&slots[1]).map(|value| value.revision),
+    ];
     let next_revision = revisions.iter().flatten().max().copied().unwrap_or(0) + 1;
     let target_index = match revisions {
         [None, _] => 0,
@@ -252,4 +255,80 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running Project Diamond Soul");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temporary_directory(name: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock")
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "diamond-soul-{name}-{}-{unique}",
+            std::process::id()
+        ))
+    }
+
+    fn payload(value: &str) -> String {
+        serde_json::json!({
+            "format": CLOUD_STORAGE_FORMAT,
+            "schemaVersion": 1,
+            "values": { "diamond-soul.career": value }
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn cloud_storage_rotates_two_valid_slots_and_loads_newest() {
+        let directory = temporary_directory("rotation");
+        write_cloud_storage_at(&directory, &payload("first")).expect("first write");
+        write_cloud_storage_at(&directory, &payload("second")).expect("second write");
+
+        let loaded = load_cloud_storage_at(&directory)
+            .expect("load")
+            .expect("stored payload");
+        let value: CloudStoragePayload = serde_json::from_str(&loaded).expect("valid payload");
+        assert_eq!(value.values["diamond-soul.career"], "second");
+        assert!(cloud_slots(&directory).iter().all(|path| path.is_file()));
+
+        fs::remove_dir_all(directory).expect("cleanup");
+    }
+
+    #[test]
+    fn cloud_storage_recovers_the_other_slot_when_newest_is_corrupt() {
+        let directory = temporary_directory("recovery");
+        write_cloud_storage_at(&directory, &payload("first")).expect("first write");
+        write_cloud_storage_at(&directory, &payload("second")).expect("second write");
+        let slots = cloud_slots(&directory);
+        let newest = slots
+            .iter()
+            .max_by_key(|path| read_slot(path).map(|value| value.revision).unwrap_or(0))
+            .expect("newest slot");
+        fs::write(newest, b"corrupt").expect("corrupt newest");
+
+        let loaded = load_cloud_storage_at(&directory)
+            .expect("load")
+            .expect("backup payload");
+        let value: CloudStoragePayload = serde_json::from_str(&loaded).expect("valid payload");
+        assert_eq!(value.values["diamond-soul.career"], "first");
+
+        fs::remove_dir_all(directory).expect("cleanup");
+    }
+
+    #[test]
+    fn cloud_storage_rejects_unmanaged_keys() {
+        let directory = temporary_directory("invalid-key");
+        let invalid = serde_json::json!({
+            "format": CLOUD_STORAGE_FORMAT,
+            "schemaVersion": 1,
+            "values": { "another-app.save": "value" }
+        })
+        .to_string();
+        assert!(write_cloud_storage_at(&directory, &invalid).is_err());
+        assert!(!directory.exists());
+    }
 }

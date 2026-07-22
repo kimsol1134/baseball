@@ -125,7 +125,7 @@ private struct ImportantMomentView: View {
                 Text("IMPORTANT MOMENT · WEEK \(state.week)").font(.caption.weight(.bold)).foregroundStyle(DiamondSoulTheme.milestone)
                 Text(state.level == .major ? "1군에서 자리를 정할 승부" : state.managerTrust < 55 ? "보직 경쟁 평가전" : "다음 보직을 결정할 경기")
                     .font(.largeTitle.bold())
-                Text("한 점 차 · 1사 2루 · 정현우 타석\n현재 피로 \(state.fatigue), 감독 신뢰 \(state.managerTrust)")
+                Text("한 점 차 · 1사 2루 · 최정우 타석\n현재 피로 \(state.fatigue), 감독 신뢰 \(state.managerTrust)")
                     .foregroundStyle(.secondary)
                 VStack(spacing: 10) {
                     ForEach(MobileCareerStore.ImportantApproach.allCases) { approach in

@@ -17,7 +17,13 @@
     "desktop:build": "npm run prepare:sidecar && node tools/run-tauri.mjs build",
     "desktop:build:mac": "npm run prepare:sidecar && node tools/run-tauri.mjs build --bundles app,dmg",
     "desktop:build:windows": "npm run prepare:sidecar && node tools/run-tauri.mjs build --bundles nsis,msi",
-    "check": "npm run test:swift && npm run test:web && npm run build:web && npm run check:tauri"
+    "steam:build:full": "node tools/build-steam-depot.mjs full",
+    "steam:build:demo": "node tools/build-steam-depot.mjs demo",
+    "steam:smoke": "node tools/smoke-steam-depot.mjs",
+    "steam:config:full": "node tools/generate-steamworks-config.mjs full",
+    "steam:config:demo": "node tools/generate-steamworks-config.mjs demo",
+    "test:tauri": "node tools/run-cargo.mjs test --manifest-path apps/windows/src-tauri/Cargo.toml",
+    "check": "npm run test:swift && npm run test:web && npm run build:web && npm run test:tauri && npm run check:tauri"
   },
   "engines": {
     "node": ">=22.19.0"

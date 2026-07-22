@@ -93,6 +93,16 @@ npm run check:tauri
 npm run check
 ```
 
+Steam 정식판·데모 데포 생성:
+
+```sh
+npm run steam:build:full
+npm run steam:build:demo
+npm run steam:smoke -- artifacts/steam/full/macos-arm64
+```
+
+Windows에서는 `windows-x64`, Apple Silicon Mac에서는 `macos-arm64`, Intel Mac에서는 `macos-x64` 데포가 생성된다. App ID 발급 이후 설정과 SteamPipe 업로드 준비는 [Steamworks 연결 안내](./steam/README.md)를 따른다.
+
 배치 타석 시뮬레이션:
 
 ```sh

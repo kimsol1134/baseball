@@ -1,0 +1,18 @@
+{
+  "full": {
+    "appId": "REPLACE_WITH_FULL_APP_ID",
+    "depots": {
+      "windows-x64": "REPLACE_WITH_WINDOWS_DEPOT_ID",
+      "macos-arm64": "REPLACE_WITH_MAC_ARM64_DEPOT_ID",
+      "macos-x64": "REPLACE_WITH_MAC_X64_DEPOT_ID"
+    }
+  },
+  "demo": {
+    "appId": "REPLACE_WITH_DEMO_APP_ID",
+    "depots": {
+      "windows-x64": "REPLACE_WITH_DEMO_WINDOWS_DEPOT_ID",
+      "macos-arm64": "REPLACE_WITH_DEMO_MAC_ARM64_DEPOT_ID",
+      "macos-x64": "REPLACE_WITH_DEMO_MAC_X64_DEPOT_ID"
+    }
+  }
+}

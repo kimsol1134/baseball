@@ -56,9 +56,9 @@ iOS는 `generic/platform=iOS Simulator` 대상 Debug와 Release 빌드가 모두
 | 항목 | 상태 | 공개 전 필요한 조치 |
 |---|---|---|
 | macOS 앱/DMG 생성 | ad-hoc 서명·엄격 무결성·DMG 체크섬 통과 | Developer ID 서명, Apple 공증과 Gatekeeper 확인 |
-| Windows Steam 데포 | macOS에서 미검증 | Windows CI/실기기에서 무설치 데포 생성, Steam 설치·업데이트·삭제·sidecar 검사 |
+| Windows Steam 데포 | 생성·검사 CI 구성 완료, 아직 원격 실행 전 | Windows CI/실기기에서 무설치 데포 생성, Steam 설치·업데이트·삭제·sidecar 검사 |
 | 무료 고교 커리어 | 출시 후보 | 외부 초보자 플레이테스트, 문구·밸런스·크래시 기준 통과 |
-| Steam 정식판·데모 | 빌드별 프로 접근 분리 | App ID 발급, 데모 범위 고정, 파일 저장·Auto-Cloud·데모 승계 검증 |
+| Steam 정식판·데모 | 빌드별 프로 접근 분리, 첫 중요 경기 종료 게이트, 회전 파일 저장 구현 | App ID 발급, 실제 Auto-Cloud·다른 기기·데모 승계 검증 |
 | iOS 앱 | generic 빌드만 통과 | 실제 제품 진입 흐름, StoreKit, 실기기 접근성·백그라운드·강제 종료 검증 |
 | 법무·스토어 메타데이터 | 미승인 | 상표, 개인정보, 이용약관, 연령 등급, 스크린샷·설명 검토 |
 

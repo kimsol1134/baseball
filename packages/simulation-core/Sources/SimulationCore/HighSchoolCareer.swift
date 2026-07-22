@@ -83,7 +83,7 @@ public struct PlayerIdentitySnapshot: Codable, Equatable, Sendable {
     }
 
     public static let defaultPitcher = PlayerIdentitySnapshot(
-        name: "김도윤", throwingHand: .right, bodyType: .balanced, region: "서울"
+        name: "문동윤", throwingHand: .right, bodyType: .balanced, region: "서울"
     )
 }
 
@@ -547,23 +547,23 @@ public struct HighSchoolCareerEngine: Sendable {
     ]
 
     public static let schools: [SchoolSnapshot] = [
-        .init(id: .hanbitTraditional, name: "한빛고", philosophy: "기본기와 긴 이닝", coachName: "김태성", coachArchetype: "원칙형", catcherName: "한도윤", catcherArchetype: "안정형", strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
-        .init(id: .miraeAnalytics, name: "미래고", philosophy: "데이터와 경기 설계", coachName: "오세진", coachArchetype: "분석형", catcherName: "윤지호", catcherArchetype: "분석형", strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
-        .init(id: .haedongPower, name: "해동고", philosophy: "출력과 공격적인 승부", coachName: "박강민", coachArchetype: "승부형", catcherName: "최우석", catcherArchetype: "공격형", strength: .velocity, tradeoff: "피로와 제구 비용을 감수해야 합니다."),
-        .init(id: .cheongamDevelopment, name: "청암고", philosophy: "개인별 폼과 변화구 육성", coachName: "이현수", coachArchetype: "육성형", catcherName: "문태윤", catcherArchetype: "공감형", strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
+        .init(id: .hanbitTraditional, name: "부산해남고", philosophy: "기본기와 긴 이닝", coachName: "김성곤", coachArchetype: "원칙형", catcherName: "강민준", catcherArchetype: "안정형", strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
+        .init(id: .miraeAnalytics, name: "서울덕성고", philosophy: "데이터와 경기 설계", coachName: "염경윤", coachArchetype: "분석형", catcherName: "양의준", catcherArchetype: "분석형", strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
+        .init(id: .haedongPower, name: "광주동진고", philosophy: "출력과 공격적인 승부", coachName: "선동현", coachArchetype: "승부형", catcherName: "김상준", catcherArchetype: "공격형", strength: .velocity, tradeoff: "피로와 제구 비용을 감수해야 합니다."),
+        .init(id: .cheongamDevelopment, name: "인천제문고", philosophy: "개인별 폼과 변화구 육성", coachName: "김태현", coachArchetype: "육성형", catcherName: "박경원", catcherArchetype: "공감형", strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
     ]
 
     public static let teams: [DraftTeamSnapshot] = [
-        .init(id: "seoul_comets", name: "서울 코메츠", need: .command, demand: 72, developmentPlan: "2군 선발 로테이션에서 커맨드 완성", positionCompetitor: "정민규", proCoach: "권재혁"),
-        .init(id: "busan_marines", name: "부산 마린즈", need: .stamina, demand: 66, developmentPlan: "긴 이닝형 선발 육성", positionCompetitor: "송태원", proCoach: "남기훈"),
-        .init(id: "incheon_waves", name: "인천 웨이브스", need: .breakingBall, demand: 70, developmentPlan: "결정구 한 종을 프로 수준으로 강화", positionCompetitor: "류성재", proCoach: "고진우"),
-        .init(id: "daegu_forge", name: "대구 포지", need: .velocity, demand: 75, developmentPlan: "출력 유지와 불펜 조기 데뷔", positionCompetitor: "임도현", proCoach: "장현석"),
-        .init(id: "daejeon_rockets", name: "대전 로키츠", need: .gamePlanning, demand: 68, developmentPlan: "배터리 게임 플랜 중심 선발 육성", positionCompetitor: "주민호", proCoach: "서강윤"),
-        .init(id: "gwangju_phoenix", name: "광주 피닉스", need: .breakingBall, demand: 64, developmentPlan: "변화구 터널과 약한 타구 강화", positionCompetitor: "노정훈", proCoach: "신재국"),
-        .init(id: "suwon_guardians", name: "수원 가디언즈", need: .command, demand: 61, developmentPlan: "볼넷 억제 후 1군 롱릴리프", positionCompetitor: "강윤호", proCoach: "최명진"),
-        .init(id: "changwon_meteors", name: "창원 미티어스", need: .velocity, demand: 69, developmentPlan: "포심 형태와 최고 구속 동시 개발", positionCompetitor: "백승원", proCoach: "조현태"),
-        .init(id: "jeonju_hanok", name: "전주 한옥스", need: .stamina, demand: 58, developmentPlan: "체력 기반 선발 후보 경쟁", positionCompetitor: "이수혁", proCoach: "배건우"),
-        .init(id: "jeju_storm", name: "제주 스톰", need: .gamePlanning, demand: 63, developmentPlan: "데이터 적응형 스윙맨 육성", positionCompetitor: "김재린", proCoach: "한영준")
+        .init(id: "seoul_comets", name: "잠실 트윈스타즈", need: .command, demand: 72, developmentPlan: "2군 선발 로테이션에서 커맨드 완성", positionCompetitor: "임찬윤", proCoach: "류지훈"),
+        .init(id: "busan_marines", name: "사직 자이언스", need: .stamina, demand: 66, developmentPlan: "긴 이닝형 선발 육성", positionCompetitor: "박세준", proCoach: "김태현"),
+        .init(id: "incheon_waves", name: "문학 랜딩스", need: .breakingBall, demand: 70, developmentPlan: "결정구 한 종을 프로 수준으로 강화", positionCompetitor: "김강윤", proCoach: "이승용"),
+        .init(id: "daegu_forge", name: "대구 라이온하츠", need: .velocity, demand: 75, developmentPlan: "출력 유지와 불펜 조기 데뷔", positionCompetitor: "원태윤", proCoach: "박진문"),
+        .init(id: "daejeon_rockets", name: "대전 이글윙스", need: .gamePlanning, demand: 68, developmentPlan: "배터리 게임 플랜 중심 선발 육성", positionCompetitor: "문동윤", proCoach: "김경민"),
+        .init(id: "gwangju_phoenix", name: "광주 타이곤즈", need: .breakingBall, demand: 64, developmentPlan: "변화구 터널과 약한 타구 강화", positionCompetitor: "이의준", proCoach: "이범준"),
+        .init(id: "suwon_guardians", name: "수원 위저즈", need: .command, demand: 61, developmentPlan: "볼넷 억제 후 1군 롱릴리프", positionCompetitor: "고영준", proCoach: "이강준"),
+        .init(id: "changwon_meteors", name: "창원 다이너스", need: .velocity, demand: 69, developmentPlan: "포심 형태와 최고 구속 동시 개발", positionCompetitor: "구창윤", proCoach: "이호진"),
+        .init(id: "jeonju_hanok", name: "고척 히어로스", need: .stamina, demand: 58, developmentPlan: "체력 기반 선발 후보 경쟁", positionCompetitor: "안우준", proCoach: "홍원준"),
+        .init(id: "jeju_storm", name: "잠실 베어킹스", need: .gamePlanning, demand: 63, developmentPlan: "데이터 적응형 스윙맨 육성", positionCompetitor: "곽민재", proCoach: "이승준")
     ]
 
     public init() {}
@@ -784,12 +784,12 @@ public struct HighSchoolCareerEngine: Sendable {
 
     private func rival(seed: UInt64, difficulty: DifficultyLevel, karmas: [KarmaID]) -> RivalSnapshot {
         let rivals = [
-            RivalSnapshot(id: "rival-seo", name: "서준혁", archetype: "패턴 학습형 중심타자", contact: 62, discipline: 58, power: 66),
-            RivalSnapshot(id: "rival-lee", name: "이건우", archetype: "초구 공격형", contact: 65, discipline: 47, power: 61),
-            RivalSnapshot(id: "rival-park", name: "박시윤", archetype: "존 관리형", contact: 58, discipline: 67, power: 55),
-            RivalSnapshot(id: "rival-kang", name: "강민재", archetype: "장타 특화형", contact: 53, discipline: 54, power: 72),
-            RivalSnapshot(id: "rival-yoon", name: "윤하준", archetype: "변화구 대응형", contact: 63, discipline: 59, power: 57),
-            RivalSnapshot(id: "rival-choi", name: "최도현", archetype: "포심 사냥형", contact: 60, discipline: 52, power: 68)
+            RivalSnapshot(id: "rival-seo", name: "이정훈", archetype: "패턴 학습형 중심타자", contact: 62, discipline: 58, power: 66),
+            RivalSnapshot(id: "rival-lee", name: "이대훈", archetype: "초구 공격형", contact: 65, discipline: 47, power: 61),
+            RivalSnapshot(id: "rival-park", name: "박용태", archetype: "존 관리형", contact: 58, discipline: 67, power: 55),
+            RivalSnapshot(id: "rival-kang", name: "이승윤", archetype: "장타 특화형", contact: 53, discipline: 54, power: 72),
+            RivalSnapshot(id: "rival-yoon", name: "구자윤", archetype: "변화구 대응형", contact: 63, discipline: 59, power: 57),
+            RivalSnapshot(id: "rival-choi", name: "최형준", archetype: "포심 사냥형", contact: 60, discipline: 52, power: 68)
         ]
         var generator = SplitMix64(seed: seed ^ 0x5249_5641_4c00)
         let base = rivals[generator.nextInt(upperBound: rivals.count)]

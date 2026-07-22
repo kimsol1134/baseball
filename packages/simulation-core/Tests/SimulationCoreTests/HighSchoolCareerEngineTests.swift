@@ -136,7 +136,7 @@ final class HighSchoolCareerEngineTests: XCTestCase {
 
         result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
         let headline = try XCTUnwrap(result.snapshot.news.first)
-        XCTAssertTrue(headline.contains("오세진 감독"))
+        XCTAssertTrue(headline.contains("염경윤 감독"))
         XCTAssertTrue(headline.contains("감독이 본 문제"))
         XCTAssertFalse(headline.contains("listen"))
         XCTAssertFalse(headline.contains("이야기를 나눴습니다"))

@@ -17,6 +17,9 @@
 - iOS 개인정보 매니페스트 포함, generic Simulator 빌드 통과
 - 프로덕션 npm 의존성 감사 결과 알려진 취약점 0건
 - 로컬 옵트인 계측에 투구·커리어 결정 시간과 공당 조작 수 포함
+- Steam 정식판·데모 빌드 권한 분리와 설정 누락 시 데모 기본값 적용
+- Windows·macOS 공용 Steam Cloud 파일 스키마, 두 슬롯 회전 저장과 손상 복구 테스트 통과
+- macOS ARM64 Steam 정식판·데모 데포 생성, 파일 체크섬과 sidecar 상태 검사 통과
 
 ## 현재 로컬 산출물
 
@@ -47,7 +50,8 @@
 
 ### Windows 배포
 
-- [ ] Windows CI에서 SteamPipe용 무설치 데포 폴더 생성
+- [x] Windows CI에서 SteamPipe용 무설치 데포 폴더를 생성하는 워크플로 구성
+- [ ] 원격 Windows CI의 실제 데포 생성 성공 확인
 - [ ] 앱과 Swift sidecar 코드 서명
 - [ ] Windows 11 표준 사용자 Steam 설치·실행·업데이트·삭제 확인
 - [ ] SmartScreen, 방화벽, 백신 오탐 확인
@@ -59,7 +63,7 @@
 - [x] 정식판과 데모의 프로 커리어 접근을 빌드 종류로 분리
 - [ ] Steamworks 파트너 등록, 정식판 App ID와 데모 App ID 발급
 - [ ] `Coming Soon` 페이지 최소 2주 공개와 정식 출시 30일 대기 충족
-- [ ] `localStorage` 자동 저장을 Steam Auto-Cloud용 파일 저장으로 이전
+- [x] `localStorage` 자동 저장을 Steam Auto-Cloud용 회전 파일 저장으로 미러링
 - [ ] 데모 저장의 정식판 승계와 다른 기기 복원 확인
 - [ ] 가격·환불·고객지원 문구 검토
 
@@ -92,3 +96,5 @@ npm run desktop:build -- --bundles app,dmg
 ```
 
 로컬 산출물은 `apps/windows/src-tauri/target/release/bundle/` 아래에 생성한다. 이 파일은 기능 검증용이며 서명·공증 전에는 공개 배포하지 않는다.
+
+Steam 데포는 `artifacts/steam/<edition>/<platform>/` 아래에 생성한다. macOS ARM64 정식판과 데모 데포는 로컬 체크섬·sidecar 검사를 통과했지만 ad-hoc 서명이므로 공개 업로드 대상이 아니다.

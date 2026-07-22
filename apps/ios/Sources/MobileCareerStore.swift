@@ -28,8 +28,8 @@ final class MobileCareerStore {
 #if DEBUG
         do {
             let team = ProCareerEngine.proTeams[0]
-            let draft = DraftResultSnapshot(outcome: .drafted, evaluationScore: 72, projectedRange: "2~3라운드", team: team, round: 2, overallPick: 18, signingBonus: 120_000_000, firstSeasonGoal: "2군 선발", summary: "서울 코멧츠 지명")
-            let pitcher = PitcherSnapshot(id: "mobile-pitcher", name: "김도윤", stuff: 58, command: 56, movement: 55, stamina: 57)
+            let draft = DraftResultSnapshot(outcome: .drafted, evaluationScore: 72, projectedRange: "2~3라운드", team: team, round: 2, overallPick: 18, signingBonus: 120_000_000, firstSeasonGoal: "2군 선발", summary: "잠실 트윈스타즈 지명")
+            let pitcher = PitcherSnapshot(id: "mobile-pitcher", name: "문동윤", stuff: 58, command: 56, movement: 55, stamina: 57)
             let entitlement = ProEntitlementSnapshot(status: .active, source: .development, verifiedAt: ISO8601DateFormatter().string(from: .now))
             var created = try engine.start(.init(seed: "20260722", identity: .defaultPitcher, pitcher: pitcher, draftResult: draft, entitlement: entitlement))
             created = try engine.signContract(.init(seed: created.nextSeed, state: created.snapshot))

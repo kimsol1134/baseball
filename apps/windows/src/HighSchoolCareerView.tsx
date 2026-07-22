@@ -196,7 +196,7 @@ interface CareerSetupProps {
 export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBack }: CareerSetupProps) {
   const [presetID, setPresetID] = useState("");
   const [allocation, setAllocation] = useState<CreationAllocationSnapshot>({ stuff: 2, command: 1, movement: 1, stamina: 1 });
-  const [identity, setIdentity] = useState<PlayerIdentitySnapshot>({ name: "김도윤", throwingHand: "right", bodyType: "balanced", region: "서울" });
+  const [identity, setIdentity] = useState<PlayerIdentitySnapshot>({ name: "문동윤", throwingHand: "right", bodyType: "balanced", region: "서울" });
   const [difficulty, setDifficulty] = useState<CareerDifficultySnapshot>({
     careerHarshness: "standard", informationClarity: "standard", simulationDifficulty: "standard", interventionAssist: "standard",
   });
@@ -281,13 +281,15 @@ interface CareerViewProps {
   onDismissTutorial: () => void;
   onStartPro: () => Promise<void>;
   proAccessAvailable: boolean;
+  demoMode: boolean;
   onMilestoneFeedback: () => void;
 }
 
 export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTraining, onRelationship,
   onCompletePrologue, onImportantGame, onAwakening, onAdvanceChapter, onDraft, onLegacy, onNextLife, onBackToLab, onNewCareer,
-  showTutorial, onDismissTutorial, onStartPro, proAccessAvailable, onMilestoneFeedback }: CareerViewProps) {
+  showTutorial, onDismissTutorial, onStartPro, proAccessAvailable, demoMode, onMilestoneFeedback }: CareerViewProps) {
   const state = result.snapshot;
+  const demoComplete = demoMode && state.performance.importantGamesCompleted >= 1;
   const [focus, setFocus] = useState<TrainingFocus>("command");
   const [intensity, setIntensity] = useState<TrainingIntensity>("standard");
   const [memories, setMemories] = useState<ReadonlyArray<MemoryCardID>>([]);
@@ -364,6 +366,14 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
       </section>
 
       <section className="career-panel career-decision"><div className="lab-card-heading"><span>지금 할 일</span><small>{PHASE_LABELS[state.phase]}</small></div>
+        {demoComplete ? <div className="career-milestone demo-complete"><span>DEMO COMPLETE</span>
+          <h3>첫 중요 경기를 마쳤습니다.</h3>
+          <p>{state.pitcher.name}은 구위 {rating(state.pitcher.stuff)}, 커맨드 {rating(state.pitcher.command)}로 첫 기록을 남겼습니다. 이 저장은 정식판에서 그대로 이어집니다.</p>
+          <div className="demo-summary"><div><strong>{state.performance.pitches}</strong><span>투구</span></div><div><strong>{state.performance.strikeouts}</strong><span>삼진</span></div><div><strong>{state.relationshipTrust}</strong><span>관계 신뢰</span></div></div>
+          <p className="demo-next">정식판에서는 남은 고교 생활, 드래프트, 프로 입단과 은퇴까지 이어집니다.</p>
+          <button className="lab-primary" type="button" onClick={onNewCareer}>새 선수로 다시 해보기</button>
+        </div> : null}
+        {!demoComplete ? <>
         {draftRevealStage !== null && !draftRevealDone ? <div className={`draft-reveal draft-reveal--stage-${draftRevealStage}`} role="dialog" aria-live="polite" aria-label="드래프트 결과 공개">
           <span>{reveal.label}</span><div className="draft-rounds" aria-hidden="true">{[0, 1, 2, 3, 4].map((step) => <i key={step} className={step <= draftRevealStage ? "is-active" : undefined} />)}</div>
           <h3>{reveal.title}</h3><p>{reveal.copy}</p>
@@ -408,6 +418,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             <p>{proAccessAvailable ? "2군 선발 경쟁부터 시작합니다. 고교 기록과 구종은 그대로 이어집니다." : "프로 커리어는 정식판에서 고교 기록 그대로 이어집니다."}</p>
             <button type="button" disabled={isRunning || !proAccessAvailable} onClick={() => void onStartPro()}>{proAccessAvailable ? "프로 입단" : "데모는 여기까지"}</button></div> : null}
           {state.draftResult.outcome === "undrafted" ? <button className="lab-primary" type="button" onClick={() => void onNextLife()}>기억을 가지고 다음 삶 시작</button> : null}</div> : null}
+        </> : null}
         {error ? <p className="error-message" role="alert">{error}</p> : null}
       </section>
 

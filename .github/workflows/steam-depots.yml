@@ -1,0 +1,66 @@
+name: Steam depot artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "steam-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.edition }} · ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-2022
+            edition: full
+            depot-path: artifacts/steam/full/windows-x64
+          - name: Windows x64
+            os: windows-2022
+            edition: demo
+            depot-path: artifacts/steam/demo/windows-x64
+          - name: macOS Apple Silicon
+            os: macos-15
+            edition: full
+            depot-path: artifacts/steam/full/macos-arm64
+          - name: macOS Apple Silicon
+            os: macos-15
+            edition: demo
+            depot-path: artifacts/steam/demo/macos-arm64
+          - name: macOS Intel
+            os: macos-15-intel
+            edition: full
+            depot-path: artifacts/steam/full/macos-x64
+          - name: macOS Intel
+            os: macos-15-intel
+            edition: demo
+            depot-path: artifacts/steam/demo/macos-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: SwiftyLab/setup-swift@v1.13.0
+        with:
+          swift-version: "6.3.3"
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm run steam:build:${{ matrix.edition }}
+      - run: npm run steam:smoke -- ${{ matrix.depot-path }}
+      - name: Verify macOS bundle integrity
+        if: runner.os == 'macOS'
+        shell: bash
+        run: codesign --verify --deep --strict --verbose=2 "${{ matrix.depot-path }}/Project Diamond Soul.app"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diamond-soul-steam-${{ matrix.edition }}-${{ runner.os }}-${{ runner.arch }}
+          path: ${{ matrix.depot-path }}
+          if-no-files-found: error
+          retention-days: 30

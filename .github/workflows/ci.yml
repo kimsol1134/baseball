@@ -59,6 +59,7 @@ jobs:
           swift-version: "6.3.3"
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
+      - run: npm run test:tauri
       - run: npm run desktop:build -- --bundles ${{ matrix.bundles }}
       - run: npm run smoke:sidecar
       - name: Verify installed Windows package

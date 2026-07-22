@@ -361,10 +361,10 @@ export function PitcherLabView({
             <div className="lab-milestone">
               <span>BATTERY TALK {snapshot.relationshipEventsCompleted + 1}</span>
               <h3>오늘 엇갈린 사인을 다시 맞춰 봅니다.</h3>
-              <p>한도윤: “낮은 변화구가 더 안전했어. 그런데 넌 왜 계속 높은 공을 골랐어?”</p>
+              <p>강민준: “낮은 변화구가 더 안전했어. 그런데 넌 왜 계속 높은 공을 골랐어?”</p>
               <div className="lab-choice-pair">
                 <button type="button" disabled={isRunning} onClick={() => void onRelationship("trust_catcher")}>
-                  <strong>한도윤이 본 타자 반응부터 듣는다</strong><span>포수 신뢰가 오른다</span>
+                  <strong>강민준이 본 타자 반응부터 듣는다</strong><span>포수 신뢰가 오른다</span>
                 </button>
                 <button type="button" disabled={isRunning} onClick={() => void onRelationship("assert_own_plan")}>
                   <strong>높은 공을 고른 이유를 설명한다</strong><span>내 판단을 분명히 한다</span>
