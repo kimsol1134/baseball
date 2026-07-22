@@ -147,6 +147,8 @@ button:focus-visible {
 }
 
 .topbar {
+  position: relative;
+  z-index: 50;
   min-height: 76px;
   display: flex;
   flex-wrap: wrap;
@@ -4197,9 +4199,13 @@ footer {
 
 .accessibility-controls {
   position: absolute;
+  z-index: 1;
   top: calc(100% + 8px);
   right: 0;
   width: min(330px, calc(100vw - 32px));
+  max-height: min(620px, calc(100dvh - 96px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-2);
@@ -4335,7 +4341,7 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
 
 .identity-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: minmax(320px, 2fr) repeat(3, minmax(130px, 1fr));
   gap: 8px;
   margin: 12px 0;
 }
@@ -4358,7 +4364,7 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
 }
 
 .identity-grid .identity-name-field {
-  grid-column: span 2;
+  grid-column: auto;
 }
 
 .identity-name-field > div {
@@ -4370,6 +4376,100 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
 .identity-name-field small {
   color: var(--subtle);
   font-size: 0.6875rem;
+}
+
+.difficulty-panel,
+.karma-panel {
+  display: grid;
+  gap: 11px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgb(7 13 10 / 42%);
+}
+
+.difficulty-panel > div:first-child,
+.karma-panel > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.difficulty-panel > div:first-child > span,
+.karma-panel > div:first-child > span {
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 900;
+}
+
+.difficulty-panel > div:first-child > small,
+.karma-panel > div:first-child > small {
+  color: var(--subtle);
+  font-size: 0.6875rem;
+  line-height: 1.45;
+}
+
+.difficulty-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.difficulty-grid label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.difficulty-grid select {
+  width: 100%;
+  height: 38px;
+  padding: 0 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  color: var(--text);
+  background: #111a16;
+}
+
+.karma-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.karma-grid button {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 72px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  text-align: left;
+  background: var(--surface-raised);
+  cursor: pointer;
+}
+
+.karma-grid button:hover,
+.karma-grid button.is-selected {
+  border-color: var(--color-milestone);
+  background: rgb(216 181 101 / 10%);
+}
+
+.karma-grid button.is-selected {
+  box-shadow: inset 3px 0 0 var(--color-milestone);
+}
+
+.karma-grid strong {
+  font-size: 0.8125rem;
+}
+
+.karma-grid span {
+  color: var(--subtle);
+  font-size: 0.6875rem;
+  line-height: 1.4;
 }
 
 .career-vitals {
@@ -5000,6 +5100,15 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
     grid-template-columns: 1fr 1fr;
   }
 
+  .identity-grid .identity-name-field {
+    grid-column: span 2;
+  }
+
+  .difficulty-grid,
+  .karma-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .career-news {
     grid-column: auto;
   }
@@ -5017,6 +5126,23 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
 
   .topbar {
     display: grid;
+  }
+
+  .settings-menu {
+    justify-self: stretch;
+  }
+
+  .settings-menu summary {
+    justify-content: center;
+  }
+
+  .accessibility-controls {
+    position: fixed;
+    top: max(16px, env(safe-area-inset-top));
+    right: max(16px, env(safe-area-inset-right));
+    left: max(16px, env(safe-area-inset-left));
+    width: auto;
+    max-height: calc(100dvh - 32px);
   }
 
   .core-status {
@@ -5065,6 +5191,15 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   }
 
   .identity-name-field > div {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-grid .identity-name-field {
+    grid-column: auto;
+  }
+
+  .difficulty-grid,
+  .karma-grid {
     grid-template-columns: 1fr;
   }
 
