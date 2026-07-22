@@ -429,9 +429,9 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             : <button className="draft-skip" type="button" onClick={() => setDraftRevealStage(4)}>바로 결과 보기</button>}
         </div> : null}
         {state.phase === "prologue" ? <div className="career-milestone prologue-card"><span>중학교 마지막 경기</span>
-          <h3>{state.identity.region}의 마지막 중학교 대회</h3><p>{state.identity.name} · {state.identity.throwingHand === "right" ? "우투" : "좌투"} · {state.identity.bodyType === "tall" ? "장신" : state.identity.bodyType === "compact" ? "다부진" : "균형"} 체격. 경기를 마치고 나오자 네 고교에서 진학 제안이 도착했습니다. {state.karmas.length > 0 ? `선택한 추가 조건 ${state.karmas.length}개` : "추가 조건 없음"}</p>
+          <h3>{state.identity.region}의 마지막 중학교 대회</h3><p>{state.identity.name} · {state.identity.throwingHand === "right" ? "우투" : "좌투"} · {state.identity.bodyType === "tall" ? "장신" : state.identity.bodyType === "compact" ? "다부진" : "균형"} 체격. 경기를 마치고 나오자 {state.identity.region} 지역 네 고교에서 진학 제안이 도착했습니다. {state.karmas.length > 0 ? `선택한 추가 조건 ${state.karmas.length}개` : "추가 조건 없음"}</p>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onCompletePrologue()}>고교 진학 제안 확인</button></div> : null}
-        {state.phase === "school_selection" ? <><h3>어느 학교로 진학할까요?</h3><p>학교마다 잘 가르치는 훈련과 감수해야 할 단점이 다릅니다.</p>
+        {state.phase === "school_selection" ? <><h3>{state.identity.region}에서 어느 학교로 진학할까요?</h3><p>같은 지역에서 선수 등록을 이어갈 수 있는 학교들입니다. 학교마다 잘 가르치는 훈련과 감수해야 할 단점이 다릅니다.</p>
           <div className="school-grid">{state.schoolOptions.map((school) => <button key={school.id} type="button" disabled={isRunning} onClick={() => void onSchool(school.id)}>
             <span>{school.name}</span><strong>{school.philosophy}</strong><p>{school.coachName} 감독 · {school.catcherName} 포수</p><small>{school.tradeoff}</small></button>)}</div></> : null}
         {state.phase === "training" ? <><h3>이번 계절의 {state.chapterTrainingCount + 1}번째 훈련</h3><p>{showHints ? `${state.school?.name ?? "학교"}는 ${TRAININGS.find((item) => item.value === state.school?.strength)?.label ?? "주력"} 훈련을 가장 잘 지원합니다. 현재 피로는 ${state.fatigue}입니다.` : `현재 피로 ${state.fatigue}. 이번 훈련을 고르세요.`}</p>

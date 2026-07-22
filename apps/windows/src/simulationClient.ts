@@ -136,6 +136,10 @@ export function completeMiddleSchoolPrologue(params: CareerStateParams): Promise
   return executeRPC<HighSchoolCareerResult, CareerStateParams>("completeMiddleSchoolPrologue", params);
 }
 
+export function normalizeRegionalSchools(params: CareerStateParams): Promise<HighSchoolCareerResult> {
+  return executeRPC<HighSchoolCareerResult, CareerStateParams>("normalizeRegionalSchools", params);
+}
+
 export function chooseSchool(params: ChooseSchoolParams): Promise<HighSchoolCareerResult> {
   return executeRPC<HighSchoolCareerResult, ChooseSchoolParams>("chooseSchool", params);
 }

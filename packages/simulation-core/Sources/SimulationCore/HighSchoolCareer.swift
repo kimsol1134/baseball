@@ -535,6 +535,35 @@ private struct RelationshipImpact {
 }
 
 public struct HighSchoolCareerEngine: Sendable {
+    private struct RegionalSchoolNames: Sendable {
+        let traditional: String
+        let analytics: String
+        let power: String
+        let development: String
+    }
+
+    private static let regionalSchoolNames: [String: RegionalSchoolNames] = [
+        "서울": .init(traditional: "서울덕성고", analytics: "서울배명진고", power: "서울청암고", development: "서울경동원고"),
+        "인천": .init(traditional: "인천제문포고", analytics: "인천동림고", power: "인천항성고", development: "인천송해고"),
+        "수원": .init(traditional: "수원유성고", analytics: "수원장안빛고", power: "수원화홍고", development: "수원매탄원고"),
+        "대전": .init(traditional: "대전한밭원고", analytics: "대전대성림고", power: "대전유성진고", development: "대전중앙빛고"),
+        "광주": .init(traditional: "광주제원고", analytics: "광주동진고", power: "광주진광고", development: "광주무등원고"),
+        "대구": .init(traditional: "대구경원고", analytics: "대구상림고", power: "대구달성원고", development: "대구청운림고"),
+        "부산": .init(traditional: "부산해남고", analytics: "부산항성고", power: "부산개원고", development: "부산남경고"),
+        "창원": .init(traditional: "창원마산해고", analytics: "창원용해고", power: "창원기공원고", development: "창원진동림고"),
+        "울산": .init(traditional: "울산대현림고", analytics: "울산문해고", power: "울산태화원고", development: "울산장생포고"),
+        "세종": .init(traditional: "세종한솔원고", analytics: "세종새빛고", power: "세종금강원고", development: "세종연기림고"),
+        "경기": .init(traditional: "경기유신서고", analytics: "경기야탑원고", power: "경기소래진고", development: "경기청담림고"),
+        "강원": .init(traditional: "강릉해람고", analytics: "원주원흥고", power: "춘천호반고", development: "속초설해고"),
+        "충북": .init(traditional: "청주원흥고", analytics: "충북세명광고", power: "충주성문고", development: "진천덕산원고"),
+        "충남": .init(traditional: "공주금강고", analytics: "천안북원고", power: "아산온천고", development: "서산해미원고"),
+        "전북": .init(traditional: "전주완산원고", analytics: "군산상림고", power: "정읍인성원고", development: "익산보석고"),
+        "전남": .init(traditional: "화순화원고", analytics: "순천효원고", power: "목포항남고", development: "여수진남원고"),
+        "경북": .init(traditional: "포항해철고", analytics: "경주월성원고", power: "구미도원고", development: "안동하회고"),
+        "경남": .init(traditional: "마산용해고", analytics: "김해가야원고", power: "양산물빛고", development: "거제옥포원고"),
+        "제주": .init(traditional: "제주한라원고", analytics: "서귀포해원고", power: "제주탐라빛고", development: "제주오름고")
+    ]
+
     public static let chapters: [CareerChapterSnapshot] = [
         .init(number: 1, title: "낯선 마운드", schoolYear: 1, season: "봄", theme: "첫 고교 훈련과 첫 공식 등판이 기다린다"),
         .init(number: 2, title: "첫 번째 증명", schoolYear: 1, season: "여름", theme: "여름 대회 엔트리와 맡을 보직이 정해진다"),
@@ -546,12 +575,15 @@ public struct HighSchoolCareerEngine: Sendable {
         .init(number: 8, title: "드래프트 데이", schoolYear: 3, season: "여름", theme: "마지막 전국대회를 치르고 드래프트 결과를 기다린다")
     ]
 
-    public static let schools: [SchoolSnapshot] = [
-        .init(id: .hanbitTraditional, name: "부산해남고", philosophy: "기본기와 긴 이닝", coachName: "김성곤", coachArchetype: "원칙형", catcherName: "강민준", catcherArchetype: "안정형", strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
-        .init(id: .miraeAnalytics, name: "서울덕성고", philosophy: "데이터와 경기 설계", coachName: "염경윤", coachArchetype: "분석형", catcherName: "양의준", catcherArchetype: "분석형", strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
-        .init(id: .haedongPower, name: "광주동진고", philosophy: "출력과 공격적인 승부", coachName: "선동현", coachArchetype: "승부형", catcherName: "김상준", catcherArchetype: "공격형", strength: .velocity, tradeoff: "피로와 제구 비용을 감수해야 합니다."),
-        .init(id: .cheongamDevelopment, name: "인천제문고", philosophy: "개인별 폼과 변화구 육성", coachName: "김태현", coachArchetype: "육성형", catcherName: "박경원", catcherArchetype: "공감형", strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
-    ]
+    public static func schools(for region: String) -> [SchoolSnapshot] {
+        let names = regionalSchoolNames[region] ?? regionalSchoolNames["서울"]!
+        return [
+            .init(id: .hanbitTraditional, name: names.traditional, philosophy: "기본기와 긴 이닝", coachName: "김성곤", coachArchetype: "원칙형", catcherName: "강민준", catcherArchetype: "안정형", strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
+            .init(id: .miraeAnalytics, name: names.analytics, philosophy: "데이터와 경기 설계", coachName: "염경윤", coachArchetype: "분석형", catcherName: "양의준", catcherArchetype: "분석형", strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
+            .init(id: .haedongPower, name: names.power, philosophy: "출력과 공격적인 승부", coachName: "선동현", coachArchetype: "승부형", catcherName: "김상준", catcherArchetype: "공격형", strength: .velocity, tradeoff: "피로와 제구 비용을 감수해야 합니다."),
+            .init(id: .cheongamDevelopment, name: names.development, philosophy: "개인별 폼과 변화구 육성", coachName: "김태현", coachArchetype: "육성형", catcherName: "박경원", catcherArchetype: "공감형", strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
+        ]
+    }
 
     public static let teams: [DraftTeamSnapshot] = [
         .init(id: "seoul_comets", name: "잠실 트윈스타즈", need: .command, demand: 72, developmentPlan: "2군 선발 로테이션에서 커맨드 완성", positionCompetitor: "임찬윤", proCoach: "류지훈"),
@@ -588,12 +620,12 @@ public struct HighSchoolCareerEngine: Sendable {
             careerID: "career-\(params.seed)-life-\(params.lifeNumber)", revision: 0, lifeNumber: params.lifeNumber,
             phase: .prologue, identity: params.identity, difficulty: params.difficulty, karmas: params.karmas,
             legacyRewardPermille: rewardPermille, memorySlots: memorySlots,
-            pitcher: pitcher, schoolOptions: Self.schools, school: nil,
+            pitcher: pitcher, schoolOptions: Self.schools(for: params.identity.region), school: nil,
             rival: rival(seed: seed, difficulty: params.difficulty.simulationDifficulty, karmas: params.karmas), chapter: Self.chapters[0], chapterTrainingCount: 0,
             totalTrainingsCompleted: 0, milestoneIndex: 0, relationshipsCompleted: 0,
             relationshipTrust: 50, selectedAwakenings: [], awakeningOptions: [], fatigue: 5,
             performance: CareerPerformanceSnapshot(), currentGameScenario: nil, currentRelationshipEvent: nil, lastTraining: nil,
-            news: ["중학교 마지막 대회에서 보여준 공이 네 학교의 관심을 끌었습니다."], fanInterest: 5,
+            news: ["\(params.identity.region) 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다."], fanInterest: 5,
             draftResult: nil, legacyOptions: [], selectedMemories: [], stateCommitment: ""
         )
         return result(seed: seed, state: signed(base), event: "high_school_career_started")
@@ -603,16 +635,38 @@ public struct HighSchoolCareerEngine: Sendable {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .prologue)
         let identity = params.state.identity
         let next = replacing(params.state, revision: params.state.revision + 1, phase: .schoolSelection,
-            news: ["고교 진학 제안 도착 · \(identity.name) · 4개 학교"] + params.state.news)
+            news: ["고교 진학 제안 도착 · \(identity.name) · \(identity.region) 4개 학교"] + params.state.news)
         return result(seed: seed, state: signed(next), event: "middle_school_prologue_completed")
+    }
+
+    public func normalizeRegionalSchools(_ params: AdvanceCareerChapterParams) throws -> HighSchoolCareerResult {
+        _ = try validatedSeed(params.seed)
+        try validateState(params.state)
+        let options = Self.schools(for: params.state.identity.region)
+        let selectedSchool = params.state.school.flatMap { current in
+            options.first(where: { $0.id == current.id })
+        }
+        let normalizedNews = params.state.news.map { item in
+            if item == "고교 진학 제안 도착 · \(params.state.identity.name) · 4개 학교" {
+                return "고교 진학 제안 도착 · \(params.state.identity.name) · \(params.state.identity.region) 4개 학교"
+            }
+            if item == "중학교 마지막 대회에서 보여준 공이 네 학교의 관심을 끌었습니다." {
+                return "\(params.state.identity.region) 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다."
+            }
+            return item
+        }
+        let normalized = signed(replacing(params.state, schoolOptions: options, school: selectedSchool, news: normalizedNews))
+        let eventHash = StableHash.fnv1a64("\(normalized.careerID)|\(normalized.revision)|regional_schools_normalized|\(normalized.stateCommitment)")
+        return HighSchoolCareerResult(revision: normalized.revision, nextSeed: params.seed, events: [], snapshot: normalized, eventHash: eventHash)
     }
 
     public func chooseSchool(_ params: ChooseSchoolParams) throws -> HighSchoolCareerResult {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .schoolSelection)
-        guard let school = params.state.schoolOptions.first(where: { $0.id == params.schoolID }) else {
+        let regionalSchools = Self.schools(for: params.state.identity.region)
+        guard let school = regionalSchools.first(where: { $0.id == params.schoolID }) else {
             throw SimulationError.invalidPitcherLab("school is not available")
         }
-        let next = replacing(params.state, revision: params.state.revision + 1, phase: .training, school: school,
+        let next = replacing(params.state, revision: params.state.revision + 1, phase: .training, schoolOptions: regionalSchools, school: school,
             news: ["\(school.name) 입학이 확정됐습니다. \(school.coachName) 감독은 첫 훈련부터 ‘\(school.philosophy)’을 강조했습니다."] + params.state.news)
         return result(seed: seed, state: signed(next), event: "school_selected", reasons: ["school.\(school.id.rawValue)"])
     }
@@ -1089,7 +1143,8 @@ public struct HighSchoolCareerEngine: Sendable {
     }
 
     private func replacing(_ state: HighSchoolCareerSnapshot, revision: UInt64? = nil,
-        phase: HighSchoolCareerPhase? = nil, pitcher: PitcherSnapshot? = nil, school: SchoolSnapshot? = nil,
+        phase: HighSchoolCareerPhase? = nil, pitcher: PitcherSnapshot? = nil,
+        schoolOptions: [SchoolSnapshot]? = nil, school: SchoolSnapshot? = nil,
         chapter: CareerChapterSnapshot? = nil, chapterTrainingCount: Int? = nil, totalTrainingsCompleted: Int? = nil,
         milestoneIndex: Int? = nil, relationshipsCompleted: Int? = nil, relationshipTrust: Int? = nil,
         selectedAwakenings: [AwakeningID]? = nil, awakeningOptions: [AwakeningID]? = nil, fatigue: Int? = nil,
@@ -1102,7 +1157,7 @@ public struct HighSchoolCareerEngine: Sendable {
         HighSchoolCareerSnapshot(careerID: state.careerID, revision: revision ?? state.revision, lifeNumber: state.lifeNumber,
             phase: phase ?? state.phase, identity: state.identity, difficulty: state.difficulty, karmas: state.karmas,
             legacyRewardPermille: state.legacyRewardPermille, memorySlots: state.memorySlots,
-            pitcher: pitcher ?? state.pitcher, schoolOptions: state.schoolOptions,
+            pitcher: pitcher ?? state.pitcher, schoolOptions: schoolOptions ?? state.schoolOptions,
             school: school ?? state.school, rival: state.rival, chapter: chapter ?? state.chapter,
             chapterTrainingCount: chapterTrainingCount ?? state.chapterTrainingCount,
             totalTrainingsCompleted: totalTrainingsCompleted ?? state.totalTrainingsCompleted,
@@ -1144,7 +1199,14 @@ public struct HighSchoolCareerEngine: Sendable {
     }
 
     private func validate(_ state: HighSchoolCareerSnapshot, phase: HighSchoolCareerPhase) throws {
-        guard state.phase == phase, state.stateCommitment == commitment(state),
+        guard state.phase == phase else {
+            throw SimulationError.invalidPitcherLab("career state or phase is invalid")
+        }
+        try validateState(state)
+    }
+
+    private func validateState(_ state: HighSchoolCareerSnapshot) throws {
+        guard state.stateCommitment == commitment(state),
               (0...16).contains(state.totalTrainingsCompleted), (0...5).contains(state.relationshipsCompleted),
               (0...100).contains(state.fatigue), (0...100).contains(state.relationshipTrust) else {
             throw SimulationError.invalidPitcherLab("career state or phase is invalid")

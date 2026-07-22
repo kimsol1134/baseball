@@ -12,6 +12,28 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertEqual(MemoryCardID.allCases.count, 18)
     }
 
+    func testSchoolOffersStayInThePlayersSelectedRegion() throws {
+        let engine = HighSchoolCareerEngine()
+        let incheon = try engine.start(
+            StartHighSchoolCareerParams(
+                seed: "20260724",
+                presetID: "power_prospect",
+                identity: PlayerIdentitySnapshot(name: "문동윤", throwingHand: .right, bodyType: .balanced, region: "인천")
+            )
+        )
+        let busan = try engine.start(
+            StartHighSchoolCareerParams(
+                seed: "20260724",
+                presetID: "power_prospect",
+                identity: PlayerIdentitySnapshot(name: "문동윤", throwingHand: .right, bodyType: .balanced, region: "부산")
+            )
+        )
+
+        XCTAssertEqual(incheon.snapshot.schoolOptions.map(\.name), ["인천제문포고", "인천동림고", "인천항성고", "인천송해고"])
+        XCTAssertTrue(incheon.snapshot.schoolOptions.allSatisfy { $0.name.hasPrefix("인천") })
+        XCTAssertNotEqual(incheon.snapshot.schoolOptions.map(\.name), busan.snapshot.schoolOptions.map(\.name))
+    }
+
     func testDifficultyAndKarmaChangeRulesWithoutChangingContentOrder() throws {
         let engine = HighSchoolCareerEngine()
         let relaxed = try engine.start(

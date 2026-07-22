@@ -9,6 +9,7 @@ import {
   commitTraining,
   commitCareerTraining,
   completeMiddleSchoolPrologue,
+  normalizeRegionalSchools,
   finalizeScouting,
   listPitcherPresets,
   preparePitch,
@@ -157,8 +158,8 @@ const INITIAL_GAME_STATE: GameStateSnapshot = {
     ],
   },
   park: {
-    id: "hanbit-school-park",
-    name: "부산해남고 야구장",
+    id: "practice-park",
+    name: "연습 구장",
     hitFactor: 980,
     homeRunFactor: 930,
   },
@@ -530,7 +531,8 @@ export function App() {
         const saved = restoredPro.payload;
         const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
         if (!savedPreset) throw new Error("저장된 프로 커리어의 투수 프리셋을 찾을 수 없습니다.");
-        setPresets(availablePresets); setSelectedPresetID(saved.selectedPresetID); setCareerResult(saved.highSchoolCareer);
+        const normalizedCareer = await normalizeRegionalSchools({ seed: saved.highSchoolCareer.nextSeed, state: saved.highSchoolCareer.snapshot });
+        setPresets(availablePresets); setSelectedPresetID(saved.selectedPresetID); setCareerResult(normalizedCareer);
         setProResult(saved.proCareer); setProVisible(true); setScreenMode("lab"); setExperienceMode("career");
         setSaveNotice(restoredPro.source === "backup" ? "손상된 프로 저장 대신 마지막 정상 백업을 복구했습니다." : "프로 커리어 자동 저장에서 이어서 시작했습니다.");
         setCoreStatus({ state: "online", health }); return;
@@ -539,6 +541,7 @@ export function App() {
         const saved = restoredCareer.payload;
         const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
         if (!savedPreset) throw new Error("저장된 고교 커리어의 투수 프리셋을 찾을 수 없습니다.");
+        const normalizedCareer = await normalizeRegionalSchools({ seed: saved.careerResult.nextSeed, state: saved.careerResult.snapshot });
         setPresets(availablePresets);
         setSelectedPresetID(saved.selectedPresetID);
         setSeed(saved.seed);
@@ -549,7 +552,7 @@ export function App() {
         setRivalMemory(saved.rivalMemory);
         setGameState(saved.gameState);
         setGameLog(saved.gameLog);
-        setCareerResult(saved.careerResult);
+        setCareerResult(normalizedCareer);
         setLabInningStats(saved.inningStats);
         setScreenMode(saved.screenMode === "pitch" && saved.preparation ? "pitch" : "lab");
         setExperienceMode("career");
@@ -1251,6 +1254,11 @@ export function App() {
     };
     const nextState: GameStateSnapshot = {
       ...INITIAL_GAME_STATE,
+      park: careerResult.snapshot.school ? {
+        ...INITIAL_GAME_STATE.park,
+        id: `${careerResult.snapshot.school.id}-park`,
+        name: `${careerResult.snapshot.school.name} 야구장`,
+      } : INITIAL_GAME_STATE.park,
       runners,
       runsAllowed: 0,
       inningState: { inning, half: "bottom", outs },
@@ -1508,6 +1516,14 @@ export function App() {
         : plateEnded
           ? "다음 타석 시작"
           : "다음 투구 선택";
+  const careerSchool = careerResult?.snapshot.school;
+  const careerOpponent = careerResult?.snapshot.schoolOptions.find((school) => school.id !== careerSchool?.id);
+  const scoreboardHome = experienceMode === "career"
+    ? proVisible && proResult ? proResult.snapshot.team.name : careerSchool?.name ?? "고교"
+    : "연습팀";
+  const scoreboardAway = experienceMode === "career"
+    ? proVisible && proResult ? "상대 구단" : careerOpponent?.name ?? "상대 고교"
+    : "연습 상대";
   const handleGameCastContinue = () => {
     if (!plateEnded) { setShowGameCast(false); return; }
     if (lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && proVisible && proResult?.snapshot.phase === "important_game") {
@@ -1638,7 +1654,7 @@ export function App() {
             <span>{pitcher?.name ?? "투수 준비 중"}</span><b>VS</b><span>{activeBatter.name}</span>
           </div>
           <div className="scoreboard" aria-label={`현재 점수 2 대 ${2 + gameState.runsAllowed}`}>
-            <span>부산해남고</span><strong>2 : {2 + gameState.runsAllowed}</strong><span>광주동진고</span>
+            <span>{scoreboardHome}</span><strong>2 : {2 + gameState.runsAllowed}</strong><span>{scoreboardAway}</span>
           </div>
         </section>
 

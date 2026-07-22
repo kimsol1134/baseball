@@ -136,6 +136,9 @@ public struct RPCServer: Sendable {
             case "completeMiddleSchoolPrologue":
                 let params = try decode(AdvanceCareerChapterParams.self, from: request)
                 response = RPCResponse(id: request.id, result: try JSONValue.from(try highSchoolCareer.completePrologue(params)))
+            case "normalizeRegionalSchools":
+                let params = try decode(AdvanceCareerChapterParams.self, from: request)
+                response = RPCResponse(id: request.id, result: try JSONValue.from(try highSchoolCareer.normalizeRegionalSchools(params)))
             case "chooseSchool":
                 let params = try decode(ChooseSchoolParams.self, from: request)
                 response = RPCResponse(id: request.id, result: try JSONValue.from(try highSchoolCareer.chooseSchool(params)))
