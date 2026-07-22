@@ -21,6 +21,7 @@
 4. `07_pitcher_lab_prototype_spec.md`
 5. `03_trd.md`
 6. IA·Use Case·Design·Data·QA 문서
+7. `18_design_system_final_review_and_improvement.md`
 
 ## 기준선 핵심
 

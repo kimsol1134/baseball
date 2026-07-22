@@ -3,7 +3,7 @@
 | 항목 | 값 |
 |---|---|
 | 문서 ID | DOC-06 |
-| 버전 | 1.0 Baseline |
+| 버전 | 1.1 Dark System Alignment |
 | 방향 | Data Calm, Dramatic Moments |
 
 ## 1. 경험 목표
@@ -31,19 +31,23 @@
 
 | Token | 값 | 용도 |
 |---|---|---|
-| `color-bg` | `#F3F6F8` | 앱 기본 배경 |
-| `color-surface` | `#FFFFFF` | 카드·표·모달 |
-| `color-ink` | `#17232E` | 기본 텍스트 |
-| `color-muted` | `#607383` | 보조 텍스트 |
-| `color-primary` | `#163B57` | 내비게이션·제목 |
-| `color-action` | `#2B65D9` | 기본 행동·선택 |
-| `color-highlight` | `#E5742B` | 드래프트·클러치·중요 경고 |
-| `color-positive` | `#2F8F5B` | 성장·회복·성공 |
-| `color-negative` | `#C44D4D` | 부상·위험·감소 |
-| `color-warning` | `#B78218` | 불확실·피로·주의 |
-| `color-border` | `#CAD5DD` | 구분선·표 경계 |
+| `color-canvas` | `#080D0B` | 앱 기본 배경 |
+| `color-surface` | `#101815` | 카드·표·모달 |
+| `color-surface-raised` | `#17231E` | 현재 선택·행동 영역 |
+| `color-text-primary` | `#F1F4EE` | 기본 텍스트 |
+| `color-text-secondary` | `#B4C1BB` | 보조 텍스트 |
+| `color-brand` | `#B7F36B` | 로고·브랜드 표식 |
+| `color-action` | `#B7F36B` | 화면의 단일 기본 행동 |
+| `color-selection` | `#86C96A` | 선택 테두리·체크 |
+| `color-milestone` | `#D8B565` | 드래프트·데뷔·수상 |
+| `color-positive` | `#55C58A` | 성장·회복·성공 |
+| `color-negative` | `#EF746A` | 부상·실패·오류 |
+| `color-warning` | `#F0A94A` | 불확실·피로·주의 |
+| `color-information` | `#67B6C1` | 연결·분석·중립 상태 |
+| `color-border` | `#3F554B` | 기본 구분선 |
+| `color-border-strong` | `#5F736A` | 입력·선택·중요 경계 |
 
-다크 모드는 후속이지만 토큰 기반으로 준비한다. 팀 색상은 브랜드 장식에만 쓰고 상태 의미를 덮지 않는다.
+다크그린을 기본 정체성으로 사용한다. 라임은 브랜드와 단일 기본 행동, 골드는 서사적 마일스톤에 제한하며 상태 의미는 전용 토큰으로 분리한다. 세부 역할과 변경 기준은 DOC-18을 따른다. 팀 색상은 브랜드 장식에만 쓰고 상태 의미를 덮지 않는다.
 
 ### 2.3 타이포그래피
 

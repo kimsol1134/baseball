@@ -380,7 +380,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <div className="career-training-grid">{TRAININGS.map((option) => <button key={option.value} type="button" aria-pressed={focus === option.value}
             className={focus === option.value ? "is-selected" : undefined} onClick={() => setFocus(option.value)}><strong>{option.label}</strong><span>{option.copy}</span></button>)}</div>
           <div className="training-intensity-grid">{(["light", "standard", "intensive"] as const).map((value) => <button key={value} type="button"
-            className={intensity === value ? "is-selected" : undefined} onClick={() => setIntensity(value)}><strong>{value === "light" ? "가볍게" : value === "standard" ? "표준" : "집중"}</strong></button>)}</div>
+            className={intensity === value ? "is-selected" : undefined} aria-pressed={intensity === value} onClick={() => setIntensity(value)}><strong>{value === "light" ? "가볍게" : value === "standard" ? "표준" : "집중"}</strong></button>)}</div>
           <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity)}>이 훈련 시작</button>
           {state.lastTraining ? <div className="career-feedback"><strong>{state.lastTraining.feedback}</strong><span>능력 +{state.lastTraining.growth} · 피로 {state.lastTraining.fatigueChange >= 0 ? "+" : ""}{state.lastTraining.fatigueChange}</span></div> : null}</> : null}
         {state.phase === "relationship" ? <><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3><p>{scene.quote}</p>
@@ -396,7 +396,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <p>{state.difficulty.informationClarity === "challenging" ? "구단의 평가는 이름이 불린 뒤 공개됩니다." : "10개 구단이 능력, 경기 기록, 포수·감독 평가를 함께 확인합니다."}</p><button className="lab-primary" type="button" disabled={isRunning} onClick={() => void startDraftReveal()}>드래프트 시작</button></div> : null}
         {state.phase === "legacy" && state.draftResult ? <><div className="draft-result is-undrafted"><span>UNDRAFTED · 평가 {state.draftResult.evaluationScore}</span><h3>이번 삶은 여기서 끝났습니다.</h3><p>{state.draftResult.summary}</p></div>
           <h4>다음 삶에 남길 기억 {state.memorySlots}장</h4><div className="memory-grid">{state.legacyOptions.map((memory) => <button key={memory} type="button" className={memories.includes(memory) ? "is-selected" : undefined}
-            onClick={() => toggleMemory(memory)}><strong>{MEMORIES[memory]}</strong><span>{MEMORY_DETAILS[memory]}</span><small>{memories.includes(memory) ? "선택됨" : "기억하기"}</small></button>)}</div>
+            aria-pressed={memories.includes(memory)} onClick={() => toggleMemory(memory)}><strong>{MEMORIES[memory]}</strong><span>{MEMORY_DETAILS[memory]}</span><small>{memories.includes(memory) ? "선택됨" : "기억하기"}</small></button>)}</div>
           <button className="lab-primary" type="button" disabled={isRunning || memories.length !== state.memorySlots} onClick={() => void onLegacy(memories)}>기억 {state.memorySlots}장 확정</button></> : null}
         {state.phase === "completed" && state.draftResult ? <div className={`draft-result ${state.draftResult.outcome === "drafted" ? "is-drafted" : "is-undrafted"}`}>
           <span>{state.draftResult.outcome === "drafted" ? `${state.draftResult.round}라운드 ${state.draftResult.overallPick}순위` : "DRAFT COMPLETE"}</span>
@@ -405,8 +405,8 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             <div><span>경쟁자</span><strong>{state.draftResult.team.positionCompetitor}</strong></div><div><span>담당 코치</span><strong>{state.draftResult.team.proCoach}</strong></div>
             <div><span>첫 시즌 목표</span><strong>2군 선발 경쟁 · 1군 데뷔</strong></div><div><span>프로에서 할 일</span><strong>훈련·보직 경쟁·계약·FA</strong></div></div> : null}
           {state.draftResult.outcome === "drafted" ? <div className="pro-lock"><span>PRO CAREER</span><h4>{proAccessAvailable ? "지명 구단과 계약할 차례입니다." : "프로 커리어 확장"}</h4>
-            <p>{proAccessAvailable ? "2군 선발 경쟁부터 시작합니다. 고교 기록과 구종은 그대로 이어집니다." : "구매·복원 연동이 완료된 배포 채널에서 고교 기록을 이어서 시작할 수 있습니다."}</p>
-            <button type="button" disabled={isRunning || !proAccessAvailable} onClick={() => void onStartPro()}>{proAccessAvailable ? "프로 입단" : "현재 배포판에서는 이용할 수 없음"}</button></div> : null}
+            <p>{proAccessAvailable ? "2군 선발 경쟁부터 시작합니다. 고교 기록과 구종은 그대로 이어집니다." : "프로 커리어는 정식판에서 고교 기록 그대로 이어집니다."}</p>
+            <button type="button" disabled={isRunning || !proAccessAvailable} onClick={() => void onStartPro()}>{proAccessAvailable ? "프로 입단" : "데모는 여기까지"}</button></div> : null}
           {state.draftResult.outcome === "undrafted" ? <button className="lab-primary" type="button" onClick={() => void onNextLife()}>기억을 가지고 다음 삶 시작</button> : null}</div> : null}
         {error ? <p className="error-message" role="alert">{error}</p> : null}
       </section>

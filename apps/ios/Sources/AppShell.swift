@@ -1,5 +1,31 @@
 import SwiftUI
 import SimulationCore
+import UIKit
+
+enum DiamondSoulTheme {
+    static let action = adaptive(light: 0x4F7828, dark: 0xB7F36B)
+    static let selection = adaptive(light: 0x447A37, dark: 0x86C96A)
+    static let milestone = adaptive(light: 0x7E5D17, dark: 0xD8B565)
+    static let positive = adaptive(light: 0x24744E, dark: 0x55C58A)
+    static let warning = adaptive(light: 0x8A570F, dark: 0xF0A94A)
+    static let negative = adaptive(light: 0xAD3E36, dark: 0xEF746A)
+    static let information = adaptive(light: 0x236B78, dark: 0x67B6C1)
+
+    private static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            platformColor(traits.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
+
+    private static func platformColor(_ hex: UInt32) -> UIColor {
+        UIColor(
+            red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255,
+            alpha: 1
+        )
+    }
+}
 
 enum AppTab: Hashable, CaseIterable, Identifiable {
     case today, career, records
@@ -18,7 +44,7 @@ struct AppShell: View {
             NavigationStack { CareerFlowView(career: career) }.tabItem { Label(AppTab.career.title, systemImage: AppTab.career.icon) }.tag(AppTab.career)
             NavigationStack { RecordView(career: career) }.tabItem { Label(AppTab.records.title, systemImage: AppTab.records.icon) }.tag(AppTab.records)
         }
-        .tint(.orange)
+        .tint(DiamondSoulTheme.action)
     }
 }
 
@@ -45,7 +71,7 @@ private struct TodayDashboard: View {
                 Text("\(state.team.name) · \(state.season)시즌 \(state.week)주차").font(.headline)
                 HStack { Metric(title: "피로", value: "\(state.fatigue)"); Metric(title: "감독 신뢰", value: "\(state.managerTrust)"); Metric(title: "부상", value: state.injuryWeeks > 0 ? "\(state.injuryWeeks)주" : "정상") }
                 GroupBox("다음 행동") { Text(actionText(state.phase)).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8) }
-                if let milestone = state.milestones.last { GroupBox("최근 이정표") { Label(milestone, systemImage: "star.fill").foregroundStyle(.orange).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8) } }
+                if let milestone = state.milestones.last { GroupBox("최근 이정표") { Label(milestone, systemImage: "star.fill").foregroundStyle(DiamondSoulTheme.milestone).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8) } }
                 GroupBox("최근 소식") { ForEach(Array(state.news.prefix(3).enumerated()), id: \.offset) { _, item in Text(item).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 4) } }
             }.padding()
         }

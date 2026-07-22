@@ -413,7 +413,7 @@ export function PitcherLabView({
               <div className="soul-options">
                 {SOUL_OPTIONS.map((option) => (
                   <button key={option.value} type="button" className={soulDomain === option.value ? "is-selected" : undefined}
-                    onClick={() => setSoulDomain(option.value)}>
+                    aria-pressed={soulDomain === option.value} onClick={() => setSoulDomain(option.value)}>
                     <strong>{option.label}</strong><span>{option.description}</span>
                   </button>
                 ))}
@@ -422,7 +422,7 @@ export function PitcherLabView({
               <div className="lab-choice-pair">
                 {snapshot.legacyOptions.map((memory) => (
                   <button key={memory} type="button" className={selectedMemory === memory ? "is-selected" : undefined}
-                    onClick={() => setMemoryCard(memory)}>
+                    aria-pressed={selectedMemory === memory} onClick={() => setMemoryCard(memory)}>
                     <strong>{MEMORY_LABELS[memory].title}</strong><span>{MEMORY_LABELS[memory].description}</span>
                   </button>
                 ))}

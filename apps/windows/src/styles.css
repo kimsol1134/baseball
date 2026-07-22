@@ -3,25 +3,57 @@
   font-family:
     Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", Inter, system-ui,
     sans-serif;
-  color: #edf3ef;
-  background: #0b100f;
+  color: var(--color-text-primary);
+  background: var(--color-canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --bg: #0b100f;
-  --surface: #111817;
-  --surface-raised: #17201e;
-  --surface-soft: #1b2623;
-  --line: #293632;
-  --line-strong: #3b4c47;
-  --text: #edf3ef;
-  --muted: #afbeb9;
-  --subtle: #8b9e98;
-  --lime: #b9ef71;
-  --lime-strong: #90d044;
-  --lime-dark: #253b1e;
-  --amber: #eab45f;
-  --red: #ed796d;
-  --blue: #6eb5a9;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --color-canvas: #080d0b;
+  --color-surface: #101815;
+  --color-surface-raised: #17231e;
+  --color-surface-soft: #1e2b25;
+  --color-border: #3f554b;
+  --color-border-strong: #5f736a;
+  --color-text-primary: #f1f4ee;
+  --color-text-secondary: #b4c1bb;
+  --color-text-tertiary: #84968e;
+  --color-brand: #b7f36b;
+  --color-action: #b7f36b;
+  --color-action-strong: #96dc4e;
+  --color-action-soft: #243a20;
+  --color-selection: #86c96a;
+  --color-selection-soft: #1b2f20;
+  --color-milestone: #d8b565;
+  --color-positive: #55c58a;
+  --color-warning: #f0a94a;
+  --color-negative: #ef746a;
+  --color-information: #67b6c1;
+  --color-information-soft: #163036;
+  --color-focus: #d3ff82;
+  /* Legacy aliases keep older screens compatible while colors migrate by role. */
+  --bg: var(--color-canvas);
+  --surface: var(--color-surface);
+  --surface-raised: var(--color-surface-raised);
+  --surface-soft: var(--color-surface-soft);
+  --line: var(--color-border);
+  --line-strong: var(--color-border-strong);
+  --text: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --subtle: var(--color-text-tertiary);
+  --lime: var(--color-brand);
+  --lime-strong: var(--color-selection);
+  --lime-dark: var(--color-action-soft);
+  --amber: var(--color-warning);
+  --red: var(--color-negative);
+  --blue: var(--color-information);
   --shadow: 0 18px 60px rgb(0 0 0 / 24%);
 }
 
@@ -67,6 +99,7 @@ body {
   min-height: 100dvh;
   font-size: 1rem;
   line-height: 1.5;
+  font-variant-numeric: tabular-nums;
   background:
     radial-gradient(circle at 20% -10%, rgb(94 131 101 / 12%), transparent 34rem),
     var(--bg);
@@ -90,7 +123,7 @@ button {
 }
 
 button:focus-visible {
-  outline: 3px solid rgb(185 239 113 / 45%);
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -132,9 +165,9 @@ button:focus-visible {
   height: 42px;
   display: grid;
   place-items: center;
-  border: 1px solid #8bbf55;
+  border: 1px solid var(--color-selection);
   border-radius: 12px 4px 12px 4px;
-  color: var(--lime);
+  color: var(--color-brand);
   font-weight: 900;
   letter-spacing: -0.06em;
   transform: rotate(-2deg);
@@ -142,7 +175,7 @@ button:focus-visible {
 
 .eyebrow {
   margin: 0 0 4px;
-  color: var(--lime);
+  color: var(--color-brand);
   font-size: 0.8125rem;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -190,7 +223,7 @@ h2 {
   border: 0;
   border-left: 1px solid var(--line-strong);
   padding: 0 2px 0 9px;
-  color: var(--lime);
+  color: var(--color-information);
   background: transparent;
   cursor: pointer;
 }
@@ -203,12 +236,12 @@ h2 {
 }
 
 .core-status--online .status-dot {
-  background: var(--lime);
-  box-shadow: 0 0 0 4px rgb(185 239 113 / 10%);
+  background: var(--color-information);
+  box-shadow: 0 0 0 4px rgb(103 182 193 / 12%);
 }
 
 .core-status--offline .status-dot {
-  background: var(--red);
+  background: var(--color-negative);
 }
 
 main {
@@ -433,7 +466,7 @@ main {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #75a947, var(--lime));
+  background: linear-gradient(90deg, #3f9f72, var(--color-positive));
 }
 
 .scouting-card,
@@ -720,9 +753,15 @@ legend {
 
 .pitch-options button.is-selected,
 .intensity-options button.is-selected {
-  border-color: var(--lime-strong);
+  border-color: var(--color-selection);
   color: var(--text);
-  background: var(--lime-dark);
+  background: var(--color-selection-soft);
+}
+
+.pitch-options button.is-selected strong::before,
+.intensity-options button.is-selected strong::before {
+  content: "✓ ";
+  color: var(--color-selection);
 }
 
 .pitch-options strong,
@@ -840,7 +879,7 @@ legend {
 }
 
 .strike-zone button.is-selected {
-  border-color: var(--lime);
+  border-color: var(--color-selection);
   background: rgb(82 124 50 / 38%);
 }
 
@@ -849,7 +888,7 @@ legend {
   inset: 50% auto auto 50%;
   width: 13px;
   height: 13px;
-  border: 3px solid var(--lime);
+  border: 3px solid var(--color-selection);
   border-radius: 50%;
   transform: translate(-50%, -50%);
   box-shadow: 0 0 0 5px rgb(185 239 113 / 11%);
@@ -881,7 +920,7 @@ legend {
   border: 0;
   border-radius: 11px;
   color: #16200e;
-  background: linear-gradient(135deg, var(--lime), #91d64a);
+  background: linear-gradient(135deg, var(--color-action), var(--color-action-strong));
   font-weight: 900;
   cursor: pointer;
   box-shadow: 0 8px 22px rgb(145 214 74 / 13%);
@@ -942,12 +981,12 @@ legend {
 .trajectory-path { fill: none; stroke: #e4bc60; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 140; animation: trajectory-draw 420ms ease-out both; }
 .trajectory-target { fill: none; stroke: #a5b6af; stroke-width: 1.5; stroke-dasharray: 2 2; }
 .trajectory-actual { stroke: #f3f7f4; stroke-width: 1.5; }
-.trajectory-actual--positive { fill: var(--lime); }
-.trajectory-actual--negative { fill: var(--red); }
-.trajectory-actual--neutral { fill: var(--amber); }
+.trajectory-actual--positive { fill: var(--color-positive); }
+.trajectory-actual--negative { fill: var(--color-negative); }
+.trajectory-actual--neutral { fill: var(--color-information); }
 .pitch-trajectory > div { display: grid; gap: 5px; }
 .pitch-trajectory span { color: var(--subtle); font-size: 0.75rem; }
-.pitch-trajectory strong { color: #e8c268; font-size: 0.875rem; }
+.pitch-trajectory strong { color: var(--color-information); font-size: 0.875rem; }
 .pitch-trajectory small { color: var(--muted); font-size: 0.75rem; }
 
 @keyframes trajectory-draw { from { stroke-dashoffset: 140; opacity: .2; } to { stroke-dashoffset: 0; opacity: 1; } }
@@ -979,7 +1018,7 @@ legend {
 
 .outcome--positive {
   border-color: #4a6a37;
-  color: var(--lime);
+  color: var(--color-positive);
   background: linear-gradient(145deg, #17241a, #111814);
 }
 
@@ -991,7 +1030,7 @@ legend {
 
 .outcome--neutral {
   border-color: #665330;
-  color: var(--amber);
+  color: var(--color-information);
 }
 
 .result-summary {
@@ -1021,7 +1060,7 @@ legend {
 .decision-grade--good,
 .decision-grade--excellent {
   border-color: #45633a;
-  color: var(--lime);
+  color: var(--color-positive);
   background: #172218;
 }
 
@@ -1112,7 +1151,7 @@ legend {
 }
 
 .fielding-resolution b {
-  color: var(--lime);
+  color: var(--color-positive);
   font-size: 0.8125rem;
 }
 
@@ -1229,7 +1268,7 @@ legend {
 }
 
 .growth-signal {
-  color: var(--lime);
+  color: var(--color-positive);
   font-size: 0.75rem;
   line-height: 1.45;
 }
@@ -1340,7 +1379,7 @@ legend {
 }
 
 .history-dot--positive {
-  background: var(--lime);
+  background: var(--color-positive);
 }
 
 .history-dot--negative {
@@ -1404,6 +1443,7 @@ footer {
 }
 
 .preset-creation-grid button {
+  position: relative;
   display: grid;
   gap: 7px;
   min-height: 150px;
@@ -1417,8 +1457,28 @@ footer {
 
 .preset-creation-grid button:hover,
 .preset-creation-grid button.is-selected {
-  border-color: var(--lime);
-  background: linear-gradient(145deg, rgb(165 230 82 / 8%), transparent), var(--surface);
+  border-color: var(--color-selection);
+  background: linear-gradient(145deg, rgb(134 201 106 / 10%), transparent), var(--surface-raised);
+}
+
+.preset-creation-grid button.is-selected {
+  padding-right: 48px;
+}
+
+.preset-creation-grid button.is-selected::after {
+  content: "✓";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-selection);
+  border-radius: 50%;
+  color: #10200d;
+  background: var(--color-selection);
+  font-weight: 900;
 }
 
 .preset-creation-grid span {
@@ -1628,7 +1688,7 @@ footer {
 }
 
 .life-comparison > div b {
-  color: var(--lime);
+  color: var(--color-positive);
   text-align: right;
 }
 
@@ -1650,7 +1710,7 @@ footer {
 }
 
 .lab-vitals strong {
-  color: var(--lime);
+  color: var(--color-information);
   font-size: 1.3125rem;
 }
 
@@ -1691,7 +1751,7 @@ footer {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--lime);
+  background: var(--color-positive);
 }
 
 .lab-grid {
@@ -1773,7 +1833,7 @@ footer {
   width: 2px;
   height: 12px;
   border-radius: 2px;
-  background: var(--lime);
+  background: var(--color-selection);
 }
 
 .training-reaction {
@@ -1805,8 +1865,8 @@ footer {
 }
 
 .training-reaction--breakthrough {
-  border-color: var(--lime);
-  box-shadow: 0 0 22px rgb(165 230 82 / 8%);
+  border-color: var(--color-positive);
+  box-shadow: 0 0 22px rgb(85 197 138 / 10%);
 }
 
 .lab-action h3 {
@@ -1833,6 +1893,7 @@ footer {
 .training-intensity-grid button,
 .lab-choice-pair button,
 .soul-options button {
+  position: relative;
   display: grid;
   gap: 4px;
   padding: 10px;
@@ -1851,8 +1912,38 @@ footer {
 .training-intensity-grid button.is-selected,
 .lab-choice-pair button.is-selected,
 .soul-options button.is-selected {
-  border-color: var(--lime);
-  background: #1b2b20;
+  border-color: var(--color-selection);
+  background: var(--color-selection-soft);
+}
+
+.training-option-grid button.is-selected,
+.training-intensity-grid button.is-selected,
+.lab-choice-pair button.is-selected,
+.soul-options button.is-selected,
+.career-training-grid button.is-selected,
+.memory-grid button.is-selected {
+  padding-right: 36px;
+}
+
+.training-option-grid button.is-selected::after,
+.training-intensity-grid button.is-selected::after,
+.lab-choice-pair button.is-selected::after,
+.soul-options button.is-selected::after,
+.career-training-grid button.is-selected::after,
+.memory-grid button.is-selected::after {
+  content: "✓";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #10200d;
+  background: var(--color-selection);
+  font-size: 0.75rem;
+  font-weight: 900;
 }
 
 .training-option-grid strong,
@@ -1886,7 +1977,7 @@ footer {
   border: 0;
   border-radius: 10px;
   color: #14200f;
-  background: linear-gradient(135deg, #c6ff69, #8edb43);
+  background: linear-gradient(135deg, var(--color-action), var(--color-action-strong));
   font-size: 0.875rem;
   font-weight: 900;
 }
@@ -2035,7 +2126,7 @@ footer {
 }
 
 .awakening-list strong {
-  color: var(--lime);
+  color: var(--color-positive);
   font-size: 0.75rem;
 }
 
@@ -2058,42 +2149,120 @@ footer {
   font-size: 0.75rem;
 }
 
-.accessibility-controls {
+.settings-menu {
+  position: relative;
+  z-index: 40;
+  flex: 0 0 auto;
+}
+
+.settings-menu summary {
+  min-height: 44px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 5px;
+  align-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  color: var(--muted);
+  background: var(--surface-raised);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.settings-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-menu summary::before {
+  content: "⚙";
+  margin-right: 7px;
+  color: var(--color-information);
+}
+
+.settings-menu[open] summary {
+  border-color: var(--color-information);
+  color: var(--text);
+  background: var(--color-information-soft);
+}
+
+.accessibility-controls {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(330px, calc(100vw - 32px));
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 48%);
+}
+
+.settings-menu-label {
+  grid-column: 1 / -1;
+  margin-top: var(--space-1);
+  color: var(--subtle);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
 }
 
 .accessibility-controls button {
-  min-height: 34px;
-  padding: 7px 10px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
   color: var(--muted);
-  background: #121b17;
+  background: var(--surface);
   font-size: 0.75rem;
+  text-align: left;
 }
 
 .accessibility-controls button[aria-pressed="true"] {
-  color: #071008;
-  border-color: var(--lime);
-  background: var(--lime);
+  color: var(--text);
+  border-color: var(--color-information);
+  background: var(--color-information-soft);
+}
+
+.accessibility-controls button[aria-pressed="true"]::before {
+  content: "✓";
+  margin-right: 5px;
+  color: var(--color-information);
+  font-weight: 900;
 }
 
 body.high-contrast {
-  --text: #fff;
-  --muted: #d7e2dc;
-  --subtle: #b4c4bb;
-  --line: #66756e;
-  --line-strong: #91a49a;
-  --surface: #060a08;
+  --color-canvas: #020503;
+  --color-surface: #070b09;
+  --color-surface-raised: #0b120e;
+  --color-surface-soft: #111b16;
+  --color-border: #87978f;
+  --color-border-strong: #c1cec7;
+  --color-text-primary: #fff;
+  --color-text-secondary: #e2e8e4;
+  --color-text-tertiary: #c4cec9;
+  --color-brand: #d3ff82;
+  --color-action: #d3ff82;
+  --color-action-strong: #b8f45f;
+  --color-action-soft: #1a2b13;
+  --color-selection: #b9ed8d;
+  --color-selection-soft: #152313;
+  --color-milestone: #ffe08a;
+  --color-positive: #78e6ab;
+  --color-warning: #ffc66d;
+  --color-negative: #ff9a91;
+  --color-information: #8ed9e2;
+  --color-information-soft: #10262a;
+  --color-focus: #ffe36a;
 }
 
 body.high-contrast button:focus-visible,
 body.high-contrast input:focus-visible,
 body.high-contrast select:focus-visible {
-  outline: 3px solid #ffe36a;
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -2192,7 +2361,7 @@ body.reduce-motion *::after {
 }
 
 .career-vitals strong {
-  color: #e8c268;
+  color: var(--color-milestone);
   font-size: 1.25rem;
 }
 
@@ -2222,8 +2391,8 @@ body.reduce-motion *::after {
 }
 
 .chapter-map > div.is-current {
-  color: #f0ce78;
-  border-color: #806b36;
+  color: var(--color-milestone);
+  border-color: var(--color-milestone);
   background: #252117;
 }
 
@@ -2293,7 +2462,7 @@ body.reduce-motion *::after {
 }
 
 .career-rating-grid strong {
-  color: var(--lime);
+  color: var(--text);
   font-size: 1.3125rem;
 }
 
@@ -2339,6 +2508,7 @@ body.reduce-motion *::after {
 .career-training-grid button,
 .relationship-options button,
 .memory-grid button {
+  position: relative;
   display: grid;
   gap: 4px;
   padding: 10px;
@@ -2352,8 +2522,8 @@ body.reduce-motion *::after {
 .school-grid button:hover,
 .career-training-grid button.is-selected,
 .memory-grid button.is-selected {
-  border-color: #b99748;
-  background: #272216;
+  border-color: var(--color-selection);
+  background: var(--color-selection-soft);
 }
 
 .school-grid span,
@@ -2365,7 +2535,7 @@ body.reduce-motion *::after {
   font-size: 0.75rem;
 }
 
-.memory-grid small { color: #e5be63; font-size: 0.75rem; }
+.memory-grid small { color: var(--color-milestone); font-size: 0.75rem; }
 
 .draft-reveal {
   position: absolute;
@@ -2385,12 +2555,12 @@ body.reduce-motion *::after {
   animation: draft-card-in 300ms ease-out;
 }
 
-.draft-reveal > span { color: #e5be63; font-size: 0.75rem; font-weight: 900; letter-spacing: .16em; }
+.draft-reveal > span { color: var(--color-milestone); font-size: 0.75rem; font-weight: 900; letter-spacing: .16em; }
 .draft-reveal h3 { margin: 0; font-size: 1.625rem; }
 .draft-reveal p { max-width: 460px; margin: 0 auto; color: var(--muted); font-size: 0.8125rem; line-height: 1.7; }
 .draft-rounds { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: min(310px, 80%); margin: 0 auto; }
 .draft-rounds i { height: 3px; border-radius: 99px; background: #39423d; }
-.draft-rounds i.is-active { background: #e1b94f; box-shadow: 0 0 12px rgb(225 185 79 / 50%); }
+.draft-rounds i.is-active { background: var(--color-milestone); box-shadow: 0 0 12px rgb(216 181 101 / 50%); }
 .draft-skip { justify-self: center; padding: 7px 12px; border: 0; color: var(--muted); background: transparent; font-size: 0.75rem; text-decoration: underline; }
 .draft-reveal--stage-3 h3 { color: #f2d078; text-shadow: 0 0 24px rgb(225 185 79 / 35%); }
 
@@ -2409,7 +2579,7 @@ body.reduce-motion *::after {
 .pro-plan-actions > button:not(.lab-primary) { display: grid; gap: 3px; place-content: center; border: 1px solid #806b36; border-radius: 8px; color: #e6c46c; background: #211d14; font-size: 0.75rem; font-weight: 800; }
 .pro-plan-actions small { color: var(--muted); font-size: 0.75rem; font-weight: 500; }
 .award-strip { display: grid; gap: 5px; margin: 10px 0; padding: 10px; border: 1px solid #756033; border-radius: 8px; background: #211d14; }
-.award-strip span { color: #d2aa50; font-size: 0.75rem; font-weight: 900; }
+.award-strip span { color: var(--color-milestone); font-size: 0.75rem; font-weight: 900; }
 .award-strip strong { color: #ead18c; font-size: 0.75rem; }
 
 .school-grid p {
@@ -2423,7 +2593,7 @@ body.reduce-motion *::after {
   gap: 4px;
   margin-top: 9px;
   padding: 9px;
-  border-left: 3px solid var(--lime);
+  border-left: 3px solid var(--color-positive);
   color: var(--text);
   background: #142019;
   font-size: 0.75rem;
@@ -2444,7 +2614,7 @@ body.reduce-motion *::after {
 
 .career-milestone > span,
 .draft-result > span {
-  color: #e5be63;
+  color: var(--color-milestone);
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -2492,7 +2662,7 @@ body.reduce-motion *::after {
 }
 
 .career-news article span {
-  color: #d2aa50;
+  color: var(--color-information);
   font-size: 0.75rem;
   font-weight: 800;
 }
@@ -2525,7 +2695,7 @@ body.reduce-motion *::after {
 }
 
 .career-performance b {
-  color: var(--lime);
+  color: var(--text);
 }
 
 .career-performance small {

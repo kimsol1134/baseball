@@ -47,6 +47,8 @@ import {
 } from "./highSchoolCareerAutosave";
 import { clearProCareer, loadProCareer, saveProCareer } from "./proCareerAutosave";
 import { feedbackCueForResult, GameFeedback } from "./gameFeedback";
+import { includesProCareer, releaseEditionFromEnvironment } from "./releaseEdition";
+import { getAppStorage } from "./cloudStorage";
 import {
   createAnonymousDiagnosticPackage,
   downloadTextFile,
@@ -122,6 +124,7 @@ const SCOUTING: BatterScoutingSnapshot = {
 };
 
 const INITIAL_SEED = "20260721";
+const appStorage = getAppStorage();
 const INITIAL_CONTEXT: PlateAppearanceContext = {
   plateAppearanceID: "pa-prototype-1",
   revision: 0,
@@ -303,15 +306,21 @@ function AccessibilityControls({ highContrast, reducedMotion, fontScale, analyti
   onHaptics: () => void;
   onDiagnostics: () => void;
 }) {
-  return <div className="accessibility-controls" aria-label="접근성 설정">
-    <button type="button" aria-pressed={highContrast} onClick={onContrast}>고대비 {highContrast ? "켜짐" : "꺼짐"}</button>
-    <button type="button" aria-pressed={reducedMotion} onClick={onMotion}>모션 감소 {reducedMotion ? "켜짐" : "꺼짐"}</button>
-    <button type="button" onClick={onFontScale}>글자 {fontScale === 1 ? "보통" : fontScale === 1.15 ? "크게" : "매우 크게"}</button>
-    <button type="button" aria-pressed={soundEnabled} onClick={onSound}>효과음 {soundEnabled ? "켜짐" : "꺼짐"}</button>
-    <button type="button" aria-pressed={hapticsEnabled} onClick={onHaptics}>햅틱 {hapticsEnabled ? "켜짐" : "꺼짐"}</button>
-    <button type="button" aria-pressed={analyticsOptIn} onClick={onAnalytics}>로컬 분석 {analyticsOptIn ? "동의" : "미동의"}</button>
-    <button type="button" onClick={onDiagnostics}>익명 진단 저장</button>
-  </div>;
+  return <details className="settings-menu">
+    <summary>접근성·설정</summary>
+    <div className="accessibility-controls" aria-label="접근성 및 환경 설정">
+      <span className="settings-menu-label">화면</span>
+      <button type="button" aria-pressed={highContrast} onClick={onContrast}>고대비 {highContrast ? "켜짐" : "꺼짐"}</button>
+      <button type="button" aria-pressed={reducedMotion} onClick={onMotion}>모션 감소 {reducedMotion ? "켜짐" : "꺼짐"}</button>
+      <button type="button" onClick={onFontScale}>글자 {fontScale === 1 ? "보통" : fontScale === 1.15 ? "크게" : "매우 크게"}</button>
+      <span className="settings-menu-label">피드백</span>
+      <button type="button" aria-pressed={soundEnabled} onClick={onSound}>효과음 {soundEnabled ? "켜짐" : "꺼짐"}</button>
+      <button type="button" aria-pressed={hapticsEnabled} onClick={onHaptics}>햅틱 {hapticsEnabled ? "켜짐" : "꺼짐"}</button>
+      <span className="settings-menu-label">데이터</span>
+      <button type="button" aria-pressed={analyticsOptIn} onClick={onAnalytics}>로컬 분석 {analyticsOptIn ? "동의" : "미동의"}</button>
+      <button type="button" onClick={onDiagnostics}>익명 진단 저장</button>
+    </div>
+  </details>;
 }
 
 function PitchTrajectory({ result }: { result: PitchKernelResult }) {
@@ -428,7 +437,11 @@ function pitchHint(profile?: PitchProfileSnapshot) {
 }
 
 export function App() {
-  const developmentProAccess = import.meta.env.DEV;
+  const releaseEdition = releaseEditionFromEnvironment(
+    import.meta.env.DEV,
+    import.meta.env.VITE_RELEASE_EDITION,
+  );
+  const bundledProAccess = includesProCareer(releaseEdition);
   const [coreStatus, setCoreStatus] = useState<CoreStatus>({ state: "checking" });
   const [presets, setPresets] = useState<ReadonlyArray<PitcherPresetSnapshot>>([]);
   const [selectedPresetID, setSelectedPresetID] = useState<string>();
@@ -455,13 +468,13 @@ export function App() {
   const [labInningStats, setLabInningStats] = useState<LabInningStats>(EMPTY_LAB_INNING_STATS);
   const [error, setError] = useState<string>();
   const [saveNotice, setSaveNotice] = useState<string>();
-  const [highContrast, setHighContrast] = useState(() => window.localStorage.getItem("diamond-soul.a11y.contrast") === "true");
-  const [reducedMotion, setReducedMotion] = useState(() => window.localStorage.getItem("diamond-soul.a11y.motion") === "true");
-  const [fontScale, setFontScale] = useState(() => Number(window.localStorage.getItem("diamond-soul.a11y.font-scale") ?? "1"));
-  const [analyticsOptIn, setAnalyticsOptIn] = useState(() => window.localStorage.getItem("diamond-soul.analytics.opt-in") === "true");
-  const [tutorialDismissed, setTutorialDismissed] = useState(() => window.localStorage.getItem("diamond-soul.tutorial.completed") === "true");
-  const [soundEnabled, setSoundEnabled] = useState(() => window.localStorage.getItem("diamond-soul.feedback.sound") !== "false");
-  const [hapticsEnabled, setHapticsEnabled] = useState(() => window.localStorage.getItem("diamond-soul.feedback.haptics") !== "false");
+  const [highContrast, setHighContrast] = useState(() => appStorage.getItem("diamond-soul.a11y.contrast") === "true");
+  const [reducedMotion, setReducedMotion] = useState(() => appStorage.getItem("diamond-soul.a11y.motion") === "true");
+  const [fontScale, setFontScale] = useState(() => Number(appStorage.getItem("diamond-soul.a11y.font-scale") ?? "1"));
+  const [analyticsOptIn, setAnalyticsOptIn] = useState(() => appStorage.getItem("diamond-soul.analytics.opt-in") === "true");
+  const [tutorialDismissed, setTutorialDismissed] = useState(() => appStorage.getItem("diamond-soul.tutorial.completed") === "true");
+  const [soundEnabled, setSoundEnabled] = useState(() => appStorage.getItem("diamond-soul.feedback.sound") !== "false");
+  const [hapticsEnabled, setHapticsEnabled] = useState(() => appStorage.getItem("diamond-soul.feedback.haptics") !== "false");
   const [lastCall, setLastCall] = useState<PitchCall>();
   const [resultStage, setResultStage] = useState<"idle" | "impact" | "summary">("idle");
   const [showResultDetails, setShowResultDetails] = useState(false);
@@ -516,11 +529,11 @@ export function App() {
       ]);
       const initialPreset = availablePresets[0];
       if (!initialPreset) throw new Error("사용 가능한 투수 프리셋이 없습니다.");
-      const restored = loadPitcherLabAutosave(window.localStorage);
-      const restoredCareer = loadHighSchoolCareer(window.localStorage);
-      const restoredProCandidate = loadProCareer(window.localStorage);
+      const restored = loadPitcherLabAutosave(appStorage);
+      const restoredCareer = loadHighSchoolCareer(appStorage);
+      const restoredProCandidate = loadProCareer(appStorage);
       const restoredPro = restoredProCandidate
-        && (developmentProAccess || restoredProCandidate.payload.proCareer.snapshot.entitlement.source !== "development")
+        && (bundledProAccess || restoredProCandidate.payload.proCareer.snapshot.entitlement.source !== "development")
         ? restoredProCandidate
         : undefined;
       const proIsNewest = restoredPro && (!restored || Date.parse(restoredPro.payload.savedAt) >= Date.parse(restored.payload.savedAt))
@@ -628,21 +641,30 @@ export function App() {
   }, [connectCore]);
 
   useEffect(() => {
+    const handleCloudSave = (event: Event) => {
+      const detail = (event as CustomEvent<{ state: "saved" | "error"; message: string }>).detail;
+      if (detail?.state === "error") setSaveNotice(detail.message);
+    };
+    window.addEventListener("diamond-soul:cloud-save", handleCloudSave);
+    return () => window.removeEventListener("diamond-soul:cloud-save", handleCloudSave);
+  }, []);
+
+  useEffect(() => {
     document.body.classList.toggle("high-contrast", highContrast);
     document.body.classList.toggle("reduce-motion", reducedMotion);
     document.documentElement.style.setProperty("--font-scale", String(fontScale));
-    window.localStorage.setItem("diamond-soul.a11y.contrast", String(highContrast));
-    window.localStorage.setItem("diamond-soul.a11y.motion", String(reducedMotion));
-    window.localStorage.setItem("diamond-soul.a11y.font-scale", String(fontScale));
+    appStorage.setItem("diamond-soul.a11y.contrast", String(highContrast));
+    appStorage.setItem("diamond-soul.a11y.motion", String(reducedMotion));
+    appStorage.setItem("diamond-soul.a11y.font-scale", String(fontScale));
   }, [fontScale, highContrast, reducedMotion]);
 
   useEffect(() => {
-    window.localStorage.setItem("diamond-soul.analytics.opt-in", String(analyticsOptIn));
+    appStorage.setItem("diamond-soul.analytics.opt-in", String(analyticsOptIn));
   }, [analyticsOptIn]);
 
   useEffect(() => {
-    window.localStorage.setItem("diamond-soul.feedback.sound", String(soundEnabled));
-    window.localStorage.setItem("diamond-soul.feedback.haptics", String(hapticsEnabled));
+    appStorage.setItem("diamond-soul.feedback.sound", String(soundEnabled));
+    appStorage.setItem("diamond-soul.feedback.haptics", String(hapticsEnabled));
   }, [hapticsEnabled, soundEnabled]);
 
   useEffect(() => {
@@ -672,7 +694,7 @@ export function App() {
       return;
     }
     if (lastCareerTelemetryRevision.current === revision) return;
-    recordLocalAnalytics(window.localStorage, analyticsOptIn, {
+    recordLocalAnalytics(appStorage, analyticsOptIn, {
       name: "career_decision_completed",
       occurredAt: new Date().toISOString(),
       properties: { event: careerResult.events[0]?.eventType ?? "unknown", phase: careerResult.snapshot.phase, revision, decisionMs: Math.round(performance.now() - careerDecisionStartedAt.current), life: careerResult.snapshot.lifeNumber, chapter: careerResult.snapshot.chapter.number, trainings: careerResult.snapshot.totalTrainingsCompleted, relationships: careerResult.snapshot.relationshipsCompleted, games: careerResult.snapshot.performance.importantGamesCompleted, awakenings: careerResult.snapshot.selectedAwakenings.length },
@@ -694,7 +716,7 @@ export function App() {
       return;
     }
     if (lastProTelemetryRevision.current === revision) return;
-    recordLocalAnalytics(window.localStorage, analyticsOptIn, {
+    recordLocalAnalytics(appStorage, analyticsOptIn, {
       name: "pro_decision_completed",
       occurredAt: new Date().toISOString(),
       properties: { event: proResult.events[0] ?? "unknown", phase: proResult.snapshot.phase, revision, decisionMs: Math.round(performance.now() - proDecisionStartedAt.current), season: proResult.snapshot.season, week: proResult.snapshot.week, level: proResult.snapshot.level, role: proResult.snapshot.role },
@@ -724,7 +746,7 @@ export function App() {
       labInningStats,
     };
     try {
-      savePitcherLabAutosave(window.localStorage, payload);
+      savePitcherLabAutosave(appStorage, payload);
       setSaveNotice("자동 저장 완료");
     } catch (caught) {
       setSaveNotice(caught instanceof Error ? `자동 저장 실패 · ${caught.message}` : "자동 저장 실패");
@@ -751,7 +773,7 @@ export function App() {
       inningStats: labInningStats,
     };
     try {
-      saveHighSchoolCareer(window.localStorage, payload);
+      saveHighSchoolCareer(appStorage, payload);
       setSaveNotice("고교 커리어 자동 저장 완료");
     } catch (caught) {
       setSaveNotice(caught instanceof Error ? `고교 커리어 자동 저장 실패 · ${caught.message}` : "고교 커리어 자동 저장 실패");
@@ -761,14 +783,14 @@ export function App() {
   useEffect(() => {
     if (coreStatus.state !== "online" || !proResult || !careerResult || !selectedPresetID) return;
     try {
-      saveProCareer(window.localStorage, { format: "DiamondSoulProCareerAutosave", schemaVersion: 1, savedAt: new Date().toISOString(), selectedPresetID, highSchoolCareer: careerResult, proCareer: proResult });
+      saveProCareer(appStorage, { format: "DiamondSoulProCareerAutosave", schemaVersion: 1, savedAt: new Date().toISOString(), selectedPresetID, highSchoolCareer: careerResult, proCareer: proResult });
       setSaveNotice("프로 커리어 자동 저장 완료");
     } catch (caught) { setSaveNotice(caught instanceof Error ? `프로 자동 저장 실패 · ${caught.message}` : "프로 자동 저장 실패"); }
   }, [careerResult, coreStatus.state, proResult, selectedPresetID]);
 
   const handleNewExperiment = useCallback(() => {
     if (!window.confirm("현재 선수의 훈련 기록을 지우고 새 선수를 만들까요?")) return;
-    clearPitcherLabAutosave(window.localStorage);
+    clearPitcherLabAutosave(appStorage);
     setLabResult(undefined);
     setPreviousLifeResult(undefined);
     setScreenMode("lab");
@@ -826,7 +848,7 @@ export function App() {
       setPreparation(result.nextPreparation);
       if (result.nextPreparation) applyRecommendation(result.nextPreparation.primaryRecommendation);
       feedback.play(feedbackCueForResult(result), soundEnabled, hapticsEnabled);
-      recordLocalAnalytics(window.localStorage, analyticsOptIn, {
+      recordLocalAnalytics(appStorage, analyticsOptIn, {
         name: "pitch_resolved",
         occurredAt: new Date().toISOString(),
         properties: { outcome: result.snapshot.outcome, ended: result.snapshot.ended, acceptedCatcherCall: result.snapshot.recommendationAccepted, selectionQuality: result.snapshot.selectionQuality, pitchNumber: context.pitchNumber, decisionMs: Math.round(performance.now() - pitchDecisionStartedAt.current), interactionsBeforeThrow: pitchInteractionCount.current + 1, mode: experienceMode, importantGame: screenMode === "pitch" },
@@ -1178,7 +1200,7 @@ export function App() {
 
   const handleCareerDraft = useCallback(async () => {
     if (!careerResult) return;
-    recordLocalAnalytics(window.localStorage, analyticsOptIn, { name: "draft_reveal_started", occurredAt: new Date().toISOString(), properties: { life: careerResult.snapshot.lifeNumber, evaluationBand: careerResult.snapshot.difficulty.informationClarity } });
+    recordLocalAnalytics(appStorage, analyticsOptIn, { name: "draft_reveal_started", occurredAt: new Date().toISOString(), properties: { life: careerResult.snapshot.lifeNumber, evaluationBand: careerResult.snapshot.difficulty.informationClarity } });
     await runCareerAction(() => resolveDraft({ seed: careerResult.nextSeed, state: careerResult.snapshot }));
   }, [analyticsOptIn, careerResult, runCareerAction]);
 
@@ -1299,8 +1321,8 @@ export function App() {
 
   const handleNewCareer = useCallback(() => {
     if (!window.confirm("현재 고교 커리어 진행을 지우고 새 삶을 시작할까요?")) return;
-    clearHighSchoolCareer(window.localStorage);
-    clearProCareer(window.localStorage);
+    clearHighSchoolCareer(appStorage);
+    clearProCareer(appStorage);
     setCareerResult(undefined);
     setProResult(undefined);
     setProVisible(false);
@@ -1328,14 +1350,19 @@ export function App() {
   const handleStartPro = useCallback(async () => {
     if (proResult) { setProVisible(true); return; }
     if (!careerResult?.snapshot.draftResult || careerResult.snapshot.draftResult.outcome !== "drafted") return;
-    if (!developmentProAccess) {
-      setError("프로 커리어는 검증된 구매 또는 복원 권한이 연결된 뒤 이용할 수 있습니다.");
+    if (!bundledProAccess) {
+      setError("프로 커리어는 정식판에서 이어서 플레이할 수 있습니다.");
       return;
     }
     setProVisible(true);
     await runProAction(() => startProCareer({ seed: careerResult.nextSeed, identity: careerResult.snapshot.identity, pitcher: careerResult.snapshot.pitcher,
-      draftResult: careerResult.snapshot.draftResult!, entitlement: { productID: "diamond_soul_pro_career", status: "active", source: "development", verifiedAt: new Date().toISOString(), offlineValidUntil: new Date(Date.now() + 30 * 86_400_000).toISOString() } }));
-  }, [careerResult, developmentProAccess, proResult, runProAction]);
+      draftResult: careerResult.snapshot.draftResult!, entitlement: {
+        productID: releaseEdition === "steam_full" ? "diamond_soul_steam_full" : "diamond_soul_development",
+        status: "active",
+        source: releaseEdition === "steam_full" ? "purchase" : "development",
+        verifiedAt: new Date().toISOString(),
+      } }));
+  }, [bundledProAccess, careerResult, proResult, releaseEdition, runProAction]);
   const handleSignPro = useCallback(async () => { if (proResult) await runProAction(() => signProContract({ seed: proResult.nextSeed, state: proResult.snapshot })); }, [proResult, runProAction]);
   const handlePlanPro = useCallback(async (plan: ProWeekPlan) => { if (proResult) await runProAction(() => planProWeek({ seed: proResult.nextSeed, state: proResult.snapshot, plan })); }, [proResult, runProAction]);
   const handlePlanProBlock = useCallback(async (plan: ProWeekPlan) => {
@@ -1424,14 +1451,14 @@ export function App() {
   const handleMilestoneFeedback = useCallback(() => feedback.play("milestone", soundEnabled, hapticsEnabled), [feedback, hapticsEnabled, soundEnabled]);
   const dismissTutorial = useCallback(() => {
     setTutorialDismissed(true);
-    window.localStorage.setItem("diamond-soul.tutorial.completed", "true");
+    appStorage.setItem("diamond-soul.tutorial.completed", "true");
   }, []);
   const downloadDiagnostics = useCallback(() => {
-    const save = loadHighSchoolCareer(window.localStorage)?.payload;
+    const save = loadHighSchoolCareer(appStorage)?.payload;
     const health = coreStatus.state === "online" ? coreStatus.health : undefined;
     downloadTextFile(`diamond-soul-diagnostic-${new Date().toISOString().slice(0, 10)}.json`, createAnonymousDiagnosticPackage({
       appVersion: "1.0.0", coreVersion: health?.coreVersion, protocolVersion: health?.protocolVersion,
-      error, save, analytics: readLocalAnalytics(window.localStorage),
+      error, save, analytics: readLocalAnalytics(appStorage),
     }));
     setSaveNotice("이름과 시드를 제외한 익명 진단 파일을 저장했습니다.");
   }, [coreStatus, error]);
@@ -1474,7 +1501,7 @@ export function App() {
           onAdvanceChapter={handleAdvanceCareerChapter} onDraft={handleCareerDraft}
           onLegacy={handleCareerLegacy} onNextLife={handleNextCareerLife} onBackToLab={handleBackToLab}
           onNewCareer={handleNewCareer} onStartPro={handleStartPro}
-          proAccessAvailable={developmentProAccess || (proResult?.snapshot.entitlement.status === "active" && proResult.snapshot.entitlement.source !== "development")}
+          proAccessAvailable={bundledProAccess || (proResult?.snapshot.entitlement.status === "active" && proResult.snapshot.entitlement.source !== "development")}
           onMilestoneFeedback={handleMilestoneFeedback} />
           : <HighSchoolCareerSetup presets={presets} isRunning={isRunning || coreStatus.state === "checking"}
             error={error} onStart={handleStartCareer} onBack={handleBackToLab} />}

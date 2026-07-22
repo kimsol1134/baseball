@@ -10,6 +10,7 @@
 		22E9F28B15A71F503C1BB86C /* RecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7340CD72D2CA5325B3987DC4 /* RecordView.swift */; };
 		6DD613F1386362365ADC0F19 /* SimulationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 48F6D6D28E28E9D17352C6CB /* SimulationCore */; };
 		8C45FAD1BA2BA6ACFFEACAFB /* CareerFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28318EAFD1E0C8B71B219F81 /* CareerFlowView.swift */; };
+		A963A339F4B48E1528146E36 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B200CFBEF142E8EABF7AEF3E /* Assets.xcassets */; };
 		C0E07B84DBA4D211E616AF51 /* AppShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC86469C367B3D6D1FD34329 /* AppShell.swift */; };
 		F591504869CA28416ABD125D /* MobileCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BDE90266AE4123B75F85B0 /* MobileCareerStore.swift */; };
 		F6D8BA7C781E81C1603CE278 /* DiamondSoulApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18CF252F1EB557784ED7D619 /* DiamondSoulApp.swift */; };
@@ -24,6 +25,7 @@
 		7340CD72D2CA5325B3987DC4 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
 		90C5C6C52CA536FA4485F647 /* DiamondSoulIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DiamondSoulIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AC86469C367B3D6D1FD34329 /* AppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShell.swift; sourceTree = "<group>"; };
+		B200CFBEF142E8EABF7AEF3E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E9C0D2E1CACA38D20D47DE82 /* simulation-core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "simulation-core"; path = "../../packages/simulation-core"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -60,6 +62,7 @@
 			isa = PBXGroup;
 			children = (
 				AC86469C367B3D6D1FD34329 /* AppShell.swift */,
+				B200CFBEF142E8EABF7AEF3E /* Assets.xcassets */,
 				28318EAFD1E0C8B71B219F81 /* CareerFlowView.swift */,
 				18CF252F1EB557784ED7D619 /* DiamondSoulApp.swift */,
 				56BDE90266AE4123B75F85B0 /* MobileCareerStore.swift */,
@@ -141,6 +144,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A963A339F4B48E1528146E36 /* Assets.xcassets in Resources */,
 				FE9935FF0DFA3A006A620352 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

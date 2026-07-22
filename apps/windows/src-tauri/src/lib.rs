@@ -1,8 +1,141 @@
-use tauri::AppHandle;
-#[cfg(windows)]
-use tauri::Manager;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::fs::{self, File};
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
+use tauri::{AppHandle, Manager};
 use tauri_plugin_shell::process::{Command, CommandEvent};
 use tauri_plugin_shell::ShellExt;
+
+const CLOUD_STORAGE_FORMAT: &str = "DiamondSoulSteamCloudStorage";
+const CLOUD_STORAGE_LIMIT: usize = 16 * 1024 * 1024;
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CloudStoragePayload {
+    format: String,
+    schema_version: u32,
+    values: BTreeMap<String, String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CloudStorageFile {
+    format: String,
+    schema_version: u32,
+    revision: u64,
+    values: BTreeMap<String, String>,
+}
+
+fn validate_payload(contents: &str) -> Result<CloudStoragePayload, String> {
+    if contents.len() > CLOUD_STORAGE_LIMIT {
+        return Err("save data exceeds the 16 MB limit".to_owned());
+    }
+    let payload: CloudStoragePayload = serde_json::from_str(contents)
+        .map_err(|error| format!("save data is not valid JSON: {error}"))?;
+    if payload.format != CLOUD_STORAGE_FORMAT || payload.schema_version != 1 {
+        return Err("save data has an unsupported format".to_owned());
+    }
+    if payload.values.len() > 512
+        || payload
+            .values
+            .iter()
+            .any(|(key, _)| !key.starts_with("diamond-soul.") || key.len() > 256)
+    {
+        return Err("save data contains an invalid key".to_owned());
+    }
+    Ok(payload)
+}
+
+fn read_slot(path: &Path) -> Option<CloudStorageFile> {
+    let mut file = File::open(path).ok()?;
+    let length = file.metadata().ok()?.len() as usize;
+    if length > CLOUD_STORAGE_LIMIT {
+        return None;
+    }
+    let mut contents = String::with_capacity(length);
+    file.read_to_string(&mut contents).ok()?;
+    let value: CloudStorageFile = serde_json::from_str(&contents).ok()?;
+    if value.format != CLOUD_STORAGE_FORMAT
+        || value.schema_version != 1
+        || value
+            .values
+            .keys()
+            .any(|key| !key.starts_with("diamond-soul.") || key.len() > 256)
+    {
+        return None;
+    }
+    Some(value)
+}
+
+fn cloud_slots(directory: &Path) -> [PathBuf; 2] {
+    [
+        directory.join("steam-cloud-a.json"),
+        directory.join("steam-cloud-b.json"),
+    ]
+}
+
+fn load_cloud_storage_at(directory: &Path) -> Result<Option<String>, String> {
+    let newest = cloud_slots(directory)
+        .iter()
+        .filter_map(|path| read_slot(path))
+        .max_by_key(|value| value.revision);
+    let Some(value) = newest else { return Ok(None) };
+    serde_json::to_string(&CloudStoragePayload {
+        format: value.format,
+        schema_version: value.schema_version,
+        values: value.values,
+    })
+    .map(Some)
+    .map_err(|error| format!("failed to encode save data: {error}"))
+}
+
+fn write_cloud_storage_at(directory: &Path, contents: &str) -> Result<(), String> {
+    let payload = validate_payload(contents)?;
+    fs::create_dir_all(directory)
+        .map_err(|error| format!("failed to create save directory: {error}"))?;
+    let slots = cloud_slots(directory);
+    let revisions = slots.map(|ref path| read_slot(path).map(|value| value.revision));
+    let next_revision = revisions.iter().flatten().max().copied().unwrap_or(0) + 1;
+    let target_index = match revisions {
+        [None, _] => 0,
+        [_, None] => 1,
+        [Some(a), Some(b)] if a <= b => 0,
+        _ => 1,
+    };
+    let value = CloudStorageFile {
+        format: payload.format,
+        schema_version: payload.schema_version,
+        revision: next_revision,
+        values: payload.values,
+    };
+    let encoded = serde_json::to_vec(&value)
+        .map_err(|error| format!("failed to encode save data: {error}"))?;
+    let temporary = directory.join(format!("steam-cloud-{}.tmp", target_index));
+    if temporary.exists() {
+        fs::remove_file(&temporary)
+            .map_err(|error| format!("failed to remove stale temporary save: {error}"))?;
+    }
+    let mut file = File::create(&temporary)
+        .map_err(|error| format!("failed to create temporary save: {error}"))?;
+    file.write_all(&encoded)
+        .and_then(|_| file.sync_all())
+        .map_err(|error| format!("failed to write temporary save: {error}"))?;
+    if slots[target_index].exists() {
+        fs::remove_file(&slots[target_index])
+            .map_err(|error| format!("failed to rotate old save: {error}"))?;
+    }
+    fs::rename(&temporary, &slots[target_index])
+        .map_err(|error| format!("failed to commit save: {error}"))?;
+    Ok(())
+}
+
+fn cloud_storage_directory(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|path| path.join("steam-cloud"))
+        .map_err(|error| format!("failed to locate the user data directory: {error}"))
+}
 
 fn core_command(app: &AppHandle) -> Result<Command, String> {
     let command = app
@@ -87,11 +220,25 @@ async fn execute_core(app: AppHandle, request: String) -> Result<String, String>
     run_core_request(&app, &request).await
 }
 
+#[tauri::command]
+fn load_cloud_storage(app: AppHandle) -> Result<Option<String>, String> {
+    load_cloud_storage_at(&cloud_storage_directory(&app)?)
+}
+
+#[tauri::command]
+fn write_cloud_storage(app: AppHandle, contents: String) -> Result<(), String> {
+    write_cloud_storage_at(&cloud_storage_directory(&app)?, &contents)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![execute_core])
+        .invoke_handler(tauri::generate_handler![
+            execute_core,
+            load_cloud_storage,
+            write_cloud_storage
+        ])
         .setup(|app| {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {

@@ -542,6 +542,8 @@ dependencies = [
 name = "diamond-soul"
 version = "1.0.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-shell",
