@@ -40,6 +40,18 @@ const targetTriple = execFileSync(rustc, ["--print", "host-tuple"], {
 }).trim();
 const releaseEdition = requestedEdition === "full" ? "steam_full" : "steam_demo";
 const buildEnvironment = { ...process.env, VITE_RELEASE_EDITION: releaseEdition };
+if (process.platform === "darwin") {
+  for (const variable of [
+    "APPLE_ID",
+    "APPLE_PASSWORD",
+    "APPLE_TEAM_ID",
+    "APPLE_API_ISSUER",
+    "APPLE_API_KEY",
+    "APPLE_API_KEY_PATH",
+  ]) {
+    if (!buildEnvironment[variable]?.trim()) delete buildEnvironment[variable];
+  }
+}
 const platformName = process.platform === "win32" ? "windows" : "macos";
 const architecture = targetTriple.startsWith("aarch64") ? "arm64" : "x64";
 const artifactRoot = path.join(repositoryRoot, "artifacts", "steam");
