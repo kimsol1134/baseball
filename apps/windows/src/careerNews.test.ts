@@ -49,10 +49,15 @@ describe("career news detail", () => {
       affiliation: "인천제문포고",
     });
 
-    expect(detail.lead).toContain("인천제문포고와 관련된");
-    expect(detail.lead).toContain("하루를 둘러싼");
+    expect(detail.lead).toContain("하루의 다음 팀");
     expect(detail.paragraphs[0]).toContain("하루를 둘러싼");
     expect(detail.paragraphs[1]).toContain("인천제문포고는 당장의");
+
+    const admission = createCareerNewsDetail("인천제문포고 입학이 확정됐습니다.", 0, {
+      ...context,
+      playerName: "하루",
+    });
+    expect(admission.lead).toContain("하루가 인천제문포고에 입학했다");
   });
 
   it("changes reporting and fan reactions to match the event", () => {
@@ -60,9 +65,13 @@ describe("career news detail", () => {
     const game = createCareerNewsDetail("전국 대회 6이닝 무실점 승리.", 1, context);
 
     expect(admission.paragraphs.join(" ")).toContain("첫 불펜 일정");
-    expect(admission.watchPoint).toContain("봄 대회 보직");
+    expect(admission.paragraphs.join(" ")).toContain("원하는 곳에 공을 꾸준히 던지는지");
+    expect(admission.paragraphs.join(" ")).not.toContain("재현성");
+    expect(admission.watchPoint).toContain("봄 대회에서 맡을 역할");
+    expect(admission.fanSummary).toBe("학교 선택을 반기며 첫 등판을 기다리고 있다");
     expect(admission.fanPosts.every((post) => !post.message.includes("한 경기"))).toBe(true);
     expect(game.paragraphs.join(" ")).toContain("무실점이라는 결과");
+    expect(game.fanSummary).toBe("오늘 투구가 좋았다는 반응이 많다");
     expect(game.fanPosts.some((post) => post.message.includes("등판") || post.message.includes("마운드"))).toBe(true);
   });
 });

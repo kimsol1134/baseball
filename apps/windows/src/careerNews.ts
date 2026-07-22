@@ -125,28 +125,28 @@ function storyParagraphs(
     if (tone === "negative") {
       return [`기록표에 남은 숫자보다 과정이 더 뼈아팠다. 유리한 카운트를 만들고도 마무리 공이 가운데로 몰리면서 ${withParticle(player, "이", "가")} 원하는 흐름을 이어 가지 못했다.`, `${team} 코칭스태프는 다음 등판 전 불펜에서 초구 스트라이크와 2스트라이크 이후 승부구를 따로 점검할 계획이다.`];
     }
-    return [`이번 소식만으로 ${player}의 현재 위치를 단정하기는 어렵다. 현장에서는 결과와 함께 상대 타선, 투구 수, 위기 대응을 나눠 보고 있다.`, `${withParticle(team, "은", "는")} 다음 경기에서도 같은 투구 계획을 유지할지, 상대에 맞춰 승부 순서를 바꿀지 경기 전 회의에서 결정할 예정이다.`];
+    return [`이번 소식만으로 ${withParticle(player, "이", "가")} 잘 던지고 있는지 단정하기는 어렵다. 코칭스태프는 결과만 보지 않고 상대 타선, 투구 수, 주자가 있을 때의 투구까지 함께 살폈다.`, `${withParticle(team, "은", "는")} 다음 경기에서도 같은 순서로 공을 던질지, 상대 타자에 맞춰 바꿀지 경기 전 회의에서 결정할 예정이다.`];
   }
   if (category === "career") {
     if (item.includes("입학")) {
-      return [`${team} 야구부는 ${player}의 합류를 확정한 뒤 첫 불펜 일정과 체력 측정 계획을 함께 전달했다. 지도부는 당장 구속을 올리기보다 고교 일정에 맞는 몸을 만드는 데 우선순위를 뒀다.`, `첫 훈련에서는 기존 투수들과 같은 메뉴를 소화한다. 이후 포수와의 호흡, 회복 속도, 스트라이크 재현성을 보고 봄 대회에서 맡을 역할을 정할 예정이다.`];
+      return [`${team} 야구부는 ${player}의 합류를 확정한 뒤 첫 불펜 일정과 체력 측정 계획을 함께 전달했다. 지도부는 당장 구속을 올리기보다 고교 일정에 맞는 몸을 만드는 데 우선순위를 뒀다.`, `첫 훈련에서는 기존 투수들과 같은 메뉴를 소화한다. 이후 포수와의 호흡, 회복 속도, 원하는 곳에 공을 꾸준히 던지는지를 보고 봄 대회에서 맡을 역할을 정할 예정이다.`];
     }
     if (item.includes("제안") || item.includes("스카우트") || item.includes("관심")) {
-      return [`지역 대회에서 ${player}의 투구를 지켜본 학교들은 최고 구속보다 스트라이크를 되찾는 속도와 경기 후반의 움직임에 주목했다. 복수의 지도자가 같은 날 진학 의사를 확인했다.`, `제안을 보낸 학교마다 육성 방식과 당장 비어 있는 보직이 다르다. ${player}에게는 이름값보다 실제 등판 기회와 포수진의 성향을 비교하는 일이 중요해졌다.`];
+      return [`지역 대회에서 ${player}의 투구를 지켜본 학교들은 최고 구속보다 볼이 연달아 나온 뒤 다시 스트라이크를 던지는 모습과 경기 후반에도 흔들리지 않는 투구에 주목했다. 여러 학교의 지도자가 같은 날 진학 의사를 확인했다.`, `제안을 보낸 학교마다 훈련 방식과 당장 비어 있는 자리가 다르다. ${player}에게는 학교의 이름보다 실제 등판 기회와 어떤 포수와 호흡을 맞출지를 비교하는 일이 중요해졌다.`];
     }
     if (item.includes("드래프트") || item.includes("지명")) {
-      return [`구단들은 ${player}의 최근 경기뿐 아니라 고교 기간 동안의 구속 변화, 결장 이력, 위기 상황 투구를 한꺼번에 검토했다. 평가는 선발 가능성과 즉시전력 여부에서 갈렸다.`, `지명 결과가 확정되면 ${team}에서 맡을 첫 보직과 개인 육성표가 정해진다. 미지명일 경우에는 다음 진로를 결정할 시간이 곧바로 시작된다.`];
+      return [`구단들은 ${player}의 최근 경기뿐 아니라 고교 기간 동안의 구속 변화, 결장 이력, 주자가 있을 때의 투구를 한꺼번에 검토했다. 선발로 키울 수 있는지와 곧바로 경기에 내보낼 수 있는지를 두고 평가는 갈렸다.`, `지명 결과가 확정되면 ${team}에서 처음 맡을 역할과 개인 훈련 계획이 정해진다. 미지명일 경우에는 다음 진로를 결정할 시간이 곧바로 시작된다.`];
     }
     if (item.includes("계약") || item.includes("콜업")) {
-      return [`${withParticle(team, "은", "는")} ${player}에게 기대하는 역할과 당장 보완해야 할 항목을 협상 자리에서 분명히 했다. 보장된 자리는 없지만 다음 단계로 올라갈 기준은 구체적으로 제시됐다.`, `계약서나 등록 명단에 이름이 오르는 순간부터 경쟁 상대도 달라진다. 첫 일정의 투구 수와 회복 계획이 다음 기회를 좌우할 전망이다.`];
+      return [`${withParticle(team, "은", "는")} ${player}에게 기대하는 역할과 당장 고쳐야 할 부분을 협상 자리에서 분명히 했다. 보장된 자리는 없지만 1군이나 선발 기회를 받으려면 무엇을 보여 줘야 하는지는 구체적으로 제시됐다.`, `계약서나 등록 명단에 이름이 오르는 순간부터 경쟁 상대도 달라진다. 첫 일정의 투구 수와 회복 계획이 다음 기회를 좌우할 전망이다.`];
     }
     return [`${withParticle(player, "을", "를")} 둘러싼 평가는 한 번의 결정으로 끝나지 않는다. ${context.period}까지 쌓인 구종 완성도와 경기 대응, 동료들의 신뢰가 함께 검토됐다.`, `${withParticle(team, "은", "는")} 당장의 이름값보다 앞으로 맡길 수 있는 역할을 강조했다. 다음 일정에서 보여 줄 내용이 계약과 보직 경쟁의 출발점을 바꿀 수 있다.`];
   }
   if (category === "health") {
     if (item.includes("회복") || item.includes("복귀")) {
-      return [`${withParticle(team, "은", "는")} ${player}의 회복 상태를 구속보다 릴리스 반복과 투구 다음 날의 반응으로 확인했다. 현재까지 통증 재발 신호는 없지만 훈련량은 단계적으로 늘릴 계획이다.`, `복귀 일정은 한 번의 불펜 투구로 확정하지 않는다. 연속 훈련을 소화한 뒤에도 몸 상태가 유지되는지가 실제 등판 시점을 결정한다.`];
+      return [`${withParticle(team, "은", "는")} ${player}의 회복 상태를 구속보다 투구 동작이 흔들리지 않는지와 공을 던진 다음 날 통증이 생기는지로 확인했다. 현재까지 통증은 다시 나타나지 않았지만 훈련량은 조금씩 늘릴 계획이다.`, `복귀 일정은 한 번의 불펜 투구로 확정하지 않는다. 며칠 연속 훈련한 뒤에도 몸에 이상이 없는지가 실제 등판 시점을 결정한다.`];
     }
-    return [`${withParticle(team, "은", "는")} ${player}의 몸 상태를 기록과 느낌으로 나눠 확인하고 있다. 구속 하나만으로 회복 여부를 판단하지 않고 릴리스 반복과 경기 뒤 회복 속도까지 살핀다.`, `선수 보호가 우선이지만 경쟁 일정은 기다려 주지 않는다. 다음 훈련 강도를 어떻게 정하느냐가 경기력과 출전 기회에 동시에 영향을 줄 전망이다.`];
+    return [`${withParticle(team, "은", "는")} ${player}의 통증 정도와 실제 투구 동작을 함께 확인하고 있다. 구속 하나만으로 몸 상태를 판단하지 않고, 경기 뒤 얼마나 빨리 회복하는지도 살핀다.`, `선수 보호가 우선이지만 경쟁 일정은 기다려 주지 않는다. 다음 훈련을 얼마나 강하게 할지가 경기력과 출전 기회에 동시에 영향을 줄 전망이다.`];
   }
   if (item.includes("포수") || item.includes("배터리") || item.includes("사인")) {
     return [`${withParticle(player, "과", "와")} 배터리를 이룬 포수는 최근 경기 영상을 함께 보며 사인이 흔들린 장면과 좋았던 승부를 따로 표시했다. 두 선수는 다음 경기의 첫 세 타자까지 사용할 순서를 미리 정했다.`, `호흡이 좋아졌다는 평가는 대화가 아니라 경기에서 확인된다. 위기에서 첫 사인을 그대로 믿을 수 있는지가 둘 사이의 다음 기준이 된다.`];
@@ -167,14 +167,14 @@ function quoteFor(item: string, category: CareerNewsCategory, tone: CareerNewsTo
   }
   if (category === "health") return item.includes("회복") || item.includes("복귀")
     ? { speaker: coach, quote: "오늘 괜찮았다는 말보다 내일도 같은 동작이 나오는지가 중요합니다. 서두르지 않겠습니다." }
-    : { speaker: coach, quote: "쉬는 것도 훈련입니다. 다음 등판까지 가장 좋은 공을 남기는 쪽으로 판단하겠습니다." };
+    : { speaker: coach, quote: "지금은 쉬어야 합니다. 통증 없이 던질 수 있을 때까지 경기에 내보내지 않겠습니다." };
   if (category === "career") {
-    if (item.includes("입학")) return { speaker: coach, quote: "입학이 자리를 보장하지는 않습니다. 첫 훈련부터 누구와 같은 기준으로 경쟁하는지 보여 주겠습니다." };
+    if (item.includes("입학")) return { speaker: coach, quote: "입학했다고 경기에 바로 나갈 수 있는 건 아닙니다. 첫 훈련부터 다른 투수들과 같은 기준으로 경쟁합니다." };
     if (item.includes("제안") || item.includes("스카우트")) return { speaker: coach, quote: "제안의 숫자보다 어느 환경에서 가장 자주 던질 수 있는지를 먼저 봐야 합니다." };
     if (item.includes("드래프트") || item.includes("지명")) return { speaker: coach, quote: "평가는 끝났습니다. 이제 결과가 나오면 그 자리에서 다음 준비를 시작해야 합니다." };
-    return { speaker: coach, quote: "평가는 이미 시작됐습니다. 지금 필요한 건 소문이 아니라 다음 경기에서 보여 줄 한 가지입니다." };
+    return { speaker: coach, quote: "다음 경기에서 초구 스트라이크를 잡는지, 위기에서도 자기 공을 던지는지 보겠습니다." };
   }
-  return { speaker: coach, quote: "말로 정한 역할은 경기에서 지켜야 의미가 있습니다. 다음 선택을 보겠습니다." };
+  return { speaker: coach, quote: "감독과 포수 앞에서 한 약속은 경기에서 지켜야 합니다. 다음 등판을 보겠습니다." };
 }
 
 function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNewsTone, context: CareerNewsContext) {
@@ -196,7 +196,7 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     "다음 기회가 있다면 보직부터 현실적으로 잡자",
   ] : [
     "보직이 어디인지부터 나와야 제대로 판단 가능",
-    `${player} 다음 단계에서도 자기 공 던지는지 보자`,
+    `${player} 새 팀에서도 자기 공 던지는지 보자`,
     "계약보다 육성 계획이 더 궁금한 팬 있음?",
     "기회 받은 건 좋고 이제 경쟁 상대가 중요함",
     "기사는 기대 쪽인데 실제 등판 일정도 알려줘",
@@ -272,17 +272,52 @@ function fanPosts(item: string, tone: CareerNewsTone, context: CareerNewsContext
 }
 
 function watchPointFor(item: string, category: CareerNewsCategory) {
-  if (item.includes("입학")) return "첫 불펜에서 포수와 호흡을 맞추고 봄 대회 보직을 받는 과정";
-  if (item.includes("제안") || item.includes("진학")) return "학교별 육성 방식과 실제로 보장되는 등판 기회";
-  if (item.includes("드래프트") || item.includes("지명")) return "지명 순번과 입단 뒤 처음 맡게 될 보직";
-  if (item.includes("회복") || item.includes("복귀")) return "연속 훈련 뒤 통증 재발 여부와 제한 투구 수";
+  if (item.includes("입학")) return "첫 불펜에서 포수와 호흡을 맞추고 봄 대회에서 맡을 역할";
+  if (item.includes("제안") || item.includes("진학")) return "학교별 훈련 방식과 실제로 경쟁해야 할 투수들";
+  if (item.includes("드래프트") || item.includes("지명")) return "지명 순번과 입단 뒤 처음 맡게 될 역할";
+  if (item.includes("회복") || item.includes("복귀")) return "며칠 연속 훈련한 뒤 통증이 없는지와 복귀전 투구 수";
   const watchPoints: Record<CareerNewsCategory, string> = {
-    game: "다음 경기의 초구 스트라이크와 결정구 성공률",
-    people: "다음 경기에서 감독·포수와 합의한 역할을 지키는지",
-    career: "다음 평가 일정에서 맡게 될 보직과 경쟁 상대",
+    game: "다음 경기에서도 초구 스트라이크를 잡고 유리한 카운트에서 삼진을 잡아내는지",
+    people: "다음 경기에서 감독·포수와 약속한 투구를 지키는지",
+    career: "다음 경기나 테스트에서 맡게 될 역할과 경쟁 상대",
     health: "다음 훈련 강도와 등판 뒤 회복 속도",
   };
   return watchPoints[category];
+}
+
+function fanSummaryFor(item: string, category: CareerNewsCategory, tone: CareerNewsTone) {
+  if (category === "game") {
+    if (tone === "positive") return "오늘 투구가 좋았다는 반응이 많다";
+    if (tone === "negative") return "다음 등판에서는 달라져야 한다는 반응이 많다";
+    return "다음 경기까지 더 지켜보자는 반응이 많다";
+  }
+  if (category === "career") {
+    if (item.includes("입학") || item.includes("제안") || item.includes("진학")) return "학교 선택을 반기며 첫 등판을 기다리고 있다";
+    if (tone === "negative") return "다음 진로를 걱정하는 반응이 많다";
+    return "새 기회를 반기는 반응이 많다";
+  }
+  if (category === "health") {
+    if (tone === "negative") return "무리하지 말고 충분히 쉬라는 반응이 많다";
+    return "복귀는 반갑지만 서두르지 말자는 반응이 많다";
+  }
+  if (item.includes("포수") || item.includes("배터리") || item.includes("사인")) return "포수와의 호흡을 더 지켜보자는 반응이 많다";
+  return "다음 경기에서 실제 변화를 확인하자는 반응이 많다";
+}
+
+function leadFor(item: string, category: CareerNewsCategory, tone: CareerNewsTone, context: CareerNewsContext) {
+  const player = context.playerName;
+  const team = context.affiliation;
+  if (item.includes("입학")) return `${withParticle(player, "이", "가")} ${team}에 입학했다. 첫 훈련을 거쳐 봄 대회에서 맡을 역할이 정해진다.`;
+  if (item.includes("제안") || item.includes("진학")) return `${player}에게 진학 제안이 도착했다. 학교마다 훈련 방식과 경쟁해야 할 투수가 다르다.`;
+  if (item.includes("드래프트") || item.includes("지명")) return `${player}의 지명 결과에 따라 첫 프로 구단과 입단 뒤 맡을 역할이 정해진다.`;
+  if (category === "game") {
+    if (tone === "positive") return `${withParticle(player, "이", "가")} 좋은 투구를 보여 줬다. 다음 경기에서도 같은 모습을 이어 갈지가 관심사다.`;
+    if (tone === "negative") return `${withParticle(player, "이", "가")} 이번 경기에서 흔들렸다. 다음 등판 전 고쳐야 할 부분이 분명해졌다.`;
+    return `${player}의 경기 내용에 대한 평가가 엇갈렸다. 다음 등판을 더 지켜봐야 한다.`;
+  }
+  if (category === "health") return `${player}의 몸 상태가 다음 훈련과 등판 일정에 영향을 주고 있다.`;
+  if (category === "people") return `${player}의 훈련 방식과 동료들과의 호흡에 변화가 생겼다. 다음 경기에서 그 결과를 확인할 수 있다.`;
+  return `${player}의 다음 팀과 맡을 역할에 영향을 줄 소식이다.`;
 }
 
 export function createCareerNewsDetail(item: string, index: number, context: CareerNewsContext): CareerNewsDetail {
@@ -290,7 +325,7 @@ export function createCareerNewsDetail(item: string, index: number, context: Car
   const category = classifyCareerNews(headline);
   const tone = careerNewsTone(headline);
   const quote = quoteFor(headline, category, tone, context);
-  const fanSummary = tone === "positive" ? "기대가 빠르게 커지는 중" : tone === "negative" ? "우려와 재평가 요구가 우세" : "기대와 신중론이 팽팽함";
+  const fanSummary = fanSummaryFor(headline, category, tone);
   return {
     id: `${stableHash(`${headline}|${index}`)}`,
     headline,
@@ -299,7 +334,7 @@ export function createCareerNewsDetail(item: string, index: number, context: Car
     tone,
     source: sourceFor(category, context.mode),
     timeLabel: index === 0 ? "방금 전" : index === 1 ? "이전 소식" : `${index}개 소식 전`,
-    lead: `${context.period}, ${withParticle(context.affiliation, "과", "와")} 관련된 소식이 ${withParticle(context.playerName, "을", "를")} 둘러싼 평가와 다음 일정에 영향을 주고 있다.`,
+    lead: leadFor(headline, category, tone, context),
     paragraphs: storyParagraphs(headline, category, tone, context),
     quoteSpeaker: quote.speaker,
     quote: quote.quote,
