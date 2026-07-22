@@ -225,6 +225,8 @@ body.high-contrast {
   .relationship-options span,
   .lab-choice-pair span,
   .memory-grid span,
+  .character-profile > p,
+  .news-context p,
   .career-news article p,
   .lab-log article p,
   .pro-plan-actions small,
