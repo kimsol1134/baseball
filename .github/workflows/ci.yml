@@ -37,6 +37,7 @@ jobs:
       - run: npm ci
       - run: npm run test:web
       - run: npm run build:web
+      - run: npm run steam:submission:check
 
   desktop:
     name: Desktop package (${{ matrix.name }})
