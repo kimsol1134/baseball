@@ -711,7 +711,7 @@ export function App() {
   useEffect(() => {
     if (experienceMode !== "lab" || coreStatus.state !== "online" || !labResult || !selectedPresetID) return;
     const payload: PitcherLabAutosavePayload = {
-      format: "DiamondSoulPitcherLabAutosave",
+      format: "BaseballPitcherLabAutosave",
       schemaVersion: 1,
       savedAt: new Date().toISOString(),
       selectedPresetID,
@@ -739,7 +739,7 @@ export function App() {
   useEffect(() => {
     if (experienceMode !== "career" || coreStatus.state !== "online" || !careerResult || !selectedPresetID) return;
     const payload: HighSchoolCareerAutosavePayload = {
-      format: "DiamondSoulHighSchoolCareerAutosave",
+      format: "BaseballHighSchoolCareerAutosave",
       schemaVersion: 2,
       savedAt: new Date().toISOString(),
       selectedPresetID,
@@ -766,7 +766,7 @@ export function App() {
   useEffect(() => {
     if (coreStatus.state !== "online" || !proResult || !careerResult || !selectedPresetID) return;
     try {
-      saveProCareer(appStorage, { format: "DiamondSoulProCareerAutosave", schemaVersion: 1, savedAt: new Date().toISOString(), selectedPresetID, highSchoolCareer: careerResult, proCareer: proResult });
+      saveProCareer(appStorage, { format: "BaseballProCareerAutosave", schemaVersion: 1, savedAt: new Date().toISOString(), selectedPresetID, highSchoolCareer: careerResult, proCareer: proResult });
       setSaveNotice("프로 커리어 자동 저장 완료");
     } catch (caught) { setSaveNotice(caught instanceof Error ? `프로 자동 저장 실패 · ${caught.message}` : "프로 자동 저장 실패"); }
   }, [careerResult, coreStatus.state, proResult, selectedPresetID]);
