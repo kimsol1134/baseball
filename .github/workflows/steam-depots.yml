@@ -48,8 +48,8 @@ jobs:
             depot-path: artifacts/steam/demo/macos-x64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -113,7 +113,7 @@ jobs:
           if [[ "$MACOS_SIGNING_CONFIGURED" == "1" ]]; then
             xcrun stapler validate "$app_path"
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: baseball-steam-${{ matrix.edition }}-${{ runner.os }}-${{ runner.arch }}
           path: ${{ matrix.depot-path }}
