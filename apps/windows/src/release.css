@@ -5,7 +5,7 @@
   padding: 32px;
   color: var(--color-text-primary);
   background:
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-positive) 20%, transparent), transparent 42%),
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-negative) 18%, transparent), transparent 42%),
     var(--color-canvas);
 }
 
@@ -14,14 +14,14 @@
   display: grid;
   gap: 14px;
   padding: 30px;
-  border: 1px solid color-mix(in srgb, var(--color-selection) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-negative) 38%, transparent);
   border-radius: 16px;
   background: color-mix(in srgb, var(--color-surface) 94%, transparent);
   box-shadow: 0 28px 80px color-mix(in srgb, var(--color-canvas) 42%, transparent);
 }
 
 .startup-failure-card span {
-  color: var(--color-brand);
+  color: var(--color-negative);
   font-size: var(--font-size-label);
   font-weight: 800;
   letter-spacing: .08em;
@@ -47,8 +47,8 @@
   margin-top: 6px;
   border: 0;
   border-radius: 9px;
-  color: var(--color-canvas);
-  background: var(--color-brand);
+  color: var(--color-action-ink);
+  background: var(--color-action);
   font: inherit;
   font-weight: 900;
   cursor: pointer;

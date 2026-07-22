@@ -37,6 +37,9 @@ for (const path of filesUnder(windowsSource)) {
       if (rule[2].includes("var(--scene-") && !sceneSelectorAllowlist.test(rule[1])) {
         failures.push(`${label}: 구장 전용 scene 토큰을 일반 UI에서 사용함 — ${rule[1].trim().replace(/\s+/g, " ")}`);
       }
+      if (sceneSelectorAllowlist.test(rule[1]) && rule[2].includes("var(--color-milestone")) {
+        failures.push(`${label}: 플레이 장면이 서사 전용 milestone 토큰을 사용함 — ${rule[1].trim().replace(/\s+/g, " ")}`);
+      }
     }
   }
   if (path.endsWith(".tsx")) {
@@ -140,4 +143,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log("디자인 시스템 검사 통과: 원시 색상·레거시 토큰·scene 오용 0, 고정 본문 크기 0, 고대비 토큰 대응 및 WCAG AA 대비, 공통 컴포넌트 계약 확인");
+console.log("디자인 시스템 검사 통과: 원시 색상·레거시 토큰·scene/milestone 역할 오용 0, 고정 본문 크기 0, 고대비 토큰 대응 및 WCAG AA 대비, 공통 컴포넌트 계약 확인");
