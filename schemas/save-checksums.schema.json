@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-soul.local/schemas/save-checksums.schema.json",
+  "$id": "https://baseball.local/schemas/save-checksums.schema.json",
   "title": "야구 못하면 또 환생함 Save Checksums",
   "type": "object",
   "required": ["algorithm", "files"],

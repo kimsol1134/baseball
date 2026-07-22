@@ -92,8 +92,8 @@
 ```sh
 npm ci
 npm run check
-xcodebuild -project apps/ios/ProjectDiamondSoul.xcodeproj \
-  -scheme DiamondSoulIOS -configuration Release \
+xcodebuild -project apps/ios/Baseball.xcodeproj \
+  -scheme BaseballIOS -configuration Release \
   -destination 'generic/platform=iOS Simulator' \
   CODE_SIGNING_ALLOWED=NO build
 npm run desktop:build -- --bundles app,dmg

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-soul.local/schemas/pitch-kernel.schema.json",
+  "$id": "https://baseball.local/schemas/pitch-kernel.schema.json",
   "title": "Pitch Kernel command parameters",
   "oneOf": [
     { "$ref": "#/$defs/preparePitchParams" },

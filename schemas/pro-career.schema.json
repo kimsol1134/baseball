@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-soul.local/schemas/pro-career.schema.json",
+  "$id": "https://baseball.local/schemas/pro-career.schema.json",
   "title": "야구 못하면 또 환생함 pro career snapshot",
   "type": "object",
   "required": ["proCareerID", "revision", "phase", "identity", "pitcher", "team", "entitlement", "age", "season", "week", "level", "role", "managerTrust", "fatigue", "currentStats", "careerStats", "commitment"],

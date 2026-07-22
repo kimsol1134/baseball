@@ -451,13 +451,13 @@ export function App() {
   const [labInningStats, setLabInningStats] = useState<LabInningStats>(EMPTY_LAB_INNING_STATS);
   const [error, setError] = useState<string>();
   const [saveNotice, setSaveNotice] = useState<string>();
-  const [highContrast, setHighContrast] = useState(() => appStorage.getItem("diamond-soul.a11y.contrast") === "true");
-  const [reducedMotion, setReducedMotion] = useState(() => appStorage.getItem("diamond-soul.a11y.motion") === "true");
-  const [fontScale, setFontScale] = useState(() => Number(appStorage.getItem("diamond-soul.a11y.font-scale") ?? "1"));
-  const [analyticsOptIn, setAnalyticsOptIn] = useState(() => appStorage.getItem("diamond-soul.analytics.opt-in") === "true");
-  const [tutorialDismissed, setTutorialDismissed] = useState(() => appStorage.getItem("diamond-soul.tutorial.completed") === "true");
-  const [soundEnabled, setSoundEnabled] = useState(() => appStorage.getItem("diamond-soul.feedback.sound") !== "false");
-  const [hapticsEnabled, setHapticsEnabled] = useState(() => appStorage.getItem("diamond-soul.feedback.haptics") !== "false");
+  const [highContrast, setHighContrast] = useState(() => appStorage.getItem("baseball.a11y.contrast") === "true");
+  const [reducedMotion, setReducedMotion] = useState(() => appStorage.getItem("baseball.a11y.motion") === "true");
+  const [fontScale, setFontScale] = useState(() => Number(appStorage.getItem("baseball.a11y.font-scale") ?? "1"));
+  const [analyticsOptIn, setAnalyticsOptIn] = useState(() => appStorage.getItem("baseball.analytics.opt-in") === "true");
+  const [tutorialDismissed, setTutorialDismissed] = useState(() => appStorage.getItem("baseball.tutorial.completed") === "true");
+  const [soundEnabled, setSoundEnabled] = useState(() => appStorage.getItem("baseball.feedback.sound") !== "false");
+  const [hapticsEnabled, setHapticsEnabled] = useState(() => appStorage.getItem("baseball.feedback.haptics") !== "false");
   const [lastCall, setLastCall] = useState<PitchCall>();
   const [resultStage, setResultStage] = useState<"idle" | "impact" | "summary">("idle");
   const [showResultDetails, setShowResultDetails] = useState(false);
@@ -628,26 +628,26 @@ export function App() {
       const detail = (event as CustomEvent<{ state: "saved" | "error"; message: string }>).detail;
       if (detail?.state === "error") setSaveNotice(detail.message);
     };
-    window.addEventListener("diamond-soul:cloud-save", handleCloudSave);
-    return () => window.removeEventListener("diamond-soul:cloud-save", handleCloudSave);
+    window.addEventListener("baseball:cloud-save", handleCloudSave);
+    return () => window.removeEventListener("baseball:cloud-save", handleCloudSave);
   }, []);
 
   useEffect(() => {
     document.body.classList.toggle("high-contrast", highContrast);
     document.body.classList.toggle("reduce-motion", reducedMotion);
     document.documentElement.style.setProperty("--font-scale", String(fontScale));
-    appStorage.setItem("diamond-soul.a11y.contrast", String(highContrast));
-    appStorage.setItem("diamond-soul.a11y.motion", String(reducedMotion));
-    appStorage.setItem("diamond-soul.a11y.font-scale", String(fontScale));
+    appStorage.setItem("baseball.a11y.contrast", String(highContrast));
+    appStorage.setItem("baseball.a11y.motion", String(reducedMotion));
+    appStorage.setItem("baseball.a11y.font-scale", String(fontScale));
   }, [fontScale, highContrast, reducedMotion]);
 
   useEffect(() => {
-    appStorage.setItem("diamond-soul.analytics.opt-in", String(analyticsOptIn));
+    appStorage.setItem("baseball.analytics.opt-in", String(analyticsOptIn));
   }, [analyticsOptIn]);
 
   useEffect(() => {
-    appStorage.setItem("diamond-soul.feedback.sound", String(soundEnabled));
-    appStorage.setItem("diamond-soul.feedback.haptics", String(hapticsEnabled));
+    appStorage.setItem("baseball.feedback.sound", String(soundEnabled));
+    appStorage.setItem("baseball.feedback.haptics", String(hapticsEnabled));
   }, [hapticsEnabled, soundEnabled]);
 
   useEffect(() => {
@@ -1340,7 +1340,7 @@ export function App() {
     setProVisible(true);
     await runProAction(() => startProCareer({ seed: careerResult.nextSeed, identity: careerResult.snapshot.identity, pitcher: careerResult.snapshot.pitcher,
       draftResult: careerResult.snapshot.draftResult!, entitlement: {
-        productID: releaseEdition === "steam_full" ? "diamond_soul_steam_full" : "diamond_soul_development",
+        productID: releaseEdition === "steam_full" ? "baseball_steam_full" : "baseball_development",
         status: "active",
         source: releaseEdition === "steam_full" ? "purchase" : "development",
         verifiedAt: new Date().toISOString(),
@@ -1434,12 +1434,12 @@ export function App() {
   const handleMilestoneFeedback = useCallback(() => feedback.play("milestone", soundEnabled, hapticsEnabled), [feedback, hapticsEnabled, soundEnabled]);
   const dismissTutorial = useCallback(() => {
     setTutorialDismissed(true);
-    appStorage.setItem("diamond-soul.tutorial.completed", "true");
+    appStorage.setItem("baseball.tutorial.completed", "true");
   }, []);
   const downloadDiagnostics = useCallback(() => {
     const save = loadHighSchoolCareer(appStorage)?.payload;
     const health = coreStatus.state === "online" ? coreStatus.health : undefined;
-    downloadTextFile(`diamond-soul-diagnostic-${new Date().toISOString().slice(0, 10)}.json`, createAnonymousDiagnosticPackage({
+    downloadTextFile(`baseball-diagnostic-${new Date().toISOString().slice(0, 10)}.json`, createAnonymousDiagnosticPackage({
       appVersion: "1.0.0", coreVersion: health?.coreVersion, protocolVersion: health?.protocolVersion,
       error, save, analytics: readLocalAnalytics(appStorage),
     }));

@@ -9,7 +9,7 @@ public struct ProEntitlementSnapshot: Codable, Equatable, Sendable {
     public let source: EntitlementSource
     public let verifiedAt: String
     public let offlineValidUntil: String?
-    public init(productID: String = "diamond_soul_pro_career", status: EntitlementStatus, source: EntitlementSource, verifiedAt: String, offlineValidUntil: String? = nil) {
+    public init(productID: String = "baseball_pro_career", status: EntitlementStatus, source: EntitlementSource, verifiedAt: String, offlineValidUntil: String? = nil) {
         self.productID = productID; self.status = status; self.source = source; self.verifiedAt = verifiedAt; self.offlineValidUntil = offlineValidUntil
     }
 }

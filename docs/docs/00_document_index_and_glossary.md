@@ -3,7 +3,8 @@
 | 항목 | 값 |
 |---|---|
 | 정식 제품명 | **야구 못하면 또 환생함** |
-| 구 코드명 | Project Diamond Soul (내부 식별자 `diamond-soul`은 호환성을 위해 유지) |
+| 구 코드명 | Project Diamond Soul |
+| 내부 식별자 | `baseball` |
 | 문서 버전 | 1.0 Baseline |
 | 기준일 | 2026-07-21 |
 | 제품 책임자 | 솔 |

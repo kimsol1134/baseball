@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-soul.local/schemas/content-pack-manifest.schema.json",
+  "$id": "https://baseball.local/schemas/content-pack-manifest.schema.json",
   "title": "야구 못하면 또 환생함 declarative content pack manifest",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "schemaVersion", "id", "title", "version", "gameVersion", "author", "content"],
   "properties": {
-    "format": { "const": "DiamondSoulContentPack" },
+    "format": { "const": "BaseballContentPack" },
     "schemaVersion": { "const": 1 },
     "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
     "title": { "type": "string", "minLength": 1 },

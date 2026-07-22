@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-soul.local/schemas/pitcher-lab.schema.json",
+  "$id": "https://baseball.local/schemas/pitcher-lab.schema.json",
   "title": "Pitcher Lab RPC state",
   "type": "object",
   "required": ["revision", "nextSeed", "events", "snapshot", "eventHash"],

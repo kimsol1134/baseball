@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-soul.local/schemas/json-rpc.schema.json",
+  "$id": "https://baseball.local/schemas/json-rpc.schema.json",
   "title": "야구 못하면 또 환생함 JSON-RPC request",
   "type": "object",
   "required": ["jsonrpc", "id", "method"],

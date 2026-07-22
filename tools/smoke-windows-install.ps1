@@ -8,7 +8,7 @@ $install = Start-Process -FilePath $installer.FullName -ArgumentList "/S" -PassT
 if ($install.ExitCode -ne 0) { throw "NSIS installation failed with exit code $($install.ExitCode)." }
 
 $installRoots = Get-ChildItem $env:LOCALAPPDATA -Directory |
-    Where-Object { $_.Name -like "*Diamond*Soul*" } |
+    Where-Object { $_.Name -like "*야구*환생함*" -or $_.Name -like "*baseball*" } |
     Sort-Object LastWriteTime -Descending
 $installRoot = $installRoots | Select-Object -First 1
 if (-not $installRoot) { throw "Installed application directory was not found." }

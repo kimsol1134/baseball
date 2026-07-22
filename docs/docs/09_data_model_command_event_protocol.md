@@ -305,7 +305,7 @@ exclusive_group: catcher_major_conflict
 
 ```json
 {
-  "format":"DiamondSoulSave",
+  "format":"BaseballSave",
   "schemaVersion":4,
   "engineVersion":"0.7.0",
   "contentVersion":"base-0.7.0",

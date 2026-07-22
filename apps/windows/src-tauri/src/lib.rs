@@ -7,12 +7,12 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_shell::process::{Command, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
-const CLOUD_STORAGE_FORMAT: &str = "DiamondSoulSteamCloudStorage";
+const CLOUD_STORAGE_FORMAT: &str = "BaseballSteamCloudStorage";
 const CLOUD_STORAGE_LIMIT: usize = 16 * 1024 * 1024;
 const CLOUD_SAVE_PREFIXES: [&str; 3] = [
-    "diamond-soul.pitcher-lab.autosave.",
-    "diamond-soul.high-school-career.autosave.",
-    "diamond-soul.pro-career.autosave.",
+    "baseball.pitcher-lab.autosave.",
+    "baseball.high-school-career.autosave.",
+    "baseball.pro-career.autosave.",
 ];
 
 fn is_cloud_save_key(key: &str) -> bool {
@@ -279,7 +279,7 @@ mod tests {
             .expect("system clock")
             .as_nanos();
         std::env::temp_dir().join(format!(
-            "diamond-soul-{name}-{}-{unique}",
+            "baseball-{name}-{}-{unique}",
             std::process::id()
         ))
     }
@@ -288,7 +288,7 @@ mod tests {
         serde_json::json!({
             "format": CLOUD_STORAGE_FORMAT,
             "schemaVersion": 1,
-            "values": { "diamond-soul.pro-career.autosave.v1": value }
+            "values": { "baseball.pro-career.autosave.v1": value }
         })
         .to_string()
     }
@@ -303,7 +303,7 @@ mod tests {
             .expect("load")
             .expect("stored payload");
         let value: CloudStoragePayload = serde_json::from_str(&loaded).expect("valid payload");
-        assert_eq!(value.values["diamond-soul.pro-career.autosave.v1"], "second");
+        assert_eq!(value.values["baseball.pro-career.autosave.v1"], "second");
         assert!(cloud_slots(&directory).iter().all(|path| path.is_file()));
 
         fs::remove_dir_all(directory).expect("cleanup");
@@ -325,7 +325,7 @@ mod tests {
             .expect("load")
             .expect("backup payload");
         let value: CloudStoragePayload = serde_json::from_str(&loaded).expect("valid payload");
-        assert_eq!(value.values["diamond-soul.pro-career.autosave.v1"], "first");
+        assert_eq!(value.values["baseball.pro-career.autosave.v1"], "first");
 
         fs::remove_dir_all(directory).expect("cleanup");
     }

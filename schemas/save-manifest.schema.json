@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-soul.local/schemas/save-manifest.schema.json",
+  "$id": "https://baseball.local/schemas/save-manifest.schema.json",
   "title": "야구 못하면 또 환생함 Save Manifest",
   "type": "object",
   "required": [
@@ -16,7 +16,7 @@
     "activeContentPacks"
   ],
   "properties": {
-    "format": { "const": "DiamondSoulSave" },
+    "format": { "const": "BaseballSave" },
     "schemaVersion": { "type": "integer", "minimum": 1 },
     "engineVersion": { "type": "string", "minLength": 1 },
     "contentVersion": { "type": "string", "minLength": 1 },

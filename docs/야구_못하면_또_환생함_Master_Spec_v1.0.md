@@ -42,7 +42,8 @@
 | 항목 | 값 |
 |---|---|
 | 정식 제품명 | **야구 못하면 또 환생함** |
-| 구 코드명 | Project Diamond Soul (내부 식별자 `diamond-soul`은 호환성을 위해 유지) |
+| 구 코드명 | Project Diamond Soul |
+| 내부 식별자 | `baseball` |
 | 문서 버전 | 1.0 Baseline |
 | 기준일 | 2026-07-21 |
 | 제품 책임자 | 솔 |
@@ -3046,7 +3047,7 @@ exclusive_group: catcher_major_conflict
 
 ```json
 {
-  "format":"DiamondSoulSave",
+  "format":"BaseballSave",
   "schemaVersion":4,
   "engineVersion":"0.7.0",
   "contentVersion":"base-0.7.0",
@@ -4073,7 +4074,7 @@ DOC-12의 공통 Definition of Done을 따르며, 플레이 가능한 경로와 
 ### iOS
 
 - 상품 유형: 비소모성 인앱 구매.
-- 예시 Product ID: `com.studio.diamondsoul.procareer`.
+- 예시 Product ID: `com.solkim.baseball.procareer`.
 - 구매 복원 제공.
 - 현재 entitlement를 앱 시작·복귀·거래 업데이트 시 확인.
 - 상품 가격은 출시 전 시장·지역별 연구로 확정한다.

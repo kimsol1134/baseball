@@ -49,7 +49,7 @@
 ### iOS
 
 - 상품 유형: 비소모성 인앱 구매.
-- 예시 Product ID: `com.studio.diamondsoul.procareer`.
+- 예시 Product ID: `com.solkim.baseball.procareer`.
 - 구매 복원 제공.
 - 현재 entitlement를 앱 시작·복귀·거래 업데이트 시 확인.
 - 상품 가격은 출시 전 시장·지역별 연구로 확정한다.

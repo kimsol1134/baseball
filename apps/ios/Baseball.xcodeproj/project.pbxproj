@@ -7,117 +7,117 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		22E9F28B15A71F503C1BB86C /* RecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7340CD72D2CA5325B3987DC4 /* RecordView.swift */; };
-		6DD613F1386362365ADC0F19 /* SimulationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 48F6D6D28E28E9D17352C6CB /* SimulationCore */; };
-		8C45FAD1BA2BA6ACFFEACAFB /* CareerFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28318EAFD1E0C8B71B219F81 /* CareerFlowView.swift */; };
-		A963A339F4B48E1528146E36 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B200CFBEF142E8EABF7AEF3E /* Assets.xcassets */; };
-		C0E07B84DBA4D211E616AF51 /* AppShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC86469C367B3D6D1FD34329 /* AppShell.swift */; };
-		F591504869CA28416ABD125D /* MobileCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BDE90266AE4123B75F85B0 /* MobileCareerStore.swift */; };
-		F6D8BA7C781E81C1603CE278 /* DiamondSoulApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18CF252F1EB557784ED7D619 /* DiamondSoulApp.swift */; };
-		FE9935FF0DFA3A006A620352 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 68251EC026E542D931505DE3 /* PrivacyInfo.xcprivacy */; };
+		0E8B47740AB64ADAAD5B3CCF /* MobileCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */; };
+		13EA77018AE302361EDCB5D0 /* BaseballApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */; };
+		2002DF8C14E6ACE3382A1C57 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8C9444147D2AD6F238142F71 /* PrivacyInfo.xcprivacy */; };
+		6407DCFE4D37D5E4AE6F19CF /* RecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95C0C193AE57D564D00ED12 /* RecordView.swift */; };
+		98F47F2D21DE7C84E44394A0 /* CareerFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */; };
+		A7A1E4BCB6F2294E361B74CD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88829ECACC67B2EBCDBC9538 /* Assets.xcassets */; };
+		D461F48E6FD8C03B8697AAA5 /* SimulationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 17CAB6B06F634AF92AC437D2 /* SimulationCore */; };
+		F51A7AAC0D43BBCA3CB6D7AC /* AppShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 356AC8C39D52A759CC575D92 /* AppShell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		18CF252F1EB557784ED7D619 /* DiamondSoulApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiamondSoulApp.swift; sourceTree = "<group>"; };
-		28318EAFD1E0C8B71B219F81 /* CareerFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerFlowView.swift; sourceTree = "<group>"; };
-		56BDE90266AE4123B75F85B0 /* MobileCareerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileCareerStore.swift; sourceTree = "<group>"; };
-		68251EC026E542D931505DE3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		7340CD72D2CA5325B3987DC4 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
-		90C5C6C52CA536FA4485F647 /* DiamondSoulIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DiamondSoulIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AC86469C367B3D6D1FD34329 /* AppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShell.swift; sourceTree = "<group>"; };
-		B200CFBEF142E8EABF7AEF3E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		E9C0D2E1CACA38D20D47DE82 /* simulation-core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "simulation-core"; path = "../../packages/simulation-core"; sourceTree = SOURCE_ROOT; };
+		285036A4851BB767A8890951 /* simulation-core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "simulation-core"; path = "../../packages/simulation-core"; sourceTree = SOURCE_ROOT; };
+		2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseballApp.swift; sourceTree = "<group>"; };
+		356AC8C39D52A759CC575D92 /* AppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShell.swift; sourceTree = "<group>"; };
+		3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerFlowView.swift; sourceTree = "<group>"; };
+		88829ECACC67B2EBCDBC9538 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8C9444147D2AD6F238142F71 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		C95C0C193AE57D564D00ED12 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
+		CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileCareerStore.swift; sourceTree = "<group>"; };
+		E9DF09E1A64F67EAE776D832 /* BaseballIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BaseballIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C4FFB9F4B23A84EA125F6B74 /* Frameworks */ = {
+		ECE8DFFCFA700B1FB2D97575 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6DD613F1386362365ADC0F19 /* SimulationCore in Frameworks */,
+				D461F48E6FD8C03B8697AAA5 /* SimulationCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		2E4DF0D8D6AC4A8AC711522A /* Products */ = {
+		809F6CD070CFBBA16DF54098 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				90C5C6C52CA536FA4485F647 /* DiamondSoulIOS.app */,
+				285036A4851BB767A8890951 /* simulation-core */,
 			);
-			name = Products;
+			name = Packages;
 			sourceTree = "<group>";
 		};
-		6EC51CF3CEB66116125ED07E = {
+		84C7B2D1DD60CB971AEAD148 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				86DE0A5472F565D4C6992B0E /* Packages */,
-				7315F39820A00BAB07D2B90F /* Sources */,
-				2E4DF0D8D6AC4A8AC711522A /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		7315F39820A00BAB07D2B90F /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				AC86469C367B3D6D1FD34329 /* AppShell.swift */,
-				B200CFBEF142E8EABF7AEF3E /* Assets.xcassets */,
-				28318EAFD1E0C8B71B219F81 /* CareerFlowView.swift */,
-				18CF252F1EB557784ED7D619 /* DiamondSoulApp.swift */,
-				56BDE90266AE4123B75F85B0 /* MobileCareerStore.swift */,
-				68251EC026E542D931505DE3 /* PrivacyInfo.xcprivacy */,
-				7340CD72D2CA5325B3987DC4 /* RecordView.swift */,
+				356AC8C39D52A759CC575D92 /* AppShell.swift */,
+				88829ECACC67B2EBCDBC9538 /* Assets.xcassets */,
+				2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */,
+				3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */,
+				CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */,
+				8C9444147D2AD6F238142F71 /* PrivacyInfo.xcprivacy */,
+				C95C0C193AE57D564D00ED12 /* RecordView.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		86DE0A5472F565D4C6992B0E /* Packages */ = {
+		84E17BFBAF556BE69BE6D0ED /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E9C0D2E1CACA38D20D47DE82 /* simulation-core */,
+				E9DF09E1A64F67EAE776D832 /* BaseballIOS.app */,
 			);
-			name = Packages;
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B8B39C95E1D902769D81F510 = {
+			isa = PBXGroup;
+			children = (
+				809F6CD070CFBBA16DF54098 /* Packages */,
+				84C7B2D1DD60CB971AEAD148 /* Sources */,
+				84E17BFBAF556BE69BE6D0ED /* Products */,
+			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0DA8374CF96D0F812B28A77C /* DiamondSoulIOS */ = {
+		A6AE4AA6C49C272B1AAC1C9E /* BaseballIOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 952472CE6DBF4D1624A6302E /* Build configuration list for PBXNativeTarget "DiamondSoulIOS" */;
+			buildConfigurationList = F0D5EF489AC58AE611FD4696 /* Build configuration list for PBXNativeTarget "BaseballIOS" */;
 			buildPhases = (
-				EFC684115AA7DCDF367CEFDF /* Sources */,
-				39FEEA0E4F762ADACE1B619B /* Resources */,
-				C4FFB9F4B23A84EA125F6B74 /* Frameworks */,
+				7E9D1C43046248341AEF24EB /* Sources */,
+				F44545047CE54335B85D7C94 /* Resources */,
+				ECE8DFFCFA700B1FB2D97575 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = DiamondSoulIOS;
+			name = BaseballIOS;
 			packageProductDependencies = (
-				48F6D6D28E28E9D17352C6CB /* SimulationCore */,
+				17CAB6B06F634AF92AC437D2 /* SimulationCore */,
 			);
-			productName = DiamondSoulIOS;
-			productReference = 90C5C6C52CA536FA4485F647 /* DiamondSoulIOS.app */;
+			productName = BaseballIOS;
+			productReference = E9DF09E1A64F67EAE776D832 /* BaseballIOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		28CDB3F14DAE678E774C6BDF /* Project object */ = {
+		0E17C2BC6CF84F4B1E407270 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					0DA8374CF96D0F812B28A77C = {
+					A6AE4AA6C49C272B1AAC1C9E = {
 						ProvisioningStyle = Automatic;
 					};
 				};
 			};
-			buildConfigurationList = 1D80B859235C7B229925CA7D /* Build configuration list for PBXProject "ProjectDiamondSoul" */;
+			buildConfigurationList = 45BB05BC1D4755C860A32F98 /* Build configuration list for PBXProject "Baseball" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -125,49 +125,105 @@
 				Base,
 				en,
 			);
-			mainGroup = 6EC51CF3CEB66116125ED07E;
+			mainGroup = B8B39C95E1D902769D81F510;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				1488D2AADAF7F3513D10B192 /* XCLocalSwiftPackageReference "../../packages/simulation-core" */,
+				94622FAF6111F98B04F64A13 /* XCLocalSwiftPackageReference "../../packages/simulation-core" */,
 			);
 			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				0DA8374CF96D0F812B28A77C /* DiamondSoulIOS */,
+				A6AE4AA6C49C272B1AAC1C9E /* BaseballIOS */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		39FEEA0E4F762ADACE1B619B /* Resources */ = {
+		F44545047CE54335B85D7C94 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A963A339F4B48E1528146E36 /* Assets.xcassets in Resources */,
-				FE9935FF0DFA3A006A620352 /* PrivacyInfo.xcprivacy in Resources */,
+				A7A1E4BCB6F2294E361B74CD /* Assets.xcassets in Resources */,
+				2002DF8C14E6ACE3382A1C57 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		EFC684115AA7DCDF367CEFDF /* Sources */ = {
+		7E9D1C43046248341AEF24EB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C0E07B84DBA4D211E616AF51 /* AppShell.swift in Sources */,
-				8C45FAD1BA2BA6ACFFEACAFB /* CareerFlowView.swift in Sources */,
-				F6D8BA7C781E81C1603CE278 /* DiamondSoulApp.swift in Sources */,
-				F591504869CA28416ABD125D /* MobileCareerStore.swift in Sources */,
-				22E9F28B15A71F503C1BB86C /* RecordView.swift in Sources */,
+				F51A7AAC0D43BBCA3CB6D7AC /* AppShell.swift in Sources */,
+				13EA77018AE302361EDCB5D0 /* BaseballApp.swift in Sources */,
+				98F47F2D21DE7C84E44394A0 /* CareerFlowView.swift in Sources */,
+				0E8B47740AB64ADAAD5B3CCF /* MobileCareerStore.swift in Sources */,
+				6407DCFE4D37D5E4AE6F19CF /* RecordView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		0D68AF38B0EC2C45BCAD1CC2 /* Debug */ = {
+		2DE7AA60B0754DD91DC30B3C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		382A8E48A7C4D6D40C139BF0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -230,7 +286,7 @@
 			};
 			name = Debug;
 		};
-		2FABF31F4520DDF9E30FEDA4 /* Release */ = {
+		6E9BE203D239BC48C979F76A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -247,7 +303,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.diamondsoul.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = com.solkim.baseball.ios;
 				PRODUCT_NAME = "야구 못하면 또 환생함";
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
@@ -256,7 +312,7 @@
 			};
 			name = Release;
 		};
-		6376051AAC2231BD555D6C2F /* Debug */ = {
+		CCB6C9B6A0F979DDD6A7D0D8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -273,7 +329,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.diamondsoul.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = com.solkim.baseball.ios;
 				PRODUCT_NAME = "야구 못하면 또 환생함";
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
@@ -282,79 +338,23 @@
 			};
 			name = Debug;
 		};
-		FD0938759877DFF30538736D /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1D80B859235C7B229925CA7D /* Build configuration list for PBXProject "ProjectDiamondSoul" */ = {
+		45BB05BC1D4755C860A32F98 /* Build configuration list for PBXProject "Baseball" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0D68AF38B0EC2C45BCAD1CC2 /* Debug */,
-				FD0938759877DFF30538736D /* Release */,
+				382A8E48A7C4D6D40C139BF0 /* Debug */,
+				2DE7AA60B0754DD91DC30B3C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		952472CE6DBF4D1624A6302E /* Build configuration list for PBXNativeTarget "DiamondSoulIOS" */ = {
+		F0D5EF489AC58AE611FD4696 /* Build configuration list for PBXNativeTarget "BaseballIOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				6376051AAC2231BD555D6C2F /* Debug */,
-				2FABF31F4520DDF9E30FEDA4 /* Release */,
+				CCB6C9B6A0F979DDD6A7D0D8 /* Debug */,
+				6E9BE203D239BC48C979F76A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -362,18 +362,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		1488D2AADAF7F3513D10B192 /* XCLocalSwiftPackageReference "../../packages/simulation-core" */ = {
+		94622FAF6111F98B04F64A13 /* XCLocalSwiftPackageReference "../../packages/simulation-core" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../../packages/simulation-core";
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		48F6D6D28E28E9D17352C6CB /* SimulationCore */ = {
+		17CAB6B06F634AF92AC437D2 /* SimulationCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SimulationCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 28CDB3F14DAE678E774C6BDF /* Project object */;
+	rootObject = 0E17C2BC6CF84F4B1E407270 /* Project object */;
 }

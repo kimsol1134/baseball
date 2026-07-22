@@ -11,7 +11,7 @@ public struct SaveContentPack: Codable, Equatable, Sendable {
 }
 
 public struct SaveManifest: Codable, Equatable, Sendable {
-    public static let currentFormat = "DiamondSoulSave"
+    public static let currentFormat = "BaseballSave"
 
     public let format: String
     public let schemaVersion: Int

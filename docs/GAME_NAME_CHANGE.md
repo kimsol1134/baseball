@@ -24,19 +24,19 @@
 - 루트 README, 개발 문서, 마스터 Markdown·Word 문서
 - 스키마와 예제 콘텐츠의 사람이 읽는 제목·작성자 표기
 
-## 호환성을 위해 유지하는 내부 식별자
+## 내부 식별자 변경
 
-아래 값은 외부에 표시되는 게임명이 아니라 저장·빌드·프로젝트 호환성을 위한 기술 식별자이므로 이번 변경에서 유지한다.
+프로젝트 내부 식별자는 `baseball` 네임스페이스로 통일한다.
 
-- npm 패키지·워크스페이스: `project-diamond-soul`, `@diamond-soul/*`
-- Rust 크레이트·실행 파일: `diamond-soul`, `diamond-soul.exe`
-- 저장 키·이벤트·파일 접두사: `diamond-soul.*`
-- JSON Schema `$id`: `https://diamond-soul.local/...`
-- Tauri·iOS 번들 ID: `com.solkim.diamondsoul`, `com.diamondsoul.ios`
-- Xcode 프로젝트·타깃·스킴: `ProjectDiamondSoul`, `DiamondSoulIOS`
-- CI 아티팩트·키체인 등 자동화용 `diamond-soul-*` 식별자
+- npm 패키지·워크스페이스: `baseball`, `@baseball/*`
+- Rust 크레이트·실행 파일: `baseball`, `baseball.exe`
+- 저장 키·이벤트·파일 접두사: `baseball.*`
+- JSON Schema `$id`: `https://baseball.local/...`
+- Tauri·iOS 번들 ID: `com.solkim.baseball`, `com.solkim.baseball.ios`
+- Xcode 프로젝트·타깃·스킴: `Baseball`, `BaseballIOS`
+- CI 아티팩트·키체인 등 자동화용 `baseball-*` 식별자
 
-이 값들을 바꾸려면 기존 저장 데이터 마이그레이션, 설치 업데이트 경로, 클라우드 저장, 서명·배포 설정을 별도 검증해야 한다.
+기존 `diamond-soul` 저장과 설치 경로를 자동 마이그레이션하지 않는 브레이킹 변경이다.
 
 ## 출시 체크
 

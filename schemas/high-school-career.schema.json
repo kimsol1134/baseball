@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://diamond-soul.local/schemas/high-school-career.schema.json",
+  "$id": "https://baseball.local/schemas/high-school-career.schema.json",
   "title": "High School Career result",
   "type": "object",
   "required": ["revision", "nextSeed", "events", "snapshot", "eventHash"],
