@@ -185,6 +185,11 @@ public struct FieldingResolutionSnapshot: Codable, Equatable, Sendable {
     public let impact: DefenseImpact
     public let fielderPosition: FielderPosition?
     public let fielderName: String?
+    public let landingDistanceTenthsMeters: Int?
+    public let hangTimeMilliseconds: Int?
+    public let apexHeightTenthsMeters: Int?
+    /// Flat 3D series in groups of [timeMs, lateralTenthsCM, forwardTenthsCM, heightTenthsCM].
+    public let ballFlightSeries: [Int]?
     public let shortExplanation: String
 
     public init(
@@ -198,6 +203,10 @@ public struct FieldingResolutionSnapshot: Codable, Equatable, Sendable {
         impact: DefenseImpact,
         fielderPosition: FielderPosition? = nil,
         fielderName: String? = nil,
+        landingDistanceTenthsMeters: Int? = nil,
+        hangTimeMilliseconds: Int? = nil,
+        apexHeightTenthsMeters: Int? = nil,
+        ballFlightSeries: [Int]? = nil,
         shortExplanation: String
     ) {
         self.neutralOutcome = neutralOutcome
@@ -210,6 +219,10 @@ public struct FieldingResolutionSnapshot: Codable, Equatable, Sendable {
         self.impact = impact
         self.fielderPosition = fielderPosition
         self.fielderName = fielderName
+        self.landingDistanceTenthsMeters = landingDistanceTenthsMeters
+        self.hangTimeMilliseconds = hangTimeMilliseconds
+        self.apexHeightTenthsMeters = apexHeightTenthsMeters
+        self.ballFlightSeries = ballFlightSeries
         self.shortExplanation = shortExplanation
     }
 }
@@ -481,6 +494,7 @@ public struct BallInPlayEngine: Sendable {
                     "\($0.name) 앞 타구가 예상한 중립 결과로 이어졌습니다."
                 } ?? "타구 질이 예상한 중립 결과로 이어졌습니다."
         }
+        let flight = ballFlight(for: battedBall, sector: sector)
         return FieldingResolutionSnapshot(
             neutralOutcome: neutralOutcome,
             finalOutcome: finalOutcome,
@@ -492,7 +506,61 @@ public struct BallInPlayEngine: Sendable {
             impact: impact,
             fielderPosition: fielderPosition,
             fielderName: fielder?.name,
+            landingDistanceTenthsMeters: flight.distanceTenthsMeters,
+            hangTimeMilliseconds: flight.hangTimeMilliseconds,
+            apexHeightTenthsMeters: flight.apexHeightTenthsMeters,
+            ballFlightSeries: flight.series,
             shortExplanation: explanation
+        )
+    }
+
+    private func ballFlight(
+        for battedBall: BattedBall,
+        sector: FieldingSector
+    ) -> (distanceTenthsMeters: Int, hangTimeMilliseconds: Int, apexHeightTenthsMeters: Int, series: [Int]) {
+        let speedMetersPerSecond = Double(battedBall.exitVelocityTenthsKPH) / 36.0
+        let launchDegrees = Double(battedBall.launchAngleTenthsDegrees) / 10.0
+        let launchRadians = max(2.0, min(42.0, launchDegrees)) * .pi / 180.0
+        let projectileCarry = speedMetersPerSecond * speedMetersPerSecond
+            * sin(2.0 * launchRadians) / 9.81 * 0.68
+        let groundCarry = 10.0 + speedMetersPerSecond * 0.48
+            + Double(battedBall.contactQuality) / 85.0
+        let rawDistance = launchDegrees < 9.0 ? groundCarry : projectileCarry
+        let distanceMeters: Double
+        switch sector {
+        case .infield:
+            distanceMeters = min(42.0, max(12.0, rawDistance))
+        case .outfield:
+            distanceMeters = min(104.0, max(48.0, rawDistance))
+        case .fence:
+            distanceMeters = min(140.0, max(105.0, rawDistance))
+        }
+        let rawHangTime = launchDegrees < 9.0
+            ? 0.55 + distanceMeters / 48.0
+            : 2.0 * speedMetersPerSecond * sin(launchRadians) / 9.81 * 0.82
+        let hangTimeMilliseconds = Int((min(5.6, max(0.55, rawHangTime)) * 1_000.0).rounded())
+        let rawApex = speedMetersPerSecond * speedMetersPerSecond
+            * pow(sin(launchRadians), 2.0) / (2.0 * 9.81) * 0.72
+        let apexMeters = launchDegrees < 9.0
+            ? min(1.2, max(0.15, launchDegrees / 8.0))
+            : min(32.0, max(1.5, rawApex))
+        let directionRadians = Double(battedBall.directionTenthsDegrees) / 10.0 * .pi / 180.0
+        let series = (0...20).flatMap { index -> [Int] in
+            let progress = Double(index) / 20.0
+            let travelledMeters = distanceMeters * progress
+            let heightMeters = max(0.0, 4.0 * apexMeters * progress * (1.0 - progress))
+            return [
+                hangTimeMilliseconds * index / 20,
+                Int((sin(directionRadians) * travelledMeters * 1_000.0).rounded()),
+                Int((cos(directionRadians) * travelledMeters * 1_000.0).rounded()),
+                Int((heightMeters * 1_000.0).rounded())
+            ]
+        }
+        return (
+            distanceTenthsMeters: Int((distanceMeters * 10.0).rounded()),
+            hangTimeMilliseconds: hangTimeMilliseconds,
+            apexHeightTenthsMeters: Int((apexMeters * 10.0).rounded()),
+            series: series
         )
     }
 

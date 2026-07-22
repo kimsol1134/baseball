@@ -329,6 +329,66 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertGreaterThan(strongOuts, weakOuts)
     }
 
+    func testTrajectoryDataReachesResolvedPitchAndLandingPoints() throws {
+        let result = try submitPresetPitch(
+            seed: 77,
+            pitcher: try XCTUnwrap(PitcherPresetCatalog.all.first).pitcher,
+            call: PitchCall(
+                pitchType: .slider,
+                zone: PitchZone(row: 2, column: 0),
+                zoneIntent: .edge,
+                intensity: .normal
+            )
+        )
+        XCTAssertNotNil(result.snapshot.execution.flightTimeMilliseconds)
+        XCTAssertNotNil(result.snapshot.execution.trajectoryControlX)
+        XCTAssertNotNil(result.snapshot.execution.trajectoryControlY)
+        let pitchSeries = try XCTUnwrap(result.snapshot.execution.trajectorySeries)
+        let pitchSamples = stride(from: 0, to: pitchSeries.count, by: 4).map {
+            Array(pitchSeries[$0..<min($0 + 4, pitchSeries.count)])
+        }
+        XCTAssertEqual(pitchSamples.count, 17)
+        XCTAssertEqual(pitchSamples.first?[0], 0)
+        XCTAssertEqual(pitchSamples.first?[2], 18_440)
+        XCTAssertEqual(
+            pitchSamples.last?[0],
+            result.snapshot.execution.flightTimeMilliseconds
+        )
+        XCTAssertEqual(pitchSamples.last?[2], 0)
+        XCTAssertTrue(zip(pitchSamples, pitchSamples.dropFirst()).allSatisfy {
+            $0[0] < $1[0]
+        })
+
+        let fielding = BallInPlayEngine().resolve(
+            BattedBall(
+                exitVelocityTenthsKPH: 1_380,
+                launchAngleTenthsDegrees: 240,
+                directionTenthsDegrees: 180,
+                contactQuality: 650
+            ),
+            gameState: gameState(defense: 55, hitFactor: 1_000, homeRunFactor: 1_000),
+            seed: 77,
+            ordinal: 1
+        )
+        XCTAssertGreaterThan(try XCTUnwrap(fielding.landingDistanceTenthsMeters), 0)
+        XCTAssertGreaterThan(try XCTUnwrap(fielding.hangTimeMilliseconds), 0)
+        XCTAssertGreaterThan(try XCTUnwrap(fielding.apexHeightTenthsMeters), 0)
+        let ballSeries = try XCTUnwrap(fielding.ballFlightSeries)
+        let ballSamples = stride(from: 0, to: ballSeries.count, by: 4).map {
+            Array(ballSeries[$0..<min($0 + 4, ballSeries.count)])
+        }
+        XCTAssertEqual(ballSamples.count, 21)
+        XCTAssertEqual(ballSamples.first?[3], 0)
+        XCTAssertEqual(ballSamples.last?[3], 0)
+        XCTAssertEqual(ballSamples.last?[0], fielding.hangTimeMilliseconds)
+        let sampledApex = try XCTUnwrap(ballSamples.map { $0[3] }.max())
+        let reportedApex = try XCTUnwrap(fielding.apexHeightTenthsMeters)
+        XCTAssertLessThanOrEqual(
+            abs(sampledApex - reportedApex * 100),
+            50
+        )
+    }
+
     func testHitterFriendlyParkCreatesMoreHomeRunsFromFenceContact() {
         let resolver = BallInPlayEngine()
         let battedBall = BattedBall(

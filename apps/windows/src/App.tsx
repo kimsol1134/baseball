@@ -31,7 +31,7 @@ import {
 import { PitcherLabSetup, PitcherLabView } from "./PitcherLabView";
 import { HighSchoolCareerSetup, HighSchoolCareerView } from "./HighSchoolCareerView";
 import { ProCareerView } from "./ProCareerView";
-import { TrajectoryReplay } from "./TrajectoryReplay";
+import { GameCastReplay } from "./TrajectoryReplay";
 import {
   clearPitcherLabAutosave,
   loadPitcherLabAutosave,
@@ -461,7 +461,9 @@ export function App() {
   const [lastCall, setLastCall] = useState<PitchCall>();
   const [resultStage, setResultStage] = useState<"idle" | "impact" | "summary">("idle");
   const [showResultDetails, setShowResultDetails] = useState(false);
+  const [showGameCast, setShowGameCast] = useState(false);
   const [feedback] = useState(() => new GameFeedback());
+  const gameCastRegionRef = useRef<HTMLElement | null>(null);
   const pitchDecisionStartedAt = useRef(performance.now());
   const pitchInteractionCount = useRef(0);
   const careerDecisionStartedAt = useRef(performance.now());
@@ -652,12 +654,26 @@ export function App() {
 
   useEffect(() => {
     setShowResultDetails(false);
-    if (!lastResult) { setResultStage("idle"); return; }
+    if (!lastResult) { setResultStage("idle"); setShowGameCast(false); return; }
+    setShowGameCast(true);
     if (reducedMotion) { setResultStage("summary"); return; }
     setResultStage("impact");
     const timer = window.setTimeout(() => setResultStage("summary"), 360);
     return () => window.clearTimeout(timer);
   }, [lastResult?.eventHash, reducedMotion]);
+
+  useEffect(() => {
+    if (!showGameCast || !lastResult) return;
+    const frame = window.requestAnimationFrame(() => {
+      const region = gameCastRegionRef.current;
+      region?.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+      region?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [lastResult?.eventHash, reducedMotion, showGameCast]);
 
   useEffect(() => {
     pitchDecisionStartedAt.current = performance.now();
@@ -1461,6 +1477,34 @@ export function App() {
   const alternativeRecommendation = preparation?.alternativeRecommendation;
   const plateEnded = lastResult?.snapshot.ended ?? false;
   const rivalAdaptation = preparation?.rivalAdaptation ?? lastResult?.rivalAdaptation;
+  const importantInningEnded = Boolean(lastResult?.snapshot.inningTransition?.inningEnded && (
+    (experienceMode === "career" && (
+      (proVisible && proResult?.snapshot.phase === "important_game")
+      || (!proVisible && careerResult?.snapshot.phase === "important_game")
+    ))
+    || labResult?.snapshot.phase === "important_inning"
+  ));
+  const gameCastContinueLabel = isRunning
+    ? "다음 장면 준비 중…"
+    : importantInningEnded
+      ? "중요 이닝 종료 · 분석으로 돌아가기"
+      : lastResult?.snapshot.inningTransition?.inningEnded
+        ? "다음 수비 이닝 시작"
+        : plateEnded
+          ? "다음 타석 시작"
+          : "다음 투구 선택";
+  const handleGameCastContinue = () => {
+    if (!plateEnded) { setShowGameCast(false); return; }
+    if (lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && proVisible && proResult?.snapshot.phase === "important_game") {
+      void handleCompleteProGame();
+    } else if (lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && careerResult?.snapshot.phase === "important_game") {
+      void handleCompleteCareerGame();
+    } else if (lastResult?.snapshot.inningTransition?.inningEnded && labResult?.snapshot.phase === "important_inning") {
+      void handleCompleteImportantInning();
+    } else {
+      void handleNewPlateAppearance();
+    }
+  };
 
   if (screenMode === "lab" && experienceMode === "career") {
     return (
@@ -1582,7 +1626,7 @@ export function App() {
           </div>
         </section>
 
-        <div className="workspace-grid">
+        <div className={`workspace-grid ${showGameCast && lastResult ? "workspace-grid--gamecast" : ""}`}>
           <aside className="panel player-panel" aria-label="선수 정보">
             <div className="panel-heading">
               <div><p className="eyebrow">YOUR PITCHER</p><h2>{pitcher?.name ?? "불러오는 중"}</h2></div>
@@ -1659,7 +1703,22 @@ export function App() {
             </div>
           </aside>
 
-          <section className="panel decision-panel" aria-label="투구 선택">
+          <section ref={gameCastRegionRef} tabIndex={showGameCast && lastResult ? -1 : undefined} className={`panel decision-panel ${showGameCast && lastResult ? "decision-panel--gamecast" : ""}`} aria-label={showGameCast && lastResult ? "플레이 리플레이" : "투구 선택"}>
+            {showGameCast && lastResult ? <>
+              <GameCastReplay
+                key={lastResult.eventHash}
+                result={lastResult}
+                pitchType={lastCall?.pitchType}
+                situationLabel={`${halfInningLabel(gameState)} · ${outsLabel(gameState)}`}
+                pitcherName={pitcher?.name ?? "투수"}
+                batterName={activeBatter.name}
+                continueLabel={gameCastContinueLabel}
+                isRunning={isRunning}
+                reducedMotion={reducedMotion}
+                onContinue={handleGameCastContinue}
+              />
+              {error ? <p className="error-message" role="alert">{error}</p> : null}
+            </> : <>
             <div className="panel-heading">
               <div><p className="eyebrow">PITCH DECISION</p><h2>어떻게 승부할까요?</h2></div>
               <span className="count-badge">B {context.balls} · S {context.strikes}</span>
@@ -1787,6 +1846,7 @@ export function App() {
               </button>
             )}
             {error ? <p className="error-message" role="alert">{error}</p> : null}
+            </>}
           </section>
 
           <aside className="panel result-panel" aria-label="투구 결과">
@@ -1805,14 +1865,13 @@ export function App() {
                       : OUTCOME_LABELS[lastResult.snapshot.outcome]}
                   </strong>
                 </div>
-                <TrajectoryReplay key={lastResult.eventHash} result={lastResult} pitchType={lastCall?.pitchType} />
                 <div className={`decision-grade decision-grade--${lastResult.snapshot.selectionQuality}`}>
                   {SELECTION_LABELS[lastResult.snapshot.selectionQuality]}
                   <span>{lastResult.snapshot.recommendationAccepted ? " · 포수 추천 수락" : " · 포수 사인 수정"}</span>
                 </div>
                 <p className="result-summary">{lastResult.snapshot.shortFeedback}</p>
                 {resultStage === "summary" ? <button className="result-details-toggle" type="button" aria-expanded={showResultDetails} onClick={() => setShowResultDetails((value) => !value)}>
-                  {showResultDetails ? "핵심 결과만 보기" : "궤적·타구·분석 자세히 보기"}
+                  {showResultDetails ? "핵심 결과만 보기" : "투구·타구·분석 자세히 보기"}
                 </button> : null}
                 <p className="result-detail">{lastResult.snapshot.detailFeedback}</p>
                 <dl className="result-facts">

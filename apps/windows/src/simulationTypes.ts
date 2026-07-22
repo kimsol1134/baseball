@@ -239,6 +239,10 @@ export interface FieldingResolutionSnapshot {
   impact: DefenseImpact;
   fielderPosition?: FielderPosition;
   fielderName?: string;
+  landingDistanceTenthsMeters?: number;
+  hangTimeMilliseconds?: number;
+  apexHeightTenthsMeters?: number;
+  ballFlightSeries?: ReadonlyArray<number>;
   shortExplanation: string;
 }
 
@@ -354,6 +358,10 @@ export interface PitchExecution {
   horizontalBreakTenthsCM: number;
   verticalBreakTenthsCM: number;
   executionQuality: number;
+  flightTimeMilliseconds?: number;
+  trajectoryControlX?: number;
+  trajectoryControlY?: number;
+  trajectorySeries?: ReadonlyArray<number>;
 }
 
 export interface BattedBall {
@@ -391,6 +399,7 @@ export interface PlateAppearanceSnapshot {
   execution: PitchExecution;
   battedBall?: BattedBall;
   fieldingResolution?: FieldingResolutionSnapshot;
+  runnersBefore?: BaserunnerStateSnapshot;
   runnersAfter: BaserunnerStateSnapshot;
   runsScored: number;
   stealAttempt?: StealAttemptSnapshot;

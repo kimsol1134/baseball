@@ -32,7 +32,7 @@ const faqItems = [
   {
     question: "Steam 데모는 어디까지 체험할 수 있나요?",
     answer:
-      "핵심 투구, 성장, 관계, 첫 중요 경기까지 약 30~45분 동안 체험하는 별도 무료 데모를 준비하고 있습니다. 데모 종료 저장은 정식판에서 이어지도록 설계했습니다.",
+      "핵심 투구, 성장, 관계, 첫 중요 경기까지 약 30~45분 동안 체험하는 별도 무료 데모를 준비하고 있습니다. 데모에서 만든 선수와 진행 상황은 정식판에서도 그대로 이어갈 수 있도록 준비하고 있습니다.",
   },
   {
     question: "모바일에서도 플레이할 수 있나요?",
@@ -180,7 +180,7 @@ export default function HomePage() {
                   <i />
                 </span>
               </div>
-              <p>“한 타자를 상대할 때마다 다음 선택이 궁금해지는 선수.”</p>
+              <p>“다음 한 공이 계속 궁금해지는 선수.”</p>
             </aside>
           </div>
           <a className="scroll-cue" href="#pitch" aria-label="다음 섹션으로 이동">
@@ -219,6 +219,14 @@ export default function HomePage() {
                     <h3>시작점부터 선택합니다</h3>
                   </div>
                 </div>
+                <div className="feature-image">
+                  <Image
+                    src="/scene-school.webp"
+                    alt="야구부에 입학해 운동장을 바라보는 고교 투수"
+                    fill
+                    sizes="(max-width: 580px) 100vw, (max-width: 1100px) 50vw, 25vw"
+                  />
+                </div>
                 <div className="student-card">
                   <div className="student-mark">H</div>
                   <div className="student-profile">
@@ -244,6 +252,14 @@ export default function HomePage() {
                     <h3>오늘의 선택이 능력이 됩니다</h3>
                   </div>
                 </div>
+                <div className="feature-image">
+                  <Image
+                    src="/scene-training.webp"
+                    alt="실내 불펜에서 투구 훈련을 하는 고교 투수"
+                    fill
+                    sizes="(max-width: 580px) 100vw, (max-width: 1100px) 50vw, 25vw"
+                  />
+                </div>
                 <p className="report-title">이번 주 훈련 리포트</p>
                 <div className="metric-list">
                   <div><span>구속</span><i><b style={{ width: "82%" }} /></i><strong>142</strong><em>+2</em></div>
@@ -261,6 +277,14 @@ export default function HomePage() {
                     <p>관계</p>
                     <h3>혼자서는 완주할 수 없습니다</h3>
                   </div>
+                </div>
+                <div className="feature-image">
+                  <Image
+                    src="/scene-battery.webp"
+                    alt="훈련 뒤 덕아웃에서 대화하는 투수와 포수"
+                    fill
+                    sizes="(max-width: 580px) 100vw, (max-width: 1100px) 50vw, 25vw"
+                  />
                 </div>
                 <div className="teammate">
                   <span className="catcher-mask" aria-hidden="true">C</span>
@@ -283,6 +307,14 @@ export default function HomePage() {
                     <h3>기록은 기억으로 남습니다</h3>
                   </div>
                 </div>
+                <div className="feature-image">
+                  <Image
+                    src="/scene-game.webp"
+                    alt="야간 경기에서 결정적인 공을 던지는 고교 투수"
+                    fill
+                    sizes="(max-width: 580px) 100vw, (max-width: 1100px) 50vw, 25vw"
+                  />
+                </div>
                 <div className="mini-scoreboard">
                   <small>VS 청운고 · 야간 경기</small>
                   <strong>7 <span>:</span> 2</strong>
@@ -300,6 +332,13 @@ export default function HomePage() {
         </section>
 
         <section className="section draft-section" id="career">
+          <Image
+            className="draft-art"
+            src="/scene-draft.webp"
+            alt="프로야구 드래프트 무대 뒤에서 지명 전화를 받는 신인 선수"
+            fill
+            sizes="100vw"
+          />
           <div className="draft-glow" />
           <div className="shell draft-shell">
             <SectionHeading
@@ -358,19 +397,28 @@ export default function HomePage() {
               <div className="memory-book">
                 <article className="memory-note note-one">
                   <span>기억 01</span>
-                  <div className="memory-visual"><b>11</b></div>
+                  <div className="memory-visual">
+                    <Image src="/scene-game.webp" alt="결승전 마지막 투구" fill sizes="30vw" />
+                    <b>11</b>
+                  </div>
                   <strong>3학년 봄, 결승 멀티이닝</strong>
                   <p>마지막 아웃 카운트를 직접 잡아냈다.</p>
                 </article>
                 <article className="memory-note note-two">
                   <span>기억 02</span>
-                  <div className="memory-visual"><b>120</b></div>
+                  <div className="memory-visual">
+                    <Image src="/scene-training.webp" alt="완투를 준비하던 불펜 훈련" fill sizes="30vw" />
+                    <b>120</b>
+                  </div>
                   <strong>첫 완투승</strong>
                   <p>120구를 던진 뒤, 포수와 말없이 웃었다.</p>
                 </article>
                 <article className="memory-note note-three">
                   <span>기억 03</span>
-                  <div className="memory-visual"><b>81</b></div>
+                  <div className="memory-visual">
+                    <Image src="/scene-battery.webp" alt="오랜 시간 함께한 포수와의 대화" fill sizes="30vw" />
+                    <b>81</b>
+                  </div>
                   <strong>포수와의 약속</strong>
                   <p>은퇴 전까지 같은 사인을 믿기로 했다.</p>
                 </article>
@@ -378,6 +426,14 @@ export default function HomePage() {
 
               <div className="legacy-card">
                 <p className="micro-label">커리어 레거시</p>
+                <div className="legacy-image">
+                  <Image
+                    src="/scene-legacy.webp"
+                    alt="은퇴 뒤 야구공과 옛 사진을 돌아보는 선수"
+                    fill
+                    sizes="(max-width: 1100px) 100vw, 40vw"
+                  />
+                </div>
                 <div className="legacy-columns">
                   <div>
                     <small>첫 시즌</small>
@@ -413,12 +469,19 @@ export default function HomePage() {
                   <small>Windows</small>
                 </div>
                 <div className="demo-screen">
+                  <Image
+                    className="demo-image"
+                    src="/scene-game.webp"
+                    alt="중요 경기에서 투구하는 Steam 데모 장면"
+                    fill
+                    sizes="(max-width: 820px) 100vw, 50vw"
+                  />
                   <div className="tiny-score"><span>7회 말</span><strong>7 : 5</strong></div>
                   <div className="tiny-zone">●</div>
                   <div className="tiny-stats"><i /><i /><i /></div>
                 </div>
                 <h3>30~45분, 첫 중요 경기까지</h3>
-                <p>투구 · 성장 · 관계를 경험하고, 종료 저장을 정식판에서 이어가도록 준비하고 있습니다.</p>
+                <p>투구 · 성장 · 관계를 경험하고, 데모에서 만든 선수와 진행 상황을 정식판에서도 이어갈 수 있도록 준비하고 있습니다.</p>
                 <SteamButton href={demoHref} {...externalProps(demoHref)}>
                   Steam 데모 확인
                 </SteamButton>
@@ -430,6 +493,13 @@ export default function HomePage() {
                   <small>Mobile · Desktop</small>
                 </div>
                 <div className="teaser-screen">
+                  <Image
+                    className="demo-image"
+                    src="/scene-training.webp"
+                    alt="첫 승부를 준비하는 웹 티저 장면"
+                    fill
+                    sizes="(max-width: 820px) 100vw, 50vw"
+                  />
                   <span className="teaser-ball">9</span>
                   <div>
                     <small>당신의 첫 승부</small>

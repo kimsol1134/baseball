@@ -401,7 +401,7 @@ summary:focus-visible {
   position: absolute;
   right: 0;
   bottom: 72px;
-  width: 322px;
+  width: 340px;
   padding: 18px;
   border: 1px solid rgba(216, 181, 101, 0.46);
   background: rgba(8, 13, 11, 0.78);
@@ -505,7 +505,9 @@ summary:focus-visible {
   padding-top: 12px;
   border-top: 1px solid var(--line);
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 11px;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
 }
 
 .scroll-cue {
@@ -838,7 +840,7 @@ summary:focus-visible {
 
 .feature-card {
   min-width: 0;
-  min-height: 442px;
+  min-height: 640px;
   padding: 22px;
   border: 1px solid var(--line);
   background: var(--surface);
@@ -879,8 +881,34 @@ summary:focus-visible {
   line-height: 1.45;
 }
 
+.feature-image {
+  position: relative;
+  height: 152px;
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--canvas);
+}
+
+.feature-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 46%, rgba(8, 13, 11, 0.5));
+  pointer-events: none;
+}
+
+.feature-image img {
+  object-fit: cover;
+  transition: transform 300ms ease;
+}
+
+.feature-card:hover .feature-image img {
+  transform: scale(1.035);
+}
+
 .student-card {
-  margin-top: 20px;
+  margin-top: 14px;
   padding: 15px;
   border: 1px solid #9caa9f;
   background: #e5e7df;
@@ -958,7 +986,7 @@ summary:focus-visible {
 }
 
 .report-title {
-  margin: 24px 0 14px;
+  margin: 16px 0 14px;
   color: var(--text-muted);
   font-size: 11px;
 }
@@ -1033,7 +1061,7 @@ summary:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 22px;
+  margin-top: 16px;
 }
 
 .catcher-mask {
@@ -1093,7 +1121,7 @@ summary:focus-visible {
 }
 
 .mini-scoreboard {
-  margin-top: 22px;
+  margin-top: 16px;
   padding: 22px 12px;
   border: 1px solid var(--line);
   display: grid;
@@ -1136,9 +1164,27 @@ summary:focus-visible {
 }
 
 .draft-section {
+  isolation: isolate;
   overflow: hidden;
   border-block: 1px solid rgba(216, 181, 101, 0.5);
   background: #100d08;
+}
+
+.draft-section::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(16, 13, 8, 0.68), rgba(16, 13, 8, 0.88) 58%, rgba(16, 13, 8, 0.58)),
+    linear-gradient(180deg, rgba(16, 13, 8, 0.5), #100d08 76%);
+}
+
+.draft-art {
+  z-index: -2;
+  object-fit: cover;
+  object-position: center 38%;
+  opacity: 0.72;
 }
 
 .draft-glow {
@@ -1156,6 +1202,7 @@ summary:focus-visible {
 
 .draft-shell {
   position: relative;
+  z-index: 1;
 }
 
 .draft-section .eyebrow,
@@ -1418,17 +1465,30 @@ summary:focus-visible {
 }
 
 .memory-visual {
+  position: relative;
   height: 142px;
   margin: 13px 0 15px;
   display: grid;
   place-items: end center;
-  background:
-    linear-gradient(rgba(13, 22, 18, 0.12), rgba(13, 22, 18, 0.68)),
-    #45564d;
+  overflow: hidden;
+  background: #45564d;
   color: #d7decf;
 }
 
+.memory-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(rgba(13, 22, 18, 0.04), rgba(13, 22, 18, 0.76));
+}
+
+.memory-visual img {
+  object-fit: cover;
+}
+
 .memory-visual b {
+  position: relative;
+  z-index: 1;
   margin-bottom: 10px;
   font-size: 31px;
   opacity: 0.76;
@@ -1454,6 +1514,26 @@ summary:focus-visible {
   flex-direction: column;
   justify-content: center;
   background: var(--surface);
+}
+
+.legacy-image {
+  position: relative;
+  min-height: 220px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--canvas);
+}
+
+.legacy-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 54%, rgba(8, 13, 11, 0.68));
+}
+
+.legacy-image img {
+  object-fit: cover;
 }
 
 .legacy-columns {
@@ -1538,10 +1618,28 @@ summary:focus-visible {
 
 .demo-screen,
 .teaser-screen {
+  position: relative;
+  isolation: isolate;
   height: 230px;
   margin: 18px 0 22px;
   border: 1px solid var(--line);
   background: #0a100e;
+  overflow: hidden;
+}
+
+.demo-screen::after,
+.teaser-screen::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(8, 13, 11, 0.84), rgba(8, 13, 11, 0.2));
+}
+
+.demo-image {
+  z-index: -2;
+  object-fit: cover;
+  object-position: center;
 }
 
 .demo-screen {
@@ -1556,6 +1654,8 @@ summary:focus-visible {
   padding: 12px;
   border: 1px solid var(--line);
   display: grid;
+  background: rgba(8, 13, 11, 0.78);
+  backdrop-filter: blur(6px);
 }
 
 .tiny-score span {
@@ -1575,7 +1675,8 @@ summary:focus-visible {
   place-items: center;
   background:
     linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    linear-gradient(90deg, var(--line) 1px, transparent 1px),
+    rgba(8, 13, 11, 0.72);
   background-size: 33.33% 33.33%;
   color: var(--lime);
   font-size: 24px;
@@ -1585,6 +1686,8 @@ summary:focus-visible {
   padding: 14px;
   border: 1px solid var(--line);
   display: grid;
+  background: rgba(8, 13, 11, 0.74);
+  backdrop-filter: blur(6px);
   align-content: center;
   gap: 9px;
 }
@@ -1614,6 +1717,8 @@ summary:focus-visible {
 }
 
 .teaser-ball {
+  position: relative;
+  z-index: 1;
   width: 84px;
   height: 84px;
   border: 1px solid var(--lime-dark);
@@ -1627,6 +1732,8 @@ summary:focus-visible {
 }
 
 .teaser-screen div {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 6px;
 }
@@ -1895,7 +2002,7 @@ summary:focus-visible {
 
   .hero-scout-card {
     right: 0;
-    width: 290px;
+    width: 320px;
   }
 
   .school-grid {
@@ -1903,7 +2010,7 @@ summary:focus-visible {
   }
 
   .feature-card {
-    min-height: 420px;
+    min-height: 610px;
   }
 
   .draft-stage {

@@ -510,6 +510,7 @@ public struct PitchKernelEngine: Sendable {
             execution: execution,
             battedBall: neutralResolution.battedBall,
             fieldingResolution: fieldingResolution,
+            runnersBefore: currentGameState.runners,
             runnersAfter: updatedGameState.runners,
             runsScored: baserunnerAdvance?.runsScored ?? 0,
             stealAttempt: stealResolution.attempt,
@@ -870,15 +871,54 @@ public struct PitchKernelEngine: Sendable {
             - params.context.fatigue
             + generator.nextInt(upperBound: 21) - 10
         let movementScale = (profile?.movement ?? params.pitcher.movement) - 50
+        let actualX = target.x + offsetX
+        let actualY = target.y + offsetY
+        let horizontalMovement = horizontalBreak + movementScale * 2
+        let verticalMovement = verticalBreak + movementScale * 2
+        let flightTimeMilliseconds = max(330, min(620, Int((18.44 / (Double(velocity) / 36.0)) * 1_000.0)))
+        let controlProgress = 0.62
+        let movementCurve = sin(.pi * controlProgress)
+        let trajectoryControlX = Int((
+            Double(actualX) * controlProgress
+                - Double(horizontalMovement) * 1.35 * movementCurve
+        ).rounded())
+        let trajectoryControlY = Int((
+            1_300.0 * (1.0 - controlProgress)
+                + Double(actualY) * controlProgress
+                + Double(verticalMovement) * 1.05 * movementCurve
+        ).rounded())
+        let plateLateralTenthsCM = Double(actualX) * 432.0 / 500.0
+        let plateHeightTenthsCM = 750.0 + Double(actualY) * 250.0 / 500.0
+        let trajectorySeries = (0...16).flatMap { index -> [Int] in
+            let progress = Double(index) / 16.0
+            let curve = 4.0 * progress * (1.0 - progress)
+            return [
+                flightTimeMilliseconds * index / 16,
+                Int((
+                    plateLateralTenthsCM * progress
+                        - Double(horizontalMovement) * curve
+                ).rounded()),
+                Int((18_440.0 * (1.0 - progress)).rounded()),
+                Int((
+                    1_850.0 * (1.0 - progress)
+                        + plateHeightTenthsCM * progress
+                        + Double(verticalMovement) * curve
+                ).rounded())
+            ]
+        }
         return PitchExecution(
             targetX: target.x,
             targetY: target.y,
-            actualX: target.x + offsetX,
-            actualY: target.y + offsetY,
+            actualX: actualX,
+            actualY: actualY,
             velocityTenthsKPH: velocity,
-            horizontalBreakTenthsCM: horizontalBreak + movementScale * 2,
-            verticalBreakTenthsCM: verticalBreak + movementScale * 2,
-            executionQuality: executionQuality
+            horizontalBreakTenthsCM: horizontalMovement,
+            verticalBreakTenthsCM: verticalMovement,
+            executionQuality: executionQuality,
+            flightTimeMilliseconds: flightTimeMilliseconds,
+            trajectoryControlX: trajectoryControlX,
+            trajectoryControlY: trajectoryControlY,
+            trajectorySeries: trajectorySeries
         )
     }
 

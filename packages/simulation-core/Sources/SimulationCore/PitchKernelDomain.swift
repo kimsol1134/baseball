@@ -279,6 +279,11 @@ public struct PitchExecution: Codable, Equatable, Sendable {
     public let horizontalBreakTenthsCM: Int
     public let verticalBreakTenthsCM: Int
     public let executionQuality: Int
+    public let flightTimeMilliseconds: Int?
+    public let trajectoryControlX: Int?
+    public let trajectoryControlY: Int?
+    /// Flat 3D series in groups of [timeMs, lateralTenthsCM, forwardTenthsCM, heightTenthsCM].
+    public let trajectorySeries: [Int]?
 
     public init(
         targetX: Int,
@@ -288,7 +293,11 @@ public struct PitchExecution: Codable, Equatable, Sendable {
         velocityTenthsKPH: Int,
         horizontalBreakTenthsCM: Int,
         verticalBreakTenthsCM: Int,
-        executionQuality: Int
+        executionQuality: Int,
+        flightTimeMilliseconds: Int? = nil,
+        trajectoryControlX: Int? = nil,
+        trajectoryControlY: Int? = nil,
+        trajectorySeries: [Int]? = nil
     ) {
         self.targetX = targetX
         self.targetY = targetY
@@ -298,6 +307,10 @@ public struct PitchExecution: Codable, Equatable, Sendable {
         self.horizontalBreakTenthsCM = horizontalBreakTenthsCM
         self.verticalBreakTenthsCM = verticalBreakTenthsCM
         self.executionQuality = executionQuality
+        self.flightTimeMilliseconds = flightTimeMilliseconds
+        self.trajectoryControlX = trajectoryControlX
+        self.trajectoryControlY = trajectoryControlY
+        self.trajectorySeries = trajectorySeries
     }
 }
 
@@ -392,6 +405,7 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
     public let execution: PitchExecution
     public let battedBall: BattedBall?
     public let fieldingResolution: FieldingResolutionSnapshot?
+    public let runnersBefore: BaserunnerStateSnapshot?
     public let runnersAfter: BaserunnerStateSnapshot
     public let runsScored: Int
     public let stealAttempt: StealAttemptSnapshot?
@@ -415,6 +429,7 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
         execution: PitchExecution,
         battedBall: BattedBall?,
         fieldingResolution: FieldingResolutionSnapshot? = nil,
+        runnersBefore: BaserunnerStateSnapshot? = nil,
         runnersAfter: BaserunnerStateSnapshot = .empty,
         runsScored: Int = 0,
         stealAttempt: StealAttemptSnapshot? = nil,
@@ -437,6 +452,7 @@ public struct PlateAppearanceSnapshot: Codable, Equatable, Sendable {
         self.execution = execution
         self.battedBall = battedBall
         self.fieldingResolution = fieldingResolution
+        self.runnersBefore = runnersBefore
         self.runnersAfter = runnersAfter
         self.runsScored = runsScored
         self.stealAttempt = stealAttempt
