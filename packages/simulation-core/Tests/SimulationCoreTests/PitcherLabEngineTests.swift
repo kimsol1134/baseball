@@ -3,6 +3,18 @@ import XCTest
 @testable import SimulationCore
 
 final class PitcherLabEngineTests: XCTestCase {
+    func testPresetStatsDifferAndPlayerCanUseRecommendedOrCustomName() throws {
+        let engine = PitcherLabEngine()
+        let power = try engine.start(StartPitcherLabParams(seed: "10", presetID: "power_prospect"))
+        let commander = try engine.start(StartPitcherLabParams(seed: "10", presetID: "precision_commander"))
+        let custom = try engine.start(StartPitcherLabParams(seed: "10", presetID: "breaking_ball_artist", playerName: "나만의 에이스"))
+
+        XCTAssertEqual(power.snapshot.pitcher.name, "문동윤")
+        XCTAssertEqual(custom.snapshot.pitcher.name, "나만의 에이스")
+        XCTAssertGreaterThan(power.snapshot.pitcher.stuff, commander.snapshot.pitcher.stuff)
+        XCTAssertGreaterThan(commander.snapshot.pitcher.command, power.snapshot.pitcher.command)
+    }
+
     func testSameSeedAndTrainingChoiceProduceSameState() throws {
         let engine = PitcherLabEngine()
         let firstStart = try engine.start(

@@ -594,6 +594,7 @@ export interface PitcherLabResult {
 export interface StartPitcherLabParams {
   seed: string;
   presetID: string;
+  playerName?: string;
   lifeNumber: number;
   inheritedSoulPoints: number;
   inheritedSoulDomain?: SoulDomain;

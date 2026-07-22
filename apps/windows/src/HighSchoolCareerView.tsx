@@ -198,6 +198,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
   const [presetID, setPresetID] = useState("");
   const [allocation, setAllocation] = useState<CreationAllocationSnapshot>({ stuff: 2, command: 1, movement: 1, stamina: 1 });
   const [identity, setIdentity] = useState<PlayerIdentitySnapshot>({ name: "문동윤", throwingHand: "right", bodyType: "balanced", region: "서울" });
+  const [usesRecommendedName, setUsesRecommendedName] = useState(true);
   const [difficulty, setDifficulty] = useState<CareerDifficultySnapshot>({
     careerHarshness: "standard", informationClarity: "standard", simulationDifficulty: "standard", interventionAssist: "standard",
   });
@@ -205,6 +206,13 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
   const effectivePresetID = presetID || presets[0]?.id || "";
   const selected = presets.find((preset) => preset.id === effectivePresetID);
   const spent = Object.values(allocation).reduce((sum, value) => sum + value, 0);
+  useEffect(() => {
+    if (usesRecommendedName && selected) setIdentity((current) => ({ ...current, name: selected.pitcher.name }));
+  }, [selected, usesRecommendedName]);
+  const selectPreset = (preset: PitcherPresetSnapshot) => {
+    setPresetID(preset.id);
+    if (usesRecommendedName) setIdentity((current) => ({ ...current, name: preset.pitcher.name }));
+  };
   const change = (key: keyof CreationAllocationSnapshot, delta: number) => setAllocation((current) => {
     const used = Object.values(current).reduce((sum, value) => sum + value, 0);
     const value = current[key] + delta;
@@ -224,18 +232,27 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
       </section>
       <section className="preset-creation-grid">
         {presets.map((preset) => <button key={preset.id} type="button" aria-pressed={preset.id === effectivePresetID}
-          className={preset.id === effectivePresetID ? "is-selected" : undefined} onClick={() => setPresetID(preset.id)}>
+          className={preset.id === effectivePresetID ? "is-selected" : undefined} onClick={() => selectPreset(preset)}>
           <span>{preset.name}</span><strong>{preset.pitcher.name}</strong><p>{preset.tagline}</p><small>{preset.tradeoff}</small>
+          <dl className="preset-statline" aria-label={`${preset.name} 기본 능력: ${METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
+            {METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd></div>)}
+          </dl>
         </button>)}
       </section>
       {selected ? <section className="creation-allocation career-allocation">
         <div className="creation-summary"><div><span>투수 유형</span><strong>{selected.name}</strong><p>선수마다 강점과 약점이 다릅니다. 추가 능력 5점은 어느 유형을 골라도 같습니다.</p></div>
           <div className="creation-points"><span>남은 포인트</span><strong>{5 - spent}</strong></div></div>
-        <div className="allocation-grid">{METRICS.map((metric) => <div key={metric.key}><span>{metric.label}</span><small>20–80 현재 능력</small><div>
+        <div className="allocation-grid">{METRICS.map((metric) => <div key={metric.key}><span>{metric.label}</span><small>기본 {selected.pitcher[metric.key]} · 추가 +{allocation[metric.key]}</small><div>
           <button type="button" disabled={allocation[metric.key] === 0} onClick={() => change(metric.key, -1)}>−</button>
-          <strong>{allocation[metric.key]}</strong><button type="button" disabled={spent >= 5} onClick={() => change(metric.key, 1)}>+</button>
+          <strong aria-label={`${metric.label} 최종 ${selected.pitcher[metric.key] + allocation[metric.key]}`}>
+            {selected.pitcher[metric.key] + allocation[metric.key]}<small>+{allocation[metric.key]}</small>
+          </strong><button type="button" disabled={spent >= 5} onClick={() => change(metric.key, 1)}>+</button>
         </div></div>)}</div>
-        <div className="identity-grid"><label><span>이름</span><input value={identity.name} maxLength={12} onChange={(event) => setIdentity({ ...identity, name: event.target.value })} /></label>
+        <div className="identity-grid"><label className="identity-name-field"><span>선수 이름</span><div><input value={identity.name} maxLength={12} autoComplete="off"
+          onChange={(event) => { setIdentity({ ...identity, name: event.target.value }); setUsesRecommendedName(false); }} />
+          <button type="button" disabled={usesRecommendedName && identity.name === selected.pitcher.name}
+            onClick={() => { setIdentity({ ...identity, name: selected.pitcher.name }); setUsesRecommendedName(true); }}>추천 이름 사용</button></div>
+          <small>추천 이름을 그대로 쓰거나 직접 입력하세요.</small></label>
           <label><span>지역</span><select value={identity.region} onChange={(event) => setIdentity({ ...identity, region: event.target.value })}>
             <option>서울</option><option>경기</option><option>충청</option><option>영남</option><option>호남</option><option>강원</option><option>제주</option></select></label>
           <label><span>투구 손</span><select value={identity.throwingHand} onChange={(event) => setIdentity({ ...identity, throwingHand: event.target.value as PlayerIdentitySnapshot["throwingHand"] })}>
@@ -254,7 +271,8 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
             {"id":"erased_memory","title":"지워진 기억","copy":"기억 슬롯 2장 · 보상 +25%"},{"id":"no_last_chance","title":"마지막 기회 없음","copy":"지명 안전망 감소 · 보상 +35%"}] as const).map((karma) =>
             <button key={karma.id} type="button" className={karmas.includes(karma.id) ? "is-selected" : undefined} aria-pressed={karmas.includes(karma.id)} onClick={() => toggleKarma(karma.id)}>
               <strong>{karma.title}</strong><span>{karma.copy}</span></button>)}</div></div>
-        <button className="lab-primary" type="button" disabled={isRunning || spent !== 5 || !identity.name.trim()} onClick={() => void onStart(selected.id, allocation, identity, difficulty, karmas)}>
+        <button className="lab-primary" type="button" disabled={isRunning || spent !== 5 || !identity.name.trim()}
+          onClick={() => void onStart(selected.id, allocation, { ...identity, name: identity.name.trim() }, difficulty, karmas)}>
           {isRunning ? "선수 생성 중…" : "고교 커리어 시작"}
         </button>{error ? <p className="error-message" role="alert">{error}</p> : null}
       </section> : null}

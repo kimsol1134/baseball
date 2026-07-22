@@ -166,6 +166,7 @@ final class RPCServerTests: XCTestCase {
                 StartPitcherLabParams(
                     seed: "20260722",
                     presetID: "power_prospect",
+                    playerName: "김솔",
                     inheritedSoulDomain: nil
                 )
             )
@@ -176,6 +177,7 @@ final class RPCServerTests: XCTestCase {
         let start = try XCTUnwrap(startResponse.result).decode(PitcherLabResult.self)
 
         XCTAssertEqual(start.snapshot.phase, .training)
+        XCTAssertEqual(start.snapshot.pitcher.name, "김솔")
         XCTAssertEqual(start.snapshot.trainingSessionsCompleted, 0)
 
         let trainingRequest = RPCRequest(

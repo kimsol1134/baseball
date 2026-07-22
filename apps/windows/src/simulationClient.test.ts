@@ -70,6 +70,7 @@ describe("simulation client", () => {
     const result = await startPitcherLab({
       seed: "1",
       presetID: "power_prospect",
+      playerName: "김솔",
       lifeNumber: 1,
       inheritedSoulPoints: 0,
     });
@@ -77,7 +78,7 @@ describe("simulation client", () => {
     expect(result.snapshot.phase).toBe("training");
     expect(invokeMock).toHaveBeenCalledWith(
       "execute_core",
-      expect.objectContaining({ request: expect.stringContaining('"method":"startPitcherLab"') }),
+      expect.objectContaining({ request: expect.stringContaining('"playerName":"김솔"') }),
     );
   });
 

@@ -997,10 +997,12 @@ export function App() {
   const handleStartLab = useCallback(async (
     presetID: string,
     creationAllocation: CreationAllocationSnapshot,
+    playerName: string,
   ) => {
     await runLabAction(() => startPitcherLab({
       seed: "20260722",
       presetID,
+      playerName,
       lifeNumber: 1,
       inheritedSoulPoints: 0,
       creationAllocation,
@@ -1060,6 +1062,7 @@ export function App() {
     await runLabAction(() => startPitcherLab({
       seed: labResult.nextSeed,
       presetID: labResult.snapshot.presetID,
+      playerName: labResult.snapshot.pitcher.name,
       lifeNumber: labResult.snapshot.lifeNumber + 1,
       inheritedSoulPoints: legacy.soulPointsGranted,
       inheritedSoulDomain: legacy.soulDomain,

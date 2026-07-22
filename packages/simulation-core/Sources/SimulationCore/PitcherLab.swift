@@ -393,6 +393,7 @@ public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
 public struct StartPitcherLabParams: Codable, Equatable, Sendable {
     public let seed: String
     public let presetID: String
+    public let playerName: String?
     public let lifeNumber: Int
     public let inheritedSoulPoints: Int
     public let inheritedSoulDomain: SoulDomain?
@@ -410,6 +411,27 @@ public struct StartPitcherLabParams: Codable, Equatable, Sendable {
     ) {
         self.seed = seed
         self.presetID = presetID
+        self.playerName = nil
+        self.lifeNumber = lifeNumber
+        self.inheritedSoulPoints = inheritedSoulPoints
+        self.inheritedSoulDomain = inheritedSoulDomain
+        self.inheritedMemory = inheritedMemory
+        self.creationAllocation = creationAllocation
+    }
+
+    public init(
+        seed: String,
+        presetID: String,
+        playerName: String,
+        lifeNumber: Int = 1,
+        inheritedSoulPoints: Int = 0,
+        inheritedSoulDomain: SoulDomain? = nil,
+        inheritedMemory: MemoryCardID? = nil,
+        creationAllocation: CreationAllocationSnapshot? = nil
+    ) {
+        self.seed = seed
+        self.presetID = presetID
+        self.playerName = playerName
         self.lifeNumber = lifeNumber
         self.inheritedSoulPoints = inheritedSoulPoints
         self.inheritedSoulDomain = inheritedSoulDomain
@@ -610,7 +632,20 @@ public struct PitcherLabEngine: Sendable {
         }
         let runID = "lab-\(params.seed)-life-\(params.lifeNumber)"
         let trait = hiddenTrait(runID: runID, seed: seed)
-        let createdPitcher = applyCreationAllocation(allocation, to: preset.pitcher)
+        let playerName = params.playerName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? preset.pitcher.name
+        guard (1...12).contains(playerName.count) else {
+            throw SimulationError.invalidPitcherLab("player name must contain between one and twelve characters")
+        }
+        let namedPitcher = PitcherSnapshot(
+            id: preset.pitcher.id,
+            name: playerName,
+            stuff: preset.pitcher.stuff,
+            command: preset.pitcher.command,
+            movement: preset.pitcher.movement,
+            stamina: preset.pitcher.stamina,
+            pitchProfiles: preset.pitcher.pitchProfiles
+        )
+        let createdPitcher = applyCreationAllocation(allocation, to: namedPitcher)
         let inheritedPitcher = applyInheritance(
             to: createdPitcher,
             soulPoints: params.inheritedSoulPoints,

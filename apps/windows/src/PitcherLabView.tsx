@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   AwakeningID,
   CreationAllocationSnapshot,
@@ -26,11 +26,13 @@ interface PitcherLabSetupProps {
   presets: ReadonlyArray<PitcherPresetSnapshot>;
   isRunning: boolean;
   error?: string;
-  onStart: (presetID: string, allocation: CreationAllocationSnapshot) => Promise<void>;
+  onStart: (presetID: string, allocation: CreationAllocationSnapshot, playerName: string) => Promise<void>;
 }
 
 export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherLabSetupProps) {
   const [presetID, setPresetID] = useState(presets[0]?.id ?? "");
+  const [playerName, setPlayerName] = useState(presets[0]?.pitcher.name ?? "");
+  const [usesRecommendedName, setUsesRecommendedName] = useState(true);
   const [allocation, setAllocation] = useState<CreationAllocationSnapshot>({
     stuff: 2,
     command: 1,
@@ -40,6 +42,15 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
   const effectivePresetID = presetID || presets[0]?.id || "";
   const selectedPreset = presets.find((preset) => preset.id === effectivePresetID) ?? presets[0];
   const spent = Object.values(allocation).reduce((sum, value) => sum + value, 0);
+
+  useEffect(() => {
+    if (usesRecommendedName && selectedPreset) setPlayerName(selectedPreset.pitcher.name);
+  }, [selectedPreset, usesRecommendedName]);
+
+  const selectPreset = (nextPreset: PitcherPresetSnapshot) => {
+    setPresetID(nextPreset.id);
+    if (usesRecommendedName) setPlayerName(nextPreset.pitcher.name);
+  };
 
   const changeAllocation = (key: keyof CreationAllocationSnapshot, amount: number) => {
     setAllocation((current) => {
@@ -60,11 +71,14 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
       <section className="preset-creation-grid" aria-label="투수 프리셋 선택">
         {presets.map((preset) => (
           <button key={preset.id} type="button" className={effectivePresetID === preset.id ? "is-selected" : undefined}
-            aria-pressed={effectivePresetID === preset.id} onClick={() => setPresetID(preset.id)}>
+            aria-pressed={effectivePresetID === preset.id} onClick={() => selectPreset(preset)}>
             <span>{preset.name}</span>
             <strong>{preset.pitcher.name}</strong>
             <p>{preset.tagline}</p>
             <small>{preset.strengths.join(" · ")}</small>
+            <dl className="preset-statline" aria-label={`${preset.name} 기본 능력: ${CREATION_METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
+              {CREATION_METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd></div>)}
+            </dl>
           </button>
         ))}
       </section>
@@ -78,23 +92,36 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
             </div>
             <div className="creation-points"><span>남은 생성 포인트</span><strong>{5 - spent}</strong></div>
           </div>
+          <div className="identity-name-panel">
+            <label htmlFor="lab-player-name"><span>선수 이름</span>
+              <input id="lab-player-name" value={playerName} maxLength={12} autoComplete="off"
+                onChange={(event) => { setPlayerName(event.target.value); setUsesRecommendedName(false); }} />
+            </label>
+            <button type="button" disabled={usesRecommendedName && playerName === selectedPreset.pitcher.name}
+              onClick={() => { setPlayerName(selectedPreset.pitcher.name); setUsesRecommendedName(true); }}>
+              추천 이름 사용
+            </button>
+            <small>추천 이름을 그대로 쓰거나, 최대 12자까지 직접 정할 수 있습니다.</small>
+          </div>
           <div className="allocation-grid">
             {CREATION_METRICS.map((metric) => (
               <div key={metric.key}>
                 <span>{metric.label}</span>
-                <small>{metric.description}</small>
+                <small>{metric.description} · 기본 {selectedPreset.pitcher[metric.key]}</small>
                 <div>
                   <button type="button" aria-label={`${metric.label} 1 감소`} disabled={allocation[metric.key] === 0}
                     onClick={() => changeAllocation(metric.key, -1)}>−</button>
-                  <strong>{allocation[metric.key]}</strong>
+                  <strong aria-label={`${metric.label} 최종 ${selectedPreset.pitcher[metric.key] + allocation[metric.key]}`}>
+                    {selectedPreset.pitcher[metric.key] + allocation[metric.key]}<small>+{allocation[metric.key]}</small>
+                  </strong>
                   <button type="button" aria-label={`${metric.label} 1 증가`} disabled={spent >= 5 || allocation[metric.key] === 5}
                     onClick={() => changeAllocation(metric.key, 1)}>+</button>
                 </div>
               </div>
             ))}
           </div>
-          <button className="lab-primary" type="button" disabled={isRunning || spent !== 5}
-            onClick={() => void onStart(selectedPreset.id, allocation)}>
+          <button className="lab-primary" type="button" disabled={isRunning || spent !== 5 || !playerName.trim()}
+            onClick={() => void onStart(selectedPreset.id, allocation, playerName.trim())}>
             {isRunning ? "선수 준비 중…" : "훈련 시작"}
           </button>
           {error ? <p className="error-message" role="alert">{error}</p> : null}

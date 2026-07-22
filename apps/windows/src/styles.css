@@ -3412,6 +3412,39 @@ footer {
   font-size: 0.75rem;
 }
 
+.preset-statline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin: 3px 0 0;
+}
+
+.preset-statline > div {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 5px 2px;
+  border: 1px solid rgb(142 171 153 / 18%);
+  border-radius: 6px;
+  background: rgb(5 10 8 / 36%);
+}
+
+.preset-statline dt {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--subtle);
+  font-size: 0.625rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset-statline dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 900;
+}
+
 .creation-allocation {
   padding: 18px;
   border: 1px solid #3d5948;
@@ -3452,6 +3485,61 @@ footer {
   font-size: 1.75rem;
 }
 
+.identity-name-panel {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: end;
+  gap: 7px 10px;
+  margin: 0 0 12px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-raised);
+}
+
+.identity-name-panel label {
+  display: grid;
+  gap: 5px;
+}
+
+.identity-name-panel label > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.identity-name-panel input,
+.identity-name-panel button,
+.identity-name-field button {
+  height: 34px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  color: var(--text);
+  background: #111a16;
+}
+
+.identity-name-panel input {
+  padding: 0 10px;
+}
+
+.identity-name-panel button,
+.identity-name-field button {
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.identity-name-panel button:disabled,
+.identity-name-field button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.identity-name-panel > small {
+  grid-column: 1 / -1;
+  color: var(--subtle);
+  font-size: 0.6875rem;
+}
+
 .allocation-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -3485,6 +3573,19 @@ footer {
   gap: 8px;
   margin-top: 5px;
   text-align: center;
+}
+
+.allocation-grid > div > div > strong {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.allocation-grid > div > div > strong small {
+  color: var(--lime);
+  font-size: 0.625rem;
+  font-weight: 800;
 }
 
 .allocation-grid button {
@@ -4256,6 +4357,21 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   background: #111a16;
 }
 
+.identity-grid .identity-name-field {
+  grid-column: span 2;
+}
+
+.identity-name-field > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.identity-name-field small {
+  color: var(--subtle);
+  font-size: 0.6875rem;
+}
+
 .career-vitals {
   display: grid;
   grid-template-columns: repeat(3, minmax(68px, 1fr));
@@ -4846,6 +4962,14 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
     grid-template-columns: 1fr;
   }
 
+  .identity-name-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-name-panel > small {
+    grid-column: auto;
+  }
+
   .lab-log {
     grid-column: auto;
   }
@@ -4934,6 +5058,14 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   .allocation-grid,
   .preset-creation-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .preset-creation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .identity-name-field > div {
+    grid-template-columns: 1fr;
   }
 
   .draft-rounds {
