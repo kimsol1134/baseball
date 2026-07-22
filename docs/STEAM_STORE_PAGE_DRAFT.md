@@ -88,20 +88,22 @@ CPU, 메모리, 저장 공간의 숫자는 Windows 실기기와 저사양 VM 프
 
 - [ ] 실제 게임 플레이 트레일러
 - [ ] 실제 플레이 화면 스크린샷 최소 5장, 1920×1080 이상 16:9
-- [ ] Header Capsule 920×430
-- [ ] Small Capsule 462×174
-- [ ] Main Capsule 1232×706
-- [ ] Vertical Capsule 748×896
-- [ ] Page Background 1438×810
-- [ ] Shortcut Icon 256×256
-- [ ] App Icon 184×184 JPG
-- [ ] Library Capsule 600×900
-- [ ] Library Hero 3840×1240
-- [ ] Library Logo 1280px 너비 또는 720px 높이 PNG
-- [ ] Library Header Capsule 920×430
+- [x] Header Capsule 920×430 출시 후보
+- [x] Small Capsule 462×174 출시 후보
+- [x] Main Capsule 1232×706 출시 후보
+- [x] Vertical Capsule 748×896 출시 후보
+- [x] Page Background 1438×810 출시 후보
+- [x] Shortcut Icon 256×256
+- [x] App Icon 184×184 JPG
+- [x] Library Capsule 600×900 출시 후보
+- [x] Library Hero 3840×1240, 글자 없음
+- [x] Library Logo 1280×720 투명 PNG
+- [x] Library Header Capsule 920×430 출시 후보
 - [ ] 데모 전용 캡슐에 `DEMO` 식별 표시
 
 스크린샷에는 현재 빌드에 없는 기능, 콘셉트 이미지, 설명용 문구를 넣지 않는다. 정식 게임 화면만 사용한다.
+
+출시 후보 파일과 생성 브리프는 [`marketing/steam/assets/README.md`](../marketing/steam/assets/README.md)에 보관한다. 업로드 전 제목 가독성, 실제 상표·선수 유사성, 현재 게임 화면과의 표현 일치 여부를 사람이 최종 확인한다. 규격은 `npm run steam:submission:check`로 자동 검사한다.
 
 ## 공개 전 문구 검토
 

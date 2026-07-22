@@ -27,6 +27,9 @@
 - 원격 Windows CI에서 NSIS 설치 파일 생성, 무인 설치, Swift 런타임 포함과 sidecar 상태 검사 통과
 - 인증서가 없는 macOS Steam 빌드가 빈 키체인 ID 대신 ad-hoc 서명을 사용하도록 수정하고 ARM64 정식판·데모 재검증
 - 공개 GitHub 저장소의 원격 CI에서 Windows x64, macOS Intel·Apple Silicon의 정식판·데모 6개 Steam 데포 생성·검사·업로드 통과
+- 시작 실패와 Steam Cloud 불러오기 실패를 빈 화면 대신 복구 안내로 표시하고 로컬 저장 지속 여부를 알림
+- 내부 이벤트 해시·분석 JSON 버튼·혼용 영문 단계명을 플레이 화면에서 제거하고 한국어 사용자 문구로 통일
+- Steam 상점·라이브러리 출시 후보 그래픽 11종 제작과 규격 자동 검사 통과
 
 ## 현재 로컬 산출물
 
@@ -36,6 +39,8 @@
 - 검증: manifest SHA-256 전수 검사, sidecar health, `codesign --verify --deep --strict` 통과
 - 실제 실행: 정식판 실행·종료와 종료 직전 저장 파일 기록 통과
 - 제한: ad-hoc 서명이므로 Developer ID 서명·공증 전에는 공개 업로드 대상이 아님
+- Steam 그래픽: `marketing/steam/assets/` 아래 상점 캡슐 5종, 라이브러리 자산 4종, 아이콘 2종
+- 제출 자동 점검: `npm run steam:submission:check`의 이미지 규격·버전 정렬·출시 금지 문구 16개 게이트 통과
 
 ## 공개 전 필수 게이트
 
@@ -75,7 +80,9 @@
 - [x] `localStorage` 자동 저장을 Steam Auto-Cloud용 회전 파일 저장으로 미러링
 - [ ] 데모 저장의 정식판 승계와 다른 기기 복원 확인
 - [ ] 가격·환불·고객지원 문구 검토
-- [ ] 상점 자산과 실제 플레이 트레일러 준비
+- [x] 상점·라이브러리 캡슐과 아이콘 1차 출시 후보 제작
+- [ ] 실제 플레이 스크린샷 5장 이상과 실제 플레이 트레일러 준비
+- [ ] 생성 키아트의 상표·유사성·상품 표현 최종 사람 검수
 - [ ] Valve 스토어·빌드 검토 제출
 
 ### 릴리스 인프라
@@ -107,6 +114,7 @@ xcodebuild -project apps/ios/Baseball.xcodeproj \
   -destination 'generic/platform=iOS Simulator' \
   CODE_SIGNING_ALLOWED=NO build
 npm run desktop:build -- --bundles app,dmg
+npm run steam:submission:check
 npm run steam:build:full
 npm run steam:smoke -- artifacts/steam/full/macos-arm64
 npm run steam:build:demo
