@@ -464,6 +464,7 @@ export function App() {
   const [showGameCast, setShowGameCast] = useState(false);
   const [feedback] = useState(() => new GameFeedback());
   const gameCastRegionRef = useRef<HTMLElement | null>(null);
+  const gameCastWasOpen = useRef(false);
   const pitchDecisionStartedAt = useRef(performance.now());
   const pitchInteractionCount = useRef(0);
   const careerDecisionStartedAt = useRef(performance.now());
@@ -674,6 +675,19 @@ export function App() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [lastResult?.eventHash, reducedMotion, showGameCast]);
+
+  useEffect(() => {
+    if (showGameCast) {
+      gameCastWasOpen.current = true;
+      return;
+    }
+    if (!lastResult || !gameCastWasOpen.current) return;
+    gameCastWasOpen.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      gameCastRegionRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [lastResult?.eventHash, showGameCast]);
 
   useEffect(() => {
     pitchDecisionStartedAt.current = performance.now();
@@ -1593,7 +1607,7 @@ export function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${showGameCast && lastResult ? "app-shell--gamecast" : ""}`}>
       <header className="topbar">
         <div className="brand-lockup">
           <img className="brand-mark" src="/128x128.png" alt="" />

@@ -362,8 +362,16 @@ export default function HomePage() {
                 <small>수신 중…</small>
               </div>
               <div className="rookie-card">
-                <span className="rookie-silhouette">26</span>
-                <div>
+                <div className="rookie-photo">
+                  <Image
+                    src="/scene-rookie.webp"
+                    alt="드래프트에 지명된 신인 투수 이준서"
+                    fill
+                    sizes="(max-width: 1100px) 110px, 84px"
+                  />
+                  <span>26</span>
+                </div>
+                <div className="rookie-copy">
                   <small>ROOKIE CARD</small>
                   <strong>이준서</strong>
                   <p>투수 · 우투우타</p>

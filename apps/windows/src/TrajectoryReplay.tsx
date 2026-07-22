@@ -647,6 +647,7 @@ export function GameCastReplay({
   }, [playbackRate, reducedMotion, status, timeline.total]);
 
   const phase = gameCastPhase(elapsed, timeline, hasContact);
+  const phaseLabel = !hasContact && phase === "contact" ? "ABS·스윙 판정 중" : PHASE_LABELS[phase];
   const revealResult = phase === "result" || status === "complete";
   const pitchProgress = clamp(elapsed / Math.max(1, timeline.pitchEnd), 0, 1);
   const fieldProgress = hasContact
@@ -659,7 +660,7 @@ export function GameCastReplay({
     : snapshot.result === "walk"
       ? "볼넷"
       : snapshot.result === "hit"
-        ? "출루 허용"
+        ? OUTCOME_LABELS[snapshot.outcome]
         : snapshot.result === "in_play_out"
           ? "범타"
           : OUTCOME_LABELS[snapshot.outcome];
@@ -683,7 +684,7 @@ export function GameCastReplay({
 
   return <section className={`gamecast-replay gamecast-replay--${tone} ${hasContact ? "has-contact" : "is-pitch-only"}`} style={motionStyle} aria-label="환생 야구 플레이 재생">
     <div className="sr-only" role="status" aria-live="polite">
-      {revealResult ? snapshot.accessibilitySummary : PHASE_LABELS[phase]}
+      {revealResult ? snapshot.accessibilitySummary : phaseLabel}
     </div>
     <header className="gamecast-header">
       <div className="gamecast-brand"><span>환생 야구</span><strong>GAMECAST</strong></div>
@@ -700,7 +701,7 @@ export function GameCastReplay({
     </header>
 
     <div className="gamecast-outcome-strip">
-      <div><span>{revealResult ? snapshot.ended ? "타석 결과" : "투구 결과" : "LIVE PLAY"}</span><strong>{revealResult ? outcome : PHASE_LABELS[phase]}</strong></div>
+      <div><span>{revealResult ? snapshot.ended ? "타석 결과" : "투구 결과" : "LIVE PLAY"}</span><strong>{revealResult ? outcome : phaseLabel}</strong></div>
       <div className="gamecast-play-sequence" aria-label="플레이 재생 순서">
         <span className={phase === "pitch" ? "is-current is-pitch" : "is-complete"}>01 투구</span>
         <i />
@@ -754,7 +755,7 @@ export function GameCastReplay({
     <footer className="gamecast-footer">
       <div className="gamecast-result-copy">
         <span className={revealResult ? `decision-grade decision-grade--${snapshot.selectionQuality}` : "gamecast-live-badge"}>{revealResult ? snapshot.recommendationAccepted ? "포수 추천 수락" : "포수 사인 수정" : "LIVE"}</span>
-        <div><strong>{revealResult ? snapshot.shortFeedback : PHASE_LABELS[phase]}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : "공과 선수의 실제 좌표를 시간순으로 재생하고 있습니다."}</p></div>
+        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : "공과 선수의 실제 좌표를 시간순으로 재생하고 있습니다."}</p></div>
       </div>
       <button className="primary-action gamecast-continue" type="button" disabled={isRunning || !revealResult} onClick={onContinue}>
         {isRunning ? "다음 장면 준비 중…" : revealResult ? continueLabel : "플레이 재생 중…"}

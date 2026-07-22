@@ -1329,17 +1329,39 @@ summary:focus-visible {
   pointer-events: none;
 }
 
-.rookie-silhouette {
+.rookie-photo {
+  position: relative;
   height: 130px;
-  display: grid;
-  place-items: end center;
+  overflow: hidden;
+  border: 1px solid rgba(216, 181, 101, 0.38);
   background: #293028;
+  z-index: 1;
+}
+
+.rookie-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 52%, rgba(8, 13, 11, 0.76));
+  pointer-events: none;
+}
+
+.rookie-photo img {
+  object-fit: cover;
+  object-position: 50% 20%;
+}
+
+.rookie-photo span {
+  position: absolute;
+  left: 10px;
+  bottom: 6px;
+  z-index: 1;
   color: var(--gold);
   font-size: 22px;
   font-weight: 900;
 }
 
-.rookie-card > div {
+.rookie-copy {
   display: grid;
   align-content: center;
   position: relative;
@@ -2023,7 +2045,7 @@ summary:focus-visible {
     grid-template-columns: 110px 1fr;
   }
 
-  .rookie-silhouette {
+  .rookie-photo {
     height: 160px;
   }
 
