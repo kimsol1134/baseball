@@ -436,8 +436,8 @@ function Metric({ label, value, accent }: { label: string; value: string; accent
 
 function Base({ x, y, occupied, label }: { x: number; y: number; occupied: boolean; label: string }) {
   return <g className={`gamecast-base ${occupied ? "is-occupied" : ""}`} transform={`translate(${x} ${y})`}>
-    <rect x="-8" y="-8" width="16" height="16" transform="rotate(45)" />
-    <text y="3" textAnchor="middle">{label}</text>
+    <rect x="-6" y="-6" width="12" height="12" transform="rotate(45)" />
+    <text y="2.5" textAnchor="middle">{label}</text>
   </g>;
 }
 
@@ -658,11 +658,11 @@ function FieldView({
       <strong>타구 분석 카메라</strong>
       <small>{directionLabel(battedBall.directionTenthsDegrees / 10)}</small>
     </div>
-    <div className="gamecast-flight-hud" aria-hidden="true">
-      <span>타구 속도</span>
-      <strong>{progress > 0 ? (battedBall.exitVelocityTenthsKPH / 10).toFixed(1) : "—"}</strong>
-      <small>km/h</small>
-    </div>
+    {!revealResult ? <div className="gamecast-flight-hud" aria-hidden="true">
+      <span>현재 높이</span>
+      <strong>{progress > 0 ? heightMeters.toFixed(1) : "—"}</strong>
+      <small>m</small>
+    </div> : null}
     <svg viewBox="0 0 640 420" style={cameraStyle} role="img" aria-label={`${directionLabel(battedBall.directionTenthsDegrees / 10)} 방향 3D 타구 좌표 ${samples.length}개 재생`}>
       <defs>
         <linearGradient id="field-tracking-sky" x1="0" y1="0" x2="0" y2="1">
@@ -703,11 +703,6 @@ function FieldView({
           <rect x="21" y="8" width="44" height="13" rx="2" />
           <rect x="575" y="8" width="44" height="13" rx="2" />
         </g>
-        <g className="gamecast-tracking-scoreboard" transform="translate(270 35)">
-          <rect width="100" height="43" rx="3" />
-          <text x="50" y="17" textAnchor="middle">환성 야구장</text>
-          <text x="50" y="33" textAnchor="middle">NIGHT GAME</text>
-        </g>
         <path d="M 320 380 L 46 92 Q 320 20 594 92 L 320 380 Z" fill="url(#field-tracking-turf)" className="gamecast-tracking-outfield" />
         <path d="M 74 117 Q 320 52 566 117" className="gamecast-tracking-warning-track" />
         <path d="M 111 153 Q 320 91 529 153 M 151 204 Q 320 149 489 204 M 197 261 Q 320 215 443 261" className="gamecast-tracking-field-mow" />
@@ -716,6 +711,11 @@ function FieldView({
         <path d="M 320 380 L 46 92 M 320 380 L 594 92" className="gamecast-foul-lines" />
         <ellipse cx="320" cy="270" rx="23" ry="7" className="gamecast-tracking-mound" />
         <path d="M 306 360 H 334 L 326 371 H 314 Z" className="gamecast-home-plate" />
+        <g className="gamecast-tracking-scoreboard" transform="translate(270 28)">
+          <rect width="100" height="43" rx="3" />
+          <text x="50" y="17" textAnchor="middle">환성 야구장</text>
+          <text x="50" y="33" textAnchor="middle">NIGHT GAME</text>
+        </g>
         <rect width="640" height="420" filter="url(#field-tracking-texture)" className="gamecast-tracking-texture" />
       </g>
       <Base x={486} y={257} occupied={displayedRunners.firstOccupied} label="1" />
@@ -930,6 +930,7 @@ export function GameCastReplay({
         />
         <aside className="gamecast-telemetry">
           <div className="gamecast-telemetry-heading"><span>타구 리포트</span><strong>{directionLabel(battedBall.directionTenthsDegrees / 10)}</strong></div>
+          {causalitySummary}
           <PitchZoneSummary execution={execution} pitchLabel={pitchLabel} />
           <div className="gamecast-contact-card">
             <span>타구 속도</span>
@@ -942,7 +943,6 @@ export function GameCastReplay({
             <Metric label="비거리" value={revealResult ? `${fieldPlot?.distanceMeters.toFixed(1)} m` : "측정 중"} accent />
             <Metric label="수비" value={revealResult ? fielderAction(fielding) : "반응 중"} />
           </div>
-          {causalitySummary}
           <GameCastImpact result={result} revealResult={revealResult} />
         </aside>
       </> : <>

@@ -2438,7 +2438,7 @@ legend {
   grid-template-columns: minmax(0, 1fr) 116px;
   grid-template-rows: auto 1fr auto;
   align-items: center;
-  min-height: 138px;
+  min-height: 126px;
   padding: 9px 10px 7px;
   border-bottom: 1px solid color-mix(in srgb, var(--color-text-secondary) 16%, transparent);
   background:
@@ -2538,6 +2538,22 @@ legend {
 
 .gamecast-phase--result.gamecast-replay--positive .gamecast-outcome-strip { box-shadow: inset 3px 0 var(--color-positive); }
 .gamecast-phase--result.gamecast-replay--negative .gamecast-outcome-strip { box-shadow: inset 3px 0 var(--color-negative); }
+
+.gamecast-telemetry > .gamecast-causality:first-of-type {
+  border-top: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text-secondary) 15%, transparent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-information) 9%, transparent), transparent 72%),
+    color-mix(in srgb, var(--scene-chalk) 2%, transparent);
+}
+
+.gamecast-telemetry .gamecast-contact-card {
+  padding-block: 8px;
+}
+
+.gamecast-telemetry .gamecast-contact-card strong {
+  font-size: var(--font-size-display);
+}
 
 .gamecast-field-view svg {
   transform: translate(var(--gamecast-camera-x, 0), var(--gamecast-camera-y, 0)) scale(var(--gamecast-camera-scale, 1));
