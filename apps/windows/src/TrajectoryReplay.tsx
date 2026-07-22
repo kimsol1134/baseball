@@ -172,8 +172,8 @@ export function interpolateTrajectory(
 
 function platePoint(x: number, y: number): Point {
   return {
-    x: clamp(160 + x * 0.11, 18, 302),
-    y: clamp(205 - y * 0.105, 24, 286),
+    x: clamp(160 + x * 0.08, 48, 272),
+    y: clamp(215 - y * 0.08, 48, 282),
   };
 }
 
@@ -191,7 +191,7 @@ export function createPitchPlot(execution: PitchExecution): PitchPlot {
     target,
     actual,
     control,
-    path: `M 160 135 Q ${control.x.toFixed(1)} ${control.y.toFixed(1)}, ${actual.x.toFixed(1)} ${actual.y.toFixed(1)}`,
+    path: `M 160 116 Q ${control.x.toFixed(1)} ${control.y.toFixed(1)}, ${actual.x.toFixed(1)} ${actual.y.toFixed(1)}`,
   };
 }
 
@@ -215,7 +215,7 @@ function projectPitchSample(
   return {
     x: lerp(160, actual.x, progress)
       + ((sample.lateralTenthsCM - linearLateral) / 10) * 1.15 * perspective,
-    y: lerp(135, actual.y, progress)
+    y: lerp(116, actual.y, progress)
       - ((sample.heightTenthsCM - linearHeight) / 10) * 0.48 * perspective,
   };
 }
@@ -231,7 +231,7 @@ function pitchReplayPoints(execution: PitchExecution): ReadonlyArray<{ time: num
   const plot = createPitchPlot(execution);
   const duration = execution.flightTimeMilliseconds ?? 480;
   return [
-    { time: 0, point: { x: 160, y: 135 } },
+    { time: 0, point: { x: 160, y: 116 } },
     { time: Math.round(duration * 0.62), point: plot.control },
     { time: duration, point: plot.actual },
   ];
@@ -483,38 +483,88 @@ function PitchView({
   const trail = replayPoints.filter((sample) => sample.time <= currentTime).map((sample) => sample.point);
   if (trail.length === 0 || trail[trail.length - 1] !== currentPoint) trail.push(currentPoint);
   const glowID = `pitch-glow-${compact ? "compact" : "main"}`;
+  const skyID = `tracking-sky-${compact ? "compact" : "main"}`;
+  const turfID = `tracking-turf-${compact ? "compact" : "main"}`;
+  const dirtID = `tracking-dirt-${compact ? "compact" : "main"}`;
+  const lightID = `tracking-light-${compact ? "compact" : "main"}`;
+  const textureID = `tracking-texture-${compact ? "compact" : "main"}`;
   const canvasWidth = compact ? 320 : 480;
   const sceneOffsetX = (canvasWidth - 320) / 2;
   return <div className={`gamecast-pitch-view ${compact ? "is-compact" : ""}`}>
     <div className="gamecast-camera-hud" aria-hidden="true">
-      <span className="gamecast-live-indicator"><i /> 생중계</span>
-      <strong>{compact ? "투구 추적" : "포수 시점"}</strong>
+      <span className="gamecast-live-indicator"><i /> TRACKLAB</span>
+      <strong>{compact ? "투구 위치" : "투구 분석 카메라"}</strong>
     </div>
     <svg viewBox={`0 0 ${canvasWidth} 310`} role="img" aria-label={`투구 3D 좌표 ${replayPoints.length}개 중 ${Math.max(1, trail.length)}개 재생`}>
       <defs>
+        <linearGradient id={skyID} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className="gamecast-tracking-sky-top" />
+          <stop offset="1" className="gamecast-tracking-sky-bottom" />
+        </linearGradient>
+        <linearGradient id={turfID} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className="gamecast-tracking-turf-far" />
+          <stop offset="1" className="gamecast-tracking-turf-near" />
+        </linearGradient>
+        <linearGradient id={dirtID} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" className="gamecast-tracking-dirt-far" />
+          <stop offset="1" className="gamecast-tracking-dirt-near" />
+        </linearGradient>
+        <radialGradient id={lightID} cx="50%" cy="0%" r="72%">
+          <stop offset="0" className="gamecast-tracking-light-core" />
+          <stop offset="1" className="gamecast-tracking-light-edge" />
+        </radialGradient>
+        <filter id={textureID} x="-15%" y="-15%" width="130%" height="130%">
+          <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="17" result="noise" />
+          <feColorMatrix in="noise" type="saturate" values="0" result="mono" />
+          <feComponentTransfer in="mono"><feFuncA type="table" tableValues="0 .075" /></feComponentTransfer>
+        </filter>
         <filter id={glowID} x="-200%" y="-200%" width="400%" height="400%">
           <feGaussianBlur stdDeviation="4" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
+      <g className="gamecast-pitch-environment">
+        <rect width={canvasWidth} height="310" fill={`url(#${skyID})`} />
+        <ellipse cx={canvasWidth / 2} cy="72" rx={canvasWidth * .48} ry="150" fill={`url(#${lightID})`} />
+        <path d={`M 0 75 Q ${canvasWidth / 2} 39 ${canvasWidth} 75 V 119 Q ${canvasWidth / 2} 88 0 119 Z`} className="gamecast-tracking-grandstand" />
+        <path d={`M 0 102 Q ${canvasWidth / 2} 74 ${canvasWidth} 102 V 124 Q ${canvasWidth / 2} 100 0 124 Z`} className="gamecast-tracking-crowd" />
+        <path d={`M 0 116 Q ${canvasWidth / 2} 94 ${canvasWidth} 116 V 133 H 0 Z`} className="gamecast-tracking-wall" />
+        <g className="gamecast-tracking-light-rigs">
+          <path d={`M 38 104 L 28 13 M ${canvasWidth - 38} 104 L ${canvasWidth - 28} 13`} />
+          <rect x="10" y="8" width="38" height="12" rx="2" />
+          <rect x={canvasWidth - 48} y="8" width="38" height="12" rx="2" />
+        </g>
+        <g className="gamecast-tracking-scoreboard" transform={`translate(${canvasWidth / 2 - 45} 48)`}>
+          <rect width="90" height="37" rx="3" />
+          <text x="45" y="14" textAnchor="middle">환성 야구장</text>
+          <text x="45" y="28" textAnchor="middle">NIGHT GAME</text>
+        </g>
+        <path d={`M 0 120 H ${canvasWidth} V 310 H 0 Z`} fill={`url(#${turfID})`} />
+        <path d={`M ${canvasWidth / 2 - 14} 121 L ${canvasWidth / 2 - 88} 310 H ${canvasWidth / 2 + 88} L ${canvasWidth / 2 + 14} 121 Z`} fill={`url(#${dirtID})`} className="gamecast-tracking-lane" />
+        <path d={`M 0 166 Q ${canvasWidth / 2} 139 ${canvasWidth} 166 M 0 216 Q ${canvasWidth / 2} 187 ${canvasWidth} 216 M 0 274 Q ${canvasWidth / 2} 242 ${canvasWidth} 274`} className="gamecast-tracking-mow" />
+        <ellipse cx={canvasWidth / 2} cy="122" rx="27" ry="7" className="gamecast-tracking-mound" />
+        <path d={`M ${canvasWidth / 2 - 62} 258 L ${canvasWidth / 2 - 91} 307 M ${canvasWidth / 2 + 62} 258 L ${canvasWidth / 2 + 91} 307`} className="gamecast-tracking-box" />
+        <path d={`M ${canvasWidth / 2 - 14} 290 H ${canvasWidth / 2 + 14} L ${canvasWidth / 2 + 7} 300 H ${canvasWidth / 2 - 7} Z`} className="gamecast-home-plate" />
+        <rect width={canvasWidth} height="310" filter={`url(#${textureID})`} className="gamecast-tracking-texture" />
+      </g>
       <g transform={`translate(${sceneOffsetX} 0)`}>
-      <path d="M 105 145 H 215 V 250 H 105 Z M 141.7 145 V 250 M 178.3 145 V 250 M 105 180 H 215 M 105 215 H 215" className="gamecast-strike-grid" />
+      <path d="M 120 175 H 200 V 255 H 120 Z M 146.7 175 V 255 M 173.3 175 V 255 M 120 201.7 H 200 M 120 228.3 H 200" className="gamecast-strike-grid" />
+      <g className="gamecast-release-point" transform="translate(160 116)"><circle r="4" /><circle r="9" /></g>
       <path d={pointsPath(trail)} className="gamecast-pitch-shadow" />
       <path d={pointsPath(trail)} className="gamecast-pitch-line" />
+      {trail.slice(0, -1).filter((_, index) => index % 2 === 0).map((point, index) => <circle key={`${point.x}-${point.y}-${index}`} cx={point.x} cy={point.y} r={1.2 + index * .16} className="gamecast-pitch-depth-dot" />)}
       <g className="gamecast-target" transform={`translate(${plot.target.x} ${plot.target.y})`}>
         <circle r="8" /><path d="M -13 0 H 13 M 0 -13 V 13" />
       </g>
-      {progress > 0 ? <g className={`gamecast-live-ball gamecast-live-ball--${tone}`} transform={`translate(${currentPoint.x} ${currentPoint.y})`} filter={`url(#${glowID})`}>
+      {progress > 0 ? <g className={`gamecast-live-ball gamecast-live-ball--${revealResult ? tone : "tracking"}`} transform={`translate(${currentPoint.x} ${currentPoint.y})`} filter={`url(#${glowID})`}>
         <circle r={compact ? 5 : 6} /><path d="M -2.5 -5 Q 0 -2 2.5 -5 M -2.5 5 Q 0 2 2.5 5" />
       </g> : null}
       {revealResult ? <g className={`gamecast-actual gamecast-actual--${tone}`} transform={`translate(${plot.actual.x} ${plot.actual.y})`}>
         <circle r="9" /><path d="M -14 0 H 14 M 0 -14 V 14" />
       </g> : null}
-      <text x="12" y="20" className="gamecast-axis-label">공을 놓은 지점</text>
-      <text x="249" y="298" className="gamecast-axis-label">홈플레이트</text>
       </g>
     </svg>
-    {!compact ? <div className="gamecast-view-caption"><span>포수 중계 시점</span><span>＋ 목표 코스</span><span>● 실제 공</span><strong>{revealResult ? "ABS 판독 완료" : `${Math.round(progress * 100)}% 추적`}</strong></div> : null}
+    {!compact ? <div className="gamecast-view-caption"><span>18.44 m 투구 좌표</span><span>＋ 목표</span><span>● 실제 위치</span><strong>{revealResult ? "위치 판독 완료" : `${Math.round(progress * 100)}% 분석`}</strong></div> : null}
   </div>;
 }
 
@@ -766,7 +816,7 @@ export function GameCastReplay({
       {revealResult ? snapshot.accessibilitySummary : phaseLabel}
     </div>
     <header className="gamecast-header">
-      <div className="gamecast-brand"><i /> <span>환생 야구</span><strong>경기 중계</strong></div>
+      <div className="gamecast-brand"><i /> <span>환생 야구</span><strong>TRACKLAB</strong></div>
       <div className="gamecast-matchup"><span><small>투</small>{pitcherName}</span><b>VS</b><span><small>타</small>{batterName}</span></div>
       <div className="gamecast-situation"><span>{situationLabel}</span><strong><i>B</i> {revealResult ? snapshot.balls : "—"} <i>S</i> {revealResult ? snapshot.strikes : "—"}</strong></div>
       <div className="gamecast-playback-controls" aria-label="재생 제어">
@@ -780,7 +830,7 @@ export function GameCastReplay({
     </header>
 
     <div className="gamecast-outcome-strip">
-      <div><span>{revealResult ? snapshot.ended ? "최종 결과" : "투구 결과" : "생중계"}</span><strong>{revealResult ? outcome : phaseLabel}</strong></div>
+      <div><span>{revealResult ? snapshot.ended ? "최종 기록" : "투구 기록" : "플레이 분석"}</span><strong>{revealResult ? outcome : phaseLabel}</strong></div>
       <div className="gamecast-play-sequence" aria-label="플레이 재생 순서">
         <span className={phase === "pitch" ? "is-current is-pitch" : "is-complete"}>01 투구</span>
         <i />
@@ -823,7 +873,8 @@ export function GameCastReplay({
       </> : <>
         <PitchView execution={execution} tone={tone} progress={pitchProgress} revealResult={revealResult} />
         <aside className="gamecast-telemetry gamecast-telemetry--result">
-          <div className="gamecast-telemetry-heading"><span>투구 정보</span><strong>{pitchLabel}</strong></div>
+          <div className="gamecast-telemetry-heading"><span>투구 리포트</span><strong>{pitchLabel}</strong></div>
+          {causalitySummary}
           <div className="gamecast-speed"><strong>{(execution.velocityTenthsKPH / 10).toFixed(1)}</strong><span>km/h</span></div>
           <div className="gamecast-metrics gamecast-metrics--stacked">
             <Metric label="비행시간" value={`${execution.flightTimeMilliseconds ?? 0} ms`} />
@@ -832,7 +883,6 @@ export function GameCastReplay({
             <Metric label="코스 정확도" value={revealResult ? `${execution.executionQuality} / 1000` : "계산 중"} accent />
           </div>
           <div className={`gamecast-zone-call gamecast-zone-call--${revealResult ? tone : "pending"}`}><span>ABS 판정</span><strong>{revealResult ? Math.abs(execution.actualX) <= 500 && Math.abs(execution.actualY) <= 500 ? "존 안" : "존 밖" : "판독 중"}</strong></div>
-          {causalitySummary}
           <GameCastImpact result={result} revealResult={revealResult} />
         </aside>
       </>}
@@ -845,8 +895,8 @@ export function GameCastReplay({
 
     <footer className="gamecast-footer">
       <div className="gamecast-result-copy">
-        <span className={revealResult ? `decision-grade decision-grade--${snapshot.selectionQuality}` : "gamecast-live-badge"}>{revealResult ? snapshot.recommendationAccepted ? "포수 추천 수락" : "포수 사인 수정" : "생중계"}</span>
-        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "field" ? "중계 카메라가 판정된 타구와 수비 반응을 따라갑니다." : phase === "contact" ? "투구가 끝났습니다. 스윙·존·접촉 여부를 판정합니다." : "포수 시점에서 투구 동작과 공의 움직임을 따라갑니다."}</p></div>
+        <span className={revealResult ? `decision-grade decision-grade--${snapshot.selectionQuality}` : "gamecast-live-badge"}>{revealResult ? snapshot.recommendationAccepted ? "포수 추천 수락" : "포수 사인 수정" : "TRACKING"}</span>
+        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "field" ? "판정된 타구와 수비 반응을 같은 좌표계에서 추적합니다." : phase === "contact" ? "투구가 끝났습니다. 스윙·존·접촉 여부를 판정합니다." : "릴리스부터 홈플레이트까지 실제 공의 움직임을 분석합니다."}</p></div>
       </div>
       <button className="ds-button ds-button--primary primary-action gamecast-continue" type="button" disabled={isRunning || !revealResult} onClick={onContinue}>
         {isRunning ? "다음 장면 준비 중…" : revealResult ? continueLabel : "플레이 재생 중…"}

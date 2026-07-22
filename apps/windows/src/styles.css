@@ -2186,13 +2186,11 @@ legend {
   isolation: isolate;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-size: cover;
 }
 
 .gamecast-pitch-view {
-  background-image:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-canvas) 5%, transparent), color-mix(in srgb, var(--color-canvas) 18%, transparent)),
-    url("./assets/gamecast-pitch-stadium-night-v3.webp");
+  background: var(--color-canvas);
 }
 
 .gamecast-field-view {
@@ -2208,15 +2206,137 @@ legend {
   z-index: 3;
   inset: 0 0 28px;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 24%, transparent), transparent 10%, transparent 90%, color-mix(in srgb, var(--color-canvas) 24%, transparent)),
-    linear-gradient(0deg, color-mix(in srgb, var(--color-canvas) 22%, transparent), transparent 22%);
-  box-shadow: inset 0 0 65px color-mix(in srgb, var(--color-canvas) 28%, transparent);
+    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 28%, transparent), transparent 12%, transparent 88%, color-mix(in srgb, var(--color-canvas) 28%, transparent)),
+    linear-gradient(0deg, color-mix(in srgb, var(--color-canvas) 28%, transparent), transparent 24%);
+  box-shadow: inset 0 0 72px color-mix(in srgb, var(--color-canvas) 30%, transparent);
   pointer-events: none;
 }
 
 .gamecast-field-view svg,
 .gamecast-pitch-view svg {
   background: transparent;
+}
+
+.gamecast-pitch-view svg {
+  position: relative;
+  z-index: 1;
+}
+
+.gamecast-pitch-environment {
+  pointer-events: none;
+}
+
+.gamecast-tracking-sky-top { stop-color: var(--scene-sky); }
+.gamecast-tracking-sky-bottom { stop-color: var(--scene-crowd); }
+.gamecast-tracking-turf-far { stop-color: var(--scene-turf-light); }
+.gamecast-tracking-turf-near { stop-color: var(--scene-turf-deep); }
+.gamecast-tracking-dirt-far { stop-color: var(--scene-dirt); }
+.gamecast-tracking-dirt-near { stop-color: color-mix(in srgb, var(--scene-dirt) 45%, var(--color-canvas)); }
+.gamecast-tracking-light-core { stop-color: var(--scene-chalk); stop-opacity: .13; }
+.gamecast-tracking-light-edge { stop-color: var(--color-information); stop-opacity: 0; }
+
+.gamecast-tracking-grandstand {
+  fill: var(--scene-sky-raised);
+  stroke: var(--scene-crowd);
+  stroke-width: 1;
+}
+
+.gamecast-tracking-crowd {
+  fill: color-mix(in srgb, var(--scene-crowd) 50%, var(--color-canvas));
+  stroke: var(--color-border-strong);
+  stroke-width: .7;
+  stroke-dasharray: 1 4;
+}
+
+.gamecast-tracking-wall {
+  fill: var(--scene-turf-deep);
+  stroke: color-mix(in srgb, var(--scene-turf-light) 70%, var(--color-border));
+  stroke-width: 1;
+}
+
+.gamecast-tracking-light-rigs path {
+  fill: none;
+  stroke: var(--scene-metal);
+  stroke-width: 1.4;
+}
+
+.gamecast-tracking-light-rigs rect {
+  fill: var(--color-text-primary);
+  stroke: var(--scene-chalk);
+  stroke-width: .6;
+  filter: drop-shadow(0 0 8px var(--scene-chalk));
+}
+
+.gamecast-tracking-scoreboard rect {
+  fill: var(--color-canvas);
+  stroke: var(--color-border-strong);
+  stroke-width: .8;
+}
+
+.gamecast-tracking-scoreboard text:first-of-type {
+  fill: var(--color-text-primary);
+  font-size: var(--font-size-scene-xs);
+  font-weight: 850;
+  letter-spacing: .08em;
+}
+
+.gamecast-tracking-scoreboard text:last-of-type {
+  fill: var(--color-information);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: var(--font-size-scene-xs);
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.gamecast-tracking-lane {
+  opacity: .72;
+  stroke: color-mix(in srgb, var(--scene-dirt-light) 34%, transparent);
+  stroke-width: .8;
+}
+
+.gamecast-tracking-mow {
+  fill: none;
+  stroke: color-mix(in srgb, var(--scene-turf-light) 12%, transparent);
+  stroke-width: 18;
+}
+
+.gamecast-tracking-mound {
+  fill: var(--scene-dirt);
+  stroke: var(--scene-dirt-light);
+  stroke-width: .8;
+}
+
+.gamecast-tracking-box {
+  fill: none;
+  stroke: color-mix(in srgb, var(--scene-chalk) 55%, transparent);
+  stroke-width: 1.15;
+}
+
+.gamecast-tracking-texture {
+  fill: var(--scene-chalk);
+  opacity: .28;
+  mix-blend-mode: soft-light;
+}
+
+.gamecast-release-point circle:first-child {
+  fill: var(--color-text-primary);
+}
+
+.gamecast-release-point circle:last-child {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-information) 48%, transparent);
+  stroke-width: .8;
+  stroke-dasharray: 2 2;
+}
+
+.gamecast-pitch-depth-dot {
+  fill: var(--color-information);
+  opacity: .34;
+}
+
+.gamecast-live-ball--tracking circle {
+  fill: var(--color-text-primary);
+  stroke: var(--scene-chalk);
 }
 
 .gamecast-field-view svg {
@@ -2521,6 +2641,32 @@ legend {
 
 .gamecast-view-caption strong {
   color: var(--color-selection);
+}
+
+.gamecast-outcome-strip > div:first-child strong {
+  color: var(--color-text-primary);
+}
+
+.gamecast-phase--result.gamecast-replay--positive .gamecast-outcome-strip > div:first-child strong { color: var(--color-positive); }
+.gamecast-phase--result.gamecast-replay--negative .gamecast-outcome-strip > div:first-child strong { color: var(--color-negative); }
+.gamecast-phase--result.gamecast-replay--neutral .gamecast-outcome-strip > div:first-child strong { color: var(--color-information); }
+
+.gamecast-telemetry--result .gamecast-causality {
+  order: 0;
+  border-top: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text-secondary) 15%, transparent);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-information) 9%, transparent), transparent 72%),
+    color-mix(in srgb, var(--scene-chalk) 2%, transparent);
+}
+
+.gamecast-telemetry--result .gamecast-speed {
+  justify-content: flex-start;
+  padding: 13px 11px 11px;
+}
+
+.gamecast-telemetry--result .gamecast-speed strong {
+  font-size: clamp(2.15rem, 4.4vw, 3.35rem);
 }
 
 .gamecast-pitch-sky-top { stop-color: var(--scene-sky); }

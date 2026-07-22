@@ -27,10 +27,10 @@ describe("trajectory replay geometry", () => {
       trajectoryControlY: 410,
     });
 
-    expect(plot.target.x).toBe(116);
-    expect(plot.actual.x).toBe(18);
-    expect(plot.actual.y).toBe(37);
-    expect(plot.path).toContain("M 160 135 Q");
+    expect(plot.target.x).toBe(128);
+    expect(plot.actual.x).toBe(48);
+    expect(plot.actual.y).toBe(87);
+    expect(plot.path).toContain("M 160 116 Q");
   });
 
   it("plots left- and right-side contact on the matching side of center field", () => {
