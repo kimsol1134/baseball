@@ -13,17 +13,23 @@ export function growthMilestoneCopy(before: number, after: number) {
   return "한 단계 더 강해졌습니다";
 }
 
+export function crossedGrowthMilestone(before: number, after: number) {
+  return [45, 55, 65, 75].some((threshold) => before < threshold && after >= threshold);
+}
+
 export function GrowthCelebration({ label, before, after, compact = false }: GrowthCelebrationProps) {
   const gain = after - before;
   if (gain <= 0) return null;
+  const isMilestone = crossedGrowthMilestone(before, after);
+  const useCompactLayout = compact || !isMilestone;
 
-  return <div className={`growth-celebration${compact ? " is-compact" : ""}`}
+  return <div className={`growth-celebration${useCompactLayout ? " is-compact" : " is-milestone"}`}
     aria-label={`${label} 능력치 상승, ${before}에서 ${after}, ${gain} 증가`}>
-    <div className="growth-celebration__burst" aria-hidden="true">
+    {isMilestone ? <div className="growth-celebration__burst" aria-hidden="true">
       {Array.from({ length: 8 }, (_, index) => <i key={index} />)}
-    </div>
+    </div> : null}
     <div className="growth-celebration__copy">
-      <span>능력치 상승!</span>
+      <span>{isMilestone ? "등급 돌파!" : "능력치 성장"}</span>
       <strong>{label}</strong>
       <small>{growthMilestoneCopy(before, after)}</small>
     </div>
