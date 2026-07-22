@@ -100,7 +100,15 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         legacyObject.removeValue(forKey: "managerTrust")
         legacyObject.removeValue(forKey: "catcherTrust")
         legacyObject.removeValue(forKey: "rivalTrust")
-        legacyObject["stateCommitment"] = legacyCommitment(for: started.snapshot)
+        legacyObject.removeValue(forKey: "balanceVersion")
+        let legacyPower = try XCTUnwrap(PitcherPresetCatalog.balanceV1.first { $0.id == "power_prospect" })
+        legacyObject["pitcher"] = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(legacyPower.pitcher)) as? [String: Any]
+        )
+        legacyObject["stateCommitment"] = ""
+        let unsignedLegacyData = try JSONSerialization.data(withJSONObject: legacyObject)
+        let unsignedLegacy = try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: unsignedLegacyData)
+        legacyObject["stateCommitment"] = legacyCommitment(for: unsignedLegacy)
 
         let legacyData = try JSONSerialization.data(withJSONObject: legacyObject)
         let legacySnapshot = try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: legacyData)
@@ -115,6 +123,12 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertEqual(normalized.managerTrust, started.snapshot.relationshipTrust)
         XCTAssertEqual(normalized.catcherTrust, started.snapshot.relationshipTrust)
         XCTAssertEqual(normalized.rivalTrust, started.snapshot.relationshipTrust)
+        XCTAssertEqual(normalized.balanceVersion, PitcherPresetCatalog.balanceVersion)
+        XCTAssertEqual(normalized.pitcher.stuff, 62)
+        XCTAssertEqual(normalized.pitcher.profile(for: .fourSeam)?.velocityTenthsKPH, 1_430)
+
+        let normalizedAgain = try engine.normalizeRegionalSchools(.init(seed: started.nextSeed, state: normalized))
+        XCTAssertEqual(normalizedAgain.snapshot.pitcher, normalized.pitcher)
         XCTAssertEqual(normalized.relationshipTrust, started.snapshot.relationshipTrust)
     }
 

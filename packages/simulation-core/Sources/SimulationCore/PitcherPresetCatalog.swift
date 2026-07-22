@@ -24,6 +24,8 @@ public struct PitcherPresetSnapshot: Codable, Equatable, Sendable {
 }
 
 public enum PitcherPresetCatalog {
+    public static let balanceVersion = 2
+
     public static let all: [PitcherPresetSnapshot] = [
         PitcherPresetSnapshot(
             id: "power_prospect",
@@ -108,6 +110,50 @@ public enum PitcherPresetCatalog {
                     profile(.changeup, .secondary, 1_260, 56, 57, 52, 46, 60, 0)
                 ]
             )
+        )
+    ]
+
+    // Kept only to translate pre-v2 saves while preserving every point earned after creation.
+    static let balanceV1: [PitcherPresetSnapshot] = [
+        PitcherPresetSnapshot(
+            id: "power_prospect", name: "강속구 원석", tagline: "", strengths: [], tradeoff: "",
+            pitcher: PitcherSnapshot(id: "pitcher-power", name: "민서준", stuff: 72, command: 44, movement: 52, stamina: 52,
+                pitchProfiles: [
+                    profile(.fourSeam, .primary, 1_525, 48, 45, 58, 74, 62, 2),
+                    profile(.slider, .secondary, 1_345, 43, 42, 57, 61, 54, 2),
+                    profile(.curveball, .secondary, 1_205, 40, 39, 54, 50, 50, 2),
+                    profile(.changeup, .development, 1_375, 34, 33, 43, 40, 43, 2)
+                ])
+        ),
+        PitcherPresetSnapshot(
+            id: "precision_commander", name: "정교한 제구형", tagline: "", strengths: [], tradeoff: "",
+            pitcher: PitcherSnapshot(id: "pitcher-command", name: "고태윤", stuff: 54, command: 74, movement: 53, stamina: 61,
+                pitchProfiles: [
+                    profile(.fourSeam, .primary, 1_445, 76, 75, 51, 52, 58, 1),
+                    profile(.slider, .secondary, 1_285, 67, 70, 57, 56, 59, 1),
+                    profile(.curveball, .development, 1_160, 48, 51, 53, 45, 48, 2),
+                    profile(.changeup, .secondary, 1_310, 70, 72, 55, 55, 63, 1)
+                ])
+        ),
+        PitcherPresetSnapshot(
+            id: "breaking_ball_artist", name: "변화구 아티스트", tagline: "", strengths: [], tradeoff: "",
+            pitcher: PitcherSnapshot(id: "pitcher-artist", name: "진서율", stuff: 59, command: 54, movement: 74, stamina: 49,
+                pitchProfiles: [
+                    profile(.fourSeam, .secondary, 1_425, 56, 53, 48, 49, 52, 1),
+                    profile(.slider, .primary, 1_305, 58, 61, 78, 76, 73, 2),
+                    profile(.curveball, .secondary, 1_175, 55, 59, 76, 69, 76, 2),
+                    profile(.changeup, .development, 1_295, 43, 46, 63, 58, 64, 2)
+                ])
+        ),
+        PitcherPresetSnapshot(
+            id: "innings_eater", name: "체력형 선발", tagline: "", strengths: [], tradeoff: "",
+            pitcher: PitcherSnapshot(id: "pitcher-stamina", name: "도하람", stuff: 53, command: 62, movement: 52, stamina: 78,
+                pitchProfiles: [
+                    profile(.fourSeam, .primary, 1_435, 65, 63, 50, 49, 57, 0),
+                    profile(.slider, .secondary, 1_275, 60, 61, 54, 50, 58, 1),
+                    profile(.curveball, .development, 1_150, 51, 50, 50, 42, 50, 1),
+                    profile(.changeup, .secondary, 1_300, 63, 64, 57, 51, 65, 0)
+                ])
         )
     ]
 

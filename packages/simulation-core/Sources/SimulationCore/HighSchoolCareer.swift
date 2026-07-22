@@ -428,6 +428,7 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let draftResult: DraftResultSnapshot?
     public let legacyOptions: [MemoryCardID]
     public let selectedMemories: [MemoryCardID]
+    public let balanceVersion: Int?
     public let stateCommitment: String
 
     public init(
@@ -466,6 +467,7 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         draftResult: DraftResultSnapshot?,
         legacyOptions: [MemoryCardID],
         selectedMemories: [MemoryCardID],
+        balanceVersion: Int? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -503,6 +505,7 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.draftResult = draftResult
         self.legacyOptions = legacyOptions
         self.selectedMemories = selectedMemories
+        self.balanceVersion = balanceVersion
         self.stateCommitment = stateCommitment
     }
 }
@@ -763,7 +766,8 @@ public struct HighSchoolCareerEngine: Sendable {
             selectedAwakenings: [], awakeningOptions: [], fatigue: 5,
             performance: CareerPerformanceSnapshot(), currentGameScenario: nil, currentRelationshipEvent: nil, lastTraining: nil,
             news: ["\(params.identity.region) 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다."], fanInterest: 5,
-            draftResult: nil, legacyOptions: [], selectedMemories: [], stateCommitment: ""
+            draftResult: nil, legacyOptions: [], selectedMemories: [], balanceVersion: PitcherPresetCatalog.balanceVersion,
+            stateCommitment: ""
         )
         return result(seed: seed, state: signed(base), event: "high_school_career_started")
     }
@@ -806,10 +810,19 @@ public struct HighSchoolCareerEngine: Sendable {
         let managerTrust = params.state.managerTrust ?? params.state.relationshipTrust
         let catcherTrust = params.state.catcherTrust ?? params.state.relationshipTrust
         let rivalTrust = params.state.rivalTrust ?? params.state.relationshipTrust
-        let normalized = signed(replacing(params.state, schoolOptions: options, school: selectedSchool,
+        let needsBalanceMigration = (params.state.balanceVersion ?? 1) < PitcherPresetCatalog.balanceVersion
+        let balanceMigration = needsBalanceMigration ? migrateBalanceV1(params.state.pitcher) : nil
+        let migratedPitcher = balanceMigration?.pitcher ?? params.state.pitcher
+        let migratedTraining = balanceMigration.flatMap { migrate(params.state.lastTraining, ratingOffsets: $0.ratingOffsets) }
+            ?? params.state.lastTraining
+        let migratedRelationship = balanceMigration.flatMap { migrate(params.state.lastRelationship, ratingOffsets: $0.ratingOffsets) }
+            ?? params.state.lastRelationship
+        let normalized = signed(replacing(params.state, pitcher: migratedPitcher,
+            schoolOptions: options, school: selectedSchool,
             rival: normalizedRival, relationshipTrust: (managerTrust + catcherTrust + rivalTrust) / 3,
             managerTrust: managerTrust, catcherTrust: catcherTrust, rivalTrust: rivalTrust,
-            news: normalizedNews, draftResult: normalizedDraft))
+            lastTraining: migratedTraining, lastRelationship: migratedRelationship,
+            news: normalizedNews, draftResult: normalizedDraft, balanceVersion: PitcherPresetCatalog.balanceVersion))
         let eventHash = StableHash.fnv1a64("\(normalized.careerID)|\(normalized.revision)|regional_schools_normalized|\(normalized.stateCommitment)")
         return HighSchoolCareerResult(revision: normalized.revision, nextSeed: params.seed, events: [], snapshot: normalized, eventHash: eventHash)
     }
@@ -1363,7 +1376,8 @@ public struct HighSchoolCareerEngine: Sendable {
         currentGameScenario: ImportantGameScenarioContent? = nil,
         currentRelationshipEvent: CareerEventContent? = nil,
         news: [String]? = nil, fanInterest: Int? = nil, draftResult: DraftResultSnapshot? = nil,
-        legacyOptions: [MemoryCardID]? = nil, selectedMemories: [MemoryCardID]? = nil, stateCommitment: String? = nil
+        legacyOptions: [MemoryCardID]? = nil, selectedMemories: [MemoryCardID]? = nil,
+        balanceVersion: Int? = nil, stateCommitment: String? = nil
     ) -> HighSchoolCareerSnapshot {
         HighSchoolCareerSnapshot(careerID: state.careerID, revision: revision ?? state.revision, lifeNumber: state.lifeNumber,
             phase: phase ?? state.phase, identity: state.identity, difficulty: state.difficulty, karmas: state.karmas,
@@ -1387,7 +1401,8 @@ public struct HighSchoolCareerEngine: Sendable {
             lastRelationship: lastRelationship ?? state.lastRelationship,
             news: news ?? state.news, fanInterest: fanInterest ?? state.fanInterest,
             draftResult: draftResult ?? state.draftResult, legacyOptions: legacyOptions ?? state.legacyOptions,
-            selectedMemories: selectedMemories ?? state.selectedMemories, stateCommitment: stateCommitment ?? state.stateCommitment)
+            selectedMemories: selectedMemories ?? state.selectedMemories,
+            balanceVersion: balanceVersion ?? state.balanceVersion, stateCommitment: stateCommitment ?? state.stateCommitment)
     }
 
     private func signed(_ state: HighSchoolCareerSnapshot) -> HighSchoolCareerSnapshot {
@@ -1415,6 +1430,9 @@ public struct HighSchoolCareerEngine: Sendable {
         } else if state.managerTrust != nil || state.catcherTrust != nil {
             canonical.append("staff:\(state.managerTrust ?? state.relationshipTrust):\(state.catcherTrust ?? state.relationshipTrust)")
         }
+        if let balanceVersion = state.balanceVersion {
+            canonical.append("balance_version:\(balanceVersion)")
+        }
         if let relationship = state.lastRelationship {
             let relationshipValues: [String] = [
                 "last_relationship", String(relationship.number), relationship.category, relationship.title,
@@ -1428,6 +1446,73 @@ public struct HighSchoolCareerEngine: Sendable {
             canonical.append(relationshipValues.joined(separator: ":"))
         }
         return StableHash.fnv1a64(canonical.joined(separator: "|"))
+    }
+
+    private struct BalanceMigration {
+        let pitcher: PitcherSnapshot
+        let ratingOffsets: [TrainingFocus: Int]
+    }
+
+    private func migrateBalanceV1(_ pitcher: PitcherSnapshot) -> BalanceMigration? {
+        guard let legacy = PitcherPresetCatalog.balanceV1.first(where: { $0.pitcher.id == pitcher.id })?.pitcher,
+              let calibrated = PitcherPresetCatalog.all.first(where: { $0.pitcher.id == pitcher.id })?.pitcher else { return nil }
+        let offsets: [TrainingFocus: Int] = [
+            .velocity: calibrated.stuff - legacy.stuff,
+            .command: calibrated.command - legacy.command,
+            .breakingBall: calibrated.movement - legacy.movement,
+            .stamina: calibrated.stamina - legacy.stamina,
+            .recovery: calibrated.stamina - legacy.stamina,
+            .gamePlanning: calibrated.command - legacy.command
+        ]
+        let profiles = pitcher.pitchProfiles?.map { current -> PitchProfileSnapshot in
+            guard let old = legacy.profile(for: current.pitchType),
+                  let new = calibrated.profile(for: current.pitchType) else { return current }
+            return PitchProfileSnapshot(
+                pitchType: current.pitchType, role: new.role,
+                velocityTenthsKPH: clamp(new.velocityTenthsKPH + current.velocityTenthsKPH - old.velocityTenthsKPH, 1_000, 1_700),
+                control: clamp(new.control + current.control - old.control, 20, 80),
+                command: clamp(new.command + current.command - old.command, 20, 80),
+                movement: clamp(new.movement + current.movement - old.movement, 20, 80),
+                whiff: clamp(new.whiff + current.whiff - old.whiff, 20, 80),
+                weakContact: clamp(new.weakContact + current.weakContact - old.weakContact, 20, 80),
+                fatigueCost: clamp(new.fatigueCost + current.fatigueCost - old.fatigueCost, 0, 4)
+            )
+        }
+        let migrated = PitcherSnapshot(
+            id: pitcher.id, name: pitcher.name,
+            stuff: clamp(pitcher.stuff + (calibrated.stuff - legacy.stuff), 20, 80),
+            command: clamp(pitcher.command + (calibrated.command - legacy.command), 20, 80),
+            movement: clamp(pitcher.movement + (calibrated.movement - legacy.movement), 20, 80),
+            stamina: clamp(pitcher.stamina + (calibrated.stamina - legacy.stamina), 20, 80),
+            pitchProfiles: profiles
+        )
+        return BalanceMigration(pitcher: migrated, ratingOffsets: offsets)
+    }
+
+    private func migrate(_ training: CareerTrainingSnapshot?, ratingOffsets: [TrainingFocus: Int]) -> CareerTrainingSnapshot? {
+        guard let training else { return nil }
+        let offset = ratingOffsets[training.focus, default: 0]
+        return CareerTrainingSnapshot(
+            number: training.number, focus: training.focus, intensity: training.intensity,
+            growth: training.growth, fatigueChange: training.fatigueChange, feedback: training.feedback,
+            metricBefore: training.metricBefore.map { clamp($0 + offset, 20, 80) },
+            metricAfter: training.metricAfter.map { clamp($0 + offset, 20, 80) },
+            fatigueBefore: training.fatigueBefore, fatigueAfter: training.fatigueAfter
+        )
+    }
+
+    private func migrate(_ relationship: CareerRelationshipResultSnapshot?, ratingOffsets: [TrainingFocus: Int]) -> CareerRelationshipResultSnapshot? {
+        guard let relationship else { return nil }
+        let offset = relationship.growthFocus.flatMap { ratingOffsets[$0] } ?? 0
+        return CareerRelationshipResultSnapshot(
+            number: relationship.number, category: relationship.category, title: relationship.title,
+            response: relationship.response, trustBefore: relationship.trustBefore, trustAfter: relationship.trustAfter,
+            fatigueBefore: relationship.fatigueBefore, fatigueAfter: relationship.fatigueAfter,
+            fanInterestBefore: relationship.fanInterestBefore, fanInterestAfter: relationship.fanInterestAfter,
+            growthFocus: relationship.growthFocus,
+            abilityBefore: relationship.abilityBefore.map { clamp($0 + offset, 20, 80) },
+            abilityAfter: relationship.abilityAfter.map { clamp($0 + offset, 20, 80) }, feedback: relationship.feedback
+        )
     }
 
     private func validate(_ state: HighSchoolCareerSnapshot, phase: HighSchoolCareerPhase) throws {

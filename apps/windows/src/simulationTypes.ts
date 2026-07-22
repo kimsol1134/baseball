@@ -804,6 +804,7 @@ export interface HighSchoolCareerSnapshot {
   draftResult?: DraftResultSnapshot;
   legacyOptions: ReadonlyArray<MemoryCardID>;
   selectedMemories: ReadonlyArray<MemoryCardID>;
+  balanceVersion?: number;
   stateCommitment: string;
 }
 
