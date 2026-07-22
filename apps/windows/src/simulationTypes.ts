@@ -745,6 +745,10 @@ export interface CareerTrainingSnapshot {
   growth: number;
   fatigueChange: number;
   feedback: string;
+  metricBefore?: number;
+  metricAfter?: number;
+  fatigueBefore?: number;
+  fatigueAfter?: number;
 }
 
 export interface HighSchoolCareerSnapshot {
@@ -767,6 +771,9 @@ export interface HighSchoolCareerSnapshot {
   milestoneIndex: number;
   relationshipsCompleted: number;
   relationshipTrust: number;
+  managerTrust?: number;
+  catcherTrust?: number;
+  rivalTrust?: number;
   selectedAwakenings: ReadonlyArray<AwakeningID>;
   awakeningOptions: ReadonlyArray<AwakeningID>;
   fatigue: number;

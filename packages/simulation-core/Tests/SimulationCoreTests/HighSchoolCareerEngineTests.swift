@@ -97,6 +97,10 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         rival.removeValue(forKey: "personality")
         rival.removeValue(forKey: "signatureRecord")
         legacyObject["rival"] = rival
+        legacyObject.removeValue(forKey: "managerTrust")
+        legacyObject.removeValue(forKey: "catcherTrust")
+        legacyObject.removeValue(forKey: "rivalTrust")
+        legacyObject["stateCommitment"] = legacyCommitment(for: started.snapshot)
 
         let legacyData = try JSONSerialization.data(withJSONObject: legacyObject)
         let legacySnapshot = try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: legacyData)
@@ -108,6 +112,10 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         })
         XCTAssertFalse((normalized.rival.personality ?? "").isEmpty)
         XCTAssertFalse((normalized.rival.signatureRecord ?? "").isEmpty)
+        XCTAssertEqual(normalized.managerTrust, started.snapshot.relationshipTrust)
+        XCTAssertEqual(normalized.catcherTrust, started.snapshot.relationshipTrust)
+        XCTAssertEqual(normalized.rivalTrust, started.snapshot.relationshipTrust)
+        XCTAssertEqual(normalized.relationshipTrust, started.snapshot.relationshipTrust)
     }
 
     func testDifficultyAndKarmaChangeRulesWithoutChangingContentOrder() throws {
@@ -241,6 +249,31 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertFalse(headline.contains("이야기를 나눴습니다"))
     }
 
+    func testTrainingResultRecordsTheExactBeforeAndAfterValues() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(seed: "2026072301", presetID: "power_prospect"))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower))
+        let stuffBefore = result.snapshot.pitcher.stuff
+        let fatigueBefore = result.snapshot.fatigue
+
+        result = try engine.commitTraining(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            focus: .velocity,
+            intensity: .standard
+        ))
+
+        let training = try XCTUnwrap(result.snapshot.lastTraining)
+        XCTAssertEqual(training.metricBefore, stuffBefore)
+        XCTAssertEqual(training.metricAfter, result.snapshot.pitcher.stuff)
+        XCTAssertEqual(training.metricAfter! - training.metricBefore!, training.growth)
+        XCTAssertEqual(training.fatigueBefore, fatigueBefore)
+        XCTAssertEqual(training.fatigueAfter, result.snapshot.fatigue)
+        XCTAssertEqual(training.fatigueAfter! - training.fatigueBefore!, training.fatigueChange)
+        XCTAssertTrue(training.feedback.contains(training.growth > 0 ? "올랐습니다" : "오르지 않았습니다"))
+    }
+
     func testRelationshipResponseDependsOnPersonnelInsteadOfAlwaysRewardingListening() throws {
         let engine = HighSchoolCareerEngine()
         let scene = try reachFirstRelationship(engine, schoolID: .haedongPower)
@@ -249,9 +282,42 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         let challenged = try engine.resolveRelationship(.init(seed: scene.nextSeed, state: scene.snapshot, response: .challenge))
 
         XCTAssertGreaterThan(challenged.snapshot.relationshipTrust, listened.snapshot.relationshipTrust)
+        XCTAssertGreaterThan(
+            try XCTUnwrap(challenged.snapshot.managerTrust),
+            try XCTUnwrap(listened.snapshot.managerTrust)
+        )
+        XCTAssertEqual(challenged.snapshot.catcherTrust, listened.snapshot.catcherTrust)
         XCTAssertGreaterThan(challenged.snapshot.fanInterest, listened.snapshot.fanInterest)
         XCTAssertGreaterThan(challenged.snapshot.fatigue, listened.snapshot.fatigue)
         XCTAssertTrue(challenged.snapshot.news.first?.contains("공개 불펜") == true)
+    }
+
+    func testCoachCatcherAndRivalRelationshipsChangeOnlyTheirOwnTrust() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try reachFirstRelationship(engine, schoolID: .haedongPower)
+
+        let coachBefore = result.snapshot
+        result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .challenge))
+        XCTAssertGreaterThan(try XCTUnwrap(result.snapshot.managerTrust), try XCTUnwrap(coachBefore.managerTrust))
+        XCTAssertEqual(result.snapshot.catcherTrust, coachBefore.catcherTrust)
+        XCTAssertEqual(result.snapshot.rivalTrust, coachBefore.rivalTrust)
+        XCTAssertEqual(result.snapshot.relationshipTrust, relationshipAverage(result.snapshot))
+
+        result = try reachRelationship("catcher", engine: engine, from: result)
+        let catcherBefore = result.snapshot
+        result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
+        XCTAssertEqual(result.snapshot.managerTrust, catcherBefore.managerTrust)
+        XCTAssertGreaterThan(try XCTUnwrap(result.snapshot.catcherTrust), try XCTUnwrap(catcherBefore.catcherTrust))
+        XCTAssertEqual(result.snapshot.rivalTrust, catcherBefore.rivalTrust)
+        XCTAssertEqual(result.snapshot.relationshipTrust, relationshipAverage(result.snapshot))
+
+        result = try reachRelationship("rival", engine: engine, from: result)
+        let rivalBefore = result.snapshot
+        result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
+        XCTAssertEqual(result.snapshot.managerTrust, rivalBefore.managerTrust)
+        XCTAssertEqual(result.snapshot.catcherTrust, rivalBefore.catcherTrust)
+        XCTAssertGreaterThan(try XCTUnwrap(result.snapshot.rivalTrust), try XCTUnwrap(rivalBefore.rivalTrust))
+        XCTAssertEqual(result.snapshot.relationshipTrust, relationshipAverage(result.snapshot))
     }
 
     func testAwakeningCandidatesFollowTrainingAndCreateARealTradeoff() throws {
@@ -404,5 +470,74 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         }
         XCTFail("각성 단계에 도달하지 못했습니다.")
         return result
+    }
+
+    private func reachRelationship(
+        _ category: String,
+        engine: HighSchoolCareerEngine,
+        from initial: HighSchoolCareerResult
+    ) throws -> HighSchoolCareerResult {
+        var result = initial
+        for _ in 0..<60 {
+            switch result.snapshot.phase {
+            case .training:
+                result = try engine.commitTraining(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    focus: .command,
+                    intensity: .standard
+                ))
+            case .relationship:
+                if result.snapshot.currentRelationshipEvent?.category == category { return result }
+                result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
+            case .importantGame:
+                let number = result.snapshot.performance.importantGamesCompleted + 1
+                result = try engine.recordImportantGame(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    report: .init(scenarioNumber: number, pitches: 16, strikeouts: 3, walks: 0,
+                        runsAllowed: 0, expectedDamage: 400, actualDamage: 180, recommendationAccepted: 10)
+                ))
+            case .awakening:
+                result = try engine.chooseAwakening(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)
+                ))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            default:
+                XCTFail("\(category) 관계 장면에 도달하기 전에 커리어가 끝났습니다.")
+                return result
+            }
+        }
+        XCTFail("\(category) 관계 장면에 도달하지 못했습니다.")
+        return result
+    }
+
+    private func relationshipAverage(_ state: HighSchoolCareerSnapshot) -> Int {
+        ((state.managerTrust ?? state.relationshipTrust)
+            + (state.catcherTrust ?? state.relationshipTrust)
+            + (state.rivalTrust ?? state.relationshipTrust)) / 3
+    }
+
+    private func legacyCommitment(for state: HighSchoolCareerSnapshot) -> String {
+        let school = state.school?.id.rawValue ?? "none"
+        let ratings = "\(state.pitcher.stuff):\(state.pitcher.command):\(state.pitcher.movement):\(state.pitcher.stamina)"
+        let performance = "\(state.performance.importantGamesCompleted):\(state.performance.pitches):\(state.performance.strikeouts):\(state.performance.walks):\(state.performance.runsAllowed):\(state.performance.expectedDamage):\(state.performance.actualDamage)"
+        let scenario = state.currentGameScenario?.id ?? "none"
+        let draft = state.draftResult.map { "\($0.outcome.rawValue):\($0.evaluationScore):\($0.team?.id ?? "none")" } ?? "none"
+        var canonical = [state.careerID, String(state.revision), state.phase.rawValue,
+            state.identity.name, state.identity.throwingHand.rawValue, state.identity.bodyType.rawValue, state.identity.region, school,
+            state.difficulty.careerHarshness.rawValue, state.difficulty.informationClarity.rawValue,
+            state.difficulty.simulationDifficulty.rawValue, state.difficulty.interventionAssist.rawValue,
+            state.karmas.map(\.rawValue).joined(separator: ","), String(state.legacyRewardPermille), String(state.memorySlots)]
+        canonical += [
+            String(state.chapter.number), String(state.chapterTrainingCount), String(state.totalTrainingsCompleted),
+            String(state.milestoneIndex), String(state.relationshipsCompleted), String(state.relationshipTrust),
+            state.selectedAwakenings.map(\.rawValue).joined(separator: ","), state.awakeningOptions.map(\.rawValue).joined(separator: ","),
+            String(state.fatigue), ratings, performance, scenario, draft, state.legacyOptions.map(\.rawValue).joined(separator: ","),
+            state.selectedMemories.map(\.rawValue).joined(separator: ",")]
+        return StableHash.fnv1a64(canonical.joined(separator: "|"))
     }
 }
