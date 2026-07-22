@@ -26,6 +26,18 @@ public struct SaveStore: Sendable {
                 try rotateBackups(for: saveURL, using: fileManager)
                 let firstBackup = backupURL(for: saveURL, index: 1)
                 try fileManager.copyItem(at: saveURL, to: firstBackup)
+#if os(Windows)
+                try fileManager.removeItem(at: saveURL)
+                do {
+                    try fileManager.moveItem(at: temporaryURL, to: saveURL)
+                } catch {
+                    if !fileManager.fileExists(atPath: saveURL.path),
+                       fileManager.fileExists(atPath: firstBackup.path) {
+                        try? fileManager.copyItem(at: firstBackup, to: saveURL)
+                    }
+                    throw error
+                }
+#else
                 do {
                     _ = try fileManager.replaceItemAt(saveURL, withItemAt: temporaryURL)
                 } catch {
@@ -35,6 +47,7 @@ public struct SaveStore: Sendable {
                     }
                     throw error
                 }
+#endif
             } else {
                 let preservedURL = uniqueCorruptURL(for: saveURL, using: fileManager)
                 try fileManager.moveItem(at: saveURL, to: preservedURL)
