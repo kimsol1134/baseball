@@ -76,6 +76,7 @@
 - [x] 배포 채널을 Steam으로 확정
 - [x] 정식판과 데모의 프로 커리어 접근을 빌드 종류로 분리
 - [ ] Steamworks 파트너 등록, 정식판 App ID와 데모 App ID 발급
+- [ ] 콘텐츠 설문 완료: 생성형 AI로 만든 Steam 키아트를 `Pre-Generated` AI 콘텐츠로 정확히 공개
 - [ ] `Coming Soon` 페이지 최소 2주 공개와 정식 출시 30일 대기 충족
 - [x] `localStorage` 자동 저장을 Steam Auto-Cloud용 회전 파일 저장으로 미러링
 - [ ] 데모 저장의 정식판 승계와 다른 기기 복원 확인
