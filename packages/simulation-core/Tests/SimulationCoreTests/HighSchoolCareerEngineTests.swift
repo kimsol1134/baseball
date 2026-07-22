@@ -42,22 +42,72 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         })
         XCTAssertEqual(Set(schools.map(\.coachName)).count, 4)
         XCTAssertEqual(Set(schools.map(\.catcherName)).count, 4)
-        XCTAssertFalse(schools.compactMap(\.catcherRecord).contains { $0.contains("통산") })
+        let youthStaffRecords = schools.flatMap { [$0.coachRecord, $0.catcherRecord].compactMap { $0 } }
+        XCTAssertFalse(youthStaffRecords.contains { $0.contains("통산") || $0.contains("한국시리즈") })
         XCTAssertTrue(schools.compactMap(\.catcherRecord).allSatisfy { $0.contains("중학") })
 
         XCTAssertTrue(HighSchoolCareerEngine.teams.allSatisfy {
             !($0.competitorProfile ?? "").isEmpty && !($0.competitorRecord ?? "").isEmpty
                 && !($0.coachProfile ?? "").isEmpty && !($0.coachRecord ?? "").isEmpty
         })
+        let proRecords = HighSchoolCareerEngine.teams.flatMap {
+            [$0.competitorRecord, $0.coachRecord].compactMap { $0 }
+        }
+        XCTAssertFalse(proRecords.contains { $0.contains("통산") || $0.contains("한국시리즈") })
 
         let rivals = try (1...64).map { seed in
             try HighSchoolCareerEngine().start(.init(seed: String(seed), presetID: "power_prospect")).snapshot.rival
         }
         XCTAssertEqual(Set(rivals.map(\.name)).count, 8)
         XCTAssertTrue(rivals.allSatisfy { !($0.personality ?? "").isEmpty && !($0.signatureRecord ?? "").isEmpty })
-        XCTAssertFalse(rivals.compactMap(\.signatureRecord).contains { $0.contains("통산") })
-        XCTAssertTrue(rivals.compactMap(\.signatureRecord).allSatisfy { $0.contains("입학 전") || $0.contains("중학") })
+        XCTAssertFalse(rivals.compactMap(\.signatureRecord).contains { $0.contains("통산") || $0.contains("한국시리즈") })
         XCTAssertGreaterThan(Set(rivals.map { "\($0.contact)-\($0.discipline)-\($0.power)" }).count, 4)
+        let ratings = rivals.flatMap { [$0.contact, $0.discipline, $0.power] }
+        XCTAssertLessThanOrEqual(ratings.max() ?? 0, 76)
+        XCTAssertGreaterThanOrEqual(ratings.min() ?? 0, 50)
+        XCTAssertLessThan(Double(ratings.reduce(0, +)) / Double(ratings.count), 68)
+
+        let hardestRivals = try (1...64).map { seed in
+            try HighSchoolCareerEngine().start(.init(
+                seed: String(seed),
+                presetID: "power_prospect",
+                difficulty: .init(simulationDifficulty: .challenging),
+                karmas: [.geniusGeneration]
+            )).snapshot.rival
+        }
+        XCTAssertTrue(hardestRivals.allSatisfy {
+            [$0.contact, $0.discipline, $0.power].filter { $0 == 80 }.count <= 1
+        })
+    }
+
+    func testNormalizationBackfillsProfilesForOlderCareerSaves() throws {
+        let engine = HighSchoolCareerEngine()
+        let started = try engine.start(.init(seed: "20260725", presetID: "power_prospect"))
+        let encoded = try JSONEncoder().encode(started.snapshot)
+        var legacyObject = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var schoolOptions = try XCTUnwrap(legacyObject["schoolOptions"] as? [[String: Any]])
+        for index in schoolOptions.indices {
+            schoolOptions[index].removeValue(forKey: "coachPersonality")
+            schoolOptions[index].removeValue(forKey: "coachRecord")
+            schoolOptions[index].removeValue(forKey: "catcherPersonality")
+            schoolOptions[index].removeValue(forKey: "catcherRecord")
+        }
+        legacyObject["schoolOptions"] = schoolOptions
+        var rival = try XCTUnwrap(legacyObject["rival"] as? [String: Any])
+        rival.removeValue(forKey: "personality")
+        rival.removeValue(forKey: "signatureRecord")
+        legacyObject["rival"] = rival
+
+        let legacyData = try JSONSerialization.data(withJSONObject: legacyObject)
+        let legacySnapshot = try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: legacyData)
+        let normalized = try engine.normalizeRegionalSchools(.init(seed: started.nextSeed, state: legacySnapshot)).snapshot
+
+        XCTAssertTrue(normalized.schoolOptions.allSatisfy {
+            !($0.coachPersonality ?? "").isEmpty && !($0.coachRecord ?? "").isEmpty
+                && !($0.catcherPersonality ?? "").isEmpty && !($0.catcherRecord ?? "").isEmpty
+        })
+        XCTAssertFalse((normalized.rival.personality ?? "").isEmpty)
+        XCTAssertFalse((normalized.rival.signatureRecord ?? "").isEmpty)
     }
 
     func testDifficultyAndKarmaChangeRulesWithoutChangingContentOrder() throws {
@@ -181,10 +231,11 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertEqual(result.snapshot.phase, .relationship)
         XCTAssertEqual(result.snapshot.currentRelationshipEvent?.category, "coach")
         XCTAssertFalse(result.snapshot.currentRelationshipEvent?.summary.isEmpty ?? true)
+        let coachName = try XCTUnwrap(result.snapshot.school?.coachName)
 
         result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
         let headline = try XCTUnwrap(result.snapshot.news.first)
-        XCTAssertTrue(headline.contains("염경윤 감독"))
+        XCTAssertTrue(headline.contains("\(coachName) 감독"))
         XCTAssertTrue(headline.contains("감독이 본 문제"))
         XCTAssertFalse(headline.contains("listen"))
         XCTAssertFalse(headline.contains("이야기를 나눴습니다"))

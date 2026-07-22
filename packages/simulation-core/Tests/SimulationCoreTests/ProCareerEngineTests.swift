@@ -75,6 +75,42 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertEqual(Set(ProCareerEngine.proTeams.map(\.positionCompetitor)).count, ProCareerEngine.proTeams.count)
     }
 
+    func testStartBackfillsTeamProfilesFromOlderDraftRecords() throws {
+        let canonical = ProCareerEngine.proTeams[0]
+        let legacyTeam = DraftTeamSnapshot(
+            id: canonical.id,
+            name: canonical.name,
+            need: canonical.need,
+            demand: canonical.demand,
+            developmentPlan: canonical.developmentPlan,
+            positionCompetitor: canonical.positionCompetitor,
+            proCoach: canonical.proCoach
+        )
+        let legacyDraft = DraftResultSnapshot(
+            outcome: .drafted,
+            evaluationScore: 72,
+            projectedRange: "2~3라운드",
+            team: legacyTeam,
+            round: 2,
+            overallPick: 18,
+            signingBonus: 120_000_000,
+            firstSeasonGoal: "2군 선발",
+            summary: "지명"
+        )
+
+        let result = try engine.start(.init(
+            seed: "24",
+            identity: .defaultPitcher,
+            pitcher: pitcher(),
+            draftResult: legacyDraft,
+            entitlement: activeEntitlement()
+        ))
+
+        XCTAssertEqual(result.snapshot.team, canonical)
+        XCTAssertFalse((result.snapshot.team.competitorProfile ?? "").isEmpty)
+        XCTAssertFalse((result.snapshot.team.coachProfile ?? "").isEmpty)
+    }
+
     private func playSeason(_ initial: ProCareerResult) throws -> ProCareerResult {
         var result = initial
         while result.snapshot.phase != .seasonReview {
