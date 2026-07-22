@@ -21,6 +21,31 @@ const METRICS: ReadonlyArray<{ key: keyof CreationAllocationSnapshot; label: str
   { key: "movement", label: "무브먼트" }, { key: "stamina", label: "체력" },
 ];
 
+const KBO_HOME_REGIONS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "서울", label: "서울 · LG / 두산 / 키움" },
+  { value: "인천", label: "인천 · SSG" },
+  { value: "수원", label: "수원 · KT" },
+  { value: "대전", label: "대전 · 한화" },
+  { value: "광주", label: "광주 · KIA" },
+  { value: "대구", label: "대구 · 삼성" },
+  { value: "부산", label: "부산 · 롯데" },
+  { value: "창원", label: "창원 · NC" },
+];
+
+const OTHER_REGIONS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "울산", label: "울산" },
+  { value: "세종", label: "세종" },
+  { value: "경기", label: "경기 · 수원 외" },
+  { value: "강원", label: "강원" },
+  { value: "충북", label: "충북" },
+  { value: "충남", label: "충남 · 대전/세종 외" },
+  { value: "전북", label: "전북" },
+  { value: "전남", label: "전남 · 광주 외" },
+  { value: "경북", label: "경북 · 대구 외" },
+  { value: "경남", label: "경남 · 부산/울산/창원 외" },
+  { value: "제주", label: "제주" },
+];
+
 const TRAININGS: ReadonlyArray<{ value: TrainingFocus; label: string; copy: string }> = [
   { value: "velocity", label: "출력", copy: "포심 구위와 최고 구속" },
   { value: "command", label: "커맨드", copy: "경계 재현과 볼넷 억제" },
@@ -253,8 +278,15 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
           <button type="button" disabled={usesRecommendedName && identity.name === selected.pitcher.name}
             onClick={() => { setIdentity({ ...identity, name: selected.pitcher.name }); setUsesRecommendedName(true); }}>추천 이름 사용</button></div>
           <small>추천 이름을 그대로 쓰거나 직접 입력하세요.</small></label>
-          <label><span>지역</span><select value={identity.region} onChange={(event) => setIdentity({ ...identity, region: event.target.value })}>
-            <option>서울</option><option>경기</option><option>충청</option><option>영남</option><option>호남</option><option>강원</option><option>제주</option></select></label>
+          <label><span>출신 지역</span><select value={identity.region} aria-label="출신 지역"
+            onChange={(event) => setIdentity({ ...identity, region: event.target.value })}>
+            <optgroup label="KBO 연고 도시">
+              {KBO_HOME_REGIONS.map((region) => <option key={region.value} value={region.value}>{region.label}</option>)}
+            </optgroup>
+            <optgroup label="그 외 지역">
+              {OTHER_REGIONS.map((region) => <option key={region.value} value={region.value}>{region.label}</option>)}
+            </optgroup>
+          </select></label>
           <label><span>투구 손</span><select value={identity.throwingHand} onChange={(event) => setIdentity({ ...identity, throwingHand: event.target.value as PlayerIdentitySnapshot["throwingHand"] })}>
             <option value="right">우투</option><option value="left">좌투</option></select></label>
           <label><span>체격</span><select value={identity.bodyType} onChange={(event) => setIdentity({ ...identity, bodyType: event.target.value as PlayerIdentitySnapshot["bodyType"] })}>
