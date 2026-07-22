@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AbilityGauge } from "./AbilityGauge";
 import { GrowthCelebration } from "./GrowthCelebration";
 import { CoreUnavailableState } from "./CoreUnavailableState";
@@ -168,6 +168,27 @@ const INTENSITY_OPTIONS: ReadonlyArray<{
   { value: "intensive", label: "강하게", description: "성장 가능성이 높지만 피로도 많이 쌓인다" },
 ];
 
+function clamp(value: number, lower: number, upper: number) {
+  return Math.min(upper, Math.max(lower, value));
+}
+
+export function labTrainingForecast(
+  fatigue: number,
+  readiness: number,
+  focus: TrainingFocus,
+  intensity: TrainingIntensity,
+) {
+  const fatigueCost = intensity === "light" ? 5 : intensity === "standard" ? 11 : 20;
+  const recoveryLow = focus === "recovery" ? 18 : 0;
+  const recoveryHigh = focus === "recovery" ? 26 : 0;
+  const fatigueLow = clamp(fatigue + fatigueCost - recoveryHigh, 0, 100);
+  const fatigueHigh = clamp(fatigue + fatigueCost - recoveryLow, 0, 100);
+  const readinessCost = intensity === "light" ? 2 : intensity === "standard" ? 6 : 12;
+  const readinessAfter = clamp(readiness - readinessCost + (focus === "recovery" ? 16 : 0), 20, 100);
+  const growthChance = intensity === "intensive" ? "상대적으로 높음" : intensity === "standard" ? "보통" : "낮음";
+  return { fatigueLow, fatigueHigh, readinessAfter, growthChance };
+}
+
 const AWAKENING_LABELS: Record<AwakeningID, { title: string; description: string }> = {
   explosive_fastball: { title: "폭발하는 포심", description: "직구 구속과 헛스윙을 잡는 힘이 크게 오릅니다." },
   pinpoint_edge: { title: "바늘끝 제구", description: "스트라이크존 끝에 계속 던질 수 있게 됩니다." },
@@ -296,6 +317,42 @@ export function PitcherLabView({
   const snapshot = result.snapshot;
   const training = snapshot.lastTraining;
   const growthMetric = training ? trainingGrowthMetric(result, training.focus) : undefined;
+  const [acknowledgedTraining, setAcknowledgedTraining] = useState(snapshot.trainingSessionsCompleted);
+  const [acknowledgedRelationship, setAcknowledgedRelationship] = useState(snapshot.relationshipEventsCompleted);
+  const [acknowledgedAwakening, setAcknowledgedAwakening] = useState(snapshot.selectedAwakenings.length);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const pendingTraining = training && training.sessionNumber > acknowledgedTraining ? training : undefined;
+  const relationshipEvent = result.events.find((event) => event.eventType === "catcher_relationship_changed");
+  const pendingRelationship = snapshot.relationshipEventsCompleted > acknowledgedRelationship ? relationshipEvent?.relationshipChoice : undefined;
+  const awakeningEvent = result.events.find((event) => event.eventType === "awakening_granted");
+  const pendingAwakening = snapshot.selectedAwakenings.length > acknowledgedAwakening
+    ? awakeningEvent?.awakening ?? snapshot.selectedAwakenings.at(-1)
+    : undefined;
+  const hasPendingResult = Boolean(pendingTraining || pendingRelationship || pendingAwakening);
+  const selectedTraining = TRAINING_OPTIONS.find((option) => option.value === focus) ?? TRAINING_OPTIONS[0];
+  const selectedIntensity = INTENSITY_OPTIONS.find((option) => option.value === intensity) ?? INTENSITY_OPTIONS[1];
+  const forecast = labTrainingForecast(snapshot.fatigue, snapshot.readiness, focus, intensity);
+  const pendingKey = pendingTraining ? `training:${pendingTraining.sessionNumber}`
+    : pendingRelationship ? `relationship:${snapshot.relationshipEventsCompleted}`
+      : pendingAwakening ? `awakening:${snapshot.selectedAwakenings.length}` : "";
+
+  useEffect(() => {
+    setAcknowledgedTraining(snapshot.trainingSessionsCompleted);
+    setAcknowledgedRelationship(snapshot.relationshipEventsCompleted);
+    setAcknowledgedAwakening(snapshot.selectedAwakenings.length);
+  }, [snapshot.runID]);
+
+  useEffect(() => {
+    if (!pendingKey) return;
+    const frame = window.requestAnimationFrame(() => {
+      resultRef.current?.focus();
+      resultRef.current?.scrollIntoView({
+        behavior: document.body.classList.contains("reduce-motion") ? "auto" : "smooth",
+        block: "center",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pendingKey]);
 
   return (
     <main className="lab-shell stage-layout" data-stage={snapshot.phase}>
@@ -368,7 +425,48 @@ export function PitcherLabView({
         <section id="lab-current-action" className="ds-card ds-card--raised lab-card lab-action">
           <div className="lab-card-heading"><span>이번에 할 일</span><small>{PHASE_LABELS[snapshot.phase]}</small></div>
 
-          {snapshot.phase === "training" ? (
+          {pendingTraining && growthMetric ? (
+            <div ref={resultRef} className={`ds-card ds-card--result training-result-card ${pendingTraining.ratingPointsGained > 0 ? "ds-card--positive is-growth" : "is-steady"}`}
+              tabIndex={-1} role="region" aria-live="polite" aria-labelledby="lab-training-result-heading">
+              <div className="training-result-title"><span>훈련 {pendingTraining.sessionNumber}회차 완료</span><h3 id="lab-training-result-heading">{TRAINING_OPTIONS.find((option) => option.value === pendingTraining.focus)?.label ?? growthMetric.label} 결과</h3></div>
+              <GrowthCelebration label={growthMetric.label} before={growthMetric.after - pendingTraining.ratingPointsGained} after={growthMetric.after} />
+              <div className="ds-record-grid training-result-scoreboard">
+                <div><span>{growthMetric.label}</span><strong>{growthMetric.after - pendingTraining.ratingPointsGained} <i aria-hidden="true">→</i> {growthMetric.after}</strong>
+                  <AbilityGauge label={growthMetric.label} value={growthMetric.after} beforeValue={growthMetric.after - pendingTraining.ratingPointsGained} />
+                  <small className={pendingTraining.ratingPointsGained > 0 ? "is-positive" : "is-neutral"}>{pendingTraining.ratingPointsGained > 0 ? `+${pendingTraining.ratingPointsGained} 성장` : "훈련량을 쌓음"}</small></div>
+                <div><span>피로</span><strong>{pendingTraining.fatigueBefore} <i aria-hidden="true">→</i> {pendingTraining.fatigueAfter}</strong><small className={pendingTraining.fatigueAfter <= pendingTraining.fatigueBefore ? "is-positive" : "is-warning"}>{pendingTraining.fatigueAfter <= pendingTraining.fatigueBefore ? `${pendingTraining.fatigueBefore - pendingTraining.fatigueAfter} 회복` : `+${pendingTraining.fatigueAfter - pendingTraining.fatigueBefore} 쌓임`}</small></div>
+                <div><span>몸 상태</span><strong>{pendingTraining.readinessBefore} <i aria-hidden="true">→</i> {pendingTraining.readinessAfter}</strong><small>{pendingTraining.observedClue}</small></div>
+              </div>
+              <p>{pendingTraining.shortFeedback}</p>
+              <div className="training-result-next"><span>다음 일정</span><strong>{PHASE_LABELS[snapshot.phase]}</strong><small>결과를 확인한 뒤 다음 선택을 엽니다.</small></div>
+              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setAcknowledgedTraining(pendingTraining.sessionNumber)}>결과 확인하고 계속</button>
+            </div>
+          ) : null}
+
+          {pendingRelationship ? (
+            <div ref={resultRef} className="ds-card ds-card--result training-result-card relationship-result-card" tabIndex={-1}
+              role="region" aria-live="polite" aria-labelledby="lab-relationship-result-heading">
+              <div className="training-result-title"><span>포수 면담 {snapshot.relationshipEventsCompleted}회차 완료</span><h3 id="lab-relationship-result-heading">엇갈린 사인을 다시 맞췄습니다.</h3></div>
+              <div className="ds-record-grid training-result-scoreboard">
+                <div><span>포수의 믿음</span><strong>{pendingRelationship === "trust_catcher" ? Math.max(0, snapshot.catcherTrust - 12) : Math.min(100, snapshot.catcherTrust + 7)} <i aria-hidden="true">→</i> {snapshot.catcherTrust}</strong>
+                  <small className={pendingRelationship === "trust_catcher" ? "is-positive" : "is-negative"}>{pendingRelationship === "trust_catcher" ? "+12 · 포수의 관찰을 먼저 들음" : "−7 · 내 계획을 우선함"}</small></div>
+              </div>
+              <p>{pendingRelationship === "trust_catcher" ? "포수가 본 타자 반응을 먼저 확인해 다음 사인의 근거가 선명해졌습니다." : "내가 높은 공을 고른 근거를 분명히 했지만 포수와 다시 맞춰 볼 시간이 필요합니다."}</p>
+              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setAcknowledgedRelationship(snapshot.relationshipEventsCompleted)}>결과 확인하고 다음 훈련</button>
+            </div>
+          ) : null}
+
+          {pendingAwakening ? (
+            <div ref={resultRef} className="ds-card ds-card--result training-result-card ds-card--positive" tabIndex={-1}
+              role="region" aria-live="polite" aria-labelledby="lab-awakening-result-heading">
+              <div className="training-result-title"><span>새 강점 {snapshot.selectedAwakenings.length}개째</span><h3 id="lab-awakening-result-heading">{AWAKENING_LABELS[pendingAwakening].title}</h3></div>
+              <p>{AWAKENING_LABELS[pendingAwakening].description}</p>
+              <div className="training-result-next"><span>다음 일정</span><strong>{PHASE_LABELS[snapshot.phase]}</strong><small>새 강점은 이번 선수의 남은 일정에 계속 적용됩니다.</small></div>
+              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setAcknowledgedAwakening(snapshot.selectedAwakenings.length)}>강점 확인하고 계속</button>
+            </div>
+          ) : null}
+
+          {!hasPendingResult && snapshot.phase === "training" ? (
             <>
               <h3>훈련 {snapshot.trainingSessionsCompleted + 1}회차</h3>
               <p className="lab-copy">같은 훈련을 계속하면 처음에는 빨리 늘지만, 곧 효과가 줄고 피로가 쌓입니다.</p>
@@ -388,13 +486,20 @@ export function PitcherLabView({
                   </button>
                 ))}
               </div>
+              <div className="training-preview" aria-live="polite">
+                <div><span>선택한 훈련</span><strong>{selectedTraining.label} · {selectedIntensity.label}</strong></div>
+                <div><span>능력치 성장 가능성</span><strong>{forecast.growthChance}{training?.focus === focus ? " · 반복 효과 변동" : ""}</strong></div>
+                <div><span>훈련 뒤 예상 피로</span><strong>{snapshot.fatigue} → {forecast.fatigueLow === forecast.fatigueHigh ? forecast.fatigueHigh : `${forecast.fatigueLow}–${forecast.fatigueHigh}`}</strong></div>
+                <div><span>훈련 뒤 몸 상태</span><strong>{snapshot.readiness} → {forecast.readinessAfter}</strong></div>
+                <p>능력 상승은 지금까지 쌓인 훈련량, 숨은 적성, 피로와 변동값에 따라 0일 수도 있습니다.</p>
+              </div>
               <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTrain(focus, intensity)}>
                 {isRunning ? "훈련 결과 계산 중…" : "이 훈련 확정"}
               </button>
             </>
           ) : null}
 
-          {snapshot.phase === "important_inning" ? (
+          {!hasPendingResult && snapshot.phase === "important_inning" ? (
             <div className="lab-milestone">
               <span>중요 이닝 {snapshot.performance.importantInningsCompleted + 1}</span>
               <h3>{snapshot.performance.importantInningsCompleted === 0 ? "자신의 공을 확인할 첫 등판" : snapshot.performance.importantInningsCompleted === 1 ? "주자와 피로가 겹친 위기" : "라이벌 재대결과 스카우트 관전"}</h3>
@@ -405,7 +510,7 @@ export function PitcherLabView({
             </div>
           ) : null}
 
-          {snapshot.phase === "relationship" ? (
+          {!hasPendingResult && snapshot.phase === "relationship" ? (
             <div className="lab-milestone">
               <span>포수 면담 {snapshot.relationshipEventsCompleted + 1}</span>
               <h3>오늘 엇갈린 사인을 다시 맞춰 봅니다.</h3>
@@ -421,7 +526,7 @@ export function PitcherLabView({
             </div>
           ) : null}
 
-          {snapshot.phase === "awakening" ? (
+          {!hasPendingResult && snapshot.phase === "awakening" ? (
             <div className="lab-milestone">
               <span>새 강점 {snapshot.selectedAwakenings.length + 1}</span>
               <h3>반복해 온 훈련에서 한 가지 강점이 드러났습니다.</h3>
@@ -436,7 +541,7 @@ export function PitcherLabView({
             </div>
           ) : null}
 
-          {snapshot.phase === "scouting" ? (
+          {!hasPendingResult && snapshot.phase === "scouting" ? (
             <div className="lab-milestone">
               <span>최종 구단 평가</span>
               <h3>스카우트가 세 번의 등판 기록을 확인합니다.</h3>
@@ -447,7 +552,7 @@ export function PitcherLabView({
             </div>
           ) : null}
 
-          {snapshot.phase === "reflection" && snapshot.scoutingEvaluation ? (
+          {!hasPendingResult && snapshot.phase === "reflection" && snapshot.scoutingEvaluation ? (
             <div className="lab-reflection">
               <span className={`scouting-grade scouting-grade--${snapshot.scoutingEvaluation.grade}`}>
                 {GRADE_LABELS[snapshot.scoutingEvaluation.grade]} · {snapshot.scoutingEvaluation.score}
@@ -482,7 +587,7 @@ export function PitcherLabView({
             </div>
           ) : null}
 
-          {snapshot.phase === "completed" && snapshot.legacySelection ? (
+          {!hasPendingResult && snapshot.phase === "completed" && snapshot.legacySelection ? (
             <div className="lab-milestone lab-completed">
               <span>{snapshot.lifeNumber}번째 선수 기록 완료</span>
               <h3>{snapshot.lifeNumber === 1 ? "첫 번째 선수의 구단 평가가 끝났습니다." : "두 번째 선수의 구단 평가도 끝났습니다."}</h3>
