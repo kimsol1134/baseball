@@ -50,7 +50,7 @@ final class RPCServerTests: XCTestCase {
             seed: "20260721",
             pitcher: PitcherSnapshot(
                 id: "pitcher-1",
-                name: "김도윤",
+                name: "테스트투수",
                 stuff: 62,
                 command: 54,
                 movement: 58,
@@ -245,7 +245,7 @@ final class RPCServerTests: XCTestCase {
 
     func testProCareerStartAndContractRoundTrip() throws {
         let draft = DraftResultSnapshot(outcome: .drafted, evaluationScore: 72, projectedRange: "2~3라운드", team: ProCareerEngine.proTeams[0], round: 2, overallPick: 18, signingBonus: 120_000_000, firstSeasonGoal: "2군 선발", summary: "지명")
-        let params = StartProCareerParams(seed: "77", identity: .defaultPitcher, pitcher: PitcherSnapshot(id: "p", name: "김도윤", stuff: 58, command: 56, movement: 55, stamina: 57), draftResult: draft, entitlement: ProEntitlementSnapshot(status: .active, source: .development, verifiedAt: "2026-07-22"))
+        let params = StartProCareerParams(seed: "77", identity: .defaultPitcher, pitcher: PitcherSnapshot(id: "p", name: "테스트투수", stuff: 58, command: 56, movement: 55, stamina: 57), draftResult: draft, entitlement: ProEntitlementSnapshot(status: .active, source: .development, verifiedAt: "2026-07-22"))
         let start = try decodeResponse(server.handle(line: try encodeRequest(RPCRequest(id: .string("pro-start"), method: "startProCareer", params: try JSONValue.from(params)))))
         let result = try XCTUnwrap(start.result).decode(ProCareerResult.self)
         XCTAssertEqual(result.snapshot.phase, .contractOffer)
@@ -258,7 +258,7 @@ final class RPCServerTests: XCTestCase {
             seed: "20260721",
             pitcher: PitcherSnapshot(
                 id: "pitcher-1",
-                name: "김도윤",
+                name: "테스트투수",
                 stuff: 62,
                 command: 54,
                 movement: 58,

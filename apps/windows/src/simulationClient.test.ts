@@ -50,7 +50,7 @@ describe("simulation client", () => {
 
   it("loads pitcher presets from the simulation core", async () => {
     invokeMock.mockResolvedValue(
-      '{"id":"desktop-3","jsonrpc":"2.0","result":[{"id":"power_prospect","name":"강속구 원석","tagline":"빠른 포심","strengths":["포심"],"tradeoff":"제구","pitcher":{"id":"p1","name":"김도윤","stuff":72,"command":44,"movement":52,"stamina":52,"pitchProfiles":[]}}]}',
+      '{"id":"desktop-3","jsonrpc":"2.0","result":[{"id":"power_prospect","name":"강속구 원석","tagline":"빠른 포심","strengths":["포심"],"tradeoff":"제구","pitcher":{"id":"p1","name":"테스트투수","stuff":72,"command":44,"movement":52,"stamina":52,"pitchProfiles":[]}}]}',
     );
 
     const presets = await listPitcherPresets();
@@ -94,7 +94,7 @@ describe("simulation client", () => {
       creationAllocation: { stuff: 2, command: 1, movement: 1, stamina: 1 },
       inheritedSoulPoints: 0,
       inheritedMemories: [],
-      identity: { name: "김도윤", throwingHand: "right", bodyType: "balanced", region: "서울" },
+      identity: { name: "테스트투수", throwingHand: "right", bodyType: "balanced", region: "서울" },
       difficulty: { careerHarshness: "standard", informationClarity: "standard", simulationDifficulty: "standard", interventionAssist: "standard" },
       karmas: [],
     });
@@ -109,8 +109,8 @@ describe("simulation client", () => {
   it("starts the pro career through the entitlement boundary", async () => {
     invokeMock.mockResolvedValue('{"id":"desktop-pro","jsonrpc":"2.0","result":{"nextSeed":"2","events":[],"snapshot":{"phase":"contract_offer"}}}');
     const result = await startProCareer({
-      seed: "1", identity: { name: "김도윤", throwingHand: "right", bodyType: "balanced", region: "서울" },
-      pitcher: { id: "p", name: "김도윤", stuff: 58, command: 56, movement: 55, stamina: 57 },
+      seed: "1", identity: { name: "테스트투수", throwingHand: "right", bodyType: "balanced", region: "서울" },
+      pitcher: { id: "p", name: "테스트투수", stuff: 58, command: 56, movement: 55, stamina: 57 },
       draftResult: { outcome: "drafted", evaluationScore: 72, projectedRange: "2라운드", team: { id: "seoul", name: "서울", need: "command", demand: 60, developmentPlan: "2군", positionCompetitor: "선발", proCoach: "코치" }, summary: "지명" },
       entitlement: { productID: "baseball_pro_career", status: "active", source: "development", verifiedAt: "2026-07-22" },
     });
@@ -127,7 +127,7 @@ describe("simulation client", () => {
       seed: "1",
       pitcher: {
         id: "p1",
-        name: "김도윤",
+        name: "테스트투수",
         stuff: 62,
         command: 54,
         movement: 58,
@@ -163,7 +163,7 @@ describe("simulation client", () => {
       seed: "1",
       pitcher: {
         id: "p1",
-        name: "김도윤",
+        name: "테스트투수",
         stuff: 62,
         command: 54,
         movement: 58,

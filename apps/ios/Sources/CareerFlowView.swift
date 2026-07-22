@@ -131,7 +131,7 @@ private struct ImportantMomentView: View {
                 Text(state.level == .major ? "1군에서 자리를 정할 승부" : state.managerTrust < 55 ? "보직 경쟁 평가전" : "다음 보직을 결정할 경기")
                     .font(.largeTitle.bold())
                 BaseballCard(title: "승부 상황", tone: .milestone) {
-                    Text("한 점 차 · 1사 2루 · 최정우 타석\n현재 피로 \(state.fatigue), 감독 신뢰 \(state.managerTrust)")
+                    Text("한 점 차 · 1사 2루 · 오재민 타석\n현재 피로 \(state.fatigue), 감독 신뢰 \(state.managerTrust)")
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
                 VStack(spacing: 10) {

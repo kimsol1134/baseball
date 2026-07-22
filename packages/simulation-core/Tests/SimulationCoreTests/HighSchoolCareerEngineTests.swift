@@ -18,14 +18,14 @@ final class HighSchoolCareerEngineTests: XCTestCase {
             StartHighSchoolCareerParams(
                 seed: "20260724",
                 presetID: "power_prospect",
-                identity: PlayerIdentitySnapshot(name: "문동윤", throwingHand: .right, bodyType: .balanced, region: "인천")
+                identity: PlayerIdentitySnapshot(name: "민서준", throwingHand: .right, bodyType: .balanced, region: "인천")
             )
         )
         let busan = try engine.start(
             StartHighSchoolCareerParams(
                 seed: "20260724",
                 presetID: "power_prospect",
-                identity: PlayerIdentitySnapshot(name: "문동윤", throwingHand: .right, bodyType: .balanced, region: "부산")
+                identity: PlayerIdentitySnapshot(name: "민서준", throwingHand: .right, bodyType: .balanced, region: "부산")
             )
         )
 

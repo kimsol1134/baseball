@@ -103,7 +103,7 @@ import type {
 
 const BATTER: BatterSnapshot = {
   id: "batter-1",
-  name: "이정훈",
+  name: "김도겸",
   contact: 56,
   discipline: 52,
   power: 58,
@@ -111,7 +111,7 @@ const BATTER: BatterSnapshot = {
 
 const PRO_BATTER: BatterSnapshot = {
   id: "pro-opponent-cleanup",
-  name: "최정호",
+  name: "오재민",
   contact: 66,
   discipline: 61,
   power: 69,
@@ -146,15 +146,15 @@ const INITIAL_GAME_STATE: GameStateSnapshot = {
     outfield: 55,
     arm: 57,
     fielders: [
-      { id: "f-p", name: "문동윤", position: "pitcher", range: 51, glove: 54, arm: 64 },
-      { id: "f-c", name: "강민준", position: "catcher", range: 48, glove: 61, arm: 67 },
-      { id: "f-1b", name: "이대훈", position: "first_base", range: 52, glove: 60, arm: 51 },
-      { id: "f-2b", name: "정근호", position: "second_base", range: 61, glove: 64, arm: 57 },
-      { id: "f-3b", name: "최정호", position: "third_base", range: 57, glove: 58, arm: 66 },
-      { id: "f-ss", name: "김하준", position: "shortstop", range: 67, glove: 65, arm: 63 },
-      { id: "f-lf", name: "김현준", position: "left_field", range: 54, glove: 53, arm: 56 },
-      { id: "f-cf", name: "이종윤", position: "center_field", range: 65, glove: 61, arm: 59 },
-      { id: "f-rf", name: "손아준", position: "right_field", range: 56, glove: 55, arm: 65 },
+      { id: "f-p", name: "민서준", position: "pitcher", range: 51, glove: 54, arm: 64 },
+      { id: "f-c", name: "유시환", position: "catcher", range: 48, glove: 61, arm: 67 },
+      { id: "f-1b", name: "임태오", position: "first_base", range: 52, glove: 60, arm: 51 },
+      { id: "f-2b", name: "나건우", position: "second_base", range: 61, glove: 64, arm: 57 },
+      { id: "f-3b", name: "오재민", position: "third_base", range: 57, glove: 58, arm: 66 },
+      { id: "f-ss", name: "배준서", position: "shortstop", range: 67, glove: 65, arm: 63 },
+      { id: "f-lf", name: "하민규", position: "left_field", range: 54, glove: 53, arm: 56 },
+      { id: "f-cf", name: "조유찬", position: "center_field", range: 65, glove: 61, arm: 59 },
+      { id: "f-rf", name: "신태양", position: "right_field", range: 56, glove: 55, arm: 65 },
     ],
   },
   park: {

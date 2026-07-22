@@ -9,7 +9,7 @@ final class PitcherLabEngineTests: XCTestCase {
         let commander = try engine.start(StartPitcherLabParams(seed: "10", presetID: "precision_commander"))
         let custom = try engine.start(StartPitcherLabParams(seed: "10", presetID: "breaking_ball_artist", playerName: "나만의 에이스"))
 
-        XCTAssertEqual(power.snapshot.pitcher.name, "문동윤")
+        XCTAssertEqual(power.snapshot.pitcher.name, "민서준")
         XCTAssertEqual(custom.snapshot.pitcher.name, "나만의 에이스")
         XCTAssertGreaterThan(power.snapshot.pitcher.stuff, commander.snapshot.pitcher.stuff)
         XCTAssertGreaterThan(commander.snapshot.pitcher.command, power.snapshot.pitcher.command)

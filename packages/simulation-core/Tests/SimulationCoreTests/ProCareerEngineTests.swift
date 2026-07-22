@@ -132,7 +132,7 @@ final class ProCareerEngineTests: XCTestCase {
         .init(seed: seed, identity: .defaultPitcher, pitcher: pitcher(), draftResult: drafted(), entitlement: entitlement ?? activeEntitlement())
     }
     private func activeEntitlement() -> ProEntitlementSnapshot { .init(status: .active, source: .development, verifiedAt: "2026-07-22", offlineValidUntil: "2026-08-22") }
-    private func pitcher() -> PitcherSnapshot { .init(id: "p-1", name: "김도윤", stuff: 58, command: 55, movement: 56, stamina: 57) }
+    private func pitcher() -> PitcherSnapshot { .init(id: "p-1", name: "테스트투수", stuff: 58, command: 55, movement: 56, stamina: 57) }
     private func drafted() -> DraftResultSnapshot {
         .init(outcome: .drafted, evaluationScore: 72, projectedRange: "2~3라운드", team: ProCareerEngine.proTeams[0], round: 2, overallPick: 18, signingBonus: 120_000_000, firstSeasonGoal: "2군 선발", summary: "지명")
     }

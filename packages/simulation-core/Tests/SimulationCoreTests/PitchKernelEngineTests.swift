@@ -903,7 +903,7 @@ final class PitchKernelEngineTests: XCTestCase {
             seed: seed,
             pitcher: pitcher ?? PitcherSnapshot(
                 id: "pitcher-1",
-                name: "김도윤",
+                name: "테스트투수",
                 stuff: 62,
                 command: 54,
                 movement: 58,

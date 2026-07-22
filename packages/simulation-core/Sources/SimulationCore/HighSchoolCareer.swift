@@ -83,7 +83,7 @@ public struct PlayerIdentitySnapshot: Codable, Equatable, Sendable {
     }
 
     public static let defaultPitcher = PlayerIdentitySnapshot(
-        name: "문동윤", throwingHand: .right, bodyType: .balanced, region: "서울"
+        name: "민서준", throwingHand: .right, bodyType: .balanced, region: "서울"
     )
 }
 

@@ -33,7 +33,7 @@ public enum PitcherPresetCatalog {
             tradeoff: "전력투구의 피로와 제구 난도가 큽니다.",
             pitcher: PitcherSnapshot(
                 id: "pitcher-power",
-                name: "문동윤",
+                name: "민서준",
                 stuff: 72,
                 command: 44,
                 movement: 52,
@@ -54,7 +54,7 @@ public enum PitcherPresetCatalog {
             tradeoff: "결정구의 순수 구위가 낮습니다.",
             pitcher: PitcherSnapshot(
                 id: "pitcher-command",
-                name: "류현준",
+                name: "고태윤",
                 stuff: 54,
                 command: 74,
                 movement: 53,
@@ -75,7 +75,7 @@ public enum PitcherPresetCatalog {
             tradeoff: "직구 구속과 장기 체력은 평범합니다.",
             pitcher: PitcherSnapshot(
                 id: "pitcher-artist",
-                name: "김광윤",
+                name: "진서율",
                 stuff: 59,
                 command: 54,
                 movement: 74,
@@ -96,7 +96,7 @@ public enum PitcherPresetCatalog {
             tradeoff: "타자를 압도하는 헛스윙 능력은 낮습니다.",
             pitcher: PitcherSnapshot(
                 id: "pitcher-stamina",
-                name: "양현준",
+                name: "도하람",
                 stuff: 53,
                 command: 62,
                 movement: 52,

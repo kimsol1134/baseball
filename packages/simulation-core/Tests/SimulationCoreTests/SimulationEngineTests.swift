@@ -79,7 +79,7 @@ final class SimulationEngineTests: XCTestCase {
             seed: seed,
             pitcher: PitcherSnapshot(
                 id: "pitcher-1",
-                name: "김도윤",
+                name: "테스트투수",
                 stuff: 62,
                 command: command,
                 movement: 58,
