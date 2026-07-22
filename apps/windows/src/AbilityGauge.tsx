@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 interface AbilityGaugeProps {
   label: string;
   value: number;
@@ -18,6 +20,15 @@ function ratingPosition(value: number) {
 
 export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBound, upperBound, compact = false }: AbilityGaugeProps) {
   const current = clampRating(value);
+  const previous = beforeValue === undefined ? current : clampRating(beforeValue);
+  const gained = beforeValue !== undefined && current > previous;
+  const [animatedValue, setAnimatedValue] = useState(gained ? previous : current);
+  useEffect(() => {
+    if (!gained) { setAnimatedValue(current); return; }
+    setAnimatedValue(previous);
+    const frame = window.requestAnimationFrame(() => setAnimatedValue(current));
+    return () => window.cancelAnimationFrame(frame);
+  }, [current, gained, previous]);
   const tier = current >= 65 ? "strength" : current >= 55 ? "above-average" : current >= 45 ? "average" : "weakness";
   const currentText = beforeValue === undefined
     ? `${label} ${displayValue ?? current}`
@@ -25,10 +36,10 @@ export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBou
   const hasRange = lowerBound !== undefined && upperBound !== undefined;
   const valueText = hasRange ? `${currentText}, 성장 예상 ${clampRating(lowerBound)}에서 ${clampRating(upperBound)}` : currentText;
 
-  return <div className={`ds-ability-gauge${compact ? " is-compact" : ""}`} data-tier={tier}
+  return <div className={`ds-ability-gauge${compact ? " is-compact" : ""}${gained ? " is-gain" : ""}`} data-tier={tier}
     role="meter" aria-label={valueText} aria-valuemin={20} aria-valuemax={80} aria-valuenow={current}>
     {hasRange ? <em style={{ left: `${ratingPosition(lowerBound)}%`, width: `${Math.max(2, ratingPosition(upperBound) - ratingPosition(lowerBound))}%` }} aria-hidden="true" /> : null}
-    <i style={{ width: `${ratingPosition(current)}%` }} />
+    <i style={{ width: `${ratingPosition(animatedValue)}%` }} />
     {beforeValue === undefined ? null : <b style={{ left: `${ratingPosition(beforeValue)}%` }} aria-hidden="true" />}
   </div>;
 }

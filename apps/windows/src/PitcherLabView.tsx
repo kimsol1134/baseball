@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AbilityGauge } from "./AbilityGauge";
+import { GrowthCelebration } from "./GrowthCelebration";
 import type {
   AwakeningID,
   CreationAllocationSnapshot,
@@ -261,6 +262,13 @@ function ratingValue(result: PitcherLabResult, metric: string) {
   }
 }
 
+function trainingGrowthMetric(result: PitcherLabResult, focus: TrainingFocus) {
+  const metric = focus === "velocity" ? "stuff"
+    : focus === "breaking_ball" ? "movement"
+      : focus === "stamina" || focus === "recovery" ? "stamina" : "command";
+  return { label: METRIC_LABELS[metric], after: ratingValue(result, metric) };
+}
+
 export function PitcherLabView({
   result,
   previousLifeResult,
@@ -283,6 +291,7 @@ export function PitcherLabView({
   const selectedMemory = memoryCard ?? firstMemory;
   const snapshot = result.snapshot;
   const training = snapshot.lastTraining;
+  const growthMetric = training ? trainingGrowthMetric(result, training.focus) : undefined;
 
   return (
     <main className="lab-shell stage-layout" data-stage={snapshot.phase}>
@@ -339,8 +348,10 @@ export function PitcherLabView({
           ))}
           <small className="rating-scale-note">20–80 평가 · 45 평균 · 65 뚜렷한 강점 · 80 세대 최고 · 포심 기준 {fourSeamVelocity(snapshot.pitcher)}</small>
           {training ? (
-            <div className={`training-reaction training-reaction--${training.reaction}`}>
+            <div className={`training-reaction training-reaction--${training.reaction}${training.ratingPointsGained > 0 ? " has-growth" : ""}`}>
               <span>최근 훈련 · {training.sessionNumber}회차</span>
+              {growthMetric ? <GrowthCelebration compact label={growthMetric.label}
+                before={growthMetric.after - training.ratingPointsGained} after={growthMetric.after} /> : null}
               <strong>{training.shortFeedback}</strong>
               <p>{training.observedClue}</p>
               <small>쌓인 훈련량 +{training.signalGained} · 몸 상태 {training.readinessBefore}→{training.readinessAfter} · 피로 {training.fatigueBefore}→{training.fatigueAfter}</small>

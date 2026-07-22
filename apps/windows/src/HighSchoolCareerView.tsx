@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AbilityGauge } from "./AbilityGauge";
 import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
+import { GrowthCelebration } from "./GrowthCelebration";
 import catcherPortrait from "./assets/catcher-portrait.webp";
 import coachPortrait from "./assets/coach-portrait.webp";
 import rivalPortrait from "./assets/rival-portrait.webp";
@@ -426,7 +427,7 @@ interface CareerViewProps {
   onStartPro: () => Promise<void>;
   proAccessAvailable: boolean;
   demoMode: boolean;
-  onMilestoneFeedback: () => void;
+  onMilestoneFeedback: (cue?: "growth" | "milestone") => void;
 }
 
 export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTraining, onRelationship,
@@ -487,6 +488,9 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     ? pendingTraining.metricAfter ?? state.pitcher[resultMetric.key]
     : 0;
   const resultBefore = pendingTraining?.metricBefore;
+  const resultCelebrationBefore = pendingTraining
+    ? resultBefore ?? Math.max(20, resultAfter - pendingTraining.growth)
+    : resultAfter;
   const resultFatigueAfter = pendingTraining ? pendingTraining.fatigueAfter ?? state.fatigue : state.fatigue;
   const resultFatigueBefore = pendingTraining ? pendingTraining.fatigueBefore ?? resultFatigueAfter - pendingTraining.fatigueChange : state.fatigue;
   const relationshipAbilityMetric = pendingRelationship?.growthFocus ? TRAINING_METRICS[pendingRelationship.growthFocus] : undefined;
@@ -526,7 +530,9 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     const resultKey = pendingTraining ? `training:${pendingTraining.number}` : `relationship:${pendingRelationship?.number}`;
     if (announcedResultRef.current === resultKey) return;
     announcedResultRef.current = resultKey;
-    onMilestoneFeedback();
+    const abilityGrew = (pendingTraining?.growth ?? 0) > 0
+      || (pendingRelationship?.abilityAfter ?? 0) > (pendingRelationship?.abilityBefore ?? 0);
+    onMilestoneFeedback(abilityGrew ? "growth" : "milestone");
     const frame = window.requestAnimationFrame(() => {
       decisionResultRef.current?.focus();
       decisionResultRef.current?.scrollIntoView({ behavior: document.body.classList.contains("reduce-motion") ? "auto" : "smooth", block: "center" });
@@ -609,6 +615,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         {!demoComplete ? <>
         {pendingTraining && resultMetric ? <div ref={decisionResultRef} className={`ds-card ds-card--result training-result-card ${pendingTraining.growth > 0 ? "ds-card--positive is-growth" : "is-steady"}`} tabIndex={-1} role="region" aria-live="polite" aria-labelledby="training-result-heading">
           <div className="training-result-title"><span>훈련 {pendingTraining.number}회차 완료</span><h3 id="training-result-heading">{TRAININGS.find((option) => option.value === pendingTraining.focus)?.label ?? resultMetric.label} 결과</h3></div>
+          <GrowthCelebration label={resultMetric.label} before={resultCelebrationBefore} after={resultAfter} />
           <div className="ds-record-grid training-result-scoreboard">
             <div><span>{resultMetric.label}</span><strong>{resultBefore === undefined ? <>현재 {resultAfter}</> : <>{resultBefore} <i aria-hidden="true">→</i> {resultAfter}</>}</strong>
               <AbilityGauge label={resultMetric.label} value={resultAfter} beforeValue={resultBefore} />
@@ -621,6 +628,8 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         </div> : null}
         {pendingRelationship ? <div ref={decisionResultRef} className="ds-card ds-card--result training-result-card relationship-result-card" tabIndex={-1} role="region" aria-live="polite" aria-labelledby="relationship-result-heading">
           <div className="training-result-title"><span>대화 {pendingRelationship.number}회차 완료 · {relationshipPerson}</span><h3 id="relationship-result-heading">{pendingRelationship.title} 결과</h3></div>
+          {relationshipAbilityMetric && pendingRelationship.abilityBefore !== undefined && pendingRelationship.abilityAfter !== undefined
+            ? <GrowthCelebration label={relationshipAbilityMetric.label} before={pendingRelationship.abilityBefore} after={pendingRelationship.abilityAfter} /> : null}
           <p className="relationship-choice-summary">{RELATIONSHIP_RESPONSE_SUMMARIES[pendingRelationship.response]}</p>
           <div className="ds-record-grid training-result-scoreboard">
             <div><span>{relationshipTrustLabel}</span><strong>{pendingRelationship.trustBefore} <i aria-hidden="true">→</i> {pendingRelationship.trustAfter}</strong><small className={pendingRelationship.trustAfter > pendingRelationship.trustBefore ? "is-positive" : pendingRelationship.trustAfter < pendingRelationship.trustBefore ? "is-negative" : "is-neutral"}>{pendingRelationship.trustAfter === pendingRelationship.trustBefore ? "변화 없음" : `${pendingRelationship.trustAfter > pendingRelationship.trustBefore ? "+" : ""}${pendingRelationship.trustAfter - pendingRelationship.trustBefore}`}</small></div>

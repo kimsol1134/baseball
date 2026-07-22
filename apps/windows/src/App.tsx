@@ -983,7 +983,9 @@ export function App() {
     setIsRunning(true);
     setError(undefined);
     try {
-      setLabResult(await action());
+      const next = await action();
+      setLabResult(next);
+      return next;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "선택을 처리하지 못했습니다. 다시 시도해 주세요.");
     } finally {
@@ -1009,13 +1011,14 @@ export function App() {
 
   const handleTraining = useCallback(async (focus: TrainingFocus, trainingIntensity: TrainingIntensity) => {
     if (!labResult) return;
-    await runLabAction(() => commitTraining({
+    const next = await runLabAction(() => commitTraining({
       seed: labResult.nextSeed,
       state: labResult.snapshot,
       focus,
       intensity: trainingIntensity,
     }));
-  }, [labResult, runLabAction]);
+    if ((next?.snapshot.lastTraining?.ratingPointsGained ?? 0) > 0) feedback.play("growth", soundEnabled, hapticsEnabled);
+  }, [feedback, hapticsEnabled, labResult, runLabAction, soundEnabled]);
 
   const handleRelationship = useCallback(async (choice: RelationshipChoice) => {
     if (!labResult) return;
@@ -1470,7 +1473,9 @@ export function App() {
   const handleProOffseason = useCallback(async (decision: OffseasonDecision) => { if (proResult) await runProAction(() => chooseProOffseason({ seed: proResult.nextSeed, state: proResult.snapshot, decision })); }, [proResult, runProAction]);
 
   const cycleFontScale = useCallback(() => setFontScale((current) => current === 1 ? 1.15 : current === 1.15 ? 1.3 : 1), []);
-  const handleMilestoneFeedback = useCallback(() => feedback.play("milestone", soundEnabled, hapticsEnabled), [feedback, hapticsEnabled, soundEnabled]);
+  const handleMilestoneFeedback = useCallback((cue: "growth" | "milestone" = "milestone") => {
+    feedback.play(cue, soundEnabled, hapticsEnabled);
+  }, [feedback, hapticsEnabled, soundEnabled]);
   const dismissTutorial = useCallback(() => {
     setTutorialDismissed(true);
     appStorage.setItem("baseball.tutorial.completed", "true");

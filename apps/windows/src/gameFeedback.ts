@@ -1,6 +1,6 @@
 import type { PitchKernelResult } from "./simulationTypes";
 
-export type GameFeedbackCue = "ball" | "strike" | "strikeout" | "contact" | "big_hit" | "milestone";
+export type GameFeedbackCue = "ball" | "strike" | "strikeout" | "contact" | "big_hit" | "growth" | "milestone";
 
 export function feedbackCueForResult(result: PitchKernelResult): GameFeedbackCue {
   if (result.snapshot.result === "strikeout") return "strikeout";
@@ -15,7 +15,8 @@ export class GameFeedback {
 
   play(cue: GameFeedbackCue, soundEnabled: boolean, hapticsEnabled: boolean) {
     if (hapticsEnabled && typeof navigator.vibrate === "function") {
-      const pattern = cue === "big_hit" || cue === "milestone" ? [35, 35, 70] : cue === "strikeout" ? [25, 25, 45] : [18];
+      const pattern = cue === "growth" ? [22, 28, 22, 28, 75]
+        : cue === "big_hit" || cue === "milestone" ? [35, 35, 70] : cue === "strikeout" ? [25, 25, 45] : [18];
       navigator.vibrate(pattern);
     }
     if (!soundEnabled) return;
@@ -30,6 +31,7 @@ export class GameFeedback {
       strikeout: [[330, 0.06, "square"], [494, 0.07, "square"], [659, 0.14, "sine"]],
       contact: [[110, 0.05, "triangle"], [220, 0.08, "square"]],
       big_hit: [[196, 0.07, "square"], [392, 0.09, "triangle"], [587, 0.16, "sine"]],
+      growth: [[330, 0.07, "triangle"], [440, 0.08, "triangle"], [554, 0.1, "sine"], [659, 0.2, "sine"]],
       milestone: [[262, 0.08, "triangle"], [392, 0.1, "triangle"], [523, 0.18, "sine"]],
     };
     notes[cue].forEach(([frequency, duration, type], index) => {

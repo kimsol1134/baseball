@@ -171,7 +171,27 @@ body.high-contrast {
   border-radius: inherit;
   background: var(--color-information);
   box-shadow: 0 0 10px color-mix(in srgb, var(--color-information) 24%, transparent);
-  transition: width 220ms ease-out;
+  overflow: hidden;
+  transition: width 240ms ease-out;
+}
+
+.ds-ability-gauge.is-gain > i {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-positive) 48%, transparent);
+  transition-duration: 820ms;
+  transition-timing-function: cubic-bezier(.16, 1, .3, 1);
+}
+
+.ds-ability-gauge.is-gain > i::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent 15%, color-mix(in srgb, var(--color-text-primary) 72%, transparent) 50%, transparent 85%);
+  transform: translateX(-120%);
+  animation: ability-gauge-shine 720ms 180ms ease-out both;
+}
+
+@keyframes ability-gauge-shine {
+  to { transform: translateX(120%); }
 }
 
 .ds-ability-gauge > em {
@@ -354,4 +374,13 @@ body.high-contrast {
 
 @media (prefers-reduced-motion: reduce) {
   :root { scroll-behavior: auto; }
+
+  .ds-ability-gauge.is-gain > i {
+    transition: none;
+  }
+
+  .ds-ability-gauge.is-gain > i::after {
+    display: none;
+    animation: none;
+  }
 }
