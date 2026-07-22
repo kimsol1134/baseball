@@ -24,6 +24,8 @@
 - macOS 실제 앱 종료 시 회전 저장 flush와 접근성·분석 설정 제외 확인
 - 데모가 첫 중요 경기 뒤 종료되고 정식판은 제한되지 않는 회귀 테스트
 - Developer ID 인증서가 있으면 서명·공증하고 stapling을 검증하는 CI 경로 구성
+- 원격 Windows CI에서 NSIS 설치 파일 생성, 무인 설치, Swift 런타임 포함과 sidecar 상태 검사 통과
+- 인증서가 없는 macOS Steam 빌드가 빈 키체인 ID 대신 ad-hoc 서명을 사용하도록 수정하고 ARM64 정식판·데모 재검증
 
 ## 현재 로컬 산출물
 
@@ -56,6 +58,7 @@
 ### Windows 배포
 
 - [x] Windows CI에서 SteamPipe용 무설치 데포 폴더를 생성하는 워크플로 구성
+- [x] 원격 Windows CI에서 NSIS 설치 파일 생성·무인 설치·sidecar 상태 검사 통과
 - [ ] 원격 Windows CI의 실제 데포 생성 성공 확인
 - [ ] 앱과 Swift sidecar 코드 서명
 - [ ] Windows 11 표준 사용자 Steam 설치·실행·업데이트·삭제 확인
@@ -73,6 +76,12 @@
 - [ ] 가격·환불·고객지원 문구 검토
 - [ ] 상점 자산과 실제 플레이 트레일러 준비
 - [ ] Valve 스토어·빌드 검토 제출
+
+### 릴리스 인프라
+
+- [x] GitHub 저장소, 릴리스 후보 브랜치, draft PR, `steam-v1.0.0-rc.1` 태그 생성
+- [x] 웹·Swift·macOS 앱·Windows 설치 패키지 P0 원격 검사 통과
+- [ ] GitHub Actions 결제 또는 지출 한도를 복구하고 `Steam depot artifacts` 6개 작업 재실행
 
 ### 이번 Steam 1.0 범위 밖
 
