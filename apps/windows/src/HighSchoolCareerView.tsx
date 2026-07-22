@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AbilityGauge } from "./AbilityGauge";
+import { AccessibleModal } from "./AccessibleModal";
 import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
 import { CoreUnavailableState } from "./CoreUnavailableState";
@@ -565,12 +566,12 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
   })();
 
   return <main className="career-shell stage-layout" data-stage={state.phase} data-team={state.draftResult?.team?.id}>
-    {showTutorial ? <section className="tutorial-panel" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+    {showTutorial ? <AccessibleModal className="tutorial-panel" labelledBy="tutorial-title" onEscape={onDismissTutorial}>
       <div><p className="eyebrow">빠른 안내</p><h2 id="tutorial-title">고교 커리어 시작 전</h2></div>
       <ol><li><strong>현재 능력</strong><span>선수 카드에서 공의 위력·제구·변화구·체력을 확인합니다.</span></li><li><strong>중요 경기</strong><span>승부처에서는 구종·코스·강도를 직접 선택합니다.</span></li>
         <li><strong>선택 확정</strong><span>확정한 훈련과 사건 선택은 되돌릴 수 없습니다.</span></li><li><strong>자동 저장</strong><span>확정한 선택마다 이 기기에 저장됩니다.</span></li></ol>
-      <button className="ds-button ds-button--primary lab-primary" type="button" autoFocus onClick={onDismissTutorial}>커리어 시작</button>
-    </section> : null}
+      <button className="ds-button ds-button--primary lab-primary" type="button" onClick={onDismissTutorial}>커리어 시작</button>
+    </AccessibleModal> : null}
     <section className="career-hero">
       <div><p className="eyebrow">{state.lifeNumber}번째 선수 · {state.chapter.schoolYear}학년 {state.chapter.season}</p>
         <h2>{state.chapter.number}장 · {state.chapter.title}</h2><p>{state.chapter.theme}</p></div>
@@ -643,12 +644,13 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <div className="training-result-next"><span>다음 일정</span><strong>{nextActionLabel}</strong><small>결과를 확인한 뒤 다음 일정으로 넘어갑니다.</small></div>
           <button className="ds-button ds-button--primary lab-primary" type="button" onClick={acknowledgeRelationship}>{nextActionLabel}</button>
         </div> : null}
-        {!hasPendingResult && draftRevealStage !== null && !draftRevealDone ? <div className={`draft-reveal draft-reveal--stage-${draftRevealStage}`} role="dialog" aria-live="polite" aria-label="드래프트 결과 공개">
+        {!hasPendingResult && draftRevealStage !== null && !draftRevealDone ? <AccessibleModal className={`draft-reveal draft-reveal--stage-${draftRevealStage}`} live="polite" label="드래프트 결과 공개"
+          onEscape={draftRevealStage >= 4 ? () => setDraftRevealDone(true) : undefined}>
           <span>{reveal.label}</span><div className="draft-rounds" aria-hidden="true">{[0, 1, 2, 3, 4].map((step) => <i key={step} className={step <= draftRevealStage ? "is-active" : undefined} />)}</div>
           <h3>{reveal.title}</h3><p>{reveal.copy}</p>
           {draftRevealStage >= 4 ? <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setDraftRevealDone(true)}>결과 화면 확인</button>
             : <button className="draft-skip" type="button" onClick={() => setDraftRevealStage(4)}>바로 결과 보기</button>}
-        </div> : null}
+        </AccessibleModal> : null}
         {!hasPendingResult && state.phase === "prologue" ? <div className="career-milestone prologue-card"><span>중학교 마지막 경기</span>
           <h3>{state.identity.region}의 마지막 중학교 대회</h3><p>{state.identity.name} · {state.identity.throwingHand === "right" ? "우투" : "좌투"} · {state.identity.bodyType === "tall" ? "장신" : state.identity.bodyType === "compact" ? "다부진" : "균형"} 체격. 경기를 마치고 나오자 {state.identity.region} 지역 네 고교에서 진학 제안이 도착했습니다. {state.karmas.length > 0 ? `더 어렵게 시작하는 조건 ${state.karmas.length}개 적용` : "추가 난이도 조건 없음"}</p>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onCompletePrologue()}>고교 진학 제안 확인</button></div> : null}
