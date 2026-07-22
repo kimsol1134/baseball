@@ -9,6 +9,7 @@ import type {
   PitchKernelResult,
   PitchOutcome,
   PitchType,
+  RivalAdaptationBand,
 } from "./simulationTypes";
 
 type Point = { x: number; y: number };
@@ -77,6 +78,13 @@ const SELECTION_QUALITY_LABELS = {
   good: "좋은 판단",
   excellent: "탁월한 판단",
 } as const;
+
+const RIVAL_ADAPTATION_LABELS: Record<RivalAdaptationBand, string> = {
+  no_data: "기록 없음",
+  watching: "관찰 중",
+  learning: "학습 중",
+  locked_on: "노림수 읽힘",
+};
 
 const FIELDER_LABELS: Record<FielderPosition, string> = {
   pitcher: "투수",
@@ -165,7 +173,7 @@ export function interpolateTrajectory(
 function platePoint(x: number, y: number): Point {
   return {
     x: clamp(160 + x * 0.11, 18, 302),
-    y: clamp(198 - y * 0.105, 24, 286),
+    y: clamp(205 - y * 0.105, 24, 286),
   };
 }
 
@@ -183,7 +191,7 @@ export function createPitchPlot(execution: PitchExecution): PitchPlot {
     target,
     actual,
     control,
-    path: `M 160 18 Q ${control.x.toFixed(1)} ${control.y.toFixed(1)}, ${actual.x.toFixed(1)} ${actual.y.toFixed(1)}`,
+    path: `M 160 135 Q ${control.x.toFixed(1)} ${control.y.toFixed(1)}, ${actual.x.toFixed(1)} ${actual.y.toFixed(1)}`,
   };
 }
 
@@ -207,7 +215,7 @@ function projectPitchSample(
   return {
     x: lerp(160, actual.x, progress)
       + ((sample.lateralTenthsCM - linearLateral) / 10) * 1.15 * perspective,
-    y: lerp(18, actual.y, progress)
+    y: lerp(135, actual.y, progress)
       - ((sample.heightTenthsCM - linearHeight) / 10) * 0.48 * perspective,
   };
 }
@@ -223,7 +231,7 @@ function pitchReplayPoints(execution: PitchExecution): ReadonlyArray<{ time: num
   const plot = createPitchPlot(execution);
   const duration = execution.flightTimeMilliseconds ?? 480;
   return [
-    { time: 0, point: { x: 160, y: 18 } },
+    { time: 0, point: { x: 160, y: 135 } },
     { time: Math.round(duration * 0.62), point: plot.control },
     { time: duration, point: plot.actual },
   ];
@@ -306,10 +314,10 @@ export function createGameCastTimeline(
   const hasContact = Boolean(fielding);
   const contactAt = pitchEnd + (hasContact ? 90 : 0);
   const fieldDuration = hasContact
-    ? clamp((fielding?.hangTimeMilliseconds ?? 1_200) * 0.45, 760, 1_850)
+    ? clamp((fielding?.hangTimeMilliseconds ?? 1_200) * 0.4, 700, 1_500)
     : 0;
   const fieldEnd = contactAt + fieldDuration;
-  const resultAt = hasContact ? fieldEnd + 120 : pitchEnd + 150;
+  const resultAt = hasContact ? fieldEnd + 90 : pitchEnd + 150;
   return { pitchEnd, contactAt, fieldEnd, resultAt, total: resultAt };
 }
 
@@ -323,6 +331,11 @@ export function gameCastPhase(
   if (elapsed < timeline.contactAt) return "contact";
   if (elapsed < timeline.resultAt) return "field";
   return "result";
+}
+
+/** Keeps the result unknowable until the contact adjudication has completed. */
+export function gameCastViewMode(phase: GameCastPhase, hasContact: boolean): "pitch" | "field" {
+  return hasContact && (phase === "field" || phase === "result") ? "field" : "pitch";
 }
 
 function occupiedBases(runners: BaserunnerStateSnapshot): number[] {
@@ -428,7 +441,7 @@ function Base({ x, y, occupied, label }: { x: number; y: number; occupied: boole
   </g>;
 }
 
-function PlayerFigure({
+function FielderMarker({
   x,
   y,
   short,
@@ -440,12 +453,9 @@ function PlayerFigure({
   active: boolean;
 }) {
   return <g className={`gamecast-fielder ${active ? "is-responsible" : ""}`} transform={`translate(${x} ${y})`}>
-    <ellipse className="gamecast-player-shadow" cy="10" rx="9" ry="3.2" />
-    <path className="gamecast-player-legs" d="M -3 4 L -5 11 M 3 4 L 5 11" />
-    <path className="gamecast-player-body" d="M -6 -8 Q 0 -12 6 -8 L 5 4 Q 0 7 -5 4 Z" />
-    <circle className="gamecast-player-head" cy="-14" r="4" />
-    <path className="gamecast-player-cap" d="M -4 -16 Q 0 -20 4 -16 L 8 -15" />
-    <g className="gamecast-player-label" transform="translate(0 -25)">
+    <circle className="gamecast-fielder-marker-ring" r="11" />
+    <circle className="gamecast-fielder-marker-dot" r="4" />
+    <g className="gamecast-player-label" transform="translate(0 -19)">
       <rect x="-9" y="-7" width="18" height="13" rx="6.5" />
       <text y="2" textAnchor="middle">{short}</text>
     </g>
@@ -473,8 +483,6 @@ function PitchView({
   const trail = replayPoints.filter((sample) => sample.time <= currentTime).map((sample) => sample.point);
   if (trail.length === 0 || trail[trail.length - 1] !== currentPoint) trail.push(currentPoint);
   const glowID = `pitch-glow-${compact ? "compact" : "main"}`;
-  const skyID = `pitch-sky-${compact ? "compact" : "main"}`;
-  const turfID = `pitch-turf-${compact ? "compact" : "main"}`;
   const canvasWidth = compact ? 320 : 480;
   const sceneOffsetX = (canvasWidth - 320) / 2;
   return <div className={`gamecast-pitch-view ${compact ? "is-compact" : ""}`}>
@@ -484,38 +492,13 @@ function PitchView({
     </div>
     <svg viewBox={`0 0 ${canvasWidth} 310`} role="img" aria-label={`투구 3D 좌표 ${replayPoints.length}개 중 ${Math.max(1, trail.length)}개 재생`}>
       <defs>
-        <linearGradient id={skyID} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" className="gamecast-pitch-sky-top" />
-          <stop offset="1" className="gamecast-pitch-sky-bottom" />
-        </linearGradient>
-        <linearGradient id={turfID} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" className="gamecast-pitch-turf-far" />
-          <stop offset="1" className="gamecast-pitch-turf-near" />
-        </linearGradient>
         <filter id={glowID} x="-200%" y="-200%" width="400%" height="400%">
           <feGaussianBlur stdDeviation="4" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
-      <rect width={canvasWidth} height="310" fill={`url(#${skyID})`} />
-      <path d={`M 0 83 Q ${canvasWidth / 2} 48 ${canvasWidth} 83 V 121 H 0 Z`} className="gamecast-pitch-stands" />
-      <path d={`M 0 104 Q ${canvasWidth / 2} 74 ${canvasWidth} 104 L ${canvasWidth} 310 H 0 Z`} fill={`url(#${turfID})`} />
       <g transform={`translate(${sceneOffsetX} 0)`}>
-      <path d="M 160 22 L 278 310 H 42 Z" className="gamecast-pitch-lane" />
-      <ellipse cx="160" cy="58" rx="34" ry="9" className="gamecast-pitch-mound" />
-      <path d="M 118 258 L 94 306 M 202 258 L 226 306" className="gamecast-batter-box" />
-      <g className="gamecast-pitcher-silhouette" transform="translate(160 47)">
-        <ellipse cy="19" rx="11" ry="3" />
-        <path d="M -5 0 Q 0 -8 5 0 L 4 13 L 9 22 M -4 13 L -9 22 M -4 2 L -12 9 M 4 2 L 12 -2" />
-        <circle cy="-8" r="4" />
-      </g>
-      <g className="gamecast-catcher-silhouette" transform="translate(160 278)">
-        <ellipse cy="17" rx="18" ry="4" />
-        <path d="M -8 -2 Q 0 -12 8 -2 L 13 13 M -13 13 L -6 3 M 6 3 L 13 13" />
-        <circle cy="-13" r="6" />
-      </g>
       <path d="M 105 145 H 215 V 250 H 105 Z M 141.7 145 V 250 M 178.3 145 V 250 M 105 180 H 215 M 105 215 H 215" className="gamecast-strike-grid" />
-      <path d="M 146 287 H 174 L 166 296 H 154 Z" className="gamecast-home-plate" />
       <path d={pointsPath(trail)} className="gamecast-pitch-shadow" />
       <path d={pointsPath(trail)} className="gamecast-pitch-line" />
       <g className="gamecast-target" transform={`translate(${plot.target.x} ${plot.target.y})`}>
@@ -531,7 +514,7 @@ function PitchView({
       <text x="249" y="298" className="gamecast-axis-label">홈플레이트</text>
       </g>
     </svg>
-    {!compact ? <div className="gamecast-view-caption"><span>포수 중계 시점</span><span>＋ 포수 미트</span><span>● 실제 공</span><strong>{revealResult ? "ABS 판독 완료" : `${Math.round(progress * 100)}% 추적`}</strong></div> : null}
+    {!compact ? <div className="gamecast-view-caption"><span>포수 중계 시점</span><span>＋ 목표 코스</span><span>● 실제 공</span><strong>{revealResult ? "ABS 판독 완료" : `${Math.round(progress * 100)}% 추적`}</strong></div> : null}
   </div>;
 }
 
@@ -604,49 +587,11 @@ function FieldView({
     </div>
     <svg viewBox="0 0 640 420" style={cameraStyle} role="img" aria-label={`${directionLabel(battedBall.directionTenthsDegrees / 10)} 방향 3D 타구 좌표 ${samples.length}개 재생`}>
       <defs>
-        <linearGradient id="stadium-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" className="gamecast-stadium-sky-top" />
-          <stop offset="1" className="gamecast-stadium-sky-bottom" />
-        </linearGradient>
-        <pattern id="stadium-crowd" width="10" height="8" patternUnits="userSpaceOnUse">
-          <rect width="10" height="8" className="gamecast-crowd-base" />
-          <circle cx="2" cy="3" r="1" className="gamecast-crowd-light" />
-          <circle cx="7" cy="5" r="1" className="gamecast-crowd-mid" />
-        </pattern>
-        <linearGradient id="stadium-grass" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" className="gamecast-grass-far" />
-          <stop offset="1" className="gamecast-grass-near" />
-        </linearGradient>
-        <radialGradient id="stadium-light" cx="50%" cy="92%" r="84%">
-          <stop offset="0" className="gamecast-light-near" />
-          <stop offset="1" className="gamecast-light-far" />
-        </radialGradient>
         <filter id="live-ball-glow" x="-200%" y="-200%" width="400%" height="400%">
           <feGaussianBlur stdDeviation="5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
-      <rect width="640" height="420" fill="url(#stadium-sky)" />
-      <image href="/gamecast-stadium-night.webp" width="640" height="420" preserveAspectRatio="xMidYMid slice" className="gamecast-stadium-plate" />
-      <path d="M 0 42 Q 320 -26 640 42 V 105 Q 320 39 0 105 Z" fill="url(#stadium-crowd)" className="gamecast-grandstand" />
-      <path d="M 0 86 Q 320 19 640 86 V 108 Q 320 48 0 108 Z" className="gamecast-outfield-wall" />
-      <g className="gamecast-light-rigs">
-        <path d="M 58 91 L 44 8 M 582 91 L 596 8" />
-        <rect x="24" y="5" width="42" height="12" rx="2" />
-        <rect x="574" y="5" width="42" height="12" rx="2" />
-      </g>
-      <g className="gamecast-center-scoreboard" transform="translate(275 30)">
-        <rect width="90" height="42" rx="3" />
-        <text x="45" y="16" textAnchor="middle">환생 야구</text>
-        <text x="45" y="32" textAnchor="middle">생중계</text>
-      </g>
-      <path d="M 320 365 L 65 73 Q 320 14 575 73 L 320 365 Z" fill="url(#stadium-grass)" className="gamecast-outfield" />
-      <path d="M 88 103 Q 320 48 552 103" className="gamecast-warning-track" />
-      <path d="M 118 139 Q 320 82 522 139 M 153 184 Q 320 132 487 184 M 191 231 Q 320 190 449 231" className="gamecast-mowing-lines" />
-      <path d="M 320 365 L 497 254 320 210 143 254 Z" className="gamecast-infield-dirt" />
-      <path d="M 320 360 L 486 257 320 218 154 257 Z" className="gamecast-diamond" />
-      <path d="M 320 365 L 65 73 M 320 365 L 575 73" className="gamecast-foul-lines" />
-      <path d="M 306 358 H 334 L 326 368 H 314 Z" className="gamecast-home-plate" />
       <Base x={486} y={257} occupied={displayedRunners.firstOccupied} label="1" />
       <Base x={320} y={218} occupied={displayedRunners.secondOccupied} label="2" />
       <Base x={154} y={257} occupied={displayedRunners.thirdOccupied} label="3" />
@@ -654,7 +599,7 @@ function FieldView({
         const isResponsible = marker.position === fielding.fielderPosition;
         const point = isResponsible && fielderPoint ? fielderPoint : marker;
         const isActive = isResponsible && (progress > 0.58 || revealResult);
-        return <PlayerFigure key={marker.position} x={point.x} y={point.y} short={marker.short} active={isActive} />;
+        return <FielderMarker key={marker.position} x={point.x} y={point.y} short={marker.short} active={isActive} />;
       })}
       {progress > 0 && progress < 0.22 ? <g className="gamecast-contact-burst" transform={`translate(${FIELD_HOME.x} ${FIELD_HOME.y})`}>
         <circle r="12" /><circle r="25" /><path d="M -34 0 H 34 M 0 -34 V 34 M -24 -24 L 24 24 M 24 -24 L -24 24" />
@@ -682,6 +627,25 @@ function FieldView({
       <text x="12" y="411" className="gamecast-axis-label">환생 야구 · 타구 추적</text>
     </svg>
     <div className="gamecast-view-caption"><span>중계 카메라</span><span>{plot.apexHeightMeters.toFixed(1)} m 최고점</span><span>{plot.hangTimeSeconds.toFixed(1)} s 체공</span><strong>{revealResult ? fielderAction(fielding) : `타구 추적 ${Math.round(progress * 100)}%`}</strong></div>
+  </div>;
+}
+
+function GameCastImpact({ result, revealResult }: { result: PitchKernelResult; revealResult: boolean }) {
+  const { snapshot, rivalAdaptation, postgameAnalysis } = result;
+  const batterySummary = snapshot.recommendationAccepted ? "추천 수락" : "사인 수정";
+  const adaptationSummary = `${RIVAL_ADAPTATION_LABELS[rivalAdaptation.band]} · ${rivalAdaptation.level}`;
+  return <div className={`gamecast-impact-summary ${revealResult ? "is-revealed" : "is-pending"}`} aria-label={revealResult
+    ? `이번 공의 기록. 피로 ${snapshot.fatigueAfterPitch}, 배터리 ${batterySummary}, 상대 학습 ${adaptationSummary}. ${postgameAnalysis.growthSignal}`
+    : "이번 공이 선수에게 남기는 기록은 판정 후 공개됩니다."}>
+    <div><span>이번 공이 남긴 기록</span><small>{revealResult ? "선수 시점" : "판정 대기"}</small></div>
+    {revealResult ? <>
+      <strong title={postgameAnalysis.growthSignal}>{postgameAnalysis.growthSignal}</strong>
+      <div className="gamecast-impact-meta">
+        <span><small>피로</small><b>{snapshot.fatigueAfterPitch}</b></span>
+        <span><small>배터리</small><b>{batterySummary}</b></span>
+        <span><small>상대 학습</small><b>{adaptationSummary}</b></span>
+      </div>
+    </> : <p>투구 내용과 관계·성장 신호를 계산하고 있습니다.</p>}
   </div>;
 }
 
@@ -769,6 +733,9 @@ export function GameCastReplay({
           ? "범타"
           : OUTCOME_LABELS[snapshot.outcome];
   const cinematicResult = revealResult && (hasContact || snapshot.ended);
+  const viewMode = gameCastViewMode(phase, hasContact);
+  const showField = viewMode === "field" && Boolean(battedBall && fielding);
+  const adjudicationLabel = hasContact && (phase === "field" || phase === "result") ? "02 타격" : "02 판정";
   const resetPlayback = useCallback(() => {
     elapsedRef.current = reducedMotion ? timeline.total : 0;
     setElapsed(elapsedRef.current);
@@ -794,14 +761,14 @@ export function GameCastReplay({
     <span><small>결과</small><b>{outcome}</b></span>
   </div> : null;
 
-  return <section className={`gamecast-replay gamecast-replay--${tone} gamecast-phase--${phase} ${hasContact ? "has-contact" : "is-pitch-only"}`} style={motionStyle} aria-label="환생 야구 플레이 재생">
+  return <section className={`gamecast-replay gamecast-replay--${tone} gamecast-phase--${phase} gamecast-camera--${viewMode}`} style={motionStyle} aria-label="환생 야구 플레이 재생">
     <div className="sr-only" role="status" aria-live="polite">
       {revealResult ? snapshot.accessibilitySummary : phaseLabel}
     </div>
     <header className="gamecast-header">
       <div className="gamecast-brand"><i /> <span>환생 야구</span><strong>경기 중계</strong></div>
       <div className="gamecast-matchup"><span><small>투</small>{pitcherName}</span><b>VS</b><span><small>타</small>{batterName}</span></div>
-      <div className="gamecast-situation"><span>{situationLabel}</span><strong><i>B</i> {snapshot.balls} <i>S</i> {snapshot.strikes}</strong></div>
+      <div className="gamecast-situation"><span>{situationLabel}</span><strong><i>B</i> {revealResult ? snapshot.balls : "—"} <i>S</i> {revealResult ? snapshot.strikes : "—"}</strong></div>
       <div className="gamecast-playback-controls" aria-label="재생 제어">
         <button type="button" onClick={togglePlayback} disabled={reducedMotion} aria-label={status === "playing" ? "일시정지" : status === "paused" ? "재생" : "다시 보기"}>
           {status === "playing" ? "Ⅱ" : "▶"}
@@ -817,15 +784,15 @@ export function GameCastReplay({
       <div className="gamecast-play-sequence" aria-label="플레이 재생 순서">
         <span className={phase === "pitch" ? "is-current is-pitch" : "is-complete"}>01 투구</span>
         <i />
-        <span className={!hasContact ? "is-muted" : phase === "contact" ? "is-current is-contact" : ["field", "result"].includes(phase) ? "is-complete" : ""}>02 타격</span>
+        <span className={phase === "contact" ? "is-current is-contact" : ["field", "result"].includes(phase) ? "is-complete" : ""}>{adjudicationLabel}</span>
         <i />
         <span className={phase === "field" ? "is-current is-result" : phase === "result" ? "is-complete" : ""}>03 결과</span>
       </div>
       <small>{pitchLabel} · {(execution.velocityTenthsKPH / 10).toFixed(1)} km/h</small>
     </div>
 
-    <div className={`gamecast-visuals ${hasContact ? "has-field" : "has-pitch"}`}>
-      {battedBall && fielding ? <>
+    <div className={`gamecast-visuals ${showField ? "has-field" : "has-pitch"}`}>
+      {showField && battedBall && fielding ? <>
         <FieldView
           battedBall={battedBall}
           fielding={fielding}
@@ -837,21 +804,21 @@ export function GameCastReplay({
           revealResult={revealResult}
         />
         <aside className="gamecast-telemetry">
-          <div className="gamecast-telemetry-heading"><span>타구 추적</span><strong>{phase === "pitch" ? pitchLabel : directionLabel(battedBall.directionTenthsDegrees / 10)}</strong></div>
+          <div className="gamecast-telemetry-heading"><span>타구 추적</span><strong>{directionLabel(battedBall.directionTenthsDegrees / 10)}</strong></div>
           <PitchView execution={execution} tone={tone} compact progress={pitchProgress} revealResult={revealResult} />
           <div className="gamecast-contact-card">
             <span>타구 속도</span>
-            <div><strong>{phase === "pitch" ? "—" : (battedBall.exitVelocityTenthsKPH / 10).toFixed(1)}</strong><em>km/h</em></div>
-            <small>{phase === "pitch" ? "타구 대기" : `발사각 ${(battedBall.launchAngleTenthsDegrees / 10).toFixed(1)}°`}</small>
+            <div><strong>{(battedBall.exitVelocityTenthsKPH / 10).toFixed(1)}</strong><em>km/h</em></div>
+            <small>발사각 {(battedBall.launchAngleTenthsDegrees / 10).toFixed(1)}°</small>
           </div>
           <div className="gamecast-metrics gamecast-metrics--stacked">
             <Metric label="투구" value={`${pitchLabel} · ${(execution.velocityTenthsKPH / 10).toFixed(1)} km/h`} />
-            <Metric label="방향" value={phase === "pitch" ? "추적 대기" : directionLabel(battedBall.directionTenthsDegrees / 10)} />
+            <Metric label="방향" value={directionLabel(battedBall.directionTenthsDegrees / 10)} />
             <Metric label="비거리" value={revealResult ? `${fieldPlot?.distanceMeters.toFixed(1)} m` : "측정 중"} accent />
             <Metric label="수비" value={revealResult ? fielderAction(fielding) : "반응 중"} />
           </div>
           {causalitySummary}
-          <div className="gamecast-rival-read"><span>타자 대응</span><strong>{revealResult ? result.rivalAdaptation.warning : "타자 반응 기록 중"}</strong></div>
+          <GameCastImpact result={result} revealResult={revealResult} />
         </aside>
       </> : <>
         <PitchView execution={execution} tone={tone} progress={pitchProgress} revealResult={revealResult} />
@@ -866,7 +833,7 @@ export function GameCastReplay({
           </div>
           <div className={`gamecast-zone-call gamecast-zone-call--${revealResult ? tone : "pending"}`}><span>ABS 판정</span><strong>{revealResult ? Math.abs(execution.actualX) <= 500 && Math.abs(execution.actualY) <= 500 ? "존 안" : "존 밖" : "판독 중"}</strong></div>
           {causalitySummary}
-          <div className="gamecast-rival-read"><span>타자 대응</span><strong>{revealResult ? result.rivalAdaptation.warning : "타자 반응 기록 중"}</strong></div>
+          <GameCastImpact result={result} revealResult={revealResult} />
         </aside>
       </>}
       {cinematicResult ? <div className={`gamecast-result-sting gamecast-result-sting--${tone}`} aria-hidden="true">
@@ -879,7 +846,7 @@ export function GameCastReplay({
     <footer className="gamecast-footer">
       <div className="gamecast-result-copy">
         <span className={revealResult ? `decision-grade decision-grade--${snapshot.selectionQuality}` : "gamecast-live-badge"}>{revealResult ? snapshot.recommendationAccepted ? "포수 추천 수락" : "포수 사인 수정" : "생중계"}</span>
-        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "pitch" ? "포수 시점에서 투구 동작과 공의 움직임을 따라갑니다." : "중계 카메라가 타구와 수비 반응을 따라갑니다."}</p></div>
+        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "field" ? "중계 카메라가 판정된 타구와 수비 반응을 따라갑니다." : phase === "contact" ? "투구가 끝났습니다. 스윙·존·접촉 여부를 판정합니다." : "포수 시점에서 투구 동작과 공의 움직임을 따라갑니다."}</p></div>
       </div>
       <button className="ds-button ds-button--primary primary-action gamecast-continue" type="button" disabled={isRunning || !revealResult} onClick={onContinue}>
         {isRunning ? "다음 장면 준비 중…" : revealResult ? continueLabel : "플레이 재생 중…"}

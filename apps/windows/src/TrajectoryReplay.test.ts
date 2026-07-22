@@ -6,6 +6,7 @@ import {
   createRunnerMotions,
   decodeTrajectorySeries,
   gameCastPhase,
+  gameCastViewMode,
   interpolateTrajectory,
   runnerPoint,
 } from "./TrajectoryReplay";
@@ -28,8 +29,8 @@ describe("trajectory replay geometry", () => {
 
     expect(plot.target.x).toBe(116);
     expect(plot.actual.x).toBe(18);
-    expect(plot.actual.y).toBe(30);
-    expect(plot.path).toContain("M 160 18 Q");
+    expect(plot.actual.y).toBe(37);
+    expect(plot.path).toContain("M 160 135 Q");
   });
 
   it("plots left- and right-side contact on the matching side of center field", () => {
@@ -129,6 +130,16 @@ describe("trajectory replay geometry", () => {
     expect(gameCastPhase(timeline.pitchEnd + 1, timeline, true)).toBe("contact");
     expect(gameCastPhase(timeline.contactAt + 1, timeline, true)).toBe("field");
     expect(gameCastPhase(timeline.resultAt, timeline, true)).toBe("result");
+  });
+
+  it("keeps every outcome on the same pitch camera until contact is confirmed", () => {
+    expect(gameCastViewMode("pitch", false)).toBe("pitch");
+    expect(gameCastViewMode("pitch", true)).toBe("pitch");
+    expect(gameCastViewMode("contact", false)).toBe("pitch");
+    expect(gameCastViewMode("contact", true)).toBe("pitch");
+    expect(gameCastViewMode("field", true)).toBe("field");
+    expect(gameCastViewMode("result", true)).toBe("field");
+    expect(gameCastViewMode("result", false)).toBe("pitch");
   });
 
   it("creates visible batter and lead-runner movement before final base state", () => {
