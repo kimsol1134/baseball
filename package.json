@@ -27,6 +27,7 @@
     "steam:smoke": "node tools/smoke-steam-depot.mjs",
     "steam:config:full": "node tools/generate-steamworks-config.mjs full",
     "steam:config:demo": "node tools/generate-steamworks-config.mjs demo",
+    "steam:submission:check": "node tools/check-steam-submission.mjs",
     "test:tauri": "node tools/run-cargo.mjs test --manifest-path apps/windows/src-tauri/Cargo.toml",
     "check": "npm run test:swift && npm run test:web && npm run build:web && npm run test:tauri && npm run check:tauri"
   },
