@@ -4,12 +4,12 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
-const executableExtension = process.platform === "win32" ? ".cmd" : "";
 const tauri = path.join(
   repositoryRoot,
   "node_modules",
-  ".bin",
-  `tauri${executableExtension}`,
+  "@tauri-apps",
+  "cli",
+  "tauri.js",
 );
 const cargoBin = path.join(repositoryRoot, ".toolchains", "cargo", "bin");
 const localToolchain = existsSync(cargoBin);
@@ -22,7 +22,7 @@ const environment = localToolchain
     }
   : process.env;
 
-const result = spawnSync(tauri, process.argv.slice(2), {
+const result = spawnSync(process.execPath, [tauri, ...process.argv.slice(2)], {
   cwd: path.join(repositoryRoot, "apps", "windows"),
   env: environment,
   stdio: "inherit",
