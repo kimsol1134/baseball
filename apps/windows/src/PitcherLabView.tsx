@@ -279,7 +279,7 @@ export function PitcherLabView({
     <main className="lab-shell">
       <section className="lab-hero">
         <div>
-          <p className="eyebrow">투수 성장실 · {snapshot.lifeNumber}번째 선수</p>
+          <p className="eyebrow">연습 모드 · {snapshot.lifeNumber}번째 선수</p>
           <h2>{snapshot.pitcher.name} · {snapshot.lifeNumber === 1 ? "첫 번째" : "두 번째"} 선수</h2>
           <p>현재 능력은 정확히 보입니다. 어떤 훈련이 잘 맞는지는 직접 훈련한 뒤 반응을 확인해야 합니다.</p>
         </div>
@@ -293,7 +293,7 @@ export function PitcherLabView({
         </div>
       </section>
 
-      <section className="lab-progress" aria-label="투수 성장실 진행 상황">
+      <section className="lab-progress" aria-label="연습 모드 진행 상황">
         <div>
           <span>훈련</span>
           <strong>{snapshot.trainingSessionsCompleted} / 6</strong>

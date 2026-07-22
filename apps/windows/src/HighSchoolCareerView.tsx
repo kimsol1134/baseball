@@ -216,10 +216,9 @@ interface CareerSetupProps {
   error?: string;
   onStart: (presetID: string, allocation: CreationAllocationSnapshot, identity: PlayerIdentitySnapshot,
     difficulty: CareerDifficultySnapshot, karmas: ReadonlyArray<KarmaID>) => Promise<void>;
-  onBack: () => void;
 }
 
-export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBack }: CareerSetupProps) {
+export function HighSchoolCareerSetup({ presets, isRunning, error, onStart }: CareerSetupProps) {
   const [presetID, setPresetID] = useState("");
   const [allocation, setAllocation] = useState<CreationAllocationSnapshot>({ stuff: 2, command: 1, movement: 1, stamina: 1 });
   const [identity, setIdentity] = useState<PlayerIdentitySnapshot>({ name: "문동윤", throwingHand: "right", bodyType: "balanced", region: "서울" });
@@ -253,7 +252,6 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart, onBa
       <section className="career-intro">
         <div><p className="eyebrow">고교 커리어</p><h2>중학교의 마지막 공에서 드래프트까지</h2>
           <p>학교를 고르고, 감독과 포수에게 배우고, 라이벌과 다시 만납니다. 세 시즌 뒤에는 프로 구단의 선택을 받습니다.</p></div>
-        <button type="button" onClick={onBack}>투수 성장실로</button>
       </section>
       <section className="preset-creation-grid">
         {presets.map((preset) => <button key={preset.id} type="button" aria-pressed={preset.id === effectivePresetID}
@@ -326,7 +324,6 @@ interface CareerViewProps {
   onDraft: () => Promise<void>;
   onLegacy: (memories: ReadonlyArray<MemoryCardID>) => Promise<void>;
   onNextLife: () => Promise<void>;
-  onBackToLab: () => void;
   onNewCareer: () => void;
   showTutorial: boolean;
   onDismissTutorial: () => void;
@@ -337,7 +334,7 @@ interface CareerViewProps {
 }
 
 export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTraining, onRelationship,
-  onCompletePrologue, onImportantGame, onAwakening, onAdvanceChapter, onDraft, onLegacy, onNextLife, onBackToLab, onNewCareer,
+  onCompletePrologue, onImportantGame, onAwakening, onAdvanceChapter, onDraft, onLegacy, onNextLife, onNewCareer,
   showTutorial, onDismissTutorial, onStartPro, proAccessAvailable, demoMode, onMilestoneFeedback }: CareerViewProps) {
   const state = result.snapshot;
   const demoComplete = hasCompletedSteamDemo(demoMode, state.performance.importantGamesCompleted);
@@ -399,7 +396,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
       <div><p className="eyebrow">{state.lifeNumber}번째 선수 · {state.chapter.schoolYear}학년 {state.chapter.season}</p>
         <h2>{state.chapter.number}장 · {state.chapter.title}</h2><p>{state.chapter.theme}</p></div>
       <div className="career-vitals"><div><span>피로</span><strong>{state.fatigue}</strong></div><div><span>관계 신뢰</span><strong>{state.relationshipTrust}</strong></div>
-        <div><span>팬 관심</span><strong>{state.fanInterest}</strong></div><button type="button" onClick={onBackToLab}>투수 성장실</button>
+        <div><span>팬 관심</span><strong>{state.fanInterest}</strong></div>
         <button type="button" onClick={onNewCareer}>새 커리어</button></div>
     </section>
     <section className="chapter-map" aria-label="8개 커리어 챕터">{Array.from({ length: 8 }, (_, index) => index + 1).map((chapter) =>

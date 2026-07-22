@@ -446,7 +446,7 @@ export function App() {
   const [gameState, setGameState] = useState<GameStateSnapshot>(INITIAL_GAME_STATE);
   const [gameLog, setGameLog] = useState<GameLogSnapshot>(INITIAL_GAME_LOG);
   const [screenMode, setScreenMode] = useState<"lab" | "pitch">("lab");
-  const [experienceMode, setExperienceMode] = useState<"lab" | "career">("lab");
+  const [experienceMode, setExperienceMode] = useState<"lab" | "career">("career");
   const [labResult, setLabResult] = useState<PitcherLabResult>();
   const [previousLifeResult, setPreviousLifeResult] = useState<PitcherLabResult>();
   const [careerResult, setCareerResult] = useState<HighSchoolCareerResult>();
@@ -526,9 +526,7 @@ export function App() {
         && (bundledProAccess || restoredProCandidate.payload.proCareer.snapshot.entitlement.source !== "development")
         ? restoredProCandidate
         : undefined;
-      const proIsNewest = restoredPro && (!restored || Date.parse(restoredPro.payload.savedAt) >= Date.parse(restored.payload.savedAt))
-        && (!restoredCareer || Date.parse(restoredPro.payload.savedAt) >= Date.parse(restoredCareer.payload.savedAt));
-      if (proIsNewest) {
+      if (restoredPro) {
         const saved = restoredPro.payload;
         const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
         if (!savedPreset) throw new Error("저장된 프로 커리어의 투수 프리셋을 찾을 수 없습니다.");
@@ -537,11 +535,7 @@ export function App() {
         setSaveNotice(restoredPro.source === "backup" ? "손상된 프로 저장 대신 마지막 정상 백업을 복구했습니다." : "프로 커리어 자동 저장에서 이어서 시작했습니다.");
         setCoreStatus({ state: "online", health }); return;
       }
-      const careerIsNewest = restoredCareer && (
-        !restored
-        || Date.parse(restoredCareer.payload.savedAt) > Date.parse(restored.payload.savedAt)
-      );
-      if (careerIsNewest) {
+      if (restoredCareer) {
         const saved = restoredCareer.payload;
         const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
         if (!savedPreset) throw new Error("저장된 고교 커리어의 투수 프리셋을 찾을 수 없습니다.");
@@ -616,7 +610,7 @@ export function App() {
       setCareerResult(undefined);
       setLabInningStats(EMPTY_LAB_INNING_STATS);
       setScreenMode("lab");
-      setExperienceMode("lab");
+      setExperienceMode("career");
       setSaveNotice(undefined);
       applyRecommendation(initialPreparation.primaryRecommendation);
       setCoreStatus({ state: "online", health });
@@ -1356,7 +1350,7 @@ export function App() {
     setSaveNotice("새 고교 커리어를 준비했습니다.");
   }, []);
 
-  const handleBackToLab = useCallback(() => {
+  const handleOpenPractice = useCallback(() => {
     setExperienceMode("lab");
     setScreenMode("lab");
     setError(undefined);
@@ -1536,6 +1530,7 @@ export function App() {
           </div></div>
           <div className={`core-status core-status--${coreStatus.state}`}><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" ? <button type="button" onClick={() => void connectCore()}>다시 연결</button> : null}</div>
+          <button className="mode-switch" type="button" onClick={handleOpenPractice}>연습 모드</button>
           <AccessibilityControls {...accessibilityProps} />
         </header>
         {saveNotice ? <div className="save-notice" role="status">{saveNotice}</div> : null}
@@ -1547,13 +1542,13 @@ export function App() {
           onCompletePrologue={handleCompleteCareerPrologue}
           onImportantGame={handleStartCareerGame} onAwakening={handleCareerAwakening}
           onAdvanceChapter={handleAdvanceCareerChapter} onDraft={handleCareerDraft}
-          onLegacy={handleCareerLegacy} onNextLife={handleNextCareerLife} onBackToLab={handleBackToLab}
+          onLegacy={handleCareerLegacy} onNextLife={handleNextCareerLife}
           onNewCareer={handleNewCareer} onStartPro={handleStartPro}
           proAccessAvailable={bundledProAccess || (proResult?.snapshot.entitlement.status === "active" && proResult.snapshot.entitlement.source !== "development")}
           demoMode={releaseEdition === "steam_demo" || releaseEdition === "web_teaser"}
           onMilestoneFeedback={handleMilestoneFeedback} />
           : <HighSchoolCareerSetup presets={presets} isRunning={isRunning || coreStatus.state === "checking"}
-            error={error} onStart={handleStartCareer} onBack={handleBackToLab} />}
+            error={error} onStart={handleStartCareer} />}
         <footer><span>고교 커리어{careerResult ? ` · ${careerResult.snapshot.chapter.schoolYear}학년 ${careerResult.snapshot.chapter.season}` : ""}</span>
           <span>선택이 확정될 때마다 자동 저장됩니다.</span></footer>
       </div>
@@ -1568,7 +1563,7 @@ export function App() {
             <img className="brand-mark" src="/128x128.png" alt="" />
             <div>
               <p className="eyebrow">야구 못하면 또 환생함</p>
-              <h1>투수 성장실</h1>
+              <h1>연습 모드</h1>
             </div>
           </div>
           <div className={`core-status core-status--${coreStatus.state}`}>
@@ -1578,7 +1573,7 @@ export function App() {
               <button type="button" onClick={() => void connectCore()}>다시 연결</button>
             ) : null}
           </div>
-          <button className="mode-switch" type="button" onClick={handleOpenCareer}>고교 커리어</button>
+          <button className="mode-switch" type="button" onClick={handleOpenCareer}>고교 커리어로</button>
           <AccessibilityControls {...accessibilityProps} />
         </header>
         {saveNotice ? <div className="save-notice" role="status">{saveNotice}</div> : null}
@@ -1606,7 +1601,7 @@ export function App() {
           />
         )}
         <footer>
-          <span>투수 성장실{labResult ? ` · ${labResult.snapshot.lifeNumber}번째 선수` : " · 새 선수"}</span>
+          <span>연습 모드{labResult ? ` · ${labResult.snapshot.lifeNumber}번째 선수` : " · 새 선수"}</span>
           <span>선택이 확정될 때마다 자동 저장됩니다.</span>
         </footer>
       </div>
