@@ -1625,7 +1625,8 @@ export function App() {
   }
 
   return (
-    <div className={`app-shell ${showGameCast && lastResult ? "app-shell--gamecast" : ""}`}>
+    <div className={`app-shell ${showGameCast && lastResult ? "app-shell--gamecast" : ""}`}
+      data-team={proVisible && proResult ? proResult.snapshot.team.id : careerResult?.snapshot.draftResult?.team?.id}>
       <header className="topbar">
         <div className="brand-lockup">
           <img className="brand-mark" src="/128x128.png" alt="" />
@@ -1653,16 +1654,16 @@ export function App() {
           <div className="matchup">
             <span>{pitcher?.name ?? "투수 준비 중"}</span><b>VS</b><span>{activeBatter.name}</span>
           </div>
-          <div className="scoreboard" aria-label={`현재 점수 2 대 ${2 + gameState.runsAllowed}`}>
+          <div className="ds-scoreboard scoreboard" aria-label={`현재 점수 2 대 ${2 + gameState.runsAllowed}`}>
             <span>{scoreboardHome}</span><strong>2 : {2 + gameState.runsAllowed}</strong><span>{scoreboardAway}</span>
           </div>
         </section>
 
         <div className={`workspace-grid ${showGameCast && lastResult ? "workspace-grid--gamecast" : ""}`}>
-          <aside className="panel player-panel" aria-label="선수 정보">
+          <aside className="ds-card ds-player-card panel player-panel" aria-label="선수 정보">
             <div className="panel-heading">
               <div><p className="eyebrow">내 투수</p><h2>{pitcher?.name ?? "불러오는 중"}</h2></div>
-              <span className="role-badge">{selectedPreset?.name ?? "프리셋"}</span>
+              <span className="ds-badge role-badge">{selectedPreset?.name ?? "프리셋"}</span>
             </div>
             <label className="preset-picker">
               <span>투수 프리셋</span>
@@ -1735,7 +1736,7 @@ export function App() {
             </div>
           </aside>
 
-          <section ref={gameCastRegionRef} tabIndex={showGameCast && lastResult ? -1 : undefined} className={`panel decision-panel ${showGameCast && lastResult ? "decision-panel--gamecast" : ""}`} aria-label={showGameCast && lastResult ? "플레이 리플레이" : "투구 선택"}>
+          <section ref={gameCastRegionRef} tabIndex={showGameCast && lastResult ? -1 : undefined} className={`ds-card ds-card--raised panel decision-panel ${showGameCast && lastResult ? "decision-panel--gamecast" : ""}`} aria-label={showGameCast && lastResult ? "플레이 리플레이" : "투구 선택"}>
             {showGameCast && lastResult ? <>
               <GameCastReplay
                 key={lastResult.eventHash}
@@ -1753,7 +1754,7 @@ export function App() {
             </> : <>
             <div className="panel-heading">
               <div><p className="eyebrow">승부 선택</p><h2>어떻게 승부할까요?</h2></div>
-              <span className="count-badge">B {context.balls} · S {context.strikes}</span>
+              <span className="ds-badge count-badge">B {context.balls} · S {context.strikes}</span>
             </div>
 
             {primaryRecommendation ? (
@@ -1855,7 +1856,7 @@ export function App() {
             </div>
 
             {plateEnded ? (
-              <button className="primary-action" type="button" disabled={isRunning}
+              <button className="ds-button ds-button--primary primary-action" type="button" disabled={isRunning}
                 onClick={() => lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && proVisible && proResult?.snapshot.phase === "important_game"
                   ? void handleCompleteProGame()
                   : lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && careerResult?.snapshot.phase === "important_game"
@@ -1872,7 +1873,7 @@ export function App() {
                     : "다음 타석 시작"}
               </button>
             ) : (
-              <button className="primary-action" type="button" disabled={!online || !preparation || isRunning}
+              <button className="ds-button ds-button--primary primary-action" type="button" disabled={!online || !preparation || isRunning}
                 onClick={() => void handlePitch()}>
                 {isRunning ? "투구 계산 중…" : online && preparation ? "던지기" : "포수 사인 준비 중"}
               </button>
@@ -1881,10 +1882,10 @@ export function App() {
             </>}
           </section>
 
-          <aside className="panel result-panel" aria-label="투구 결과">
+          <aside className="ds-card ds-card--result panel result-panel" aria-label="투구 결과">
             <div className="panel-heading">
               <div><p className="eyebrow">결과</p><h2>투구 결과</h2></div>
-                  <span className="seed-label">{context.pitchNumber}구째</span>
+                  <span className="ds-badge seed-label">{context.pitchNumber}구째</span>
             </div>
 
             {lastResult ? (

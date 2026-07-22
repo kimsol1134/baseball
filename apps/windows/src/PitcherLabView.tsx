@@ -76,7 +76,7 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
             <strong>{preset.pitcher.name}</strong>
             <p>{preset.tagline}</p>
             <small>{preset.strengths.join(" · ")}</small>
-            <dl className="preset-statline" aria-label={`${preset.name} 기본 능력: ${CREATION_METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
+            <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${CREATION_METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
               {CREATION_METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd></div>)}
             </dl>
           </button>
@@ -120,7 +120,7 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
               </div>
             ))}
           </div>
-          <button className="lab-primary" type="button" disabled={isRunning || spent !== 5 || !playerName.trim()}
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || spent !== 5 || !playerName.trim()}
             onClick={() => void onStart(selectedPreset.id, allocation, playerName.trim())}>
             {isRunning ? "선수 준비 중…" : "훈련 시작"}
           </button>
@@ -276,7 +276,7 @@ export function PitcherLabView({
   const training = snapshot.lastTraining;
 
   return (
-    <main className="lab-shell">
+    <main className="lab-shell stage-layout" data-stage={snapshot.phase}>
       <section className="lab-hero">
         <div>
           <p className="eyebrow">연습 모드 · {snapshot.lifeNumber}번째 선수</p>
@@ -317,7 +317,7 @@ export function PitcherLabView({
       </section>
 
       <div className="lab-grid">
-        <section className="lab-card lab-ratings">
+        <section className="ds-card ds-player-card lab-card lab-ratings">
           <div className="lab-card-heading"><span>현재 능력과 잠재 범위</span><small>훈련할수록 예상 범위가 좁아집니다</small></div>
           {snapshot.potentialRanges.map((range) => (
             <div className="potential-row" key={range.metric}>
@@ -340,7 +340,7 @@ export function PitcherLabView({
           ) : null}
         </section>
 
-        <section className="lab-card lab-action">
+        <section className="ds-card ds-card--raised lab-card lab-action">
           <div className="lab-card-heading"><span>다음 결정</span><small>{PHASE_LABELS[snapshot.phase]}</small></div>
 
           {snapshot.phase === "training" ? (
@@ -363,7 +363,7 @@ export function PitcherLabView({
                   </button>
                 ))}
               </div>
-              <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onTrain(focus, intensity)}>
+              <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTrain(focus, intensity)}>
                 {isRunning ? "훈련 결과 계산 중…" : "이 훈련 확정"}
               </button>
             </>
@@ -374,7 +374,7 @@ export function PitcherLabView({
               <span>중요 이닝 {snapshot.performance.importantInningsCompleted + 1}</span>
               <h3>{snapshot.performance.importantInningsCompleted === 0 ? "자신의 공을 확인할 첫 등판" : snapshot.performance.importantInningsCompleted === 1 ? "주자와 피로가 겹친 위기" : "라이벌 재대결과 스카우트 관전"}</h3>
               <p>직접 구종과 코스를 골라 이번 훈련 뒤 공이 어떻게 달라졌는지 확인합니다.</p>
-              <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onStartImportantInning()}>
+              <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onStartImportantInning()}>
                 중요 이닝 시작
               </button>
             </div>
@@ -416,7 +416,7 @@ export function PitcherLabView({
               <span>최종 스카우팅</span>
               <h3>스카우트가 세 번의 등판 기록을 펼칩니다.</h3>
               <p>현재 능력과 삼진·볼넷·실점, 훈련 뒤 달라진 점을 함께 평가합니다.</p>
-              <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onFinalizeScouting()}>
+              <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onFinalizeScouting()}>
                 최종 스카우팅 리포트 받기
               </button>
             </div>
@@ -450,7 +450,7 @@ export function PitcherLabView({
                   </button>
                 ))}
               </div>
-              <button className="lab-primary" type="button" disabled={isRunning || !selectedMemory}
+              <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || !selectedMemory}
                 onClick={() => selectedMemory ? void onSelectLegacy(soulDomain, selectedMemory) : undefined}>
                 이 경험을 다음 삶에 남기기
               </button>
@@ -468,7 +468,7 @@ export function PitcherLabView({
                 <span>새 학교·코치 후보 해금</span>
               </div>
               {snapshot.lifeNumber === 1 ? (
-                <button className="lab-primary" type="button" disabled={isRunning} onClick={() => void onStartSecondLife()}>
+                <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onStartSecondLife()}>
                   두 번째 삶 시작
                 </button>
               ) : previousLifeResult ? (
@@ -491,7 +491,7 @@ export function PitcherLabView({
           {error ? <p className="error-message" role="alert">{error}</p> : null}
         </section>
 
-        <aside className="lab-card lab-log">
+        <aside className="ds-card ds-record-grid lab-card lab-log">
           <div className="lab-card-heading"><span>선수 기록</span><small>자동 저장됨</small></div>
           <div className="lab-log-stats">
             <div><span>투구</span><strong>{snapshot.performance.pitches}</strong></div>

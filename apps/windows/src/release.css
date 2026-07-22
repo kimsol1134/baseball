@@ -3,10 +3,10 @@
   display: grid;
   place-items: center;
   padding: 32px;
-  color: #eef6ef;
+  color: var(--color-text-primary);
   background:
-    radial-gradient(circle at 50% 0%, rgb(112 170 104 / 20%), transparent 42%),
-    #07100c;
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-positive) 20%, transparent), transparent 42%),
+    var(--color-canvas);
 }
 
 .startup-failure-card {
@@ -14,15 +14,15 @@
   display: grid;
   gap: 14px;
   padding: 30px;
-  border: 1px solid rgb(169 209 148 / 24%);
+  border: 1px solid color-mix(in srgb, var(--color-selection) 24%, transparent);
   border-radius: 16px;
-  background: rgb(10 24 17 / 94%);
-  box-shadow: 0 28px 80px rgb(0 0 0 / 42%);
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  box-shadow: 0 28px 80px color-mix(in srgb, var(--color-canvas) 42%, transparent);
 }
 
 .startup-failure-card span {
-  color: #9ddd68;
-  font-size: .75rem;
+  color: var(--color-brand);
+  font-size: var(--font-size-label);
   font-weight: 800;
   letter-spacing: .08em;
 }
@@ -38,7 +38,7 @@
 }
 
 .startup-failure-card p {
-  color: #b5c4b9;
+  color: var(--color-text-secondary);
   line-height: 1.65;
 }
 
@@ -47,8 +47,8 @@
   margin-top: 6px;
   border: 0;
   border-radius: 9px;
-  color: #07100c;
-  background: #a8e968;
+  color: var(--color-canvas);
+  background: var(--color-brand);
   font: inherit;
   font-weight: 900;
   cursor: pointer;
@@ -61,18 +61,18 @@
   bottom: 18px;
   width: min(440px, calc(100vw - 36px));
   padding: 12px 14px;
-  border: 1px solid rgb(241 188 90 / 40%);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 40%, transparent);
   border-radius: 10px;
-  color: #fff2d0;
-  background: rgb(35 25 10 / 94%);
-  box-shadow: 0 14px 40px rgb(0 0 0 / 35%);
-  font-size: .82rem;
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-warning-soft) 94%, transparent);
+  box-shadow: 0 14px 40px color-mix(in srgb, var(--color-canvas) 35%, transparent);
+  font-size: var(--font-size-meta);
   line-height: 1.5;
 }
 
 .startup-storage-warning button {
   margin-left: 10px;
-  border: 1px solid rgb(255 242 208 / 30%);
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 30%, transparent);
   border-radius: 6px;
   color: inherit;
   background: transparent;
@@ -84,18 +84,18 @@
 .settings-explanation,
 .settings-version {
   grid-column: 1 / -1;
-  color: var(--color-text-subtle, #91a097);
-  font-size: .68rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-scene-md);
   line-height: 1.45;
 }
 
 .settings-version {
   padding-top: 8px;
-  border-top: 1px solid rgb(255 255 255 / 8%);
+  border-top: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);
 }
 
 .event-proof strong {
-  color: var(--color-text-subtle, #91a097);
-  font-size: .68rem;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-scene-md);
   font-weight: 700;
 }

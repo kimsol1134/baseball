@@ -881,7 +881,7 @@ export function GameCastReplay({
         <span className={revealResult ? `decision-grade decision-grade--${snapshot.selectionQuality}` : "gamecast-live-badge"}>{revealResult ? snapshot.recommendationAccepted ? "포수 추천 수락" : "포수 사인 수정" : "생중계"}</span>
         <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "pitch" ? "포수 시점에서 릴리스와 무브먼트를 추적합니다." : "중계 카메라가 타구와 수비 반응을 따라갑니다."}</p></div>
       </div>
-      <button className="primary-action gamecast-continue" type="button" disabled={isRunning || !revealResult} onClick={onContinue}>
+      <button className="ds-button ds-button--primary primary-action gamecast-continue" type="button" disabled={isRunning || !revealResult} onClick={onContinue}>
         {isRunning ? "다음 장면 준비 중…" : revealResult ? continueLabel : "플레이 재생 중…"}
       </button>
     </footer>

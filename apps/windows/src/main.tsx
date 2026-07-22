@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { getAppStorage, hydrateCloudStorage, installCloudSaveCloseGuard } from "./cloudStorage";
 import { ErrorBoundary, StartupFailure, StorageWarning } from "./ErrorBoundary";
 import "./styles.css";
+import "./design-system.css";
 import "./release.css";
 
 const root = document.getElementById("root");

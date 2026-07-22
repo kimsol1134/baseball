@@ -1,0 +1,293 @@
+:root {
+  color-scheme: dark;
+  --font-family-sans: Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", Inter, system-ui, sans-serif;
+  --font-family-scoreboard: "SFMono-Regular", "Roboto Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --font-scale: 1;
+  --font-size-label: 0.75rem;
+  --font-size-meta: 0.8125rem;
+  --font-size-body-sm: 0.875rem;
+  --font-size-body-lg: 0.9375rem;
+  --font-size-body: 1rem;
+  --font-size-section: 1.125rem;
+  --font-size-heading-sm: 1.25rem;
+  --font-size-heading-md: 1.5rem;
+  --font-size-heading-lg: 1.75rem;
+  --font-size-display: 2rem;
+  --font-size-title: clamp(1.5rem, 2.4vw, 2rem);
+  --font-size-scene-xs: 0.75rem;
+  --font-size-scene-sm: 0.75rem;
+  --font-size-scene-md: 0.75rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --color-canvas: #080d0b;
+  --color-surface: #101815;
+  --color-surface-raised: #17231e;
+  --color-surface-soft: #1e2b25;
+  --color-border: #3f554b;
+  --color-border-strong: #5f736a;
+  --color-text-primary: #f1f4ee;
+  --color-text-secondary: #b4c1bb;
+  --color-text-tertiary: #84968e;
+  --color-brand: #b7f36b;
+  --color-action: #b7f36b;
+  --color-action-strong: #96dc4e;
+  --color-action-soft: #243a20;
+  --color-action-ink: #10200d;
+  --color-selection: #86c96a;
+  --color-selection-soft: #1b2f20;
+  --color-milestone: #d8b565;
+  --color-milestone-soft: #211d14;
+  --color-positive: #55c58a;
+  --color-positive-soft: #14271d;
+  --color-warning: #f0a94a;
+  --color-warning-soft: #251d12;
+  --color-negative: #ef746a;
+  --color-negative-soft: #261816;
+  --color-information: #67b6c1;
+  --color-information-soft: #163036;
+  --color-focus: #d3ff82;
+
+  /* 구장·리플레이 전용 색은 상태 의미를 갖지 않는다. */
+  --scene-sky: #050a15;
+  --scene-sky-raised: #11191f;
+  --scene-turf-deep: #0a1710;
+  --scene-turf: #1d3824;
+  --scene-turf-light: #2c482d;
+  --scene-dirt: #805f3e;
+  --scene-dirt-light: #b48a5b;
+  --scene-chalk: #f5f8f5;
+  --scene-metal: #9aab9e;
+  --scene-crowd: #344650;
+  --scene-paper: #f5f1df;
+  --scene-paper-ink: #243917;
+
+  /* 구단색은 상태색과 분리하며 선수 카드의 장식에만 사용한다. */
+  --team-blue: #5d8fd7;
+  --team-navy: #7189a2;
+  --team-gold: #d3a64c;
+  --team-red: #d76c68;
+  --team-teal: #52aa9e;
+  --team-orange: #d8894e;
+  --team-violet: #9a82d2;
+  --team-silver: #aab5b0;
+
+  --shadow-soft: 0 12px 34px color-mix(in srgb, var(--color-canvas) 48%, transparent);
+  --shadow-card: 0 18px 60px color-mix(in srgb, var(--color-canvas) 62%, transparent);
+  --shadow-stage: 0 28px 90px color-mix(in srgb, var(--color-canvas) 76%, transparent);
+  --team-decoration: var(--team-blue);
+}
+
+:root:has(body.high-contrast),
+body.high-contrast {
+  --color-canvas: #020503;
+  --color-surface: #070b09;
+  --color-surface-raised: #0b120e;
+  --color-surface-soft: #111b16;
+  --color-border: #87978f;
+  --color-border-strong: #c1cec7;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e2e8e4;
+  --color-text-tertiary: #c4cec9;
+  --color-brand: #d3ff82;
+  --color-action: #d3ff82;
+  --color-action-strong: #b8f45f;
+  --color-action-soft: #1a2b13;
+  --color-action-ink: #020503;
+  --color-selection: #b9ed8d;
+  --color-selection-soft: #152313;
+  --color-milestone: #ffe08a;
+  --color-milestone-soft: #2b2415;
+  --color-positive: #78e6ab;
+  --color-positive-soft: #10291d;
+  --color-warning: #ffc66d;
+  --color-warning-soft: #2d210f;
+  --color-negative: #ff9a91;
+  --color-negative-soft: #321817;
+  --color-information: #8ed9e2;
+  --color-information-soft: #10262a;
+  --color-focus: #ffe36a;
+  --scene-sky: #020503;
+  --scene-sky-raised: #0b120e;
+  --scene-turf-deep: #071109;
+  --scene-turf: #17351e;
+  --scene-turf-light: #2d5b34;
+  --scene-dirt: #8c653f;
+  --scene-dirt-light: #d0a06c;
+  --scene-chalk: #ffffff;
+  --scene-metal: #d2ded7;
+  --scene-crowd: #405a66;
+  --scene-paper: #fff7d5;
+  --scene-paper-ink: #172b12;
+  --team-blue: #8fbaff;
+  --team-navy: #a8bdd2;
+  --team-gold: #ffd36d;
+  --team-red: #ff9691;
+  --team-teal: #7ee0d0;
+  --team-orange: #ffb477;
+  --team-violet: #c4a9ff;
+  --team-silver: #d7e0dc;
+}
+
+/* Shared component contracts. Existing feature classes opt into these contracts. */
+.ds-card {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.ds-card.ds-card--raised { border-color: var(--color-border-strong); background: var(--color-surface-raised); }
+.ds-card.ds-card--result { border-left: 4px solid var(--color-information); }
+.ds-card.ds-card--milestone { border-color: var(--color-milestone); background: var(--color-milestone-soft); box-shadow: var(--shadow-stage); }
+
+.ds-button {
+  min-height: 44px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  background: var(--color-surface-raised);
+  font-weight: 800;
+}
+
+.ds-button.ds-button--primary {
+  border-color: var(--color-action);
+  color: var(--color-action-ink);
+  background: var(--color-action);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--color-action) 18%, transparent);
+}
+
+.ds-button.ds-button--quiet { border-color: transparent; background: transparent; }
+.ds-button.ds-button--danger { border-color: var(--color-negative); color: var(--color-negative); background: var(--color-negative-soft); }
+.ds-button:disabled { border-color: var(--color-border); color: var(--color-text-tertiary); background: var(--color-surface-soft); box-shadow: none; }
+
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-soft);
+  font-size: var(--font-size-label);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ds-badge--positive { border-color: var(--color-positive); color: var(--color-positive); background: var(--color-positive-soft); }
+.ds-badge--warning { border-color: var(--color-warning); color: var(--color-warning); background: var(--color-warning-soft); }
+.ds-badge--information { border-color: var(--color-information); color: var(--color-information); background: var(--color-information-soft); }
+.ds-badge--milestone { border-color: var(--color-milestone); color: var(--color-milestone); background: var(--color-milestone-soft); }
+
+.ds-card.ds-player-card {
+  position: relative;
+  overflow: hidden;
+  border-top: 3px solid var(--team-decoration);
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--team-decoration) 8%, transparent), transparent 44%),
+    var(--color-surface);
+}
+
+.ds-scoreboard,
+.ds-record-grid strong,
+.ds-record-grid b {
+  font-family: var(--font-family-scoreboard);
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: 0.02em;
+}
+
+.ds-record-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-border) 24%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-border) 24%, transparent) 1px, transparent 1px);
+  background-size: 100% 32px, 32px 100%;
+}
+
+/* 두 줄 이상 읽는 설명은 12px 메타 레이블과 분리한다. */
+:is(
+  .preset-creation-grid p,
+  .school-grid p,
+  .school-grid small,
+  .training-option-grid span,
+  .training-intensity-grid span,
+  .career-training-grid span,
+  .relationship-options span,
+  .lab-choice-pair span,
+  .memory-grid span,
+  .career-news article p,
+  .lab-log article p,
+  .pro-plan-actions small,
+  .lab-copy
+) {
+  font-size: var(--font-size-body-sm);
+  line-height: 1.55;
+}
+
+.stage-layout:is(
+  [data-stage="draft"],
+  [data-stage="contract_offer"],
+  [data-stage="pro_debut"],
+  [data-stage="major_debut"],
+  [data-stage="retirement_decision"],
+  [data-stage="completed"]
+) {
+  isolation: isolate;
+}
+
+.stage-layout:is(
+  [data-stage="draft"],
+  [data-stage="contract_offer"],
+  [data-stage="pro_debut"],
+  [data-stage="major_debut"],
+  [data-stage="retirement_decision"],
+  [data-stage="completed"]
+) .career-decision {
+  border-color: var(--color-milestone);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-milestone) 13%, transparent), transparent 28rem),
+    var(--color-surface-raised);
+  box-shadow: var(--shadow-stage);
+}
+
+.stage-layout:is(
+  [data-stage="draft"],
+  [data-stage="contract_offer"],
+  [data-stage="pro_debut"],
+  [data-stage="major_debut"],
+  [data-stage="retirement_decision"],
+  [data-stage="completed"]
+) :is(.career-player, .career-news) {
+  opacity: 0.72;
+  filter: saturate(0.68);
+}
+
+[data-team="seoul_comets"] { --team-decoration: var(--team-blue); }
+[data-team="busan_marines"] { --team-decoration: var(--team-gold); }
+[data-team="incheon_waves"] { --team-decoration: var(--team-blue); }
+[data-team="daegu_forge"] { --team-decoration: var(--team-teal); }
+[data-team="daejeon_rockets"] { --team-decoration: var(--team-orange); }
+[data-team="gwangju_phoenix"] { --team-decoration: var(--team-red); }
+[data-team="suwon_guardians"] { --team-decoration: var(--team-navy); }
+[data-team="changwon_meteors"] { --team-decoration: var(--team-violet); }
+[data-team="jeonju_hanok"] { --team-decoration: var(--team-teal); }
+[data-team="jeju_storm"] { --team-decoration: var(--team-silver); }
+
+@media (max-width: 900px) {
+  .stage-layout[data-stage] .career-player,
+  .stage-layout[data-stage] .career-news { opacity: 1; filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { scroll-behavior: auto; }
+}
