@@ -34,15 +34,15 @@ public enum PitcherPresetCatalog {
             pitcher: PitcherSnapshot(
                 id: "pitcher-power",
                 name: "민서준",
-                stuff: 72,
-                command: 44,
-                movement: 52,
-                stamina: 52,
+                stuff: 62,
+                command: 42,
+                movement: 48,
+                stamina: 50,
                 pitchProfiles: [
-                    profile(.fourSeam, .primary, 1_525, 48, 45, 58, 74, 62, 2),
-                    profile(.slider, .secondary, 1_345, 43, 42, 57, 61, 54, 2),
-                    profile(.curveball, .secondary, 1_205, 40, 39, 54, 50, 50, 2),
-                    profile(.changeup, .development, 1_375, 34, 33, 43, 40, 43, 2)
+                    profile(.fourSeam, .primary, 1_430, 46, 43, 54, 64, 57, 2),
+                    profile(.slider, .secondary, 1_290, 41, 40, 54, 56, 51, 2),
+                    profile(.curveball, .secondary, 1_150, 38, 37, 50, 46, 47, 2),
+                    profile(.changeup, .development, 1_290, 34, 33, 42, 39, 42, 2)
                 ]
             )
         ),
@@ -55,15 +55,15 @@ public enum PitcherPresetCatalog {
             pitcher: PitcherSnapshot(
                 id: "pitcher-command",
                 name: "고태윤",
-                stuff: 54,
-                command: 74,
-                movement: 53,
-                stamina: 61,
+                stuff: 48,
+                command: 63,
+                movement: 49,
+                stamina: 55,
                 pitchProfiles: [
-                    profile(.fourSeam, .primary, 1_445, 76, 75, 51, 52, 58, 1),
-                    profile(.slider, .secondary, 1_285, 67, 70, 57, 56, 59, 1),
-                    profile(.curveball, .development, 1_160, 48, 51, 53, 45, 48, 2),
-                    profile(.changeup, .secondary, 1_310, 70, 72, 55, 55, 63, 1)
+                    profile(.fourSeam, .primary, 1_390, 65, 64, 48, 47, 54, 1),
+                    profile(.slider, .secondary, 1_250, 59, 61, 53, 51, 55, 1),
+                    profile(.curveball, .development, 1_125, 45, 48, 50, 42, 45, 2),
+                    profile(.changeup, .secondary, 1_260, 61, 63, 52, 50, 59, 1)
                 ]
             )
         ),
@@ -76,15 +76,15 @@ public enum PitcherPresetCatalog {
             pitcher: PitcherSnapshot(
                 id: "pitcher-artist",
                 name: "진서율",
-                stuff: 59,
-                command: 54,
-                movement: 74,
-                stamina: 49,
+                stuff: 51,
+                command: 49,
+                movement: 64,
+                stamina: 47,
                 pitchProfiles: [
-                    profile(.fourSeam, .secondary, 1_425, 56, 53, 48, 49, 52, 1),
-                    profile(.slider, .primary, 1_305, 58, 61, 78, 76, 73, 2),
-                    profile(.curveball, .secondary, 1_175, 55, 59, 76, 69, 76, 2),
-                    profile(.changeup, .development, 1_295, 43, 46, 63, 58, 64, 2)
+                    profile(.fourSeam, .secondary, 1_400, 52, 49, 46, 45, 49, 1),
+                    profile(.slider, .primary, 1_270, 55, 57, 66, 63, 64, 2),
+                    profile(.curveball, .secondary, 1_135, 52, 55, 65, 58, 66, 2),
+                    profile(.changeup, .development, 1_255, 41, 43, 57, 52, 58, 2)
                 ]
             )
         ),
@@ -97,15 +97,15 @@ public enum PitcherPresetCatalog {
             pitcher: PitcherSnapshot(
                 id: "pitcher-stamina",
                 name: "도하람",
-                stuff: 53,
-                command: 62,
-                movement: 52,
-                stamina: 78,
+                stuff: 49,
+                command: 54,
+                movement: 48,
+                stamina: 64,
                 pitchProfiles: [
-                    profile(.fourSeam, .primary, 1_435, 65, 63, 50, 49, 57, 0),
-                    profile(.slider, .secondary, 1_275, 60, 61, 54, 50, 58, 1),
-                    profile(.curveball, .development, 1_150, 51, 50, 50, 42, 50, 1),
-                    profile(.changeup, .secondary, 1_300, 63, 64, 57, 51, 65, 0)
+                    profile(.fourSeam, .primary, 1_405, 57, 55, 47, 44, 54, 0),
+                    profile(.slider, .secondary, 1_250, 54, 55, 50, 45, 54, 1),
+                    profile(.curveball, .development, 1_120, 47, 46, 47, 38, 46, 1),
+                    profile(.changeup, .secondary, 1_260, 56, 57, 52, 46, 60, 0)
                 ]
             )
         )

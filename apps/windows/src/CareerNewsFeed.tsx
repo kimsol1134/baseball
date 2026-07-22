@@ -100,7 +100,10 @@ export function CareerNewsFeed({ items, context, maxItems = 9 }: Props) {
               <blockquote><span>{selected.quoteSpeaker}</span><p>“{selected.quote}”</p></blockquote></article>
             <aside className="news-context"><h3>현재 상황</h3>
               <div><span>소속</span><strong>{context.affiliation}</strong></div><div><span>시점</span><strong>{context.period}</strong></div>
-              <div><span>{context.mode === "high_school" ? "감독·포수의 믿음" : "감독의 믿음"}</span><strong>{context.trust}</strong></div>
+              {context.mode === "high_school" ? <><div><span>감독의 믿음</span><strong>{context.managerTrust ?? context.trust}</strong></div>
+                <div><span>포수의 믿음</span><strong>{context.catcherTrust ?? context.trust}</strong></div>
+                <div><span>라이벌의 인정</span><strong>{context.rivalTrust ?? context.trust}</strong></div></>
+                : <div><span>감독의 믿음</span><strong>{context.trust}</strong></div>}
               <div><span>{context.mode === "high_school" ? "지역 팬 관심" : "소속 리그"}</span><strong>{context.mode === "high_school" ? context.fanInterest ?? "—" : context.level ?? "프로"}</strong></div>
               <h4>다음에 확인할 것</h4><p>{selected.watchPoint}</p></aside>
           </div>

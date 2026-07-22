@@ -290,6 +290,26 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertGreaterThan(challenged.snapshot.fanInterest, listened.snapshot.fanInterest)
         XCTAssertGreaterThan(challenged.snapshot.fatigue, listened.snapshot.fatigue)
         XCTAssertTrue(challenged.snapshot.news.first?.contains("공개 불펜") == true)
+        let relationshipResult = try XCTUnwrap(challenged.snapshot.lastRelationship)
+        XCTAssertEqual(relationshipResult.category, "coach")
+        XCTAssertEqual(relationshipResult.title, scene.snapshot.currentRelationshipEvent?.title)
+        XCTAssertEqual(relationshipResult.response, .challenge)
+        XCTAssertEqual(relationshipResult.trustBefore, scene.snapshot.managerTrust)
+        XCTAssertEqual(relationshipResult.trustAfter, challenged.snapshot.managerTrust)
+        XCTAssertEqual(relationshipResult.fatigueAfter, challenged.snapshot.fatigue)
+        XCTAssertEqual(relationshipResult.fanInterestAfter, challenged.snapshot.fanInterest)
+        XCTAssertFalse(relationshipResult.feedback.contains(relationshipResult.title))
+
+        let encoded = try JSONEncoder().encode(challenged.snapshot)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var changedResult = try XCTUnwrap(object["lastRelationship"] as? [String: Any])
+        changedResult["feedback"] = "변조된 대화 결과"
+        object["lastRelationship"] = changedResult
+        let changed = try JSONDecoder().decode(
+            HighSchoolCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        XCTAssertThrowsError(try engine.advanceChapter(.init(seed: challenged.nextSeed, state: changed)))
     }
 
     func testCoachCatcherAndRivalRelationshipsChangeOnlyTheirOwnTrust() throws {

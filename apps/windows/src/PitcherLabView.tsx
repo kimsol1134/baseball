@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AbilityGauge } from "./AbilityGauge";
 import type {
   AwakeningID,
   CreationAllocationSnapshot,
@@ -21,6 +22,11 @@ const CREATION_METRICS: ReadonlyArray<{
   { key: "movement", label: "변화구", description: "공이 꺾이고 떨어지는 정도" },
   { key: "stamina", label: "체력", description: "긴 이닝에도 공의 힘을 유지하는 능력" },
 ];
+
+function fourSeamVelocity(pitcher: PitcherPresetSnapshot["pitcher"]) {
+  const velocity = pitcher.pitchProfiles?.find((profile) => profile.pitchType === "four_seam")?.velocityTenthsKPH;
+  return velocity === undefined ? "측정 전" : `${(velocity / 10).toFixed(1)} km/h`;
+}
 
 interface PitcherLabSetupProps {
   presets: ReadonlyArray<PitcherPresetSnapshot>;
@@ -66,7 +72,7 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
       <section className="lab-setup-intro">
         <p className="eyebrow">새 선수</p>
         <h2>어떤 투수로 시작할까요?</h2>
-        <p>강점과 약점이 다른 네 유형 중 하나를 고른 뒤, 추가 능력 5점을 나눠 주세요.</p>
+        <p>강점과 약점이 다른 네 유형 중 하나를 고른 뒤, 추가 능력 5점을 나눠 주세요. 능력치는 20–80 평가이며 80은 세대 최고 수준입니다.</p>
       </section>
       <section className="preset-creation-grid" aria-label="투수 프리셋 선택">
         {presets.map((preset) => (
@@ -77,8 +83,10 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
             <p>{preset.tagline}</p>
             <small>{preset.strengths.join(" · ")}</small>
             <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${CREATION_METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
-              {CREATION_METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd></div>)}
+              {CREATION_METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd>
+                <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]} /></div>)}
             </dl>
+            <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
           </button>
         ))}
       </section>
@@ -117,6 +125,7 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
                   <button type="button" aria-label={`${metric.label} 1 증가`} disabled={spent >= 5 || allocation[metric.key] === 5}
                     onClick={() => changeAllocation(metric.key, 1)}>+</button>
                 </div>
+                <AbilityGauge compact label={`${metric.label} 최종`} value={selectedPreset.pitcher[metric.key] + allocation[metric.key]} />
               </div>
             ))}
           </div>
@@ -323,13 +332,12 @@ export function PitcherLabView({
             <div className="potential-row" key={range.metric}>
               <span>{METRIC_LABELS[range.metric] ?? range.metric}</span>
               <strong>{ratingValue(result, range.metric)}</strong>
-              <div className="potential-track" aria-label={`${range.lowerBound}에서 ${range.upperBound} 사이`}>
-                <i style={{ left: `${range.lowerBound}%`, width: `${Math.max(2, range.upperBound - range.lowerBound)}%` }} />
-                <b style={{ left: `${range.current}%` }} />
-              </div>
+              <AbilityGauge label={METRIC_LABELS[range.metric] ?? range.metric} value={range.current}
+                lowerBound={range.lowerBound} upperBound={range.upperBound} />
               <small>{range.lowerBound}–{range.upperBound}</small>
             </div>
           ))}
+          <small className="rating-scale-note">20–80 평가 · 45 평균 · 65 뚜렷한 강점 · 80 세대 최고 · 포심 기준 {fourSeamVelocity(snapshot.pitcher)}</small>
           {training ? (
             <div className={`training-reaction training-reaction--${training.reaction}`}>
               <span>최근 훈련 · {training.sessionNumber}회차</span>

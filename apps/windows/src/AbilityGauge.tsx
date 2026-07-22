@@ -1,0 +1,34 @@
+interface AbilityGaugeProps {
+  label: string;
+  value: number;
+  displayValue?: string;
+  beforeValue?: number;
+  lowerBound?: number;
+  upperBound?: number;
+  compact?: boolean;
+}
+
+function clampRating(value: number) {
+  return Math.min(80, Math.max(20, value));
+}
+
+function ratingPosition(value: number) {
+  return (clampRating(value) - 20) / 60 * 100;
+}
+
+export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBound, upperBound, compact = false }: AbilityGaugeProps) {
+  const current = clampRating(value);
+  const tier = current >= 65 ? "strength" : current >= 55 ? "above-average" : current >= 45 ? "average" : "weakness";
+  const currentText = beforeValue === undefined
+    ? `${label} ${displayValue ?? current}`
+    : `${label} ${clampRating(beforeValue)}에서 ${current}`;
+  const hasRange = lowerBound !== undefined && upperBound !== undefined;
+  const valueText = hasRange ? `${currentText}, 성장 예상 ${clampRating(lowerBound)}에서 ${clampRating(upperBound)}` : currentText;
+
+  return <div className={`ds-ability-gauge${compact ? " is-compact" : ""}`} data-tier={tier}
+    role="meter" aria-label={valueText} aria-valuemin={20} aria-valuemax={80} aria-valuenow={current}>
+    {hasRange ? <em style={{ left: `${ratingPosition(lowerBound)}%`, width: `${Math.max(2, ratingPosition(upperBound) - ratingPosition(lowerBound))}%` }} aria-hidden="true" /> : null}
+    <i style={{ width: `${ratingPosition(current)}%` }} />
+    {beforeValue === undefined ? null : <b style={{ left: `${ratingPosition(beforeValue)}%` }} aria-hidden="true" />}
+  </div>;
+}

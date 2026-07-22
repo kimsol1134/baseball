@@ -7,6 +7,9 @@ export interface CareerNewsContext {
   affiliation: string;
   period: string;
   trust: number;
+  managerTrust?: number;
+  catcherTrust?: number;
+  rivalTrust?: number;
   fanInterest?: number;
   coachName?: string;
   catcherName?: string;

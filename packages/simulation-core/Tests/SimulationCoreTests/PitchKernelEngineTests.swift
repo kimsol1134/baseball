@@ -798,6 +798,31 @@ final class PitchKernelEngineTests: XCTestCase {
         }
     }
 
+    func testHighSchoolPresetRatingsAndFastballsLeaveRoomToDevelop() throws {
+        let presets = PitcherPresetCatalog.all
+        let fastballs = try presets.map { preset in
+            try XCTUnwrap(preset.pitcher.profile(for: .fourSeam))
+        }
+
+        XCTAssertTrue(presets.allSatisfy { preset in
+            [preset.pitcher.stuff, preset.pitcher.command, preset.pitcher.movement, preset.pitcher.stamina]
+                .allSatisfy { (20...64).contains($0) }
+        })
+        XCTAssertTrue(fastballs.allSatisfy { (1_380...1_430).contains($0.velocityTenthsKPH) })
+
+        let power = try XCTUnwrap(presets.first { $0.id == "power_prospect" })
+        let powerFastball = try XCTUnwrap(power.pitcher.profile(for: .fourSeam))
+        XCTAssertEqual(powerFastball.velocityTenthsKPH, fastballs.map(\.velocityTenthsKPH).max())
+        let maximumCreationVelocityGain = 5 * 5
+        let fullEffortVelocityBonus = 32
+        let maximumDailyVariation = 10
+        XCTAssertLessThan(
+            powerFastball.velocityTenthsKPH + maximumCreationVelocityGain
+                + fullEffortVelocityBonus + maximumDailyVariation,
+            1_500
+        )
+    }
+
     func testPresetProfilesChangeVelocityCommandAndFatigueInExpectedDirections() throws {
         let power = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "power_prospect" })
         let commander = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "precision_commander" })

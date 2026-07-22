@@ -355,6 +355,43 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
     }
 }
 
+public struct CareerRelationshipResultSnapshot: Codable, Equatable, Sendable {
+    public let number: Int
+    public let category: String
+    public let title: String
+    public let response: RelationshipResponse
+    public let trustBefore: Int
+    public let trustAfter: Int
+    public let fatigueBefore: Int
+    public let fatigueAfter: Int
+    public let fanInterestBefore: Int
+    public let fanInterestAfter: Int
+    public let growthFocus: TrainingFocus?
+    public let abilityBefore: Int?
+    public let abilityAfter: Int?
+    public let feedback: String
+
+    public init(number: Int, category: String, title: String, response: RelationshipResponse,
+        trustBefore: Int, trustAfter: Int, fatigueBefore: Int, fatigueAfter: Int,
+        fanInterestBefore: Int, fanInterestAfter: Int, growthFocus: TrainingFocus?,
+        abilityBefore: Int?, abilityAfter: Int?, feedback: String) {
+        self.number = number
+        self.category = category
+        self.title = title
+        self.response = response
+        self.trustBefore = trustBefore
+        self.trustAfter = trustAfter
+        self.fatigueBefore = fatigueBefore
+        self.fatigueAfter = fatigueAfter
+        self.fanInterestBefore = fanInterestBefore
+        self.fanInterestAfter = fanInterestAfter
+        self.growthFocus = growthFocus
+        self.abilityBefore = abilityBefore
+        self.abilityAfter = abilityAfter
+        self.feedback = feedback
+    }
+}
+
 public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let careerID: String
     public let revision: UInt64
@@ -385,6 +422,7 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let currentGameScenario: ImportantGameScenarioContent?
     public let currentRelationshipEvent: CareerEventContent?
     public let lastTraining: CareerTrainingSnapshot?
+    public let lastRelationship: CareerRelationshipResultSnapshot?
     public let news: [String]
     public let fanInterest: Int
     public let draftResult: DraftResultSnapshot?
@@ -422,6 +460,7 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         currentGameScenario: ImportantGameScenarioContent?,
         currentRelationshipEvent: CareerEventContent?,
         lastTraining: CareerTrainingSnapshot?,
+        lastRelationship: CareerRelationshipResultSnapshot? = nil,
         news: [String],
         fanInterest: Int,
         draftResult: DraftResultSnapshot?,
@@ -458,6 +497,7 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.currentGameScenario = currentGameScenario
         self.currentRelationshipEvent = currentRelationshipEvent
         self.lastTraining = lastTraining
+        self.lastRelationship = lastRelationship
         self.news = news
         self.fanInterest = fanInterest
         self.draftResult = draftResult
@@ -837,14 +877,35 @@ public struct HighSchoolCareerEngine: Sendable {
         let managerAfter = relationshipCategory == "coach" ? clamp(managerBefore + trustChange, 0, 100) : managerBefore
         let catcherAfter = relationshipCategory == "catcher" ? clamp(catcherBefore + trustChange, 0, 100) : catcherBefore
         let rivalAfter = relationshipCategory == "rival" ? clamp(rivalBefore + trustChange, 0, 100) : rivalBefore
+        let fatigueAfter = clamp(params.state.fatigue + impact.fatigue, 0, 100)
+        let fanInterestAfter = clamp(params.state.fanInterest + impact.fanInterest, 0, 100)
+        let growthBefore = impact.growthFocus.map { rating(for: $0, pitcher: params.state.pitcher) }
+        let growthAfter = impact.growthFocus.map { rating(for: $0, pitcher: pitcher) }
+        let relationshipHeadline = relationshipNews(state: params.state, response: params.response, seed: seed, impact: impact)
+        let relationshipResult = CareerRelationshipResultSnapshot(
+            number: params.state.relationshipsCompleted + 1,
+            category: relationshipCategory,
+            title: params.state.currentRelationshipEvent?.title ?? "대화",
+            response: params.response,
+            trustBefore: relationshipCategory == "coach" ? managerBefore : relationshipCategory == "catcher" ? catcherBefore : rivalBefore,
+            trustAfter: relationshipCategory == "coach" ? managerAfter : relationshipCategory == "catcher" ? catcherAfter : rivalAfter,
+            fatigueBefore: params.state.fatigue,
+            fatigueAfter: fatigueAfter,
+            fanInterestBefore: params.state.fanInterest,
+            fanInterestAfter: fanInterestAfter,
+            growthFocus: impact.growthFocus,
+            abilityBefore: growthBefore,
+            abilityAfter: growthAfter,
+            feedback: impact.outcome
+        )
         let nextBase = replacing(params.state, revision: params.state.revision + 1,
             pitcher: pitcher,
             relationshipsCompleted: params.state.relationshipsCompleted + 1,
             relationshipTrust: (managerAfter + catcherAfter + rivalAfter) / 3,
             managerTrust: managerAfter, catcherTrust: catcherAfter, rivalTrust: rivalAfter,
-            fatigue: clamp(params.state.fatigue + impact.fatigue, 0, 100),
-            news: [relationshipNews(state: params.state, response: params.response, seed: seed, impact: impact)] + params.state.news,
-            fanInterest: clamp(params.state.fanInterest + impact.fanInterest, 0, 100))
+            fatigue: fatigueAfter, lastRelationship: relationshipResult,
+            news: [relationshipHeadline] + params.state.news,
+            fanInterest: fanInterestAfter)
         let next = advanceMilestone(nextBase, seed: seed)
         return result(seed: seed, state: signed(next), event: "career_relationship_resolved", reasons: ["relationship.\(params.response.rawValue)"])
     }
@@ -1298,6 +1359,7 @@ public struct HighSchoolCareerEngine: Sendable {
         managerTrust: Int? = nil, catcherTrust: Int? = nil, rivalTrust: Int? = nil,
         selectedAwakenings: [AwakeningID]? = nil, awakeningOptions: [AwakeningID]? = nil, fatigue: Int? = nil,
         performance: CareerPerformanceSnapshot? = nil, lastTraining: CareerTrainingSnapshot? = nil,
+        lastRelationship: CareerRelationshipResultSnapshot? = nil,
         currentGameScenario: ImportantGameScenarioContent? = nil,
         currentRelationshipEvent: CareerEventContent? = nil,
         news: [String]? = nil, fanInterest: Int? = nil, draftResult: DraftResultSnapshot? = nil,
@@ -1322,6 +1384,7 @@ public struct HighSchoolCareerEngine: Sendable {
             currentGameScenario: currentGameScenario ?? state.currentGameScenario,
             currentRelationshipEvent: currentRelationshipEvent ?? state.currentRelationshipEvent,
             lastTraining: lastTraining ?? state.lastTraining,
+            lastRelationship: lastRelationship ?? state.lastRelationship,
             news: news ?? state.news, fanInterest: fanInterest ?? state.fanInterest,
             draftResult: draftResult ?? state.draftResult, legacyOptions: legacyOptions ?? state.legacyOptions,
             selectedMemories: selectedMemories ?? state.selectedMemories, stateCommitment: stateCommitment ?? state.stateCommitment)
@@ -1352,6 +1415,18 @@ public struct HighSchoolCareerEngine: Sendable {
         } else if state.managerTrust != nil || state.catcherTrust != nil {
             canonical.append("staff:\(state.managerTrust ?? state.relationshipTrust):\(state.catcherTrust ?? state.relationshipTrust)")
         }
+        if let relationship = state.lastRelationship {
+            let relationshipValues: [String] = [
+                "last_relationship", String(relationship.number), relationship.category, relationship.title,
+                relationship.response.rawValue, String(relationship.trustBefore), String(relationship.trustAfter),
+                String(relationship.fatigueBefore), String(relationship.fatigueAfter),
+                String(relationship.fanInterestBefore), String(relationship.fanInterestAfter),
+                relationship.growthFocus?.rawValue ?? "none", relationship.abilityBefore.map(String.init) ?? "none",
+                relationship.abilityAfter.map(String.init) ?? "none", relationship.feedback,
+                "current_fan_interest", String(state.fanInterest)
+            ]
+            canonical.append(relationshipValues.joined(separator: ":"))
+        }
         return StableHash.fnv1a64(canonical.joined(separator: "|"))
     }
 
@@ -1363,12 +1438,25 @@ public struct HighSchoolCareerEngine: Sendable {
     }
 
     private func validateState(_ state: HighSchoolCareerSnapshot) throws {
+        let relationshipResultIsValid = state.lastRelationship.map { relationship in
+            relationship.number == state.relationshipsCompleted
+                && (1...5).contains(relationship.number)
+                && ["coach", "catcher", "rival"].contains(relationship.category)
+                && !relationship.title.isEmpty && !relationship.feedback.isEmpty
+                && (0...100).contains(relationship.trustBefore) && (0...100).contains(relationship.trustAfter)
+                && (0...100).contains(relationship.fatigueBefore) && (0...100).contains(relationship.fatigueAfter)
+                && (0...100).contains(relationship.fanInterestBefore) && (0...100).contains(relationship.fanInterestAfter)
+                && (relationship.abilityBefore.map({ (20...80).contains($0) }) ?? true)
+                && (relationship.abilityAfter.map({ (20...80).contains($0) }) ?? true)
+                && (relationship.abilityBefore == nil) == (relationship.abilityAfter == nil)
+        } ?? true
         guard state.stateCommitment == commitment(state),
               (0...16).contains(state.totalTrainingsCompleted), (0...5).contains(state.relationshipsCompleted),
               (0...100).contains(state.fatigue), (0...100).contains(state.relationshipTrust),
               state.managerTrust.map({ (0...100).contains($0) }) ?? true,
               state.catcherTrust.map({ (0...100).contains($0) }) ?? true,
-              state.rivalTrust.map({ (0...100).contains($0) }) ?? true else {
+              state.rivalTrust.map({ (0...100).contains($0) }) ?? true,
+              relationshipResultIsValid else {
             throw SimulationError.invalidPitcherLab("career state or phase is invalid")
         }
     }

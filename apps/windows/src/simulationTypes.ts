@@ -751,6 +751,23 @@ export interface CareerTrainingSnapshot {
   fatigueAfter?: number;
 }
 
+export interface CareerRelationshipResultSnapshot {
+  number: number;
+  category: string;
+  title: string;
+  response: RelationshipResponse;
+  trustBefore: number;
+  trustAfter: number;
+  fatigueBefore: number;
+  fatigueAfter: number;
+  fanInterestBefore: number;
+  fanInterestAfter: number;
+  growthFocus?: TrainingFocus;
+  abilityBefore?: number;
+  abilityAfter?: number;
+  feedback: string;
+}
+
 export interface HighSchoolCareerSnapshot {
   careerID: string;
   revision: number;
@@ -781,6 +798,7 @@ export interface HighSchoolCareerSnapshot {
   currentGameScenario?: ImportantGameScenarioContent;
   currentRelationshipEvent?: CareerEventContent;
   lastTraining?: CareerTrainingSnapshot;
+  lastRelationship?: CareerRelationshipResultSnapshot;
   news: ReadonlyArray<string>;
   fanInterest: number;
   draftResult?: DraftResultSnapshot;
