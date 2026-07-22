@@ -190,12 +190,12 @@ public struct ProCareerEngine: Sendable {
         }
         if state.level != level {
             milestones = addingUnique("1군 콜업", to: milestones)
-            news.insert("퓨처스 기록과 감독 신뢰를 인정받아 1군 엔트리에 합류했습니다.", at: 0)
+            news.insert("2군 기록과 감독의 믿음을 쌓아 1군 출전 명단에 합류했습니다.", at: 0)
         }
         if state.role != role {
-            let roleName = role == .starter ? "선발" : role == .longRelief ? "롱릴리프" : role == .setup ? "셋업맨" : "마무리"
-            milestones = addingUnique("\(state.season)시즌 \(roleName) 보직", to: milestones)
-            news.insert("감독 면담 뒤 다음 등판부터 \(roleName) 보직을 맡습니다.", at: 0)
+            let roleName = role == .starter ? "선발" : role == .longRelief ? "긴 이닝 구원" : role == .setup ? "필승조" : "마무리"
+            milestones = addingUnique("\(state.season)시즌 \(roleName) 역할", to: milestones)
+            news.insert("감독 면담 뒤 다음 등판부터 \(roleName) 역할을 맡습니다.", at: 0)
         }
         let priorGames = careerGames(state)
         let nextGames = priorGames + games
@@ -223,8 +223,8 @@ public struct ProCareerEngine: Sendable {
         let trust = clamp(params.state.managerTrust + report.strikeouts * 2 - report.walks * 2 - report.runsAllowed * 3 + (soundProcess ? 2 : 0), 0, 100)
         let stats = ProSeasonStats(season: params.state.season, teamID: params.state.team.id, games: params.state.currentStats.games + 1, starts: params.state.currentStats.starts + (params.state.role == .starter ? 1 : 0), inningsOuts: params.state.currentStats.inningsOuts + max(3, report.pitches / 5), strikeouts: params.state.currentStats.strikeouts + report.strikeouts, walks: params.state.currentStats.walks + report.walks, runsAllowed: params.state.currentStats.runsAllowed + report.runsAllowed, wins: params.state.currentStats.wins + (report.runsAllowed == 0 && params.state.role == .starter ? 1 : 0), saves: params.state.currentStats.saves + (report.runsAllowed == 0 && params.state.role == .closer ? 1 : 0))
         let trustDelta = trust - params.state.managerTrust
-        let evaluation = soundProcess ? "승부 과정까지 좋은 평가를 받았습니다." : "결과와 별개로 볼배합을 다시 점검합니다."
-        let news = ["중요 경기 · \(report.strikeouts)탈삼진 · \(report.walks)볼넷 · \(report.runsAllowed)실점 · 감독 신뢰 \(trustDelta >= 0 ? "+" : "")\(trustDelta). \(evaluation)"] + params.state.news
+        let evaluation = soundProcess ? "고른 구종과 코스도 좋았다는 평가를 받았습니다." : "경기 결과와 별개로 구종 순서를 다시 맞춥니다."
+        let news = ["중요 경기 · \(report.strikeouts)탈삼진 · \(report.walks)볼넷 · \(report.runsAllowed)실점 · 감독의 믿음 \(trustDelta >= 0 ? "+" : "")\(trustDelta). \(evaluation)"] + params.state.news
         var milestones = params.state.milestones
         if params.state.level == .major { milestones = addingUnique("1군 첫 중요 승부", to: milestones) }
         let updated = replacing(params.state, revision: params.state.revision + 1, phase: .weeklyPlan, managerTrust: trust, catcherTrust: clamp(params.state.catcherTrust + (soundProcess ? 2 : -1), 0, 100), currentStats: stats, milestones: milestones, news: Array(news.prefix(30)))
@@ -253,7 +253,7 @@ public struct ProCareerEngine: Sendable {
         let state = params.state
         if params.decision == .retire || state.phase == .retirementDecision {
             let score = hallOfFameScore(state)
-            let news = [score >= 70 ? "명예의 전당 헌액이 확정됐습니다." : "은퇴식에서 커리어의 마지막 공을 돌아봤습니다."] + state.news
+            let news = [score >= 70 ? "명예의 전당 헌액이 확정됐습니다." : "은퇴식에서 선수 생활의 마지막 공을 돌아봤습니다."] + state.news
             let retired = replacing(state, revision: state.revision + 1, phase: .completed, news: news, hallOfFameScore: score)
             return result(retired, nextSeed: String(rng.next()), events: ["pro_career_retired"])
         }
@@ -293,10 +293,10 @@ public struct ProCareerEngine: Sendable {
     private func careerGames(_ state: ProCareerSnapshot) -> Int { state.careerStats.reduce(0) { $0 + $1.games } + state.currentStats.games }
     private func careerStrikeouts(_ state: ProCareerSnapshot) -> Int { state.careerStats.reduce(0) { $0 + $1.strikeouts } + state.currentStats.strikeouts }
     private func importantMomentHeadline(week: Int, level: ProLevel, trust: Int) -> String {
-        if level == .major && week <= 12 { return "1군에서 입지를 정할 승부가 잡혔습니다." }
-        if week == 23 { return "포스트시즌 엔트리를 결정할 마지막 평가전이 잡혔습니다." }
-        if trust < 55 { return "보직 경쟁에서 살아남기 위한 평가전이 잡혔습니다." }
-        return "감독이 다음 보직을 결정할 경기에서 직접 공을 맡겼습니다."
+        if level == .major && week <= 12 { return "1군에 남을 기회를 잡아야 하는 경기가 잡혔습니다." }
+        if week == 23 { return "포스트시즌 출전 명단을 결정할 마지막 경기가 잡혔습니다." }
+        if trust < 55 { return "다음 등판 기회를 따내야 하는 경기가 잡혔습니다." }
+        return "감독이 선발·불펜 역할을 결정할 경기에서 직접 공을 맡겼습니다."
     }
     private func grow(_ pitcher: PitcherSnapshot, plan: ProWeekPlan, amount: Int) -> PitcherSnapshot {
         PitcherSnapshot(id: pitcher.id, name: pitcher.name,

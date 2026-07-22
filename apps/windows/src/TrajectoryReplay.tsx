@@ -394,10 +394,10 @@ function outcomeTone(outcome: PitchOutcome) {
 }
 
 function executionLabel(score: number) {
-  if (score >= 780) return "정확한 실행";
-  if (score >= 600) return "안정적 실행";
-  if (score >= 420) return "흔들린 실행";
-  return "큰 실투";
+  if (score >= 780) return "원한 코스에 들어감";
+  if (score >= 600) return "코스가 조금 벗어남";
+  if (score >= 420) return "코스가 크게 벗어남";
+  return "한가운데 실투";
 }
 
 function directionLabel(degrees: number) {
@@ -527,7 +527,7 @@ function PitchView({
       {revealResult ? <g className={`gamecast-actual gamecast-actual--${tone}`} transform={`translate(${plot.actual.x} ${plot.actual.y})`}>
         <circle r="9" /><path d="M -14 0 H 14 M 0 -14 V 14" />
       </g> : null}
-      <text x="12" y="20" className="gamecast-axis-label">릴리스</text>
+      <text x="12" y="20" className="gamecast-axis-label">공을 놓은 지점</text>
       <text x="249" y="298" className="gamecast-axis-label">홈플레이트</text>
       </g>
     </svg>
@@ -699,7 +699,7 @@ interface GameCastReplayProps {
 
 const PHASE_LABELS: Record<GameCastPhase, string> = {
   pitch: "투구 추적 중",
-  contact: "컨택 판정 중",
+  contact: "타격 판정 중",
   field: "타구·수비 추적 중",
   result: "플레이 확정",
 };
@@ -786,10 +786,10 @@ export function GameCastReplay({
   const cycleSpeed = () => setPlaybackRate((rate) => rate === 0.5 ? 1 : rate === 1 ? 2 : 0.5);
   const motionStyle = { "--gamecast-progress": `${(elapsed / timeline.total) * 100}%` } as CSSProperties;
   const runnersBefore = snapshot.runnersBefore ?? EMPTY_RUNNERS;
-  const causalitySummary = revealResult ? <div className="gamecast-causality" aria-label={`선택 ${SELECTION_QUALITY_LABELS[snapshot.selectionQuality]}, 실행 ${executionLabel(execution.executionQuality)}, 결과 ${outcome}`}>
+  const causalitySummary = revealResult ? <div className="gamecast-causality" aria-label={`공 선택 ${SELECTION_QUALITY_LABELS[snapshot.selectionQuality]}, 코스 ${executionLabel(execution.executionQuality)}, 결과 ${outcome}`}>
     <span><small>선택</small><b>{SELECTION_QUALITY_LABELS[snapshot.selectionQuality]}</b></span>
     <i aria-hidden="true">›</i>
-    <span><small>실행</small><b>{executionLabel(execution.executionQuality)}</b></span>
+    <span><small>실제 코스</small><b>{executionLabel(execution.executionQuality)}</b></span>
     <i aria-hidden="true">›</i>
     <span><small>결과</small><b>{outcome}</b></span>
   </div> : null;
@@ -817,7 +817,7 @@ export function GameCastReplay({
       <div className="gamecast-play-sequence" aria-label="플레이 재생 순서">
         <span className={phase === "pitch" ? "is-current is-pitch" : "is-complete"}>01 투구</span>
         <i />
-        <span className={!hasContact ? "is-muted" : phase === "contact" ? "is-current is-contact" : ["field", "result"].includes(phase) ? "is-complete" : ""}>02 컨택</span>
+        <span className={!hasContact ? "is-muted" : phase === "contact" ? "is-current is-contact" : ["field", "result"].includes(phase) ? "is-complete" : ""}>02 타격</span>
         <i />
         <span className={phase === "field" ? "is-current is-result" : phase === "result" ? "is-complete" : ""}>03 결과</span>
       </div>
@@ -860,9 +860,9 @@ export function GameCastReplay({
           <div className="gamecast-speed"><strong>{(execution.velocityTenthsKPH / 10).toFixed(1)}</strong><span>km/h</span></div>
           <div className="gamecast-metrics gamecast-metrics--stacked">
             <Metric label="비행시간" value={`${execution.flightTimeMilliseconds ?? 0} ms`} />
-            <Metric label="수평 무브" value={`${execution.horizontalBreakTenthsCM >= 0 ? "+" : ""}${(execution.horizontalBreakTenthsCM / 10).toFixed(1)} cm`} />
-            <Metric label="수직 무브" value={`${execution.verticalBreakTenthsCM >= 0 ? "+" : ""}${(execution.verticalBreakTenthsCM / 10).toFixed(1)} cm`} />
-            <Metric label="실행 품질" value={revealResult ? `${execution.executionQuality}` : "계산 중"} accent />
+            <Metric label="수평 움직임" value={`${execution.horizontalBreakTenthsCM >= 0 ? "+" : ""}${(execution.horizontalBreakTenthsCM / 10).toFixed(1)} cm`} />
+            <Metric label="수직 움직임" value={`${execution.verticalBreakTenthsCM >= 0 ? "+" : ""}${(execution.verticalBreakTenthsCM / 10).toFixed(1)} cm`} />
+            <Metric label="코스 정확도" value={revealResult ? `${execution.executionQuality} / 1000` : "계산 중"} accent />
           </div>
           <div className={`gamecast-zone-call gamecast-zone-call--${revealResult ? tone : "pending"}`}><span>ABS 판정</span><strong>{revealResult ? Math.abs(execution.actualX) <= 500 && Math.abs(execution.actualY) <= 500 ? "존 안" : "존 밖" : "판독 중"}</strong></div>
           {causalitySummary}
@@ -879,7 +879,7 @@ export function GameCastReplay({
     <footer className="gamecast-footer">
       <div className="gamecast-result-copy">
         <span className={revealResult ? `decision-grade decision-grade--${snapshot.selectionQuality}` : "gamecast-live-badge"}>{revealResult ? snapshot.recommendationAccepted ? "포수 추천 수락" : "포수 사인 수정" : "생중계"}</span>
-        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "pitch" ? "포수 시점에서 릴리스와 무브먼트를 추적합니다." : "중계 카메라가 타구와 수비 반응을 따라갑니다."}</p></div>
+        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "pitch" ? "포수 시점에서 투구 동작과 공의 움직임을 따라갑니다." : "중계 카메라가 타구와 수비 반응을 따라갑니다."}</p></div>
       </div>
       <button className="ds-button ds-button--primary primary-action gamecast-continue" type="button" disabled={isRunning || !revealResult} onClick={onContinue}>
         {isRunning ? "다음 장면 준비 중…" : revealResult ? continueLabel : "플레이 재생 중…"}

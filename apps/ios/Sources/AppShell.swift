@@ -169,9 +169,9 @@ private struct TodayDashboard: View {
                         .accessibilityHidden(true)
                     Text("\(state.team.name) · \(state.season)시즌 \(state.week)주차").font(.headline)
                 }
-                HStack { Metric(title: "피로", value: "\(state.fatigue)"); Metric(title: "감독 신뢰", value: "\(state.managerTrust)"); Metric(title: "부상", value: state.injuryWeeks > 0 ? "\(state.injuryWeeks)주" : "정상") }
+                HStack { Metric(title: "피로", value: "\(state.fatigue)"); Metric(title: "감독의 믿음", value: "\(state.managerTrust)"); Metric(title: "부상", value: state.injuryWeeks > 0 ? "\(state.injuryWeeks)주" : "정상") }
                 BaseballCard(title: "다음 행동", tone: .raised) { Text(actionText(state.phase)).font(.body.weight(.semibold)) }
-                if let milestone = state.milestones.last { BaseballCard(title: "최근 이정표", tone: .milestone) { Label(milestone, systemImage: "star.fill").foregroundStyle(BaseballTheme.milestone) } }
+                if let milestone = state.milestones.last { BaseballCard(title: "최근 주요 기록", tone: .milestone) { Label(milestone, systemImage: "star.fill").foregroundStyle(BaseballTheme.milestone) } }
                 BaseballCard(title: "최근 소식") { ForEach(Array(state.news.prefix(3).enumerated()), id: \.offset) { _, item in Text(item).padding(.vertical, 3) } }
             }.padding()
         }

@@ -1110,8 +1110,8 @@ public struct PitchKernelEngine: Sendable {
         let intent: String
         switch recommendation.call.zoneIntent {
         case .strike: intent = "존 안"
-        case .edge: intent = "경계"
-        case .chase: intent = "유인구"
+        case .edge: intent = "존 끝"
+        case .chase: intent = "존 밖 유인"
         }
         let shortReason: String
         if recommendation.reasonCodes.contains("rival.pattern_detected") {
@@ -1172,7 +1172,7 @@ public struct PitchKernelEngine: Sendable {
         let inningText = inningTransition.outsRecorded > 0
             ? " \(inningTransition.shortExplanation)"
             : ""
-        let detail = "선택은 \(selectionDisplayName(selection)), 실행 품질은 \(execution.executionQuality)입니다. \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
+        let detail = "공 선택은 \(selectionDisplayName(selection)), 코스 정확도는 \(execution.executionQuality)/1000입니다. \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
         return (short, detail)
     }
 

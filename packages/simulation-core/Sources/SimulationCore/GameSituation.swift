@@ -489,10 +489,10 @@ public struct BallInPlayEngine: Sendable {
                 } ?? "수비 범위를 벗어난 타구가 더 큰 결과로 이어졌습니다."
         case .neutral:
             explanation = abs(parkAdjustment) >= 60
-                ? "구장 효과가 있었지만 최종 결과 단계는 바뀌지 않았습니다."
+                ? "구장의 영향은 있었지만 안타·아웃 결과는 바뀌지 않았습니다."
                 : fielder.map {
-                    "\($0.name) 앞 타구가 예상한 중립 결과로 이어졌습니다."
-                } ?? "타구 질이 예상한 중립 결과로 이어졌습니다."
+                    "\($0.name) 앞으로 간 타구에서 예상할 만한 결과가 나왔습니다."
+                } ?? "타구 강도에 걸맞은 결과가 나왔습니다."
         }
         let flight = ballFlight(for: battedBall, sector: sector)
         return FieldingResolutionSnapshot(
@@ -983,9 +983,9 @@ public struct GameAnalysisEngine: Sendable {
         let topPitch = pitchBreakdowns.max { $0.pitches < $1.pitches }
         let patternWarning: String
         if entries.count < 6 {
-            patternWarning = "아직 본 공이 적습니다. 6구부터 반복되는 승부를 짚어 줍니다."
+            patternWarning = "아직 던진 공이 적습니다. 6구 이상부터 자주 쓰는 구종과 코스를 알려 줍니다."
         } else if let topPitch, topPitch.pitches * 100 >= entries.count * 55 {
-            patternWarning = "\(pitchName(topPitch.pitchType)) 비중이 55%를 넘어 반복 노출을 점검해야 합니다."
+            patternWarning = "\(pitchName(topPitch.pitchType))을 전체의 절반 넘게 던졌습니다. 타자가 기다리지 않도록 다른 구종도 섞어야 합니다."
         } else {
             patternWarning = "구종 사용이 한쪽으로 치우치지 않았습니다."
         }
@@ -997,13 +997,13 @@ public struct GameAnalysisEngine: Sendable {
         let averageSelection = average(entries.map { selectionScore($0.selectionQuality) })
         let growthSignal: String
         if averageExecution < 600 {
-            growthSignal = "우선 훈련 후보: 같은 릴리스 반복과 코스 실행"
+            growthSignal = "추천 훈련: 투구 동작을 일정하게 만들고 원하는 코스에 던지기"
         } else if hardHitRate >= 300 {
-            growthSignal = "우선 훈련 후보: 약한 타구 유도와 변화구 완성도"
+            growthSignal = "추천 훈련: 변화구로 빗맞은 타구 만들기"
         } else if averageSelection < 650 {
-            growthSignal = "우선 훈련 후보: 카운트별 구종 설계"
+            growthSignal = "추천 훈련: 카운트에 맞춰 구종 고르기"
         } else {
-            growthSignal = "다음 훈련: 현재 구종 선택과 코스 재현을 유지"
+            growthSignal = "현재처럼 상황에 맞는 구종을 고르고 원하는 코스에 던지면 됩니다."
         }
         let confidence: AnalysisConfidenceBand
         switch entries.count {

@@ -35,6 +35,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check:copy
       - run: npm run test:web
       - run: npm run build:web
       - run: npm run steam:submission:check

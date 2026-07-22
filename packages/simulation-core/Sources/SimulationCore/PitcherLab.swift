@@ -933,7 +933,7 @@ public struct PitcherLabEngine: Sendable {
             soulPointsGranted: 2,
             unlockedSchoolID: params.state.lifeNumber == 1 ? "school-data-lab" : "school-river-tech",
             unlockedCoachID: params.state.lifeNumber == 1 ? "coach-analyst-han" : "coach-mechanics-kim",
-            summary: "\(soulLabel(params.soulDomain))에서 익힌 것과 ‘\(memoryLabel(params.memoryCard))’ 기록을 다음 선수에게 넘깁니다."
+            summary: "\(soulLabel(params.soulDomain)) 훈련으로 얻은 능력과 ‘\(memoryLabel(params.memoryCard))’을 다음 선수에게 넘깁니다."
         )
         let updated = replacing(
             params.state,
@@ -1033,7 +1033,7 @@ public struct PitcherLabEngine: Sendable {
         case .muted: return "몸이 자극을 받아들이는 데 시간이 더 필요해 보입니다."
         case .steady: return "반복할수록 같은 동작을 이어 가는 힘이 좋아집니다."
         case .strong: return "\(focusLabel(focus)) 훈련에서 동작이 예상보다 빠르게 안정됐습니다."
-        case .breakthrough: return "코치가 같은 훈련을 이어 가도 좋을 만큼 동작이 빠르게 좋아졌다고 평가했습니다."
+        case .breakthrough: return "코치가 같은 훈련을 계속하자고 할 만큼 동작이 빠르게 좋아졌습니다."
         }
     }
 
@@ -1043,7 +1043,7 @@ public struct PitcherLabEngine: Sendable {
         ratingPoints: Int
     ) -> String {
         let growth = ratingPoints > 0 ? " 실제 능력치가 \(ratingPoints)포인트 상승했습니다." : " 능력치는 그대로지만 다음 상승까지 훈련량이 쌓였습니다."
-        return "\(focusLabel(focus)) 훈련에서 \(reactionLabel(reaction)) 반응을 확인했습니다.\(growth)"
+        return "\(focusLabel(focus)) 훈련 효과가 \(reactionLabel(reaction)) 편이었습니다.\(growth)"
     }
 
     private func applyGrowth(to pitcher: PitcherSnapshot, focus: TrainingFocus, points: Int) -> PitcherSnapshot {
@@ -1152,11 +1152,11 @@ public struct PitcherLabEngine: Sendable {
         default: grade = .elite
         }
         var strengths: [String] = []
-        if state.pitcher.stuff >= 65 { strengths.append("타자를 밀어내는 구위") }
-        if state.pitcher.command >= 65 { strengths.append("경계를 반복하는 커맨드") }
-        if state.pitcher.movement >= 65 { strengths.append("결정구의 뚜렷한 궤적") }
+        if state.pitcher.stuff >= 65 { strengths.append("타자를 밀어붙이는 직구") }
+        if state.pitcher.command >= 65 { strengths.append("원하는 코스에 꾸준히 던지는 제구") }
+        if state.pitcher.movement >= 65 { strengths.append("헛스윙을 잡는 변화구 움직임") }
         if state.pitcher.stamina >= 65 { strengths.append("선발 투수의 체력") }
-        if strengths.isEmpty { strengths.append("네 영역의 균형") }
+        if strengths.isEmpty { strengths.append("공의 위력·제구·변화구·체력의 균형") }
         var concerns: [String] = []
         if performance.walks >= 3 { concerns.append("위기에서 늘어나는 볼넷") }
         if performance.runsAllowed >= 5 { concerns.append("실점 억제의 기복") }
@@ -1167,67 +1167,67 @@ public struct PitcherLabEngine: Sendable {
             score: score,
             strengths: strengths,
             concerns: concerns,
-            summary: "세 번의 중요 이닝과 여섯 번의 훈련 기록을 바탕으로 ‘\(scoutingLabel(grade))’ 평가를 받았습니다."
+            summary: "세 번의 중요 이닝과 여섯 번의 훈련 기록을 바탕으로 구단 평가에서 ‘\(scoutingLabel(grade))’ 등급을 받았습니다."
         )
     }
 
     private func focusLabel(_ focus: TrainingFocus) -> String {
         switch focus {
-        case .velocity: return "구속·출력"
-        case .command: return "제구·커맨드"
-        case .breakingBall: return "변화구 형태"
+        case .velocity: return "직구 구속"
+        case .command: return "제구"
+        case .breakingBall: return "변화구"
         case .stamina: return "선발 체력"
-        case .recovery: return "회복 루틴"
-        case .gamePlanning: return "경기 설계"
+        case .recovery: return "휴식과 회복"
+        case .gamePlanning: return "타자 상대법"
         }
     }
 
     private func reactionLabel(_ reaction: TrainingReactionBand) -> String {
         switch reaction {
-        case .muted: return "더딘"
-        case .steady: return "안정적인"
-        case .strong: return "강한"
-        case .breakthrough: return "돌파구"
+        case .muted: return "낮은"
+        case .steady: return "보통인"
+        case .strong: return "큰"
+        case .breakthrough: return "매우 큰"
         }
     }
 
     private func soulLabel(_ domain: SoulDomain) -> String {
         switch domain {
-        case .body: return "육체"
+        case .body: return "몸"
         case .technique: return "기술"
-        case .game: return "경기"
+        case .game: return "경기 경험"
         }
     }
 
     private func memoryLabel(_ memory: MemoryCardID) -> String {
         switch memory {
-        case .velocityBlueprint: return "구속의 설계도"
+        case .velocityBlueprint: return "직구 구속 훈련법"
         case .fingertipMemory: return "손끝의 기억"
         case .catcherNotebook: return "포수의 노트"
         case .rivalNotebook: return "라이벌 노트"
-        case .recoveryRoutine: return "회복 루틴"
+        case .recoveryRoutine: return "회복 방법"
         case .pressureRehearsal: return "압박의 예행연습"
         case .firstPitchMap: return "초구 지도"
-        case .twoStrikeSequence: return "2스트라이크 시퀀스"
+        case .twoStrikeSequence: return "2스트라이크 구종 순서"
         case .fatigueDiary: return "피로 일지"
-        case .mechanicsVideo: return "폼 교정 영상"
-        case .schoolPlaybook: return "학교 플레이북"
+        case .mechanicsVideo: return "투구 동작 교정 영상"
+        case .schoolPlaybook: return "학교에서 배운 승부법"
         case .coachLetter: return "코치의 편지"
-        case .draftReport: return "드래프트 리포트"
+        case .draftReport: return "구단 평가표"
         case .stadiumEcho: return "구장의 메아리"
         case .teamFirstPromise: return "팀을 위한 약속"
         case .failureScorebook: return "실패의 스코어북"
-        case .winterProgram: return "겨울 프로그램"
+        case .winterProgram: return "겨울 훈련표"
         case .bullpenCompass: return "불펜의 나침반"
         }
     }
 
     private func scoutingLabel(_ grade: ScoutingGrade) -> String {
         switch grade {
-        case .undrafted: return "미지명"
-        case .follow: return "추적 관찰"
-        case .draftable: return "지명권"
-        case .elite: return "상위 지명"
+        case .undrafted: return "미지명 예상"
+        case .follow: return "더 지켜봄"
+        case .draftable: return "지명 가능"
+        case .elite: return "상위 순번 유력"
         }
     }
 

@@ -603,7 +603,7 @@ public struct HighSchoolCareerEngine: Sendable {
 
     public static let chapters: [CareerChapterSnapshot] = [
         .init(number: 1, title: "낯선 마운드", schoolYear: 1, season: "봄", theme: "첫 고교 훈련과 첫 공식 등판이 기다린다"),
-        .init(number: 2, title: "첫 번째 증명", schoolYear: 1, season: "여름", theme: "여름 대회 엔트리와 맡을 보직이 정해진다"),
+        .init(number: 2, title: "첫 번째 증명", schoolYear: 1, season: "여름", theme: "여름 대회 출전 명단과 맡을 역할이 정해진다"),
         .init(number: 3, title: "첫 겨울", schoolYear: 1, season: "겨울", theme: "봄이 오기 전까지 가장 부족한 한 가지를 다듬는다"),
         .init(number: 4, title: "전국의 시선", schoolYear: 2, season: "봄", theme: "전국대회에서 라이벌과 다시 만난다"),
         .init(number: 5, title: "흔들리는 배터리", schoolYear: 2, season: "여름", theme: "포수와 자꾸 엇갈리는 사인을 바로잡아야 한다"),
@@ -619,15 +619,15 @@ public struct HighSchoolCareerEngine: Sendable {
                 coachPersonality: "새벽 반복 훈련을 고집하며 핑계보다 공 하나를 더 던지게 합니다.", coachRecord: "재임 14년 · 전국대회 4강 6회",
                 catcherPersonality: "실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수입니다.", catcherRecord: "중학 마지막 시즌 26경기 · 도루저지율 .438",
                 strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
-            .init(id: .miraeAnalytics, name: names.analytics, philosophy: "데이터와 경기 설계", coachName: "노재형", coachArchetype: "분석형", catcherName: "한도윤", catcherArchetype: "분석형",
+            .init(id: .miraeAnalytics, name: names.analytics, philosophy: "기록을 활용한 타자 상대법", coachName: "노재형", coachArchetype: "분석형", catcherName: "한도윤", catcherArchetype: "분석형",
                 coachPersonality: "확률표를 들고 한 베이스와 불펜 교체 시점을 끝까지 계산합니다.", coachRecord: "데이터 코치 경력 11년 · 지역대회 우승 4회",
                 catcherPersonality: "말수는 적지만 타자의 노림수를 먼저 읽고 결정적인 순간 직접 해결합니다.", catcherRecord: "전국중학대회 포수상 · 8홈런",
                 strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
-            .init(id: .haedongPower, name: names.power, philosophy: "출력과 공격적인 승부", coachName: "오승렬", coachArchetype: "승부형", catcherName: "차민석", catcherArchetype: "공격형",
+            .init(id: .haedongPower, name: names.power, philosophy: "빠른 직구와 공격적인 승부", coachName: "오승렬", coachArchetype: "승부형", catcherName: "차민석", catcherArchetype: "공격형",
                 coachPersonality: "에이스에게 가장 엄격하며 위기일수록 몸쪽 정면승부를 요구합니다.", coachRecord: "전국대회 결승 3회 · 프로 지명 투수 5명",
                 catcherPersonality: "몸쪽 사인을 두려워하지 않고 큰 경기에서 투수를 강하게 끌고 갑니다.", catcherRecord: "중학 마지막 시즌 24경기 선발 · 도루저지 11회",
-                strength: .velocity, tradeoff: "피로와 제구 비용을 감수해야 합니다."),
-            .init(id: .cheongamDevelopment, name: names.development, philosophy: "개인별 폼과 변화구 육성", coachName: "배도환", coachArchetype: "육성형", catcherName: "문하진", catcherArchetype: "공감형",
+                strength: .velocity, tradeoff: "빠른 공을 많이 던질수록 피로가 쌓이고 제구가 흔들립니다."),
+            .init(id: .cheongamDevelopment, name: names.development, philosophy: "개인별 투구 동작과 변화구 훈련", coachName: "배도환", coachArchetype: "육성형", catcherName: "문하진", catcherArchetype: "공감형",
                 coachPersonality: "무심한 표정으로 결단을 내리지만 큰 경기에서는 선수를 먼저 믿습니다.", coachRecord: "7년간 프로 지명 12명 · 변화구 캠프 9회",
                 catcherPersonality: "블로킹 천 번을 기본으로 여기며 투수의 버릇까지 잡아내는 완벽주의자입니다.", catcherRecord: "중학 마지막 시즌 무실책 · 4경기 연속 장타",
                 strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
@@ -635,16 +635,16 @@ public struct HighSchoolCareerEngine: Sendable {
     }
 
     public static let teams: [DraftTeamSnapshot] = [
-        .init(id: "seoul_comets", name: "서울 코메츠", need: .command, demand: 72, developmentPlan: "2군 선발 로테이션에서 커맨드 완성", positionCompetitor: "차윤호", proCoach: "문재석", competitorProfile: "느린 커브와 타이밍 싸움으로 살아남은 베테랑 선발", competitorRecord: "최근 시즌 9승 · ERA 3.91", coachProfile: "선수와 대화부터 시작하는 수비 중심 지도자", coachRecord: "3년 연속 포스트시즌 진출"),
-        .init(id: "busan_marines", name: "부산 블루웨일스", need: .stamina, demand: 66, developmentPlan: "긴 이닝형 선발 육성", positionCompetitor: "도현우", proCoach: "강태림", competitorProfile: "높은 포심과 낙차 큰 포크볼을 앞세운 우완 에이스", competitorRecord: "최근 시즌 11승 · 142탈삼진", coachProfile: "큰 경기일수록 선발에게 한 이닝을 더 맡기는 승부사", coachRecord: "챔피언십 시리즈 진출 2회"),
+        .init(id: "seoul_comets", name: "서울 코메츠", need: .command, demand: 72, developmentPlan: "2군 선발로 뛰며 원하는 코스에 던지는 능력 향상", positionCompetitor: "차윤호", proCoach: "문재석", competitorProfile: "느린 커브와 타이밍 싸움으로 살아남은 베테랑 선발", competitorRecord: "최근 시즌 9승 · ERA 3.91", coachProfile: "선수와 대화부터 시작하는 수비 중심 지도자", coachRecord: "3년 연속 포스트시즌 진출"),
+        .init(id: "busan_marines", name: "부산 블루웨일스", need: .stamina, demand: 66, developmentPlan: "긴 이닝을 맡는 선발로 훈련", positionCompetitor: "도현우", proCoach: "강태림", competitorProfile: "높은 포심과 낙차 큰 포크볼을 앞세운 우완 에이스", competitorRecord: "최근 시즌 11승 · 142탈삼진", coachProfile: "큰 경기일수록 선발에게 한 이닝을 더 맡기는 승부사", coachRecord: "챔피언십 시리즈 진출 2회"),
         .init(id: "incheon_waves", name: "인천 웨이브스", need: .breakingBall, demand: 70, developmentPlan: "결정구 한 종을 프로 수준으로 강화", positionCompetitor: "백승찬", proCoach: "윤도환", competitorProfile: "슬라이더와 템포 변화로 버티는 왼손 선발", competitorRecord: "최근 시즌 8승 · 126탈삼진", coachProfile: "베테랑 자율과 강한 수비를 함께 요구하는 감독", coachRecord: "정규시즌 상위 3위 2회"),
-        .init(id: "daegu_forge", name: "대구 포지", need: .velocity, demand: 75, developmentPlan: "출력 유지와 불펜 조기 데뷔", positionCompetitor: "신재원", proCoach: "권민철", competitorProfile: "낮은 코스와 완급을 반복하는 젊은 우완 에이스", competitorRecord: "최근 시즌 12승 · ERA 3.44", coachProfile: "기본 수비와 세대교체를 함께 밀어붙이는 내야 출신 지도자", coachRecord: "신인 투수 4명 1군 데뷔"),
-        .init(id: "daejeon_rockets", name: "대전 로켓츠", need: .gamePlanning, demand: 68, developmentPlan: "배터리 게임 플랜 중심 선발 육성", positionCompetitor: "장하준", proCoach: "배성우", competitorProfile: "빠른 포심으로 타자의 배트를 늦추는 파이어볼러", competitorRecord: "최고 158.2km/h · 134탈삼진", coachProfile: "한번 고른 선발은 충분한 기회를 주는 장기 운영형 감독", coachRecord: "3년 연속 승률 5할 이상"),
-        .init(id: "gwangju_phoenix", name: "광주 피닉스", need: .breakingBall, demand: 64, developmentPlan: "변화구 터널과 약한 타구 강화", positionCompetitor: "서이준", proCoach: "남기석", competitorProfile: "큰 각도의 커브로 삼진을 쌓는 왼손 정통파", competitorRecord: "최근 시즌 10승 · 151탈삼진", coachProfile: "선수를 믿고 공격적으로 뛰게 하는 젊은 감독", coachRecord: "최근 2년 승률 .561"),
-        .init(id: "suwon_guardians", name: "수원 가디언즈", need: .command, demand: 61, developmentPlan: "볼넷 억제 후 1군 롱릴리프", positionCompetitor: "주성민", proCoach: "오태건", competitorProfile: "낮은 팔 각도와 체인지업으로 볼넷을 지우는 선발", competitorRecord: "최근 시즌 BB/9 1.8 · 퀄리티스타트 17회", coachProfile: "투수의 릴리스 타이밍을 직접 잡는 잠수함 출신 지도자", coachRecord: "4년 연속 포스트시즌 진출"),
-        .init(id: "changwon_meteors", name: "창원 미티어스", need: .velocity, demand: 69, developmentPlan: "포심 형태와 최고 구속 동시 개발", positionCompetitor: "류한결", proCoach: "차경호", competitorProfile: "회전 효율이 좋은 왼손 포심으로 타구를 띄우는 선발", competitorRecord: "최근 시즌 ERA 2.48 · 9승", coachProfile: "타격 이론과 편안한 소통을 함께 쓰는 감독", coachRecord: "주전 3명 커리어 하이 달성"),
-        .init(id: "jeonju_hanok", name: "전주 한울스", need: .stamina, demand: 58, developmentPlan: "체력 기반 선발 후보 경쟁", positionCompetitor: "문시온", proCoach: "신도영", competitorProfile: "빠른 포심과 짧은 슬라이더로 삼진을 모으는 우완 선발", competitorRecord: "최근 시즌 178탈삼진 · ERA 2.71", coachProfile: "젊은 선수에게 먼저 기회를 주는 장기 육성형 감독", coachRecord: "신인 6명 1군 엔트리 등록"),
-        .init(id: "jeju_storm", name: "제주 스톰", need: .gamePlanning, demand: 63, developmentPlan: "데이터 적응형 스윙맨 육성", positionCompetitor: "한유찬", proCoach: "조민규", competitorProfile: "묵직한 포심과 컷패스트볼로 긴 이닝을 버티는 우완 선발", competitorRecord: "최근 시즌 13승 · 147탈삼진", coachProfile: "큰 경기 경험을 바탕으로 한 번의 강한 승부를 강조하는 감독", coachRecord: "포스트시즌 진출 3회")
+        .init(id: "daegu_forge", name: "대구 포지", need: .velocity, demand: 75, developmentPlan: "빠른 직구를 유지하며 불펜으로 빠른 1군 데뷔", positionCompetitor: "신재원", proCoach: "권민철", competitorProfile: "낮은 코스와 완급을 반복하는 젊은 우완 에이스", competitorRecord: "최근 시즌 12승 · ERA 3.44", coachProfile: "기본 수비와 세대교체를 함께 밀어붙이는 내야 출신 지도자", coachRecord: "신인 투수 4명 1군 데뷔"),
+        .init(id: "daejeon_rockets", name: "대전 로켓츠", need: .gamePlanning, demand: 68, developmentPlan: "포수와 구종 순서를 맞추는 선발 훈련", positionCompetitor: "장하준", proCoach: "배성우", competitorProfile: "빠른 포심으로 타자의 배트를 늦추는 파이어볼러", competitorRecord: "최고 158.2km/h · 134탈삼진", coachProfile: "한번 고른 선발은 충분한 기회를 주는 장기 운영형 감독", coachRecord: "3년 연속 승률 5할 이상"),
+        .init(id: "gwangju_phoenix", name: "광주 피닉스", need: .breakingBall, demand: 64, developmentPlan: "직구와 같은 궤도에서 갈라지는 변화구 훈련", positionCompetitor: "서이준", proCoach: "남기석", competitorProfile: "큰 각도의 커브로 삼진을 쌓는 왼손 정통파", competitorRecord: "최근 시즌 10승 · 151탈삼진", coachProfile: "선수를 믿고 공격적으로 뛰게 하는 젊은 감독", coachRecord: "최근 2년 승률 .561"),
+        .init(id: "suwon_guardians", name: "수원 가디언즈", need: .command, demand: 61, developmentPlan: "볼넷을 줄인 뒤 1군 긴 이닝 구원으로 데뷔", positionCompetitor: "주성민", proCoach: "오태건", competitorProfile: "낮은 팔 각도와 체인지업으로 볼넷을 줄이는 선발", competitorRecord: "최근 시즌 BB/9 1.8 · 퀄리티스타트 17회", coachProfile: "투수의 팔이 나오는 타이밍을 직접 잡는 잠수함 출신 지도자", coachRecord: "4년 연속 포스트시즌 진출"),
+        .init(id: "changwon_meteors", name: "창원 미티어스", need: .velocity, demand: 69, developmentPlan: "직구의 움직임과 최고 구속을 함께 향상", positionCompetitor: "류한결", proCoach: "차경호", competitorProfile: "회전이 좋은 왼손 직구로 뜬공을 만드는 선발", competitorRecord: "최근 시즌 ERA 2.48 · 9승", coachProfile: "타격 이론과 편안한 소통을 함께 쓰는 감독", coachRecord: "주전 3명 개인 최고 기록 달성"),
+        .init(id: "jeonju_hanok", name: "전주 한울스", need: .stamina, demand: 58, developmentPlan: "체력을 키워 선발 한 자리에 도전", positionCompetitor: "문시온", proCoach: "신도영", competitorProfile: "빠른 포심과 짧은 슬라이더로 삼진을 모으는 우완 선발", competitorRecord: "최근 시즌 178탈삼진 · ERA 2.71", coachProfile: "젊은 선수에게 먼저 기회를 주는 장기 육성형 감독", coachRecord: "신인 6명 1군 출전 명단 등록"),
+        .init(id: "jeju_storm", name: "제주 스톰", need: .gamePlanning, demand: 63, developmentPlan: "기록을 활용해 선발과 구원을 오가는 투수로 훈련", positionCompetitor: "한유찬", proCoach: "조민규", competitorProfile: "묵직한 포심과 컷패스트볼로 긴 이닝을 버티는 우완 선발", competitorRecord: "최근 시즌 13승 · 147탈삼진", coachProfile: "큰 경기 경험을 바탕으로 한 번의 강한 승부를 강조하는 감독", coachRecord: "포스트시즌 진출 3회")
     ]
 
     private static let rivals: [RivalSnapshot] = [
@@ -871,7 +871,7 @@ public struct HighSchoolCareerEngine: Sendable {
             signingBonus: round.map { max(40_000_000, 300_000_000 - $0 * 45_000_000) },
             firstSeasonGoal: team.map { _ in "퓨처스 선발 10경기와 볼넷률 8% 이하" },
             summary: drafted
-                ? "지명 구단 · \(team?.name ?? "프로 구단"). 현재 구위와 고교 경기 기록에서 높은 평가를 받았습니다."
+                ? "지명 구단 · \(team?.name ?? "프로 구단"). 공의 위력과 고교 경기 기록에서 높은 평가를 받았습니다."
                 : "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
         )
         let phase: HighSchoolCareerPhase = drafted ? .completed : .legacy
@@ -995,11 +995,11 @@ public struct HighSchoolCareerEngine: Sendable {
         let category = state.currentRelationshipEvent?.category ?? "coach"
         let archetype = category == "coach" ? state.school?.coachArchetype : category == "catcher" ? state.school?.catcherArchetype : state.rival.archetype
         switch (category, archetype, response) {
-        case ("coach", "원칙형", .listen): return .init(trust: 8, fatigue: 0, fanInterest: 0, growthFocus: .stamina, outcome: "정해진 이닝을 버티는 루틴을 함께 정했습니다.")
-        case ("coach", "원칙형", .explain): return .init(trust: 2, fatigue: 0, fanInterest: 0, growthFocus: .command, outcome: "등판 기록은 받아들였지만 보직은 그대로 유지됐습니다.")
-        case ("coach", "원칙형", .challenge): return .init(trust: state.fatigue < 45 ? 5 : -7, fatigue: 6, fanInterest: 2, growthFocus: state.fatigue < 45 ? .velocity : nil, outcome: state.fatigue < 45 ? "추가 불펜에서 선발 테스트 기회를 얻었습니다." : "지친 팔로 무리한 요구를 했다는 평가가 남았습니다.")
-        case ("coach", "분석형", .listen): return .init(trust: 3, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "감독이 지적한 수치를 다음 훈련 기준으로 삼았습니다.")
-        case ("coach", "분석형", .explain): return .init(trust: 8, fatigue: 0, fanInterest: 0, growthFocus: .gamePlanning, outcome: "기록을 근거로 다음 등판의 투구 계획을 다시 짰습니다.")
+        case ("coach", "원칙형", .listen): return .init(trust: 8, fatigue: 0, fanInterest: 0, growthFocus: .stamina, outcome: "정해진 이닝을 버티기 위한 경기 전 준비 순서를 함께 정했습니다.")
+        case ("coach", "원칙형", .explain): return .init(trust: 2, fatigue: 0, fanInterest: 0, growthFocus: .command, outcome: "등판 기록은 받아들였지만 맡은 역할은 그대로 유지됐습니다.")
+        case ("coach", "원칙형", .challenge): return .init(trust: state.fatigue < 45 ? 5 : -7, fatigue: 6, fanInterest: 2, growthFocus: state.fatigue < 45 ? .velocity : nil, outcome: state.fatigue < 45 ? "추가 불펜에서 선발 테스트 기회를 얻었습니다." : "지친 상태에서 무리하게 등판을 요구해 감독의 믿음이 줄었습니다.")
+        case ("coach", "분석형", .listen): return .init(trust: 3, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "감독이 지적한 수치를 다음 훈련에 반영했습니다.")
+        case ("coach", "분석형", .explain): return .init(trust: 8, fatigue: 0, fanInterest: 0, growthFocus: .gamePlanning, outcome: "기록을 근거로 다음 등판의 구종과 코스 순서를 다시 짰습니다.")
         case ("coach", "분석형", .challenge): return .init(trust: -4, fatigue: 4, fanInterest: 2, growthFocus: .velocity, outcome: "추가 테스트는 얻었지만 준비 과정을 설득하지 못했습니다.")
         case ("coach", "승부형", .listen): return .init(trust: 2, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "지시는 받아들였지만 경쟁 구도는 바뀌지 않았습니다.")
         case ("coach", "승부형", .explain): return .init(trust: 4, fatigue: 0, fanInterest: 1, growthFocus: .command, outcome: "최근 결과를 인정받아 한 번 더 선발 경쟁에 남았습니다.")
@@ -1011,18 +1011,18 @@ public struct HighSchoolCareerEngine: Sendable {
         case ("catcher", "안정형", .explain): return .init(trust: 4, fatigue: 0, fanInterest: 0, growthFocus: .command, outcome: "사인을 바꾸는 기준을 하나로 맞췄습니다.")
         case ("catcher", "안정형", .challenge): return .init(trust: -4, fatigue: 2, fanInterest: 1, growthFocus: nil, outcome: "시험은 받아들였지만 포수의 불안은 남았습니다.")
         case ("catcher", "분석형", .listen): return .init(trust: 4, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "포수가 정리한 타자 반응표를 건네받았습니다.")
-        case ("catcher", "분석형", .explain): return .init(trust: 8, fatigue: 0, fanInterest: 0, growthFocus: .gamePlanning, outcome: "두 사람이 본 근거를 합쳐 다음 경기 시퀀스를 만들었습니다.")
-        case ("catcher", "분석형", .challenge): return .init(trust: 2, fatigue: 2, fanInterest: 2, growthFocus: .breakingBall, outcome: "불펜에서 두 시퀀스를 같은 타자 역할로 비교했습니다.")
+        case ("catcher", "분석형", .explain): return .init(trust: 8, fatigue: 0, fanInterest: 0, growthFocus: .gamePlanning, outcome: "두 사람이 본 근거를 합쳐 다음 경기의 구종 순서를 만들었습니다.")
+        case ("catcher", "분석형", .challenge): return .init(trust: 2, fatigue: 2, fanInterest: 2, growthFocus: .breakingBall, outcome: "불펜에서 두 가지 구종 순서를 같은 타자를 상대로 시험했습니다.")
         case ("catcher", "공격형", .listen): return .init(trust: 2, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "포수의 공격적인 의도는 확인했지만 승부 순서는 정하지 못했습니다.")
         case ("catcher", "공격형", .explain): return .init(trust: 4, fatigue: 0, fanInterest: 1, growthFocus: .command, outcome: "강한 공을 쓸 카운트를 좁혀 합의했습니다.")
-        case ("catcher", "공격형", .challenge): return .init(trust: 8, fatigue: 3, fanInterest: 4, growthFocus: .velocity, outcome: "다음 경기 첫 타자에게 가장 강한 시퀀스를 시험하기로 했습니다.")
+        case ("catcher", "공격형", .challenge): return .init(trust: 8, fatigue: 3, fanInterest: 4, growthFocus: .velocity, outcome: "다음 경기 첫 타자에게 가장 자신 있는 구종 순서를 시험하기로 했습니다.")
         case ("catcher", "공감형", .listen): return .init(trust: 7, fatigue: -2, fanInterest: 0, growthFocus: .breakingBall, outcome: "받기 어려운 공을 추려 둘만의 불펜 시간을 잡았습니다.")
         case ("catcher", "공감형", .explain): return .init(trust: 7, fatigue: 0, fanInterest: 0, growthFocus: .command, outcome: "손에서 빠지는 날의 대체 사인을 정했습니다.")
         case ("catcher", "공감형", .challenge): return .init(trust: -2, fatigue: 3, fanInterest: 2, growthFocus: .breakingBall, outcome: "어려운 공을 더 받기로 했지만 경기 전 부담도 커졌습니다.")
         case ("rival", _, .listen): return .init(trust: 3, fatigue: 0, fanInterest: 1, growthFocus: .gamePlanning, outcome: "상대가 읽은 반복 습관 하나를 알아냈습니다.")
         case ("rival", _, .explain): return .init(trust: 1, fatigue: 0, fanInterest: 3, growthFocus: .command, outcome: "서로의 의도를 확인한 재대결이 기사에 실렸습니다.")
-        case ("rival", _, .challenge): return .init(trust: -1, fatigue: 2, fanInterest: 7, growthFocus: .breakingBall, outcome: "다음 맞대결이 대회에서 가장 기다리는 승부가 됐습니다.")
-        default: return .init(trust: 2, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "다음 일정에서 선택의 결과를 확인하게 됐습니다.")
+        case ("rival", _, .challenge): return .init(trust: -1, fatigue: 2, fanInterest: 7, growthFocus: .breakingBall, outcome: "다음 맞대결이 대회에서 가장 기대되는 승부가 됐습니다.")
+        default: return .init(trust: 2, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "대화를 차분히 마쳐 감독·포수의 믿음이 조금 올랐습니다.")
         }
     }
 
@@ -1037,44 +1037,44 @@ public struct HighSchoolCareerEngine: Sendable {
             : "포수 사인을 자주 바꾼 탓에 경기 뒤 다시 승부 순서를 맞추기로 했습니다."
         default: return report.strikeouts > report.walks
             ? "라이벌과 약속한 재대결에서 \(report.strikeouts)개의 삼진을 잡았습니다."
-            : "라이벌은 다시 만난 타석에서도 이전 승부의 흔적을 놓치지 않았습니다."
+            : "라이벌은 지난 경기에서 본 구종 순서를 다시 읽어냈습니다."
         }
     }
 
     private func awakeningTitle(_ awakening: AwakeningID) -> String {
         switch awakening {
         case .explosiveFastball: return "폭발하는 포심"
-        case .pinpointEdge: return "바늘끝 경계"
-        case .disappearingBreaker: return "사라지는 궤적"
+        case .pinpointEdge: return "바늘끝 제구"
+        case .disappearingBreaker: return "사라지는 변화구"
         case .ironArm: return "강철의 어깨"
         case .calmUnderPressure: return "고요한 마운드"
-        case .batterySync: return "배터리 동기화"
+        case .batterySync: return "포수와 한마음"
         case .risingFourSeam: return "떠오르는 포심"
-        case .sinkerTunnel: return "싱커 터널"
+        case .sinkerTunnel: return "같은 길에서 갈라지는 공"
         case .frozenChangeup: return "멈춘 체인지업"
         case .sweepingSlider: return "스위퍼 궤도"
-        case .curveballClock: return "커브의 시계"
-        case .repeatableRelease: return "반복되는 릴리스"
+        case .curveballClock: return "일정한 커브 타이밍"
+        case .repeatableRelease: return "흔들리지 않는 투구 동작"
         case .pickoffRhythm: return "주자를 묶는 리듬"
-        case .twoStrikePlan: return "2스트라이크 설계"
+        case .twoStrikePlan: return "2스트라이크 승부법"
         case .firstPitchStrike: return "초구 스트라이크"
-        case .trafficController: return "주자 교통정리"
-        case .lateInningReserve: return "후반 이닝의 여력"
-        case .scoutComposure: return "스카우트 앞의 평정"
+        case .trafficController: return "주자를 두고도 침착하게"
+        case .lateInningReserve: return "후반에도 남는 힘"
+        case .scoutComposure: return "압박 속 침착함"
         }
     }
 
     private func awakeningEffect(_ awakening: AwakeningID) -> String {
         switch awakening {
-        case .explosiveFastball: return "포심 위력은 크게 오르지만 커맨드와 체력 소모를 감수합니다."
+        case .explosiveFastball: return "직구의 위력은 크게 오르지만 제구가 어려워지고 체력이 빨리 줄어듭니다."
         case .risingFourSeam: return "포심 헛스윙이 늘지만 변화구 움직임이 조금 줄어듭니다."
-        case .pinpointEdge, .repeatableRelease: return "경계 재현이 좋아지는 대신 최고 출력이 조금 줄어듭니다."
+        case .pinpointEdge, .repeatableRelease: return "원하는 코스에 더 꾸준히 던지지만 최고 구속이 조금 줄어듭니다."
         case .firstPitchStrike: return "초구 제구가 좋아지지만 긴 이닝의 여유가 조금 줄어듭니다."
-        case .disappearingBreaker, .sweepingSlider, .frozenChangeup, .curveballClock: return "결정구 움직임과 헛스윙이 늘지만 커맨드나 체력을 감수합니다."
+        case .disappearingBreaker, .sweepingSlider, .frozenChangeup, .curveballClock: return "변화구로 헛스윙을 더 잡지만 제구가 어려워지거나 체력이 더 듭니다."
         case .sinkerTunnel: return "포심과 체인지업의 궤도가 닮아 약한 타구를 더 만듭니다."
         case .ironArm, .lateInningReserve: return "공 하나당 체력 소모가 줄고 긴 이닝에 강해집니다."
         case .batterySync: return "포수와 맞춘 코스의 제구와 약한 타구 유도가 좋아집니다."
-        case .calmUnderPressure, .pickoffRhythm, .twoStrikePlan, .trafficController, .scoutComposure: return "특정 경기 상황의 실행력이 좋아지는 대신 한쪽 능력에 비용이 생깁니다."
+        case .calmUnderPressure, .pickoffRhythm, .twoStrikePlan, .trafficController, .scoutComposure: return "주자나 2스트라이크처럼 압박이 큰 상황에서 덜 흔들리지만 다른 능력이 조금 줄어듭니다."
         }
     }
 

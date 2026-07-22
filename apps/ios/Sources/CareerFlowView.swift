@@ -27,7 +27,7 @@ struct CareerFlowView: View {
                 case .weeklyPlan: WeeklyPlanView(career: career, state: state)
                 case .importantGame: ImportantMomentView(career: career, state: state)
                 case .seasonReview: ActionCard(title: "시즌 종료", copy: "올해 경기 기록과 수상을 통산 기록에 더합니다.", button: "시즌 기록 확인", action: career.reviewSeason)
-                case .offseasonDecision: ActionCard(title: "오프시즌", copy: "현재 구단에 남아 보직 경쟁을 계속합니다.", button: "현재 구단에 남기", action: career.continueCareer)
+                case .offseasonDecision: ActionCard(title: "오프시즌", copy: "현재 구단에 남아 선발·불펜 자리 경쟁을 계속합니다.", button: "현재 구단에 남기", action: career.continueCareer)
                 default: ContentUnavailableView("이번 일정은 끝났습니다", systemImage: "checkmark.circle")
                 }
             }
@@ -55,14 +55,14 @@ private struct CareerSummary: View {
                 Section("선수") {
                     LabeledContent("구단", value: state.team.name)
                     LabeledContent("레벨", value: state.level == .major ? "1군" : "2군")
-                    LabeledContent("보직", value: roleLabel(state.role))
+                    LabeledContent("역할", value: roleLabel(state.role))
                 }
                 Section("능력") {
-                    LabeledContent("구위", value: "\(state.pitcher.stuff)")
-                    LabeledContent("커맨드", value: "\(state.pitcher.command)")
+                    LabeledContent("공의 위력", value: "\(state.pitcher.stuff)")
+                    LabeledContent("제구", value: "\(state.pitcher.command)")
                     LabeledContent("체력", value: "\(state.pitcher.stamina)")
                 }
-                Section("최근 이정표") {
+                Section("최근 주요 기록") {
                     ForEach(Array(state.milestones.suffix(6).reversed()), id: \.self) { milestone in
                         Label(milestone, systemImage: milestone == state.milestones.last ? "star.fill" : "circle.fill")
                             .foregroundStyle(milestone == state.milestones.last ? BaseballTheme.milestone : BaseballTheme.textSecondary)
@@ -76,7 +76,7 @@ private struct CareerSummary: View {
     }
 
     private func roleLabel(_ role: ProRole) -> String {
-        switch role { case .starter: "선발"; case .longRelief: "롱릴리프"; case .setup: "셋업맨"; case .closer: "마무리" }
+        switch role { case .starter: "선발"; case .longRelief: "긴 이닝 구원"; case .setup: "필승조"; case .closer: "마무리" }
     }
 }
 
@@ -88,22 +88,22 @@ private struct WeeklyPlanView: View {
         Form {
             Section("오늘의 상태") {
                 LabeledContent("피로", value: "\(state.fatigue)")
-                LabeledContent("감독 신뢰", value: "\(state.managerTrust)")
-                LabeledContent("현재 보직", value: roleLabel(state.role))
+                LabeledContent("감독의 믿음", value: "\(state.managerTrust)")
+                LabeledContent("현재 역할", value: roleLabel(state.role))
             }
-            Section("이번 구간의 우선순위") {
+            Section("이번 주에 할 일") {
                 Picker("계획", selection: Bindable(career).selectedPlan) {
                     Text("결정구 불펜 · 성장 / 피로↑").tag(ProWeekPlan.developWeapon)
-                    Text("코너워크 · 커맨드 / 피로↑").tag(ProWeekPlan.refineCommand)
+                    Text("코스 제구 · 제구 향상 / 피로↑").tag(ProWeekPlan.refineCommand)
                     Text("긴 이닝 훈련 · 체력 / 피로↑").tag(ProWeekPlan.buildStamina)
                     Text("회복 · 등판 감소 / 피로↓").tag(ProWeekPlan.recover)
-                    Text("맡은 보직 · 신뢰 / 성장 없음").tag(ProWeekPlan.earnTrust)
+                    Text("이번 주 경기 · 감독의 믿음 향상 / 능력치 성장 없음").tag(ProWeekPlan.earnTrust)
                 }
                 Button("1주 진행", action: career.advanceWeek).buttonStyle(.borderedProminent).frame(minHeight: 44)
                 Button(action: career.advanceBlock) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("같은 계획으로 3주 진행")
-                        Text("중요 경기나 보직 변화가 생기면 멈춥니다.").font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                        Text("중요 경기나 선발·불펜 역할 변화가 생기면 멈춥니다.").font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                     }
                 }
                 .buttonStyle(.bordered)
@@ -116,7 +116,7 @@ private struct WeeklyPlanView: View {
     }
 
     private func roleLabel(_ role: ProRole) -> String {
-        switch role { case .starter: "선발"; case .longRelief: "롱릴리프"; case .setup: "셋업맨"; case .closer: "마무리" }
+        switch role { case .starter: "선발"; case .longRelief: "긴 이닝 구원"; case .setup: "필승조"; case .closer: "마무리" }
     }
 }
 
@@ -128,10 +128,10 @@ private struct ImportantMomentView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 18) {
                 Text("IMPORTANT MOMENT · WEEK \(state.week)").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.milestone)
-                Text(state.level == .major ? "1군에서 자리를 정할 승부" : state.managerTrust < 55 ? "보직 경쟁 평가전" : "다음 보직을 결정할 경기")
+                Text(state.level == .major ? "1군에서 자리를 정할 승부" : state.managerTrust < 55 ? "다음 등판 기회를 따낼 경기" : "선발·불펜 역할을 결정할 경기")
                     .font(.largeTitle.bold())
                 BaseballCard(title: "승부 상황", tone: .milestone) {
-                    Text("한 점 차 · 1사 2루 · 오재민 타석\n현재 피로 \(state.fatigue), 감독 신뢰 \(state.managerTrust)")
+                    Text("한 점 차 · 1사 2루 · 오재민 타석\n현재 피로 \(state.fatigue), 감독의 믿음 \(state.managerTrust)")
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
                 VStack(spacing: 10) {

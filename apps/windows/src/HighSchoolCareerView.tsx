@@ -19,8 +19,8 @@ import type {
 } from "./simulationTypes";
 
 const METRICS: ReadonlyArray<{ key: keyof CreationAllocationSnapshot; label: string }> = [
-  { key: "stuff", label: "구위" }, { key: "command", label: "커맨드" },
-  { key: "movement", label: "무브먼트" }, { key: "stamina", label: "체력" },
+  { key: "stuff", label: "공의 위력" }, { key: "command", label: "제구" },
+  { key: "movement", label: "변화구" }, { key: "stamina", label: "체력" },
 ];
 
 const PRO_BASEBALL_HOME_CITIES: ReadonlyArray<{ value: string; label: string }> = [
@@ -49,83 +49,83 @@ const OTHER_REGIONS: ReadonlyArray<{ value: string; label: string }> = [
 ];
 
 const TRAININGS: ReadonlyArray<{ value: TrainingFocus; label: string; copy: string }> = [
-  { value: "velocity", label: "출력", copy: "포심 구위와 최고 구속" },
-  { value: "command", label: "커맨드", copy: "경계 재현과 볼넷 억제" },
-  { value: "breaking_ball", label: "변화구", copy: "궤적과 헛스윙 결정구" },
-  { value: "stamina", label: "선발 체력", copy: "긴 이닝의 구위 유지" },
-  { value: "recovery", label: "회복", copy: "피로 관리와 다음 경기 준비" },
-  { value: "game_planning", label: "경기 설계", copy: "카운트와 상대 패턴 대응" },
+  { value: "velocity", label: "직구 구속", copy: "직구를 더 빠르고 위력 있게 던진다" },
+  { value: "command", label: "제구", copy: "원하는 코스에 꾸준히 던져 볼넷을 줄인다" },
+  { value: "breaking_ball", label: "변화구", copy: "더 크게 꺾이는 공으로 헛스윙을 노린다" },
+  { value: "stamina", label: "선발 체력", copy: "긴 이닝에도 공의 힘을 유지한다" },
+  { value: "recovery", label: "휴식과 회복", copy: "피로를 낮추고 다음 경기를 준비한다" },
+  { value: "game_planning", label: "타자 상대법", copy: "카운트와 타자 약점에 맞춰 구종을 고른다" },
 ];
 
 const AWAKENINGS: Record<AwakeningID, string> = {
-  explosive_fastball: "폭발하는 포심", pinpoint_edge: "바늘끝 경계",
-  disappearing_breaker: "사라지는 궤적", iron_arm: "강철의 어깨",
-  calm_under_pressure: "고요한 마운드", battery_sync: "배터리 동기화",
-  rising_four_seam: "떠오르는 포심", sinker_tunnel: "싱커 터널",
+  explosive_fastball: "폭발하는 포심", pinpoint_edge: "바늘끝 제구",
+  disappearing_breaker: "사라지는 변화구", iron_arm: "강철의 어깨",
+  calm_under_pressure: "고요한 마운드", battery_sync: "포수와 한마음",
+  rising_four_seam: "떠오르는 포심", sinker_tunnel: "같은 길에서 갈라지는 공",
   frozen_changeup: "멈춘 체인지업", sweeping_slider: "스위퍼 궤도",
-  curveball_clock: "커브의 시계", repeatable_release: "반복되는 릴리스",
-  pickoff_rhythm: "주자를 묶는 리듬", two_strike_plan: "2스트라이크 설계",
-  first_pitch_strike: "초구 스트라이크", traffic_controller: "주자 교통정리",
-  late_inning_reserve: "후반 이닝의 여력", scout_composure: "스카우트 앞의 평정",
+  curveball_clock: "일정한 커브 타이밍", repeatable_release: "흔들리지 않는 투구 동작",
+  pickoff_rhythm: "주자를 묶는 리듬", two_strike_plan: "2스트라이크 승부법",
+  first_pitch_strike: "초구 스트라이크", traffic_controller: "주자를 두고도 침착하게",
+  late_inning_reserve: "후반에도 남는 힘", scout_composure: "압박 속 침착함",
 };
 
 const AWAKENING_DETAILS: Record<AwakeningID, string> = {
-  explosive_fastball: "포심 구위 +4 · 커맨드 -2 · 구속과 헛스윙 상승",
-  rising_four_seam: "포심 구위·헛스윙 상승 · 전체 무브먼트 -1",
-  pinpoint_edge: "커맨드 +4 · 구위 -1 · 경계 제구 상승",
-  disappearing_breaker: "무브먼트 +4 · 커맨드 -1 · 변화구 헛스윙 상승",
-  iron_arm: "체력 +5 · 무브먼트 -1 · 공마다 피로 소모 감소",
-  calm_under_pressure: "커맨드 +2 · 체력 +1 · 제구 안정",
-  battery_sync: "커맨드 +2 · 무브먼트 +1 · 약한 타구 유도 상승",
-  sinker_tunnel: "무브먼트 +3 · 포심과 체인지업의 약한 타구 상승",
+  explosive_fastball: "공의 위력 +4 · 제구 -2 · 직구 구속과 헛스윙 증가",
+  rising_four_seam: "직구의 위력과 헛스윙 증가 · 변화구 -1",
+  pinpoint_edge: "제구 +4 · 공의 위력 -1 · 스트라이크존 끝 제구 향상",
+  disappearing_breaker: "변화구 +4 · 제구 -1 · 변화구 헛스윙 증가",
+  iron_arm: "체력 +5 · 변화구 -1 · 공마다 쌓이는 피로 감소",
+  calm_under_pressure: "제구 +2 · 체력 +1 · 주자가 있을 때 제구 향상",
+  battery_sync: "제구 +2 · 변화구 +1 · 빗맞은 타구 증가",
+  sinker_tunnel: "변화구 +3 · 직구와 체인지업의 빗맞은 타구 증가",
   frozen_changeup: "체인지업 궤적·헛스윙 상승 · 체력 -1",
-  sweeping_slider: "무브먼트 +4 · 커맨드 -1 · 슬라이더 결정력 상승",
-  curveball_clock: "무브먼트 +4 · 체력 -1 · 커브 결정력 상승",
-  repeatable_release: "커맨드 +4 · 구위 -1 · 전 구종 제구 상승",
-  pickoff_rhythm: "커맨드 +1 · 체력 +2 · 주자 상황 실행 안정",
-  two_strike_plan: "커맨드·무브먼트 +2 · 체력 -1 · 변화구 헛스윙 상승",
-  first_pitch_strike: "커맨드 +3 · 체력 -1 · 초구 제구 상승",
-  traffic_controller: "커맨드·체력 +2 · 구위 -1 · 약한 타구 상승",
-  late_inning_reserve: "체력 +4 · 공마다 피로 소모 감소",
-  scout_composure: "구위·커맨드 +2 · 체력 -1",
+  sweeping_slider: "변화구 +4 · 제구 -1 · 슬라이더 헛스윙 증가",
+  curveball_clock: "변화구 +4 · 체력 -1 · 커브 헛스윙 증가",
+  repeatable_release: "제구 +4 · 공의 위력 -1 · 모든 구종의 제구 향상",
+  pickoff_rhythm: "제구 +1 · 체력 +2 · 주자가 있을 때 흔들림 감소",
+  two_strike_plan: "제구·변화구 +2 · 체력 -1 · 변화구 헛스윙 증가",
+  first_pitch_strike: "제구 +3 · 체력 -1 · 초구 스트라이크 증가",
+  traffic_controller: "제구·체력 +2 · 공의 위력 -1 · 빗맞은 타구 증가",
+  late_inning_reserve: "체력 +4 · 공마다 쌓이는 피로 감소",
+  scout_composure: "공의 위력·제구 +2 · 체력 -1",
 };
 
 const MEMORIES: Record<MemoryCardID, string> = {
-  velocity_blueprint: "구속의 설계도", fingertip_memory: "손끝의 기억",
+  velocity_blueprint: "직구 구속 훈련법", fingertip_memory: "손끝의 기억",
   catcher_notebook: "포수의 노트", rival_notebook: "라이벌 노트",
-  recovery_routine: "회복 루틴", pressure_rehearsal: "압박의 예행연습",
-  first_pitch_map: "초구 지도", two_strike_sequence: "2스트라이크 시퀀스",
-  fatigue_diary: "피로 일지", mechanics_video: "폼 교정 영상",
-  school_playbook: "학교 플레이북", coach_letter: "코치의 편지",
-  draft_report: "드래프트 리포트", stadium_echo: "구장의 메아리",
+  recovery_routine: "회복 방법", pressure_rehearsal: "압박의 예행연습",
+  first_pitch_map: "초구 지도", two_strike_sequence: "2스트라이크 구종 순서",
+  fatigue_diary: "피로 일지", mechanics_video: "투구 동작 교정 영상",
+  school_playbook: "학교에서 배운 승부법", coach_letter: "코치의 편지",
+  draft_report: "구단 평가표", stadium_echo: "구장의 메아리",
   team_first_promise: "팀을 위한 약속", failure_scorebook: "실패의 스코어북",
-  winter_program: "겨울 프로그램", bullpen_compass: "불펜의 나침반",
+  winter_program: "겨울 훈련표", bullpen_compass: "불펜의 나침반",
 };
 
 const MEMORY_DETAILS: Record<MemoryCardID, string> = {
-  velocity_blueprint: "포심 구속·헛스윙 상승, 커맨드 소폭 감소",
+  velocity_blueprint: "직구 구속·헛스윙 증가, 제구 소폭 감소",
   fingertip_memory: "변화구 움직임 상승, 체력 소폭 감소",
-  catcher_notebook: "커맨드와 약한 타구 유도 상승",
-  rival_notebook: "커맨드·무브먼트와 변화구 헛스윙 상승",
+  catcher_notebook: "제구와 빗맞은 타구 유도 증가",
+  rival_notebook: "제구·변화구와 변화구 헛스윙 증가",
   recovery_routine: "체력 상승, 공마다 피로 소모 감소",
-  pressure_rehearsal: "커맨드·체력과 제구 안정 상승",
+  pressure_rehearsal: "제구·체력과 위기 상황 제구 향상",
   first_pitch_map: "초구 제구 상승, 체력 소폭 감소",
   two_strike_sequence: "변화구 움직임·헛스윙 상승, 체력 소폭 감소",
   fatigue_diary: "체력과 후반 제구 상승",
-  mechanics_video: "커맨드·제구 상승, 최고 출력 소폭 감소",
-  school_playbook: "커맨드·무브먼트 상승",
-  coach_letter: "커맨드·체력 상승",
-  draft_report: "구위·커맨드 상승",
-  stadium_echo: "구위·헛스윙 상승, 커맨드 소폭 감소",
-  team_first_promise: "커맨드·체력과 약한 타구 유도 상승",
-  failure_scorebook: "커맨드·무브먼트 상승, 체력 소폭 감소",
-  winter_program: "구위·체력 상승, 피로 소모 감소",
-  bullpen_compass: "구위·체력 상승, 피로 소모 감소",
+  mechanics_video: "제구 향상, 공의 최고 위력 소폭 감소",
+  school_playbook: "제구·변화구 향상",
+  coach_letter: "제구·체력 향상",
+  draft_report: "공의 위력·제구 향상",
+  stadium_echo: "공의 위력·헛스윙 증가, 제구 소폭 감소",
+  team_first_promise: "제구·체력과 빗맞은 타구 유도 증가",
+  failure_scorebook: "제구·변화구 향상, 체력 소폭 감소",
+  winter_program: "공의 위력·체력 향상, 피로 누적 감소",
+  bullpen_compass: "공의 위력·체력 향상, 피로 누적 감소",
 };
 
 const PHASE_LABELS: Record<HighSchoolCareerResult["snapshot"]["phase"], string> = {
   prologue: "중학교 마지막 대회", school_selection: "학교 선택", training: "훈련", relationship: "면담",
-  important_game: "중요 경기", awakening: "새 강점", chapter_review: "계절 마무리", draft: "드래프트", legacy: "남길 기억", completed: "완료",
+  important_game: "중요 경기", awakening: "새 강점", chapter_review: "시즌 마무리", draft: "드래프트", legacy: "남길 기억", completed: "완료",
 };
 
 type RelationshipChoiceCard = { id: RelationshipResponse; title: string; copy: string };
@@ -268,7 +268,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart }: Ca
       </section>
       {selected ? <section className="creation-allocation career-allocation">
         <div className="creation-summary"><div><span>투수 유형</span><strong>{selected.name}</strong><p>선수마다 강점과 약점이 다릅니다. 추가 능력 5점은 어느 유형을 골라도 같습니다.</p></div>
-          <div className="creation-points"><span>남은 포인트</span><strong>{5 - spent}</strong></div></div>
+          <div className="creation-points"><span>남은 능력치 점수</span><strong>{5 - spent}</strong></div></div>
         <div className="allocation-grid">{METRICS.map((metric) => <div key={metric.key}><span>{metric.label}</span><small>기본 {selected.pitcher[metric.key]} · 추가 +{allocation[metric.key]}</small><div>
           <button type="button" disabled={allocation[metric.key] === 0} onClick={() => change(metric.key, -1)}>−</button>
           <strong aria-label={`${metric.label} 최종 ${selected.pitcher[metric.key] + allocation[metric.key]}`}>
@@ -297,12 +297,12 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart }: Ca
           {([{"key":"careerHarshness","label":"지명 기준"},{"key":"informationClarity","label":"능력 공개"},{"key":"simulationDifficulty","label":"상대 타자"},{"key":"interventionAssist","label":"포수 추천"}] as const).map((axis) =>
             <label key={axis.key}><span>{axis.label}</span><select value={difficulty[axis.key]} onChange={(event) => setDifficulty({ ...difficulty, [axis.key]: event.target.value })}>
               <option value={axis.key === "interventionAssist" ? "full" : "relaxed"}>{axis.key === "interventionAssist" ? "힌트 많음" : "낮음"}</option>
-              <option value="standard">표준</option><option value={axis.key === "interventionAssist" ? "minimal" : "challenging"}>{axis.key === "interventionAssist" ? "힌트 최소" : "높음"}</option>
+              <option value="standard">보통</option><option value={axis.key === "interventionAssist" ? "minimal" : "challenging"}>{axis.key === "interventionAssist" ? "힌트 최소" : "높음"}</option>
             </select></label>)}</div></div>
-        <div className="karma-panel"><div><span>추가 조건 · 최대 2개</span><small>더 어려운 조건을 고르면 미지명 뒤에 얻는 보상이 늘어납니다.</small></div><div className="karma-grid">
-          {([{"id":"unknown_land","title":"무명의 땅","copy":"스카우트 노출 감소 · 보상 +15%"},{"id":"stubborn_coach","title":"완고한 감독","copy":"갈등 페널티 증가 · 보상 +15%"},
-            {"id":"single_weapon","title":"한 가지 무기","copy":"강점 집중, 나머지 감소 · 보상 +20%"},{"id":"genius_generation","title":"천재의 세대","copy":"라이벌 능력 상승 · 보상 +25%"},
-            {"id":"erased_memory","title":"지워진 기억","copy":"기억 슬롯 2장 · 보상 +25%"},{"id":"no_last_chance","title":"마지막 기회 없음","copy":"지명 안전망 감소 · 보상 +35%"}] as const).map((karma) =>
+        <div className="karma-panel"><div><span>더 어렵게 시작하기 · 최대 2개</span><small>불리한 조건을 고르면 다음 삶에 가져갈 보상이 늘어납니다.</small></div><div className="karma-grid">
+          {([{"id":"unknown_land","title":"무명의 땅","copy":"스카우트가 보러 오는 경기 감소 · 다음 삶 보상 +15%"},{"id":"stubborn_coach","title":"완고한 감독","copy":"감독과 부딪히면 믿음이 더 많이 감소 · 다음 삶 보상 +15%"},
+            {"id":"single_weapon","title":"한 가지 무기","copy":"가장 높은 능력은 오르고 나머지는 낮아짐 · 다음 삶 보상 +20%"},{"id":"genius_generation","title":"천재의 세대","copy":"라이벌이 더 강해짐 · 다음 삶 보상 +25%"},
+            {"id":"erased_memory","title":"지워진 기억","copy":"다음 삶에 남길 기억 2장 · 다음 삶 보상 +25%"},{"id":"no_last_chance","title":"마지막 기회 없음","copy":"낮은 평가로도 지명될 가능성이 줄어듦 · 다음 삶 보상 +35%"}] as const).map((karma) =>
             <button key={karma.id} type="button" className={karmas.includes(karma.id) ? "is-selected" : undefined} aria-pressed={karmas.includes(karma.id)} onClick={() => toggleKarma(karma.id)}>
               <strong>{karma.title}</strong><span>{karma.copy}</span></button>)}</div></div>
         <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || spent !== 5 || !identity.name.trim()}
@@ -376,7 +376,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
   const scene = relationshipScene(relationship, state);
   const reveal = (() => {
     const draft = state.draftResult;
-    if (draftRevealStage === 0 || !draft) return { label: "지명 후보 명단", title: "10개 구단이 최종 명단을 닫았습니다.", copy: "경기 기록, 현재 구종, 감독과 포수의 평가가 한 장의 보드에 올라갑니다." };
+    if (draftRevealStage === 0 || !draft) return { label: "지명 후보 명단", title: "10개 구단이 최종 명단을 닫았습니다.", copy: "경기 기록, 현재 구종, 감독과 포수의 평가가 최종 지명 후보표에 올라갑니다." };
     if (draftRevealStage === 1) return draft.outcome === "drafted" && draft.round === 1
       ? { label: "1라운드", title: "구단 테이블에서 전화가 연결됩니다.", copy: `${draft.team?.name ?? "한 구단"}이 첫 선택을 준비합니다.` }
       : { label: "1라운드", title: "1라운드가 끝났습니다.", copy: "아직 이름은 불리지 않았습니다. 다음 라운드 명단이 올라옵니다." };
@@ -386,45 +386,45 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     if (draftRevealStage === 3) return draft.outcome === "drafted"
       ? { label: "지명 전화", title: `${draft.team?.name ?? "프로 구단"} · ${draft.round}라운드 ${draft.overallPick}순위`, copy: `${state.pitcher.name}의 프로 지명이 확정됐습니다.` }
       : { label: "최종 라운드", title: "마지막 순번이 지나갔습니다.", copy: "이번 드래프트에서는 이름이 불리지 않았습니다." };
-    return { label: draft.outcome === "drafted" ? "스카우트 평가" : "다음 기록", title: draft.outcome === "drafted" ? `평가 ${draft.evaluationScore} · ${draft.projectedRange}` : `최종 평가 ${draft.evaluationScore}`, copy: draft.summary };
+    return { label: draft.outcome === "drafted" ? "구단 평가" : "다음 기록", title: draft.outcome === "drafted" ? `구단 평가 점수 ${draft.evaluationScore} · 예상 ${draft.projectedRange}` : `구단 평가 점수 ${draft.evaluationScore}`, copy: draft.summary };
   })();
 
   return <main className="career-shell stage-layout" data-stage={state.phase} data-team={state.draftResult?.team?.id}>
     {showTutorial ? <section className="tutorial-panel" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
       <div><p className="eyebrow">빠른 안내</p><h2 id="tutorial-title">고교 커리어 시작 전</h2></div>
-      <ol><li><strong>현재 능력</strong><span>선수 카드에서 구위·커맨드·무브먼트·체력을 확인합니다.</span></li><li><strong>중요 경기</strong><span>승부처에서는 구종·코스·강도를 직접 선택합니다.</span></li>
+      <ol><li><strong>현재 능력</strong><span>선수 카드에서 공의 위력·제구·변화구·체력을 확인합니다.</span></li><li><strong>중요 경기</strong><span>승부처에서는 구종·코스·강도를 직접 선택합니다.</span></li>
         <li><strong>선택 확정</strong><span>확정한 훈련과 사건 선택은 되돌릴 수 없습니다.</span></li><li><strong>자동 저장</strong><span>확정한 선택마다 이 기기에 저장됩니다.</span></li></ol>
       <button className="ds-button ds-button--primary lab-primary" type="button" autoFocus onClick={onDismissTutorial}>커리어 시작</button>
     </section> : null}
     <section className="career-hero">
       <div><p className="eyebrow">{state.lifeNumber}번째 선수 · {state.chapter.schoolYear}학년 {state.chapter.season}</p>
         <h2>{state.chapter.number}장 · {state.chapter.title}</h2><p>{state.chapter.theme}</p></div>
-      <div className="career-vitals"><div><span>피로</span><strong>{state.fatigue}</strong></div><div><span>관계 신뢰</span><strong>{state.relationshipTrust}</strong></div>
-        <div><span>팬 관심</span><strong>{state.fanInterest}</strong></div>
+      <div className="career-vitals"><div><span>피로</span><strong>{state.fatigue}</strong></div><div><span>감독·포수의 믿음</span><strong>{state.relationshipTrust}</strong></div>
+        <div><span>지역 팬 관심</span><strong>{state.fanInterest}</strong></div>
         <button type="button" onClick={onNewCareer}>새 커리어</button></div>
     </section>
-    <section className="chapter-map" aria-label="8개 커리어 챕터">{Array.from({ length: 8 }, (_, index) => index + 1).map((chapter) =>
+    <section className="chapter-map" aria-label="8개 고교 시즌">{Array.from({ length: 8 }, (_, index) => index + 1).map((chapter) =>
       <div key={chapter} className={chapter === state.chapter.number ? "is-current" : chapter < state.chapter.number ? "is-complete" : undefined}>
         <span>{chapter}</span><small>{chapter < state.chapter.number ? "완료" : chapter === state.chapter.number ? "진행 중" : "잠김"}</small></div>)}</section>
     <div className="career-grid">
       <section className="ds-card ds-player-card career-panel career-player"><div className="lab-card-heading"><span>{state.pitcher.name}</span><small>{state.school?.name ?? "학교 선택 전"}</small></div>
-        <div className="ds-record-grid career-rating-grid"><div><span>구위</span><strong>{rating(state.pitcher.stuff)}</strong></div><div><span>커맨드</span><strong>{rating(state.pitcher.command)}</strong></div>
-          <div><span>무브먼트</span><strong>{rating(state.pitcher.movement)}</strong></div><div><span>체력</span><strong>{rating(state.pitcher.stamina)}</strong></div></div>
-        <small className="information-clarity">정보 정확도 · {state.difficulty.informationClarity === "relaxed" ? "정확한 현재값" : state.difficulty.informationClarity === "standard" ? "스카우트 추정 범위" : "등급만 공개"}</small>
+        <div className="ds-record-grid career-rating-grid"><div><span>공의 위력</span><strong>{rating(state.pitcher.stuff)}</strong></div><div><span>제구</span><strong>{rating(state.pitcher.command)}</strong></div>
+          <div><span>변화구</span><strong>{rating(state.pitcher.movement)}</strong></div><div><span>체력</span><strong>{rating(state.pitcher.stamina)}</strong></div></div>
+        <small className="information-clarity">능력치 표시 · {state.difficulty.informationClarity === "relaxed" ? "정확한 숫자" : state.difficulty.informationClarity === "standard" ? "스카우트 예상 범위" : "상·중·하만 표시"}</small>
         {state.school ? <div className="career-personnel">
           <CharacterProfile label="감독" title={`${state.school.coachName} · ${state.school.coachArchetype}`} record={state.school.coachRecord} description={state.school.coachPersonality} />
           <CharacterProfile label="포수" title={`${state.school.catcherName} · ${state.school.catcherArchetype}`} record={state.school.catcherRecord} description={state.school.catcherPersonality} />
           <CharacterProfile label="라이벌" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
         </div> : null}
         <div className="career-counters"><span>훈련 {state.totalTrainingsCompleted}/16</span><span>경기 {state.performance.importantGamesCompleted}/5</span>
-          <span>관계 {state.relationshipsCompleted}/5</span><span>각성 {state.selectedAwakenings.length}/3</span></div>
+          <span>대화 {state.relationshipsCompleted}/5</span><span>새 강점 {state.selectedAwakenings.length}/3</span></div>
       </section>
 
       <section className="ds-card ds-card--raised career-panel career-decision"><div className="lab-card-heading"><span>지금 할 일</span><small>{PHASE_LABELS[state.phase]}</small></div>
         {demoComplete ? <div className="career-milestone demo-complete"><span>데모 기록 완료</span>
           <h3>첫 중요 경기를 마쳤습니다.</h3>
-          <p>{state.pitcher.name}은 구위 {rating(state.pitcher.stuff)}, 커맨드 {rating(state.pitcher.command)}로 첫 기록을 남겼습니다. 이 저장은 정식판에서 그대로 이어집니다.</p>
-          <div className="demo-summary"><div><strong>{state.performance.pitches}</strong><span>투구</span></div><div><strong>{state.performance.strikeouts}</strong><span>삼진</span></div><div><strong>{state.relationshipTrust}</strong><span>관계 신뢰</span></div></div>
+          <p>{state.pitcher.name}은 공의 위력 {rating(state.pitcher.stuff)}, 제구 {rating(state.pitcher.command)}로 첫 기록을 남겼습니다. 이 저장은 정식판에서 그대로 이어집니다.</p>
+          <div className="demo-summary"><div><strong>{state.performance.pitches}</strong><span>투구</span></div><div><strong>{state.performance.strikeouts}</strong><span>삼진</span></div><div><strong>{state.relationshipTrust}</strong><span>감독·포수의 믿음</span></div></div>
           <p className="demo-next">정식판에서는 남은 고교 생활, 드래프트, 프로 입단과 은퇴까지 이어집니다.</p>
           <button className="ds-button ds-button--primary lab-primary" type="button" onClick={onNewCareer}>새 선수로 다시 해보기</button>
         </div> : null}
@@ -436,21 +436,21 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             : <button className="draft-skip" type="button" onClick={() => setDraftRevealStage(4)}>바로 결과 보기</button>}
         </div> : null}
         {state.phase === "prologue" ? <div className="career-milestone prologue-card"><span>중학교 마지막 경기</span>
-          <h3>{state.identity.region}의 마지막 중학교 대회</h3><p>{state.identity.name} · {state.identity.throwingHand === "right" ? "우투" : "좌투"} · {state.identity.bodyType === "tall" ? "장신" : state.identity.bodyType === "compact" ? "다부진" : "균형"} 체격. 경기를 마치고 나오자 {state.identity.region} 지역 네 고교에서 진학 제안이 도착했습니다. {state.karmas.length > 0 ? `선택한 추가 조건 ${state.karmas.length}개` : "추가 조건 없음"}</p>
+          <h3>{state.identity.region}의 마지막 중학교 대회</h3><p>{state.identity.name} · {state.identity.throwingHand === "right" ? "우투" : "좌투"} · {state.identity.bodyType === "tall" ? "장신" : state.identity.bodyType === "compact" ? "다부진" : "균형"} 체격. 경기를 마치고 나오자 {state.identity.region} 지역 네 고교에서 진학 제안이 도착했습니다. {state.karmas.length > 0 ? `더 어렵게 시작하는 조건 ${state.karmas.length}개 적용` : "추가 난이도 조건 없음"}</p>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onCompletePrologue()}>고교 진학 제안 확인</button></div> : null}
         {state.phase === "school_selection" ? <><h3>{state.identity.region}에서 어느 학교로 진학할까요?</h3><p>같은 지역에서 선수 등록을 이어갈 수 있는 학교들입니다. 학교마다 잘 가르치는 훈련과 감수해야 할 단점이 다릅니다.</p>
           <div className="school-grid">{state.schoolOptions.map((school) => <button key={school.id} type="button" disabled={isRunning} onClick={() => void onSchool(school.id)}>
             <span>{school.name}</span><strong>{school.philosophy}</strong>
             <CharacterProfile className="school-staff" title={`${school.coachName} 감독 · ${school.coachArchetype}`} record={school.coachRecord} description={school.coachPersonality} />
             <CharacterProfile className="school-staff" title={`${school.catcherName} 포수 · ${school.catcherArchetype}`} record={school.catcherRecord} description={school.catcherPersonality} />
-            <small className="school-tradeoff">주의 · {school.tradeoff}</small></button>)}</div></> : null}
-        {state.phase === "training" ? <><h3>이번 계절의 {state.chapterTrainingCount + 1}번째 훈련</h3><p>{showHints ? `${state.school?.name ?? "학교"}는 ${TRAININGS.find((item) => item.value === state.school?.strength)?.label ?? "주력"} 훈련을 가장 잘 지원합니다. 현재 피로는 ${state.fatigue}입니다.` : `현재 피로 ${state.fatigue}. 이번 훈련을 고르세요.`}</p>
+            <small className="school-tradeoff">아쉬운 점 · {school.tradeoff}</small></button>)}</div></> : null}
+        {state.phase === "training" ? <><h3>{state.chapter.season} {state.chapterTrainingCount + 1}번째 훈련</h3><p>{showHints ? `${state.school?.name ?? "학교"}는 ${TRAININGS.find((item) => item.value === state.school?.strength)?.label ?? "주력"} 훈련을 가장 잘 지원합니다. 현재 피로는 ${state.fatigue}입니다.` : `현재 피로 ${state.fatigue}. 이번 훈련을 고르세요.`}</p>
           <div className="career-training-grid">{TRAININGS.map((option) => <button key={option.value} type="button" aria-pressed={focus === option.value}
             className={focus === option.value ? "is-selected" : undefined} onClick={() => setFocus(option.value)}><strong>{option.label}</strong><span>{option.copy}</span></button>)}</div>
           <div className="training-intensity-grid">{(["light", "standard", "intensive"] as const).map((value) => <button key={value} type="button"
-            className={intensity === value ? "is-selected" : undefined} aria-pressed={intensity === value} onClick={() => setIntensity(value)}><strong>{value === "light" ? "가볍게" : value === "standard" ? "표준" : "집중"}</strong></button>)}</div>
+            className={intensity === value ? "is-selected" : undefined} aria-pressed={intensity === value} onClick={() => setIntensity(value)}><strong>{value === "light" ? "가볍게" : value === "standard" ? "보통" : "강하게"}</strong></button>)}</div>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity)}>이 훈련 시작</button>
-          {state.lastTraining ? <div className="career-feedback"><strong>{state.lastTraining.feedback}</strong><span>능력 +{state.lastTraining.growth} · 피로 {state.lastTraining.fatigueChange >= 0 ? "+" : ""}{state.lastTraining.fatigueChange}</span></div> : null}</> : null}
+          {state.lastTraining ? <div className="career-feedback"><strong>{state.lastTraining.feedback}</strong><span>선택한 능력 +{state.lastTraining.growth} · 피로 {state.lastTraining.fatigueChange >= 0 ? "+" : ""}{state.lastTraining.fatigueChange}</span></div> : null}</> : null}
         {state.phase === "relationship" ? <><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3><p>{scene.quote}</p>
           <div className="relationship-options">{scene.choices.map((choice) => <button key={choice.id} type="button" disabled={isRunning} onClick={() => void onRelationship(choice.id)}><strong>{choice.title}</strong><span>{choice.copy}</span></button>)}</div></> : null}
         {state.phase === "important_game" ? <div className="career-milestone"><span>중요 경기 {state.performance.importantGamesCompleted + 1}</span><h3>{state.currentGameScenario?.title ?? `${state.rival.name} 상대 중요 이닝`}</h3>
@@ -459,21 +459,21 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onImportantGame()}>중요 이닝 직접 투구</button></div> : null}
         {state.phase === "awakening" ? <><h3>새로 익힌 강점 {state.selectedAwakenings.length + 1}/3</h3><div className="relationship-options">{state.awakeningOptions.map((awakening) =>
           <button key={awakening} type="button" disabled={isRunning} onClick={() => void onAwakening(awakening)}><strong>{AWAKENINGS[awakening]}</strong><span>{AWAKENING_DETAILS[awakening]}</span></button>)}</div></> : null}
-        {state.phase === "chapter_review" ? <div className="career-milestone"><span>이번 계절 완료</span><h3>‘{state.chapter.title}’ 종료</h3><p>다음 계절로 넘어가면 이번 계절의 선택은 바꿀 수 없습니다.</p>
-          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onAdvanceChapter()}>다음 계절로</button></div> : null}
+        {state.phase === "chapter_review" ? <div className="career-milestone"><span>{state.chapter.season} 일정 완료</span><h3>‘{state.chapter.title}’ 종료</h3><p>다음 시즌으로 넘어가면 지금까지 고른 훈련과 대화는 바꿀 수 없습니다.</p>
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onAdvanceChapter()}>다음 시즌으로</button></div> : null}
         {state.phase === "draft" ? <div className="career-milestone draft-stage"><span>드래프트 당일</span><h3>드래프트가 시작됩니다.</h3>
           <p>{state.difficulty.informationClarity === "challenging" ? "구단의 평가는 이름이 불린 뒤 공개됩니다." : "10개 구단이 능력, 경기 기록, 포수·감독 평가를 함께 확인합니다."}</p><button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void startDraftReveal()}>드래프트 시작</button></div> : null}
-        {state.phase === "legacy" && state.draftResult ? <><div className="draft-result is-undrafted"><span>미지명 · 평가 {state.draftResult.evaluationScore}</span><h3>이번 삶은 여기서 끝났습니다.</h3><p>{state.draftResult.summary}</p></div>
+        {state.phase === "legacy" && state.draftResult ? <><div className="draft-result is-undrafted"><span>미지명 · 구단 평가 점수 {state.draftResult.evaluationScore}</span><h3>이번 삶은 여기서 끝났습니다.</h3><p>{state.draftResult.summary}</p></div>
           <h4>다음 삶에 남길 기억 {state.memorySlots}장</h4><div className="memory-grid">{state.legacyOptions.map((memory) => <button key={memory} type="button" className={memories.includes(memory) ? "is-selected" : undefined}
             aria-pressed={memories.includes(memory)} onClick={() => toggleMemory(memory)}><strong>{MEMORIES[memory]}</strong><span>{MEMORY_DETAILS[memory]}</span><small>{memories.includes(memory) ? "선택됨" : "기억하기"}</small></button>)}</div>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || memories.length !== state.memorySlots} onClick={() => void onLegacy(memories)}>기억 {state.memorySlots}장 확정</button></> : null}
         {state.phase === "completed" && state.draftResult ? <div className={`draft-result ${state.draftResult.outcome === "drafted" ? "is-drafted" : "is-undrafted"}`}>
           <span>{state.draftResult.outcome === "drafted" ? `${state.draftResult.round}라운드 ${state.draftResult.overallPick}순위` : "드래프트 종료"}</span>
           <h3>{state.draftResult.team?.name ?? "다음 삶을 준비합니다"}</h3><p>{state.draftResult.summary}</p>{state.draftResult.team ? <div className="pro-preview">
-            <div><span>계약금</span><strong>{Math.round((state.draftResult.signingBonus ?? 0) / 10_000)}만원</strong></div><div><span>육성 계획</span><strong>{state.draftResult.team.developmentPlan}</strong></div>
+            <div><span>계약금</span><strong>{Math.round((state.draftResult.signingBonus ?? 0) / 10_000)}만원</strong></div><div><span>입단 뒤 계획</span><strong>{state.draftResult.team.developmentPlan}</strong></div>
             <CharacterProfile label="경쟁자" title={state.draftResult.team.positionCompetitor} record={state.draftResult.team.competitorRecord} description={state.draftResult.team.competitorProfile} />
             <CharacterProfile label="담당 코치" title={state.draftResult.team.proCoach} record={state.draftResult.team.coachRecord} description={state.draftResult.team.coachProfile} />
-            <div><span>첫 시즌 목표</span><strong>2군 선발 경쟁 · 1군 데뷔</strong></div><div><span>프로에서 할 일</span><strong>훈련·보직 경쟁·계약·FA</strong></div></div> : null}
+            <div><span>첫 시즌 목표</span><strong>2군 선발 경쟁 · 1군 데뷔</strong></div><div><span>프로에서 이어지는 내용</span><strong>훈련·선발 경쟁·계약·FA</strong></div></div> : null}
           {state.draftResult.outcome === "drafted" ? <div className="pro-lock"><span>프로 커리어</span><h4>{proAccessAvailable ? "지명 구단과 계약할 차례입니다." : "프로 커리어 확장"}</h4>
             <p>{proAccessAvailable ? "2군 선발 경쟁부터 시작합니다. 고교 기록과 구종은 그대로 이어집니다." : "프로 커리어는 정식판에서 고교 기록 그대로 이어집니다."}</p>
             <button type="button" disabled={isRunning || !proAccessAvailable} onClick={() => void onStartPro()}>{proAccessAvailable ? "프로 입단" : "데모는 여기까지"}</button></div> : null}

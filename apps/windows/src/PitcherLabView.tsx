@@ -16,10 +16,10 @@ const CREATION_METRICS: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
-  { key: "stuff", label: "구위", description: "출력과 포심 구속" },
-  { key: "command", label: "커맨드", description: "목표점과 경계 재현" },
-  { key: "movement", label: "무브먼트", description: "변화구 궤적과 헛스윙" },
-  { key: "stamina", label: "체력", description: "긴 이닝과 피로 저항" },
+  { key: "stuff", label: "공의 위력", description: "직구 구속과 헛스윙을 끌어내는 힘" },
+  { key: "command", label: "제구", description: "원하는 곳에 꾸준히 던지는 능력" },
+  { key: "movement", label: "변화구", description: "공이 꺾이고 떨어지는 정도" },
+  { key: "stamina", label: "체력", description: "긴 이닝에도 공의 힘을 유지하는 능력" },
 ];
 
 interface PitcherLabSetupProps {
@@ -90,7 +90,7 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
               <strong>{selectedPreset.name} · {selectedPreset.pitcher.name}</strong>
               <p>{selectedPreset.tradeoff}</p>
             </div>
-            <div className="creation-points"><span>남은 생성 포인트</span><strong>{5 - spent}</strong></div>
+            <div className="creation-points"><span>남은 능력치 점수</span><strong>{5 - spent}</strong></div>
           </div>
           <div className="identity-name-panel">
             <label htmlFor="lab-player-name"><span>선수 이름</span>
@@ -136,12 +136,12 @@ const TRAINING_OPTIONS: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
-  { value: "velocity", label: "구속·출력", description: "포심 구위와 최고 구속을 높인다" },
-  { value: "command", label: "제구·커맨드", description: "목표점 재현과 경계 공략을 다듬는다" },
-  { value: "breaking_ball", label: "변화구 형태", description: "변화량과 헛스윙 능력을 높인다" },
-  { value: "stamina", label: "선발 체력", description: "긴 이닝에도 구위를 유지하도록 훈련한다" },
-  { value: "recovery", label: "회복 루틴", description: "피로를 낮추고 다음 훈련 준비도 회복" },
-  { value: "game_planning", label: "경기 설계", description: "카운트별 구종 순서와 상대 대응을 익힌다" },
+  { value: "velocity", label: "직구 구속", description: "직구를 더 빠르고 위력 있게 던진다" },
+  { value: "command", label: "제구", description: "원하는 코스에 꾸준히 던지는 연습을 한다" },
+  { value: "breaking_ball", label: "변화구", description: "더 크게 꺾이는 변화구로 헛스윙을 노린다" },
+  { value: "stamina", label: "선발 체력", description: "긴 이닝에도 공의 힘이 떨어지지 않게 한다" },
+  { value: "recovery", label: "휴식과 회복", description: "피로를 낮추고 다음 훈련을 준비한다" },
+  { value: "game_planning", label: "타자 상대법", description: "카운트와 타자 약점에 맞춰 구종을 고르는 연습을 한다" },
 ];
 
 const INTENSITY_OPTIONS: ReadonlyArray<{
@@ -149,71 +149,71 @@ const INTENSITY_OPTIONS: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
-  { value: "light", label: "가볍게", description: "피로를 아끼며 감각 유지" },
-  { value: "standard", label: "표준", description: "성장과 회복의 균형" },
-  { value: "intensive", label: "집중", description: "큰 자극, 높은 피로 비용" },
+  { value: "light", label: "가볍게", description: "피로를 적게 쌓고 투구 감각만 유지한다" },
+  { value: "standard", label: "보통", description: "능력과 피로가 모두 적당히 오른다" },
+  { value: "intensive", label: "강하게", description: "능력이 많이 오르지만 피로도 많이 쌓인다" },
 ];
 
 const AWAKENING_LABELS: Record<AwakeningID, { title: string; description: string }> = {
-  explosive_fastball: { title: "폭발하는 포심", description: "구위와 포심 출력이 크게 선명해집니다." },
-  pinpoint_edge: { title: "바늘끝 경계", description: "ABS 경계를 반복하는 커맨드를 얻습니다." },
-  disappearing_breaker: { title: "사라지는 궤적", description: "변화구의 움직임과 결정력이 강화됩니다." },
-  iron_arm: { title: "강철의 어깨", description: "긴 이닝에도 구위를 지키는 체력을 얻습니다." },
-  calm_under_pressure: { title: "고요한 마운드", description: "위기에서도 계획을 실행하는 힘을 얻습니다." },
-  battery_sync: { title: "배터리 동기화", description: "포수의 정보와 자신의 감각을 빠르게 합칩니다." },
-  rising_four_seam: { title: "떠오르는 포심", description: "높은 존 포심의 형태를 강화합니다." },
-  sinker_tunnel: { title: "싱커 터널", description: "포심과 변화구의 출발 궤적을 겹칩니다." },
-  frozen_changeup: { title: "멈춘 체인지업", description: "속도 차이와 낙폭을 선명하게 만듭니다." },
+  explosive_fastball: { title: "폭발하는 포심", description: "직구 구속과 헛스윙을 잡는 힘이 크게 오릅니다." },
+  pinpoint_edge: { title: "바늘끝 제구", description: "스트라이크존 끝에 계속 던질 수 있게 됩니다." },
+  disappearing_breaker: { title: "사라지는 변화구", description: "변화구가 더 크게 꺾여 헛스윙을 잡기 쉬워집니다." },
+  iron_arm: { title: "강철의 어깨", description: "긴 이닝에도 공의 힘이 잘 떨어지지 않습니다." },
+  calm_under_pressure: { title: "고요한 마운드", description: "주자가 있어도 원하는 공을 침착하게 던집니다." },
+  battery_sync: { title: "포수와 한마음", description: "포수의 사인을 빠르게 이해하고 좋은 코스를 고릅니다." },
+  rising_four_seam: { title: "떠오르는 포심", description: "높은 직구로 헛스윙과 뜬공을 더 자주 만듭니다." },
+  sinker_tunnel: { title: "같은 길에서 갈라지는 공", description: "직구와 싱커가 타자 앞까지 같은 공처럼 보입니다." },
+  frozen_changeup: { title: "멈춘 체인지업", description: "직구와의 속도 차이가 커지고 더 많이 떨어집니다." },
   sweeping_slider: { title: "스위퍼 궤도", description: "슬라이더의 수평 움직임을 키웁니다." },
-  curveball_clock: { title: "커브의 시계", description: "커브의 릴리스 타이밍을 반복합니다." },
-  repeatable_release: { title: "반복되는 릴리스", description: "모든 구종의 출발점을 안정시킵니다." },
+  curveball_clock: { title: "일정한 커브 타이밍", description: "매번 같은 동작으로 커브를 던집니다." },
+  repeatable_release: { title: "흔들리지 않는 투구 동작", description: "어떤 구종을 던져도 팔이 나오는 위치가 일정합니다." },
   pickoff_rhythm: { title: "주자를 묶는 리듬", description: "주자가 있을 때도 투구 리듬을 지킵니다." },
-  two_strike_plan: { title: "2스트라이크 설계", description: "결정구 순서를 미리 설계합니다." },
+  two_strike_plan: { title: "2스트라이크 승부법", description: "삼진을 잡기 위한 구종 순서를 미리 정합니다." },
   first_pitch_strike: { title: "초구 스트라이크", description: "유리한 카운트를 빠르게 만듭니다." },
-  traffic_controller: { title: "주자 교통정리", description: "복잡한 주자 상황을 단순화합니다." },
-  late_inning_reserve: { title: "후반 이닝의 여력", description: "경기 후반의 구위 저하를 늦춥니다." },
-  scout_composure: { title: "스카우트 앞의 평정", description: "높은 압박에서도 계획을 유지합니다." },
+  traffic_controller: { title: "주자를 두고도 침착하게", description: "주자가 여러 명 나가도 아웃 하나에 집중합니다." },
+  late_inning_reserve: { title: "후반에도 남는 힘", description: "경기 후반에도 공의 위력이 덜 떨어집니다." },
+  scout_composure: { title: "압박 속 침착함", description: "스카우트가 지켜봐도 평소처럼 던집니다." },
 };
 
 const MEMORY_LABELS: Record<MemoryCardID, { title: string; description: string }> = {
-  velocity_blueprint: { title: "구속의 설계도", description: "다음 삶이 출력 훈련의 감각을 가지고 시작합니다." },
+  velocity_blueprint: { title: "직구 구속 훈련법", description: "다음 선수는 직구 구속 훈련에 더 빨리 적응합니다." },
   fingertip_memory: { title: "손끝의 기억", description: "다음 삶의 변화구 학습을 앞당깁니다." },
-  catcher_notebook: { title: "포수의 노트", description: "배터리의 대화에서 얻은 정보를 남깁니다." },
-  rival_notebook: { title: "라이벌 노트", description: "반복 패턴과 실패의 단서를 다음 삶에 남깁니다." },
-  recovery_routine: { title: "회복 루틴", description: "피로를 관리한 시행착오를 다음 몸에 남깁니다." },
+  catcher_notebook: { title: "포수의 노트", description: "포수와 이야기하며 배운 타자 상대법을 남깁니다." },
+  rival_notebook: { title: "라이벌 노트", description: "상대에게 읽힌 습관과 실패한 승부를 남깁니다." },
+  recovery_routine: { title: "회복 방법", description: "언제 쉬고 얼마나 훈련해야 하는지 남깁니다." },
   pressure_rehearsal: { title: "압박의 예행연습", description: "중요 이닝의 감각을 다음 삶에 남깁니다." },
   first_pitch_map: { title: "초구 지도", description: "타자별 첫 승부의 단서를 남깁니다." },
-  two_strike_sequence: { title: "2스트라이크 시퀀스", description: "결정구 순서의 시행착오를 남깁니다." },
-  fatigue_diary: { title: "피로 일지", description: "구위가 떨어진 시점의 기록을 남깁니다." },
-  mechanics_video: { title: "폼 교정 영상", description: "릴리스 변화의 영상을 남깁니다." },
-  school_playbook: { title: "학교 플레이북", description: "팀에서 배운 경기 운영을 남깁니다." },
+  two_strike_sequence: { title: "2스트라이크 구종 순서", description: "삼진을 잡았던 구종 순서와 실패한 승부를 남깁니다." },
+  fatigue_diary: { title: "피로 일지", description: "공의 힘이 떨어지기 시작한 시점을 남깁니다." },
+  mechanics_video: { title: "투구 동작 교정 영상", description: "팔이 나오는 위치가 달라진 장면을 남깁니다." },
+  school_playbook: { title: "학교에서 배운 승부법", description: "팀에서 배운 타자 상대법을 남깁니다." },
   coach_letter: { title: "코치의 편지", description: "성장 과정에 대한 코치의 관찰을 남깁니다." },
-  draft_report: { title: "드래프트 리포트", description: "구단이 본 강점과 우려를 남깁니다." },
+  draft_report: { title: "구단 평가표", description: "구단이 본 강점과 고쳐야 할 점을 남깁니다." },
   stadium_echo: { title: "구장의 메아리", description: "중요 경기의 감각을 다음 삶에 남깁니다." },
   team_first_promise: { title: "팀을 위한 약속", description: "관계에서 배운 책임을 남깁니다." },
   failure_scorebook: { title: "실패의 스코어북", description: "좋은 선택과 나쁜 결과를 구분해 남깁니다." },
-  winter_program: { title: "겨울 프로그램", description: "비시즌 루틴을 다음 몸에 남깁니다." },
+  winter_program: { title: "겨울 훈련표", description: "비시즌에 효과가 좋았던 훈련 순서를 남깁니다." },
   bullpen_compass: { title: "불펜의 나침반", description: "등판 전 준비 순서를 남깁니다." },
 };
 
 const SOUL_OPTIONS: ReadonlyArray<{ value: SoulDomain; label: string; description: string }> = [
-  { value: "body", label: "육체", description: "출력과 회복의 경험" },
-  { value: "technique", label: "기술", description: "제구와 구종 학습의 경험" },
-  { value: "game", label: "경기", description: "판단과 압박 대응의 경험" },
+  { value: "body", label: "몸", description: "구속을 높이고 피로를 푸는 방법" },
+  { value: "technique", label: "기술", description: "제구와 변화구를 익힌 방법" },
+  { value: "game", label: "경기 경험", description: "위기에서 구종과 코스를 골랐던 경험" },
 ];
 
 const METRIC_LABELS: Record<string, string> = {
-  stuff: "구위",
-  command: "커맨드",
-  movement: "무브먼트",
+  stuff: "공의 위력",
+  command: "제구",
+  movement: "변화구",
   stamina: "체력",
 };
 
 const GRADE_LABELS = {
-  undrafted: "미지명",
-  follow: "추적 관찰",
-  draftable: "지명권",
-  elite: "상위 지명",
+  undrafted: "미지명 예상",
+  follow: "더 지켜봄",
+  draftable: "지명 가능",
+  elite: "상위 순번 유력",
 } as const;
 
 const PHASE_LABELS = {
@@ -221,8 +221,8 @@ const PHASE_LABELS = {
   important_inning: "중요 이닝",
   relationship: "포수 면담",
   awakening: "새 강점",
-  scouting: "스카우팅",
-  reflection: "스카우팅 결과",
+  scouting: "구단 평가",
+  reflection: "평가 결과",
   completed: "완료",
 } as const;
 
@@ -281,13 +281,13 @@ export function PitcherLabView({
         <div>
           <p className="eyebrow">연습 모드 · {snapshot.lifeNumber}번째 선수</p>
           <h2>{snapshot.pitcher.name} · {snapshot.lifeNumber === 1 ? "첫 번째" : "두 번째"} 선수</h2>
-          <p>현재 능력은 정확히 보입니다. 어떤 훈련이 잘 맞는지는 직접 훈련한 뒤 반응을 확인해야 합니다.</p>
+          <p>현재 능력치는 정확히 보입니다. 어떤 훈련이 잘 맞는지는 직접 해 본 뒤 결과로 확인합니다.</p>
         </div>
         <div className="lab-hero-tools">
           <div className="lab-vitals">
-            <div><span>준비도</span><strong>{snapshot.readiness}</strong></div>
+            <div><span>훈련할 몸 상태</span><strong>{snapshot.readiness}</strong></div>
             <div><span>피로</span><strong>{snapshot.fatigue}</strong></div>
-            <div><span>포수 신뢰</span><strong>{snapshot.catcherTrust}</strong></div>
+            <div><span>포수의 믿음</span><strong>{snapshot.catcherTrust}</strong></div>
           </div>
           <div className="lab-utility-actions"><button type="button" onClick={onNewExperiment}>새 선수</button></div>
         </div>
@@ -318,7 +318,7 @@ export function PitcherLabView({
 
       <div className="lab-grid">
         <section className="ds-card ds-player-card lab-card lab-ratings">
-          <div className="lab-card-heading"><span>현재 능력과 잠재 범위</span><small>훈련할수록 예상 범위가 좁아집니다</small></div>
+          <div className="lab-card-heading"><span>현재 실력과 성장 가능성</span><small>훈련을 이어가면 얼마나 더 성장할지 알 수 있습니다</small></div>
           {snapshot.potentialRanges.map((range) => (
             <div className="potential-row" key={range.metric}>
               <span>{METRIC_LABELS[range.metric] ?? range.metric}</span>
@@ -335,18 +335,18 @@ export function PitcherLabView({
               <span>최근 훈련 · {training.sessionNumber}회차</span>
               <strong>{training.shortFeedback}</strong>
               <p>{training.observedClue}</p>
-              <small>훈련 누적 +{training.signalGained} · 준비도 {training.readinessBefore}→{training.readinessAfter} · 피로 {training.fatigueBefore}→{training.fatigueAfter}</small>
+              <small>쌓인 훈련량 +{training.signalGained} · 몸 상태 {training.readinessBefore}→{training.readinessAfter} · 피로 {training.fatigueBefore}→{training.fatigueAfter}</small>
             </div>
           ) : null}
         </section>
 
         <section className="ds-card ds-card--raised lab-card lab-action">
-          <div className="lab-card-heading"><span>다음 결정</span><small>{PHASE_LABELS[snapshot.phase]}</small></div>
+          <div className="lab-card-heading"><span>이번에 할 일</span><small>{PHASE_LABELS[snapshot.phase]}</small></div>
 
           {snapshot.phase === "training" ? (
             <>
               <h3>훈련 {snapshot.trainingSessionsCompleted + 1}회차</h3>
-              <p className="lab-copy">같은 훈련의 반복은 초기에 유리하지만 정체와 피로를 만들 수 있습니다.</p>
+              <p className="lab-copy">같은 훈련을 계속하면 처음에는 빨리 늘지만, 곧 효과가 줄고 피로가 쌓입니다.</p>
               <div className="training-option-grid">
                 {TRAINING_OPTIONS.map((option) => (
                   <button key={option.value} type="button" className={focus === option.value ? "is-selected" : undefined}
@@ -387,7 +387,7 @@ export function PitcherLabView({
               <p>유시환: “낮은 변화구가 더 안전했어. 그런데 넌 왜 계속 높은 공을 골랐어?”</p>
               <div className="lab-choice-pair">
                 <button type="button" disabled={isRunning} onClick={() => void onRelationship("trust_catcher")}>
-                  <strong>유시환이 본 타자 반응부터 듣는다</strong><span>포수 신뢰가 오른다</span>
+                  <strong>유시환이 본 타자 반응부터 듣는다</strong><span>포수가 나를 더 믿는다</span>
                 </button>
                 <button type="button" disabled={isRunning} onClick={() => void onRelationship("assert_own_plan")}>
                   <strong>높은 공을 고른 이유를 설명한다</strong><span>내 판단을 분명히 한다</span>
@@ -413,11 +413,11 @@ export function PitcherLabView({
 
           {snapshot.phase === "scouting" ? (
             <div className="lab-milestone">
-              <span>최종 스카우팅</span>
-              <h3>스카우트가 세 번의 등판 기록을 펼칩니다.</h3>
-              <p>현재 능력과 삼진·볼넷·실점, 훈련 뒤 달라진 점을 함께 평가합니다.</p>
+              <span>최종 구단 평가</span>
+              <h3>스카우트가 세 번의 등판 기록을 확인합니다.</h3>
+              <p>현재 능력과 삼진·볼넷·실점, 훈련 뒤 달라진 점을 함께 봅니다.</p>
               <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onFinalizeScouting()}>
-                최종 스카우팅 리포트 받기
+                구단 평가 결과 보기
               </button>
             </div>
           ) : null}
@@ -460,10 +460,10 @@ export function PitcherLabView({
           {snapshot.phase === "completed" && snapshot.legacySelection ? (
             <div className="lab-milestone lab-completed">
               <span>{snapshot.lifeNumber}번째 선수 기록 완료</span>
-              <h3>{snapshot.lifeNumber === 1 ? "첫 번째 선수의 스카우팅이 끝났습니다." : "두 번째 선수의 스카우팅도 끝났습니다."}</h3>
+              <h3>{snapshot.lifeNumber === 1 ? "첫 번째 선수의 구단 평가가 끝났습니다." : "두 번째 선수의 구단 평가도 끝났습니다."}</h3>
               <p>{snapshot.legacySelection.summary}</p>
               <div className="legacy-reward">
-                <strong>생성 포인트 +{snapshot.legacySelection.soulPointsGranted}</strong>
+                <strong>다음 선수 능력치 점수 +{snapshot.legacySelection.soulPointsGranted}</strong>
                 <span>{MEMORY_LABELS[snapshot.legacySelection.memoryCard].title}</span>
                 <span>새 학교·코치 후보 해금</span>
               </div>
@@ -481,8 +481,8 @@ export function PitcherLabView({
                       <b>{snapshot.pitcher[metric] - previousLifeResult.snapshot.pitcher[metric] >= 0 ? "+" : ""}{snapshot.pitcher[metric] - previousLifeResult.snapshot.pitcher[metric]}</b>
                     </div>
                   ))}
-                  <div><span>스카우팅</span><strong>{previousLifeResult.snapshot.scoutingEvaluation?.score ?? 0} → {snapshot.scoutingEvaluation?.score ?? 0}</strong></div>
-                  <div><span>기대 피해</span><strong>{previousLifeResult.snapshot.performance.expectedDamage} → {snapshot.performance.expectedDamage}</strong></div>
+                  <div><span>구단 평가 점수</span><strong>{previousLifeResult.snapshot.scoutingEvaluation?.score ?? 0} → {snapshot.scoutingEvaluation?.score ?? 0}</strong></div>
+                  <div><span>예상 출루·장타 위험</span><strong>{previousLifeResult.snapshot.performance.expectedDamage} → {snapshot.performance.expectedDamage}</strong></div>
                 </div>
               ) : null}
             </div>
@@ -499,13 +499,13 @@ export function PitcherLabView({
             <div><span>볼넷</span><strong>{snapshot.performance.walks}</strong></div>
             <div><span>실점</span><strong>{snapshot.performance.runsAllowed}</strong></div>
           </div>
-          <div className="lab-signal-list">
+          <div className="lab-signal-list" aria-label="능력별 쌓인 훈련량">
             {TRAINING_OPTIONS.map((option) => {
               const key = option.value === "breaking_ball" ? "breakingBall" : option.value === "game_planning" ? "gamePlanning" : option.value;
               const value = snapshot.developmentSignals[key as keyof typeof snapshot.developmentSignals];
               return (
                 <div key={option.value}>
-                  <span>{option.label}</span><strong>{value} / 500</strong>
+                  <span>{option.label} 훈련량</span><strong>{value} / 500</strong>
                   <i><b style={{ width: `${value / 5}%` }} /></i>
                 </div>
               );

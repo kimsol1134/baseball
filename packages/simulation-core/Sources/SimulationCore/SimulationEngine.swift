@@ -279,7 +279,7 @@ public struct SimulationEngine: Sendable {
         case 430..<650: executionDescription = "의도한 코스에 가깝게 제구됐습니다"
         default: executionDescription = "의도한 코스를 정교하게 찔렀습니다"
         }
-        let contactDescription = contactQuality.map { " 타구 품질 지수는 \($0)였습니다." } ?? ""
+        let contactDescription = contactQuality.map { " 타구 강도는 \($0)/1000이었습니다." } ?? ""
         let zoneDescription = wasInZone ? "스트라이크 존" : "존 바깥"
         return (
             summary: summary,

@@ -50,8 +50,8 @@ describe("career news detail", () => {
     });
 
     expect(detail.lead).toContain("하루의 다음 팀");
-    expect(detail.paragraphs[0]).toContain("하루를 둘러싼");
-    expect(detail.paragraphs[1]).toContain("인천제문포고는 당장의");
+    expect(detail.paragraphs[0]).toContain("하루의 구속 변화");
+    expect(detail.paragraphs[1]).toContain("하루에게는 다음 등판");
 
     const admission = createCareerNewsDetail("인천제문포고 입학이 확정됐습니다.", 0, {
       ...context,

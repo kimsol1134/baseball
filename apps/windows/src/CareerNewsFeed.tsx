@@ -98,11 +98,11 @@ export function CareerNewsFeed({ items, context, maxItems = 9 }: Props) {
           <div className="news-detail-grid">
             <article className="news-story"><h3>취재 내용</h3>{selected.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
               <blockquote><span>{selected.quoteSpeaker}</span><p>“{selected.quote}”</p></blockquote></article>
-            <aside className="news-context"><h3>지금의 의미</h3>
+            <aside className="news-context"><h3>현재 상황</h3>
               <div><span>소속</span><strong>{context.affiliation}</strong></div><div><span>시점</span><strong>{context.period}</strong></div>
-              <div><span>{context.mode === "high_school" ? "관계 신뢰" : "감독 신뢰"}</span><strong>{context.trust}</strong></div>
-              <div><span>{context.mode === "high_school" ? "팬 관심" : "현재 무대"}</span><strong>{context.mode === "high_school" ? context.fanInterest ?? "—" : context.level ?? "프로"}</strong></div>
-              <h4>다음 관전 포인트</h4><p>{selected.watchPoint}</p></aside>
+              <div><span>{context.mode === "high_school" ? "감독·포수의 믿음" : "감독의 믿음"}</span><strong>{context.trust}</strong></div>
+              <div><span>{context.mode === "high_school" ? "지역 팬 관심" : "소속 리그"}</span><strong>{context.mode === "high_school" ? context.fanInterest ?? "—" : context.level ?? "프로"}</strong></div>
+              <h4>다음에 확인할 것</h4><p>{selected.watchPoint}</p></aside>
           </div>
           <section className="news-fan-reactions" aria-labelledby="fan-reaction-title"><div><h3 id="fan-reaction-title">팬 반응</h3><small>{selected.fanSummary}</small></div>
             <div className="fan-post-grid">{selected.fanPosts.map((post) => <article key={`${post.handle}-${post.message}`}>

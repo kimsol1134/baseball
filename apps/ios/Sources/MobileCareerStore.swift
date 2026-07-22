@@ -8,8 +8,8 @@ final class MobileCareerStore {
     enum ImportantApproach: String, CaseIterable, Identifiable {
         case trustBattery, attackZone, expandZone
         var id: Self { self }
-        var title: String { switch self { case .trustBattery: "포수의 시퀀스를 따른다"; case .attackZone: "존 안에서 먼저 승부한다"; case .expandZone: "변화구로 존을 넓힌다" } }
-        var detail: String { switch self { case .trustBattery: "볼배합 안정 · 배터리 신뢰 상승"; case .attackZone: "삼진 기회 상승 · 장타 위험 상승"; case .expandZone: "헛스윙 기회 상승 · 볼넷 위험 상승" } }
+        var title: String { switch self { case .trustBattery: "포수의 추천대로 던진다"; case .attackZone: "스트라이크존 안으로 과감하게 던진다"; case .expandZone: "존 밖 변화구로 헛스윙을 노린다" } }
+        var detail: String { switch self { case .trustBattery: "포수와의 믿음 상승"; case .attackZone: "삼진 기회 상승 · 장타 위험 상승"; case .expandZone: "헛스윙 기회 상승 · 볼넷 위험 상승" } }
     }
     enum LoadState: Equatable { case loading, ready, failed(String) }
     var loadState: LoadState = .loading
@@ -69,7 +69,7 @@ final class MobileCareerStore {
         case .expandZone:
             report = .init(scenarioNumber: result.snapshot.week, pitches: 21, strikeouts: 3, walks: 2, runsAllowed: 0, expectedDamage: 390, actualDamage: 260, recommendationAccepted: 8)
         }
-        perform(summary: "\(report.pitches)구 · \(report.strikeouts)탈삼진 · \(report.walks)볼넷 · \(report.runsAllowed)실점. 선택한 승부 방식이 감독과 포수의 평가에 반영됐습니다.") {
+        perform(summary: "\(report.pitches)구 · \(report.strikeouts)탈삼진 · \(report.walks)볼넷 · \(report.runsAllowed)실점. 고른 구종과 코스에 따라 감독·포수의 믿음이 달라졌습니다.") {
             try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report))
         }
     }
@@ -112,16 +112,16 @@ final class MobileCareerStore {
 
     private func progressSummary(before: ProCareerSnapshot?, after: ProCareerSnapshot) -> String {
         guard let before else { return "다음 일정이 준비됐습니다." }
-        if before.level != after.level { return "1군 엔트리에 합류했습니다. 다음 중요 승부가 바로 이어집니다." }
-        if before.role != after.role { return "감독 면담 뒤 보직이 \(roleName(after.role))로 바뀌었습니다." }
-        if after.milestones.count > before.milestones.count { return "새 이정표 · \(after.milestones.last ?? "커리어 기록")" }
+        if before.level != after.level { return "1군 출전 명단에 합류했습니다. 다음 중요 경기가 바로 이어집니다." }
+        if before.role != after.role { return "감독 면담 뒤 역할이 \(roleName(after.role))으로 바뀌었습니다." }
+        if after.milestones.count > before.milestones.count { return "새 주요 기록 · \(after.milestones.last ?? "선수 기록")" }
         let fatigue = after.fatigue - before.fatigue
         let trust = after.managerTrust - before.managerTrust
-        return "\(before.week + 1)주차 완료 · 감독 신뢰 \(trust >= 0 ? "+" : "")\(trust) · 피로 \(fatigue >= 0 ? "+" : "")\(fatigue)"
+        return "\(before.week + 1)주차 완료 · 감독의 믿음 \(trust >= 0 ? "+" : "")\(trust) · 피로 \(fatigue >= 0 ? "+" : "")\(fatigue)"
     }
 
     private func roleName(_ role: ProRole) -> String {
-        switch role { case .starter: "선발"; case .longRelief: "롱릴리프"; case .setup: "셋업맨"; case .closer: "마무리" }
+        switch role { case .starter: "선발"; case .longRelief: "긴 이닝 구원"; case .setup: "필승조"; case .closer: "마무리" }
     }
 
     private var saveURL: URL {

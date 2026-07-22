@@ -195,9 +195,9 @@ const INTENSITY_OPTIONS: ReadonlyArray<{
   label: string;
   hint: string;
 }> = [
-  { value: "controlled", label: "제어", hint: "제구 우선" },
+  { value: "controlled", label: "힘 조절", hint: "제구 우선" },
   { value: "normal", label: "보통", hint: "균형" },
-  { value: "max_effort", label: "전력", hint: "구위 우선" },
+  { value: "max_effort", label: "전력투구", hint: "구속 우선" },
 ];
 
 const INTENT_OPTIONS: ReadonlyArray<{
@@ -205,9 +205,9 @@ const INTENT_OPTIONS: ReadonlyArray<{
   label: string;
   hint: string;
 }> = [
-  { value: "strike", label: "존 안", hint: "볼넷 억제" },
-  { value: "edge", label: "경계", hint: "정교한 승부" },
-  { value: "chase", label: "유인", hint: "헛스윙 노림" },
+  { value: "strike", label: "스트라이크", hint: "볼넷 억제" },
+  { value: "edge", label: "존 끝", hint: "코스 공략" },
+  { value: "chase", label: "존 밖 유인", hint: "헛스윙 노림" },
 ];
 
 const OUTCOME_LABELS: Record<PitchOutcome, string> = {
@@ -215,17 +215,17 @@ const OUTCOME_LABELS: Record<PitchOutcome, string> = {
   called_strike: "루킹 스트라이크",
   swinging_strike: "헛스윙",
   foul: "파울",
-  in_play_out: "인플레이 아웃",
+  in_play_out: "타구 아웃",
   single: "안타",
   double: "2루타",
   home_run: "홈런",
 };
 
 const SELECTION_LABELS: Record<SelectionQuality, string> = {
-  poor: "나쁜 선택",
-  risky: "위험한 선택",
-  good: "좋은 선택",
-  excellent: "탁월한 선택",
+  poor: "공 선택이 아쉬웠습니다",
+  risky: "위험한 공을 골랐습니다",
+  good: "좋은 공을 골랐습니다",
+  excellent: "상황에 가장 알맞은 공이었습니다",
 };
 
 const PLATE_RESULT_LABELS: Record<PlateAppearanceResult, string> = {
@@ -237,9 +237,9 @@ const PLATE_RESULT_LABELS: Record<PlateAppearanceResult, string> = {
 
 const ADAPTATION_LABELS: Record<RivalAdaptationBand, string> = {
   no_data: "첫 대결",
-  watching: "관찰 중",
-  learning: "패턴 학습",
-  locked_on: "노림수 형성",
+  watching: "아직 파악 못 함",
+  learning: "투구 습관을 읽는 중",
+  locked_on: "노림수가 분명함",
 };
 
 const FIELDER_LABELS: Record<FielderPosition, string> = {
@@ -413,9 +413,9 @@ function rateLabel(value: number) {
 
 function confidenceLabel(value: PitchKernelResult["postgameAnalysis"]["confidence"]) {
   switch (value) {
-    case "low": return "신뢰도 낮음";
-    case "developing": return "패턴을 살피는 중";
-    case "reliable": return "분석 신뢰 가능";
+    case "low": return "아직 던진 공이 적음";
+    case "developing": return "투구 습관이 보이기 시작함";
+    case "reliable": return "충분한 투구로 분석함";
   }
 }
 
@@ -1510,7 +1510,7 @@ export function App() {
   const gameCastContinueLabel = isRunning
     ? "다음 장면 준비 중…"
     : importantInningEnded
-      ? "중요 이닝 종료 · 분석으로 돌아가기"
+      ? "중요 이닝 종료 · 기록 화면으로"
       : lastResult?.snapshot.inningTransition?.inningEnded
         ? "다음 수비 이닝 시작"
         : plateEnded
@@ -1663,10 +1663,10 @@ export function App() {
           <aside className="ds-card ds-player-card panel player-panel" aria-label="선수 정보">
             <div className="panel-heading">
               <div><p className="eyebrow">내 투수</p><h2>{pitcher?.name ?? "불러오는 중"}</h2></div>
-              <span className="ds-badge role-badge">{selectedPreset?.name ?? "프리셋"}</span>
+              <span className="ds-badge role-badge">{selectedPreset?.name ?? "투수 유형"}</span>
             </div>
             <label className="preset-picker">
-              <span>투수 프리셋</span>
+              <span>투수 유형</span>
               <select
                 value={selectedPresetID ?? ""}
                 disabled={isRunning || presets.length === 0 || experienceMode === "career" || labResult?.snapshot.phase === "important_inning"}
@@ -1692,9 +1692,9 @@ export function App() {
             </div>
             {pitcher ? (
               <div className="stat-list" aria-label="현재 능력치">
-                <StatRow label="구위" value={pitcher.stuff} />
+                <StatRow label="공의 위력" value={pitcher.stuff} />
                 <StatRow label="제구" value={pitcher.command} />
-                <StatRow label="무브먼트" value={pitcher.movement} />
+                <StatRow label="변화구" value={pitcher.movement} />
                 <StatRow label="체력" value={pitcher.stamina} />
               </div>
             ) : null}
@@ -1715,12 +1715,12 @@ export function App() {
               <strong>{activeBatter.name} · 우타</strong>
               <p>가운데 포심에 강하고 낮은 몸쪽 슬라이더 인식이 늦습니다.</p>
               <div className="mini-stats">
-                <span>컨택 {activeBatter.contact}</span><span>선구 {activeBatter.discipline}</span><span>파워 {activeBatter.power}</span>
+                <span>공 맞히기 {activeBatter.contact}</span><span>볼 고르기 {activeBatter.discipline}</span><span>장타력 {activeBatter.power}</span>
               </div>
               {rivalAdaptation ? (
                 <div className={`rival-adaptation rival-adaptation--${rivalAdaptation.band}`}>
                   <div>
-                    <span>라이벌 적응</span>
+                    <span>타자가 내 투구를 읽는 정도</span>
                     <strong>{ADAPTATION_LABELS[rivalAdaptation.band]}</strong>
                   </div>
                   <div className="adaptation-track" aria-label={`라이벌 적응도 ${rivalAdaptation.level} / 900`}>
@@ -1761,11 +1761,11 @@ export function App() {
               <div className="catcher-call">
                 <div className="catcher-icon" aria-hidden="true">C</div>
                 <div>
-                  <span>포수 주 추천 · 확신 {Math.round(primaryRecommendation.confidence / 10)}%</span>
+                  <span>포수 추천 · 자신감 {Math.round(primaryRecommendation.confidence / 10)}%</span>
                   <strong>{recommendationTitle(primaryRecommendation)}</strong>
                   <p>{primaryRecommendation.shortReason}</p>
                   <div className="recommendation-actions">
-                    <button type="button" onClick={() => applyManualPitchCall(primaryRecommendation.call)}>포수 콜로 되돌리기</button>
+                    <button type="button" onClick={() => applyManualPitchCall(primaryRecommendation.call)}>포수 추천으로 되돌리기</button>
                     {alternativeRecommendation ? (
                       <button type="button" onClick={() => applyManualPitchCall(alternativeRecommendation.call)}>
                         대안: {pitchLabel(alternativeRecommendation.call.pitchType)}
@@ -1801,9 +1801,9 @@ export function App() {
                   </span>
                   <dl>
                     <div><dt>구속</dt><dd>{(selectedPitchProfile.velocityTenthsKPH / 10).toFixed(1)}</dd></div>
-                    <div><dt>제구</dt><dd>{selectedPitchProfile.control}</dd></div>
-                    <div><dt>커맨드</dt><dd>{selectedPitchProfile.command}</dd></div>
-                    <div><dt>무브</dt><dd>{selectedPitchProfile.movement}</dd></div>
+                    <div><dt>스트라이크</dt><dd>{selectedPitchProfile.control}</dd></div>
+                    <div><dt>코스 제구</dt><dd>{selectedPitchProfile.command}</dd></div>
+                    <div><dt>변화량</dt><dd>{selectedPitchProfile.movement}</dd></div>
                     <div><dt>헛스윙</dt><dd>{selectedPitchProfile.whiff}</dd></div>
                     <div><dt>약한 타구</dt><dd>{selectedPitchProfile.weakContact}</dd></div>
                   </dl>
@@ -1831,7 +1831,7 @@ export function App() {
 
               <div className="pitch-modifiers">
                 <fieldset className="choice-group intensity-group">
-                  <legend>3. 존 의도</legend>
+                  <legend>3. 승부 범위</legend>
                   <div className="intensity-options">
                     {INTENT_OPTIONS.map((option) => (
                       <button key={option.value} type="button" className={zoneIntent === option.value ? "is-selected" : undefined}
@@ -1867,7 +1867,7 @@ export function App() {
                 {isRunning
                   ? "새 타석 준비 중…"
                   : lastResult?.snapshot.inningTransition?.inningEnded && ((experienceMode === "career" && ((proVisible && proResult?.snapshot.phase === "important_game") || (!proVisible && careerResult?.snapshot.phase === "important_game"))) || labResult?.snapshot.phase === "important_inning")
-                    ? "중요 이닝 종료 · 분석으로 돌아가기"
+                    ? "중요 이닝 종료 · 기록 화면으로"
                     : lastResult?.snapshot.inningTransition?.inningEnded
                       ? "다음 수비 이닝 시작"
                     : "다음 타석 시작"}
@@ -1910,19 +1910,19 @@ export function App() {
                 <dl className="result-facts">
                   <div><dt>ABS</dt><dd>{Math.abs(lastResult.snapshot.execution.actualX) <= 500 && Math.abs(lastResult.snapshot.execution.actualY) <= 500 ? "존 안" : "존 밖"}</dd></div>
                   <div><dt>구속</dt><dd>{(lastResult.snapshot.execution.velocityTenthsKPH / 10).toFixed(1)} km/h</dd></div>
-                  <div><dt>실행 품질</dt><dd>{lastResult.snapshot.execution.executionQuality}</dd></div>
+                  <div><dt>코스 정확도</dt><dd>{lastResult.snapshot.execution.executionQuality} / 1000</dd></div>
                 </dl>
                 {lastResult.snapshot.battedBall ? (
                   <dl className="result-facts batted-ball-facts">
                     <div><dt>타구 속도</dt><dd>{(lastResult.snapshot.battedBall.exitVelocityTenthsKPH / 10).toFixed(1)} km/h</dd></div>
                     <div><dt>발사각</dt><dd>{(lastResult.snapshot.battedBall.launchAngleTenthsDegrees / 10).toFixed(1)}°</dd></div>
-                    <div><dt>타구 질</dt><dd>{lastResult.snapshot.battedBall.contactQuality}</dd></div>
+                    <div><dt>타구 강도</dt><dd>{lastResult.snapshot.battedBall.contactQuality} / 1000</dd></div>
                   </dl>
                 ) : null}
                 {lastResult.snapshot.fieldingResolution ? (
                   <div className={`fielding-resolution fielding-resolution--${lastResult.snapshot.fieldingResolution.impact}`}>
                     <div>
-                      <span>수비 반영 전</span>
+                      <span>타구만 본 결과</span>
                       <strong>{OUTCOME_LABELS[lastResult.snapshot.fieldingResolution.neutralOutcome]}</strong>
                       <b aria-hidden="true">→</b>
                       <span>최종 결과</span>
@@ -1934,7 +1934,7 @@ export function App() {
                         ? `${fielderLabel(lastResult.snapshot.fieldingResolution.fielderPosition)} ${lastResult.snapshot.fieldingResolution.fielderName} · `
                         : ""}
                       수비 {lastResult.snapshot.fieldingResolution.defenseRating}
-                      {` · 구장 보정 ${lastResult.snapshot.fieldingResolution.parkAdjustment >= 0 ? "+" : ""}${lastResult.snapshot.fieldingResolution.parkAdjustment}`}
+                      {` · 구장 영향 ${lastResult.snapshot.fieldingResolution.parkAdjustment >= 0 ? "+" : ""}${lastResult.snapshot.fieldingResolution.parkAdjustment}`}
                     </small>
                   </div>
                 ) : null}
@@ -1987,12 +1987,12 @@ export function App() {
                   <small>{confidenceLabel(lastResult.postgameAnalysis.confidence)} · {lastResult.postgameAnalysis.sampleSize}구</small>
                 </div>
                 <div className="analysis-metrics">
-                  <div><span>존율</span><strong>{rateLabel(lastResult.postgameAnalysis.zoneRate)}</strong></div>
+                  <div><span>스트라이크존 비율</span><strong>{rateLabel(lastResult.postgameAnalysis.zoneRate)}</strong></div>
                   <div><span>헛스윙률</span><strong>{rateLabel(lastResult.postgameAnalysis.whiffRate)}</strong></div>
                   <div><span>강한 타구</span><strong>{rateLabel(lastResult.postgameAnalysis.hardHitRate)}</strong></div>
-                  <div><span>실행</span><strong>{lastResult.postgameAnalysis.averageExecutionQuality}</strong></div>
-                  <div><span>예상 피해</span><strong>{(lastResult.postgameAnalysis.expectedDamage / 1000).toFixed(2)}</strong></div>
-                  <div><span>실제 피해</span><strong>{(lastResult.postgameAnalysis.actualDamage / 1000).toFixed(2)}</strong></div>
+                  <div><span>평균 코스 정확도</span><strong>{lastResult.postgameAnalysis.averageExecutionQuality} / 1000</strong></div>
+                  <div><span>예상 출루·장타 위험</span><strong>{(lastResult.postgameAnalysis.expectedDamage / 1000).toFixed(2)}</strong></div>
+                  <div><span>실제 출루·장타 위험</span><strong>{(lastResult.postgameAnalysis.actualDamage / 1000).toFixed(2)}</strong></div>
                 </div>
                 <p>{lastResult.postgameAnalysis.patternWarning}</p>
                 <strong className="growth-signal">{lastResult.postgameAnalysis.growthSignal}</strong>

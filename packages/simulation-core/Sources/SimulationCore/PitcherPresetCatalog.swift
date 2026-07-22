@@ -29,7 +29,7 @@ public enum PitcherPresetCatalog {
             id: "power_prospect",
             name: "강속구 원석",
             tagline: "빠른 포심으로 타자를 밀어붙입니다.",
-            strengths: ["포심 구위", "최고 구속", "헛스윙"],
+            strengths: ["직구의 위력", "최고 구속", "헛스윙"],
             tradeoff: "전력투구의 피로와 제구 난도가 큽니다.",
             pitcher: PitcherSnapshot(
                 id: "pitcher-power",
@@ -48,10 +48,10 @@ public enum PitcherPresetCatalog {
         ),
         PitcherPresetSnapshot(
             id: "precision_commander",
-            name: "정교한 커맨더",
-            tagline: "ABS 경계를 반복해서 공략합니다.",
-            strengths: ["제구", "경계 실행", "볼넷 억제"],
-            tradeoff: "결정구의 순수 구위가 낮습니다.",
+            name: "정교한 제구형",
+            tagline: "스트라이크존 끝에 꾸준히 던집니다.",
+            strengths: ["제구", "코스 공략", "볼넷 억제"],
+            tradeoff: "삼진을 잡을 강한 결정구가 부족합니다.",
             pitcher: PitcherSnapshot(
                 id: "pitcher-command",
                 name: "고태윤",
@@ -70,8 +70,8 @@ public enum PitcherPresetCatalog {
         PitcherPresetSnapshot(
             id: "breaking_ball_artist",
             name: "변화구 아티스트",
-            tagline: "서로 다른 궤적과 속도로 노림수를 흔듭니다.",
-            strengths: ["변화구 형태", "헛스윙", "약한 타구"],
+            tagline: "속도와 움직임이 다른 변화구로 타자의 타이밍을 빼앗습니다.",
+            strengths: ["변화구 움직임", "헛스윙", "빗맞은 타구"],
             tradeoff: "직구 구속과 장기 체력은 평범합니다.",
             pitcher: PitcherSnapshot(
                 id: "pitcher-artist",
@@ -90,9 +90,9 @@ public enum PitcherPresetCatalog {
         ),
         PitcherPresetSnapshot(
             id: "innings_eater",
-            name: "체력형 이닝이터",
+            name: "체력형 선발",
             tagline: "큰 기복 없이 많은 공을 소화합니다.",
-            strengths: ["체력", "피로 저항", "안정성"],
+            strengths: ["체력", "피로가 천천히 쌓임", "꾸준한 제구"],
             tradeoff: "타자를 압도하는 헛스윙 능력은 낮습니다.",
             pitcher: PitcherSnapshot(
                 id: "pitcher-stamina",
