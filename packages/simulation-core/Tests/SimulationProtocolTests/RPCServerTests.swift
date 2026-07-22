@@ -13,8 +13,8 @@ final class RPCServerTests: XCTestCase {
         XCTAssertNil(response.error)
         let health = try XCTUnwrap(response.result).decode(HealthResult.self)
         XCTAssertEqual(health.status, "ok")
-        XCTAssertEqual(health.protocolVersion, "1.3")
-        XCTAssertEqual(health.coreVersion, "0.4.0")
+        XCTAssertEqual(health.protocolVersion, "1.4")
+        XCTAssertEqual(health.coreVersion, "0.5.0")
     }
 
     func testListsFourPitcherPresetsWithCompleteRepertoires() throws {
@@ -124,6 +124,9 @@ final class RPCServerTests: XCTestCase {
         XCTAssertEqual(result.events[2].eventType, "pitch_call_committed")
         XCTAssertEqual(result.rivalMemory.totalPitchesSeen, 1)
         XCTAssertTrue(result.events.contains { $0.eventType == "rival_memory_updated" })
+        XCTAssertEqual(result.gameLog.totalPitches, 1)
+        XCTAssertEqual(result.postgameAnalysis.sampleSize, 1)
+        XCTAssertTrue(result.events.contains { $0.eventType == "game_analysis_updated" })
         XCTAssertFalse(result.eventHash.isEmpty)
     }
 

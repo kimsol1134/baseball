@@ -1,0 +1,656 @@
+import Foundation
+
+public enum FieldingSector: String, Codable, Sendable {
+    case infield
+    case outfield
+    case fence
+}
+
+public enum DefenseImpact: String, Codable, Sendable {
+    case helpedPitcher = "helped_pitcher"
+    case neutral
+    case hurtPitcher = "hurt_pitcher"
+}
+
+public enum AnalysisConfidenceBand: String, Codable, Sendable {
+    case low
+    case developing
+    case reliable
+}
+
+public struct DefenseSnapshot: Codable, Equatable, Sendable {
+    public let infield: Int
+    public let outfield: Int
+    public let arm: Int
+
+    public init(infield: Int, outfield: Int, arm: Int) {
+        self.infield = infield
+        self.outfield = outfield
+        self.arm = arm
+    }
+}
+
+public struct ParkSnapshot: Codable, Equatable, Sendable {
+    public let id: String
+    public let name: String
+    public let hitFactor: Int
+    public let homeRunFactor: Int
+
+    public init(id: String, name: String, hitFactor: Int, homeRunFactor: Int) {
+        self.id = id
+        self.name = name
+        self.hitFactor = hitFactor
+        self.homeRunFactor = homeRunFactor
+    }
+}
+
+public struct BaserunnerStateSnapshot: Codable, Equatable, Sendable {
+    public let firstOccupied: Bool
+    public let secondOccupied: Bool
+    public let thirdOccupied: Bool
+    public let leadRunnerSpeed: Int
+
+    public init(
+        firstOccupied: Bool,
+        secondOccupied: Bool,
+        thirdOccupied: Bool,
+        leadRunnerSpeed: Int
+    ) {
+        self.firstOccupied = firstOccupied
+        self.secondOccupied = secondOccupied
+        self.thirdOccupied = thirdOccupied
+        self.leadRunnerSpeed = leadRunnerSpeed
+    }
+
+    public static let empty = BaserunnerStateSnapshot(
+        firstOccupied: false,
+        secondOccupied: false,
+        thirdOccupied: false,
+        leadRunnerSpeed: 50
+    )
+
+    public var occupiedCount: Int {
+        [firstOccupied, secondOccupied, thirdOccupied].filter { $0 }.count
+    }
+}
+
+public struct GameStateSnapshot: Codable, Equatable, Sendable {
+    public let defense: DefenseSnapshot
+    public let park: ParkSnapshot
+    public let runners: BaserunnerStateSnapshot
+    public let runsAllowed: Int
+
+    public init(
+        defense: DefenseSnapshot,
+        park: ParkSnapshot,
+        runners: BaserunnerStateSnapshot,
+        runsAllowed: Int
+    ) {
+        self.defense = defense
+        self.park = park
+        self.runners = runners
+        self.runsAllowed = runsAllowed
+    }
+
+    public static let standard = GameStateSnapshot(
+        defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50),
+        park: ParkSnapshot(
+            id: "neutral-park",
+            name: "중립 구장",
+            hitFactor: 1_000,
+            homeRunFactor: 1_000
+        ),
+        runners: .empty,
+        runsAllowed: 0
+    )
+}
+
+public struct FieldingResolutionSnapshot: Codable, Equatable, Sendable {
+    public let neutralOutcome: PitchOutcome
+    public let finalOutcome: PitchOutcome
+    public let sector: FieldingSector
+    public let difficulty: Int
+    public let defenseRating: Int
+    public let defenseAdjustment: Int
+    public let parkAdjustment: Int
+    public let impact: DefenseImpact
+    public let shortExplanation: String
+
+    public init(
+        neutralOutcome: PitchOutcome,
+        finalOutcome: PitchOutcome,
+        sector: FieldingSector,
+        difficulty: Int,
+        defenseRating: Int,
+        defenseAdjustment: Int,
+        parkAdjustment: Int,
+        impact: DefenseImpact,
+        shortExplanation: String
+    ) {
+        self.neutralOutcome = neutralOutcome
+        self.finalOutcome = finalOutcome
+        self.sector = sector
+        self.difficulty = difficulty
+        self.defenseRating = defenseRating
+        self.defenseAdjustment = defenseAdjustment
+        self.parkAdjustment = parkAdjustment
+        self.impact = impact
+        self.shortExplanation = shortExplanation
+    }
+}
+
+public struct BaserunnerAdvanceSnapshot: Codable, Equatable, Sendable {
+    public let before: BaserunnerStateSnapshot
+    public let after: BaserunnerStateSnapshot
+    public let runsScored: Int
+    public let shortExplanation: String
+
+    public init(
+        before: BaserunnerStateSnapshot,
+        after: BaserunnerStateSnapshot,
+        runsScored: Int,
+        shortExplanation: String
+    ) {
+        self.before = before
+        self.after = after
+        self.runsScored = runsScored
+        self.shortExplanation = shortExplanation
+    }
+}
+
+public struct PitchAnalysisEntry: Codable, Equatable, Sendable {
+    public let pitchType: PitchType
+    public let wasInZone: Bool
+    public let batterSwung: Bool
+    public let outcome: PitchOutcome
+    public let selectionQuality: SelectionQuality
+    public let executionQuality: Int
+    public let contactQuality: Int?
+    public let expectedDamage: Int
+    public let actualDamage: Int
+    public let recommendationAccepted: Bool
+
+    public init(
+        pitchType: PitchType,
+        wasInZone: Bool,
+        batterSwung: Bool,
+        outcome: PitchOutcome,
+        selectionQuality: SelectionQuality,
+        executionQuality: Int,
+        contactQuality: Int?,
+        expectedDamage: Int,
+        actualDamage: Int,
+        recommendationAccepted: Bool
+    ) {
+        self.pitchType = pitchType
+        self.wasInZone = wasInZone
+        self.batterSwung = batterSwung
+        self.outcome = outcome
+        self.selectionQuality = selectionQuality
+        self.executionQuality = executionQuality
+        self.contactQuality = contactQuality
+        self.expectedDamage = expectedDamage
+        self.actualDamage = actualDamage
+        self.recommendationAccepted = recommendationAccepted
+    }
+}
+
+public struct GameLogSnapshot: Codable, Equatable, Sendable {
+    public let gameID: String
+    public let revision: UInt64
+    public let totalPitches: Int
+    public let entries: [PitchAnalysisEntry]
+
+    public init(
+        gameID: String,
+        revision: UInt64,
+        totalPitches: Int,
+        entries: [PitchAnalysisEntry]
+    ) {
+        self.gameID = gameID
+        self.revision = revision
+        self.totalPitches = totalPitches
+        self.entries = entries
+    }
+}
+
+public struct PitchAnalysisBreakdown: Codable, Equatable, Sendable {
+    public let pitchType: PitchType
+    public let pitches: Int
+    public let zoneRate: Int
+    public let whiffRate: Int
+    public let hardHitRate: Int
+    public let expectedDamage: Int
+
+    public init(
+        pitchType: PitchType,
+        pitches: Int,
+        zoneRate: Int,
+        whiffRate: Int,
+        hardHitRate: Int,
+        expectedDamage: Int
+    ) {
+        self.pitchType = pitchType
+        self.pitches = pitches
+        self.zoneRate = zoneRate
+        self.whiffRate = whiffRate
+        self.hardHitRate = hardHitRate
+        self.expectedDamage = expectedDamage
+    }
+}
+
+public struct PostgameAnalysisSnapshot: Codable, Equatable, Sendable {
+    public let sampleSize: Int
+    public let confidence: AnalysisConfidenceBand
+    public let zoneRate: Int
+    public let whiffRate: Int
+    public let hardHitRate: Int
+    public let averageSelectionQuality: Int
+    public let averageExecutionQuality: Int
+    public let expectedDamage: Int
+    public let actualDamage: Int
+    public let pitchBreakdowns: [PitchAnalysisBreakdown]
+    public let patternWarning: String
+    public let growthSignal: String
+
+    public init(
+        sampleSize: Int,
+        confidence: AnalysisConfidenceBand,
+        zoneRate: Int,
+        whiffRate: Int,
+        hardHitRate: Int,
+        averageSelectionQuality: Int,
+        averageExecutionQuality: Int,
+        expectedDamage: Int,
+        actualDamage: Int,
+        pitchBreakdowns: [PitchAnalysisBreakdown],
+        patternWarning: String,
+        growthSignal: String
+    ) {
+        self.sampleSize = sampleSize
+        self.confidence = confidence
+        self.zoneRate = zoneRate
+        self.whiffRate = whiffRate
+        self.hardHitRate = hardHitRate
+        self.averageSelectionQuality = averageSelectionQuality
+        self.averageExecutionQuality = averageExecutionQuality
+        self.expectedDamage = expectedDamage
+        self.actualDamage = actualDamage
+        self.pitchBreakdowns = pitchBreakdowns
+        self.patternWarning = patternWarning
+        self.growthSignal = growthSignal
+    }
+}
+
+public struct BallInPlayEngine: Sendable {
+    public init() {}
+
+    public func resolve(
+        _ battedBall: BattedBall,
+        gameState: GameStateSnapshot,
+        seed: UInt64,
+        ordinal: Int
+    ) -> FieldingResolutionSnapshot {
+        let neutralOutcome = outcome(for: battedBall.contactQuality)
+        let sector: FieldingSector
+        if battedBall.launchAngleTenthsDegrees < 90 {
+            sector = .infield
+        } else if neutralOutcome == .homeRun
+            || (battedBall.contactQuality >= 700
+                && (150...350).contains(battedBall.launchAngleTenthsDegrees)) {
+            sector = .fence
+        } else {
+            sector = .outfield
+        }
+        let defenseRating = sector == .infield
+            ? gameState.defense.infield
+            : gameState.defense.outfield
+        let defenseScale = sector == .fence ? 1 : 4
+        let defenseAdjustment = -(defenseRating - 50) * defenseScale
+        let hitAdjustment = (gameState.park.hitFactor - 1_000) / 3
+        let homeRunAdjustment = neutralOutcome == .homeRun || battedBall.contactQuality >= 720
+            ? (gameState.park.homeRunFactor - 1_000) / 2
+            : 0
+        let parkAdjustment = hitAdjustment + homeRunAdjustment
+        var generator = SplitMix64(
+            seed: seed ^ 0x4649_454c_44 ^ (UInt64(ordinal) &* 0x9E37_79B9)
+        )
+        let randomRange = sector == .fence ? 81 : 241
+        let randomAdjustment = generator.nextInt(upperBound: randomRange) - randomRange / 2
+        let adjustedQuality = clamp(
+            battedBall.contactQuality + defenseAdjustment + parkAdjustment + randomAdjustment,
+            0,
+            1_000
+        )
+        let rawFinalOutcome = outcome(for: adjustedQuality)
+        let finalOutcome: PitchOutcome
+        switch (sector, rawFinalOutcome) {
+        case (.infield, .double), (.infield, .homeRun): finalOutcome = .single
+        case (.outfield, .homeRun): finalOutcome = .double
+        default: finalOutcome = rawFinalOutcome
+        }
+        let impact = impactFrom(neutral: neutralOutcome, final: finalOutcome)
+        let explanation: String
+        switch impact {
+        case .helpedPitcher:
+            explanation = "수비 위치와 첫발이 안타성 타구의 결과를 낮췄습니다."
+        case .hurtPitcher:
+            explanation = parkAdjustment >= 60
+                ? "구장 환경이 타구를 더 위험한 결과로 키웠습니다."
+                : "수비 범위를 벗어난 타구가 더 큰 결과로 이어졌습니다."
+        case .neutral:
+            explanation = abs(parkAdjustment) >= 60
+                ? "구장 효과가 있었지만 최종 결과 단계는 바뀌지 않았습니다."
+                : "타구 질이 예상한 중립 결과로 이어졌습니다."
+        }
+        return FieldingResolutionSnapshot(
+            neutralOutcome: neutralOutcome,
+            finalOutcome: finalOutcome,
+            sector: sector,
+            difficulty: clamp(1_000 - battedBall.contactQuality + abs(randomAdjustment), 0, 1_000),
+            defenseRating: defenseRating,
+            defenseAdjustment: defenseAdjustment,
+            parkAdjustment: parkAdjustment,
+            impact: impact,
+            shortExplanation: explanation
+        )
+    }
+
+    private func outcome(for quality: Int) -> PitchOutcome {
+        switch quality {
+        case ..<500: return .inPlayOut
+        case 500..<690: return .single
+        case 690..<790: return .double
+        default: return .homeRun
+        }
+    }
+
+    private func impactFrom(neutral: PitchOutcome, final: PitchOutcome) -> DefenseImpact {
+        let neutralValue = outcomeValue(neutral)
+        let finalValue = outcomeValue(final)
+        if finalValue < neutralValue { return .helpedPitcher }
+        if finalValue > neutralValue { return .hurtPitcher }
+        return .neutral
+    }
+
+    private func outcomeValue(_ outcome: PitchOutcome) -> Int {
+        switch outcome {
+        case .inPlayOut: return 0
+        case .single: return 1
+        case .double: return 2
+        case .homeRun: return 3
+        default: return 0
+        }
+    }
+
+    private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
+        min(max(value, lower), upper)
+    }
+}
+
+public struct BaserunnerEngine: Sendable {
+    public init() {}
+
+    public func advance(
+        _ runners: BaserunnerStateSnapshot,
+        outcome: PitchOutcome,
+        plateAppearanceResult: PlateAppearanceResult,
+        defense: DefenseSnapshot,
+        seed: UInt64
+    ) -> BaserunnerAdvanceSnapshot {
+        let after: BaserunnerStateSnapshot
+        let runs: Int
+        var generator = SplitMix64(seed: seed ^ 0x5255_4e4e_4552)
+        switch plateAppearanceResult {
+        case .strikeout, .inPlayOut:
+            after = runners
+            runs = 0
+        case .walk:
+            let forcedRun = runners.firstOccupied && runners.secondOccupied && runners.thirdOccupied
+            after = BaserunnerStateSnapshot(
+                firstOccupied: true,
+                secondOccupied: runners.secondOccupied || runners.firstOccupied,
+                thirdOccupied: runners.thirdOccupied || (runners.firstOccupied && runners.secondOccupied),
+                leadRunnerSpeed: runners.leadRunnerSpeed
+            )
+            runs = forcedRun ? 1 : 0
+        case .hit:
+            switch outcome {
+            case .single:
+                let secondScores = runners.secondOccupied
+                    && extraBaseSucceeds(
+                        speed: runners.leadRunnerSpeed,
+                        arm: defense.arm,
+                        roll: generator.nextInt(upperBound: 1_000),
+                        threshold: 500
+                    )
+                let firstTakesThird = runners.firstOccupied && !runners.secondOccupied
+                    && extraBaseSucceeds(
+                        speed: runners.leadRunnerSpeed,
+                        arm: defense.arm,
+                        roll: generator.nextInt(upperBound: 1_000),
+                        threshold: 650
+                    )
+                let thirdOccupied = (runners.secondOccupied && !secondScores) || firstTakesThird
+                after = BaserunnerStateSnapshot(
+                    firstOccupied: true,
+                    secondOccupied: runners.firstOccupied && !firstTakesThird,
+                    thirdOccupied: thirdOccupied,
+                    leadRunnerSpeed: 50
+                )
+                runs = (runners.thirdOccupied ? 1 : 0) + (secondScores ? 1 : 0)
+            case .double:
+                let firstScores = runners.firstOccupied
+                    && extraBaseSucceeds(
+                        speed: runners.leadRunnerSpeed,
+                        arm: defense.arm,
+                        roll: generator.nextInt(upperBound: 1_000),
+                        threshold: 540
+                    )
+                after = BaserunnerStateSnapshot(
+                    firstOccupied: false,
+                    secondOccupied: true,
+                    thirdOccupied: runners.firstOccupied && !firstScores,
+                    leadRunnerSpeed: 50
+                )
+                runs = (runners.secondOccupied ? 1 : 0)
+                    + (runners.thirdOccupied ? 1 : 0)
+                    + (firstScores ? 1 : 0)
+            case .homeRun:
+                after = .empty
+                runs = runners.occupiedCount + 1
+            default:
+                after = runners
+                runs = 0
+            }
+        }
+        let explanation: String
+        if runs > 0 {
+            explanation = "주자 진루로 \(runs)점을 허용했습니다."
+        } else if after != runners {
+            explanation = "타석 결과에 따라 주자 배치가 바뀌었습니다."
+        } else {
+            explanation = "주자 배치는 유지됐습니다."
+        }
+        return BaserunnerAdvanceSnapshot(
+            before: runners,
+            after: after,
+            runsScored: runs,
+            shortExplanation: explanation
+        )
+    }
+
+    private func extraBaseSucceeds(speed: Int, arm: Int, roll: Int, threshold: Int) -> Bool {
+        roll + (speed - arm) * 8 >= threshold
+    }
+}
+
+public struct GameAnalysisEngine: Sendable {
+    public static let maximumEntries = 120
+
+    public init() {}
+
+    public func validate(_ log: GameLogSnapshot?) throws {
+        guard let log else { return }
+        guard !log.gameID.isEmpty,
+              log.totalPitches >= log.entries.count,
+              log.entries.count <= Self.maximumEntries else {
+            throw SimulationError.invalidGameLog("game log metadata is inconsistent")
+        }
+        for entry in log.entries {
+            guard (0...1_000).contains(entry.executionQuality),
+                  entry.contactQuality.map({ (0...1_000).contains($0) }) ?? true,
+                  entry.expectedDamage >= 0,
+                  entry.actualDamage >= 0 else {
+                throw SimulationError.invalidGameLog("an analysis entry is outside the valid range")
+            }
+        }
+    }
+
+    public func record(
+        _ log: GameLogSnapshot?,
+        gameID: String,
+        pitchType: PitchType,
+        wasInZone: Bool,
+        batterSwung: Bool,
+        outcome: PitchOutcome,
+        plateAppearanceResult: PlateAppearanceResult?,
+        selectionQuality: SelectionQuality,
+        executionQuality: Int,
+        battedBall: BattedBall?,
+        fielding: FieldingResolutionSnapshot?,
+        recommendationAccepted: Bool
+    ) -> GameLogSnapshot {
+        let current = log ?? GameLogSnapshot(
+            gameID: gameID,
+            revision: 0,
+            totalPitches: 0,
+            entries: []
+        )
+        let entry = PitchAnalysisEntry(
+            pitchType: pitchType,
+            wasInZone: wasInZone,
+            batterSwung: batterSwung,
+            outcome: outcome,
+            selectionQuality: selectionQuality,
+            executionQuality: executionQuality,
+            contactQuality: battedBall?.contactQuality,
+            expectedDamage: damageValue(fielding?.neutralOutcome ?? outcome, result: plateAppearanceResult),
+            actualDamage: damageValue(outcome, result: plateAppearanceResult),
+            recommendationAccepted: recommendationAccepted
+        )
+        return GameLogSnapshot(
+            gameID: current.gameID,
+            revision: current.revision + 1,
+            totalPitches: current.totalPitches + 1,
+            entries: Array((current.entries + [entry]).suffix(Self.maximumEntries))
+        )
+    }
+
+    public func analyze(_ log: GameLogSnapshot) -> PostgameAnalysisSnapshot {
+        let entries = log.entries
+        let swings = entries.filter(\.batterSwung)
+        let contacts = entries.filter { $0.contactQuality != nil }
+        let pitchBreakdowns = PitchType.allCases.compactMap { pitchType -> PitchAnalysisBreakdown? in
+            let matching = entries.filter { $0.pitchType == pitchType }
+            guard !matching.isEmpty else { return nil }
+            let matchingSwings = matching.filter(\.batterSwung)
+            let matchingContacts = matching.filter { $0.contactQuality != nil }
+            return PitchAnalysisBreakdown(
+                pitchType: pitchType,
+                pitches: matching.count,
+                zoneRate: rate(matching.filter(\.wasInZone).count, matching.count),
+                whiffRate: rate(
+                    matching.filter { $0.outcome == .swingingStrike }.count,
+                    matchingSwings.count
+                ),
+                hardHitRate: rate(
+                    matchingContacts.filter { ($0.contactQuality ?? 0) >= 650 }.count,
+                    matchingContacts.count
+                ),
+                expectedDamage: matching.reduce(0) { $0 + $1.expectedDamage }
+            )
+        }
+        let topPitch = pitchBreakdowns.max { $0.pitches < $1.pitches }
+        let patternWarning: String
+        if entries.count < 6 {
+            patternWarning = "표본이 적어 패턴 판단을 보류합니다. 최소 6구가 필요합니다."
+        } else if let topPitch, topPitch.pitches * 100 >= entries.count * 55 {
+            patternWarning = "\(pitchName(topPitch.pitchType)) 비중이 55%를 넘어 반복 노출을 점검해야 합니다."
+        } else {
+            patternWarning = "구종 사용이 한쪽으로 치우치지 않았습니다."
+        }
+        let averageExecution = average(entries.map(\.executionQuality))
+        let hardHitRate = rate(
+            contacts.filter { ($0.contactQuality ?? 0) >= 650 }.count,
+            contacts.count
+        )
+        let averageSelection = average(entries.map { selectionScore($0.selectionQuality) })
+        let growthSignal: String
+        if averageExecution < 600 {
+            growthSignal = "우선 훈련 후보: 릴리스 재현성과 코스 실행"
+        } else if hardHitRate >= 300 {
+            growthSignal = "우선 훈련 후보: 약한 타구 유도와 변화구 완성도"
+        } else if averageSelection < 650 {
+            growthSignal = "우선 훈련 후보: 카운트별 구종 설계"
+        } else {
+            growthSignal = "성장 신호: 선택과 실행이 함께 안정되고 있습니다."
+        }
+        let confidence: AnalysisConfidenceBand
+        switch entries.count {
+        case ..<8: confidence = .low
+        case 8..<20: confidence = .developing
+        default: confidence = .reliable
+        }
+        return PostgameAnalysisSnapshot(
+            sampleSize: entries.count,
+            confidence: confidence,
+            zoneRate: rate(entries.filter(\.wasInZone).count, entries.count),
+            whiffRate: rate(entries.filter { $0.outcome == .swingingStrike }.count, swings.count),
+            hardHitRate: hardHitRate,
+            averageSelectionQuality: averageSelection,
+            averageExecutionQuality: averageExecution,
+            expectedDamage: entries.reduce(0) { $0 + $1.expectedDamage },
+            actualDamage: entries.reduce(0) { $0 + $1.actualDamage },
+            pitchBreakdowns: pitchBreakdowns,
+            patternWarning: patternWarning,
+            growthSignal: growthSignal
+        )
+    }
+
+    private func damageValue(_ outcome: PitchOutcome, result: PlateAppearanceResult?) -> Int {
+        if result == .walk { return 330 }
+        switch outcome {
+        case .single: return 470
+        case .double: return 780
+        case .homeRun: return 1_400
+        default: return 0
+        }
+    }
+
+    private func selectionScore(_ quality: SelectionQuality) -> Int {
+        switch quality {
+        case .poor: return 250
+        case .risky: return 450
+        case .good: return 700
+        case .excellent: return 900
+        }
+    }
+
+    private func rate(_ numerator: Int, _ denominator: Int) -> Int {
+        denominator == 0 ? 0 : numerator * 1_000 / denominator
+    }
+
+    private func average(_ values: [Int]) -> Int {
+        values.isEmpty ? 0 : values.reduce(0, +) / values.count
+    }
+
+    private func pitchName(_ pitchType: PitchType) -> String {
+        switch pitchType {
+        case .fourSeam: return "포심"
+        case .slider: return "슬라이더"
+        case .curveball: return "커브"
+        case .changeup: return "체인지업"
+        }
+    }
+}

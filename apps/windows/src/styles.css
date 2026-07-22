@@ -488,6 +488,35 @@ main {
   color: #efc880;
 }
 
+.environment-card {
+  display: grid;
+  gap: 7px;
+  margin: -8px 0 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #111a17;
+}
+
+.environment-card > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.environment-card span,
+.environment-card small {
+  color: var(--subtle);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.environment-card strong {
+  color: #cbd8d3;
+  font-size: 9px;
+}
+
 .decision-panel {
   border-color: #385044;
   background:
@@ -930,6 +959,138 @@ legend {
   color: #a8bab4;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 9px;
+}
+
+.fielding-resolution {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #101816;
+}
+
+.fielding-resolution > div {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.fielding-resolution span,
+.fielding-resolution small {
+  color: var(--subtle);
+  font-size: 8px;
+}
+
+.fielding-resolution strong {
+  font-size: 9px;
+}
+
+.fielding-resolution b {
+  color: var(--lime);
+  font-size: 10px;
+}
+
+.fielding-resolution p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.fielding-resolution--helped_pitcher {
+  border-color: #38573e;
+}
+
+.fielding-resolution--hurt_pitcher {
+  border-color: #613c36;
+}
+
+.runner-resolution {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface-raised);
+  font-size: 9px;
+}
+
+.runner-resolution strong {
+  color: var(--text);
+}
+
+.postgame-analysis {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid #34493f;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #121c18, #0f1614);
+}
+
+.analysis-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.analysis-metrics > div {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.analysis-metrics span {
+  color: var(--subtle);
+  font-size: 7px;
+}
+
+.analysis-metrics strong {
+  font-size: 10px;
+}
+
+.postgame-analysis > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.growth-signal {
+  color: var(--lime);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.pitch-analysis-list {
+  display: grid;
+  gap: 5px;
+}
+
+.pitch-analysis-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #26322e;
+}
+
+.pitch-analysis-list strong,
+.pitch-analysis-list span {
+  font-size: 8px;
+}
+
+.pitch-analysis-list small,
+.pitch-analysis-list span {
+  color: var(--subtle);
 }
 
 .empty-result {

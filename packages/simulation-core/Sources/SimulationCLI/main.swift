@@ -11,6 +11,12 @@ struct BatchReport: Codable {
     let pitcherPreset: String
     let rivalMemoryMode: String
     let finalRivalAdaptationLevel: Int
+    let defenseRating: Int
+    let parkFactor: Int
+    let runsAllowed: Int
+    let expectedDamage: Int
+    let actualDamage: Int
+    let analysisConfidence: String
 }
 
 enum BatchStrategy: String {
@@ -51,6 +57,22 @@ let rivalMemoryMode: RivalMemoryMode = {
     guard arguments.indices.contains(valueIndex) else { return .reset }
     return RivalMemoryMode(rawValue: arguments[valueIndex]) ?? .reset
 }()
+let defenseRating: Int = {
+    guard let index = arguments.firstIndex(of: "--defense") else { return 50 }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex), let value = Int(arguments[valueIndex]) else {
+        return 50
+    }
+    return min(max(value, 20), 80)
+}()
+let parkFactor: Int = {
+    guard let index = arguments.firstIndex(of: "--park") else { return 1_000 }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex), let value = Int(arguments[valueIndex]) else {
+        return 1_000
+    }
+    return min(max(value, 700), 1_300)
+}()
 
 guard let preset = PitcherPresetCatalog.all.first(where: { $0.id == presetID }) else {
     let available = PitcherPresetCatalog.all.map(\.id).joined(separator: ", ")
@@ -84,10 +106,39 @@ var plateAppearanceResults: [String: Int] = [:]
 var pitchOutcomes: [String: Int] = [:]
 var totalPitches = 0
 var persistentMemory: RivalMemorySnapshot?
+var persistentGameLog: GameLogSnapshot?
 var finalAdaptationLevel = 0
+var totalRunsAllowed = 0
+var finalAnalysis: PostgameAnalysisSnapshot?
 
 for index in 1...iterations {
     var plateMemory = rivalMemoryMode == .persistent ? persistentMemory : nil
+    var gameState = GameStateSnapshot(
+        defense: DefenseSnapshot(
+            infield: defenseRating,
+            outfield: defenseRating,
+            arm: defenseRating
+        ),
+        park: ParkSnapshot(
+            id: "batch-park",
+            name: "배치 테스트 구장",
+            hitFactor: parkFactor,
+            homeRunFactor: parkFactor
+        ),
+        runners: BaserunnerStateSnapshot(
+            firstOccupied: true,
+            secondOccupied: false,
+            thirdOccupied: false,
+            leadRunnerSpeed: 55
+        ),
+        runsAllowed: 0
+    )
+    var gameLog = persistentGameLog ?? GameLogSnapshot(
+        gameID: "batch-game",
+        revision: 0,
+        totalPitches: 0,
+        entries: []
+    )
     var seed = String(index)
     var context = PlateAppearanceContext(
         plateAppearanceID: "batch-pa-\(index)",
@@ -108,7 +159,9 @@ for index in 1...iterations {
             batter: batter,
             scouting: scouting,
             context: context,
-            rivalMemory: plateMemory
+            rivalMemory: plateMemory,
+            gameState: gameState,
+            gameLog: gameLog
         )
     )
 
@@ -131,15 +184,22 @@ for index in 1...iterations {
                 context: context,
                 preparationToken: preparation.preparationToken,
                 call: call,
-                rivalMemory: plateMemory
+                rivalMemory: plateMemory,
+                gameState: gameState,
+                gameLog: gameLog
             )
         )
         plateMemory = result.rivalMemory
+        gameState = result.gameState
+        gameLog = result.gameLog
+        finalAnalysis = result.postgameAnalysis
         finalAdaptationLevel = result.rivalAdaptation.level
         totalPitches += 1
         pitchOutcomes[result.snapshot.outcome.rawValue, default: 0] += 1
         if let finalResult = result.snapshot.result {
             plateAppearanceResults[finalResult.rawValue, default: 0] += 1
+            totalRunsAllowed += result.snapshot.runsScored
+            persistentGameLog = result.gameLog
             if rivalMemoryMode == .persistent {
                 persistentMemory = result.rivalMemory
             }
@@ -175,7 +235,13 @@ let report = BatchReport(
     strategy: strategy.rawValue,
     pitcherPreset: preset.id,
     rivalMemoryMode: rivalMemoryMode.rawValue,
-    finalRivalAdaptationLevel: finalAdaptationLevel
+    finalRivalAdaptationLevel: finalAdaptationLevel,
+    defenseRating: defenseRating,
+    parkFactor: parkFactor,
+    runsAllowed: totalRunsAllowed,
+    expectedDamage: finalAnalysis?.expectedDamage ?? 0,
+    actualDamage: finalAnalysis?.actualDamage ?? 0,
+    analysisConfidence: finalAnalysis?.confidence.rawValue ?? AnalysisConfidenceBand.low.rawValue
 )
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

@@ -8,7 +8,10 @@ import {
 import type {
   BatterScoutingSnapshot,
   BatterSnapshot,
+  BaserunnerStateSnapshot,
   CatcherRecommendationSnapshot,
+  GameLogSnapshot,
+  GameStateSnapshot,
   HealthResult,
   PitchIntensity,
   PitchKernelResult,
@@ -54,6 +57,30 @@ const INITIAL_CONTEXT: PlateAppearanceContext = {
   scoreDifferential: 0,
   leverage: 600,
   fatigue: 12,
+};
+
+const INITIAL_GAME_STATE: GameStateSnapshot = {
+  defense: { infield: 58, outfield: 55, arm: 57 },
+  park: {
+    id: "hanbit-school-park",
+    name: "한빛고 야구장",
+    hitFactor: 980,
+    homeRunFactor: 930,
+  },
+  runners: {
+    firstOccupied: true,
+    secondOccupied: false,
+    thirdOccupied: false,
+    leadRunnerSpeed: 62,
+  },
+  runsAllowed: 0,
+};
+
+const INITIAL_GAME_LOG: GameLogSnapshot = {
+  gameID: "practice-game-20260721",
+  revision: 0,
+  totalPitches: 0,
+  entries: [],
 };
 
 const PITCH_OPTIONS: ReadonlyArray<{
@@ -204,6 +231,27 @@ function roleLabel(profile: PitchProfileSnapshot) {
   }
 }
 
+function runnerLabel(runners: BaserunnerStateSnapshot) {
+  const occupied = [
+    runners.firstOccupied ? "1루" : undefined,
+    runners.secondOccupied ? "2루" : undefined,
+    runners.thirdOccupied ? "3루" : undefined,
+  ].filter(Boolean);
+  return occupied.length > 0 ? `주자 ${occupied.join("·")}` : "주자 없음";
+}
+
+function rateLabel(value: number) {
+  return `${(value / 10).toFixed(1)}%`;
+}
+
+function confidenceLabel(value: PitchKernelResult["postgameAnalysis"]["confidence"]) {
+  switch (value) {
+    case "low": return "신뢰도 낮음";
+    case "developing": return "표본 형성 중";
+    case "reliable": return "분석 신뢰 가능";
+  }
+}
+
 function pitchHint(profile?: PitchProfileSnapshot) {
   if (!profile) return "프로필 없음";
   return `${roleLabel(profile)} · ${(profile.velocityTenthsKPH / 10).toFixed(0)} km/h`;
@@ -224,6 +272,8 @@ export function App() {
   const [lastResult, setLastResult] = useState<PitchKernelResult>();
   const [history, setHistory] = useState<ReadonlyArray<HistoryItem>>([]);
   const [rivalMemory, setRivalMemory] = useState<RivalMemorySnapshot>();
+  const [gameState, setGameState] = useState<GameStateSnapshot>(INITIAL_GAME_STATE);
+  const [gameLog, setGameLog] = useState<GameLogSnapshot>(INITIAL_GAME_LOG);
   const [error, setError] = useState<string>();
 
   const selectedPreset = presets.find((preset) => preset.id === selectedPresetID);
@@ -258,6 +308,8 @@ export function App() {
         batter: BATTER,
         scouting: SCOUTING,
         context: INITIAL_CONTEXT,
+        gameState: INITIAL_GAME_STATE,
+        gameLog: INITIAL_GAME_LOG,
       });
       setPresets(availablePresets);
       setSelectedPresetID(initialPreset.id);
@@ -267,6 +319,8 @@ export function App() {
       setLastResult(undefined);
       setHistory([]);
       setRivalMemory(undefined);
+      setGameState(INITIAL_GAME_STATE);
+      setGameLog(INITIAL_GAME_LOG);
       applyRecommendation(initialPreparation.primaryRecommendation);
       setCoreStatus({ state: "online", health });
     } catch (caught) {
@@ -293,9 +347,13 @@ export function App() {
         preparationToken: preparation.preparationToken,
         call: { pitchType, zone, zoneIntent, intensity },
         rivalMemory,
+        gameState,
+        gameLog,
       });
       setLastResult(result);
       setRivalMemory(result.rivalMemory);
+      setGameState(result.gameState);
+      setGameLog(result.gameLog);
       setHistory((current) => [
         {
           eventHash: result.eventHash,
@@ -319,14 +377,23 @@ export function App() {
         caught instanceof Error ? caught.message : "투구 결과를 계산하지 못했습니다.";
       setError(message);
       try {
-        setPreparation(await preparePitch({ seed, pitcher, batter: BATTER, scouting: SCOUTING, context, rivalMemory }));
+        setPreparation(await preparePitch({
+          seed,
+          pitcher,
+          batter: BATTER,
+          scouting: SCOUTING,
+          context,
+          rivalMemory,
+          gameState,
+          gameLog,
+        }));
       } catch {
         setCoreStatus({ state: "offline", message });
       }
     } finally {
       setIsRunning(false);
     }
-  }, [context, intensity, pitchType, pitcher, preparation, rivalMemory, seed, zone, zoneIntent]);
+  }, [context, gameLog, gameState, intensity, pitchType, pitcher, preparation, rivalMemory, seed, zone, zoneIntent]);
 
   const handleNewPlateAppearance = useCallback(async () => {
     if (!pitcher) return;
@@ -344,17 +411,20 @@ export function App() {
         scouting: SCOUTING,
         context: nextContext,
         rivalMemory,
+        gameState,
+        gameLog,
       });
       setContext(nextContext);
       setPreparation(nextPreparation);
       setLastResult(undefined);
+      setHistory([]);
       applyRecommendation(nextPreparation.primaryRecommendation);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "새 타석을 시작하지 못했습니다.");
     } finally {
       setIsRunning(false);
     }
-  }, [applyRecommendation, pitcher, rivalMemory, seed]);
+  }, [applyRecommendation, gameLog, gameState, pitcher, rivalMemory, seed]);
 
   const handlePresetChange = useCallback(async (presetID: string) => {
     const nextPreset = presets.find((preset) => preset.id === presetID);
@@ -365,6 +435,10 @@ export function App() {
       ...INITIAL_CONTEXT,
       plateAppearanceID: `pa-preset-${nextPreset.id}-${Date.now()}`,
     };
+    const nextGameLog: GameLogSnapshot = {
+      ...INITIAL_GAME_LOG,
+      gameID: `practice-game-${nextPreset.id}-${Date.now()}`,
+    };
     try {
       const nextPreparation = await preparePitch({
         seed,
@@ -372,6 +446,8 @@ export function App() {
         batter: BATTER,
         scouting: SCOUTING,
         context: nextContext,
+        gameState: INITIAL_GAME_STATE,
+        gameLog: nextGameLog,
       });
       setSelectedPresetID(nextPreset.id);
       setContext(nextContext);
@@ -379,6 +455,8 @@ export function App() {
       setLastResult(undefined);
       setHistory([]);
       setRivalMemory(undefined);
+      setGameState(INITIAL_GAME_STATE);
+      setGameLog(nextGameLog);
       applyRecommendation(nextPreparation.primaryRecommendation);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "투수 프리셋을 바꾸지 못했습니다.");
@@ -416,13 +494,13 @@ export function App() {
         <section className="game-context" aria-label="경기 상황">
           <div>
             <span className="context-label">고교 연습 경기 · 7회말</span>
-            <strong>무사 1루 · B {context.balls} / S {context.strikes} · {context.pitchNumber}구</strong>
+            <strong>무사 · {runnerLabel(gameState.runners)} · B {context.balls} / S {context.strikes} · {context.pitchNumber}구</strong>
           </div>
           <div className="matchup">
             <span>{pitcher?.name ?? "투수 준비 중"}</span><b>VS</b><span>{BATTER.name}</span>
           </div>
-          <div className="scoreboard" aria-label="현재 점수 2 대 2">
-            <span>한빛고</span><strong>2 : 2</strong><span>대명고</span>
+          <div className="scoreboard" aria-label={`현재 점수 2 대 ${2 + gameState.runsAllowed}`}>
+            <span>한빛고</span><strong>2 : {2 + gameState.runsAllowed}</strong><span>대명고</span>
           </div>
         </section>
 
@@ -465,6 +543,11 @@ export function App() {
                 <StatRow label="체력" value={pitcher.stamina} />
               </div>
             ) : null}
+            <div className="environment-card" aria-label="수비와 구장 환경">
+              <div><span>수비 지원</span><strong>내야 {gameState.defense.infield} · 외야 {gameState.defense.outfield}</strong></div>
+              <div><span>구장</span><strong>{gameState.park.name}</strong></div>
+              <small>안타 {rateLabel(gameState.park.hitFactor)} · 홈런 {rateLabel(gameState.park.homeRunFactor)}</small>
+            </div>
             <div className="scouting-card">
               <span>상대 타자 리포트</span>
               <strong>{BATTER.name} · 우타</strong>
@@ -641,6 +724,28 @@ export function App() {
                     <div><dt>타구 질</dt><dd>{lastResult.snapshot.battedBall.contactQuality}</dd></div>
                   </dl>
                 ) : null}
+                {lastResult.snapshot.fieldingResolution ? (
+                  <div className={`fielding-resolution fielding-resolution--${lastResult.snapshot.fieldingResolution.impact}`}>
+                    <div>
+                      <span>중립 예상</span>
+                      <strong>{OUTCOME_LABELS[lastResult.snapshot.fieldingResolution.neutralOutcome]}</strong>
+                      <b aria-hidden="true">→</b>
+                      <span>최종 결과</span>
+                      <strong>{OUTCOME_LABELS[lastResult.snapshot.fieldingResolution.finalOutcome]}</strong>
+                    </div>
+                    <p>{lastResult.snapshot.fieldingResolution.shortExplanation}</p>
+                    <small>
+                      수비 {lastResult.snapshot.fieldingResolution.defenseRating}
+                      {` · 구장 보정 ${lastResult.snapshot.fieldingResolution.parkAdjustment >= 0 ? "+" : ""}${lastResult.snapshot.fieldingResolution.parkAdjustment}`}
+                    </small>
+                  </div>
+                ) : null}
+                {lastResult.snapshot.ended ? (
+                  <div className="runner-resolution">
+                    <span>{runnerLabel(lastResult.snapshot.runnersAfter)}</span>
+                    <strong>{lastResult.snapshot.runsScored > 0 ? `${lastResult.snapshot.runsScored}실점` : "실점 없음"}</strong>
+                  </div>
+                ) : null}
                 <div className="event-proof">
                   <span>계획 커밋 → 콜 → 실행 → 결과</span>
                   <code>{lastResult.eventHash}</code>
@@ -652,6 +757,35 @@ export function App() {
                 <p>포수 추천을 그대로 쓰거나 수정한 뒤 첫 공을 던져보세요.</p>
               </div>
             )}
+
+            {lastResult ? (
+              <section className="postgame-analysis" aria-label="경기 후 분석 미리보기">
+                <div className="section-label">
+                  <span>경기 후 분석 미리보기</span>
+                  <small>{confidenceLabel(lastResult.postgameAnalysis.confidence)} · {lastResult.postgameAnalysis.sampleSize}구</small>
+                </div>
+                <div className="analysis-metrics">
+                  <div><span>존율</span><strong>{rateLabel(lastResult.postgameAnalysis.zoneRate)}</strong></div>
+                  <div><span>헛스윙률</span><strong>{rateLabel(lastResult.postgameAnalysis.whiffRate)}</strong></div>
+                  <div><span>강한 타구</span><strong>{rateLabel(lastResult.postgameAnalysis.hardHitRate)}</strong></div>
+                  <div><span>실행</span><strong>{lastResult.postgameAnalysis.averageExecutionQuality}</strong></div>
+                  <div><span>예상 피해</span><strong>{(lastResult.postgameAnalysis.expectedDamage / 1000).toFixed(2)}</strong></div>
+                  <div><span>실제 피해</span><strong>{(lastResult.postgameAnalysis.actualDamage / 1000).toFixed(2)}</strong></div>
+                </div>
+                <p>{lastResult.postgameAnalysis.patternWarning}</p>
+                <strong className="growth-signal">{lastResult.postgameAnalysis.growthSignal}</strong>
+                {lastResult.postgameAnalysis.pitchBreakdowns.length > 0 ? (
+                  <div className="pitch-analysis-list">
+                    {lastResult.postgameAnalysis.pitchBreakdowns.map((breakdown) => (
+                      <div key={breakdown.pitchType}>
+                        <strong>{pitchLabel(breakdown.pitchType)} <small>{breakdown.pitches}구</small></strong>
+                        <span>존 {rateLabel(breakdown.zoneRate)} · 헛스윙 {rateLabel(breakdown.whiffRate)} · 강타 {rateLabel(breakdown.hardHitRate)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
 
             <div className="history-section">
               <div className="section-label"><span>이번 타석 투구</span><small>최대 5개</small></div>
@@ -674,7 +808,7 @@ export function App() {
 
       <footer>
         <span>P1 Pitch Kernel</span>
-        <span>타자 계획 선확정 · 라이벌 패턴 기억 · ABS · 선택/실행/결과 분리</span>
+        <span>타자 계획 선확정 · 라이벌 패턴 기억 · 수비/구장/주루 · 경기 후 분석</span>
       </footer>
     </div>
   );

@@ -45,8 +45,8 @@ public struct RPCServer: Sendable {
             case "health":
                 let health = HealthResult(
                     status: "ok",
-                    protocolVersion: "1.3",
-                    coreVersion: "0.4.0"
+                    protocolVersion: "1.4",
+                    coreVersion: "0.5.0"
                 )
                 response = RPCResponse(id: request.id, result: try JSONValue.from(health))
             case "listPitcherPresets":

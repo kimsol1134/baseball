@@ -114,6 +114,9 @@ export type ZoneIntent = "strike" | "edge" | "chase";
 export type SelectionQuality = "poor" | "risky" | "good" | "excellent";
 export type PlateAppearanceResult = "strikeout" | "walk" | "in_play_out" | "hit";
 export type RivalAdaptationBand = "no_data" | "watching" | "learning" | "locked_on";
+export type FieldingSector = "infield" | "outfield" | "fence";
+export type DefenseImpact = "helped_pitcher" | "neutral" | "hurt_pitcher";
+export type AnalysisConfidenceBand = "low" | "developing" | "reliable";
 
 export interface PitchCall {
   pitchType: PitchType;
@@ -170,6 +173,96 @@ export interface RivalAdaptationSnapshot {
   warning: string;
 }
 
+export interface DefenseSnapshot {
+  infield: number;
+  outfield: number;
+  arm: number;
+}
+
+export interface ParkSnapshot {
+  id: string;
+  name: string;
+  hitFactor: number;
+  homeRunFactor: number;
+}
+
+export interface BaserunnerStateSnapshot {
+  firstOccupied: boolean;
+  secondOccupied: boolean;
+  thirdOccupied: boolean;
+  leadRunnerSpeed: number;
+}
+
+export interface GameStateSnapshot {
+  defense: DefenseSnapshot;
+  park: ParkSnapshot;
+  runners: BaserunnerStateSnapshot;
+  runsAllowed: number;
+}
+
+export interface FieldingResolutionSnapshot {
+  neutralOutcome: PitchOutcome;
+  finalOutcome: PitchOutcome;
+  sector: FieldingSector;
+  difficulty: number;
+  defenseRating: number;
+  defenseAdjustment: number;
+  parkAdjustment: number;
+  impact: DefenseImpact;
+  shortExplanation: string;
+}
+
+export interface BaserunnerAdvanceSnapshot {
+  before: BaserunnerStateSnapshot;
+  after: BaserunnerStateSnapshot;
+  runsScored: number;
+  shortExplanation: string;
+}
+
+export interface PitchAnalysisEntry {
+  pitchType: PitchType;
+  wasInZone: boolean;
+  batterSwung: boolean;
+  outcome: PitchOutcome;
+  selectionQuality: SelectionQuality;
+  executionQuality: number;
+  contactQuality?: number;
+  expectedDamage: number;
+  actualDamage: number;
+  recommendationAccepted: boolean;
+}
+
+export interface GameLogSnapshot {
+  gameID: string;
+  revision: number;
+  totalPitches: number;
+  entries: ReadonlyArray<PitchAnalysisEntry>;
+}
+
+export interface PitchAnalysisBreakdown {
+  pitchType: PitchType;
+  pitches: number;
+  zoneRate: number;
+  whiffRate: number;
+  hardHitRate: number;
+  expectedDamage: number;
+}
+
+export interface PostgameAnalysisSnapshot {
+  sampleSize: number;
+  confidence: AnalysisConfidenceBand;
+  zoneRate: number;
+  whiffRate: number;
+  hardHitRate: number;
+  averageSelectionQuality: number;
+  averageExecutionQuality: number;
+  expectedDamage: number;
+  actualDamage: number;
+  pitchBreakdowns: ReadonlyArray<PitchAnalysisBreakdown>;
+  patternWarning: string;
+  growthSignal: string;
+}
+
 export interface PreparePitchParams {
   seed: string;
   pitcher: PitcherSnapshot;
@@ -177,6 +270,8 @@ export interface PreparePitchParams {
   scouting: BatterScoutingSnapshot;
   context: PlateAppearanceContext;
   rivalMemory?: RivalMemorySnapshot;
+  gameState?: GameStateSnapshot;
+  gameLog?: GameLogSnapshot;
 }
 
 export interface SubmitPitchParams extends PreparePitchParams {
@@ -227,6 +322,9 @@ export interface PitchKernelEvent {
   outcome?: PitchOutcome;
   reasonCodes: ReadonlyArray<string>;
   rivalAdaptation?: RivalAdaptationSnapshot;
+  fieldingResolution?: FieldingResolutionSnapshot;
+  baserunnerAdvance?: BaserunnerAdvanceSnapshot;
+  postgameAnalysis?: PostgameAnalysisSnapshot;
 }
 
 export interface PlateAppearanceSnapshot {
@@ -242,6 +340,9 @@ export interface PlateAppearanceSnapshot {
   fatigueAfterPitch: number;
   execution: PitchExecution;
   battedBall?: BattedBall;
+  fieldingResolution?: FieldingResolutionSnapshot;
+  runnersAfter: BaserunnerStateSnapshot;
+  runsScored: number;
   reasonCodes: ReadonlyArray<string>;
   shortFeedback: string;
   detailFeedback: string;
@@ -256,5 +357,8 @@ export interface PitchKernelResult {
   nextPreparation?: PitchPreparation;
   rivalMemory: RivalMemorySnapshot;
   rivalAdaptation: RivalAdaptationSnapshot;
+  gameState: GameStateSnapshot;
+  gameLog: GameLogSnapshot;
+  postgameAnalysis: PostgameAnalysisSnapshot;
   eventHash: string;
 }

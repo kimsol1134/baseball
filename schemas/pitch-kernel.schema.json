@@ -122,6 +122,81 @@
       },
       "additionalProperties": false
     },
+    "defense": {
+      "type": "object",
+      "required": ["infield", "outfield", "arm"],
+      "properties": {
+        "infield": { "$ref": "#/$defs/rating" },
+        "outfield": { "$ref": "#/$defs/rating" },
+        "arm": { "$ref": "#/$defs/rating" }
+      },
+      "additionalProperties": false
+    },
+    "park": {
+      "type": "object",
+      "required": ["id", "name", "hitFactor", "homeRunFactor"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "hitFactor": { "type": "integer", "minimum": 700, "maximum": 1300 },
+        "homeRunFactor": { "type": "integer", "minimum": 700, "maximum": 1300 }
+      },
+      "additionalProperties": false
+    },
+    "runners": {
+      "type": "object",
+      "required": ["firstOccupied", "secondOccupied", "thirdOccupied", "leadRunnerSpeed"],
+      "properties": {
+        "firstOccupied": { "type": "boolean" },
+        "secondOccupied": { "type": "boolean" },
+        "thirdOccupied": { "type": "boolean" },
+        "leadRunnerSpeed": { "$ref": "#/$defs/rating" }
+      },
+      "additionalProperties": false
+    },
+    "gameState": {
+      "type": "object",
+      "required": ["defense", "park", "runners", "runsAllowed"],
+      "properties": {
+        "defense": { "$ref": "#/$defs/defense" },
+        "park": { "$ref": "#/$defs/park" },
+        "runners": { "$ref": "#/$defs/runners" },
+        "runsAllowed": { "type": "integer", "minimum": 0, "maximum": 99 }
+      },
+      "additionalProperties": false
+    },
+    "analysisEntry": {
+      "type": "object",
+      "required": ["pitchType", "wasInZone", "batterSwung", "outcome", "selectionQuality", "executionQuality", "expectedDamage", "actualDamage", "recommendationAccepted"],
+      "properties": {
+        "pitchType": { "enum": ["four_seam", "slider", "curveball", "changeup"] },
+        "wasInZone": { "type": "boolean" },
+        "batterSwung": { "type": "boolean" },
+        "outcome": { "enum": ["ball", "called_strike", "swinging_strike", "foul", "in_play_out", "single", "double", "home_run"] },
+        "selectionQuality": { "enum": ["poor", "risky", "good", "excellent"] },
+        "executionQuality": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "contactQuality": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "expectedDamage": { "type": "integer", "minimum": 0 },
+        "actualDamage": { "type": "integer", "minimum": 0 },
+        "recommendationAccepted": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "gameLog": {
+      "type": "object",
+      "required": ["gameID", "revision", "totalPitches", "entries"],
+      "properties": {
+        "gameID": { "type": "string", "minLength": 1 },
+        "revision": { "type": "integer", "minimum": 0 },
+        "totalPitches": { "type": "integer", "minimum": 0 },
+        "entries": {
+          "type": "array",
+          "maxItems": 120,
+          "items": { "$ref": "#/$defs/analysisEntry" }
+        }
+      },
+      "additionalProperties": false
+    },
     "pitchCall": {
       "type": "object",
       "required": ["pitchType", "zone", "zoneIntent", "intensity"],
@@ -142,7 +217,9 @@
         "batter": { "$ref": "#/$defs/batter" },
         "scouting": { "$ref": "#/$defs/scouting" },
         "context": { "$ref": "#/$defs/context" },
-        "rivalMemory": { "$ref": "#/$defs/rivalMemory" }
+        "rivalMemory": { "$ref": "#/$defs/rivalMemory" },
+        "gameState": { "$ref": "#/$defs/gameState" },
+        "gameLog": { "$ref": "#/$defs/gameLog" }
       },
       "additionalProperties": false
     },
@@ -156,6 +233,8 @@
         "scouting": { "$ref": "#/$defs/scouting" },
         "context": { "$ref": "#/$defs/context" },
         "rivalMemory": { "$ref": "#/$defs/rivalMemory" },
+        "gameState": { "$ref": "#/$defs/gameState" },
+        "gameLog": { "$ref": "#/$defs/gameLog" },
         "preparationToken": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
         "call": { "$ref": "#/$defs/pitchCall" }
       },

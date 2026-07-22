@@ -135,13 +135,22 @@ public struct PitchKernelEngine: Sendable {
 
     private let recommendationEngine: CatcherRecommendationEngine
     private let rivalMemoryEngine: RivalMemoryEngine
+    private let ballInPlayEngine: BallInPlayEngine
+    private let baserunnerEngine: BaserunnerEngine
+    private let gameAnalysisEngine: GameAnalysisEngine
 
     public init(
         recommendationEngine: CatcherRecommendationEngine = CatcherRecommendationEngine(),
-        rivalMemoryEngine: RivalMemoryEngine = RivalMemoryEngine()
+        rivalMemoryEngine: RivalMemoryEngine = RivalMemoryEngine(),
+        ballInPlayEngine: BallInPlayEngine = BallInPlayEngine(),
+        baserunnerEngine: BaserunnerEngine = BaserunnerEngine(),
+        gameAnalysisEngine: GameAnalysisEngine = GameAnalysisEngine()
     ) {
         self.recommendationEngine = recommendationEngine
         self.rivalMemoryEngine = rivalMemoryEngine
+        self.ballInPlayEngine = ballInPlayEngine
+        self.baserunnerEngine = baserunnerEngine
+        self.gameAnalysisEngine = gameAnalysisEngine
     }
 
     public func preparePitch(_ params: PreparePitchParams) throws -> PitchPreparation {
@@ -180,7 +189,9 @@ public struct PitchKernelEngine: Sendable {
             batter: params.batter,
             scouting: params.scouting,
             context: params.context,
-            rivalMemory: params.rivalMemory
+            rivalMemory: params.rivalMemory,
+            gameState: params.gameState,
+            gameLog: params.gameLog
         )
         let seed = try validate(prepareParams)
         try validate(call: params.call, pitcher: params.pitcher)
@@ -207,7 +218,7 @@ public struct PitchKernelEngine: Sendable {
         let wasInZone = abs(execution.actualX) <= 500 && abs(execution.actualY) <= 500
         let planPitchMatched = plan.expectedPitch == params.call.pitchType
         let planZoneMatched = zonesAreNear(plan.expectedZone, params.call.zone)
-        let resolution = resolvePitch(
+        let neutralResolution = resolvePitch(
             params: params,
             plan: plan,
             execution: execution,
@@ -215,6 +226,17 @@ public struct PitchKernelEngine: Sendable {
             adaptation: adaptation,
             seed: seed
         )
+        let currentGameState = params.gameState ?? .standard
+        let fieldingResolution = neutralResolution.battedBall.map {
+            ballInPlayEngine.resolve(
+                $0,
+                gameState: currentGameState,
+                seed: seed,
+                ordinal: params.context.pitchNumber
+            )
+        }
+        let outcome = fieldingResolution?.finalOutcome ?? neutralResolution.outcome
+        let batterSwung = outcome != .ball && outcome != .calledStrike
         let selection = selectionQuality(
             call: params.call,
             pitcher: params.pitcher,
@@ -225,7 +247,7 @@ public struct PitchKernelEngine: Sendable {
         let recommendationAccepted = params.call == recommendations.primary.call
         let state = advanceCount(
             context: params.context,
-            outcome: resolution.outcome
+            outcome: outcome
         )
         let nextSeed = deriveNextSeed(seed)
         let revision = params.context.revision + 1
@@ -240,9 +262,39 @@ public struct PitchKernelEngine: Sendable {
             batter: params.batter,
             context: params.context,
             call: params.call,
-            outcome: resolution.outcome,
+            outcome: outcome,
             plateAppearanceEnded: state.result != nil
         )
+        let baserunnerAdvance = state.result.map {
+            baserunnerEngine.advance(
+                currentGameState.runners,
+                outcome: outcome,
+                plateAppearanceResult: $0,
+                defense: currentGameState.defense,
+                seed: seed
+            )
+        }
+        let updatedGameState = GameStateSnapshot(
+            defense: currentGameState.defense,
+            park: currentGameState.park,
+            runners: baserunnerAdvance?.after ?? currentGameState.runners,
+            runsAllowed: currentGameState.runsAllowed + (baserunnerAdvance?.runsScored ?? 0)
+        )
+        let updatedGameLog = gameAnalysisEngine.record(
+            params.gameLog,
+            gameID: params.gameLog?.gameID ?? "game-\(params.pitcher.id)",
+            pitchType: params.call.pitchType,
+            wasInZone: wasInZone,
+            batterSwung: batterSwung,
+            outcome: outcome,
+            plateAppearanceResult: state.result,
+            selectionQuality: selection,
+            executionQuality: execution.executionQuality,
+            battedBall: neutralResolution.battedBall,
+            fielding: fieldingResolution,
+            recommendationAccepted: recommendationAccepted
+        )
+        let postgameAnalysis = gameAnalysisEngine.analyze(updatedGameLog)
         let adaptationContext = PlateAppearanceContext(
             plateAppearanceID: params.context.plateAppearanceID,
             revision: revision,
@@ -260,22 +312,25 @@ public struct PitchKernelEngine: Sendable {
             context: adaptationContext
         )
         let reasonCodes = resolutionReasons(
-            outcome: resolution.outcome,
+            outcome: outcome,
             wasInZone: wasInZone,
             planPitchMatched: planPitchMatched,
             planZoneMatched: planZoneMatched,
             selectionQuality: selection,
             executionQuality: execution.executionQuality,
-            adaptation: adaptation
+            adaptation: adaptation,
+            fielding: fieldingResolution
         )
         let feedback = feedback(
-            outcome: resolution.outcome,
+            outcome: outcome,
             selection: selection,
             execution: execution,
             planPitchMatched: planPitchMatched,
             planZoneMatched: planZoneMatched,
-            battedBall: resolution.battedBall,
-            adaptation: adaptation
+            battedBall: neutralResolution.battedBall,
+            adaptation: adaptation,
+            fielding: fieldingResolution,
+            baserunnerAdvance: baserunnerAdvance
         )
 
         var events: [PitchKernelEvent] = []
@@ -314,17 +369,30 @@ public struct PitchKernelEngine: Sendable {
             PitchKernelEvent(
                 eventType: "pitch_resolved",
                 sequence: events.count,
-                outcome: resolution.outcome,
+                outcome: outcome,
                 reasonCodes: reasonCodes
             )
         )
-        if let battedBall = resolution.battedBall {
+        if let battedBall = neutralResolution.battedBall {
             events.append(
                 PitchKernelEvent(
                     eventType: "batted_ball_created",
                     sequence: events.count,
                     battedBall: battedBall,
                     reasonCodes: ["contact.quality.\(contactBand(battedBall.contactQuality))"]
+                )
+            )
+        }
+        if let fieldingResolution {
+            events.append(
+                PitchKernelEvent(
+                    eventType: "fielding_resolved",
+                    sequence: events.count,
+                    fieldingResolution: fieldingResolution,
+                    reasonCodes: [
+                        "fielding.\(fieldingResolution.sector.rawValue)",
+                        "fielding.impact.\(fieldingResolution.impact.rawValue)"
+                    ]
                 )
             )
         }
@@ -340,6 +408,16 @@ public struct PitchKernelEngine: Sendable {
             )
         )
         if let plateAppearanceResult = state.result {
+            if let baserunnerAdvance {
+                events.append(
+                    PitchKernelEvent(
+                        eventType: "baserunners_advanced",
+                        sequence: events.count,
+                        baserunnerAdvance: baserunnerAdvance,
+                        reasonCodes: ["runs_scored.\(baserunnerAdvance.runsScored)"]
+                    )
+                )
+            }
             events.append(
                 PitchKernelEvent(
                     eventType: "plate_appearance_ended",
@@ -349,6 +427,17 @@ public struct PitchKernelEngine: Sendable {
                 )
             )
         }
+        events.append(
+            PitchKernelEvent(
+                eventType: "game_analysis_updated",
+                sequence: events.count,
+                postgameAnalysis: postgameAnalysis,
+                reasonCodes: [
+                    "analysis.confidence.\(postgameAnalysis.confidence.rawValue)",
+                    "analysis.sample.\(postgameAnalysis.sampleSize)"
+                ]
+            )
+        )
 
         let snapshot = PlateAppearanceSnapshot(
             revision: revision,
@@ -357,12 +446,15 @@ public struct PitchKernelEngine: Sendable {
             pitchNumber: params.context.pitchNumber,
             ended: state.result != nil,
             result: state.result,
-            outcome: resolution.outcome,
+            outcome: outcome,
             selectionQuality: selection,
             recommendationAccepted: recommendationAccepted,
             fatigueAfterPitch: fatigueAfterPitch,
             execution: execution,
-            battedBall: resolution.battedBall,
+            battedBall: neutralResolution.battedBall,
+            fieldingResolution: fieldingResolution,
+            runnersAfter: updatedGameState.runners,
+            runsScored: baserunnerAdvance?.runsScored ?? 0,
             reasonCodes: reasonCodes,
             shortFeedback: feedback.short,
             detailFeedback: feedback.detail,
@@ -378,7 +470,9 @@ public struct PitchKernelEngine: Sendable {
                     batter: params.batter,
                     scouting: params.scouting,
                     context: adaptationContext,
-                    rivalMemory: updatedMemory
+                    rivalMemory: updatedMemory,
+                    gameState: params.gameState == nil ? nil : updatedGameState,
+                    gameLog: params.gameLog == nil ? nil : updatedGameLog
                 )
             )
         } else {
@@ -396,12 +490,14 @@ public struct PitchKernelEngine: Sendable {
                 String(execution.actualX),
                 String(execution.actualY),
                 String(execution.velocityTenthsKPH),
-                resolution.outcome.rawValue,
+                outcome.rawValue,
                 String(state.balls),
                 String(state.strikes),
                 state.result?.rawValue ?? "active",
                 canonical(updatedMemory),
                 String(updatedAdaptation.level),
+                canonical(updatedGameState),
+                canonical(updatedGameLog),
                 nextSeed
             ].joined(separator: "|")
         )
@@ -413,6 +509,9 @@ public struct PitchKernelEngine: Sendable {
             nextPreparation: nextPreparation,
             rivalMemory: updatedMemory,
             rivalAdaptation: updatedAdaptation,
+            gameState: updatedGameState,
+            gameLog: updatedGameLog,
+            postgameAnalysis: postgameAnalysis,
             eventHash: eventHash
         )
     }
@@ -476,6 +575,23 @@ public struct PitchKernelEngine: Sendable {
             pitcher: params.pitcher,
             batter: params.batter
         )
+        if let gameState = params.gameState {
+            let defenseRatings = [
+                gameState.defense.infield,
+                gameState.defense.outfield,
+                gameState.defense.arm,
+                gameState.runners.leadRunnerSpeed
+            ]
+            guard defenseRatings.allSatisfy({ (20...80).contains($0) }),
+                  !gameState.park.id.isEmpty,
+                  !gameState.park.name.isEmpty,
+                  (700...1_300).contains(gameState.park.hitFactor),
+                  (700...1_300).contains(gameState.park.homeRunFactor),
+                  (0...99).contains(gameState.runsAllowed) else {
+                throw SimulationError.invalidGameState("defense, park, runner, or score values are out of range")
+            }
+        }
+        try gameAnalysisEngine.validate(params.gameLog)
         let context = params.context
         guard !context.plateAppearanceID.isEmpty,
               (1...20).contains(context.inning),
@@ -590,6 +706,8 @@ public struct PitchKernelEngine: Sendable {
                 String(params.context.strikes),
                 canonical(params.pitcher),
                 canonical(params.rivalMemory),
+                canonical(params.gameState),
+                canonical(params.gameLog),
                 planCommitment,
                 canonical(primary.call),
                 canonical(alternative.call)
@@ -898,7 +1016,9 @@ public struct PitchKernelEngine: Sendable {
         planPitchMatched: Bool,
         planZoneMatched: Bool,
         battedBall: BattedBall?,
-        adaptation: RivalAdaptationSnapshot
+        adaptation: RivalAdaptationSnapshot,
+        fielding: FieldingResolutionSnapshot?,
+        baserunnerAdvance: BaserunnerAdvanceSnapshot?
     ) -> (short: String, detail: String) {
         let short: String
         switch outcome {
@@ -924,7 +1044,9 @@ public struct PitchKernelEngine: Sendable {
         let adaptationText = adaptation.band == .lockedOn && (planPitchMatched || planZoneMatched)
             ? " 라이벌이 이전 대결의 반복을 활용했습니다."
             : ""
-        let detail = "선택은 \(selectionDisplayName(selection)), 실행 품질은 \(execution.executionQuality)입니다. \(planText).\(adaptationText)\(contactText)"
+        let fieldingText = fielding.map { " \($0.shortExplanation)" } ?? ""
+        let runnerText = baserunnerAdvance.map { " \($0.shortExplanation)" } ?? ""
+        let detail = "선택은 \(selectionDisplayName(selection)), 실행 품질은 \(execution.executionQuality)입니다. \(planText).\(adaptationText)\(contactText)\(fieldingText)\(runnerText)"
         return (short, detail)
     }
 
@@ -935,7 +1057,8 @@ public struct PitchKernelEngine: Sendable {
         planZoneMatched: Bool,
         selectionQuality: SelectionQuality,
         executionQuality: Int,
-        adaptation: RivalAdaptationSnapshot
+        adaptation: RivalAdaptationSnapshot,
+        fielding: FieldingResolutionSnapshot?
     ) -> [String] {
         var reasons = [
             "outcome.\(outcome.rawValue)",
@@ -947,6 +1070,12 @@ public struct PitchKernelEngine: Sendable {
         ]
         if adaptation.detectedPitch != nil || adaptation.detectedZone != nil {
             reasons.append("rival.pattern.\(adaptation.band.rawValue)")
+        }
+        if let fielding {
+            reasons.append("fielding.impact.\(fielding.impact.rawValue)")
+            if abs(fielding.parkAdjustment) >= 60 {
+                reasons.append("park.material_adjustment")
+            }
         }
         return reasons
     }
@@ -1019,6 +1148,47 @@ public struct PitchKernelEngine: Sendable {
             String(memory.plateAppearancesSeen),
             String(memory.totalPitchesSeen),
             observations
+        ].joined(separator: "|")
+    }
+
+    private func canonical(_ state: GameStateSnapshot?) -> String {
+        guard let state else { return "standard-game-state" }
+        return [
+            String(state.defense.infield),
+            String(state.defense.outfield),
+            String(state.defense.arm),
+            state.park.id,
+            String(state.park.hitFactor),
+            String(state.park.homeRunFactor),
+            state.runners.firstOccupied ? "1" : "0",
+            state.runners.secondOccupied ? "1" : "0",
+            state.runners.thirdOccupied ? "1" : "0",
+            String(state.runners.leadRunnerSpeed),
+            String(state.runsAllowed)
+        ].joined(separator: ":")
+    }
+
+    private func canonical(_ log: GameLogSnapshot?) -> String {
+        guard let log else { return "empty-game-log" }
+        let entries = log.entries.map {
+            [
+                $0.pitchType.rawValue,
+                $0.wasInZone ? "1" : "0",
+                $0.batterSwung ? "1" : "0",
+                $0.outcome.rawValue,
+                $0.selectionQuality.rawValue,
+                String($0.executionQuality),
+                String($0.contactQuality ?? -1),
+                String($0.expectedDamage),
+                String($0.actualDamage),
+                $0.recommendationAccepted ? "1" : "0"
+            ].joined(separator: ":")
+        }.joined(separator: ",")
+        return [
+            log.gameID,
+            String(log.revision),
+            String(log.totalPitches),
+            entries
         ].joined(separator: "|")
     }
 

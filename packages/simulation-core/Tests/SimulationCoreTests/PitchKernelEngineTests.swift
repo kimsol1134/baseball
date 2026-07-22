@@ -304,6 +304,190 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertGreaterThan(repeatedDamage, mixedDamage)
     }
 
+    func testStrongDefenseTurnsMoreBorderlineContactIntoOuts() {
+        let resolver = BallInPlayEngine()
+        let battedBall = BattedBall(
+            exitVelocityTenthsKPH: 1_330,
+            launchAngleTenthsDegrees: 140,
+            directionTenthsDegrees: 120,
+            contactQuality: 610
+        )
+        let strong = gameState(defense: 80, hitFactor: 1_000, homeRunFactor: 1_000)
+        let weak = gameState(defense: 20, hitFactor: 1_000, homeRunFactor: 1_000)
+        var strongOuts = 0
+        var weakOuts = 0
+
+        for seed in 1...2_000 {
+            if resolver.resolve(battedBall, gameState: strong, seed: UInt64(seed), ordinal: 1).finalOutcome == .inPlayOut {
+                strongOuts += 1
+            }
+            if resolver.resolve(battedBall, gameState: weak, seed: UInt64(seed), ordinal: 1).finalOutcome == .inPlayOut {
+                weakOuts += 1
+            }
+        }
+
+        XCTAssertGreaterThan(strongOuts, weakOuts)
+    }
+
+    func testHitterFriendlyParkCreatesMoreHomeRunsFromFenceContact() {
+        let resolver = BallInPlayEngine()
+        let battedBall = BattedBall(
+            exitVelocityTenthsKPH: 1_450,
+            launchAngleTenthsDegrees: 270,
+            directionTenthsDegrees: -80,
+            contactQuality: 760
+        )
+        let hitterPark = gameState(defense: 50, hitFactor: 1_100, homeRunFactor: 1_300)
+        let pitcherPark = gameState(defense: 50, hitFactor: 900, homeRunFactor: 700)
+        var hitterParkHomeRuns = 0
+        var pitcherParkHomeRuns = 0
+
+        for seed in 1...1_000 {
+            if resolver.resolve(battedBall, gameState: hitterPark, seed: UInt64(seed), ordinal: 1).finalOutcome == .homeRun {
+                hitterParkHomeRuns += 1
+            }
+            if resolver.resolve(battedBall, gameState: pitcherPark, seed: UInt64(seed), ordinal: 1).finalOutcome == .homeRun {
+                pitcherParkHomeRuns += 1
+            }
+        }
+
+        XCTAssertGreaterThan(hitterParkHomeRuns, pitcherParkHomeRuns)
+    }
+
+    func testBaserunnerEngineForcesLoadedWalkAndClearsHomeRun() {
+        let engine = BaserunnerEngine()
+        let loaded = BaserunnerStateSnapshot(
+            firstOccupied: true,
+            secondOccupied: true,
+            thirdOccupied: true,
+            leadRunnerSpeed: 55
+        )
+        let walk = engine.advance(
+            loaded,
+            outcome: .ball,
+            plateAppearanceResult: .walk,
+            defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50),
+            seed: 1
+        )
+        let homeRun = engine.advance(
+            loaded,
+            outcome: .homeRun,
+            plateAppearanceResult: .hit,
+            defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50),
+            seed: 1
+        )
+
+        XCTAssertEqual(walk.runsScored, 1)
+        XCTAssertEqual(walk.after.occupiedCount, 3)
+        XCTAssertEqual(homeRun.runsScored, 4)
+        XCTAssertEqual(homeRun.after, .empty)
+
+        let firstAndSecond = BaserunnerStateSnapshot(
+            firstOccupied: true,
+            secondOccupied: true,
+            thirdOccupied: false,
+            leadRunnerSpeed: 40
+        )
+        for seed in 1...100 {
+            let single = engine.advance(
+                firstAndSecond,
+                outcome: .single,
+                plateAppearanceResult: .hit,
+                defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 70),
+                seed: UInt64(seed)
+            )
+            XCTAssertEqual(single.after.occupiedCount + single.runsScored, 3)
+        }
+    }
+
+    func testInfieldContactCannotBecomeExtraBaseHit() {
+        let result = BallInPlayEngine().resolve(
+            BattedBall(
+                exitVelocityTenthsKPH: 1_550,
+                launchAngleTenthsDegrees: 20,
+                directionTenthsDegrees: 0,
+                contactQuality: 900
+            ),
+            gameState: gameState(defense: 20, hitFactor: 1_300, homeRunFactor: 1_300),
+            seed: 1,
+            ordinal: 1
+        )
+
+        XCTAssertEqual(result.sector, .infield)
+        XCTAssertTrue(result.finalOutcome == .single || result.finalOutcome == .inPlayOut)
+    }
+
+    func testGameAnalysisSeparatesExpectedAndActualDamage() {
+        let analysisEngine = GameAnalysisEngine()
+        var log: GameLogSnapshot?
+        let fielding = FieldingResolutionSnapshot(
+            neutralOutcome: .double,
+            finalOutcome: .inPlayOut,
+            sector: .outfield,
+            difficulty: 500,
+            defenseRating: 70,
+            defenseAdjustment: -80,
+            parkAdjustment: 0,
+            impact: .helpedPitcher,
+            shortExplanation: "수비가 결과를 낮췄습니다."
+        )
+        for index in 0..<8 {
+            log = analysisEngine.record(
+                log,
+                gameID: "analysis-game",
+                pitchType: index < 5 ? .slider : .fourSeam,
+                wasInZone: index.isMultiple(of: 2),
+                batterSwung: true,
+                outcome: index == 0 ? .inPlayOut : .swingingStrike,
+                plateAppearanceResult: index == 0 ? .inPlayOut : nil,
+                selectionQuality: .good,
+                executionQuality: 700,
+                battedBall: index == 0
+                    ? BattedBall(
+                        exitVelocityTenthsKPH: 1_420,
+                        launchAngleTenthsDegrees: 180,
+                        directionTenthsDegrees: 0,
+                        contactQuality: 720
+                    )
+                    : nil,
+                fielding: index == 0 ? fielding : nil,
+                recommendationAccepted: true
+            )
+        }
+        let analysis = analysisEngine.analyze(log!)
+
+        XCTAssertEqual(analysis.sampleSize, 8)
+        XCTAssertEqual(analysis.confidence, .developing)
+        XCTAssertGreaterThan(analysis.expectedDamage, analysis.actualDamage)
+        XCTAssertTrue(analysis.patternWarning.contains("슬라이더"), analysis.patternWarning)
+    }
+
+    func testChangingGameStateAfterPreparationInvalidatesToken() throws {
+        let preparedState = gameState(defense: 60, hitFactor: 1_000, homeRunFactor: 1_000)
+        let changedState = gameState(defense: 20, hitFactor: 1_300, homeRunFactor: 1_300)
+        let params = makePrepareParams(seed: "818", gameState: preparedState)
+        let preparation = try engine.preparePitch(params)
+
+        XCTAssertThrowsError(
+            try engine.submitPitch(
+                SubmitPitchParams(
+                    seed: params.seed,
+                    pitcher: params.pitcher,
+                    batter: params.batter,
+                    scouting: params.scouting,
+                    context: params.context,
+                    preparationToken: preparation.preparationToken,
+                    call: preparation.primaryRecommendation.call,
+                    rivalMemory: params.rivalMemory,
+                    gameState: changedState,
+                    gameLog: params.gameLog
+                )
+            )
+        ) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidPreparationToken)
+        }
+    }
+
     private func makeRivalMemory(
         params: PreparePitchParams,
         repeated: Bool,
@@ -443,7 +627,9 @@ final class PitchKernelEngineTests: XCTestCase {
         balls: Int = 1,
         strikes: Int = 1,
         pitcher: PitcherSnapshot? = nil,
-        rivalMemory: RivalMemorySnapshot? = nil
+        rivalMemory: RivalMemorySnapshot? = nil,
+        gameState: GameStateSnapshot? = nil,
+        gameLog: GameLogSnapshot? = nil
     ) -> PreparePitchParams {
         PreparePitchParams(
             seed: seed,
@@ -481,7 +667,9 @@ final class PitchKernelEngineTests: XCTestCase {
                 leverage: leverage,
                 fatigue: 12
             ),
-            rivalMemory: rivalMemory
+            rivalMemory: rivalMemory,
+            gameState: gameState,
+            gameLog: gameLog
         )
     }
 
@@ -497,7 +685,27 @@ final class PitchKernelEngineTests: XCTestCase {
             context: prepareParams.context,
             preparationToken: preparation.preparationToken,
             call: preparation.primaryRecommendation.call,
-            rivalMemory: prepareParams.rivalMemory
+            rivalMemory: prepareParams.rivalMemory,
+            gameState: prepareParams.gameState,
+            gameLog: prepareParams.gameLog
+        )
+    }
+
+    private func gameState(
+        defense: Int,
+        hitFactor: Int,
+        homeRunFactor: Int
+    ) -> GameStateSnapshot {
+        GameStateSnapshot(
+            defense: DefenseSnapshot(infield: defense, outfield: defense, arm: defense),
+            park: ParkSnapshot(
+                id: "test-park",
+                name: "테스트 구장",
+                hitFactor: hitFactor,
+                homeRunFactor: homeRunFactor
+            ),
+            runners: .empty,
+            runsAllowed: 0
         )
     }
 }
