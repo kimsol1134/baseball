@@ -617,19 +617,19 @@ public struct HighSchoolCareerEngine: Sendable {
         return [
             .init(id: .hanbitTraditional, name: names.traditional, philosophy: "기본기와 긴 이닝", coachName: "김성곤", coachArchetype: "원칙형", catcherName: "강민준", catcherArchetype: "안정형",
                 coachPersonality: "새벽 반복 훈련을 고집하며 핑계보다 공 하나를 더 던지게 합니다.", coachRecord: "통산 1,387승 · 우승 3회",
-                catcherPersonality: "실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수입니다.", catcherRecord: "통산 2,299경기 · 포수상 6회",
+                catcherPersonality: "실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수입니다.", catcherRecord: "중학 마지막 시즌 26경기 · 도루저지율 .438",
                 strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
             .init(id: .miraeAnalytics, name: names.analytics, philosophy: "데이터와 경기 설계", coachName: "염경윤", coachArchetype: "분석형", catcherName: "양의준", catcherArchetype: "분석형",
                 coachPersonality: "확률표를 들고 한 베이스와 불펜 교체 시점을 끝까지 계산합니다.", coachRecord: "정규시즌 1위 2회 · 우승 1회",
-                catcherPersonality: "말수는 적지만 타자의 노림수를 먼저 읽고 결정적인 순간 직접 해결합니다.", catcherRecord: "포수상 8회 · 통산 249홈런",
+                catcherPersonality: "말수는 적지만 타자의 노림수를 먼저 읽고 결정적인 순간 직접 해결합니다.", catcherRecord: "전국중학대회 포수상 · 8홈런",
                 strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
             .init(id: .haedongPower, name: names.power, philosophy: "출력과 공격적인 승부", coachName: "선동현", coachArchetype: "승부형", catcherName: "진갑준", catcherArchetype: "공격형",
                 coachPersonality: "에이스에게 가장 엄격하며 위기일수록 몸쪽 정면승부를 요구합니다.", coachRecord: "통산 ERA 1.21 · 145승 · 133세이브",
-                catcherPersonality: "몸쪽 사인을 두려워하지 않고 큰 경기에서 투수를 강하게 끌고 갑니다.", catcherRecord: "통산 1,819경기 · 우승 배터리 5회",
+                catcherPersonality: "몸쪽 사인을 두려워하지 않고 큰 경기에서 투수를 강하게 끌고 갑니다.", catcherRecord: "중학 마지막 시즌 24경기 선발 · 도루저지 11회",
                 strength: .velocity, tradeoff: "피로와 제구 비용을 감수해야 합니다."),
             .init(id: .cheongamDevelopment, name: names.development, philosophy: "개인별 폼과 변화구 육성", coachName: "김태현", coachArchetype: "육성형", catcherName: "박경원", catcherArchetype: "공감형",
                 coachPersonality: "무심한 표정으로 결단을 내리지만 큰 경기에서는 선수를 먼저 믿습니다.", coachRecord: "한국시리즈 우승 3회 · 7시즌 연속 가을야구",
-                catcherPersonality: "블로킹 천 번을 기본으로 여기며 투수의 버릇까지 잡아내는 완벽주의자입니다.", catcherRecord: "통산 313홈런 · 4연타석 홈런",
+                catcherPersonality: "블로킹 천 번을 기본으로 여기며 투수의 버릇까지 잡아내는 완벽주의자입니다.", catcherRecord: "중학 마지막 시즌 무실책 · 4경기 연속 장타",
                 strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
         ]
     }
@@ -649,21 +649,21 @@ public struct HighSchoolCareerEngine: Sendable {
 
     private static let rivals: [RivalSnapshot] = [
         .init(id: "rival-seo", name: "이정훈", archetype: "천재 교타형", contact: 76, discipline: 70, power: 61,
-            personality: "배트가 공을 끝까지 따라갑니다. 같은 코스를 두 번 놓치지 않는 왼손 타자입니다.", signatureRecord: "시즌 타율 .348 · 192안타 · MVP"),
+            personality: "배트가 공을 끝까지 따라갑니다. 같은 코스를 두 번 놓치지 않는 왼손 타자입니다.", signatureRecord: "입학 전 타율 .448 · 52안타 · 전국대회 MVP"),
         .init(id: "rival-lee", name: "이대훈", archetype: "초구 거포형", contact: 72, discipline: 61, power: 78,
-            personality: "느린 발을 감출 만큼 타구 판단이 빠릅니다. 초구 실투를 그냥 보내지 않습니다.", signatureRecord: "타격 7관왕 · 시즌 43홈런 132타점"),
+            personality: "느린 발을 감출 만큼 타구 판단이 빠릅니다. 초구 실투를 그냥 보내지 않습니다.", signatureRecord: "입학 전 타율 .427 · 7홈런 · 31타점"),
         .init(id: "rival-park", name: "박용태", archetype: "안타 제조형", contact: 74, discipline: 68, power: 54,
-            personality: "파울로 버티며 투구 수를 늘리고 마지막에는 짧은 스윙으로 안타를 만듭니다.", signatureRecord: "통산 2,503안타 · 2,221경기"),
+            personality: "파울로 버티며 투구 수를 늘리고 마지막에는 짧은 스윙으로 안타를 만듭니다.", signatureRecord: "중학 3년 82경기 모두 출전 · 103안타"),
         .init(id: "rival-kang", name: "이승윤", archetype: "외다리 장타형", contact: 64, discipline: 63, power: 80,
-            personality: "높게 떠오른 공을 우측 담장으로 보내는 왼손 거포입니다. 실투 하나가 곧 실점입니다.", signatureRecord: "시즌 55홈런 · 통산 466홈런"),
+            personality: "높게 떠오른 공을 우측 담장으로 보내는 왼손 거포입니다. 실투 하나가 곧 실점입니다.", signatureRecord: "입학 전 타율 .392 · 9홈런 · 결승 2홈런"),
         .init(id: "rival-yoon", name: "구자윤", archetype: "장신 호타준족형", contact: 71, discipline: 63, power: 67,
-            personality: "큰 스윙 궤도와 빠른 발을 함께 씁니다. 변화구가 뜨면 주저 없이 당겨칩니다.", signatureRecord: "시즌 타율 .339 · 30홈런 · 15도루"),
+            personality: "큰 스윙 궤도와 빠른 발을 함께 씁니다. 변화구가 뜨면 주저 없이 당겨칩니다.", signatureRecord: "입학 전 타율 .439 · 4홈런 · 15도루"),
         .init(id: "rival-choi", name: "최형준", archetype: "득점권 해결사형", contact: 70, discipline: 69, power: 76,
-            personality: "늦은 카운트와 득점권에서 오히려 스윙이 짧아지는 베테랑 해결사입니다.", signatureRecord: "통산 3,999루타 · 1,499타점"),
+            personality: "늦은 카운트와 득점권에서 오히려 스윙이 짧아지는 해결사입니다.", signatureRecord: "입학 전 득점권 타율 .499 · 39타점"),
         .init(id: "rival-home-run", name: "최정우", archetype: "몸쪽 사냥형", contact: 66, discipline: 72, power: 80,
-            personality: "몸쪽 공도 피하지 않고 잡아당깁니다. 불리한 카운트에서도 장타를 버리지 않습니다.", signatureRecord: "통산 508홈런 · 18시즌 연속 두 자릿수 홈런"),
+            personality: "몸쪽 공도 피하지 않고 잡아당깁니다. 불리한 카운트에서도 장타를 버리지 않습니다.", signatureRecord: "입학 전 타율 .386 · 8홈런 · 몸에 맞는 공 12개"),
         .init(id: "rival-speed", name: "김도윤", archetype: "30-30 질주형", contact: 75, discipline: 65, power: 75,
-            personality: "타구가 뜨는 순간 2루를 노립니다. 실투 하나로 경기 흐름을 바꾸는 호타준족입니다.", signatureRecord: "시즌 타율 .346 · 37홈런 · 39도루 · 142득점")
+            personality: "타구가 뜨는 순간 2루를 노립니다. 실투 하나로 경기 흐름을 바꾸는 호타준족입니다.", signatureRecord: "입학 전 타율 .446 · 7홈런 · 29도루 · 42득점")
     ]
 
     public init() {}

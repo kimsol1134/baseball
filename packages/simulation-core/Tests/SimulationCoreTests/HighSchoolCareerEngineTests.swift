@@ -42,6 +42,8 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         })
         XCTAssertEqual(Set(schools.map(\.coachName)).count, 4)
         XCTAssertEqual(Set(schools.map(\.catcherName)).count, 4)
+        XCTAssertFalse(schools.compactMap(\.catcherRecord).contains { $0.contains("통산") })
+        XCTAssertTrue(schools.compactMap(\.catcherRecord).allSatisfy { $0.contains("중학") })
 
         XCTAssertTrue(HighSchoolCareerEngine.teams.allSatisfy {
             !($0.competitorProfile ?? "").isEmpty && !($0.competitorRecord ?? "").isEmpty
@@ -53,6 +55,8 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         }
         XCTAssertEqual(Set(rivals.map(\.name)).count, 8)
         XCTAssertTrue(rivals.allSatisfy { !($0.personality ?? "").isEmpty && !($0.signatureRecord ?? "").isEmpty })
+        XCTAssertFalse(rivals.compactMap(\.signatureRecord).contains { $0.contains("통산") })
+        XCTAssertTrue(rivals.compactMap(\.signatureRecord).allSatisfy { $0.contains("입학 전") || $0.contains("중학") })
         XCTAssertGreaterThan(Set(rivals.map { "\($0.contact)-\($0.discipline)-\($0.power)" }).count, 4)
     }
 

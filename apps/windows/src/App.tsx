@@ -111,7 +111,7 @@ const BATTER: BatterSnapshot = {
 
 const PRO_BATTER: BatterSnapshot = {
   id: "pro-opponent-cleanup",
-  name: "최정우",
+  name: "최정호",
   contact: 66,
   discipline: 61,
   power: 69,
@@ -150,7 +150,7 @@ const INITIAL_GAME_STATE: GameStateSnapshot = {
       { id: "f-c", name: "강민준", position: "catcher", range: 48, glove: 61, arm: 67 },
       { id: "f-1b", name: "이대훈", position: "first_base", range: 52, glove: 60, arm: 51 },
       { id: "f-2b", name: "정근호", position: "second_base", range: 61, glove: 64, arm: 57 },
-      { id: "f-3b", name: "최정우", position: "third_base", range: 57, glove: 58, arm: 66 },
+      { id: "f-3b", name: "최정호", position: "third_base", range: 57, glove: 58, arm: 66 },
       { id: "f-ss", name: "김하준", position: "shortstop", range: 67, glove: 65, arm: 63 },
       { id: "f-lf", name: "김현준", position: "left_field", range: 54, glove: 53, arm: 56 },
       { id: "f-cf", name: "이종윤", position: "center_field", range: 65, glove: 61, arm: 59 },
