@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AbilityGauge } from "./AbilityGauge";
 import { GrowthCelebration } from "./GrowthCelebration";
+import { CoreUnavailableState } from "./CoreUnavailableState";
 import type {
   AwakeningID,
   CreationAllocationSnapshot,
@@ -33,10 +34,12 @@ interface PitcherLabSetupProps {
   presets: ReadonlyArray<PitcherPresetSnapshot>;
   isRunning: boolean;
   error?: string;
+  coreMessage: string;
+  onRetryCore: () => void;
   onStart: (presetID: string, allocation: CreationAllocationSnapshot, playerName: string) => Promise<void>;
 }
 
-export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherLabSetupProps) {
+export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetryCore, onStart }: PitcherLabSetupProps) {
   const [presetID, setPresetID] = useState(presets[0]?.id ?? "");
   const [playerName, setPlayerName] = useState(presets[0]?.pitcher.name ?? "");
   const [usesRecommendedName, setUsesRecommendedName] = useState(true);
@@ -91,6 +94,7 @@ export function PitcherLabSetup({ presets, isRunning, error, onStart }: PitcherL
           </button>
         ))}
       </section>
+      {presets.length === 0 ? <CoreUnavailableState message={error ?? coreMessage} isChecking={isRunning} onRetry={onRetryCore} /> : null}
       {selectedPreset ? (
         <section className="creation-allocation">
           <div className="creation-summary">
@@ -160,8 +164,8 @@ const INTENSITY_OPTIONS: ReadonlyArray<{
   description: string;
 }> = [
   { value: "light", label: "가볍게", description: "피로를 적게 쌓고 투구 감각만 유지한다" },
-  { value: "standard", label: "보통", description: "능력과 피로가 모두 적당히 오른다" },
-  { value: "intensive", label: "강하게", description: "능력이 많이 오르지만 피로도 많이 쌓인다" },
+  { value: "standard", label: "보통", description: "성장 가능성과 피로가 균형을 이룬다" },
+  { value: "intensive", label: "강하게", description: "성장 가능성이 높지만 피로도 많이 쌓인다" },
 ];
 
 const AWAKENING_LABELS: Record<AwakeningID, { title: string; description: string }> = {
@@ -334,6 +338,8 @@ export function PitcherLabView({
         </div>
       </section>
 
+      <a className="mobile-action-jump" href="#lab-current-action"><span>현재 단계</span><strong>{PHASE_LABELS[snapshot.phase]}</strong><small>바로 이동</small></a>
+
       <div className="lab-grid">
         <section className="ds-card ds-player-card lab-card lab-ratings">
           <div className="lab-card-heading"><span>현재 실력과 성장 가능성</span><small>훈련을 이어가면 얼마나 더 성장할지 알 수 있습니다</small></div>
@@ -359,7 +365,7 @@ export function PitcherLabView({
           ) : null}
         </section>
 
-        <section className="ds-card ds-card--raised lab-card lab-action">
+        <section id="lab-current-action" className="ds-card ds-card--raised lab-card lab-action">
           <div className="lab-card-heading"><span>이번에 할 일</span><small>{PHASE_LABELS[snapshot.phase]}</small></div>
 
           {snapshot.phase === "training" ? (

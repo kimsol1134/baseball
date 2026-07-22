@@ -4516,7 +4516,8 @@ body.high-contrast :is(.career-intro, .career-hero) {
   background-color: var(--color-surface-raised);
 }
 
-.career-offline-card {
+.career-offline-card,
+.core-unavailable-state {
   display: grid;
   align-content: end;
   gap: 6px;
@@ -4533,7 +4534,8 @@ body.high-contrast :is(.career-intro, .career-hero) {
   box-shadow: var(--shadow-card);
 }
 
-.career-offline-card > span {
+.career-offline-card > span,
+.core-unavailable-state > span {
   color: var(--color-information);
   font-size: var(--font-size-label);
   font-weight: 900;
@@ -4541,22 +4543,39 @@ body.high-contrast :is(.career-intro, .career-hero) {
   text-transform: uppercase;
 }
 
-.career-offline-card > strong {
+.career-offline-card > strong,
+.core-unavailable-state > strong {
   max-width: 640px;
   color: var(--color-text-primary);
   font-size: var(--font-size-section);
 }
 
-.career-offline-card > p {
+.career-offline-card > p,
+.core-unavailable-state > p {
   max-width: 640px;
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-body-sm);
 }
 
-body.high-contrast .career-offline-card {
+body.high-contrast :is(.career-offline-card, .core-unavailable-state) {
   background-image: none;
   background-color: var(--color-surface-raised);
+}
+
+.core-unavailable-state > small {
+  max-width: 640px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-caption);
+}
+
+.core-unavailable-state > button {
+  width: fit-content;
+  margin-top: 8px;
+}
+
+.mobile-action-jump {
+  display: none;
 }
 
 .career-intro h2,
@@ -6139,6 +6158,45 @@ body.high-contrast .character-profile__portrait {
 
   .lab-log {
     grid-column: auto;
+  }
+
+  .mobile-action-jump {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 12px;
+    align-items: center;
+    min-height: 64px;
+    padding: 11px 14px;
+    border: 1px solid color-mix(in srgb, var(--color-action) 52%, var(--color-border));
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    background: color-mix(in srgb, var(--color-action) 10%, var(--color-surface-raised));
+    box-shadow: var(--shadow-card);
+  }
+
+  .mobile-action-jump > span {
+    color: var(--color-action);
+    font-size: var(--font-size-label);
+    font-weight: 900;
+    letter-spacing: .06em;
+  }
+
+  .mobile-action-jump > strong {
+    grid-column: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-action-jump > small {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    color: var(--color-text-secondary);
+  }
+
+  :is(.career-decision, .lab-action) {
+    scroll-margin-top: 12px;
   }
 
   .career-intro,

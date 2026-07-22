@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AbilityGauge } from "./AbilityGauge";
 import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
+import { CoreUnavailableState } from "./CoreUnavailableState";
 import { GrowthCelebration } from "./GrowthCelebration";
 import catcherPortrait from "./assets/catcher-portrait.webp";
 import coachPortrait from "./assets/coach-portrait.webp";
@@ -304,11 +305,13 @@ interface CareerSetupProps {
   presets: ReadonlyArray<PitcherPresetSnapshot>;
   isRunning: boolean;
   error?: string;
+  coreMessage: string;
+  onRetryCore: () => void;
   onStart: (presetID: string, allocation: CreationAllocationSnapshot, identity: PlayerIdentitySnapshot,
     difficulty: CareerDifficultySnapshot, karmas: ReadonlyArray<KarmaID>) => Promise<void>;
 }
 
-export function HighSchoolCareerSetup({ presets, isRunning, error, onStart }: CareerSetupProps) {
+export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, onRetryCore, onStart }: CareerSetupProps) {
   const [presetID, setPresetID] = useState("");
   const [allocation, setAllocation] = useState<CreationAllocationSnapshot>({ stuff: 2, command: 1, movement: 1, stamina: 1 });
   const [identity, setIdentity] = useState<PlayerIdentitySnapshot>({ name: "민서준", throwingHand: "right", bodyType: "balanced", region: "서울" });
@@ -354,19 +357,15 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, onStart }: Ca
           <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
         </button>)}
       </section>
-      {presets.length === 0 ? <section className="career-offline-card" role="status">
-        <span>선수 명단 불러오는 중</span>
-        <strong>더그아웃에서 경기 데이터를 기다리고 있습니다.</strong>
-        <p>{error ?? "시뮬레이션 코어가 연결되면 투수 유형과 능력치가 이곳에 표시됩니다."}</p>
-      </section> : null}
+      {presets.length === 0 ? <CoreUnavailableState message={error ?? coreMessage} isChecking={isRunning} onRetry={onRetryCore} /> : null}
       {selected ? <section className="creation-allocation career-allocation">
         <div className="creation-summary"><div><span>투수 유형</span><strong>{selected.name}</strong><p>선수마다 강점과 약점이 다릅니다. 추가 능력 5점은 어느 유형을 골라도 같습니다.</p></div>
           <div className="creation-points"><span>남은 능력치 점수</span><strong>{5 - spent}</strong></div></div>
         <div className="allocation-grid">{METRICS.map((metric) => <div key={metric.key}><span>{metric.label}</span><small>기본 {selected.pitcher[metric.key]} · 추가 +{allocation[metric.key]}</small><div>
-          <button type="button" disabled={allocation[metric.key] === 0} onClick={() => change(metric.key, -1)}>−</button>
+          <button type="button" aria-label={`${metric.label} 1 감소`} disabled={allocation[metric.key] === 0} onClick={() => change(metric.key, -1)}>−</button>
           <strong aria-label={`${metric.label} 최종 ${selected.pitcher[metric.key] + allocation[metric.key]}`}>
             {selected.pitcher[metric.key] + allocation[metric.key]}<small>+{allocation[metric.key]}</small>
-          </strong><button type="button" disabled={spent >= 5} onClick={() => change(metric.key, 1)}>+</button>
+          </strong><button type="button" aria-label={`${metric.label} 1 증가`} disabled={spent >= 5 || allocation[metric.key] === 5} onClick={() => change(metric.key, 1)}>+</button>
         </div><AbilityGauge compact label={`${metric.label} 최종`} value={selected.pitcher[metric.key] + allocation[metric.key]} /></div>)}</div>
         <div className="identity-grid"><label className="identity-name-field"><span>선수 이름</span><div><input value={identity.name} maxLength={12} autoComplete="off"
           onChange={(event) => { setIdentity({ ...identity, name: event.target.value }); setUsesRecommendedName(false); }} />
@@ -585,6 +584,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     <section className="chapter-map" aria-label="8개 고교 시즌">{Array.from({ length: 8 }, (_, index) => index + 1).map((chapter) =>
       <div key={chapter} className={chapter === state.chapter.number ? "is-current" : chapter < state.chapter.number ? "is-complete" : undefined}>
         <span>{chapter}</span><small>{chapter < state.chapter.number ? "완료" : chapter === state.chapter.number ? "진행 중" : "잠김"}</small></div>)}</section>
+    <a className="mobile-action-jump" href="#career-current-action"><span>현재 단계</span><strong>{hasPendingResult ? "결과를 확인하세요" : nextActionLabel}</strong><small>바로 이동</small></a>
     <div className="career-grid">
       <section className="ds-card ds-player-card career-panel career-player"><div className="lab-card-heading"><span>{state.pitcher.name}</span><small>{state.school?.name ?? "학교 선택 전"}</small></div>
         <div className="ds-record-grid career-rating-grid">{METRICS.map((metric) => {
@@ -604,7 +604,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <span>대화 {state.relationshipsCompleted}/5</span><span>새 강점 {state.selectedAwakenings.length}/3</span></div>
       </section>
 
-      <section className="ds-card ds-card--raised career-panel career-decision"><div className="lab-card-heading"><span>{pendingTraining ? "훈련 완료" : pendingRelationship ? "대화 완료" : "지금 할 일"}</span><small>{hasPendingResult ? "결과 확인" : PHASE_LABELS[state.phase]}</small></div>
+      <section id="career-current-action" className="ds-card ds-card--raised career-panel career-decision"><div className="lab-card-heading"><span>{pendingTraining ? "훈련 완료" : pendingRelationship ? "대화 완료" : "지금 할 일"}</span><small>{hasPendingResult ? "결과 확인" : PHASE_LABELS[state.phase]}</small></div>
         {demoComplete ? <div className="career-milestone demo-complete"><span>데모 기록 완료</span>
           <h3>첫 중요 경기를 마쳤습니다.</h3>
           <p>{state.pitcher.name}은 공의 위력 {rating(state.pitcher.stuff)}, 제구 {rating(state.pitcher.command)}로 첫 기록을 남겼습니다. 이 저장은 정식판에서 그대로 이어집니다.</p>

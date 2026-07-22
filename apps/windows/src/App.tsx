@@ -1549,7 +1549,7 @@ export function App() {
           <div className="brand-lockup"><img className="brand-mark" src="/128x128.png" alt="" /><div>
             <p className="eyebrow">야구 못하면 또 환생함</p><h1>고교 커리어</h1>
           </div></div>
-          <div className={`core-status core-status--${coreStatus.state}`}><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
+          <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite"><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" ? <button type="button" onClick={() => void connectCore()}>다시 연결</button> : null}</div>
           <button className="mode-switch" type="button" onClick={handleOpenPractice}>연습 모드</button>
           <AccessibilityControls {...accessibilityProps} />
@@ -1569,7 +1569,7 @@ export function App() {
           demoMode={releaseEdition === "steam_demo" || releaseEdition === "web_teaser"}
           onMilestoneFeedback={handleMilestoneFeedback} />
           : <HighSchoolCareerSetup presets={presets} isRunning={isRunning || coreStatus.state === "checking"}
-            error={error} onStart={handleStartCareer} />}
+            error={error} coreMessage={statusMessage(coreStatus)} onRetryCore={() => void connectCore()} onStart={handleStartCareer} />}
         <footer><span>고교 커리어{careerResult ? ` · ${careerResult.snapshot.chapter.schoolYear}학년 ${careerResult.snapshot.chapter.season}` : ""}</span>
           <span>선택이 확정될 때마다 자동 저장됩니다.</span></footer>
       </div>
@@ -1587,7 +1587,7 @@ export function App() {
               <h1>연습 모드</h1>
             </div>
           </div>
-          <div className={`core-status core-status--${coreStatus.state}`}>
+          <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite">
             <span className="status-dot" aria-hidden="true" />
             <span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" ? (
@@ -1618,6 +1618,8 @@ export function App() {
             presets={presets}
             isRunning={isRunning || coreStatus.state === "checking"}
             error={error}
+            coreMessage={statusMessage(coreStatus)}
+            onRetryCore={() => void connectCore()}
             onStart={handleStartLab}
           />
         )}
@@ -1640,7 +1642,7 @@ export function App() {
             <h1>{experienceMode === "career" ? proVisible ? "프로 중요 경기" : "고교 중요 경기" : labResult?.snapshot.phase === "important_inning" ? "중요 이닝" : "투구 연습"}</h1>
           </div>
         </div>
-        <div className={`core-status core-status--${coreStatus.state}`}>
+        <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite">
           <span className="status-dot" aria-hidden="true" />
           <span>{statusMessage(coreStatus)}</span>
           {coreStatus.state === "offline" ? (
