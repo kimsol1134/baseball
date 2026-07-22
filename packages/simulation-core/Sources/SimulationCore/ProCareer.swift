@@ -125,7 +125,8 @@ public struct ProCareerEngine: Sendable {
     public func start(_ params: StartProCareerParams) throws -> ProCareerResult {
         guard let seed = UInt64(params.seed) else { throw SimulationError.invalidSeed(params.seed) }
         guard params.entitlement.status == .active else { throw SimulationError.invalidProCareer("프로 커리어 이용 권한을 확인할 수 없습니다.") }
-        guard params.draftResult.outcome == .drafted, let team = params.draftResult.team else { throw SimulationError.invalidProCareer("고교 드래프트 지명 기록이 필요합니다.") }
+        guard params.draftResult.outcome == .drafted, let draftedTeam = params.draftResult.team else { throw SimulationError.invalidProCareer("고교 드래프트 지명 기록이 필요합니다.") }
+        let team = HighSchoolCareerEngine.teams.first(where: { $0.id == draftedTeam.id }) ?? draftedTeam
         var rng = SplitMix64(seed: seed)
         let id = "pro-\(StableHash.fnv1a64("\(seed)|\(params.pitcher.id)|\(team.id)"))"
         let stats = ProSeasonStats(season: 1, teamID: team.id)

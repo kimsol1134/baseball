@@ -4537,6 +4537,49 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   font-size: var(--font-size-label);
 }
 
+.career-personnel > div,
+.pro-character-duo > div {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border-radius: 7px;
+  background: var(--color-surface-raised);
+}
+
+.career-personnel small,
+.pro-character-duo small,
+.pro-preview small,
+.rival-scouting small {
+  color: var(--color-milestone);
+  font-size: var(--font-size-label);
+  font-weight: 750;
+}
+
+.career-personnel p,
+.pro-character-duo p,
+.pro-preview p,
+.rival-scouting p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-label);
+  line-height: 1.45;
+}
+
+.pro-character-duo {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.pro-character-duo span {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-label);
+}
+
+.pro-character-duo strong {
+  font-size: var(--font-size-label);
+}
+
 .career-counters {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4644,6 +4687,37 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   margin: 2px 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-label);
+}
+
+.school-staff {
+  display: grid;
+  gap: 2px;
+  padding: 7px;
+  border-radius: 7px;
+  background: var(--color-surface);
+}
+
+.school-staff p:last-child {
+  line-height: 1.4;
+}
+
+.school-staff small {
+  color: var(--color-milestone);
+  font-weight: 750;
+}
+
+.school-grid .school-tradeoff {
+  padding-top: 4px;
+  color: var(--color-warning);
+}
+
+.rival-scouting {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0;
+  padding: 10px;
+  border-left: 3px solid var(--color-warning);
+  background: var(--color-surface-raised);
 }
 
 .career-feedback {

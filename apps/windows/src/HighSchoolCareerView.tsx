@@ -407,8 +407,11 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         <div className="ds-record-grid career-rating-grid"><div><span>구위</span><strong>{rating(state.pitcher.stuff)}</strong></div><div><span>커맨드</span><strong>{rating(state.pitcher.command)}</strong></div>
           <div><span>무브먼트</span><strong>{rating(state.pitcher.movement)}</strong></div><div><span>체력</span><strong>{rating(state.pitcher.stamina)}</strong></div></div>
         <small className="information-clarity">정보 정확도 · {state.difficulty.informationClarity === "relaxed" ? "정확한 현재값" : state.difficulty.informationClarity === "standard" ? "스카우트 추정 범위" : "등급만 공개"}</small>
-        {state.school ? <div className="career-personnel"><span>감독</span><strong>{state.school.coachName} · {state.school.coachArchetype}</strong><span>포수</span><strong>{state.school.catcherName} · {state.school.catcherArchetype}</strong>
-          <span>라이벌</span><strong>{state.rival.name} · {state.rival.archetype}</strong></div> : null}
+        {state.school ? <div className="career-personnel">
+          <div><span>감독</span><strong>{state.school.coachName} · {state.school.coachArchetype}</strong><small>{state.school.coachRecord}</small><p>{state.school.coachPersonality}</p></div>
+          <div><span>포수</span><strong>{state.school.catcherName} · {state.school.catcherArchetype}</strong><small>{state.school.catcherRecord}</small><p>{state.school.catcherPersonality}</p></div>
+          <div><span>라이벌</span><strong>{state.rival.name} · {state.rival.archetype}</strong><small>{state.rival.signatureRecord}</small><p>{state.rival.personality}</p></div>
+        </div> : null}
         <div className="career-counters"><span>훈련 {state.totalTrainingsCompleted}/16</span><span>경기 {state.performance.importantGamesCompleted}/5</span>
           <span>관계 {state.relationshipsCompleted}/5</span><span>각성 {state.selectedAwakenings.length}/3</span></div>
       </section>
@@ -433,7 +436,10 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onCompletePrologue()}>고교 진학 제안 확인</button></div> : null}
         {state.phase === "school_selection" ? <><h3>{state.identity.region}에서 어느 학교로 진학할까요?</h3><p>같은 지역에서 선수 등록을 이어갈 수 있는 학교들입니다. 학교마다 잘 가르치는 훈련과 감수해야 할 단점이 다릅니다.</p>
           <div className="school-grid">{state.schoolOptions.map((school) => <button key={school.id} type="button" disabled={isRunning} onClick={() => void onSchool(school.id)}>
-            <span>{school.name}</span><strong>{school.philosophy}</strong><p>{school.coachName} 감독 · {school.catcherName} 포수</p><small>{school.tradeoff}</small></button>)}</div></> : null}
+            <span>{school.name}</span><strong>{school.philosophy}</strong>
+            <div className="school-staff"><p><b>{school.coachName} 감독</b> · {school.coachArchetype}</p><small>{school.coachRecord}</small><p>{school.coachPersonality}</p></div>
+            <div className="school-staff"><p><b>{school.catcherName} 포수</b> · {school.catcherArchetype}</p><small>{school.catcherRecord}</small><p>{school.catcherPersonality}</p></div>
+            <small className="school-tradeoff">주의 · {school.tradeoff}</small></button>)}</div></> : null}
         {state.phase === "training" ? <><h3>이번 계절의 {state.chapterTrainingCount + 1}번째 훈련</h3><p>{showHints ? `${state.school?.name ?? "학교"}는 ${TRAININGS.find((item) => item.value === state.school?.strength)?.label ?? "주력"} 훈련을 가장 잘 지원합니다. 현재 피로는 ${state.fatigue}입니다.` : `현재 피로 ${state.fatigue}. 이번 훈련을 고르세요.`}</p>
           <div className="career-training-grid">{TRAININGS.map((option) => <button key={option.value} type="button" aria-pressed={focus === option.value}
             className={focus === option.value ? "is-selected" : undefined} onClick={() => setFocus(option.value)}><strong>{option.label}</strong><span>{option.copy}</span></button>)}</div>
@@ -444,6 +450,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         {state.phase === "relationship" ? <><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3><p>{scene.quote}</p>
           <div className="relationship-options">{scene.choices.map((choice) => <button key={choice.id} type="button" disabled={isRunning} onClick={() => void onRelationship(choice.id)}><strong>{choice.title}</strong><span>{choice.copy}</span></button>)}</div></> : null}
         {state.phase === "important_game" ? <div className="career-milestone"><span>중요 경기 {state.performance.importantGamesCompleted + 1}</span><h3>{state.currentGameScenario?.title ?? `${state.rival.name} 상대 중요 이닝`}</h3>
+          <div className="rival-scouting"><strong>{state.rival.name} · {state.rival.archetype}</strong><small>{state.rival.signatureRecord}</small><p>{state.rival.personality}</p></div>
           <p>{state.currentGameScenario?.narrative ?? `현재 피로 ${state.fatigue}. 직접 구종과 코스를 골라 이닝을 끝내야 합니다.`}</p>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onImportantGame()}>중요 이닝 직접 투구</button></div> : null}
         {state.phase === "awakening" ? <><h3>새로 익힌 강점 {state.selectedAwakenings.length + 1}/3</h3><div className="relationship-options">{state.awakeningOptions.map((awakening) =>
@@ -460,7 +467,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <span>{state.draftResult.outcome === "drafted" ? `${state.draftResult.round}라운드 ${state.draftResult.overallPick}순위` : "드래프트 종료"}</span>
           <h3>{state.draftResult.team?.name ?? "다음 삶을 준비합니다"}</h3><p>{state.draftResult.summary}</p>{state.draftResult.team ? <div className="pro-preview">
             <div><span>계약금</span><strong>{Math.round((state.draftResult.signingBonus ?? 0) / 10_000)}만원</strong></div><div><span>육성 계획</span><strong>{state.draftResult.team.developmentPlan}</strong></div>
-            <div><span>경쟁자</span><strong>{state.draftResult.team.positionCompetitor}</strong></div><div><span>담당 코치</span><strong>{state.draftResult.team.proCoach}</strong></div>
+            <div><span>경쟁자</span><strong>{state.draftResult.team.positionCompetitor}</strong><small>{state.draftResult.team.competitorRecord}</small><p>{state.draftResult.team.competitorProfile}</p></div><div><span>담당 코치</span><strong>{state.draftResult.team.proCoach}</strong><small>{state.draftResult.team.coachRecord}</small><p>{state.draftResult.team.coachProfile}</p></div>
             <div><span>첫 시즌 목표</span><strong>2군 선발 경쟁 · 1군 데뷔</strong></div><div><span>프로에서 할 일</span><strong>훈련·보직 경쟁·계약·FA</strong></div></div> : null}
           {state.draftResult.outcome === "drafted" ? <div className="pro-lock"><span>프로 커리어</span><h4>{proAccessAvailable ? "지명 구단과 계약할 차례입니다." : "프로 커리어 확장"}</h4>
             <p>{proAccessAvailable ? "2군 선발 경쟁부터 시작합니다. 고교 기록과 구종은 그대로 이어집니다." : "프로 커리어는 정식판에서 고교 기록 그대로 이어집니다."}</p>

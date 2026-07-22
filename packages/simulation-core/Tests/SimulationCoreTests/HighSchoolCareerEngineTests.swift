@@ -34,6 +34,28 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertNotEqual(incheon.snapshot.schoolOptions.map(\.name), busan.snapshot.schoolOptions.map(\.name))
     }
 
+    func testFictionalCharacterProfilesCarryPersonalityRecordsAndDistinctRatings() throws {
+        let schools = HighSchoolCareerEngine.schools(for: "인천")
+        XCTAssertTrue(schools.allSatisfy {
+            !($0.coachPersonality ?? "").isEmpty && !($0.coachRecord ?? "").isEmpty
+                && !($0.catcherPersonality ?? "").isEmpty && !($0.catcherRecord ?? "").isEmpty
+        })
+        XCTAssertEqual(Set(schools.map(\.coachName)).count, 4)
+        XCTAssertEqual(Set(schools.map(\.catcherName)).count, 4)
+
+        XCTAssertTrue(HighSchoolCareerEngine.teams.allSatisfy {
+            !($0.competitorProfile ?? "").isEmpty && !($0.competitorRecord ?? "").isEmpty
+                && !($0.coachProfile ?? "").isEmpty && !($0.coachRecord ?? "").isEmpty
+        })
+
+        let rivals = try (1...64).map { seed in
+            try HighSchoolCareerEngine().start(.init(seed: String(seed), presetID: "power_prospect")).snapshot.rival
+        }
+        XCTAssertEqual(Set(rivals.map(\.name)).count, 8)
+        XCTAssertTrue(rivals.allSatisfy { !($0.personality ?? "").isEmpty && !($0.signatureRecord ?? "").isEmpty })
+        XCTAssertGreaterThan(Set(rivals.map { "\($0.contact)-\($0.discipline)-\($0.power)" }).count, 4)
+    }
+
     func testDifficultyAndKarmaChangeRulesWithoutChangingContentOrder() throws {
         let engine = HighSchoolCareerEngine()
         let relaxed = try engine.start(

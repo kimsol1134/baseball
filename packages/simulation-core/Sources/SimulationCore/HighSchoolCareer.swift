@@ -119,6 +119,10 @@ public struct SchoolSnapshot: Codable, Equatable, Sendable {
     public let coachArchetype: String
     public let catcherName: String
     public let catcherArchetype: String
+    public let coachPersonality: String?
+    public let coachRecord: String?
+    public let catcherPersonality: String?
+    public let catcherRecord: String?
     public let strength: TrainingFocus
     public let tradeoff: String
 
@@ -130,6 +134,10 @@ public struct SchoolSnapshot: Codable, Equatable, Sendable {
         coachArchetype: String,
         catcherName: String,
         catcherArchetype: String,
+        coachPersonality: String? = nil,
+        coachRecord: String? = nil,
+        catcherPersonality: String? = nil,
+        catcherRecord: String? = nil,
         strength: TrainingFocus,
         tradeoff: String
     ) {
@@ -140,6 +148,10 @@ public struct SchoolSnapshot: Codable, Equatable, Sendable {
         self.coachArchetype = coachArchetype
         self.catcherName = catcherName
         self.catcherArchetype = catcherArchetype
+        self.coachPersonality = coachPersonality
+        self.coachRecord = coachRecord
+        self.catcherPersonality = catcherPersonality
+        self.catcherRecord = catcherRecord
         self.strength = strength
         self.tradeoff = tradeoff
     }
@@ -152,14 +164,27 @@ public struct RivalSnapshot: Codable, Equatable, Sendable {
     public let contact: Int
     public let discipline: Int
     public let power: Int
+    public let personality: String?
+    public let signatureRecord: String?
 
-    public init(id: String, name: String, archetype: String, contact: Int, discipline: Int, power: Int) {
+    public init(
+        id: String,
+        name: String,
+        archetype: String,
+        contact: Int,
+        discipline: Int,
+        power: Int,
+        personality: String? = nil,
+        signatureRecord: String? = nil
+    ) {
         self.id = id
         self.name = name
         self.archetype = archetype
         self.contact = contact
         self.discipline = discipline
         self.power = power
+        self.personality = personality
+        self.signatureRecord = signatureRecord
     }
 }
 
@@ -227,6 +252,10 @@ public struct DraftTeamSnapshot: Codable, Equatable, Sendable {
     public let developmentPlan: String
     public let positionCompetitor: String
     public let proCoach: String
+    public let competitorProfile: String?
+    public let competitorRecord: String?
+    public let coachProfile: String?
+    public let coachRecord: String?
 
     public init(
         id: String,
@@ -235,7 +264,11 @@ public struct DraftTeamSnapshot: Codable, Equatable, Sendable {
         demand: Int,
         developmentPlan: String,
         positionCompetitor: String,
-        proCoach: String
+        proCoach: String,
+        competitorProfile: String? = nil,
+        competitorRecord: String? = nil,
+        coachProfile: String? = nil,
+        coachRecord: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -244,6 +277,10 @@ public struct DraftTeamSnapshot: Codable, Equatable, Sendable {
         self.developmentPlan = developmentPlan
         self.positionCompetitor = positionCompetitor
         self.proCoach = proCoach
+        self.competitorProfile = competitorProfile
+        self.competitorRecord = competitorRecord
+        self.coachProfile = coachProfile
+        self.coachRecord = coachRecord
     }
 }
 
@@ -578,24 +615,55 @@ public struct HighSchoolCareerEngine: Sendable {
     public static func schools(for region: String) -> [SchoolSnapshot] {
         let names = regionalSchoolNames[region] ?? regionalSchoolNames["서울"]!
         return [
-            .init(id: .hanbitTraditional, name: names.traditional, philosophy: "기본기와 긴 이닝", coachName: "김성곤", coachArchetype: "원칙형", catcherName: "강민준", catcherArchetype: "안정형", strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
-            .init(id: .miraeAnalytics, name: names.analytics, philosophy: "데이터와 경기 설계", coachName: "염경윤", coachArchetype: "분석형", catcherName: "양의준", catcherArchetype: "분석형", strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
-            .init(id: .haedongPower, name: names.power, philosophy: "출력과 공격적인 승부", coachName: "선동현", coachArchetype: "승부형", catcherName: "김상준", catcherArchetype: "공격형", strength: .velocity, tradeoff: "피로와 제구 비용을 감수해야 합니다."),
-            .init(id: .cheongamDevelopment, name: names.development, philosophy: "개인별 폼과 변화구 육성", coachName: "김태현", coachArchetype: "육성형", catcherName: "박경원", catcherArchetype: "공감형", strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
+            .init(id: .hanbitTraditional, name: names.traditional, philosophy: "기본기와 긴 이닝", coachName: "김성곤", coachArchetype: "원칙형", catcherName: "강민준", catcherArchetype: "안정형",
+                coachPersonality: "새벽 반복 훈련을 고집하며 핑계보다 공 하나를 더 던지게 합니다.", coachRecord: "통산 1,387승 · 우승 3회",
+                catcherPersonality: "실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수입니다.", catcherRecord: "통산 2,299경기 · 포수상 6회",
+                strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
+            .init(id: .miraeAnalytics, name: names.analytics, philosophy: "데이터와 경기 설계", coachName: "염경윤", coachArchetype: "분석형", catcherName: "양의준", catcherArchetype: "분석형",
+                coachPersonality: "확률표를 들고 한 베이스와 불펜 교체 시점을 끝까지 계산합니다.", coachRecord: "정규시즌 1위 2회 · 우승 1회",
+                catcherPersonality: "말수는 적지만 타자의 노림수를 먼저 읽고 결정적인 순간 직접 해결합니다.", catcherRecord: "포수상 8회 · 통산 249홈런",
+                strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
+            .init(id: .haedongPower, name: names.power, philosophy: "출력과 공격적인 승부", coachName: "선동현", coachArchetype: "승부형", catcherName: "진갑준", catcherArchetype: "공격형",
+                coachPersonality: "에이스에게 가장 엄격하며 위기일수록 몸쪽 정면승부를 요구합니다.", coachRecord: "통산 ERA 1.21 · 145승 · 133세이브",
+                catcherPersonality: "몸쪽 사인을 두려워하지 않고 큰 경기에서 투수를 강하게 끌고 갑니다.", catcherRecord: "통산 1,819경기 · 우승 배터리 5회",
+                strength: .velocity, tradeoff: "피로와 제구 비용을 감수해야 합니다."),
+            .init(id: .cheongamDevelopment, name: names.development, philosophy: "개인별 폼과 변화구 육성", coachName: "김태현", coachArchetype: "육성형", catcherName: "박경원", catcherArchetype: "공감형",
+                coachPersonality: "무심한 표정으로 결단을 내리지만 큰 경기에서는 선수를 먼저 믿습니다.", coachRecord: "한국시리즈 우승 3회 · 7시즌 연속 가을야구",
+                catcherPersonality: "블로킹 천 번을 기본으로 여기며 투수의 버릇까지 잡아내는 완벽주의자입니다.", catcherRecord: "통산 313홈런 · 4연타석 홈런",
+                strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
         ]
     }
 
     public static let teams: [DraftTeamSnapshot] = [
-        .init(id: "seoul_comets", name: "잠실 트윈스타즈", need: .command, demand: 72, developmentPlan: "2군 선발 로테이션에서 커맨드 완성", positionCompetitor: "임찬윤", proCoach: "류지훈"),
-        .init(id: "busan_marines", name: "사직 자이언스", need: .stamina, demand: 66, developmentPlan: "긴 이닝형 선발 육성", positionCompetitor: "박세준", proCoach: "김태현"),
-        .init(id: "incheon_waves", name: "문학 랜딩스", need: .breakingBall, demand: 70, developmentPlan: "결정구 한 종을 프로 수준으로 강화", positionCompetitor: "김강윤", proCoach: "이승용"),
-        .init(id: "daegu_forge", name: "대구 라이온하츠", need: .velocity, demand: 75, developmentPlan: "출력 유지와 불펜 조기 데뷔", positionCompetitor: "원태윤", proCoach: "박진문"),
-        .init(id: "daejeon_rockets", name: "대전 이글윙스", need: .gamePlanning, demand: 68, developmentPlan: "배터리 게임 플랜 중심 선발 육성", positionCompetitor: "문동윤", proCoach: "김경민"),
-        .init(id: "gwangju_phoenix", name: "광주 타이곤즈", need: .breakingBall, demand: 64, developmentPlan: "변화구 터널과 약한 타구 강화", positionCompetitor: "이의준", proCoach: "이범준"),
-        .init(id: "suwon_guardians", name: "수원 위저즈", need: .command, demand: 61, developmentPlan: "볼넷 억제 후 1군 롱릴리프", positionCompetitor: "고영준", proCoach: "이강준"),
-        .init(id: "changwon_meteors", name: "창원 다이너스", need: .velocity, demand: 69, developmentPlan: "포심 형태와 최고 구속 동시 개발", positionCompetitor: "구창윤", proCoach: "이호진"),
-        .init(id: "jeonju_hanok", name: "고척 히어로스", need: .stamina, demand: 58, developmentPlan: "체력 기반 선발 후보 경쟁", positionCompetitor: "안우준", proCoach: "홍원준"),
-        .init(id: "jeju_storm", name: "잠실 베어킹스", need: .gamePlanning, demand: 63, developmentPlan: "데이터 적응형 스윙맨 육성", positionCompetitor: "곽민재", proCoach: "이승준")
+        .init(id: "seoul_comets", name: "잠실 트윈스타즈", need: .command, demand: 72, developmentPlan: "2군 선발 로테이션에서 커맨드 완성", positionCompetitor: "임찬윤", proCoach: "류지훈", competitorProfile: "느린 커브와 타이밍 싸움으로 살아남은 베테랑 선발", competitorRecord: "최근 시즌 10승 · ERA 3.82", coachProfile: "선수와 대화부터 시작하는 수비 중심 지도자", coachRecord: "2년 연속 가을야구"),
+        .init(id: "busan_marines", name: "사직 자이언스", need: .stamina, demand: 66, developmentPlan: "긴 이닝형 선발 육성", positionCompetitor: "박세준", proCoach: "김태현", competitorProfile: "높은 포심과 포크볼을 앞세운 안경 에이스", competitorRecord: "시즌 12승 · 159탈삼진", coachProfile: "무심한 표정 뒤에 큰 경기 뚝심을 감춘 승부사", coachRecord: "한국시리즈 우승 3회"),
+        .init(id: "incheon_waves", name: "문학 랜딩스", need: .breakingBall, demand: 70, developmentPlan: "결정구 한 종을 프로 수준으로 강화", positionCompetitor: "김강윤", proCoach: "이승용", competitorProfile: "슬라이더와 큰 경기 경험으로 버티는 좌완 에이스", competitorRecord: "통산 169승 · 1,899탈삼진", coachProfile: "베테랑 자율과 강한 야구를 함께 요구하는 감독", coachRecord: "통합 우승 코치 · 감독 첫해 가을야구"),
+        .init(id: "daegu_forge", name: "대구 라이온하츠", need: .velocity, demand: 75, developmentPlan: "출력 유지와 불펜 조기 데뷔", positionCompetitor: "원태윤", proCoach: "박진문", competitorProfile: "낮은 코스와 완급을 반복하는 젊은 우완 에이스", competitorRecord: "시즌 14승 · ERA 3.67", coachProfile: "기본 수비와 세대교체를 함께 밀어붙이는 내야 명장", coachRecord: "정규시즌 2위 · 한국시리즈 진출"),
+        .init(id: "daejeon_rockets", name: "대전 이글윙스", need: .gamePlanning, demand: 68, developmentPlan: "배터리 게임 플랜 중심 선발 육성", positionCompetitor: "문동윤", proCoach: "김경민", competitorProfile: "160km/h에 닿는 포심을 지닌 국가대표 파이어볼러", competitorRecord: "최고 160.0km/h · 신인상", coachProfile: "한번 고른 선발은 끝까지 밀어붙이는 국가대표형 감독", coachRecord: "통산 899승 · 준우승 4회"),
+        .init(id: "gwangju_phoenix", name: "광주 타이곤즈", need: .breakingBall, demand: 64, developmentPlan: "변화구 터널과 약한 타구 강화", positionCompetitor: "이의준", proCoach: "이범준", competitorProfile: "큰 각도의 커브로 삼진을 쌓는 왼손 정통파", competitorRecord: "시즌 10승 · 154탈삼진", coachProfile: "선수를 믿고 공격적으로 뛰게 하는 젊은 감독", coachRecord: "감독 첫해 통합 우승"),
+        .init(id: "suwon_guardians", name: "수원 위저즈", need: .command, demand: 61, developmentPlan: "볼넷 억제 후 1군 롱릴리프", positionCompetitor: "고영준", proCoach: "이강준", competitorProfile: "잠수 궤적과 체인지업으로 볼넷을 지우는 선발", competitorRecord: "시즌 BB/9 1.4 · 퀄리티스타트 20회", coachProfile: "투수의 타이밍과 체인지업을 직접 잡는 잠수함 명장", coachRecord: "통합 우승 1회 · 4년 연속 가을야구"),
+        .init(id: "changwon_meteors", name: "창원 다이너스", need: .velocity, demand: 69, developmentPlan: "포심 형태와 최고 구속 동시 개발", positionCompetitor: "구창윤", proCoach: "이호진", competitorProfile: "건강한 날에는 리그를 압도하는 왼손 포심", competitorRecord: "시즌 ERA 2.11 · 10승", coachProfile: "타격 이론과 형님 리더십을 함께 쓰는 감독", coachRecord: "타격왕 3회 출신 · 감독 첫해 5강 경쟁"),
+        .init(id: "jeonju_hanok", name: "고척 히어로스", need: .stamina, demand: 58, developmentPlan: "체력 기반 선발 후보 경쟁", positionCompetitor: "안우준", proCoach: "홍원준", competitorProfile: "150km/h 후반 포심과 날카로운 슬라이더의 탈삼진왕", competitorRecord: "시즌 223탈삼진 · ERA 2.12", coachProfile: "젊은 선수에게 먼저 기회를 주는 장기 육성형 감독", coachRecord: "한국시리즈 준우승 1회"),
+        .init(id: "jeju_storm", name: "잠실 베어킹스", need: .gamePlanning, demand: 63, developmentPlan: "데이터 적응형 스윙맨 육성", positionCompetitor: "곽민재", proCoach: "이승준", competitorProfile: "묵직한 포심으로 국가대표를 노리는 우완 선발", competitorRecord: "시즌 15승 · 154탈삼진", coachProfile: "홈런 타자의 경험으로 큰 경기 한 방을 강조하는 감독", coachRecord: "통산 466홈런 출신 · 국가대표 감독")
+    ]
+
+    private static let rivals: [RivalSnapshot] = [
+        .init(id: "rival-seo", name: "이정훈", archetype: "천재 교타형", contact: 76, discipline: 70, power: 61,
+            personality: "배트가 공을 끝까지 따라갑니다. 같은 코스를 두 번 놓치지 않는 왼손 타자입니다.", signatureRecord: "시즌 타율 .348 · 192안타 · MVP"),
+        .init(id: "rival-lee", name: "이대훈", archetype: "초구 거포형", contact: 72, discipline: 61, power: 78,
+            personality: "느린 발을 감출 만큼 타구 판단이 빠릅니다. 초구 실투를 그냥 보내지 않습니다.", signatureRecord: "타격 7관왕 · 시즌 43홈런 132타점"),
+        .init(id: "rival-park", name: "박용태", archetype: "안타 제조형", contact: 74, discipline: 68, power: 54,
+            personality: "파울로 버티며 투구 수를 늘리고 마지막에는 짧은 스윙으로 안타를 만듭니다.", signatureRecord: "통산 2,503안타 · 2,221경기"),
+        .init(id: "rival-kang", name: "이승윤", archetype: "외다리 장타형", contact: 64, discipline: 63, power: 80,
+            personality: "높게 떠오른 공을 우측 담장으로 보내는 왼손 거포입니다. 실투 하나가 곧 실점입니다.", signatureRecord: "시즌 55홈런 · 통산 466홈런"),
+        .init(id: "rival-yoon", name: "구자윤", archetype: "장신 호타준족형", contact: 71, discipline: 63, power: 67,
+            personality: "큰 스윙 궤도와 빠른 발을 함께 씁니다. 변화구가 뜨면 주저 없이 당겨칩니다.", signatureRecord: "시즌 타율 .339 · 30홈런 · 15도루"),
+        .init(id: "rival-choi", name: "최형준", archetype: "득점권 해결사형", contact: 70, discipline: 69, power: 76,
+            personality: "늦은 카운트와 득점권에서 오히려 스윙이 짧아지는 베테랑 해결사입니다.", signatureRecord: "통산 3,999루타 · 1,499타점"),
+        .init(id: "rival-home-run", name: "최정우", archetype: "몸쪽 사냥형", contact: 66, discipline: 72, power: 80,
+            personality: "몸쪽 공도 피하지 않고 잡아당깁니다. 불리한 카운트에서도 장타를 버리지 않습니다.", signatureRecord: "통산 508홈런 · 18시즌 연속 두 자릿수 홈런"),
+        .init(id: "rival-speed", name: "김도윤", archetype: "30-30 질주형", contact: 75, discipline: 65, power: 75,
+            personality: "타구가 뜨는 순간 2루를 노립니다. 실투 하나로 경기 흐름을 바꾸는 호타준족입니다.", signatureRecord: "시즌 타율 .346 · 37홈런 · 39도루 · 142득점")
     ]
 
     public init() {}
@@ -646,6 +714,17 @@ public struct HighSchoolCareerEngine: Sendable {
         let selectedSchool = params.state.school.flatMap { current in
             options.first(where: { $0.id == current.id })
         }
+        let normalizedRival = Self.rivals.first(where: { $0.id == params.state.rival.id }).map { profile in
+            RivalSnapshot(id: profile.id, name: profile.name, archetype: profile.archetype,
+                contact: params.state.rival.contact, discipline: params.state.rival.discipline, power: params.state.rival.power,
+                personality: profile.personality, signatureRecord: profile.signatureRecord)
+        } ?? params.state.rival
+        let normalizedDraft = params.state.draftResult.map { draft in
+            let team = draft.team.flatMap { current in Self.teams.first(where: { $0.id == current.id }) } ?? draft.team
+            return DraftResultSnapshot(outcome: draft.outcome, evaluationScore: draft.evaluationScore,
+                projectedRange: draft.projectedRange, team: team, round: draft.round, overallPick: draft.overallPick,
+                signingBonus: draft.signingBonus, firstSeasonGoal: draft.firstSeasonGoal, summary: draft.summary)
+        }
         let normalizedNews = params.state.news.map { item in
             if item == "고교 진학 제안 도착 · \(params.state.identity.name) · 4개 학교" {
                 return "고교 진학 제안 도착 · \(params.state.identity.name) · \(params.state.identity.region) 4개 학교"
@@ -655,7 +734,8 @@ public struct HighSchoolCareerEngine: Sendable {
             }
             return item
         }
-        let normalized = signed(replacing(params.state, schoolOptions: options, school: selectedSchool, news: normalizedNews))
+        let normalized = signed(replacing(params.state, schoolOptions: options, school: selectedSchool,
+            rival: normalizedRival, news: normalizedNews, draftResult: normalizedDraft))
         let eventHash = StableHash.fnv1a64("\(normalized.careerID)|\(normalized.revision)|regional_schools_normalized|\(normalized.stateCommitment)")
         return HighSchoolCareerResult(revision: normalized.revision, nextSeed: params.seed, events: [], snapshot: normalized, eventHash: eventHash)
     }
@@ -837,22 +917,14 @@ public struct HighSchoolCareerEngine: Sendable {
     }
 
     private func rival(seed: UInt64, difficulty: DifficultyLevel, karmas: [KarmaID]) -> RivalSnapshot {
-        let rivals = [
-            RivalSnapshot(id: "rival-seo", name: "이정훈", archetype: "패턴 학습형 중심타자", contact: 62, discipline: 58, power: 66),
-            RivalSnapshot(id: "rival-lee", name: "이대훈", archetype: "초구 공격형", contact: 65, discipline: 47, power: 61),
-            RivalSnapshot(id: "rival-park", name: "박용태", archetype: "존 관리형", contact: 58, discipline: 67, power: 55),
-            RivalSnapshot(id: "rival-kang", name: "이승윤", archetype: "장타 특화형", contact: 53, discipline: 54, power: 72),
-            RivalSnapshot(id: "rival-yoon", name: "구자윤", archetype: "변화구 대응형", contact: 63, discipline: 59, power: 57),
-            RivalSnapshot(id: "rival-choi", name: "최형준", archetype: "포심 사냥형", contact: 60, discipline: 52, power: 68)
-        ]
         var generator = SplitMix64(seed: seed ^ 0x5249_5641_4c00)
-        let base = rivals[generator.nextInt(upperBound: rivals.count)]
+        let base = Self.rivals[generator.nextInt(upperBound: Self.rivals.count)]
         let difficultyBonus = difficulty == .relaxed ? -3 : difficulty == .challenging ? 4 : 0
         let generationBonus = karmas.contains(.geniusGeneration) ? 4 : 0
         let bonus = difficultyBonus + generationBonus
         return RivalSnapshot(id: base.id, name: base.name, archetype: base.archetype,
             contact: clamp(base.contact + bonus, 20, 80), discipline: clamp(base.discipline + bonus, 20, 80),
-            power: clamp(base.power + bonus, 20, 80))
+            power: clamp(base.power + bonus, 20, 80), personality: base.personality, signatureRecord: base.signatureRecord)
     }
 
     private func awakeningOptions(state: HighSchoolCareerSnapshot, seed: UInt64) -> [AwakeningID] {
@@ -1145,6 +1217,7 @@ public struct HighSchoolCareerEngine: Sendable {
     private func replacing(_ state: HighSchoolCareerSnapshot, revision: UInt64? = nil,
         phase: HighSchoolCareerPhase? = nil, pitcher: PitcherSnapshot? = nil,
         schoolOptions: [SchoolSnapshot]? = nil, school: SchoolSnapshot? = nil,
+        rival: RivalSnapshot? = nil,
         chapter: CareerChapterSnapshot? = nil, chapterTrainingCount: Int? = nil, totalTrainingsCompleted: Int? = nil,
         milestoneIndex: Int? = nil, relationshipsCompleted: Int? = nil, relationshipTrust: Int? = nil,
         selectedAwakenings: [AwakeningID]? = nil, awakeningOptions: [AwakeningID]? = nil, fatigue: Int? = nil,
@@ -1158,7 +1231,7 @@ public struct HighSchoolCareerEngine: Sendable {
             phase: phase ?? state.phase, identity: state.identity, difficulty: state.difficulty, karmas: state.karmas,
             legacyRewardPermille: state.legacyRewardPermille, memorySlots: state.memorySlots,
             pitcher: pitcher ?? state.pitcher, schoolOptions: schoolOptions ?? state.schoolOptions,
-            school: school ?? state.school, rival: state.rival, chapter: chapter ?? state.chapter,
+            school: school ?? state.school, rival: rival ?? state.rival, chapter: chapter ?? state.chapter,
             chapterTrainingCount: chapterTrainingCount ?? state.chapterTrainingCount,
             totalTrainingsCompleted: totalTrainingsCompleted ?? state.totalTrainingsCompleted,
             milestoneIndex: milestoneIndex ?? state.milestoneIndex,

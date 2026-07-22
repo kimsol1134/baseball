@@ -663,6 +663,10 @@ export interface SchoolSnapshot {
   coachArchetype: string;
   catcherName: string;
   catcherArchetype: string;
+  coachPersonality?: string;
+  coachRecord?: string;
+  catcherPersonality?: string;
+  catcherRecord?: string;
   strength: TrainingFocus;
   tradeoff: string;
 }
@@ -674,6 +678,8 @@ export interface RivalSnapshot {
   contact: number;
   discipline: number;
   power: number;
+  personality?: string;
+  signatureRecord?: string;
 }
 
 export interface CareerChapterSnapshot {
@@ -714,6 +720,10 @@ export interface DraftTeamSnapshot {
   developmentPlan: string;
   positionCompetitor: string;
   proCoach: string;
+  competitorProfile?: string;
+  competitorRecord?: string;
+  coachProfile?: string;
+  coachRecord?: string;
 }
 
 export interface DraftResultSnapshot {
