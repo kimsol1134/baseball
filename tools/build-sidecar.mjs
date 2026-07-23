@@ -84,6 +84,10 @@ if (!existsSync(source)) {
 }
 
 mkdirSync(binaryDirectory, { recursive: true });
+// Recreate the bundle target instead of overwriting it in place. On macOS an
+// overwritten file can retain stale Gatekeeper/provenance xattrs and hang on
+// launch even when its bytes are identical to the freshly built executable.
+rmSync(destination, { force: true });
 copyFileSync(source, destination);
 if (process.platform !== "win32") {
   chmodSync(destination, 0o755);
