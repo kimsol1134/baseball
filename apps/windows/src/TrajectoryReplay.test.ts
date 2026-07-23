@@ -142,7 +142,7 @@ describe("trajectory replay geometry", () => {
     ]);
 
     expect(projectBattedBallLift(samples[0], samples)).toBeGreaterThan(4);
-    expect(projectBattedBallLift(samples[1], samples)).toBeGreaterThan(70);
+    expect(projectBattedBallLift(samples[1], samples)).toBeGreaterThan(120);
     expect(projectBattedBallLift(samples[2], samples)).toBe(0);
   });
 

@@ -308,7 +308,10 @@ export function projectBattedBallLift(
   const furthestForward = Math.max(1, ...samples.map((point) => point.forwardTenthsCM));
   const depth = clamp(sample.forwardTenthsCM / furthestForward, 0, 1);
   const heightMeters = sample.heightTenthsCM / 1_000;
-  return clamp(heightMeters * lerp(4.8, 3.25, depth), 0, 112);
+  // The field camera is much shallower than a true plan view. Project vertical
+  // metres more strongly than ground-depth metres so rise, apex, and descent
+  // remain legible instead of collapsing into the outfield perspective.
+  return clamp(heightMeters * lerp(8.4, 6.5, depth), 0, 150);
 }
 
 /** Projects the core-resolved landing point onto the top-down stadium. */
