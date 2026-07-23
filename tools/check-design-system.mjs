@@ -62,9 +62,14 @@ const contractChecks = [
   ["apps/windows/src/ProCareerView.tsx", 'data-team={state.team.id}'],
   ["apps/windows/src/CoreUnavailableState.tsx", 'aria-live="polite"'],
   ["apps/windows/src/PitcherLabView.tsx", "hasPendingResult"],
+  ["apps/windows/src/PitcherLabView.tsx", "writeLabResultAcknowledgement"],
+  ["apps/windows/src/PitcherLabView.tsx", "ratingPointsApplied"],
   ["apps/windows/src/PitcherLabView.tsx", "labTrainingForecast"],
   ["apps/windows/src/App.tsx", "effectiveReducedMotion"],
   ["apps/windows/src/App.tsx", "gameStateForReplay"],
+  ["apps/windows/src/App.tsx", "pitcherRoleLabel"],
+  ["apps/windows/src/App.tsx", "batterScoutingReport"],
+  ["apps/windows/src/App.tsx", "return status.message"],
   ["apps/windows/src/CharacterProfile.tsx", 'loading="lazy"'],
   ["apps/windows/src/CharacterProfile.tsx", 'decoding="async"'],
   ["apps/windows/src/styles.css", ".app-shell--high-school"],
@@ -84,6 +89,9 @@ const contractChecks = [
   ["apps/windows/src/design-system.css", '[data-stage="pro_debut"]'],
   ["apps/windows/src/design-system.css", '[data-stage="major_debut"]'],
   ["apps/windows/src/design-system.css", ':root:has(body.high-contrast)'],
+  ["apps/windows/e2e/ui-regression.spec.ts", '390px, 130% type, and high contrast do not overflow'],
+  [".github/workflows/ci.yml", "npm run test:e2e"],
+  [".github/workflows/ci.yml", "npm run check:web-assets"],
 ];
 
 for (const [path, expected] of contractChecks) {

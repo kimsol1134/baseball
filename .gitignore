@@ -14,3 +14,6 @@ apps/windows/src-tauri/gen/
 /artifacts/
 /steam/steamworks.local.json
 steam_appid.txt
+apps/windows/test-results/
+apps/windows/playwright-report/
+.playwright-mcp/

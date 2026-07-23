@@ -39,7 +39,19 @@ jobs:
       - run: npm run check:copy
       - run: npm run test:web
       - run: npm run build:web
+      - run: npm run check:web-assets
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
       - run: npm run steam:submission:check
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: playwright-ui-report
+          path: |
+            apps/windows/playwright-report
+            apps/windows/test-results
+          if-no-files-found: ignore
+          retention-days: 7
 
   desktop:
     name: Desktop package (${{ matrix.name }})
