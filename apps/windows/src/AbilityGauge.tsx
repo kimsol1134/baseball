@@ -29,7 +29,7 @@ export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBou
     const frame = window.requestAnimationFrame(() => setAnimatedValue(current));
     return () => window.cancelAnimationFrame(frame);
   }, [current, gained, previous]);
-  const tier = current >= 65 ? "strength" : current >= 55 ? "above-average" : current >= 45 ? "average" : "weakness";
+  const tier = current >= 65 ? "strength" : current >= 50 ? "above-average" : current >= 40 ? "average" : "weakness";
   const currentText = beforeValue === undefined
     ? `${label} ${displayValue ?? current}`
     : `${label} ${clampRating(beforeValue)}에서 ${current}`;

@@ -6,15 +6,15 @@ interface GrowthCelebrationProps {
 }
 
 export function growthMilestoneCopy(before: number, after: number) {
-  if (before < 75 && after >= 75) return "전국 최고 수준에 올라섰습니다";
-  if (before < 65 && after >= 65) return "경기의 흐름을 바꿀 확실한 강점입니다";
-  if (before < 55 && after >= 55) return "고교 평균을 확실히 넘어섰습니다";
-  if (before < 45 && after >= 45) return "이제 약점으로 보이지 않습니다";
+  if (before < 75 && after >= 75) return "세대 최고 수준에 올라섰습니다";
+  if (before < 65 && after >= 65) return "프로에서도 경기를 지배할 강점입니다";
+  if (before < 50 && after >= 50) return "프로 평균 수준에 도달했습니다";
+  if (before < 40 && after >= 40) return "고교 정상급 능력이 됐습니다";
   return "한 단계 더 강해졌습니다";
 }
 
 export function crossedGrowthMilestone(before: number, after: number) {
-  return [45, 55, 65, 75].some((threshold) => before < threshold && after >= threshold);
+  return [40, 50, 65, 75].some((threshold) => before < threshold && after >= threshold);
 }
 
 export function GrowthCelebration({ label, before, after, compact = false }: GrowthCelebrationProps) {

@@ -12,8 +12,10 @@ describe("GrowthCelebration", () => {
   });
 
   it("calls out crossing a meaningful rating tier", () => {
-    expect(growthMilestoneCopy(64, 65)).toContain("확실한 강점");
-    expect(growthMilestoneCopy(74, 75)).toContain("전국 최고");
+    expect(growthMilestoneCopy(39, 40)).toContain("고교 정상급");
+    expect(growthMilestoneCopy(49, 50)).toContain("프로 평균 수준");
+    expect(growthMilestoneCopy(64, 65)).toContain("프로에서도");
+    expect(growthMilestoneCopy(74, 75)).toContain("세대 최고");
     expect(crossedGrowthMilestone(64, 65)).toBe(true);
   });
 
