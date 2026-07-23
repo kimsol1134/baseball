@@ -9,7 +9,7 @@
     "build:steam:full": "tsc --noEmit && vite build --mode steam-full",
     "build:steam:demo": "tsc --noEmit && vite build --mode steam-demo",
     "build:web:teaser": "tsc --noEmit && vite build --mode web-teaser",
-    "test": "vitest run --exclude e2e/**",
+    "test": "vitest run --exclude 'e2e/**'",
     "test:e2e": "playwright test",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
