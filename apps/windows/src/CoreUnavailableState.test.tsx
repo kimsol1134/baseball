@@ -16,6 +16,7 @@ describe("CoreUnavailableState", () => {
 
     expect(html).toContain('role="status"');
     expect(html).toContain('aria-live="polite"');
+    expect(html).toContain("<h2>");
     expect(html).toContain("연결이 끊어졌습니다.");
     expect(html).toContain("저장된 커리어는 지워지지 않습니다");
     expect(html).toContain("다시 연결");

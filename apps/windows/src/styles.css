@@ -4871,8 +4871,9 @@ body.high-contrast :is(.career-intro, .career-hero) {
 }
 
 .career-offline-card > strong,
-.core-unavailable-state > strong {
+.core-unavailable-state > h2 {
   max-width: 640px;
+  margin: 0;
   color: var(--color-text-primary);
   font-size: var(--font-size-section);
 }

@@ -1573,7 +1573,9 @@ export function App() {
             <p className="eyebrow">야구 못하면 또 환생함</p><h1>{careerModeTitle}</h1>
           </div></div>
           <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite"><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
-            {coreStatus.state === "offline" ? <button type="button" onClick={() => void connectCore()}>다시 연결</button> : null}</div>
+            {coreStatus.state === "offline" && (careerResult || proResult || presets.length > 0)
+              ? <button type="button" onClick={() => void connectCore()}>다시 연결</button>
+              : null}</div>
           <button className="mode-switch" type="button" onClick={handleOpenPractice}>연습 모드</button>
           <AccessibilityControls {...accessibilityProps} />
         </header>
@@ -1613,7 +1615,7 @@ export function App() {
           <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite">
             <span className="status-dot" aria-hidden="true" />
             <span>{statusMessage(coreStatus)}</span>
-            {coreStatus.state === "offline" ? (
+            {coreStatus.state === "offline" && (labResult || presets.length > 0) ? (
               <button type="button" onClick={() => void connectCore()}>다시 연결</button>
             ) : null}
           </div>

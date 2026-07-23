@@ -10,7 +10,9 @@ async function openOfflineApp(page: Page) {
 test("desktop shell keeps recovery and settings usable", async ({ page }, testInfo) => {
   await openOfflineApp(page);
   await expect(page.getByRole("heading", { name: "고교 커리어" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "선수 명단을 아직 불러오지 못했습니다." })).toBeVisible();
   await expect(page.getByText("저장된 커리어는 지워지지 않습니다")).toBeVisible();
+  await expect(page.getByRole("button", { name: "다시 연결" })).toHaveCount(1);
 
   const layout = await page.evaluate(() => ({
     viewport: window.innerWidth,
@@ -19,6 +21,13 @@ test("desktop shell keeps recovery and settings usable", async ({ page }, testIn
   }));
   expect(layout.content).toBeLessThanOrEqual(layout.viewport);
   expect(layout.headerHeight).toBeLessThan(180);
+  await expect(page).toHaveScreenshot("offline-recovery.png", {
+    fullPage: true,
+    animations: "disabled",
+    caret: "hide",
+    maxDiffPixelRatio: 0.12,
+    threshold: 0.3,
+  });
   await testInfo.attach("desktop-offline", { body: await page.screenshot(), contentType: "image/png" });
 });
 
