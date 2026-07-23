@@ -520,12 +520,69 @@ public struct BallInPlayEngine: Sendable {
     ) -> (distanceTenthsMeters: Int, hangTimeMilliseconds: Int, apexHeightTenthsMeters: Int, series: [Int]) {
         let speedMetersPerSecond = Double(battedBall.exitVelocityTenthsKPH) / 36.0
         let launchDegrees = Double(battedBall.launchAngleTenthsDegrees) / 10.0
-        let launchRadians = max(2.0, min(42.0, launchDegrees)) * .pi / 180.0
-        let projectileCarry = speedMetersPerSecond * speedMetersPerSecond
-            * sin(2.0 * launchRadians) / 9.81 * 0.68
-        let groundCarry = 10.0 + speedMetersPerSecond * 0.48
-            + Double(battedBall.contactQuality) / 85.0
-        let rawDistance = launchDegrees < 9.0 ? groundCarry : projectileCarry
+        let launchRadians = max(-8.0, min(48.0, launchDegrees)) * .pi / 180.0
+
+        // Numerically integrate gravity, quadratic drag, and representative
+        // backspin lift. Constants use a regulation-size baseball at sea-level
+        // air density; the inferred lift coefficient stands in for spin because
+        // the contact model does not yet expose measured batted-ball RPM.
+        let baseballMassKilograms = 0.145
+        let baseballRadiusMeters = 0.0369
+        let airDensityKilogramsPerCubicMeter = 1.225
+        let crossSectionSquareMeters = Double.pi * baseballRadiusMeters * baseballRadiusMeters
+        let dragCoefficient = 0.30
+        let liftCoefficient = min(0.20, max(0.12, 0.15 + (24.0 - launchDegrees) * 0.0015))
+        let dragFactor = 0.5 * airDensityKilogramsPerCubicMeter
+            * crossSectionSquareMeters * dragCoefficient / baseballMassKilograms
+        let liftFactor = 0.5 * airDensityKilogramsPerCubicMeter
+            * crossSectionSquareMeters * liftCoefficient / baseballMassKilograms
+        let integrationStepSeconds = 0.005
+        var elapsedSeconds = 0.0
+        var forwardMeters = 0.0
+        var heightMeters = 1.0
+        var forwardVelocity = speedMetersPerSecond * cos(launchRadians)
+        var verticalVelocity = speedMetersPerSecond * sin(launchRadians)
+        var apexMeters = heightMeters
+        var integratedSamples: [(time: Double, forward: Double, height: Double)] = [
+            (time: 0.0, forward: 0.0, height: heightMeters)
+        ]
+
+        while elapsedSeconds < 6.5 {
+            let previousTime = elapsedSeconds
+            let previousForward = forwardMeters
+            let previousHeight = heightMeters
+            let speed = hypot(forwardVelocity, verticalVelocity)
+            let forwardAcceleration = -dragFactor * speed * forwardVelocity
+                - liftFactor * speed * verticalVelocity
+            let verticalAcceleration = -9.81 - dragFactor * speed * verticalVelocity
+                + liftFactor * speed * forwardVelocity
+            let nextForwardVelocity = max(0.0, forwardVelocity + forwardAcceleration * integrationStepSeconds)
+            let nextVerticalVelocity = verticalVelocity + verticalAcceleration * integrationStepSeconds
+            let nextForward = forwardMeters
+                + (forwardVelocity + nextForwardVelocity) * 0.5 * integrationStepSeconds
+            let nextHeight = heightMeters
+                + (verticalVelocity + nextVerticalVelocity) * 0.5 * integrationStepSeconds
+            let nextTime = elapsedSeconds + integrationStepSeconds
+
+            if nextHeight <= 0.0, nextTime > 0.05 {
+                let landingRatio = previousHeight / max(0.000_001, previousHeight - nextHeight)
+                elapsedSeconds = previousTime + integrationStepSeconds * landingRatio
+                forwardMeters = previousForward + (nextForward - previousForward) * landingRatio
+                heightMeters = 0.0
+                integratedSamples.append((time: elapsedSeconds, forward: forwardMeters, height: 0.0))
+                break
+            }
+
+            elapsedSeconds = nextTime
+            forwardMeters = nextForward
+            heightMeters = nextHeight
+            forwardVelocity = nextForwardVelocity
+            verticalVelocity = nextVerticalVelocity
+            apexMeters = max(apexMeters, heightMeters)
+            integratedSamples.append((time: elapsedSeconds, forward: forwardMeters, height: heightMeters))
+        }
+
+        let rawDistance = max(1.0, forwardMeters)
         let distanceMeters: Double
         switch sector {
         case .infield:
@@ -535,25 +592,30 @@ public struct BallInPlayEngine: Sendable {
         case .fence:
             distanceMeters = min(140.0, max(105.0, rawDistance))
         }
-        let rawHangTime = launchDegrees < 9.0
-            ? 0.55 + distanceMeters / 48.0
-            : 2.0 * speedMetersPerSecond * sin(launchRadians) / 9.81 * 0.82
-        let hangTimeMilliseconds = Int((min(5.6, max(0.55, rawHangTime)) * 1_000.0).rounded())
-        let rawApex = speedMetersPerSecond * speedMetersPerSecond
-            * pow(sin(launchRadians), 2.0) / (2.0 * 9.81) * 0.72
-        let apexMeters = launchDegrees < 9.0
-            ? min(1.2, max(0.15, launchDegrees / 8.0))
-            : min(32.0, max(1.5, rawApex))
+        let distanceScale = distanceMeters / rawDistance
+        let hangTimeMilliseconds = Int((elapsedSeconds * 1_000.0).rounded())
         let directionRadians = Double(battedBall.directionTenthsDegrees) / 10.0 * .pi / 180.0
-        let series = (0...20).flatMap { index -> [Int] in
-            let progress = Double(index) / 20.0
-            let travelledMeters = distanceMeters * progress
-            let heightMeters = max(0.0, 4.0 * apexMeters * progress * (1.0 - progress))
+        var cursor = 1
+        let series = (0...30).flatMap { index -> [Int] in
+            let sampleTime = elapsedSeconds * Double(index) / 30.0
+            while cursor < integratedSamples.count - 1,
+                  integratedSamples[cursor].time < sampleTime {
+                cursor += 1
+            }
+            let next = integratedSamples[cursor]
+            let previous = integratedSamples[max(0, cursor - 1)]
+            let interpolation = (sampleTime - previous.time)
+                / max(0.000_001, next.time - previous.time)
+            let sampledForward = previous.forward
+                + (next.forward - previous.forward) * interpolation
+            let sampledHeight = previous.height
+                + (next.height - previous.height) * interpolation
+            let travelledMeters = sampledForward * distanceScale
             return [
-                hangTimeMilliseconds * index / 20,
+                hangTimeMilliseconds * index / 30,
                 Int((sin(directionRadians) * travelledMeters * 1_000.0).rounded()),
                 Int((cos(directionRadians) * travelledMeters * 1_000.0).rounded()),
-                Int((heightMeters * 1_000.0).rounded())
+                Int((max(0.0, sampledHeight) * 1_000.0).rounded())
             ]
         }
         return (

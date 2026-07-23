@@ -875,37 +875,58 @@ public struct PitchKernelEngine: Sendable {
         let actualY = target.y + offsetY
         let horizontalMovement = horizontalBreak + movementScale * 2
         let verticalMovement = verticalBreak + movementScale * 2
-        let flightTimeMilliseconds = max(330, min(620, Int((18.44 / (Double(velocity) / 36.0)) * 1_000.0)))
-        let controlProgress = 0.62
-        let movementCurve = sin(.pi * controlProgress)
-        let trajectoryControlX = Int((
-            Double(actualX) * controlProgress
-                - Double(horizontalMovement) * 1.35 * movementCurve
-        ).rounded())
-        let trajectoryControlY = Int((
-            1_300.0 * (1.0 - controlProgress)
-                + Double(actualY) * controlProgress
-                + Double(verticalMovement) * 1.05 * movementCurve
-        ).rounded())
+        // A baseball loses roughly 8–10% of its speed over the 18.44 m trip.
+        // Quadratic drag has the closed-form distance x = ln(1 + k v0 t) / k;
+        // using a baseball-sized drag constant gives us a physically timed replay
+        // without changing the pitch-resolution inputs.
+        let releaseSpeedMetersPerSecond = Double(velocity) / 36.0
+        let dragPerMeter = 0.0053
+        let flightSeconds = (exp(dragPerMeter * 18.44) - 1.0)
+            / (dragPerMeter * releaseSpeedMetersPerSecond)
+        let flightTimeMilliseconds = max(330, min(620, Int((flightSeconds * 1_000.0).rounded())))
         let plateLateralTenthsCM = Double(actualX) * 432.0 / 500.0
         let plateHeightTenthsCM = 750.0 + Double(actualY) * 250.0 / 500.0
-        let trajectorySeries = (0...16).flatMap { index -> [Int] in
-            let progress = Double(index) / 16.0
-            let curve = 4.0 * progress * (1.0 - progress)
+        let durationSeconds = Double(flightTimeMilliseconds) / 1_000.0
+        let horizontalBreakMeters = Double(horizontalMovement) / 1_000.0
+        let verticalBreakMeters = Double(verticalMovement) / 1_000.0
+        let plateLateralMeters = plateLateralTenthsCM / 1_000.0
+        let plateHeightMeters = plateHeightTenthsCM / 1_000.0
+        let noSpinPlateLateral = plateLateralMeters - horizontalBreakMeters
+        let noSpinPlateHeight = plateHeightMeters - verticalBreakMeters
+        let initialLateralVelocity = noSpinPlateLateral / durationSeconds
+        let initialVerticalVelocity = (
+            noSpinPlateHeight - 1.85 + 0.5 * 9.81 * durationSeconds * durationSeconds
+        ) / durationSeconds
+        let trajectorySeries = (0...24).flatMap { index -> [Int] in
+            let timeProgress = Double(index) / 24.0
+            let elapsedSeconds = durationSeconds * timeProgress
+            let travelledProgress = log(1.0 + dragPerMeter * releaseSpeedMetersPerSecond * elapsedSeconds)
+                / (dragPerMeter * 18.44)
+            // Magnus displacement accumulates with t². This preserves the same
+            // resolved plate location while producing the late separation that
+            // distinguishes a slider from a four-seam fastball.
+            let magnusProgress = timeProgress * timeProgress
+            let lateralMeters = initialLateralVelocity * elapsedSeconds
+                + horizontalBreakMeters * magnusProgress
+            let heightMeters = 1.85
+                + initialVerticalVelocity * elapsedSeconds
+                - 0.5 * 9.81 * elapsedSeconds * elapsedSeconds
+                + verticalBreakMeters * magnusProgress
             return [
-                flightTimeMilliseconds * index / 16,
-                Int((
-                    plateLateralTenthsCM * progress
-                        - Double(horizontalMovement) * curve
-                ).rounded()),
-                Int((18_440.0 * (1.0 - progress)).rounded()),
-                Int((
-                    1_850.0 * (1.0 - progress)
-                        + plateHeightTenthsCM * progress
-                        + Double(verticalMovement) * curve
-                ).rounded())
+                flightTimeMilliseconds * index / 24,
+                Int((lateralMeters * 1_000.0).rounded()),
+                Int((18_440.0 * (1.0 - travelledProgress)).rounded()),
+                Int((heightMeters * 1_000.0).rounded())
             ]
         }
+        let controlSampleOffset = 15 * 4
+        let trajectoryControlX = Int((
+            Double(trajectorySeries[controlSampleOffset + 1]) * 500.0 / 432.0
+        ).rounded())
+        let controlHeightTenthsCM = Double(trajectorySeries[controlSampleOffset + 3])
+        let trajectoryControlY = Int((
+            (controlHeightTenthsCM - 750.0) * 500.0 / 250.0
+        ).rounded())
         return PitchExecution(
             targetX: target.x,
             targetY: target.y,

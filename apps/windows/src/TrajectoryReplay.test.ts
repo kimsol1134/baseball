@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createBattedBallPlot,
   createGameCastTimeline,
+  createPitchMovementReferencePoints,
   createPitchPlot,
   shouldCommitReplayFrame,
   createRunnerMotions,
@@ -9,6 +10,7 @@ import {
   gameCastPhase,
   gameCastViewMode,
   interpolateTrajectory,
+  projectBattedBallLift,
   runnerPoint,
 } from "./TrajectoryReplay";
 
@@ -107,6 +109,41 @@ describe("trajectory replay geometry", () => {
       forwardTenthsCM: 13_830,
       heightTenthsCM: 1_575,
     });
+  });
+
+  it("separates a slider from its same-release no-spin reference", () => {
+    const reference = createPitchMovementReferencePoints({
+      targetX: 0,
+      targetY: 0,
+      actualX: -230,
+      actualY: -80,
+      velocityTenthsKPH: 1_275,
+      horizontalBreakTenthsCM: -160,
+      verticalBreakTenthsCM: 30,
+      executionQuality: 780,
+      flightTimeMilliseconds: 540,
+      trajectorySeries: [
+        0, 0, 18_440, 1_850,
+        270, -8, 9_600, 1_500,
+        540, -199, 0, 710,
+      ],
+    });
+
+    expect(reference).toHaveLength(3);
+    expect(reference[0].point).toEqual({ x: 160, y: 116 });
+    expect(reference[2].point.x).toBeGreaterThan(155);
+  });
+
+  it("projects a fly-ball apex as a visible arc above its ground track", () => {
+    const samples = decodeTrajectorySeries([
+      0, 0, 0, 1_000,
+      2_000, 0, 50_000, 18_000,
+      4_000, 0, 100_000, 0,
+    ]);
+
+    expect(projectBattedBallLift(samples[0], samples)).toBeGreaterThan(4);
+    expect(projectBattedBallLift(samples[1], samples)).toBeGreaterThan(70);
+    expect(projectBattedBallLift(samples[2], samples)).toBe(0);
   });
 
   it("stages pitch, contact, fielding, and result without revealing early", () => {

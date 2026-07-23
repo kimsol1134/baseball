@@ -202,7 +202,6 @@ export function createPitchPlot(execution: PitchExecution): PitchPlot {
 function projectPitchSample(
   sample: TrajectoryPoint3D,
   samples: ReadonlyArray<TrajectoryPoint3D>,
-  execution: PitchExecution,
 ): Point {
   const first = samples[0];
   const last = samples[samples.length - 1];
@@ -212,15 +211,14 @@ function projectPitchSample(
     0,
     1,
   );
-  const actual = platePoint(execution.actualX, execution.actualY);
-  const linearLateral = lerp(first.lateralTenthsCM, last.lateralTenthsCM, progress);
-  const linearHeight = lerp(first.heightTenthsCM, last.heightTenthsCM, progress);
-  const perspective = 0.45 + progress * 0.55;
+  const lateralMeters = sample.lateralTenthsCM / 1_000;
+  const heightMeters = sample.heightTenthsCM / 1_000;
+  const cameraScale = lerp(35, 93, progress);
+  const referenceHeightMeters = lerp(first.heightTenthsCM / 1_000, 0.75, progress);
+  const verticalScale = lerp(70, 160, progress);
   return {
-    x: lerp(160, actual.x, progress)
-      + ((sample.lateralTenthsCM - linearLateral) / 10) * 1.15 * perspective,
-    y: lerp(116, actual.y, progress)
-      - ((sample.heightTenthsCM - linearHeight) / 10) * 0.48 * perspective,
+    x: 160 + lateralMeters * cameraScale,
+    y: lerp(116, 215, progress) - (heightMeters - referenceHeightMeters) * verticalScale,
   };
 }
 
@@ -229,7 +227,7 @@ function pitchReplayPoints(execution: PitchExecution): ReadonlyArray<{ time: num
   if (samples.length >= 2) {
     return samples.map((sample) => ({
       time: sample.timeMilliseconds,
-      point: projectPitchSample(sample, samples, execution),
+      point: projectPitchSample(sample, samples),
     }));
   }
   const plot = createPitchPlot(execution);
@@ -239,6 +237,30 @@ function pitchReplayPoints(execution: PitchExecution): ReadonlyArray<{ time: num
     { time: Math.round(duration * 0.62), point: plot.control },
     { time: duration, point: plot.actual },
   ];
+}
+
+/** Reconstructs the same-release, no-spin path used to measure pitch movement. */
+export function createPitchMovementReferencePoints(
+  execution: PitchExecution,
+): ReadonlyArray<{ time: number; point: Point }> {
+  const samples = decodeTrajectorySeries(execution.trajectorySeries);
+  if (samples.length < 2) return [];
+  const duration = Math.max(1, samples[samples.length - 1].timeMilliseconds);
+  const referenceSamples = samples.map((sample) => {
+    const progress = clamp(sample.timeMilliseconds / duration, 0, 1);
+    const magnusProgress = progress * progress;
+    return {
+      ...sample,
+      lateralTenthsCM: sample.lateralTenthsCM
+        - execution.horizontalBreakTenthsCM * magnusProgress,
+      heightTenthsCM: sample.heightTenthsCM
+        - execution.verticalBreakTenthsCM * magnusProgress,
+    };
+  });
+  return referenceSamples.map((sample) => ({
+    time: sample.timeMilliseconds,
+    point: projectPitchSample(sample, referenceSamples),
+  }));
 }
 
 function interpolateReplayPoint(
@@ -277,6 +299,16 @@ function projectFieldSample(sample: TrajectoryPoint3D): Point {
     x: clamp(FIELD_HOME.x + (sample.lateralTenthsCM / 1_000) * 2.5, 72, 568),
     y: clamp(FIELD_HOME.y - (sample.forwardTenthsCM / 1_000) * 2.35, 76, FIELD_HOME.y),
   };
+}
+
+export function projectBattedBallLift(
+  sample: TrajectoryPoint3D,
+  samples: ReadonlyArray<TrajectoryPoint3D>,
+): number {
+  const furthestForward = Math.max(1, ...samples.map((point) => point.forwardTenthsCM));
+  const depth = clamp(sample.forwardTenthsCM / furthestForward, 0, 1);
+  const heightMeters = sample.heightTenthsCM / 1_000;
+  return clamp(heightMeters * lerp(4.8, 3.25, depth), 0, 112);
 }
 
 /** Projects the core-resolved landing point onto the top-down stadium. */
@@ -503,11 +535,24 @@ function PitchView({
 }) {
   const plot = createPitchPlot(execution);
   const replayPoints = pitchReplayPoints(execution);
+  const movementReferencePoints = createPitchMovementReferencePoints(execution);
   const finalTime = replayPoints[replayPoints.length - 1].time;
   const currentTime = finalTime * clamp(progress, 0, 1);
   const currentPoint = interpolateReplayPoint(replayPoints, currentTime);
   const trail = replayPoints.filter((sample) => sample.time <= currentTime).map((sample) => sample.point);
   if (trail.length === 0 || trail[trail.length - 1] !== currentPoint) trail.push(currentPoint);
+  const movementReferenceTrail = movementReferencePoints.length > 0
+    ? movementReferencePoints
+      .filter((sample) => sample.time <= currentTime)
+      .map((sample) => sample.point)
+    : [];
+  if (movementReferencePoints.length > 0) {
+    const currentReference = interpolateReplayPoint(movementReferencePoints, currentTime);
+    if (movementReferenceTrail.length === 0
+      || movementReferenceTrail[movementReferenceTrail.length - 1] !== currentReference) {
+      movementReferenceTrail.push(currentReference);
+    }
+  }
   const glowID = `pitch-glow-${compact ? "compact" : "main"}`;
   const skyID = `tracking-sky-${compact ? "compact" : "main"}`;
   const turfID = `tracking-turf-${compact ? "compact" : "main"}`;
@@ -576,6 +621,9 @@ function PitchView({
       <g transform={`translate(${sceneOffsetX} 0)`}>
       <path d="M 120 175 H 200 V 255 H 120 Z M 146.7 175 V 255 M 173.3 175 V 255 M 120 201.7 H 200 M 120 228.3 H 200" className="gamecast-strike-grid" />
       <g className="gamecast-release-point" transform="translate(160 116)"><circle r="4" /><circle r="9" /></g>
+      {movementReferenceTrail.length > 1
+        ? <path d={pointsPath(movementReferenceTrail)} className="gamecast-ground-projection" />
+        : null}
       <path d={pointsPath(trail)} className="gamecast-pitch-shadow" />
       <path d={pointsPath(trail)} className="gamecast-pitch-line" />
       {trail.slice(0, -1).filter((_, index) => index % 2 === 0).map((point, index) => <circle key={`${point.x}-${point.y}-${index}`} cx={point.x} cy={point.y} r={1.2 + index * .16} className="gamecast-pitch-depth-dot" />)}
@@ -590,7 +638,7 @@ function PitchView({
       </g> : null}
       </g>
     </svg>
-    {!compact ? <div className="gamecast-view-caption"><span>18.44 m 투구 좌표</span><span>＋ 목표</span><span>● 실제 위치</span><strong>{revealResult ? "위치 판독 완료" : `${Math.round(progress * 100)}% 분석`}</strong></div> : null}
+    {!compact ? <div className="gamecast-view-caption"><span>18.44 m 물리 궤적</span><span>┈ 무회전 기준</span><span>● 실제 위치</span><strong>{revealResult ? "위치 판독 완료" : `${Math.round(progress * 100)}% 분석`}</strong></div> : null}
   </div>;
 }
 
@@ -635,11 +683,10 @@ function FieldView({
   const groundTrailPoints = elapsedSamples.map(projectFieldSample);
   const flightTrailPoints = elapsedSamples.map((sample) => {
     const ground = projectFieldSample(sample);
-    const sampleHeightMeters = sample.heightTenthsCM / 1_000;
-    return { x: ground.x, y: ground.y - Math.min(46, sampleHeightMeters * 2.1) };
+    return { x: ground.x, y: ground.y - projectBattedBallLift(sample, samples) };
   });
   const heightMeters = currentSample.heightTenthsCM / 1_000;
-  const ballLift = Math.min(46, heightMeters * 2.1);
+  const ballLift = projectBattedBallLift(currentSample, samples);
   const responsible = fielding.fielderPosition
     ? FIELD_MARKERS.find((marker) => marker.position === fielding.fielderPosition)
     : undefined;
@@ -756,7 +803,7 @@ function FieldView({
         <circle r="7" /><circle r="15" className="gamecast-landing-ring" />
       </g> : null}
     </svg>
-    <div className="gamecast-view-caption"><span>공식 타구 좌표</span><span>{plot.apexHeightMeters.toFixed(1)} m 최고점</span><span>{plot.hangTimeSeconds.toFixed(1)} s 체공</span><strong>{revealResult ? fielderAction(fielding) : `타구 분석 ${Math.round(progress * 100)}%`}</strong></div>
+    <div className="gamecast-view-caption"><span>중력·항력·양력 궤적</span><span>{plot.apexHeightMeters.toFixed(1)} m 최고점</span><span>{plot.hangTimeSeconds.toFixed(1)} s 체공</span><strong>{revealResult ? fielderAction(fielding) : `타구 분석 ${Math.round(progress * 100)}%`}</strong></div>
   </div>;
 }
 

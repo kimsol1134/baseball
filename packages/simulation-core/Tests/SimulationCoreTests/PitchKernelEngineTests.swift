@@ -347,17 +347,26 @@ final class PitchKernelEngineTests: XCTestCase {
         let pitchSamples = stride(from: 0, to: pitchSeries.count, by: 4).map {
             Array(pitchSeries[$0..<min($0 + 4, pitchSeries.count)])
         }
-        XCTAssertEqual(pitchSamples.count, 17)
+        XCTAssertEqual(pitchSamples.count, 25)
         XCTAssertEqual(pitchSamples.first?[0], 0)
         XCTAssertEqual(pitchSamples.first?[2], 18_440)
         XCTAssertEqual(
             pitchSamples.last?[0],
             result.snapshot.execution.flightTimeMilliseconds
         )
-        XCTAssertEqual(pitchSamples.last?[2], 0)
+        XCTAssertLessThanOrEqual(abs(pitchSamples.last?[2] ?? 100), 10)
         XCTAssertTrue(zip(pitchSamples, pitchSamples.dropFirst()).allSatisfy {
             $0[0] < $1[0]
         })
+        let chordMidpoint = (try XCTUnwrap(pitchSamples.first?[1])
+            + (try XCTUnwrap(pitchSamples.last?[1]))) / 2
+        let lateralDeviation = pitchSamples[12][1] - chordMidpoint
+        XCTAssertGreaterThan(abs(lateralDeviation), 20)
+        XCTAssertLessThan(
+            lateralDeviation * result.snapshot.execution.horizontalBreakTenthsCM,
+            0,
+            "slider movement must visibly separate from its release tangent"
+        )
 
         let fielding = BallInPlayEngine().resolve(
             BattedBall(
@@ -377,8 +386,8 @@ final class PitchKernelEngineTests: XCTestCase {
         let ballSamples = stride(from: 0, to: ballSeries.count, by: 4).map {
             Array(ballSeries[$0..<min($0 + 4, ballSeries.count)])
         }
-        XCTAssertEqual(ballSamples.count, 21)
-        XCTAssertEqual(ballSamples.first?[3], 0)
+        XCTAssertEqual(ballSamples.count, 31)
+        XCTAssertEqual(ballSamples.first?[3], 1_000)
         XCTAssertEqual(ballSamples.last?[3], 0)
         XCTAssertEqual(ballSamples.last?[0], fielding.hangTimeMilliseconds)
         let sampledApex = try XCTUnwrap(ballSamples.map { $0[3] }.max())
@@ -387,6 +396,14 @@ final class PitchKernelEngineTests: XCTestCase {
             abs(sampledApex - reportedApex * 100),
             50
         )
+        let planarDistances = ballSamples.map { sample in
+            hypot(Double(sample[1]), Double(sample[2]))
+        }
+        XCTAssertGreaterThan(
+            planarDistances[1] - planarDistances[0],
+            planarDistances[30] - planarDistances[29]
+        )
+        XCTAssertGreaterThan(sampledApex, try XCTUnwrap(ballSamples.first?[3]))
     }
 
     func testHitterFriendlyParkCreatesMoreHomeRunsFromFenceContact() {
@@ -806,9 +823,9 @@ final class PitchKernelEngineTests: XCTestCase {
 
         XCTAssertTrue(presets.allSatisfy { preset in
             [preset.pitcher.stuff, preset.pitcher.command, preset.pitcher.movement, preset.pitcher.stamina]
-                .allSatisfy { (20...64).contains($0) }
+                .allSatisfy { (20...44).contains($0) }
         })
-        XCTAssertTrue(fastballs.allSatisfy { (1_380...1_430).contains($0.velocityTenthsKPH) })
+        XCTAssertTrue(fastballs.allSatisfy { (1_340...1_410).contains($0.velocityTenthsKPH) })
 
         let power = try XCTUnwrap(presets.first { $0.id == "power_prospect" })
         let powerFastball = try XCTUnwrap(power.pitcher.profile(for: .fourSeam))
