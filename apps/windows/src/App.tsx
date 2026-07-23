@@ -9,6 +9,8 @@ import {
   commitTraining,
   commitCareerTraining,
   completeMiddleSchoolPrologue,
+  normalizePitcherLabBalance,
+  normalizeProCareerBalance,
   normalizeRegionalSchools,
   finalizeScouting,
   listPitcherPresets,
@@ -49,6 +51,9 @@ import {
   type HighSchoolCareerAutosavePayload,
 } from "./highSchoolCareerAutosave";
 import { clearProCareer, loadProCareer, saveProCareer } from "./proCareerAutosave";
+import { nextFontScale, parseFontScale } from "./accessibilityPreferences";
+import { batterScoutingReport, pitcherRoleLabel } from "./playerPresentation";
+import { crossedGrowthMilestone } from "./GrowthCelebration";
 import { feedbackCueForResult, GameFeedback } from "./gameFeedback";
 import { includesProCareer, releaseEditionFromEnvironment } from "./releaseEdition";
 import { getAppStorage } from "./cloudStorage";
@@ -105,17 +110,17 @@ import type {
 const BATTER: BatterSnapshot = {
   id: "batter-1",
   name: "김도겸",
-  contact: 56,
-  discipline: 52,
-  power: 58,
+  contact: 44,
+  discipline: 41,
+  power: 46,
 };
 
 const PRO_BATTER: BatterSnapshot = {
   id: "pro-opponent-cleanup",
   name: "오재민",
-  contact: 66,
-  discipline: 61,
-  power: 69,
+  contact: 52,
+  discipline: 50,
+  power: 55,
 };
 
 const SCOUTING: BatterScoutingSnapshot = {
@@ -338,7 +343,7 @@ function statusMessage(status: CoreStatus) {
     case "online":
       return "게임 준비 완료";
     case "offline":
-      return "연결이 끊겼습니다";
+      return status.message;
   }
 }
 
@@ -461,7 +466,7 @@ export function App() {
   const [highContrast, setHighContrast] = useState(() => appStorage.getItem("baseball.a11y.contrast") === "true");
   const [reducedMotion, setReducedMotion] = useState(() => appStorage.getItem("baseball.a11y.motion") === "true");
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const [fontScale, setFontScale] = useState(() => Number(appStorage.getItem("baseball.a11y.font-scale") ?? "1"));
+  const [fontScale, setFontScale] = useState(() => parseFontScale(appStorage.getItem("baseball.a11y.font-scale")));
   const [analyticsOptIn, setAnalyticsOptIn] = useState(() => appStorage.getItem("baseball.analytics.opt-in") === "true");
   const [tutorialDismissed, setTutorialDismissed] = useState(() => appStorage.getItem("baseball.tutorial.completed") === "true");
   const [soundEnabled, setSoundEnabled] = useState(() => appStorage.getItem("baseball.feedback.sound") !== "false");
@@ -536,8 +541,9 @@ export function App() {
         const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
         if (!savedPreset) throw new Error("저장된 프로 커리어의 투수 프리셋을 찾을 수 없습니다.");
         const normalizedCareer = await normalizeRegionalSchools({ seed: saved.highSchoolCareer.nextSeed, state: saved.highSchoolCareer.snapshot });
+        const normalizedPro = await normalizeProCareerBalance({ seed: saved.proCareer.nextSeed, state: saved.proCareer.snapshot });
         setPresets(availablePresets); setSelectedPresetID(saved.selectedPresetID); setCareerResult(normalizedCareer);
-        setProResult(saved.proCareer); setProVisible(true); setScreenMode("lab"); setExperienceMode("career");
+        setProResult(normalizedPro); setProVisible(true); setScreenMode("lab"); setExperienceMode("career");
         setSaveNotice(restoredPro.source === "backup" ? "손상된 프로 저장 대신 마지막 정상 백업을 복구했습니다." : "프로 커리어 자동 저장에서 이어서 시작했습니다.");
         setCoreStatus({ state: "online", health }); return;
       }
@@ -546,21 +552,22 @@ export function App() {
         const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
         if (!savedPreset) throw new Error("저장된 고교 커리어의 투수 프리셋을 찾을 수 없습니다.");
         const normalizedCareer = await normalizeRegionalSchools({ seed: saved.careerResult.nextSeed, state: saved.careerResult.snapshot });
+        const careerBalanceChanged = normalizedCareer.snapshot.balanceVersion !== saved.careerResult.snapshot.balanceVersion;
         setPresets(availablePresets);
         setSelectedPresetID(saved.selectedPresetID);
         setSeed(saved.seed);
         setContext(saved.context);
-        setPreparation(saved.preparation);
-        setLastResult(saved.lastResult);
-        setHistory(saved.history);
-        setRivalMemory(saved.rivalMemory);
+        setPreparation(careerBalanceChanged ? undefined : saved.preparation);
+        setLastResult(careerBalanceChanged ? undefined : saved.lastResult);
+        setHistory(careerBalanceChanged ? [] : saved.history);
+        setRivalMemory(careerBalanceChanged ? undefined : saved.rivalMemory);
         setGameState(saved.gameState);
         setGameLog(saved.gameLog);
         setCareerResult(normalizedCareer);
         setLabInningStats(saved.inningStats);
-        setScreenMode(saved.screenMode === "pitch" && saved.preparation ? "pitch" : "lab");
+        setScreenMode(!careerBalanceChanged && saved.screenMode === "pitch" && saved.preparation ? "pitch" : "lab");
         setExperienceMode("career");
-        if (saved.preparation) applyRecommendation(saved.preparation.primaryRecommendation);
+        if (!careerBalanceChanged && saved.preparation) applyRecommendation(saved.preparation.primaryRecommendation);
         setSaveNotice(restoredCareer.source === "backup"
           ? "손상된 고교 커리어 저장 대신 마지막 정상 백업을 복구했습니다."
           : "고교 커리어 자동 저장에서 이어서 시작했습니다.");
@@ -571,22 +578,24 @@ export function App() {
         const saved = restored.payload;
         const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
         if (!savedPreset) throw new Error("저장된 선수의 투수 유형을 찾을 수 없습니다.");
+        const normalizedLab = await normalizePitcherLabBalance({ seed: saved.labResult.nextSeed, state: saved.labResult.snapshot });
+        const balanceChanged = normalizedLab.snapshot.balanceVersion !== saved.labResult.snapshot.balanceVersion;
         setPresets(availablePresets);
         setSelectedPresetID(saved.selectedPresetID);
         setSeed(saved.seed);
         setContext(saved.context);
-        setPreparation(saved.preparation);
-        setLastResult(saved.lastResult);
-        setHistory(saved.history);
-        setRivalMemory(saved.rivalMemory);
+        setPreparation(balanceChanged ? undefined : saved.preparation);
+        setLastResult(balanceChanged ? undefined : saved.lastResult);
+        setHistory(balanceChanged ? [] : saved.history);
+        setRivalMemory(balanceChanged ? undefined : saved.rivalMemory);
         setGameState(saved.gameState);
         setGameLog(saved.gameLog);
-        setLabResult(saved.labResult);
+        setLabResult(normalizedLab);
         setExperienceMode("lab");
         setPreviousLifeResult(saved.previousLifeResult);
         setLabInningStats(saved.labInningStats);
-        setScreenMode(saved.screenMode === "pitch" && saved.preparation ? "pitch" : "lab");
-        if (saved.preparation) applyRecommendation(saved.preparation.primaryRecommendation);
+        setScreenMode(!balanceChanged && saved.screenMode === "pitch" && saved.preparation ? "pitch" : "lab");
+        if (!balanceChanged && saved.preparation) applyRecommendation(saved.preparation.primaryRecommendation);
         setSaveNotice(restored.source === "backup"
           ? "손상된 최신 저장 대신 마지막 정상 백업을 복구했습니다."
           : "자동 저장에서 이어서 시작했습니다.");
@@ -1029,7 +1038,10 @@ export function App() {
       focus,
       intensity: trainingIntensity,
     }));
-    if ((next?.snapshot.lastTraining?.ratingPointsGained ?? 0) > 0) feedback.play("growth", soundEnabled, hapticsEnabled);
+    const training = next?.snapshot.lastTraining;
+    if ((training?.ratingPointsApplied ?? 0) > 0 && training?.ratingBefore !== undefined && training.ratingAfter !== undefined) {
+      feedback.play(crossedGrowthMilestone(training.ratingBefore, training.ratingAfter) ? "growth" : "progress", soundEnabled, hapticsEnabled);
+    }
   }, [feedback, hapticsEnabled, labResult, runLabAction, soundEnabled]);
 
   const handleRelationship = useCallback(async (choice: RelationshipChoice) => {
@@ -1484,8 +1496,8 @@ export function App() {
   const handleReviewPro = useCallback(async () => { if (proResult) await runProAction(() => reviewProSeason({ seed: proResult.nextSeed, state: proResult.snapshot })); }, [proResult, runProAction]);
   const handleProOffseason = useCallback(async (decision: OffseasonDecision) => { if (proResult) await runProAction(() => chooseProOffseason({ seed: proResult.nextSeed, state: proResult.snapshot, decision })); }, [proResult, runProAction]);
 
-  const cycleFontScale = useCallback(() => setFontScale((current) => current === 1 ? 1.15 : current === 1.15 ? 1.3 : 1), []);
-  const handleMilestoneFeedback = useCallback((cue: "growth" | "milestone" = "milestone") => {
+  const cycleFontScale = useCallback(() => setFontScale(nextFontScale), []);
+  const handleMilestoneFeedback = useCallback((cue: "progress" | "growth" | "milestone" = "milestone") => {
     feedback.play(cue, soundEnabled, hapticsEnabled);
   }, [feedback, hapticsEnabled, soundEnabled]);
   const dismissTutorial = useCallback(() => {
@@ -1534,6 +1546,11 @@ export function App() {
           ? "다음 타석 시작"
           : "다음 투구 선택";
   const careerSchool = careerResult?.snapshot.school;
+  const showingProCareer = Boolean(proVisible && proResult);
+  const careerModeTitle = showingProCareer ? "프로 커리어" : "고교 커리어";
+  const careerModeFooter = showingProCareer
+    ? `${proResult?.snapshot.team.name ?? "프로 구단"} · ${proResult?.snapshot.level === "major" ? "1군" : "2군"}`
+    : `고교 커리어${careerResult ? ` · ${careerResult.snapshot.chapter.schoolYear}학년 ${careerResult.snapshot.chapter.season}` : ""}`;
   const displayedGameState = gameStateForReplay(gameState, lastResult, showGameCast);
   const handleGameCastContinue = () => {
     if (!plateEnded) { setShowGameCast(false); return; }
@@ -1550,10 +1567,10 @@ export function App() {
 
   if (screenMode === "lab" && experienceMode === "career") {
     return (
-      <div className={`app-shell app-shell--career ${proVisible && proResult ? "app-shell--pro" : "app-shell--high-school"}`}>
+      <div className={`app-shell app-shell--career ${showingProCareer ? "app-shell--pro" : "app-shell--high-school"}`}>
         <header className="topbar">
           <div className="brand-lockup"><img className="brand-mark" src="/128x128.png" alt="" /><div>
-            <p className="eyebrow">야구 못하면 또 환생함</p><h1>고교 커리어</h1>
+            <p className="eyebrow">야구 못하면 또 환생함</p><h1>{careerModeTitle}</h1>
           </div></div>
           <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite"><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" ? <button type="button" onClick={() => void connectCore()}>다시 연결</button> : null}</div>
@@ -1576,7 +1593,7 @@ export function App() {
           onMilestoneFeedback={handleMilestoneFeedback} />
           : <HighSchoolCareerSetup presets={presets} isRunning={isRunning || coreStatus.state === "checking"}
             error={error} coreMessage={statusMessage(coreStatus)} onRetryCore={() => void connectCore()} onStart={handleStartCareer} />}
-        <footer><span>고교 커리어{careerResult ? ` · ${careerResult.snapshot.chapter.schoolYear}학년 ${careerResult.snapshot.chapter.season}` : ""}</span>
+        <footer><span>{careerModeFooter}</span>
           <span>선택이 확정될 때마다 자동 저장됩니다.</span></footer>
       </div>
     );
@@ -1701,7 +1718,7 @@ export function App() {
             ) : null}
             <div className="player-summary">
               <div className="avatar" aria-hidden="true">P</div>
-              <div><strong>선발투수 · {pitchHint(pitcher?.pitchProfiles?.find((profile) => profile.pitchType === "four_seam"))}</strong><span>피로 {context.fatigue} · {pitcherCondition(context.fatigue)}</span></div>
+              <div><strong>{pitcherRoleLabel(experienceMode === "career" && proVisible ? proResult?.snapshot.role : undefined)} · {pitchHint(pitcher?.pitchProfiles?.find((profile) => profile.pitchType === "four_seam"))}</strong><span>피로 {context.fatigue} · {pitcherCondition(context.fatigue)}</span></div>
             </div>
             {pitcher ? (
               <div className="stat-list" aria-label="현재 능력치">
@@ -1726,7 +1743,7 @@ export function App() {
             <div className="scouting-card">
               <span>상대 타자 리포트</span>
               <strong>{activeBatter.name}</strong>
-              <p>가운데 포심에 강하고 낮은 몸쪽 슬라이더 인식이 늦습니다.</p>
+              <p>{batterScoutingReport(activeBatter)}</p>
               <div className="mini-stats">
                 <span>공 맞히기 {activeBatter.contact}</span><span>볼 고르기 {activeBatter.discipline}</span><span>장타력 {activeBatter.power}</span>
               </div>
