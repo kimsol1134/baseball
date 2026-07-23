@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AbilityGauge } from "./AbilityGauge";
 import { GrowthCelebration } from "./GrowthCelebration";
+import { readLabResultAcknowledgement, writeLabResultAcknowledgement } from "./labResultAcknowledgement";
 import { CoreUnavailableState } from "./CoreUnavailableState";
 import type {
   AwakeningID,
@@ -28,6 +29,12 @@ const CREATION_METRICS: ReadonlyArray<{
 function fourSeamVelocity(pitcher: PitcherPresetSnapshot["pitcher"]) {
   const velocity = pitcher.pitchProfiles?.find((profile) => profile.pitchType === "four_seam")?.velocityTenthsKPH;
   return velocity === undefined ? "측정 전" : `${(velocity / 10).toFixed(1)} km/h`;
+}
+
+function presetPotential(preset: PitcherPresetSnapshot, key: keyof CreationAllocationSnapshot) {
+  const value = preset.pitcher[key];
+  const strongest = Math.max(preset.pitcher.stuff, preset.pitcher.command, preset.pitcher.movement, preset.pitcher.stamina);
+  return Math.min(65, value + (value === strongest ? 18 : 12));
 }
 
 interface PitcherLabSetupProps {
@@ -76,7 +83,7 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
       <section className="lab-setup-intro">
         <p className="eyebrow">새 선수</p>
         <h2>어떤 투수로 시작할까요?</h2>
-        <p>강점과 약점이 다른 네 유형 중 하나를 고른 뒤, 추가 능력 5점을 나눠 주세요. 능력치는 20–80 평가이며 80은 세대 최고 수준입니다.</p>
+        <p>강점과 약점이 다른 네 유형 중 하나를 고른 뒤, 추가 능력 5점을 나눠 주세요. 20–80은 프로 기준이며 50이 가상 프로리그 1군 평균입니다. 지금은 고교 선수의 현재 능력을 표시합니다.</p>
       </section>
       <section className="preset-creation-grid" aria-label="투수 프리셋 선택">
         {presets.map((preset) => (
@@ -88,7 +95,9 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
             <small>{preset.strengths.join(" · ")}</small>
             <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${CREATION_METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
               {CREATION_METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd>
-                <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]} /></div>)}
+                <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]}
+                  lowerBound={preset.pitcher[metric.key] + 2} upperBound={presetPotential(preset, metric.key)} />
+                <small>성장 기대 {preset.pitcher[metric.key] + 2}–{presetPotential(preset, metric.key)}</small></div>)}
             </dl>
             <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
           </button>
@@ -117,8 +126,10 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
             <small>추천 이름을 그대로 쓰거나, 최대 12자까지 직접 정할 수 있습니다.</small>
           </div>
           <div className="allocation-grid">
-            {CREATION_METRICS.map((metric) => (
-              <div key={metric.key}>
+            {CREATION_METRICS.map((metric) => {
+              const finalRating = selectedPreset.pitcher[metric.key] + allocation[metric.key];
+              const potential = Math.max(finalRating + 2, presetPotential(selectedPreset, metric.key));
+              return <div key={metric.key}>
                 <span>{metric.label}</span>
                 <small>{metric.description} · 기본 {selectedPreset.pitcher[metric.key]}</small>
                 <div>
@@ -130,9 +141,11 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
                   <button type="button" aria-label={`${metric.label} 1 증가`} disabled={spent >= 5 || allocation[metric.key] === 5}
                     onClick={() => changeAllocation(metric.key, 1)}>+</button>
                 </div>
-                <AbilityGauge compact label={`${metric.label} 최종`} value={selectedPreset.pitcher[metric.key] + allocation[metric.key]} />
-              </div>
-            ))}
+                <AbilityGauge compact label={`${metric.label} 최종`} value={finalRating}
+                  lowerBound={finalRating + 2} upperBound={potential} />
+                <small>현재 {finalRating} · 성장 기대 {finalRating + 2}–{potential}</small>
+              </div>;
+            })}
           </div>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || spent !== 5 || !playerName.trim()}
             onClick={() => void onStart(selectedPreset.id, allocation, playerName.trim())}>
@@ -317,13 +330,16 @@ export function PitcherLabView({
   const snapshot = result.snapshot;
   const training = snapshot.lastTraining;
   const growthMetric = training ? trainingGrowthMetric(result, training.focus) : undefined;
-  const [acknowledgedTraining, setAcknowledgedTraining] = useState(snapshot.trainingSessionsCompleted);
-  const [acknowledgedRelationship, setAcknowledgedRelationship] = useState(snapshot.relationshipEventsCompleted);
-  const [acknowledgedAwakening, setAcknowledgedAwakening] = useState(snapshot.selectedAwakenings.length);
+  const [acknowledgedTraining, setAcknowledgedTraining] = useState(() => readLabResultAcknowledgement(window.localStorage, snapshot.runID, "training"));
+  const [acknowledgedRelationship, setAcknowledgedRelationship] = useState(() => readLabResultAcknowledgement(window.localStorage, snapshot.runID, "relationship"));
+  const [acknowledgedAwakening, setAcknowledgedAwakening] = useState(() => readLabResultAcknowledgement(window.localStorage, snapshot.runID, "awakening"));
   const resultRef = useRef<HTMLDivElement>(null);
   const pendingTraining = training && training.sessionNumber > acknowledgedTraining ? training : undefined;
   const relationshipEvent = result.events.find((event) => event.eventType === "catcher_relationship_changed");
   const pendingRelationship = snapshot.relationshipEventsCompleted > acknowledgedRelationship ? relationshipEvent?.relationshipChoice : undefined;
+  const relationshipTrustBefore = relationshipEvent?.catcherTrustBefore;
+  const relationshipTrustAfter = relationshipEvent?.catcherTrustAfter ?? snapshot.catcherTrust;
+  const relationshipTrustChange = relationshipEvent?.catcherTrustChangeApplied;
   const awakeningEvent = result.events.find((event) => event.eventType === "awakening_granted");
   const pendingAwakening = snapshot.selectedAwakenings.length > acknowledgedAwakening
     ? awakeningEvent?.awakening ?? snapshot.selectedAwakenings.at(-1)
@@ -337,9 +353,9 @@ export function PitcherLabView({
       : pendingAwakening ? `awakening:${snapshot.selectedAwakenings.length}` : "";
 
   useEffect(() => {
-    setAcknowledgedTraining(snapshot.trainingSessionsCompleted);
-    setAcknowledgedRelationship(snapshot.relationshipEventsCompleted);
-    setAcknowledgedAwakening(snapshot.selectedAwakenings.length);
+    setAcknowledgedTraining(readLabResultAcknowledgement(window.localStorage, snapshot.runID, "training"));
+    setAcknowledgedRelationship(readLabResultAcknowledgement(window.localStorage, snapshot.runID, "relationship"));
+    setAcknowledgedAwakening(readLabResultAcknowledgement(window.localStorage, snapshot.runID, "awakening"));
   }, [snapshot.runID]);
 
   useEffect(() => {
@@ -409,12 +425,12 @@ export function PitcherLabView({
               <small>{range.lowerBound}–{range.upperBound}</small>
             </div>
           ))}
-          <small className="rating-scale-note">20–80 평가 · 45 평균 · 65 뚜렷한 강점 · 80 세대 최고 · 포심 기준 {fourSeamVelocity(snapshot.pitcher)}</small>
+          <small className="rating-scale-note">프로 기준 20–80 · 40 고교 정상급 · 50 프로 평균 · 65 프로 최상급 · 포심 기준 {fourSeamVelocity(snapshot.pitcher)}</small>
           {training ? (
-            <div className={`training-reaction training-reaction--${training.reaction}${training.ratingPointsGained > 0 ? " has-growth" : ""}`}>
+            <div className={`training-reaction training-reaction--${training.reaction}${(training.ratingPointsApplied ?? 0) > 0 ? " has-growth" : ""}`}>
               <span>최근 훈련 · {training.sessionNumber}회차</span>
-              {growthMetric ? <GrowthCelebration compact label={growthMetric.label}
-                before={growthMetric.after - training.ratingPointsGained} after={growthMetric.after} /> : null}
+              {growthMetric && training.ratingBefore !== undefined && training.ratingAfter !== undefined ? <GrowthCelebration compact label={growthMetric.label}
+                before={training.ratingBefore} after={training.ratingAfter} /> : null}
               <strong>{training.shortFeedback}</strong>
               <p>{training.observedClue}</p>
               <small>쌓인 훈련량 +{training.signalGained} · 몸 상태 {training.readinessBefore}→{training.readinessAfter} · 피로 {training.fatigueBefore}→{training.fatigueAfter}</small>
@@ -426,20 +442,24 @@ export function PitcherLabView({
           <div className="lab-card-heading"><span>이번에 할 일</span><small>{PHASE_LABELS[snapshot.phase]}</small></div>
 
           {pendingTraining && growthMetric ? (
-            <div ref={resultRef} className={`ds-card ds-card--result training-result-card ${pendingTraining.ratingPointsGained > 0 ? "ds-card--positive is-growth" : "is-steady"}`}
+            <div ref={resultRef} className={`ds-card ds-card--result training-result-card ${(pendingTraining.ratingPointsApplied ?? 0) > 0 ? "ds-card--positive is-growth" : "is-steady"}`}
               tabIndex={-1} role="region" aria-live="polite" aria-labelledby="lab-training-result-heading">
               <div className="training-result-title"><span>훈련 {pendingTraining.sessionNumber}회차 완료</span><h3 id="lab-training-result-heading">{TRAINING_OPTIONS.find((option) => option.value === pendingTraining.focus)?.label ?? growthMetric.label} 결과</h3></div>
-              <GrowthCelebration label={growthMetric.label} before={growthMetric.after - pendingTraining.ratingPointsGained} after={growthMetric.after} />
+              {pendingTraining.ratingBefore !== undefined && pendingTraining.ratingAfter !== undefined
+                ? <GrowthCelebration label={growthMetric.label} before={pendingTraining.ratingBefore} after={pendingTraining.ratingAfter} /> : null}
               <div className="ds-record-grid training-result-scoreboard">
-                <div><span>{growthMetric.label}</span><strong>{growthMetric.after - pendingTraining.ratingPointsGained} <i aria-hidden="true">→</i> {growthMetric.after}</strong>
-                  <AbilityGauge label={growthMetric.label} value={growthMetric.after} beforeValue={growthMetric.after - pendingTraining.ratingPointsGained} />
-                  <small className={pendingTraining.ratingPointsGained > 0 ? "is-positive" : "is-neutral"}>{pendingTraining.ratingPointsGained > 0 ? `+${pendingTraining.ratingPointsGained} 성장` : "훈련량을 쌓음"}</small></div>
+                <div><span>{growthMetric.label}</span><strong>{pendingTraining.ratingBefore === undefined ? <>현재 {pendingTraining.ratingAfter ?? growthMetric.after}</> : <>{pendingTraining.ratingBefore} <i aria-hidden="true">→</i> {pendingTraining.ratingAfter}</>}</strong>
+                  <AbilityGauge label={growthMetric.label} value={pendingTraining.ratingAfter ?? growthMetric.after} beforeValue={pendingTraining.ratingBefore} />
+                  <small className={(pendingTraining.ratingPointsApplied ?? 0) > 0 ? "is-positive" : "is-neutral"}>{pendingTraining.ratingPointsApplied === undefined ? "이전 저장 데이터 · 적용 전 값 미기록" : pendingTraining.ratingPointsApplied > 0 ? `+${pendingTraining.ratingPointsApplied} 실제 성장` : "훈련량을 쌓음"}</small></div>
                 <div><span>피로</span><strong>{pendingTraining.fatigueBefore} <i aria-hidden="true">→</i> {pendingTraining.fatigueAfter}</strong><small className={pendingTraining.fatigueAfter <= pendingTraining.fatigueBefore ? "is-positive" : "is-warning"}>{pendingTraining.fatigueAfter <= pendingTraining.fatigueBefore ? `${pendingTraining.fatigueBefore - pendingTraining.fatigueAfter} 회복` : `+${pendingTraining.fatigueAfter - pendingTraining.fatigueBefore} 쌓임`}</small></div>
                 <div><span>몸 상태</span><strong>{pendingTraining.readinessBefore} <i aria-hidden="true">→</i> {pendingTraining.readinessAfter}</strong><small>{pendingTraining.observedClue}</small></div>
               </div>
               <p>{pendingTraining.shortFeedback}</p>
               <div className="training-result-next"><span>다음 일정</span><strong>{PHASE_LABELS[snapshot.phase]}</strong><small>결과를 확인한 뒤 다음 선택을 엽니다.</small></div>
-              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setAcknowledgedTraining(pendingTraining.sessionNumber)}>결과 확인하고 계속</button>
+              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => {
+                writeLabResultAcknowledgement(window.localStorage, snapshot.runID, "training", pendingTraining.sessionNumber);
+                setAcknowledgedTraining(pendingTraining.sessionNumber);
+              }}>결과 확인하고 계속</button>
             </div>
           ) : null}
 
@@ -448,11 +468,14 @@ export function PitcherLabView({
               role="region" aria-live="polite" aria-labelledby="lab-relationship-result-heading">
               <div className="training-result-title"><span>포수 면담 {snapshot.relationshipEventsCompleted}회차 완료</span><h3 id="lab-relationship-result-heading">엇갈린 사인을 다시 맞췄습니다.</h3></div>
               <div className="ds-record-grid training-result-scoreboard">
-                <div><span>포수의 믿음</span><strong>{pendingRelationship === "trust_catcher" ? Math.max(0, snapshot.catcherTrust - 12) : Math.min(100, snapshot.catcherTrust + 7)} <i aria-hidden="true">→</i> {snapshot.catcherTrust}</strong>
-                  <small className={pendingRelationship === "trust_catcher" ? "is-positive" : "is-negative"}>{pendingRelationship === "trust_catcher" ? "+12 · 포수의 관찰을 먼저 들음" : "−7 · 내 계획을 우선함"}</small></div>
+                <div><span>포수의 믿음</span><strong>{relationshipTrustBefore === undefined ? <>현재 {relationshipTrustAfter}</> : <>{relationshipTrustBefore} <i aria-hidden="true">→</i> {relationshipTrustAfter}</>}</strong>
+                  <small className={(relationshipTrustChange ?? 0) > 0 ? "is-positive" : (relationshipTrustChange ?? 0) < 0 ? "is-negative" : "is-neutral"}>{relationshipTrustChange === undefined ? "이전 저장 데이터 · 적용 전 값 미기록" : `${relationshipTrustChange > 0 ? "+" : ""}${relationshipTrustChange} · ${pendingRelationship === "trust_catcher" ? "포수의 관찰을 먼저 들음" : "내 계획을 우선함"}`}</small></div>
               </div>
               <p>{pendingRelationship === "trust_catcher" ? "포수가 본 타자 반응을 먼저 확인해 다음 사인의 근거가 선명해졌습니다." : "내가 높은 공을 고른 근거를 분명히 했지만 포수와 다시 맞춰 볼 시간이 필요합니다."}</p>
-              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setAcknowledgedRelationship(snapshot.relationshipEventsCompleted)}>결과 확인하고 다음 훈련</button>
+              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => {
+                writeLabResultAcknowledgement(window.localStorage, snapshot.runID, "relationship", snapshot.relationshipEventsCompleted);
+                setAcknowledgedRelationship(snapshot.relationshipEventsCompleted);
+              }}>결과 확인하고 다음 훈련</button>
             </div>
           ) : null}
 
@@ -462,7 +485,10 @@ export function PitcherLabView({
               <div className="training-result-title"><span>새 강점 {snapshot.selectedAwakenings.length}개째</span><h3 id="lab-awakening-result-heading">{AWAKENING_LABELS[pendingAwakening].title}</h3></div>
               <p>{AWAKENING_LABELS[pendingAwakening].description}</p>
               <div className="training-result-next"><span>다음 일정</span><strong>{PHASE_LABELS[snapshot.phase]}</strong><small>새 강점은 이번 선수의 남은 일정에 계속 적용됩니다.</small></div>
-              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setAcknowledgedAwakening(snapshot.selectedAwakenings.length)}>강점 확인하고 계속</button>
+              <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => {
+                writeLabResultAcknowledgement(window.localStorage, snapshot.runID, "awakening", snapshot.selectedAwakenings.length);
+                setAcknowledgedAwakening(snapshot.selectedAwakenings.length);
+              }}>강점 확인하고 계속</button>
             </div>
           ) : null}
 
