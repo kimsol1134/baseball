@@ -25,8 +25,8 @@ test("desktop shell keeps recovery and settings usable", async ({ page }, testIn
     fullPage: true,
     animations: "disabled",
     caret: "hide",
-    maxDiffPixelRatio: 0.12,
-    threshold: 0.3,
+    maxDiffPixelRatio: 0.06,
+    threshold: 0.25,
   });
   await testInfo.attach("desktop-offline", { body: await page.screenshot(), contentType: "image/png" });
 });
@@ -54,6 +54,13 @@ test("390px, 130% type, and high contrast do not overflow", async ({ page }, tes
   expect(layout.content).toBeLessThanOrEqual(layout.viewport);
   expect(layout.headerHeight).toBeLessThan(250);
   expect(layout.retryWidth).toBeGreaterThanOrEqual(44);
+  await expect(page).toHaveScreenshot("mobile-large-type-high-contrast.png", {
+    fullPage: true,
+    animations: "disabled",
+    caret: "hide",
+    maxDiffPixelRatio: 0.06,
+    threshold: 0.25,
+  });
   await testInfo.attach("mobile-large-type-high-contrast", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
 });
 
@@ -78,8 +85,8 @@ test("connected core keeps career, result, and GameCast visual baselines", async
     fullPage: true,
     animations: "disabled",
     caret: "hide",
-    maxDiffPixelRatio: 0.12,
-    threshold: 0.3,
+    maxDiffPixelRatio: 0.06,
+    threshold: 0.25,
   });
 
   await page.getByRole("button", { name: "연습 모드" }).click();
@@ -93,8 +100,8 @@ test("connected core keeps career, result, and GameCast visual baselines", async
   await expect(firstResult).toHaveScreenshot("lab-training-result.png", {
     animations: "disabled",
     caret: "hide",
-    maxDiffPixelRatio: 0.12,
-    threshold: 0.3,
+    maxDiffPixelRatio: 0.06,
+    threshold: 0.25,
   });
 
   await page.getByRole("button", { name: "결과 확인하고 계속" }).click();
@@ -108,7 +115,7 @@ test("connected core keeps career, result, and GameCast visual baselines", async
   await expect(gameCast).toHaveScreenshot("gamecast-pitch.png", {
     animations: "disabled",
     caret: "hide",
-    maxDiffPixelRatio: 0.12,
-    threshold: 0.3,
+    maxDiffPixelRatio: 0.06,
+    threshold: 0.25,
   });
 });
