@@ -6666,13 +6666,21 @@ body.high-contrast .character-profile__portrait {
     justify-content: center;
   }
 
-  .accessibility-controls {
+  .settings-menu[open] summary {
     position: fixed;
+    z-index: 2;
     top: max(16px, env(safe-area-inset-top));
     right: max(16px, env(safe-area-inset-right));
     left: max(16px, env(safe-area-inset-left));
+  }
+
+  .accessibility-controls {
+    position: fixed;
+    top: max(68px, calc(env(safe-area-inset-top) + 52px));
+    right: max(16px, env(safe-area-inset-right));
+    left: max(16px, env(safe-area-inset-left));
     width: auto;
-    max-height: calc(100dvh - 32px);
+    max-height: calc(100dvh - max(84px, calc(env(safe-area-inset-top) + 68px)));
   }
 
   .core-status {
