@@ -13,6 +13,7 @@ import type {
   HighSchoolCareerResult,
   PitchKernelResult,
   PitcherLabResult,
+  PitcherLabStateParams,
   PitchPreparation,
   PitcherPresetSnapshot,
   PreparePitchParams,
@@ -124,6 +125,10 @@ export function finalizeScouting(params: FinalizeScoutingParams): Promise<Pitche
   return executeRPC<PitcherLabResult, FinalizeScoutingParams>("finalizeScouting", params);
 }
 
+export function normalizePitcherLabBalance(params: PitcherLabStateParams): Promise<PitcherLabResult> {
+  return executeRPC<PitcherLabResult, PitcherLabStateParams>("normalizePitcherLabBalance", params);
+}
+
 export function selectLegacy(params: SelectLegacyParams): Promise<PitcherLabResult> {
   return executeRPC<PitcherLabResult, SelectLegacyParams>("selectLegacy", params);
 }
@@ -174,6 +179,9 @@ export function selectCareerLegacy(params: SelectCareerLegacyParams): Promise<Hi
 
 export function startProCareer(params: StartProCareerParams): Promise<ProCareerResult> {
   return executeRPC<ProCareerResult, StartProCareerParams>("startProCareer", params);
+}
+export function normalizeProCareerBalance(params: ProStateParams): Promise<ProCareerResult> {
+  return executeRPC<ProCareerResult, ProStateParams>("normalizeProCareerBalance", params);
 }
 export function signProContract(params: ProStateParams): Promise<ProCareerResult> {
   return executeRPC<ProCareerResult, ProStateParams>("signProContract", params);

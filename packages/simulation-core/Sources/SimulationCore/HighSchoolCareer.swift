@@ -652,23 +652,23 @@ public struct HighSchoolCareerEngine: Sendable {
 
     private static let regionalSchoolNames: [String: RegionalSchoolNames] = [
         "서울": .init(traditional: "서울덕성고", analytics: "서울배성고", power: "서울충림고", development: "서울경원고"),
-        "인천": .init(traditional: "인천제문포고", analytics: "인천동림고", power: "인천항성고", development: "인천송해고"),
-        "수원": .init(traditional: "수원유림고", analytics: "수원장림고", power: "수원화홍고", development: "수원매원고"),
-        "대전": .init(traditional: "대전한별고", analytics: "대전대림고", power: "대전유진고", development: "대전중원고"),
-        "광주": .init(traditional: "광주제원고", analytics: "광주동진고", power: "광주진광고", development: "광주무원고"),
-        "대구": .init(traditional: "대구경원고", analytics: "대구상림고", power: "대구달원고", development: "대구청림고"),
-        "부산": .init(traditional: "부산해남고", analytics: "부산항성고", power: "부산개원고", development: "부산남경고"),
-        "창원": .init(traditional: "마산해강고", analytics: "창원용해고", power: "창원기성고", development: "진해동림고"),
+        "인천": .init(traditional: "인천해문결고", analytics: "인천동림고", power: "인천항성고", development: "인천송해고"),
+        "수원": .init(traditional: "수원화성빛고", analytics: "수원장림고", power: "수원화담결고", development: "수원매화솔고"),
+        "대전": .init(traditional: "대전갑천별고", analytics: "대전들샘결고", power: "대전유진고", development: "대전중원고"),
+        "광주": .init(traditional: "광주무등결고", analytics: "광주예향결고", power: "광주서빛람고", development: "광주무원고"),
+        "대구": .init(traditional: "대구팔공결고", analytics: "대구능금결고", power: "대구달원고", development: "대구청림고"),
+        "부산": .init(traditional: "부산해남고", analytics: "부산항성고", power: "부산항해솔고", development: "부산오륙결고"),
+        "창원": .init(traditional: "마산해강고", analytics: "창원가람솔고", power: "창원누리결고", development: "진해동림고"),
         "울산": .init(traditional: "울산대명고", analytics: "울산문성고", power: "울산태원고", development: "울산장생고"),
         "세종": .init(traditional: "세종한별고", analytics: "세종새빛고", power: "세종금빛고", development: "세종연서고"),
-        "경기": .init(traditional: "성남유림고", analytics: "고양백송고", power: "시흥소명고", development: "용인청림고"),
+        "경기": .init(traditional: "성남유림고", analytics: "고양서람빛고", power: "시흥소명고", development: "용인청림고"),
         "강원": .init(traditional: "강릉해람고", analytics: "원주원흥고", power: "춘천호반고", development: "속초설해고"),
-        "충북": .init(traditional: "청주원흥고", analytics: "청주세명고", power: "충주성문고", development: "진천덕원고"),
-        "충남": .init(traditional: "공주금강고", analytics: "천안북원고", power: "아산온천고", development: "서산해명고"),
-        "전북": .init(traditional: "전주완성고", analytics: "군산상림고", power: "정읍인원고", development: "익산보석고"),
-        "전남": .init(traditional: "화순화원고", analytics: "순천효원고", power: "목포항남고", development: "여수진원고"),
-        "경북": .init(traditional: "포항해철고", analytics: "경주월림고", power: "구미도원고", development: "안동하회고"),
-        "경남": .init(traditional: "마산용해고", analytics: "김해가원고", power: "양산물빛고", development: "거제옥림고"),
+        "충북": .init(traditional: "청주직지솔고", analytics: "청주세명고", power: "충주성문고", development: "진천덕원고"),
+        "충남": .init(traditional: "공주금강고", analytics: "천안능수결고", power: "아산곡교결고", development: "서산해명고"),
+        "전북": .init(traditional: "전주한옥솔고", analytics: "군산새만결고", power: "정읍인원고", development: "익산보석고"),
+        "전남": .init(traditional: "화순화원고", analytics: "순천정원솔고", power: "목포항남고", development: "여수진원고"),
+        "경북": .init(traditional: "포항해오름고", analytics: "경주월림고", power: "구미도원고", development: "안동하회고"),
+        "경남": .init(traditional: "마산달빛결고", analytics: "김해수로결고", power: "양산물빛고", development: "거제푸른섬고"),
         "제주": .init(traditional: "제주한라원고", analytics: "서귀포해원고", power: "제주탐라빛고", development: "제주오름고")
     ]
 
@@ -708,7 +708,7 @@ public struct HighSchoolCareerEngine: Sendable {
     public static let teams: [DraftTeamSnapshot] = [
         .init(id: "seoul_comets", name: "서울 코메츠", need: .command, demand: 72, developmentPlan: "2군 선발로 뛰며 원하는 코스에 던지는 능력 향상", positionCompetitor: "차윤호", proCoach: "문재석", competitorProfile: "느린 커브와 타이밍 싸움으로 살아남은 베테랑 선발", competitorRecord: "최근 시즌 9승 · ERA 3.91", coachProfile: "선수와 대화부터 시작하는 수비 중심 지도자", coachRecord: "3년 연속 포스트시즌 진출"),
         .init(id: "busan_marines", name: "부산 블루웨일스", need: .stamina, demand: 66, developmentPlan: "긴 이닝을 맡는 선발로 훈련", positionCompetitor: "도현우", proCoach: "강태림", competitorProfile: "높은 포심과 낙차 큰 포크볼을 앞세운 우완 에이스", competitorRecord: "최근 시즌 11승 · 142탈삼진", coachProfile: "큰 경기일수록 선발에게 한 이닝을 더 맡기는 승부사", coachRecord: "챔피언십 시리즈 진출 2회"),
-        .init(id: "incheon_waves", name: "인천 웨이브스", need: .breakingBall, demand: 70, developmentPlan: "결정구 한 종을 프로 수준으로 강화", positionCompetitor: "백승찬", proCoach: "윤도환", competitorProfile: "슬라이더와 템포 변화로 버티는 왼손 선발", competitorRecord: "최근 시즌 8승 · 126탈삼진", coachProfile: "베테랑 자율과 강한 수비를 함께 요구하는 감독", coachRecord: "정규시즌 상위 3위 2회"),
+        .init(id: "incheon_waves", name: "인천 크레스트핀스", need: .breakingBall, demand: 70, developmentPlan: "결정구 한 종을 프로 수준으로 강화", positionCompetitor: "백승찬", proCoach: "윤도환", competitorProfile: "슬라이더와 템포 변화로 버티는 왼손 선발", competitorRecord: "최근 시즌 8승 · 126탈삼진", coachProfile: "베테랑 자율과 강한 수비를 함께 요구하는 감독", coachRecord: "정규시즌 상위 3위 2회"),
         .init(id: "daegu_forge", name: "대구 포지", need: .velocity, demand: 75, developmentPlan: "빠른 직구를 유지하며 불펜으로 빠른 1군 데뷔", positionCompetitor: "신재원", proCoach: "권민철", competitorProfile: "낮은 코스와 완급을 반복하는 젊은 우완 에이스", competitorRecord: "최근 시즌 12승 · ERA 3.44", coachProfile: "기본 수비와 세대교체를 함께 밀어붙이는 내야 출신 지도자", coachRecord: "신인 투수 4명 1군 데뷔"),
         .init(id: "daejeon_rockets", name: "대전 로켓츠", need: .gamePlanning, demand: 68, developmentPlan: "포수와 구종 순서를 맞추는 선발 훈련", positionCompetitor: "장하준", proCoach: "배성우", competitorProfile: "빠른 포심으로 타자의 배트를 늦추는 파이어볼러", competitorRecord: "최고 158.2km/h · 134탈삼진", coachProfile: "한번 고른 선발은 충분한 기회를 주는 장기 운영형 감독", coachRecord: "3년 연속 승률 5할 이상"),
         .init(id: "gwangju_phoenix", name: "광주 피닉스", need: .breakingBall, demand: 64, developmentPlan: "직구와 같은 궤도에서 갈라지는 변화구 훈련", positionCompetitor: "서이준", proCoach: "남기석", competitorProfile: "큰 각도의 커브로 삼진을 쌓는 왼손 정통파", competitorRecord: "최근 시즌 10승 · 151탈삼진", coachProfile: "선수를 믿고 공격적으로 뛰게 하는 젊은 감독", coachRecord: "최근 2년 승률 .561"),
@@ -719,21 +719,21 @@ public struct HighSchoolCareerEngine: Sendable {
     ]
 
     private static let rivals: [RivalSnapshot] = [
-        .init(id: "rival-seo", name: "서하준", archetype: "천재 교타형", contact: 68, discipline: 64, power: 55,
+        .init(id: "rival-seo", name: "서하준", archetype: "천재 교타형", contact: 47, discipline: 44, power: 39,
             personality: "배트가 공을 끝까지 따라갑니다. 같은 코스를 두 번 놓치지 않는 왼손 타자입니다.", signatureRecord: "봄 대회 타율 .421 · 31안타"),
-        .init(id: "rival-lee", name: "권태오", archetype: "초구 거포형", contact: 62, discipline: 52, power: 72,
+        .init(id: "rival-lee", name: "권태오", archetype: "초구 거포형", contact: 42, discipline: 37, power: 49,
             personality: "느린 발을 감출 만큼 타구 판단이 빠릅니다. 초구 실투를 그냥 보내지 않습니다.", signatureRecord: "전국대회 7홈런 · 22타점"),
-        .init(id: "rival-park", name: "남도현", archetype: "안타 제조형", contact: 67, discipline: 65, power: 51,
+        .init(id: "rival-park", name: "남도현", archetype: "안타 제조형", contact: 46, discipline: 45, power: 37,
             personality: "파울로 버티며 투구 수를 늘리고 마지막에는 짧은 스윙으로 안타를 만듭니다.", signatureRecord: "11경기 연속 안타 · 출루율 .492"),
-        .init(id: "rival-kang", name: "배시우", archetype: "외다리 장타형", contact: 55, discipline: 56, power: 76,
+        .init(id: "rival-kang", name: "배시우", archetype: "외다리 장타형", contact: 39, discipline: 40, power: 50,
             personality: "높게 떠오른 공을 우측 담장으로 보내는 왼손 거포입니다. 실투 하나가 곧 실점입니다.", signatureRecord: "장타율 .711 · 8홈런"),
-        .init(id: "rival-yoon", name: "류건우", archetype: "장신 호타준족형", contact: 64, discipline: 57, power: 61,
+        .init(id: "rival-yoon", name: "류건우", archetype: "장신 호타준족형", contact: 44, discipline: 40, power: 43,
             personality: "큰 스윙 궤도와 빠른 발을 함께 씁니다. 변화구가 뜨면 주저 없이 당겨칩니다.", signatureRecord: "18경기 14도루 · 5홈런"),
-        .init(id: "rival-choi", name: "정세현", archetype: "득점권 해결사형", contact: 63, discipline: 62, power: 70,
+        .init(id: "rival-choi", name: "정세현", archetype: "득점권 해결사형", contact: 44, discipline: 43, power: 48,
             personality: "늦은 카운트와 득점권에서 오히려 스윙이 짧아지는 해결사입니다.", signatureRecord: "득점권 타율 .438 · 끝내기 3회"),
-        .init(id: "rival-home-run", name: "강이안", archetype: "몸쪽 사냥형", contact: 60, discipline: 65, power: 76,
+        .init(id: "rival-home-run", name: "강이안", archetype: "몸쪽 사냥형", contact: 41, discipline: 44, power: 50,
             personality: "몸쪽 공도 피하지 않고 잡아당깁니다. 불리한 카운트에서도 장타를 버리지 않습니다.", signatureRecord: "봄·여름 대회 14홈런 · 장타율 .804"),
-        .init(id: "rival-speed", name: "문재윤", archetype: "질주형 중심타자", contact: 68, discipline: 58, power: 68,
+        .init(id: "rival-speed", name: "문재윤", archetype: "질주형 중심타자", contact: 47, discipline: 40, power: 46,
             personality: "타구가 뜨는 순간 2루를 노립니다. 실투 하나로 경기 흐름을 바꾸는 호타준족입니다.", signatureRecord: "20도루 · 6홈런 · 21득점")
     ]
 
@@ -783,13 +783,21 @@ public struct HighSchoolCareerEngine: Sendable {
     public func normalizeRegionalSchools(_ params: AdvanceCareerChapterParams) throws -> HighSchoolCareerResult {
         _ = try validatedSeed(params.seed)
         try validateState(params.state)
+        let sourceBalanceVersion = params.state.balanceVersion ?? 1
+        let needsBalanceMigration = sourceBalanceVersion < PitcherPresetCatalog.balanceVersion
         let options = Self.schools(for: params.state.identity.region)
         let selectedSchool = params.state.school.flatMap { current in
             options.first(where: { $0.id == current.id })
         }
         let normalizedRival = Self.rivals.first(where: { $0.id == params.state.rival.id }).map { profile in
-            RivalSnapshot(id: profile.id, name: profile.name, archetype: profile.archetype,
-                contact: params.state.rival.contact, discipline: params.state.rival.discipline, power: params.state.rival.power,
+            let difficultyBonus = params.state.difficulty.simulationDifficulty == .relaxed ? -3
+                : params.state.difficulty.simulationDifficulty == .challenging ? 4 : 0
+            let generationBonus = params.state.karmas.contains(.geniusGeneration) ? 4 : 0
+            let bonus = difficultyBonus + generationBonus
+            return RivalSnapshot(id: profile.id, name: profile.name, archetype: profile.archetype,
+                contact: needsBalanceMigration ? clamp(profile.contact + bonus, 20, 80) : params.state.rival.contact,
+                discipline: needsBalanceMigration ? clamp(profile.discipline + bonus, 20, 80) : params.state.rival.discipline,
+                power: needsBalanceMigration ? clamp(profile.power + bonus, 20, 80) : params.state.rival.power,
                 personality: profile.personality, signatureRecord: profile.signatureRecord)
         } ?? params.state.rival
         let normalizedDraft = params.state.draftResult.map { draft in
@@ -810,8 +818,7 @@ public struct HighSchoolCareerEngine: Sendable {
         let managerTrust = params.state.managerTrust ?? params.state.relationshipTrust
         let catcherTrust = params.state.catcherTrust ?? params.state.relationshipTrust
         let rivalTrust = params.state.rivalTrust ?? params.state.relationshipTrust
-        let needsBalanceMigration = (params.state.balanceVersion ?? 1) < PitcherPresetCatalog.balanceVersion
-        let balanceMigration = needsBalanceMigration ? migrateBalanceV1(params.state.pitcher) : nil
+        let balanceMigration = PitcherPresetCatalog.migrate(params.state.pitcher, fromVersion: sourceBalanceVersion)
         let migratedPitcher = balanceMigration?.pitcher ?? params.state.pitcher
         let migratedTraining = balanceMigration.flatMap { migrate(params.state.lastTraining, ratingOffsets: $0.ratingOffsets) }
             ?? params.state.lastTraining
@@ -971,7 +978,9 @@ public struct HighSchoolCareerEngine: Sendable {
         let ratings = params.state.pitcher.stuff + params.state.pitcher.command + params.state.pitcher.movement + params.state.pitcher.stamina
         let gameQuality = params.state.performance.strikeouts * 3 - params.state.performance.walks * 2 - params.state.performance.runsAllowed * 3
         let processBonus = max(-8, min(10, (params.state.performance.expectedDamage - params.state.performance.actualDamage) / 350))
-        let ratingScore = ratings / 4
+        // Amateur players are graded against the top professional league. Projection keeps draftable
+        // high-school players below a present 50 while still rewarding age-adjusted upside.
+        let ratingScore = ratings / 4 + 18
         let performanceScore = gameQuality / 5
         let awakeningScore = params.state.selectedAwakenings.count * 2
         let relationshipScore = (params.state.relationshipTrust - 50) / 10
@@ -1446,47 +1455,6 @@ public struct HighSchoolCareerEngine: Sendable {
             canonical.append(relationshipValues.joined(separator: ":"))
         }
         return StableHash.fnv1a64(canonical.joined(separator: "|"))
-    }
-
-    private struct BalanceMigration {
-        let pitcher: PitcherSnapshot
-        let ratingOffsets: [TrainingFocus: Int]
-    }
-
-    private func migrateBalanceV1(_ pitcher: PitcherSnapshot) -> BalanceMigration? {
-        guard let legacy = PitcherPresetCatalog.balanceV1.first(where: { $0.pitcher.id == pitcher.id })?.pitcher,
-              let calibrated = PitcherPresetCatalog.all.first(where: { $0.pitcher.id == pitcher.id })?.pitcher else { return nil }
-        let offsets: [TrainingFocus: Int] = [
-            .velocity: calibrated.stuff - legacy.stuff,
-            .command: calibrated.command - legacy.command,
-            .breakingBall: calibrated.movement - legacy.movement,
-            .stamina: calibrated.stamina - legacy.stamina,
-            .recovery: calibrated.stamina - legacy.stamina,
-            .gamePlanning: calibrated.command - legacy.command
-        ]
-        let profiles = pitcher.pitchProfiles?.map { current -> PitchProfileSnapshot in
-            guard let old = legacy.profile(for: current.pitchType),
-                  let new = calibrated.profile(for: current.pitchType) else { return current }
-            return PitchProfileSnapshot(
-                pitchType: current.pitchType, role: new.role,
-                velocityTenthsKPH: clamp(new.velocityTenthsKPH + current.velocityTenthsKPH - old.velocityTenthsKPH, 1_000, 1_700),
-                control: clamp(new.control + current.control - old.control, 20, 80),
-                command: clamp(new.command + current.command - old.command, 20, 80),
-                movement: clamp(new.movement + current.movement - old.movement, 20, 80),
-                whiff: clamp(new.whiff + current.whiff - old.whiff, 20, 80),
-                weakContact: clamp(new.weakContact + current.weakContact - old.weakContact, 20, 80),
-                fatigueCost: clamp(new.fatigueCost + current.fatigueCost - old.fatigueCost, 0, 4)
-            )
-        }
-        let migrated = PitcherSnapshot(
-            id: pitcher.id, name: pitcher.name,
-            stuff: clamp(pitcher.stuff + (calibrated.stuff - legacy.stuff), 20, 80),
-            command: clamp(pitcher.command + (calibrated.command - legacy.command), 20, 80),
-            movement: clamp(pitcher.movement + (calibrated.movement - legacy.movement), 20, 80),
-            stamina: clamp(pitcher.stamina + (calibrated.stamina - legacy.stamina), 20, 80),
-            pitchProfiles: profiles
-        )
-        return BalanceMigration(pitcher: migrated, ratingOffsets: offsets)
     }
 
     private func migrate(_ training: CareerTrainingSnapshot?, ratingOffsets: [TrainingFocus: Int]) -> CareerTrainingSnapshot? {

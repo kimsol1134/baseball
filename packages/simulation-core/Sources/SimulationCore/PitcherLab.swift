@@ -162,6 +162,9 @@ public struct TrainingSessionSnapshot: Codable, Equatable, Sendable {
     public let reaction: TrainingReactionBand
     public let signalGained: Int
     public let ratingPointsGained: Int
+    public let ratingBefore: Int?
+    public let ratingAfter: Int?
+    public let ratingPointsApplied: Int?
     public let readinessBefore: Int
     public let readinessAfter: Int
     public let fatigueBefore: Int
@@ -176,6 +179,9 @@ public struct TrainingSessionSnapshot: Codable, Equatable, Sendable {
         reaction: TrainingReactionBand,
         signalGained: Int,
         ratingPointsGained: Int,
+        ratingBefore: Int? = nil,
+        ratingAfter: Int? = nil,
+        ratingPointsApplied: Int? = nil,
         readinessBefore: Int,
         readinessAfter: Int,
         fatigueBefore: Int,
@@ -189,6 +195,9 @@ public struct TrainingSessionSnapshot: Codable, Equatable, Sendable {
         self.reaction = reaction
         self.signalGained = signalGained
         self.ratingPointsGained = ratingPointsGained
+        self.ratingBefore = ratingBefore
+        self.ratingAfter = ratingAfter
+        self.ratingPointsApplied = ratingPointsApplied
         self.readinessBefore = readinessBefore
         self.readinessAfter = readinessAfter
         self.fatigueBefore = fatigueBefore
@@ -342,6 +351,7 @@ public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
     public let legacyOptions: [MemoryCardID]
     public let legacySelection: LegacySelectionSnapshot?
     public let stateCommitment: String
+    public let balanceVersion: Int?
 
     public init(
         runID: String,
@@ -364,7 +374,8 @@ public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
         scoutingEvaluation: ScoutingEvaluationSnapshot?,
         legacyOptions: [MemoryCardID],
         legacySelection: LegacySelectionSnapshot?,
-        stateCommitment: String
+        stateCommitment: String,
+        balanceVersion: Int? = nil
     ) {
         self.runID = runID
         self.revision = revision
@@ -387,6 +398,7 @@ public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
         self.legacyOptions = legacyOptions
         self.legacySelection = legacySelection
         self.stateCommitment = stateCommitment
+        self.balanceVersion = balanceVersion
     }
 }
 
@@ -523,6 +535,16 @@ public struct FinalizeScoutingParams: Codable, Equatable, Sendable {
     }
 }
 
+public struct PitcherLabStateParams: Codable, Equatable, Sendable {
+    public let seed: String
+    public let state: PitcherLabSnapshot
+
+    public init(seed: String, state: PitcherLabSnapshot) {
+        self.seed = seed
+        self.state = state
+    }
+}
+
 public struct SelectLegacyParams: Codable, Equatable, Sendable {
     public let seed: String
     public let state: PitcherLabSnapshot
@@ -543,6 +565,9 @@ public struct PitcherLabEvent: Codable, Equatable, Sendable {
     public let training: TrainingSessionSnapshot?
     public let importantInning: ImportantInningReport?
     public let relationshipChoice: RelationshipChoice?
+    public let catcherTrustBefore: Int?
+    public let catcherTrustAfter: Int?
+    public let catcherTrustChangeApplied: Int?
     public let awakening: AwakeningID?
     public let scouting: ScoutingEvaluationSnapshot?
     public let legacy: LegacySelectionSnapshot?
@@ -554,6 +579,9 @@ public struct PitcherLabEvent: Codable, Equatable, Sendable {
         training: TrainingSessionSnapshot? = nil,
         importantInning: ImportantInningReport? = nil,
         relationshipChoice: RelationshipChoice? = nil,
+        catcherTrustBefore: Int? = nil,
+        catcherTrustAfter: Int? = nil,
+        catcherTrustChangeApplied: Int? = nil,
         awakening: AwakeningID? = nil,
         scouting: ScoutingEvaluationSnapshot? = nil,
         legacy: LegacySelectionSnapshot? = nil,
@@ -564,6 +592,9 @@ public struct PitcherLabEvent: Codable, Equatable, Sendable {
         self.training = training
         self.importantInning = importantInning
         self.relationshipChoice = relationshipChoice
+        self.catcherTrustBefore = catcherTrustBefore
+        self.catcherTrustAfter = catcherTrustAfter
+        self.catcherTrustChangeApplied = catcherTrustChangeApplied
         self.awakening = awakening
         self.scouting = scouting
         self.legacy = legacy
@@ -678,7 +709,8 @@ public struct PitcherLabEngine: Sendable {
             scoutingEvaluation: nil,
             legacyOptions: [],
             legacySelection: nil,
-            stateCommitment: ""
+            stateCommitment: "",
+            balanceVersion: PitcherPresetCatalog.balanceVersion
         )
         let snapshot = signed(base)
         return makeResult(
@@ -686,6 +718,28 @@ public struct PitcherLabEngine: Sendable {
             snapshot: snapshot,
             events: [PitcherLabEvent(eventType: "pitcher_lab_started", sequence: 0)]
         )
+    }
+
+    public func normalizeBalance(_ params: PitcherLabStateParams) throws -> PitcherLabResult {
+        _ = try validatedSeed(params.seed)
+        try validateState(params.state)
+        let sourceVersion = params.state.balanceVersion
+            ?? PitcherPresetCatalog.inferredLegacyVersion(for: params.state.pitcher)
+        guard let migration = PitcherPresetCatalog.migrate(params.state.pitcher, fromVersion: sourceVersion) else {
+            let normalized = params.state.balanceVersion == PitcherPresetCatalog.balanceVersion
+                ? params.state
+                : signed(replacing(params.state, balanceVersion: PitcherPresetCatalog.balanceVersion))
+            return normalizedResult(seed: params.seed, snapshot: normalized)
+        }
+        let trait = hiddenTrait(runID: params.state.runID, seed: runSeed(from: params.state.runID))
+        var normalized = replacing(params.state, pitcher: migration.pitcher,
+            potentialRanges: potentialRanges(pitcher: migration.pitcher, trait: trait,
+                sessions: params.state.trainingSessionsCompleted, seed: runSeed(from: params.state.runID)),
+            balanceVersion: PitcherPresetCatalog.balanceVersion)
+        if params.state.scoutingEvaluation != nil {
+            normalized = replacing(normalized, scoutingEvaluation: scoutingEvaluation(for: normalized))
+        }
+        return normalizedResult(seed: params.seed, snapshot: signed(normalized))
     }
 
     public func commitTraining(_ params: CommitTrainingParams) throws -> PitcherLabResult {
@@ -719,6 +773,8 @@ public struct PitcherLabEngine: Sendable {
         let ratingPoints = totalSignal / 500
         let signals = params.state.developmentSignals.replacing(params.focus, with: totalSignal % 500)
         let pitcher = applyGrowth(to: params.state.pitcher, focus: params.focus, points: ratingPoints)
+        let ratingBefore = rating(for: params.state.pitcher, focus: params.focus)
+        let ratingAfter = rating(for: pitcher, focus: params.focus)
         let recoveryBonus = params.focus == .recovery ? 18 + (trait == .recoveryGift ? 8 : 0) : 0
         let fatigueAfter = clamp(params.state.fatigue + fatigueCost - recoveryBonus, 0, 100)
         let readinessCost = params.intensity == .intensive ? 12 : params.intensity == .standard ? 6 : 2
@@ -735,6 +791,9 @@ public struct PitcherLabEngine: Sendable {
             reaction: reaction,
             signalGained: signalGained,
             ratingPointsGained: ratingPoints,
+            ratingBefore: ratingBefore,
+            ratingAfter: ratingAfter,
+            ratingPointsApplied: ratingAfter - ratingBefore,
             readinessBefore: params.state.readiness,
             readinessAfter: readinessAfter,
             fatigueBefore: params.state.fatigue,
@@ -837,13 +896,14 @@ public struct PitcherLabEngine: Sendable {
         }
         let eventNumber = params.state.relationshipEventsCompleted + 1
         let trustChange = params.choice == .trustCatcher ? 12 : -7
+        let trustAfter = clamp(params.state.catcherTrust + trustChange, 0, 100)
         let nextPhase: PitcherLabPhase = eventNumber == 1 ? .training : .training
         let updated = replacing(
             params.state,
             revision: params.state.revision + 1,
             phase: nextPhase,
             relationshipEventsCompleted: eventNumber,
-            catcherTrust: clamp(params.state.catcherTrust + trustChange, 0, 100)
+            catcherTrust: trustAfter
         )
         return makeResult(
             seed: seed,
@@ -853,6 +913,9 @@ public struct PitcherLabEngine: Sendable {
                     eventType: "catcher_relationship_changed",
                     sequence: 0,
                     relationshipChoice: params.choice,
+                    catcherTrustBefore: params.state.catcherTrust,
+                    catcherTrustAfter: trustAfter,
+                    catcherTrustChangeApplied: trustAfter - params.state.catcherTrust,
                     reasonCodes: ["catcher.trust.\(trustChange >= 0 ? "up" : "down")"]
                 )
             ]
@@ -967,6 +1030,10 @@ public struct PitcherLabEngine: Sendable {
         guard state.phase == expectedPhase else {
             throw SimulationError.invalidPitcherLab("expected \(expectedPhase.rawValue), got \(state.phase.rawValue)")
         }
+        try validateState(state)
+    }
+
+    private func validateState(_ state: PitcherLabSnapshot) throws {
         guard state.stateCommitment == commitment(for: state),
               (0...6).contains(state.trainingSessionsCompleted),
               (0...2).contains(state.relationshipEventsCompleted),
@@ -1072,6 +1139,15 @@ public struct PitcherLabEngine: Sendable {
         )
     }
 
+    private func rating(for pitcher: PitcherSnapshot, focus: TrainingFocus) -> Int {
+        switch focus {
+        case .velocity: return pitcher.stuff
+        case .command, .gamePlanning: return pitcher.command
+        case .breakingBall: return pitcher.movement
+        case .stamina, .recovery: return pitcher.stamina
+        }
+    }
+
     private func applyInheritance(
         to pitcher: PitcherSnapshot,
         soulPoints: Int,
@@ -1143,7 +1219,7 @@ public struct PitcherLabEngine: Sendable {
         let walkPenalty = performance.walks * 12
         let strikeoutBonus = performance.strikeouts * 15
         let processBonus = max(-120, min(120, (performance.expectedDamage - performance.actualDamage) / 8))
-        let score = clamp(ratingAverage * 10 + strikeoutBonus + processBonus - runPenalty - walkPenalty, 0, 1_000)
+        let score = clamp((ratingAverage + 18) * 10 + strikeoutBonus + processBonus - runPenalty - walkPenalty, 0, 1_000)
         let grade: ScoutingGrade
         switch score {
         case ..<500: grade = .undrafted
@@ -1152,10 +1228,10 @@ public struct PitcherLabEngine: Sendable {
         default: grade = .elite
         }
         var strengths: [String] = []
-        if state.pitcher.stuff >= 65 { strengths.append("타자를 밀어붙이는 직구") }
-        if state.pitcher.command >= 65 { strengths.append("원하는 코스에 꾸준히 던지는 제구") }
-        if state.pitcher.movement >= 65 { strengths.append("헛스윙을 잡는 변화구 움직임") }
-        if state.pitcher.stamina >= 65 { strengths.append("선발 투수의 체력") }
+        if state.pitcher.stuff >= 45 { strengths.append("고교 무대에서 돋보이는 직구") }
+        if state.pitcher.command >= 45 { strengths.append("프로 가능성을 보인 제구") }
+        if state.pitcher.movement >= 45 { strengths.append("결정구로 성장 중인 변화구") }
+        if state.pitcher.stamina >= 45 { strengths.append("선발 후보로 평가받는 체력") }
         if strengths.isEmpty { strengths.append("공의 위력·제구·변화구·체력의 균형") }
         var concerns: [String] = []
         if performance.walks >= 3 { concerns.append("위기에서 늘어나는 볼넷") }
@@ -1263,14 +1339,18 @@ public struct PitcherLabEngine: Sendable {
             "\($0.metric):\($0.current):\($0.lowerBound):\($0.upperBound):\($0.confidence)"
         }.joined(separator: ",")
         let lastTraining = state.lastTraining.map {
-            "\($0.sessionNumber):\($0.focus.rawValue):\($0.intensity.rawValue):\($0.reaction.rawValue):\($0.signalGained):\($0.ratingPointsGained):\($0.readinessAfter):\($0.fatigueAfter)"
+            var fields = "\($0.sessionNumber):\($0.focus.rawValue):\($0.intensity.rawValue):\($0.reaction.rawValue):\($0.signalGained):\($0.ratingPointsGained):\($0.readinessAfter):\($0.fatigueAfter)"
+            if let before = $0.ratingBefore, let after = $0.ratingAfter, let applied = $0.ratingPointsApplied {
+                fields += ":rating:\(before):\(after):\(applied)"
+            }
+            return fields
         } ?? "no-training"
         let scouting = state.scoutingEvaluation.map { "\($0.grade.rawValue):\($0.score)" }
             ?? "no-scouting"
         let legacy = state.legacySelection.map {
             "\($0.soulDomain.rawValue):\($0.memoryCard.rawValue)"
         } ?? "no-legacy"
-        let canonical = [
+        var canonical = [
             state.runID,
             String(state.revision),
             String(state.lifeNumber),
@@ -1292,8 +1372,11 @@ public struct PitcherLabEngine: Sendable {
             scouting,
             state.legacyOptions.map(\.rawValue).joined(separator: ","),
             legacy
-        ].joined(separator: "|")
-        return StableHash.fnv1a64(canonical)
+        ]
+        if let balanceVersion = state.balanceVersion {
+            canonical.append("balance_version:\(balanceVersion)")
+        }
+        return StableHash.fnv1a64(canonical.joined(separator: "|"))
     }
 
     private func makeResult(
@@ -1318,6 +1401,16 @@ public struct PitcherLabEngine: Sendable {
         )
     }
 
+    private func normalizedResult(seed: String, snapshot: PitcherLabSnapshot) -> PitcherLabResult {
+        PitcherLabResult(
+            revision: snapshot.revision,
+            nextSeed: seed,
+            events: [],
+            snapshot: snapshot,
+            eventHash: StableHash.fnv1a64("\(snapshot.runID)|\(snapshot.revision)|balance_normalized|\(snapshot.stateCommitment)")
+        )
+    }
+
     private func replacing(
         _ state: PitcherLabSnapshot,
         revision: UInt64? = nil,
@@ -1337,6 +1430,7 @@ public struct PitcherLabEngine: Sendable {
         scoutingEvaluation: ScoutingEvaluationSnapshot? = nil,
         legacyOptions: [MemoryCardID]? = nil,
         legacySelection: LegacySelectionSnapshot? = nil,
+        balanceVersion: Int? = nil,
         stateCommitment: String? = nil
     ) -> PitcherLabSnapshot {
         PitcherLabSnapshot(
@@ -1360,7 +1454,8 @@ public struct PitcherLabEngine: Sendable {
             scoutingEvaluation: scoutingEvaluation ?? state.scoutingEvaluation,
             legacyOptions: legacyOptions ?? state.legacyOptions,
             legacySelection: legacySelection ?? state.legacySelection,
-            stateCommitment: stateCommitment ?? ""
+            stateCommitment: stateCommitment ?? "",
+            balanceVersion: balanceVersion ?? state.balanceVersion
         )
     }
 

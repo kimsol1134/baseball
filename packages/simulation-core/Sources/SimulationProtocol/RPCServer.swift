@@ -130,6 +130,9 @@ public struct RPCServer: Sendable {
                 let params = try decode(SelectLegacyParams.self, from: request)
                 let result = try pitcherLab.selectLegacy(params)
                 response = RPCResponse(id: request.id, result: try JSONValue.from(result))
+            case "normalizePitcherLabBalance":
+                let params = try decode(PitcherLabStateParams.self, from: request)
+                response = RPCResponse(id: request.id, result: try JSONValue.from(try pitcherLab.normalizeBalance(params)))
             case "startHighSchoolCareer":
                 let params = try decode(StartHighSchoolCareerParams.self, from: request)
                 response = RPCResponse(id: request.id, result: try JSONValue.from(try highSchoolCareer.start(params)))
@@ -166,6 +169,9 @@ public struct RPCServer: Sendable {
             case "startProCareer":
                 let params = try decode(StartProCareerParams.self, from: request)
                 response = RPCResponse(id: request.id, result: try JSONValue.from(try proCareer.start(params)))
+            case "normalizeProCareerBalance":
+                let params = try decode(ProStateParams.self, from: request)
+                response = RPCResponse(id: request.id, result: try JSONValue.from(try proCareer.normalizeBalance(params)))
             case "signProContract":
                 let params = try decode(ProStateParams.self, from: request)
                 response = RPCResponse(id: request.id, result: try JSONValue.from(try proCareer.signContract(params)))

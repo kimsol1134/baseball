@@ -63,9 +63,9 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertFalse(rivals.compactMap(\.signatureRecord).contains { $0.contains("통산") || $0.contains("한국시리즈") })
         XCTAssertGreaterThan(Set(rivals.map { "\($0.contact)-\($0.discipline)-\($0.power)" }).count, 4)
         let ratings = rivals.flatMap { [$0.contact, $0.discipline, $0.power] }
-        XCTAssertLessThanOrEqual(ratings.max() ?? 0, 76)
-        XCTAssertGreaterThanOrEqual(ratings.min() ?? 0, 50)
-        XCTAssertLessThan(Double(ratings.reduce(0, +)) / Double(ratings.count), 68)
+        XCTAssertLessThanOrEqual(ratings.max() ?? 0, 50)
+        XCTAssertGreaterThanOrEqual(ratings.min() ?? 0, 37)
+        XCTAssertLessThan(Double(ratings.reduce(0, +)) / Double(ratings.count), 46)
 
         let hardestRivals = try (1...64).map { seed in
             try HighSchoolCareerEngine().start(.init(
@@ -124,12 +124,39 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertEqual(normalized.catcherTrust, started.snapshot.relationshipTrust)
         XCTAssertEqual(normalized.rivalTrust, started.snapshot.relationshipTrust)
         XCTAssertEqual(normalized.balanceVersion, PitcherPresetCatalog.balanceVersion)
-        XCTAssertEqual(normalized.pitcher.stuff, 62)
-        XCTAssertEqual(normalized.pitcher.profile(for: .fourSeam)?.velocityTenthsKPH, 1_430)
+        XCTAssertEqual(normalized.pitcher.stuff, 42)
+        XCTAssertEqual(normalized.pitcher.profile(for: .fourSeam)?.velocityTenthsKPH, 1_410)
 
         let normalizedAgain = try engine.normalizeRegionalSchools(.init(seed: started.nextSeed, state: normalized))
         XCTAssertEqual(normalizedAgain.snapshot.pitcher, normalized.pitcher)
         XCTAssertEqual(normalized.relationshipTrust, started.snapshot.relationshipTrust)
+    }
+
+    func testV2BalanceMigrationPreservesEveryEarnedPoint() throws {
+        let v2 = try XCTUnwrap(PitcherPresetCatalog.balanceV2.first { $0.id == "power_prospect" }?.pitcher)
+        let earnedProfiles = v2.pitchProfiles?.map { profile in
+            PitchProfileSnapshot(
+                pitchType: profile.pitchType, role: profile.role,
+                velocityTenthsKPH: profile.velocityTenthsKPH + (profile.pitchType == .fourSeam ? 20 : 0),
+                control: profile.control, command: profile.command, movement: profile.movement,
+                whiff: profile.whiff, weakContact: profile.weakContact, fatigueCost: profile.fatigueCost
+            )
+        }
+        let earned = PitcherSnapshot(
+            id: v2.id, name: "이어 하는 선수", stuff: v2.stuff + 5, command: v2.command + 2,
+            movement: v2.movement + 1, stamina: v2.stamina + 3, pitchProfiles: earnedProfiles
+        )
+
+        XCTAssertEqual(PitcherPresetCatalog.inferredLegacyVersion(for: earned), 2)
+        let migrated = try XCTUnwrap(PitcherPresetCatalog.migrate(earned, fromVersion: 2)?.pitcher)
+        let v3 = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "power_prospect" }?.pitcher)
+        XCTAssertEqual(migrated.name, "이어 하는 선수")
+        XCTAssertEqual(migrated.stuff, v3.stuff + 5)
+        XCTAssertEqual(migrated.command, v3.command + 2)
+        XCTAssertEqual(migrated.movement, v3.movement + 1)
+        XCTAssertEqual(migrated.stamina, v3.stamina + 3)
+        XCTAssertEqual(migrated.profile(for: .fourSeam)?.velocityTenthsKPH,
+            try XCTUnwrap(v3.profile(for: .fourSeam)?.velocityTenthsKPH) + 20)
     }
 
     func testDifficultyAndKarmaChangeRulesWithoutChangingContentOrder() throws {

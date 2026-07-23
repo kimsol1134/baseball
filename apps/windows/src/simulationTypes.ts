@@ -507,6 +507,9 @@ export interface TrainingSessionSnapshot {
   reaction: TrainingReactionBand;
   signalGained: number;
   ratingPointsGained: number;
+  ratingBefore?: number;
+  ratingAfter?: number;
+  ratingPointsApplied?: number;
   readinessBefore: number;
   readinessAfter: number;
   fatigueBefore: number;
@@ -568,6 +571,7 @@ export interface PitcherLabSnapshot {
   scoutingEvaluation?: ScoutingEvaluationSnapshot;
   legacyOptions: ReadonlyArray<MemoryCardID>;
   legacySelection?: LegacySelectionSnapshot;
+  balanceVersion?: number;
   stateCommitment: string;
 }
 
@@ -577,6 +581,9 @@ export interface PitcherLabEvent {
   training?: TrainingSessionSnapshot;
   importantInning?: ImportantInningReport;
   relationshipChoice?: RelationshipChoice;
+  catcherTrustBefore?: number;
+  catcherTrustAfter?: number;
+  catcherTrustChangeApplied?: number;
   awakening?: AwakeningID;
   scouting?: ScoutingEvaluationSnapshot;
   legacy?: LegacySelectionSnapshot;
@@ -905,6 +912,11 @@ export interface FinalizeScoutingParams {
   state: PitcherLabSnapshot;
 }
 
+export interface PitcherLabStateParams {
+  seed: string;
+  state: PitcherLabSnapshot;
+}
+
 export interface SelectLegacyParams {
   seed: string;
   state: PitcherLabSnapshot;
@@ -927,7 +939,7 @@ export interface ProCareerSnapshot {
   team: DraftTeamSnapshot; entitlement: ProEntitlementSnapshot; age: number; season: number; week: number; level: ProLevel; role: ProRole;
   managerTrust: number; catcherTrust: number; fatigue: number; injuryWeeks: number; serviceYears: number; militaryCompleted: boolean;
   contract?: ProContractSnapshot; currentStats: ProSeasonStats; careerStats: ReadonlyArray<ProSeasonStats>; awards: ReadonlyArray<string>;
-  milestones: ReadonlyArray<string>; news: ReadonlyArray<string>; hallOfFameScore?: number; commitment: string;
+  milestones: ReadonlyArray<string>; news: ReadonlyArray<string>; hallOfFameScore?: number; balanceVersion?: number; commitment: string;
 }
 export interface ProCareerResult { snapshot: ProCareerSnapshot; nextSeed: string; events: ReadonlyArray<string> }
 export interface StartProCareerParams { seed: string; identity: PlayerIdentitySnapshot; pitcher: PitcherSnapshot; draftResult: DraftResultSnapshot; entitlement: ProEntitlementSnapshot }

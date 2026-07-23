@@ -47,6 +47,11 @@ final class PitcherLabEngineTests: XCTestCase {
         XCTAssertEqual(firstTraining.snapshot.trainingSessionsCompleted, 1)
         XCTAssertEqual(firstTraining.snapshot.phase, .training)
         XCTAssertFalse(firstTraining.snapshot.stateCommitment.isEmpty)
+        let training = try XCTUnwrap(firstTraining.events.first?.training)
+        XCTAssertEqual(training.ratingBefore, firstStart.snapshot.pitcher.stuff)
+        XCTAssertEqual(training.ratingAfter, firstTraining.snapshot.pitcher.stuff)
+        XCTAssertEqual(training.ratingPointsApplied,
+            firstTraining.snapshot.pitcher.stuff - firstStart.snapshot.pitcher.stuff)
     }
 
     func testPitcherLabCompletesSixTrainingsThreeInningsAndLegacy() throws {
@@ -63,6 +68,7 @@ final class PitcherLabEngineTests: XCTestCase {
         result = try train(engine, result, .recovery, .light)
         XCTAssertEqual(result.snapshot.phase, .relationship)
 
+        let trustBefore = result.snapshot.catcherTrust
         result = try engine.chooseRelationship(
             ChooseRelationshipParams(
                 seed: result.nextSeed,
@@ -71,6 +77,9 @@ final class PitcherLabEngineTests: XCTestCase {
             )
         )
         XCTAssertGreaterThan(result.snapshot.catcherTrust, 50)
+        XCTAssertEqual(result.events.first?.catcherTrustBefore, trustBefore)
+        XCTAssertEqual(result.events.first?.catcherTrustAfter, result.snapshot.catcherTrust)
+        XCTAssertEqual(result.events.first?.catcherTrustChangeApplied, result.snapshot.catcherTrust - trustBefore)
 
         result = try train(engine, result, .command, .standard)
         result = try inning(engine, result, number: 2, runs: 1)
