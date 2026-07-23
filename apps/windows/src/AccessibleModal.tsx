@@ -20,6 +20,8 @@ interface AccessibleModalProps {
 
 export function AccessibleModal({ children, className, labelledBy, label, live, onEscape }: AccessibleModalProps) {
   const modalRef = useRef<HTMLElement>(null);
+  const onEscapeRef = useRef(onEscape);
+  onEscapeRef.current = onEscape;
 
   useEffect(() => {
     const modal = modalRef.current;
@@ -46,9 +48,9 @@ export function AccessibleModal({ children, className, labelledBy, label, live, 
     };
     const frame = window.requestAnimationFrame(focusFirst);
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && onEscape) {
+      if (event.key === "Escape" && onEscapeRef.current) {
         event.preventDefault();
-        onEscape();
+        onEscapeRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -76,7 +78,7 @@ export function AccessibleModal({ children, className, labelledBy, label, live, 
       inertStates.forEach((wasInert, element) => { element.inert = wasInert; });
       returnTarget?.focus();
     };
-  }, [onEscape]);
+  }, []);
 
   return (
     <section ref={modalRef} className={className} role="dialog" aria-modal="true"
