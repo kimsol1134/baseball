@@ -70,15 +70,15 @@
 
 | 자산 | 역할 |
 |---|---|
-| `high-school-pitcher-dugout.webp` | 고교 커리어 진입 키아트 |
-| `high-school-stadium-night.webp` | 현재 고교 커리어·연결 대기 구장. 전역 셸에는 사용하지 않는다. |
-| `gamecast-field-stadium-night-v2.webp` | 프로 커리어 히어로의 단일 구장 키아트 |
+| `high-school-career-intro-v2.webp` | 조용한 학교 불펜과 익명 투수로 시작을 보여주는 고교 커리어 진입 키아트 |
+| `high-school-stadium-night-v2.webp` | 작은 관중석과 생활권 야경으로 아마추어 규모를 드러내는 고교 커리어·연결 대기 구장 |
+| `pro-career-stadium-tunnel.webp` | 만원 관중·다층 관중석·방송 시설로 승격감을 주는 프로 전용 키아트 |
 | `coach-role-scene.webp` | 얼굴이 보이지 않는 기록 보드·감독 역할 장면 |
 | `catcher-role-scene.webp` | 이름과 무관한 마스크·미트 역할 장면 |
 | `rival-role-scene.webp` | 얼굴이 식별되지 않는 타석 실루엣 역할 장면 |
 | `app-icon-midnight.png` | Midnight Dugout 팔레트의 앱 아이콘 원본 |
 
-모든 자산은 실존 구단·로고·문자 없이 생성하고 런타임 이미지는 WebP로 최적화한다. 고대비 모드에서는 큰 배경 이미지를 제거하고 역할 장면은 흑백 고대비로 전환한다. 생성 프롬프트, 후처리, IP 검토, 은퇴 원본은 `docs/assets/source/README.md`에서 추적한다.
+모든 자산은 실존 구단·로고·문자 없이 생성하고 런타임 이미지는 WebP로 최적화한다. 고대비 모드에서는 큰 배경 이미지를 제거하고 역할 장면은 흑백 고대비로 전환한다. 고교 연결 실패 시 진입 키아트를 숨겨 복구 카드의 구장 이미지 한 장만 노출한다. 생성 프롬프트, 후처리, IP 검토, 은퇴 원본은 `docs/assets/source/README.md`에서 추적한다.
 
 GameCast는 래스터 경기장을 배경으로 쓰지 않는다. 투구와 타구 모두 시뮬레이션 코어의 물리 좌표를 TrackLab SVG로 표현해 카메라 왜곡과 사진/SVG 좌표 불일치를 제거한다.
 

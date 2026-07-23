@@ -4803,11 +4803,13 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
 }
 
 .pro-career-shell .career-hero {
+  min-height: 240px;
   border-top-color: var(--team-decoration);
   background-image:
     linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 95%, transparent) 0%, color-mix(in srgb, var(--color-canvas) 73%, transparent) 54%, color-mix(in srgb, var(--color-canvas) 86%, transparent) 100%),
-    url("./assets/gamecast-field-stadium-night-v2.webp");
-  background-position: center 44%;
+    url("./assets/pro-career-stadium-tunnel.webp");
+  background-position: center 52%;
+  background-size: cover;
 }
 
 .career-intro {
@@ -4816,7 +4818,7 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   background-image:
     linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 97%, transparent) 0%, color-mix(in srgb, var(--color-canvas) 86%, transparent) 42%, color-mix(in srgb, var(--color-canvas) 18%, transparent) 78%),
     linear-gradient(0deg, color-mix(in srgb, var(--color-canvas) 62%, transparent), transparent 60%),
-    url("./assets/high-school-pitcher-dugout.webp");
+    url("./assets/high-school-career-intro-v2.webp");
   background-position: center;
   background-size: cover;
 }
@@ -4825,7 +4827,7 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   min-height: 170px;
   background-image:
     linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 94%, transparent) 0%, color-mix(in srgb, var(--color-canvas) 72%, transparent) 52%, color-mix(in srgb, var(--color-canvas) 88%, transparent) 100%),
-    url("./assets/high-school-stadium-night.webp");
+    url("./assets/high-school-stadium-night-v2.webp");
   background-position: center 54%;
   background-size: cover;
 }
@@ -4853,7 +4855,7 @@ body.high-contrast :is(.career-intro, .career-hero) {
   overflow: hidden;
   background-image:
     linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 96%, transparent), color-mix(in srgb, var(--color-canvas) 54%, transparent)),
-    url("./assets/high-school-stadium-night.webp");
+    url("./assets/high-school-stadium-night-v2.webp");
   background-position: center 58%;
   background-size: cover;
   box-shadow: var(--shadow-card);
@@ -6571,7 +6573,7 @@ body.high-contrast .character-profile__portrait {
     justify-content: flex-start;
     background-image:
       linear-gradient(180deg, color-mix(in srgb, var(--color-canvas) 98%, transparent) 0%, color-mix(in srgb, var(--color-canvas) 88%, transparent) 46%, color-mix(in srgb, var(--color-canvas) 34%, transparent) 100%),
-      url("./assets/high-school-pitcher-dugout.webp");
+      url("./assets/high-school-career-intro-v2.webp");
     background-position: 68% center;
   }
 

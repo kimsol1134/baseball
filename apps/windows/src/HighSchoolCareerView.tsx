@@ -352,10 +352,10 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
 
   return (
     <main className="career-setup">
-      <section className="career-intro">
+      {presets.length > 0 ? <section className="career-intro">
         <div><p className="eyebrow">고교 커리어</p><h2>중학교의 마지막 공에서 드래프트까지</h2>
           <p>학교를 고르고, 감독과 포수에게 배우고, 라이벌과 다시 만납니다. 능력치는 프로 기준 20–80 평가입니다. 50은 가상 프로리그 1군 평균이며, 고교 1학년은 주로 20–40대에서 시작합니다.</p></div>
-      </section>
+      </section> : null}
       <section className="preset-creation-grid">
         {presets.map((preset) => <button key={preset.id} type="button" aria-pressed={preset.id === effectivePresetID}
           className={preset.id === effectivePresetID ? "is-selected" : undefined} onClick={() => selectPreset(preset)}>
