@@ -53,6 +53,7 @@ import {
 import { clearProCareer, loadProCareer, saveProCareer } from "./proCareerAutosave";
 import { nextFontScale, parseFontScale } from "./accessibilityPreferences";
 import { batterScoutingReport, pitcherRoleLabel } from "./playerPresentation";
+import { coreRecoveryMessage } from "./coreRecoveryMessage";
 import { crossedGrowthMilestone } from "./GrowthCelebration";
 import { feedbackCueForResult, GameFeedback } from "./gameFeedback";
 import { includesProCareer, releaseEditionFromEnvironment } from "./releaseEdition";
@@ -343,8 +344,12 @@ function statusMessage(status: CoreStatus) {
     case "online":
       return "게임 준비 완료";
     case "offline":
-      return status.message;
+      return "경기 데이터 연결 필요";
   }
+}
+
+function statusDetail(status: CoreStatus) {
+  return status.state === "offline" ? coreRecoveryMessage(status.message) : statusMessage(status);
 }
 
 function outcomeTone(outcome: PitchOutcome) {
@@ -1594,7 +1599,7 @@ export function App() {
           demoMode={releaseEdition === "steam_demo" || releaseEdition === "web_teaser"}
           onMilestoneFeedback={handleMilestoneFeedback} />
           : <HighSchoolCareerSetup presets={presets} isRunning={isRunning || coreStatus.state === "checking"}
-            error={error} coreMessage={statusMessage(coreStatus)} onRetryCore={() => void connectCore()} onStart={handleStartCareer} />}
+            error={error} coreMessage={statusDetail(coreStatus)} onRetryCore={() => void connectCore()} onStart={handleStartCareer} />}
         <footer><span>{careerModeFooter}</span>
           <span>선택이 확정될 때마다 자동 저장됩니다.</span></footer>
       </div>
@@ -1643,7 +1648,7 @@ export function App() {
             presets={presets}
             isRunning={isRunning || coreStatus.state === "checking"}
             error={error}
-            coreMessage={statusMessage(coreStatus)}
+            coreMessage={statusDetail(coreStatus)}
             onRetryCore={() => void connectCore()}
             onStart={handleStartLab}
           />
