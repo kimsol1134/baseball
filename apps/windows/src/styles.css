@@ -102,19 +102,16 @@ button:focus-visible {
 
 .app-shell--high-school {
   background-image:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-canvas) 76%, transparent), var(--color-canvas) 78%),
-    url("./assets/high-school-stadium-night.webp");
-  background-position: center, center 32%;
-  background-size: cover;
+    radial-gradient(circle at 16% 8%, color-mix(in srgb, var(--color-accent) 8%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 48%, transparent), var(--color-canvas) 72%);
 }
 
 .app-shell--pro {
   background-image:
-    linear-gradient(180deg, color-mix(in srgb, var(--color-canvas) 70%, transparent), var(--color-canvas) 76%),
-    linear-gradient(90deg, color-mix(in srgb, var(--color-canvas) 46%, transparent), transparent 72%),
-    url("./assets/gamecast-field-stadium-night-v2.webp");
-  background-position: center, center, center 34%;
-  background-size: cover;
+    linear-gradient(color-mix(in srgb, var(--team-decoration) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--team-decoration) 7%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 78% 6%, color-mix(in srgb, var(--team-decoration) 18%, transparent), transparent 34%);
+  background-size: 96px 96px, 96px 96px, cover;
 }
 
 .app-shell--lab {
@@ -4893,8 +4890,8 @@ body.high-contrast :is(.career-offline-card, .core-unavailable-state) {
 
 .core-unavailable-state > small {
   max-width: 640px;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-caption);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-label);
 }
 
 .core-unavailable-state > button {
@@ -6646,6 +6643,19 @@ body.high-contrast .character-profile__portrait {
 
   .topbar {
     display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
+  }
+
+  .brand-lockup,
+  .core-status {
+    grid-column: 1 / -1;
+  }
+
+  .mode-switch,
+  .settings-menu {
+    width: 100%;
   }
 
   .settings-menu {

@@ -4,10 +4,10 @@ import { AccessibleModal } from "./AccessibleModal";
 import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
 import { CoreUnavailableState } from "./CoreUnavailableState";
-import { GrowthCelebration } from "./GrowthCelebration";
-import catcherPortrait from "./assets/catcher-portrait-ui.webp";
-import coachPortrait from "./assets/coach-portrait-ui.webp";
-import rivalPortrait from "./assets/rival-portrait-ui.webp";
+import { crossedGrowthMilestone, GrowthCelebration } from "./GrowthCelebration";
+import catcherRoleScene from "./assets/catcher-role-scene.webp";
+import coachRoleScene from "./assets/coach-role-scene.webp";
+import rivalRoleScene from "./assets/rival-role-scene.webp";
 import { expectedTrainingFatigue, parseAcknowledgedResult, trainingGrowthOutlook } from "./careerTrainingPresentation";
 import { hasCompletedSteamDemo } from "./demoGate";
 import type {
@@ -81,17 +81,26 @@ const TRAINING_METRICS: Record<TrainingFocus, { key: keyof CreationAllocationSna
 };
 
 function abilityMeaning(value: number) {
-  if (value >= 75) return "전국 상위권";
-  if (value >= 65) return "뚜렷한 강점";
-  if (value >= 55) return "평균 이상";
-  if (value >= 45) return "평균";
-  return "보완 필요";
+  if (value >= 75) return "세대 최고 수준";
+  if (value >= 65) return "프로 최상급";
+  if (value >= 55) return "프로 평균 이상";
+  if (value >= 50) return "프로 평균";
+  if (value >= 45) return "프로 진입 가능";
+  if (value >= 40) return "고교 정상급";
+  if (value >= 35) return "고교 주전급";
+  return "성장 단계";
 }
 
 function visibleGaugeRating(value: number, clarity: CareerDifficultySnapshot["informationClarity"]) {
   if (clarity === "relaxed") return value;
   if (clarity === "standard") return Math.floor(value / 5) * 5 + 2;
-  return value >= 65 ? 72 : value >= 50 ? 57 : 37;
+  return value >= 60 ? 67 : value >= 45 ? 52 : value >= 35 ? 40 : 27;
+}
+
+function presetPotential(preset: PitcherPresetSnapshot, key: keyof CreationAllocationSnapshot) {
+  const value = preset.pitcher[key];
+  const strongest = Math.max(preset.pitcher.stuff, preset.pitcher.command, preset.pitcher.movement, preset.pitcher.stamina);
+  return Math.min(65, value + (value === strongest ? 18 : 12));
 }
 
 function fourSeamVelocity(pitcher: PitcherPresetSnapshot["pitcher"]) {
@@ -345,7 +354,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
     <main className="career-setup">
       <section className="career-intro">
         <div><p className="eyebrow">고교 커리어</p><h2>중학교의 마지막 공에서 드래프트까지</h2>
-          <p>학교를 고르고, 감독과 포수에게 배우고, 라이벌과 다시 만납니다. 능력치는 20–80 평가이며 45는 고교 평균, 65는 뚜렷한 강점, 80은 세대 최고 수준입니다.</p></div>
+          <p>학교를 고르고, 감독과 포수에게 배우고, 라이벌과 다시 만납니다. 능력치는 프로 기준 20–80 평가입니다. 50은 가상 프로리그 1군 평균이며, 고교 1학년은 주로 20–40대에서 시작합니다.</p></div>
       </section>
       <section className="preset-creation-grid">
         {presets.map((preset) => <button key={preset.id} type="button" aria-pressed={preset.id === effectivePresetID}
@@ -353,7 +362,9 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
           <span>{preset.name}</span><strong>{preset.pitcher.name}</strong><p>{preset.tagline}</p><small>{preset.tradeoff}</small>
           <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
             {METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd>
-              <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]} /></div>)}
+              <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]}
+                lowerBound={preset.pitcher[metric.key] + 2} upperBound={presetPotential(preset, metric.key)} />
+              <small>성장 기대 {preset.pitcher[metric.key] + 2}–{presetPotential(preset, metric.key)}</small></div>)}
           </dl>
           <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
         </button>)}
@@ -362,12 +373,17 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
       {selected ? <section className="creation-allocation career-allocation">
         <div className="creation-summary"><div><span>투수 유형</span><strong>{selected.name}</strong><p>선수마다 강점과 약점이 다릅니다. 추가 능력 5점은 어느 유형을 골라도 같습니다.</p></div>
           <div className="creation-points"><span>남은 능력치 점수</span><strong>{5 - spent}</strong></div></div>
-        <div className="allocation-grid">{METRICS.map((metric) => <div key={metric.key}><span>{metric.label}</span><small>기본 {selected.pitcher[metric.key]} · 추가 +{allocation[metric.key]}</small><div>
+        <div className="allocation-grid">{METRICS.map((metric) => {
+          const finalRating = selected.pitcher[metric.key] + allocation[metric.key];
+          const potential = Math.max(finalRating + 2, presetPotential(selected, metric.key));
+          return <div key={metric.key}><span>{metric.label}</span><small>기본 {selected.pitcher[metric.key]} · 추가 +{allocation[metric.key]}</small><div>
           <button type="button" aria-label={`${metric.label} 1 감소`} disabled={allocation[metric.key] === 0} onClick={() => change(metric.key, -1)}>−</button>
           <strong aria-label={`${metric.label} 최종 ${selected.pitcher[metric.key] + allocation[metric.key]}`}>
             {selected.pitcher[metric.key] + allocation[metric.key]}<small>+{allocation[metric.key]}</small>
           </strong><button type="button" aria-label={`${metric.label} 1 증가`} disabled={spent >= 5 || allocation[metric.key] === 5} onClick={() => change(metric.key, 1)}>+</button>
-        </div><AbilityGauge compact label={`${metric.label} 최종`} value={selected.pitcher[metric.key] + allocation[metric.key]} /></div>)}</div>
+        </div><AbilityGauge compact label={`${metric.label} 최종`} value={finalRating}
+          lowerBound={finalRating + 2} upperBound={potential} /><small>현재 {finalRating} · 성장 기대 {finalRating + 2}–{potential}</small></div>;
+        })}</div>
         <div className="identity-grid"><label className="identity-name-field"><span>선수 이름</span><div><input value={identity.name} maxLength={12} autoComplete="off"
           onChange={(event) => { setIdentity({ ...identity, name: event.target.value }); setUsesRecommendedName(false); }} />
           <button type="button" disabled={usesRecommendedName && identity.name === selected.pitcher.name}
@@ -427,7 +443,7 @@ interface CareerViewProps {
   onStartPro: () => Promise<void>;
   proAccessAvailable: boolean;
   demoMode: boolean;
-  onMilestoneFeedback: (cue?: "growth" | "milestone") => void;
+  onMilestoneFeedback: (cue?: "progress" | "growth" | "milestone") => void;
 }
 
 export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTraining, onRelationship,
@@ -530,9 +546,9 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     const resultKey = pendingTraining ? `training:${pendingTraining.number}` : `relationship:${pendingRelationship?.number}`;
     if (announcedResultRef.current === resultKey) return;
     announcedResultRef.current = resultKey;
-    const abilityGrew = (pendingTraining?.growth ?? 0) > 0
-      || (pendingRelationship?.abilityAfter ?? 0) > (pendingRelationship?.abilityBefore ?? 0);
-    onMilestoneFeedback(abilityGrew ? "growth" : "milestone");
+    const before = pendingTraining?.metricBefore ?? pendingRelationship?.abilityBefore;
+    const after = pendingTraining?.metricAfter ?? pendingRelationship?.abilityAfter;
+    onMilestoneFeedback(before !== undefined && after !== undefined && crossedGrowthMilestone(before, after) ? "growth" : "progress");
     const frame = window.requestAnimationFrame(() => {
       decisionResultRef.current?.focus();
       decisionResultRef.current?.scrollIntoView({ behavior: document.body.classList.contains("reduce-motion") ? "auto" : "smooth", block: "center" });
@@ -550,7 +566,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     setAcknowledgedRelationship(pendingRelationship.number);
   };
   const scene = relationshipScene(relationship, state);
-  const relationshipArt = relationship.category === "coach" ? coachPortrait : relationship.category === "catcher" ? catcherPortrait : rivalPortrait;
+  const relationshipArt = relationship.category === "coach" ? coachRoleScene : relationship.category === "catcher" ? catcherRoleScene : rivalRoleScene;
   const reveal = (() => {
     const draft = state.draftResult;
     if (draftRevealStage === 0 || !draft) return { label: "지명 후보 명단", title: "10개 구단이 최종 명단을 닫았습니다.", copy: "경기 기록, 현재 구종, 감독과 포수의 평가가 최종 지명 후보표에 올라갑니다." };
@@ -596,7 +612,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             <AbilityGauge label={metric.label} value={visibleGaugeRating(value, state.difficulty.informationClarity)} displayValue={displayed} />
             <small>{abilityMeaning(value)}{metric.key === "stuff" ? ` · 포심 기준 ${currentFourSeamVelocity}` : ""}</small></div>;
         })}</div>
-        <small className="information-clarity">{state.difficulty.informationClarity === "relaxed" ? "정확한 숫자" : state.difficulty.informationClarity === "standard" ? "구단이 예상한 5점 범위" : "상·중·하만 표시"} · 20–80 평가 · 45 평균 · 65 뚜렷한 강점 · 80 세대 최고</small>
+        <small className="information-clarity">{state.difficulty.informationClarity === "relaxed" ? "정확한 숫자" : state.difficulty.informationClarity === "standard" ? "구단이 예상한 5점 범위" : "상·중·하만 표시"} · 프로 기준 20–80 · 40 고교 정상급 · 50 프로 평균 · 65 프로 최상급</small>
         {state.school ? <div className="career-personnel">
           <CharacterProfile label="감독" title={`${state.school.coachName} · ${state.school.coachArchetype}`} record={state.school.coachRecord} description={state.school.coachPersonality} />
           <CharacterProfile label="포수" title={`${state.school.catcherName} · ${state.school.catcherArchetype}`} record={state.school.catcherRecord} description={state.school.catcherPersonality} />
@@ -646,7 +662,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <button className="ds-button ds-button--primary lab-primary" type="button" onClick={acknowledgeRelationship}>{nextActionLabel}</button>
         </div> : null}
         {!hasPendingResult && draftRevealStage !== null && !draftRevealDone ? <AccessibleModal className={`draft-reveal draft-reveal--stage-${draftRevealStage}`} live="polite" label="드래프트 결과 공개"
-          onEscape={draftRevealStage >= 4 ? () => setDraftRevealDone(true) : undefined}>
+          onEscape={() => draftRevealStage >= 4 ? setDraftRevealDone(true) : setDraftRevealStage(4)}>
           <span>{reveal.label}</span><div className="draft-rounds" aria-hidden="true">{[0, 1, 2, 3, 4].map((step) => <i key={step} className={step <= draftRevealStage ? "is-active" : undefined} />)}</div>
           <h3>{reveal.title}</h3><p>{reveal.copy}</p>
           {draftRevealStage >= 4 ? <button className="ds-button ds-button--primary lab-primary" type="button" onClick={() => setDraftRevealDone(true)}>결과 화면 확인</button>
@@ -674,7 +690,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         {!hasPendingResult && state.phase === "relationship" ? <><div className="relationship-scene-heading"><div><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3></div><img src={relationshipArt} alt="" width="90" height="112" loading="lazy" decoding="async" /></div><p>{scene.quote}</p>
           <div className="relationship-options">{scene.choices.map((choice) => <button key={choice.id} type="button" disabled={isRunning} onClick={() => void onRelationship(choice.id)}><strong>{choice.title}</strong><span>{choice.copy}</span></button>)}</div></> : null}
         {!hasPendingResult && state.phase === "important_game" ? <div className="career-milestone"><span>중요 경기 {state.performance.importantGamesCompleted + 1}</span><h3>{state.currentGameScenario?.title ?? `${state.rival.name} 상대 중요 이닝`}</h3>
-          <CharacterProfile className="rival-scouting" imageSrc={rivalPortrait} imageAlt="" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
+          <CharacterProfile className="rival-scouting" imageSrc={rivalRoleScene} imageAlt="" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
           <p>{state.currentGameScenario?.narrative ?? `현재 피로 ${state.fatigue}. 직접 구종과 코스를 골라 이닝을 끝내야 합니다.`}</p>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onImportantGame()}>중요 이닝 직접 투구</button></div> : null}
         {!hasPendingResult && state.phase === "awakening" ? <><h3>새로 익힌 강점 {state.selectedAwakenings.length + 1}/3</h3><div className="relationship-options">{state.awakeningOptions.map((awakening) =>
