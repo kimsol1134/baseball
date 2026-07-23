@@ -9,6 +9,10 @@ describe("player presentation", () => {
     expect(pitcherRoleLabel("closer")).toBe("마무리투수");
   });
 
+  it("does not invent a role before professional assignment", () => {
+    expect(pitcherRoleLabel()).toBe("투수");
+  });
+
   it("changes the scouting report with the batter profile", () => {
     const slugger = batterScoutingReport({ id: "a", name: "A", contact: 42, discipline: 48, power: 72 });
     const patient = batterScoutingReport({ id: "b", name: "B", contact: 50, discipline: 70, power: 45 });

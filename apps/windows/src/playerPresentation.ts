@@ -8,7 +8,7 @@ const PRO_ROLE_LABELS: Record<ProRole, string> = {
 };
 
 export function pitcherRoleLabel(role?: ProRole): string {
-  return role ? PRO_ROLE_LABELS[role] : "선발투수";
+  return role ? PRO_ROLE_LABELS[role] : "투수";
 }
 
 export function batterScoutingReport(batter: BatterSnapshot): string {
