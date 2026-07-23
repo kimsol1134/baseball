@@ -85,7 +85,7 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
         <h2>어떤 투수로 시작할까요?</h2>
         <p>강점과 약점이 다른 네 유형 중 하나를 고른 뒤, 추가 능력 5점을 나눠 주세요. 20–80은 프로 기준이며 50이 가상 프로리그 1군 평균입니다. 지금은 고교 선수의 현재 능력을 표시합니다.</p>
       </section>
-      <section className="preset-creation-grid" aria-label="투수 프리셋 선택">
+      {presets.length > 0 ? <section className="preset-creation-grid" aria-label="투수 프리셋 선택">
         {presets.map((preset) => (
           <button key={preset.id} type="button" className={effectivePresetID === preset.id ? "is-selected" : undefined}
             aria-pressed={effectivePresetID === preset.id} onClick={() => selectPreset(preset)}>
@@ -102,7 +102,7 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
             <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
           </button>
         ))}
-      </section>
+      </section> : null}
       {presets.length === 0 ? <CoreUnavailableState message={error ?? coreMessage} isChecking={isRunning} onRetry={onRetryCore} /> : null}
       {selectedPreset ? (
         <section className="creation-allocation">
