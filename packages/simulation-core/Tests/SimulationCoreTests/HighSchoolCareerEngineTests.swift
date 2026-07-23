@@ -29,7 +29,7 @@ final class HighSchoolCareerEngineTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(incheon.snapshot.schoolOptions.map(\.name), ["인천제문포고", "인천동림고", "인천항성고", "인천송해고"])
+        XCTAssertEqual(incheon.snapshot.schoolOptions.map(\.name), ["인천해문결고", "인천동림고", "인천항성고", "인천송해고"])
         XCTAssertTrue(incheon.snapshot.schoolOptions.allSatisfy { $0.name.hasPrefix("인천") })
         XCTAssertNotEqual(incheon.snapshot.schoolOptions.map(\.name), busan.snapshot.schoolOptions.map(\.name))
     }
