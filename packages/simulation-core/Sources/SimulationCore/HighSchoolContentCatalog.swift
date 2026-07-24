@@ -79,6 +79,14 @@ public enum HighSchoolContentCatalog {
         .init(id: "game-rain", title: "우천 중단 뒤", inning: 6, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 540, narrative: "두 시간 동안 경기가 멈춰 몸이 식은 뒤 만나는 첫 타자입니다."),
         .init(id: "game-one-run", title: "한 점 차", inning: 9, outs: 0, runners: runners(false, true, false, speed: 68), leverage: 980, narrative: "드래프트 전 마지막 고교 이닝"),
         .init(id: "game-new-catcher", title: "새 포수와 첫 경기", inning: 4, outs: 1, runners: runners(true, false, false, speed: 62), leverage: 570, narrative: "새 포수와 아직 구종 사인을 충분히 맞추지 못했습니다."),
-        .init(id: "game-national-final", title: "전국 결승", inning: 8, outs: 2, runners: runners(true, true, false, speed: 66), leverage: 1_000, narrative: "2사 1·2루. 마지막 아웃 하나에 우승이 걸렸습니다.")
+        .init(id: "game-national-final", title: "전국 결승", inning: 8, outs: 2, runners: runners(true, true, false, speed: 66), leverage: 1_000, narrative: "2사 1·2루. 마지막 아웃 하나에 우승이 걸렸습니다."),
+        .init(id: "game-walkoff-defense", title: "9회말 리드 방어", inning: 9, outs: 1, runners: runners(false, true, true, speed: 63), leverage: 985, narrative: "한 점 앞선 9회말 1사 2·3루. 외야로 뜨기만 해도 동점, 안타면 경기가 끝납니다."),
+        .init(id: "game-extra-tiebreak", title: "연장 승부치기", inning: 10, outs: 0, runners: runners(true, true, false, speed: 67), leverage: 940, narrative: "연장 승부치기. 무사 1·2루에서 시작합니다. 아웃부터 잡지 못하면 큰 이닝이 됩니다."),
+        .init(id: "game-ace-duel", title: "0-0 투수전", inning: 8, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 810, narrative: "8회까지 0의 행진. 상대 에이스도 지지 않습니다. 먼저 실수하는 쪽이 집니다."),
+        .init(id: "game-damage-control", title: "실점 뒤 수습", inning: 6, outs: 1, runners: runners(true, true, true, speed: 58), leverage: 875, narrative: "이미 이 이닝에 석 점을 내줬습니다. 다시 만루. 여기서 더 내주면 경기가 넘어갑니다."),
+        .init(id: "game-rain-grip", title: "빗속의 공", inning: 2, outs: 0, runners: runners(true, false, false, speed: 60), leverage: 470, narrative: "빗물을 머금은 공이 손끝에서 자꾸 미끄러집니다. 노린 코스보다 한 뼘씩 벗어납니다."),
+        .init(id: "game-doubleheader", title: "더블헤더 2차전", inning: 4, outs: 2, runners: runners(false, true, false, speed: 64), leverage: 640, narrative: "오늘 두 번째 경기. 낮 경기에서 이미 던진 팔이 무겁게 남아 있습니다."),
+        .init(id: "game-scout-showcase", title: "스카우트 총출동", inning: 7, outs: 2, runners: runners(false, false, false, speed: 55), leverage: 960, narrative: "관중석 첫 줄이 스카우트로 가득 찼습니다. 공 하나하나가 순위표에 적힙니다."),
+        .init(id: "game-rival-away", title: "라이벌 원정", inning: 6, outs: 2, runners: runners(true, false, false, speed: 61), leverage: 830, narrative: "라이벌 학교 원정. 마운드에 설 때마다 스탠드가 야유로 덮습니다. 소리를 지워야 공이 보입니다.")
     ]
 }

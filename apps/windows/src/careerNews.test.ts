@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { careerNewsTone, classifyCareerNews, createCareerNewsDetail, type CareerNewsContext } from "./careerNews";
+import { careerNewsTone, classifyCareerNews, createCareerNewsDetail, rotateQuote, type CareerNewsContext } from "./careerNews";
 
 const context: CareerNewsContext = {
   mode: "high_school",
@@ -58,6 +58,27 @@ describe("career news detail", () => {
       playerName: "하루",
     });
     expect(admission.lead).toContain("하루가 인천제문포고에 입학했다");
+  });
+
+  it("rotates the quote pool deterministically by period and headline", () => {
+    const pool = ["A", "B", "C", "D"];
+    // Same seed always resolves to the same pool entry.
+    expect(rotateQuote(pool, "w0")).toBe(rotateQuote(pool, "w0"));
+    // These seeds are chosen to land on distinct indices, covering the whole pool.
+    expect(new Set(["w0", "w1", "w2", "w3"].map((seed) => rotateQuote(pool, seed))).size).toBe(4);
+    for (const seed of ["w0", "w1", "w2", "w3"]) expect(pool).toContain(rotateQuote(pool, seed));
+  });
+
+  it("cycles game quotes across weeks while keeping the speaker and staying deterministic", () => {
+    const periods = ["1학년 봄", "1학년 여름", "2학년 봄", "2학년 가을", "3학년 봄", "3학년 여름"];
+    const details = periods.map((period) => createCareerNewsDetail("라이벌전 6이닝 무실점 승리", 0, { ...context, period }));
+    // The positive game quote still comes from the catcher.
+    expect(details.every((detail) => detail.quoteSpeaker === "서준호 포수")).toBe(true);
+    // The quote rotates as the week changes rather than repeating one fixed line.
+    expect(new Set(details.map((detail) => detail.quote)).size).toBeGreaterThan(1);
+    // Same period and headline always yields the same quote.
+    expect(createCareerNewsDetail("라이벌전 6이닝 무실점 승리", 0, { ...context, period: "1학년 봄" }).quote)
+      .toBe(details[0].quote);
   });
 
   it("changes reporting and fan reactions to match the event", () => {

@@ -58,6 +58,18 @@ public struct RivalAdaptationSnapshot: Codable, Equatable, Sendable {
     public let evidenceCount: Int
     public let detectedPitch: PitchType?
     public let detectedZone: PitchZone?
+    /// Most-frequent pitch in the recent evidence window. Always defined so the batter can
+    /// lean on the observed distribution by a continuous amount (see `pitchReadStrength`),
+    /// rather than only when a hard detection threshold is crossed.
+    public let leanPitch: PitchType
+    /// Most-frequent zone in the recent evidence window. See `zoneReadStrength`.
+    public let leanZone: PitchZone
+    /// Continuous, capped strength (0...) of the pitch-type read. Scales the batter's
+    /// anticipation and the resulting contact correction. Non-zero even for a mixed
+    /// sequence (small familiarity), hard-capped so a repeated pattern cannot collapse.
+    public let pitchReadStrength: Int
+    /// Continuous, capped strength (0...) of the zone read. See `pitchReadStrength`.
+    public let zoneReadStrength: Int
     public let confidence: Int
     public let warning: String
 
@@ -67,6 +79,10 @@ public struct RivalAdaptationSnapshot: Codable, Equatable, Sendable {
         evidenceCount: Int,
         detectedPitch: PitchType?,
         detectedZone: PitchZone?,
+        leanPitch: PitchType,
+        leanZone: PitchZone,
+        pitchReadStrength: Int,
+        zoneReadStrength: Int,
         confidence: Int,
         warning: String
     ) {
@@ -75,6 +91,10 @@ public struct RivalAdaptationSnapshot: Codable, Equatable, Sendable {
         self.evidenceCount = evidenceCount
         self.detectedPitch = detectedPitch
         self.detectedZone = detectedZone
+        self.leanPitch = leanPitch
+        self.leanZone = leanZone
+        self.pitchReadStrength = pitchReadStrength
+        self.zoneReadStrength = zoneReadStrength
         self.confidence = confidence
         self.warning = warning
     }
@@ -82,6 +102,34 @@ public struct RivalAdaptationSnapshot: Codable, Equatable, Sendable {
 
 public struct RivalMemoryEngine: Sendable {
     public static let maximumObservations = 24
+
+    // MARK: Continuous read-strength tuning
+    //
+    // The batter's anticipation used to be a 1-bit cliff: a pattern was either "detected"
+    // (evidence >= 4 AND share >= 50%) — instantly worth the full `level` correction — or
+    // invisible, so an even four-pitch mix was permanently immune. These constants replace
+    // that with a smooth curve: the read grows with both sample size and how far the observed
+    // distribution leans past uniform, keeps a small non-zero floor even for a mix, and is
+    // hard-capped so an infinitely repeated call can no longer collapse the sim.
+    /// Evidence count below which a read barely registers (a lone pitch is trivially "100%").
+    /// Keeps short / within-plate-appearance memories close to the no-adaptation baseline.
+    static let readSampleFloor = 3
+    /// Evidence count at which the sample factor saturates.
+    static let readSampleSaturation = 18
+    /// Pitch share (per-mille) at/below which there is no pattern signal (uniform is 250).
+    static let pitchReadBaseline = 260
+    /// Zone share (per-mille) at/below which there is no pattern signal (uniform is ~111).
+    static let zoneReadBaseline = 150
+    /// Small read the batter gets purely from having seen many pitches (removes the mix exemption).
+    static let pitchFamiliarityFloor = 60
+    static let zoneFamiliarityFloor = 40
+    /// Hard caps on the read strengths — the ceiling that bounds the worst-case correction.
+    static let pitchReadCap = 300
+    static let zoneReadCap = 250
+    /// Ceiling applied to `level` before it scales the on-contact bonuses in the resolver.
+    /// Below the cap the resolver behaves exactly as before (so short / non-persistent
+    /// memories are unchanged); above it the repeated-pattern amplifier stops growing.
+    static let resolveDamageCap = 420
 
     public init() {}
 
@@ -133,6 +181,10 @@ public struct RivalMemoryEngine: Sendable {
                 evidenceCount: 0,
                 detectedPitch: nil,
                 detectedZone: nil,
+                leanPitch: .fourSeam,
+                leanZone: PitchZone(row: 1, column: 1),
+                pitchReadStrength: 0,
+                zoneReadStrength: 0,
                 confidence: 0,
                 warning: "아직 이 투수의 공을 충분히 보지 못했습니다."
             )
@@ -155,6 +207,25 @@ public struct RivalMemoryEngine: Sendable {
         if memory.plateAppearancesSeen == 0 {
             level = min(level, 420)
         }
+        // Continuous read strengths: grow with sample size AND with how far the observed
+        // distribution leans past uniform, keep a small floor, and are hard-capped. These —
+        // not `level` — drive the batter's anticipation and contact correction downstream,
+        // so a repeated pattern is bounded and a mixed sequence is never fully exempt.
+        let sampleWeight = min(evidence.count, Self.readSampleSaturation)
+        let patternSample = max(0, sampleWeight - Self.readSampleFloor)
+        let patternSpan = Self.readSampleSaturation - Self.readSampleFloor
+        let pitchExcess = max(0, pitchShare - Self.pitchReadBaseline)
+        let zoneExcess = max(0, zoneShare - Self.zoneReadBaseline)
+        let pitchReadStrength = min(
+            Self.pitchReadCap,
+            (pitchExcess * patternSample / patternSpan)
+                + (patternSample * Self.pitchFamiliarityFloor / patternSpan)
+        )
+        let zoneReadStrength = min(
+            Self.zoneReadCap,
+            (zoneExcess * patternSample / patternSpan)
+                + (patternSample * Self.zoneFamiliarityFloor / patternSpan)
+        )
         let detectedPitch = evidence.count >= 4 && pitchShare >= 500 ? topPitch.pitchType : nil
         let detectedZone = evidence.count >= 4 && zoneShare >= 500 ? topZone.zone : nil
         let confidence = min(950, evidence.count * 28 + max(pitchShare, zoneShare) / 2)
@@ -182,6 +253,10 @@ public struct RivalMemoryEngine: Sendable {
             evidenceCount: evidence.count,
             detectedPitch: detectedPitch,
             detectedZone: detectedZone,
+            leanPitch: topPitch.pitchType,
+            leanZone: topZone.zone,
+            pitchReadStrength: pitchReadStrength,
+            zoneReadStrength: zoneReadStrength,
             confidence: confidence,
             warning: warning
         )

@@ -574,6 +574,58 @@ main {
   color: var(--color-warning);
 }
 
+.scouting-confidence {
+  display: grid;
+  gap: 6px;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.scouting-confidence > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scouting-confidence > div:first-child span,
+.scouting-confidence small {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-label);
+  font-weight: 700;
+}
+
+.scouting-confidence > div:first-child strong {
+  display: inline;
+  margin: 0;
+  color: var(--color-information);
+  font-size: var(--font-size-label);
+}
+
+.scouting-confidence p {
+  margin: 0;
+  font-size: var(--font-size-label);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.scouting-confidence--low > div:first-child strong {
+  color: var(--color-warning);
+}
+
+.scouting-confidence--low .adaptation-track span {
+  background: var(--color-warning);
+}
+
+.scouting-confidence--trusted > div:first-child strong {
+  color: var(--color-positive);
+}
+
+.scouting-confidence--trusted .adaptation-track span {
+  background: var(--color-positive);
+}
+
 .environment-card {
   display: grid;
   gap: 7px;
@@ -5067,7 +5119,7 @@ body.high-contrast :is(.career-offline-card, .core-unavailable-state) {
 
 .career-vitals {
   display: grid;
-  grid-template-columns: repeat(5, minmax(92px, 1fr));
+  grid-template-columns: repeat(6, minmax(84px, 1fr));
   gap: 7px;
   min-width: 560px;
 }
@@ -5101,6 +5153,34 @@ body.high-contrast :is(.career-offline-card, .core-unavailable-state) {
 
 .career-vitals > button {
   grid-column: 1 / -1;
+}
+
+/* 팔 상태 바이탈: 주의는 마일스톤 톤, 경고·회복은 경고/부상 톤으로 눈에 띄게 한다. */
+.career-arm-vital.is-caution strong {
+  color: var(--color-milestone);
+}
+
+.career-arm-vital.is-warning {
+  border-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+}
+
+.career-arm-vital.is-warning strong {
+  color: var(--color-warning);
+}
+
+.career-arm-vital.is-recovering {
+  border-color: var(--color-negative);
+  background: color-mix(in srgb, var(--color-negative) 14%, transparent);
+}
+
+.career-arm-vital.is-recovering strong {
+  color: var(--color-negative);
+}
+
+.career-rehab-card {
+  border-color: var(--color-negative);
+  background: color-mix(in srgb, var(--color-negative) 10%, transparent);
 }
 
 .chapter-map {
@@ -5813,9 +5893,24 @@ body.high-contrast .character-profile__portrait {
 .draft-rounds i { height: 3px; border-radius: 99px; background: var(--color-border); }
 .draft-rounds i.is-active { background: var(--color-milestone); box-shadow: 0 0 12px color-mix(in srgb, var(--color-milestone) 50%, transparent); }
 .draft-skip { justify-self: center; padding: 7px 12px; border: 0; color: var(--color-text-secondary); background: transparent; font-size: var(--font-size-label); text-decoration: underline; }
-.draft-reveal--stage-3 h3 { color: var(--color-milestone); text-shadow: 0 0 24px color-mix(in srgb, var(--color-milestone) 35%, transparent); }
+/* 지명 전화(3단계) 호명 카드는 지명 구단 색을 얹어 마일스톤을 팀의 순간으로 만든다. */
+.draft-reveal--stage-3 { border-color: color-mix(in srgb, var(--team-decoration) 50%, var(--color-milestone)); }
+.draft-reveal--stage-3 h3 { color: color-mix(in srgb, var(--team-decoration) 42%, var(--color-milestone)); text-shadow: 0 0 24px color-mix(in srgb, var(--team-decoration) 38%, transparent); }
+.draft-result.is-drafted h3 { color: color-mix(in srgb, var(--team-decoration) 40%, var(--color-milestone)); }
 
 @keyframes draft-card-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 1군 데뷔전 강조 블록. main의 data-team으로 팀 색을 어시스트해 데뷔 순간을 부각한다. */
+.major-debut-card { border-color: color-mix(in srgb, var(--team-decoration) 52%, var(--color-milestone));
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--team-decoration) 16%, transparent), transparent 30rem),
+    linear-gradient(160deg, color-mix(in srgb, var(--team-decoration) 10%, var(--color-surface-raised)), var(--color-surface));
+  box-shadow: var(--shadow-stage); }
+.major-debut-card > span { color: color-mix(in srgb, var(--team-decoration) 58%, var(--color-milestone)); }
+.major-debut-sequence { display: grid; gap: 6px; margin: 11px 0 4px; padding: 12px 14px; border-left: 3px solid var(--team-decoration);
+  border-radius: 8px; background: color-mix(in srgb, var(--team-decoration) 8%, var(--color-surface-raised)); }
+.major-debut-sequence p { margin: 0; color: var(--color-text-primary); font-size: var(--font-size-body-sm); line-height: 1.6; }
+.major-debut-sequence p:first-child { color: var(--color-text-secondary); }
 
 .career-timeline { display: grid; gap: 8px; margin-top: 14px; }
 .career-timeline > span { color: var(--color-text-secondary); font-size: var(--font-size-label); font-weight: 800; }
@@ -5824,6 +5919,13 @@ body.high-contrast .character-profile__portrait {
 .career-timeline strong { font-size: var(--font-size-label); font-weight: 650; }
 .career-timeline > div.is-latest { color: var(--color-milestone); }
 .career-timeline > div.is-latest i { border-color: var(--color-milestone); background: var(--color-milestone); box-shadow: 0 0 9px color-mix(in srgb, var(--color-milestone) 45%, transparent); }
+
+/* Phase 3-2: "올해의 세 가지 긴장" 시즌 프리뷰 카드. */
+.pro-season-tensions { display: grid; gap: 7px; margin-top: 14px; padding: 11px 12px; border: 1px solid var(--color-border-strong); border-radius: 10px; background: var(--color-surface-raised); }
+.pro-tensions-heading { color: var(--color-text-secondary); font-size: var(--font-size-label); font-weight: 800; }
+.pro-season-tensions .pro-tension { display: grid; gap: 2px; padding-left: 9px; border-left: 2px solid var(--color-milestone); }
+.pro-season-tensions .pro-tension > strong { color: var(--color-text-primary); font-size: var(--font-size-label); font-weight: 700; }
+.pro-season-tensions .pro-tension > small { color: var(--color-text-tertiary); font-size: var(--font-size-label); font-weight: 500; line-height: 1.5; }
 
 .pro-plan-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pro-plan-actions > button { min-height: 44px; }

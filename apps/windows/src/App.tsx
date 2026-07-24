@@ -53,9 +53,11 @@ import {
 import { clearProCareer, loadProCareer, saveProCareer } from "./proCareerAutosave";
 import { nextFontScale, parseFontScale } from "./accessibilityPreferences";
 import { batterScoutingReport, pitcherRoleLabel } from "./playerPresentation";
+import { proBatterFromRival } from "./proRival";
 import { coreRecoveryMessage } from "./coreRecoveryMessage";
 import { crossedGrowthMilestone } from "./GrowthCelebration";
 import { feedbackCueForResult, GameFeedback } from "./gameFeedback";
+import { AvatarFace } from "./AvatarFace";
 import { includesProCareer, releaseEditionFromEnvironment } from "./releaseEdition";
 import { getAppStorage } from "./cloudStorage";
 import {
@@ -103,6 +105,7 @@ import type {
   SelectionQuality,
   SoulDomain,
   SchoolID,
+  ExtendedPitchOutcome,
   TrainingFocus,
   TrainingIntensity,
   ZoneIntent,
@@ -116,14 +119,6 @@ const BATTER: BatterSnapshot = {
   power: 46,
 };
 
-const PRO_BATTER: BatterSnapshot = {
-  id: "pro-opponent-cleanup",
-  name: "오재민",
-  contact: 52,
-  discipline: 50,
-  power: 55,
-};
-
 const SCOUTING: BatterScoutingSnapshot = {
   hotZone: { row: 1, column: 1 },
   coldZone: { row: 2, column: 0 },
@@ -131,6 +126,20 @@ const SCOUTING: BatterScoutingSnapshot = {
   pitchWeakness: "slider",
   chaseTendency: 48,
 };
+
+// Where the scouting read starts, by the difficulty's information-clarity axis: a relaxed run is
+// handed the truth outright, a challenging one has to earn it by watching the batter. Observation
+// lifts every case toward full confidence inside the core (see ScoutingEstimate).
+function scoutBaselineReliability(clarity: string | undefined): number {
+  switch (clarity) {
+    case "relaxed":
+      return 100;
+    case "challenging":
+      return 22;
+    default:
+      return 45;
+  }
+}
 
 const INITIAL_SEED = "20260721";
 const appStorage = getAppStorage();
@@ -217,7 +226,7 @@ const INTENT_OPTIONS: ReadonlyArray<{
   { value: "chase", label: "존 밖 유인", hint: "헛스윙 노림" },
 ];
 
-const OUTCOME_LABELS: Record<PitchOutcome, string> = {
+const OUTCOME_LABELS: Record<ExtendedPitchOutcome, string> = {
   ball: "볼",
   called_strike: "루킹 스트라이크",
   swinging_strike: "헛스윙",
@@ -225,7 +234,9 @@ const OUTCOME_LABELS: Record<PitchOutcome, string> = {
   in_play_out: "타구 아웃",
   single: "안타",
   double: "2루타",
+  triple: "3루타",
   home_run: "홈런",
+  hit_by_pitch: "몸에 맞는 공",
 };
 
 const SELECTION_LABELS: Record<SelectionQuality, string> = {
@@ -247,6 +258,12 @@ const ADAPTATION_LABELS: Record<RivalAdaptationBand, string> = {
   watching: "아직 파악 못 함",
   learning: "투구 습관을 읽는 중",
   locked_on: "노림수가 분명함",
+};
+
+const SCOUT_BAND_LABELS: Record<"low" | "developing" | "trusted", string> = {
+  low: "낮음",
+  developing: "보통",
+  trusted: "높음",
 };
 
 const FIELDER_LABELS: Record<FielderPosition, string> = {
@@ -496,7 +513,7 @@ export function App() {
     ? proVisible && proResult ? proResult.snapshot.pitcher : careerResult?.snapshot.pitcher ?? selectedPreset?.pitcher
     : labResult?.snapshot.pitcher ?? selectedPreset?.pitcher;
   const activeBatter: BatterSnapshot = experienceMode === "career" && proVisible && proResult
-    ? PRO_BATTER
+    ? proBatterFromRival(proResult.snapshot.currentRival)
     : experienceMode === "career" && careerResult ? {
         id: careerResult.snapshot.rival.id,
         name: careerResult.snapshot.rival.name,
@@ -508,6 +525,15 @@ export function App() {
   const selectedPitchProfile = pitcher?.pitchProfiles?.find(
     (profile) => profile.pitchType === pitchType,
   );
+
+  // The scouting baseline follows the active run's information-clarity difficulty. Held in a ref so
+  // prepare and submit read the same value within a plate appearance without re-creating handlers.
+  const scoutReliabilityRef = useRef(scoutBaselineReliability(undefined));
+  useEffect(() => {
+    scoutReliabilityRef.current = scoutBaselineReliability(
+      careerResult?.snapshot.difficulty?.informationClarity,
+    );
+  }, [careerResult?.snapshot.difficulty?.informationClarity]);
 
   const applyPitchCall = useCallback((call: PitchCall) => {
     setPitchType(call.pitchType);
@@ -611,7 +637,7 @@ export function App() {
         seed: INITIAL_SEED,
         pitcher: initialPreset.pitcher,
         batter: BATTER,
-        scouting: SCOUTING,
+        scouting: { ...SCOUTING, reliability: scoutReliabilityRef.current },
         context: INITIAL_CONTEXT,
         gameState: INITIAL_GAME_STATE,
         gameLog: INITIAL_GAME_LOG,
@@ -853,7 +879,7 @@ export function App() {
         seed,
         pitcher,
         batter: activeBatter,
-        scouting: SCOUTING,
+        scouting: { ...SCOUTING, reliability: scoutReliabilityRef.current },
         context,
         preparationToken: preparation.preparationToken,
         call: submittedCall,
@@ -918,7 +944,7 @@ export function App() {
           seed,
           pitcher,
           batter: activeBatter,
-          scouting: SCOUTING,
+          scouting: { ...SCOUTING, reliability: scoutReliabilityRef.current },
           context,
           rivalMemory,
           gameState,
@@ -948,7 +974,7 @@ export function App() {
         seed,
         pitcher,
         batter: activeBatter,
-        scouting: SCOUTING,
+        scouting: { ...SCOUTING, reliability: scoutReliabilityRef.current },
         context: nextContext,
         rivalMemory,
         gameState,
@@ -984,7 +1010,7 @@ export function App() {
         seed,
         pitcher: nextPreset.pitcher,
         batter: activeBatter,
-        scouting: SCOUTING,
+        scouting: { ...SCOUTING, reliability: scoutReliabilityRef.current },
         context: nextContext,
         gameState: INITIAL_GAME_STATE,
         gameLog: nextGameLog,
@@ -1139,7 +1165,7 @@ export function App() {
         seed: labResult.nextSeed,
         pitcher: labResult.snapshot.pitcher,
         batter: BATTER,
-        scouting: SCOUTING,
+        scouting: { ...SCOUTING, reliability: scoutReliabilityRef.current },
         context: scenarioContext,
         rivalMemory,
         gameState: scenarioState,
@@ -1306,7 +1332,7 @@ export function App() {
         seed: careerResult.nextSeed,
         pitcher: careerResult.snapshot.pitcher,
         batter: careerBatter,
-        scouting: SCOUTING,
+        scouting: { ...SCOUTING, reliability: scoutReliabilityRef.current },
         context: nextContext,
         rivalMemory,
         gameState: nextState,
@@ -1428,10 +1454,11 @@ export function App() {
         current = await planProWeek({ seed: current.nextSeed, state: current.snapshot, plan });
       }
       setProResult(current);
-      if (current.events.includes("major_call_up")) feedback.play("milestone", soundEnabled, hapticsEnabled);
+      // 1군 콜업(major_call_up) 스팅어는 ProCareerView가 데뷔 단계 진입에서 한 번 울린다.
+      // 여기서 또 재생하면 3주 진행 경로에서만 이중으로 울려 단주 경로와 어긋나므로 두지 않는다.
     } catch (caught) { setError(caught instanceof Error ? caught.message : String(caught)); }
     finally { setIsRunning(false); }
-  }, [feedback, hapticsEnabled, proResult, soundEnabled]);
+  }, [proResult]);
   const handleProGame = useCallback(async () => {
     if (!proResult) return;
     const inning = proResult.snapshot.role === "starter" ? 7 : proResult.snapshot.role === "closer" ? 9 : 8;
@@ -1459,8 +1486,8 @@ export function App() {
       const nextPreparation = await preparePitch({
         seed: proResult.nextSeed,
         pitcher: proResult.snapshot.pitcher,
-        batter: PRO_BATTER,
-        scouting: SCOUTING,
+        batter: proBatterFromRival(proResult.snapshot.currentRival),
+        scouting: { ...SCOUTING, reliability: scoutReliabilityRef.current },
         context: proContext,
         rivalMemory,
         gameState: proState,
@@ -1534,6 +1561,7 @@ export function App() {
   const alternativeRecommendation = preparation?.alternativeRecommendation;
   const plateEnded = lastResult?.snapshot.ended ?? false;
   const rivalAdaptation = preparation?.rivalAdaptation ?? lastResult?.rivalAdaptation;
+  const scoutingReport = preparation?.scoutingReport;
   const importantInningEnded = Boolean(lastResult?.snapshot.inningTransition?.inningEnded && (
     (experienceMode === "career" && (
       (proVisible && proResult?.snapshot.phase === "important_game")
@@ -1586,7 +1614,7 @@ export function App() {
         </header>
         {saveNotice ? <div className="save-notice" role="status">{saveNotice}</div> : null}
         {proVisible && proResult ? <ProCareerView result={proResult} isRunning={isRunning} error={error} onSign={handleSignPro} onPlan={handlePlanPro} onPlanBlock={handlePlanProBlock}
-          onGame={handleProGame} onReview={handleReviewPro} onOffseason={handleProOffseason} onBack={() => setProVisible(false)} />
+          onGame={handleProGame} onReview={handleReviewPro} onOffseason={handleProOffseason} onBack={() => setProVisible(false)} onMilestoneFeedback={handleMilestoneFeedback} />
         : careerResult ? <HighSchoolCareerView key={careerResult.snapshot.careerID} result={careerResult} isRunning={isRunning} error={error}
           showTutorial={!tutorialDismissed && careerResult.snapshot.lifeNumber === 1} onDismissTutorial={dismissTutorial}
           onSchool={handleCareerSchool} onTraining={handleCareerTraining} onRelationship={handleCareerRelationship}
@@ -1724,7 +1752,7 @@ export function App() {
               </div>
             ) : null}
             <div className="player-summary">
-              <div className="avatar" aria-hidden="true">P</div>
+              <AvatarFace className="avatar" seed={pitcher?.name ?? "선수"} role="player" width={44} height={56} />
               <div><strong>{pitcherRoleLabel(experienceMode === "career" && proVisible ? proResult?.snapshot.role : undefined)} · {pitchHint(pitcher?.pitchProfiles?.find((profile) => profile.pitchType === "four_seam"))}</strong><span>피로 {context.fatigue} · {pitcherCondition(context.fatigue)}</span></div>
             </div>
             {pitcher ? (
@@ -1754,6 +1782,27 @@ export function App() {
               <div className="mini-stats">
                 <span>공 맞히기 {activeBatter.contact}</span><span>볼 고르기 {activeBatter.discipline}</span><span>장타력 {activeBatter.power}</span>
               </div>
+              {scoutingReport ? (
+                <div className={`scouting-confidence scouting-confidence--${scoutingReport.band}`}>
+                  <div>
+                    <span>스카우팅 신뢰도</span>
+                    <strong>{SCOUT_BAND_LABELS[scoutingReport.band]}</strong>
+                  </div>
+                  <div className="adaptation-track" aria-label={`스카우팅 신뢰도 ${scoutingReport.reliability} / 100`}>
+                    <span style={{ width: `${scoutingReport.reliability}%` }} />
+                  </div>
+                  <p>
+                    {scoutingReport.band === "trusted"
+                      ? `약점은 ${pitchLabel(scoutingReport.estimatedWeakness)} · ${zoneLabel(scoutingReport.estimatedColdZone)}로 굳어졌습니다.`
+                      : `아직 추정입니다. 약점은 ${pitchLabel(scoutingReport.estimatedWeakness)} · ${zoneLabel(scoutingReport.estimatedColdZone)} 근처로 보이며, 관측이 쌓이면 정확해집니다.`}
+                  </p>
+                  <small>
+                    관측 {scoutingReport.observationCount}구 · 적극성 {scoutingReport.chaseTendencyMargin > 0
+                      ? `${Math.max(20, scoutingReport.estimatedChaseTendency - scoutingReport.chaseTendencyMargin)}–${Math.min(80, scoutingReport.estimatedChaseTendency + scoutingReport.chaseTendencyMargin)}`
+                      : scoutingReport.estimatedChaseTendency}
+                  </small>
+                </div>
+              ) : null}
               {rivalAdaptation ? (
                 <div className={`rival-adaptation rival-adaptation--${rivalAdaptation.band}`}>
                   <div>

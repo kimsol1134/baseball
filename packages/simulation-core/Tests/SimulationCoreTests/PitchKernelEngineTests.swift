@@ -33,22 +33,229 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertEqual(first.alternativeRecommendation, second.alternativeRecommendation)
     }
 
-    func testLeverageDoesNotChangePitchResolution() throws {
-        let lowLeverageParams = makePrepareParams(seed: "400", leverage: 0)
-        let highLeverageParams = makePrepareParams(seed: "400", leverage: 1_000)
-        let lowPreparation = try engine.preparePitch(lowLeverageParams)
-        let highPreparation = try engine.preparePitch(highLeverageParams)
+    func testLowReliabilityScoutingReadIsAHypothesisThatCanMissTheTruth() throws {
+        // With almost no confidence the report is an estimate, not an answer sheet: the shown
+        // weakness and cold zone are decoyed away from the truth and the chase read carries a
+        // non-zero uncertainty band. (Below the minimum reveal threshold both facts always miss.)
+        let params = makePrepareParams(seed: "5", reliability: 8)
+        let report = try XCTUnwrap(try engine.preparePitch(params).scoutingReport)
+
+        XCTAssertEqual(report.band, "low")
+        XCTAssertLessThan(report.reliability, ScoutingEstimate.trustedReliability)
+        XCTAssertNotEqual(report.estimatedWeakness, params.scouting.pitchWeakness)
+        XCTAssertNotEqual(report.estimatedColdZone, params.scouting.coldZone)
+        XCTAssertGreaterThan(report.chaseTendencyMargin, 0)
+    }
+
+    func testScoutingReadConvergesToTruthAsObservationsAccumulate() throws {
+        // The same low-confidence baseline sharpens to the truth once the pitcher has seen enough
+        // of this batter: the report becomes trusted, its uncertainty closes to zero, and the
+        // catcher's primary pitch swings from the decoy weakness onto the real one.
+        let seen = RivalMemorySnapshot(
+            matchupID: "pitcher-1:batter-1",
+            revision: 12,
+            plateAppearancesSeen: 2,
+            totalPitchesSeen: 14,
+            recentObservations: [
+                RivalPitchObservation(pitchType: .fourSeam, zone: PitchZone(row: 1, column: 1), zoneIntent: .edge, balls: 0, strikes: 0, outcome: .foul),
+                RivalPitchObservation(pitchType: .slider, zone: PitchZone(row: 2, column: 0), zoneIntent: .edge, balls: 1, strikes: 0, outcome: .ball),
+                RivalPitchObservation(pitchType: .changeup, zone: PitchZone(row: 0, column: 2), zoneIntent: .chase, balls: 1, strikes: 1, outcome: .swingingStrike)
+            ]
+        )
+        let blind = makePrepareParams(seed: "5", reliability: 8)
+        let studied = makePrepareParams(seed: "5", reliability: 8, rivalMemory: seen)
+
+        let blindPreparation = try engine.preparePitch(blind)
+        let studiedPreparation = try engine.preparePitch(studied)
+        let blindReport = try XCTUnwrap(blindPreparation.scoutingReport)
+        let studiedReport = try XCTUnwrap(studiedPreparation.scoutingReport)
+
+        XCTAssertEqual(blindReport.band, "low")
+        XCTAssertEqual(studiedReport.band, "trusted")
+        XCTAssertGreaterThan(studiedReport.observationCount, blindReport.observationCount)
+        XCTAssertEqual(studiedReport.estimatedWeakness, studied.scouting.pitchWeakness)
+        XCTAssertEqual(studiedReport.estimatedColdZone, studied.scouting.coldZone)
+        XCTAssertEqual(studiedReport.chaseTendencyMargin, 0)
+        XCTAssertNotEqual(
+            blindPreparation.primaryRecommendation.call.pitchType,
+            studiedPreparation.primaryRecommendation.call.pitchType
+        )
+        XCTAssertEqual(
+            studiedPreparation.primaryRecommendation.call.pitchType,
+            studied.scouting.pitchWeakness
+        )
+    }
+
+    func testScoutingReliabilityDoesNotChangeExecutionOrResolution() throws {
+        // ADR-005 for the fog: reliability only changes what is recommended/shown. A fixed,
+        // manually chosen pitch resolves byte-for-byte identically whether the read is a wild
+        // guess or near-certain, because the physics, the batter plan and the selection grade all
+        // consume the *true* scouting report regardless of confidence.
+        let call = PitchCall(
+            pitchType: .changeup,
+            zone: PitchZone(row: 0, column: 2),
+            zoneIntent: .edge,
+            intensity: .normal
+        )
+        func resolve(reliability: Int) throws -> PlateAppearanceSnapshot {
+            let params = makePrepareParams(seed: "777", reliability: reliability)
+            let preparation = try engine.preparePitch(params)
+            return try engine.submitPitch(
+                SubmitPitchParams(
+                    seed: params.seed,
+                    pitcher: params.pitcher,
+                    batter: params.batter,
+                    scouting: params.scouting,
+                    context: params.context,
+                    preparationToken: preparation.preparationToken,
+                    call: call,
+                    rivalMemory: params.rivalMemory,
+                    gameState: params.gameState,
+                    gameLog: params.gameLog
+                )
+            ).snapshot
+        }
+
+        let guess = try resolve(reliability: 8)
+        let studied = try resolve(reliability: 96)
+        XCTAssertEqual(guess.execution, studied.execution)
+        XCTAssertEqual(guess.outcome, studied.outcome)
+        XCTAssertEqual(guess.battedBall, studied.battedBall)
+        XCTAssertEqual(guess.selectionQuality, studied.selectionQuality)
+        XCTAssertEqual(guess.fatigueAfterPitch, studied.fatigueAfterPitch)
+    }
+
+    func testLowReliabilityLowersRecommendationConfidence() throws {
+        // A shaky read is stated as a hedge: identical everything else, the confidence a low
+        // reliability carries is strictly lower than a trusted one's.
+        let confident = try engine.preparePitch(makePrepareParams(seed: "9", reliability: 95))
+        let shaky = try engine.preparePitch(makePrepareParams(seed: "9", reliability: 12))
+        XCTAssertLessThan(
+            shaky.primaryRecommendation.confidence,
+            confident.primaryRecommendation.confidence
+        )
+    }
+
+    func testLeverageChangesTheBatterPlanButNotExecutionOrResolution() throws {
+        // ADR-005 (non-calibration), restated for situational awareness: leverage may change
+        // what the batter *intends*, but never the physics or the resolution of a given plan.
+        // A league-average-discipline hitter (50) with the bases loaded sits in a base/out
+        // branch that does not vary with leverage, and whose leverage-amplification term is
+        // exactly zero — so the committed plan is identical across a huge leverage swing, and
+        // therefore the executed pitch and its resolved outcome must be identical too.
+        let loaded = BaserunnerStateSnapshot(
+            firstOccupied: true,
+            secondOccupied: true,
+            thirdOccupied: true,
+            leadRunnerSpeed: 50
+        )
+        let state = gameState(defense: 50, hitFactor: 1_000, homeRunFactor: 1_000, runners: loaded)
+        let lowParams = makePrepareParams(seed: "400", leverage: 0, discipline: 50, gameState: state)
+        let highParams = makePrepareParams(seed: "400", leverage: 1_000, discipline: 50, gameState: state)
+        let lowPreparation = try engine.preparePitch(lowParams)
+        let highPreparation = try engine.preparePitch(highParams)
+
+        // Same sealed plan in a blowout and in a nail-biter...
+        XCTAssertEqual(lowPreparation.planCommitment, highPreparation.planCommitment)
 
         let low = try engine.submitPitch(
-            makeSubmitParams(preparation: lowPreparation, prepareParams: lowLeverageParams)
+            makeSubmitParams(preparation: lowPreparation, prepareParams: lowParams)
         )
         let high = try engine.submitPitch(
-            makeSubmitParams(preparation: highPreparation, prepareParams: highLeverageParams)
+            makeSubmitParams(preparation: highPreparation, prepareParams: highParams)
         )
 
-        XCTAssertEqual(low.snapshot.outcome, high.snapshot.outcome)
+        // ...so leverage moves neither the physical pitch nor its resolution.
         XCTAssertEqual(low.snapshot.execution, high.snapshot.execution)
+        XCTAssertEqual(low.snapshot.outcome, high.snapshot.outcome)
         XCTAssertEqual(low.snapshot.battedBall, high.snapshot.battedBall)
+    }
+
+    func testBatterPlanRespondsToBaseStateDeterministicallyAcrossSeeds() throws {
+        // The counterpart to the invariance above: with everything else fixed, the base/out
+        // picture must change the batter's plan. Runners in scoring position with an out to give
+        // commit a more aggressive, contact-first plan than empty bases in a low-stakes spot —
+        // a deterministic property, so it holds for every seed, not merely on average.
+        let scoringPosition = BaserunnerStateSnapshot(
+            firstOccupied: false,
+            secondOccupied: true,
+            thirdOccupied: true,
+            leadRunnerSpeed: 50
+        )
+        let rispState = gameState(
+            defense: 50,
+            hitFactor: 1_000,
+            homeRunFactor: 1_000,
+            runners: scoringPosition
+        )
+        let outOfZoneCall = PitchCall(
+            pitchType: .fourSeam,
+            zone: PitchZone(row: 0, column: 0),
+            zoneIntent: .chase,
+            intensity: .normal
+        )
+        var plansDiffer = 0
+        var rispSwings = 0
+        var emptySwings = 0
+
+        for seed in 1...400 {
+            let rispParams = makePrepareParams(
+                seed: String(seed),
+                leverage: 300,
+                balls: 0,
+                strikes: 0,
+                gameState: rispState
+            )
+            let emptyParams = makePrepareParams(
+                seed: String(seed),
+                leverage: 300,
+                balls: 0,
+                strikes: 0
+            )
+            let rispPreparation = try engine.preparePitch(rispParams)
+            let emptyPreparation = try engine.preparePitch(emptyParams)
+            if rispPreparation.planCommitment != emptyPreparation.planCommitment {
+                plansDiffer += 1
+            }
+
+            let risp = try engine.submitPitch(
+                SubmitPitchParams(
+                    seed: rispParams.seed,
+                    pitcher: rispParams.pitcher,
+                    batter: rispParams.batter,
+                    scouting: rispParams.scouting,
+                    context: rispParams.context,
+                    preparationToken: rispPreparation.preparationToken,
+                    call: outOfZoneCall,
+                    rivalMemory: nil,
+                    gameState: rispState
+                )
+            )
+            let empty = try engine.submitPitch(
+                SubmitPitchParams(
+                    seed: emptyParams.seed,
+                    pitcher: emptyParams.pitcher,
+                    batter: emptyParams.batter,
+                    scouting: emptyParams.scouting,
+                    context: emptyParams.context,
+                    preparationToken: emptyPreparation.preparationToken,
+                    call: outOfZoneCall,
+                    rivalMemory: nil,
+                    gameState: nil
+                )
+            )
+            if didSwing(risp.snapshot.outcome) { rispSwings += 1 }
+            if didSwing(empty.snapshot.outcome) { emptySwings += 1 }
+        }
+
+        // The plan encodes the situation, so its commitment differs on every single seed...
+        XCTAssertEqual(plansDiffer, 400)
+        // ...and the scoring-position batter offers at the pitch materially more often.
+        XCTAssertGreaterThan(rispSwings, emptySwings)
+    }
+
+    private func didSwing(_ outcome: PitchOutcome) -> Bool {
+        outcome != .ball && outcome != .calledStrike
     }
 
     func testSameSeedContextAndCallProduceSameEventStream() throws {
@@ -302,6 +509,49 @@ final class PitchKernelEngineTests: XCTestCase {
         }
 
         XCTAssertGreaterThan(repeatedDamage, mixedDamage)
+    }
+
+    func testRepeatedPatternReadStrengthIsBoundedByTheCap() throws {
+        let params = makePrepareParams(seed: "1", balls: 0, strikes: 0)
+        // Hammer the same call far past the observation window: the read must saturate,
+        // not run away — this is the ceiling that turns the old cliff into a plateau.
+        let hammered = makeRivalMemory(params: params, repeated: true, observations: 120)
+        let adaptation = RivalMemoryEngine().analyze(hammered, context: params.context)
+
+        XCTAssertLessThanOrEqual(adaptation.pitchReadStrength, RivalMemoryEngine.pitchReadCap)
+        XCTAssertLessThanOrEqual(adaptation.zoneReadStrength, RivalMemoryEngine.zoneReadCap)
+        // An unbroken pattern is the worst case, so it should reach — but never exceed — the cap.
+        XCTAssertEqual(adaptation.pitchReadStrength, RivalMemoryEngine.pitchReadCap)
+        XCTAssertEqual(adaptation.zoneReadStrength, RivalMemoryEngine.zoneReadCap)
+    }
+
+    func testMixedSequenceStillProducesASmallNonZeroRead() throws {
+        let params = makePrepareParams(seed: "1", balls: 0, strikes: 0)
+        let mixed = makeRivalMemory(params: params, repeated: false)
+        let adaptation = RivalMemoryEngine().analyze(mixed, context: params.context)
+
+        // A perfectly even mix used to be permanently invisible (the exemption that made
+        // "just mix four pitches" a total counter). It now leaves a small familiarity read...
+        XCTAssertGreaterThan(adaptation.pitchReadStrength, 0)
+        XCTAssertGreaterThan(adaptation.zoneReadStrength, 0)
+        // ...that stays well under the cap a locked pattern would earn.
+        XCTAssertLessThan(adaptation.pitchReadStrength, RivalMemoryEngine.pitchReadCap)
+        XCTAssertLessThan(adaptation.zoneReadStrength, RivalMemoryEngine.zoneReadCap)
+    }
+
+    func testRepeatedReadOutweighsMixedReadAcrossTheContinuousCurve() throws {
+        let params = makePrepareParams(seed: "1", balls: 0, strikes: 0)
+        let repeated = makeRivalMemory(params: params, repeated: true)
+        let mixed = makeRivalMemory(params: params, repeated: false)
+        let memoryEngine = RivalMemoryEngine()
+
+        let repeatedAdaptation = memoryEngine.analyze(repeated, context: params.context)
+        let mixedAdaptation = memoryEngine.analyze(mixed, context: params.context)
+
+        // The "diverse call > repeated call" hierarchy must survive the switch from a
+        // threshold to a continuous curve: repetition still earns a strictly stronger read.
+        XCTAssertGreaterThan(repeatedAdaptation.pitchReadStrength, mixedAdaptation.pitchReadStrength)
+        XCTAssertGreaterThan(repeatedAdaptation.zoneReadStrength, mixedAdaptation.zoneReadStrength)
     }
 
     func testStrongDefenseTurnsMoreBorderlineContactIntoOuts() {
@@ -773,6 +1023,256 @@ final class PitchKernelEngineTests: XCTestCase {
         }
     }
 
+    // MARK: - Phase 3-4 rule primitives
+
+    func testDeepFlyBallScoresRunnerFromThirdAsSacrificeFly() {
+        let engine = BaserunnerEngine()
+        let thirdOnly = BaserunnerStateSnapshot(
+            firstOccupied: false,
+            secondOccupied: false,
+            thirdOccupied: true,
+            leadRunnerSpeed: 55
+        )
+        let deepFly = BattedBall(
+            exitVelocityTenthsKPH: 1_360,
+            launchAngleTenthsDegrees: 300,
+            directionTenthsDegrees: 60,
+            contactQuality: 520
+        )
+        let advance = engine.advance(
+            thirdOnly,
+            outcome: .inPlayOut,
+            plateAppearanceResult: .inPlayOut,
+            defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50),
+            seed: 1,
+            battedBall: deepFly,
+            fielding: makeFielding(sector: .outfield, distance: 950),
+            inningEnded: false
+        )
+
+        // The runner tags from third on the catch and scores; the out itself is recorded elsewhere.
+        XCTAssertEqual(advance.runsScored, 1)
+        XCTAssertFalse(advance.after.thirdOccupied)
+
+        // With two out, the catch is the third out and the run cannot count — no sacrifice fly.
+        let inningEndingAdvance = engine.advance(
+            thirdOnly,
+            outcome: .inPlayOut,
+            plateAppearanceResult: .inPlayOut,
+            defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50),
+            seed: 1,
+            battedBall: deepFly,
+            fielding: makeFielding(sector: .outfield, distance: 950),
+            inningEnded: true
+        )
+        XCTAssertEqual(inningEndingAdvance.runsScored, 0)
+        XCTAssertTrue(inningEndingAdvance.after.thirdOccupied)
+    }
+
+    func testShallowFlyBallStrandsTheRunnerOnThird() {
+        let engine = BaserunnerEngine()
+        let thirdOnly = BaserunnerStateSnapshot(
+            firstOccupied: false,
+            secondOccupied: false,
+            thirdOccupied: true,
+            leadRunnerSpeed: 55
+        )
+        let shallowFly = BattedBall(
+            exitVelocityTenthsKPH: 1_180,
+            launchAngleTenthsDegrees: 300,
+            directionTenthsDegrees: 40,
+            contactQuality: 430
+        )
+        let advance = engine.advance(
+            thirdOnly,
+            outcome: .inPlayOut,
+            plateAppearanceResult: .inPlayOut,
+            defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50),
+            seed: 1,
+            battedBall: shallowFly,
+            fielding: makeFielding(sector: .outfield, distance: 520),
+            inningEnded: false
+        )
+
+        // A can-of-corn too shallow to tag on: no run, the runner holds third.
+        XCTAssertEqual(advance.runsScored, 0)
+        XCTAssertTrue(advance.after.thirdOccupied)
+    }
+
+    func testTripleClearsTheBasesAndIsReachableFromAGapLineDrive() {
+        let engine = BaserunnerEngine()
+        let loaded = BaserunnerStateSnapshot(
+            firstOccupied: true,
+            secondOccupied: true,
+            thirdOccupied: true,
+            leadRunnerSpeed: 55
+        )
+        let advance = engine.advance(
+            loaded,
+            outcome: .triple,
+            plateAppearanceResult: .hit,
+            defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50),
+            seed: 1
+        )
+
+        // Every runner scores and the batter pulls into third.
+        XCTAssertEqual(advance.runsScored, 3)
+        XCTAssertEqual(
+            advance.after,
+            BaserunnerStateSnapshot(
+                firstOccupied: false,
+                secondOccupied: false,
+                thirdOccupied: true,
+                leadRunnerSpeed: 50
+            )
+        )
+
+        // A gap/corner line drive of extra-base quality can be stretched into a triple.
+        let gapLineDrive = BattedBall(
+            exitVelocityTenthsKPH: 1_520,
+            launchAngleTenthsDegrees: 210,
+            directionTenthsDegrees: 400,
+            contactQuality: 700
+        )
+        var sawTriple = false
+        for seed in 1...6_000 {
+            if BallInPlayEngine().resolve(
+                gapLineDrive,
+                gameState: gameState(defense: 50, hitFactor: 1_000, homeRunFactor: 1_000),
+                seed: UInt64(seed),
+                ordinal: 1
+            ).finalOutcome == .triple {
+                sawTriple = true
+                break
+            }
+        }
+        XCTAssertTrue(sawTriple)
+    }
+
+    func testHitByPitchAdvancesRunnersExactlyLikeAWalk() {
+        let engine = BaserunnerEngine()
+        let defense = DefenseSnapshot(infield: 50, outfield: 50, arm: 50)
+        let states = [
+            BaserunnerStateSnapshot.empty,
+            BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 50),
+            BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: true, thirdOccupied: false, leadRunnerSpeed: 50),
+            BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: true, thirdOccupied: true, leadRunnerSpeed: 50),
+            BaserunnerStateSnapshot(firstOccupied: false, secondOccupied: true, thirdOccupied: true, leadRunnerSpeed: 50)
+        ]
+        for runners in states {
+            // Both share the coarse `.walk` result, so the free base and any forced run must match.
+            let walk = engine.advance(runners, outcome: .ball, plateAppearanceResult: .walk, defense: defense, seed: 7)
+            let hitByPitch = engine.advance(runners, outcome: .hitByPitch, plateAppearanceResult: .walk, defense: defense, seed: 7)
+            XCTAssertEqual(walk.after, hitByPitch.after)
+            XCTAssertEqual(walk.runsScored, hitByPitch.runsScored)
+        }
+    }
+
+    func testHitByPitchOutcomeEndsThePlateAppearanceAsAWalk() throws {
+        // Chasing the batter inside off the plate: over enough seeds a wild inside pitch plunks the
+        // hitter, and when it does the plate appearance ends in the walk bucket (a free base).
+        let insideChase = PitchCall(
+            pitchType: .fourSeam,
+            zone: PitchZone(row: 1, column: 0),
+            zoneIntent: .chase,
+            intensity: .maxEffort
+        )
+        var found = false
+        for seed in 1...20_000 where !found {
+            let params = makePrepareParams(seed: String(seed), balls: 0, strikes: 0)
+            let preparation = try engine.preparePitch(params)
+            let result = try engine.submitPitch(
+                SubmitPitchParams(
+                    seed: params.seed,
+                    pitcher: params.pitcher,
+                    batter: params.batter,
+                    scouting: params.scouting,
+                    context: params.context,
+                    preparationToken: preparation.preparationToken,
+                    call: insideChase
+                )
+            )
+            if result.snapshot.outcome == .hitByPitch {
+                found = true
+                XCTAssertEqual(result.snapshot.result, .walk)
+                XCTAssertTrue(result.snapshot.ended)
+                XCTAssertNil(result.snapshot.battedBall)
+            }
+        }
+        XCTAssertTrue(found, "a hit-by-pitch should be reachable on inside pitches")
+    }
+
+    func testSameHandMatchupProducesMoreWhiffsThanOppositeHand() throws {
+        // Platoon: a same-hand hitter (RHB vs RHP) whiffs on the breaking ball more than the
+        // opposite-hand hitter (LHB vs RHP), whose contact edge is the mirror of the pitcher's
+        // same-hand advantage. Same seeds and slider on both, so the gap is the handedness alone.
+        let slider = PitchCall(
+            pitchType: .slider,
+            zone: PitchZone(row: 2, column: 0),
+            zoneIntent: .edge,
+            intensity: .normal
+        )
+        func whiffs(batSide: BatSide) throws -> Int {
+            var count = 0
+            for seed in 1...6_000 {
+                let base = makePrepareParams(seed: String(seed))
+                let batter = BatterSnapshot(
+                    id: base.batter.id,
+                    name: base.batter.name,
+                    contact: base.batter.contact,
+                    discipline: base.batter.discipline,
+                    power: base.batter.power,
+                    batSide: batSide
+                )
+                let preparation = try engine.preparePitch(base)
+                let result = try engine.submitPitch(
+                    SubmitPitchParams(
+                        seed: base.seed,
+                        pitcher: base.pitcher,
+                        batter: batter,
+                        scouting: base.scouting,
+                        context: base.context,
+                        preparationToken: preparation.preparationToken,
+                        call: slider
+                    )
+                )
+                if result.snapshot.outcome == .swingingStrike { count += 1 }
+            }
+            return count
+        }
+
+        let sameHand = try whiffs(batSide: .right)
+        let oppositeHand = try whiffs(batSide: .left)
+        XCTAssertGreaterThan(sameHand, oppositeHand)
+    }
+
+    func testLegacySnapshotsWithoutHandednessDecodeToRightHandedDefaults() throws {
+        // Saves and RPC payloads written before platoon carry no batSide/throwingHand; they must
+        // load as right-handed so old games resolve unchanged, while a fresh encode round-trips.
+        let batterJSON = Data(#"{"id":"b","name":"타자","contact":50,"discipline":50,"power":50}"#.utf8)
+        let batter = try JSONDecoder().decode(BatterSnapshot.self, from: batterJSON)
+        XCTAssertEqual(batter.batSide, .right)
+
+        let pitcherJSON = Data(#"{"id":"p","name":"투수","stuff":50,"command":50,"movement":50,"stamina":50}"#.utf8)
+        let pitcher = try JSONDecoder().decode(PitcherSnapshot.self, from: pitcherJSON)
+        XCTAssertEqual(pitcher.throwingHand, .right)
+        XCTAssertNil(pitcher.pitchProfiles)
+
+        let encodedLefty = try JSONEncoder().encode(
+            BatterSnapshot(id: "b", name: "타자", contact: 50, discipline: 50, power: 50, batSide: .left)
+        )
+        let roundTripped = try JSONDecoder().decode(BatterSnapshot.self, from: encodedLefty)
+        XCTAssertEqual(roundTripped.batSide, .left)
+
+        let encodedLeftyPitcher = try JSONEncoder().encode(
+            PitcherSnapshot(id: "p", name: "투수", stuff: 50, command: 50, movement: 50, stamina: 50, throwingHand: .left)
+        )
+        XCTAssertEqual(
+            try JSONDecoder().decode(PitcherSnapshot.self, from: encodedLeftyPitcher).throwingHand,
+            .left
+        )
+    }
+
     private func makeRivalMemory(
         params: PreparePitchParams,
         repeated: Bool,
@@ -936,6 +1436,8 @@ final class PitchKernelEngineTests: XCTestCase {
         leverage: Int = 600,
         balls: Int = 1,
         strikes: Int = 1,
+        discipline: Int = 52,
+        reliability: Int = ScoutingEstimate.trustedReliability,
         pitcher: PitcherSnapshot? = nil,
         rivalMemory: RivalMemorySnapshot? = nil,
         gameState: GameStateSnapshot? = nil,
@@ -955,7 +1457,7 @@ final class PitchKernelEngineTests: XCTestCase {
                 id: "batter-1",
                 name: "이준호",
                 contact: 56,
-                discipline: 52,
+                discipline: discipline,
                 power: 58
             ),
             scouting: BatterScoutingSnapshot(
@@ -963,7 +1465,8 @@ final class PitchKernelEngineTests: XCTestCase {
                 coldZone: PitchZone(row: 2, column: 0),
                 pitchStrength: .fourSeam,
                 pitchWeakness: .slider,
-                chaseTendency: 48
+                chaseTendency: 48,
+                reliability: reliability
             ),
             context: PlateAppearanceContext(
                 plateAppearanceID: "pa-1",
@@ -1006,7 +1509,8 @@ final class PitchKernelEngineTests: XCTestCase {
         hitFactor: Int,
         homeRunFactor: Int,
         fielders: [FielderSnapshot]? = nil,
-        inningState: InningStateSnapshot? = nil
+        inningState: InningStateSnapshot? = nil,
+        runners: BaserunnerStateSnapshot = .empty
     ) -> GameStateSnapshot {
         GameStateSnapshot(
             defense: DefenseSnapshot(
@@ -1021,7 +1525,7 @@ final class PitchKernelEngineTests: XCTestCase {
                 hitFactor: hitFactor,
                 homeRunFactor: homeRunFactor
             ),
-            runners: .empty,
+            runners: runners,
             runsAllowed: 0,
             inningState: inningState
         )
@@ -1038,5 +1542,20 @@ final class PitchKernelEngineTests: XCTestCase {
                 arm: rating
             )
         }
+    }
+
+    private func makeFielding(sector: FieldingSector, distance: Int) -> FieldingResolutionSnapshot {
+        FieldingResolutionSnapshot(
+            neutralOutcome: .inPlayOut,
+            finalOutcome: .inPlayOut,
+            sector: sector,
+            difficulty: 500,
+            defenseRating: 50,
+            defenseAdjustment: 0,
+            parkAdjustment: 0,
+            impact: .neutral,
+            landingDistanceTenthsMeters: distance,
+            shortExplanation: "테스트 수비 결과"
+        )
     }
 }

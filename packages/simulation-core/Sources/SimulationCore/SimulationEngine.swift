@@ -269,7 +269,11 @@ public struct SimulationEngine: Sendable {
         case .inPlayOut: summary = "약한 타구를 유도해 인플레이 아웃을 만들었습니다."
         case .single: summary = "타자가 빈틈을 찾아 단타를 만들었습니다."
         case .double: summary = "강한 타구가 외야를 갈라 2루타가 됐습니다."
+        // The single-pitch preview engine never produces these two (they are decided by the
+        // full kernel's fielding and pitch-location paths), but the switch must stay exhaustive.
+        case .triple: summary = "타구가 외야 구석을 갈라 3루타가 됐습니다."
         case .homeRun: summary = "실투를 놓치지 않은 타자가 홈런을 만들었습니다."
+        case .hitByPitch: summary = "몸에 맞는 공으로 타자가 출루했습니다."
         }
 
         let executionDescription: String

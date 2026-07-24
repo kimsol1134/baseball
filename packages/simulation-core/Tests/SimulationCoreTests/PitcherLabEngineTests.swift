@@ -220,6 +220,54 @@ final class PitcherLabEngineTests: XCTestCase {
         }
     }
 
+    func testThirdConsecutiveSameFocusIncursRepeatPenalty() throws {
+        let engine = PitcherLabEngine()
+
+        // Run A trains the same focus three sessions in a row. The third session is
+        // the second consecutive repeat, so it must hit the -45 anti-spam penalty.
+        var runA = try engine.start(
+            StartPitcherLabParams(seed: "31337", presetID: "power_prospect")
+        )
+        runA = try train(engine, runA, .command, .standard) // session 1
+        runA = try train(engine, runA, .command, .standard) // session 2 (first repeat)
+        runA = try inning(engine, runA, number: 1, runs: 0)
+        runA = try train(engine, runA, .command, .standard) // session 3 (second repeat)
+        let penalisedSignal = try XCTUnwrap(runA.snapshot.lastTraining?.signalGained)
+
+        // Run B is identical except it breaks the streak first, so its third session
+        // is only a first repeat and earns the +55 bonus. The seed chain and the
+        // readiness/fatigue path are identical (both foci are non-recovery at the
+        // same intensity, and the seed advances independently of the choices), so
+        // the two signals differ only by the modifier gap of 55 - (-45) = 100.
+        var runB = try engine.start(
+            StartPitcherLabParams(seed: "31337", presetID: "power_prospect")
+        )
+        runB = try train(engine, runB, .stamina, .standard) // session 1 (different focus)
+        runB = try train(engine, runB, .command, .standard) // session 2 (switch)
+        runB = try inning(engine, runB, number: 1, runs: 0)
+        runB = try train(engine, runB, .command, .standard) // session 3 (first repeat)
+        let firstRepeatSignal = try XCTUnwrap(runB.snapshot.lastTraining?.signalGained)
+
+        XCTAssertLessThan(penalisedSignal, firstRepeatSignal)
+        XCTAssertEqual(firstRepeatSignal - penalisedSignal, 100)
+        XCTAssertEqual(runA.snapshot.focusStreak, 3)
+        XCTAssertEqual(runB.snapshot.focusStreak, 2)
+    }
+
+    func testBreakingFocusStreakClearsThePenalty() throws {
+        let engine = PitcherLabEngine()
+        var result = try engine.start(
+            StartPitcherLabParams(seed: "24680", presetID: "innings_eater")
+        )
+        result = try train(engine, result, .command, .standard) // streak 1
+        result = try train(engine, result, .command, .standard) // streak 2
+        XCTAssertEqual(result.snapshot.focusStreak, 2)
+
+        result = try inning(engine, result, number: 1, runs: 0)
+        result = try train(engine, result, .breakingBall, .standard) // switch resets streak
+        XCTAssertEqual(result.snapshot.focusStreak, 1)
+    }
+
     private func train(
         _ engine: PitcherLabEngine,
         _ result: PitcherLabResult,

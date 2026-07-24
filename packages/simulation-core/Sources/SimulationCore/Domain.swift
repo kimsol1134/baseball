@@ -19,6 +19,15 @@ public enum PitchUsageRole: String, Codable, CaseIterable, Sendable {
     case development
 }
 
+/// Which side of the plate the batter hits from. `switchHitter` always takes the platoon-favored
+/// box (bats opposite the pitcher's hand). Defaults to `.right` on decode so pre-platoon saves and
+/// RPC payloads — which carry no `batSide` — load as a right-handed hitter unchanged.
+public enum BatSide: String, Codable, CaseIterable, Sendable {
+    case right
+    case left
+    case switchHitter = "switch"
+}
+
 public struct PitchProfileSnapshot: Codable, Equatable, Sendable {
     public let pitchType: PitchType
     public let role: PitchUsageRole
@@ -71,6 +80,10 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
     public let movement: Int
     public let stamina: Int
     public let pitchProfiles: [PitchProfileSnapshot]?
+    /// The arm the pitcher throws with. Drives only the left/right platoon read in `resolvePitch`
+    /// and never the recommendation, plan, or preparation token. Defaults to `.right` on decode so
+    /// saves/RPC payloads written before platoon existed keep resolving identically.
+    public let throwingHand: ThrowingHand
 
     public init(
         id: String,
@@ -78,7 +91,8 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
         stuff: Int,
         command: Int,
         movement: Int,
-        stamina: Int
+        stamina: Int,
+        throwingHand: ThrowingHand = .right
     ) {
         self.init(
             id: id,
@@ -87,7 +101,8 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
             command: command,
             movement: movement,
             stamina: stamina,
-            pitchProfiles: nil
+            pitchProfiles: nil,
+            throwingHand: throwingHand
         )
     }
 
@@ -98,7 +113,8 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
         command: Int,
         movement: Int,
         stamina: Int,
-        pitchProfiles: [PitchProfileSnapshot]?
+        pitchProfiles: [PitchProfileSnapshot]?,
+        throwingHand: ThrowingHand = .right
     ) {
         self.id = id
         self.name = name
@@ -107,6 +123,23 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
         self.movement = movement
         self.stamina = stamina
         self.pitchProfiles = pitchProfiles
+        self.throwingHand = throwingHand
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, stuff, command, movement, stamina, pitchProfiles, throwingHand
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        stuff = try container.decode(Int.self, forKey: .stuff)
+        command = try container.decode(Int.self, forKey: .command)
+        movement = try container.decode(Int.self, forKey: .movement)
+        stamina = try container.decode(Int.self, forKey: .stamina)
+        pitchProfiles = try container.decodeIfPresent([PitchProfileSnapshot].self, forKey: .pitchProfiles)
+        throwingHand = try container.decodeIfPresent(ThrowingHand.self, forKey: .throwingHand) ?? .right
     }
 
     public func profile(for pitchType: PitchType) -> PitchProfileSnapshot? {
@@ -120,19 +153,38 @@ public struct BatterSnapshot: Codable, Equatable, Sendable {
     public let contact: Int
     public let discipline: Int
     public let power: Int
+    /// Which box the batter stands in, for the left/right platoon read. Defaults to `.right` on
+    /// decode so saves/RPC payloads written before platoon existed load as a right-handed hitter.
+    public let batSide: BatSide
 
     public init(
         id: String,
         name: String,
         contact: Int,
         discipline: Int,
-        power: Int
+        power: Int,
+        batSide: BatSide = .right
     ) {
         self.id = id
         self.name = name
         self.contact = contact
         self.discipline = discipline
         self.power = power
+        self.batSide = batSide
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, contact, discipline, power, batSide
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        contact = try container.decode(Int.self, forKey: .contact)
+        discipline = try container.decode(Int.self, forKey: .discipline)
+        power = try container.decode(Int.self, forKey: .power)
+        batSide = try container.decodeIfPresent(BatSide.self, forKey: .batSide) ?? .right
     }
 }
 
@@ -191,7 +243,9 @@ public enum PitchOutcome: String, Codable, CaseIterable, Sendable {
     case inPlayOut = "in_play_out"
     case single
     case double
+    case triple
     case homeRun = "home_run"
+    case hitByPitch = "hit_by_pitch"
 }
 
 public struct PitchResolvedEvent: Codable, Equatable, Sendable {

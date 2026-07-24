@@ -20,7 +20,9 @@ struct BatchReport: Codable {
     let stealAttempts: Int
     let stolenBases: Int
     let doublePlays: Int
+    let sacrificeFlies: Int
     let halfInningsCompleted: Int
+    let batSide: String
 }
 
 enum BatchStrategy: String {
@@ -77,6 +79,23 @@ let parkFactor: Int = {
     }
     return min(max(value, 700), 1_300)
 }()
+func batterRating(_ flag: String, default fallback: Int) -> Int {
+    guard let index = arguments.firstIndex(of: flag) else { return fallback }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex), let value = Int(arguments[valueIndex]) else {
+        return fallback
+    }
+    return min(max(value, 20), 80)
+}
+let batterContact = batterRating("--contact", default: 56)
+let batterDiscipline = batterRating("--discipline", default: 52)
+let batterPower = batterRating("--power", default: 58)
+let batSide: BatSide = {
+    guard let index = arguments.firstIndex(of: "--bat-side") else { return .right }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex) else { return .right }
+    return BatSide(rawValue: arguments[valueIndex]) ?? .right
+}()
 
 guard let preset = PitcherPresetCatalog.all.first(where: { $0.id == presetID }) else {
     let available = PitcherPresetCatalog.all.map(\.id).joined(separator: ", ")
@@ -87,9 +106,10 @@ let pitcher = preset.pitcher
 let batter = BatterSnapshot(
     id: "batter-1",
     name: "이준호",
-    contact: 56,
-    discipline: 52,
-    power: 58
+    contact: batterContact,
+    discipline: batterDiscipline,
+    power: batterPower,
+    batSide: batSide
 )
 let scouting = BatterScoutingSnapshot(
     hotZone: PitchZone(row: 1, column: 1),
@@ -135,6 +155,7 @@ var persistentRunners = BaserunnerStateSnapshot(
 var stealAttempts = 0
 var stolenBases = 0
 var doublePlays = 0
+var sacrificeFlies = 0
 var halfInningsCompleted = 0
 
 for index in 1...iterations {
@@ -223,6 +244,10 @@ for index in 1...iterations {
         if result.snapshot.inningTransition?.doublePlayCompleted == true {
             doublePlays += 1
         }
+        // An out that still plates a run is a sacrifice fly (the only run-scoring out in the model).
+        if result.snapshot.result == .inPlayOut, result.snapshot.runsScored > 0 {
+            sacrificeFlies += 1
+        }
         if result.snapshot.inningTransition?.inningEnded == true {
             halfInningsCompleted += 1
         }
@@ -295,7 +320,9 @@ let report = BatchReport(
     stealAttempts: stealAttempts,
     stolenBases: stolenBases,
     doublePlays: doublePlays,
-    halfInningsCompleted: halfInningsCompleted
+    sacrificeFlies: sacrificeFlies,
+    halfInningsCompleted: halfInningsCompleted,
+    batSide: batSide.rawValue
 )
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

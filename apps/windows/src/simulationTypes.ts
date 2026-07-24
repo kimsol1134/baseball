@@ -10,6 +10,17 @@ export type PitchOutcome =
   | "double"
   | "home_run";
 
+// Phase 3-4 rule primitives. The kernel's `outcome` can also carry one of these at runtime, but they
+// are kept out of `PitchOutcome` itself so the exhaustive `Record<PitchOutcome, string>` label maps
+// that predate them (e.g. in App.tsx) keep type-checking without edits. Widen a value to this type
+// wherever the new outcomes must be distinguished; the snapshot fields stay typed `PitchOutcome`.
+export type ExtendedPitchOutcome = PitchOutcome | "triple" | "hit_by_pitch";
+
+export interface CareerScheduleSnapshot {
+  trainingsByChapter: number[];
+  milestonesByChapter: string[][];
+}
+
 export interface PitchZone {
   row: number;
   column: number;
@@ -142,6 +153,8 @@ export interface BatterScoutingSnapshot {
   pitchStrength: PitchType;
   pitchWeakness: PitchType;
   chaseTendency: number;
+  /** 0–100 confidence in this report. Omitted payloads decode as fully trusted on the core side. */
+  reliability?: number;
 }
 
 export interface PlateAppearanceContext {
@@ -338,6 +351,16 @@ export interface CatcherRecommendationSnapshot {
   shortReason: string;
 }
 
+export interface ScoutingReportSnapshot {
+  reliability: number;
+  observationCount: number;
+  band: "low" | "developing" | "trusted";
+  estimatedWeakness: PitchType;
+  estimatedColdZone: PitchZone;
+  estimatedChaseTendency: number;
+  chaseTendencyMargin: number;
+}
+
 export interface PitchPreparation {
   seed: string;
   revision: number;
@@ -347,6 +370,8 @@ export interface PitchPreparation {
   primaryRecommendation: CatcherRecommendationSnapshot;
   alternativeRecommendation: CatcherRecommendationSnapshot;
   rivalAdaptation: RivalAdaptationSnapshot;
+  /** Optional so preparations restored from pre-scouting-report autosaves still load. */
+  scoutingReport?: ScoutingReportSnapshot;
 }
 
 export interface PitchExecution {
@@ -572,6 +597,7 @@ export interface PitcherLabSnapshot {
   legacyOptions: ReadonlyArray<MemoryCardID>;
   legacySelection?: LegacySelectionSnapshot;
   balanceVersion?: number;
+  focusStreak?: number;
   stateCommitment: string;
 }
 
@@ -812,6 +838,11 @@ export interface HighSchoolCareerSnapshot {
   legacyOptions: ReadonlyArray<MemoryCardID>;
   selectedMemories: ReadonlyArray<MemoryCardID>;
   balanceVersion?: number;
+  /** 누적 팔 상태 위험(0–100). 옛 저장본은 없을 수 있어 0으로 읽는다. */
+  armRisk?: number;
+  schedule?: CareerScheduleSnapshot;
+  /** 부상으로 강제된 남은 회복 훈련 횟수(0–2). */
+  injuryRecovery?: number;
   stateCommitment: string;
 }
 
@@ -934,12 +965,18 @@ export type ProWeekPlan = "develop_weapon" | "refine_command" | "build_stamina" 
 export type OffseasonDecision = "continue" | "military_service" | "free_agency" | "retire";
 export interface ProSeasonStats { season: number; teamID: string; games: number; starts: number; inningsOuts: number; strikeouts: number; walks: number; runsAllowed: number; wins: number; saves: number }
 export interface ProContractSnapshot { yearsRemaining: number; annualSalary: number; rolePromise: ProRole }
+export type ProSeasonSegment = "spring_camp" | "opening" | "first_half" | "all_star_break" | "pennant_race" | "season_finale";
+export type ProSeasonTrigger = "opening_statement" | "call_up_audition" | "major_debut" | "record_chase" | "role_showdown" | "standings_race";
+export interface ProRivalBatter { id: string; name: string; archetype: string; teamID: string; teamName: string; record: string; profile: string }
+export interface ProSeasonTension { kind: string; title: string; detail: string }
 export interface ProCareerSnapshot {
   proCareerID: string; revision: number; phase: ProCareerPhase; identity: PlayerIdentitySnapshot; pitcher: PitcherSnapshot;
   team: DraftTeamSnapshot; entitlement: ProEntitlementSnapshot; age: number; season: number; week: number; level: ProLevel; role: ProRole;
   managerTrust: number; catcherTrust: number; fatigue: number; injuryWeeks: number; serviceYears: number; militaryCompleted: boolean;
   contract?: ProContractSnapshot; currentStats: ProSeasonStats; careerStats: ReadonlyArray<ProSeasonStats>; awards: ReadonlyArray<string>;
   milestones: ReadonlyArray<string>; news: ReadonlyArray<string>; hallOfFameScore?: number; balanceVersion?: number; commitment: string;
+  seasonSegment?: ProSeasonSegment; seasonTrigger?: ProSeasonTrigger; currentRival?: ProRivalBatter;
+  seasonTensions?: ReadonlyArray<ProSeasonTension>; seasonImportantGames?: number;
 }
 export interface ProCareerResult { snapshot: ProCareerSnapshot; nextSeed: string; events: ReadonlyArray<string> }
 export interface StartProCareerParams { seed: string; identity: PlayerIdentitySnapshot; pitcher: PitcherSnapshot; draftResult: DraftResultSnapshot; entitlement: ProEntitlementSnapshot }

@@ -352,6 +352,11 @@ public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
     public let legacySelection: LegacySelectionSnapshot?
     public let stateCommitment: String
     public let balanceVersion: Int?
+    /// Consecutive completed training sessions that share `lastTraining.focus`.
+    /// Older saves predate this field and decode to `nil`; the engine then falls
+    /// back to a streak of 1 when a prior session exists. Kept optional so those
+    /// saves still match their stored commitment.
+    public let focusStreak: Int?
 
     public init(
         runID: String,
@@ -375,7 +380,8 @@ public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
         legacyOptions: [MemoryCardID],
         legacySelection: LegacySelectionSnapshot?,
         stateCommitment: String,
-        balanceVersion: Int? = nil
+        balanceVersion: Int? = nil,
+        focusStreak: Int? = nil
     ) {
         self.runID = runID
         self.revision = revision
@@ -399,6 +405,7 @@ public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
         self.legacySelection = legacySelection
         self.stateCommitment = stateCommitment
         self.balanceVersion = balanceVersion
+        self.focusStreak = focusStreak
     }
 }
 
@@ -710,7 +717,8 @@ public struct PitcherLabEngine: Sendable {
             legacyOptions: [],
             legacySelection: nil,
             stateCommitment: "",
-            balanceVersion: PitcherPresetCatalog.balanceVersion
+            balanceVersion: PitcherPresetCatalog.balanceVersion,
+            focusStreak: 0
         )
         let snapshot = signed(base)
         return makeResult(
@@ -761,8 +769,14 @@ public struct PitcherLabEngine: Sendable {
         let traitBonus = trait.matchingFocus == params.focus ? 135 : 0
         let readinessModifier = (params.state.readiness - 50) * 2
         let fatiguePenalty = max(0, params.state.fatigue - 35) * 2
-        let repeatCount = recentRepeatCount(params.state, focus: params.focus)
+        // Anti-spam: a first repeat of the same focus is rewarded, but a third
+        // (and beyond) consecutive session on that focus is penalised. Older saves
+        // lack `focusStreak`, so assume a streak of 1 when a prior session exists.
+        let isRepeatFocus = params.state.lastTraining?.focus == params.focus
+        let priorFocusStreak = params.state.focusStreak ?? (params.state.lastTraining == nil ? 0 : 1)
+        let repeatCount = isRepeatFocus ? priorFocusStreak : 0
         let repeatModifier = repeatCount == 0 ? 20 : repeatCount == 1 ? 55 : -45
+        let nextFocusStreak = isRepeatFocus ? priorFocusStreak + 1 : 1
         let randomModifier = generator.nextInt(upperBound: 81) - 40
         let signalGained = clamp(
             intensityBase + traitBonus + readinessModifier - fatiguePenalty + repeatModifier + randomModifier,
@@ -831,7 +845,8 @@ public struct PitcherLabEngine: Sendable {
                 sessions: sessionNumber,
                 seed: runSeed(from: params.state.runID)
             ),
-            lastTraining: training
+            lastTraining: training,
+            focusStreak: nextFocusStreak
         )
         return makeResult(
             seed: seed,
@@ -1080,10 +1095,6 @@ public struct PitcherLabEngine: Sendable {
                 confidence: clamp(280 + sessions * 90, 0, 900)
             )
         }
-    }
-
-    private func recentRepeatCount(_ state: PitcherLabSnapshot, focus: TrainingFocus) -> Int {
-        state.lastTraining?.focus == focus ? 1 : 0
     }
 
     private func reactionBand(_ signal: Int) -> TrainingReactionBand {
@@ -1376,6 +1387,9 @@ public struct PitcherLabEngine: Sendable {
         if let balanceVersion = state.balanceVersion {
             canonical.append("balance_version:\(balanceVersion)")
         }
+        if let focusStreak = state.focusStreak {
+            canonical.append("focus_streak:\(focusStreak)")
+        }
         return StableHash.fnv1a64(canonical.joined(separator: "|"))
     }
 
@@ -1431,6 +1445,7 @@ public struct PitcherLabEngine: Sendable {
         legacyOptions: [MemoryCardID]? = nil,
         legacySelection: LegacySelectionSnapshot? = nil,
         balanceVersion: Int? = nil,
+        focusStreak: Int? = nil,
         stateCommitment: String? = nil
     ) -> PitcherLabSnapshot {
         PitcherLabSnapshot(
@@ -1455,7 +1470,8 @@ public struct PitcherLabEngine: Sendable {
             legacyOptions: legacyOptions ?? state.legacyOptions,
             legacySelection: legacySelection ?? state.legacySelection,
             stateCommitment: stateCommitment ?? "",
-            balanceVersion: balanceVersion ?? state.balanceVersion
+            balanceVersion: balanceVersion ?? state.balanceVersion,
+            focusStreak: focusStreak ?? state.focusStreak
         )
     }
 

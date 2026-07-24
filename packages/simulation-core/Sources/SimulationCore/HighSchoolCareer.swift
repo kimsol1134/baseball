@@ -111,6 +111,15 @@ public enum DraftOutcome: String, Codable, Sendable {
     case undrafted
 }
 
+/// 고교 혹사 신호. 중요 경기의 투구 수와 당시 피로로 누적된 팔 상태를 세 단계로 나눈 것.
+/// 부상 회복 중에는 `recovering`으로 덮어써 UI가 회복 카드를 보여 준다.
+public enum ArmHealthState: String, Codable, CaseIterable, Sendable {
+    case normal
+    case caution
+    case warning
+    case recovering
+}
+
 public struct SchoolSnapshot: Codable, Equatable, Sendable {
     public let id: SchoolID
     public let name: String
@@ -392,6 +401,64 @@ public struct CareerRelationshipResultSnapshot: Codable, Equatable, Sendable {
     }
 }
 
+/// 한 회차(런)의 챕터 뼈대. 시드+회차에서 결정론적으로 생성되며, 챕터별 훈련 수와 관계·경기·각성
+/// 국면의 배치를 담는다. 스펙 범위: 훈련 12–16 / 관계 4–6 / 중요 경기 4–6 / 각성 3(고정).
+/// 옛 저장본은 이 필드가 없어 nil이며 `fixedDefault`(기존 16/5/5/3 뼈대)로 읽어 진행 중 리듬을
+/// 그대로 보존한다. [[focusStreak]]·시즌 아크의 옵셔널+백필 패턴과 같은 계열이다.
+/// final class 박싱: 거대 스냅숏 구조체 안에 배열의 배열을 인라인으로 두면 Swift 6.3의
+/// outlined destroy 코드젠 결함(전체 스위트 실행 시 오버릴리즈 크래시)을 밟는다.
+/// 참조 타입으로 박싱하면 destroy 경로가 단순해지고 Codable JSON 형태는 struct와 동일하다.
+public final class CareerScheduleSnapshot: Codable, Equatable, Sendable {
+    /// 8개 챕터의 챕터별 훈련 횟수. 각 값 ≥ 1, 합은 12–16.
+    public let trainingsByChapter: [Int]
+    /// 8개 챕터의 챕터별 국면 배치. 각 원소는 relationship/importantGame/awakening을 순서대로 담는다.
+    /// 드래프트(.draft)는 저장하지 않고 8챕터의 국면 뒤에 엔진이 덧붙인다.
+    public let milestonesByChapter: [[HighSchoolCareerPhase]]
+
+    public init(trainingsByChapter: [Int], milestonesByChapter: [[HighSchoolCareerPhase]]) {
+        self.trainingsByChapter = trainingsByChapter
+        self.milestonesByChapter = milestonesByChapter
+    }
+
+    public static func == (lhs: CareerScheduleSnapshot, rhs: CareerScheduleSnapshot) -> Bool {
+        lhs.trainingsByChapter == rhs.trainingsByChapter && lhs.milestonesByChapter == rhs.milestonesByChapter
+    }
+
+    public var trainingTotal: Int { trainingsByChapter.reduce(0, +) }
+    public var relationshipTotal: Int { count(.relationship) }
+    public var importantGameTotal: Int { count(.importantGame) }
+    public var awakeningTotal: Int { count(.awakening) }
+
+    private func count(_ phase: HighSchoolCareerPhase) -> Int {
+        milestonesByChapter.reduce(0) { $0 + $1.filter { $0 == phase }.count }
+    }
+
+    /// Phase 4 이전의 고정 뼈대(훈련 16 / 관계 5 / 중요 경기 5 / 각성 3). 스케줄 필드가 없는 옛
+    /// 저장본이 이 값으로 백필돼 저장 호환과 진행 중 회차의 리듬을 유지한다.
+    public static let fixedDefault = CareerScheduleSnapshot(
+        trainingsByChapter: [2, 2, 2, 2, 2, 2, 2, 2],
+        milestonesByChapter: [
+            [.relationship],
+            [.relationship, .importantGame],
+            [.awakening, .importantGame],
+            [.relationship, .importantGame],
+            [.relationship],
+            [.awakening, .importantGame],
+            [.relationship],
+            [.awakening, .importantGame]
+        ]
+    )
+
+    /// 상태 커밋먼트에 넣는 결정론적 토큰. 챕터별 훈련·국면을 그대로 담아 스케줄 변조를 탐지한다.
+    var commitmentToken: String {
+        let trainings = trainingsByChapter.map(String.init).joined(separator: ",")
+        let milestones = milestonesByChapter
+            .map { $0.map(\.rawValue).joined(separator: ",") }
+            .joined(separator: ";")
+        return "\(trainings)|\(milestones)"
+    }
+}
+
 public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let careerID: String
     public let revision: UInt64
@@ -429,6 +496,13 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let legacyOptions: [MemoryCardID]
     public let selectedMemories: [MemoryCardID]
     public let balanceVersion: Int?
+    /// 누적 팔 상태 위험(0–100). 옛 저장본은 값이 없어 nil이며 0으로 읽는다. [[focusStreak]] 패턴.
+    public let armRisk: Int?
+    /// 부상으로 강제된 남은 회복 훈련 횟수(0–2). nil은 부상 이력이 없다는 뜻이다.
+    public let injuryRecovery: Int?
+    /// 이 회차의 챕터 뼈대(챕터별 훈련 수·국면 배치). 옛 저장본은 없어 nil이며 엔진이
+    /// `CareerScheduleSnapshot.fixedDefault`(16/5/5/3)로 읽는다. [[focusStreak]] 패턴.
+    public let schedule: CareerScheduleSnapshot?
     public let stateCommitment: String
 
     public init(
@@ -468,6 +542,9 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         legacyOptions: [MemoryCardID],
         selectedMemories: [MemoryCardID],
         balanceVersion: Int? = nil,
+        armRisk: Int? = nil,
+        injuryRecovery: Int? = nil,
+        schedule: CareerScheduleSnapshot? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -506,6 +583,9 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.legacyOptions = legacyOptions
         self.selectedMemories = selectedMemories
         self.balanceVersion = balanceVersion
+        self.armRisk = armRisk
+        self.injuryRecovery = injuryRecovery
+        self.schedule = schedule
         self.stateCommitment = stateCommitment
     }
 }
@@ -737,6 +817,124 @@ public struct HighSchoolCareerEngine: Sendable {
             personality: "타구가 뜨는 순간 2루를 노립니다. 실투 하나로 경기 흐름을 바꾸는 호타준족입니다.", signatureRecord: "20도루 · 6홈런 · 21득점")
     ]
 
+    // MARK: - 고교 혹사·부상 시스템
+
+    // 팔 상태 밴드 경계. HighSchoolCareerView.tsx의 armHealthState()와 반드시 같은 값을 쓴다.
+    static let armCautionThreshold = 35
+    static let armWarningThreshold = 55
+    // 이 임계를 넘긴 채 "참고 던진다"를 고르면 결정론적으로 부상이 난다. 경고에서 한두 번 강행하면
+    // 넘도록 (경고 + 강행 증가분) 언저리에 둔다.
+    static let armInjuryThreshold = 72
+    // 중요 경기 투구 수/피로가 바닥을 넘을 때만 팔에 부담이 쌓인다. 가벼운 등판(투구 ≤24·피로 ≤55)은
+    // 위험을 0으로 두므로, 회복 훈련으로 피로만 관리하면 경고 없이 완주할 수 있다.
+    static let armFatigueFloor = 55
+    static let armPitchFloor = 24
+    static let armPushThroughRisk = 15   // "참고 던진다"가 올리는 위험
+    static let armRestRelief = 45        // "짧은 휴식"이 덜어 내는 위험
+    static let armExamRelief = 8         // "정밀 검진" 뒤 남는 최소 피로 회복
+
+    static let armCareEventID = "evt-arm-care"
+
+    // MARK: - 런 뼈대 시드 가변화 (Phase 4)
+
+    /// 훈련이 부족한 회차의 훈련당 성장 신호에 더하는 보정 계수(결손 1당). 훈련 총량이 12–16으로
+    /// 흔들려도 총 성장 기대가 유사 범위(±15%)에 머물도록 드래프트 밸런스를 보호한다. 40시드
+    /// 지명률 밴드(25–65%)에 맞춰 실측·조정된 값이다.
+    static let trainingCompensationPerDeficit = 24
+
+    /// 스케줄이 없는(옛 저장본) 상태는 고정 뼈대로 읽어 진행 중 리듬을 그대로 유지한다.
+    private func schedule(for state: HighSchoolCareerSnapshot) -> CareerScheduleSnapshot {
+        state.schedule ?? .fixedDefault
+    }
+
+    /// 시드+회차(careerID에 함께 담김)에서 결정론적으로 회차 뼈대를 만든다. 스펙 범위:
+    /// 훈련 12–16 / 관계 4–6 / 중요 경기 4–6 / 각성 3(고정). 각 챕터는 최소 1회 훈련을 받아
+    /// 빈 챕터가 없고, 8챕터(드래프트 직전 챕터)는 각성→경기→드래프트 finale 구조를 유지한다.
+    static func makeSchedule(careerID: String) -> CareerScheduleSnapshot {
+        var generator = SplitMix64(seed: UInt64(StableHash.fnv1a64("run_skeleton|\(careerID)"), radix: 16) ?? 0x5348_4c53_4b45_4c00)
+        let trainingTotal = 12 + generator.nextInt(upperBound: 5)      // 12–16
+        let relationshipTotal = 4 + generator.nextInt(upperBound: 3)   // 4–6
+        let gameTotal = 4 + generator.nextInt(upperBound: 3)           // 4–6
+
+        // 훈련: 챕터마다 1회를 깔고(빈 챕터 없음) 남는 훈련을 챕터당 최대 3회까지 흩뿌린다.
+        var trainings = [Int](repeating: 1, count: 8)
+        var remaining = trainingTotal - 8
+        while remaining > 0 {
+            let candidates = (0..<8).filter { trainings[$0] < 3 }
+            trainings[candidates[generator.nextInt(upperBound: candidates.count)]] += 1
+            remaining -= 1
+        }
+
+        // 국면: 8챕터 finale는 각성1·경기1로 고정(드래프트는 엔진이 덧붙임). 나머지 관계 전부,
+        // 경기 gameTotal-1, 각성 2를 챕터 1–7에 배치한다.
+        //
+        // 배치는 타입을 "한 바퀴에 하나씩" 뽑는 패스 방식으로 짜서 관계·경기·각성이 서로 엇갈리게
+        // 한다(원래 고정 뼈대와 같은 리듬). 이렇게 하면 경기(≥3개)가 항상 앞쪽에 깔리고 네 번째
+        // 관계 슬롯(팔 상태 씬의 방아쇠)이 그 뒤에 놓여, 혹사 시스템이 어느 시드에서도 성립한다.
+        // 셔플 대신 타입 우선순위만 시드로 섞어(6가지) 회차별 변주를 준다.
+        var queues: [(phase: HighSchoolCareerPhase, count: Int)] = [
+            (.relationship, relationshipTotal), (.importantGame, gameTotal - 1), (.awakening, 2)
+        ]
+        for index in queues.indices.reversed() where index > 0 {
+            queues.swapAt(index, generator.nextInt(upperBound: index + 1))
+        }
+        var sequence: [HighSchoolCareerPhase] = []
+        while queues.contains(where: { $0.count > 0 }) {
+            for index in queues.indices where queues[index].count > 0 {
+                sequence.append(queues[index].phase)
+                queues[index].count -= 1
+            }
+        }
+
+        // 엮인 순서를 유지한 채 챕터 1–7에 최대한 고르게 나눠 담는다(챕터당 1–2국면). 어느 챕터가
+        // 하나 더 받는지는 시드가 정한다.
+        var milestones = [[HighSchoolCareerPhase]](repeating: [], count: 8)
+        var counts = [Int](repeating: sequence.count / 7, count: 7)
+        let extraOffset = generator.nextInt(upperBound: 7)
+        for index in 0..<(sequence.count % 7) { counts[(extraOffset + index) % 7] += 1 }
+        var cursor = 0
+        for chapter in 0..<7 {
+            for _ in 0..<counts[chapter] where cursor < sequence.count {
+                milestones[chapter].append(sequence[cursor]); cursor += 1
+            }
+        }
+        milestones[7] = [.awakening, .importantGame]
+        return CareerScheduleSnapshot(trainingsByChapter: trainings, milestonesByChapter: milestones)
+    }
+
+    /// 경고 상태에서 다음 관계 국면을 대체하는 합성 health 이벤트. 세 응답이 그대로 세 선택지가 된다.
+    private func armCareEvent() -> CareerEventContent {
+        CareerEventContent(id: Self.armCareEventID, title: "팔 상태 경고", category: "health",
+            summary: "최근 등판 뒤 팔이 평소보다 무겁습니다. 트레이너가 오늘 어떻게 할지 묻습니다.")
+    }
+
+    /// 누적 위험과 회복 상태로부터 결정론적 3단(+회복) 신호를 만든다.
+    static func armHealthState(armRisk: Int?, injuryRecovery: Int?) -> ArmHealthState {
+        if (injuryRecovery ?? 0) > 0 { return .recovering }
+        let risk = armRisk ?? 0
+        if risk >= armWarningThreshold { return .warning }
+        if risk >= armCautionThreshold { return .caution }
+        return .normal
+    }
+
+    private func armSignalNews(_ state: ArmHealthState, pitches: Int) -> String? {
+        switch state {
+        case .warning: return "무리한 투구가 이어집니다 · 투구 수 \(pitches). 다음 훈련 전에 팔 상태를 살펴야 합니다."
+        case .caution: return "투구 수 \(pitches)로 팔에 피로가 쌓이기 시작했습니다. 회복 훈련을 고려하세요."
+        case .normal, .recovering: return nil
+        }
+    }
+
+    /// 관계 국면 이벤트를 고르되, 경고 상태이고 핵심 인물(감독·포수·라이벌) 슬롯이 지난 뒤라면
+    /// 합성 팔 상태 이벤트로 대체한다. 핵심 3슬롯은 보존해 관계의 기본 서사를 깨지 않는다.
+    private func relationshipEventForSlot(_ state: HighSchoolCareerSnapshot, seed: UInt64) -> CareerEventContent {
+        if state.relationshipsCompleted >= Self.coreRelationshipCategories.count,
+           Self.armHealthState(armRisk: state.armRisk, injuryRecovery: state.injuryRecovery) == .warning {
+            return armCareEvent()
+        }
+        return relationshipEvent(for: state, seed: seed)
+    }
+
     public init() {}
 
     public func start(_ params: StartHighSchoolCareerParams) throws -> HighSchoolCareerResult {
@@ -750,13 +948,14 @@ public struct HighSchoolCareerEngine: Sendable {
               !params.identity.region.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw SimulationError.invalidPitcherLab("career creation or inherited memories are invalid")
         }
-        var pitcher = renamed(params.identity.name, pitcher: applyCreation(params.creationAllocation, to: preset.pitcher))
+        var pitcher = renamed(params.identity.name, pitcher: applyCreation(params.creationAllocation, to: preset.pitcher), hand: params.identity.throwingHand)
         pitcher = applyInheritance(params.inheritedSoulPoints, domain: params.inheritedSoulDomain, memories: params.inheritedMemories, to: pitcher)
         pitcher = applyKarmas(params.karmas, to: pitcher)
         let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille }
         let memorySlots = params.karmas.contains(.erasedMemory) ? 2 : 3
+        let careerID = "career-\(params.seed)-life-\(params.lifeNumber)"
         let base = HighSchoolCareerSnapshot(
-            careerID: "career-\(params.seed)-life-\(params.lifeNumber)", revision: 0, lifeNumber: params.lifeNumber,
+            careerID: careerID, revision: 0, lifeNumber: params.lifeNumber,
             phase: .prologue, identity: params.identity, difficulty: params.difficulty, karmas: params.karmas,
             legacyRewardPermille: rewardPermille, memorySlots: memorySlots,
             pitcher: pitcher, schoolOptions: Self.schools(for: params.identity.region), school: nil,
@@ -765,11 +964,30 @@ public struct HighSchoolCareerEngine: Sendable {
             relationshipTrust: 50, managerTrust: 50, catcherTrust: 50, rivalTrust: 50,
             selectedAwakenings: [], awakeningOptions: [], fatigue: 5,
             performance: CareerPerformanceSnapshot(), currentGameScenario: nil, currentRelationshipEvent: nil, lastTraining: nil,
-            news: ["\(params.identity.region) 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다."], fanInterest: 5,
+            news: Self.prologueNews(identity: params.identity, lifeNumber: params.lifeNumber, inheritedMemoryCount: params.inheritedMemories.count), fanInterest: 5,
             draftResult: nil, legacyOptions: [], selectedMemories: [], balanceVersion: PitcherPresetCatalog.balanceVersion,
+            armRisk: 0, injuryRecovery: 0, schedule: Self.makeSchedule(careerID: careerID),
             stateCommitment: ""
         )
         return result(seed: seed, state: signed(base), event: "high_school_career_started")
+    }
+
+    /// 받는 쪽 환생: 첫 삶은 기존 문구를 그대로 쓰고, 두 번째 삶부터는 세계가 회차를 알은체한다.
+    /// 세계관 규칙상 명확한 환생 기억이 아니라 "설명하기 어려운 감각"으로만 표현한다.
+    static func prologueNews(identity: PlayerIdentitySnapshot, lifeNumber: Int, inheritedMemoryCount: Int) -> [String] {
+        guard lifeNumber >= 2 else {
+            return ["\(identity.region) 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다."]
+        }
+        let openers = [
+            "\(identity.region) 중학교 마지막 대회. 처음 서는 마운드인데 흙의 감촉이 낯설지 않았습니다. 같은 지역 네 고교가 다시 지켜보고 있습니다.",
+            "\(identity.region) 중학교 마지막 대회에서 던진 마지막 공. 포수 미트에 꽂히는 소리가 어딘가 익숙했습니다. 네 고교의 시선이 모입니다.",
+            "\(identity.region) 중학교 마지막 대회를 마친 뒤, 어깨보다 먼저 마음이 다음 이닝을 준비하고 있었습니다. 네 고교에서 제안이 도착했습니다."
+        ]
+        var news = [openers[(lifeNumber - 2) % openers.count]]
+        if inheritedMemoryCount > 0 {
+            news.append("처음 잡는 그립인데 손끝이 먼저 기억합니다 · 설명하기 어려운 감각 \(inheritedMemoryCount)가지")
+        }
+        return news
     }
 
     public func completePrologue(_ params: AdvanceCareerChapterParams) throws -> HighSchoolCareerResult {
@@ -847,45 +1065,78 @@ public struct HighSchoolCareerEngine: Sendable {
 
     public func commitTraining(_ params: CommitCareerTrainingParams) throws -> HighSchoolCareerResult {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .training)
-        guard params.state.school != nil, params.state.chapterTrainingCount < 2, params.state.totalTrainingsCompleted < 16 else {
+        let schedule = schedule(for: params.state)
+        let chapterTrainings = schedule.trainingsByChapter[params.state.chapter.number - 1]
+        guard params.state.school != nil, params.state.chapterTrainingCount < chapterTrainings,
+              params.state.totalTrainingsCompleted < schedule.trainingTotal else {
             throw SimulationError.invalidPitcherLab("career training is out of order")
         }
         let number = params.state.totalTrainingsCompleted + 1
+        // 부상 회복 강제: 남은 재활 횟수가 있으면 무엇을 골랐든 회복 훈련으로 소비된다(성장 없음).
+        let injuryRecovery = params.state.injuryRecovery ?? 0
+        let isRehab = injuryRecovery > 0
+        let effectiveFocus: TrainingFocus = isRehab ? .recovery : params.focus
         var generator = SplitMix64(seed: seed ^ UInt64(number) ^ 0x4341_5245_4552)
         let base = params.intensity == .light ? 130 : params.intensity == .standard ? 210 : 280
         let schoolBonus = params.state.school?.strength == params.focus ? 110 : 0
         let fatiguePenalty = max(0, params.state.fatigue - 45) * 3
-        let signal = max(60, base + schoolBonus - fatiguePenalty + generator.nextInt(upperBound: 91) - 45)
-        let growthSignal = signal >= 430 ? 2 : signal >= 260 ? 1 : 0
+        // 훈련 수가 적은 회차 보정: 결손(16 - 총 훈련)에 비례해 성장 신호를 올려 총 성장 기대를
+        // 16회 기준 근처(±15%)에 붙인다. 드래프트 밸런스를 스케줄 가변화로부터 보호한다.
+        let scheduleCompensation = max(0, 16 - schedule.trainingTotal) * Self.trainingCompensationPerDeficit
+        let signal = max(60, base + schoolBonus - fatiguePenalty + scheduleCompensation + generator.nextInt(upperBound: 91) - 45)
+        let growthSignal = isRehab ? 0 : (signal >= 430 ? 2 : signal >= 260 ? 1 : 0)
         let pitcher = grow(params.state.pitcher, focus: params.focus, points: growthSignal)
         let fatigueCost = params.intensity == .light ? 3 : params.intensity == .standard ? 8 : 15
         let recovery = params.focus == .recovery ? 18 : 0
-        let fatigue = clamp(params.state.fatigue + fatigueCost - recovery, 0, 100)
-        let metricBefore = rating(for: params.focus, pitcher: params.state.pitcher)
-        let metricAfter = rating(for: params.focus, pitcher: pitcher)
+        // 재활은 훈련 강도와 무관하게 피로를 크게 덜고, 남은 위험도 조금씩 씻어 낸다.
+        let fatigue = isRehab
+            ? clamp(params.state.fatigue - 24, 0, 100)
+            : clamp(params.state.fatigue + fatigueCost - recovery, 0, 100)
+        let nextInjuryRecovery = isRehab ? injuryRecovery - 1 : injuryRecovery
+        let nextArmRisk = isRehab ? max(0, (params.state.armRisk ?? 0) - 10) : (params.state.armRisk ?? 0)
+        let metricBefore = rating(for: effectiveFocus, pitcher: params.state.pitcher)
+        let metricAfter = rating(for: effectiveFocus, pitcher: pitcher)
         let growth = metricAfter - metricBefore
-        let training = CareerTrainingSnapshot(number: number, focus: params.focus, intensity: params.intensity,
+        let feedback = isRehab
+            ? "재활 훈련으로 팔 상태를 회복합니다. 이번 훈련은 성장 없이 지나갑니다.\(nextInjuryRecovery > 0 ? " 남은 회복 \(nextInjuryRecovery)회." : " 다음 훈련부터 정상으로 돌아옵니다.")"
+            : trainingFeedback(focus: params.focus, growth: growth, fatigueChange: fatigue - params.state.fatigue)
+        let training = CareerTrainingSnapshot(number: number, focus: effectiveFocus, intensity: params.intensity,
             growth: growth, fatigueChange: fatigue - params.state.fatigue,
-            feedback: trainingFeedback(focus: params.focus, growth: growth, fatigueChange: fatigue - params.state.fatigue),
+            feedback: feedback,
             metricBefore: metricBefore, metricAfter: metricAfter,
             fatigueBefore: params.state.fatigue, fatigueAfter: fatigue)
         let chapterCount = params.state.chapterTrainingCount + 1
-        let phase: HighSchoolCareerPhase = chapterCount == 2 ? milestone(for: params.state.chapter.number, index: 0) : .training
+        let phase: HighSchoolCareerPhase = chapterCount == chapterTrainings ? milestone(for: params.state.chapter.number, index: 0, schedule: schedule) : .training
         let optionState = replacing(params.state, pitcher: pitcher, fatigue: fatigue, lastTraining: training)
         let options = phase == .awakening ? awakeningOptions(state: optionState, seed: seed) : []
         let scenario = phase == .importantGame ? gameScenario(for: params.state, seed: seed) : nil
-        let relationshipEvent = phase == .relationship ? relationshipEvent(for: params.state, seed: seed) : nil
+        // 경고 상태가 이어지면 다음 관계 국면을 팔 상태 선택으로 대체한다(핵심 3슬롯은 보존).
+        let armSignalAfter = Self.armHealthState(armRisk: nextArmRisk, injuryRecovery: nextInjuryRecovery)
+        let relationshipEvent: CareerEventContent? = phase == .relationship
+            ? (params.state.relationshipsCompleted >= Self.coreRelationshipCategories.count && armSignalAfter == .warning
+                ? armCareEvent()
+                : relationshipEvent(for: params.state, seed: seed))
+            : nil
         let next = replacing(params.state, revision: params.state.revision + 1, phase: phase, pitcher: pitcher,
             chapterTrainingCount: chapterCount, totalTrainingsCompleted: number, awakeningOptions: options,
             fatigue: fatigue, performance: params.state.performance, lastTraining: training, currentGameScenario: scenario,
-            currentRelationshipEvent: relationshipEvent)
-        return result(seed: seed, state: signed(next), event: "career_training_completed", reasons: ["training.\(params.focus.rawValue)"])
+            currentRelationshipEvent: relationshipEvent,
+            news: isRehab ? ["재활 훈련 \(number)회차 · 팔 상태를 회복합니다."] + params.state.news : nil,
+            armRisk: nextArmRisk, injuryRecovery: nextInjuryRecovery)
+        return result(seed: seed, state: signed(next),
+            event: isRehab ? "career_training_rehab" : "career_training_completed",
+            reasons: ["training.\(effectiveFocus.rawValue)"])
     }
 
     public func resolveRelationship(_ params: ResolveCareerRelationshipParams) throws -> HighSchoolCareerResult {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .relationship)
+        // 팔 상태 경고 이벤트는 관계 국면을 빌려 세 선택지(참고 던진다·짧은 휴식·정밀 검진)로 나온다.
+        if params.state.currentRelationshipEvent?.id == Self.armCareEventID {
+            return resolveArmCare(seed: seed, state: params.state, response: params.response)
+        }
         let impact = relationshipImpact(state: params.state, response: params.response)
-        let relationshipCategory = params.state.currentRelationshipEvent?.category ?? "coach"
+        let eventCategory = params.state.currentRelationshipEvent?.category ?? "coach"
+        let relationshipCategory = trustChannel(for: eventCategory)
         let isCoach = relationshipCategory == "coach"
         let trustChange = params.state.karmas.contains(.stubbornCoach) && isCoach && impact.trust < 0
             ? impact.trust * 2 : impact.trust
@@ -930,6 +1181,72 @@ public struct HighSchoolCareerEngine: Sendable {
         return result(seed: seed, state: signed(next), event: "career_relationship_resolved", reasons: ["relationship.\(params.response.rawValue)"])
     }
 
+    /// 팔 상태 경고에서의 세 선택을 처리한다. 관계 슬롯을 한 칸 소비하되(핵심 인물 슬롯은 이미 지난 뒤),
+    /// 건강 채널(→ 감독)의 신뢰만 소폭 움직이고 실제 효과는 위험·피로·부상으로 나타난다.
+    private func resolveArmCare(seed: UInt64, state: HighSchoolCareerSnapshot, response: RelationshipResponse) -> HighSchoolCareerResult {
+        let priorRisk = state.armRisk ?? 0
+        var nextRisk = priorRisk
+        var nextInjuryRecovery = state.injuryRecovery ?? 0
+        var fatigueDelta = 0
+        var trustDelta = 0
+        var fanDelta = 0
+        var injured = false
+        var outcome = ""
+        var headline = ""
+        switch response {
+        case .challenge: // 참고 던진다: 능력 유지, 위험 상승, 임계를 넘으면 결정론적 부상
+            nextRisk = clamp(priorRisk + Self.armPushThroughRisk, 0, 100)
+            trustDelta = -2; fanDelta = 1
+            if nextRisk >= Self.armInjuryThreshold {
+                injured = true
+                let severity = nextRisk >= 92 ? 2 : 1
+                nextInjuryRecovery = severity
+                nextRisk = 50 // 부상 뒤에도 마모는 남는다
+                fatigueDelta = 6
+                outcome = "무리한 등판이 겹쳐 팔에 이상이 왔습니다. 다음 훈련 \(severity)회는 재활로 씁니다."
+                headline = "팔 부상 · \(state.pitcher.name), 무리한 등판이 반복돼 재활에 들어갑니다."
+            } else {
+                fatigueDelta = 4
+                outcome = "오늘도 예정대로 던졌습니다. 능력은 지켰지만 팔의 위험이 더 커졌습니다."
+                headline = "\(state.pitcher.name), 경고에도 등판을 강행했습니다 · 팔 위험 누적."
+            }
+        case .listen: // 짧은 휴식: 성장 없이 팔을 쉬게 해 피로와 위험을 크게 던다
+            nextRisk = max(0, priorRisk - Self.armRestRelief)
+            fatigueDelta = -30; trustDelta = 2
+            outcome = "이번 등판은 건너뛰고 팔을 쉬게 했습니다. 피로와 위험이 크게 줄었습니다."
+            headline = "\(state.pitcher.name), 짧은 휴식으로 팔을 아꼈습니다 · 회복 우선."
+        case .explain: // 정밀 검진: 상태를 정확히 공개하고 위험을 제거한다
+            nextRisk = 0
+            fatigueDelta = -Self.armExamRelief; trustDelta = 1
+            outcome = "정밀 검진 결과 큰 손상은 없었습니다. 검진 전 위험 수치는 \(priorRisk), 관리 계획을 새로 세웠습니다."
+            headline = "\(state.pitcher.name), 정밀 검진으로 팔 상태를 확인했습니다 · 위험 관리 시작."
+        }
+        let managerBefore = state.managerTrust ?? state.relationshipTrust
+        let catcherBefore = state.catcherTrust ?? state.relationshipTrust
+        let rivalBefore = state.rivalTrust ?? state.relationshipTrust
+        let managerAfter = clamp(managerBefore + trustDelta, 0, 100) // health 채널 → 감독 믿음
+        let fatigueAfter = clamp(state.fatigue + fatigueDelta, 0, 100)
+        let fanAfter = clamp(state.fanInterest + fanDelta, 0, 100)
+        let relationshipResult = CareerRelationshipResultSnapshot(
+            number: state.relationshipsCompleted + 1, category: "coach",
+            title: state.currentRelationshipEvent?.title ?? "팔 상태 경고", response: response,
+            trustBefore: managerBefore, trustAfter: managerAfter,
+            fatigueBefore: state.fatigue, fatigueAfter: fatigueAfter,
+            fanInterestBefore: state.fanInterest, fanInterestAfter: fanAfter,
+            growthFocus: nil, abilityBefore: nil, abilityAfter: nil, feedback: outcome)
+        let nextBase = replacing(state, revision: state.revision + 1,
+            relationshipsCompleted: state.relationshipsCompleted + 1,
+            relationshipTrust: (managerAfter + catcherBefore + rivalBefore) / 3,
+            managerTrust: managerAfter, catcherTrust: catcherBefore, rivalTrust: rivalBefore,
+            fatigue: fatigueAfter, lastRelationship: relationshipResult,
+            news: [headline] + state.news, fanInterest: fanAfter,
+            armRisk: nextRisk, injuryRecovery: nextInjuryRecovery)
+        let next = advanceMilestone(nextBase, seed: seed)
+        return result(seed: seed, state: signed(next),
+            event: injured ? "career_arm_injury" : "career_arm_care",
+            reasons: ["arm_care.\(response.rawValue)"])
+    }
+
     public func recordImportantGame(_ params: RecordCareerGameParams) throws -> HighSchoolCareerResult {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .importantGame)
         let expected = params.state.performance.importantGamesCompleted + 1
@@ -942,9 +1259,21 @@ public struct HighSchoolCareerEngine: Sendable {
             ? "\(params.state.pitcher.name), \(params.state.rival.name)과의 승부에서 무실점"
             : "\(params.state.pitcher.name), \(params.report.strikeouts)탈삼진 · \(params.report.walks)볼넷 · \(params.report.runsAllowed)실점"
         let callback = relationshipCallback(state: params.state, report: params.report)
+        // Deterministic arm signal: overwork is driven by this outing's pitch count, with pre-game
+        // fatigue amplifying it. A normal-length outing (pitches at/under the floor) adds no risk
+        // no matter how tired — so ordinary play never drifts toward injury; only heavy pitch loads do.
+        let priorRisk = params.state.armRisk ?? 0
+        let pitchStress = max(0, params.report.pitches - Self.armPitchFloor)
+        let fatigueStress = max(0, params.state.fatigue - Self.armFatigueFloor)
+        let nextRisk = clamp(priorRisk + (pitchStress > 0 ? pitchStress + fatigueStress : 0), 0, 100)
+        let priorSignal = Self.armHealthState(armRisk: priorRisk, injuryRecovery: params.state.injuryRecovery)
+        let nextSignal = Self.armHealthState(armRisk: nextRisk, injuryRecovery: params.state.injuryRecovery)
+        let armNews = (nextSignal != priorSignal ? armSignalNews(nextSignal, pitches: params.report.pitches) : nil)
         let nextBase = replacing(params.state, revision: params.state.revision + 1,
             fatigue: clamp(params.state.fatigue + max(3, params.report.pitches / 3), 0, 100),
-            performance: performance, news: ([headline] + (callback.map { [$0] } ?? []) + params.state.news), fanInterest: interest)
+            performance: performance,
+            news: ([headline] + (callback.map { [$0] } ?? []) + (armNews.map { [$0] } ?? []) + params.state.news),
+            fanInterest: interest, armRisk: nextRisk)
         let next = advanceMilestone(nextBase, seed: seed)
         return result(seed: seed, state: signed(next), event: "career_important_game_completed", reasons: ["important_game.\(expected)"])
     }
@@ -978,16 +1307,25 @@ public struct HighSchoolCareerEngine: Sendable {
         let ratings = params.state.pitcher.stuff + params.state.pitcher.command + params.state.pitcher.movement + params.state.pitcher.stamina
         let gameQuality = params.state.performance.strikeouts * 3 - params.state.performance.walks * 2 - params.state.performance.runsAllowed * 3
         let processBonus = max(-8, min(10, (params.state.performance.expectedDamage - params.state.performance.actualDamage) / 350))
-        // Amateur players are graded against the top professional league. Projection keeps draftable
-        // high-school players below a present 50 while still rewarding age-adjusted upside.
-        let ratingScore = ratings / 4 + 18
-        let performanceScore = gameQuality / 5
-        let awakeningScore = params.state.selectedAwakenings.count * 2
+        // Amateur players are graded against the top professional league. The floor is deliberately
+        // low so that an ungrown build posting only ordinary important-game lines lands just under
+        // the present-50 bar and a neglected run misses the draft (spec: first-round draft rate
+        // ~35–45%). Focused growth and a strong game record — not a fixed floor or the guaranteed
+        // three awakenings — are what carry a run clear of the threshold, so the game record now
+        // weighs more (÷4) and the awakening bonus is a light nudge (×1) rather than a flat lift.
+        let ratingScore = ratings / 4 + 15
+        let performanceScore = gameQuality / 4
+        let awakeningScore = params.state.selectedAwakenings.count
         let relationshipScore = (params.state.relationshipTrust - 50) / 10
-        let variance = generator.nextInt(upperBound: 9) - 4
+        let variance = generator.nextInt(upperBound: 11) - 5
         let karmaPenalty = (params.state.karmas.contains(.unknownLand) ? 3 : 0)
             + (params.state.karmas.contains(.noLastChance) ? 2 : 0)
-        let score = clamp(ratingScore + performanceScore + processBonus + awakeningScore + relationshipScore + variance - karmaPenalty, 20, 95)
+        // Overwork history reads through residual arm risk at draft time: a run still carrying a
+        // high, unaddressed risk takes a small durability ding, while a run that got hurt but
+        // rehabbed clean (risk bled back down) passes through unpenalised — "회복 후 무사 통과".
+        let residualRisk = params.state.armRisk ?? 0
+        let overusePenalty = residualRisk >= Self.armWarningThreshold ? 4 : residualRisk >= 45 ? 2 : 0
+        let score = clamp(ratingScore + performanceScore + processBonus + awakeningScore + relationshipScore + variance - karmaPenalty - overusePenalty, 20, 95)
         let threshold = params.state.difficulty.careerHarshness == .relaxed ? 57
             : params.state.difficulty.careerHarshness == .challenging ? 65 : 61
         let drafted = score >= threshold
@@ -996,7 +1334,9 @@ public struct HighSchoolCareerEngine: Sendable {
         let pick = round.map { ($0 - 1) * 10 + generator.nextInt(upperBound: 10) + 1 }
         let draft = DraftResultSnapshot(
             outcome: drafted ? .drafted : .undrafted, evaluationScore: score,
-            projectedRange: score >= 78 ? "1라운드" : score >= 70 ? "2~3라운드" : score >= 61 ? "4~6라운드" : "미지명",
+            // Derived from the outcome so a drafted player never reads as "미지명" — e.g. a 57–60
+            // score that clears the relaxed 57 threshold still shows a concrete round range.
+            projectedRange: !drafted ? "미지명" : score >= 78 ? "1라운드" : score >= 70 ? "2~3라운드" : "4~6라운드",
             team: team, round: round, overallPick: pick,
             signingBonus: round.map { max(40_000_000, 300_000_000 - $0 * 45_000_000) },
             firstSeasonGoal: team.map { _ in "퓨처스 선발 10경기와 볼넷률 8% 이하" },
@@ -1004,9 +1344,12 @@ public struct HighSchoolCareerEngine: Sendable {
                 ? "지명 구단 · \(team?.name ?? "프로 구단"). 공의 위력과 고교 경기 기록에서 높은 평가를 받았습니다."
                 : "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
         )
-        let phase: HighSchoolCareerPhase = drafted ? .completed : .legacy
-        let memories = drafted ? [] : memoryOptions(state: params.state, seed: seed)
-        let next = replacing(params.state, revision: params.state.revision + 1, phase: phase,
+        // Both outcomes bank memories for the next life: a successful run leaves an
+        // achievement-shaped set, a failed run leaves a lesson-shaped one. Selection happens in
+        // the shared .legacy phase before .completed, so the roguelite loop is no longer
+        // failure-only.
+        let memories = memoryOptions(state: params.state, seed: seed, drafted: drafted)
+        let next = replacing(params.state, revision: params.state.revision + 1, phase: .legacy,
             news: [drafted ? "드래프트 지명 · \(team?.name ?? "프로 구단") · \(params.state.pitcher.name)" : "드래프트가 끝날 때까지 이름이 불리지 않았습니다."] + params.state.news,
             draftResult: draft, legacyOptions: memories)
         return result(seed: seed, state: signed(next), event: "career_draft_resolved", reasons: ["draft.\(draft.outcome.rawValue)"])
@@ -1023,22 +1366,20 @@ public struct HighSchoolCareerEngine: Sendable {
         return result(seed: seed, state: signed(next), event: "career_legacy_selected", reasons: unique.map { "memory.\($0.rawValue)" })
     }
 
-    private func milestone(for chapter: Int, index: Int) -> HighSchoolCareerPhase {
-        let schedules: [[HighSchoolCareerPhase]] = [
-            [.relationship], [.relationship, .importantGame], [.awakening, .importantGame],
-            [.relationship, .importantGame], [.relationship], [.awakening, .importantGame],
-            [.relationship], [.awakening, .importantGame, .draft]
-        ]
-        let events = schedules[chapter - 1]
+    /// 스케줄에서 챕터별 국면을 읽는다. 8챕터(드래프트 직전 챕터)는 저장된 국면 뒤에 .draft를
+    /// 덧붙여 finale 구조를 보장하고, 국면을 모두 소진하면 .chapterReview로 넘어간다.
+    private func milestone(for chapter: Int, index: Int, schedule: CareerScheduleSnapshot) -> HighSchoolCareerPhase {
+        var events = schedule.milestonesByChapter[chapter - 1]
+        if chapter == 8 { events.append(.draft) }
         return index < events.count ? events[index] : .chapterReview
     }
 
     private func advanceMilestone(_ state: HighSchoolCareerSnapshot, seed: UInt64) -> HighSchoolCareerSnapshot {
         let index = state.milestoneIndex + 1
-        let phase = milestone(for: state.chapter.number, index: index)
+        let phase = milestone(for: state.chapter.number, index: index, schedule: schedule(for: state))
         let options = phase == .awakening ? awakeningOptions(state: state, seed: seed) : []
         let scenario = phase == .importantGame ? gameScenario(for: state, seed: seed) : nil
-        let relationshipEvent = phase == .relationship ? relationshipEvent(for: state, seed: seed) : nil
+        let relationshipEvent = phase == .relationship ? relationshipEventForSlot(state, seed: seed) : nil
         if phase == .draft {
             return replacing(state, phase: .draft, milestoneIndex: index, awakeningOptions: [])
         }
@@ -1096,15 +1437,50 @@ public struct HighSchoolCareerEngine: Sendable {
         return result
     }
 
+    private static let coreRelationshipCategories = ["coach", "catcher", "rival"]
+
+    // Every non-core event category (growth/health/team/media/life/…), in catalog order.
+    private static let extendedRelationshipCategories: [String] = {
+        let core: Set<String> = ["coach", "catcher", "rival"]
+        var seen = Set<String>()
+        var ordered: [String] = []
+        for event in HighSchoolContentCatalog.events where !core.contains(event.category) {
+            if seen.insert(event.category).inserted { ordered.append(event.category) }
+        }
+        return ordered
+    }()
+
     private func relationshipEvent(for state: HighSchoolCareerSnapshot, seed: UInt64) -> CareerEventContent {
-        let category = state.relationshipsCompleted % 3 == 0 ? "coach" : state.relationshipsCompleted % 3 == 1 ? "catcher" : "rival"
+        let slot = state.relationshipsCompleted
+        // The first three relationship slots always feature the core people (coach, catcher,
+        // rival) so those bonds are guaranteed in every run.
+        if slot < Self.coreRelationshipCategories.count {
+            let category = Self.coreRelationshipCategories[slot]
+            let candidates = HighSchoolContentCatalog.events.filter { $0.category == category }
+            return candidates[Int(seed % UInt64(candidates.count))]
+        }
+        // Later slots surface the wider pool so the 26 non-core events become reachable.
+        // Each run draws a distinct category per slot, varying by run — careerID embeds both
+        // the seed and the life number — while staying fully deterministic.
+        let runSeed = UInt64(StableHash.fnv1a64("relationship_pool|\(state.careerID)"), radix: 16) ?? seed
+        var generator = SplitMix64(seed: runSeed)
+        var categories = Self.extendedRelationshipCategories
+        for index in categories.indices.reversed() where index > 0 {
+            categories.swapAt(index, generator.nextInt(upperBound: index + 1))
+        }
+        let category = categories[(slot - Self.coreRelationshipCategories.count) % categories.count]
         let candidates = HighSchoolContentCatalog.events.filter { $0.category == category }
-        return candidates[Int(seed % UInt64(candidates.count))]
+        return candidates[Int(generator.next() % UInt64(candidates.count))]
     }
 
     private func relationshipNews(state: HighSchoolCareerSnapshot, response: RelationshipResponse, seed: UInt64, impact: RelationshipImpact) -> String {
         let content = state.currentRelationshipEvent ?? relationshipEvent(for: state, seed: seed)
         let category = content.category
+        // Non-core moments (a fan letter, a call from home, a scout's question) read as their
+        // own headline rather than being forced into a coach/catcher/rival voice.
+        if !Self.coreRelationshipCategories.contains(category) {
+            return "\(content.title) — \(impact.outcome)"
+        }
         let name = category == "coach" ? "\(state.school?.coachName ?? "담당") 감독" : category == "catcher" ? "\(state.school?.catcherName ?? "주전") 포수" : state.rival.name
         let responseSummary: String
         switch (category, response) {
@@ -1121,8 +1497,22 @@ public struct HighSchoolCareerEngine: Sendable {
         return "\(content.title) · \(name) — \(responseSummary) \(impact.outcome)"
     }
 
+    // Non-core events still land on one of the three people for the trust bookkeeping the UI
+    // and save integrity expect; their real payload is the fatigue / fan interest / ability
+    // change carried by the impact.
+    private func trustChannel(for category: String) -> String {
+        switch category {
+        case "coach", "catcher", "rival": return category
+        case "growth", "game", "awakening", "fan": return "catcher"
+        default: return "coach" // health, team, draft, media, life, legacy
+        }
+    }
+
     private func relationshipImpact(state: HighSchoolCareerSnapshot, response: RelationshipResponse) -> RelationshipImpact {
         let category = state.currentRelationshipEvent?.category ?? "coach"
+        if !Self.coreRelationshipCategories.contains(category) {
+            return extendedRelationshipImpact(category: category, response: response)
+        }
         let archetype = category == "coach" ? state.school?.coachArchetype : category == "catcher" ? state.school?.catcherArchetype : state.rival.archetype
         switch (category, archetype, response) {
         case ("coach", "원칙형", .listen): return .init(trust: 8, fatigue: 0, fanInterest: 0, growthFocus: .stamina, outcome: "정해진 이닝을 버티기 위한 경기 전 준비 순서를 함께 정했습니다.")
@@ -1153,6 +1543,42 @@ public struct HighSchoolCareerEngine: Sendable {
         case ("rival", _, .explain): return .init(trust: 1, fatigue: 0, fanInterest: 3, growthFocus: .command, outcome: "서로의 의도를 확인한 재대결이 기사에 실렸습니다.")
         case ("rival", _, .challenge): return .init(trust: -1, fatigue: 2, fanInterest: 7, growthFocus: .breakingBall, outcome: "다음 맞대결이 대회에서 가장 기대되는 승부가 됐습니다.")
         default: return .init(trust: 2, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "대화를 차분히 마쳐 감독·포수의 믿음이 조금 올랐습니다.")
+        }
+    }
+
+    private func extendedRelationshipImpact(category: String, response: RelationshipResponse) -> RelationshipImpact {
+        switch (category, response) {
+        case ("growth", .listen): return .init(trust: 6, fatigue: 0, fanInterest: 0, growthFocus: .breakingBall, outcome: "포수와 함께 새 구종을 언제 쓸지 정리했습니다.")
+        case ("growth", .explain): return .init(trust: 4, fatigue: 0, fanInterest: 0, growthFocus: .command, outcome: "지금 잡은 그립의 감각을 설명해 제구 기준을 맞췄습니다.")
+        case ("growth", .challenge): return .init(trust: 1, fatigue: 4, fanInterest: 2, growthFocus: .breakingBall, outcome: "다음 경기에서 바로 시험하기로 하고 불펜을 늘렸습니다.")
+        case ("health", .listen): return .init(trust: 5, fatigue: -6, fanInterest: 0, growthFocus: nil, outcome: "오늘은 공을 놓고 회복에 집중하기로 했습니다.")
+        case ("health", .explain): return .init(trust: 3, fatigue: -2, fanInterest: 0, growthFocus: .stamina, outcome: "몸 상태를 기록으로 설명해 훈련 강도를 조정했습니다.")
+        case ("health", .challenge): return .init(trust: -3, fatigue: 6, fanInterest: 1, growthFocus: nil, outcome: "쉬라는 말을 미루고 던졌지만 피로가 더 쌓였습니다.")
+        case ("team", .listen): return .init(trust: 5, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "팀이 정한 순서를 먼저 받아들였습니다.")
+        case ("team", .explain): return .init(trust: 4, fatigue: 0, fanInterest: 1, growthFocus: .gamePlanning, outcome: "내가 맡을 이닝과 역할을 분명히 정리했습니다.")
+        case ("team", .challenge): return .init(trust: 2, fatigue: 4, fanInterest: 2, growthFocus: .stamina, outcome: "더 긴 이닝을 맡겠다고 나서 팀의 기대를 키웠습니다.")
+        case ("draft", .listen): return .init(trust: 3, fatigue: 0, fanInterest: 2, growthFocus: nil, outcome: "스카우트가 무엇을 보는지 차분히 들었습니다.")
+        case ("draft", .explain): return .init(trust: 4, fatigue: 0, fanInterest: 3, growthFocus: .command, outcome: "무엇을 바꿨는지 근거를 들어 설명했습니다.")
+        case ("draft", .challenge): return .init(trust: 1, fatigue: 4, fanInterest: 4, growthFocus: .velocity, outcome: "지켜보는 앞에서 가장 좋은 공으로 승부했습니다.")
+        case ("media", .listen): return .init(trust: 2, fatigue: 0, fanInterest: 3, growthFocus: nil, outcome: "질문의 뜻을 되물어 차분히 답했습니다.")
+        case ("media", .explain): return .init(trust: 3, fatigue: 0, fanInterest: 4, growthFocus: .gamePlanning, outcome: "그 공을 고른 이유를 솔직히 설명했습니다.")
+        case ("media", .challenge): return .init(trust: 0, fatigue: 2, fanInterest: 6, growthFocus: nil, outcome: "다음 경기에서 결과로 답하겠다고 했습니다.")
+        case ("fan", .listen): return .init(trust: 2, fatigue: 0, fanInterest: 4, growthFocus: nil, outcome: "팬이 좋아하는 공이 무엇인지 귀담아들었습니다.")
+        case ("fan", .explain): return .init(trust: 3, fatigue: 0, fanInterest: 5, growthFocus: .command, outcome: "그 공을 왜 아끼는지 답장에 적었습니다.")
+        case ("fan", .challenge): return .init(trust: 1, fatigue: 2, fanInterest: 6, growthFocus: .velocity, outcome: "다음 경기에서 그 공을 꼭 보여 주겠다고 약속했습니다.")
+        case ("game", .listen): return .init(trust: 5, fatigue: 0, fanInterest: 1, growthFocus: .gamePlanning, outcome: "지난 상황을 포수와 되짚어 다음 수를 정리했습니다.")
+        case ("game", .explain): return .init(trust: 4, fatigue: 0, fanInterest: 1, growthFocus: .command, outcome: "그때의 선택을 설명해 배터리의 기준을 맞췄습니다.")
+        case ("game", .challenge): return .init(trust: 2, fatigue: 3, fanInterest: 2, growthFocus: .breakingBall, outcome: "같은 상황이 오면 더 공격적으로 가기로 했습니다.")
+        case ("awakening", .listen): return .init(trust: 4, fatigue: 0, fanInterest: 1, growthFocus: .breakingBall, outcome: "몸에 익은 동작을 포수와 다시 확인했습니다.")
+        case ("awakening", .explain): return .init(trust: 4, fatigue: 0, fanInterest: 1, growthFocus: .command, outcome: "반복해 온 동작의 감각을 말로 정리했습니다.")
+        case ("awakening", .challenge): return .init(trust: 2, fatigue: 3, fanInterest: 2, growthFocus: .velocity, outcome: "익힌 동작을 경기에서 바로 써 보기로 했습니다.")
+        case ("life", .listen): return .init(trust: 4, fatigue: -3, fanInterest: 0, growthFocus: nil, outcome: "가족의 이야기를 먼저 들으며 마음을 가라앉혔습니다.")
+        case ("life", .explain): return .init(trust: 3, fatigue: 0, fanInterest: 0, growthFocus: nil, outcome: "지금의 계획을 차분히 설명했습니다.")
+        case ("life", .challenge): return .init(trust: 1, fatigue: 4, fanInterest: 1, growthFocus: nil, outcome: "부족한 시간을 훈련으로 메우기로 했습니다.")
+        case ("legacy", .listen): return .init(trust: 3, fatigue: 0, fanInterest: 1, growthFocus: nil, outcome: "가장 좋았던 경기와 힘들었던 경기를 조용히 되짚었습니다.")
+        case ("legacy", .explain): return .init(trust: 3, fatigue: 0, fanInterest: 2, growthFocus: .gamePlanning, outcome: "세 해의 기록에서 남길 것을 골라 적었습니다.")
+        case ("legacy", .challenge): return .init(trust: 2, fatigue: 2, fanInterest: 2, growthFocus: .command, outcome: "다음 선수에게 남길 한 가지를 분명히 정했습니다.")
+        default: return .init(trust: 2, fatigue: 0, fanInterest: 1, growthFocus: nil, outcome: "이번 일을 차분히 넘기며 마음을 다잡았습니다.")
         }
     }
 
@@ -1223,9 +1649,12 @@ public struct HighSchoolCareerEngine: Sendable {
         }!
     }
 
-    private func memoryOptions(state: HighSchoolCareerSnapshot, seed: UInt64) -> [MemoryCardID] {
+    private func memoryOptions(state: HighSchoolCareerSnapshot, seed: UInt64, drafted: Bool = false) -> [MemoryCardID] {
         var options = MemoryCardID.allCases
-        var generator = SplitMix64(seed: seed ^ UInt64(state.performance.pitches) ^ 0x4d45_4d4f_5259)
+        // Drafted and undrafted runs shuffle from the same pool but on a different salt, so a
+        // successful life surfaces a different set of memories than a failed one.
+        let outcomeSalt: UInt64 = drafted ? 0x4452_4146_5445_4400 : 0
+        var generator = SplitMix64(seed: seed ^ UInt64(state.performance.pitches) ^ 0x4d45_4d4f_5259 ^ outcomeSalt)
         for index in options.indices.reversed() where index > 0 {
             options.swapAt(index, generator.nextInt(upperBound: index + 1))
         }
@@ -1247,7 +1676,7 @@ public struct HighSchoolCareerEngine: Sendable {
         value = PitcherSnapshot(id: value.id, name: value.name, stuff: strongest == .velocity ? value.stuff : max(20, value.stuff - 2),
             command: strongest == .command ? value.command : max(20, value.command - 2),
             movement: strongest == .breakingBall ? value.movement : max(20, value.movement - 2),
-            stamina: max(20, value.stamina - 2), pitchProfiles: value.pitchProfiles)
+            stamina: max(20, value.stamina - 2), pitchProfiles: value.pitchProfiles, throwingHand: value.throwingHand)
         return value
     }
 
@@ -1322,7 +1751,7 @@ public struct HighSchoolCareerEngine: Sendable {
         return PitcherSnapshot(id: pitcher.id, name: pitcher.name,
             stuff: clamp(pitcher.stuff + stuff, 20, 80), command: clamp(pitcher.command + command, 20, 80),
             movement: clamp(pitcher.movement + movement, 20, 80), stamina: clamp(pitcher.stamina + stamina, 20, 80),
-            pitchProfiles: profiles)
+            pitchProfiles: profiles, throwingHand: pitcher.throwingHand)
     }
 
     private func grow(_ pitcher: PitcherSnapshot, focus: TrainingFocus, points: Int) -> PitcherSnapshot {
@@ -1341,7 +1770,7 @@ public struct HighSchoolCareerEngine: Sendable {
             stuff: clamp(pitcher.stuff + (focus == .velocity ? points : 0), 20, 80),
             command: clamp(pitcher.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
             movement: clamp(pitcher.movement + (focus == .breakingBall ? points : 0), 20, 80),
-            stamina: clamp(pitcher.stamina + (focus == .stamina || focus == .recovery ? points : 0), 20, 80), pitchProfiles: profiles)
+            stamina: clamp(pitcher.stamina + (focus == .stamina || focus == .recovery ? points : 0), 20, 80), pitchProfiles: profiles, throwingHand: pitcher.throwingHand)
     }
 
     private func rating(for focus: TrainingFocus, pitcher: PitcherSnapshot) -> Int {
@@ -1386,7 +1815,8 @@ public struct HighSchoolCareerEngine: Sendable {
         currentRelationshipEvent: CareerEventContent? = nil,
         news: [String]? = nil, fanInterest: Int? = nil, draftResult: DraftResultSnapshot? = nil,
         legacyOptions: [MemoryCardID]? = nil, selectedMemories: [MemoryCardID]? = nil,
-        balanceVersion: Int? = nil, stateCommitment: String? = nil
+        balanceVersion: Int? = nil, armRisk: Int? = nil, injuryRecovery: Int? = nil,
+        stateCommitment: String? = nil
     ) -> HighSchoolCareerSnapshot {
         HighSchoolCareerSnapshot(careerID: state.careerID, revision: revision ?? state.revision, lifeNumber: state.lifeNumber,
             phase: phase ?? state.phase, identity: state.identity, difficulty: state.difficulty, karmas: state.karmas,
@@ -1411,7 +1841,10 @@ public struct HighSchoolCareerEngine: Sendable {
             news: news ?? state.news, fanInterest: fanInterest ?? state.fanInterest,
             draftResult: draftResult ?? state.draftResult, legacyOptions: legacyOptions ?? state.legacyOptions,
             selectedMemories: selectedMemories ?? state.selectedMemories,
-            balanceVersion: balanceVersion ?? state.balanceVersion, stateCommitment: stateCommitment ?? state.stateCommitment)
+            balanceVersion: balanceVersion ?? state.balanceVersion,
+            armRisk: armRisk ?? state.armRisk, injuryRecovery: injuryRecovery ?? state.injuryRecovery,
+            schedule: state.schedule,
+            stateCommitment: stateCommitment ?? state.stateCommitment)
     }
 
     private func signed(_ state: HighSchoolCareerSnapshot) -> HighSchoolCareerSnapshot {
@@ -1441,6 +1874,19 @@ public struct HighSchoolCareerEngine: Sendable {
         }
         if let balanceVersion = state.balanceVersion {
             canonical.append("balance_version:\(balanceVersion)")
+        }
+        // Overwork/injury fields are appended only when present so pre-feature saves — which lack
+        // them (nil) — still hash to their stored commitment. Mirrors the focusStreak precedent.
+        if let armRisk = state.armRisk {
+            canonical.append("arm_risk:\(armRisk)")
+        }
+        if let injuryRecovery = state.injuryRecovery {
+            canonical.append("injury_recovery:\(injuryRecovery)")
+        }
+        // 스케줄 필드도 있을 때만 덧붙여, 이 기능 이전(스케줄 없음) 저장본이 기존 커밋먼트로 그대로
+        // 검증되게 한다. 팔·focusStreak 필드와 같은 조건부 계열이다.
+        if let schedule = state.schedule {
+            canonical.append("schedule:\(schedule.commitmentToken)")
         }
         if let relationship = state.lastRelationship {
             let relationshipValues: [String] = [
@@ -1491,9 +1937,10 @@ public struct HighSchoolCareerEngine: Sendable {
     }
 
     private func validateState(_ state: HighSchoolCareerSnapshot) throws {
+        // 관계는 스펙상 4–6회이므로 상한을 6으로 둔다. 옛 저장본(≤5)도 그대로 유효하다.
         let relationshipResultIsValid = state.lastRelationship.map { relationship in
             relationship.number == state.relationshipsCompleted
-                && (1...5).contains(relationship.number)
+                && (1...6).contains(relationship.number)
                 && ["coach", "catcher", "rival"].contains(relationship.category)
                 && !relationship.title.isEmpty && !relationship.feedback.isEmpty
                 && (0...100).contains(relationship.trustBefore) && (0...100).contains(relationship.trustAfter)
@@ -1503,13 +1950,23 @@ public struct HighSchoolCareerEngine: Sendable {
                 && (relationship.abilityAfter.map({ (20...80).contains($0) }) ?? true)
                 && (relationship.abilityBefore == nil) == (relationship.abilityAfter == nil)
         } ?? true
+        // 스케줄이 있으면 구조를 확인해(8챕터·각 챕터 훈련 ≥1·스펙 총량) 손상 저장본이 엔진 인덱싱을
+        // 깨뜨리지 않게 한다. 없으면(옛 저장본) 고정 뼈대로 읽으므로 검사 대상이 아니다.
+        let scheduleIsValid = state.schedule.map { schedule in
+            schedule.trainingsByChapter.count == 8 && schedule.milestonesByChapter.count == 8
+                && schedule.trainingsByChapter.allSatisfy { $0 >= 1 }
+                && (12...16).contains(schedule.trainingTotal)
+                && (4...6).contains(schedule.relationshipTotal)
+                && (4...6).contains(schedule.importantGameTotal)
+                && schedule.awakeningTotal == 3
+        } ?? true
         guard state.stateCommitment == commitment(state),
-              (0...16).contains(state.totalTrainingsCompleted), (0...5).contains(state.relationshipsCompleted),
+              (0...16).contains(state.totalTrainingsCompleted), (0...6).contains(state.relationshipsCompleted),
               (0...100).contains(state.fatigue), (0...100).contains(state.relationshipTrust),
               state.managerTrust.map({ (0...100).contains($0) }) ?? true,
               state.catcherTrust.map({ (0...100).contains($0) }) ?? true,
               state.rivalTrust.map({ (0...100).contains($0) }) ?? true,
-              relationshipResultIsValid else {
+              relationshipResultIsValid, scheduleIsValid else {
             throw SimulationError.invalidPitcherLab("career state or phase is invalid")
         }
     }
@@ -1523,9 +1980,9 @@ public struct HighSchoolCareerEngine: Sendable {
         min(upper, max(lower, value))
     }
 
-    private func renamed(_ name: String, pitcher: PitcherSnapshot) -> PitcherSnapshot {
+    private func renamed(_ name: String, pitcher: PitcherSnapshot, hand: ThrowingHand? = nil) -> PitcherSnapshot {
         PitcherSnapshot(id: pitcher.id, name: name, stuff: pitcher.stuff, command: pitcher.command,
-            movement: pitcher.movement, stamina: pitcher.stamina, pitchProfiles: pitcher.pitchProfiles)
+            movement: pitcher.movement, stamina: pitcher.stamina, pitchProfiles: pitcher.pitchProfiles, throwingHand: hand ?? pitcher.throwingHand)
     }
 
     private func result(seed: UInt64, state: HighSchoolCareerSnapshot, event: String, reasons: [String] = []) -> HighSchoolCareerResult {

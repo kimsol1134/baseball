@@ -31,19 +31,73 @@ public struct BatterScoutingSnapshot: Codable, Equatable, Sendable {
     public let pitchStrength: PitchType
     public let pitchWeakness: PitchType
     public let chaseTendency: Int
+    /// 0–100 confidence in this report. Below `ScoutingEstimate.trustedReliability` the catcher
+    /// recommendation and the UI report are drawn from an *estimated* view that can miss the truth
+    /// and sharpens with observation; the physics, the batter plan and `selectionQuality` always
+    /// use the true values (ADR-005). Defaults to trusted so legacy callers/saves are unchanged.
+    public let reliability: Int
 
     public init(
         hotZone: PitchZone,
         coldZone: PitchZone,
         pitchStrength: PitchType,
         pitchWeakness: PitchType,
-        chaseTendency: Int
+        chaseTendency: Int,
+        reliability: Int = ScoutingEstimate.trustedReliability
     ) {
         self.hotZone = hotZone
         self.coldZone = coldZone
         self.pitchStrength = pitchStrength
         self.pitchWeakness = pitchWeakness
         self.chaseTendency = chaseTendency
+        self.reliability = reliability
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case hotZone, coldZone, pitchStrength, pitchWeakness, chaseTendency, reliability
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        hotZone = try container.decode(PitchZone.self, forKey: .hotZone)
+        coldZone = try container.decode(PitchZone.self, forKey: .coldZone)
+        pitchStrength = try container.decode(PitchType.self, forKey: .pitchStrength)
+        pitchWeakness = try container.decode(PitchType.self, forKey: .pitchWeakness)
+        chaseTendency = try container.decode(Int.self, forKey: .chaseTendency)
+        reliability = try container.decodeIfPresent(Int.self, forKey: .reliability)
+            ?? ScoutingEstimate.trustedReliability
+    }
+}
+
+/// Player-facing summary of the current scouting read: how confident it is, how much has been
+/// observed, and the current (estimated) hypothesis with an uncertainty band that closes as the
+/// report becomes trusted. Purely informational — it never feeds the physics or judgment paths.
+public struct ScoutingReportSnapshot: Codable, Equatable, Sendable {
+    public let reliability: Int
+    public let observationCount: Int
+    /// "low" | "developing" | "trusted".
+    public let band: String
+    public let estimatedWeakness: PitchType
+    public let estimatedColdZone: PitchZone
+    public let estimatedChaseTendency: Int
+    public let chaseTendencyMargin: Int
+
+    public init(
+        reliability: Int,
+        observationCount: Int,
+        band: String,
+        estimatedWeakness: PitchType,
+        estimatedColdZone: PitchZone,
+        estimatedChaseTendency: Int,
+        chaseTendencyMargin: Int
+    ) {
+        self.reliability = reliability
+        self.observationCount = observationCount
+        self.band = band
+        self.estimatedWeakness = estimatedWeakness
+        self.estimatedColdZone = estimatedColdZone
+        self.estimatedChaseTendency = estimatedChaseTendency
+        self.chaseTendencyMargin = chaseTendencyMargin
     }
 }
 
@@ -234,6 +288,9 @@ public struct PitchPreparation: Codable, Equatable, Sendable {
     public let primaryRecommendation: CatcherRecommendationSnapshot
     public let alternativeRecommendation: CatcherRecommendationSnapshot
     public let rivalAdaptation: RivalAdaptationSnapshot
+    /// The confidence/hypothesis summary of the batter read. Optional so preparations decoded from
+    /// pre-scouting-report saves still load (they simply carry no report).
+    public let scoutingReport: ScoutingReportSnapshot?
 
     public init(
         seed: String,
@@ -243,7 +300,8 @@ public struct PitchPreparation: Codable, Equatable, Sendable {
         planCommitment: String,
         primaryRecommendation: CatcherRecommendationSnapshot,
         alternativeRecommendation: CatcherRecommendationSnapshot,
-        rivalAdaptation: RivalAdaptationSnapshot
+        rivalAdaptation: RivalAdaptationSnapshot,
+        scoutingReport: ScoutingReportSnapshot? = nil
     ) {
         self.seed = seed
         self.revision = revision
@@ -253,6 +311,7 @@ public struct PitchPreparation: Codable, Equatable, Sendable {
         self.primaryRecommendation = primaryRecommendation
         self.alternativeRecommendation = alternativeRecommendation
         self.rivalAdaptation = rivalAdaptation
+        self.scoutingReport = scoutingReport
     }
 }
 

@@ -9,6 +9,7 @@ import catcherRoleScene from "./assets/catcher-role-scene.webp";
 import coachRoleScene from "./assets/coach-role-scene.webp";
 import rivalRoleScene from "./assets/rival-role-scene.webp";
 import { expectedTrainingFatigue, parseAcknowledgedResult, trainingGrowthOutlook } from "./careerTrainingPresentation";
+import { RELATIONSHIP_QUOTE_VARIANTS, relationshipTrustBand } from "./relationshipDialogue";
 import { hasCompletedSteamDemo } from "./demoGate";
 import type {
   AwakeningID,
@@ -113,6 +114,27 @@ function fatigueMeaning(value: number) {
   if (value >= 60) return "피로 누적 · 강훈련 주의";
   if (value >= 35) return "훈련 가능";
   return "몸 상태 좋음";
+}
+
+// 팔 상태 밴드. SimulationCore의 HighSchoolCareerEngine.armCaution/armWarningThreshold와 값을 맞춘다.
+const ARM_CAUTION_THRESHOLD = 35;
+const ARM_WARNING_THRESHOLD = 55;
+type ArmHealthState = "normal" | "caution" | "warning" | "recovering";
+function armHealthState(snapshot: HighSchoolCareerResult["snapshot"]): ArmHealthState {
+  if ((snapshot.injuryRecovery ?? 0) > 0) return "recovering";
+  const risk = snapshot.armRisk ?? 0;
+  if (risk >= ARM_WARNING_THRESHOLD) return "warning";
+  if (risk >= ARM_CAUTION_THRESHOLD) return "caution";
+  return "normal";
+}
+function armStateLabel(state: ArmHealthState) {
+  return state === "recovering" ? "회복 중" : state === "warning" ? "경고" : state === "caution" ? "주의" : "정상";
+}
+function armStateMeaning(state: ArmHealthState) {
+  return state === "recovering" ? "재활 훈련으로 회복 중"
+    : state === "warning" ? "혹사 위험 · 관리 필요"
+    : state === "caution" ? "피로가 쌓이기 시작"
+    : "이상 없음";
 }
 
 function trustMeaning(value: number) {
@@ -237,7 +259,62 @@ function polishedNews(item: string, coachName?: string, catcherName?: string) {
     .replace(/^반복해 온 훈련 끝에 ‘(.+)’을 익혔습니다\.$/, "‘$1’을 익혔습니다.");
 }
 
-function relationshipScene(event: CareerEventContent, state: HighSchoolCareerResult["snapshot"]): {
+// Plain-tone scenes for the wider event pool (growth/health/team/media/life/…). Each uses the
+// event's own summary as the quote so any event in the category reads naturally.
+const EXTENDED_RELATIONSHIP_SCENES: Record<string, { speaker: string; choices: ReadonlyArray<RelationshipChoiceCard> }> = {
+  growth: { speaker: "훈련 파트너", choices: [
+    { id: "listen", title: "무엇을 바꾸면 좋을지 듣는다", copy: "상대의 제안을 먼저 듣는다" },
+    { id: "explain", title: "지금 잡은 감각을 설명한다", copy: "내가 느낀 그립을 말한다" },
+    { id: "challenge", title: "경기에서 바로 시험하겠다고 한다", copy: "다음 등판에서 써 본다" },
+  ] },
+  health: { speaker: "트레이너", choices: [
+    { id: "listen", title: "오늘은 쉬라는 말을 따른다", copy: "회복을 우선한다" },
+    { id: "explain", title: "몸 상태를 기록으로 보여준다", copy: "지금 느낌을 설명한다" },
+    { id: "challenge", title: "그래도 오늘 던지겠다고 한다", copy: "쉬는 대신 공을 잡는다" },
+  ] },
+  team: { speaker: "주장", choices: [
+    { id: "listen", title: "팀이 정한 순서를 받아들인다", copy: "맡겨진 역할을 따른다" },
+    { id: "explain", title: "맡을 역할을 분명히 말한다", copy: "내 생각을 팀에 전한다" },
+    { id: "challenge", title: "더 긴 이닝을 맡겠다고 나선다", copy: "책임을 자청한다" },
+  ] },
+  draft: { speaker: "스카우트", choices: [
+    { id: "listen", title: "무엇을 평가하는지 듣는다", copy: "스카우트가 보는 것을 듣는다" },
+    { id: "explain", title: "무엇을 바꿨는지 설명한다", copy: "달라진 점을 말한다" },
+    { id: "challenge", title: "가장 좋은 공으로 승부한다", copy: "실력으로 답한다" },
+  ] },
+  media: { speaker: "취재진", choices: [
+    { id: "listen", title: "질문의 뜻을 되묻는다", copy: "무엇을 궁금해하는지 듣는다" },
+    { id: "explain", title: "그 공을 고른 이유를 말한다", copy: "내 판단을 설명한다" },
+    { id: "challenge", title: "다음 경기로 답하겠다고 한다", copy: "결과로 보여준다" },
+  ] },
+  fan: { speaker: "팬", choices: [
+    { id: "listen", title: "바라는 것을 귀담아듣는다", copy: "팬이 좋아하는 공을 확인한다" },
+    { id: "explain", title: "그 공을 아끼는 이유를 적는다", copy: "내 마음을 답장에 담는다" },
+    { id: "challenge", title: "다음 경기에서 보여주겠다고 약속한다", copy: "기대에 답한다" },
+  ] },
+  game: { speaker: "포수", choices: [
+    { id: "listen", title: "지난 상황을 포수와 되짚는다", copy: "무엇이 문제였는지 듣는다" },
+    { id: "explain", title: "그때의 선택을 설명한다", copy: "내 판단을 말한다" },
+    { id: "challenge", title: "다음엔 더 공격적으로 가겠다고 한다", copy: "같은 상황을 정면으로 맞선다" },
+  ] },
+  awakening: { speaker: "포수", choices: [
+    { id: "listen", title: "익은 동작을 다시 확인한다", copy: "몸의 감각을 점검한다" },
+    { id: "explain", title: "그 감각을 말로 정리한다", copy: "무엇이 달라졌는지 설명한다" },
+    { id: "challenge", title: "경기에서 바로 써 보겠다고 한다", copy: "실전에서 시험한다" },
+  ] },
+  life: { speaker: "가족", choices: [
+    { id: "listen", title: "가족의 이야기를 먼저 듣는다", copy: "마음을 가라앉힌다" },
+    { id: "explain", title: "지금의 계획을 설명한다", copy: "내 생각을 전한다" },
+    { id: "challenge", title: "부족한 시간을 훈련으로 메우겠다고 한다", copy: "남은 시간을 아껴 쓴다" },
+  ] },
+  legacy: { speaker: "지난 기록", choices: [
+    { id: "listen", title: "가장 좋았던 경기를 되짚는다", copy: "지난 세 해를 돌아본다" },
+    { id: "explain", title: "남길 기록을 골라 적는다", copy: "무엇을 남길지 정리한다" },
+    { id: "challenge", title: "다음 선수에게 남길 한 가지를 정한다", copy: "가장 중요한 하나를 고른다" },
+  ] },
+};
+
+export function relationshipScene(event: CareerEventContent, state: HighSchoolCareerResult["snapshot"]): {
   speaker: string;
   quote: string;
   choices: ReadonlyArray<RelationshipChoiceCard>;
@@ -246,28 +323,34 @@ function relationshipScene(event: CareerEventContent, state: HighSchoolCareerRes
   const catcher = `${state.school?.catcherName ?? "주전"} 포수`;
   const rival = state.rival.name;
 
+  // 인물별 신뢰도 구간. 감독=managerTrust, 포수=catcherTrust, 라이벌=rivalTrust로
+  // 인용 대사만 갈라 회차가 지날수록 갈등→시험→회수의 톤 아크를 만든다. 선택지는 그대로 둔다.
+  const coachBand = relationshipTrustBand(state.managerTrust ?? state.relationshipTrust);
+  const catcherBand = relationshipTrustBand(state.catcherTrust ?? state.relationshipTrust);
+  const rivalBand = relationshipTrustBand(state.rivalTrust ?? state.relationshipTrust);
+
   switch (event.id) {
-    case "evt-coach-role": return { speaker: coach, quote: "“다음 대회는 불펜에서 시작한다. 경기 후반을 맡아 줘.”", choices: [
+    case "evt-coach-role": return { speaker: coach, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-coach-role"][coachBand], choices: [
       { id: "listen", title: "불펜으로 옮긴 이유를 묻는다", copy: "감독이 본 약점부터 듣는다" },
       { id: "explain", title: "최근 선발 등판 기록을 꺼내 보인다", copy: "선발로 남고 싶은 이유를 말한다" },
       { id: "challenge", title: "다음 등판으로 선발 자리를 되찾겠다고 한다", copy: "결과로 증명하겠다고 답한다" },
     ] };
-    case "evt-coach-bench": return { speaker: coach, quote: "“이번 등판은 쉰다. 요즘은 팔이 몸보다 늦게 따라온다.”", choices: [
+    case "evt-coach-bench": return { speaker: coach, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-coach-bench"][coachBand], choices: [
       { id: "listen", title: "어느 동작이 늦었는지 묻는다", copy: "감독의 관찰을 자세히 듣는다" },
       { id: "explain", title: "최근 피로 기록을 보여준다", copy: "몸 상태를 숨김없이 설명한다" },
       { id: "challenge", title: "불펜 투구를 보고 결정해 달라고 한다", copy: "오늘 던질 기회를 요청한다" },
     ] };
-    case "evt-coach-last-advice": return { speaker: coach, quote: "“마지막 훈련은 네가 정해라. 지금 가장 부족한 게 뭐지?”", choices: [
+    case "evt-coach-last-advice": return { speaker: coach, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-coach-last-advice"][coachBand], choices: [
       { id: "listen", title: "감독이라면 무엇을 고를지 묻는다", copy: "마지막 조언을 먼저 듣는다" },
       { id: "explain", title: "최근 경기에서 흔들린 장면을 짚는다", copy: "고치려는 부분을 설명한다" },
       { id: "challenge", title: "가장 자신 있는 공을 더 다듬겠다고 한다", copy: "강점으로 승부하겠다고 답한다" },
     ] };
-    case "evt-catcher-sign": return { speaker: catcher, quote: "“오늘 사인이 세 번이나 바뀌었어. 내가 놓친 게 뭐였어?”", choices: [
+    case "evt-catcher-sign": return { speaker: catcher, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-catcher-sign"][catcherBand], choices: [
       { id: "listen", title: "포수가 본 타자 반응부터 묻는다", copy: "내가 못 본 장면을 확인한다" },
       { id: "explain", title: "사인을 바꾼 이유를 설명한다", copy: "타자가 높은 공을 기다렸다고 말한다" },
       { id: "challenge", title: "다음 타석은 내 순서대로 가 보자고 한다", copy: "내 선택을 시험해 보자고 제안한다" },
     ] };
-    case "evt-battery-dinner": return { speaker: catcher, quote: "“솔직히 네 변화구가 어디로 올지 몰라서 겁날 때가 있어.”", choices: [
+    case "evt-battery-dinner": return { speaker: catcher, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-battery-dinner"][catcherBand], choices: [
       { id: "listen", title: "받기 어려웠던 공을 하나씩 묻는다", copy: "포수가 불안했던 지점을 듣는다" },
       { id: "explain", title: "손에서 빠지는 날의 감각을 말한다", copy: "변화구가 흔들린 이유를 설명한다" },
       { id: "challenge", title: "다음 불펜에서 가장 어려운 공만 받아 달라고 한다", copy: "함께 해법을 찾자고 제안한다" },
@@ -277,37 +360,98 @@ function relationshipScene(event: CareerEventContent, state: HighSchoolCareerRes
       { id: "explain", title: "기존 사인을 유지하고 싶은 이유를 말한다", copy: "헷갈릴 수 있는 장면을 짚는다" },
       { id: "challenge", title: "불펜에서 두 방식을 모두 시험하자고 한다", copy: "경기 전에 직접 비교한다" },
     ] };
-    case "evt-catcher-doubt": return { speaker: catcher, quote: "“요즘 내 사인을 자꾸 거절하잖아. 내가 못 본 게 있어?”", choices: [
+    case "evt-catcher-doubt": return { speaker: catcher, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-catcher-doubt"][catcherBand], choices: [
       { id: "listen", title: "최근 사인이 좋았던 장면부터 묻는다", copy: "포수의 의도를 다시 듣는다" },
       { id: "explain", title: "거절했던 세 타석의 이유를 설명한다", copy: "내가 본 타자 반응을 말한다" },
       { id: "challenge", title: "다음 경기의 첫 세 타자는 내 순서로 가자고 한다", copy: "내 판단을 결과로 확인하자고 한다" },
     ] };
-    case "evt-rival-video": return { speaker: rival, quote: "“높은 포심 타이밍, 이제 맞췄어.” 짧은 타격 영상이 함께 도착했다.", choices: [
+    case "evt-rival-video": return { speaker: rival, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-rival-video"][rivalBand], choices: [
       { id: "listen", title: "언제부터 타이밍을 읽었는지 묻는다", copy: "내 반복 습관을 확인한다" },
       { id: "explain", title: "그 공으로 노렸던 것을 솔직히 말한다", copy: "서로의 판단을 맞춰 본다" },
       { id: "challenge", title: "다음에는 같은 높이에서 다른 공을 던지겠다고 한다", copy: "재대결을 약속한다" },
     ] };
-    case "evt-rival-final": return { speaker: rival, quote: "타석에 들어선 그가 지난 경기와 같은 코스를 배트 끝으로 가리킨다. “또 여기로 던져 봐.”", choices: [
+    case "evt-rival-final": return { speaker: rival, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-rival-final"][rivalBand], choices: [
       { id: "listen", title: "왜 그 코스를 가리켰는지 되묻는다", copy: "상대가 노리는 말을 더 끌어낸다" },
       { id: "explain", title: "지난 공은 실투가 아니었다고 답한다", copy: "그때의 선택을 숨기지 않는다" },
       { id: "challenge", title: "고개를 끄덕이고 승부를 받아들인다", copy: "다음 공으로 답한다" },
     ] };
-    default:
-      if (event.category === "coach") return { speaker: coach, quote: "“다음 대회는 불펜에서 시작한다. 경기 후반을 맡아 줘.”", choices: [
+    case "evt-arm-care": return { speaker: "트레이너", quote: "“최근 등판 뒤로 공을 놓는 팔이 무거워 보여. 오늘은 어떻게 할까?”", choices: [
+      { id: "challenge", title: "참고 던진다", copy: "능력은 지키지만 부상 위험이 오른다" },
+      { id: "listen", title: "짧은 휴식", copy: "이번엔 팔을 쉬어 피로와 위험을 크게 던다" },
+      { id: "explain", title: "정밀 검진", copy: "상태를 정확히 확인하고 위험을 없앤다" },
+    ] };
+    // 확장 카테고리 손대사 장면. 카테고리 기본 문구 대신 역할 화자의 인용을 붙여
+    // 첫 팬레터·집 전화·시험 주간 같은 순간을 실제 장면으로 만든다. 선택지는
+    // 기존 듣기/설명/도전 3종 구조를 지킨다.
+    case "evt-fan-letter": return { speaker: "팬", quote: "“선수님이 던지는 그 느린 공이 제일 좋아요. 다음 경기에도 꼭 던져 주세요!” 삐뚤빼뚤한 글씨 밑에 그림도 그려져 있다.", choices: [
+      { id: "listen", title: "어떤 공을 좋아하는지 다시 읽는다", copy: "팬이 아끼는 공을 확인한다" },
+      { id: "explain", title: "그 공을 던지는 이유를 답장에 적는다", copy: "왜 그 공인지 편지에 담는다" },
+      { id: "challenge", title: "다음 경기에서 꼭 보여주겠다고 약속한다", copy: "기대에 공으로 답한다" },
+    ] };
+    case "evt-parent-call": return { speaker: "부모님", quote: "“드래프트 끝나고도 계속할 거지? …아니, 대답은 천천히 해도 돼. 밥은 챙겨 먹고 다니니.”", choices: [
+      { id: "listen", title: "먼저 부모님 이야기를 듣는다", copy: "집의 걱정을 끝까지 듣는다" },
+      { id: "explain", title: "지금의 계획을 담담히 말한다", copy: "야구를 계속할 생각을 전한다" },
+      { id: "challenge", title: "결과로 안심시키겠다고 말한다", copy: "다음 경기로 보여주겠다고 답한다" },
+    ] };
+    case "evt-exam-week": return { speaker: "담임 선생님", quote: "“시험이랑 원정이 겹쳤지. 공만큼 책도 며칠은 잡아야 한다. …야구는 안 도망가.”", choices: [
+      { id: "listen", title: "선생님 말을 먼저 새겨듣는다", copy: "며칠은 책상 앞에 앉는다" },
+      { id: "explain", title: "시간을 어떻게 쪼갤지 말한다", copy: "둘 다 놓지 않을 계획을 설명한다" },
+      { id: "challenge", title: "남는 시간을 훈련으로 메우겠다고 한다", copy: "줄어든 시간을 아껴 쓴다" },
+    ] };
+    case "evt-loss-interview": return { speaker: "기자", quote: "“마지막 타자에게 그 공을 고른 이유가 있었나요?” 녹음기가 아직 돌아가고 있다.", choices: [
+      { id: "listen", title: "질문의 뜻을 되묻는다", copy: "무엇을 궁금해하는지 먼저 듣는다" },
+      { id: "explain", title: "그 공을 고른 이유를 말한다", copy: "그 순간의 판단을 설명한다" },
+      { id: "challenge", title: "다음 경기로 답하겠다고 한다", copy: "말 대신 결과로 보여준다" },
+    ] };
+    case "evt-national-stage": return { speaker: "중계 PD", quote: "“오늘 불펜부터 그림 좀 담을게. 평소대로 던져. …평소대로가 제일 어렵지?”", choices: [
+      { id: "listen", title: "카메라 동선을 확인한다", copy: "어디를 비추는지 듣는다" },
+      { id: "explain", title: "준비는 평소 그대로 하겠다고 한다", copy: "달라질 것 없다고 말한다" },
+      { id: "challenge", title: "카메라를 잊고 공에만 집중한다", copy: "중계는 신경 쓰지 않기로 한다" },
+    ] };
+    case "evt-captain-talk": return { speaker: "주장", quote: "“다음 경기, 긴 이닝 맡아 줄 수 있어? 무리면 무리라고 말해. 그게 팀엔 더 나아.”", choices: [
+      { id: "listen", title: "팀이 필요한 이닝부터 듣는다", copy: "주장이 그린 그림을 확인한다" },
+      { id: "explain", title: "지금 던질 수 있는 이닝을 말한다", copy: "몸 상태를 솔직히 전한다" },
+      { id: "challenge", title: "끝까지 책임지겠다고 나선다", copy: "긴 이닝을 자청한다" },
+    ] };
+    case "evt-school-record": return { speaker: "후배", quote: "“선배, 다음 경기에서 여섯 개만 더 잡으면 학교 기록이래요. …저 그거 옆에서 보고 싶어요.”", choices: [
+      { id: "listen", title: "후배가 아는 기록을 들어 본다", copy: "무슨 기록인지 확인한다" },
+      { id: "explain", title: "기록은 신경 쓰지 않는다고 말한다", copy: "한 타자씩 가겠다고 답한다" },
+      { id: "challenge", title: "그 기록 보여주겠다고 웃는다", copy: "다음 경기에서 노려 보겠다고 한다" },
+    ] };
+    case "evt-scout-question": return { speaker: "스카우트", quote: "“지난달 무너진 경기 다음에, 뭘 바꿨지? …바꾼 게 있다면 그게 제일 궁금해.”", choices: [
+      { id: "listen", title: "무엇을 눈여겨보는지 먼저 듣는다", copy: "스카우트가 보는 지점을 확인한다" },
+      { id: "explain", title: "그 경기 뒤 바꾼 것을 말한다", copy: "달라진 준비를 설명한다" },
+      { id: "challenge", title: "가장 좋은 공으로 답하겠다고 한다", copy: "다음 등판으로 증명한다" },
+    ] };
+    case "evt-velocity-drop": return { speaker: "트레이너", quote: "“두 경기째 구속이 2km/h 빠졌어. 숫자는 거짓말을 안 해. 몸이 뭔가 말하는 중이야.”", choices: [
+      { id: "listen", title: "무엇을 점검해야 하는지 듣는다", copy: "트레이너의 판단을 먼저 듣는다" },
+      { id: "explain", title: "요즘 몸 상태를 그대로 말한다", copy: "느껴지는 피로를 설명한다" },
+      { id: "challenge", title: "며칠 조정하고 다시 끌어올리겠다고 한다", copy: "구속은 곧 돌아온다고 답한다" },
+    ] };
+    case "evt-bullpen-rival": return { speaker: "경쟁하는 동료", quote: "“네 새 변화구 그립… 한 번만 보여줄래? 선발 자리는 서로 뺏는 사이지만, 그래도 배우고 싶어서.”", choices: [
+      { id: "listen", title: "왜 그 그립이 궁금한지 듣는다", copy: "동료의 생각을 먼저 듣는다" },
+      { id: "explain", title: "그립 잡는 법을 설명해 준다", copy: "숨기지 않고 알려 준다" },
+      { id: "challenge", title: "자리는 마운드에서 겨루자고 한다", copy: "선발은 경기로 정하자고 답한다" },
+    ] };
+    default: {
+      const extended = EXTENDED_RELATIONSHIP_SCENES[event.category];
+      if (extended) return { speaker: extended.speaker, quote: event.summary, choices: extended.choices };
+      if (event.category === "coach") return { speaker: coach, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-coach-role"][coachBand], choices: [
         { id: "listen", title: "불펜으로 옮긴 이유를 묻는다", copy: "감독이 본 약점부터 듣는다" },
         { id: "explain", title: "최근 선발 등판 기록을 꺼내 보인다", copy: "선발로 남고 싶은 이유를 말한다" },
         { id: "challenge", title: "다음 등판으로 선발 자리를 되찾겠다고 한다", copy: "결과로 증명하겠다고 답한다" },
       ] };
-      if (event.category === "catcher") return { speaker: catcher, quote: "“오늘 사인이 세 번이나 바뀌었어. 내가 놓친 게 뭐였어?”", choices: [
+      if (event.category === "catcher") return { speaker: catcher, quote: RELATIONSHIP_QUOTE_VARIANTS["evt-catcher-sign"][catcherBand], choices: [
         { id: "listen", title: "포수가 본 타자 반응부터 묻는다", copy: "내가 못 본 장면을 확인한다" },
         { id: "explain", title: "사인을 바꾼 이유를 설명한다", copy: "타자가 높은 공을 기다렸다고 말한다" },
         { id: "challenge", title: "다음 타석은 내 순서대로 가 보자고 한다", copy: "내 선택을 시험해 보자고 제안한다" },
       ] };
-      return { speaker: rival, quote: "“다음에도 같은 초구를 던질 거야?”", choices: [
+      return { speaker: rival, quote: RELATIONSHIP_QUOTE_VARIANTS["fallback-rival"][rivalBand], choices: [
         { id: "listen", title: "어떤 습관을 읽었는지 묻는다", copy: "상대의 답을 들어 본다" },
         { id: "explain", title: "그 초구로 노린 것을 말한다", copy: "내 판단을 숨기지 않는다" },
         { id: "challenge", title: "다음 타석에는 다른 답을 주겠다고 한다", copy: "재대결을 약속한다" },
       ] };
+    }
   }
 }
 
@@ -522,6 +666,8 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
   const fatiguePenalty = Math.max(0, state.fatigue - 45) * 3;
   const growthScore = trainingBase + schoolBonus - fatiguePenalty;
   const growthOutlook = trainingGrowthOutlook(growthScore);
+  const arm = armHealthState(state);
+  const isRehab = (state.injuryRecovery ?? 0) > 0;
   const relationship = state.currentRelationshipEvent ?? (state.relationshipsCompleted % 3 === 0
     ? { id: "fallback-coach", category: "coach", title: "선발인가 불펜인가", summary: "감독이 다음 대회는 불펜에서 시작하겠다고 말합니다." }
     : state.relationshipsCompleted % 3 === 1
@@ -537,7 +683,8 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
   const nextActionLabel = state.phase === "training" ? "다음 훈련 고르기"
     : state.phase === "relationship" && relationship.category === "coach" ? `${state.school?.coachName ?? "감독"} 감독과 대화하기`
       : state.phase === "relationship" && relationship.category === "catcher" ? `${state.school?.catcherName ?? "포수"} 포수와 대화하기`
-        : state.phase === "relationship" ? `${state.rival.name}의 메시지 확인`
+        : state.phase === "relationship" && relationship.category === "rival" ? `${state.rival.name}의 메시지 확인`
+          : state.phase === "relationship" ? `${relationship.title} 확인`
       : state.phase === "important_game" ? "중요 경기 확인"
         : state.phase === "awakening" ? "새 강점 확인"
           : state.phase === "chapter_review" ? "시즌 마무리 확인" : "다음 일정 확인";
@@ -566,7 +713,11 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
     setAcknowledgedRelationship(pendingRelationship.number);
   };
   const scene = relationshipScene(relationship, state);
-  const relationshipArt = relationship.category === "coach" ? coachRoleScene : relationship.category === "catcher" ? catcherRoleScene : rivalRoleScene;
+  const relationshipArt = relationship.category === "coach" ? coachRoleScene
+    : relationship.category === "catcher" ? catcherRoleScene
+    : relationship.category === "rival" ? rivalRoleScene
+    : ["growth", "game", "awakening", "fan"].includes(relationship.category) ? catcherRoleScene
+    : coachRoleScene;
   const reveal = (() => {
     const draft = state.draftResult;
     if (draftRevealStage === 0 || !draft) return { label: "지명 후보 명단", title: "10개 구단이 최종 명단을 닫았습니다.", copy: "경기 기록, 현재 구종, 감독과 포수의 평가가 최종 지명 후보표에 올라갑니다." };
@@ -593,6 +744,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
       <div><p className="eyebrow">{state.lifeNumber}번째 선수 · {state.chapter.schoolYear}학년 {state.chapter.season}</p>
         <h2>{state.chapter.number}장 · {state.chapter.title}</h2><p>{state.chapter.theme}</p></div>
       <div className="career-vitals"><div><span>피로</span><strong>{state.fatigue}</strong><small>{fatigueMeaning(state.fatigue)}</small></div>
+        <div className={`career-arm-vital is-${arm}`}><span>팔 상태</span><strong>{armStateLabel(arm)}</strong><small>{armStateMeaning(arm)}</small></div>
         <div><span>감독의 믿음</span><strong>{managerTrust}</strong><small>{trustMeaning(managerTrust)}</small></div>
         <div><span>포수의 믿음</span><strong>{catcherTrust}</strong><small>{trustMeaning(catcherTrust)}</small></div>
         <div><span>라이벌의 인정</span><strong>{rivalTrust}</strong><small>{rivalTrustMeaning(rivalTrust)}</small></div>
@@ -618,8 +770,8 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <CharacterProfile label="포수" title={`${state.school.catcherName} · ${state.school.catcherArchetype}`} record={state.school.catcherRecord} description={state.school.catcherPersonality} />
           <CharacterProfile label="라이벌" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
         </div> : null}
-        <div className="career-counters"><span>훈련 {state.totalTrainingsCompleted}/16</span><span>경기 {state.performance.importantGamesCompleted}/5</span>
-          <span>대화 {state.relationshipsCompleted}/5</span><span>새 강점 {state.selectedAwakenings.length}/3</span></div>
+        <div className="career-counters"><span>훈련 {state.totalTrainingsCompleted}/{state.schedule ? state.schedule.trainingsByChapter.reduce((a, b) => a + b, 0) : 16}</span><span>경기 {state.performance.importantGamesCompleted}/{state.schedule ? state.schedule.milestonesByChapter.flat().filter((m) => m === "important_game").length : 5}</span>
+          <span>대화 {state.relationshipsCompleted}/{state.schedule ? state.schedule.milestonesByChapter.flat().filter((m) => m === "relationship").length : 5}</span><span>새 강점 {state.selectedAwakenings.length}/3</span></div>
       </section>
 
       <section id="career-current-action" className="ds-card ds-card--raised career-panel career-decision"><div className="lab-card-heading"><span>{pendingTraining ? "훈련 완료" : pendingRelationship ? "대화 완료" : "지금 할 일"}</span><small>{hasPendingResult ? "결과 확인" : PHASE_LABELS[state.phase]}</small></div>
@@ -670,6 +822,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         </AccessibleModal> : null}
         {!hasPendingResult && state.phase === "prologue" ? <div className="career-milestone prologue-card"><span>중학교 마지막 경기</span>
           <h3>{state.identity.region}의 마지막 중학교 대회</h3><p>{state.identity.name} · {state.identity.throwingHand === "right" ? "우투" : "좌투"} · {state.identity.bodyType === "tall" ? "장신" : state.identity.bodyType === "compact" ? "다부진" : "균형"} 체격. 경기를 마치고 나오자 {state.identity.region} 지역 네 고교에서 진학 제안이 도착했습니다. {state.karmas.length > 0 ? `더 어렵게 시작하는 조건 ${state.karmas.length}개 적용` : "추가 난이도 조건 없음"}</p>
+          {state.lifeNumber >= 2 ? <p className="prologue-life-echo">{state.lifeNumber}번째 선수. 처음 서는 마운드인데, 어깨보다 먼저 몸이 다음 공을 준비합니다.</p> : null}
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onCompletePrologue()}>고교 진학 제안 확인</button></div> : null}
         {!hasPendingResult && state.phase === "school_selection" ? <><h3>{state.identity.region}에서 어느 학교로 진학할까요?</h3><p>같은 지역에서 선수 등록을 이어갈 수 있는 학교들입니다. 학교마다 잘 가르치는 훈련과 감수해야 할 단점이 다릅니다.</p>
           <div className="school-grid">{state.schoolOptions.map((school) => <button key={school.id} type="button" disabled={isRunning} onClick={() => void onSchool(school.id)}>
@@ -677,7 +830,13 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             <CharacterProfile className="school-staff" title={`${school.coachName} 감독 · ${school.coachArchetype}`} record={school.coachRecord} description={school.coachPersonality} />
             <CharacterProfile className="school-staff" title={`${school.catcherName} 포수 · ${school.catcherArchetype}`} record={school.catcherRecord} description={school.catcherPersonality} />
             <small className="school-tradeoff">아쉬운 점 · {school.tradeoff}</small></button>)}</div></> : null}
-        {!hasPendingResult && state.phase === "training" ? <><h3>{state.chapter.season} {state.chapterTrainingCount + 1}번째 훈련 고르기</h3><p>{showHints ? `${state.school?.name ?? "학교"}는 ${TRAININGS.find((item) => item.value === state.school?.strength)?.label ?? "주력"} 훈련의 성장 가능성을 높여 줍니다. 현재 피로는 ${state.fatigue}입니다.` : `현재 피로 ${state.fatigue}. 이번에 진행할 훈련을 고르세요.`}</p>
+        {!hasPendingResult && state.phase === "training" && isRehab ? <div className="career-milestone career-rehab-card">
+          <span>재활 훈련 · 남은 {state.injuryRecovery}회</span>
+          <h3>지금은 팔 회복이 먼저입니다</h3>
+          <p>무리한 등판으로 팔에 이상이 왔습니다. 이번 훈련은 재활로 진행돼 능력치는 오르지 않지만, 팔 상태와 피로가 회복됩니다.</p>
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining("recovery", "light")}>{isRunning ? "회복 중…" : "재활 훈련 진행"}</button>
+        </div> : null}
+        {!hasPendingResult && state.phase === "training" && !isRehab ? <><h3>{state.chapter.season} {state.chapterTrainingCount + 1}번째 훈련 고르기</h3><p>{showHints ? `${state.school?.name ?? "학교"}는 ${TRAININGS.find((item) => item.value === state.school?.strength)?.label ?? "주력"} 훈련의 성장 가능성을 높여 줍니다. 현재 피로는 ${state.fatigue}입니다.` : `현재 피로 ${state.fatigue}. 이번에 진행할 훈련을 고르세요.`}</p>
           <div className="career-training-grid">{TRAININGS.map((option) => <button key={option.value} type="button" aria-pressed={focus === option.value}
             className={focus === option.value ? "is-selected" : undefined} onClick={() => setFocus(option.value)}><strong>{option.label}</strong><span>{option.copy}</span><small>{option.gameEffect}</small></button>)}</div>
           <div className="training-intensity-grid">{INTENSITIES.map((option) => <button key={option.value} type="button"
@@ -687,7 +846,9 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             <div><span>훈련 뒤 예상 피로</span><strong>{state.fatigue} → {expectedFatigue.after} <small>({expectedFatigue.change >= 0 ? "+" : ""}{expectedFatigue.change})</small></strong></div>
             <p>성장 여부는 학교 지원, 현재 피로와 훈련 강도에 따라 달라집니다.</p></div>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity)}>{isRunning ? "훈련 결과 계산 중…" : `${selectedTraining.label} 훈련 진행`}</button></> : null}
-        {!hasPendingResult && state.phase === "relationship" ? <><div className="relationship-scene-heading"><div><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3></div><img src={relationshipArt} alt="" width="90" height="112" loading="lazy" decoding="async" /></div><p>{scene.quote}</p>
+        {!hasPendingResult && state.phase === "relationship" ? <><div className="relationship-scene-heading"><div><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3></div><img src={relationshipArt} alt="" width="90" height="112" loading="lazy" decoding="async" /></div>
+          {state.lifeNumber >= 2 && state.relationshipsCompleted === 0 ? <p className="relationship-life-echo">상대가 잠시 말을 멈추고 이쪽을 바라봅니다. “…이상하네. 처음 보는 폼인데, 어디서 본 것 같아.”</p> : null}
+          <p>{scene.quote}</p>
           <div className="relationship-options">{scene.choices.map((choice) => <button key={choice.id} type="button" disabled={isRunning} onClick={() => void onRelationship(choice.id)}><strong>{choice.title}</strong><span>{choice.copy}</span></button>)}</div></> : null}
         {!hasPendingResult && state.phase === "important_game" ? <div className="career-milestone"><span>중요 경기 {state.performance.importantGamesCompleted + 1}</span><h3>{state.currentGameScenario?.title ?? `${state.rival.name} 상대 중요 이닝`}</h3>
           <CharacterProfile className="rival-scouting" imageSrc={rivalRoleScene} imageAlt="" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
@@ -699,8 +860,11 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onAdvanceChapter()}>다음 시즌으로</button></div> : null}
         {!hasPendingResult && state.phase === "draft" ? <div className="career-milestone draft-stage"><span>드래프트 당일</span><h3>드래프트가 시작됩니다.</h3>
           <p>{state.difficulty.informationClarity === "challenging" ? "구단의 평가는 이름이 불린 뒤 공개됩니다." : "10개 구단이 능력, 경기 기록, 포수·감독 평가를 함께 확인합니다."}</p><button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void startDraftReveal()}>드래프트 시작</button></div> : null}
-        {!hasPendingResult && state.phase === "legacy" && state.draftResult ? <><div className="draft-result is-undrafted"><span>미지명 · 구단 평가 점수 {state.draftResult.evaluationScore}</span><h3>이번 삶은 여기서 끝났습니다.</h3><p>{state.draftResult.summary}</p></div>
-          <h4>다음 삶에 남길 기억 {state.memorySlots}장</h4><div className="memory-grid">{state.legacyOptions.map((memory) => <button key={memory} type="button" className={memories.includes(memory) ? "is-selected" : undefined}
+        {!hasPendingResult && state.phase === "legacy" && state.draftResult ? <>
+          {state.draftResult.outcome === "drafted"
+            ? <div className="draft-result is-drafted"><span>지명 · {state.draftResult.round}라운드 {state.draftResult.overallPick}순위</span><h3>{state.draftResult.team?.name ?? "프로 구단"} 지명</h3><p>{state.draftResult.summary}</p></div>
+            : <div className="draft-result is-undrafted"><span>미지명 · 구단 평가 점수 {state.draftResult.evaluationScore}</span><h3>이번 삶은 여기서 끝났습니다.</h3><p>{state.draftResult.summary}</p></div>}
+          <h4>{state.draftResult.outcome === "drafted" ? `프로로 향하기 전, 이번 삶에서 간직할 기억 ${state.memorySlots}장` : `다음 삶에 남길 기억 ${state.memorySlots}장`}</h4><div className="memory-grid">{state.legacyOptions.map((memory) => <button key={memory} type="button" className={memories.includes(memory) ? "is-selected" : undefined}
             aria-pressed={memories.includes(memory)} onClick={() => toggleMemory(memory)}><strong>{MEMORIES[memory]}</strong><span>{MEMORY_DETAILS[memory]}</span><small>{memories.includes(memory) ? "선택됨" : "기억하기"}</small></button>)}</div>
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || memories.length !== state.memorySlots} onClick={() => void onLegacy(memories)}>기억 {state.memorySlots}장 확정</button></> : null}
         {!hasPendingResult && state.phase === "completed" && state.draftResult ? <div className={`draft-result ${state.draftResult.outcome === "drafted" ? "is-drafted" : "is-undrafted"}`}>

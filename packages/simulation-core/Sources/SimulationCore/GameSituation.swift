@@ -423,6 +423,19 @@ public struct PostgameAnalysisSnapshot: Codable, Equatable, Sendable {
 public struct BallInPlayEngine: Sendable {
     public init() {}
 
+    /// Chance (per 1,000) that a gap/corner double gets stretched into a triple. Tuned with the
+    /// shape gate below so triples land near the real ~2% of hits; see `tools/check-balance.mjs`.
+    static let tripleChance = 540
+
+    /// A triple's batted-ball signature: driven into the alley or down the line (well off straight
+    /// center) on a lower, line-drive trajectory that gets behind the outfielders rather than a
+    /// towering fly (which is caught or clears the fence).
+    static func isTripleShape(_ battedBall: BattedBall) -> Bool {
+        let corner = abs(battedBall.directionTenthsDegrees) >= 250
+        let lineDrive = (120...280).contains(battedBall.launchAngleTenthsDegrees)
+        return corner && lineDrive
+    }
+
     public func resolve(
         _ battedBall: BattedBall,
         gameState: GameStateSnapshot,
@@ -468,11 +481,20 @@ public struct BallInPlayEngine: Sendable {
             1_000
         )
         let rawFinalOutcome = outcome(for: adjustedQuality)
-        let finalOutcome: PitchOutcome
+        var finalOutcome: PitchOutcome
         switch (sector, rawFinalOutcome) {
         case (.infield, .double), (.infield, .homeRun): finalOutcome = .single
         case (.outfield, .homeRun): finalOutcome = .double
         default: finalOutcome = rawFinalOutcome
+        }
+        // Stretch a gap/corner double into a triple: a lower, line-drive drive into the alley or
+        // down the line that skips behind the outfielders. It is only ever an upgrade from a double
+        // (never removing an out or a home run), fires on a small slice of them so triples stay a
+        // realistic ~2% of hits, and consumes the generator last so every other ball is unchanged.
+        if finalOutcome == .double, sector != .infield, Self.isTripleShape(battedBall) {
+            if generator.nextInt(upperBound: 1_000) < Self.tripleChance {
+                finalOutcome = .triple
+            }
         }
         let impact = impactFrom(neutral: neutralOutcome, final: finalOutcome)
         let explanation: String
@@ -666,7 +688,8 @@ public struct BallInPlayEngine: Sendable {
         case .inPlayOut: return 0
         case .single: return 1
         case .double: return 2
-        case .homeRun: return 3
+        case .triple: return 3
+        case .homeRun: return 4
         default: return 0
         }
     }
@@ -685,7 +708,10 @@ public struct BaserunnerEngine: Sendable {
         plateAppearanceResult: PlateAppearanceResult,
         defense: DefenseSnapshot,
         seed: UInt64,
-        doublePlayCompleted: Bool = false
+        doublePlayCompleted: Bool = false,
+        battedBall: BattedBall? = nil,
+        fielding: FieldingResolutionSnapshot? = nil,
+        inningEnded: Bool = false
     ) -> BaserunnerAdvanceSnapshot {
         let after: BaserunnerStateSnapshot
         let runs: Int
@@ -695,15 +721,27 @@ public struct BaserunnerEngine: Sendable {
             after = runners
             runs = 0
         case .inPlayOut:
-            after = doublePlayCompleted
-                ? BaserunnerStateSnapshot(
+            if let sacFly = sacrificeFlyAdvance(
+                runners: runners,
+                battedBall: battedBall,
+                fielding: fielding,
+                inningEnded: inningEnded,
+                doublePlayCompleted: doublePlayCompleted
+            ) {
+                after = sacFly.after
+                runs = sacFly.runs
+            } else if doublePlayCompleted {
+                after = BaserunnerStateSnapshot(
                     firstOccupied: false,
                     secondOccupied: runners.secondOccupied,
                     thirdOccupied: runners.thirdOccupied,
                     leadRunnerSpeed: runners.leadRunnerSpeed
                 )
-                : runners
-            runs = 0
+                runs = 0
+            } else {
+                after = runners
+                runs = 0
+            }
         case .walk:
             let forcedRun = runners.firstOccupied && runners.secondOccupied && runners.thirdOccupied
             after = BaserunnerStateSnapshot(
@@ -755,6 +793,15 @@ public struct BaserunnerEngine: Sendable {
                 runs = (runners.secondOccupied ? 1 : 0)
                     + (runners.thirdOccupied ? 1 : 0)
                     + (firstScores ? 1 : 0)
+            case .triple:
+                // A triple clears the bases: every runner scores and the batter pulls into third.
+                after = BaserunnerStateSnapshot(
+                    firstOccupied: false,
+                    secondOccupied: false,
+                    thirdOccupied: true,
+                    leadRunnerSpeed: 50
+                )
+                runs = runners.occupiedCount
             case .homeRun:
                 after = .empty
                 runs = runners.occupiedCount + 1
@@ -850,6 +897,39 @@ public struct BaserunnerEngine: Sendable {
             after,
             succeeded ? 0 : 1
         )
+    }
+
+    /// How deep a caught fly ball (in tenths of a meter) must carry for a runner to tag from third,
+    /// and the deeper mark that also lets a runner tag from second to third. Shallow flies plate no
+    /// one. Tuned against the outfield landing band (~48–104 m); see `tools/check-balance.mjs`.
+    static let sacrificeFlyThirdScoreDistance = 620
+    static let sacrificeFlySecondAdvanceDistance = 900
+
+    /// A sacrifice fly: a runner on third tags up and scores on a deep enough caught fly, provided
+    /// there is an out to give (the catch is not the third out) and it is a fly ball, not a grounder
+    /// turned two. Returns `nil` when it is not a sac-fly situation, leaving the normal out path.
+    private func sacrificeFlyAdvance(
+        runners: BaserunnerStateSnapshot,
+        battedBall: BattedBall?,
+        fielding: FieldingResolutionSnapshot?,
+        inningEnded: Bool,
+        doublePlayCompleted: Bool
+    ) -> (after: BaserunnerStateSnapshot, runs: Int)? {
+        guard !inningEnded, !doublePlayCompleted, runners.thirdOccupied else { return nil }
+        guard let battedBall, battedBall.launchAngleTenthsDegrees >= 90 else { return nil }
+        guard let fielding,
+              fielding.sector == .outfield || fielding.sector == .fence,
+              let distance = fielding.landingDistanceTenthsMeters,
+              distance >= Self.sacrificeFlyThirdScoreDistance else { return nil }
+        let secondTags = runners.secondOccupied
+            && distance >= Self.sacrificeFlySecondAdvanceDistance
+        let after = BaserunnerStateSnapshot(
+            firstOccupied: runners.firstOccupied,
+            secondOccupied: runners.secondOccupied && !secondTags,
+            thirdOccupied: secondTags,
+            leadRunnerSpeed: runners.leadRunnerSpeed
+        )
+        return (after, 1)
     }
 
     private func extraBaseSucceeds(speed: Int, arm: Int, roll: Int, threshold: Int) -> Bool {
@@ -1090,10 +1170,12 @@ public struct GameAnalysisEngine: Sendable {
     }
 
     private func damageValue(_ outcome: PitchOutcome, result: PlateAppearanceResult?) -> Int {
+        // A hit-by-pitch shares the `.walk` result bucket, so it is valued as a free base here too.
         if result == .walk { return 330 }
         switch outcome {
         case .single: return 470
         case .double: return 780
+        case .triple: return 1_050
         case .homeRun: return 1_400
         default: return 0
         }

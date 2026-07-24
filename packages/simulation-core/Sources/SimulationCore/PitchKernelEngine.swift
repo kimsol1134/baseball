@@ -3,12 +3,17 @@ import Foundation
 public struct CatcherRecommendationEngine: Sendable {
     public init() {}
 
+    /// `scouting` here is the *estimated* read, and `reliability` (0–100) is how much to trust it.
+    /// A low reliability both feeds a possibly-wrong estimate and shaves the stated confidence, so
+    /// a shaky report reads as a hedge, not a certainty. `reliability` defaults to fully trusted so
+    /// direct callers are unchanged.
     public func recommend(
         pitcher: PitcherSnapshot,
         batter: BatterSnapshot,
         scouting: BatterScoutingSnapshot,
         context: PlateAppearanceContext,
-        adaptation: RivalAdaptationSnapshot? = nil
+        adaptation: RivalAdaptationSnapshot? = nil,
+        reliability: Int = 100
     ) -> (primary: CatcherRecommendation, alternative: CatcherRecommendation) {
         let twoStrikes = context.strikes == 2
         let protectZone = context.balls == 3
@@ -30,13 +35,16 @@ public struct CatcherRecommendationEngine: Sendable {
                 zoneIntent: protectZone ? .strike : (twoStrikes ? .chase : .edge),
                 intensity: protectZone || primaryProfile?.role == .development ? .controlled : .normal
             ),
-            confidence: clamp(
-                520
-                    + (pitcher.command - 50) * 4
-                    + ((primaryProfile?.command ?? 50) - 50) * 2
-                    + (batter.discipline < 50 ? 45 : 0),
-                350,
-                850
+            confidence: ScoutingEstimate.adjustedConfidence(
+                clamp(
+                    520
+                        + (pitcher.command - 50) * 4
+                        + ((primaryProfile?.command ?? 50) - 50) * 2
+                        + (batter.discipline < 50 ? 45 : 0),
+                    350,
+                    850
+                ),
+                reliability: reliability
             ),
             reasonCodes: [
                 repetitionAvoided
@@ -70,7 +78,10 @@ public struct CatcherRecommendationEngine: Sendable {
                 zoneIntent: protectZone ? .strike : .edge,
                 intensity: context.fatigue >= 60 ? .controlled : .normal
             ),
-            confidence: clamp(430 + (pitcher.stuff - 50) * 3, 300, 760),
+            confidence: ScoutingEstimate.adjustedConfidence(
+                clamp(430 + (pitcher.stuff - 50) * 3, 300, 760),
+                reliability: reliability
+            ),
             reasonCodes: [
                 "scouting.avoid_hot_zone",
                 "sequence.change_speed",
@@ -126,10 +137,29 @@ public struct PitchKernelEngine: Sendable {
         case power
     }
 
+    /// How the batter's read of the *game situation* (base/out state, leverage) shifts their
+    /// plate approach. Every field is a signed, bounded nudge to a swing or contact tendency —
+    /// never to the physical result of a pitch. It is sealed inside the `BatterPlan` and
+    /// consumed only through it, so per ADR-005 the situation can change what the batter
+    /// *intends*, while the execution and resolution of any given plan stay situation-blind.
+    private struct SituationalBias {
+        /// Added to the swing chance on pitches inside the zone (+ = attacks strikes).
+        let zoneSwingShift: Int
+        /// Added to the swing chance on pitches outside the zone (+ = expands / chases).
+        let chaseShift: Int
+        /// Added to the contact chance once the batter swings (+ = shortens up, fewer whiffs).
+        let contactShift: Int
+        /// Added to the foul chance on contact (+ = fights pitches off).
+        let foulShift: Int
+        /// One public, spoiler-free line describing the situational approach, or "" when neutral.
+        let note: String
+    }
+
     private struct BatterPlan {
         let expectedPitch: PitchType
         let expectedZone: PitchZone
         let approach: BatterApproach
+        let bias: SituationalBias
         let commitment: String
     }
 
@@ -160,12 +190,16 @@ public struct PitchKernelEngine: Sendable {
         let seed = try validate(params)
         let adaptation = rivalMemoryEngine.analyze(params.rivalMemory, context: params.context)
         let plan = commitBatterPlan(params: params, adaptation: adaptation, seed: seed)
+        // The catcher reasons from the *estimated* read (which can miss the truth at low
+        // confidence); the batter plan above and every physics/judgment path keep the true report.
+        let read = scoutingRead(params: params)
         let recommendations = recommendationEngine.recommend(
             pitcher: params.pitcher,
             batter: params.batter,
-            scouting: params.scouting,
+            scouting: read.estimate,
             context: params.context,
-            adaptation: adaptation
+            adaptation: adaptation,
+            reliability: read.reliability
         )
         let token = preparationToken(
             params: params,
@@ -179,10 +213,39 @@ public struct PitchKernelEngine: Sendable {
             pitchNumber: params.context.pitchNumber,
             preparationToken: token,
             planCommitment: plan.commitment,
-            primaryRecommendation: recommendationSnapshot(recommendations.primary),
+            primaryRecommendation: recommendationSnapshot(
+                recommendations.primary,
+                situationNote: plan.bias.note
+            ),
             alternativeRecommendation: recommendationSnapshot(recommendations.alternative),
-            rivalAdaptation: adaptation
+            rivalAdaptation: adaptation,
+            scoutingReport: ScoutingEstimate.report(
+                estimate: read.estimate,
+                effectiveReliability: read.reliability,
+                observationCount: params.rivalMemory?.totalPitchesSeen ?? 0
+            )
         )
+    }
+
+    /// Effective reliability + estimated read for a preparation, derived only from the true report,
+    /// the observation counts and the durable pitcher/batter identity. Shared by `preparePitch` and
+    /// `submitPitch` so both agree on the recommendation (and therefore on the preparation token).
+    private func scoutingRead(
+        params: PreparePitchParams
+    ) -> (reliability: Int, estimate: BatterScoutingSnapshot) {
+        let reliability = ScoutingEstimate.effectiveReliability(
+            baseline: params.scouting.reliability,
+            memory: params.rivalMemory
+        )
+        let estimate = ScoutingEstimate.estimatedScouting(
+            truth: params.scouting,
+            reliability: reliability,
+            matchupSeed: ScoutingEstimate.matchupSeed(
+                pitcherID: params.pitcher.id,
+                batterID: params.batter.id
+            )
+        )
+        return (reliability, estimate)
     }
 
     public func submitPitch(_ params: SubmitPitchParams) throws -> PitchKernelResult {
@@ -200,12 +263,14 @@ public struct PitchKernelEngine: Sendable {
         try validate(call: params.call, pitcher: params.pitcher)
         let adaptation = rivalMemoryEngine.analyze(params.rivalMemory, context: params.context)
         let plan = commitBatterPlan(params: prepareParams, adaptation: adaptation, seed: seed)
+        let read = scoutingRead(params: prepareParams)
         let recommendations = recommendationEngine.recommend(
             pitcher: params.pitcher,
             batter: params.batter,
-            scouting: params.scouting,
+            scouting: read.estimate,
             context: params.context,
-            adaptation: adaptation
+            adaptation: adaptation,
+            reliability: read.reliability
         )
         let expectedToken = preparationToken(
             params: prepareParams,
@@ -292,7 +357,10 @@ public struct PitchKernelEngine: Sendable {
                 plateAppearanceResult: $0,
                 defense: currentGameState.defense,
                 seed: seed,
-                doublePlayCompleted: inningTransition.doublePlayCompleted
+                doublePlayCompleted: inningTransition.doublePlayCompleted,
+                battedBall: neutralResolution.battedBall,
+                fielding: fieldingResolution,
+                inningEnded: inningTransition.inningEnded
             )
         }
         let runnersAfterPlay = inningTransition.inningEnded
@@ -630,6 +698,9 @@ public struct PitchKernelEngine: Sendable {
         guard (20...80).contains(params.scouting.chaseTendency) else {
             throw SimulationError.invalidScouting("chaseTendency must be between 20 and 80")
         }
+        guard (0...100).contains(params.scouting.reliability) else {
+            throw SimulationError.invalidScouting("reliability must be between 0 and 100")
+        }
         try rivalMemoryEngine.validate(
             params.rivalMemory,
             pitcher: params.pitcher,
@@ -716,9 +787,8 @@ public struct PitchKernelEngine: Sendable {
             (.changeup, 200),
             (.curveball, 200)
         ]
-        if let detectedPitch = adaptation.detectedPitch,
-           let index = pitchWeights.firstIndex(where: { $0.pitchType == detectedPitch }) {
-            pitchWeights[index].weight += adaptation.level * 2
+        if let index = pitchWeights.firstIndex(where: { $0.pitchType == adaptation.leanPitch }) {
+            pitchWeights[index].weight += adaptation.pitchReadStrength * 2
         }
         let totalPitchWeight = pitchWeights.reduce(0) { $0 + $1.weight }
         var pitchRoll = generator.nextInt(upperBound: totalPitchWeight)
@@ -732,9 +802,9 @@ public struct PitchKernelEngine: Sendable {
         }
 
         let expectedZone: PitchZone
-        if let detectedZone = adaptation.detectedZone,
-           generator.nextInt(upperBound: 100) < min(78, 32 + adaptation.level / 18) {
-            expectedZone = detectedZone
+        if adaptation.zoneReadStrength > 0,
+           generator.nextInt(upperBound: 100) < min(60, 12 + adaptation.zoneReadStrength / 6) {
+            expectedZone = adaptation.leanZone
         } else if generator.nextInt(upperBound: 100) < 45 {
             expectedZone = params.scouting.hotZone
         } else {
@@ -751,6 +821,14 @@ public struct PitchKernelEngine: Sendable {
         } else {
             approach = generator.nextInt(upperBound: 100) < 55 ? .aggressive : .power
         }
+        // The situational read is a pure function of the public state (base/out/leverage/count)
+        // and consumes no randomness, so the plan's RNG stream — and every fixture that depends
+        // on it — is unchanged; only the sealed swing-tendency nudges below are new.
+        let bias = situationalBias(
+            context: params.context,
+            runners: params.gameState?.runners ?? .empty,
+            discipline: params.batter.discipline
+        )
         let commitment = StableHash.fnv1a64(
             [
                 params.context.plateAppearanceID,
@@ -759,6 +837,10 @@ public struct PitchKernelEngine: Sendable {
                 String(expectedZone.row),
                 String(expectedZone.column),
                 approach.rawValue,
+                String(bias.zoneSwingShift),
+                String(bias.chaseShift),
+                String(bias.contactShift),
+                String(bias.foulShift),
                 String(generator.next())
             ].joined(separator: "|")
         )
@@ -766,7 +848,67 @@ public struct PitchKernelEngine: Sendable {
             expectedPitch: expectedPitch,
             expectedZone: expectedZone,
             approach: approach,
+            bias: bias,
             commitment: commitment
+        )
+    }
+
+    /// Turns the public game situation into bounded swing/contact-tendency shifts. This is the
+    /// batter *reading the moment* — attacking with a runner to drive in, working the count in a
+    /// low-stakes empty-base spot, and letting the stakes amplify their own discipline. It never
+    /// touches pitch physics or result probabilities directly: the shifts flow only through the
+    /// sealed plan and are deliberately conservative (Phase 1-2 handles the wider recalibration).
+    private func situationalBias(
+        context: PlateAppearanceContext,
+        runners: BaserunnerStateSnapshot,
+        discipline: Int
+    ) -> SituationalBias {
+        let scoringPosition = runners.secondOccupied || runners.thirdOccupied
+        let basesEmpty = runners.occupiedCount == 0
+        let driveInRun = scoringPosition && context.outs < 2
+        let patientSpot = basesEmpty && context.leverage < 400
+
+        var zoneSwingShift = 0
+        var chaseShift = 0
+        var contactShift = 0
+        var foulShift = 0
+
+        if driveInRun {
+            // Runner in scoring position with an out to give: shorten up, put it in play.
+            zoneSwingShift += 40
+            chaseShift += 20
+            contactShift += 25
+            foulShift += 35
+        }
+        if patientSpot {
+            // Nobody on and nothing riding on it: make the pitcher work.
+            zoneSwingShift -= 30
+            chaseShift -= 40
+        }
+        // Leverage amplifies the batter's *own* discipline (focus), not the outcome: a
+        // disciplined hitter chases less as the stakes climb, a free-swinger a touch more.
+        // This is exactly zero at league-average discipline (50), so leverage on its own can
+        // never move the plan — the guarantee the ADR-005 execution/resolution tests rely on.
+        let leverageOverNeutral = max(0, context.leverage - 500)
+        chaseShift -= (discipline - 50) * leverageOverNeutral / 250
+
+        let note: String
+        if driveInRun {
+            note = "득점권이라 타자가 컨택 위주로 적극적입니다."
+        } else if patientSpot {
+            note = "주자가 없어 타자가 공을 신중히 고릅니다."
+        } else if context.leverage >= 750 {
+            note = "중요한 승부라 타자의 집중력이 올라갑니다."
+        } else {
+            note = ""
+        }
+
+        return SituationalBias(
+            zoneSwingShift: zoneSwingShift,
+            chaseShift: chaseShift,
+            contactShift: contactShift,
+            foulShift: foulShift,
+            note: note
         )
     }
 
@@ -956,8 +1098,9 @@ public struct PitchKernelEngine: Sendable {
         )
         let pitchMatched = plan.expectedPitch == params.call.pitchType
         let zoneMatched = zonesAreNear(plan.expectedZone, params.call.zone)
-        let patternRecognitionBonus = (pitchMatched ? adaptation.level / 6 : 0)
-            + (zoneMatched ? adaptation.level / 10 : 0)
+        let cappedAdaptation = min(RivalMemoryEngine.resolveDamageCap, adaptation.level)
+        let patternRecognitionBonus = (pitchMatched ? cappedAdaptation / 6 : 0)
+            + (zoneMatched ? cappedAdaptation / 10 : 0)
         let recognitionBonus = (pitchMatched ? 95 : -65)
             + (zoneMatched ? 70 : -35)
             + patternRecognitionBonus
@@ -968,50 +1111,74 @@ public struct PitchKernelEngine: Sendable {
         case .protect: approachSwingBonus = 80
         case .power: approachSwingBonus = 35
         }
+        let situationalSwingShift = wasInZone
+            ? plan.bias.zoneSwingShift
+            : plan.bias.chaseShift
         let swingChance = clamp(
-            (wasInZone ? 610 : 110)
+            (wasInZone ? 640 : 110)
                 + params.scouting.chaseTendency * (wasInZone ? 1 : 4)
                 - params.batter.discipline * 2
                 + recognitionBonus
-                + approachSwingBonus,
+                + approachSwingBonus
+                + situationalSwingShift,
             25,
             960
         )
         let batterSwung = generator.nextInt(upperBound: 1_000) < swingChance
         if !batterSwung {
+            if !wasInZone,
+               let hitByPitch = hitByPitchOutcome(
+                   call: params.call,
+                   execution: execution,
+                   pitcherHand: params.pitcher.throwingHand,
+                   batSide: params.batter.batSide,
+                   generator: &generator
+               ) {
+                return (hitByPitch, nil)
+            }
             return (wasInZone ? .calledStrike : .ball, nil)
         }
 
         let profile = params.pitcher.profile(for: params.call.pitchType)
-        let pitchDifficulty: Int
+        let ratingDifficulty: Int
         if let profile {
-            pitchDifficulty = (params.pitcher.stuff - 50) * 2
+            ratingDifficulty = (params.pitcher.stuff - 50) * 2
                 + (profile.whiff - 50) * 3
                 + (profile.movement - 50) * 2
                 + max(0, execution.executionQuality - 500) / 2
         } else {
-            pitchDifficulty = (params.pitcher.stuff - 50) * 6
+            ratingDifficulty = (params.pitcher.stuff - 50) * 6
                 + (params.pitcher.movement - 50) * 5
                 + max(0, execution.executionQuality - 500) / 2
         }
+        let velocityEdge = clamp((execution.velocityTenthsKPH - 1_370) / 4, -45, 70)
+        let pitchDifficulty = ratingDifficulty + velocityEdge
+        let platoonContact = platoonContactBonus(
+            pitcherHand: params.pitcher.throwingHand,
+            batSide: params.batter.batSide,
+            pitchType: params.call.pitchType
+        )
         let contactChance = clamp(
-            560
-                + (params.batter.contact - 50) * 8
-                + (pitchMatched ? 100 : -80)
-                + (zoneMatched ? 55 : -40)
-                + (pitchMatched ? adaptation.level / 5 : 0)
+            720
+                + (params.batter.contact - 50) * 6
+                + (pitchMatched ? 90 : -70)
+                + (zoneMatched ? 50 : -35)
+                + (pitchMatched ? cappedAdaptation / 5 : 0)
+                + plan.bias.contactShift
+                + platoonContact
                 - pitchDifficulty,
-            70,
-            930
+            120,
+            940
         )
         guard generator.nextInt(upperBound: 1_000) < contactChance else {
             return (.swingingStrike, nil)
         }
 
         let foulChance = clamp(
-            230 + ((profile?.movement ?? params.pitcher.movement) - params.batter.contact) * 3,
-            120,
-            390
+            470 + ((profile?.movement ?? params.pitcher.movement) - params.batter.contact) * 3
+                + plan.bias.foulShift,
+            260,
+            620
         )
         if generator.nextInt(upperBound: 1_000) < foulChance {
             return (.foul, nil)
@@ -1019,31 +1186,128 @@ public struct PitchKernelEngine: Sendable {
 
         let contactQuality = clamp(
             430
-                + (params.batter.power - 50) * 7
-                + (params.batter.contact - 50) * 4
+                + (params.batter.power - 50) * 3
+                + (params.batter.contact - 50) * 2
                 + (pitchMatched ? 90 : -70)
                 + (zoneMatched ? 45 : -35)
-                + (pitchMatched ? adaptation.level / 8 : 0)
+                + (pitchMatched ? cappedAdaptation / 8 : 0)
                 - ((profile?.weakContact ?? 50) - 50) * 2
                 - max(0, execution.executionQuality - 500) / 3
                 + generator.nextInt(upperBound: 301) - 150,
             0,
             1_000
         )
+        let exitVelocity = clamp(
+            1_000
+                + contactQuality * 3 / 4
+                + (params.batter.power - 50) * 6
+                + generator.nextInt(upperBound: 181) - 90,
+            700,
+            1_900
+        )
+        let launchAngle = clamp(
+            -100 + generator.nextInt(upperBound: 521) + (contactQuality - 450) / 8,
+            -150,
+            520
+        )
+        let battedQuality = Self.battedQuality(
+            exitVelocity: exitVelocity,
+            launchAngle: launchAngle
+        )
         let battedBall = BattedBall(
-            exitVelocityTenthsKPH: 1_050 + contactQuality / 2,
-            launchAngleTenthsDegrees: -50 + generator.nextInt(upperBound: 430),
+            exitVelocityTenthsKPH: exitVelocity,
+            launchAngleTenthsDegrees: launchAngle,
             directionTenthsDegrees: -450 + generator.nextInt(upperBound: 901),
-            contactQuality: contactQuality
+            contactQuality: battedQuality
         )
         let outcome: PitchOutcome
-        switch contactQuality {
+        switch battedQuality {
         case ..<500: outcome = .inPlayOut
         case 500..<690: outcome = .single
         case 690..<790: outcome = .double
         default: outcome = .homeRun
         }
         return (outcome, battedBall)
+    }
+
+    /// How far past the inside edge (toward the batter) an unswung pitch must miss to threaten the
+    /// hands, and the per-candidate chance it actually plunks the batter. Tuned so a hit-by-pitch
+    /// lands near the real ~1% of plate appearances; see `tools/check-balance.mjs`.
+    static let hitByPitchInsideThreshold = 1_000
+    static let hitByPitchBaseChance = 120
+    static let hitByPitchInsideCallBonus = 60
+
+    /// Whether the batter effectively stands in the left-handed box against this pitcher. A switch
+    /// hitter always takes the platoon-favored side (opposite the pitcher's throwing hand).
+    private func batsLeftEffectively(batSide: BatSide, pitcherHand: ThrowingHand) -> Bool {
+        switch batSide {
+        case .left: return true
+        case .right: return false
+        case .switchHitter: return pitcherHand == .right
+        }
+    }
+
+    /// The platoon read: a bounded, RNG-free additive nudge to the batter's contact chance. It is
+    /// exactly zero in a same-hand matchup — so every same-hand fixture, including the decode-default
+    /// RHP-vs-RHB one, resolves byte-for-byte as before — and gives the opposite-hand batter a small
+    /// contact edge that is largest on breaking balls and smallest on the changeup (the pitch that
+    /// itself thrives against opposite-handed hitters). The batter's opposite-hand edge is the exact
+    /// mirror of the pitcher's same-hand breaking-ball whiff edge (ADR-005: it shifts a tendency,
+    /// never the physics or a drawn result).
+    private func platoonContactBonus(
+        pitcherHand: ThrowingHand,
+        batSide: BatSide,
+        pitchType: PitchType
+    ) -> Int {
+        let batsLeft = batsLeftEffectively(batSide: batSide, pitcherHand: pitcherHand)
+        let sameHand = batsLeft == (pitcherHand == .left)
+        guard !sameHand else { return 0 }
+        switch pitchType {
+        case .slider, .curveball: return 42
+        case .fourSeam: return 24
+        case .changeup: return 14
+        }
+    }
+
+    /// A pitch the batter doesn't swing at that sails far enough into their own side of the plate to
+    /// hit them. Only ever reached from the no-swing / out-of-zone branch (the pitch was already a
+    /// ball), and it draws from the local generator only once the location is a genuine inside miss,
+    /// so it can never perturb another pitch's stream and leaves every non-inside ball unchanged.
+    private func hitByPitchOutcome(
+        call: PitchCall,
+        execution: PitchExecution,
+        pitcherHand: ThrowingHand,
+        batSide: BatSide,
+        generator: inout SplitMix64
+    ) -> PitchOutcome? {
+        let batsLeft = batsLeftEffectively(batSide: batSide, pitcherHand: pitcherHand)
+        // Inside is the batter's own side of the plate: positive X for a lefty, negative for a righty.
+        let insideMiss = batsLeft ? execution.actualX : -execution.actualX
+        guard insideMiss >= Self.hitByPitchInsideThreshold else { return nil }
+        // Working the inside corner on purpose is the risk/reward: a called inside location lifts it.
+        let calledInside = batsLeft ? (call.zone.column == 2) : (call.zone.column == 0)
+        let chance = Self.hitByPitchBaseChance + (calledInside ? Self.hitByPitchInsideCallBonus : 0)
+        return generator.nextInt(upperBound: 1_000) < chance ? .hitByPitch : nil
+    }
+
+    /// 타구 결과 해석용 품질 스칼라. 결과의 원인은 (EV, LA)이며 이 값은 그 요약이다.
+    /// 배럴(EV 154km/h 이상 & LA 17~34도)만 홈런 밴드에 도달할 수 있고,
+    /// 담장 경계는 구장 팩터·수비 보정이 GameSituation에서 최종 결정한다.
+    static func battedQuality(exitVelocity: Int, launchAngle: Int) -> Int {
+        let laFit: Int
+        if launchAngle < 90 {
+            laFit = 30 + max(0, launchAngle + 150) / 5
+        } else {
+            let lineFit = 240 - abs(launchAngle - 170) * 7 / 10
+            let popPenalty = launchAngle > 340 ? launchAngle - 340 : 0
+            laFit = max(0, lineFit - popPenalty)
+        }
+        let rawBase = exitVelocity * 7 / 10 + laFit - 600
+        let base = max(0, min(758, rawBase))
+        let isBarrel = exitVelocity >= 1_470 && (170...340).contains(launchAngle)
+        guard isBarrel else { return base }
+        let barrelQuality = 765 + (exitVelocity - 1_470) / 3 + (90 - abs(launchAngle - 250)) / 3
+        return max(700, min(940, barrelQuality))
     }
 
     private func advanceCount(
@@ -1061,8 +1325,14 @@ public struct PitchKernelEngine: Sendable {
             return (context.balls, min(2, context.strikes + 1), nil)
         case .inPlayOut:
             return (context.balls, context.strikes, .inPlayOut)
-        case .single, .double, .homeRun:
+        case .single, .double, .triple, .homeRun:
             return (context.balls, context.strikes, .hit)
+        case .hitByPitch:
+            // A hit-by-pitch reaches base and forces runners exactly like a walk, so it shares the
+            // coarse `.walk` plate-appearance bucket (which keeps `PlateAppearanceResult` — and the
+            // front-end union that mirrors it — unchanged). The `.hitByPitch` outcome above is what
+            // distinguishes it for feedback, scoring records, and CLI aggregation.
+            return (context.balls, context.strikes, .walk)
         }
     }
 
@@ -1124,7 +1394,8 @@ public struct PitchKernelEngine: Sendable {
     }
 
     private func recommendationSnapshot(
-        _ recommendation: CatcherRecommendation
+        _ recommendation: CatcherRecommendation,
+        situationNote: String = ""
     ) -> CatcherRecommendationSnapshot {
         let pitchName = pitchDisplayName(recommendation.call.pitchType)
         let zoneName = zoneDisplayName(recommendation.call.zone)
@@ -1134,14 +1405,17 @@ public struct PitchKernelEngine: Sendable {
         case .edge: intent = "존 끝"
         case .chase: intent = "존 밖 유인"
         }
-        let shortReason: String
+        let baseReason: String
         if recommendation.reasonCodes.contains("rival.pattern_detected") {
-            shortReason = "라이벌이 반복 구종을 읽고 있어 \(zoneName) \(pitchName)으로 패턴을 바꿉니다."
+            baseReason = "라이벌이 반복 구종을 읽고 있어 \(zoneName) \(pitchName)으로 패턴을 바꿉니다."
         } else if recommendation.reasonCodes.contains("scouting.pitch_weakness") {
-            shortReason = "타자의 약점인 \(zoneName) \(pitchName)\(pitchObjectParticle(recommendation.call.pitchType)) \(intent)로 공략합니다."
+            baseReason = "타자의 약점인 \(zoneName) \(pitchName)\(pitchObjectParticle(recommendation.call.pitchType)) \(intent)로 공략합니다."
         } else {
-            shortReason = "강한 코스를 피해 \(zoneName) \(pitchName)으로 타이밍을 바꿉니다."
+            baseReason = "강한 코스를 피해 \(zoneName) \(pitchName)으로 타이밍을 바꿉니다."
         }
+        // The situational note is derived only from the public base/out/leverage state, so it
+        // reads the moment without leaking the batter's sealed pitch/zone guess.
+        let shortReason = situationNote.isEmpty ? baseReason : "\(baseReason) \(situationNote)"
         return CatcherRecommendationSnapshot(
             call: recommendation.call,
             confidence: recommendation.confidence,
@@ -1163,7 +1437,7 @@ public struct PitchKernelEngine: Sendable {
         stealAttempt: StealAttemptSnapshot?,
         inningTransition: InningTransitionSnapshot
     ) -> (short: String, detail: String) {
-        let short: String
+        var short: String
         switch outcome {
         case .ball: short = "타자가 골라내 볼이 됐습니다."
         case .calledStrike: short = "ABS가 스트라이크를 선언했습니다."
@@ -1172,7 +1446,13 @@ public struct PitchKernelEngine: Sendable {
         case .inPlayOut: short = "약한 타구를 유도해 아웃을 만들었습니다."
         case .single: short = "타구가 수비 사이를 빠져나가 단타가 됐습니다."
         case .double: short = "강한 타구가 외야를 갈라 2루타가 됐습니다."
+        case .triple: short = "타구가 외야 구석을 완전히 갈라 3루타가 됐습니다."
         case .homeRun: short = "정타를 허용해 홈런이 됐습니다."
+        case .hitByPitch: short = "몸에 맞는 공으로 타자가 걸어 나갔습니다."
+        }
+        // An out that still plates a runner is a sacrifice fly — a deep fly the runner tags up on.
+        if outcome == .inPlayOut, (baserunnerAdvance?.runsScored ?? 0) > 0 {
+            short = "깊은 희생플라이로 3루 주자가 홈을 밟았습니다."
         }
         let planText: String
         switch (planPitchMatched, planZoneMatched) {

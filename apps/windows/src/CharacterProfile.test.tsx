@@ -8,7 +8,8 @@ describe("CharacterProfile", () => {
 
     expect(markup).toContain("윤태문 · 원칙형");
     expect(markup).not.toContain("<small");
-    expect(markup).not.toContain("<p");
+    expect(markup).not.toContain("<p>");
+    expect(markup).toContain("avatar-face");
   });
 
   it("renders complete profile details through the shared contract", () => {

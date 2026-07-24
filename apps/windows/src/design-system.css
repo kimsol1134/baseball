@@ -388,3 +388,28 @@ body.high-contrast {
     animation: none;
   }
 }
+
+/* 아바타 파츠 전용 팔레트 — 절차 생성 초상(AvatarFace)만 사용한다.
+   UI 프레임·텍스트에는 쓰지 않으므로 고대비 대응 계약(--color-*) 대상이 아니다. */
+:root {
+  --avatar-skin-1: #f2cfa5;
+  --avatar-skin-2: #e8bd8f;
+  --avatar-skin-3: #d9a878;
+  --avatar-skin-4: #c98e5f;
+  --avatar-skin-5: #b97a4e;
+  --avatar-hair-1: #20242b;
+  --avatar-hair-2: #3a2d22;
+  --avatar-hair-3: #54402c;
+  --avatar-hair-gray: #6d6f76;
+  --avatar-jersey-1: #3d5a44;
+  --avatar-jersey-2: #2f4858;
+  --avatar-jersey-3: #5a4632;
+  --avatar-jersey-4: #44415a;
+  --avatar-jersey-5: #5c3a3a;
+  --avatar-cap: #274232;
+  --avatar-cap-brim: #1c3125;
+  --avatar-helmet: #32405c;
+  --avatar-mask: #8b93a1;
+  --avatar-line: #1a1d22;
+  --avatar-highlight: #ffffff;
+}

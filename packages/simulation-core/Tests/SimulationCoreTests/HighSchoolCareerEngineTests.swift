@@ -6,8 +6,8 @@ final class HighSchoolCareerEngineTests: XCTestCase {
     func testVerticalSliceContentMinimumsUseStableUniqueIDs() {
         XCTAssertEqual(HighSchoolContentCatalog.events.count, 36)
         XCTAssertEqual(Set(HighSchoolContentCatalog.events.map(\.id)).count, 36)
-        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count, 12)
-        XCTAssertEqual(Set(HighSchoolContentCatalog.scenarios.map(\.id)).count, 12)
+        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count, 20)
+        XCTAssertEqual(Set(HighSchoolContentCatalog.scenarios.map(\.id)).count, 20)
         XCTAssertEqual(AwakeningID.allCases.count, 18)
         XCTAssertEqual(MemoryCardID.allCases.count, 18)
     }
@@ -101,6 +101,9 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         legacyObject.removeValue(forKey: "catcherTrust")
         legacyObject.removeValue(forKey: "rivalTrust")
         legacyObject.removeValue(forKey: "balanceVersion")
+        legacyObject.removeValue(forKey: "armRisk")
+        legacyObject.removeValue(forKey: "injuryRecovery")
+        legacyObject.removeValue(forKey: "schedule")
         let legacyPower = try XCTUnwrap(PitcherPresetCatalog.balanceV1.first { $0.id == "power_prospect" })
         legacyObject["pitcher"] = try XCTUnwrap(
             JSONSerialization.jsonObject(with: JSONEncoder().encode(legacyPower.pitcher)) as? [String: Any]
@@ -211,12 +214,33 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         )
         result = try completeCareer(engine, from: result, strongGames: true)
 
+        // A drafted run now also banks memories: it passes through the shared .legacy phase
+        // (with non-empty options) before completing, so success is no longer a dead end for
+        // the roguelite meta.
+        XCTAssertEqual(result.snapshot.phase, .legacy)
+        XCTAssertEqual(result.snapshot.draftResult?.outcome, .drafted)
+        XCTAssertFalse(result.snapshot.legacyOptions.isEmpty)
+        result = try engine.selectLegacy(
+            SelectCareerLegacyParams(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                memoryCards: Array(result.snapshot.legacyOptions.prefix(result.snapshot.memorySlots))
+            )
+        )
+
         XCTAssertEqual(result.snapshot.phase, .completed)
         XCTAssertEqual(result.snapshot.chapter.number, 8)
-        XCTAssertEqual(result.snapshot.totalTrainingsCompleted, 16)
-        XCTAssertEqual(result.snapshot.relationshipsCompleted, 5)
-        XCTAssertEqual(result.snapshot.performance.importantGamesCompleted, 5)
+        // 뼈대가 시드별로 가변(훈련 12–16 / 관계 4–6 / 경기 4–6 / 각성 3)이므로, 완주한 카운트는
+        // 이 회차의 스케줄 총량과 정확히 일치해야 한다.
+        let schedule = try XCTUnwrap(result.snapshot.schedule)
+        XCTAssertEqual(result.snapshot.totalTrainingsCompleted, schedule.trainingTotal)
+        XCTAssertEqual(result.snapshot.relationshipsCompleted, schedule.relationshipTotal)
+        XCTAssertEqual(result.snapshot.performance.importantGamesCompleted, schedule.importantGameTotal)
+        XCTAssertTrue((12...16).contains(schedule.trainingTotal))
+        XCTAssertTrue((4...6).contains(schedule.relationshipTotal))
+        XCTAssertTrue((4...6).contains(schedule.importantGameTotal))
         XCTAssertEqual(result.snapshot.selectedAwakenings.count, 3)
+        XCTAssertEqual(result.snapshot.selectedMemories.count, result.snapshot.memorySlots)
         XCTAssertEqual(result.snapshot.draftResult?.outcome, .drafted)
         XCTAssertNotNil(result.snapshot.draftResult?.team)
         XCTAssertNotNil(result.snapshot.draftResult?.firstSeasonGoal)
@@ -249,6 +273,137 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertEqual(result.snapshot.selectedMemories.count, 3)
     }
 
+    func testRelationshipSlotsExposeNonCoreCategoriesInOneRun() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(seed: "20260723", presetID: "power_prospect"))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower))
+
+        var categories: [String] = []
+        for _ in 0..<80 {
+            switch result.snapshot.phase {
+            case .relationship:
+                categories.append(try XCTUnwrap(result.snapshot.currentRelationshipEvent?.category))
+                result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
+            case .training:
+                result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: result.snapshot.school?.strength ?? .command, intensity: .light))
+            case .importantGame:
+                let number = result.snapshot.performance.importantGamesCompleted + 1
+                result = try engine.recordImportantGame(.init(seed: result.nextSeed, state: result.snapshot,
+                    report: .init(scenarioNumber: number, pitches: 18, strikeouts: 4, walks: 0, runsAllowed: 0, expectedDamage: 380, actualDamage: 120, recommendationAccepted: 10)))
+            case .awakening:
+                result = try engine.chooseAwakening(.init(seed: result.nextSeed, state: result.snapshot, awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            default:
+                break
+            }
+            if [.draft, .legacy, .completed].contains(result.snapshot.phase) { break }
+        }
+
+        // 관계 슬롯 수는 이 회차의 가변 스케줄(4–6)을 따른다.
+        let relationshipTotal = try XCTUnwrap(result.snapshot.schedule).relationshipTotal
+        XCTAssertEqual(categories.count, relationshipTotal)
+        // Core people are guaranteed in the first three slots every run.
+        XCTAssertEqual(Array(categories.prefix(3)), ["coach", "catcher", "rival"])
+        let core: Set<String> = ["coach", "catcher", "rival"]
+        let extended = categories.filter { !core.contains($0) }
+        XCTAssertFalse(extended.isEmpty, "later slots must surface non-core event categories")
+        XCTAssertEqual(Set(extended).count, extended.count, "extended slots must draw distinct categories")
+        XCTAssertEqual(Set(categories).count, relationshipTotal, "a single run should span one distinct category per relationship slot")
+    }
+
+    func testEveryImportantGameScenarioIsWellFormed() {
+        // 신규 8종을 포함한 20종 시나리오 전부가 경기 상황으로 성립하는지 검증한다. 이닝 1–10,
+        // 아웃 0–2, 레버리지 1–1000, 리드 주자 스피드 범위, 제목·서사 비어 있지 않음, id 고유.
+        let scenarios = HighSchoolContentCatalog.scenarios
+        XCTAssertEqual(scenarios.count, 20)
+        XCTAssertEqual(Set(scenarios.map(\.id)).count, 20, "scenario ids must be unique")
+        // (이닝, 아웃, 주자 배치) 조합도 서로 겹치지 않아 20종이 실제로 다른 상황을 만든다.
+        let situations = scenarios.map { "\($0.inning)-\($0.outs)-\($0.runners.firstOccupied)-\($0.runners.secondOccupied)-\($0.runners.thirdOccupied)" }
+        XCTAssertEqual(Set(situations).count, 20, "each scenario must be a distinct (inning, outs, runners) situation")
+        for scenario in scenarios {
+            XCTAssertTrue((1...10).contains(scenario.inning), "\(scenario.id): inning out of range")
+            XCTAssertTrue((0...2).contains(scenario.outs), "\(scenario.id): outs out of range")
+            XCTAssertTrue((1...1_000).contains(scenario.leverage), "\(scenario.id): leverage out of range")
+            XCTAssertTrue((30...90).contains(scenario.runners.leadRunnerSpeed), "\(scenario.id): lead runner speed out of range")
+            XCTAssertFalse(scenario.title.isEmpty, "\(scenario.id): empty title")
+            XCTAssertFalse(scenario.narrative.isEmpty, "\(scenario.id): empty narrative")
+        }
+    }
+
+    func testCareerImportantGamesDrawDistinctScenariosFromExpandedPool() throws {
+        // 한 커리어의 중요 경기들이 서로 다른 시나리오를 쓰는지 확인한다. 경기 수는 시드에
+        // 따라 다르고(런 뼈대 가변화, HighSchoolCareer 소유) 각 경기는 nextSeed 체인의 서로
+        // 다른 시드로 시나리오를 고르므로, 20종으로 넓힌 풀에서 한 커리어가 중복 없이 전 경기를
+        // 다른 장면으로 만나는 것이 가능함을 대표 시드들로 검증한다. 아울러 모든 커리어가 카탈로그
+        // 안의 시나리오만 쓰고 신설 8종이 실제로 도달 가능한지 확인한다.
+        let engine = HighSchoolCareerEngine()
+        let catalogIDs = Set(HighSchoolContentCatalog.scenarios.map(\.id))
+        let newScenarioIDs: Set<String> = ["game-walkoff-defense", "game-extra-tiebreak", "game-ace-duel",
+            "game-damage-control", "game-rain-grip", "game-doubleheader", "game-scout-showcase", "game-rival-away"]
+        var sawFullyDistinctCareer = false
+        var scenariosSeenAcrossSample: Set<String> = []
+        for seed in 1...16 {
+            var result = try engine.start(.init(seed: String(seed), presetID: "power_prospect"))
+            result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+            result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower))
+            var scenarioIDs: [String] = []
+            for _ in 0..<120 {
+                switch result.snapshot.phase {
+                case .relationship:
+                    result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
+                case .training:
+                    result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: result.snapshot.school?.strength ?? .command, intensity: .light))
+                case .importantGame:
+                    scenarioIDs.append(try XCTUnwrap(result.snapshot.currentGameScenario?.id))
+                    let number = result.snapshot.performance.importantGamesCompleted + 1
+                    result = try engine.recordImportantGame(.init(seed: result.nextSeed, state: result.snapshot,
+                        report: .init(scenarioNumber: number, pitches: 18, strikeouts: 4, walks: 0, runsAllowed: 0, expectedDamage: 380, actualDamage: 120, recommendationAccepted: 10)))
+                case .awakening:
+                    result = try engine.chooseAwakening(.init(seed: result.nextSeed, state: result.snapshot, awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)))
+                case .chapterReview:
+                    result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+                default: break
+                }
+                if [.draft, .legacy, .completed].contains(result.snapshot.phase) { break }
+            }
+            XCTAssertGreaterThanOrEqual(scenarioIDs.count, 3, "seed \(seed): a career should surface several important games")
+            XCTAssertTrue(scenarioIDs.allSatisfy { catalogIDs.contains($0) }, "seed \(seed): every scenario must come from the catalog: \(scenarioIDs)")
+            scenariosSeenAcrossSample.formUnion(scenarioIDs)
+            if Set(scenarioIDs).count == scenarioIDs.count { sawFullyDistinctCareer = true }
+        }
+        // 20종으로 넓힌 풀에서 한 커리어의 전 중요 경기가 서로 다른 장면인 경우가 실제로 존재해야 한다.
+        XCTAssertTrue(sawFullyDistinctCareer, "expanding to 20 scenarios should let a career surface fully distinct important games")
+        // 표본 전체가 풀을 넓게 사용하고, 신설 8종도 실제로 도달 가능해야 한다.
+        XCTAssertGreaterThanOrEqual(scenariosSeenAcrossSample.count, 12, "the sample should exercise a wide slice of the 20-scenario pool: \(scenariosSeenAcrossSample.count)")
+        XCTAssertFalse(scenariosSeenAcrossSample.isDisjoint(with: newScenarioIDs), "the newly added scenarios must be reachable in play")
+    }
+
+    func testDraftedCareerBanksMemoriesForNextLife() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(seed: "20260723", presetID: "power_prospect"))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower))
+        result = try completeCareer(engine, from: result, strongGames: true)
+
+        XCTAssertEqual(result.snapshot.draftResult?.outcome, .drafted)
+        XCTAssertEqual(result.snapshot.phase, .legacy)
+        XCTAssertEqual(result.snapshot.legacyOptions.count, 5)
+        XCTAssertFalse(result.snapshot.legacyOptions.isEmpty)
+
+        let selected = try engine.selectLegacy(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            memoryCards: Array(result.snapshot.legacyOptions.prefix(result.snapshot.memorySlots))
+        ))
+        XCTAssertEqual(selected.snapshot.phase, .completed)
+        XCTAssertEqual(selected.snapshot.selectedMemories.count, result.snapshot.memorySlots)
+        // Pro unlock stays reachable: the run is still marked drafted after banking memories.
+        XCTAssertEqual(selected.snapshot.draftResult?.outcome, .drafted)
+        XCTAssertNotNil(selected.snapshot.draftResult?.team)
+    }
+
     func testSameSeedAndSchoolProduceSameCareerState() throws {
         let engine = HighSchoolCareerEngine()
         let first = try engine.start(StartHighSchoolCareerParams(seed: "44", presetID: "innings_eater"))
@@ -273,10 +428,8 @@ final class HighSchoolCareerEngineTests: XCTestCase {
 
     func testRelationshipPhaseCarriesAConcreteScene() throws {
         let engine = HighSchoolCareerEngine()
-        var result = try engine.start(StartHighSchoolCareerParams(seed: "808", presetID: "precision_commander"))
-        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
-        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .miraeAnalytics))
-        for _ in 0..<2 { result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: .gamePlanning, intensity: .standard)) }
+        // 가변 뼈대에서도 첫 관계 국면까지 진행한다(첫 슬롯은 항상 코어 '감독').
+        var result = try reachFirstRelationship(engine, schoolID: .miraeAnalytics)
         XCTAssertEqual(result.snapshot.phase, .relationship)
         XCTAssertEqual(result.snapshot.currentRelationshipEvent?.category, "coach")
         XCTAssertFalse(result.snapshot.currentRelationshipEvent?.summary.isEmpty ?? true)
@@ -429,6 +582,145 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         )
     }
 
+    // MARK: - Draft outcome balance (Phase 1-4: "드래프트 실패 복원")
+
+    // Three archetypal playthroughs used by the draft-rate harness below.
+    // `ordinary` is the "평범한 플레이" reference policy the spec's 35–55% first-round draft
+    // rate is measured against: it spreads training thin across all six focuses at standard
+    // intensity (so almost no rating growth), takes the first relationship option, and posts
+    // unremarkable important-game lines. `focused` min-maxes the school strength and dominates;
+    // `neglect` throws games and coasts on light training.
+    private enum DraftPlayPolicy { case focused, ordinary, neglect }
+
+    private func runCareerToDraft(
+        _ engine: HighSchoolCareerEngine,
+        seed: String,
+        policy: DraftPlayPolicy,
+        difficulty: CareerDifficultySnapshot = .standard,
+        presetID: String = "power_prospect",
+        schoolID: SchoolID = .haedongPower
+    ) throws -> DraftResultSnapshot {
+        var result = try engine.start(.init(seed: seed, presetID: presetID, difficulty: difficulty))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: schoolID))
+        for _ in 0..<160 {
+            switch result.snapshot.phase {
+            case .training:
+                let focus: TrainingFocus
+                let intensity: TrainingIntensity
+                switch policy {
+                case .focused:
+                    focus = result.snapshot.school?.strength ?? .command
+                    intensity = .intensive
+                case .ordinary:
+                    focus = TrainingFocus.allCases[result.snapshot.totalTrainingsCompleted % TrainingFocus.allCases.count]
+                    intensity = .standard
+                case .neglect:
+                    focus = result.snapshot.school?.strength ?? .command
+                    intensity = .light
+                }
+                result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: focus, intensity: intensity))
+            case .relationship:
+                let response: RelationshipResponse = policy == .neglect ? .challenge : .listen
+                result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: response))
+            case .importantGame:
+                let number = result.snapshot.performance.importantGamesCompleted + 1
+                let report: ImportantInningReport
+                switch policy {
+                case .focused:
+                    report = .init(scenarioNumber: number, pitches: 18, strikeouts: 4, walks: 0, runsAllowed: 0, expectedDamage: 380, actualDamage: 120, recommendationAccepted: 10)
+                case .ordinary:
+                    report = .init(scenarioNumber: number, pitches: 18, strikeouts: 3, walks: 2, runsAllowed: 2, expectedDamage: 720, actualDamage: 700, recommendationAccepted: 6)
+                case .neglect:
+                    report = .init(scenarioNumber: number, pitches: 18, strikeouts: 0, walks: 5, runsAllowed: 7, expectedDamage: 1_200, actualDamage: 4_500, recommendationAccepted: 0)
+                }
+                result = try engine.recordImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report))
+            case .awakening:
+                result = try engine.chooseAwakening(.init(seed: result.nextSeed, state: result.snapshot, awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            case .draft:
+                result = try engine.resolveDraft(.init(seed: result.nextSeed, state: result.snapshot))
+                return try XCTUnwrap(result.snapshot.draftResult)
+            case .legacy, .completed:
+                return try XCTUnwrap(result.snapshot.draftResult)
+            case .prologue, .schoolSelection:
+                XCTFail("school should already be selected for seed \(seed)")
+                return try XCTUnwrap(result.snapshot.draftResult)
+            }
+        }
+        XCTFail("career did not reach the draft for seed \(seed)")
+        return try XCTUnwrap(result.snapshot.draftResult)
+    }
+
+    private func draftOutcomes(
+        _ engine: HighSchoolCareerEngine,
+        seeds: [String],
+        policy: DraftPlayPolicy,
+        difficulty: CareerDifficultySnapshot = .standard
+    ) throws -> (rate: Double, drafted: Int, scores: [Int]) {
+        var drafted = 0
+        var scores: [Int] = []
+        for seed in seeds {
+            let draft = try runCareerToDraft(engine, seed: seed, policy: policy, difficulty: difficulty)
+            scores.append(draft.evaluationScore)
+            if draft.outcome == .drafted { drafted += 1 }
+        }
+        return (Double(drafted) / Double(seeds.count), drafted, scores)
+    }
+
+    private static let draftBalanceSeeds = (1...40).map(String.init)
+
+    // Reference measurement: an "평범한 플레이" run on standard difficulty should be drafted
+    // 35–55% of the time. The exact rate is reported (not asserted) so the value stays visible
+    // as balance drifts; the assertion only guards the ±10pt band (25–65%) so small, intended
+    // tuning does not turn the suite red.
+    func testOrdinaryPlayDraftRateLandsInSpecBand() throws {
+        let engine = HighSchoolCareerEngine()
+        let seeds = Self.draftBalanceSeeds
+        let (rate, drafted, scores) = try draftOutcomes(engine, seeds: seeds, policy: .ordinary)
+        let sorted = scores.sorted()
+        // The score is threshold-independent (only the career-harshness threshold changes), so the
+        // per-difficulty rates below are all measured on the same 30+ seed sample.
+        func rateAtOrAbove(_ threshold: Int) -> Int {
+            Int((Double(scores.filter { $0 >= threshold }.count) / Double(scores.count) * 100).rounded())
+        }
+        print("[draft-balance] ordinary/standard rate=\(Int((rate * 100).rounded()))% (\(drafted)/\(seeds.count)) "
+            + "score min=\(sorted.first ?? 0) p25=\(sorted[sorted.count / 4]) median=\(sorted[sorted.count / 2]) "
+            + "p75=\(sorted[min(sorted.count - 1, sorted.count * 3 / 4)]) max=\(sorted.last ?? 0) "
+            + "| by-harshness relaxed(≥57)=\(rateAtOrAbove(57))% standard(≥61)=\(rateAtOrAbove(61))% challenging(≥65)=\(rateAtOrAbove(65))%")
+        XCTAssertGreaterThanOrEqual(rate, 0.25, "ordinary careers miss the draft too often — floor/performance weights are too harsh")
+        XCTAssertLessThanOrEqual(rate, 0.65, "ordinary careers are drafted too easily — the failure-inheritance loop loses its tension")
+    }
+
+    // A focused, high-performing run must stay reliably draftable; a neglected run must
+    // reliably fail. This is the "성공은 계속 성공, 방치는 확실히 실패" guard the spec asks for.
+    func testFocusedRunsStayDraftedAndNeglectRunsFail() throws {
+        let engine = HighSchoolCareerEngine()
+        let seeds = Self.draftBalanceSeeds
+        let focused = try draftOutcomes(engine, seeds: seeds, policy: .focused)
+        let neglect = try draftOutcomes(engine, seeds: seeds, policy: .neglect)
+        print("[draft-balance] focused rate=\(Int((focused.rate * 100).rounded()))% (\(focused.drafted)/\(seeds.count)) "
+            + "neglect rate=\(Int((neglect.rate * 100).rounded()))% (\(neglect.drafted)/\(seeds.count))")
+        XCTAssertGreaterThanOrEqual(focused.rate, 0.9, "a focused, dominant run must remain reliably draftable")
+        XCTAssertLessThanOrEqual(neglect.rate, 0.1, "a neglected, thrown run must reliably miss the draft")
+    }
+
+    // Career-harshness axis stays monotone: an easier setting never drafts less often than a
+    // harder one for the same play policy. Only the threshold changes across these three, so
+    // the score distribution is shared and the ordering is a clean smoke test.
+    func testDraftRateIsMonotonicAcrossCareerHarshness() throws {
+        let engine = HighSchoolCareerEngine()
+        let seeds = (1...15).map(String.init)
+        let relaxed = try draftOutcomes(engine, seeds: seeds, policy: .ordinary, difficulty: .init(careerHarshness: .relaxed)).rate
+        let standard = try draftOutcomes(engine, seeds: seeds, policy: .ordinary, difficulty: .init(careerHarshness: .standard)).rate
+        let challenging = try draftOutcomes(engine, seeds: seeds, policy: .ordinary, difficulty: .init(careerHarshness: .challenging)).rate
+        print("[draft-balance] harshness relaxed=\(Int((relaxed * 100).rounded()))% "
+            + "standard=\(Int((standard * 100).rounded()))% challenging=\(Int((challenging * 100).rounded()))%")
+        XCTAssertGreaterThanOrEqual(relaxed, standard, "relaxed harshness must draft at least as often as standard")
+        XCTAssertGreaterThanOrEqual(standard, challenging, "standard harshness must draft at least as often as challenging")
+    }
+
     private func completeCareer(
         _ engine: HighSchoolCareerEngine,
         from initial: HighSchoolCareerResult,
@@ -503,9 +795,28 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         var result = try engine.start(.init(seed: "808", presetID: "precision_commander"))
         result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
         result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: schoolID))
-        for _ in 0..<2 {
-            result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: .velocity, intensity: .standard))
+        // 뼈대가 가변이라 챕터 1이 관계로 시작하지 않을 수 있다. 첫 관계 국면까지 훈련·경기·각성을
+        // 소화하며 진행한다(첫 관계 슬롯은 항상 코어 '감독').
+        for _ in 0..<40 {
+            switch result.snapshot.phase {
+            case .relationship:
+                return result
+            case .training:
+                result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: .velocity, intensity: .standard))
+            case .importantGame:
+                let number = result.snapshot.performance.importantGamesCompleted + 1
+                result = try engine.recordImportantGame(.init(seed: result.nextSeed, state: result.snapshot,
+                    report: .init(scenarioNumber: number, pitches: 16, strikeouts: 3, walks: 0, runsAllowed: 0, expectedDamage: 400, actualDamage: 180, recommendationAccepted: 10)))
+            case .awakening:
+                result = try engine.chooseAwakening(.init(seed: result.nextSeed, state: result.snapshot, awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            default:
+                XCTFail("첫 관계 장면 전에 커리어가 끝났습니다")
+                return result
+            }
         }
+        XCTFail("첫 관계 장면에 도달하지 못했습니다")
         return result
     }
 
@@ -513,7 +824,8 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         var result = try engine.start(.init(seed: "1212", presetID: "precision_commander"))
         result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
         result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower))
-        for _ in 0..<30 {
+        // 가변 뼈대에서 첫 각성은 후반 챕터에 놓일 수 있어 넉넉한 상한으로 끝까지 몰고 간다.
+        for _ in 0..<80 {
             switch result.snapshot.phase {
             case .training:
                 result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: focus, intensity: .standard))
@@ -599,6 +911,261 @@ final class HighSchoolCareerEngineTests: XCTestCase {
             state.selectedAwakenings.map(\.rawValue).joined(separator: ","), state.awakeningOptions.map(\.rawValue).joined(separator: ","),
             String(state.fatigue), ratings, performance, scenario, draft, state.legacyOptions.map(\.rawValue).joined(separator: ","),
             state.selectedMemories.map(\.rawValue).joined(separator: ",")]
+        // Mirror the real commitment's conditional blocks so a "pre-arm-feature" save that still
+        // carries newer fields (rivalTrust, balanceVersion) hashes correctly. Arm fields are the
+        // one thing a legacy save lacks, so they are intentionally omitted here.
+        if state.rivalTrust != nil {
+            canonical.append("relationships:\(state.managerTrust ?? state.relationshipTrust):\(state.catcherTrust ?? state.relationshipTrust):\(state.rivalTrust ?? state.relationshipTrust)")
+        } else if state.managerTrust != nil || state.catcherTrust != nil {
+            canonical.append("staff:\(state.managerTrust ?? state.relationshipTrust):\(state.catcherTrust ?? state.relationshipTrust)")
+        }
+        if let balanceVersion = state.balanceVersion {
+            canonical.append("balance_version:\(balanceVersion)")
+        }
         return StableHash.fnv1a64(canonical.joined(separator: "|"))
+    }
+}
+
+extension HighSchoolCareerEngineTests {
+    struct ArmRunOutcome { let injured: Bool; let rehabbed: Bool; let draft: DraftResultSnapshot?; let maxRisk: Int; let sawWarning: Bool }
+
+    // Drives a full career with a chosen arm-care response and a per-game pitch load. Used both by
+    // the balance measurement and the behavioural arm tests below.
+    func runArmCareer(
+        _ engine: HighSchoolCareerEngine,
+        seed: String,
+        pitchesForGame: (Int) -> Int,
+        armResponse: RelationshipResponse,
+        useRecovery: Bool,
+        presetID: String = "power_prospect",
+        schoolID: SchoolID = .haedongPower
+    ) throws -> ArmRunOutcome {
+        var result = try engine.start(.init(seed: seed, presetID: presetID))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: schoolID))
+        var injured = false
+        var rehabbed = false
+        var maxRisk = 0
+        var sawWarning = false
+        for _ in 0..<200 {
+            maxRisk = max(maxRisk, result.snapshot.armRisk ?? 0)
+            if HighSchoolCareerEngine.armHealthState(armRisk: result.snapshot.armRisk, injuryRecovery: result.snapshot.injuryRecovery) == .warning { sawWarning = true }
+            switch result.snapshot.phase {
+            case .training:
+                let idx = result.snapshot.totalTrainingsCompleted
+                let focus: TrainingFocus = useRecovery && idx % 3 == 2 ? .recovery
+                    : TrainingFocus.allCases[idx % TrainingFocus.allCases.count]
+                result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: focus, intensity: .standard))
+            case .relationship:
+                let isArm = result.snapshot.currentRelationshipEvent?.id == HighSchoolCareerEngine.armCareEventID
+                result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: isArm ? armResponse : .listen))
+            case .importantGame:
+                let number = result.snapshot.performance.importantGamesCompleted + 1
+                let pitches = pitchesForGame(number)
+                result = try engine.recordImportantGame(.init(seed: result.nextSeed, state: result.snapshot,
+                    report: .init(scenarioNumber: number, pitches: pitches, strikeouts: 4, walks: 1, runsAllowed: 1, expectedDamage: 500, actualDamage: 400, recommendationAccepted: pitches / 2)))
+            case .awakening:
+                result = try engine.chooseAwakening(.init(seed: result.nextSeed, state: result.snapshot, awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            case .draft:
+                result = try engine.resolveDraft(.init(seed: result.nextSeed, state: result.snapshot))
+                return ArmRunOutcome(injured: injured, rehabbed: rehabbed, draft: result.snapshot.draftResult, maxRisk: maxRisk, sawWarning: sawWarning)
+            case .legacy, .completed:
+                return ArmRunOutcome(injured: injured, rehabbed: rehabbed, draft: result.snapshot.draftResult, maxRisk: maxRisk, sawWarning: sawWarning)
+            case .prologue, .schoolSelection:
+                XCTFail("school should already be selected"); return ArmRunOutcome(injured: injured, rehabbed: rehabbed, draft: nil, maxRisk: maxRisk, sawWarning: sawWarning)
+            }
+            if result.events.contains(where: { $0.eventType == "career_arm_injury" }) { injured = true }
+            if result.events.contains(where: { $0.eventType == "career_training_rehab" }) { rehabbed = true }
+        }
+        XCTFail("career did not finish for seed \(seed)")
+        return ArmRunOutcome(injured: injured, rehabbed: rehabbed, draft: nil, maxRisk: maxRisk, sawWarning: sawWarning)
+    }
+
+    // 평범한 중요-이닝 투구 수(24–49, 시드마다 다름)를 시드가 지정한다. 회복 훈련은 돌리되 경고에서
+    // "참고 던진다"를 고르는 표준 정책. 실측 부상률은 15–35% 목표 안에 들어야 한다.
+    private func ordinaryPitches(_ seed: Int, _ game: Int) -> Int { 24 + (seed % 26) }
+
+    // ⑤ 평범 정책(회복 훈련 + 경고에서 강행) 40시드 부상률이 스펙 목표 15~35% 안에 든다.
+    func testOrdinaryPushThroughInjuryRateLandsInSpecBand() throws {
+        let engine = HighSchoolCareerEngine()
+        let seeds = (1...40).map(String.init)
+        var injured = 0, drafted = 0, warned = 0
+        for seed in seeds {
+            let s = Int(seed)!
+            let out = try runArmCareer(engine, seed: seed, pitchesForGame: { self.ordinaryPitches(s, $0) }, armResponse: .challenge, useRecovery: true)
+            if out.injured { injured += 1 }
+            if out.sawWarning { warned += 1 }
+            if out.draft?.outcome == .drafted { drafted += 1 }
+        }
+        let rate = Double(injured) / Double(seeds.count)
+        print("[arm-balance] ordinary push-through injuryRate=\(Int((rate * 100).rounded()))% (\(injured)/40) warned=\(warned)/40 drafted=\(drafted)/40")
+        XCTAssertGreaterThanOrEqual(rate, 0.15, "혹사를 강행하는 평범 정책의 부상이 너무 드뭅니다 — 위험 곡선이 약합니다")
+        XCTAssertLessThanOrEqual(rate, 0.35, "평범 정책이 너무 자주 다칩니다 — 무리한 등판의 여지가 없습니다")
+    }
+
+    // ⑥ 같은 투구 부하라도 짧은 휴식/정밀 검진으로 관리하면 아무도 다치지 않는다.
+    func testManagingTheWarningAvoidsInjuryEntirely() throws {
+        let engine = HighSchoolCareerEngine()
+        let seeds = (1...40).map(String.init)
+        for response in [RelationshipResponse.listen, .explain] {
+            var injured = 0
+            for seed in seeds {
+                let s = Int(seed)!
+                let out = try runArmCareer(engine, seed: seed, pitchesForGame: { self.ordinaryPitches(s, $0) }, armResponse: response, useRecovery: true)
+                if out.injured { injured += 1 }
+            }
+            XCTAssertEqual(injured, 0, "\(response.rawValue)로 경고를 관리하면 부상이 없어야 합니다")
+        }
+    }
+
+    // ① 고피로 + 다투구 등판은 결정론적으로 경고 신호를 띄운다.
+    func testHeavyOutingWhileFatiguedRaisesArmWarning() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(seed: "555", presetID: "power_prospect"))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower))
+        // 강훈련으로 피로를 쌓다가, 팔이 아직 정상인데 피로가 바닥을 넘긴 중요 경기에 이르면 멈춘다.
+        // 가변 뼈대에서 첫 경기가 이른 챕터에 올 수 있으므로, 아직 지치지 않은 경기는 가벼운 등판
+        // (위험 0)으로 넘기고 계속 강훈련한다.
+        var reachedFatiguedGame = false
+        for _ in 0..<80 {
+            switch result.snapshot.phase {
+            case .training:
+                result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: .velocity, intensity: .intensive))
+            case .relationship:
+                result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
+            case .awakening:
+                result = try engine.chooseAwakening(.init(seed: result.nextSeed, state: result.snapshot, awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            case .importantGame:
+                if result.snapshot.fatigue >= HighSchoolCareerEngine.armFatigueFloor
+                    && HighSchoolCareerEngine.armHealthState(armRisk: result.snapshot.armRisk, injuryRecovery: result.snapshot.injuryRecovery) == .normal {
+                    reachedFatiguedGame = true
+                } else {
+                    let number = result.snapshot.performance.importantGamesCompleted + 1
+                    result = try engine.recordImportantGame(.init(seed: result.nextSeed, state: result.snapshot,
+                        report: .init(scenarioNumber: number, pitches: 18, strikeouts: 4, walks: 1, runsAllowed: 1, expectedDamage: 500, actualDamage: 400, recommendationAccepted: 9)))
+                }
+            default: break
+            }
+            if reachedFatiguedGame { break }
+        }
+        XCTAssertTrue(reachedFatiguedGame, "지친 상태(피로 ≥ 바닥)에서 시작하는 중요 경기에 도달해야 합니다")
+        XCTAssertEqual(HighSchoolCareerEngine.armHealthState(armRisk: result.snapshot.armRisk, injuryRecovery: result.snapshot.injuryRecovery), .normal)
+        let fatigueBeforeGame = result.snapshot.fatigue
+        XCTAssertGreaterThanOrEqual(fatigueBeforeGame, HighSchoolCareerEngine.armFatigueFloor, "이 경기는 이미 지친 상태에서 시작해야 합니다")
+        let number = result.snapshot.performance.importantGamesCompleted + 1
+        result = try engine.recordImportantGame(.init(seed: result.nextSeed, state: result.snapshot,
+            report: .init(scenarioNumber: number, pitches: 70, strikeouts: 4, walks: 1, runsAllowed: 1, expectedDamage: 500, actualDamage: 400, recommendationAccepted: 30)))
+        XCTAssertGreaterThanOrEqual(result.snapshot.armRisk ?? 0, HighSchoolCareerEngine.armWarningThreshold)
+        XCTAssertEqual(HighSchoolCareerEngine.armHealthState(armRisk: result.snapshot.armRisk, injuryRecovery: result.snapshot.injuryRecovery), .warning)
+        XCTAssertTrue(result.snapshot.news.contains { $0.contains("무리한 투구") }, "경고가 뉴스에 반영돼야 합니다")
+    }
+
+    // ② 무거운 투구 부하에서 "참고 던진다"를 반복하면 결정론적으로 부상 → 재활이 강제된다.
+    func testRepeatedPushThroughDeterministicallyInjuresAndForcesRehab() throws {
+        let engine = HighSchoolCareerEngine()
+        let heavy: (Int) -> Int = { _ in 45 }
+        let first = try runArmCareer(engine, seed: "31", pitchesForGame: heavy, armResponse: .challenge, useRecovery: true)
+        XCTAssertTrue(first.injured, "무거운 부하에서 강행을 반복하면 부상이 나야 합니다")
+        XCTAssertTrue(first.rehabbed, "부상 뒤에는 재활 훈련이 강제돼야 합니다")
+        // 결정론: 같은 시드는 같은 결과를 낸다.
+        let second = try runArmCareer(engine, seed: "31", pitchesForGame: heavy, armResponse: .challenge, useRecovery: true)
+        XCTAssertEqual(first.injured, second.injured)
+        XCTAssertEqual(first.maxRisk, second.maxRisk)
+        XCTAssertEqual(first.draft?.evaluationScore, second.draft?.evaluationScore)
+    }
+
+    // ② 보강: 부상 시 재활 훈련은 성장 없이 지나가고 회복 카운트가 강제된다(단일 시드 세부 검증).
+    func testInjuryForcesGrowthlessRehabTrainings() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(seed: "31", presetID: "power_prospect"))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower))
+        var sawInjury = false
+        var sawGrowthlessRehab = false
+        for _ in 0..<200 {
+            switch result.snapshot.phase {
+            case .training:
+                let injuredNow = (result.snapshot.injuryRecovery ?? 0) > 0
+                result = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: .velocity, intensity: .standard))
+                if injuredNow {
+                    XCTAssertEqual(result.snapshot.lastTraining?.growth, 0, "재활 훈련은 능력이 오르지 않습니다")
+                    XCTAssertEqual(result.snapshot.lastTraining?.focus, .recovery, "재활은 회복 훈련으로 표시됩니다")
+                    sawGrowthlessRehab = true
+                }
+            case .relationship:
+                let wasArm = result.snapshot.currentRelationshipEvent?.id == HighSchoolCareerEngine.armCareEventID
+                result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .challenge))
+                if wasArm && result.events.contains(where: { $0.eventType == "career_arm_injury" }) {
+                    sawInjury = true
+                    XCTAssertGreaterThan(result.snapshot.injuryRecovery ?? 0, 0, "부상 직후 회복 카운트가 잡혀야 합니다")
+                }
+            case .importantGame:
+                let number = result.snapshot.performance.importantGamesCompleted + 1
+                result = try engine.recordImportantGame(.init(seed: result.nextSeed, state: result.snapshot,
+                    report: .init(scenarioNumber: number, pitches: 45, strikeouts: 4, walks: 1, runsAllowed: 1, expectedDamage: 500, actualDamage: 400, recommendationAccepted: 20)))
+            case .awakening:
+                result = try engine.chooseAwakening(.init(seed: result.nextSeed, state: result.snapshot, awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)))
+            case .chapterReview:
+                result = try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+            case .draft, .legacy, .completed: break
+            case .prologue, .schoolSelection: XCTFail("unexpected phase")
+            }
+            if [.draft, .legacy, .completed].contains(result.snapshot.phase) { break }
+        }
+        XCTAssertTrue(sawInjury, "이 시드/정책은 부상에 도달해야 합니다")
+        XCTAssertTrue(sawGrowthlessRehab, "부상 뒤 재활 훈련이 관찰돼야 합니다")
+    }
+
+    // ③ 같은 무거운 부하라도 "짧은 휴식"으로 관리하면 부상이 없다.
+    func testRestingUnderHeavyLoadAvoidsInjury() throws {
+        let engine = HighSchoolCareerEngine()
+        let heavy: (Int) -> Int = { _ in 45 }
+        let out = try runArmCareer(engine, seed: "31", pitchesForGame: heavy, armResponse: .listen, useRecovery: true)
+        XCTAssertFalse(out.injured, "휴식을 선택하면 같은 부하에서도 다치지 않아야 합니다")
+        XCTAssertFalse(out.rehabbed, "부상이 없으니 재활도 없어야 합니다")
+    }
+
+    // ④ 옛 저장본(팔 필드 없음)이 그대로 디코드·검증되고, 이후 팔 시스템이 활성화된다.
+    func testLegacySaveWithoutArmFieldsDecodesAndValidates() throws {
+        let engine = HighSchoolCareerEngine()
+        let started = try engine.start(.init(seed: "20260726", presetID: "power_prospect"))
+        let encoded = try JSONEncoder().encode(started.snapshot)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        // 이 기능 이전 저장본은 팔 필드도, 회차 스케줄 필드도 없다.
+        object.removeValue(forKey: "armRisk")
+        object.removeValue(forKey: "injuryRecovery")
+        object.removeValue(forKey: "schedule")
+        object["stateCommitment"] = ""
+        let unsignedData = try JSONSerialization.data(withJSONObject: object)
+        let unsigned = try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: unsignedData)
+        XCTAssertNil(unsigned.armRisk)
+        XCTAssertNil(unsigned.injuryRecovery)
+        object["stateCommitment"] = legacyCommitment(for: unsigned)
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+        let legacy = try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: legacyData)
+        // 옛 커밋먼트로도 검증을 통과해 다음 단계가 진행된다.
+        let advanced = try engine.completePrologue(.init(seed: started.nextSeed, state: legacy))
+        XCTAssertEqual(advanced.snapshot.phase, .schoolSelection)
+        XCTAssertEqual(HighSchoolCareerEngine.armHealthState(armRisk: legacy.armRisk, injuryRecovery: legacy.injuryRecovery), .normal)
+    }
+
+    func testPrologueAcknowledgesLaterLivesWithoutChangingFirstLife() throws {
+        let identity = PlayerIdentitySnapshot.defaultPitcher
+        let firstLife = HighSchoolCareerEngine.prologueNews(identity: identity, lifeNumber: 1, inheritedMemoryCount: 0)
+        XCTAssertEqual(firstLife, ["서울 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다."])
+
+        let secondLife = HighSchoolCareerEngine.prologueNews(identity: identity, lifeNumber: 2, inheritedMemoryCount: 2)
+        XCTAssertNotEqual(secondLife.first, firstLife.first)
+        XCTAssertEqual(secondLife.count, 2)
+        XCTAssertTrue(secondLife[1].contains("설명하기 어려운 감각"))
+
+        let thirdLife = HighSchoolCareerEngine.prologueNews(identity: identity, lifeNumber: 3, inheritedMemoryCount: 0)
+        XCTAssertEqual(thirdLife.count, 1)
+        XCTAssertNotEqual(thirdLife.first, secondLife.first)
     }
 }

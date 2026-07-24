@@ -160,26 +160,83 @@ function storyParagraphs(
   return [`이 대화 뒤 감독은 ${player}에게 맡길 이닝을 다시 검토했고, 포수는 다음 경기 첫 세 타자에게 던질 공의 순서를 정리했다.`, `${player}가 위기에서 포수의 첫 사인을 믿고 던지는지가 다음 출전 기회에 직접 영향을 준다.`];
 }
 
+// 결정론적 인용 순환. 주차·경기 수를 담은 context.period와 헤드라인으로 지문을 만들어
+// 풀에서 하나를 고른다. 같은 소식은 늘 같은 인용을, 주차가 바뀌면 다음 인용을 돌려준다.
+// (각 풀의 1번은 기존 고정 문장을 그대로 유지한다.)
+export function rotateQuote(pool: readonly string[], seed: string): string {
+  return pool[stableHash(seed) % pool.length];
+}
+
+const GAME_POSITIVE_QUOTES = [
+  "좋았던 공 하나보다, 흔들린 뒤에도 다음 사인을 믿고 던진 게 더 중요했어요.",
+  "결과보다, 주자가 나가고도 투구 템포가 안 흔들린 게 눈에 띄었어요.",
+  "오늘은 승부구가 손에 붙었어요. 카운트가 몰려도 내가 먼저 급하지 않았고요.",
+  "삼진 숫자는 잊어도 돼요. 위기에서 낮게 제구된 공 하나, 그거면 다음도 믿어요.",
+];
+const GAME_NEGATIVE_QUOTES = [
+  "타자가 잘 친 공과 우리가 놓친 공을 나눠 봐야 해요. 다음에는 같은 실수를 줄일 수 있습니다.",
+  "유리한 카운트에서 한가운데로 몰린 공이 아쉬웠어요. 거기만 줄이면 됩니다.",
+  "오늘은 초구 스트라이크가 안 들어갔어요. 다음 등판 전에 그것부터 맞춰요.",
+  "결과는 접어 두고, 흔들린 세 타석만 같이 다시 봐요.",
+];
+const HEALTH_RECOVERY_QUOTES = [
+  "오늘 괜찮았다는 말보다 내일도 같은 동작이 나오는지가 중요합니다. 서두르지 않겠습니다.",
+  "불펜 한 번으로 복귀를 정하지 않습니다. 며칠 몸이 버티는지 보고 결정하겠습니다.",
+  "구속은 천천히 올려도 됩니다. 통증 없이 던지는 날이 며칠 이어지는지가 먼저예요.",
+];
+const HEALTH_REST_QUOTES = [
+  "지금은 쉬어야 합니다. 통증 없이 던질 수 있을 때까지 경기에 내보내지 않겠습니다.",
+  "한 경기 더 던지는 것보다, 다음 달을 온전히 던지는 게 팀에 낫습니다.",
+  "무리하면 다음이 없습니다. 지금은 몸부터 붙잡겠습니다.",
+];
+const CAREER_ADMISSION_QUOTES = [
+  "입학했다고 경기에 바로 나갈 수 있는 건 아닙니다. 첫 훈련부터 다른 투수들과 같은 기준으로 경쟁합니다.",
+  "이름값으로 마운드에 세우지 않습니다. 첫 불펜부터 다시 봅니다.",
+  "환영은 오늘까지고, 내일부터는 다른 투수들과 같은 줄에 섭니다.",
+];
+const CAREER_OFFER_QUOTES = [
+  "제안의 숫자보다 어느 환경에서 가장 자주 던질 수 있는지를 먼저 봐야 합니다.",
+  "학교 이름보다, 누구와 배터리를 맞추고 몇 이닝을 받는지가 중요합니다.",
+  "제안이 많다고 좋은 게 아닙니다. 실제로 공 던질 자리가 있는 곳을 고르세요.",
+];
+const CAREER_DRAFT_QUOTES = [
+  "평가는 끝났습니다. 이제 결과가 나오면 그 자리에서 다음 준비를 시작해야 합니다.",
+  "순번은 제 손을 떠났습니다. 이름이 불리든 아니든, 다음 공은 똑같이 준비합니다.",
+  "구단이 무엇을 봤는지는 곧 나옵니다. 우린 우리가 던진 걸 믿으면 됩니다.",
+];
+const CAREER_DEFAULT_QUOTES = [
+  "다음 경기에서 초구 스트라이크를 잡는지, 위기에서도 자기 공을 던지는지 보겠습니다.",
+  "기록은 다 확인했습니다. 남은 건 다음 등판에서 약점 하나를 줄이는 일입니다.",
+  "평가서의 숫자보다, 주자가 있을 때 던지는 공을 보겠습니다.",
+];
+const PEOPLE_DEFAULT_QUOTES = [
+  "감독과 포수 앞에서 한 약속은 경기에서 지켜야 합니다. 다음 등판을 보겠습니다.",
+  "말은 오늘 정리됐고, 확인은 경기에서 합니다. 다음 등판을 보죠.",
+  "라커룸에서 맞춘 건 마운드에서 드러납니다. 첫 위기 때 첫 사인을 믿는지 보겠습니다.",
+];
+
 function quoteFor(item: string, category: CareerNewsCategory, tone: CareerNewsTone, context: CareerNewsContext) {
   const coach = context.coachName ? `${context.coachName} 감독` : "현장 관계자";
   const catcher = context.catcherName ? `${context.catcherName} 포수` : coach;
+  const seed = `${context.period}|${item}`;
   if (category === "game") {
     return tone === "positive"
-      ? { speaker: catcher, quote: "좋았던 공 하나보다, 흔들린 뒤에도 다음 사인을 믿고 던진 게 더 중요했어요." }
-      : { speaker: catcher, quote: "타자가 잘 친 공과 우리가 놓친 공을 나눠 봐야 해요. 다음에는 같은 실수를 줄일 수 있습니다." };
+      ? { speaker: catcher, quote: rotateQuote(GAME_POSITIVE_QUOTES, seed) }
+      : { speaker: catcher, quote: rotateQuote(GAME_NEGATIVE_QUOTES, seed) };
   }
   if (category === "health") return item.includes("회복") || item.includes("복귀")
-    ? { speaker: coach, quote: "오늘 괜찮았다는 말보다 내일도 같은 동작이 나오는지가 중요합니다. 서두르지 않겠습니다." }
-    : { speaker: coach, quote: "지금은 쉬어야 합니다. 통증 없이 던질 수 있을 때까지 경기에 내보내지 않겠습니다." };
+    ? { speaker: coach, quote: rotateQuote(HEALTH_RECOVERY_QUOTES, seed) }
+    : { speaker: coach, quote: rotateQuote(HEALTH_REST_QUOTES, seed) };
   if (category === "career") {
-    if (item.includes("입학")) return { speaker: coach, quote: "입학했다고 경기에 바로 나갈 수 있는 건 아닙니다. 첫 훈련부터 다른 투수들과 같은 기준으로 경쟁합니다." };
-    if (item.includes("제안") || item.includes("스카우트")) return { speaker: coach, quote: "제안의 숫자보다 어느 환경에서 가장 자주 던질 수 있는지를 먼저 봐야 합니다." };
-    if (item.includes("드래프트") || item.includes("지명")) return { speaker: coach, quote: "평가는 끝났습니다. 이제 결과가 나오면 그 자리에서 다음 준비를 시작해야 합니다." };
-    return { speaker: coach, quote: "다음 경기에서 초구 스트라이크를 잡는지, 위기에서도 자기 공을 던지는지 보겠습니다." };
+    if (item.includes("입학")) return { speaker: coach, quote: rotateQuote(CAREER_ADMISSION_QUOTES, seed) };
+    if (item.includes("제안") || item.includes("스카우트")) return { speaker: coach, quote: rotateQuote(CAREER_OFFER_QUOTES, seed) };
+    if (item.includes("드래프트") || item.includes("지명")) return { speaker: coach, quote: rotateQuote(CAREER_DRAFT_QUOTES, seed) };
+    return { speaker: coach, quote: rotateQuote(CAREER_DEFAULT_QUOTES, seed) };
   }
-  return { speaker: coach, quote: "감독과 포수 앞에서 한 약속은 경기에서 지켜야 합니다. 다음 등판을 보겠습니다." };
+  return { speaker: coach, quote: rotateQuote(PEOPLE_DEFAULT_QUOTES, seed) };
 }
 
+// 팬 반응 풀. 각 상황당 12종으로, fanPosts가 주차·소식별 지문으로 4개를 골라 반복을 줄인다.
 function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNewsTone, context: CareerNewsContext) {
   const player = context.playerName;
   if (category === "career" && (item.includes("입학") || item.includes("제안") || item.includes("진학"))) return [
@@ -189,6 +246,12 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     "지역에서 계속 뛰는 거면 직관 갈 이유 하나 늘었네",
     "학교 선택은 끝났고 이제 첫 등판이 진짜 시작이지",
     "육성 잘하는 곳인지 이번 시즌 내내 지켜본다",
+    "입학 소식보다 첫 불펜 명단에 언제 들지가 더 궁금",
+    "같은 지역이라 원정 안 가도 되는 게 제일 반갑다",
+    `${player} 유니폼 색 바뀌는 게 벌써 적응 안 되네`,
+    "학교 이름값 말고 실제로 던질 자리 많은 곳이길",
+    "신입생 텃세 없이 배터리부터 잘 맞았으면",
+    "첫 대회 엔트리에 이름 오르면 그때가 진짜 시작",
   ];
   if (category === "career") return tone === "negative" ? [
     "결과는 아쉽지만 다음 진로까지 끝난 건 아님",
@@ -197,6 +260,12 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     `${player} 여기서 접을 선수는 아니라고 봄`,
     "미지명 하나로 고교 3년을 다 지울 순 없지",
     "다음 기회가 있다면 맡을 역할부터 현실적으로 잡자",
+    "오늘 소식은 아프지만 폼이 죽은 건 아니었다",
+    "평가서 숫자보다 남은 카드가 뭔지부터 보자",
+    `${player} 멘탈만 다시 잡으면 반등할 구간임`,
+    "급하게 결론 내지 말고 다음 진로 천천히 고르자",
+    "이런 날일수록 훈련 루틴 안 흔들리는 게 중요",
+    "길게 보면 오늘이 전환점이었다 소리 나올 수도",
   ] : [
     "선발인지 불펜인지부터 나와야 제대로 판단 가능",
     `${player} 새 팀에서도 자기 공 던지는지 보자`,
@@ -204,6 +273,12 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     "기회 받은 건 좋고 이제 경쟁 상대가 중요함",
     "기사는 기대 쪽인데 실제 등판 일정도 알려줘",
     "이제부터는 학생 때 기록보다 프로 적응이지",
+    "계약 규모보다 첫 시즌 보직이 더 알고 싶다",
+    `${player} 콜업까지 얼마나 걸릴지부터 궁금하다`,
+    "새 배터리랑 사인 맞추는 것부터 잘 넘겼으면",
+    "입단 첫날 인터뷰 톤 보니 각오는 됐더라",
+    "경쟁 팀에 같은 자리 누구 있는지부터 체크",
+    "학생 때 구속 말고 프로에서 몇 이닝 버티는지 보자",
   ];
   if (category === "health") return tone === "negative" ? [
     "무리해서 한 경기 더 던지는 것보다 제대로 쉬어야 함",
@@ -212,6 +287,12 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     `${player} 빈자리는 아쉽지만 급하게 올리진 말자`,
     "구속 회복보다 다음 날 몸 상태가 더 중요함",
     "재발만 없으면 기다릴 수 있다",
+    "통증 참고 던진 티가 지난 등판부터 났었음",
+    "이번엔 무리 안 시키는 게 시즌 전체엔 이득",
+    `${player} 없는 동안 불펜 부담 늘겠지만 그래도 쉬어야지`,
+    "복귀보다 재활 과정 제대로 밟는지가 먼저",
+    "팔 상태 숫자 나오기 전엔 아무도 재촉 말자",
+    "조급하게 올렸다 재발한 케이스 한둘 봤나",
   ] : [
     "회복 소식은 반갑지만 실전은 천천히 가자",
     "불펜 한 번 괜찮았다고 바로 올리지는 말길",
@@ -219,6 +300,12 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     `${player} 건강하게 돌아오는 게 제일 큰 전력임`,
     "다음 날 통증 없다는 소식까지 기다린다",
     "복귀전 날짜 뜨면 보러 간다",
+    "몸 돌아왔다니 반갑고 첫 등판은 짧게 갔으면",
+    "재활 끝 소식보다 다음 날 리포트가 더 궁금",
+    `${player} 복귀 첫 공 구속은 굳이 안 봐도 됨 천천히`,
+    "실전 복귀보다 연속 훈련부터 무탈했으면",
+    "돌아온다는 것만으로 이번 주 제일 좋은 소식",
+    "무리 없는 일정이면 길게 볼 수 있다",
   ];
   if (category === "people") return [
     "이런 뒷이야기 보고 나면 다음 경기 사인이 더 잘 보임",
@@ -227,6 +314,12 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     `${player} 혼자 잘 던지는 게임은 아니니까 관계도 챙겨야지`,
     "훈련 분위기 좋다는 말은 경기에서 확인하면 됨",
     "다음 위기에서 첫 사인 고르는 장면이 궁금하다",
+    "배터리 호흡은 결국 위기 한 번에서 드러나더라",
+    "감독이랑 방향 맞춘 건 좋고 결과는 경기에서 보자",
+    "라커룸 분위기까지 챙기는 선수가 오래 가더라",
+    `${player} 사인 주고받는 리듬이 요즘 좋아 보인다`,
+    "말로 맞춘 약속, 다음 등판 첫 이닝에 확인됨",
+    "이런 대화 뒤 경기가 항상 볼 만했음",
   ];
   if (tone === "positive") return [
     `${player} 공 끝은 진짜임. 다음 등판도 챙겨본다`,
@@ -234,7 +327,13 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     "아직 한 경기다. 그래도 오늘은 좀 설레도 되잖아",
     "이런 성장 보는 맛에 시즌 따라가는 거지",
     "기록표보다 마운드에서 안 쫄은 게 제일 마음에 듦",
-    "다음 상대가 더 세다던데 거기서도 해보자",
+    "다음 상대가 더 세다던데 그 등판도 보러 간다",
+    "오늘 마운드에서 표정 하나 안 바뀐 거 봤음?",
+    "이 정도면 다음 등판 선발로 나와도 될 듯",
+    `${player} 등판날 알림 맞춰놨다`,
+    "위기에서 마운드 위 템포가 진짜 좋았다",
+    "다음 등판 전에 이 영상 몇 번 더 돌려본다",
+    "삼진쇼는 덤이고 마운드 배짱이 진짜였음",
   ];
   if (tone === "negative") return [
     "구속보다 스트라이크부터. 다음에도 이러면 힘들다",
@@ -243,6 +342,12 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     "기대 안 접었음. 대신 같은 실수는 그만",
     "결과만 보고 괜찮다 하기엔 몰린 공이 너무 많았음",
     `${player}한테 지금 필요한 건 변명이 아니라 다음 아웃카운트`,
+    "초구 스트라이크 비율부터 다음 등판에 고쳐 오자",
+    "몰린 카운트에서 한가운데 실투가 반복됐음",
+    "오늘은 리듬이 안 맞았음. 다음 마운드에선 다르길",
+    `${player} 폼이 아니라 승부를 급하게 간 게 문제로 보임`,
+    "삼진 욕심보다 아웃카운트 하나씩 챙겼으면",
+    "기록보다 다음 등판 첫 이닝이 진짜 시험이다",
   ];
   return [
     "좋다 나쁘다 말하기엔 아직 표본이 너무 적음",
@@ -251,6 +356,12 @@ function fanMessages(item: string, category: CareerNewsCategory, tone: CareerNew
     "지금은 조용히 지켜보는 게 맞는 것 같음",
     `${player} 역할이 정확히 뭔지 다음 경기 보면 알겠지`,
     "이 소식 하나로 들뜨진 말자. 그래도 궁금하긴 함",
+    "한 경기 표본으로 결론 내는 사람들 좀 진정하자",
+    "다음 등판 상대 라인업부터 보고 얘기하자",
+    "오늘은 판단 보류. 대신 기록은 남겨둔다",
+    `${player} 다음 등판에서 방향 잡히면 그때 평가함`,
+    "기대도 실망도 아직. 그냥 지켜보는 중",
+    "소식은 소식이고 확인은 결국 경기에서",
   ];
 }
 

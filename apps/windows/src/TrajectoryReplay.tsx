@@ -3,11 +3,11 @@ import type { CSSProperties } from "react";
 import type {
   BaserunnerStateSnapshot,
   BattedBall,
+  ExtendedPitchOutcome,
   FieldingResolutionSnapshot,
   FielderPosition,
   PitchExecution,
   PitchKernelResult,
-  PitchOutcome,
   PitchType,
   RivalAdaptationBand,
 } from "./simulationTypes";
@@ -65,7 +65,7 @@ const PITCH_LABELS: Record<PitchType, string> = {
   changeup: "체인지업",
 };
 
-const OUTCOME_LABELS: Record<PitchOutcome, string> = {
+const OUTCOME_LABELS: Record<ExtendedPitchOutcome, string> = {
   ball: "볼",
   called_strike: "루킹 스트라이크",
   swinging_strike: "헛스윙",
@@ -73,7 +73,9 @@ const OUTCOME_LABELS: Record<PitchOutcome, string> = {
   in_play_out: "범타",
   single: "안타",
   double: "2루타",
+  triple: "3루타",
   home_run: "홈런",
+  hit_by_pitch: "몸에 맞는 공",
 };
 
 const SELECTION_QUALITY_LABELS = {
@@ -388,14 +390,17 @@ function occupiedBases(runners: BaserunnerStateSnapshot): number[] {
 export function createRunnerMotions(
   before: BaserunnerStateSnapshot,
   after: BaserunnerStateSnapshot,
-  outcome: PitchOutcome,
+  outcome: ExtendedPitchOutcome,
   runsScored: number,
 ): ReadonlyArray<RunnerMotion> {
   const finalBases = occupiedBases(after);
   const motions: RunnerMotion[] = [];
-  const batterDestination = outcome === "single" ? 1 : outcome === "double" ? 2 : outcome === "home_run" ? 4 : 1;
+  const batterDestination = outcome === "single" ? 1
+    : outcome === "double" ? 2
+      : outcome === "triple" ? 3
+        : outcome === "home_run" ? 4 : 1;
   const batterOut = outcome === "in_play_out";
-  if (["single", "double", "home_run", "in_play_out"].includes(outcome)) {
+  if (["single", "double", "triple", "home_run", "in_play_out"].includes(outcome)) {
     motions.push({ id: "batter", fromBase: 0, toBase: batterDestination, isOut: batterOut });
     const index = finalBases.indexOf(batterDestination);
     if (index >= 0) finalBases.splice(index, 1);
@@ -432,15 +437,17 @@ export function runnerPoint(motion: RunnerMotion, progress: number): Point {
   };
 }
 
-function outcomeTone(outcome: PitchOutcome) {
+function outcomeTone(outcome: ExtendedPitchOutcome) {
   switch (outcome) {
     case "called_strike":
     case "swinging_strike":
     case "in_play_out": return "positive";
     case "ball":
+    case "hit_by_pitch":
     case "foul": return "neutral";
     case "single":
     case "double":
+    case "triple":
     case "home_run": return "negative";
   }
 }
@@ -915,15 +922,20 @@ export function GameCastReplay({
     : 0;
   const pitchLabel = pitchType ? PITCH_LABELS[pitchType] : "실제 투구";
   const fieldPlot = battedBall && fielding ? createBattedBallPlot(battedBall, fielding) : undefined;
-  const outcome = snapshot.result === "strikeout"
-    ? "삼진"
-    : snapshot.result === "walk"
-      ? "볼넷"
-      : snapshot.result === "hit"
-        ? OUTCOME_LABELS[snapshot.outcome]
-        : snapshot.result === "in_play_out"
-          ? "범타"
-          : OUTCOME_LABELS[snapshot.outcome];
+  // A hit-by-pitch shares the coarse `.walk` result, and a run-scoring out is a sacrifice fly, so
+  // both are named from the fine `outcome`/`runsScored` rather than the plate-appearance result.
+  const outcomeExtended = snapshot.outcome as ExtendedPitchOutcome;
+  const outcome = outcomeExtended === "hit_by_pitch"
+    ? "몸에 맞는 공"
+    : snapshot.result === "strikeout"
+      ? "삼진"
+      : snapshot.result === "walk"
+        ? "볼넷"
+        : snapshot.result === "hit"
+          ? OUTCOME_LABELS[outcomeExtended]
+          : snapshot.result === "in_play_out"
+            ? (snapshot.runsScored > 0 ? "희생플라이" : "범타")
+            : OUTCOME_LABELS[outcomeExtended];
   const viewMode = gameCastViewMode(phase, hasContact);
   const showField = viewMode === "field" && Boolean(battedBall && fielding);
   const adjudicationLabel = hasContact && (phase === "field" || phase === "result") ? "02 타격" : "02 판정";
