@@ -104,25 +104,29 @@ const FIELDER_LABELS: Record<FielderPosition, string> = {
   right_field: "우익수",
 };
 
-const FIELD_MARKERS: ReadonlyArray<{ position: FielderPosition; x: number; y: number; short: string }> = [
-  { position: "catcher", x: 320, y: 374, short: "포" },
-  { position: "pitcher", x: 320, y: 270, short: "투" },
-  { position: "first_base", x: 486, y: 250, short: "1" },
-  { position: "second_base", x: 385, y: 222, short: "2" },
-  { position: "third_base", x: 154, y: 250, short: "3" },
-  { position: "shortstop", x: 255, y: 222, short: "유" },
-  { position: "left_field", x: 170, y: 188, short: "좌" },
-  { position: "center_field", x: 320, y: 175, short: "중" },
-  { position: "right_field", x: 470, y: 188, short: "우" },
-];
+// OOTP식 탑다운: 모든 좌표는 홈(320,386) 기준 2.2px/m 단일 축척에서 나온다.
+// 베이스 27.4m, 마운드 18.4m, 외야수 88~96m — 낙하점과 수비 위치가 같은 자로 그려져
+// "우익수가 2루에서 포구" 같은 원근 왜곡이 사라진다.
+const FIELD_SCALE = 2.2;
+const FIELD_HOME: Point = { x: 320, y: 386 };
 
-const FIELD_HOME: Point = { x: 320, y: 365 };
+const FIELD_MARKERS: ReadonlyArray<{ position: FielderPosition; x: number; y: number; short: string }> = [
+  { position: "catcher", x: 320, y: 399, short: "포" },
+  { position: "pitcher", x: 320, y: 346, short: "투" },
+  { position: "first_base", x: 357, y: 324, short: "1" },
+  { position: "second_base", x: 341, y: 301, short: "2" },
+  { position: "third_base", x: 283, y: 324, short: "3" },
+  { position: "shortstop", x: 299, y: 301, short: "유" },
+  { position: "left_field", x: 232, y: 214, short: "좌" },
+  { position: "center_field", x: 320, y: 175, short: "중" },
+  { position: "right_field", x: 408, y: 214, short: "우" },
+];
 
 const BASE_ROUTE: ReadonlyArray<Point> = [
   FIELD_HOME,
-  { x: 486, y: 257 },
-  { x: 320, y: 218 },
-  { x: 154, y: 257 },
+  { x: 362.6, y: 343.4 },
+  { x: 320, y: 300.6 },
+  { x: 277.4, y: 343.4 },
   FIELD_HOME,
 ];
 
@@ -298,8 +302,8 @@ function legacyDistance(battedBall: BattedBall, fielding: FieldingResolutionSnap
 
 function projectFieldSample(sample: TrajectoryPoint3D): Point {
   return {
-    x: clamp(FIELD_HOME.x + (sample.lateralTenthsCM / 1_000) * 2.5, 72, 568),
-    y: clamp(FIELD_HOME.y - (sample.forwardTenthsCM / 1_000) * 2.35, 76, FIELD_HOME.y),
+    x: clamp(FIELD_HOME.x + (sample.lateralTenthsCM / 1_000) * FIELD_SCALE, 136, 504),
+    y: clamp(FIELD_HOME.y - (sample.forwardTenthsCM / 1_000) * FIELD_SCALE, 96, FIELD_HOME.y),
   };
 }
 
@@ -329,8 +333,8 @@ export function createBattedBallPlot(
   const lateral = Math.sin(directionRadians) * distanceMeters;
   const forward = Math.cos(directionRadians) * distanceMeters;
   const landing = seriesLanding ?? {
-    x: clamp(FIELD_HOME.x + lateral * 2.5, 72, 568),
-    y: clamp(FIELD_HOME.y - forward * 2.35, 76, FIELD_HOME.y - 7),
+    x: clamp(FIELD_HOME.x + lateral * FIELD_SCALE, 136, 504),
+    y: clamp(FIELD_HOME.y - forward * FIELD_SCALE, 96, FIELD_HOME.y - 7),
   };
   const curveDirection = directionDegrees === 0 ? 1 : Math.sign(directionDegrees);
   const control = {
@@ -724,7 +728,7 @@ function FieldView({
       <strong>{progress > 0 ? heightMeters.toFixed(1) : "—"}</strong>
       <small>m</small>
     </div> : null}
-    <svg viewBox="0 0 640 420" style={cameraStyle} role="img" aria-label={`${directionLabel(battedBall.directionTenthsDegrees / 10)} 방향 3D 타구 좌표 ${samples.length}개 재생`}>
+    <svg viewBox="128 84 384 330" style={cameraStyle} role="img" aria-label={`${directionLabel(battedBall.directionTenthsDegrees / 10)} 방향 3D 타구 좌표 ${samples.length}개 재생`}>
       <defs>
         <linearGradient id="field-tracking-sky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" className="gamecast-tracking-sky-top" />
@@ -755,34 +759,44 @@ function FieldView({
       </defs>
       <g className="gamecast-field-environment">
         <rect width="640" height="420" fill="url(#field-tracking-sky)" />
-        <ellipse cx="320" cy="92" rx="315" ry="255" fill="url(#field-tracking-light)" />
-        <path d="M 0 56 Q 320 -15 640 56 V 122 Q 320 45 0 122 Z" className="gamecast-tracking-grandstand" />
-        <path d="M 0 70 Q 320 5 640 70 V 116 Q 320 45 0 116 Z" fill="url(#field-tracking-crowd)" className="gamecast-field-crowd" />
-        <path d="M 0 101 Q 320 34 640 101 V 125 Q 320 64 0 125 Z" className="gamecast-tracking-wall" />
-        <g className="gamecast-tracking-light-rigs">
-          <path d="M 58 115 L 43 13 M 582 115 L 597 13" />
-          <rect x="21" y="8" width="44" height="13" rx="2" />
-          <rect x="575" y="8" width="44" height="13" rx="2" />
+        {/* 파울 지역 잔디: 전면 베이스 레이어 */}
+        <rect width="640" height="420" className="gamecast-tracking-foulground" />
+        {/* 관중석 링: 펜스 바깥 밴드 */}
+        <path d="M 150 252 C 196 34, 444 34, 490 252 L 462 238 C 424 96, 216 96, 178 238 Z" fill="url(#field-tracking-crowd)" className="gamecast-field-crowd" />
+        {/* 워닝트랙 + 펜스 */}
+        <path d="M 164.4 230.4 C 210 80, 430 80, 475.6 230.4" className="gamecast-tracking-warning-track" />
+        <path d="M 164.4 230.4 C 210 80, 430 80, 475.6 230.4" className="gamecast-fence" />
+        {/* 페어 잔디 */}
+        <path d="M 320 386 L 164.4 230.4 C 210 80, 430 80, 475.6 230.4 Z" fill="url(#field-tracking-turf)" className="gamecast-tracking-outfield" />
+        <clipPath id="fair-clip"><path d="M 320 386 L 164.4 230.4 C 210 80, 430 80, 475.6 230.4 Z" /></clipPath>
+        <g clipPath="url(#fair-clip)">
+          <circle cx="320" cy="386" r="132" className="gamecast-distance-ring" />
+          <circle cx="320" cy="386" r="198" className="gamecast-distance-ring" />
         </g>
-        <path d="M 0 420 V 103 Q 320 36 640 103 V 420 Z" className="gamecast-tracking-foulground" />
-        <path d="M 320 380 L -113 92 Q 320 20 753 92 L 320 380 Z" fill="url(#field-tracking-turf)" className="gamecast-tracking-outfield" />
-        <path d="M 74 117 Q 320 52 566 117" className="gamecast-tracking-warning-track" />
-        <path d="M 111 153 Q 320 91 529 153 M 151 204 Q 320 149 489 204 M 197 261 Q 320 215 443 261" className="gamecast-tracking-field-mow" />
-        <path d="M 320 368 L 505 257 320 207 135 257 Z" className="gamecast-tracking-infield" />
-        <path d="M 320 365 L 486 257 320 218 154 257 Z" className="gamecast-diamond" />
-        <path d="M 320 380 L -113 92 M 320 380 L 753 92" className="gamecast-foul-lines" />
-        <ellipse cx="320" cy="270" rx="23" ry="7" className="gamecast-tracking-mound" />
-        <path d="M 306 360 H 334 L 326 371 H 314 Z" className="gamecast-home-plate" />
-        <g className="gamecast-tracking-scoreboard" transform="translate(270 28)">
+        <text x="326" y="252" className="gamecast-distance-label">60 m</text>
+        <text x="326" y="186" className="gamecast-distance-label">90 m</text>
+        {/* 내야 더트 + 홈 주변 */}
+        <path d="M 320 401 L 379 343.4 L 320 285 L 261 343.4 Z" className="gamecast-tracking-infield" />
+        <circle cx="320" cy="386" r="27" className="gamecast-tracking-infield" />
+        <circle cx="320" cy="345.4" r="9.5" className="gamecast-tracking-mound" />
+        {/* 내야 잔디 + 베이스라인 */}
+        <path d="M 320 386 L 362.6 343.4 L 320 300.6 L 277.4 343.4 Z" className="gamecast-diamond" />
+        {/* 파울 라인 */}
+        <path d="M 320 386 L 164.4 230.4 M 320 386 L 475.6 230.4" className="gamecast-foul-lines" />
+        {/* 타석 */}
+        <rect x="303" y="378" width="9" height="15" rx="1.5" className="gamecast-batter-box" />
+        <rect x="328" y="378" width="9" height="15" rx="1.5" className="gamecast-batter-box" />
+        <path d="M 314 382 H 326 L 323 390 H 317 Z" className="gamecast-home-plate" />
+        <g className="gamecast-tracking-scoreboard" transform="translate(270 92)">
           <rect width="100" height="43" rx="3" />
           <text x="50" y="17" textAnchor="middle">환성 야구장</text>
           <text x="50" y="33" textAnchor="middle">NIGHT GAME</text>
         </g>
         <rect width="640" height="420" filter="url(#field-tracking-texture)" className="gamecast-tracking-texture" />
       </g>
-      <Base x={486} y={257} occupied={displayedRunners.firstOccupied} label="1" />
-      <Base x={320} y={218} occupied={displayedRunners.secondOccupied} label="2" />
-      <Base x={154} y={257} occupied={displayedRunners.thirdOccupied} label="3" />
+      <Base x={362.6} y={343.4} occupied={displayedRunners.firstOccupied} label="1" />
+      <Base x={320} y={300.6} occupied={displayedRunners.secondOccupied} label="2" />
+      <Base x={277.4} y={343.4} occupied={displayedRunners.thirdOccupied} label="3" />
       {FIELD_MARKERS.map((marker) => {
         const isResponsible = marker.position === fielding.fielderPosition;
         const point = isResponsible && fielderPoint ? fielderPoint : marker;
@@ -798,9 +812,8 @@ function FieldView({
         <path d={pointsPath(flightTrailPoints)} className="gamecast-flight-path" />
         {flightTrailPoints.slice(-5, -1).map((point, index) => <circle key={`${point.x}-${point.y}-${index}`} cx={point.x} cy={point.y} r={1.4 + index * 0.42} className="gamecast-ball-ghost" />)}
         <ellipse cx={currentGround.x} cy={currentGround.y + 3} rx={7 + heightMeters * 0.15} ry="4" className="gamecast-ball-shadow" />
-        <line x1={currentGround.x} y1={currentGround.y} x2={currentGround.x} y2={currentGround.y - ballLift} className="gamecast-height-guide" />
-        <g className={`gamecast-live-ball gamecast-live-ball--${revealResult ? tone : "tracking"}`} transform={`translate(${currentGround.x} ${currentGround.y - ballLift})`} filter="url(#live-ball-glow)">
-          <circle r="6" />
+        <g className={`gamecast-live-ball gamecast-live-ball--${revealResult ? tone : "tracking"}`} transform={`translate(${currentGround.x} ${currentGround.y - ballLift * 0.16})`} filter="url(#live-ball-glow)">
+          <circle r={5 + Math.min(5, heightMeters * 0.16)} />
         </g>
       </> : null}
       {runnerMotions.map((motion) => {

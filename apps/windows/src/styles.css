@@ -7310,3 +7310,11 @@ body.high-contrast .character-profile__portrait {
   background: var(--color-positive);
   font-size: var(--font-size-scene-sm);
 }
+
+
+/* OOTP식 탑다운 필드 추가 요소 */
+.gamecast-fence { fill: none; stroke: var(--scene-sky-raised); stroke-width: 5; }
+.gamecast-tracking-warning-track { fill: none; stroke: var(--scene-dirt); stroke-width: 12; opacity: .8; }
+.gamecast-distance-ring { fill: none; stroke: color-mix(in srgb, var(--color-text-primary) 14%, transparent); stroke-dasharray: 3 7; }
+.gamecast-distance-label { fill: color-mix(in srgb, var(--color-text-primary) 30%, transparent); font-size: var(--font-size-scene-sm); font-family: var(--font-mono, ui-monospace); }
+.gamecast-batter-box { fill: none; stroke: color-mix(in srgb, var(--color-text-primary) 45%, transparent); stroke-width: 1.2; }
