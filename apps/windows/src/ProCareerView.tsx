@@ -4,7 +4,7 @@ import { CharacterProfile } from "./CharacterProfile";
 import type { OffseasonDecision, ProCareerResult, ProSeasonSegment, ProSeasonTrigger, ProWeekPlan } from "./simulationTypes";
 
 const PLANS: ReadonlyArray<{ id: ProWeekPlan; title: string; copy: string }> = [
-  { id: "develop_weapon", title: "결정구 훈련", copy: "변화구와 구위이 오르지만 피로가 쌓인다" },
+  { id: "develop_weapon", title: "결정구 훈련", copy: "변화구와 구위가 오르지만 피로가 쌓인다" },
   { id: "refine_command", title: "코스 제구", copy: "볼넷을 줄이고 원하는 코스에 꾸준히 던지는 연습을 한다" },
   { id: "build_stamina", title: "긴 이닝 훈련", copy: "선발 체력을 키우지만 피로가 쌓인다" },
   { id: "recover", title: "회복", copy: "등판을 줄이고 피로와 부상을 회복한다" },

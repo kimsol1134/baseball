@@ -58,7 +58,7 @@ const OTHER_REGIONS: ReadonlyArray<{ value: string; label: string }> = [
 ];
 
 const TRAININGS: ReadonlyArray<{ value: TrainingFocus; label: string; copy: string; gameEffect: string }> = [
-  { value: "velocity", label: "직구 구속", copy: "구위이 오를 수 있다", gameEffect: "빠른 직구와 헛스윙에 유리" },
+  { value: "velocity", label: "직구 구속", copy: "구위가 오를 수 있다", gameEffect: "빠른 직구와 헛스윙에 유리" },
   { value: "command", label: "제구", copy: "원하는 코스에 던지는 능력이 오를 수 있다", gameEffect: "볼넷과 한가운데 실투 감소" },
   { value: "breaking_ball", label: "변화구", copy: "변화구의 움직임이 좋아질 수 있다", gameEffect: "변화구 헛스윙과 빗맞은 타구 증가" },
   { value: "stamina", label: "선발 체력", copy: "긴 이닝을 버티는 체력이 오를 수 있다", gameEffect: "경기 후반 구속·제구 하락 감소" },
@@ -86,9 +86,10 @@ function abilityMeaning(value: number) {
   if (value >= 65) return "프로 최상급";
   if (value >= 55) return "프로 평균 이상";
   if (value >= 50) return "프로 평균";
-  if (value >= 45) return "지역에서 손꼽는 재능";
-  if (value >= 40) return "고교 상위권";
-  if (value >= 35) return "고교 주전 경쟁";
+  if (value >= 47) return "지역에서 손꼽는 재능";
+  if (value >= 43) return "고교 상위권 도전";
+  if (value >= 38) return "고교 주전 경쟁";
+  if (value >= 33) return "성장 중인 기본기";
   return "기본기 다지는 단계";
 }
 

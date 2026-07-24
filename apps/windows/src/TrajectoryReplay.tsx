@@ -764,6 +764,7 @@ function FieldView({
           <rect x="21" y="8" width="44" height="13" rx="2" />
           <rect x="575" y="8" width="44" height="13" rx="2" />
         </g>
+        <path d="M 0 420 V 103 Q 320 36 640 103 V 420 Z" className="gamecast-tracking-foulground" />
         <path d="M 320 380 L 46 92 Q 320 20 594 92 L 320 380 Z" fill="url(#field-tracking-turf)" className="gamecast-tracking-outfield" />
         <path d="M 74 117 Q 320 52 566 117" className="gamecast-tracking-warning-track" />
         <path d="M 111 153 Q 320 91 529 153 M 151 204 Q 320 149 489 204 M 197 261 Q 320 215 443 261" className="gamecast-tracking-field-mow" />

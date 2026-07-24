@@ -7186,3 +7186,7 @@ body.high-contrast .character-profile__portrait {
   background: var(--color-surface-soft);
   font-size: var(--font-size-scene-sm);
 }
+
+
+/* 파울 지역 지면: 페어 웨지 밖이 하늘로 비어 내야가 단절돼 보이던 문제를 잔디 톤으로 잇는다. */
+.gamecast-tracking-foulground { fill: var(--scene-turf-deep); opacity: .9; }

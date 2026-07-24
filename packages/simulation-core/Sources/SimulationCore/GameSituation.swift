@@ -443,6 +443,9 @@ public struct BallInPlayEngine: Sendable {
         ordinal: Int
     ) -> FieldingResolutionSnapshot {
         let neutralOutcome = outcome(for: battedBall.contactQuality)
+        // 공중 타구는 방향만이 아니라 실제 낙하 거리로 담당 구역을 정한다.
+        // 10m 내야 뜬공을 외야수가 2루까지 달려와 잡는 비현실을 막는다.
+        let provisionalFlight = ballFlight(for: battedBall, sector: .outfield)
         let sector: FieldingSector
         if battedBall.launchAngleTenthsDegrees < 90 {
             sector = .infield
@@ -450,6 +453,8 @@ public struct BallInPlayEngine: Sendable {
             || (battedBall.contactQuality >= 700
                 && (150...350).contains(battedBall.launchAngleTenthsDegrees)) {
             sector = .fence
+        } else if provisionalFlight.distanceTenthsMeters < 500 {
+            sector = .infield
         } else {
             sector = .outfield
         }

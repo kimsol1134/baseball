@@ -219,7 +219,7 @@ const AWAKENING_LABELS: Record<AwakeningID, { title: string; description: string
   two_strike_plan: { title: "2스트라이크 승부법", description: "삼진을 잡기 위한 구종 순서를 미리 정합니다." },
   first_pitch_strike: { title: "초구 스트라이크", description: "유리한 카운트를 빠르게 만듭니다." },
   traffic_controller: { title: "주자를 두고도 침착하게", description: "주자가 여러 명 나가도 아웃 하나에 집중합니다." },
-  late_inning_reserve: { title: "후반에도 남는 힘", description: "경기 후반에도 구위이 덜 떨어집니다." },
+  late_inning_reserve: { title: "후반에도 남는 힘", description: "경기 후반에도 구위가 덜 떨어집니다." },
   scout_composure: { title: "압박 속 침착함", description: "스카우트가 지켜봐도 평소처럼 던집니다." },
 };
 
