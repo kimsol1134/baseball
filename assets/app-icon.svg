@@ -1,6 +1,80 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#111817"/>
-  <path d="M256 58 448 256 256 454 64 256Z" fill="#253b1e" stroke="#b9ef71" stroke-width="24"/>
-  <circle cx="256" cy="256" r="112" fill="#17201e" stroke="#3b4c47" stroke-width="10"/>
-  <text x="256" y="286" text-anchor="middle" font-family="Arial, sans-serif" font-size="108" font-weight="900" fill="#b9ef71">DS</text>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#16241b"/>
+      <stop offset="55%" stop-color="#0e1712"/>
+      <stop offset="100%" stop-color="#070c09"/>
+    </radialGradient>
+    <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9ade59"/>
+      <stop offset="45%" stop-color="#b7f36b"/>
+      <stop offset="100%" stop-color="#69a840"/>
+    </linearGradient>
+    <radialGradient id="ball" cx="38%" cy="30%" r="82%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="58%" stop-color="#f4f2e8"/>
+      <stop offset="100%" stop-color="#c6c4b2"/>
+    </radialGradient>
+    <linearGradient id="trailBack" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b7f36b" stop-opacity="0"/>
+      <stop offset="55%" stop-color="#b7f36b" stop-opacity=".75"/>
+      <stop offset="100%" stop-color="#d9ff9e" stop-opacity=".95"/>
+    </linearGradient>
+    <linearGradient id="trailFront" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#b7f36b" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#b7f36b" stop-opacity=".85"/>
+      <stop offset="75%" stop-color="#d9ff9e"/>
+      <stop offset="100%" stop-color="#eaffc9"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="12" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowBig" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="22" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="square"><rect width="1024" height="1024"/></clipPath>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <g clip-path="url(#square)">
+    <!-- 다이아몬드 프레임 -->
+    <g transform="rotate(45 512 512)">
+      <rect x="216" y="216" width="592" height="592" rx="30" fill="#0c130e" opacity=".65"/>
+      <rect x="216" y="216" width="592" height="592" rx="30" fill="none" stroke="#22371d" stroke-width="56"/>
+      <rect x="216" y="216" width="592" height="592" rx="30" fill="none" stroke="url(#frame)" stroke-width="22" filter="url(#glow)"/>
+    </g>
+    <g fill="#d9ff9e" filter="url(#glow)">
+      <circle cx="512" cy="93" r="15"/><circle cx="931" cy="512" r="15"/>
+      <circle cx="512" cy="931" r="15"/><circle cx="93" cy="512" r="15"/>
+    </g>
+
+    <!-- 야구공 -->
+    <g>
+      <circle cx="524" cy="486" r="234" fill="#060a07" opacity=".5"/>
+      <circle cx="512" cy="474" r="228" fill="url(#ball)"/>
+      <!-- 심 두 줄 -->
+      <path d="M 366 306 C 296 436, 296 534, 380 648" fill="none" stroke="#b9412f" stroke-width="15" stroke-linecap="round"/>
+      <path d="M 658 306 C 730 436, 730 534, 644 648" fill="none" stroke="#b9412f" stroke-width="15" stroke-linecap="round"/>
+      <!-- 스티치: 짧은 사선 V 티크, 촘촘하게 -->
+      <g stroke="#b9412f" stroke-width="8" stroke-linecap="round">
+        <path d="M 356 330 l 30 -18"/><path d="M 340 372 l 32 -14"/><path d="M 330 416 l 33 -10"/>
+        <path d="M 326 460 l 34 -5"/><path d="M 328 504 l 34 1"/><path d="M 336 548 l 33 7"/>
+        <path d="M 350 592 l 31 12"/><path d="M 368 630 l 29 17"/>
+        <path d="M 668 330 l -30 -18"/><path d="M 684 372 l -32 -14"/><path d="M 694 416 l -33 -10"/>
+        <path d="M 698 460 l -34 -5"/><path d="M 696 504 l -34 1"/><path d="M 688 548 l -33 7"/>
+        <path d="M 674 592 l -31 12"/><path d="M 656 630 l -29 17"/>
+      </g>
+    </g>
+
+    <!-- 오빗 앞 구간: 왼쪽 아래에서 공 앞을 지나 오른쪽으로 빠져나감 -->
+    <g fill="none" stroke="url(#trailFront)" stroke-linecap="round" filter="url(#glowBig)">
+      <path d="M 128 592 C 240 746, 566 792, 762 656 C 812 620, 828 540, 810 470" stroke-width="34"/>
+    </g>
+    <!-- 궤적 위 모션 에코 두 점 -->
+    <circle cx="212" cy="664" r="10" fill="#d9ff9e" opacity=".55"/>
+    <circle cx="172" cy="632" r="7" fill="#d9ff9e" opacity=".35"/>
+    <circle cx="810" cy="470" r="18" fill="#f4ffe1" filter="url(#glowBig)"/>
+  </g>
 </svg>
