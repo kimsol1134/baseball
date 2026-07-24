@@ -1775,7 +1775,7 @@ export function App() {
             </div>
             {pitcher ? (
               <div className="stat-list" aria-label="현재 능력치">
-                <StatRow label="공의 위력" value={pitcher.stuff} />
+                <StatRow label="구위" value={pitcher.stuff} />
                 <StatRow label="제구" value={pitcher.command} />
                 <StatRow label="변화구" value={pitcher.movement} />
                 <StatRow label="체력" value={pitcher.stamina} />

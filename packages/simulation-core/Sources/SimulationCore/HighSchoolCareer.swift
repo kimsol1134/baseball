@@ -1341,7 +1341,7 @@ public struct HighSchoolCareerEngine: Sendable {
             signingBonus: round.map { max(40_000_000, 300_000_000 - $0 * 45_000_000) },
             firstSeasonGoal: team.map { _ in "퓨처스 선발 10경기와 볼넷률 8% 이하" },
             summary: drafted
-                ? "지명 구단 · \(team?.name ?? "프로 구단"). 공의 위력과 고교 경기 기록에서 높은 평가를 받았습니다."
+                ? "지명 구단 · \(team?.name ?? "프로 구단"). 구위과 고교 경기 기록에서 높은 평가를 받았습니다."
                 : "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
         )
         // Both outcomes bank memories for the next life: a successful run leaves an
@@ -1785,7 +1785,7 @@ public struct HighSchoolCareerEngine: Sendable {
     private func trainingFeedback(focus: TrainingFocus, growth: Int, fatigueChange: Int) -> String {
         let metric: String
         switch focus {
-        case .velocity: metric = "공의 위력"
+        case .velocity: metric = "구위"
         case .command: metric = "제구"
         case .breakingBall: metric = "변화구"
         case .stamina, .recovery: metric = "체력"

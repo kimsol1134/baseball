@@ -205,6 +205,60 @@ body.high-contrast {
   box-shadow: 0 0 10px color-mix(in srgb, var(--color-positive) 26%, transparent);
 }
 
+.ds-ability-gauge.is-dual {
+  display: grid;
+  gap: 3px;
+  height: auto;
+  overflow: visible;
+  border-radius: 0;
+  background: none;
+}
+
+.ds-ability-gauge.is-dual .ds-ability-gauge__row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ds-ability-gauge.is-dual .ds-ability-gauge__row > small {
+  flex: 0 0 auto;
+  min-width: 2em;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-scene-sm);
+  line-height: 1;
+  text-align: left;
+}
+
+.ds-ability-gauge.is-dual.is-compact { gap: 2px; }
+
+.ds-ability-gauge.is-dual.is-compact .ds-ability-gauge__track { height: 5px; }
+
+.ds-ability-gauge.is-dual .ds-ability-gauge__track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-surface-soft);
+}
+
+.ds-ability-gauge.is-dual .ds-ability-gauge__track > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  border-radius: inherit;
+  background: var(--color-information);
+}
+
+.ds-ability-gauge.is-dual[data-tier="strength"] .ds-ability-gauge__row:not(.is-potential) .ds-ability-gauge__track > i { background: var(--color-positive); }
+.ds-ability-gauge.is-dual[data-tier="above-average"] .ds-ability-gauge__row:not(.is-potential) .ds-ability-gauge__track > i { background: var(--color-information); }
+.ds-ability-gauge.is-dual[data-tier="average"] .ds-ability-gauge__row:not(.is-potential) .ds-ability-gauge__track > i { background: var(--color-selection); }
+.ds-ability-gauge.is-dual[data-tier="weakness"] .ds-ability-gauge__row:not(.is-potential) .ds-ability-gauge__track > i { background: var(--color-border-strong); }
+
+.ds-ability-gauge.is-dual .ds-ability-gauge__row.is-potential .ds-ability-gauge__track > i {
+  background: color-mix(in srgb, var(--color-positive) 55%, transparent);
+}
+
 .ds-ability-gauge > u {
   position: absolute;
   z-index: 2;

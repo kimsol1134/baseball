@@ -20,7 +20,7 @@ const CREATION_METRICS: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
-  { key: "stuff", label: "공의 위력", description: "직구 구속과 헛스윙을 끌어내는 힘" },
+  { key: "stuff", label: "구위", description: "직구 구속과 헛스윙을 끌어내는 힘" },
   { key: "command", label: "제구", description: "원하는 곳에 꾸준히 던지는 능력" },
   { key: "movement", label: "변화구", description: "공이 꺾이고 떨어지는 정도" },
   { key: "stamina", label: "체력", description: "긴 이닝에도 공의 힘을 유지하는 능력" },
@@ -219,7 +219,7 @@ const AWAKENING_LABELS: Record<AwakeningID, { title: string; description: string
   two_strike_plan: { title: "2스트라이크 승부법", description: "삼진을 잡기 위한 구종 순서를 미리 정합니다." },
   first_pitch_strike: { title: "초구 스트라이크", description: "유리한 카운트를 빠르게 만듭니다." },
   traffic_controller: { title: "주자를 두고도 침착하게", description: "주자가 여러 명 나가도 아웃 하나에 집중합니다." },
-  late_inning_reserve: { title: "후반에도 남는 힘", description: "경기 후반에도 공의 위력이 덜 떨어집니다." },
+  late_inning_reserve: { title: "후반에도 남는 힘", description: "경기 후반에도 구위이 덜 떨어집니다." },
   scout_composure: { title: "압박 속 침착함", description: "스카우트가 지켜봐도 평소처럼 던집니다." },
 };
 
@@ -251,7 +251,7 @@ const SOUL_OPTIONS: ReadonlyArray<{ value: SoulDomain; label: string; descriptio
 ];
 
 const METRIC_LABELS: Record<string, string> = {
-  stuff: "공의 위력",
+  stuff: "구위",
   command: "제구",
   movement: "변화구",
   stamina: "체력",

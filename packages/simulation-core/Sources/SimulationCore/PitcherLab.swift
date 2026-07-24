@@ -1243,7 +1243,7 @@ public struct PitcherLabEngine: Sendable {
         if state.pitcher.command >= 45 { strengths.append("프로 가능성을 보인 제구") }
         if state.pitcher.movement >= 45 { strengths.append("결정구로 성장 중인 변화구") }
         if state.pitcher.stamina >= 45 { strengths.append("선발 후보로 평가받는 체력") }
-        if strengths.isEmpty { strengths.append("공의 위력·제구·변화구·체력의 균형") }
+        if strengths.isEmpty { strengths.append("구위·제구·변화구·체력의 균형") }
         var concerns: [String] = []
         if performance.walks >= 3 { concerns.append("위기에서 늘어나는 볼넷") }
         if performance.runsAllowed >= 5 { concerns.append("실점 억제의 기복") }

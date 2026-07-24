@@ -28,7 +28,7 @@ import type {
 } from "./simulationTypes";
 
 const METRICS: ReadonlyArray<{ key: keyof CreationAllocationSnapshot; label: string }> = [
-  { key: "stuff", label: "공의 위력" }, { key: "command", label: "제구" },
+  { key: "stuff", label: "구위" }, { key: "command", label: "제구" },
   { key: "movement", label: "변화구" }, { key: "stamina", label: "체력" },
 ];
 
@@ -58,7 +58,7 @@ const OTHER_REGIONS: ReadonlyArray<{ value: string; label: string }> = [
 ];
 
 const TRAININGS: ReadonlyArray<{ value: TrainingFocus; label: string; copy: string; gameEffect: string }> = [
-  { value: "velocity", label: "직구 구속", copy: "공의 위력이 오를 수 있다", gameEffect: "빠른 직구와 헛스윙에 유리" },
+  { value: "velocity", label: "직구 구속", copy: "구위이 오를 수 있다", gameEffect: "빠른 직구와 헛스윙에 유리" },
   { value: "command", label: "제구", copy: "원하는 코스에 던지는 능력이 오를 수 있다", gameEffect: "볼넷과 한가운데 실투 감소" },
   { value: "breaking_ball", label: "변화구", copy: "변화구의 움직임이 좋아질 수 있다", gameEffect: "변화구 헛스윙과 빗맞은 타구 증가" },
   { value: "stamina", label: "선발 체력", copy: "긴 이닝을 버티는 체력이 오를 수 있다", gameEffect: "경기 후반 구속·제구 하락 감소" },
@@ -73,7 +73,7 @@ const INTENSITIES: ReadonlyArray<{ value: TrainingIntensity; label: string; copy
 ];
 
 const TRAINING_METRICS: Record<TrainingFocus, { key: keyof CreationAllocationSnapshot; label: string }> = {
-  velocity: { key: "stuff", label: "공의 위력" },
+  velocity: { key: "stuff", label: "구위" },
   command: { key: "command", label: "제구" },
   breaking_ball: { key: "movement", label: "변화구" },
   stamina: { key: "stamina", label: "체력" },
@@ -189,9 +189,9 @@ const AWAKENINGS: Record<AwakeningID, string> = {
 };
 
 const AWAKENING_DETAILS: Record<AwakeningID, string> = {
-  explosive_fastball: "공의 위력 +4 · 제구 -2 · 직구 구속과 헛스윙 증가",
+  explosive_fastball: "구위 +4 · 제구 -2 · 직구 구속과 헛스윙 증가",
   rising_four_seam: "직구의 위력과 헛스윙 증가 · 변화구 -1",
-  pinpoint_edge: "제구 +4 · 공의 위력 -1 · 스트라이크존 끝 제구 향상",
+  pinpoint_edge: "제구 +4 · 구위 -1 · 스트라이크존 끝 제구 향상",
   disappearing_breaker: "변화구 +4 · 제구 -1 · 변화구 헛스윙 증가",
   iron_arm: "체력 +5 · 변화구 -1 · 공마다 쌓이는 피로 감소",
   calm_under_pressure: "제구 +2 · 체력 +1 · 주자가 있을 때 제구 향상",
@@ -200,13 +200,13 @@ const AWAKENING_DETAILS: Record<AwakeningID, string> = {
   frozen_changeup: "체인지업 궤적·헛스윙 상승 · 체력 -1",
   sweeping_slider: "변화구 +4 · 제구 -1 · 슬라이더 헛스윙 증가",
   curveball_clock: "변화구 +4 · 체력 -1 · 커브 헛스윙 증가",
-  repeatable_release: "제구 +4 · 공의 위력 -1 · 모든 구종의 제구 향상",
+  repeatable_release: "제구 +4 · 구위 -1 · 모든 구종의 제구 향상",
   pickoff_rhythm: "제구 +1 · 체력 +2 · 주자가 있을 때 흔들림 감소",
   two_strike_plan: "제구·변화구 +2 · 체력 -1 · 변화구 헛스윙 증가",
   first_pitch_strike: "제구 +3 · 체력 -1 · 초구 스트라이크 증가",
-  traffic_controller: "제구·체력 +2 · 공의 위력 -1 · 빗맞은 타구 증가",
+  traffic_controller: "제구·체력 +2 · 구위 -1 · 빗맞은 타구 증가",
   late_inning_reserve: "체력 +4 · 공마다 쌓이는 피로 감소",
-  scout_composure: "공의 위력·제구 +2 · 체력 -1",
+  scout_composure: "구위·제구 +2 · 체력 -1",
 };
 
 const MEMORIES: Record<MemoryCardID, string> = {
@@ -234,12 +234,12 @@ const MEMORY_DETAILS: Record<MemoryCardID, string> = {
   mechanics_video: "제구 향상, 공의 최고 위력 소폭 감소",
   school_playbook: "제구·변화구 향상",
   coach_letter: "제구·체력 향상",
-  draft_report: "공의 위력·제구 향상",
-  stadium_echo: "공의 위력·헛스윙 증가, 제구 소폭 감소",
+  draft_report: "구위·제구 향상",
+  stadium_echo: "구위·헛스윙 증가, 제구 소폭 감소",
   team_first_promise: "제구·체력과 빗맞은 타구 유도 증가",
   failure_scorebook: "제구·변화구 향상, 체력 소폭 감소",
-  winter_program: "공의 위력·체력 향상, 피로 누적 감소",
-  bullpen_compass: "공의 위력·체력 향상, 피로 누적 감소",
+  winter_program: "구위·체력 향상, 피로 누적 감소",
+  bullpen_compass: "구위·체력 향상, 피로 누적 감소",
 };
 
 const PHASE_LABELS: Record<HighSchoolCareerResult["snapshot"]["phase"], string> = {
@@ -505,7 +505,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
           className={preset.id === effectivePresetID ? "is-selected" : undefined} onClick={() => selectPreset(preset)}>
           <span>{preset.name}</span><strong>{preset.pitcher.name}</strong><p>{preset.tagline}</p><small>{preset.tradeoff}</small>
           <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
-            {METRICS.map((metric) => <div key={metric.key}><dt>{metric.key === "stuff" ? "위력" : metric.label}</dt>
+            {METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt>
               <dd data-tier={ratingTier(preset.pitcher[metric.key])}>{preset.pitcher[metric.key]}<i>/{presetPotential(preset, metric.key)}</i></dd>
               <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]}
                 lowerBound={preset.pitcher[metric.key]} upperBound={presetPotential(preset, metric.key)} /></div>)}
@@ -513,7 +513,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
           <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
         </button>)}
       </section> : null}
-      {presets.length > 0 ? <div className="gauge-legend" aria-hidden="true"><span className="gauge-legend__bar"><i /><em /><u /></span><span>채움 = 현재 · 밝은 띠 = 잠재까지 성장 여지</span></div> : null}
+      {presets.length > 0 ? <div className="gauge-legend" aria-hidden="true"><span className="gauge-legend__dual"><i /><em /></span><span>위 = 현재 · 아래 연둣빛 = 잠재</span></div> : null}
       {presets.length === 0 ? <CoreUnavailableState message={error ?? coreMessage} isChecking={isRunning} onRetry={onRetryCore} /> : null}
       {selected ? <section className="creation-allocation career-allocation">
         <div className="creation-summary"><div><span>투수 유형</span><strong>{selected.name}</strong><p>선수마다 강점과 약점이 다릅니다. 추가 능력 5점은 어느 유형을 골라도 같습니다.</p></div>
@@ -737,7 +737,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
   return <main className="career-shell stage-layout" data-stage={state.phase} data-school={state.school?.id} data-team={state.draftResult?.team?.id}>
     {showTutorial ? <AccessibleModal className="tutorial-panel" labelledBy="tutorial-title" onEscape={onDismissTutorial}>
       <div><p className="eyebrow">빠른 안내</p><h2 id="tutorial-title">커리어 시작 전</h2></div>
-      <ol><li><strong>현재 능력</strong><span>선수 카드에서 공의 위력·제구·변화구·체력을 확인합니다.</span></li><li><strong>중요 경기</strong><span>승부처에서는 구종·코스·강도를 직접 선택합니다.</span></li>
+      <ol><li><strong>현재 능력</strong><span>선수 카드에서 구위·제구·변화구·체력을 확인합니다.</span></li><li><strong>중요 경기</strong><span>승부처에서는 구종·코스·강도를 직접 선택합니다.</span></li>
         <li><strong>선택 확정</strong><span>확정한 훈련과 사건 선택은 되돌릴 수 없습니다.</span></li><li><strong>자동 저장</strong><span>확정한 선택마다 이 기기에 저장됩니다.</span></li></ol>
       <button className="ds-button ds-button--primary lab-primary" type="button" onClick={onDismissTutorial}>커리어 시작</button>
     </AccessibleModal> : null}
@@ -778,7 +778,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
       <section id="career-current-action" className="ds-card ds-card--raised career-panel career-decision"><div className="lab-card-heading"><span>{pendingTraining ? "훈련 완료" : pendingRelationship ? "대화 완료" : "지금 할 일"}</span><small>{hasPendingResult ? "결과 확인" : PHASE_LABELS[state.phase]}</small></div>
         {demoComplete ? <div className="career-milestone demo-complete"><span>데모 기록 완료</span>
           <h3>첫 중요 경기를 마쳤습니다.</h3>
-          <p>{state.pitcher.name}은 공의 위력 {rating(state.pitcher.stuff)}, 제구 {rating(state.pitcher.command)}로 첫 기록을 남겼습니다. 이 저장은 정식판에서 그대로 이어집니다.</p>
+          <p>{state.pitcher.name}은 구위 {rating(state.pitcher.stuff)}, 제구 {rating(state.pitcher.command)}로 첫 기록을 남겼습니다. 이 저장은 정식판에서 그대로 이어집니다.</p>
           <div className="demo-summary"><div><strong>{state.performance.pitches}</strong><span>투구</span></div><div><strong>{state.performance.strikeouts}</strong><span>삼진</span></div><div><strong>{managerTrust}</strong><span>감독의 믿음</span></div><div><strong>{catcherTrust}</strong><span>포수의 믿음</span></div></div>
           <p className="demo-next">정식판에서는 남은 고교 생활, 드래프트, 프로 입단과 은퇴까지 이어집니다.</p>
           <button className="ds-button ds-button--primary lab-primary" type="button" onClick={onNewCareer}>새 선수로 다시 해보기</button>

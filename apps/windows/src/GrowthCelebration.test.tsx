@@ -4,10 +4,10 @@ import { crossedGrowthMilestone, GrowthCelebration, growthMilestoneCopy } from "
 
 describe("GrowthCelebration", () => {
   it("makes the exact gain the dominant accessible result", () => {
-    const markup = renderToStaticMarkup(<GrowthCelebration label="공의 위력" before={64} after={65} />);
+    const markup = renderToStaticMarkup(<GrowthCelebration label="구위" before={64} after={65} />);
 
     expect(markup).toContain("등급 돌파!");
-    expect(markup).toContain("공의 위력 능력치 상승, 64에서 65, 1 증가");
+    expect(markup).toContain("구위 능력치 상승, 64에서 65, 1 증가");
     expect(markup).toContain("+1");
   });
 

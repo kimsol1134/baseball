@@ -3981,10 +3981,9 @@ footer {
 }
 
 .preset-statline .ds-ability-gauge {
-  width: calc(100% - 8px);
-  height: 10px;
-  margin-top: 5px;
-  margin-bottom: 3px;
+  width: calc(100% - 6px);
+  margin-top: 4px;
+  margin-bottom: 2px;
 }
 
 .preset-statline dd[data-tier="strength"] { color: var(--color-positive); }
@@ -7026,6 +7025,22 @@ body.high-contrast .character-profile__portrait {
   color: var(--color-text-tertiary);
   font-size: var(--font-size-scene-sm);
 }
+
+.gauge-legend__dual {
+  display: inline-grid;
+  gap: 2px;
+  width: 44px;
+}
+
+.gauge-legend__dual > i,
+.gauge-legend__dual > em {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+}
+
+.gauge-legend__dual > i { width: 60%; background: var(--color-information); }
+.gauge-legend__dual > em { width: 88%; background: color-mix(in srgb, var(--color-positive) 55%, transparent); }
 
 .gauge-legend__bar {
   position: relative;

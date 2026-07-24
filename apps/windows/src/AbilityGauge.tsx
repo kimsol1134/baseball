@@ -41,10 +41,17 @@ export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBou
   const hasRange = lowerBound !== undefined && upperBound !== undefined;
   const valueText = hasRange ? `${currentText}, 성장 예상 ${clampRating(lowerBound)}에서 ${clampRating(upperBound)}` : currentText;
 
+  if (hasRange) {
+    return <div className={`ds-ability-gauge is-dual${compact ? " is-compact" : ""}`} data-tier={tier}
+      role="meter" aria-label={valueText} aria-valuemin={20} aria-valuemax={80} aria-valuenow={current}>
+      <span className="ds-ability-gauge__row">{compact ? null : <small aria-hidden="true">현재</small>}
+        <span className="ds-ability-gauge__track"><i style={{ width: `${ratingPosition(current)}%` }} /></span></span>
+      <span className="ds-ability-gauge__row is-potential">{compact ? null : <small aria-hidden="true">잠재</small>}
+        <span className="ds-ability-gauge__track"><i style={{ width: `${ratingPosition(upperBound)}%` }} /></span></span>
+    </div>;
+  }
   return <div className={`ds-ability-gauge${compact ? " is-compact" : ""}${gained ? " is-gain" : ""}`} data-tier={tier}
     role="meter" aria-label={valueText} aria-valuemin={20} aria-valuemax={80} aria-valuenow={current}>
-    {hasRange ? <em style={{ left: `${ratingPosition(lowerBound)}%`, width: `${Math.max(2, ratingPosition(upperBound) - ratingPosition(lowerBound))}%` }} aria-hidden="true" /> : null}
-    {hasRange ? <u style={{ left: `${ratingPosition(upperBound)}%` }} aria-hidden="true" /> : null}
     <i style={{ width: `${ratingPosition(animatedValue)}%` }} />
     {beforeValue === undefined ? null : <b style={{ left: `${ratingPosition(beforeValue)}%` }} aria-hidden="true" />}
   </div>;
