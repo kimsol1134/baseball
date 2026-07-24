@@ -16,6 +16,11 @@ export type PitchOutcome =
 // wherever the new outcomes must be distinguished; the snapshot fields stay typed `PitchOutcome`.
 export type ExtendedPitchOutcome = PitchOutcome | "triple" | "hit_by_pitch";
 
+export interface TrainingOpportunitySnapshot {
+  focus: TrainingFocus;
+  reason: string;
+}
+
 export interface CareerScheduleSnapshot {
   trainingsByChapter: number[];
   milestonesByChapter: string[][];
@@ -782,6 +787,7 @@ export interface CareerTrainingSnapshot {
   metricAfter?: number;
   fatigueBefore?: number;
   fatigueAfter?: number;
+  opportunityHit?: boolean;
 }
 
 export interface CareerRelationshipResultSnapshot {
@@ -841,6 +847,7 @@ export interface HighSchoolCareerSnapshot {
   /** 누적 팔 상태 위험(0–100). 옛 저장본은 없을 수 있어 0으로 읽는다. */
   armRisk?: number;
   schedule?: CareerScheduleSnapshot;
+  trainingOpportunity?: TrainingOpportunitySnapshot;
   /** 부상으로 강제된 남은 회복 훈련 횟수(0–2). */
   injuryRecovery?: number;
   stateCommitment: string;

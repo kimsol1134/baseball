@@ -327,6 +327,17 @@ public struct DraftResultSnapshot: Codable, Equatable, Sendable {
     }
 }
 
+/// 오늘의 기회: 매 훈련마다 코치가 미는 분야 하나가 결정론적으로 바뀐다.
+/// 적중하면 성장 신호 보너스 — 로테이션 선택에 매번 다른 이유를 만든다.
+public struct TrainingOpportunitySnapshot: Codable, Equatable, Sendable {
+    public let focus: TrainingFocus
+    public let reason: String
+    public init(focus: TrainingFocus, reason: String) {
+        self.focus = focus
+        self.reason = reason
+    }
+}
+
 public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
     public let number: Int
     public let focus: TrainingFocus
@@ -338,6 +349,7 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
     public let metricAfter: Int?
     public let fatigueBefore: Int?
     public let fatigueAfter: Int?
+    public let opportunityHit: Bool?
 
     public init(
         number: Int,
@@ -349,7 +361,8 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
         metricBefore: Int? = nil,
         metricAfter: Int? = nil,
         fatigueBefore: Int? = nil,
-        fatigueAfter: Int? = nil
+        fatigueAfter: Int? = nil,
+        opportunityHit: Bool? = nil
     ) {
         self.number = number
         self.focus = focus
@@ -361,6 +374,7 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
         self.metricAfter = metricAfter
         self.fatigueBefore = fatigueBefore
         self.fatigueAfter = fatigueAfter
+        self.opportunityHit = opportunityHit
     }
 }
 
@@ -503,6 +517,8 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     /// 이 회차의 챕터 뼈대(챕터별 훈련 수·국면 배치). 옛 저장본은 없어 nil이며 엔진이
     /// `CareerScheduleSnapshot.fixedDefault`(16/5/5/3)로 읽는다. [[focusStreak]] 패턴.
     public let schedule: CareerScheduleSnapshot?
+    /// 파생 상태(커밋 제외): careerID와 완료 훈련 수에서 항상 재계산된다.
+    public let trainingOpportunity: TrainingOpportunitySnapshot?
     public let stateCommitment: String
 
     public init(
@@ -545,6 +561,7 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         armRisk: Int? = nil,
         injuryRecovery: Int? = nil,
         schedule: CareerScheduleSnapshot? = nil,
+        trainingOpportunity: TrainingOpportunitySnapshot? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -586,6 +603,7 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.armRisk = armRisk
         self.injuryRecovery = injuryRecovery
         self.schedule = schedule
+        self.trainingOpportunity = trainingOpportunity
         self.stateCommitment = stateCommitment
     }
 }
@@ -1083,7 +1101,9 @@ public struct HighSchoolCareerEngine: Sendable {
         // 훈련 수가 적은 회차 보정: 결손(16 - 총 훈련)에 비례해 성장 신호를 올려 총 성장 기대를
         // 16회 기준 근처(±15%)에 붙인다. 드래프트 밸런스를 스케줄 가변화로부터 보호한다.
         let scheduleCompensation = max(0, 16 - schedule.trainingTotal) * Self.trainingCompensationPerDeficit
-        let signal = max(60, base + schoolBonus - fatiguePenalty + scheduleCompensation + generator.nextInt(upperBound: 91) - 45)
+        let opportunityHit = !isRehab && params.focus == params.state.trainingOpportunity?.focus
+        let opportunityBonus = opportunityHit ? 90 : 0
+        let signal = max(60, base + schoolBonus + opportunityBonus - fatiguePenalty + scheduleCompensation + generator.nextInt(upperBound: 91) - 45)
         let growthSignal = isRehab ? 0 : (signal >= 430 ? 2 : signal >= 260 ? 1 : 0)
         let pitcher = grow(params.state.pitcher, focus: params.focus, points: growthSignal)
         let fatigueCost = params.intensity == .light ? 3 : params.intensity == .standard ? 8 : 15
@@ -1104,7 +1124,8 @@ public struct HighSchoolCareerEngine: Sendable {
             growth: growth, fatigueChange: fatigue - params.state.fatigue,
             feedback: feedback,
             metricBefore: metricBefore, metricAfter: metricAfter,
-            fatigueBefore: params.state.fatigue, fatigueAfter: fatigue)
+            fatigueBefore: params.state.fatigue, fatigueAfter: fatigue,
+            opportunityHit: opportunityHit)
         let chapterCount = params.state.chapterTrainingCount + 1
         let phase: HighSchoolCareerPhase = chapterCount == chapterTrainings ? milestone(for: params.state.chapter.number, index: 0, schedule: schedule) : .training
         let optionState = replacing(params.state, pitcher: pitcher, fatigue: fatigue, lastTraining: training)
@@ -1844,7 +1865,33 @@ public struct HighSchoolCareerEngine: Sendable {
             balanceVersion: balanceVersion ?? state.balanceVersion,
             armRisk: armRisk ?? state.armRisk, injuryRecovery: injuryRecovery ?? state.injuryRecovery,
             schedule: state.schedule,
+            trainingOpportunity: Self.trainingOpportunity(
+                careerID: state.careerID,
+                index: totalTrainingsCompleted ?? state.totalTrainingsCompleted),
             stateCommitment: stateCommitment ?? state.stateCommitment)
+    }
+
+    static let opportunityReasons: [TrainingFocus: [String]] = [
+        .velocity: ["어제 불펜에서 팔 스윙이 가벼웠다. 오늘 직구를 밀어붙이자.", "하체 힘이 붙었다. 구속을 끌어올릴 타이밍이다.", "공 끝이 살아 있다. 오늘은 세게 던져 보자."],
+        .command: ["포수가 미트를 거의 안 움직였다. 코스 훈련이 먹힐 날이다.", "던지는 리듬이 잡혔다. 오늘 존 구석을 노리자.", "밸런스가 좋다. 원하는 곳에 꽂는 연습을 늘리자."],
+        .breakingBall: ["어제 변화구 회전이 좋았다. 오늘 확실히 내 것으로 만들자.", "손끝 감각이 살아 있다. 변화구를 다듬을 기회다.", "타자들이 변화구에 늦게 반응했다. 오늘 더 벼리자."],
+        .stamina: ["긴 이닝을 버틸 몸을 만들 적기다.", "회복이 빨라졌다. 오늘 체력 훈련이 잘 붙는다.", "다음 등판까지 여유가 있다. 체력을 쌓자."],
+        .recovery: ["팔이 무겁다는 신호다. 오늘은 회복이 최고의 훈련이다.", "쉬는 것도 실력이다. 몸을 만들 날이다.", "피로가 쌓였다. 오늘 회복하면 내일이 달라진다."],
+        .gamePlanning: ["상대 타선 기록이 도착했다. 오늘 파고들자.", "포수와 사인을 맞출 시간이 났다. 수 싸움을 늘리자.", "경기 감각이 올라 있다. 상대 분석이 잘 먹힌다."],
+    ]
+
+    static func trainingOpportunity(careerID: String, index: Int) -> TrainingOpportunitySnapshot {
+        let focusPool = TrainingFocus.allCases
+        let seedValue = StableHash.fnv1a64Value("\(careerID)|opportunity|\(index)")
+        var pick = Int(seedValue % UInt64(focusPool.count))
+        if index > 0 {
+            let previous = Int(StableHash.fnv1a64Value("\(careerID)|opportunity|\(index - 1)") % UInt64(focusPool.count))
+            if pick == previous { pick = (pick + 1) % focusPool.count }
+        }
+        let focus = focusPool[pick]
+        let reasons = Self.opportunityReasons[focus] ?? []
+        let reason = reasons.isEmpty ? "" : reasons[Int((seedValue >> 8) % UInt64(reasons.count))]
+        return TrainingOpportunitySnapshot(focus: focus, reason: reason)
     }
 
     private func signed(_ state: HighSchoolCareerSnapshot) -> HighSchoolCareerSnapshot {

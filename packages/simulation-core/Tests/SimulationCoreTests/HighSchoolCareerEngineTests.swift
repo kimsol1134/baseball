@@ -1169,3 +1169,34 @@ extension HighSchoolCareerEngineTests {
         XCTAssertNotEqual(thirdLife.first, secondLife.first)
     }
 }
+
+extension HighSchoolCareerEngineTests {
+    func testTrainingOpportunityIsDeterministicAndRotates() throws {
+        let first = HighSchoolCareerEngine.trainingOpportunity(careerID: "career-9-life-1", index: 0)
+        let firstAgain = HighSchoolCareerEngine.trainingOpportunity(careerID: "career-9-life-1", index: 0)
+        XCTAssertEqual(first, firstAgain)
+        XCTAssertFalse(first.reason.isEmpty)
+        var distinct = Set<TrainingFocus>()
+        for index in 0..<8 { distinct.insert(HighSchoolCareerEngine.trainingOpportunity(careerID: "career-9-life-1", index: index).focus) }
+        XCTAssertGreaterThanOrEqual(distinct.count, 3, "기회가 회전하지 않으면 매일 같은 추천이 된다")
+        for index in 1..<8 {
+            XCTAssertNotEqual(
+                HighSchoolCareerEngine.trainingOpportunity(careerID: "career-9-life-1", index: index).focus,
+                HighSchoolCareerEngine.trainingOpportunity(careerID: "career-9-life-1", index: index - 1).focus,
+                "연속 훈련에서 같은 기회가 반복되면 안 된다")
+        }
+    }
+
+    func testMatchingTheOpportunityRaisesTheGrowthSignal() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(seed: "515", presetID: "power_prospect"))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: result.snapshot.schoolOptions[0].id))
+        let opportunity = try XCTUnwrap(result.snapshot.trainingOpportunity)
+        let offFocus = TrainingFocus.allCases.first { $0 != opportunity.focus && $0 != .recovery } ?? .command
+        let hit = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: opportunity.focus, intensity: .standard))
+        let miss = try engine.commitTraining(.init(seed: result.nextSeed, state: result.snapshot, focus: offFocus, intensity: .standard))
+        XCTAssertEqual(hit.snapshot.lastTraining?.opportunityHit, true)
+        XCTAssertNotEqual(miss.snapshot.lastTraining?.opportunityHit, true)
+    }
+}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AbilityGauge, ratingTier } from "./AbilityGauge";
+import { abilityMeaning } from "./ratingScale";
 import { AccessibleModal } from "./AccessibleModal";
 import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
@@ -81,17 +82,7 @@ const TRAINING_METRICS: Record<TrainingFocus, { key: keyof CreationAllocationSna
   game_planning: { key: "command", label: "제구" },
 };
 
-function abilityMeaning(value: number) {
-  if (value >= 75) return "세대 최고 수준";
-  if (value >= 65) return "프로 최상급";
-  if (value >= 55) return "프로 평균 이상";
-  if (value >= 50) return "프로 평균";
-  if (value >= 47) return "지역에서 손꼽는 재능";
-  if (value >= 43) return "고교 상위권 도전";
-  if (value >= 38) return "고교 주전 경쟁";
-  if (value >= 33) return "성장 중인 기본기";
-  return "기본기 다지는 단계";
-}
+
 
 function visibleGaugeRating(value: number, clarity: CareerDifficultySnapshot["informationClarity"]) {
   if (clarity === "relaxed") return value;
@@ -786,7 +777,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         </div> : null}
         {!demoComplete ? <>
         {pendingTraining && resultMetric ? <div ref={decisionResultRef} className={`ds-card ds-card--result training-result-card ${pendingTraining.growth > 0 ? "ds-card--positive is-growth" : "is-steady"}`} tabIndex={-1} role="region" aria-live="polite" aria-labelledby="training-result-heading">
-          <div className="training-result-title"><span>훈련 {pendingTraining.number}회차 완료</span><h3 id="training-result-heading">{TRAININGS.find((option) => option.value === pendingTraining.focus)?.label ?? resultMetric.label} 결과</h3></div>
+          <div className="training-result-title"><span>훈련 {pendingTraining.number}회차 완료</span><h3 id="training-result-heading">{TRAININGS.find((option) => option.value === pendingTraining.focus)?.label ?? resultMetric.label} 결과</h3>{pendingTraining.opportunityHit ? <span className="ds-chip opp-hit-chip">기회 적중 · 성장 보너스</span> : null}</div>
           <GrowthCelebration label={resultMetric.label} before={resultCelebrationBefore} after={resultAfter} />
           <div className="ds-record-grid training-result-scoreboard">
             <div><span>{resultMetric.label}</span><strong>{resultBefore === undefined ? <>현재 {resultAfter}</> : <>{resultBefore} <i aria-hidden="true">→</i> {resultAfter}</>}</strong>
@@ -839,8 +830,10 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining("recovery", "light")}>{isRunning ? "회복 중…" : "재활 훈련 진행"}</button>
         </div> : null}
         {!hasPendingResult && state.phase === "training" && !isRehab ? <><h3>{state.chapter.season} {state.chapterTrainingCount + 1}번째 훈련 고르기</h3><p>{showHints ? `${state.school?.name ?? "학교"}는 ${TRAININGS.find((item) => item.value === state.school?.strength)?.label ?? "주력"} 훈련의 성장 가능성을 높여 줍니다. 현재 피로는 ${state.fatigue}입니다.` : `현재 피로 ${state.fatigue}. 이번에 진행할 훈련을 고르세요.`}</p>
+          {state.trainingOpportunity ? <p className="training-coach-memo"><b>코치 메모</b> {state.trainingOpportunity.reason}</p> : null}
           <div className="career-training-grid">{TRAININGS.map((option) => <button key={option.value} type="button" aria-pressed={focus === option.value}
-            className={focus === option.value ? "is-selected" : undefined} onClick={() => setFocus(option.value)}><strong>{option.label}</strong><span>{option.copy}</span><small>{option.gameEffect}</small></button>)}</div>
+            data-opportunity={state.trainingOpportunity?.focus === option.value || undefined}
+            className={focus === option.value ? "is-selected" : undefined} onClick={() => setFocus(option.value)}>{state.trainingOpportunity?.focus === option.value ? <span className="ds-chip training-opp-chip">오늘의 기회</span> : null}<strong>{option.label}</strong><span>{option.copy}</span><small>{option.gameEffect}</small></button>)}</div>
           <div className="training-intensity-grid">{INTENSITIES.map((option) => <button key={option.value} type="button"
             className={intensity === option.value ? "is-selected" : undefined} aria-pressed={intensity === option.value} onClick={() => setIntensity(option.value)}><strong>{option.label}</strong><span>{option.copy}</span></button>)}</div>
           <div className="training-preview" aria-live="polite"><div><span>선택한 훈련</span><strong>{selectedTraining.label} · {selectedIntensity.label}</strong></div>

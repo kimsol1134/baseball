@@ -5579,9 +5579,9 @@ body.high-contrast .character-profile__portrait {
 .growth-celebration {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
   min-height: 116px;
   padding: clamp(15px, 3vw, 22px);
   overflow: hidden;
@@ -7190,3 +7190,123 @@ body.high-contrast .character-profile__portrait {
 
 /* 파울 지역 지면: 페어 웨지 밖이 하늘로 비어 내야가 단절돼 보이던 문제를 잔디 톤으로 잇는다. */
 .gamecast-tracking-foulground { fill: var(--scene-turf-deep); opacity: .9; }
+
+
+/* 2안 등급 사다리 성장 카드 */
+.growth-celebration__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.growth-celebration__meaning {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-label);
+}
+
+.growth-celebration__next {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-label);
+}
+
+.growth-celebration__next b { color: var(--color-milestone, var(--color-positive)); }
+
+.growth-ladder { margin-top: 2px; }
+
+.growth-ladder__track {
+  position: relative;
+  height: 10px;
+  overflow: visible;
+  border-radius: 999px;
+  background: var(--color-surface-soft);
+}
+
+.growth-ladder__seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  background: color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+}
+
+.growth-ladder__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--color-information), var(--color-positive));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--color-positive) 38%, transparent);
+}
+
+.growth-ladder__jump {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 18px;
+  background: color-mix(in srgb, var(--color-text-primary) 45%, transparent);
+}
+
+.growth-ladder__marker {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 3px solid var(--color-canvas);
+  background: var(--color-positive);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-positive) 66%, transparent);
+}
+
+.growth-ladder__labels {
+  position: relative;
+  height: 15px;
+  margin-top: 7px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-scene-sm);
+  line-height: 1;
+}
+
+.growth-ladder__labels > span:first-child { position: absolute; left: 0; }
+.growth-ladder__end { position: absolute; right: 0; }
+
+.growth-ladder__tick {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.growth-ladder__tick.is-reached { color: var(--color-positive); font-weight: 750; }
+
+
+/* 오늘의 기회: 코치가 미는 훈련 강조 */
+.training-coach-memo {
+  margin: 0 0 8px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-label);
+}
+
+.training-coach-memo b { color: var(--color-milestone, var(--color-positive)); }
+
+.career-training-grid button[data-opportunity] {
+  border-color: color-mix(in srgb, var(--color-positive) 72%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--color-positive) 20%, transparent);
+}
+
+.training-opp-chip {
+  margin-bottom: 4px;
+  border: 1px solid color-mix(in srgb, var(--color-positive) 70%, transparent);
+  color: var(--color-positive);
+  background: color-mix(in srgb, var(--color-positive) 12%, transparent);
+  font-size: var(--font-size-scene-sm);
+}
+
+.opp-hit-chip {
+  margin-left: 8px;
+  border: 1px solid var(--color-positive);
+  color: var(--color-canvas);
+  background: var(--color-positive);
+  font-size: var(--font-size-scene-sm);
+}
