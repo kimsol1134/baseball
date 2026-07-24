@@ -86,10 +86,10 @@ function abilityMeaning(value: number) {
   if (value >= 65) return "프로 최상급";
   if (value >= 55) return "프로 평균 이상";
   if (value >= 50) return "프로 평균";
-  if (value >= 45) return "프로 진입 가능";
-  if (value >= 40) return "고교 정상급";
-  if (value >= 35) return "고교 주전급";
-  return "성장 단계";
+  if (value >= 45) return "지역에서 손꼽는 재능";
+  if (value >= 40) return "고교 상위권";
+  if (value >= 35) return "고교 주전 경쟁";
+  return "기본기 다지는 단계";
 }
 
 function visibleGaugeRating(value: number, clarity: CareerDifficultySnapshot["informationClarity"]) {
@@ -742,7 +742,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
       <button className="ds-button ds-button--primary lab-primary" type="button" onClick={onDismissTutorial}>커리어 시작</button>
     </AccessibleModal> : null}
     <section className="career-hero">
-      <div><p className="eyebrow">{state.lifeNumber}번째 선수 · {state.chapter.schoolYear}학년 {state.chapter.season}</p>
+      <div><p className="eyebrow">{state.lifeNumber}번째 선수 · {state.chapter.schoolYear}학년 {state.chapter.season}{demoMode ? <span className="ds-chip demo-scope-chip">데모 · 첫 중요 경기까지</span> : null}</p>
         <h2>{state.chapter.number}장 · {state.chapter.title}</h2><p>{state.chapter.theme}</p></div>
       <div className="career-vitals"><div><span>피로</span><strong>{state.fatigue}</strong><small>{fatigueMeaning(state.fatigue)}</small></div>
         <div className={`career-arm-vital is-${arm}`}><span>팔 상태</span><strong>{armStateLabel(arm)}</strong><small>{armStateMeaning(arm)}</small></div>

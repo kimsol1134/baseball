@@ -9,7 +9,7 @@ export function growthMilestoneCopy(before: number, after: number) {
   if (before < 75 && after >= 75) return "세대 최고 수준에 올라섰습니다";
   if (before < 65 && after >= 65) return "프로에서도 경기를 지배할 강점입니다";
   if (before < 50 && after >= 50) return "프로 평균 수준에 도달했습니다";
-  if (before < 40 && after >= 40) return "고교 정상급 능력이 됐습니다";
+  if (before < 40 && after >= 40) return "고교 상위권 능력이 됐습니다";
   return "한 단계 더 강해졌습니다";
 }
 

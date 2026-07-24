@@ -12,7 +12,7 @@ describe("GrowthCelebration", () => {
   });
 
   it("calls out crossing a meaningful rating tier", () => {
-    expect(growthMilestoneCopy(39, 40)).toContain("고교 정상급");
+    expect(growthMilestoneCopy(39, 40)).toContain("고교 상위권");
     expect(growthMilestoneCopy(49, 50)).toContain("프로 평균 수준");
     expect(growthMilestoneCopy(64, 65)).toContain("프로에서도");
     expect(growthMilestoneCopy(74, 75)).toContain("세대 최고");

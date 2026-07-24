@@ -7177,3 +7177,12 @@ body.high-contrast .character-profile__portrait {
   .workspace-grid--split .player-panel { grid-column: 1; grid-row: 4; }
   .gamecast-idle { min-height: 420px; }
 }
+
+
+.demo-scope-chip {
+  margin-left: 8px;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-soft);
+  font-size: var(--font-size-scene-sm);
+}
