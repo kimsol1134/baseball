@@ -50,6 +50,9 @@ for (const path of filesUnder(windowsSource)) {
 }
 
 const contractChecks = [
+  ["apps/windows/src/App.tsx", "ds-chip"],
+  ["apps/windows/src/HighSchoolCareerView.tsx", "ds-chip"],
+  ["apps/windows/src/CareerNewsFeed.tsx", "ds-chip"],
   ["apps/windows/src/main.tsx", 'import "./design-system.css"'],
   ["apps/windows/src/App.tsx", "ds-card ds-player-card panel player-panel"],
   ["apps/windows/src/App.tsx", "ds-button ds-button--primary primary-action"],
@@ -173,4 +176,16 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
+{
+  const dsSource = readFileSync(designSystemPath, "utf8");
+  const chipBlock = dsSource.match(/\.ds-chip \{[^}]+\}/)?.[0] ?? "";
+  for (const required of ["display: inline-flex", "align-items: center", "line-height: 1", "padding-block: 1px 0"]) {
+    if (!chipBlock.includes(required)) failures.push(`design-system.css: ds-chip 계약에 '${required}' 누락`);
+  }
+  if (failures.length > 0) {
+    console.error(`디자인 시스템 검사 실패 (${failures.length})`);
+    for (const failure of failures) console.error(`- ${failure}`);
+    process.exit(1);
+  }
+}
 console.log("디자인 시스템 검사 통과: 원시 색상·레거시 토큰·scene/milestone 역할 오용 0, 고정 본문 크기 0, 고대비 토큰 대응 및 WCAG AA 대비, 공통 컴포넌트 계약 확인");

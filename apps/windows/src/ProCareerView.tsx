@@ -78,7 +78,7 @@ export function ProCareerView({ result, isRunning, error, onSign, onPlan, onPlan
   }, [isMajorDebut, onMilestoneFeedback]);
   return <main className="career-shell pro-career-shell stage-layout" data-stage={stage} data-team={state.team.id} data-segment={segment}>
     <section className="career-hero"><div><p className="eyebrow">프로 커리어 · {state.season}시즌 · {SEGMENT_LABELS[segment]}</p><h2>{state.team.name} · {state.age}세</h2><p>{state.level === "major" ? "1군" : "2군"} {ROLE_LABELS[state.role]} · {state.week}/24주</p></div>
-      <div className="career-vitals"><div><span>감독의 믿음</span><strong>{state.managerTrust}</strong></div><div><span>피로</span><strong>{state.fatigue}</strong></div><div><span>1군 등록</span><strong>{state.serviceYears}년</strong></div><button type="button" onClick={onBack}>고교 기록</button></div></section>
+      <div className="career-vitals"><div><span>감독의 믿음</span><strong>{state.managerTrust}</strong></div><div><span>피로</span><strong>{state.fatigue}</strong></div><div><span>1군 등록</span><strong>{state.serviceYears}년</strong></div><button className="ds-chip" type="button" onClick={onBack}>고교 기록</button></div></section>
     <div className="career-grid">
       <section className="ds-card ds-player-card career-panel career-player"><div className="lab-card-heading"><span>시즌 기록</span><small>{state.level === "major" ? "1군" : "2군"}</small></div>
         <div className="ds-record-grid career-rating-grid"><div><span>경기</span><strong>{state.currentStats.games}</strong></div><div><span>선발</span><strong>{state.currentStats.starts}</strong></div><div><span>탈삼진</span><strong>{state.currentStats.strikeouts}</strong></div><div><span>9이닝당 실점</span><strong>{runsPer9}</strong></div></div>

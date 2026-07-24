@@ -750,7 +750,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
         <div><span>포수의 믿음</span><strong>{catcherTrust}</strong><small>{trustMeaning(catcherTrust)}</small></div>
         <div><span>라이벌의 인정</span><strong>{rivalTrust}</strong><small>{rivalTrustMeaning(rivalTrust)}</small></div>
         <div><span>지역 팬 관심</span><strong>{state.fanInterest}</strong><small>{fanInterestMeaning(state.fanInterest)}</small></div>
-        <button type="button" onClick={onNewCareer}>새 커리어</button></div>
+        <button className="ds-chip" type="button" onClick={onNewCareer}>새 커리어</button></div>
     </section>
     <section className="chapter-map" aria-label="8개 고교 시즌">{Array.from({ length: 8 }, (_, index) => index + 1).map((chapter) =>
       <div key={chapter} className={chapter === state.chapter.number ? "is-current" : chapter < state.chapter.number ? "is-complete" : undefined}>
@@ -771,8 +771,8 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <CharacterProfile label="포수" title={`${state.school.catcherName} · ${state.school.catcherArchetype}`} record={state.school.catcherRecord} description={state.school.catcherPersonality} />
           <CharacterProfile label="라이벌" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />
         </div> : null}
-        <div className="career-counters"><span>훈련 {state.totalTrainingsCompleted}/{state.schedule ? state.schedule.trainingsByChapter.reduce((a, b) => a + b, 0) : 16}</span><span>경기 {state.performance.importantGamesCompleted}/{state.schedule ? state.schedule.milestonesByChapter.flat().filter((m) => m === "important_game").length : 5}</span>
-          <span>대화 {state.relationshipsCompleted}/{state.schedule ? state.schedule.milestonesByChapter.flat().filter((m) => m === "relationship").length : 5}</span><span>새 강점 {state.selectedAwakenings.length}/3</span></div>
+        <div className="career-counters"><span className="ds-chip">훈련 {state.totalTrainingsCompleted}/{state.schedule ? state.schedule.trainingsByChapter.reduce((a, b) => a + b, 0) : 16}</span><span className="ds-chip">경기 {state.performance.importantGamesCompleted}/{state.schedule ? state.schedule.milestonesByChapter.flat().filter((m) => m === "important_game").length : 5}</span>
+          <span className="ds-chip">대화 {state.relationshipsCompleted}/{state.schedule ? state.schedule.milestonesByChapter.flat().filter((m) => m === "relationship").length : 5}</span><span className="ds-chip">새 강점 {state.selectedAwakenings.length}/3</span></div>
       </section>
 
       <section id="career-current-action" className="ds-card ds-card--raised career-panel career-decision"><div className="lab-card-heading"><span>{pendingTraining ? "훈련 완료" : pendingRelationship ? "대화 완료" : "지금 할 일"}</span><small>{hasPendingResult ? "결과 확인" : PHASE_LABELS[state.phase]}</small></div>
@@ -798,7 +798,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <button className="ds-button ds-button--primary lab-primary" type="button" onClick={acknowledgeTraining}>{nextActionLabel}</button>
         </div> : null}
         {pendingRelationship ? <div ref={decisionResultRef} className="ds-card ds-card--result training-result-card relationship-result-card" tabIndex={-1} role="region" aria-live="polite" aria-labelledby="relationship-result-heading">
-          <div className="training-result-title"><span>대화 {pendingRelationship.number}회차 완료 · {relationshipPerson}</span><h3 id="relationship-result-heading">{pendingRelationship.title} 결과</h3></div>
+          <div className="training-result-title"><span className="ds-chip">대화 {pendingRelationship.number}회차 완료 · {relationshipPerson}</span><h3 id="relationship-result-heading">{pendingRelationship.title} 결과</h3></div>
           {relationshipAbilityMetric && pendingRelationship.abilityBefore !== undefined && pendingRelationship.abilityAfter !== undefined
             ? <GrowthCelebration label={relationshipAbilityMetric.label} before={pendingRelationship.abilityBefore} after={pendingRelationship.abilityAfter} /> : null}
           <p className="relationship-choice-summary">{RELATIONSHIP_RESPONSE_SUMMARIES[pendingRelationship.response]}</p>

@@ -72,7 +72,7 @@ export function CareerNewsFeed({ items, context, maxItems = 9 }: Props) {
 
   return <>
     <div className="career-news-filters" role="group" aria-label="뉴스 분류">
-      {FILTERS.map((item) => <button key={item.id} type="button" className={filter === item.id ? "is-active" : undefined}
+      {FILTERS.map((item) => <button key={item.id} type="button" className={filter === item.id ? "ds-chip is-active" : "ds-chip"}
         aria-pressed={filter === item.id} onClick={() => setFilter(item.id)}>{item.label}</button>)}
     </div>
     <div className="career-news-list">

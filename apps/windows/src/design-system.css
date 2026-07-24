@@ -152,6 +152,17 @@ body.high-contrast {
 .ds-card.ds-card--result.ds-card--positive { border-left-color: var(--color-positive); }
 .ds-card.ds-card--milestone { border-color: var(--color-milestone); background: var(--color-milestone-soft); box-shadow: var(--shadow-stage); }
 
+/* 짧은 한글 라벨 박스(탭·필·카운터류) 공통 계약.
+   한글 잉크가 라인박스에서 살짝 높게 앉으므로 라인높이 1 + padding-block 1px/0 하향 보정으로 광학 중앙을 맞춘다.
+   이 계약을 쓰는 컴포넌트는 padding-block을 덮어쓰지 말고 padding-inline만 정의한다. */
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 1px 0;
+  line-height: 1;
+}
+
 .ds-ability-gauge {
   position: relative;
   width: 100%;
@@ -321,6 +332,7 @@ body.high-contrast {
   background: var(--color-surface-soft);
   font-size: var(--font-size-label);
   font-weight: 800;
+  line-height: 1;
   line-height: 1;
 }
 

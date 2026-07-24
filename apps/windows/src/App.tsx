@@ -1618,8 +1618,8 @@ export function App() {
             <p className="eyebrow">야구 못하면 또 환생함</p><h1>{careerModeTitle}</h1>
           </div></div>
           <nav className="mode-tabs" aria-label="모드 선택">
-            <button type="button" aria-current="page">커리어</button>
-            <button type="button" onClick={handleOpenPractice}>연습 모드</button>
+            <button className="ds-chip" type="button" aria-current="page">커리어</button>
+            <button className="ds-chip" type="button" onClick={handleOpenPractice}>연습 모드</button>
           </nav>
           {coreStatus.state !== "online" ? <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite"><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" && (careerResult || proResult || presets.length > 0)
@@ -1661,8 +1661,8 @@ export function App() {
             </div>
           </div>
           <nav className="mode-tabs" aria-label="모드 선택">
-            <button type="button" onClick={handleOpenCareer}>커리어</button>
-            <button type="button" aria-current="page">연습 모드</button>
+            <button className="ds-chip" type="button" onClick={handleOpenCareer}>커리어</button>
+            <button className="ds-chip" type="button" aria-current="page">연습 모드</button>
           </nav>
           {coreStatus.state !== "online" ? <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite">
             <span className="status-dot" aria-hidden="true" />

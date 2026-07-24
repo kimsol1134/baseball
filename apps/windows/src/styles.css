@@ -6975,7 +6975,7 @@ body.high-contrast .character-profile__portrait {
 
 .mode-tabs > button {
   min-height: 34px;
-  padding: 0 14px;
+  padding-inline: 14px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -7081,33 +7081,9 @@ body.high-contrast .character-profile__portrait {
 }
 
 
-/* 한글 칩 광학 정렬: 짧은 라벨이 든 박스류는 라인박스 여백을 없애고(라인높이 1)
-   한글 잉크가 라인박스에서 살짝 높게 앉는 것을 0.5px 하향으로 보정한다. */
-.mode-tabs > button,
-.career-counters span,
+/* 칩 광학 정렬은 ds-chip 계약(design-system.css)이 담당한다. 아래는 컴포넌트 고유 몫만. */
 .career-vitals > div > span,
 .career-vitals > div > small,
-.career-vitals button,
-.news-tabs button,
-.ds-badge,
 .preset-statline dt {
   line-height: 1;
-}
-
-.mode-tabs > button,
-.career-vitals button,
-.news-tabs button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mode-tabs > button {
-  padding-top: 1px;
-}
-
-.career-counters span {
-  display: inline-flex;
-  align-items: center;
-  padding-top: 1px;
 }
