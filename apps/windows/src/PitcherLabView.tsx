@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AbilityGauge } from "./AbilityGauge";
+import { AbilityGauge, ratingTier } from "./AbilityGauge";
 import { GrowthCelebration } from "./GrowthCelebration";
 import { readLabResultAcknowledgement, writeLabResultAcknowledgement } from "./labResultAcknowledgement";
 import { CoreUnavailableState } from "./CoreUnavailableState";
@@ -83,7 +83,7 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
       <section className="lab-setup-intro">
         <p className="eyebrow">새 선수</p>
         <h2>어떤 투수로 시작할까요?</h2>
-        <p>강점과 약점이 다른 네 유형 중 하나를 고른 뒤, 추가 능력 5점을 나눠 주세요. 20–80은 프로 기준이며 50이 가상 프로리그 1군 평균입니다. 지금은 고교 선수의 현재 능력을 표시합니다.</p>
+        <p>강점과 약점이 다른 네 유형 중 하나를 고른 뒤, 추가 능력 5점을 나눠 주세요.</p>
       </section>
       {presets.length > 0 ? <section className="preset-creation-grid" aria-label="투수 프리셋 선택">
         {presets.map((preset) => (
@@ -97,7 +97,7 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
               {CREATION_METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd>
                 <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]}
                   lowerBound={preset.pitcher[metric.key] + 2} upperBound={presetPotential(preset, metric.key)} />
-                <small>성장 기대 {preset.pitcher[metric.key] + 2}–{presetPotential(preset, metric.key)}</small></div>)}
+                <small>성장 {preset.pitcher[metric.key] + 2}–{presetPotential(preset, metric.key)}</small></div>)}
             </dl>
             <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
           </button>
@@ -143,7 +143,7 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
                 </div>
                 <AbilityGauge compact label={`${metric.label} 최종`} value={finalRating}
                   lowerBound={finalRating + 2} upperBound={potential} />
-                <small>현재 {finalRating} · 성장 기대 {finalRating + 2}–{potential}</small>
+                <small>현재 {finalRating} · 잠재 {potential}</small>
               </div>;
             })}
           </div>
@@ -425,7 +425,7 @@ export function PitcherLabView({
               <small>{range.lowerBound}–{range.upperBound}</small>
             </div>
           ))}
-          <small className="rating-scale-note">프로 기준 20–80 · 40 고교 정상급 · 50 프로 평균 · 65 프로 최상급 · 포심 기준 {fourSeamVelocity(snapshot.pitcher)}</small>
+          <small className="rating-scale-note">포심 기준 {fourSeamVelocity(snapshot.pitcher)}</small>
           {training ? (
             <div className={`training-reaction training-reaction--${training.reaction}${(training.ratingPointsApplied ?? 0) > 0 ? " has-growth" : ""}`}>
               <span>최근 훈련 · {training.sessionNumber}회차</span>

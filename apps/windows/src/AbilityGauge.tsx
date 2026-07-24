@@ -18,6 +18,11 @@ function ratingPosition(value: number) {
   return (clampRating(value) - 20) / 60 * 100;
 }
 
+export function ratingTier(value: number) {
+  const rating = clampRating(value);
+  return rating >= 65 ? "strength" : rating >= 50 ? "above-average" : rating >= 40 ? "average" : "weakness";
+}
+
 export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBound, upperBound, compact = false }: AbilityGaugeProps) {
   const current = clampRating(value);
   const previous = beforeValue === undefined ? current : clampRating(beforeValue);
@@ -29,7 +34,7 @@ export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBou
     const frame = window.requestAnimationFrame(() => setAnimatedValue(current));
     return () => window.cancelAnimationFrame(frame);
   }, [current, gained, previous]);
-  const tier = current >= 65 ? "strength" : current >= 50 ? "above-average" : current >= 40 ? "average" : "weakness";
+  const tier = ratingTier(current);
   const currentText = beforeValue === undefined
     ? `${label} ${displayValue ?? current}`
     : `${label} ${clampRating(beforeValue)}에서 ${current}`;
@@ -39,6 +44,7 @@ export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBou
   return <div className={`ds-ability-gauge${compact ? " is-compact" : ""}${gained ? " is-gain" : ""}`} data-tier={tier}
     role="meter" aria-label={valueText} aria-valuemin={20} aria-valuemax={80} aria-valuenow={current}>
     {hasRange ? <em style={{ left: `${ratingPosition(lowerBound)}%`, width: `${Math.max(2, ratingPosition(upperBound) - ratingPosition(lowerBound))}%` }} aria-hidden="true" /> : null}
+    {hasRange ? <u style={{ left: `${ratingPosition(upperBound)}%` }} aria-hidden="true" /> : null}
     <i style={{ width: `${ratingPosition(animatedValue)}%` }} />
     {beforeValue === undefined ? null : <b style={{ left: `${ratingPosition(beforeValue)}%` }} aria-hidden="true" />}
   </div>;

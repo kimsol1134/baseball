@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AbilityGauge } from "./AbilityGauge";
+import { AbilityGauge, ratingTier } from "./AbilityGauge";
 import { AccessibleModal } from "./AccessibleModal";
 import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
@@ -498,17 +498,17 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
     <main className="career-setup">
       {presets.length > 0 ? <section className="career-intro">
         <div><p className="eyebrow">고교 커리어</p><h2>중학교의 마지막 공에서 드래프트까지</h2>
-          <p>학교를 고르고, 감독과 포수에게 배우고, 라이벌과 다시 만납니다. 능력치는 프로 기준 20–80 평가입니다. 50은 가상 프로리그 1군 평균이며, 고교 1학년은 주로 20–40대에서 시작합니다.</p></div>
+          <p>학교를 고르고, 감독과 포수에게 배우고, 라이벌과 다시 만납니다.</p></div>
       </section> : null}
       {presets.length > 0 ? <section className="preset-creation-grid">
         {presets.map((preset) => <button key={preset.id} type="button" aria-pressed={preset.id === effectivePresetID}
           className={preset.id === effectivePresetID ? "is-selected" : undefined} onClick={() => selectPreset(preset)}>
           <span>{preset.name}</span><strong>{preset.pitcher.name}</strong><p>{preset.tagline}</p><small>{preset.tradeoff}</small>
           <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
-            {METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd>
+            {METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt>
+              <dd data-tier={ratingTier(preset.pitcher[metric.key])}>{preset.pitcher[metric.key]}<i>/{presetPotential(preset, metric.key)}</i></dd>
               <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]}
-                lowerBound={preset.pitcher[metric.key] + 2} upperBound={presetPotential(preset, metric.key)} />
-              <small>성장 기대 {preset.pitcher[metric.key] + 2}–{presetPotential(preset, metric.key)}</small></div>)}
+                lowerBound={preset.pitcher[metric.key]} upperBound={presetPotential(preset, metric.key)} /></div>)}
           </dl>
           <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
         </button>)}
@@ -526,7 +526,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
             {selected.pitcher[metric.key] + allocation[metric.key]}<small>+{allocation[metric.key]}</small>
           </strong><button type="button" aria-label={`${metric.label} 1 증가`} disabled={spent >= 5 || allocation[metric.key] === 5} onClick={() => change(metric.key, 1)}>+</button>
         </div><AbilityGauge compact label={`${metric.label} 최종`} value={finalRating}
-          lowerBound={finalRating + 2} upperBound={potential} /><small>현재 {finalRating} · 성장 기대 {finalRating + 2}–{potential}</small></div>;
+          lowerBound={finalRating + 2} upperBound={potential} /><small>현재 {finalRating} · 잠재 {potential}</small></div>;
         })}</div>
         <div className="identity-grid"><label className="identity-name-field"><span>선수 이름</span><div><input value={identity.name} maxLength={12} autoComplete="off"
           onChange={(event) => { setIdentity({ ...identity, name: event.target.value }); setUsesRecommendedName(false); }} />
@@ -764,7 +764,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             <AbilityGauge label={metric.label} value={visibleGaugeRating(value, state.difficulty.informationClarity)} displayValue={displayed} />
             <small>{abilityMeaning(value)}{metric.key === "stuff" ? ` · 포심 기준 ${currentFourSeamVelocity}` : ""}</small></div>;
         })}</div>
-        <small className="information-clarity">{state.difficulty.informationClarity === "relaxed" ? "정확한 숫자" : state.difficulty.informationClarity === "standard" ? "구단이 예상한 5점 범위" : "상·중·하만 표시"} · 프로 기준 20–80 · 40 고교 정상급 · 50 프로 평균 · 65 프로 최상급</small>
+        <small className="information-clarity">{state.difficulty.informationClarity === "relaxed" ? "정확한 숫자" : state.difficulty.informationClarity === "standard" ? "구단이 예상한 5점 범위" : "상·중·하만 표시"}</small>
         {state.school ? <div className="career-personnel">
           <CharacterProfile label="감독" title={`${state.school.coachName} · ${state.school.coachArchetype}`} record={state.school.coachRecord} description={state.school.coachPersonality} />
           <CharacterProfile label="포수" title={`${state.school.catcherName} · ${state.school.catcherArchetype}`} record={state.school.catcherRecord} description={state.school.catcherPersonality} />

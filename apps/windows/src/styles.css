@@ -3874,6 +3874,8 @@ footer {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
+  max-width: 1180px;
+  margin-inline: auto;
 }
 
 .preset-creation-grid button {
@@ -3979,7 +3981,23 @@ footer {
 }
 
 .preset-statline .ds-ability-gauge {
-  margin-top: 2px;
+  width: calc(100% - 8px);
+  height: 10px;
+  margin-top: 5px;
+  margin-bottom: 3px;
+}
+
+.preset-statline dd[data-tier="strength"] { color: var(--color-positive); }
+.preset-statline dd[data-tier="above-average"] { color: var(--color-information); }
+.preset-statline dd[data-tier="average"] { color: var(--color-selection); }
+.preset-statline dd[data-tier="weakness"] { color: var(--color-text-secondary); }
+
+.preset-statline dd > i {
+  margin-left: 1px;
+  color: var(--color-positive);
+  font-size: var(--font-size-scene-sm);
+  font-style: normal;
+  font-weight: 750;
 }
 
 .preset-creation-grid .preset-velocity {

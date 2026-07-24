@@ -197,11 +197,23 @@ body.high-contrast {
 .ds-ability-gauge > em {
   position: absolute;
   z-index: 0;
-  top: -2px;
-  height: calc(100% + 4px);
-  border: 1px solid color-mix(in srgb, var(--color-positive) 68%, transparent);
+  top: -3px;
+  height: calc(100% + 6px);
+  border: 1px solid color-mix(in srgb, var(--color-positive) 82%, transparent);
   border-radius: inherit;
-  background: color-mix(in srgb, var(--color-positive) 20%, transparent);
+  background: color-mix(in srgb, var(--color-positive) 30%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-positive) 26%, transparent);
+}
+
+.ds-ability-gauge > u {
+  position: absolute;
+  z-index: 2;
+  top: -4px;
+  width: 2px;
+  height: calc(100% + 8px);
+  border-radius: 1px;
+  background: var(--color-positive);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-positive) 60%, transparent);
 }
 
 .ds-ability-gauge[data-tier="strength"] > i { background: var(--color-positive); }
