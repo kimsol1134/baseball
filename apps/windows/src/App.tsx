@@ -58,6 +58,7 @@ import { coreRecoveryMessage } from "./coreRecoveryMessage";
 import { crossedGrowthMilestone } from "./GrowthCelebration";
 import { feedbackCueForResult, GameFeedback } from "./gameFeedback";
 import { AvatarFace } from "./AvatarFace";
+import { resetAllProgress } from "./progressReset";
 import { includesProCareer, releaseEditionFromEnvironment } from "./releaseEdition";
 import { getAppStorage } from "./cloudStorage";
 import {
@@ -317,7 +318,7 @@ function StatRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function AccessibilityControls({ highContrast, reducedMotion, systemReducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled, onContrast, onMotion, onFontScale, onAnalytics, onSound, onHaptics, onDiagnostics }: {
+function AccessibilityControls({ highContrast, reducedMotion, systemReducedMotion, fontScale, analyticsOptIn, soundEnabled, hapticsEnabled, onContrast, onMotion, onFontScale, onAnalytics, onSound, onHaptics, onDiagnostics, onResetProgress }: {
   highContrast: boolean;
   reducedMotion: boolean;
   systemReducedMotion: boolean;
@@ -332,10 +333,12 @@ function AccessibilityControls({ highContrast, reducedMotion, systemReducedMotio
   onSound: () => void;
   onHaptics: () => void;
   onDiagnostics: () => void;
+  onResetProgress: () => void;
 }) {
   const hapticsSupported = typeof navigator.vibrate === "function";
-  return <details className="settings-menu">
-    <summary>접근성·설정</summary>
+  const [resetArmed, setResetArmed] = useState(false);
+  return <details className="settings-menu" onToggle={(event) => { if (!(event.target as HTMLDetailsElement).open) setResetArmed(false); }}>
+    <summary>설정</summary>
     <div className="accessibility-controls" aria-label="접근성 및 환경 설정">
       <span className="settings-menu-label">화면</span>
       <button type="button" aria-pressed={highContrast} onClick={onContrast}>고대비 {highContrast ? "켜짐" : "꺼짐"}</button>
@@ -347,6 +350,11 @@ function AccessibilityControls({ highContrast, reducedMotion, systemReducedMotio
       <span className="settings-menu-label">데이터</span>
       <button type="button" aria-pressed={analyticsOptIn} onClick={onAnalytics}>플레이 기록 {analyticsOptIn ? "저장함" : "저장 안 함"}</button>
       <button type="button" onClick={onDiagnostics}>문제 해결 자료 저장</button>
+      <button type="button" className={resetArmed ? "settings-reset is-armed" : "settings-reset"}
+        onClick={() => { if (resetArmed) { onResetProgress(); } else { setResetArmed(true); } }}>
+        {resetArmed ? "정말 모든 진행을 지우고 처음부터 시작합니다" : "처음부터 다시 시작"}
+      </button>
+      {resetArmed ? <small className="settings-explanation">저장된 커리어·연습 기록이 모두 삭제됩니다. 화면·소리 설정은 유지됩니다. 다시 누르면 실행됩니다.</small> : null}
       <small className="settings-explanation">플레이 기록은 동의할 때만 이 기기에 저장되며 외부로 전송되지 않습니다. 문제 해결 자료에도 선수 이름과 자유 입력은 포함하지 않습니다.</small>
       <span className="settings-menu-label">게임 정보</span>
       <small className="settings-version">버전 1.0.0 · 선택 확정마다 자동 저장 · Windows와 macOS 지원</small>
@@ -1554,6 +1562,10 @@ export function App() {
     onSound: () => setSoundEnabled((value) => !value),
     onHaptics: () => setHapticsEnabled((value) => !value),
     onDiagnostics: downloadDiagnostics,
+    onResetProgress: () => {
+      resetAllProgress(appStorage);
+      window.location.reload();
+    },
   };
 
   const online = coreStatus.state === "online";
@@ -1605,11 +1617,14 @@ export function App() {
           <div className="brand-lockup"><img className="brand-mark" src="/128x128.png" alt="" /><div>
             <p className="eyebrow">야구 못하면 또 환생함</p><h1>{careerModeTitle}</h1>
           </div></div>
-          <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite"><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
+          <nav className="mode-tabs" aria-label="모드 선택">
+            <button type="button" aria-current="page">고교 커리어</button>
+            <button type="button" onClick={handleOpenPractice}>연습 모드</button>
+          </nav>
+          {coreStatus.state !== "online" ? <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite"><span className="status-dot" aria-hidden="true" /><span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" && (careerResult || proResult || presets.length > 0)
               ? <button type="button" onClick={() => void connectCore()}>다시 연결</button>
-              : null}</div>
-          <button className="mode-switch" type="button" onClick={handleOpenPractice}>연습 모드</button>
+              : null}</div> : null}
           <AccessibilityControls {...accessibilityProps} />
         </header>
         {saveNotice ? <div className="save-notice" role="status">{saveNotice}</div> : null}
@@ -1645,14 +1660,17 @@ export function App() {
               <h1>연습 모드</h1>
             </div>
           </div>
-          <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite">
+          <nav className="mode-tabs" aria-label="모드 선택">
+            <button type="button" onClick={handleOpenCareer}>고교 커리어</button>
+            <button type="button" aria-current="page">연습 모드</button>
+          </nav>
+          {coreStatus.state !== "online" ? <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite">
             <span className="status-dot" aria-hidden="true" />
             <span>{statusMessage(coreStatus)}</span>
             {coreStatus.state === "offline" && (labResult || presets.length > 0) ? (
               <button type="button" onClick={() => void connectCore()}>다시 연결</button>
             ) : null}
-          </div>
-          <button className="mode-switch" type="button" onClick={handleOpenCareer}>고교 커리어로</button>
+          </div> : null}
           <AccessibilityControls {...accessibilityProps} />
         </header>
         {saveNotice ? <div className="save-notice" role="status">{saveNotice}</div> : null}
@@ -1700,13 +1718,13 @@ export function App() {
             <h1>{experienceMode === "career" ? proVisible ? "프로 중요 경기" : "고교 중요 경기" : labResult?.snapshot.phase === "important_inning" ? "중요 이닝" : "투구 연습"}</h1>
           </div>
         </div>
-        <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite">
+        {coreStatus.state !== "online" ? <div className={`core-status core-status--${coreStatus.state}`} role="status" aria-live="polite">
           <span className="status-dot" aria-hidden="true" />
           <span>{statusMessage(coreStatus)}</span>
           {coreStatus.state === "offline" ? (
             <button type="button" onClick={() => void connectCore()}>다시 연결</button>
           ) : null}
-        </div>
+        </div> : null}
         <AccessibilityControls {...accessibilityProps} />
       </header>
 

@@ -79,7 +79,6 @@ test.describe("system motion preference", () => {
 test("connected core keeps career, result, and GameCast visual baselines", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.getByText("게임 준비 완료")).toBeVisible();
   await expect(page.getByRole("heading", { name: "중학교의 마지막 공에서 드래프트까지" })).toBeVisible();
   await expect(page).toHaveScreenshot("career-setup.png", {
     fullPage: true,

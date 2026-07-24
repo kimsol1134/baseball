@@ -5611,7 +5611,7 @@ body.high-contrast .character-profile__portrait {
   position: relative;
   z-index: 2;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   white-space: nowrap;
 }
@@ -5629,14 +5629,20 @@ body.high-contrast .character-profile__portrait {
   font-size: clamp(2.9rem, 8vw, 4.7rem);
   font-weight: 950;
   letter-spacing: -.075em;
-  line-height: .9;
+  line-height: 1;
   text-shadow: 0 0 28px color-mix(in srgb, var(--color-positive) 38%, transparent);
   animation: growth-number-pop 620ms 90ms cubic-bezier(.16, 1.45, .3, 1) both;
 }
 
 .growth-celebration__score > b {
-  align-self: flex-start;
-  padding: 5px 8px;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 9px;
+  line-height: 1;
   border-radius: 999px;
   color: var(--color-canvas);
   background: var(--color-positive);
@@ -6935,5 +6941,58 @@ body.high-contrast .character-profile__portrait {
     transform: none;
     transition: none;
     animation: none;
+  }
+}
+
+
+/* 헤더 모드 전환 탭: 타이틀 옆에서 현재 모드와 전환처를 함께 보여준다. */
+.mode-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: auto;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+}
+
+.mode-tabs > button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-meta);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mode-tabs > button[aria-current="page"] {
+  background: var(--color-surface-raised);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
+  cursor: default;
+}
+
+.settings-reset.is-armed {
+  border-color: var(--color-negative);
+  color: var(--color-negative);
+  font-weight: 800;
+}
+
+@media (max-width: 560px) {
+  .mode-tabs {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: stretch;
+    margin-right: 0;
+    padding: 3px;
+  }
+
+  .mode-tabs > button {
+    flex: 1;
+    min-height: 30px;
+    padding: 0 8px;
   }
 }
