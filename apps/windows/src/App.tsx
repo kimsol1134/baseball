@@ -362,6 +362,17 @@ function AccessibilityControls({ highContrast, reducedMotion, systemReducedMotio
   </details>;
 }
 
+/// 결정적 순간(삼진·득점·장타·이닝 종료·병살)만 풀스크린 TRACKLAB으로 자동 확장한다.
+function isDecisiveResult(result: PitchKernelResult) {
+  const snapshot = result.snapshot;
+  const outcome = snapshot.outcome as ExtendedPitchOutcome;
+  return snapshot.result === "strikeout"
+    || snapshot.runsScored > 0
+    || outcome === "double" || outcome === "triple" || outcome === "home_run"
+    || snapshot.inningTransition?.inningEnded === true
+    || snapshot.inningTransition?.doublePlayCompleted === true;
+}
+
 function statusMessage(status: CoreStatus) {
   switch (status.state) {
     case "checking":
@@ -505,6 +516,7 @@ export function App() {
   const [resultStage, setResultStage] = useState<"idle" | "impact" | "summary">("idle");
   const [showResultDetails, setShowResultDetails] = useState(false);
   const [showGameCast, setShowGameCast] = useState(false);
+  const [stageExpanded, setStageExpanded] = useState(false);
   const [feedback] = useState(() => new GameFeedback());
   const gameCastRegionRef = useRef<HTMLElement | null>(null);
   const gameCastWasOpen = useRef(false);
@@ -716,8 +728,9 @@ export function App() {
 
   useEffect(() => {
     setShowResultDetails(false);
-    if (!lastResult) { setResultStage("idle"); setShowGameCast(false); return; }
+    if (!lastResult) { setResultStage("idle"); setShowGameCast(false); setStageExpanded(false); return; }
     setShowGameCast(true);
+    setStageExpanded(isDecisiveResult(lastResult));
     if (effectiveReducedMotion) { setResultStage("summary"); return; }
     setResultStage("impact");
     const timer = window.setTimeout(() => setResultStage("summary"), 360);
@@ -1598,6 +1611,7 @@ export function App() {
     : `고교 커리어${careerResult ? ` · ${careerResult.snapshot.chapter.schoolYear}학년 ${careerResult.snapshot.chapter.season}` : ""}`;
   const displayedGameState = gameStateForReplay(gameState, lastResult, showGameCast);
   const handleGameCastContinue = () => {
+    setStageExpanded(false);
     if (!plateEnded) { setShowGameCast(false); return; }
     if (lastResult?.snapshot.inningTransition?.inningEnded && experienceMode === "career" && proVisible && proResult?.snapshot.phase === "important_game") {
       void handleCompleteProGame();
@@ -1708,7 +1722,7 @@ export function App() {
   }
 
   return (
-    <div className={`app-shell app-shell--pitch ${showGameCast && lastResult ? "app-shell--gamecast" : ""}`}
+    <div className={`app-shell app-shell--pitch ${showGameCast && lastResult && stageExpanded ? "app-shell--gamecast" : ""}`}
       data-team={proVisible && proResult ? proResult.snapshot.team.id : careerResult?.snapshot.draftResult?.team?.id}>
       <header className="topbar">
         <div className="brand-lockup">
@@ -1742,7 +1756,33 @@ export function App() {
           </div>
         </section>
 
-        <div className={`workspace-grid ${showGameCast && lastResult ? "workspace-grid--gamecast" : ""}`}>
+        <div className={`workspace-grid workspace-grid--split ${showGameCast && lastResult && stageExpanded ? "workspace-grid--gamecast" : ""}`}>
+          <section ref={gameCastRegionRef} tabIndex={showGameCast && lastResult ? -1 : undefined}
+            className={`ds-card panel pitch-stage-panel${stageExpanded ? " is-expanded" : ""}`}
+            aria-label={showGameCast && lastResult ? "플레이 리플레이" : "경기장"}>
+            {showGameCast && lastResult ? <>
+              <button className="ds-chip pitch-stage-toggle" type="button"
+                onClick={() => setStageExpanded((value) => !value)}>
+                {stageExpanded ? "작게 보기" : "크게 보기 ⤢"}
+              </button>
+              <GameCastReplay
+                key={lastResult.eventHash}
+                result={lastResult}
+                pitchType={lastCall?.pitchType}
+                situationLabel={`${halfInningLabel(displayedGameState)} · ${outsLabel(displayedGameState)} · ${runnerLabel(displayedGameState.runners)}`}
+                pitcherName={pitcher?.name ?? "투수"}
+                batterName={activeBatter.name}
+                continueLabel={gameCastContinueLabel}
+                isRunning={isRunning}
+                reducedMotion={effectiveReducedMotion}
+                onContinue={handleGameCastContinue}
+              />
+            </> : <div className="gamecast-idle" aria-hidden="true">
+              <div className="gamecast-idle__zone" />
+              <p>공을 고르고 던지면 이 자리에서 궤적이 재생됩니다</p>
+            </div>}
+            {error ? <p className="error-message" role="alert">{error}</p> : null}
+          </section>
           <aside className="ds-card ds-player-card panel player-panel" aria-label="선수 정보">
             <div className="panel-heading">
               <div><p className="eyebrow">내 투수</p><h2>{pitcher?.name ?? "불러오는 중"}</h2></div>
@@ -1840,22 +1880,8 @@ export function App() {
             </div>
           </aside>
 
-          <section ref={gameCastRegionRef} tabIndex={showGameCast && lastResult ? -1 : undefined} className={`ds-card ds-card--raised panel decision-panel ${showGameCast && lastResult ? "decision-panel--gamecast" : ""}`} aria-label={showGameCast && lastResult ? "플레이 리플레이" : "투구 선택"}>
-            {showGameCast && lastResult ? <>
-              <GameCastReplay
-                key={lastResult.eventHash}
-                result={lastResult}
-                pitchType={lastCall?.pitchType}
-                situationLabel={`${halfInningLabel(displayedGameState)} · ${outsLabel(displayedGameState)} · ${runnerLabel(displayedGameState.runners)}`}
-                pitcherName={pitcher?.name ?? "투수"}
-                batterName={activeBatter.name}
-                continueLabel={gameCastContinueLabel}
-                isRunning={isRunning}
-                reducedMotion={effectiveReducedMotion}
-                onContinue={handleGameCastContinue}
-              />
-              {error ? <p className="error-message" role="alert">{error}</p> : null}
-            </> : <>
+          <section className="ds-card ds-card--raised panel decision-panel" aria-label="투구 선택">
+            <>
             <div className="panel-heading">
               <div><p className="eyebrow">승부 선택</p><h2>어떻게 승부할까요?</h2></div>
               <span className="ds-badge count-badge">B {context.balls} · S {context.strikes}</span>
@@ -1983,7 +2009,7 @@ export function App() {
               </button>
             )}
             {error ? <p className="error-message" role="alert">{error}</p> : null}
-            </>}
+            </>
           </section>
 
           <aside className="ds-card ds-card--result panel result-panel" aria-label="투구 결과">

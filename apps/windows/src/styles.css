@@ -1379,16 +1379,15 @@ legend {
   margin-inline: auto;
 }
 
-.workspace-grid--gamecast .player-panel {
-  display: none;
-}
-
-.workspace-grid--gamecast .decision-panel {
-  grid-column: 1 / -1;
-}
-
+.workspace-grid--gamecast .player-panel,
+.workspace-grid--gamecast .decision-panel,
 .workspace-grid--gamecast .result-panel {
   display: none;
+}
+
+.workspace-grid--gamecast .pitch-stage-panel {
+  grid-column: 1 / -1;
+  grid-row: 1;
 }
 
 .decision-panel--gamecast {
@@ -7086,4 +7085,95 @@ body.high-contrast .character-profile__portrait {
 .career-vitals > div > small,
 .preset-statline dt {
   line-height: 1;
+}
+
+
+/* A안 상시 분할: 왼쪽 스테이지(구장) 고정, 오른쪽 콜·결과·투수 스택. */
+.workspace-grid--split {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.workspace-grid--split.workspace-grid--gamecast { grid-template-columns: minmax(0, 1fr); }
+
+.workspace-grid--split .pitch-stage-panel { grid-column: 1; grid-row: 1 / span 3; }
+.workspace-grid--split .decision-panel { grid-column: 2; grid-row: 1; }
+.workspace-grid--split .result-panel { grid-column: 2; grid-row: 2; }
+.workspace-grid--split .player-panel { grid-column: 2; grid-row: 3; }
+
+.pitch-stage-panel {
+  position: relative;
+  overflow: hidden;
+  min-height: 560px;
+  padding: 0;
+}
+
+.pitch-stage-panel .gamecast-replay { display: flex; flex-direction: column; }
+.pitch-stage-panel .gamecast-visuals { flex: 1; }
+
+.pitch-stage-toggle {
+  position: absolute;
+  top: 52px;
+  right: 10px;
+}
+
+.pitch-stage-panel.is-expanded .pitch-stage-toggle {
+  top: 96px;
+  right: 16px;
+  z-index: 6;
+  min-height: 30px;
+  padding-inline: 11px;
+  border: 1px solid var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-canvas) 82%, transparent);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.pitch-stage-panel .gamecast-replay { min-height: 100%; }
+
+/* 인라인 모드 컴팩트: 텔레메트리 사이드는 확장에서만, 헤더 브랜드 축소 */
+.pitch-stage-panel:not(.is-expanded) .gamecast-telemetry { display: none; }
+.pitch-stage-panel:not(.is-expanded) .gamecast-brand span { display: none; }
+.pitch-stage-panel:not(.is-expanded) .gamecast-header { padding: 8px 12px; }
+.pitch-stage-panel:not(.is-expanded) .gamecast-outcome-strip { padding-block: 6px; }
+
+/* 대기 상태 필드 */
+.gamecast-idle {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  height: 100%;
+  min-height: 620px;
+  background:
+    radial-gradient(120% 90% at 50% 108%, var(--scene-turf) 0 34%, var(--scene-turf-deep) 34% 56%, var(--color-surface) 56% 100%),
+    linear-gradient(var(--color-canvas), var(--color-surface));
+}
+
+.gamecast-idle__zone {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  width: 17%;
+  aspect-ratio: 3 / 3.4;
+  transform: translateX(-50%);
+  border: 1.5px solid color-mix(in srgb, var(--color-text-primary) 70%, transparent);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-text-primary) 26%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-text-primary) 26%, transparent) 1px, transparent 1px);
+  background-size: 33.4% 33.4%;
+}
+
+.gamecast-idle > p {
+  margin-bottom: 26px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-label);
+}
+
+@media (max-width: 900px) {
+  .workspace-grid--split { grid-template-columns: minmax(0, 1fr); }
+  .workspace-grid--split .pitch-stage-panel { grid-row: 1; grid-column: 1; min-height: 420px; }
+  .workspace-grid--split .decision-panel { grid-column: 1; grid-row: 2; }
+  .workspace-grid--split .result-panel { grid-column: 1; grid-row: 3; }
+  .workspace-grid--split .player-panel { grid-column: 1; grid-row: 4; }
+  .gamecast-idle { min-height: 420px; }
 }
