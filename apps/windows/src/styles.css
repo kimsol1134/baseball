@@ -7014,3 +7014,53 @@ body.high-contrast .character-profile__portrait {
     padding: 0 8px;
   }
 }
+
+
+/* 게이지 범례: 프리셋 카드의 막대가 무엇을 뜻하는지 한 줄로 알려준다. */
+.gauge-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 1180px;
+  margin: 8px auto 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-scene-sm);
+}
+
+.gauge-legend__bar {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-surface-soft);
+}
+
+.gauge-legend__bar > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 55%;
+  border-radius: inherit;
+  background: var(--color-information);
+}
+
+.gauge-legend__bar > em {
+  position: absolute;
+  top: -2px;
+  left: 55%;
+  width: 34%;
+  height: calc(100% + 4px);
+  border: 1px solid color-mix(in srgb, var(--color-positive) 82%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-positive) 30%, transparent);
+}
+
+.gauge-legend__bar > u {
+  position: absolute;
+  top: -3px;
+  left: 89%;
+  width: 2px;
+  height: calc(100% + 6px);
+  border-radius: 1px;
+  background: var(--color-positive);
+}

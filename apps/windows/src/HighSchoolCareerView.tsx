@@ -497,7 +497,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
   return (
     <main className="career-setup">
       {presets.length > 0 ? <section className="career-intro">
-        <div><p className="eyebrow">고교 커리어</p><h2>중학교의 마지막 공에서 드래프트까지</h2>
+        <div><p className="eyebrow">커리어</p><h2>중학교의 마지막 공에서 드래프트까지</h2>
           <p>학교를 고르고, 감독과 포수에게 배우고, 라이벌과 다시 만납니다.</p></div>
       </section> : null}
       {presets.length > 0 ? <section className="preset-creation-grid">
@@ -505,7 +505,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
           className={preset.id === effectivePresetID ? "is-selected" : undefined} onClick={() => selectPreset(preset)}>
           <span>{preset.name}</span><strong>{preset.pitcher.name}</strong><p>{preset.tagline}</p><small>{preset.tradeoff}</small>
           <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
-            {METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt>
+            {METRICS.map((metric) => <div key={metric.key}><dt>{metric.key === "stuff" ? "위력" : metric.label}</dt>
               <dd data-tier={ratingTier(preset.pitcher[metric.key])}>{preset.pitcher[metric.key]}<i>/{presetPotential(preset, metric.key)}</i></dd>
               <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]}
                 lowerBound={preset.pitcher[metric.key]} upperBound={presetPotential(preset, metric.key)} /></div>)}
@@ -513,6 +513,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
           <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
         </button>)}
       </section> : null}
+      {presets.length > 0 ? <div className="gauge-legend" aria-hidden="true"><span className="gauge-legend__bar"><i /><em /><u /></span><span>채움 = 현재 · 밝은 띠 = 잠재까지 성장 여지</span></div> : null}
       {presets.length === 0 ? <CoreUnavailableState message={error ?? coreMessage} isChecking={isRunning} onRetry={onRetryCore} /> : null}
       {selected ? <section className="creation-allocation career-allocation">
         <div className="creation-summary"><div><span>투수 유형</span><strong>{selected.name}</strong><p>선수마다 강점과 약점이 다릅니다. 추가 능력 5점은 어느 유형을 골라도 같습니다.</p></div>
@@ -560,7 +561,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
               <strong>{karma.title}</strong><span>{karma.copy}</span></button>)}</div></div>
         <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || spent !== 5 || !identity.name.trim()}
           onClick={() => void onStart(selected.id, allocation, { ...identity, name: identity.name.trim() }, difficulty, karmas)}>
-          {isRunning ? "선수 생성 중…" : "고교 커리어 시작"}
+          {isRunning ? "선수 생성 중…" : "커리어 시작"}
         </button>{error ? <p className="error-message" role="alert">{error}</p> : null}
       </section> : null}
     </main>
@@ -735,7 +736,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
 
   return <main className="career-shell stage-layout" data-stage={state.phase} data-school={state.school?.id} data-team={state.draftResult?.team?.id}>
     {showTutorial ? <AccessibleModal className="tutorial-panel" labelledBy="tutorial-title" onEscape={onDismissTutorial}>
-      <div><p className="eyebrow">빠른 안내</p><h2 id="tutorial-title">고교 커리어 시작 전</h2></div>
+      <div><p className="eyebrow">빠른 안내</p><h2 id="tutorial-title">커리어 시작 전</h2></div>
       <ol><li><strong>현재 능력</strong><span>선수 카드에서 공의 위력·제구·변화구·체력을 확인합니다.</span></li><li><strong>중요 경기</strong><span>승부처에서는 구종·코스·강도를 직접 선택합니다.</span></li>
         <li><strong>선택 확정</strong><span>확정한 훈련과 사건 선택은 되돌릴 수 없습니다.</span></li><li><strong>자동 저장</strong><span>확정한 선택마다 이 기기에 저장됩니다.</span></li></ol>
       <button className="ds-button ds-button--primary lab-primary" type="button" onClick={onDismissTutorial}>커리어 시작</button>
