@@ -21,6 +21,34 @@
                ReferencedContainer = "container:Baseball.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "0A4405C5B92D02164EEFC31A"
+               BuildableName = "BaseballIOSTests.xctest"
+               BlueprintName = "BaseballIOSTests"
+               ReferencedContainer = "container:Baseball.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4A67AB13230E48C439F5AAC9"
+               BuildableName = "BaseballIOSUITests.xctest"
+               BlueprintName = "BaseballIOSUITests"
+               ReferencedContainer = "container:Baseball.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -39,7 +67,31 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "0A4405C5B92D02164EEFC31A"
+               BuildableName = "BaseballIOSTests.xctest"
+               BlueprintName = "BaseballIOSTests"
+               ReferencedContainer = "container:Baseball.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "4A67AB13230E48C439F5AAC9"
+               BuildableName = "BaseballIOSUITests.xctest"
+               BlueprintName = "BaseballIOSUITests"
+               ReferencedContainer = "container:Baseball.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

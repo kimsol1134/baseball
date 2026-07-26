@@ -25,6 +25,41 @@ jobs:
       - name: Test simulation packages
         run: swift test --package-path packages/simulation-core
 
+  ios:
+    name: iOS build and tests
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: apps/ios
+        run: xcodegen generate
+      # 생성 결과가 커밋된 프로젝트와 어긋나면 로컬과 CI가 다른 것을 빌드하게 된다.
+      - name: Verify the committed project matches project.yml
+        run: git diff --exit-code apps/ios/Baseball.xcodeproj/project.pbxproj
+      - name: Build and test
+        working-directory: apps/ios
+        run: |
+          xcodebuild \
+            -project Baseball.xcodeproj \
+            -scheme BaseballIOS \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -skip-testing:BaseballIOSUITests/PromoCaptureUITests \
+            -skip-testing:BaseballIOSTests/PromoFrameExportTests \
+            -skip-testing:BaseballIOSTests/PromoAudioExportTests \
+            test CODE_SIGNING_ALLOWED=NO
+      # 릴리스 구성에서도 앱이 만들어져야 한다. 유료앱 권한 게이트 회귀를 잡는 마지막 그물이다.
+      - name: Release configuration build
+        working-directory: apps/ios
+        run: |
+          xcodebuild \
+            -project Baseball.xcodeproj \
+            -scheme BaseballIOS \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            build CODE_SIGNING_ALLOWED=NO
+
   web:
     name: React tests and build
     runs-on: ubuntu-latest

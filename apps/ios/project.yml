@@ -12,28 +12,98 @@ targets:
     platform: iOS
     sources:
       - Sources
+      # 녹음 음원. 비어 있어도 빌드되며, 파일을 넣으면 SoundBank가 알아서 집어 합성 대신 쓴다.
+      # 폴더 이름을 Resources로 두면 안 된다 — 앱 번들 최상위의 Resources/를 codesign이
+      # 중첩 번들로 보고 서명이 깨진다.
+      - path: Audio
+        type: folder
+    # GENERATE_INFOPLIST_FILE로는 UILaunchScreen 사전을 채울 수 없어 명시 Info.plist를 쓴다.
+    # 자동 생성 런치스크린은 단색 빈 화면이라 유료앱의 첫인상 구간을 통째로 버린다.
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: 야구 못하면 또 환생함
+        # 게임 콘텐츠가 한국어이므로 개발 지역을 한국어로 못 박는다. 자동 생성 기본값(en)은
+        # App Store에서 기본 언어를 영어로 잘못 표시한다.
+        CFBundleDevelopmentRegion: ko
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        UIApplicationSupportsIndirectInputEvents: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
+          UIImageRespectsSafeAreaInsets: true
+        # 아이폰 세로 고정. 승부 화면의 존 그리드·궤적 뷰·와인드업 제스처가 모두 세로 기준이다.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    entitlements:
+      path: Sources/BaseballIOS.entitlements
+      properties:
+        # Game Center 업적·리더보드에 필요하다. App Store Connect에서 이 앱 ID의 Game Center를
+        # 함께 켜야 실제로 붙는다. 권한이 없어도 앱은 정상 동작한다(AchievementStore 참조).
+        com.apple.developer.game-center: true
+        # 세이브를 기기 사이로 옮긴다. 키-값 저장소만 쓰므로 컨테이너 하나면 충분하다.
+        com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.solkim.baseball.ios
-        PRODUCT_NAME: 야구 못하면 또 환생함
+        # 번들·실행 파일 이름은 ASCII로 둔다. 홈 화면에 보이는 이름은 Info.plist의
+        # CFBundleDisplayName이고, 한글 PRODUCT_NAME은 TEST_HOST 경로를 깨뜨린다.
+        PRODUCT_NAME: BaseballIOS
         MARKETING_VERSION: 1.0.0
-        CURRENT_PROJECT_VERSION: 1
+        CURRENT_PROJECT_VERSION: 2
         CODE_SIGN_STYLE: Automatic
+        # 아카이브·업로드에 필요하다. 없으면 "requires a development team"으로 실패한다.
+        DEVELOPMENT_TEAM: D48DDX5D5W
         SWIFT_VERSION: "6.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: 야구 못하면 또 환생함
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # 아이폰 전용. 아이패드를 지원 목록에 두면 Apple이 아이패드에서 심사하고 아이패드
+        # 스크린샷을 요구하는데, 아이패드 레이아웃은 검증된 적이 없다. 지원 범위를 실제로
+        # 검증한 만큼만 선언한다.
+        TARGETED_DEVICE_FAMILY: "1"
         SUPPORTS_MACCATALYST: NO
     dependencies:
       - package: BaseballSimulation
         product: SimulationCore
+  BaseballIOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.solkim.baseball.ios.tests
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: BaseballIOS
+      - package: BaseballSimulation
+        product: SimulationCore
+  BaseballIOSUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.solkim.baseball.ios.uitests
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: BaseballIOS
 schemes:
   BaseballIOS:
     build:
       targets:
         BaseballIOS: all
+        BaseballIOSTests: [test]
+        BaseballIOSUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - BaseballIOSTests
+        - BaseballIOSUITests
