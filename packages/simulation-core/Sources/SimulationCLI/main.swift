@@ -37,6 +37,95 @@ enum RivalMemoryMode: String {
 }
 
 let arguments = Array(CommandLine.arguments.dropFirst())
+
+// MARK: - 등판 모드
+//
+// `--outings N`이 있으면 타석 단위 배치 대신 **등판 N경기**를 돌려 집계한다.
+// 시즌 성적이 야구처럼 나오는지는 타석 분포만으로 알 수 없다 — 6이닝 선발이 몇 이닝을
+// 버티는지, 승패가 어떻게 갈리는지는 경기 단위로만 보인다. `check-balance`가 이 출력을 쓴다.
+if let outingIndex = arguments.firstIndex(of: "--outings"),
+   arguments.indices.contains(arguments.index(after: outingIndex)),
+   let outingCount = Int(arguments[arguments.index(after: outingIndex)]) {
+    let outsTarget: Int = {
+        guard let index = arguments.firstIndex(of: "--outs-target") else { return 18 }
+        let valueIndex = arguments.index(after: index)
+        guard arguments.indices.contains(valueIndex), let value = Int(arguments[valueIndex]) else { return 18 }
+        return value
+    }()
+    let role: String = {
+        guard let index = arguments.firstIndex(of: "--role") else { return "starter" }
+        let valueIndex = arguments.index(after: index)
+        guard arguments.indices.contains(valueIndex) else { return "starter" }
+        return arguments[valueIndex]
+    }()
+    let offset: Int = {
+        guard let index = arguments.firstIndex(of: "--batter-offset") else { return 0 }
+        let valueIndex = arguments.index(after: index)
+        guard arguments.indices.contains(valueIndex), let value = Int(arguments[valueIndex]) else { return 0 }
+        return value
+    }()
+    let presetForOutings: String = {
+        guard let index = arguments.firstIndex(of: "--preset") else { return "power_prospect" }
+        let valueIndex = arguments.index(after: index)
+        guard arguments.indices.contains(valueIndex) else { return "power_prospect" }
+        return arguments[valueIndex]
+    }()
+    guard let outingPreset = PitcherPresetCatalog.all.first(where: { $0.id == presetForOutings })
+        ?? PitcherPresetCatalog.all.first else {
+        FileHandle.standardError.write(Data("no preset\n".utf8))
+        exit(1)
+    }
+
+    let started = role == "starter"
+    let simulator = AutoOutingSimulator()
+    var rng = SplitMix64(seed: 20_260_726)
+    var outs = 0, strikeouts = 0, walks = 0, runsAllowed = 0, pitches = 0, hits = 0, homeRuns = 0
+    var wins = 0, losses = 0, saves = 0, noDecisions = 0
+
+    for index in 0..<max(1, outingCount) {
+        let line = simulator.simulate(
+            pitcher: outingPreset.pitcher,
+            startingFatigue: 18 + (index % 4) * 6,
+            outsTarget: outsTarget,
+            pitchCap: started ? 96 : 28,
+            batterOffset: offset,
+            baseSeed: rng.next()
+        )
+        outs += line.outs; strikeouts += line.strikeouts; walks += line.walks
+        runsAllowed += line.runsAllowed; pitches += line.pitches
+        hits += line.hits; homeRuns += line.homeRuns
+
+        let support = LeagueBaseline.teamRuns(using: &rng)
+        let othersOuts = max(0, 27 - line.outs)
+        let opponentRuns = line.runsAllowed
+            + LeagueBaseline.restOfTeamRuns(outsCovered: othersOuts, using: &rng)
+        switch DecisionRules.decide(
+            started: started, isCloser: role == "closer", outs: line.outs,
+            runsAllowed: line.runsAllowed, teamRuns: support, opponentRuns: opponentRuns
+        ) {
+        case .win: wins += 1
+        case .loss: losses += 1
+        case .save: saves += 1
+        case .noDecision: noDecisions += 1
+        }
+    }
+
+    struct OutingReport: Encodable {
+        let games: Int, outs: Int, strikeouts: Int, walks: Int, runsAllowed: Int
+        let pitches: Int, hits: Int, homeRuns: Int
+        let wins: Int, losses: Int, saves: Int, noDecisions: Int
+    }
+    let outingReport = OutingReport(
+        games: outingCount, outs: outs, strikeouts: strikeouts, walks: walks,
+        runsAllowed: runsAllowed, pitches: pitches, hits: hits, homeRuns: homeRuns,
+        wins: wins, losses: losses, saves: saves, noDecisions: noDecisions
+    )
+    let outingEncoder = JSONEncoder()
+    outingEncoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    FileHandle.standardOutput.write(try outingEncoder.encode(outingReport))
+    FileHandle.standardOutput.write(Data("\n".utf8))
+    exit(0)
+}
 let iterations: Int = {
     guard let index = arguments.firstIndex(of: "--iterations") else { return 10_000 }
     let valueIndex = arguments.index(after: index)

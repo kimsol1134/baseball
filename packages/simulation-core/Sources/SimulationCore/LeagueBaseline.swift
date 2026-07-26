@@ -11,7 +11,7 @@ import Foundation
 ///
 /// 이 파일이 존재하는 이유는 그 모양이 코드 여기저기에 흩어져 마법의 숫자로 박히는 것을 막기
 /// 위해서다. 밸런스를 고칠 때 볼 곳이 한 군데여야 한다.
-enum LeagueBaseline {
+public enum LeagueBaseline {
 
     // MARK: - 팀 득점
 
@@ -22,7 +22,7 @@ enum LeagueBaseline {
     /// 완봉패와 난타전이 둘 다 사라져서 시즌이 밋밋해진다.
     ///
     /// 합은 1,000이어야 한다(`runDistributionSumsToOneThousand` 테스트가 지킨다).
-    static let teamRunsPerGamePermille: [Int] = [
+    public static let teamRunsPerGamePermille: [Int] = [
         62,    // 0점 — 완봉당하는 경기
         104,   // 1
         131,   // 2
@@ -45,7 +45,7 @@ enum LeagueBaseline {
     ]
 
     /// 득점 분포에서 하나 뽑는다. 시드된 RNG만 받는다 — 결정성을 깨지 않기 위해서다.
-    static func teamRuns(using rng: inout SplitMix64) -> Int {
+    public static func teamRuns(using rng: inout SplitMix64) -> Int {
         let roll = rng.nextInt(upperBound: 1_000)
         var cumulative = 0
         for (runs, weight) in teamRunsPerGamePermille.enumerated() {
@@ -61,7 +61,7 @@ enum LeagueBaseline {
     /// 내가 등판한 날에는 앞선 여덟 이닝에서 아무도 점수를 안 줬다는 뜻이 되고, 야구를 아는
     /// 사람은 시즌 로그 한 페이지만 봐도 알아챈다. 팀 득점 분포에서 하나 뽑아 잔여 이닝
     /// 비율로 줄인다.
-    static func restOfTeamRuns(outsCovered: Int, using rng: inout SplitMix64) -> Int {
+    public static func restOfTeamRuns(outsCovered: Int, using rng: inout SplitMix64) -> Int {
         let full = teamRuns(using: &rng)
         return full * max(0, outsCovered) / 27
     }
@@ -69,26 +69,26 @@ enum LeagueBaseline {
     // MARK: - 판정 규칙
 
     /// 선발승의 최소 이닝. 야구 규칙 그대로 5이닝이다.
-    static let minimumOutsForStarterWin = 15
+    public static let minimumOutsForStarterWin = 15
 
     /// 세이브가 성립하는 최대 점수 차. 3점 차 이내에서 마무리해야 한다.
-    static let saveLeadCeiling = 3
+    public static let saveLeadCeiling = 3
 
     // MARK: - 고교
 
     /// 고교 팀이 한 경기에서 뽑는 점수. 프로보다 편차가 크고 대량 득점이 잦다.
     /// 아마추어 야구는 수비와 제구가 프로만큼 안정적이지 않아 점수가 크게 벌어진다.
-    static let highSchoolRunsPerGamePermille: [Int] = [
+    public static let highSchoolRunsPerGamePermille: [Int] = [
         70, 92, 112, 124, 126, 116, 100, 80, 62, 45, 32, 21, 13, 7, 0,
     ]
 
     /// 고교판 "내가 안 던진 이닝의 실점". 프로와 같은 이유로 필요하다.
-    static func restOfHighSchoolTeamRuns(outsCovered: Int, using rng: inout SplitMix64) -> Int {
+    public static func restOfHighSchoolTeamRuns(outsCovered: Int, using rng: inout SplitMix64) -> Int {
         let full = highSchoolTeamRuns(using: &rng)
         return full * max(0, outsCovered) / 27
     }
 
-    static func highSchoolTeamRuns(using rng: inout SplitMix64) -> Int {
+    public static func highSchoolTeamRuns(using rng: inout SplitMix64) -> Int {
         let roll = rng.nextInt(upperBound: 1_000)
         var cumulative = 0
         for (runs, weight) in highSchoolRunsPerGamePermille.enumerated() {
@@ -207,8 +207,9 @@ public struct ProGameLine: Codable, Equatable, Sendable, Identifiable {
 /// **왜 상대 팀을 통째로 시뮬레이션하지 않는가**: 플레이어가 알고 싶은 것은 자기 기록과
 /// 그 경기의 승패뿐이다. 상대 타선 아홉 명을 굴리면 계산은 늘고 화면에 나오는 것은 같다.
 /// 대신 팀 득점을 실제 분포에서 뽑아 규칙을 적용한다 — 결과의 모양은 같고 비용은 훨씬 싸다.
-enum DecisionRules {
-    static func decide(
+/// 등판 결과에 승패를 붙이는 규칙. 밸런스 CLI가 별도 모듈이라 public이다.
+public enum DecisionRules {
+    public static func decide(
         started: Bool,
         isCloser: Bool,
         outs: Int,

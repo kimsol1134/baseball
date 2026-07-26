@@ -103,9 +103,59 @@ const highContact = batch(["--preset", "power_prospect", "--contact", "56", "--d
 const contactSpread = highContact.avg - lowContact.avg;
 expect("컨택 45→56 피안타율 스프레드", contactSpread, 0.005, 0.13);
 
+
+// ── 등판 단위 검사 ───────────────────────────────────────────────────────────
+//
+// 타석 분포만으로는 시즌 성적이 야구처럼 보이는지 알 수 없다. 6이닝 선발이 몇 이닝을
+// 버티는지, 승패가 어떻게 갈리는지는 경기 단위로만 드러난다. 자동 시즌 성적이 화면에
+// 나오기 시작했으므로 여기가 회귀 지점이다.
+//
+// **밴드의 성격**: 아래 값은 "실제 야구의 정답"이 아니라 **2026-07-26 실측값 기준의 회귀
+// 탐지선**이다. 지금 커널은 실제 야구보다 투수에게 유리하다 — 신인급 프리셋(구위 42·제구 34)이
+// 리그 평균 타자를 상대로 BB9 1.79(MLB 약 3.2)·K9 9.81(약 8.5)·RA9 3.42(약 4.4)를 찍는다.
+// 그 격차는 커널 판정의 문제이지 이 파일의 문제가 아니며, 밴드를 실제 야구 값으로 좁히면
+// 오늘 당장 실패한다. 격차를 줄이는 것은 별도 작업이고, 그때 이 밴드도 함께 좁힌다.
+// 밴드를 넓혀 통과시키지 않는다 — 벗어나면 원인을 찾는다.
+function outings(args) {
+  const raw = execFileSync(cli, args, { encoding: "utf8" });
+  const d = JSON.parse(raw);
+  const outs = d.outs;
+  return {
+    inningsPerGame: outs / 3 / d.games,
+    ra9: (d.runsAllowed * 27) / outs,
+    k9: (d.strikeouts * 27) / outs,
+    bb9: (d.walks * 27) / outs,
+    winRate: d.wins / d.games,
+    noDecisionRate: d.noDecisions / d.games,
+    saveRate: d.saves / d.games,
+  };
+}
+
+const starter = outings(["--outings", "400"]);
+expect("선발 평균 이닝", starter.inningsPerGame, 4.6, 6.2);
+expect("선발 9이닝당 실점", starter.ra9, 2.6, 4.6);
+expect("선발 K/9", starter.k9, 8.0, 11.5);
+expect("선발 BB/9", starter.bb9, 1.2, 3.2);
+expect("선발 승률", starter.winRate, 0.3, 0.62);
+expect("선발 노디시전 비율", starter.noDecisionRate, 0.1, 0.35);
+
+// 마무리는 세이브 전환율이 핵심이다. 한 번도 날리지 않으면 마무리를 맡는 긴장이 없어진다.
+const closer = outings(["--outings", "400", "--role", "closer", "--outs-target", "3"]);
+expect("마무리 세이브 비율", closer.saveRate, 0.15, 0.4);
+expect("마무리 9이닝당 실점", closer.ra9, 2.2, 5.2);
+
+// 제구형이 파워형보다 볼넷이 적어야 한다. 프리셋 차이가 성적에 반영되지 않으면
+// 선수 육성 자체가 의미를 잃는다.
+const commander = outings(["--outings", "300", "--preset", "precision_commander"]);
+if (!(commander.bb9 < starter.bb9)) {
+  failures.push(`제구형 BB/9(${commander.bb9.toFixed(2)})가 파워형(${starter.bb9.toFixed(2)})보다 많음`);
+} else {
+  console.log(`  통과: 제구형 < 파워형 볼넷 위계 (${commander.bb9.toFixed(2)} < ${starter.bb9.toFixed(2)})`);
+}
+
 if (failures.length > 0) {
   console.error("\n밸런스 불변식 검사 실패:");
   for (const failure of failures) console.error(`  실패: ${failure}`);
   process.exit(1);
 }
-console.log("밸런스 불변식 검사 통과: 분포 밴드·적응 위계·파워 단조성·레이팅 민감도 확인");
+console.log("밸런스 불변식 검사 통과: 분포 밴드·적응 위계·파워 단조성·레이팅 민감도·등판 단위 확인");
