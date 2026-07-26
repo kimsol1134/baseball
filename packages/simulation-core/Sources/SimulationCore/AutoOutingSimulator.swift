@@ -60,9 +60,18 @@ public struct AutoOutingSimulator: Sendable {
                 power: clamp(50 + batterOffset + rng.nextInt(upperBound: 9) - 4, 20, 80),
                 batSide: rng.nextInt(upperBound: 100) < 32 ? .left : .right
             )
+            // 강점과 약점 코스는 서로 마주 보게 잡는다.
+            //
+            // 예전에는 둘을 각각 무작위로 뽑아서 **11%의 타자가 강점과 약점이 같은 칸**이었다.
+            // 그러면 포수가 약점인 줄 알고 타자가 가장 잘 치는 코스를 요구한다 — 실제
+            // 스카우팅에서는 있을 수 없는 일이고, 자동 등판의 피안타율만 실제 야구보다
+            // 높아지는 원인이었다.
+            let hotZone = PitchZone(row: rng.nextInt(upperBound: 3), column: rng.nextInt(upperBound: 3))
+            let coldZone = PitchZone(row: 2 - hotZone.row, column: 2 - hotZone.column)
             let scouting = BatterScoutingSnapshot(
-                hotZone: PitchZone(row: rng.nextInt(upperBound: 3), column: rng.nextInt(upperBound: 3)),
-                coldZone: PitchZone(row: rng.nextInt(upperBound: 3), column: rng.nextInt(upperBound: 3)),
+                hotZone: hotZone,
+                // 한가운데가 강점이면 대칭점도 한가운데다. 그때만 낮은 바깥쪽으로 민다.
+                coldZone: coldZone == hotZone ? PitchZone(row: 2, column: 0) : coldZone,
                 pitchStrength: .fourSeam,
                 pitchWeakness: rng.nextInt(upperBound: 2) == 0 ? .slider : .changeup,
                 chaseTendency: clamp(48 + rng.nextInt(upperBound: 9) - 4, 20, 80)
