@@ -163,7 +163,7 @@ const TRAINING_OPTIONS: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
-  { value: "velocity", label: "직구 구속", description: "직구를 더 빠르고 위력 있게 던진다" },
+  { value: "velocity", label: "구위", description: "직구를 더 빠르고 위력 있게 던진다" },
   { value: "command", label: "제구", description: "원하는 코스에 꾸준히 던지는 연습을 한다" },
   { value: "breaking_ball", label: "변화구", description: "더 크게 꺾이는 변화구로 헛스윙을 노린다" },
   { value: "stamina", label: "선발 체력", description: "긴 이닝에도 공의 힘이 떨어지지 않게 한다" },

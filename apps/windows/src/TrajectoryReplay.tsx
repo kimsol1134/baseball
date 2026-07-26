@@ -1063,7 +1063,7 @@ export function GameCastReplay({
     <footer className="gamecast-footer">
       <div className="gamecast-result-copy">
         <span className={revealResult ? `decision-grade decision-grade--${snapshot.selectionQuality}` : "gamecast-live-badge"}>{revealResult ? snapshot.recommendationAccepted ? "포수 추천 수락" : "포수 사인 수정" : "TRACKING"}</span>
-        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "field" ? "판정된 타구와 수비 반응을 같은 좌표계에서 추적합니다." : phase === "contact" ? "투구가 끝났습니다. 스윙·존·접촉 여부를 판정합니다." : "릴리스부터 홈플레이트까지 실제 공의 움직임을 분석합니다."}</p></div>
+        <div><strong>{revealResult ? snapshot.shortFeedback : phaseLabel}</strong><p>{revealResult ? fielding?.shortExplanation ?? snapshot.detailFeedback : phase === "field" ? "판정된 타구와 수비 반응을 같은 좌표계에서 추적합니다." : phase === "contact" ? "투구가 끝났습니다. 스윙·존·접촉 여부를 판정합니다." : "릴리스부터 홈플레이트까지 공이 어떻게 움직였는지 분석합니다."}</p></div>
       </div>
       <button className="ds-button ds-button--primary primary-action gamecast-continue" type="button" disabled={isRunning || !revealResult} onClick={onContinue}>
         {isRunning ? "다음 장면 준비 중…" : revealResult ? continueLabel : "플레이 재생 중…"}
