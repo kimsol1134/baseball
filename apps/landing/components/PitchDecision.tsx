@@ -4,51 +4,71 @@ import { useState } from "react";
 
 const pitches = [
   {
-    name: "몸쪽 포심",
-    chance: "46%",
-    note: "구속으로 승부",
+    name: "포심",
+    call: "몸쪽 높게",
+    note: "구속으로 배트를 늦춥니다.",
   },
   {
-    name: "낮은 바깥쪽 슬라이더",
-    chance: "28%",
-    note: "타자의 시선을 흔든다",
+    name: "슬라이더",
+    call: "바깥쪽 낮게",
+    note: "포수의 주 추천입니다.",
   },
   {
-    name: "빠른 체인지업",
-    chance: "16%",
-    note: "타이밍을 빼앗는다",
+    name: "체인지업",
+    call: "존 아래",
+    note: "타이밍을 빼앗는 대안입니다.",
   },
 ] as const;
 
+const zoneNames = [
+  "몸쪽 높게",
+  "가운데 높게",
+  "바깥쪽 높게",
+  "몸쪽",
+  "가운데",
+  "바깥쪽",
+  "몸쪽 낮게",
+  "가운데 낮게",
+  "바깥쪽 낮게",
+] as const;
+
 function outcomeFor(pitch: number, zone: number) {
-  if (pitch === 1 && (zone === 7 || zone === 8)) {
+  if (pitch === 1 && zone === 8) {
     return {
-      title: "헛스윙 삼진",
-      detail: "변화구에 반응이 늦었습니다.",
+      verdict: "탁월한 판단",
+      title: "루킹 스트라이크",
+      detail: "타자가 몸쪽 빠른 공을 기다렸고, 슬라이더가 바깥쪽 낮게 들어갔습니다.",
+      path: "curve",
       tone: "positive",
     };
   }
 
-  if (zone === 0 || zone === 2 || zone === 6) {
+  if (pitch === 0 && zone === 0) {
     return {
-      title: "볼",
-      detail: "승부가 깊어졌습니다. 다음 공이 더 중요합니다.",
+      verdict: "좋은 판단",
+      title: "헛스윙",
+      detail: "높은 포심으로 배트를 늦췄지만 실제 위치가 목표보다 조금 가운데로 몰렸습니다.",
+      path: "rise",
+      tone: "positive",
+    };
+  }
+
+  if (zone === 4) {
+    return {
+      verdict: "위험한 선택",
+      title: "강한 파울",
+      detail: "타자가 기다린 코스였습니다. 판단은 위험했지만 파울로 살아남았습니다.",
+      path: "flat",
       tone: "warning",
     };
   }
 
-  if (pitch === 0 && zone === 4) {
-    return {
-      title: "강한 파울",
-      detail: "타자가 빠른 공을 기다리고 있었습니다.",
-      tone: "negative",
-    };
-  }
-
   return {
-    title: "스트라이크",
-    detail: "카운트를 유리하게 가져옵니다.",
-    tone: "positive",
+    verdict: "보통 판단",
+    title: "볼",
+    detail: "목표는 좋았지만 공이 존을 벗어났습니다. 선택과 실행은 따로 평가됩니다.",
+    path: "drop",
+    tone: "neutral",
   };
 }
 
@@ -60,10 +80,19 @@ export function PitchDecision() {
   return (
     <div className="pitch-simulator">
       <div className="pitch-context" aria-label="경기 상황">
-        <span>7회 말</span>
+        <div>
+          <small>전국 결승 · 8회 말</small>
+          <strong>서울배성고 3 : 2 부산해남고</strong>
+        </div>
         <span>2 OUT</span>
         <span>주자 1·2루</span>
-        <strong>7 : 5</strong>
+        <span className="count-box">B 1 · S 2</span>
+      </div>
+
+      <div className="catcher-call">
+        <span>포수 주 추천</span>
+        <strong>슬라이더 · 바깥쪽 낮게 · 경계 승부</strong>
+        <small>직전 두 공의 몸쪽 포심을 본 타자가 빠른 공을 기다립니다.</small>
       </div>
 
       <div className="pitch-layout">
@@ -85,34 +114,35 @@ export function PitchDecision() {
                 <strong>{item.name}</strong>
                 <small>{item.note}</small>
               </span>
-              <span className="chance">{item.chance}</span>
+              <em>{item.call}</em>
             </button>
           ))}
         </div>
 
         <div className="zone-picker">
-          <p className="micro-label">스트라이크 존</p>
+          <p className="micro-label">목표 코스</p>
           <div className="strike-zone" role="group" aria-label="투구 위치 선택">
-            {Array.from({ length: 9 }, (_, index) => (
+            {zoneNames.map((name, index) => (
               <button
-                key={index}
+                key={name}
                 className={zone === index ? "zone-cell is-selected" : "zone-cell"}
                 onClick={() => {
                   setZone(index);
                   setOutcome(null);
                 }}
                 type="button"
-                aria-label={`${index + 1}번 위치`}
+                aria-label={name}
                 aria-pressed={zone === index}
               >
-                {index + 1}
+                <span>{index + 1}</span>
               </button>
             ))}
           </div>
+          <strong className="zone-name">{zoneNames[zone]}</strong>
         </div>
 
         <div className="decision-panel">
-          <p className="micro-label">선택 판단</p>
+          <p className="micro-label">이번 승부</p>
           <dl>
             <div>
               <dt>구종</dt>
@@ -120,11 +150,11 @@ export function PitchDecision() {
             </div>
             <div>
               <dt>목표</dt>
-              <dd>{zone + 1}번 존</dd>
+              <dd>{zoneNames[zone]}</dd>
             </div>
             <div>
-              <dt>리스크</dt>
-              <dd>{zone === 4 ? "높음" : "보통"}</dd>
+              <dt>포수 사인</dt>
+              <dd>{pitch === 1 && zone === 8 ? "수락" : "변경"}</dd>
             </div>
           </dl>
 
@@ -135,18 +165,29 @@ export function PitchDecision() {
           >
             이 공을 던진다
           </button>
-
-          <div className="outcome" aria-live="polite">
-            {outcome ? (
-              <>
-                <strong className={`tone-${outcome.tone}`}>{outcome.title}</strong>
-                <span>{outcome.detail}</span>
-              </>
-            ) : (
-              <span>구종과 위치를 고른 뒤 결과를 확인하세요.</span>
-            )}
-          </div>
         </div>
+      </div>
+
+      <div className={outcome ? "pitch-result is-visible" : "pitch-result"} aria-live="polite">
+        {outcome ? (
+          <>
+            <div className={`trajectory trajectory-${outcome.path}`} aria-hidden="true">
+              <span className="target-dot" />
+              <i />
+              <b />
+            </div>
+            <div className="result-copy">
+              <span className={`tone-${outcome.tone}`}>{outcome.verdict}</span>
+              <strong>{outcome.title}</strong>
+              <p>{outcome.detail}</p>
+            </div>
+            <button type="button" onClick={() => setOutcome(null)}>
+              다른 공 선택
+            </button>
+          </>
+        ) : (
+          <p>구종과 목표 코스를 고른 뒤 결과를 확인하세요.</p>
+        )}
       </div>
     </div>
   );

@@ -7,17 +7,18 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "야구 못하면 또 환생함 — 한 선수의 전 생애를 플레이하다",
+    default: "야구 못하면 또 환생함 — 기억을 이어 드래프트를 돌파하라",
     template: "%s | 야구 못하면 또 환생함",
   },
   description:
-    "고교 입학부터 프로 은퇴까지. 매 경기의 한 공과 관계, 성장의 선택이 한 선수의 커리어가 되는 싱글플레이 야구 RPG.",
+    "승부처의 공을 한 구씩 직접 던지는 아이폰 야구 육성 게임. 고교 3년과 드래프트, 기억을 안고 다시 태어나는 회차, 프로 은퇴까지 한 번의 구매에 모두 담았습니다.",
   applicationName: "야구 못하면 또 환생함",
   keywords: [
     "야구 게임",
-    "야구 RPG",
-    "커리어 시뮬레이션",
-    "Steam 게임",
+    "야구 육성",
+    "투수 육성",
+    "아이폰 야구 게임",
+    "유료 게임",
     "인디 게임",
   ],
   alternates: {
@@ -28,23 +29,23 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: "/",
     siteName: "야구 못하면 또 환생함",
-    title: "3년 안에 지명받아라. 그리고 마지막 공까지.",
+    title: "이번 생엔, 이름이 불릴까.",
     description:
-      "고교 입학부터 프로 은퇴까지, 한 선수의 전 생애를 플레이하는 야구 커리어 RPG.",
+      "실패한 삶의 기억을 이어 드래프트를 돌파하고, 지명된 한 선수로 프로 은퇴까지 살아가는 데이터 야구 로그라이트 RPG.",
     images: [
       {
-        url: "/opengraph-image.png",
+        url: "/opengraph-image-v2.png",
         width: 1200,
         height: 630,
-        alt: "야구 못하면 또 환생함 Steam 출시 예정",
+        alt: "야구 못하면 또 환생함 — 이번 생엔, 이름이 불릴까.",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     title: "야구 못하면 또 환생함",
-    description: "한 선수의 전 생애를 플레이하는 야구 커리어 RPG.",
-    images: ["/opengraph-image.png"],
+    description: "기억을 이어 드래프트를 돌파하는 데이터 야구 로그라이트 RPG.",
+    images: ["/opengraph-image-v2.png"],
   },
   icons: {
     icon: "/icon.png",
