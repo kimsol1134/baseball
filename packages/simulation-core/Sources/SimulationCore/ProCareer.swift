@@ -577,6 +577,8 @@ public struct ProCareerEngine: Sendable {
     /// 주간 자동 등판을 PitchKernelEngine 실제 타석 루프로 실행한다(투구 UI 없이 결과만 집계).
     /// 상대는 리그 평균(50) 기준 시드 변주 타자이고 좌우 타석도 섞인다. 투수의 피로는
     /// 커널의 구속·제구 저하로 그대로 반영되므로 "지친 주의 등판"은 자연히 나빠진다.
+    /// 주간 자동 등판. 실제 구현은 `AutoOutingSimulator`에 있다 — 고교 자동 경기와
+    /// 밸런스 CLI가 같은 것을 쓴다.
     func simulateWeeklyOuting(
         pitcher: PitcherSnapshot,
         startingFatigue: Int,
@@ -584,101 +586,22 @@ public struct ProCareerEngine: Sendable {
         pitchCap: Int,
         baseSeed: UInt64
     ) -> WeeklyOutingLine {
-        let engine = PitchKernelEngine()
-        var rng = SplitMix64(seed: baseSeed)
-        var line = WeeklyOutingLine()
-        let fielders = FielderPosition.allCases.map {
-            FielderSnapshot(id: "week-\($0.rawValue)", name: $0.rawValue, position: $0, range: 50, glove: 50, arm: 50)
-        }
-        var inningState = InningStateSnapshot(inning: 1, half: .top, outs: 0)
-        var runners = BaserunnerStateSnapshot(firstOccupied: false, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 52)
-        var runsOnBoard = 0
-        var carriedGameLog = GameLogSnapshot(gameID: "week-outing", revision: 0, totalPitches: 0, entries: [])
-        var currentFatigue = clamp(startingFatigue, 0, 95)
-        var paIndex = 0
-        while line.outs < outsTarget && line.pitches < pitchCap && paIndex < 60 {
-            paIndex += 1
-            let batter = BatterSnapshot(
-                id: "week-batter-\(paIndex)", name: "상대 타선",
-                contact: clamp(50 + rng.nextInt(upperBound: 9) - 4, 20, 80),
-                discipline: clamp(50 + rng.nextInt(upperBound: 7) - 3, 20, 80),
-                power: clamp(50 + rng.nextInt(upperBound: 9) - 4, 20, 80),
-                batSide: rng.nextInt(upperBound: 100) < 32 ? .left : .right
-            )
-            let scouting = BatterScoutingSnapshot(
-                hotZone: PitchZone(row: rng.nextInt(upperBound: 3), column: rng.nextInt(upperBound: 3)),
-                coldZone: PitchZone(row: rng.nextInt(upperBound: 3), column: rng.nextInt(upperBound: 3)),
-                pitchStrength: .fourSeam,
-                pitchWeakness: rng.nextInt(upperBound: 2) == 0 ? .slider : .changeup,
-                chaseTendency: clamp(48 + rng.nextInt(upperBound: 9) - 4, 20, 80)
-            )
-            var gameState = GameStateSnapshot(
-                defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50, fielders: fielders),
-                park: ParkSnapshot(id: "league-week-park", name: "리그 구장", hitFactor: 1_000, homeRunFactor: 1_000),
-                runners: runners, runsAllowed: runsOnBoard, inningState: inningState
-            )
-            var gameLog = carriedGameLog
-            var context = PlateAppearanceContext(
-                plateAppearanceID: "week-pa-\(paIndex)", revision: 0,
-                inning: inningState.inning, outs: inningState.outs,
-                balls: 0, strikes: 0, pitchNumber: 1,
-                scoreDifferential: 0, leverage: 500, fatigue: currentFatigue
-            )
-            var seed = String(max(1, rng.next() >> 1))
-            var paMemory: RivalMemorySnapshot?
-            guard var preparation = try? engine.preparePitch(PreparePitchParams(
-                seed: seed, pitcher: pitcher, batter: batter, scouting: scouting,
-                context: context, rivalMemory: paMemory, gameState: gameState, gameLog: gameLog
-            )) else { break }
-            let outsBefore = (inningState.inning - 1) * 3 + inningState.outs
-            while true {
-                guard let result = try? engine.submitPitch(SubmitPitchParams(
-                    seed: seed, pitcher: pitcher, batter: batter, scouting: scouting,
-                    context: context, preparationToken: preparation.preparationToken,
-                    call: preparation.primaryRecommendation.call,
-                    rivalMemory: paMemory, gameState: gameState, gameLog: gameLog
-                )) else { return line }
-                paMemory = result.rivalMemory
-                gameState = result.gameState
-                gameLog = result.gameLog
-                line.pitches += 1
-                currentFatigue = clamp(result.snapshot.fatigueAfterPitch, 0, 95)
-                if let paResult = result.snapshot.result {
-                    if paResult == .strikeout { line.strikeouts += 1 }
-                    if paResult == .walk { line.walks += 1 }
-                    if paResult == .hit {
-                        line.hits += 1
-                        if result.snapshot.outcome == .homeRun { line.homeRuns += 1 }
-                    }
-                }
-                if result.snapshot.ended {
-                    line.runsAllowed += result.snapshot.runsScored
-                    runsOnBoard = result.gameState.runsAllowed
-                    carriedGameLog = result.gameLog
-                    inningState = result.gameState.inningState ?? inningState
-                    runners = result.gameState.runners
-                    let outsAfter = (inningState.inning - 1) * 3 + inningState.outs
-                    line.outs += max(0, outsAfter - outsBefore)
-                    break
-                }
-                seed = result.nextSeed
-                context = PlateAppearanceContext(
-                    plateAppearanceID: context.plateAppearanceID,
-                    revision: result.revision,
-                    inning: result.gameState.inningState?.inning ?? context.inning,
-                    outs: result.gameState.inningState?.outs ?? context.outs,
-                    balls: result.snapshot.balls,
-                    strikes: result.snapshot.strikes,
-                    pitchNumber: context.pitchNumber + 1,
-                    scoreDifferential: context.scoreDifferential,
-                    leverage: context.leverage,
-                    fatigue: currentFatigue
-                )
-                guard let nextPreparation = result.nextPreparation else { return line }
-                preparation = nextPreparation
-            }
-        }
-        return line
+        let line = AutoOutingSimulator().simulate(
+            pitcher: pitcher,
+            startingFatigue: startingFatigue,
+            outsTarget: outsTarget,
+            pitchCap: pitchCap,
+            baseSeed: baseSeed
+        )
+        var weekly = WeeklyOutingLine()
+        weekly.outs = line.outs
+        weekly.strikeouts = line.strikeouts
+        weekly.walks = line.walks
+        weekly.runsAllowed = line.runsAllowed
+        weekly.pitches = line.pitches
+        weekly.hits = line.hits
+        weekly.homeRuns = line.homeRuns
+        return weekly
     }
     private func signed(_ state: ProCareerSnapshot) -> ProCareerSnapshot { replacing(state, commitment: commitment(state)) }
     private func result(_ state: ProCareerSnapshot, nextSeed: String, events: [String]) -> ProCareerResult { let value = signed(state); return ProCareerResult(snapshot: value, nextSeed: nextSeed, events: events) }
