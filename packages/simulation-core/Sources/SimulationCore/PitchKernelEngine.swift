@@ -102,21 +102,31 @@ public struct CatcherRecommendationEngine: Sendable {
         return (primary, alternative)
     }
 
+    /// 무엇을 던질지 고른다. **타자의 약점과 투수가 실제로 던질 수 있는 공을 저울질한다.**
+    ///
+    /// 예전에는 약점 구종을 거의 무조건 요구했다 — 개발 중인 구종일 때만 피했다. 그래서
+    /// 던질 줄도 모르는 체인지업이 약점이면 계속 체인지업을 요구했고, 포수가 투수를 안 보는
+    /// 것처럼 보였다. 실제 포수는 "이 타자가 약한 공"과 "이 투수가 제일 잘 던지는 공" 사이에서
+    /// 고른다. 약점을 노리는 값어치를 점수로 매겨 주무기와 비교한다.
     private func recommendedPrimaryPitch(
         pitcher: PitcherSnapshot,
         desired: PitchType
     ) -> PitchType {
-        guard let profiles = pitcher.pitchProfiles,
-              let desiredProfile = pitcher.profile(for: desired) else {
-            return desired
+        guard let profiles = pitcher.pitchProfiles, !profiles.isEmpty else { return desired }
+
+        /// 약점을 찌를 때 얹어 주는 값. 이만큼 못 미치는 주무기라면 약점을 노린다.
+        /// 90은 세 항목 합계(command+whiff+weakContact) 기준이라 항목당 30 차이에 해당한다.
+        let weaknessBonus = 90
+
+        func value(_ profile: PitchProfileSnapshot) -> Int {
+            var score = profileScore(profile)
+            if profile.pitchType == desired { score += weaknessBonus }
+            // 아직 만들고 있는 구종은 승부처에서 쓰지 않는다.
+            if profile.role == .development { score -= 120 }
+            return score
         }
-        if desiredProfile.role != .development || profileScore(desiredProfile) >= 145 {
-            return desired
-        }
-        return profiles
-            .filter { $0.role != .development }
-            .max { profileScore($0) < profileScore($1) }?
-            .pitchType ?? desired
+
+        return profiles.max { value($0) < value($1) }?.pitchType ?? desired
     }
 
     private func recommendedAlternativePitch(
@@ -141,6 +151,22 @@ public struct CatcherRecommendationEngine: Sendable {
 }
 
 public struct PitchKernelEngine: Sendable {
+
+    /// 노린 코스에 얼마나 붙었는지를 말로 옮긴다.
+    ///
+    /// 예전에는 "코스 정확도는 610/1000입니다"라고만 적었다. 610이 좋은 건지 나쁜 건지
+    /// 알 방법이 없어서 숫자가 그냥 지나간다. 무엇을 재는 값인지도 이름에 담는다 —
+    /// 이건 공이 목표에서 얼마나 벗어났는지이지 구위나 제구 능력치가 아니다.
+    static func executionBand(_ quality: Int) -> String {
+        switch quality {
+        case 850...: "그대로 꽂혔습니다"
+        case 700..<850: "거의 붙었습니다"
+        case 520..<700: "조금 벗어났습니다"
+        case 350..<520: "많이 벗어났습니다"
+        default: "손에서 빠졌습니다"
+        }
+    }
+
     private enum BatterApproach: String {
         case patient
         case aggressive
@@ -1557,7 +1583,7 @@ public struct PitchKernelEngine: Sendable {
         let inningText = inningTransition.outsRecorded > 0
             ? " \(inningTransition.shortExplanation)"
             : ""
-        let detail = "공 선택은 \(selectionDisplayName(selection)), 코스 정확도는 \(execution.executionQuality)/1000입니다. \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
+        let detail = "공 선택은 \(selectionDisplayName(selection)), 노린 코스에는 \(Self.executionBand(execution.executionQuality))(\(execution.executionQuality)/1000). \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
         return (short, detail)
     }
 

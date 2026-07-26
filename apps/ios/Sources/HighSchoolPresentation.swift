@@ -54,6 +54,20 @@ enum HighSchoolPresentation {
         }
     }
 
+    /// 강도 이름. **무엇을 하느냐에 따라 달라진다.**
+    ///
+    /// "회복을 몰아붙이기로 한다"는 말이 안 된다. 계산상으로는 뜻이 있다 — 회복은 피로를
+    /// 18 줄이고 강도가 그만큼 도로 쌓으므로, 몰아붙이면 실제로 3만 회복된다. 즉 "쉬면서
+    /// 얼마나 몸을 쓰느냐"다. 그러면 그렇게 불러야 한다.
+    static func intensity(_ level: TrainingIntensity, focus: TrainingFocus) -> String {
+        guard focus == .recovery else { return intensity(level) }
+        switch level {
+        case .light: return "푹 쉰다"
+        case .standard: return "가볍게 몸만 푼다"
+        case .intensive: return "쉬면서도 던진다"
+        }
+    }
+
     static func intensity(_ intensity: TrainingIntensity) -> String {
         switch intensity {
         case .light: "가볍게"
@@ -62,11 +76,68 @@ enum HighSchoolPresentation {
         }
     }
 
-    static func response(_ response: RelationshipResponse) -> String {
-        switch response {
-        case .listen: "먼저 듣는다"
-        case .explain: "내 생각을 말한다"
-        case .challenge: "다음 승부로 증명한다"
+    /// 대화 응답 문구. **상황에 따라 달라진다.**
+    ///
+    /// 코어의 판정은 세 가지 태도(듣는다·설명한다·증명한다) 위에 서 있고 그건 그대로 둔다.
+    /// 바뀌는 건 말이다. 예전에는 부모님 전화에도 "다음 승부로 증명한다"가 붙었는데,
+    /// 전화기에 대고 할 말이 아니다. 같은 태도라도 상대가 감독인지 부모인지 기자인지에
+    /// 따라 사람은 다르게 말한다.
+    static func response(_ response: RelationshipResponse, category: String) -> String {
+        switch category {
+        case "life":
+            switch response {
+            case .listen: "끝까지 듣는다"
+            case .explain: "내 생각을 솔직히 말한다"
+            case .challenge: "걱정 마시라고 말한다"
+            }
+        case "coach":
+            switch response {
+            case .listen: "지시를 그대로 받는다"
+            case .explain: "내 판단을 말해 본다"
+            case .challenge: "다음 등판으로 보여드리겠다고 한다"
+            }
+        case "catcher":
+            switch response {
+            case .listen: "포수 리드에 맡긴다"
+            case .explain: "원하는 배합을 이야기한다"
+            case .challenge: "내 공을 믿어 달라고 한다"
+            }
+        case "rival":
+            switch response {
+            case .listen: "말을 아낀다"
+            case .explain: "실력은 실력으로 가리자고 한다"
+            case .challenge: "다음 승부에서 보자고 한다"
+            }
+        case "media", "fan":
+            switch response {
+            case .listen: "질문을 끝까지 듣는다"
+            case .explain: "지금 하는 준비를 설명한다"
+            case .challenge: "기록으로 답하겠다고 한다"
+            }
+        case "health":
+            switch response {
+            case .listen: "코치에게 알리고 쉰다"
+            case .explain: "상태를 정확히 설명한다"
+            case .challenge: "괜찮다고 하고 계속 던진다"
+            }
+        case "team":
+            switch response {
+            case .listen: "동료의 말을 먼저 듣는다"
+            case .explain: "내 입장을 설명한다"
+            case .challenge: "결과로 정리하자고 한다"
+            }
+        case "draft":
+            switch response {
+            case .listen: "평가를 그대로 듣는다"
+            case .explain: "내가 준비한 것을 말한다"
+            case .challenge: "남은 경기로 뒤집겠다고 한다"
+            }
+        default:
+            switch response {
+            case .listen: "먼저 듣는다"
+            case .explain: "내 생각을 말한다"
+            case .challenge: "다음 승부로 증명한다"
+            }
         }
     }
 

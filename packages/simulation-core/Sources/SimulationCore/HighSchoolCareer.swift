@@ -1542,15 +1542,36 @@ public struct HighSchoolCareerEngine: Sendable {
                 ? "지명 구단 · \(team?.name ?? "프로 구단"). 구위와 고교 경기 기록에서 높은 평가를 받았습니다."
                 : "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
         )
-        // Both outcomes bank memories for the next life: a successful run leaves an
-        // achievement-shaped set, a failed run leaves a lesson-shaped one. Selection happens in
-        // the shared .legacy phase before .completed, so the roguelite loop is no longer
-        // failure-only.
+        // 기억은 **회차를 접을 때** 고른다.
+        //
+        // 예전에는 지명 여부와 무관하게 곧바로 기억 선택으로 넘어갔다. 그런데 지명은 회차의
+        // 끝이 아니다 — 프로 커리어가 남아 있다. 성공한 순간에 "다음 생에 무엇을 남길지"를
+        // 묻는 것은 아직 끝나지도 않은 이야기의 유언을 받는 것과 같다.
+        //
+        // 지금은 지명되면 완료 화면으로 바로 간다. 프로로 갈 수도 있고, 이 회차를 접고
+        // 다시 시작할 수도 있는데, 기억은 **후자를 고를 때** 정한다(`openLegacy`).
+        // 미지명은 회차가 강제로 끝나므로 그대로 기억 선택으로 간다.
         let memories = memoryOptions(state: params.state, seed: seed, drafted: drafted)
-        let next = replacing(params.state, revision: params.state.revision + 1, phase: .legacy,
+        let next = replacing(params.state, revision: params.state.revision + 1,
+            phase: drafted ? .completed : .legacy,
             news: [drafted ? "드래프트 지명 · \(team?.name ?? "프로 구단") · \(params.state.pitcher.name)" : "드래프트가 끝날 때까지 이름이 불리지 않았습니다."] + params.state.news,
             draftResult: draft, legacyOptions: memories)
         return result(seed: seed, state: signed(next), event: "career_draft_resolved", reasons: ["draft.\(draft.outcome.rawValue)"])
+    }
+
+    /// 지명된 회차를 접고 기억 선택으로 들어간다.
+    ///
+    /// 지명되면 완료 화면에서 멈춘다 — 프로로 갈지, 이 회차를 접고 다시 시작할지는 플레이어의
+    /// 선택이다. 후자를 골랐을 때만 이 함수가 불린다. 미지명은 `resolveDraft`가 이미
+    /// `.legacy`로 보냈으므로 여기 오지 않는다.
+    public func openLegacy(_ params: AdvanceCareerChapterParams) throws -> HighSchoolCareerResult {
+        let seed = try validatedSeed(params.seed)
+        try validate(params.state, phase: .completed)
+        guard params.state.draftResult?.outcome == .drafted else {
+            throw SimulationError.invalidPitcherLab("미지명 회차는 이미 기억을 고르는 단계입니다.")
+        }
+        let next = replacing(params.state, revision: params.state.revision + 1, phase: .legacy)
+        return result(seed: seed, state: signed(next), event: "career_legacy_opened", reasons: ["legacy.opened"])
     }
 
     public func selectLegacy(_ params: SelectCareerLegacyParams) throws -> HighSchoolCareerResult {

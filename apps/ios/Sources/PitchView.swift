@@ -416,6 +416,17 @@ private struct ScoreboardBar: View {
                         )
                 }
             }
+            // 이번 등판에서 내가 지금까지 한 것. 예전에는 이닝이 끝난 뒤에만 보여 줘서,
+            // 던지는 동안에는 몇 개를 잡았고 몇 점을 줬는지 알 수 없었다. 선발로 6이닝을
+            // 던지는 중이라면 그게 지금 가장 알고 싶은 숫자다.
+            if session.pitches > 0 {
+                Text(
+                    "\(session.outsRecorded / 3).\(session.outsRecorded % 3)이닝 · "
+                        + "\(session.strikeouts)K \(session.walks)BB \(session.runsAllowed)실점 · \(session.pitches)구"
+                )
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(BaseballTheme.textTertiary)
+            }
         }
         .padding(.horizontal, BaseballMetrics.gutter)
         .padding(.vertical, 10)

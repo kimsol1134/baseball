@@ -214,12 +214,14 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         )
         result = try completeCareer(engine, from: result, strongGames: true)
 
-        // A drafted run now also banks memories: it passes through the shared .legacy phase
-        // (with non-empty options) before completing, so success is no longer a dead end for
-        // the roguelite meta.
-        XCTAssertEqual(result.snapshot.phase, .legacy)
+        // 지명된 회차는 아직 끝나지 않았다. 프로 커리어가 남아 있으므로 완료 화면에서 멈추고,
+        // 기억은 "이 회차를 접겠다"고 결정할 때(`openLegacy`) 고른다. 성공한 순간에 유언을
+        // 받는 것처럼 보이던 흐름을 바로잡은 것이다.
+        XCTAssertEqual(result.snapshot.phase, .completed)
         XCTAssertEqual(result.snapshot.draftResult?.outcome, .drafted)
-        XCTAssertFalse(result.snapshot.legacyOptions.isEmpty)
+        XCTAssertFalse(result.snapshot.legacyOptions.isEmpty, "접을 때 고를 기억은 이미 준비돼 있어야 한다")
+        result = try engine.openLegacy(.init(seed: result.nextSeed, state: result.snapshot))
+        XCTAssertEqual(result.snapshot.phase, .legacy)
         result = try engine.selectLegacy(
             SelectCareerLegacyParams(
                 seed: result.nextSeed,
@@ -388,10 +390,11 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         result = try completeCareer(engine, from: result, strongGames: true)
 
         XCTAssertEqual(result.snapshot.draftResult?.outcome, .drafted)
-        XCTAssertEqual(result.snapshot.phase, .legacy)
+        // 지명은 회차의 끝이 아니다 — 완료 화면에서 멈춘다.
+        XCTAssertEqual(result.snapshot.phase, .completed)
         XCTAssertEqual(result.snapshot.legacyOptions.count, 5)
-        XCTAssertFalse(result.snapshot.legacyOptions.isEmpty)
 
+        result = try engine.openLegacy(.init(seed: result.nextSeed, state: result.snapshot))
         let selected = try engine.selectLegacy(.init(
             seed: result.nextSeed,
             state: result.snapshot,

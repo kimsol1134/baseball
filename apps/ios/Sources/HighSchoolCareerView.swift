@@ -395,7 +395,7 @@ private struct TrainingCard: View {
                 HStack(spacing: 6) {
                     ForEach(TrainingIntensity.allCases, id: \.self) { option in
                         Button { intensity = option } label: {
-                            Text(HighSchoolPresentation.intensity(option))
+                            Text(HighSchoolPresentation.intensity(option, focus: focus))
                                 .font(.footnote.weight(.semibold))
                                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                         }
@@ -423,18 +423,50 @@ private struct RelationshipCard: View {
     let state: HighSchoolCareerSnapshot
     let onRespond: (RelationshipResponse) -> Void
 
+    /// 누가 말을 걸었는지. 이름표가 있어야 대화로 읽힌다.
+    static func speaker(for category: String) -> String {
+        switch category {
+        case "life": "집"
+        case "coach": "감독"
+        case "catcher": "포수"
+        case "rival": "라이벌"
+        case "media": "취재"
+        case "fan": "팬"
+        case "health": "몸 상태"
+        case "team": "팀"
+        case "draft": "스카우트"
+        case "growth": "훈련장"
+        case "game": "경기장"
+        default: "학교"
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            // 대화가 이 화면의 주인공이다. 예전에는 요약 한 줄이 작은 글씨로 붙고 선택지가
+            // 화면을 채워서, 무슨 일이 일어났는지보다 버튼 세 개가 먼저 눈에 들어왔다.
             if let event = state.currentRelationshipEvent {
-                BaseballCard(title: event.title, tone: .raised) {
-                    Text(event.summary).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(Self.speaker(for: event.category)).eyebrowStyle(BaseballTheme.information)
+                    Text(event.title)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                    Text(event.summary)
+                        .font(.body)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 4)
             }
             Text("어떻게 답할까요").font(.headline)
             ForEach(RelationshipResponse.allCases, id: \.self) { response in
                 Button { onRespond(response) } label: {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(HighSchoolPresentation.response(response)).font(.subheadline.weight(.bold))
+                        Text(HighSchoolPresentation.response(
+                            response,
+                            category: state.currentRelationshipEvent?.category ?? ""
+                        )).font(.subheadline.weight(.bold))
                         Text(HighSchoolPresentation.responseDetail(response))
                             .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                     }
@@ -673,9 +705,14 @@ private struct CompletionCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(state.draftResult?.summary ?? "3년이 끝났습니다.")
                         .font(.subheadline).fixedSize(horizontal: false, vertical: true)
-                    Text("다음 생 계승 · 기억 \(career.inheritance.memories.count)장 · 영혼 \(career.inheritance.soulPoints)")
-                        .font(.footnote.monospacedDigit())
-                        .foregroundStyle(BaseballTheme.milestone)
+                    // 지명된 회차에서는 아직 계승이 정해지지 않았다. 지난 회차의 것만 보여 준다.
+                    if career.inheritance.memories.isEmpty {
+                        EmptyView()
+                    } else {
+                        Text("가져온 기억 \(career.inheritance.memories.count)장 · 야구혼 \(career.inheritance.soulPoints)")
+                            .font(.footnote.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.milestone)
+                    }
                 }
             }
 
@@ -683,16 +720,21 @@ private struct CompletionCard: View {
                 PrimaryButton(title: "프로 커리어 시작", identifier: "hs.enterPro") {
                     onEnterPro(draft, state.pitcher, state.identity)
                 }
-                Text("프로로 가도 이 회차의 기억은 그대로 남아 다음 생에 쓰입니다.")
+                Text("이 선수의 이야기는 아직 끝나지 않았습니다.")
                     .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
             }
 
+            // 지명된 회차는 아직 끝나지 않았다. 접겠다고 결정할 때 비로소 기억을 고른다.
+            let drafted = state.draftResult?.outcome == .drafted
             Button {
-                career.beginNextLife()
+                if drafted { career.openLegacy() } else { career.beginNextLife() }
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("다시 태어나기").font(.subheadline.weight(.semibold))
-                    Text("\(career.inheritance.lifeNumber)회차를 기억 \(career.inheritance.memories.count)장과 함께 시작합니다.")
+                    Text(drafted ? "이 회차를 접고 다시 시작" : "다시 태어나기")
+                        .font(.subheadline.weight(.semibold))
+                    Text(drafted
+                         ? "프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르게 됩니다."
+                         : "\(career.inheritance.lifeNumber)회차를 기억 \(career.inheritance.memories.count)장과 함께 시작합니다.")
                         .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

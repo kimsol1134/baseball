@@ -157,6 +157,11 @@ final class HighSchoolCareerStore {
         perform { try engine.advanceChapter(.init(seed: $0.nextSeed, state: $0.snapshot)) }
     }
 
+    /// 지명된 회차를 접고 기억 선택으로 들어간다. 미지명은 이미 그 단계에 있다.
+    func openLegacy() {
+        perform { try engine.openLegacy(.init(seed: $0.nextSeed, state: $0.snapshot)) }
+    }
+
     func resolveDraft() {
         perform(cue: .success) { try engine.resolveDraft(.init(seed: $0.nextSeed, state: $0.snapshot)) }
     }
