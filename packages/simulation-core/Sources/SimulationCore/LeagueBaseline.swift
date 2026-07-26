@@ -82,6 +82,12 @@ enum LeagueBaseline {
         70, 92, 112, 124, 126, 116, 100, 80, 62, 45, 32, 21, 13, 7, 0,
     ]
 
+    /// 고교판 "내가 안 던진 이닝의 실점". 프로와 같은 이유로 필요하다.
+    static func restOfHighSchoolTeamRuns(outsCovered: Int, using rng: inout SplitMix64) -> Int {
+        let full = highSchoolTeamRuns(using: &rng)
+        return full * max(0, outsCovered) / 27
+    }
+
     static func highSchoolTeamRuns(using rng: inout SplitMix64) -> Int {
         let roll = rng.nextInt(upperBound: 1_000)
         var cumulative = 0

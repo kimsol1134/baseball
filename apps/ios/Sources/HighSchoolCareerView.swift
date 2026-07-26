@@ -533,6 +533,11 @@ private struct DraftCard: View {
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
             }
+            // 자동으로 흘러간 팀 경기도 평가에 들어간다. 여기 보여 주지 않으면
+            // 드래프트 카드의 "시즌 기록 +N"이 어디서 나온 숫자인지 알 수 없다.
+            if let log = state.seasonLog, !log.isEmpty {
+                SeasonRecordCard(log: log)
+            }
             PrimaryButton(title: "결과 확인", identifier: "hs.draft.resolve", action: onResolve)
         }
     }
@@ -547,7 +552,16 @@ private struct LegacyCard: View {
             if let draft = state.draftResult {
                 BaseballCard(title: draft.outcome == .drafted ? "지명" : "미지명",
                              tone: draft.outcome == .drafted ? .positive : .negative) {
-                    Text(draft.summary).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(draft.summary).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                        // 무엇이 점수를 만들었는지. 이게 없으면 3년 동안 쌓은 것들이
+                        // 결과에 어떻게 반영됐는지 알 방법이 없다.
+                        if let breakdown = draft.evaluationBreakdown, !breakdown.isEmpty {
+                            Divider()
+                            Text("평가 \(draft.evaluationScore)점").eyebrowStyle(BaseballTheme.textTertiary)
+                            FlowRow(items: breakdown)
+                        }
+                    }
                 }
             }
             BaseballCard(title: "다음 생으로 가져갈 기억 · \(career.selectedMemories.count)/\(state.memorySlots)", tone: .milestone) {
@@ -655,5 +669,92 @@ struct PrimaryButton: View {
 
     var body: some View {
         PrimaryPill(title: title, identifier: identifier, action: action)
+    }
+}
+
+/// 고교 3년의 경기 기록.
+///
+/// 직접 던진 경기와 자동으로 흘러간 팀 경기를 나눠서 보여 준다. 섞어 놓으면 "내가 만든
+/// 성적"이라는 감각이 사라지고, 그러면 자동 경기를 넣은 의미가 없다.
+private struct SeasonRecordCard: View {
+    let log: [ProGameLine]
+
+    private var played: [ProGameLine] { log.filter(\.played) }
+    private var auto: [ProGameLine] { log.filter { !$0.played } }
+
+    var body: some View {
+        BaseballCard(title: "시즌 기록") {
+            VStack(alignment: .leading, spacing: 12) {
+                if !played.isEmpty { summary(title: "직접 등판", lines: played, accent: BaseballTheme.action) }
+                if !auto.isEmpty { summary(title: "팀 경기", lines: auto, accent: BaseballTheme.textTertiary) }
+                Text("최근 경기")
+                    .eyebrowStyle(BaseballTheme.textTertiary)
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(log.suffix(5).reversed()) { line in
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text("\(line.season)학년")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                            Text(GameLineFormat.role(line))
+                                .font(.footnote.weight(.semibold).monospacedDigit())
+                            Spacer()
+                            Text(GameLineFormat.score(line))
+                                .font(.footnote.weight(.bold).monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                            if let decision = GameLineFormat.decisionLabel(line.decision) {
+                                Text(decision)
+                                    .font(.caption.weight(.heavy))
+                                    .foregroundStyle(GameLineFormat.decisionTone(line.decision))
+                            }
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(GameLineFormat.accessibilityLabel(line))
+                    }
+                }
+            }
+            .accessibilityIdentifier("hs.seasonRecord")
+        }
+    }
+
+    private func summary(title: String, lines: [ProGameLine], accent: Color) -> some View {
+        let outs = lines.reduce(0) { $0 + $1.outs }
+        let strikeouts = lines.reduce(0) { $0 + $1.strikeouts }
+        let walks = lines.reduce(0) { $0 + $1.walks }
+        let runs = lines.reduce(0) { $0 + $1.runsAllowed }
+        return VStack(alignment: .leading, spacing: 3) {
+            Text(title).eyebrowStyle(accent)
+            Text("\(lines.count)경기 · \(outs / 3)이닝 · \(strikeouts)K \(walks)BB \(runs)실점")
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(BaseballTheme.textSecondary)
+            Text("9이닝당 실점 \(GameLineFormat.runsPerNine(outs: outs, runs: runs))")
+                .font(.footnote.monospacedDigit())
+                .foregroundStyle(BaseballTheme.textTertiary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// 평가 항목을 줄바꿈하며 늘어놓는다. 항목 수가 회차마다 달라서 고정 열 배치가 맞지 않는다.
+private struct FlowRow: View {
+    let items: [String]
+
+    var body: some View {
+        // 두 개씩 짝지어 놓는다. iOS 16의 Layout 프로토콜까지 갈 만큼 복잡한 배치가 아니다.
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(Array(stride(from: 0, to: items.count, by: 2)), id: \.self) { index in
+                HStack(spacing: 14) {
+                    ForEach(items[index..<min(index + 2, items.count)], id: \.self) { item in
+                        Text(item)
+                            .font(.footnote.monospacedDigit())
+                            .foregroundStyle(
+                                item.contains("-") ? BaseballTheme.negative : BaseballTheme.textSecondary
+                            )
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("평가 항목: " + items.joined(separator: ", "))
     }
 }

@@ -302,6 +302,9 @@ public struct DraftResultSnapshot: Codable, Equatable, Sendable {
     public let overallPick: Int?
     public let signingBonus: Int?
     public let firstSeasonGoal: String?
+    /// 평가 점수가 어디서 왔는지. 화면이 이걸 보여 주지 않으면 시즌 기록도, 관계도,
+    /// 각성도 "쌓기는 하는데 뭐가 달라졌는지 모르겠는" 것이 된다.
+    public let evaluationBreakdown: [String]?
     public let summary: String
 
     public init(
@@ -313,6 +316,7 @@ public struct DraftResultSnapshot: Codable, Equatable, Sendable {
         overallPick: Int?,
         signingBonus: Int?,
         firstSeasonGoal: String?,
+        evaluationBreakdown: [String]? = nil,
         summary: String
     ) {
         self.outcome = outcome
@@ -323,6 +327,7 @@ public struct DraftResultSnapshot: Codable, Equatable, Sendable {
         self.overallPick = overallPick
         self.signingBonus = signingBonus
         self.firstSeasonGoal = firstSeasonGoal
+        self.evaluationBreakdown = evaluationBreakdown
         self.summary = summary
     }
 }
@@ -506,6 +511,14 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let awakeningOptions: [AwakeningID]
     public let fatigue: Int
     public let performance: CareerPerformanceSnapshot
+    /// 이번 학년의 경기 기록. 직접 던진 중요 경기와 자동으로 흘러간 팀 경기가 함께 쌓인다.
+    ///
+    /// 예전에는 팀의 나머지 경기가 세계에 존재하지 않았다 — 누적 K/BB/실점만 있고
+    /// "3학년 봄에 어땠는지"를 볼 방법이 없었다. 드래프트 평가가 직접 던진 4~6경기만 보고
+    /// 내려지는 것도 같은 이유였다.
+    ///
+    /// **commitment 해시에 넣지 않는다.** 넣으면 이 필드가 없는 저장본이 전부 열리지 않는다.
+    public let seasonLog: [ProGameLine]?
     public let currentGameScenario: ImportantGameScenarioContent?
     public let currentRelationshipEvent: CareerEventContent?
     public let lastTraining: CareerTrainingSnapshot?
@@ -554,6 +567,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         awakeningOptions: [AwakeningID],
         fatigue: Int,
         performance: CareerPerformanceSnapshot,
+        seasonLog: [ProGameLine]? = nil,
         currentGameScenario: ImportantGameScenarioContent?,
         currentRelationshipEvent: CareerEventContent?,
         lastTraining: CareerTrainingSnapshot?,
@@ -596,6 +610,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.awakeningOptions = awakeningOptions
         self.fatigue = fatigue
         self.performance = performance
+        self.seasonLog = seasonLog
         self.currentGameScenario = currentGameScenario
         self.currentRelationshipEvent = currentRelationshipEvent
         self.lastTraining = lastTraining
@@ -641,6 +656,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.awakeningOptions == rhs.awakeningOptions
             && lhs.fatigue == rhs.fatigue
             && lhs.performance == rhs.performance
+            && lhs.seasonLog == rhs.seasonLog
             && lhs.currentGameScenario == rhs.currentGameScenario
             && lhs.currentRelationshipEvent == rhs.currentRelationshipEvent
             && lhs.lastTraining == rhs.lastTraining
@@ -1367,10 +1383,96 @@ public struct HighSchoolCareerEngine: Sendable {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .chapterReview)
         guard params.state.chapter.number < 8 else { throw SimulationError.invalidPitcherLab("final chapter cannot advance") }
         let chapter = Self.chapters[params.state.chapter.number]
+
+        // 챕터가 넘어가는 동안 팀은 경기를 계속 치른다. 예전에는 그 경기들이 세계에
+        // 존재하지 않아서, 직접 던진 4~6경기만으로 3년이 요약됐다.
+        let autoGames = Self.simulateChapterGames(
+            state: params.state,
+            chapter: params.state.chapter,
+            seed: seed
+        )
         let next = replacing(params.state, revision: params.state.revision + 1, phase: .training,
             chapter: chapter, chapterTrainingCount: 0, milestoneIndex: 0,
-            news: ["\(chapter.title) — \(chapter.theme)."] + params.state.news)
+            seasonLog: (params.state.seasonLog ?? []) + autoGames,
+            news: [Self.chapterGameHeadline(autoGames), "\(chapter.title) — \(chapter.theme)."] + params.state.news)
         return result(seed: seed, state: signed(next), event: "career_chapter_advanced", reasons: ["chapter.\(chapter.number)"])
+    }
+
+
+    /// 고교 자동 경기의 평균 9이닝당 실점(천분율). 드래프트 시즌 항의 영점이다.
+    /// `AutoOutingSimulator`나 타자 오프셋을 바꾸면 이 값을 다시 재야 한다 —
+    /// 안 그러면 시즌 항이 전원 가산점이나 전원 감점으로 무너진다.
+    static let highSchoolBaselineRA9Permille = 1_670
+
+    /// 챕터 하나가 지나는 동안 팀이 치르는 경기.
+    ///
+    /// 두 경기로 잡은 이유: 8챕터 × 2 = 14경기이고, 여기에 직접 던진 4~6경기를 더하면
+    /// 학년당 20경기 안팎이 된다. 고교 야구의 한 시즌 규모에 가깝고, 무엇보다 **직접 던진
+    /// 경기가 전체의 4분의 1을 차지해** 주인공 자리를 잃지 않는다.
+    ///
+    /// 커널 RNG 스트림을 건드리지 않으려고 시드에서 지역 생성기를 만들어 쓴다.
+    /// 골든 픽스처는 `SimulationEngine.simulatePitch` 경로만 덮으므로 영향이 없다.
+    static func simulateChapterGames(
+        state: HighSchoolCareerSnapshot,
+        chapter: CareerChapterSnapshot,
+        seed: UInt64
+    ) -> [ProGameLine] {
+        var rng = SplitMix64(seed: seed ^ 0x4853_4741_4d45)  // "HSGAME"
+        let simulator = AutoOutingSimulator()
+        // 고교 타자는 프로 기준선보다 약하다. 대회 챕터만 프로 수준으로 올린다 —
+        // 전국 무대에서 갑자기 상대가 세지는 것이 이 게임의 긴장 구조다.
+        let offset = chapter.theme.contains("대회") ? 0 : -6
+        let alreadyPlayed = state.seasonLog?.count ?? 0
+
+        return (0..<2).map { index in
+            let line = simulator.simulate(
+                pitcher: state.pitcher,
+                startingFatigue: state.fatigue + index * 6,
+                outsTarget: 18,
+                pitchCap: 90,
+                batterOffset: offset,
+                baseSeed: rng.next()
+            )
+            let support = LeagueBaseline.highSchoolTeamRuns(using: &rng)
+            let othersOuts = max(0, 27 - line.outs)
+            let opponentRuns = line.runsAllowed
+                + LeagueBaseline.restOfHighSchoolTeamRuns(outsCovered: othersOuts, using: &rng)
+            return ProGameLine(
+                season: chapter.schoolYear,
+                week: chapter.number,
+                outingNumber: alreadyPlayed + index + 1,
+                started: true,
+                outs: line.outs,
+                strikeouts: line.strikeouts,
+                walks: line.walks,
+                runsAllowed: line.runsAllowed,
+                pitches: line.pitches,
+                teamRuns: support,
+                opponentRuns: opponentRuns,
+                decision: DecisionRules.decide(
+                    started: true,
+                    isCloser: false,
+                    outs: line.outs,
+                    runsAllowed: line.runsAllowed,
+                    teamRuns: support,
+                    opponentRuns: opponentRuns
+                ),
+                played: false,
+                hits: line.hits,
+                homeRuns: line.homeRuns
+            )
+        }
+    }
+
+    /// 자동 경기 두 개를 한 줄 뉴스로. 숫자만 쌓이고 아무 말도 없으면 읽히지 않는다.
+    static func chapterGameHeadline(_ games: [ProGameLine]) -> String {
+        let outs = games.reduce(0) { $0 + $1.outs }
+        let strikeouts = games.reduce(0) { $0 + $1.strikeouts }
+        let runs = games.reduce(0) { $0 + $1.runsAllowed }
+        let wins = games.filter { $0.decision == .win }.count
+        let innings = outs / 3
+        return "팀 경기 \(games.count)차례 등판 · \(innings)이닝 \(strikeouts)탈삼진 \(runs)실점"
+            + (wins > 0 ? " · \(wins)승" : "")
     }
 
     public func resolveDraft(_ params: ResolveDraftParams) throws -> HighSchoolCareerResult {
@@ -1397,7 +1499,22 @@ public struct HighSchoolCareerEngine: Sendable {
         // rehabbed clean (risk bled back down) passes through unpenalised — "회복 후 무사 통과".
         let residualRisk = params.state.armRisk ?? 0
         let overusePenalty = residualRisk >= Self.armWarningThreshold ? 4 : residualRisk >= 45 ? 2 : 0
-        let score = clamp(ratingScore + performanceScore + processBonus + awakeningScore + relationshipScore + variance - karmaPenalty - overusePenalty, 20, 95)
+        // 자동 시즌 항. 시즌 로그의 9이닝당 실점을 ±4로 접는다.
+        //
+        // 캡이 분산(±5)보다 작은 것이 핵심이다 — 직접 던진 승부(performanceScore)가 지배해야
+        // 하므로 이 항은 경계선에 걸린 회차에서만 당락을 움직인다. 그렇다고 0으로 두면
+        // 시즌 기록이 화면 장식이 되고, 사는 사람은 금방 알아챈다.
+        let autoLines = (params.state.seasonLog ?? []).filter { !$0.played }
+        let autoOuts = autoLines.reduce(0) { $0 + $1.outs }
+        let autoRuns = autoLines.reduce(0) { $0 + $1.runsAllowed }
+        // 영점은 **고교 리그 평균**이어야 한다. 프로 기준(RA9 5.5)을 그대로 쓰면 고교
+        // 타자가 약한 만큼 모든 회차가 상한 +4를 받아, 항이 아니라 전원 가산점이 된다.
+        // 실측(오프셋 -6, 120경기): RA9 1.67. 그것을 0점으로 두고 ±1.0을 ±4로 편다.
+        // RA9 0.7 → +4, 1.67 → 0, 2.7 → -4.
+        let seasonTerm = autoOuts == 0
+            ? 0
+            : clamp((Self.highSchoolBaselineRA9Permille - autoRuns * 27_000 / autoOuts) * 4 / 1_000, -4, 4)
+        let score = clamp(ratingScore + performanceScore + processBonus + awakeningScore + relationshipScore + seasonTerm + variance - karmaPenalty - overusePenalty, 20, 95)
         let threshold = params.state.difficulty.careerHarshness == .relaxed ? 57
             : params.state.difficulty.careerHarshness == .challenging ? 65 : 61
         let drafted = score >= threshold
@@ -1412,6 +1529,15 @@ public struct HighSchoolCareerEngine: Sendable {
             team: team, round: round, overallPick: pick,
             signingBonus: round.map { max(40_000_000, 300_000_000 - $0 * 45_000_000) },
             firstSeasonGoal: team.map { _ in "퓨처스 선발 10경기와 볼넷률 8% 이하" },
+            // 평가가 어디서 왔는지 항목으로 보여 준다. 부호를 붙여야 무엇이 깎았는지 읽힌다.
+            evaluationBreakdown: [
+                "능력 \(ratingScore)",
+                "중요 경기 \(performanceScore >= 0 ? "+" : "")\(performanceScore)",
+                "시즌 기록 \(seasonTerm >= 0 ? "+" : "")\(seasonTerm)",
+                "각성 +\(awakeningScore)",
+                "관계 \(relationshipScore >= 0 ? "+" : "")\(relationshipScore)",
+            ] + (karmaPenalty > 0 ? ["짊어진 짐 -\(karmaPenalty)"] : [])
+              + (overusePenalty > 0 ? ["팔 상태 -\(overusePenalty)"] : []),
             summary: drafted
                 ? "지명 구단 · \(team?.name ?? "프로 구단"). 구위와 고교 경기 기록에서 높은 평가를 받았습니다."
                 : "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
@@ -1881,7 +2007,7 @@ public struct HighSchoolCareerEngine: Sendable {
         milestoneIndex: Int? = nil, relationshipsCompleted: Int? = nil, relationshipTrust: Int? = nil,
         managerTrust: Int? = nil, catcherTrust: Int? = nil, rivalTrust: Int? = nil,
         selectedAwakenings: [AwakeningID]? = nil, awakeningOptions: [AwakeningID]? = nil, fatigue: Int? = nil,
-        performance: CareerPerformanceSnapshot? = nil, lastTraining: CareerTrainingSnapshot? = nil,
+        performance: CareerPerformanceSnapshot? = nil, seasonLog: [ProGameLine]?? = nil, lastTraining: CareerTrainingSnapshot? = nil,
         lastRelationship: CareerRelationshipResultSnapshot? = nil,
         currentGameScenario: ImportantGameScenarioContent? = nil,
         currentRelationshipEvent: CareerEventContent? = nil,
@@ -1905,7 +2031,7 @@ public struct HighSchoolCareerEngine: Sendable {
             rivalTrust: rivalTrust ?? state.rivalTrust,
             selectedAwakenings: selectedAwakenings ?? state.selectedAwakenings,
             awakeningOptions: awakeningOptions ?? state.awakeningOptions, fatigue: fatigue ?? state.fatigue,
-            performance: performance ?? state.performance,
+            performance: performance ?? state.performance, seasonLog: seasonLog ?? state.seasonLog,
             currentGameScenario: currentGameScenario ?? state.currentGameScenario,
             currentRelationshipEvent: currentRelationshipEvent ?? state.currentRelationshipEvent,
             lastTraining: lastTraining ?? state.lastTraining,
