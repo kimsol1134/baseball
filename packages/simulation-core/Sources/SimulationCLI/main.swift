@@ -23,6 +23,10 @@ struct BatchReport: Codable {
     let sacrificeFlies: Int
     let halfInningsCompleted: Int
     let batSide: String
+    /// 존 통과율·존 안 스윙률·존 밖 스윙률(추격률). 실제 야구는 대략 0.48 / 0.68 / 0.31이다.
+    let zoneRate: Double
+    let swingRateInZone: Double
+    let chaseRate: Double
 }
 
 enum BatchStrategy: String {
@@ -228,6 +232,9 @@ let engine = PitchKernelEngine()
 var plateAppearanceResults: [String: Int] = [:]
 var pitchOutcomes: [String: Int] = [:]
 var totalPitches = 0
+var pitchesInZone = 0
+var swingsInZone = 0
+var swingsOutOfZone = 0
 var persistentMemory: RivalMemorySnapshot?
 var persistentGameLog: GameLogSnapshot?
 var finalAdaptationLevel = 0
@@ -343,6 +350,16 @@ for index in 1...iterations {
         finalAdaptationLevel = result.rivalAdaptation.level
         totalPitches += 1
         pitchOutcomes[result.snapshot.outcome.rawValue, default: 0] += 1
+        // 존 통과율과 존 밖 스윙률. 삼진이 많고 볼넷이 적은 원인이 "존에 많이 넣어서"인지
+        // "타자가 쫓아서"인지는 이 둘 없이는 구분할 수 없다.
+        if let entry = result.gameLog.entries.last {
+            if entry.wasInZone {
+                pitchesInZone += 1
+                if entry.batterSwung { swingsInZone += 1 }
+            } else {
+                if entry.batterSwung { swingsOutOfZone += 1 }
+            }
+        }
         if let finalResult = result.snapshot.result {
             plateAppearanceResults[finalResult.rawValue, default: 0] += 1
         } else if result.snapshot.ended {
@@ -411,7 +428,10 @@ let report = BatchReport(
     doublePlays: doublePlays,
     sacrificeFlies: sacrificeFlies,
     halfInningsCompleted: halfInningsCompleted,
-    batSide: batSide.rawValue
+    batSide: batSide.rawValue,
+    zoneRate: Double(pitchesInZone) / Double(max(1, totalPitches)),
+    swingRateInZone: Double(swingsInZone) / Double(max(1, pitchesInZone)),
+    chaseRate: Double(swingsOutOfZone) / Double(max(1, totalPitches - pitchesInZone))
 )
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
