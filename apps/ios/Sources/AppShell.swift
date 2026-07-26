@@ -1,185 +1,349 @@
 import SwiftUI
 import SimulationCore
-import UIKit
-
-enum BaseballTheme {
-    static let canvas = adaptive(light: 0xF3F6F2, dark: 0x080D0B, highContrastLight: 0xFFFFFF, highContrastDark: 0x020503)
-    static let surface = adaptive(light: 0xFFFFFF, dark: 0x101815, highContrastLight: 0xFFFFFF, highContrastDark: 0x070B09)
-    static let surfaceRaised = adaptive(light: 0xE8EEE9, dark: 0x17231E, highContrastLight: 0xF1F5F2, highContrastDark: 0x0B120E)
-    static let border = adaptive(light: 0x82958B, dark: 0x3F554B, highContrastLight: 0x405048, highContrastDark: 0xC1CEC7)
-    static let textPrimary = adaptive(light: 0x152019, dark: 0xF1F4EE, highContrastLight: 0x000000, highContrastDark: 0xFFFFFF)
-    static let textSecondary = adaptive(light: 0x52655B, dark: 0xB4C1BB, highContrastLight: 0x26322C, highContrastDark: 0xE2E8E4)
-    static let action = adaptive(light: 0x4F7828, dark: 0xB7F36B, highContrastLight: 0x315A12, highContrastDark: 0xD3FF82)
-    static let selection = adaptive(light: 0x447A37, dark: 0x86C96A, highContrastLight: 0x285B1C, highContrastDark: 0xB9ED8D)
-    static let milestone = adaptive(light: 0x7E5D17, dark: 0xD8B565, highContrastLight: 0x5F4100, highContrastDark: 0xFFE08A)
-    static let positive = adaptive(light: 0x24744E, dark: 0x55C58A, highContrastLight: 0x075A35, highContrastDark: 0x78E6AB)
-    static let warning = adaptive(light: 0x8A570F, dark: 0xF0A94A, highContrastLight: 0x663800, highContrastDark: 0xFFC66D)
-    static let negative = adaptive(light: 0xAD3E36, dark: 0xEF746A, highContrastLight: 0x821D18, highContrastDark: 0xFF9A91)
-    static let information = adaptive(light: 0x236B78, dark: 0x67B6C1, highContrastLight: 0x064C58, highContrastDark: 0x8ED9E2)
-    static let teamBlue = adaptive(light: 0x3566A8, dark: 0x5D8FD7, highContrastLight: 0x174C94, highContrastDark: 0x8FBAFF)
-    static let teamNavy = adaptive(light: 0x455E78, dark: 0x7189A2, highContrastLight: 0x29445F, highContrastDark: 0xA8BDD2)
-    static let teamGold = adaptive(light: 0x805D0E, dark: 0xD3A64C, highContrastLight: 0x604100, highContrastDark: 0xFFD36D)
-    static let teamRed = adaptive(light: 0xA03C39, dark: 0xD76C68, highContrastLight: 0x7A1D1A, highContrastDark: 0xFF9691)
-    static let teamTeal = adaptive(light: 0x256E65, dark: 0x52AA9E, highContrastLight: 0x07554D, highContrastDark: 0x7EE0D0)
-    static let teamOrange = adaptive(light: 0x8A4C16, dark: 0xD8894E, highContrastLight: 0x643100, highContrastDark: 0xFFB477)
-    static let teamViolet = adaptive(light: 0x60499A, dark: 0x9A82D2, highContrastLight: 0x422A7B, highContrastDark: 0xC4A9FF)
-    static let teamSilver = adaptive(light: 0x52625B, dark: 0xAAB5B0, highContrastLight: 0x34453D, highContrastDark: 0xD7E0DC)
-
-    static func teamDecoration(_ id: String) -> Color {
-        switch id {
-        case "busan_marines": teamGold
-        case "daegu_forge", "jeonju_hanok": teamTeal
-        case "daejeon_rockets": teamOrange
-        case "gwangju_phoenix": teamRed
-        case "suwon_guardians": teamNavy
-        case "changwon_meteors": teamViolet
-        case "jeju_storm": teamSilver
-        default: teamBlue
-        }
-    }
-
-    private static func adaptive(
-        light: UInt32,
-        dark: UInt32,
-        highContrastLight: UInt32? = nil,
-        highContrastDark: UInt32? = nil
-    ) -> Color {
-        Color(uiColor: UIColor { traits in
-            let darkMode = traits.userInterfaceStyle == .dark
-            let highContrast = traits.accessibilityContrast == .high
-            let value = darkMode
-                ? (highContrast ? highContrastDark ?? dark : dark)
-                : (highContrast ? highContrastLight ?? light : light)
-            return platformColor(value)
-        })
-    }
-
-    private static func platformColor(_ hex: UInt32) -> UIColor {
-        UIColor(
-            red: CGFloat((hex >> 16) & 0xFF) / 255,
-            green: CGFloat((hex >> 8) & 0xFF) / 255,
-            blue: CGFloat(hex & 0xFF) / 255,
-            alpha: 1
-        )
-    }
-}
-
-enum BaseballCardTone {
-    case standard, raised, milestone, positive
-
-    var accent: Color {
-        switch self {
-        case .standard: BaseballTheme.textSecondary
-        case .raised: BaseballTheme.information
-        case .milestone: BaseballTheme.milestone
-        case .positive: BaseballTheme.positive
-        }
-    }
-
-    var background: Color {
-        switch self {
-        case .standard: BaseballTheme.surface
-        case .raised: BaseballTheme.surfaceRaised
-        case .milestone: BaseballTheme.milestone.opacity(0.1)
-        case .positive: BaseballTheme.positive.opacity(0.1)
-        }
-    }
-}
-
-struct BaseballCard<Content: View>: View {
-    let title: String
-    var tone: BaseballCardTone = .standard
-    let content: Content
-
-    init(title: String, tone: BaseballCardTone = .standard, @ViewBuilder content: () -> Content) {
-        self.title = title
-        self.tone = tone
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.caption.weight(.bold)).foregroundStyle(tone.accent)
-            content
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(tone.background, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(alignment: .leading) {
-            Rectangle().fill(tone.accent).frame(width: 3).clipShape(.rect(cornerRadius: 3))
-        }
-        .overlay { RoundedRectangle(cornerRadius: 14).stroke(BaseballTheme.border.opacity(0.75), lineWidth: 1) }
-    }
-}
-
-struct ScoreboardValue: View {
-    let value: String
-    var body: some View {
-        Text(value).font(.title2.bold().monospacedDigit()).foregroundStyle(BaseballTheme.textPrimary)
-    }
-}
 
 enum AppTab: Hashable, CaseIterable, Identifiable {
-    case today, career, records
+    case highSchool, pro, records, settings
     var id: Self { self }
-    var title: String { switch self { case .today: "오늘"; case .career: "커리어"; case .records: "기록" } }
-    var icon: String { switch self { case .today: "sun.max"; case .career: "figure.baseball"; case .records: "chart.bar" } }
+    var title: String {
+        switch self {
+        case .highSchool: "고교"
+        case .pro: "프로"
+        case .records: "기록"
+        case .settings: "설정"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .highSchool: "graduationcap"
+        case .pro: "figure.baseball"
+        case .records: "chart.bar"
+        case .settings: "gearshape"
+        }
+    }
 }
 
 struct AppShell: View {
-    let career: MobileCareerStore
-    @State private var selection: AppTab = .today
+    let highSchool: HighSchoolCareerStore
+    let pro: MobileCareerStore
+    @State private var selection: AppTab = .highSchool
 
     var body: some View {
         TabView(selection: $selection) {
-            NavigationStack { TodayView(career: career) }.tabItem { Label(AppTab.today.title, systemImage: AppTab.today.icon) }.tag(AppTab.today)
-            NavigationStack { CareerFlowView(career: career) }.tabItem { Label(AppTab.career.title, systemImage: AppTab.career.icon) }.tag(AppTab.career)
-            NavigationStack { RecordView(career: career) }.tabItem { Label(AppTab.records.title, systemImage: AppTab.records.icon) }.tag(AppTab.records)
+            NavigationStack {
+                HighSchoolCareerView(career: highSchool) { draft, pitcher, identity in
+                    pro.startProCareer(draft: draft, pitcher: pitcher, identity: identity)
+                    selection = .pro
+                }
+                // 키아트가 제목을 맡는다. 내비게이션 바를 두면 제목이 두 번 나오고 눈썹 라벨을 가린다.
+                .toolbar(.hidden, for: .navigationBar)
+            }
+            .tabItem { Label(AppTab.highSchool.title, systemImage: AppTab.highSchool.icon) }
+            .tag(AppTab.highSchool)
+
+            NavigationStack { proTab }
+                .tabItem { Label(AppTab.pro.title, systemImage: AppTab.pro.icon) }
+                .tag(AppTab.pro)
+
+            NavigationStack { RecordView(career: pro) }
+                .tabItem { Label(AppTab.records.title, systemImage: AppTab.records.icon) }
+                .tag(AppTab.records)
+
+            NavigationStack { SettingsView(highSchool: highSchool, pro: pro) }
+                .tabItem { Label(AppTab.settings.title, systemImage: AppTab.settings.icon) }
+                .tag(AppTab.settings)
         }
         .tint(BaseballTheme.action)
         .foregroundStyle(BaseballTheme.textPrimary)
         .background(BaseballTheme.canvas.ignoresSafeArea())
     }
+
+    /// 프로 탭. 고교 드래프트를 통과하기 전에는 잠겨 있고, 건너뛰기 경로를 함께 안내한다.
+    @ViewBuilder private var proTab: some View {
+        switch pro.loadState {
+        case .loading:
+            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(BaseballTheme.canvas)
+        case .needsSetup:
+            ProLockedView(pro: pro)
+        case .failed(let message):
+            CareerFailureView(message: message, career: pro)
+        case .ready:
+            ProCareerTabs(career: pro)
+        }
+    }
+}
+
+/// 고교를 거치지 않고 바로 프로부터 하고 싶은 사용자를 위한 우회로. 정규 경로는 고교 드래프트다.
+private struct ProLockedView: View {
+    let pro: MobileCareerStore
+    @State private var showsSetup = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                KeyArtHeader(
+                    art: .proStadiumTunnel,
+                    eyebrow: "프로 커리어",
+                    title: "고교 드래프트에서 지명을 받으면 열립니다"
+                )
+                BaseballCard(title: "정규 경로", tone: .raised) {
+                    Text("고교 탭에서 3년을 보내고 드래프트를 통과하면, 그때의 능력을 그대로 안고 프로에 들어갑니다.")
+                        .font(.subheadline)
+                }
+                Button("고교를 건너뛰고 바로 프로 시작") { showsSetup = true }
+                    .buttonStyle(.bordered)
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                Text("건너뛰면 지명 결과가 시드에서 만들어집니다. 고교 3년의 성장과 기억은 없습니다.")
+                    .font(.caption)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+            }
+            .padding(BaseballMetrics.gutter)
+        }
+        .background(BaseballTheme.canvas)
+        .navigationTitle("프로")
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showsSetup) {
+            NavigationStack {
+                CareerSetupView(career: pro)
+                    .navigationTitle("프로부터 시작")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("취소") { showsSetup = false }
+                        }
+                    }
+            }
+        }
+        .onChange(of: pro.loadState) { _, state in
+            if state == .ready { showsSetup = false }
+        }
+    }
+}
+
+/// 프로 커리어 안의 오늘/이번 주 두 화면.
+private struct ProCareerTabs: View {
+    let career: MobileCareerStore
+    @State private var showsToday = true
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("프로 화면", selection: $showsToday) {
+                Text("오늘").tag(true)
+                Text("이번 주").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, BaseballMetrics.gutter)
+            .padding(.vertical, 8)
+
+            if showsToday {
+                TodayView(career: career)
+            } else {
+                CareerFlowView(career: career)
+            }
+        }
+        .background(BaseballTheme.canvas)
+        .onChange(of: career.state?.phase) { _, phase in
+            if phase == .importantGame { showsToday = false }
+        }
+    }
+}
+
+private struct CareerFailureView: View {
+    let message: String
+    let career: MobileCareerStore
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("커리어를 열 수 없습니다", systemImage: "exclamationmark.triangle")
+        } description: {
+            Text(message)
+        } actions: {
+            Button("새 커리어 시작") { career.deleteCareer() }
+                .buttonStyle(.borderedProminent)
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+        }
+        .background(BaseballTheme.canvas)
+    }
 }
 
 struct TodayView: View {
     let career: MobileCareerStore
+
     var body: some View {
         Group {
-            switch career.loadState {
-            case .loading: ProgressView("커리어 불러오는 중")
-            case .failed(let message): ContentUnavailableView("커리어를 열 수 없습니다", systemImage: "exclamationmark.triangle", description: Text(message))
-            case .ready:
-                if let state = career.state { TodayDashboard(state: state) } else { ContentUnavailableView("커리어 없음", systemImage: "baseball") }
+            if let state = career.state {
+                TodayDashboard(state: state)
+            } else {
+                ContentUnavailableView("커리어 없음", systemImage: "baseball")
             }
         }
-        .navigationTitle("오늘의 상태")
+        .toolbar(.hidden, for: .navigationBar)
+        .background(BaseballTheme.canvas)
     }
 }
 
 private struct TodayDashboard: View {
     let state: ProCareerSnapshot
+
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 16) {
+            LazyVStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                KeyArtHeader(
+                    art: state.level == .major ? .proStadiumTunnel : .stadiumNight,
+                    eyebrow: "\(state.season)시즌 \(state.week)주차 · \(Self.segmentLabel(state.seasonSegment))",
+                    title: "\(state.team.name) · \(state.level == .major ? "1군" : "2군") \(MobileCareerStore.roleName(state.role))",
+                    accent: BaseballTheme.teamDecoration(state.team.id)
+                )
+
+                SeasonArcBar(segment: state.seasonSegment, week: state.week)
+
                 HStack(spacing: 10) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(BaseballTheme.teamDecoration(state.team.id))
-                        .frame(width: 4, height: 24)
-                        .accessibilityHidden(true)
-                    Text("\(state.team.name) · \(state.season)시즌 \(state.week)주차").font(.headline)
+                    Metric(title: "피로", value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
+                    Metric(title: "감독의 믿음", value: "\(state.managerTrust)", tone: state.managerTrust >= 60 ? .positive : .standard)
+                    Metric(title: "부상", value: state.injuryWeeks > 0 ? "\(state.injuryWeeks)주" : "정상", tone: state.injuryWeeks > 0 ? .negative : .standard)
                 }
-                HStack { Metric(title: "피로", value: "\(state.fatigue)"); Metric(title: "감독의 믿음", value: "\(state.managerTrust)"); Metric(title: "부상", value: state.injuryWeeks > 0 ? "\(state.injuryWeeks)주" : "정상") }
-                BaseballCard(title: "다음 행동", tone: .raised) { Text(actionText(state.phase)).font(.body.weight(.semibold)) }
-                if let milestone = state.milestones.last { BaseballCard(title: "최근 주요 기록", tone: .milestone) { Label(milestone, systemImage: "star.fill").foregroundStyle(BaseballTheme.milestone) } }
-                BaseballCard(title: "최근 소식") { ForEach(Array(state.news.prefix(3).enumerated()), id: \.offset) { _, item in Text(item).padding(.vertical, 3) } }
-            }.padding()
+
+                BaseballCard(title: "다음 행동", tone: .raised) {
+                    Text(Self.actionText(state.phase)).font(.body.weight(.semibold))
+                }
+
+                if let tensions = state.seasonTensions, !tensions.isEmpty {
+                    BaseballCard(title: "올해의 세 가지 승부처") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(Array(tensions.enumerated()), id: \.offset) { _, tension in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(tension.title).font(.subheadline.weight(.semibold))
+                                    Text(tension.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityElement(children: .combine)
+                            }
+                        }
+                    }
+                }
+
+                if let rival = state.currentRival {
+                    BaseballCard(title: "이번 승부 상대", tone: .warning) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(rival.name) · \(rival.teamName)").font(.headline)
+                            Text(rival.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                            Text(rival.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+
+                if let milestone = state.milestones.last {
+                    BaseballCard(title: "최근 주요 기록", tone: .milestone) {
+                        Label(milestone, systemImage: "star.fill").foregroundStyle(BaseballTheme.milestone)
+                    }
+                }
+
+                // 3주를 한 번에 건너뛰어도(`advanceBlock`) 그 사이의 등판이 여기 남는다.
+                // 예전에는 뉴스 한 줄로 증발해서 시즌이 통째로 기억에 남지 않았다.
+                if let line = state.gameLines?.last {
+                    BaseballCard(title: "최근 등판") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if line.played {
+                                Text("직접 등판").eyebrowStyle(BaseballTheme.action)
+                            }
+                            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                                Text(GameLineFormat.score(line))
+                                    .font(BaseballType.scoreboard)
+                                    .foregroundStyle(BaseballTheme.textPrimary)
+                                if let decision = GameLineFormat.decisionLabel(line.decision) {
+                                    Text(decision)
+                                        .font(.headline.weight(.heavy))
+                                        .foregroundStyle(GameLineFormat.decisionTone(line.decision))
+                                }
+                                Spacer()
+                                Text("\(line.week)주차")
+                                    .font(.footnote.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.textTertiary)
+                            }
+                            Text("\(GameLineFormat.role(line)) · \(GameLineFormat.pitchingLine(line))")
+                                .font(.subheadline.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(GameLineFormat.accessibilityLabel(line))
+                        .accessibilityIdentifier("today.lastOuting")
+                    }
+                }
+
+                BaseballCard(title: "최근 소식") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(state.news.prefix(3).enumerated()), id: \.offset) { _, item in
+                            Text(item).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            .padding(BaseballMetrics.gutter)
+        }
+        .background(BaseballTheme.canvas)
+    }
+
+    static func segmentLabel(_ segment: ProSeasonSegment?) -> String {
+        switch segment {
+        case .springCamp: "스프링캠프"
+        case .opening: "개막"
+        case .firstHalf: "전반기"
+        case .allStarBreak: "올스타 휴식기"
+        case .pennantRace: "순위 싸움"
+        case .seasonFinale: "시즌 막바지"
+        case .none: "시즌 준비"
         }
     }
-    private func actionText(_ phase: ProCareerPhase) -> String { switch phase { case .weeklyPlan: "이번 주에 가장 신경 쓸 훈련을 고르세요."; case .importantGame: "한 점 차, 1사 2루에서 등판합니다."; case .seasonReview: "올해 경기 기록과 수상 결과를 확인하세요."; case .offseasonDecision: "현재 구단에 남을지 결정하세요."; default: "커리어 탭에서 다음 일정을 확인하세요." } }
+
+    static func actionText(_ phase: ProCareerPhase) -> String {
+        switch phase {
+        case .weeklyPlan: "이번 주에 가장 신경 쓸 훈련을 고르세요."
+        case .importantGame: "등판이 잡혔습니다. 커리어 탭에서 승부를 시작하세요."
+        case .seasonReview: "올해 경기 기록과 수상 결과를 확인하세요."
+        case .offseasonDecision: "현재 구단에 남을지 결정하세요."
+        default: "커리어 탭에서 다음 일정을 확인하세요."
+        }
+    }
 }
 
-private struct Metric: View {
-    let title: String; let value: String
-    var body: some View { VStack(alignment: .leading) { Text(title).font(.caption.weight(.semibold)).foregroundStyle(BaseballTheme.textSecondary); ScoreboardValue(value: value) }.frame(maxWidth: .infinity, minHeight: 60, alignment: .leading).accessibilityElement(children: .combine) }
+/// 24주 시즌 안에서 지금 어디쯤인지 보여 준다. 주 단위 진행 게임의 위치 감각을 만든다.
+private struct SeasonArcBar: View {
+    let segment: ProSeasonSegment?
+    let week: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("시즌 진행").font(.caption.weight(.semibold)).foregroundStyle(BaseballTheme.textSecondary)
+                Spacer()
+                Text("\(min(week, 24)) / 24주").font(.caption.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+            }
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(BaseballTheme.surfaceRaised)
+                    Capsule()
+                        .fill(BaseballTheme.action)
+                        .frame(width: max(4, proxy.size.width * CGFloat(min(week, 24)) / 24))
+                }
+            }
+            .frame(height: 8)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("시즌 진행 \(min(week, 24))주차, 24주 중")
+    }
+}
+
+/// 상태 한 칸. 큰 숫자가 주인공이라 `StatTile`을 그대로 쓴다.
+struct Metric: View {
+    let title: String
+    let value: String
+    var tone: BaseballCardTone = .standard
+
+    var body: some View {
+        StatTile(
+            label: title,
+            value: value,
+            tone: tone == .standard ? BaseballTheme.textPrimary : tone.accent
+        )
+    }
 }
