@@ -216,6 +216,18 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
     public let expectedDamage: Int
     public let actualDamage: Int
     public let recommendationAccepted: Int
+    /// 실제로 잡은 아웃카운트. 예전에는 이 값이 없어서 이닝을 `투구수 / 5`로 어림했다 —
+    /// 삼진을 많이 잡아 투구수가 늘면 던지지도 않은 이닝이 기록에 붙었다.
+    /// 기존 저장본과 호출부를 위해 optional이다.
+    public let outs: Int?
+    /// 이 경기에서 우리 팀이 낸 점수. 승패를 규칙대로 붙이려면 필요하다.
+    public let teamRuns: Int?
+    /// 마운드에 오를 때의 점수 차(내 팀 기준, 양수면 앞섬).
+    ///
+    /// 이게 없으면 화면과 결과가 어긋난다. 플레이어는 "1점 리드, 7회"를 보며 던졌는데,
+    /// 코어가 팀 득점을 독립적으로 뽑으면 무실점으로 막고도 2:5 패배를 통보받는다.
+    /// 등판 시점의 점수 차를 받아 최종 스코어를 거기서 파생시킨다.
+    public let scoreDifferentialAtEntry: Int?
 
     public init(
         scenarioNumber: Int,
@@ -225,7 +237,10 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         runsAllowed: Int,
         expectedDamage: Int,
         actualDamage: Int,
-        recommendationAccepted: Int
+        recommendationAccepted: Int,
+        outs: Int? = nil,
+        teamRuns: Int? = nil,
+        scoreDifferentialAtEntry: Int? = nil
     ) {
         self.scenarioNumber = scenarioNumber
         self.pitches = pitches
@@ -235,6 +250,9 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         self.expectedDamage = expectedDamage
         self.actualDamage = actualDamage
         self.recommendationAccepted = recommendationAccepted
+        self.outs = outs
+        self.teamRuns = teamRuns
+        self.scoreDifferentialAtEntry = scoreDifferentialAtEntry
     }
 }
 
