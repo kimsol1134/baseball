@@ -473,7 +473,13 @@ public final class CareerScheduleSnapshot: Codable, Equatable, Sendable {
     }
 }
 
-public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
+/// final class 박싱: 41개 저장 프로퍼티를 가진 값 타입으로 두면 Swift 6.3의 outlined destroy
+/// 코드젠 결함(전체 스위트 실행 시 `outlined destroy of HighSchoolCareerSnapshot`에서
+/// 오버릴리즈 크래시)을 밟는다. 개별 테스트는 전부 통과하고 스위트 전체를 돌릴 때만 터지며,
+/// 모듈의 함수 구성이 조금만 바뀌어도 재발한다. `CareerScheduleSnapshot`과 같은 처방이다.
+/// 모든 프로퍼티가 `let`이고 엔진은 항상 `replacing(...)`으로 새 인스턴스를 만들기 때문에
+/// 참조 타입이 되어도 값 의미론이 그대로 유지되고, Codable JSON 형태도 struct와 동일하다.
+public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let careerID: String
     public let revision: UInt64
     public let lifeNumber: Int
@@ -605,6 +611,51 @@ public struct HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.schedule = schedule
         self.trainingOpportunity = trainingOpportunity
         self.stateCommitment = stateCommitment
+    }
+
+    /// 클래스라 == 가 합성되지 않는다. 모든 저장 프로퍼티를 비교해 struct 시절과 같은 값 동등성을 준다.
+    public static func == (lhs: HighSchoolCareerSnapshot, rhs: HighSchoolCareerSnapshot) -> Bool {
+        lhs.careerID == rhs.careerID
+            && lhs.revision == rhs.revision
+            && lhs.lifeNumber == rhs.lifeNumber
+            && lhs.phase == rhs.phase
+            && lhs.identity == rhs.identity
+            && lhs.difficulty == rhs.difficulty
+            && lhs.karmas == rhs.karmas
+            && lhs.legacyRewardPermille == rhs.legacyRewardPermille
+            && lhs.memorySlots == rhs.memorySlots
+            && lhs.pitcher == rhs.pitcher
+            && lhs.schoolOptions == rhs.schoolOptions
+            && lhs.school == rhs.school
+            && lhs.rival == rhs.rival
+            && lhs.chapter == rhs.chapter
+            && lhs.chapterTrainingCount == rhs.chapterTrainingCount
+            && lhs.totalTrainingsCompleted == rhs.totalTrainingsCompleted
+            && lhs.milestoneIndex == rhs.milestoneIndex
+            && lhs.relationshipsCompleted == rhs.relationshipsCompleted
+            && lhs.relationshipTrust == rhs.relationshipTrust
+            && lhs.managerTrust == rhs.managerTrust
+            && lhs.catcherTrust == rhs.catcherTrust
+            && lhs.rivalTrust == rhs.rivalTrust
+            && lhs.selectedAwakenings == rhs.selectedAwakenings
+            && lhs.awakeningOptions == rhs.awakeningOptions
+            && lhs.fatigue == rhs.fatigue
+            && lhs.performance == rhs.performance
+            && lhs.currentGameScenario == rhs.currentGameScenario
+            && lhs.currentRelationshipEvent == rhs.currentRelationshipEvent
+            && lhs.lastTraining == rhs.lastTraining
+            && lhs.lastRelationship == rhs.lastRelationship
+            && lhs.news == rhs.news
+            && lhs.fanInterest == rhs.fanInterest
+            && lhs.draftResult == rhs.draftResult
+            && lhs.legacyOptions == rhs.legacyOptions
+            && lhs.selectedMemories == rhs.selectedMemories
+            && lhs.balanceVersion == rhs.balanceVersion
+            && lhs.armRisk == rhs.armRisk
+            && lhs.injuryRecovery == rhs.injuryRecovery
+            && lhs.schedule == rhs.schedule
+            && lhs.trainingOpportunity == rhs.trainingOpportunity
+            && lhs.stateCommitment == rhs.stateCommitment
     }
 }
 
