@@ -843,7 +843,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity)}>{isRunning ? "훈련 결과 계산 중…" : `${selectedTraining.label} 훈련 진행`}</button></> : null}
         {!hasPendingResult && state.phase === "relationship" ? <><div className="relationship-scene-heading"><div><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3></div><img src={relationshipArt} alt="" width="90" height="112" loading="lazy" decoding="async" /></div>
           {state.lifeNumber >= 2 && state.relationshipsCompleted === 0 ? <p className="relationship-life-echo">상대가 잠시 말을 멈추고 이쪽을 바라봅니다. “…이상하네. 처음 보는 폼인데, 어디서 본 것 같아.”</p> : null}
-          <p>{scene.quote}</p>
+          <p className="relationship-quote">{scene.quote}</p>
           <div className="relationship-options">{scene.choices.map((choice) => <button key={choice.id} type="button" disabled={isRunning} onClick={() => void onRelationship(choice.id)}><strong>{choice.title}</strong><span>{choice.copy}</span></button>)}</div></> : null}
         {!hasPendingResult && state.phase === "important_game" ? <div className="career-milestone"><span>중요 경기 {state.performance.importantGamesCompleted + 1}</span><h3>{state.currentGameScenario?.title ?? `${state.rival.name} 상대 중요 이닝`}</h3>
           <CharacterProfile className="rival-scouting" imageSrc={rivalRoleScene} imageAlt="" title={`${state.rival.name} · ${state.rival.archetype}`} record={state.rival.signatureRecord} description={state.rival.personality} />

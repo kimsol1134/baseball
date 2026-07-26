@@ -97,7 +97,7 @@ export function PitcherLabSetup({ presets, isRunning, error, coreMessage, onRetr
               {CREATION_METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{preset.pitcher[metric.key]}</dd>
                 <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]}
                   lowerBound={preset.pitcher[metric.key] + 2} upperBound={presetPotential(preset, metric.key)} />
-                <small>성장 {preset.pitcher[metric.key] + 2}–{presetPotential(preset, metric.key)}</small></div>)}
+                <small>성장 <b>{preset.pitcher[metric.key] + 2}–{presetPotential(preset, metric.key)}</b></small></div>)}
             </dl>
             <small className="preset-velocity">포심 기준 구속 {fourSeamVelocity(preset.pitcher)}</small>
           </button>

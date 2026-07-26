@@ -57,7 +57,7 @@ export function GrowthCelebration({ label, before, after, compact = false }: Gro
       <div className="growth-ladder__labels">
         <span>20</span>
         {LADDER_TICKS.map((tick) => <span key={tick.value} className={`growth-ladder__tick${after >= tick.value ? " is-reached" : ""}`}
-          style={{ left: `${ratingPositionPercent(tick.value)}%` }}>{tick.value} {tick.label}</span>)}
+          style={{ left: `${ratingPositionPercent(tick.value)}%` }}>{tick.value}{compact ? "" : ` ${tick.label}`}</span>)}
         <span className="growth-ladder__end">80</span>
       </div>
     </div>
