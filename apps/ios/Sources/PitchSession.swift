@@ -119,6 +119,11 @@ final class PitchSession {
         // 라이벌 기억은 투수-타자 조합 하나에 묶여 있다. 타자가 바뀌면 버려야 코어가
         // matchupID 불일치로 거부하지 않는다.
         rivalMemory = nil
+        // 직전 타자의 결과를 지운다. 안 지우면 새 타자와 붙는 화면에 "안타"가 그대로 떠
+        // 있어서, 방금 그 공에 맞은 것처럼 보인다. 승부 장면·판정·소리 모두 같은 문제다.
+        lastResult = nil
+        lastCues = []
+        lastDelivery = nil
         stage = .ready
         prepare()
     }

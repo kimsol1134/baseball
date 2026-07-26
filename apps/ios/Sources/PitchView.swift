@@ -100,12 +100,25 @@ struct PitchView: View {
             .padding(.bottom, 2)
             .background(BaseballTheme.surface)
             ScoreboardBar(session: session)
-            ScrollView {
-                VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                    matchupCard
-                    stage
+            // 던진 뒤 결과로 저절로 올라간다.
+            //
+            // 와인드업 패드는 화면 맨 아래에 있고 승부 장면은 그 위에 있다. 손을 떼는
+            // 순간 결과가 화면 밖에서 재생돼서, 스크롤을 직접 올려야 무슨 일이 있었는지
+            // 볼 수 있었다. 던지는 자리와 보는 자리가 다르면 손맛이 성립하지 않는다.
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                        matchupCard
+                        stage
+                    }
+                    .padding(BaseballMetrics.gutter)
                 }
-                .padding(BaseballMetrics.gutter)
+                .onChange(of: session.pitchLog.count) { _, count in
+                    guard count > 0 else { return }
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.28)) {
+                        proxy.scrollTo(Self.dramaAnchor, anchor: .top)
+                    }
+                }
             }
             footer
         }
@@ -164,6 +177,9 @@ struct PitchView: View {
         }
     }
 
+    /// 던진 뒤 이 지점으로 스크롤한다.
+    static let dramaAnchor = "pitch.drama"
+
     @ViewBuilder private var lastPitchPanel: some View {
         if let result = session.lastResult {
             VStack(alignment: .leading, spacing: 10) {
@@ -177,6 +193,7 @@ struct PitchView: View {
                 .frame(height: 320)
                 .frame(maxWidth: .infinity)
                 .background(BaseballTheme.fieldNight, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+                .id(Self.dramaAnchor)
 
                 BaseballCard(title: PitchCopy.outcome(result.snapshot.outcome), tone: tone(for: result.snapshot.outcome)) {
                     VStack(alignment: .leading, spacing: 6) {

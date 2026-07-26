@@ -213,4 +213,28 @@ final class PitchSessionTests: XCTestCase {
         XCTAssertEqual(session.report(scenarioNumber: 8).pitches, session.pitchLog.count)
         XCTAssertEqual(session.report(scenarioNumber: 8).scenarioNumber, 8)
     }
+
+    /// 타자가 바뀌면 직전 결과가 사라져야 한다.
+    ///
+    /// 실기기에서 발견: 안타를 맞고 다음 타자와 붙는데 화면에 "안타"가 계속 떠 있었다.
+    /// 방금 그 공에 맞은 것처럼 보여서 무슨 일이 일어나는지 알 수 없다.
+    func testAdvancingToNextBatterClearsThePreviousResult() throws {
+        let session = PitchSession(state: snapshot(), seed: "8811")
+        session.start()
+        // 타석이 끝날 때까지 던진다.
+        var guardCount = 0
+        while case .ready = session.stage, guardCount < 40 {
+            session.throwPitch()
+            guardCount += 1
+        }
+        guard case .betweenBatters = session.stage else {
+            throw XCTSkip("이 시드에서는 타석이 끝나지 않았습니다.")
+        }
+        XCTAssertNotNil(session.lastResult, "타석이 끝났는데 결과가 없습니다.")
+
+        session.advanceToNextBatter()
+        XCTAssertNil(session.lastResult, "다음 타자로 넘어갔는데 직전 결과가 남아 있습니다.")
+        XCTAssertTrue(session.lastCues.isEmpty, "직전 투구의 소리가 남아 있습니다.")
+        XCTAssertNil(session.lastDelivery, "직전 릴리스 판정이 남아 있습니다.")
+    }
 }
