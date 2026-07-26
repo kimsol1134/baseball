@@ -13,14 +13,20 @@ public struct CatcherRecommendationEngine: Sendable {
         scouting: BatterScoutingSnapshot,
         context: PlateAppearanceContext,
         adaptation: RivalAdaptationSnapshot? = nil,
-        reliability: Int = 100
+        reliability: Int = 100,
+        gameState: GameStateSnapshot? = nil,
+        lastPitch: PitchAnalysisEntry? = nil
     ) -> (primary: CatcherRecommendation, alternative: CatcherRecommendation) {
         let twoStrikes = context.strikes == 2
         let protectZone = context.balls == 3
+        let situation = SignSituation(context: context, gameState: gameState, lastPitch: lastPitch)
         let desiredPitch = recommendedPrimaryPitch(pitcher: pitcher, desired: scouting.pitchWeakness)
         let repetitionAvoided = (adaptation?.level ?? 0) >= 500
             && adaptation?.detectedPitch == desiredPitch
-        let primaryPitch = repetitionAvoided
+        // 라이벌이 패턴을 읽었거나, 상황상 같은 공을 되풀이하면 안 될 때 구종을 바꾼다.
+        let mustChangePitch = repetitionAvoided
+            || (situation.avoidsRepeat && lastPitch?.pitchType == desiredPitch)
+        let primaryPitch = mustChangePitch
             ? recommendedAlternativePitch(
                 pitcher: pitcher,
                 excluding: desiredPitch,
@@ -31,9 +37,12 @@ public struct CatcherRecommendationEngine: Sendable {
         let primary = CatcherRecommendation(
             call: PitchCall(
                 pitchType: primaryPitch,
-                zone: scouting.coldZone,
-                zoneIntent: protectZone ? .strike : (twoStrikes ? .chase : .edge),
-                intensity: protectZone || primaryProfile?.role == .development ? .controlled : .normal
+                // 약점 코스가 기준점이고, 상황이 그 위에서 한 칸씩 민다. 스카우팅의 가치는 그대로다.
+                zone: situation.shift(scouting.coldZone),
+                zoneIntent: situation.zoneIntent(protectZone: protectZone, twoStrikes: twoStrikes),
+                intensity: situation.demandsControl || protectZone || primaryProfile?.role == .development
+                    ? .controlled
+                    : .normal
             ),
             confidence: ScoutingEstimate.adjustedConfidence(
                 clamp(
@@ -49,12 +58,14 @@ public struct CatcherRecommendationEngine: Sendable {
             reasonCodes: [
                 repetitionAvoided
                     ? "rival.pattern_detected"
+                    : mustChangePitch
+                    ? "sequence.avoid_repeat"
                     : primaryPitch == scouting.pitchWeakness
                     ? "scouting.pitch_weakness"
                     : "arsenal.best_available",
                 "scouting.cold_zone",
-                twoStrikes ? "count.two_strikes" : "count.standard"
-            ]
+                situation.countCode
+            ] + situation.extraReasonCodes
         )
 
         let alternativePitch = repetitionAvoided
@@ -199,7 +210,9 @@ public struct PitchKernelEngine: Sendable {
             scouting: read.estimate,
             context: params.context,
             adaptation: adaptation,
-            reliability: read.reliability
+            reliability: read.reliability,
+            gameState: params.gameState,
+            lastPitch: params.gameLog?.entries.last
         )
         let token = preparationToken(
             params: params,
@@ -270,7 +283,9 @@ public struct PitchKernelEngine: Sendable {
             scouting: read.estimate,
             context: params.context,
             adaptation: adaptation,
-            reliability: read.reliability
+            reliability: read.reliability,
+            gameState: params.gameState,
+            lastPitch: params.gameLog?.entries.last
         )
         let expectedToken = preparationToken(
             params: prepareParams,
@@ -1408,14 +1423,38 @@ public struct PitchKernelEngine: Sendable {
         let baseReason: String
         if recommendation.reasonCodes.contains("rival.pattern_detected") {
             baseReason = "라이벌이 반복 구종을 읽고 있어 \(zoneName) \(pitchName)으로 패턴을 바꿉니다."
+        } else if recommendation.reasonCodes.contains("sequence.avoid_repeat") {
+            baseReason = "방금 그 공에 타이밍이 맞았습니다. \(zoneName) \(pitchName)으로 바꿉니다."
         } else if recommendation.reasonCodes.contains("scouting.pitch_weakness") {
             baseReason = "타자의 약점인 \(zoneName) \(pitchName)\(pitchObjectParticle(recommendation.call.pitchType)) \(intent)로 공략합니다."
         } else {
             baseReason = "강한 코스를 피해 \(zoneName) \(pitchName)으로 타이밍을 바꿉니다."
         }
+        // 왜 지금 이 코스인지. 카운트와 주자는 사인의 절반을 결정하는데, 예전에는 화면에
+        // 한 글자도 나오지 않아서 포수가 늘 같은 곳을 부르는 것처럼 보였다.
+        let situationReason: String? = if recommendation.reasonCodes.contains("count.avoid_walk") {
+            "볼넷을 줄 수 없어 존 안으로 넣습니다."
+        } else if recommendation.reasonCodes.contains("count.pitcher_behind") {
+            "카운트가 몰려 유인보다 스트라이크가 먼저입니다."
+        } else if recommendation.reasonCodes.contains("count.pitcher_ahead") {
+            "여유가 있으니 존 밖으로 빼서 헛스윙을 노립니다."
+        } else if recommendation.reasonCodes.contains("count.first_pitch") {
+            "초구 스트라이크를 선점합니다."
+        } else {
+            nil
+        }
+        let runnerReason: String? = if recommendation.reasonCodes.contains("runners.double_play_setup") {
+            "1루 주자가 있어 낮게 던져 병살을 노립니다."
+        } else if recommendation.reasonCodes.contains("runners.suppress_sacrifice_fly") {
+            "3루 주자가 있어 뜬공이 나올 높은 공을 피합니다."
+        } else {
+            nil
+        }
         // The situational note is derived only from the public base/out/leverage state, so it
         // reads the moment without leaking the batter's sealed pitch/zone guess.
-        let shortReason = situationNote.isEmpty ? baseReason : "\(baseReason) \(situationNote)"
+        let shortReason = [baseReason, situationReason, runnerReason, situationNote.isEmpty ? nil : situationNote]
+            .compactMap { $0 }
+            .joined(separator: " ")
         return CatcherRecommendationSnapshot(
             call: recommendation.call,
             confidence: recommendation.confidence,
