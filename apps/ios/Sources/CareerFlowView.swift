@@ -10,57 +10,122 @@ struct CareerFlowView: View {
         Group {
             if sizeClass == .regular {
                 NavigationSplitView { CareerSummary(career: career) } detail: { decision }
-            } else { decision }
+            } else {
+                decision
+            }
         }
         .navigationTitle("이번 주")
-        .sensoryFeedback(.success, trigger: career.feedbackTrigger)
+        .navigationBarTitleDisplayMode(.inline)
+        .sensoryFeedback(trigger: career.feedbackTrigger) { _, _ in
+            switch career.feedbackCue {
+            case .growth: .impact(weight: .heavy)
+            case .success: .success
+            case .setback: .warning
+            case .neutral: .selection
+            }
+        }
     }
 
     @ViewBuilder private var decision: some View {
         if let state = career.state {
-            VStack(spacing: 0) {
-                if let summary = career.lastSummary {
-                    ResultBanner(summary: summary)
-                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+            if state.phase == .importantGame, let session = career.pitchSession {
+                PitchView(session: session, onFinish: career.finishImportantGame)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                        if !career.pendingGains.isEmpty {
+                            GrowthCelebrationView(gains: career.pendingGains, onDismiss: career.acknowledgeGains)
+                                .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                        }
+                        if let summary = career.lastSummary, career.pendingGains.isEmpty {
+                            ResultBanner(summary: summary, cue: career.feedbackCue)
+                                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                        }
+
+                        switch state.phase {
+                        case .weeklyPlan:
+                            WeeklyPlanView(career: career, state: state)
+                        case .importantGame:
+                            ImportantGameIntro(state: state, onStart: career.beginImportantGame)
+                        case .seasonReview:
+                            ActionCard(
+                                title: "시즌 종료",
+                                copy: "올해 경기 기록과 수상을 통산 기록에 더합니다.",
+                                button: "시즌 기록 확인",
+                                action: career.reviewSeason
+                            )
+                        case .offseasonDecision:
+                            ActionCard(
+                                title: "오프시즌",
+                                copy: "현재 구단에 남아 선발·불펜 자리 경쟁을 계속합니다.",
+                                button: "현재 구단에 남기",
+                                action: career.continueCareer
+                            )
+                        default:
+                            ContentUnavailableView("이번 일정은 끝났습니다", systemImage: "checkmark.circle")
+                        }
+                    }
+                    .padding(BaseballMetrics.gutter)
                 }
-                switch state.phase {
-                case .weeklyPlan: WeeklyPlanView(career: career, state: state)
-                case .importantGame: ImportantMomentView(career: career, state: state)
-                case .seasonReview: ActionCard(title: "시즌 종료", copy: "올해 경기 기록과 수상을 통산 기록에 더합니다.", button: "시즌 기록 확인", action: career.reviewSeason)
-                case .offseasonDecision: ActionCard(title: "오프시즌", copy: "현재 구단에 남아 선발·불펜 자리 경쟁을 계속합니다.", button: "현재 구단에 남기", action: career.continueCareer)
-                default: ContentUnavailableView("이번 일정은 끝났습니다", systemImage: "checkmark.circle")
-                }
+                .background(BaseballTheme.canvas)
+                .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
             }
-            .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
-        } else { ProgressView() }
+        } else {
+            ProgressView()
+        }
     }
 }
 
 private struct ResultBanner: View {
     let summary: String
+    let cue: MobileCareerStore.FeedbackCue
+
+    private var tone: BaseballCardTone {
+        switch cue {
+        case .setback: .negative
+        case .growth: .milestone
+        default: .positive
+        }
+    }
+
+    private var symbol: String {
+        switch cue {
+        case .setback: "exclamationmark.triangle.fill"
+        case .growth: "arrow.up.right.circle.fill"
+        default: "checkmark.seal.fill"
+        }
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "checkmark.seal.fill").foregroundStyle(BaseballTheme.positive)
-            Text(summary).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: symbol).foregroundStyle(tone.accent).font(.footnote)
+            Text(summary)
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding().background(BaseballTheme.positive.opacity(0.1)).accessibilityElement(children: .combine)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .combine)
     }
 }
 
 private struct CareerSummary: View {
     let career: MobileCareerStore
+
     var body: some View {
         List {
             if let state = career.state {
                 Section("선수") {
+                    LabeledContent("이름", value: state.identity.name)
                     LabeledContent("구단", value: state.team.name)
                     LabeledContent("레벨", value: state.level == .major ? "1군" : "2군")
-                    LabeledContent("역할", value: roleLabel(state.role))
+                    LabeledContent("역할", value: MobileCareerStore.roleName(state.role))
                 }
                 Section("능력") {
-                    LabeledContent("공의 위력", value: "\(state.pitcher.stuff)")
-                    LabeledContent("제구", value: "\(state.pitcher.command)")
-                    LabeledContent("체력", value: "\(state.pitcher.stamina)")
+                    AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
+                    AbilityGaugeView(label: "제구", value: state.pitcher.command)
+                    AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
+                    AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
                 }
                 Section("최근 주요 기록") {
                     ForEach(Array(state.milestones.suffix(6).reversed()), id: \.self) { milestone in
@@ -74,91 +139,150 @@ private struct CareerSummary: View {
         .background(BaseballTheme.canvas)
         .navigationTitle("커리어")
     }
-
-    private func roleLabel(_ role: ProRole) -> String {
-        switch role { case .starter: "선발"; case .longRelief: "긴 이닝 구원"; case .setup: "필승조"; case .closer: "마무리" }
-    }
 }
 
+/// 주간 계획. Picker 대신 효과와 비용이 보이는 카드로 고른다(계획 문서 §2.3 B5).
 private struct WeeklyPlanView: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
 
-    var body: some View {
-        Form {
-            Section("오늘의 상태") {
-                LabeledContent("피로", value: "\(state.fatigue)")
-                LabeledContent("감독의 믿음", value: "\(state.managerTrust)")
-                LabeledContent("현재 역할", value: roleLabel(state.role))
-            }
-            Section("이번 주에 할 일") {
-                Picker("계획", selection: Bindable(career).selectedPlan) {
-                    Text("결정구 불펜 · 성장 / 피로↑").tag(ProWeekPlan.developWeapon)
-                    Text("코스 제구 · 제구 향상 / 피로↑").tag(ProWeekPlan.refineCommand)
-                    Text("긴 이닝 훈련 · 체력 / 피로↑").tag(ProWeekPlan.buildStamina)
-                    Text("회복 · 등판 감소 / 피로↓").tag(ProWeekPlan.recover)
-                    Text("이번 주 경기 · 감독의 믿음 향상 / 능력치 성장 없음").tag(ProWeekPlan.earnTrust)
-                }
-                Button("1주 진행", action: career.advanceWeek).buttonStyle(.borderedProminent).frame(minHeight: 44)
-                Button(action: career.advanceBlock) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("같은 계획으로 3주 진행")
-                        Text("중요 경기나 선발·불펜 역할 변화가 생기면 멈춥니다.").font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
-                    }
-                }
-                .buttonStyle(.bordered)
-                .frame(minHeight: 44)
-            }
-        }
-        .scrollContentBackground(.hidden)
-        .background(BaseballTheme.canvas)
-        .accessibilityElement(children: .contain)
+    private struct PlanCopy {
+        let plan: ProWeekPlan
+        let title: String
+        let effect: String
+        let cost: String
+        let symbol: String
     }
 
-    private func roleLabel(_ role: ProRole) -> String {
-        switch role { case .starter: "선발"; case .longRelief: "긴 이닝 구원"; case .setup: "필승조"; case .closer: "마무리" }
+    private static let plans: [PlanCopy] = [
+        PlanCopy(plan: .developWeapon, title: "결정구 불펜", effect: "구위와 변화구가 오릅니다", cost: "피로가 크게 쌓입니다", symbol: "flame"),
+        PlanCopy(plan: .refineCommand, title: "코스 제구 훈련", effect: "제구가 오릅니다", cost: "피로가 쌓입니다", symbol: "scope"),
+        PlanCopy(plan: .buildStamina, title: "긴 이닝 훈련", effect: "체력이 오릅니다", cost: "피로가 쌓입니다", symbol: "figure.run"),
+        PlanCopy(plan: .recover, title: "회복", effect: "피로가 줄고 부상 위험이 낮아집니다", cost: "능력이 오르지 않습니다", symbol: "bed.double"),
+        PlanCopy(plan: .earnTrust, title: "이번 주 경기 집중", effect: "감독의 믿음이 오릅니다", cost: "능력이 오르지 않습니다", symbol: "person.2")
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            HStack(spacing: 10) {
+                Metric(title: "피로", value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
+                Metric(title: "감독의 믿음", value: "\(state.managerTrust)", tone: state.managerTrust >= 60 ? .positive : .standard)
+                Metric(title: "역할", value: MobileCareerStore.roleName(state.role))
+            }
+
+            Text("이번 주에 할 일").font(.headline)
+
+            ForEach(Self.plans, id: \.plan) { copy in
+                PlanCard(copy: copy, selected: career.selectedPlan == copy.plan) {
+                    career.selectedPlan = copy.plan
+                }
+            }
+
+            Button(action: career.advanceWeek) {
+                Text("1주 진행").frame(maxWidth: .infinity, minHeight: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+
+            Button(action: career.advanceBlock) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("같은 계획으로 3주 진행").font(.subheadline.weight(.semibold))
+                    Text("중요 경기나 선발·불펜 역할 변화가 생기면 멈춥니다.")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.bordered)
+            .frame(minHeight: BaseballMetrics.minimumTapTarget)
+        }
+    }
+
+    private struct PlanCard: View {
+        let copy: PlanCopy
+        let selected: Bool
+        let onSelect: () -> Void
+
+        var body: some View {
+            Button(action: onSelect) {
+                HStack(alignment: .top, spacing: 12) {
+                    Image(systemName: copy.symbol)
+                        .font(.title3)
+                        .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)
+                        .frame(width: 28)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(copy.title).font(.subheadline.weight(.bold))
+                        Text(copy.effect).font(.footnote).foregroundStyle(BaseballTheme.positive)
+                        Text(copy.cost).font(.footnote).foregroundStyle(BaseballTheme.warning)
+                    }
+                    Spacer()
+                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.border)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                .background(
+                    selected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
+                    in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                        .stroke(selected ? BaseballTheme.selection : BaseballTheme.border, lineWidth: selected ? 2 : 1)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(selected ? .isSelected : [])
+        }
     }
 }
 
-private struct ImportantMomentView: View {
-    let career: MobileCareerStore
+/// 승부 시작 전 장면. 상대와 상황을 먼저 보여 주고 나서 투구 화면으로 들어간다.
+private struct ImportantGameIntro: View {
     let state: ProCareerSnapshot
+    let onStart: () -> Void
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 18) {
-                Text("IMPORTANT MOMENT · WEEK \(state.week)").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.milestone)
-                Text(state.level == .major ? "1군에서 자리를 정할 승부" : state.managerTrust < 55 ? "다음 등판 기회를 따낼 경기" : "선발·불펜 역할을 결정할 경기")
-                    .font(.largeTitle.bold())
-                BaseballCard(title: "승부 상황", tone: .milestone) {
-                    Text("한 점 차 · 1사 2루 · 오재민 타석\n현재 피로 \(state.fatigue), 감독의 믿음 \(state.managerTrust)")
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                }
-                VStack(spacing: 10) {
-                    ForEach(MobileCareerStore.ImportantApproach.allCases) { approach in
-                        Button { career.selectedApproach = approach } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: career.selectedApproach == approach ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(career.selectedApproach == approach ? BaseballTheme.selection : BaseballTheme.textSecondary)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(approach.title).font(.headline)
-                                    Text(approach.detail).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
-                                }
-                                Spacer()
-                            }
-                            .padding().frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-                            .background(career.selectedApproach == approach ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: 12))
-                            .overlay { RoundedRectangle(cornerRadius: 12).stroke(career.selectedApproach == approach ? BaseballTheme.selection : BaseballTheme.border, lineWidth: 1) }
-                        }
-                        .buttonStyle(.plain).accessibilityAddTraits(career.selectedApproach == approach ? .isSelected : [])
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            KeyArtHeader(
+                art: state.level == .major ? .proStadiumTunnel : .stadiumNight,
+                eyebrow: "IMPORTANT MOMENT · \(state.season)시즌 \(state.week)주차",
+                title: state.level == .major
+                    ? "1군에서 자리를 정할 승부"
+                    : state.managerTrust < 55 ? "다음 등판 기회를 따낼 경기" : "선발·불펜 역할을 결정할 경기",
+                accent: BaseballTheme.milestone
+            )
+
+            if let rival = state.currentRival {
+                BaseballCard(title: "상대", tone: .milestone) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(rival.name) · \(rival.teamName)").font(.headline)
+                        Text(rival.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                        Text(rival.profile).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(rival.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
                     }
+                    .accessibilityElement(children: .combine)
                 }
-                Button("이 승부로 투구", action: career.resolveImportantMoment)
-                    .buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity, minHeight: 50)
             }
-            .padding()
+
+            BaseballCard(title: "내 상태") {
+                HStack(spacing: 10) {
+                    Metric(title: "피로", value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
+                    Metric(title: "감독의 믿음", value: "\(state.managerTrust)")
+                    Metric(title: "포수와의 호흡", value: "\(state.catcherTrust)")
+                }
+            }
+
+            Text("한 구씩 직접 던집니다. 구종·코스·노림·힘 배분을 고르면 결과가 그때그때 갈립니다.")
+                .font(.footnote)
+                .foregroundStyle(BaseballTheme.textSecondary)
+
+            Button(action: onStart) {
+                Text("마운드에 오르기").frame(maxWidth: .infinity, minHeight: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
         }
-        .background(BaseballTheme.canvas)
     }
 }
 
@@ -167,10 +291,16 @@ private struct ActionCard: View {
     let copy: String
     let button: String
     let action: () -> Void
+
     var body: some View {
-        ContentUnavailableView { Label(title, systemImage: "baseball.fill") } description: { Text(copy) } actions: {
-            Button(button, action: action).buttonStyle(.borderedProminent).frame(minHeight: 44)
+        BaseballCard(title: title, tone: .raised) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(copy).font(.subheadline)
+                Button(action: action) {
+                    Text(button).frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                }
+                .buttonStyle(.borderedProminent)
+            }
         }
-        .background(BaseballTheme.canvas)
     }
 }
