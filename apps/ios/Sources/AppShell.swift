@@ -188,7 +188,9 @@ private struct TodayDashboard: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                 KeyArtHeader(
-                    art: state.level == .major ? .proStadiumTunnel : .stadiumNight,
+                    // 1군 데뷔와 은퇴는 커리어에 한 번뿐이라 전용 그림을 준다.
+                    art: state.phase == .completed ? .retirement
+                        : state.level == .major ? .majorDebut : .stadiumNight,
                     eyebrow: "\(state.season)시즌 \(state.week)주차 · \(Self.segmentLabel(state.seasonSegment))",
                     title: "\(state.team.name) · \(state.level == .major ? "1군" : "2군") \(MobileCareerStore.roleName(state.role))",
                     accent: BaseballTheme.teamDecoration(state.team.id)

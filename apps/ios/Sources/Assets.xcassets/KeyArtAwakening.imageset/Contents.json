@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "KeyArtAwakening.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

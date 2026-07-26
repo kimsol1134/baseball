@@ -121,10 +121,23 @@ private struct ChapterHeader: View {
     let state: HighSchoolCareerSnapshot
     let lifeNumber: Int
 
+    /// 되돌릴 수 없는 순간에만 전용 그림을 준다. 나머지는 야간 구장 한 장으로 통일한다 —
+    /// 모든 화면에 다른 그림이 있으면 어느 것도 특별하지 않다(DOC-19 §7.5).
+    static func art(for phase: HighSchoolCareerPhase) -> KeyArt {
+        switch phase {
+        case .prologue: .careerIntro
+        case .schoolSelection: .schoolCrossroads
+        case .awakening: .awakening
+        case .draft: .draftDay
+        case .legacy: .reincarnation
+        default: .stadiumNight
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.tightSpacing) {
             KeyArtHeader(
-                art: state.phase == .prologue ? .careerIntro : .stadiumNight,
+                art: Self.art(for: state.phase),
                 eyebrow: "\(lifeNumber)번째 생 · \(state.chapter.schoolYear)학년 \(state.chapter.season)",
                 title: state.school.map { "\($0.name) · \(state.chapter.title)" } ?? state.chapter.title
             )
@@ -455,9 +468,15 @@ private struct ImportantGameCard: View {
     }
 }
 
+/// 각성 선택.
+///
+/// 학교 선택과 같은 이유로 확인을 받는다 — 되돌릴 수 없는데 한 번 누르면 확정된다.
+/// 카드에 "되돌릴 수 없습니다"라고 적어 두는 것만으로는 오조작을 막지 못한다.
 private struct AwakeningCard: View {
     let options: [AwakeningID]
     let onChoose: (AwakeningID) -> Void
+
+    @State private var pending: AwakeningID?
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -465,7 +484,7 @@ private struct AwakeningCard: View {
             Text("고른 각성은 되돌릴 수 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
             ForEach(options, id: \.self) { option in
                 let copy = HighSchoolPresentation.awakening(option)
-                Button { onChoose(option) } label: {
+                Button { pending = option } label: {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(copy.title).font(.subheadline.weight(.bold))
                         Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
@@ -482,6 +501,21 @@ private struct AwakeningCard: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("hs.awakening.\(option.rawValue)")
             }
+        }
+        .confirmationDialog(
+            pending.map { "'\(HighSchoolPresentation.awakening($0).title)'으로 각성할까요?" } ?? "",
+            isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
+            titleVisibility: .visible,
+            presenting: pending
+        ) { option in
+            Button("이걸로 각성한다") {
+                onChoose(option)
+                pending = nil
+            }
+            .accessibilityIdentifier("hs.awakening.confirm")
+            Button("다시 고른다", role: .cancel) { pending = nil }
+        } message: { option in
+            Text("\(HighSchoolPresentation.awakening(option).detail)\n\n한 번 고르면 이번 생 동안 바꿀 수 없습니다.")
         }
     }
 }

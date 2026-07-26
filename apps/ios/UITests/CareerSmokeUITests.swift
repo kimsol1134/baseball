@@ -68,7 +68,7 @@ final class CareerSmokeUITests: XCTestCase {
                 continue
             }
             if tapFirst(app, prefix: "hs.response.") { continue }
-            if tapFirst(app, prefix: "hs.awakening.") { continue }
+            if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
 
             if app.buttons["hs.game.start"].exists {
@@ -135,7 +135,7 @@ final class CareerSmokeUITests: XCTestCase {
             if tapFirst(app, prefix: "hs.school.") { confirmSchool(app); continue }
             if tapIfPresent(app.buttons["hs.training.commit"]) { continue }
             if tapFirst(app, prefix: "hs.response.") { continue }
-            if tapFirst(app, prefix: "hs.awakening.") { continue }
+            if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
             if app.buttons["hs.game.start"].exists {
                 tapIfPresent(app.buttons["hs.game.start"])
@@ -221,7 +221,7 @@ final class CareerSmokeUITests: XCTestCase {
             if tapFirst(app, prefix: "hs.school.") { confirmSchool(app); continue }
             if tapIfPresent(app.buttons["hs.training.commit"]) { continue }
             if tapFirst(app, prefix: "hs.response.") { continue }
-            if tapFirst(app, prefix: "hs.awakening.") { continue }
+            if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
             XCTFail("중요 경기에 도달하기 전에 막혔습니다. 보이는 버튼: \(visibleIdentifiers(app))")
             return
@@ -311,6 +311,12 @@ final class CareerSmokeUITests: XCTestCase {
     /// 학교는 되돌릴 수 없어 확인 창이 뜬다. 카드만 누르고 넘어가면 그 자리에서 막힌다.
     private func confirmSchool(_ app: XCUIApplication) {
         let confirm = app.buttons.matching(identifier: "hs.school.confirm").firstMatch
+        if confirm.waitForExistence(timeout: 3) { confirm.tap() }
+    }
+
+    /// 각성도 되돌릴 수 없어 확인 창이 뜬다.
+    private func confirmAwakening(_ app: XCUIApplication) {
+        let confirm = app.buttons.matching(identifier: "hs.awakening.confirm").firstMatch
         if confirm.waitForExistence(timeout: 3) { confirm.tap() }
     }
 

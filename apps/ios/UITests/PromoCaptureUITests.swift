@@ -18,6 +18,12 @@ final class PromoCaptureUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// 각성은 되돌릴 수 없어 확인 창이 뜬다.
+    private func confirmAwakening(_ app: XCUIApplication) {
+        let confirm = app.buttons.matching(identifier: "hs.awakening.confirm").firstMatch
+        if confirm.waitForExistence(timeout: 3) { confirm.tap() }
+    }
+
     /// 편집점을 찾을 때 쓴다. 녹화 시작과 앱 실행 사이의 지연은 알 수 없으므로
     /// 절대 시각이 아니라 "테스트 시작 이후 경과"를 남기고, 최종 컷은 프레임을 보고 맞춘다.
     private func mark(_ name: String) {

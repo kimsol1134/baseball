@@ -292,6 +292,14 @@ enum KeyArt: String {
     case proStadiumTunnel = "KeyArtProStadiumTunnel"
     case stadiumNight = "KeyArtStadiumNight"
     case careerIntro = "KeyArtCareerIntro"
+    /// 되돌릴 수 없는 갈림길에 서는 순간들. 화면당 하나만 쓴다 — 그림이 흔하면 아무 데도
+    /// 무게가 실리지 않는다(DOC-19 §7.5).
+    case schoolCrossroads = "KeyArtSchoolCrossroads"
+    case draftDay = "KeyArtDraftDay"
+    case majorDebut = "KeyArtMajorDebut"
+    case retirement = "KeyArtRetirement"
+    case reincarnation = "KeyArtReincarnation"
+    case awakening = "KeyArtAwakening"
 }
 
 struct KeyArtHeader: View {
