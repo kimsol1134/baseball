@@ -1,0 +1,22 @@
+{
+  "name": "@baseball/promo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "홍보 영상. 앱 화면은 시뮬레이터 @3x 캡처, 승부 장면은 PitchDramaView를 프레임으로 렌더한 실물이다.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=20",
+    "render:loop": "remotion render HeroLoop out/hero-loop.mp4 --codec=h264 --crf=23",
+    "render:poster": "remotion still Trailer out/poster.png --frame=300"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.499",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "remotion": "4.0.499"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}

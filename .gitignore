@@ -17,3 +17,7 @@ steam_appid.txt
 apps/windows/test-results/
 apps/windows/playwright-report/
 .playwright-mcp/
+# 홍보 영상 렌더 결과물과 중간 음원. 소스(apps/promo/src)와 캡처 소재(apps/promo/public)에서
+# 다시 만든다. 배포에 실제로 쓰이는 완성본은 apps/landing/public에 있다.
+apps/promo/out/
+apps/promo/audio/
