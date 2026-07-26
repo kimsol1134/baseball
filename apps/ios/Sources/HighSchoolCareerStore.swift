@@ -96,7 +96,7 @@ final class HighSchoolCareerStore {
             AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
             result = created
             lastSummary = carried.lifeNumber > 1
-                ? "\(carried.lifeNumber)번째 생. 기억 \(carried.memories.count)장을 안고 다시 시작합니다."
+                ? "\(carried.lifeNumber)회차. 기억 \(carried.memories.count)장을 안고 다시 시작합니다."
                 : "고교 첫 해가 시작됩니다."
             feedbackCue = .success
             feedbackTrigger += 1

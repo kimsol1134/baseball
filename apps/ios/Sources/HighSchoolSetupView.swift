@@ -27,7 +27,7 @@ struct HighSchoolSetupView: View {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                 KeyArtHeader(
                     art: .careerIntro,
-                    eyebrow: isRebirth ? "\(career.inheritance.lifeNumber)번째 생" : "고교 커리어 시작",
+                    eyebrow: isRebirth ? "\(career.inheritance.lifeNumber)회차" : "선수 만들기",
                     title: isRebirth ? "다시 한 번, 고교 1학년부터" : "어떤 투수로 시작할지 고르세요"
                 )
 
@@ -64,7 +64,14 @@ struct HighSchoolSetupView: View {
                     }
                 }
 
-                BaseballCard(title: "이번 생의 난이도") {
+                // 난이도와 핸디캡은 2회차부터 나온다.
+                //
+                // 첫 회차에 핸디캡을 보여 주면 "고르면 다음 회차 계승이 커집니다"라고 말하게
+                // 되는데, 처음 켠 사람은 **다음 회차가 뭔지 아직 모른다.** 한 번 죽어 보고
+                // 계승을 겪은 뒤에야 이 거래가 읽힌다. Rogue Legacy도 첫 죽음 전까지 특성을
+                // 보여 주지 않는다.
+                if isRebirth {
+                BaseballCard(title: "난이도") {
                     HStack(spacing: 6) {
                         ForEach(DifficultyLevel.allCases, id: \.self) { level in
                             Button { harshness = level } label: {
@@ -87,8 +94,8 @@ struct HighSchoolSetupView: View {
                     }
                 }
 
-                Text("짊어질 것").font(.headline)
-                Text("고르면 이번 생이 어려워지는 대신 다음 생에 더 많이 남습니다. 지금 +\(rewardPermille / 10)%")
+                Text("핸디캡").font(.headline)
+                Text("고르면 이번 회차가 어려워집니다. 대신 다음 회차로 넘어가는 계승이 커집니다. 지금 +\(rewardPermille / 10)%")
                     .font(.footnote)
                     .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
                 ForEach(KarmaID.allCases, id: \.self) { karma in
@@ -100,6 +107,7 @@ struct HighSchoolSetupView: View {
                             else { selectedKarmas.insert(karma) }
                         }
                     )
+                }
                 }
 
                 PrimaryButton(title: isRebirth ? "다시 태어나기" : "고교 1학년 시작", identifier: "hs.start") {

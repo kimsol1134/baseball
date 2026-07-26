@@ -9,6 +9,8 @@ struct HighSchoolCareerView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var achievements = AchievementStore.shared
+    /// 오프닝을 넘겼는가. 저장하지 않는다 — 커리어를 지우면 다시 보는 것이 맞다.
+    @State private var openingDismissed = false
     private var audio: GameAudio { .shared }
 
     var body: some View {
@@ -17,7 +19,13 @@ struct HighSchoolCareerView: View {
             case .loading:
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             case .needsSetup:
-                HighSchoolSetupView(career: career)
+                // 첫 회차에는 오프닝 장면을 먼저 보여 준다. 앱을 열자마자 폼이 나오면
+                // 게임이 시작됐다는 것 자체가 전달되지 않는다.
+                if career.inheritance.lifeNumber == 1, !openingDismissed {
+                    OpeningView { openingDismissed = true }
+                } else {
+                    HighSchoolSetupView(career: career)
+                }
             case .failed(let message):
                 ContentUnavailableView {
                     Label("고교 커리어를 열 수 없습니다", systemImage: "exclamationmark.triangle")
@@ -138,7 +146,11 @@ private struct ChapterHeader: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.tightSpacing) {
             KeyArtHeader(
                 art: Self.art(for: state.phase),
-                eyebrow: "\(lifeNumber)번째 생 · \(state.chapter.schoolYear)학년 \(state.chapter.season)",
+                // 1회차에는 회차 표시를 하지 않는다. 처음 하는 사람에게 "1회차"는 아무 뜻이 없고,
+                // 반복하는 게임이라는 사실은 한 번 죽어 봐야 의미가 생긴다.
+                eyebrow: lifeNumber > 1
+                    ? "\(lifeNumber)회차 · \(state.chapter.schoolYear)학년 \(state.chapter.season)"
+                    : "\(state.chapter.schoolYear)학년 \(state.chapter.season)",
                 title: state.school.map { "\($0.name) · \(state.chapter.title)" } ?? state.chapter.title
             )
             HStack(spacing: 10) {
@@ -202,14 +214,18 @@ private struct PrologueCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            BaseballCard(title: lifeNumber > 1 ? "다시 태어났습니다" : "시작", tone: .milestone) {
+            BaseballCard(title: lifeNumber > 1 ? "다시 태어났습니다" : "첫 등교", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(state.news.first ?? "고교 3년이 시작됩니다.")
+                    // 첫 회차에는 감독이 말을 건다. "무엇을 해야 하는지"를 사람 말로 알려 주는 편이
+                    // 안내 문구보다 잘 읽힌다.
+                    Text(lifeNumber > 1
+                         ? (state.news.first ?? "고교 3년이 다시 시작됩니다.")
+                         : "\u{201C}몸부터 풀자. 불펜에서 한 구 던져 봐.\u{201D} — 감독")
                         .font(.subheadline)
                         .fixedSize(horizontal: false, vertical: true)
                     if !state.karmas.isEmpty {
                         Divider()
-                        Text("짊어진 것").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.warning)
+                        Text("핸디캡").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.warning)
                         ForEach(state.karmas, id: \.self) { karma in
                             let copy = HighSchoolPresentation.karma(karma)
                             VStack(alignment: .leading, spacing: 1) {
@@ -515,7 +531,7 @@ private struct AwakeningCard: View {
             .accessibilityIdentifier("hs.awakening.confirm")
             Button("다시 고른다", role: .cancel) { pending = nil }
         } message: { option in
-            Text("\(HighSchoolPresentation.awakening(option).detail)\n\n한 번 고르면 이번 생 동안 바꿀 수 없습니다.")
+            Text("\(HighSchoolPresentation.awakening(option).detail)\n\n한 번 고르면 고교 3년 동안 바꿀 수 없습니다.")
         }
     }
 }
@@ -676,7 +692,7 @@ private struct CompletionCard: View {
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("다시 태어나기").font(.subheadline.weight(.semibold))
-                    Text("\(career.inheritance.lifeNumber)번째 생을 기억 \(career.inheritance.memories.count)장과 함께 시작합니다.")
+                    Text("\(career.inheritance.lifeNumber)회차를 기억 \(career.inheritance.memories.count)장과 함께 시작합니다.")
                         .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

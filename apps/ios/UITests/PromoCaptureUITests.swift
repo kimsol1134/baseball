@@ -32,6 +32,12 @@ final class PromoCaptureUITests: XCTestCase {
     }
 
     /// 화면을 그대로 두는 시간. 사람이 읽을 틈이 없으면 영상에서 아무것도 보이지 않는다.
+    /// 1회차에는 오프닝 장면이 먼저 뜬다. 넘기지 않으면 선수 만들기 화면에 닿지 못한다.
+    private func dismissOpening(_ app: XCUIApplication) {
+        let start = app.buttons["hs.opening.start"]
+        if start.waitForExistence(timeout: 5) { start.tap() }
+    }
+
     private func hold(_ seconds: TimeInterval) {
         Thread.sleep(forTimeInterval: seconds)
     }
@@ -87,6 +93,7 @@ final class PromoCaptureUITests: XCTestCase {
         startedAt = Date()
         mark("launch")
 
+        dismissOpening(app)
         let start = app.buttons["hs.start"]
         XCTAssertTrue(start.waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
         hold(2.0)

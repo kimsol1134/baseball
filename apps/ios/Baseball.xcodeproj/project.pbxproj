@@ -45,6 +45,7 @@
 		BBB25AB032932D614C965083 /* PitchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F72E6C8CF9034C5EF75C8C51 /* PitchView.swift */; };
 		C4DCFA950D310CE7A1593078 /* AchievementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1FF7372CAEE9C5547CF458 /* AchievementsView.swift */; };
 		D461F48E6FD8C03B8697AAA5 /* SimulationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 17CAB6B06F634AF92AC437D2 /* SimulationCore */; };
+		D5AB687C52FABB539699F9D3 /* OpeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F94A4FC0E937518324E7DD23 /* OpeningView.swift */; };
 		D938E46F882A5F6954C0CD9D /* Achievements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E520447AA0844B41D0C8F96 /* Achievements.swift */; };
 		DD20655886A0B897AA32DC44 /* DeliveryControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4098E0B38E32E1CCF6BC0549 /* DeliveryControl.swift */; };
 		DF773278E6080C28533006FF /* TrajectorySample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 907AEA8BF7BCC3156FC0CCA1 /* TrajectorySample.swift */; };
@@ -125,6 +126,7 @@
 		F3FA3A8BA815F3B87537D27F /* ProRivalBatter+Stats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProRivalBatter+Stats.swift"; sourceTree = "<group>"; };
 		F6526F986EB9E4B84BFD6792 /* Audio */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Audio; sourceTree = SOURCE_ROOT; };
 		F72E6C8CF9034C5EF75C8C51 /* PitchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchView.swift; sourceTree = "<group>"; };
+		F94A4FC0E937518324E7DD23 /* OpeningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpeningView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -191,6 +193,7 @@
 				E1DD00A7AD350A34AD82027A /* HighSchoolSetupView.swift */,
 				E031636B6C1641AD3364D737 /* Info.plist */,
 				CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */,
+				F94A4FC0E937518324E7DD23 /* OpeningView.swift */,
 				7A1D59E198E4D5D56F06F17C /* PitchDramaView.swift */,
 				5F3552DE680E36021D69234E /* PitchScenario.swift */,
 				6987D517241132311CC896B0 /* PitchSession.swift */,
@@ -402,6 +405,7 @@
 				2105A4026AD256C1307FDCAA /* HighSchoolPresentation.swift in Sources */,
 				4C8AE130870EA281BFD72F7D /* HighSchoolSetupView.swift in Sources */,
 				0E8B47740AB64ADAAD5B3CCF /* MobileCareerStore.swift in Sources */,
+				D5AB687C52FABB539699F9D3 /* OpeningView.swift in Sources */,
 				AC643EFE859422711140B702 /* PitchDramaView.swift in Sources */,
 				3FA995542819DC5AC3209BE2 /* PitchScenario.swift in Sources */,
 				F69C755A97EF78CD6CB80517 /* PitchSession.swift in Sources */,

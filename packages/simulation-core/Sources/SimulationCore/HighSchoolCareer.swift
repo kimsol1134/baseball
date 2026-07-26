@@ -1536,7 +1536,7 @@ public struct HighSchoolCareerEngine: Sendable {
                 "시즌 기록 \(seasonTerm >= 0 ? "+" : "")\(seasonTerm)",
                 "각성 +\(awakeningScore)",
                 "관계 \(relationshipScore >= 0 ? "+" : "")\(relationshipScore)",
-            ] + (karmaPenalty > 0 ? ["짊어진 짐 -\(karmaPenalty)"] : [])
+            ] + (karmaPenalty > 0 ? ["핸디캡 -\(karmaPenalty)"] : [])
               + (overusePenalty > 0 ? ["팔 상태 -\(overusePenalty)"] : []),
             summary: drafted
                 ? "지명 구단 · \(team?.name ?? "프로 구단"). 구위와 고교 경기 기록에서 높은 평가를 받았습니다."

@@ -22,6 +22,7 @@ final class CareerSmokeUITests: XCTestCase {
     func testHighSchoolCareerRunsThroughDraftAndRebirth() {
         let app = launch()
 
+        dismissOpening(app)
         let start = app.buttons["hs.start"]
         XCTAssertTrue(start.waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
         capture(app, name: "01-highschool-setup")
@@ -109,6 +110,7 @@ final class CareerSmokeUITests: XCTestCase {
     /// 드래프트를 통과했다면 프로 커리어가 그 결과로 열려야 한다.
     func testDraftedRunCanEnterProCareer() {
         let app = launch()
+        dismissOpening(app)
         XCTAssertTrue(app.buttons["hs.start"].waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
         tapIfPresent(app.buttons["hs.start"])
 
@@ -173,6 +175,7 @@ final class CareerSmokeUITests: XCTestCase {
     func testFirstPitchIsReachableInTwoTaps() {
         let app = launch()
 
+        dismissOpening(app)
         let start = app.buttons["hs.start"]
         XCTAssertTrue(start.waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
         tapIfPresent(start)
@@ -202,6 +205,7 @@ final class CareerSmokeUITests: XCTestCase {
         app.launchArguments = ["-uiTestResetCareer"]
         app.launch()
 
+        dismissOpening(app)
         let start = app.buttons["hs.start"]
         XCTAssertTrue(start.waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
         tapIfPresent(start)
@@ -285,6 +289,12 @@ final class CareerSmokeUITests: XCTestCase {
     }
 
     @discardableResult
+    /// 1회차에는 오프닝 장면이 먼저 뜬다. 넘기지 않으면 선수 만들기 화면에 닿지 못한다.
+    private func dismissOpening(_ app: XCUIApplication) {
+        let start = app.buttons["hs.opening.start"]
+        if start.waitForExistence(timeout: 5) { start.tap() }
+    }
+
     private func tapIfPresent(_ element: XCUIElement) -> Bool {
         guard element.exists else { return false }
         guard bringIntoView(element) else { return false }

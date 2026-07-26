@@ -37,7 +37,7 @@ struct SettingsView: View {
             }
 
             Section("진행") {
-                LabeledContent("회차", value: "\(highSchool.inheritance.lifeNumber)번째 생")
+                LabeledContent("회차", value: "\(highSchool.inheritance.lifeNumber)회차")
                 LabeledContent("가져온 기억", value: "\(highSchool.inheritance.memories.count)장")
                 LabeledContent("영혼", value: "\(highSchool.inheritance.soulPoints)")
                 if let state = pro.state {
