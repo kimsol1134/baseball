@@ -1,0 +1,69 @@
+import SwiftUI
+
+/// 소리·손맛·접근성 설정. 자동 릴리스는 접근성 항목이라 맨 위에 둔다.
+struct SettingsView: View {
+    let highSchool: HighSchoolCareerStore
+    let pro: MobileCareerStore
+
+    @AppStorage("baseball.pitch.autoRelease") private var autoRelease = false
+    @State private var audio = GameAudio.shared
+    @State private var achievements = AchievementStore.shared
+    @State private var confirmingReset = false
+
+    var body: some View {
+        List {
+            Section {
+                Toggle("자동 릴리스", isOn: $autoRelease)
+                Text("켜면 와인드업 타이밍 없이 탭 한 번으로 던집니다. 결과는 릴리스가 딱 중간일 때와 같습니다.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+            } header: {
+                Text("조작")
+            } footer: {
+                Text("타이밍 제스처가 어려우면 켜세요. 게임 진행에 손해가 없습니다.")
+            }
+
+            Section("소리와 진동") {
+                Toggle("소리", isOn: Binding(get: { audio.soundEnabled }, set: { audio.soundEnabled = $0 }))
+                Toggle("진동", isOn: Binding(get: { audio.hapticsEnabled }, set: { audio.hapticsEnabled = $0 }))
+                Text("소리는 다른 앱의 음악을 멈추지 않고, 무음 스위치를 따릅니다.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+            }
+
+            Section {
+                AchievementsView(store: achievements)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+            }
+
+            Section("진행") {
+                LabeledContent("회차", value: "\(highSchool.inheritance.lifeNumber)번째 생")
+                LabeledContent("가져온 기억", value: "\(highSchool.inheritance.memories.count)장")
+                LabeledContent("영혼", value: "\(highSchool.inheritance.soulPoints)")
+                if let state = pro.state {
+                    LabeledContent("프로", value: "\(state.team.name) \(state.season)시즌")
+                }
+            }
+
+            Section {
+                Button("모든 진행 삭제", role: .destructive) { confirmingReset = true }
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+            } footer: {
+                Text("고교·프로 커리어와 계승 기록이 모두 지워집니다. 되돌릴 수 없습니다.")
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(BaseballTheme.canvas)
+        .navigationTitle("설정")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("모든 진행을 삭제할까요?", isPresented: $confirmingReset, titleVisibility: .visible) {
+            Button("삭제", role: .destructive) {
+                highSchool.deleteCareer()
+                pro.deleteCareer()
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("회차와 계승 기억까지 전부 사라집니다.")
+        }
+    }
+}
