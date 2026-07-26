@@ -262,6 +262,16 @@ public struct PitchKernelEngine: Sendable {
     }
 
     public func submitPitch(_ params: SubmitPitchParams) throws -> PitchKernelResult {
+        try submitPitch(params, delivery: nil)
+    }
+
+    /// - Parameter delivery: How well the player physically executed the throw. `nil` — the default
+    ///   every pre-delivery caller gets — reproduces the previous behaviour exactly, and so does
+    ///   `PitchDelivery.neutral`.
+    public func submitPitch(
+        _ params: SubmitPitchParams,
+        delivery: PitchDelivery?
+    ) throws -> PitchKernelResult {
         let prepareParams = PreparePitchParams(
             seed: params.seed,
             pitcher: params.pitcher,
@@ -274,6 +284,7 @@ public struct PitchKernelEngine: Sendable {
         )
         let seed = try validate(prepareParams)
         try validate(call: params.call, pitcher: params.pitcher)
+        try validate(delivery: delivery)
         let adaptation = rivalMemoryEngine.analyze(params.rivalMemory, context: params.context)
         let plan = commitBatterPlan(params: prepareParams, adaptation: adaptation, seed: seed)
         let read = scoutingRead(params: prepareParams)
@@ -297,7 +308,7 @@ public struct PitchKernelEngine: Sendable {
             throw SimulationError.invalidPreparationToken
         }
 
-        let execution = executePitch(params: params, seed: seed)
+        let execution = executePitch(params: params, delivery: delivery, seed: seed)
         let wasInZone = abs(execution.actualX) <= 500 && abs(execution.actualY) <= 500
         let planPitchMatched = plan.expectedPitch == params.call.pitchType
         let planZoneMatched = zonesAreNear(plan.expectedZone, params.call.zone)
@@ -622,11 +633,16 @@ public struct PitchKernelEngine: Sendable {
             nextPreparation = nil
         }
 
+        // A delivery only enters the hash when one was supplied, so pre-delivery callers and the
+        // golden fixture keep the exact hash they had before this field existed.
+        let deliveryComponent = delivery.map {
+            "|delivery:\($0.releaseAccuracy):\($0.aimAccuracy)"
+        } ?? ""
         let eventHash = StableHash.fnv1a64(
             [
                 params.seed,
                 plan.commitment,
-                canonical(params.call),
+                canonical(params.call) + deliveryComponent,
                 canonical(params.pitcher.profile(for: params.call.pitchType)),
                 String(execution.targetX),
                 String(execution.targetY),
@@ -781,6 +797,14 @@ public struct PitchKernelEngine: Sendable {
             throw SimulationError.invalidPitchProfile(
                 "\(call.pitchType.rawValue) is not in this pitcher's repertoire"
             )
+        }
+    }
+
+    private func validate(delivery: PitchDelivery?) throws {
+        guard let delivery else { return }
+        guard (0...1_000).contains(delivery.releaseAccuracy),
+              (0...1_000).contains(delivery.aimAccuracy) else {
+            throw SimulationError.invalidPitchDelivery("release and aim accuracy must be between 0 and 1000")
         }
     }
 
@@ -953,7 +977,11 @@ public struct PitchKernelEngine: Sendable {
         )
     }
 
-    private func executePitch(params: SubmitPitchParams, seed: UInt64) -> PitchExecution {
+    private func executePitch(
+        params: SubmitPitchParams,
+        delivery: PitchDelivery?,
+        seed: UInt64
+    ) -> PitchExecution {
         var generator = SplitMix64(
             seed: derivedSeed(seed, domain: 0x4558_4543, ordinal: params.context.pitchNumber)
         )
@@ -997,8 +1025,22 @@ public struct PitchKernelEngine: Sendable {
                 offsetY += generator.nextInt(upperBound: 2) == 0 ? -wildOffset : wildOffset
             }
         }
+        // Player delivery. Applied *after* every RNG draw above as pure arithmetic, so no existing
+        // path changes its generator consumption, and a neutral (or absent) delivery is the exact
+        // identity — `offset * 1_000 / 1_000 == offset`, `+ 0` on quality and velocity. That keeps
+        // the golden fixture and every pre-delivery caller byte-identical (see the determinism
+        // rules in docs/IOS_TOP_TIER_PLAN.md §3.2).
+        let aimShift = (delivery?.aimAccuracy ?? 500) - 500
+        let releaseShift = (delivery?.releaseAccuracy ?? 500) - 500
+        // Steady aim pulls the miss back toward the target by up to 24%; a shaky one pushes it out.
+        let aimScalePermille = 1_000 - aimShift * 240 / 500
+        offsetX = offsetX * aimScalePermille / 1_000
+        offsetY = offsetY * aimScalePermille / 1_000
+        // A clean release is worth ±120 of execution quality — deliberately smaller than the spread
+        // that command ratings produce, so timing sharpens ability instead of replacing it.
+        let releaseQualityBonus = releaseShift * 120 / 500
         let executionQuality = clamp(
-            1_000 - abs(offsetX) - abs(offsetY) + effectiveCommand / 5,
+            1_000 - abs(offsetX) - abs(offsetY) + effectiveCommand / 5 + releaseQualityBonus,
             0,
             1_000
         )
@@ -1027,6 +1069,9 @@ public struct PitchKernelEngine: Sendable {
             + velocityBonus
             - params.context.fatigue
             + generator.nextInt(upperBound: 21) - 10
+            // ±1.0 km/h from the release. Small, but it is the number the player watches after a
+            // delivery they felt good about. Zero at neutral.
+            + releaseShift * 10 / 500
         let movementScale = (profile?.movement ?? params.pitcher.movement) - 50
         let actualX = target.x + offsetX
         let actualY = target.y + offsetY
