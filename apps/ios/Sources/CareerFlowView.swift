@@ -3,6 +3,8 @@ import SimulationCore
 
 struct CareerFlowView: View {
     let career: MobileCareerStore
+    /// 은퇴 뒤 새 선수로 시작한다. 프로 저장본을 지우고 고교 탭으로 돌려보낸다.
+    var onStartNewPlayer: () -> Void = {}
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -59,7 +61,7 @@ struct CareerFlowView: View {
                         case .retirementDecision:
                             RetirementDecisionView(career: career, state: state)
                         case .completed:
-                            RetiredView(state: state)
+                            RetiredView(state: state, onStartNewPlayer: onStartNewPlayer)
                         default:
                             ContentUnavailableView("이번 일정은 끝났습니다", systemImage: "checkmark.circle")
                         }
@@ -467,6 +469,9 @@ private struct RetirementDecisionView: View {
 /// 은퇴한 뒤. 커리어의 마지막 화면이라 회고와 통산 기록만 남는다.
 private struct RetiredView: View {
     let state: ProCareerSnapshot
+    let onStartNewPlayer: () -> Void
+
+    @State private var confirming = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -503,6 +508,19 @@ private struct RetiredView: View {
                     }
                 }
             }
+
+            PrimaryPill(title: "새 선수로 다시 시작", identifier: "pro.newPlayer") { confirming = true }
+            Text("이 커리어를 접고 고교 1학년부터 다시 시작합니다. 지금까지의 기록은 남습니다.")
+                .font(.caption)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .confirmationDialog("새 선수로 시작하시겠습니까?", isPresented: $confirming, titleVisibility: .visible) {
+            Button("새 선수로 시작", role: .destructive, action: onStartNewPlayer)
+                .accessibilityIdentifier("pro.newPlayer.confirm")
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("\(state.identity.name)의 프로 커리어가 닫히고 고교 화면으로 돌아갑니다.")
         }
     }
 }

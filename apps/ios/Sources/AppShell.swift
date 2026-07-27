@@ -27,18 +27,27 @@ struct AppShell: View {
     let pro: MobileCareerStore
     @State private var selection: AppTab = .highSchool
 
+    /// 프로에 입단하면 고교 탭을 숨긴다.
+    ///
+    /// 이미 프로 선수인데 탭 바에 "고교"가 남아 있으면, 그 탭이 무엇인지 알 수 없다.
+    /// 고교 3년은 끝난 이야기다. 다시 고교로 돌아가는 길은 은퇴 화면의 "새 선수로 다시
+    /// 시작"뿐이고, 그건 되돌릴 수 없는 선택이라 확인을 거쳐 간다.
+    private var showsHighSchool: Bool { pro.loadState != .ready }
+
     var body: some View {
         TabView(selection: $selection) {
-            NavigationStack {
-                HighSchoolCareerView(career: highSchool) { draft, pitcher, identity in
-                    pro.startProCareer(draft: draft, pitcher: pitcher, identity: identity)
-                    selection = .pro
+            if showsHighSchool {
+                NavigationStack {
+                    HighSchoolCareerView(career: highSchool) { draft, pitcher, identity in
+                        pro.startProCareer(draft: draft, pitcher: pitcher, identity: identity)
+                        selection = .pro
+                    }
+                    // 키아트가 제목을 맡는다. 내비게이션 바를 두면 제목이 두 번 나오고 눈썹 라벨을 가린다.
+                    .toolbar(.hidden, for: .navigationBar)
                 }
-                // 키아트가 제목을 맡는다. 내비게이션 바를 두면 제목이 두 번 나오고 눈썹 라벨을 가린다.
-                .toolbar(.hidden, for: .navigationBar)
+                .tabItem { Label(AppTab.highSchool.title, systemImage: AppTab.highSchool.icon) }
+                .tag(AppTab.highSchool)
             }
-            .tabItem { Label(AppTab.highSchool.title, systemImage: AppTab.highSchool.icon) }
-            .tag(AppTab.highSchool)
 
             NavigationStack { proTab }
                 .tabItem { Label(AppTab.pro.title, systemImage: AppTab.pro.icon) }
@@ -55,6 +64,10 @@ struct AppShell: View {
         .tint(BaseballTheme.action)
         .foregroundStyle(BaseballTheme.textPrimary)
         .background(BaseballTheme.canvas.ignoresSafeArea())
+        // 고교 탭이 사라지는 순간 그 탭을 보고 있으면 빈 화면이 남는다.
+        .onChange(of: showsHighSchool) { _, shows in
+            if !shows, selection == .highSchool { selection = .pro }
+        }
     }
 
     /// 프로 탭. 고교 드래프트를 통과하기 전에는 잠겨 있고, 건너뛰기 경로를 함께 안내한다.
@@ -67,7 +80,12 @@ struct AppShell: View {
         case .failed(let message):
             CareerFailureView(message: message, career: pro)
         case .ready:
-            ProCareerTabs(career: pro)
+            ProCareerTabs(career: pro) {
+                // 은퇴한 선수의 커리어를 접고 고교로 돌아간다. 프로 저장본만 지우고
+                // 고교 회차는 그대로 두므로, 완료 화면에서 기억을 고르고 다시 시작한다.
+                pro.deleteCareer()
+                selection = .highSchool
+            }
         }
     }
 }
@@ -122,6 +140,7 @@ private struct ProLockedView: View {
 /// 프로 커리어 안의 오늘/이번 주 두 화면.
 private struct ProCareerTabs: View {
     let career: MobileCareerStore
+    let onStartNewPlayer: () -> Void
     @State private var showsToday = true
 
     var body: some View {
@@ -137,7 +156,7 @@ private struct ProCareerTabs: View {
             if showsToday {
                 TodayView(career: career)
             } else {
-                CareerFlowView(career: career)
+                CareerFlowView(career: career, onStartNewPlayer: onStartNewPlayer)
             }
         }
         .background(BaseballTheme.canvas)
