@@ -36,6 +36,8 @@ struct DraftRevealView: View {
     }
 
     @State private var stage: Stage = .waiting
+    /// 전면 화면의 실제 폭. 글자를 여기에 맞춰 접는다.
+    @State private var screenWidth: CGFloat = 320
     @State private var visibleRound = 1
     @State private var stampScale: CGFloat = 1.6
     @State private var stampOpacity: Double = 0
@@ -50,6 +52,9 @@ struct DraftRevealView: View {
     var body: some View {
         ZStack {
             KeyArtBackdrop(art: .draftDay, dim: stage == .revealed && !drafted ? 0.88 : 0.6)
+                // 그림만 화면 끝까지 간다. 루트에 `ignoresSafeArea`를 걸면 아래 버튼이
+                // 홈 인디케이터 밑으로 밀려 글자가 잘린다.
+                .ignoresSafeArea()
                 // 연출 도중 배경을 누르면 즉시 결과로 간다. **루트가 아니라 배경에 건다** —
                 // 루트에 탭 제스처를 걸면 화면 전체가 접근성 요소 하나로 접혀서, 안의 버튼을
                 // 화면 리더도 UI 테스트도 찾지 못한다.
@@ -77,25 +82,36 @@ struct DraftRevealView: View {
                 }
 
                 Spacer()
-
-                // 버튼은 항상 같은 자리에 있다. 연출 중에는 "건너뛰기", 결과가 나오면
-                // "계속"이다 — 기다리는 동안 화면에 출구가 없으면 두 번째 회차부터
-                // 이 연출이 방해물이 된다.
-                PrimaryPill(
-                    title: stage == .revealed ? "계속" : "건너뛰기",
-                    identifier: "hs.draft.reveal.done",
-                    action: { stage == .revealed ? onFinish() : skipToReveal() }
-                )
-                .padding(.horizontal, BaseballMetrics.gutter)
-                .padding(.bottom, BaseballMetrics.gutter)
             }
-            // 여백을 먼저 주고 그다음 폭을 채운다. 순서가 반대면 무한 폭에 여백이 덧붙어
-            // 글자가 화면 밖으로 밀려난다 — 실제로 제목이 오른쪽에서 잘렸다.
-            .padding(.horizontal, BaseballMetrics.gutter)
-            .frame(maxWidth: .infinity)
+            // **폭을 화면에서 직접 받아 못 박는다.**
+            //
+            // ZStack은 가장 넓은 자식에 맞춰 커지고, `.ignoresSafeArea()`가 그것을 화면 밖까지
+            // 허용한다. 그래서 줄바꿈 없는 한국어 제목 한 줄이 ZStack 자체를 화면보다 넓게
+            // 만들었고, 가운데 정렬된 내용이 좌우로 잘려 나갔다. `maxWidth: .infinity`나
+            // `fixedSize`로는 못 잡는다 — 제안 폭 자체가 없기 때문이다.
+            .frame(width: max(0, screenWidth - BaseballMetrics.gutter * 2))
         }
-        .background(BaseballTheme.canvas)
-        .ignoresSafeArea()
+        .background(BaseballTheme.canvas.ignoresSafeArea())
+        .background {
+            GeometryReader { proxy in
+                Color.clear.onAppear { screenWidth = proxy.size.width }
+            }
+        }
+        // 버튼은 아래에 겹쳐 놓는다. 내용 VStack 안에 두고 `ignoresSafeArea`를 함께 걸면
+        // 상태 표시줄 뒤로 밀려 올라가 위아래에 두 번 그려진 것처럼 보였고,
+        // `safeAreaInset`도 같은 증상을 냈다.
+        //
+        // 버튼은 항상 같은 자리에 있다. 연출 중에는 "건너뛰기", 결과가 나오면 "계속"이다 —
+        // 기다리는 동안 출구가 없으면 두 번째 회차부터 이 연출이 방해물이 된다.
+        .overlay(alignment: .bottom) {
+            PrimaryPill(
+                title: stage == .revealed ? "계속" : "건너뛰기",
+                identifier: "hs.draft.reveal.done",
+                action: { stage == .revealed ? onFinish() : skipToReveal() }
+            )
+            .padding(.horizontal, BaseballMetrics.gutter)
+            .padding(.bottom, BaseballMetrics.gutter)
+        }
         .onAppear(perform: start)
     }
 
@@ -204,6 +220,7 @@ struct RebirthStampView: View {
     var body: some View {
         ZStack {
             KeyArtBackdrop(art: .reincarnation, dim: 0.5)
+                .ignoresSafeArea()
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onFinish)
             VStack(spacing: 10) {
@@ -220,7 +237,6 @@ struct RebirthStampView: View {
                     .opacity(stampOpacity)
             }
         }
-        .ignoresSafeArea()
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hs.rebirth.stamp")
         .accessibilityLabel("\(lifeNumber)회차. 고교 1학년 봄으로 돌아갑니다.")

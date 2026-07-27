@@ -74,8 +74,15 @@ struct HighSchoolCareerView: View {
                 result: draft, playerName: state.identity.name, careerID: state.careerID
             )
         }
+        // 스탬프가 **먼저** 뜨고, 닫히면서 회차를 넘긴다.
+        //
+        // 반대로(회차를 먼저 넘기고 스탬프를 띄우면) 화면이 갈아 끼워지는 순간에 전면
+        // 화면을 올리는 셈이라 표시가 들쭉날쭉했다. 연출이 곧 전환이면 그런 경합이 없다.
         .fullScreenCover(item: $rebirthStamp) { stamp in
-            RebirthStampView(lifeNumber: stamp.lifeNumber) { rebirthStamp = nil }
+            RebirthStampView(lifeNumber: stamp.lifeNumber) {
+                rebirthStamp = nil
+                career.beginNextLife()
+            }
         }
         .sensoryFeedback(trigger: career.feedbackTrigger) { _, _ in
             switch career.feedbackCue {
@@ -171,7 +178,6 @@ struct HighSchoolCareerView: View {
         case .completed:
             CompletionCard(career: career, state: state, onEnterPro: onEnterPro) {
                 rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
-                career.beginNextLife()
             }
         }
     }

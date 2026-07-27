@@ -62,8 +62,10 @@ final class CareerSmokeUITests: XCTestCase {
             // 않으므로, 무엇보다 먼저 이것을 넘긴다. 연출 중에는 같은 버튼이 "건너뛰기"라
             // 두 번 눌러야 빠져나온다.
             if app.buttons["hs.draft.reveal.done"].exists {
-                capture(app, name: "07-draft-reveal")
+                // 첫 탭은 "건너뛰기"라 결과를 공개한다. 스토어 스크린샷은 **공개된 뒤**를
+                // 찍어야 한다 — 연출 중간(라운드 카운트)은 아무 정보도 없는 화면이다.
                 tapIfPresent(app.buttons["hs.draft.reveal.done"])
+                capture(app, name: "07-draft-reveal")
                 tapIfPresent(app.buttons["hs.draft.reveal.done"])
                 continue
             }
@@ -71,18 +73,23 @@ final class CareerSmokeUITests: XCTestCase {
             if app.buttons["hs.rebirth"].exists {
                 capture(app, name: "08-completed")
                 XCTAssertTrue(reachedDraft, "드래프트를 거치지 않고 완료에 도달했습니다.")
+                // 지명된 회차에서 같은 버튼은 "이 회차를 접고 다시 시작"이고, 누르면 새
+                // 회차가 아니라 **기억 선택**으로 간다. 루프가 이어서 처리하게 둔다.
+                let drafted = app.buttons["hs.enterPro"].exists
                 tapIfPresent(app.buttons["hs.rebirth"])
+                if drafted { continue }
+                // 환생 스탬프가 전면을 덮는다. **먼저** 이것이 사라지기를 기다린다 —
+                // 덮인 동안에는 아래 화면이 접근성 트리에 잡히지 않는다.
+                // 스탬프는 접근성 요소로 합쳐지므로 종류를 가리지 않고 찾는다.
+                let stamp = app.descendants(matching: .any).matching(identifier: "hs.rebirth.stamp").firstMatch
+                if stamp.waitForExistence(timeout: 4) {
+                    capture(app, name: "09-rebirth")
+                    _ = stamp.waitForNonExistence(timeout: timeout)
+                }
                 XCTAssertTrue(
                     app.buttons["hs.setup.next"].waitForExistence(timeout: timeout),
                     "다시 태어나기 뒤 새 회차 화면이 열리지 않았습니다."
                 )
-                // 환생 스탬프가 사라질 때까지 기다린다. 덮인 채로 다음 탭을 하면 그 탭이
-                // 스탬프에 먹힌다.
-                let stamp = app.otherElements["hs.rebirth.stamp"]
-                if stamp.exists {
-                    _ = stamp.waitForNonExistence(timeout: timeout)
-                }
-                capture(app, name: "09-rebirth")
                 return
             }
             if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
