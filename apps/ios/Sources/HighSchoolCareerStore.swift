@@ -26,6 +26,31 @@ final class HighSchoolCareerStore {
         static let firstLife = Inheritance(lifeNumber: 1, memories: [], soulPoints: 0, karmas: [])
     }
 
+    /// 끝난 회차 한 장. 환생 게임인데 **지난 회차를 볼 방법이 아예 없었다**(품질 평가 §4.3).
+    ///
+    /// "N회차의 나"들이 쌓이는 게임인데 그 역사가 어디에도 남지 않으면, 회차를 반복할 이유가
+    /// 다음 회차의 능력치뿐이 된다. 여기 있는 값은 전부 계승을 확정하는 순간 이미 손에 있다.
+    struct LifeRecord: Codable, Equatable, Identifiable {
+        var id: Int { lifeNumber }
+        let lifeNumber: Int
+        let playerName: String
+        let schoolName: String?
+        let drafted: Bool
+        let evaluationScore: Int
+        let teamName: String?
+        let memories: [MemoryCardID]
+        let games: Int
+        let strikeouts: Int
+        let walks: Int
+        let runsAllowed: Int
+        let soulPoints: Int
+
+        /// "미지명 · 평가 57점" / "3라운드 서울 …". 목록 한 줄에 결말이 들어가야 한다.
+        var outcomeLine: String {
+            drafted ? "지명 · \(teamName ?? "구단 미정")" : "미지명 · 평가 \(evaluationScore)점"
+        }
+    }
+
     var loadState: LoadState = .loading
     var result: HighSchoolCareerResult?
     var lastSummary: String?
@@ -37,7 +62,16 @@ final class HighSchoolCareerStore {
     var tutorialSession: PitchSession?
     /// legacy 단계에서 고른 기억 카드.
     var selectedMemories: [MemoryCardID] = []
+    /// 방금 만개한 재능. 화면이 축하하고 나서 비운다.
+    private(set) var pendingBloom: Bloom?
+
+    struct Bloom: Equatable {
+        let ability: TalentAbility
+        let grade: TalentGrade
+    }
     private(set) var inheritance: Inheritance = .firstLife
+    /// 끝난 회차들. 최근이 앞이다.
+    private(set) var archive: [LifeRecord] = []
 
     private let engine = HighSchoolCareerEngine()
     private let sync = SaveSync(key: "baseball-mobile-highschool-v1.json")
@@ -210,7 +244,11 @@ final class HighSchoolCareerStore {
         perform(summary: "기억 \(chosen.count)장을 다음 회차로 가져갑니다.", cue: .growth) {
             try engine.selectLegacy(.init(seed: $0.nextSeed, state: $0.snapshot, memoryCards: chosen))
         }
+        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance)
         inheritance = Self.nextInheritance(from: current.snapshot, memories: chosen, previous: inheritance)
+        // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
+        archive.removeAll { $0.lifeNumber == closed.lifeNumber }
+        archive.insert(closed, at: 0)
         selectedMemories = []
         save()
     }
@@ -222,6 +260,29 @@ final class HighSchoolCareerStore {
         pitchSession = nil
         pendingGains = []
         loadState = .needsSetup
+    }
+
+    /// 끝난 회차를 한 장으로 접는다. 순수 함수라 테스트할 수 있다.
+    nonisolated static func lifeRecord(
+        from state: HighSchoolCareerSnapshot,
+        memories: [MemoryCardID],
+        previous: Inheritance
+    ) -> LifeRecord {
+        LifeRecord(
+            lifeNumber: state.lifeNumber,
+            playerName: state.identity.name,
+            schoolName: state.school?.name,
+            drafted: state.draftResult?.outcome == .drafted,
+            evaluationScore: state.draftResult?.evaluationScore ?? 0,
+            teamName: state.draftResult?.team?.name,
+            memories: memories,
+            games: state.performance.importantGamesCompleted,
+            strikeouts: state.performance.strikeouts,
+            walks: state.performance.walks,
+            runsAllowed: state.performance.runsAllowed,
+            soulPoints: nextInheritance(from: state, memories: memories, previous: previous).soulPoints
+                - previous.soulPoints
+        )
     }
 
     /// 회차 보상 계산. 순수 함수라 테스트할 수 있다.
@@ -248,11 +309,15 @@ final class HighSchoolCareerStore {
         pendingGains = []
     }
 
+    func acknowledgeBloom() {
+        pendingBloom = nil
+    }
+
     // MARK: - 저장
 
     func save() {
         guard let result else { return }
-        let record = SaveRecord(result: result, inheritance: inheritance)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -269,6 +334,8 @@ final class HighSchoolCareerStore {
     private struct SaveRecord: Codable {
         let result: HighSchoolCareerResult
         let inheritance: Inheritance
+        /// 옵셔널이라 이 필드가 없는 옛 저장본도 그대로 열린다.
+        var archive: [LifeRecord]?
     }
 
     private func restore() -> Bool {
@@ -278,6 +345,7 @@ final class HighSchoolCareerStore {
         guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else { return false }
         result = record.result
         inheritance = record.inheritance
+        archive = record.archive ?? []
         return true
     }
 
@@ -292,6 +360,13 @@ final class HighSchoolCareerStore {
             let updated = try action(current)
             result = updated
             pendingGains = MobileCareerStore.gains(before: before.pitcher, after: updated.snapshot.pitcher)
+            // 이번 동작에서 새로 만개했는가. 훈련 번호가 바뀐 것만 센다 — 안 그러면 같은
+            // 훈련 결과를 들고 있는 동안 화면을 넘길 때마다 축하가 다시 뜬다.
+            if let training = updated.snapshot.lastTraining,
+               training.number != before.lastTraining?.number,
+               let ability = training.bloomedAbility, let grade = training.bloomedGrade {
+                pendingBloom = Bloom(ability: ability, grade: grade)
+            }
             lastSummary = summary ?? Self.progressSummary(before: before, after: updated.snapshot)
             feedbackCue = cue ?? (pendingGains.isEmpty ? .neutral : .growth)
             feedbackTrigger += 1

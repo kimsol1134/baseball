@@ -1,0 +1,195 @@
+import SwiftUI
+import SimulationCore
+
+/// 지난 회차들.
+///
+/// 환생 게임인데 **지난 회차를 볼 방법이 아예 없었다**(품질 평가 §4.3, P1-5). "N회차의 나"가
+/// 쌓이는 것이 이 게임의 구조인데 그 역사가 어디에도 남지 않으면, 회차를 반복할 이유가
+/// 다음 회차의 시작 능력치뿐이 된다.
+///
+/// 한 줄에 회차·학교·결말이 들어간다. 펼치면 기록과 가져간 기억이 나온다.
+struct LifeArchiveSection: View {
+    let records: [HighSchoolCareerStore.LifeRecord]
+
+    var body: some View {
+        BaseballCard(title: "지난 회차 \(records.count)") {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(records) { record in
+                    LifeArchiveRow(record: record)
+                    if record.id != records.last?.id {
+                        Rectangle()
+                            .fill(BaseballTheme.border.opacity(0.35))
+                            .frame(height: 1)
+                    }
+                }
+            }
+            .accessibilityIdentifier("record.lifeArchive")
+        }
+    }
+}
+
+private struct LifeArchiveRow: View {
+    let record: HighSchoolCareerStore.LifeRecord
+
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                expanded.toggle()
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(record.lifeNumber)회차")
+                        .font(.subheadline.weight(.bold).monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                    Text(record.schoolName ?? "학교 미정")
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                    Spacer(minLength: 0)
+                    Text(record.drafted ? "지명" : "미지명")
+                        .font(.caption.weight(.heavy))
+                        .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.textTertiary)
+                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                }
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(record.lifeNumber)회차, \(record.schoolName ?? "학교 미정"), \(record.outcomeLine)")
+
+            if expanded {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(record.outcomeLine)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.textSecondary)
+                    Text("\(record.games)등판 · \(record.strikeouts)K \(record.walks)BB \(record.runsAllowed)실점 · 야구혼 +\(record.soulPoints)")
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                    if !record.memories.isEmpty {
+                        Text("가져간 기억 · " + record.memories.map { HighSchoolPresentation.memory($0).title }.joined(separator: " · "))
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.milestone)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    LifeShareButton(record: record)
+                }
+                .padding(.bottom, 10)
+            }
+        }
+    }
+}
+
+/// 회차 요약을 이미지로 내보낸다.
+///
+/// 바이럴은 유저가 만들지만 **소재는 게임이 줘야 한다**(품질 평가 P1-1). "2회차 · 서울덕성고 ·
+/// 81K · 미지명" 같은 한 장이 곧 밈 포맷이다. 스크린샷을 직접 찍게 두면 UI 크롬과 상태 표시줄이
+/// 함께 나가서 아무도 올리지 않는다.
+struct LifeShareButton: View {
+    let record: HighSchoolCareerStore.LifeRecord
+
+    @Environment(\.displayScale) private var displayScale
+    @State private var rendered: Image?
+
+    var body: some View {
+        Group {
+            if let rendered {
+                ShareLink(
+                    item: rendered,
+                    preview: SharePreview("\(record.lifeNumber)회차 요약", image: rendered)
+                ) {
+                    Label("이 회차 공유", systemImage: "square.and.arrow.up")
+                        .font(.footnote.weight(.semibold))
+                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                }
+                .accessibilityIdentifier("record.share.\(record.lifeNumber)")
+            } else {
+                // 렌더가 끝나기 전에는 자리만 잡는다. 버튼이 나타났다 사라지면 목록이 튄다.
+                Label("이 회차 공유", systemImage: "square.and.arrow.up")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+            }
+        }
+        .task(id: record.lifeNumber) {
+            rendered = Self.render(record, scale: displayScale)
+        }
+    }
+
+    /// 카드 한 장을 이미지로 굽는다. `ImageRenderer`는 메인 액터에서만 동작한다.
+    @MainActor
+    static func render(_ record: HighSchoolCareerStore.LifeRecord, scale: CGFloat) -> Image? {
+        let renderer = ImageRenderer(content: LifeSummaryCard(record: record))
+        renderer.scale = max(2, scale)
+        guard let image = renderer.uiImage else { return nil }
+        return Image(uiImage: image)
+    }
+}
+
+/// 공유용 한 장. 화면이 아니라 **이미지 전용 레이아웃**이다.
+///
+/// 크롬을 넣지 않는다. 회차 번호, 이름, 학교, 결말, 기록 넉 줄, 그리고 게임 이름.
+/// 이 정도가 커뮤니티 게시물의 썸네일에서 읽히는 최대치다.
+struct LifeSummaryCard: View {
+    let record: HighSchoolCareerStore.LifeRecord
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("\(record.lifeNumber)회차")
+                .font(.system(.largeTitle, design: .monospaced, weight: .black))
+                .foregroundStyle(BaseballTheme.action)
+
+            Text(record.playerName)
+                .font(.title.bold())
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .padding(.top, 2)
+
+            Text(record.schoolName ?? "학교 미정")
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .padding(.top, 1)
+
+            Text(record.drafted ? "지명" : "미지명")
+                .font(.system(.title2, design: .default, weight: .heavy))
+                .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.negative)
+                .padding(.top, 14)
+
+            Text(record.drafted ? (record.teamName ?? "구단 미정") : "평가 \(record.evaluationScore)점")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+
+            Rectangle()
+                .fill(BaseballTheme.border)
+                .frame(height: 1)
+                .padding(.vertical, 14)
+
+            HStack(spacing: 16) {
+                stat("등판", "\(record.games)")
+                stat("탈삼진", "\(record.strikeouts)")
+                stat("볼넷", "\(record.walks)")
+                stat("실점", "\(record.runsAllowed)")
+            }
+
+            Text("야구 못하면 또 환생함")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textTertiary)
+                .padding(.top, 18)
+        }
+        .padding(28)
+        .frame(width: 480, alignment: .leading)
+        .background(BaseballTheme.canvas)
+    }
+
+    private func stat(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textTertiary)
+            Text(value)
+                .font(.system(.title3, design: .monospaced, weight: .bold))
+                .foregroundStyle(BaseballTheme.textPrimary)
+        }
+    }
+}

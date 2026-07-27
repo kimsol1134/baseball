@@ -11,6 +11,23 @@ struct HighSchoolCareerView: View {
     @State private var achievements = AchievementStore.shared
     /// 오프닝을 넘겼는가. 저장하지 않는다 — 커리어를 지우면 다시 보는 것이 맞다.
     @State private var openingDismissed = false
+    /// 드래프트 호명 연출. 결과가 **방금 나온** 순간에만 켠다.
+    @State private var draftReveal: DraftReveal?
+    /// 환생 스탬프를 띄울 회차. 기억을 확정하고 다음 회차로 넘어가는 순간에만 켠다.
+    @State private var rebirthStamp: RebirthStamp?
+
+    /// `fullScreenCover(item:)`가 요구하는 식별 가능한 값.
+    struct RebirthStamp: Identifiable {
+        let lifeNumber: Int
+        var id: Int { lifeNumber }
+    }
+
+    struct DraftReveal: Identifiable {
+        let result: DraftResultSnapshot
+        let playerName: String
+        let careerID: String
+        var id: String { careerID }
+    }
     private var audio: GameAudio { .shared }
 
     var body: some View {
@@ -39,6 +56,27 @@ struct HighSchoolCareerView: View {
             }
         }
         .background(BaseballTheme.canvas)
+        // 정점 연출 둘. 회차당 한 번뿐이라 **전면**을 쓴다.
+        //
+        // `.overlay`가 아니라 `fullScreenCover`인 이유: 이 화면은 탭 바 안에 있어서
+        // 오버레이로 덮으면 탭 바가 그 위에 남고, 화면 맨 아래의 주 행동 버튼이 탭 바에
+        // 가려 눌리지 않는다. 실제로 그렇게 만들었다가 UI 테스트가 막혔다.
+        .fullScreenCover(item: $draftReveal) { reveal in
+            DraftRevealView(result: reveal.result, playerName: reveal.playerName) { draftReveal = nil }
+        }
+        // **결과가 나오는 순간**에만 연출한다. 조건식(`draftResult != nil`)으로 띄우면
+        // 기억을 고르는 내내 조건이 참이라 화면이 계속 덮인다. `onChange`는 값이 바뀔 때만
+        // 불리므로, 저장본을 다시 열었을 때 3년 전의 호명 장면이 되풀이되지도 않는다.
+        .onChange(of: career.state?.draftResult?.evaluationScore) { previous, current in
+            guard previous == nil, current != nil,
+                  let state = career.state, let draft = state.draftResult else { return }
+            draftReveal = DraftReveal(
+                result: draft, playerName: state.identity.name, careerID: state.careerID
+            )
+        }
+        .fullScreenCover(item: $rebirthStamp) { stamp in
+            RebirthStampView(lifeNumber: stamp.lifeNumber) { rebirthStamp = nil }
+        }
         .sensoryFeedback(trigger: career.feedbackTrigger) { _, _ in
             switch career.feedbackCue {
             case .growth: .impact(weight: .heavy)
@@ -76,6 +114,14 @@ struct HighSchoolCareerView: View {
                             .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         }
 
+                        // 만개는 성장 축하보다 앞에 온다. 같은 훈련에서 둘 다 나면
+                        // 먼저 읽어야 하는 것은 "벽이 열렸다"는 쪽이다.
+                        if let bloom = career.pendingBloom {
+                            BloomCelebrationView(ability: bloom.ability, grade: bloom.grade) {
+                                career.acknowledgeBloom()
+                            }
+                            .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                        }
                         if !career.pendingGains.isEmpty {
                             GrowthCelebrationView(gains: career.pendingGains, onDismiss: career.acknowledgeGains)
                                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
@@ -123,7 +169,10 @@ struct HighSchoolCareerView: View {
         case .legacy:
             LegacyCard(career: career, state: state)
         case .completed:
-            CompletionCard(career: career, state: state, onEnterPro: onEnterPro)
+            CompletionCard(career: career, state: state, onEnterPro: onEnterPro) {
+                rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
+                career.beginNextLife()
+            }
         }
     }
 }
@@ -243,10 +292,13 @@ private struct PrologueCard: View {
             }
             BaseballCard(title: "지금의 나") {
                 VStack(alignment: .leading, spacing: 10) {
-                    AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
-                    AbilityGaugeView(label: "제구", value: state.pitcher.command)
-                    AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
-                    AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
+                    // 재능 등급과 한계선을 함께 보여 준다. 이 회차가 어떤 투수인지가
+                    // 시작 수치가 아니라 여기서 정해진다.
+                    let talent = state.talent ?? .unlimited
+                    AbilityGaugeView(label: "구위", value: state.pitcher.stuff, talent: talent.stuff)
+                    AbilityGaugeView(label: "제구", value: state.pitcher.command, talent: talent.command)
+                    AbilityGaugeView(label: "변화구", value: state.pitcher.movement, talent: talent.movement)
+                    AbilityGaugeView(label: "체력", value: state.pitcher.stamina, talent: talent.stamina)
                 }
             }
             // 이 게임에서 가장 좋은 것은 투구다. 사는 사람이 그걸 두 번째 탭에서 만나게 한다.
@@ -768,6 +820,9 @@ private struct CompletionCard: View {
     let career: HighSchoolCareerStore
     let state: HighSchoolCareerSnapshot
     let onEnterPro: (DraftResultSnapshot, PitcherSnapshot, PlayerIdentitySnapshot) -> Void
+    /// 환생 스탬프를 띄우고 나서 다음 회차로 넘어간다. 화면이 갈아 끼워지기 전에
+    /// 회차 번호를 보여 줘야 회차가 쌓이는 감각이 생긴다.
+    let onRebirth: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -810,7 +865,7 @@ private struct CompletionCard: View {
             // 지명된 회차는 아직 끝나지 않았다. 접겠다고 결정할 때 비로소 기억을 고른다.
             let drafted = state.draftResult?.outcome == .drafted
             Button {
-                if drafted { career.openLegacy() } else { career.beginNextLife() }
+                if drafted { career.openLegacy() } else { onRebirth() }
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(drafted ? "이 회차를 접고 다시 시작" : "다시 태어나기")

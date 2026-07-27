@@ -13,9 +13,16 @@ struct RecordView: View {
     var body: some View {
         Group {
             if let state = career.state {
-                RecordBoard(state: state)
+                RecordBoard(state: state, archive: highSchool.archive)
             } else if let hs = highSchool.state {
-                HighSchoolRecordBoard(state: hs)
+                HighSchoolRecordBoard(state: hs, archive: highSchool.archive)
+            } else if !highSchool.archive.isEmpty {
+                // 회차를 끝내고 아직 새로 시작하지 않은 상태. 역사는 남아 있다.
+                ScrollView {
+                    LifeArchiveSection(records: highSchool.archive)
+                        .padding(BaseballMetrics.gutter)
+                }
+                .background(BaseballTheme.canvas)
             } else {
                 ContentUnavailableView("기록 없음", systemImage: "chart.bar")
             }
@@ -32,6 +39,7 @@ struct RecordView: View {
 /// 이닝과 팀이 자동으로 치른 경기가 섞여 있다는 것이고, 그건 `played` 눈썹이 구분한다.
 private struct HighSchoolRecordBoard: View {
     let state: HighSchoolCareerSnapshot
+    let archive: [HighSchoolCareerStore.LifeRecord]
 
     private var lines: [ProGameLine] { state.seasonLog ?? [] }
 
@@ -68,6 +76,17 @@ private struct HighSchoolRecordBoard: View {
                     }
                 }
 
+                AdvancedStatsCard(
+                    title: "고교 통산 지표",
+                    outs: lines.reduce(0) { $0 + $1.outs },
+                    hits: lines.reduce(0) { $0 + ($1.hits ?? 0) },
+                    walks: lines.reduce(0) { $0 + $1.walks },
+                    strikeouts: lines.reduce(0) { $0 + $1.strikeouts },
+                    homeRuns: lines.reduce(0) { $0 + ($1.homeRuns ?? 0) },
+                    runsAllowed: lines.reduce(0) { $0 + $1.runsAllowed },
+                    lines: lines
+                )
+
                 if lines.isEmpty {
                     BaseballCard(title: "경기 기록") {
                         Text("아직 치른 경기가 없습니다. 첫 중요 경기를 던지면 여기에 쌓입니다.")
@@ -90,6 +109,8 @@ private struct HighSchoolRecordBoard: View {
                         }
                     }
                 }
+
+                if !archive.isEmpty { LifeArchiveSection(records: archive) }
 
                 BaseballCard(title: "최근 소식") {
                     if state.news.isEmpty {
@@ -114,10 +135,38 @@ private struct HighSchoolRecordBoard: View {
 
 private struct RecordBoard: View {
     let state: ProCareerSnapshot
+    let archive: [HighSchoolCareerStore.LifeRecord]
 
     /// 아웃 카운트를 "이닝.아웃" 표기로 바꾼다. 야구 기록지와 같은 읽기 방식이다.
     private static func innings(_ outs: Int) -> String {
         "\(outs / 3)\(outs % 3 == 0 ? "" : ".\(outs % 3)")"
+    }
+
+    /// 시즌 피안타·피홈런. 시즌 합계에는 없고 등판 목록에만 있다.
+    private var seasonHits: Int {
+        (state.gameLines ?? []).reduce(0) { $0 + ($1.hits ?? 0) }
+    }
+
+    private var seasonHomeRuns: Int {
+        (state.gameLines ?? []).reduce(0) { $0 + ($1.homeRuns ?? 0) }
+    }
+
+    /// 투수 순위에 끼워 넣을 내 성적.
+    private var playerRow: LeagueTable.PitcherRow {
+        LeagueTable.PitcherRow(
+            name: state.identity.name,
+            teamName: state.team.name,
+            inningsOuts: state.currentStats.inningsOuts,
+            wins: state.currentStats.wins,
+            losses: state.currentStats.losses,
+            saves: state.currentStats.saves,
+            strikeouts: state.currentStats.strikeouts,
+            walks: state.currentStats.walks,
+            hits: seasonHits,
+            homeRuns: seasonHomeRuns,
+            runsAllowed: state.currentStats.runsAllowed,
+            isPlayer: true
+        )
     }
 
     /// 9이닝당 실점. 코어가 자책점을 따로 세지 않으므로 평균자책이 아니라 실점으로 적는다.
@@ -155,6 +204,27 @@ private struct RecordBoard: View {
                         AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
                     }
                 }
+
+                AdvancedStatsCard(
+                    title: "\(state.season)시즌 지표",
+                    outs: state.currentStats.inningsOuts,
+                    hits: seasonHits,
+                    walks: state.currentStats.walks,
+                    strikeouts: state.currentStats.strikeouts,
+                    homeRuns: seasonHomeRuns,
+                    runsAllowed: state.currentStats.runsAllowed,
+                    lines: state.gameLines ?? []
+                )
+
+                StandingsCard(
+                    season: state.season, seed: state.proCareerID,
+                    week: state.week, myTeamID: state.team.id
+                )
+
+                PitcherLeaderboardCard(
+                    season: state.season, seed: state.proCareerID,
+                    week: state.week, player: playerRow
+                )
 
                 if let lines = state.gameLines, !lines.isEmpty {
                     GameLogSection(title: "이번 시즌 등판", lines: lines)
@@ -206,6 +276,8 @@ private struct RecordBoard: View {
                         }
                     }
                 }
+
+                if !archive.isEmpty { LifeArchiveSection(records: archive) }
 
                 if let score = state.hallOfFameScore {
                     BaseballCard(title: "명예의 전당 점수", tone: .milestone) {
