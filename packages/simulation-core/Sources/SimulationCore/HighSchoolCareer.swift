@@ -1402,7 +1402,9 @@ public struct HighSchoolCareerEngine: Sendable {
     /// 고교 자동 경기의 평균 9이닝당 실점(천분율). 드래프트 시즌 항의 영점이다.
     /// `AutoOutingSimulator`나 타자 오프셋을 바꾸면 이 값을 다시 재야 한다 —
     /// 안 그러면 시즌 항이 전원 가산점이나 전원 감점으로 무너진다.
-    static let highSchoolBaselineRA9Permille = 1_670
+    /// 2026-07-27 재실측: 1_610. 커널의 장타 재보정(2루타 경계 690→620, 홈런 경계 790→775)
+    /// 뒤에 다시 쟀다. 영점을 안 옮기면 시즌 항이 한쪽으로 쏠린다.
+    static let highSchoolBaselineRA9Permille = 1_610
 
     /// 챕터 하나가 지나는 동안 팀이 치르는 경기.
     ///
@@ -1509,8 +1511,8 @@ public struct HighSchoolCareerEngine: Sendable {
         let autoRuns = autoLines.reduce(0) { $0 + $1.runsAllowed }
         // 영점은 **고교 리그 평균**이어야 한다. 프로 기준(RA9 5.5)을 그대로 쓰면 고교
         // 타자가 약한 만큼 모든 회차가 상한 +4를 받아, 항이 아니라 전원 가산점이 된다.
-        // 실측(오프셋 -6, 120경기): RA9 1.67. 그것을 0점으로 두고 ±1.0을 ±4로 편다.
-        // RA9 0.7 → +4, 1.67 → 0, 2.7 → -4.
+        // 실측(오프셋 -6, 120경기): RA9 1.61. 그것을 0점으로 두고 ±1.0을 ±4로 편다.
+        // RA9 0.6 → +4, 1.61 → 0, 2.6 → -4.
         let seasonTerm = autoOuts == 0
             ? 0
             : clamp((Self.highSchoolBaselineRA9Permille - autoRuns * 27_000 / autoOuts) * 4 / 1_000, -4, 4)

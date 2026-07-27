@@ -73,6 +73,34 @@ final class HighSchoolSeasonTests: XCTestCase {
         XCTAssertLessThanOrEqual(abs(seasonTerm(outs: 252, runs: 16)), 1)
     }
 
+    /// 실제로 돌린 시즌들이 ±4 전 구간에 흩어지는가.
+    ///
+    /// 산술적으로 캡에 닿는다는 것(위 테스트)과, **시뮬레이터가 실제로 그 구간을 만들어
+    /// 내는 것**은 다른 이야기다. 예전에 영점이 프로 기준이던 시절에는 모든 회차가 +4를
+    /// 받아 항이 항목이 아니라 전원 가산점이었다. 그 사고는 산술 테스트로는 안 잡힌다.
+    func testSeasonTermSpreadsAcrossTheWholeRange() {
+        let simulator = AutoOutingSimulator()
+        var rng = SplitMix64(seed: 4_242)
+        var terms: [Int] = []
+        for season in 0..<40 {
+            var outs = 0, runs = 0
+            // 한 회차분(챕터 8개 × 2경기)을 모아 하나의 시즌 항으로 만든다.
+            for game in 0..<16 {
+                let line = simulator.simulate(
+                    pitcher: PitcherPresetCatalog.all[season % PitcherPresetCatalog.all.count].pitcher,
+                    startingFatigue: 20 + (game % 3) * 6,
+                    outsTarget: 18, pitchCap: 90, batterOffset: game % 4 == 0 ? 0 : -6,
+                    baseSeed: rng.next()
+                )
+                outs += line.outs; runs += line.runsAllowed
+            }
+            terms.append(seasonTerm(outs: outs, runs: runs))
+        }
+        XCTAssertGreaterThan(terms.max() ?? 0, 0, "잘 던진 시즌이 하나도 없습니다: \(terms)")
+        XCTAssertLessThan(terms.min() ?? 0, 0, "못 던진 시즌이 하나도 없습니다: \(terms)")
+        XCTAssertGreaterThanOrEqual(Set(terms).count, 4, "시즌 항이 몇 개 값에만 몰렸습니다: \(terms)")
+    }
+
     private func seasonTerm(outs: Int, runs: Int) -> Int {
         guard outs > 0 else { return 0 }
         let raw = (HighSchoolCareerEngine.highSchoolBaselineRA9Permille - runs * 27_000 / outs) * 4 / 1_000

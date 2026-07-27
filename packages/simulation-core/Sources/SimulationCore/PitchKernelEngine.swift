@@ -1312,14 +1312,8 @@ public struct PitchKernelEngine: Sendable {
             directionTenthsDegrees: -450 + generator.nextInt(upperBound: 901),
             contactQuality: battedQuality
         )
-        let outcome: PitchOutcome
-        switch battedQuality {
-        case ..<500: outcome = .inPlayOut
-        case 500..<690: outcome = .single
-        case 690..<790: outcome = .double
-        default: outcome = .homeRun
-        }
-        return (outcome, battedBall)
+        // 수비 판정 전의 중립 결과. 최종 결과는 `FieldingResolver`가 같은 표로 다시 정한다.
+        return (BattedBallBands.outcome(for: battedQuality), battedBall)
     }
 
     /// How far past the inside edge (toward the batter) an unswung pitch must miss to threaten the

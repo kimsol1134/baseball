@@ -84,6 +84,7 @@ if let outingIndex = arguments.firstIndex(of: "--outings"),
     let simulator = AutoOutingSimulator()
     var rng = SplitMix64(seed: 20_260_726)
     var outs = 0, strikeouts = 0, walks = 0, runsAllowed = 0, pitches = 0, hits = 0, homeRuns = 0
+    var doubles = 0, triples = 0
     var wins = 0, losses = 0, saves = 0, noDecisions = 0
 
     for index in 0..<max(1, outingCount) {
@@ -98,6 +99,7 @@ if let outingIndex = arguments.firstIndex(of: "--outings"),
         outs += line.outs; strikeouts += line.strikeouts; walks += line.walks
         runsAllowed += line.runsAllowed; pitches += line.pitches
         hits += line.hits; homeRuns += line.homeRuns
+        doubles += line.doubles; triples += line.triples
 
         let support = LeagueBaseline.teamRuns(using: &rng)
         let othersOuts = max(0, 27 - line.outs)
@@ -116,12 +118,13 @@ if let outingIndex = arguments.firstIndex(of: "--outings"),
 
     struct OutingReport: Encodable {
         let games: Int, outs: Int, strikeouts: Int, walks: Int, runsAllowed: Int
-        let pitches: Int, hits: Int, homeRuns: Int
+        let pitches: Int, hits: Int, homeRuns: Int, doubles: Int, triples: Int
         let wins: Int, losses: Int, saves: Int, noDecisions: Int
     }
     let outingReport = OutingReport(
         games: outingCount, outs: outs, strikeouts: strikeouts, walks: walks,
         runsAllowed: runsAllowed, pitches: pitches, hits: hits, homeRuns: homeRuns,
+        doubles: doubles, triples: triples,
         wins: wins, losses: losses, saves: saves, noDecisions: noDecisions
     )
     let outingEncoder = JSONEncoder()

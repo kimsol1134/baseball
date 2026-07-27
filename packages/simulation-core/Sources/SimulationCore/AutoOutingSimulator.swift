@@ -18,6 +18,9 @@ public struct AutoOutingSimulator: Sendable {
         public var pitches = 0
         public var hits = 0
         public var homeRuns = 0
+        /// 장타 분해. 실점이 안타 수와 어긋날 때 원인이 장타 부족인지 보려면 이 숫자가 있어야 한다.
+        public var doubles = 0
+        public var triples = 0
 
         public init() {}
     }
@@ -112,7 +115,12 @@ public struct AutoOutingSimulator: Sendable {
                     if paResult == .walk { line.walks += 1 }
                     if paResult == .hit {
                         line.hits += 1
-                        if result.snapshot.outcome == .homeRun { line.homeRuns += 1 }
+                        switch result.snapshot.outcome {
+                        case .homeRun: line.homeRuns += 1
+                        case .triple: line.triples += 1
+                        case .double: line.doubles += 1
+                        default: break
+                        }
                     }
                 }
                 if result.snapshot.ended {

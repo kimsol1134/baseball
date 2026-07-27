@@ -12,6 +12,33 @@ public enum DefenseImpact: String, Codable, Sendable {
     case hurtPitcher = "hurt_pitcher"
 }
 
+/// 타구 품질 하나를 결과로 바꾸는 경계.
+///
+/// **이 표는 한 곳에만 있어야 한다.** 예전에는 커널(`resolveContact`)과 수비 판정
+/// (`FieldingResolver.outcome(for:)`)이 같은 숫자를 각자 들고 있었다. 그래서 커널 쪽만
+/// 고치면 아무 일도 일어나지 않았다 — 최종 결과는 수비 판정이 정하기 때문이다.
+/// 밸런스를 만지는 사람이 그 사실을 모른 채 한쪽만 바꾸는 것이 이 중복의 실제 비용이었다.
+public enum BattedBallBands {
+    public static let singleFloor = 500
+    /// 2루타 경계.
+    ///
+    /// 690에서 655로 낮췄다. 자동 시즌의 안타 중 2루타가 8.4%뿐이라(실제 야구 약 20%)
+    /// 주자는 쌓이는데 홈에 들어오지 못했다 — 출루 1명당 실점 0.226 대 실제 0.386.
+    /// 홈런 경계는 건드리지 않는다. 파워 단조성 밴드(파워 60에서 홈런/타석 0.02~0.07)를
+    /// 지키면서 장타를 늘리는 방법은 2루타를 늘리는 것이다.
+    public static let doubleFloor = 620
+    public static let homeRunFloor = 775
+
+    public static func outcome(for quality: Int) -> PitchOutcome {
+        switch quality {
+        case ..<singleFloor: .inPlayOut
+        case singleFloor..<doubleFloor: .single
+        case doubleFloor..<homeRunFloor: .double
+        default: .homeRun
+        }
+    }
+}
+
 public enum AnalysisConfidenceBand: String, Codable, Sendable {
     case low
     case developing
@@ -425,7 +452,11 @@ public struct BallInPlayEngine: Sendable {
 
     /// Chance (per 1,000) that a gap/corner double gets stretched into a triple. Tuned with the
     /// shape gate below so triples land near the real ~2% of hits; see `tools/check-balance.mjs`.
-    static let tripleChance = 540
+    /// 2루타가 3루타로 늘어날 확률(‰).
+    ///
+    /// 2루타 경계를 690에서 620으로 낮추자 2루타 자체가 2.4배가 됐고, 이 확률이 그대로면
+    /// 3루타가 안타의 3.7%가 된다(실제 약 1.6%). 늘어난 모수에 맞춰 낮춘다.
+    static let tripleChance = 245
 
     /// A triple's batted-ball signature: driven into the alley or down the line (well off straight
     /// center) on a lower, line-drive trajectory that gets behind the outfielders rather than a
@@ -672,12 +703,7 @@ public struct BallInPlayEngine: Sendable {
     }
 
     private func outcome(for quality: Int) -> PitchOutcome {
-        switch quality {
-        case ..<500: return .inPlayOut
-        case 500..<690: return .single
-        case 690..<790: return .double
-        default: return .homeRun
-        }
+        BattedBallBands.outcome(for: quality)
     }
 
     private func impactFrom(neutral: PitchOutcome, final: PitchOutcome) -> DefenseImpact {
