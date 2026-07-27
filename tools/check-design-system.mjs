@@ -92,6 +92,20 @@ for (const path of filesUnder(iosSource, new Set([".swift"]))) {
   }
 }
 
+// 시스템 기본 강조 버튼(`.borderedProminent`)을 금지한다.
+//
+// 이 스타일은 글자색을 SwiftUI가 알아서 고른다. 앱 tint가 라임(밝은 색)이라 흰 글자가
+// 얹히고, 실기기에서 "1주 진행이 흰 글씨라 잘 안 보인다"는 말이 나왔다. `PrimaryPill`은
+// 라임 바탕에 어두운 잉크(`actionInk`)를 명시해 대비를 보장한다 — 주 행동은 그것만 쓴다.
+for (const path of filesUnder(iosSource, new Set([".swift"]))) {
+  const source = readFileSync(path, "utf8");
+  if (/buttonStyle\(\.borderedProminent\)/.test(source)) {
+    failures.push(
+      `${relative(root, path)}: .borderedProminent는 글자색을 시스템이 정해 라임 바탕에서 대비가 깨진다. PrimaryPill을 쓴다`
+    );
+  }
+}
+
 // 좌측 강조 레일을 카드 기본값으로 되돌리는 회귀를 막는다(DOC-19 §7.2). 데스크톱도 한 곳에만
 // 쓰는 장치이고, 모든 카드가 반복하면 신호가 아니라 배경이 된다.
 const designSystemSwift = readFileSync(iosDesignSystemPath, "utf8");

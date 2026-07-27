@@ -178,11 +178,7 @@ private struct WeeklyPlanView: View {
                 }
             }
 
-            Button(action: career.advanceWeek) {
-                Text("1주 진행").frame(maxWidth: .infinity, minHeight: 50)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            PrimaryPill(title: "1주 진행", identifier: "pro.advanceWeek", action: career.advanceWeek)
 
             Button(action: career.advanceBlock) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -277,11 +273,7 @@ private struct ImportantGameIntro: View {
                 .font(.footnote)
                 .foregroundStyle(BaseballTheme.textSecondary)
 
-            Button(action: onStart) {
-                Text("마운드에 오르기").frame(maxWidth: .infinity, minHeight: 50)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            PrimaryPill(title: "마운드에 오르기", identifier: "pro.game.start", action: onStart)
         }
     }
 }
@@ -296,10 +288,7 @@ private struct ActionCard: View {
         BaseballCard(title: title, tone: .raised) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(copy).font(.subheadline)
-                Button(action: action) {
-                    Text(button).frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                }
-                .buttonStyle(.borderedProminent)
+                PrimaryPill(title: button, action: action)
             }
         }
     }

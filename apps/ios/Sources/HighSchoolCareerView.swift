@@ -32,9 +32,7 @@ struct HighSchoolCareerView: View {
                 } description: {
                     Text(message)
                 } actions: {
-                    Button("새로 시작") { career.deleteCareer() }
-                        .buttonStyle(.borderedProminent)
-                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    PrimaryPill(title: "새로 시작", identifier: "hs.restart") { career.deleteCareer() }
                 }
             case .ready:
                 content

@@ -50,18 +50,12 @@ struct CareerSetupView: View {
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
 
-                Button {
+                PrimaryPill(title: "프로 지명 받기", identifier: "pro.setup.start", enabled: selectedPreset != nil) {
                     nameFocused = false
                     if let selectedPreset {
                         career.startNewCareer(preset: selectedPreset, playerName: playerName)
                     }
-                } label: {
-                    Text("프로 지명 받기")
-                        .frame(maxWidth: .infinity, minHeight: 50)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(selectedPreset == nil)
             }
             .padding(BaseballMetrics.gutter)
         }

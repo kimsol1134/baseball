@@ -157,9 +157,7 @@ private struct CareerFailureView: View {
         } description: {
             Text(message)
         } actions: {
-            Button("새 커리어 시작") { career.deleteCareer() }
-                .buttonStyle(.borderedProminent)
-                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+            PrimaryPill(title: "새 커리어 시작", identifier: "pro.restart") { career.deleteCareer() }
         }
         .background(BaseballTheme.canvas)
     }
