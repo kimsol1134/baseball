@@ -160,12 +160,18 @@ struct PitchView: View {
                 Text(message).font(.subheadline)
             }
         case .finished:
+            // 이닝을 끝낸 공도 장면부터 보여 준다.
+            //
+            // 예전에는 `.finished`에서 곧바로 정리 화면으로 갈아 끼웠다. 마지막 아웃을 잡은
+            // 공은 **화면에 한 번도 나오지 않고** 사라졌다 — 가장 중요한 한 구가 유일하게
+            // 보이지 않는 공이었다. 타석이 이어질 때와 같은 순서(장면 → 정리)로 맞춘다.
+            lastPitchPanel
             resultSummary
         case .betweenBatters(let feedback):
+            lastPitchPanel
             BaseballCard(title: "타석 종료", tone: .positive) {
                 Text(feedback).font(.subheadline)
             }
-            lastPitchPanel
         case .ready:
             if let preparation = session.preparation {
                 lastPitchPanel
