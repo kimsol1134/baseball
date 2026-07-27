@@ -308,7 +308,23 @@ final class HighSchoolCareerStore {
             return training.feedback
         }
         if let relationship = after.lastRelationship, relationship.number != before.lastRelationship?.number {
-            return relationship.feedback
+            // 코어의 결과 문구 앞에 "그 사람이 어떻게 반응했는지"를 한 줄 붙인다.
+            //
+            // 예전에는 응답을 누르면 결과 요약 한 줄로 끝났다. 포수가 어떻게 반응했는지가
+            // 없으니 관계가 숫자(팀의 믿음 60)로만 존재했다(품질 평가 §4.3).
+            let speaker: RelationshipVoiceCatalog.Speaker
+            switch relationship.category {
+            case "coach": speaker = .coach
+            case "catcher": speaker = .catcher
+            case "rival": speaker = .rival
+            default: speaker = .named("상대")
+            }
+            let aftermath = RelationshipVoiceCatalog.aftermath(
+                speaker: speaker,
+                response: relationship.response,
+                trustChange: relationship.trustAfter - relationship.trustBefore
+            )
+            return "\(aftermath) \(relationship.feedback)"
         }
         if after.chapter.number != before.chapter.number {
             return "\(after.chapter.title) · \(after.chapter.season)"

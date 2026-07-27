@@ -468,6 +468,23 @@ private struct RelationshipCard: View {
         }
     }
 
+    /// 이 장면의 목소리. 코어의 `RelationshipVoiceCatalog`가 원본이다.
+    private var scene: RelationshipVoiceCatalog.Scene? {
+        guard let event = state.currentRelationshipEvent else { return nil }
+        return RelationshipVoiceCatalog.scene(eventID: event.id, category: event.category)
+    }
+
+    /// 화자의 신뢰도 구간. 같은 사람이라도 신뢰가 낮으면 다른 말을 한다.
+    private var band: RelationshipVoiceCatalog.TrustBand {
+        guard let scene else { return .mid }
+        return RelationshipVoiceCatalog.trustBand(
+            for: scene.speaker,
+            manager: state.managerTrust ?? state.relationshipTrust,
+            catcher: state.catcherTrust ?? state.relationshipTrust,
+            rival: state.rivalTrust ?? state.relationshipTrust
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             // 대화가 이 화면의 주인공이다. 예전에는 요약 한 줄이 작은 글씨로 붙고 선택지가
@@ -489,24 +506,40 @@ private struct RelationshipCard: View {
                     Text(event.title)
                         .font(.title3.weight(.bold))
                         .foregroundStyle(BaseballTheme.textPrimary)
-                    Text(event.summary)
-                        .font(.body)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    // 손으로 쓴 인용 대사가 있으면 그것이 본문이고, 요약은 아래로 내려간다.
+                    // 없는 장면은 예전처럼 요약만 쓴다 — 없는 대사를 지어내지 않는다.
+                    let quote = scene.map { $0.quote(band) } ?? ""
+                    if !quote.isEmpty {
+                        Text(quote)
+                            .font(.body)
+                            .foregroundStyle(BaseballTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(event.summary)
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        Text(event.summary)
+                            .font(.body)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, 4)
             }
             Text("어떻게 답할까요").font(.headline)
             ForEach(RelationshipResponse.allCases, id: \.self) { response in
+                let choice = scene?.choices.first { $0.response == response }
                 Button { onRespond(response) } label: {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(HighSchoolPresentation.response(
+                        Text(choice?.title ?? HighSchoolPresentation.response(
                             response,
                             category: state.currentRelationshipEvent?.category ?? ""
                         )).font(.subheadline.weight(.bold))
-                        Text(HighSchoolPresentation.responseDetail(response))
+                        Text(choice?.detail ?? HighSchoolPresentation.responseDetail(response))
                             .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(12)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)

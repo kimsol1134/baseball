@@ -19,6 +19,7 @@
     "check:web-assets": "node tools/check-web-assets.mjs",
     "check:design-system": "node tools/check-design-system.mjs",
     "check:copy": "node tools/check-copy.mjs",
+    "check:dialogue-parity": "node tools/check-dialogue-parity.mjs",
     "prepare:sidecar": "node tools/build-sidecar.mjs",
     "smoke:sidecar": "node tools/smoke-sidecar.mjs",
     "check:tauri": "node tools/run-cargo.mjs check --manifest-path apps/windows/src-tauri/Cargo.toml",
