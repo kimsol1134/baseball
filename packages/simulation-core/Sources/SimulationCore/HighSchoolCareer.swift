@@ -355,6 +355,10 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
     public let fatigueBefore: Int?
     public let fatigueAfter: Int?
     public let opportunityHit: Bool?
+    /// 이 훈련으로 만개한 능력. 화면이 축하 연출을 띄우는 신호다.
+    public let bloomedAbility: TalentAbility?
+    /// 만개한 뒤의 등급.
+    public let bloomedGrade: TalentGrade?
 
     public init(
         number: Int,
@@ -367,7 +371,9 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
         metricAfter: Int? = nil,
         fatigueBefore: Int? = nil,
         fatigueAfter: Int? = nil,
-        opportunityHit: Bool? = nil
+        opportunityHit: Bool? = nil,
+        bloomedAbility: TalentAbility? = nil,
+        bloomedGrade: TalentGrade? = nil
     ) {
         self.number = number
         self.focus = focus
@@ -380,6 +386,8 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
         self.fatigueBefore = fatigueBefore
         self.fatigueAfter = fatigueAfter
         self.opportunityHit = opportunityHit
+        self.bloomedAbility = bloomedAbility
+        self.bloomedGrade = bloomedGrade
     }
 }
 
@@ -538,6 +546,12 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let schedule: CareerScheduleSnapshot?
     /// 파생 상태(커밋 제외): careerID와 완료 훈련 수에서 항상 재계산된다.
     public let trainingOpportunity: TrainingOpportunitySnapshot?
+    /// 이 회차의 재능. 능력마다 성장 한계가 다르고, 한계는 만개로 열린다.
+    ///
+    /// **커밋 해시에 넣지 않는다.** 넣으면 이 필드가 없는 저장본이 전부 열리지 않는다.
+    /// nil은 재능 개념이 없던 저장본이라는 뜻이고, `TalentSnapshot.unlimited`로 읽어
+    /// 예전과 똑같이 동작한다. [[focusStreak]] 패턴.
+    public let talent: TalentSnapshot?
     public let stateCommitment: String
 
     public init(
@@ -582,6 +596,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         injuryRecovery: Int? = nil,
         schedule: CareerScheduleSnapshot? = nil,
         trainingOpportunity: TrainingOpportunitySnapshot? = nil,
+        talent: TalentSnapshot? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -625,6 +640,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.injuryRecovery = injuryRecovery
         self.schedule = schedule
         self.trainingOpportunity = trainingOpportunity
+        self.talent = talent
         self.stateCommitment = stateCommitment
     }
 
@@ -671,6 +687,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.injuryRecovery == rhs.injuryRecovery
             && lhs.schedule == rhs.schedule
             && lhs.trainingOpportunity == rhs.trainingOpportunity
+            && lhs.talent == rhs.talent
             && lhs.stateCommitment == rhs.stateCommitment
     }
 }
@@ -1052,6 +1069,7 @@ public struct HighSchoolCareerEngine: Sendable {
             news: Self.prologueNews(identity: params.identity, lifeNumber: params.lifeNumber, inheritedMemoryCount: params.inheritedMemories.count), fanInterest: 5,
             draftResult: nil, legacyOptions: [], selectedMemories: [], balanceVersion: PitcherPresetCatalog.balanceVersion,
             armRisk: 0, injuryRecovery: 0, schedule: Self.makeSchedule(careerID: careerID),
+            talent: TalentRules.make(careerID: careerID),
             stateCommitment: ""
         )
         return result(seed: seed, state: signed(base), event: "high_school_career_started")
@@ -1171,7 +1189,19 @@ public struct HighSchoolCareerEngine: Sendable {
         let opportunityHit = !isRehab && params.focus == params.state.trainingOpportunity?.focus
         let opportunityBonus = opportunityHit ? 90 : 0
         let signal = max(60, base + schoolBonus + opportunityBonus - fatiguePenalty + scheduleCompensation + generator.nextInt(upperBound: 91) - 45)
-        let growthSignal = isRehab ? 0 : (signal >= 430 ? 2 : signal >= 260 ? 1 : 0)
+        let rawGrowth = isRehab ? 0 : (signal >= 430 ? 2 : signal >= 260 ? 1 : 0)
+        // 재능이 성장을 자른다. 한계에 막힌 훈련은 헛되지 않고 만개 게이지로 쌓인다 —
+        // 막혔다는 이유로 훈련이 낭비가 되면 재능은 그냥 벌점이 된다.
+        let ability = TalentAbility.from(params.focus)
+        let talentBefore = params.state.talent ?? .unlimited
+        let (growthSignal, talentAfter, bloomed) = rawGrowth > 0
+            ? TalentRules.apply(
+                talent: talentBefore,
+                ability: ability,
+                current: rating(for: params.focus, pitcher: params.state.pitcher),
+                points: rawGrowth
+            )
+            : (0, talentBefore, nil)
         let pitcher = grow(params.state.pitcher, focus: params.focus, points: growthSignal)
         let fatigueCost = params.intensity == .light ? 3 : params.intensity == .standard ? 8 : 15
         let recovery = params.focus == .recovery ? 18 : 0
@@ -1184,15 +1214,22 @@ public struct HighSchoolCareerEngine: Sendable {
         let metricBefore = rating(for: effectiveFocus, pitcher: params.state.pitcher)
         let metricAfter = rating(for: effectiveFocus, pitcher: pitcher)
         let growth = metricAfter - metricBefore
+        let bloomedGrade = bloomed.map { talentAfter.grade($0) }
         let feedback = isRehab
             ? "재활 훈련으로 팔 상태를 회복합니다. 이번 훈련은 성장 없이 지나갑니다.\(nextInjuryRecovery > 0 ? " 남은 회복 \(nextInjuryRecovery)회." : " 다음 훈련부터 정상으로 돌아옵니다.")"
-            : trainingFeedback(focus: params.focus, growth: growth, fatigueChange: fatigue - params.state.fatigue)
+            : bloomed.flatMap { ability in bloomedGrade.map { TalentRules.bloomHeadline(ability: ability, to: $0) } }
+                ?? blockedFeedback(
+                    ability: ability, talent: talentAfter, growth: growth,
+                    rawGrowth: rawGrowth, allowed: growthSignal,
+                    fatigueChange: fatigue - params.state.fatigue, focus: params.focus
+                )
         let training = CareerTrainingSnapshot(number: number, focus: effectiveFocus, intensity: params.intensity,
             growth: growth, fatigueChange: fatigue - params.state.fatigue,
             feedback: feedback,
             metricBefore: metricBefore, metricAfter: metricAfter,
             fatigueBefore: params.state.fatigue, fatigueAfter: fatigue,
-            opportunityHit: opportunityHit)
+            opportunityHit: opportunityHit,
+            bloomedAbility: bloomed, bloomedGrade: bloomedGrade)
         let chapterCount = params.state.chapterTrainingCount + 1
         let phase: HighSchoolCareerPhase = chapterCount == chapterTrainings ? milestone(for: params.state.chapter.number, index: 0, schedule: schedule) : .training
         let optionState = replacing(params.state, pitcher: pitcher, fatigue: fatigue, lastTraining: training)
@@ -1205,12 +1242,18 @@ public struct HighSchoolCareerEngine: Sendable {
                 ? armCareEvent()
                 : relationshipEvent(for: params.state, seed: seed))
             : nil
+        let bloomNews = bloomed.flatMap { ability in
+            bloomedGrade.map { ["\(ability.label) 재능이 만개했습니다 — \($0.label)"] }
+        }
         let next = replacing(params.state, revision: params.state.revision + 1, phase: phase, pitcher: pitcher,
             chapterTrainingCount: chapterCount, totalTrainingsCompleted: number, awakeningOptions: options,
             fatigue: fatigue, performance: params.state.performance, lastTraining: training, currentGameScenario: scenario,
             currentRelationshipEvent: relationshipEvent,
-            news: isRehab ? ["재활 훈련 \(number)회차 · 팔 상태를 회복합니다."] + params.state.news : nil,
-            armRisk: nextArmRisk, injuryRecovery: nextInjuryRecovery)
+            news: isRehab
+                ? ["재활 훈련 \(number)회차 · 팔 상태를 회복합니다."] + params.state.news
+                : bloomNews.map { $0 + params.state.news },
+            armRisk: nextArmRisk, injuryRecovery: nextInjuryRecovery,
+            talent: talentAfter)
         return result(seed: seed, state: signed(next),
             event: isRehab ? "career_training_rehab" : "career_training_completed",
             reasons: ["training.\(effectiveFocus.rawValue)"])
@@ -1228,8 +1271,24 @@ public struct HighSchoolCareerEngine: Sendable {
         let isCoach = relationshipCategory == "coach"
         let trustChange = params.state.karmas.contains(.stubbornCoach) && isCoach && impact.trust < 0
             ? impact.trust * 2 : impact.trust
-        let pitcher = impact.growthFocus.map { grow(params.state.pitcher, focus: $0, points: 1) }
-            ?? params.state.pitcher
+        // 대화로 얻는 성장도 재능의 한계를 넘지 않는다. 여기만 뚫리면 훈련으로 막힌 능력을
+        // 대화로 올리는 우회로가 생기고, 재능이라는 규칙이 그 자리에서 무의미해진다.
+        let talentBefore = params.state.talent ?? .unlimited
+        var talentAfter = talentBefore
+        var relationshipBloom: TalentAbility?
+        let pitcher: PitcherSnapshot
+        if let focus = impact.growthFocus {
+            let ability = TalentAbility.from(focus)
+            let (allowed, updated, bloomed) = TalentRules.apply(
+                talent: talentBefore, ability: ability,
+                current: rating(for: focus, pitcher: params.state.pitcher), points: 1
+            )
+            talentAfter = updated
+            relationshipBloom = bloomed
+            pitcher = grow(params.state.pitcher, focus: focus, points: allowed)
+        } else {
+            pitcher = params.state.pitcher
+        }
         let managerBefore = params.state.managerTrust ?? params.state.relationshipTrust
         let catcherBefore = params.state.catcherTrust ?? params.state.relationshipTrust
         let rivalBefore = params.state.rivalTrust ?? params.state.relationshipTrust
@@ -1263,8 +1322,11 @@ public struct HighSchoolCareerEngine: Sendable {
             relationshipTrust: (managerAfter + catcherAfter + rivalAfter) / 3,
             managerTrust: managerAfter, catcherTrust: catcherAfter, rivalTrust: rivalAfter,
             fatigue: fatigueAfter, lastRelationship: relationshipResult,
-            news: [relationshipHeadline] + params.state.news,
-            fanInterest: fanInterestAfter)
+            news: relationshipBloom.map {
+                ["\($0.label) 재능이 만개했습니다 — \(talentAfter.grade($0).label)", relationshipHeadline] + params.state.news
+            } ?? ([relationshipHeadline] + params.state.news),
+            fanInterest: fanInterestAfter,
+            talent: talentAfter)
         let next = advanceMilestone(nextBase, seed: seed)
         return result(seed: seed, state: signed(next), event: "career_relationship_resolved", reasons: ["relationship.\(params.response.rawValue)"])
     }
@@ -2003,6 +2065,28 @@ public struct HighSchoolCareerEngine: Sendable {
         }
     }
 
+    /// 한계에 막혔을 때는 그 사실을 말해 준다. 아무 말 없이 0이 뜨면 플레이어는 훈련이
+    /// 실패한 줄 알고 같은 곳에 더 넣지 않는다 — 만개는 계속 두드려야 오는데.
+    private func blockedFeedback(
+        ability: TalentAbility,
+        talent: TalentSnapshot,
+        growth: Int,
+        rawGrowth: Int,
+        allowed: Int,
+        fatigueChange: Int,
+        focus: TrainingFocus
+    ) -> String {
+        guard rawGrowth > 0, allowed < rawGrowth else {
+            return trainingFeedback(focus: focus, growth: growth, fatigueChange: fatigueChange)
+        }
+        let grade = talent.grade(ability)
+        let remaining = max(0, grade.bloomThreshold - talent.pressure(ability))
+        let suffix = remaining > 0
+            ? " 한 번 더 밀어붙이면 열릴 수도 있습니다(남은 두드림 \(remaining)회)."
+            : ""
+        return "\(ability.label)이(가) 지금 재능의 한계(\(grade.ceiling))에 닿아 있습니다.\(suffix)"
+    }
+
     private func trainingFeedback(focus: TrainingFocus, growth: Int, fatigueChange: Int) -> String {
         let metric: String
         switch focus {
@@ -2037,6 +2121,7 @@ public struct HighSchoolCareerEngine: Sendable {
         news: [String]? = nil, fanInterest: Int? = nil, draftResult: DraftResultSnapshot? = nil,
         legacyOptions: [MemoryCardID]? = nil, selectedMemories: [MemoryCardID]? = nil,
         balanceVersion: Int? = nil, armRisk: Int? = nil, injuryRecovery: Int? = nil,
+        talent: TalentSnapshot? = nil,
         stateCommitment: String? = nil
     ) -> HighSchoolCareerSnapshot {
         HighSchoolCareerSnapshot(careerID: state.careerID, revision: revision ?? state.revision, lifeNumber: state.lifeNumber,
@@ -2068,6 +2153,7 @@ public struct HighSchoolCareerEngine: Sendable {
             trainingOpportunity: Self.trainingOpportunity(
                 careerID: state.careerID,
                 index: totalTrainingsCompleted ?? state.totalTrainingsCompleted),
+            talent: talent ?? state.talent,
             stateCommitment: stateCommitment ?? state.stateCommitment)
     }
 

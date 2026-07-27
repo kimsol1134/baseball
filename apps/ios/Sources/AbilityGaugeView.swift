@@ -1,4 +1,5 @@
 import SwiftUI
+import SimulationCore
 
 /// 20-80 능력 사다리의 단일 출처. 데스크톱 `apps/windows/src/ratingScale.ts`와 같은 눈금을 쓴다.
 enum RatingScale {
@@ -49,6 +50,11 @@ struct AbilityGaugeView: View {
     /// 값이 오른 경우의 이전 값. 지정하면 이전 위치에 표식을 남기고 채움이 애니메이션된다.
     var beforeValue: Int?
     var showsMeaning = true
+    /// 이 능력의 재능 등급. 주면 등급 칩과 한계선을 함께 그린다.
+    ///
+    /// 한계선이 보여야 "왜 안 오르지"가 "아, 여기가 벽이구나"가 된다. 벽이 안 보이면
+    /// 플레이어는 훈련이 실패한 줄 알고 그 능력을 포기한다 — 만개는 계속 두드려야 오는데.
+    var talent: TalentGrade?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var animatedValue: Int?
@@ -60,6 +66,14 @@ struct AbilityGaugeView: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(label).eyebrowStyle(BaseballTheme.textTertiary)
+                if let talent {
+                    Text(talent.label)
+                        .font(.caption2.weight(.black))
+                        .foregroundStyle(BaseballTheme.actionInk)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(RatingScale.tone(talent.ceiling), in: Capsule())
+                }
                 Spacer()
                 if gained, let beforeValue {
                     Text("\(beforeValue) → \(value)")
@@ -83,6 +97,13 @@ struct AbilityGaugeView: View {
                             .frame(width: 2)
                             .offset(x: proxy.size.width * RatingScale.position(beforeValue))
                     }
+                    // 재능의 한계선. S는 끝까지 열려 있어 선을 그리지 않는다.
+                    if let talent, talent != .s {
+                        Rectangle()
+                            .fill(BaseballTheme.borderStrong)
+                            .frame(width: 2)
+                            .offset(x: proxy.size.width * RatingScale.position(talent.ceiling))
+                    }
                 }
             }
             .frame(height: 8)
@@ -90,6 +111,12 @@ struct AbilityGaugeView: View {
                 Text(RatingScale.meaning(value))
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
+                if let talent, value >= talent.ceiling, talent != .s {
+                    Text("재능의 한계에 닿았습니다. 계속 훈련하면 열립니다.")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .accessibilityElement(children: .ignore)
@@ -102,9 +129,10 @@ struct AbilityGaugeView: View {
     }
 
     private var accessibilityText: String {
+        let talentText = talent.map { " 재능 \($0.label), 한계 \($0.ceiling)." } ?? ""
         if gained, let beforeValue {
-            return "\(label) \(beforeValue)에서 \(value). \(RatingScale.meaning(value))"
+            return "\(label) \(beforeValue)에서 \(value).\(talentText) \(RatingScale.meaning(value))"
         }
-        return "\(label) \(value). \(RatingScale.meaning(value))"
+        return "\(label) \(value).\(talentText) \(RatingScale.meaning(value))"
     }
 }

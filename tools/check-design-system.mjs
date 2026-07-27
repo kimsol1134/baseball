@@ -119,8 +119,9 @@ if (/overlay\(alignment:\s*\.leading\)/.test(cardBlock.slice(0, cardBlock.indexO
 // 그래서 얇은 세로 막대 자체를 금지하고, 정당한 곳만 이름으로 열어 둔다. 새로 필요하면
 // 여기 추가하면서 왜 필요한지 적게 만드는 것이 목적이다.
 const narrowBarAllowlist = new Map([
-  // 능력 게이지 위의 "이전 값" 눈금. 가로 막대 위의 표식이라 텍스트 레일이 아니다.
-  ["apps/ios/Sources/AbilityGaugeView.swift", 1],
+  // 능력 게이지 위의 표식 둘 — "이전 값" 눈금과 재능의 한계선. 둘 다 가로 막대 위에
+  // 얹는 눈금이라 텍스트 왼쪽에 세우는 강조 레일이 아니다.
+  ["apps/ios/Sources/AbilityGaugeView.swift", 2],
   // 와인드업 미터를 오가는 바늘. 이것도 가로 막대 위의 표식이다.
   ["apps/ios/Sources/DeliveryControl.swift", 1],
 ]);
