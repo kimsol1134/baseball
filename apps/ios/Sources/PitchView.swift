@@ -8,9 +8,20 @@ enum PitchCopy {
         "낮은 몸쪽", "낮은 가운데", "낮은 바깥쪽"
     ]
 
-    static func zone(_ zone: PitchZone) -> String {
-        let index = zone.row * 3 + zone.column
+    /// 코스 이름. **몸쪽·바깥쪽은 타자 기준이라 좌타자에게는 뒤집힌다.**
+    ///
+    /// 라벨 표가 우타 기준으로 고정돼 있었다. 좌타자를 상대할 때 화면은 몸쪽을 바깥쪽이라
+    /// 부르고 있었고, 이 게임에서 코스는 판정의 절반이라 그 표기가 틀리면 플레이어가
+    /// 배우는 규칙 자체가 틀린다.
+    static func zone(_ zone: PitchZone, batSide: BatSide = .right) -> String {
+        let column = batSide == .left ? 2 - zone.column : zone.column
+        let index = zone.row * 3 + column
         return zoneLabels.indices.contains(index) ? zoneLabels[index] : "알 수 없는 코스"
+    }
+
+    /// 타석에 선 쪽. 좌우 플래툰은 커널이 이미 계산하는데 화면에 표기가 없었다.
+    static func batSide(_ side: BatSide) -> String {
+        side == .left ? "좌타" : "우타"
     }
 
     static func pitch(_ type: PitchType) -> String {
@@ -77,6 +88,18 @@ enum PitchCopy {
         }
     }
 
+    /// 손으로 구분할 결과. `nil`이면 진동하지 않는다.
+    ///
+    /// 파울과 볼은 아무것도 결정하지 않은 공이다. 매 투구마다 울리면 진동은 신호가 아니라
+    /// 소음이 되고, 정말 중요한 공(삼진·피안타)에서 손이 알아채지 못한다.
+    static func hapticSuccess(_ outcome: PitchOutcome) -> Bool? {
+        switch outcome {
+        case .calledStrike, .swingingStrike, .inPlayOut: true
+        case .single, .double, .triple, .homeRun, .hitByPitch: false
+        case .ball, .foul: nil
+        }
+    }
+
     static func scoutBand(_ band: String) -> String {
         switch band {
         case "trusted": "확실한 분석"
@@ -135,7 +158,15 @@ struct PitchView: View {
         // 승부 중에는 탭 바를 숨긴다. 이닝 중간에 다른 탭으로 빠져나가면 세션 상태가
         // 화면에서 사라지고, 주력 장면의 몰입도 끊긴다.
         .toolbar(.hidden, for: .tabBar)
-        .onChange(of: session.pitchLog.count) { _, _ in replay() }
+        .onChange(of: session.pitchLog.count) { _, _ in
+            replay()
+            // 결과를 손으로도 알려 준다. 화면을 안 보고 있어도 방금 그 공이 잡은 공인지
+            // 맞은 공인지 구분된다.
+            if let outcome = session.lastResult?.snapshot.outcome,
+               let success = PitchCopy.hapticSuccess(outcome) {
+                Haptics.shared.outcome(success: success)
+            }
+        }
         .onAppear {
             audio.start()
             audio.crowdIntensity = GameAudioMapping.crowdIntensity(leverage: session.scenario.leverage)
@@ -148,7 +179,15 @@ struct PitchView: View {
     private var matchupCard: some View {
         BaseballCard(title: "타석", tone: .raised) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(session.batter.name).font(.headline)
+                HStack(spacing: 8) {
+                    Text(session.batter.name).font(.headline)
+                    Text(PitchCopy.batSide(session.batter.batSide))
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(BaseballTheme.actionInk)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(BaseballTheme.action, in: Capsule())
+                }
                 Text("공 맞히기 \(session.batter.contact) · 볼 고르기 \(session.batter.discipline) · 장타력 \(session.batter.power)")
                     .font(.footnote.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textSecondary)
@@ -257,7 +296,7 @@ struct PitchView: View {
                         HStack(alignment: .top, spacing: 8) {
                             Text("\(entry.pitchNumber)").font(.caption.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary).frame(width: 18, alignment: .trailing)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text("\(PitchCopy.pitch(entry.call.pitchType)) · \(PitchCopy.zone(entry.call.zone)) · \(PitchCopy.outcome(entry.outcome))")
+                                Text("\(PitchCopy.pitch(entry.call.pitchType)) · \(PitchCopy.zone(entry.call.zone, batSide: session.batter.batSide)) · \(PitchCopy.outcome(entry.outcome))")
                                     .font(.footnote.weight(.semibold))
                                 Text(entry.shortFeedback).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                             }
@@ -276,10 +315,11 @@ struct PitchView: View {
             } label: { PitchCopy.pitch($0) }
         }
 
-        BaseballCard(title: "코스 · \(PitchCopy.zone(session.selectedZone))") {
+        BaseballCard(title: "코스 · \(PitchCopy.zone(session.selectedZone, batSide: session.batter.batSide))") {
             StrikeZoneGrid(
                 selected: session.selectedZone,
                 recommended: preparation.primaryRecommendation.call.zone,
+                batSide: session.batter.batSide,
                 onSelect: { zone in
                     session.selectedZone = zone
                     // 한복판으로 옮기면 "존 경계"는 뜻을 잃는다. 고른 채로 두면 아무 일도
@@ -521,7 +561,7 @@ private struct CatcherCard: View {
         BaseballCard(title: matchesRecommendation ? "포수 사인 · 사인대로" : "포수 사인 · 수정함") {
             VStack(alignment: .leading, spacing: 8) {
                 let call = preparation.primaryRecommendation.call
-                Text("\(PitchCopy.pitch(call.pitchType)) · \(PitchCopy.zone(call.zone)) · \(PitchCopy.intent(call.zoneIntent))")
+                Text("\(PitchCopy.pitch(call.pitchType)) · \(PitchCopy.zone(call.zone, batSide: session.batter.batSide)) · \(PitchCopy.intent(call.zoneIntent))")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(matchesRecommendation ? BaseballTheme.positive : BaseballTheme.warning)
                 Text(preparation.primaryRecommendation.shortReason)
@@ -535,8 +575,8 @@ private struct CatcherCard: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(BaseballTheme.information)
                     Text(report.band == "trusted"
-                        ? "약점은 \(PitchCopy.pitch(report.estimatedWeakness)) · \(PitchCopy.zone(report.estimatedColdZone))로 굳어졌습니다."
-                        : "아직 추정입니다. 약점은 \(PitchCopy.pitch(report.estimatedWeakness)) · \(PitchCopy.zone(report.estimatedColdZone)) 근처로 보입니다.")
+                        ? "약점은 \(PitchCopy.pitch(report.estimatedWeakness)) · \(PitchCopy.zone(report.estimatedColdZone, batSide: session.batter.batSide))로 굳어졌습니다."
+                        : "아직 추정입니다. 약점은 \(PitchCopy.pitch(report.estimatedWeakness)) · \(PitchCopy.zone(report.estimatedColdZone, batSide: session.batter.batSide)) 근처로 보입니다.")
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -561,6 +601,8 @@ private struct CatcherCard: View {
 struct StrikeZoneGrid: View {
     let selected: PitchZone
     let recommended: PitchZone
+    /// 코스 이름을 읽어 줄 기준. 좌타자면 몸쪽·바깥쪽이 뒤집힌다.
+    var batSide: BatSide = .right
     let onSelect: (PitchZone) -> Void
 
     var body: some View {
@@ -605,7 +647,7 @@ struct StrikeZoneGrid: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(PitchCopy.zone(zone) + (isRecommended ? ", 포수 추천" : ""))
+        .accessibilityLabel(PitchCopy.zone(zone, batSide: batSide) + (isRecommended ? ", 포수 추천" : ""))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

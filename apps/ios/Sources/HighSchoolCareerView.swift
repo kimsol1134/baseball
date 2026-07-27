@@ -61,7 +61,13 @@ struct HighSchoolCareerView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                        ChapterHeader(state: state, lifeNumber: career.inheritance.lifeNumber)
+                        // 회차 번호는 **스냅숏**에서 읽는다.
+                        //
+                        // 예전에는 스토어의 계승분(`inheritance.lifeNumber`)을 그대로 썼다. 그건
+                        // "다음에 시작할 회차"의 번호라, 기억을 확정한 순간 1 늘어난다. 그래서
+                        // 1회차의 마지막 화면(완료)에 "2회차"라고 적혀 있었다 — 아직 끝나지도
+                        // 않은 회차가 다음 번호를 미리 달고 있었던 셈이다.
+                        ChapterHeader(state: state, lifeNumber: state.lifeNumber)
 
                         if !achievements.freshlyUnlocked.isEmpty {
                             AchievementBanner(achievements: achievements.freshlyUnlocked) {
@@ -92,7 +98,7 @@ struct HighSchoolCareerView: View {
         case .prologue:
             PrologueCard(
                 state: state,
-                lifeNumber: career.inheritance.lifeNumber,
+                lifeNumber: state.lifeNumber,
                 onThrow: career.beginTutorialPitch,
                 onSkip: career.completePrologue
             )
@@ -243,7 +249,7 @@ private struct PrologueCard: View {
                 }
             }
             // 이 게임에서 가장 좋은 것은 투구다. 사는 사람이 그걸 두 번째 탭에서 만나게 한다.
-            PrimaryButton(title: "첫 공을 던져 본다", identifier: "hs.prologue.throw", action: onThrow)
+            PrimaryButton(title: "첫 공을 던진다", identifier: "hs.prologue.throw", action: onThrow)
             Button("바로 학교 고르기", action: onSkip)
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
@@ -644,9 +650,9 @@ private struct LegacyCard: View {
                     }
                 }
             }
-            BaseballCard(title: "다음 생으로 가져갈 기억 · \(career.selectedMemories.count)/\(state.memorySlots)", tone: .milestone) {
+            BaseballCard(title: "다음 회차로 가져갈 기억 · \(career.selectedMemories.count)/\(state.memorySlots)", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("고른 기억은 다음 생의 시작 능력에 더해집니다.")
+                    Text("고른 기억은 다음 회차의 시작 능력에 더해집니다.")
                         .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                     // 코어는 정확히 memorySlots장을 요구한다. 부족한 채로 확정하면 오류가 나므로
                     // 화면에서 막고 남은 장수를 알려 준다.

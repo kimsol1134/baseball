@@ -16,7 +16,7 @@ final class HighSchoolCareerStore {
         case failed(String)
     }
 
-    /// 다음 생으로 넘기는 것. 환생 루프의 저장 단위다.
+    /// 다음 회차로 넘기는 것. 환생 루프의 저장 단위다.
     struct Inheritance: Codable, Equatable {
         var lifeNumber: Int
         var memories: [MemoryCardID]
@@ -201,13 +201,13 @@ final class HighSchoolCareerStore {
         }
     }
 
-    /// 기억 카드를 확정하고 다음 생으로 넘길 계승분을 만든다.
+    /// 기억 카드를 확정하고 다음 회차로 넘길 계승분을 만든다.
     func confirmLegacy() {
         guard let current = result else { return }
         // 코어는 정확히 memorySlots장을 요구한다. 모자라면 조용히 아무것도 하지 않는다.
         guard selectedMemories.count == current.snapshot.memorySlots else { return }
         let chosen = selectedMemories
-        perform(summary: "기억 \(chosen.count)장을 다음 생으로 가져갑니다.", cue: .growth) {
+        perform(summary: "기억 \(chosen.count)장을 다음 회차로 가져갑니다.", cue: .growth) {
             try engine.selectLegacy(.init(seed: $0.nextSeed, state: $0.snapshot, memoryCards: chosen))
         }
         inheritance = Self.nextInheritance(from: current.snapshot, memories: chosen, previous: inheritance)
@@ -215,7 +215,7 @@ final class HighSchoolCareerStore {
         save()
     }
 
-    /// 다음 생을 시작한다. 계승분은 유지하고 진행만 비운다.
+    /// 다음 회차를 시작한다. 계승분은 유지하고 진행만 비운다.
     func beginNextLife() {
         sync.clear()
         result = nil

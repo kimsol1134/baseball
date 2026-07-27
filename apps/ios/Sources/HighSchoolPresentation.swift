@@ -16,7 +16,7 @@ enum HighSchoolPresentation {
         case .awakening: "각성"
         case .chapterReview: "챕터 마무리"
         case .draft: "드래프트"
-        case .legacy: "다음 생에 가져갈 것"
+        case .legacy: "다음 회차에 가져갈 것"
         case .completed: "완료"
         }
     }
