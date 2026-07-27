@@ -44,7 +44,7 @@ struct AppShell: View {
                 .tabItem { Label(AppTab.pro.title, systemImage: AppTab.pro.icon) }
                 .tag(AppTab.pro)
 
-            NavigationStack { RecordView(career: pro) }
+            NavigationStack { RecordView(highSchool: highSchool, career: pro) }
                 .tabItem { Label(AppTab.records.title, systemImage: AppTab.records.icon) }
                 .tag(AppTab.records)
 

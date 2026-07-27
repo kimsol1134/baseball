@@ -1,19 +1,113 @@
 import SwiftUI
 import SimulationCore
 
+/// 기록 탭.
+///
+/// 예전에는 프로 커리어만 읽었다. 그래서 고교에서 몇 경기를 던지고 기록 탭에 들어가도
+/// **"기록 없음"**만 나왔다 — 게임의 첫 3년 내내 이 탭이 비어 있었다는 뜻이다. 프로가
+/// 아직 없으면 고교 성적을 보여 준다.
 struct RecordView: View {
+    let highSchool: HighSchoolCareerStore
     let career: MobileCareerStore
 
     var body: some View {
         Group {
             if let state = career.state {
                 RecordBoard(state: state)
+            } else if let hs = highSchool.state {
+                HighSchoolRecordBoard(state: hs)
             } else {
                 ContentUnavailableView("기록 없음", systemImage: "chart.bar")
             }
         }
         .navigationTitle("기록")
         .navigationBarTitleDisplayMode(.inline)
+        .background(BaseballTheme.canvas)
+    }
+}
+
+/// 고교 3년의 성적표.
+///
+/// 프로와 같은 구조로 읽히게 맞춘다 — 요약 숫자 → 능력 → 경기 목록. 다른 점은 직접 던진
+/// 이닝과 팀이 자동으로 치른 경기가 섞여 있다는 것이고, 그건 `played` 눈썹이 구분한다.
+private struct HighSchoolRecordBoard: View {
+    let state: HighSchoolCareerSnapshot
+
+    private var lines: [ProGameLine] { state.seasonLog ?? [] }
+
+    /// 직접 던진 이닝만 따로 센다. 자동 경기까지 합치면 "내가 만든 기록"이 묻힌다.
+    private var pitchedOuts: Int { lines.filter(\.played).reduce(0) { $0 + $1.outs } }
+
+    private static func innings(_ outs: Int) -> String {
+        "\(outs / 3)\(outs % 3 == 0 ? "" : ".\(outs % 3)")"
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                Text("\(state.chapter.title) · \(state.school?.name ?? "학교 미정")")
+                    .eyebrowStyle(BaseballTheme.action)
+
+                HStack(spacing: 10) {
+                    Metric(title: "등판", value: "\(state.performance.importantGamesCompleted)")
+                    Metric(title: "던진 이닝", value: Self.innings(pitchedOuts))
+                    Metric(title: "투구 수", value: "\(state.performance.pitches)")
+                }
+                HStack(spacing: 10) {
+                    Metric(title: "탈삼진", value: "\(state.performance.strikeouts)", tone: .positive)
+                    Metric(title: "볼넷", value: "\(state.performance.walks)", tone: .warning)
+                    Metric(title: "실점", value: "\(state.performance.runsAllowed)")
+                }
+
+                BaseballCard(title: "현재 능력") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
+                        AbilityGaugeView(label: "제구", value: state.pitcher.command)
+                        AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
+                        AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
+                    }
+                }
+
+                if lines.isEmpty {
+                    BaseballCard(title: "경기 기록") {
+                        Text("아직 치른 경기가 없습니다. 첫 중요 경기를 던지면 여기에 쌓입니다.")
+                            .font(.subheadline)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } else {
+                    GameLogSection(title: "고교 경기", lines: lines)
+                }
+
+                if !state.selectedAwakenings.isEmpty {
+                    BaseballCard(title: "각성", tone: .milestone) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(state.selectedAwakenings, id: \.self) { awakening in
+                                Label(HighSchoolPresentation.awakening(awakening).title, systemImage: "sparkles")
+                                    .font(.subheadline)
+                                    .foregroundStyle(BaseballTheme.milestone)
+                            }
+                        }
+                    }
+                }
+
+                BaseballCard(title: "최근 소식") {
+                    if state.news.isEmpty {
+                        Text("아직 소식이 없습니다.").font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                    } else {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(Array(state.news.prefix(8).enumerated()), id: \.offset) { _, item in
+                                Label(item, systemImage: "star.circle")
+                                    .font(.subheadline)
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(BaseballMetrics.gutter)
+        }
         .background(BaseballTheme.canvas)
     }
 }
@@ -63,7 +157,7 @@ private struct RecordBoard: View {
                 }
 
                 if let lines = state.gameLines, !lines.isEmpty {
-                    GameLogSection(lines: lines)
+                    GameLogSection(title: "이번 시즌 등판", lines: lines)
                 }
 
                 if !state.careerStats.isEmpty {
@@ -131,6 +225,7 @@ private struct RecordBoard: View {
 /// 등판이 뉴스 한 줄로 증발했다. 시즌 합계만 남으니 "내가 이 시즌을 어떻게 보냈는지"가
 /// 기억에 남지 않았고, 그건 이 게임이 파는 것 자체를 깎아먹는 일이다.
 private struct GameLogSection: View {
+    let title: String
     let lines: [ProGameLine]
 
     /// 구원이면 한 시즌에 70등판이 넘는다. 처음부터 다 펼치면 화면이 목록에 잡아먹힌다.
@@ -143,7 +238,7 @@ private struct GameLogSection: View {
     }
 
     var body: some View {
-        BaseballCard(title: "이번 시즌 등판") {
+        BaseballCard(title: title) {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(visible) { line in
                     GameLogRow(line: line)
