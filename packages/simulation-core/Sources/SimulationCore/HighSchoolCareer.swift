@@ -1735,12 +1735,33 @@ public struct HighSchoolCareerEngine: Sendable {
 
     private func relationshipEvent(for state: HighSchoolCareerSnapshot, seed: UInt64) -> CareerEventContent {
         let slot = state.relationshipsCompleted
-        // The first three relationship slots always feature the core people (coach, catcher,
-        // rival) so those bonds are guaranteed in every run.
+        // 핵심 3인(감독·포수·라이벌)은 매 회차 반드시 만난다. 다만 **만나는 순서를 회차마다
+        // 섞는다** — 예전에는 언제나 감독 → 포수 → 라이벌이라, 회차를 반복할수록 첫 세 장면이
+        // 같은 순서로 지나갔다.
         if slot < Self.coreRelationshipCategories.count {
-            let category = Self.coreRelationshipCategories[slot]
+            var orderGenerator = SplitMix64(
+                seed: UInt64(StableHash.fnv1a64("core_order|\(state.careerID)"), radix: 16) ?? seed
+            )
+            var order = Self.coreRelationshipCategories
+            for index in order.indices.reversed() where index > 0 {
+                order.swapAt(index, orderGenerator.nextInt(upperBound: index + 1))
+            }
+            let category = order[slot]
             let candidates = HighSchoolContentCatalog.events.filter { $0.category == category }
             return candidates[Int(seed % UInt64(candidates.count))]
+        }
+        // 2회차부터는 환생 사건이 후보에 들어온다. 처음 하는 사람에게는 뜻이 통하지 않으므로
+        // 1회차에는 아예 뽑지 않는다.
+        if state.lifeNumber > 1 {
+            var rebirthGenerator = SplitMix64(
+                seed: UInt64(StableHash.fnv1a64("rebirth_event|\(state.careerID)|\(slot)"), radix: 16) ?? seed
+            )
+            // 확장 슬롯의 대략 3분의 1을 환생 사건에 준다. 전부 주면 회차 자각이 배경이 되고,
+            // 하나도 안 주면 지금처럼 회차가 화면에서 사라진다.
+            if rebirthGenerator.nextInt(upperBound: 3) == 0 {
+                let pool = HighSchoolContentCatalog.rebirthEvents
+                return pool[rebirthGenerator.nextInt(upperBound: pool.count)]
+            }
         }
         // Later slots surface the wider pool so the 26 non-core events become reachable.
         // Each run draws a distinct category per slot, varying by run — careerID embeds both

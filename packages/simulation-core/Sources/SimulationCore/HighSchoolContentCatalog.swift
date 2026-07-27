@@ -63,6 +63,28 @@ public enum HighSchoolContentCatalog {
         .init(id: "evt-scorebook-close", title: "마지막 스코어북", category: "legacy", summary: "세 해 동안 가장 좋았던 경기와 가장 힘들었던 경기에 표시를 남깁니다.")
     ]
 
+    /// 2회차부터만 나오는 사건들.
+    ///
+    /// 환생 게임인데 회차를 알아보는 텍스트가 프롤로그 뉴스 한 줄뿐이었다. 그래서 3회차나
+    /// 1회차나 만나는 장면이 같았고, 그것이 "계속 똑같다"는 감각의 절반이었다.
+    ///
+    /// 여기 있는 것들은 **이미 살아 본 사람만 겪을 수 있는 일**이다. 처음 하는 사람에게는
+    /// 뜻이 통하지 않으므로 1회차에는 아예 뽑지 않는다.
+    public static let rebirthEvents: [CareerEventContent] = [
+        .init(id: "evt-deja-vu-mound", title: "처음 밟는데 익숙한 마운드", category: "rebirth",
+              summary: "처음 오르는 마운드인데 흙의 단단함과 발끝의 각도가 이미 알던 것 같습니다."),
+        .init(id: "evt-known-coach", title: "낯익은 감독", category: "rebirth",
+              summary: "감독의 말버릇과 손짓이 어디선가 본 것 같습니다. 만난 적은 없습니다."),
+        .init(id: "evt-body-remembers", title: "몸이 먼저 아는 그립", category: "rebirth",
+              summary: "배운 적 없는 그립이 손에 저절로 잡힙니다. 던져 보니 실제로 휩니다."),
+        .init(id: "evt-rival-deja-vu", title: "라이벌의 기시감", category: "rebirth",
+              summary: "라이벌이 타석에서 당신을 오래 봅니다. \u{201C}우리 어디서 붙은 적 있나?\u{201D}"),
+        .init(id: "evt-memory-ache", title: "기억의 통증", category: "rebirth",
+              summary: "지난번에 팔을 다쳤던 그 주차입니다. 아프지 않은데 그 자리가 신경 쓰입니다."),
+        .init(id: "evt-second-summer", title: "다시 맞는 3학년 여름", category: "rebirth",
+              summary: "같은 계절, 같은 대회. 이번에는 결과를 알고 시작합니다.")
+    ]
+
     private static func runners(_ first: Bool, _ second: Bool, _ third: Bool, speed: Int) -> BaserunnerStateSnapshot {
         BaserunnerStateSnapshot(firstOccupied: first, secondOccupied: second, thirdOccupied: third, leadRunnerSpeed: speed)
     }

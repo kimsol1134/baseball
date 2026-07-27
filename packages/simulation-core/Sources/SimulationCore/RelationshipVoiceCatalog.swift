@@ -294,6 +294,62 @@ public enum RelationshipVoiceCatalog {
                 challenge("며칠 조정하고 다시 끌어올리겠다고 한다", "구속은 곧 돌아온다고 답한다"),
             ]
         ),
+        // 환생 사건(2회차부터). 신뢰도로 갈리지 않는다 — 이건 사람과의 관계가 아니라
+        // 자기 몸이 기억하는 일이다.
+        "evt-deja-vu-mound": Scene(
+            speaker: .named("나"),
+            quotes: flat("처음 오르는 마운드다. 그런데 발끝이 흙을 파는 각도까지 이미 몸이 알고 있다."),
+            choices: [
+                listen("그 감각을 그대로 둔다", "설명하지 않고 받아들인다"),
+                explain("긴장 탓이라고 정리한다", "지금 할 일에 집중한다"),
+                challenge("아는 대로 던져 본다", "몸이 아는 쪽을 믿는다"),
+            ]
+        ),
+        "evt-known-coach": Scene(
+            speaker: .named("나"),
+            quotes: flat("감독의 말버릇이 낯익다. 다음에 무슨 말을 할지 알 것 같은데, 만난 적은 없다."),
+            choices: [
+                listen("끝까지 들어 본다", "정말 아는 말인지 확인한다"),
+                explain("먼저 아는 척하지 않는다", "처음 만난 사람으로 대한다"),
+                challenge("다음 말을 먼저 꺼내 본다", "맞는지 시험해 본다"),
+            ]
+        ),
+        "evt-body-remembers": Scene(
+            speaker: .named("나"),
+            quotes: flat("배운 적 없는 그립이 손에 저절로 잡힌다. 던져 보니 정말로 휜다."),
+            choices: [
+                listen("손이 하는 대로 둔다", "생각을 끄고 반복한다"),
+                explain("포수에게 새 그립이라고 말한다", "함께 확인해 본다"),
+                challenge("다음 경기에서 바로 쓴다", "실전에서 시험한다"),
+            ]
+        ),
+        "evt-rival-deja-vu": Scene(
+            speaker: .rival,
+            quotes: flat("타석에 선 그가 오래 본다. \u{201C}우리… 어디서 붙은 적 있나?\u{201D}"),
+            choices: [
+                listen("무슨 말인지 되묻는다", "상대가 무엇을 느꼈는지 듣는다"),
+                explain("처음이라고 답한다", "사실대로 말한다"),
+                challenge("있다고 답한다", "설명하지 않고 던진다"),
+            ]
+        ),
+        "evt-memory-ache": Scene(
+            speaker: .named("나"),
+            quotes: flat("지난번에 팔이 나갔던 바로 그 주차다. 아프지 않은데 그 자리가 계속 신경 쓰인다."),
+            choices: [
+                listen("오늘은 아낀다", "같은 일을 반복하지 않는다"),
+                explain("트레이너에게 미리 말한다", "느낌만이라도 남겨 둔다"),
+                challenge("신경 쓰지 않고 던진다", "이번엔 다르다고 믿는다"),
+            ]
+        ),
+        "evt-second-summer": Scene(
+            speaker: .named("나"),
+            quotes: flat("같은 계절, 같은 대회. 이번에는 무엇이 오는지 알고 서 있다."),
+            choices: [
+                listen("아는 것을 믿고 준비한다", "지난번의 실수를 피한다"),
+                explain("팀에 미리 알려 둔다", "혼자 지고 가지 않는다"),
+                challenge("다르게 가 본다", "아는 길을 일부러 벗어난다"),
+            ]
+        ),
         "evt-bullpen-rival": Scene(
             speaker: .named("경쟁하는 동료"),
             quotes: flat("\u{201C}네 새 변화구 그립… 한 번만 보여줄래? 선발 자리는 서로 뺏는 사이지만, 그래도 배우고 싶어서.\u{201D}"),
@@ -307,6 +363,12 @@ public enum RelationshipVoiceCatalog {
 
     /// 카테고리 기본 장면. 인용 대사는 비워 두고 화면이 이벤트 요약을 쓴다.
     public static let categoryScenes: [String: Scene] = [
+        // 2회차부터의 환생 사건. 화자는 자기 자신이다 — 이 감각을 설명해 줄 사람이 없다.
+        "rebirth": Scene(speaker: .named("나"), quotes: [:], choices: [
+            listen("가만히 그 감각을 따라가 본다", "떠오르는 것을 밀어내지 않는다"),
+            explain("착각이라고 정리한다", "지금 해야 할 일에 집중한다"),
+            challenge("아는 대로 해 본다", "그 감각을 믿고 그대로 던진다"),
+        ]),
         "growth": Scene(speaker: .named("훈련 파트너"), quotes: [:], choices: [
             listen("무엇을 바꾸면 좋을지 듣는다", "상대의 제안을 먼저 듣는다"),
             explain("지금 잡은 감각을 설명한다", "내가 느낀 그립을 말한다"),

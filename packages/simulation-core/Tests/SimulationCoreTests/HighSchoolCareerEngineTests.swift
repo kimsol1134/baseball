@@ -306,8 +306,9 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         // 관계 슬롯 수는 이 회차의 가변 스케줄(4–6)을 따른다.
         let relationshipTotal = try XCTUnwrap(result.snapshot.schedule).relationshipTotal
         XCTAssertEqual(categories.count, relationshipTotal)
-        // Core people are guaranteed in the first three slots every run.
-        XCTAssertEqual(Array(categories.prefix(3)), ["coach", "catcher", "rival"])
+        // 핵심 3인은 매 회차 처음 세 슬롯에서 반드시 만난다. **순서는 회차마다 섞이므로**
+        // 집합으로 확인한다 — 순서가 고정이면 회차를 반복할수록 첫 세 장면이 똑같이 지나간다.
+        XCTAssertEqual(Set(categories.prefix(3)), ["coach", "catcher", "rival"])
         let core: Set<String> = ["coach", "catcher", "rival"]
         let extended = categories.filter { !core.contains($0) }
         XCTAssertFalse(extended.isEmpty, "later slots must surface non-core event categories")
@@ -509,32 +510,79 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertThrowsError(try engine.advanceChapter(.init(seed: challenged.nextSeed, state: changed)))
     }
 
+    /// 각 인물과의 대화는 **자기 신뢰만** 움직인다.
+    ///
+    /// 핵심 3인이 나오는 **순서는 회차마다 섞이므로**, 특정 순서를 가정하지 않고 처음 세
+    /// 관계 장면을 그대로 걸어가며 그때그때 확인한다. 예전에는 감독 → 포수 → 라이벌 순서를
+    /// 가정해 하나씩 찾아갔는데, 순서를 섞자 이미 지나간 슬롯을 다시 찾다가 회차 끝에서 멈췄다.
     func testCoachCatcherAndRivalRelationshipsChangeOnlyTheirOwnTrust() throws {
         let engine = HighSchoolCareerEngine()
         var result = try reachFirstRelationship(engine, schoolID: .haedongPower)
+        var seen: Set<String> = []
 
-        let coachBefore = result.snapshot
-        result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .challenge))
-        XCTAssertGreaterThan(try XCTUnwrap(result.snapshot.managerTrust), try XCTUnwrap(coachBefore.managerTrust))
-        XCTAssertEqual(result.snapshot.catcherTrust, coachBefore.catcherTrust)
-        XCTAssertEqual(result.snapshot.rivalTrust, coachBefore.rivalTrust)
-        XCTAssertEqual(result.snapshot.relationshipTrust, relationshipAverage(result.snapshot))
+        for _ in 0..<80 {
+            if result.snapshot.phase == .relationship,
+               let category = result.snapshot.currentRelationshipEvent?.category,
+               ["coach", "catcher", "rival"].contains(category) {
+                let before = result.snapshot
+                result = try engine.resolveRelationship(
+                    .init(seed: result.nextSeed, state: result.snapshot, response: category == "coach" ? .challenge : .listen)
+                )
+                let after = result.snapshot
+                switch category {
+                case "coach":
+                    XCTAssertGreaterThan(try XCTUnwrap(after.managerTrust), try XCTUnwrap(before.managerTrust))
+                    XCTAssertEqual(after.catcherTrust, before.catcherTrust)
+                    XCTAssertEqual(after.rivalTrust, before.rivalTrust)
+                case "catcher":
+                    XCTAssertGreaterThan(try XCTUnwrap(after.catcherTrust), try XCTUnwrap(before.catcherTrust))
+                    XCTAssertEqual(after.managerTrust, before.managerTrust)
+                    XCTAssertEqual(after.rivalTrust, before.rivalTrust)
+                default:
+                    XCTAssertGreaterThan(try XCTUnwrap(after.rivalTrust), try XCTUnwrap(before.rivalTrust))
+                    XCTAssertEqual(after.managerTrust, before.managerTrust)
+                    XCTAssertEqual(after.catcherTrust, before.catcherTrust)
+                }
+                XCTAssertEqual(after.relationshipTrust, relationshipAverage(after))
+                seen.insert(category)
+                if seen.count == 3 { return }
+                continue
+            }
+            result = try advanceOneStep(engine, result)
+            if [.draft, .legacy, .completed].contains(result.snapshot.phase) { break }
+        }
+        XCTFail("핵심 3인 관계 장면을 모두 만나지 못했습니다: \(seen.sorted())")
+    }
 
-        result = try reachRelationship("catcher", engine: engine, from: result)
-        let catcherBefore = result.snapshot
-        result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
-        XCTAssertEqual(result.snapshot.managerTrust, catcherBefore.managerTrust)
-        XCTAssertGreaterThan(try XCTUnwrap(result.snapshot.catcherTrust), try XCTUnwrap(catcherBefore.catcherTrust))
-        XCTAssertEqual(result.snapshot.rivalTrust, catcherBefore.rivalTrust)
-        XCTAssertEqual(result.snapshot.relationshipTrust, relationshipAverage(result.snapshot))
-
-        result = try reachRelationship("rival", engine: engine, from: result)
-        let rivalBefore = result.snapshot
-        result = try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
-        XCTAssertEqual(result.snapshot.managerTrust, rivalBefore.managerTrust)
-        XCTAssertEqual(result.snapshot.catcherTrust, rivalBefore.catcherTrust)
-        XCTAssertGreaterThan(try XCTUnwrap(result.snapshot.rivalTrust), try XCTUnwrap(rivalBefore.rivalTrust))
-        XCTAssertEqual(result.snapshot.relationshipTrust, relationshipAverage(result.snapshot))
+    /// 관계 외의 국면을 한 칸 넘긴다. 순서를 가정하지 않는 테스트들이 함께 쓴다.
+    private func advanceOneStep(
+        _ engine: HighSchoolCareerEngine,
+        _ result: HighSchoolCareerResult
+    ) throws -> HighSchoolCareerResult {
+        switch result.snapshot.phase {
+        case .training:
+            return try engine.commitTraining(
+                .init(seed: result.nextSeed, state: result.snapshot, focus: .command, intensity: .standard)
+            )
+        case .relationship:
+            return try engine.resolveRelationship(.init(seed: result.nextSeed, state: result.snapshot, response: .listen))
+        case .importantGame:
+            let number = result.snapshot.performance.importantGamesCompleted + 1
+            return try engine.recordImportantGame(.init(
+                seed: result.nextSeed, state: result.snapshot,
+                report: .init(scenarioNumber: number, pitches: 16, strikeouts: 3, walks: 0,
+                              runsAllowed: 0, expectedDamage: 400, actualDamage: 180, recommendationAccepted: 10)
+            ))
+        case .awakening:
+            return try engine.chooseAwakening(.init(
+                seed: result.nextSeed, state: result.snapshot,
+                awakening: try XCTUnwrap(result.snapshot.awakeningOptions.first)
+            ))
+        case .chapterReview:
+            return try engine.advanceChapter(.init(seed: result.nextSeed, state: result.snapshot))
+        default:
+            return result
+        }
     }
 
     func testAwakeningCandidatesFollowTrainingAndCreateARealTradeoff() throws {
