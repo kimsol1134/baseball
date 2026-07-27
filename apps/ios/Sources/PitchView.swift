@@ -278,6 +278,19 @@ struct PitchView: View {
                 .frame(height: 320)
                 .frame(maxWidth: .infinity)
                 .background(BaseballTheme.fieldNight, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+                // 홈런과 이닝을 끝낸 삼진에만 스탬프가 찍힌다. 이 장면이 곧 공유용
+                // 스크린샷이다. 매 공마다 찍으면 그건 스탬프가 아니라 배경이 된다.
+                .overlay {
+                    if let kind = HighlightStamp.kind(
+                        outcome: result.snapshot.outcome,
+                        plateResult: result.snapshot.result,
+                        inningEnded: result.snapshot.inningTransition?.inningEnded ?? false,
+                        landingDistanceTenthsMeters: result.snapshot.fieldingResolution?.landingDistanceTenthsMeters
+                    ) {
+                        HighlightStamp(kind: kind, velocityTenthsKPH: result.snapshot.execution.velocityTenthsKPH)
+                            .id(result.snapshot.revision)
+                    }
+                }
                 .id(Self.dramaAnchor)
 
                 BaseballCard(title: PitchCopy.outcome(result.snapshot.outcome), tone: tone(for: result.snapshot.outcome)) {

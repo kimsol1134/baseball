@@ -3,7 +3,7 @@ import Foundation
 /// 리그 순위표와 투수 순위.
 ///
 /// 야구 게임에서 내 성적만 보이고 리그가 없으면, 그 성적이 좋은지 나쁜지 알 방법이 없다.
-/// KBO 팬이 매일 보는 두 화면이 순위표와 개인 순위다.
+/// 야구 팬이 매일 보는 두 화면이 순위표와 개인 순위다.
 ///
 /// **한 경기씩 시뮬레이션하지 않는다.** 10팀 144경기를 매주 커널로 굴리면 비용이 폭발하고,
 /// 무엇보다 이 게임의 주인공은 한 명의 투수다. 리그는 배경이므로 **시드에서 결정론적으로
@@ -11,7 +11,7 @@ import Foundation
 ///
 /// 새 난수를 커널 스트림에서 뽑지 않는다. 전부 `season + seed`에서 만든 지역 생성기다.
 public enum LeagueTable {
-    /// KBO와 같은 144경기.
+    /// 한국 프로 리그와 같은 144경기.
     public static let gamesPerSeason = 144
     /// 프로 커리어 한 시즌의 주차 수.
     public static let weeksPerSeason = 24
@@ -57,13 +57,13 @@ public enum LeagueTable {
         )
         let teams = HighSchoolCareerEngine.teams
 
-        // 팀마다 시즌 승률 기대치를 뽑는다. .380 ~ .620 사이 — 실제 KBO의 시즌 승률 폭이다.
+        // 팀마다 시즌 승률 기대치를 뽑는다. .380 ~ .620 사이 — 실제 한국 프로 리그의 시즌 승률 폭이다.
         var strengths = teams.map { _ in 380 + generator.nextInt(upperBound: 241) }
         // 리그 전체 승률의 평균은 .500이어야 한다. 안 맞추면 순위표의 승수 합과 패수 합이 어긋난다.
         let mean = strengths.reduce(0, +) / strengths.count
         strengths = strengths.map { $0 - mean + 500 }
 
-        // 무승부는 팀당 시즌 2~5경기(KBO 실제 범위). 경기 수에 비례해 늘어난다.
+        // 무승부는 팀당 시즌 2~5경기(실제 리그의 범위). 경기 수에 비례해 늘어난다.
         var draws = teams.map { _ in (2 + generator.nextInt(upperBound: 4)) * played / gamesPerSeason }
         // 승부가 난 경기의 총합은 **짝수여야 한다.** 한 경기에서 한 팀이 이기면 다른 한 팀이
         // 지므로 승수 합 == 패수 합이고, 그러면 둘의 합인 승부 경기 수도 짝수다. 홀수로 두면

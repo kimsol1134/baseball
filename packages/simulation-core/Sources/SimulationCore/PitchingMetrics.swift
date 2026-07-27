@@ -32,7 +32,7 @@ public enum PitchingMetrics {
         per9(runs, outs: outs)
     }
 
-    /// 이닝당 출루 허용. 안타와 볼넷만 센다(KBO 중계 표기와 같다).
+    /// 이닝당 출루 허용. 안타와 볼넷만 센다(중계 표기와 같다).
     public static func whip(hits: Int, walks: Int, outs: Int) -> Double? {
         guard outs > 0 else { return nil }
         return Double(hits + walks) * 3 / Double(outs)
@@ -106,7 +106,7 @@ public enum PitchingMetrics {
     /// (13×0.91 + 3×2.36 − 2×9.97) / 9 = −0.1657. 3.5 − (−0.1657) = 3.666.
     public static let fipConstant = 3.67
 
-    /// 퀄리티스타트. KBO 중계가 매 경기 세는 값이다.
+    /// 퀄리티스타트. 야구 중계가 매 경기 세는 값이다.
     ///
     /// 원래 정의는 6이닝 3자책 이하지만 자책점이 없으므로 **6이닝 3실점 이하**로 센다.
     /// 실책이 없는 세계에서는 두 정의가 같다.
@@ -119,7 +119,7 @@ public enum PitchingMetrics {
         lines.filter { isQualityStart(started: $0.started, outs: $0.outs, runsAllowed: $0.runsAllowed) }.count
     }
 
-    /// 승률. 무승부는 분모에서 뺀다(KBO 표기와 같다).
+    /// 승률. 무승부는 분모에서 뺀다(중계 표기와 같다).
     public static func winRate(wins: Int, losses: Int) -> Double? {
         let decided = wins + losses
         guard decided > 0 else { return nil }

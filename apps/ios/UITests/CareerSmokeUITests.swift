@@ -58,6 +58,16 @@ final class CareerSmokeUITests: XCTestCase {
         while steps < maximumSteps {
             steps += 1
 
+            // 드래프트 호명 연출은 전면을 덮는다. 아래 화면의 버튼은 "존재"하지만 눌리지
+            // 않으므로, 무엇보다 먼저 이것을 넘긴다. 연출 중에는 같은 버튼이 "건너뛰기"라
+            // 두 번 눌러야 빠져나온다.
+            if app.buttons["hs.draft.reveal.done"].exists {
+                capture(app, name: "07-draft-reveal")
+                tapIfPresent(app.buttons["hs.draft.reveal.done"])
+                tapIfPresent(app.buttons["hs.draft.reveal.done"])
+                continue
+            }
+
             if app.buttons["hs.rebirth"].exists {
                 capture(app, name: "08-completed")
                 XCTAssertTrue(reachedDraft, "드래프트를 거치지 않고 완료에 도달했습니다.")
@@ -66,10 +76,15 @@ final class CareerSmokeUITests: XCTestCase {
                     app.buttons["hs.setup.next"].waitForExistence(timeout: timeout),
                     "다시 태어나기 뒤 새 회차 화면이 열리지 않았습니다."
                 )
+                // 환생 스탬프가 사라질 때까지 기다린다. 덮인 채로 다음 탭을 하면 그 탭이
+                // 스탬프에 먹힌다.
+                let stamp = app.otherElements["hs.rebirth.stamp"]
+                if stamp.exists {
+                    _ = stamp.waitForNonExistence(timeout: timeout)
+                }
                 capture(app, name: "09-rebirth")
                 return
             }
-
             if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
             if tapFirst(app, prefix: "hs.school.") {
                 confirmSchool(app)
@@ -132,6 +147,7 @@ final class CareerSmokeUITests: XCTestCase {
         var steps = 0
         while steps < maximumSteps {
             steps += 1
+            if tapIfPresent(app.buttons["hs.draft.reveal.done"]) { continue }
             if app.buttons["hs.enterPro"].exists {
                 tapIfPresent(app.buttons["hs.enterPro"])
                 XCTAssertTrue(

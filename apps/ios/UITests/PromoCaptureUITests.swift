@@ -64,6 +64,8 @@ final class PromoCaptureUITests: XCTestCase {
         app.launch()
         startedAt = Date()
 
+        // 1회차는 오프닝 장면이 먼저 뜬다. 넘기지 않으면 선수 만들기에 닿지 못한다.
+        dismissOpening(app)
         XCTAssertTrue(advanceSetup(app), "선수 만들기 화면이 열리지 않았습니다.")
         hold(1.0)
         app.buttons["hs.start"].tap()
