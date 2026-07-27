@@ -100,6 +100,38 @@ enum PitchCopy {
         }
     }
 
+    /// 타자가 내 투구를 얼마나 읽었는가. 이 게임의 전략적 정체성("같은 공을 반복하면
+    /// 읽힌다")인데 iOS에는 이 값이 화면에 한 번도 나오지 않았다.
+    static func adaptation(_ band: RivalAdaptationBand) -> String {
+        switch band {
+        case .noData: "아직 못 읽음"
+        case .watching: "지켜보는 중"
+        case .learning: "읽어 가는 중"
+        case .lockedOn: "완전히 읽힘"
+        }
+    }
+
+    static func adaptationTone(_ band: RivalAdaptationBand) -> Color {
+        switch band {
+        case .noData, .watching: BaseballTheme.positive
+        case .learning: BaseballTheme.warning
+        case .lockedOn: BaseballTheme.negative
+        }
+    }
+
+    static func confidence(_ band: AnalysisConfidenceBand) -> String {
+        switch band {
+        case .low: "표본이 적습니다"
+        case .developing: "쌓이는 중"
+        case .reliable: "믿을 만합니다"
+        }
+    }
+
+    /// 천분율을 백분율 문구로. 코어는 전부 ‰로 준다.
+    static func rate(_ permille: Int) -> String {
+        String(format: "%.1f%%", Double(permille) / 10)
+    }
+
     static func scoutBand(_ band: String) -> String {
         switch band {
         case "trusted": "확실한 분석"
@@ -221,6 +253,7 @@ struct PitchView: View {
         case .ready:
             if let preparation = session.preparation {
                 lastPitchPanel
+                AdaptationBar(adaptation: preparation.rivalAdaptation)
                 CatcherCard(preparation: preparation, session: session)
                 controls(preparation: preparation)
             } else {
@@ -289,6 +322,9 @@ struct PitchView: View {
                         .font(.subheadline)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
+            }
+            if let analysis = session.lastResult?.postgameAnalysis {
+                PostgameAnalysisCard(analysis: analysis)
             }
             BaseballCard(title: "투구 기록") {
                 VStack(alignment: .leading, spacing: 6) {
@@ -540,6 +576,117 @@ private struct RunnerDiamond: View {
             .fill(occupied ? BaseballTheme.milestone : BaseballTheme.border.opacity(0.35))
             .frame(width: 8, height: 8)
             .rotationEffect(.degrees(45))
+    }
+}
+
+/// 타자가 내 투구를 얼마나 읽었는가.
+///
+/// 커널이 매 투구마다 계산하는데 iOS 화면에는 없었다. 그래서 "같은 공을 반복하면 읽힌다"는
+/// 이 게임의 전략적 정체성을 플레이어가 **존재조차 알 수 없었고**, 투구가 "324개 중 하나
+/// 고르기"로 남아 반복 플레이의 학습 곡선이 생기지 않았다(품질 평가 §4.1, 결격 5).
+///
+/// 매 투구 위에 뜨는 것이라 카드 면을 두지 않는다. 막대 하나와 경고 한 줄이면 된다.
+private struct AdaptationBar: View {
+    let adaptation: RivalAdaptationSnapshot
+
+    /// 적응도는 0–900 눈금이다.
+    private var progress: Double { min(1, Double(adaptation.level) / 900) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("타자가 내 공을 읽는 정도").eyebrowStyle(BaseballTheme.textTertiary)
+                Spacer()
+                Text(PitchCopy.adaptation(adaptation.band))
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(PitchCopy.adaptationTone(adaptation.band))
+            }
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(BaseballTheme.surfaceRaised)
+                    Capsule()
+                        .fill(PitchCopy.adaptationTone(adaptation.band))
+                        .frame(width: max(2, proxy.size.width * progress))
+                }
+            }
+            .frame(height: 6)
+            if !adaptation.warning.isEmpty {
+                Text(adaptation.warning)
+                    .font(.caption)
+                    .foregroundStyle(PitchCopy.adaptationTone(adaptation.band))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            "타자가 내 공을 읽는 정도 \(PitchCopy.adaptation(adaptation.band))"
+                + (adaptation.warning.isEmpty ? "" : ". \(adaptation.warning)")
+        )
+    }
+}
+
+/// 이닝이 끝난 뒤의 분석. 무엇을 잘했고 무엇이 읽혔는지.
+///
+/// 커널이 최근 투구 창에서 이미 계산해 두는 값만 쓴다 — 새 난수를 소비하지 않는다.
+private struct PostgameAnalysisCard: View {
+    let analysis: PostgameAnalysisSnapshot
+
+    var body: some View {
+        BaseballCard(title: "이 등판 분석") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("\(PitchCopy.confidence(analysis.confidence)) · \(analysis.sampleSize)구")
+                    .eyebrowStyle(BaseballTheme.textTertiary)
+
+                HStack(spacing: 10) {
+                    Metric(title: "존 통과", value: PitchCopy.rate(analysis.zoneRate))
+                    Metric(title: "헛스윙", value: PitchCopy.rate(analysis.whiffRate), tone: .positive)
+                    Metric(title: "강한 타구", value: PitchCopy.rate(analysis.hardHitRate), tone: .warning)
+                }
+                HStack(spacing: 10) {
+                    Metric(title: "코스 정확도", value: "\(analysis.averageExecutionQuality)")
+                    Metric(title: "예상 위험", value: String(format: "%.2f", Double(analysis.expectedDamage) / 1_000))
+                    Metric(
+                        title: "실제 위험",
+                        value: String(format: "%.2f", Double(analysis.actualDamage) / 1_000),
+                        tone: analysis.actualDamage > analysis.expectedDamage ? .negative : .positive
+                    )
+                }
+
+                if !analysis.patternWarning.isEmpty {
+                    Text(analysis.patternWarning)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if !analysis.growthSignal.isEmpty {
+                    Text(analysis.growthSignal)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.positive)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if !analysis.pitchBreakdowns.isEmpty {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(analysis.pitchBreakdowns, id: \.pitchType) { breakdown in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(PitchCopy.pitch(breakdown.pitchType))
+                                    .font(.footnote.weight(.bold))
+                                    .frame(width: 64, alignment: .leading)
+                                Text("\(breakdown.pitches)구")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.textTertiary)
+                                Spacer()
+                                Text("존 \(PitchCopy.rate(breakdown.zoneRate)) · 헛스윙 \(PitchCopy.rate(breakdown.whiffRate)) · 강타 \(PitchCopy.rate(breakdown.hardHitRate))")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
