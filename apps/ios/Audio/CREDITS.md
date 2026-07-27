@@ -11,9 +11,9 @@
 | `crowd-loop.m4a` | 경기 중 관중 웅성거림(이어 재생) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:360703_eguobyte_large-crowd-medium-distance-stereo.wav) · eguobyte, "large crowd medium distance stereo" | **CC0** (공용 저작물 기증) | 불필요 |
 | `crowd-cheer` | 삼진·호투 뒤 함성 | — | — | — |
 | `crowd-groan` | 피안타·홈런 뒤 탄식 | — | — | — |
-| `glove-catch` | 포수 미트 포구 | — | — | — |
-| `bat-contact-hard` | 정타 | — | — | — |
-| `bat-contact-weak` | 빗맞은 타구 | — | — | — |
+| `glove-catch.wav` | 포수 미트 포구 | [Freesound 164499](https://freesound.org/people/martinimeniscus/sounds/164499/) · martinimeniscus, "Glove Catch 1 FF014" — *One glove catch. Quick smack.* | **CC0** | 불필요 |
+| `bat-contact-hard.wav` | 정타 | [Freesound 162863](https://freesound.org/people/martinimeniscus/sounds/162863/) · martinimeniscus, "Bat Hit 1 FF103" — *Baseball Bat slam, hit close Ext.* | **CC0** | 불필요 |
+| `bat-contact-weak.wav` | 빗맞은 타구 | 위 `bat-contact-hard`와 **같은 녹음에서 파생** (가공 내역 아래) | **CC0** | 불필요 |
 | `bat-foul` | 파울 팁 | — | — | — |
 | `swing-miss` | 헛스윙 | — | — | — |
 | `pitch-release` | 릴리스 | — | — | — |
@@ -22,26 +22,50 @@
 
 성장·기념·UI 음은 화면 피드백이라 녹음을 쓰지 않고 합성음을 유지한다(`SoundAsset.asset(for:)`).
 
-## 다음에 채울 두 칸 (P1, 외부 에셋 대기)
+## bat-contact-*.wav · glove-catch.wav 가공 내역
 
-야구 손맛의 본체가 **배트 크랙과 미트 팡**이다. 지금은 둘 다 노이즈 버스트 합성음이라,
-소리만으로는 이 게임이 야구인지 알 수 없다. 나머지 여덟 칸보다 이 둘이 먼저다.
+두 원본 모두 같은 사람(martinimeniscus)이 같은 장비로 녹음한 CC0 짝이다. 배트와 미트가
+서로 다른 세계에서 온 소리로 들리지 않는 것이 이 조합의 이유다.
+
+내려받은 것은 Freesound의 미리듣기 MP3(48kHz)다. 원본 AIFF는 로그인이 필요한데, **한 방
+소리(one-shot)에서는 손실 압축이 문제가 되지 않는다.** 인코더가 붙이는 앞뒤 여분 샘플은
+이어 붙여 반복할 때만 틈으로 들리고(그래서 `crowd-loop`은 무손실을 골랐다), 여기서는
+어택 앞의 무음을 어차피 잘라 내기 때문이다.
+
+1. 모노로 접었다. 앱이 `GameAudio`에서 등파워 패닝을 직접 건다.
+2. 앞뒤 무음을 잘라 어택을 파일 맨 앞으로 당겼다. 판정과 소리 사이의 지연이 손맛을 깎는다.
+3. 길이를 잘랐다 — 정타 0.62초, 포구 0.45초. 원본 배트는 1.17초인데 뒤쪽은 야외 잔향이고,
+   피크 이후 60ms면 이미 92% 잦아든다. 길게 두면 다음 큐를 덮는다.
+4. **피크 기준으로 맞췄다**(정타 −1.5dB, 포구 −3dB). 한 방 소리에 LUFS를 쓰면 안 된다 —
+   게이팅 창이 400ms라 0.5초짜리는 측정 자체가 성립하지 않는다(실제로 −30 LUFS가 나왔다).
+5. `bat-contact-weak`은 정타와 같은 녹음에서 파생했다. 저역 통과(1.4kHz)로 고역의 "깡"을
+   덜고 피크를 −7dB로 낮췄다 — 배트 끝에 맞으면 실제로 그렇게 들린다. 빗맞은 타구를 따로
+   녹음한 CC0 음원이 없어서, 없는 녹음을 있는 척하지 않고 파생임을 여기 적는다.
+
+`bat-foul`은 합성음으로 남긴다. 파울 팁은 배트를 스치고 미트로 들어가는 두 소리의 합이라,
+같은 타격음을 세 번째로 줄여 쓰면 셋 다 같은 소리로 들린다.
+
+## 다음에 채울 칸 (외부 에셋 대기)
 
 | 우선 | 파일 | 무엇을 구해야 하나 |
 |---|---|---|
-| 1 | `bat-contact-hard` | 알루미늄이 아닌 **나무 배트** 정타. 마이크가 가까울 것 |
-| 1 | `glove-catch` | 포수 미트 포구. 글러브(외야)가 아니라 미트여야 한다 — 소리가 다르다 |
-| 2 | `bat-contact-weak` | 빗맞은 타구. 1번과 같은 배트로 녹음된 것이면 가장 좋다 |
-| 2 | `bat-foul` | 파울 팁(스치는 소리) |
+| 1 | `umpire-strike` / `umpire-ball` | 심판 콜. 한국어 콜이면 가장 좋고, 없으면 합성 유지 |
+| 2 | `crowd-cheer` / `crowd-groan` | 함성·탄식. 관중 루프와 같은 거리감이어야 한다 |
+| 3 | `bat-foul` | 파울 팁. 위 가공 내역 참고 |
+| 3 | `pitch-release` / `swing-miss` | 바람 소리. 합성이 오히려 자연스러울 수 있다 |
 
 **수용 규격**
 
 - 라이선스: **CC0만.** CC-BY는 앱 안에 표기 자리를 만들어야 해서 이번 범위 밖이다.
+  찾는 방법: Openverse API가 Freesound의 CC0 음원을 로그인 없이 검색·내려받게 해 준다
+  (`https://api.openverse.org/v1/audio/?q=...&license=cc0`). 받은 뒤 Freesound 원본
+  페이지에서 라이선스를 한 번 더 확인한다.
 - 길이: 0.3~0.9초. 앞뒤 무음이 붙어 있으면 잘라 낸다 — 판정과 소리 사이의 지연이 손맛을 깎는다.
 - 채널: 모노 권장. 앱이 `GameAudio`에서 등파워 패닝을 직접 건다.
 - 샘플레이트: 44.1kHz 또는 48kHz. 형식은 무손실(wav/aiff/caf 또는 ALAC .m4a).
   손실 압축은 앞뒤에 인코더 여분 샘플이 붙어 타격음의 어택이 무뎌진다.
-- 음량: -16 LUFS 근처로 맞춘다. 관중 루프(-22 LUFS)보다 앞에 나와야 한다.
+- 음량: **피크 기준** −1.5dB(가장 센 소리) ~ −13dB(가장 여린 소리). 한 방 소리에
+  LUFS를 쓰면 안 된다 — 게이팅 창이 400ms라 0.5초짜리는 측정이 성립하지 않는다.
 - 내용: 관중 소리·해설·구장 반향이 섞이지 않은 **단독 타격음**이어야 한다. 앱이 관중을
   따로 깔기 때문에 겹치면 두 겹이 된다.
 

@@ -28,6 +28,26 @@ final class SoundBankTests: XCTestCase {
                              "루프가 너무 짧으면 반복이 금방 티가 난다.")
     }
 
+    /// 타격음과 포구음이 실제로 실려서 읽히는지 본다.
+    ///
+    /// 이 둘이 야구 손맛의 본체다. 파일이 빠지면 조용히 합성 노이즈로 되돌아가고, 소리만으로는
+    /// 이 게임이 야구인지 알 수 없게 된다.
+    func testImpactRecordingsAreBundled() throws {
+        let bank = SoundBank()
+        bank.load()
+        for asset in [SoundAsset.batContactHard, .batContactWeak, .gloveCatch] {
+            XCTAssertTrue(
+                bank.loadedAssets.contains(asset),
+                "\(asset.rawValue) 음원이 번들에 없습니다. apps/ios/Audio/를 확인하세요."
+            )
+            let buffer = try XCTUnwrap(bank.buffer(for: asset), "\(asset.rawValue)을 PCM으로 읽지 못했습니다.")
+            let seconds = Double(buffer.frameLength) / buffer.format.sampleRate
+            // 한 방 소리는 짧아야 한다. 길면 판정과 소리가 어긋나고 다음 큐를 덮는다.
+            XCTAssertLessThan(seconds, 1.0, "\(asset.rawValue)이 \(seconds)초로 너무 깁니다.")
+            XCTAssertGreaterThan(seconds, 0.1, "\(asset.rawValue)이 \(seconds)초로 너무 짧습니다.")
+        }
+    }
+
     /// 이음매가 들리지 않으려면 루프의 시작과 끝의 크기가 비슷해야 한다. 파일을 갈아 끼울 때
     /// 이 검사가 실패하면 크로스페이드를 다시 걸어야 한다는 뜻이다.
     func testCrowdLoopEndsWhereItBegins() throws {
