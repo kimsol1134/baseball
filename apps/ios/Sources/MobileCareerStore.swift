@@ -154,9 +154,30 @@ final class MobileCareerStore {
         }
     }
 
-    func continueCareer() {
+    func continueCareer() { chooseOffseason(.continueCareer) }
+
+    /// 오프시즌 네 갈래. 코어는 네 가지를 전부 받는데 화면이 잔류 하나만 냈다.
+    ///
+    /// 그래서 군 복무와 FA 서사가 게임에 존재하지 않았고, 12시즌·37세에 도달해
+    /// `retirementDecision`으로 넘어가면 화면이 아예 없어 **커리어가 그 자리에서 막혔다.**
+    func chooseOffseason(_ decision: OffseasonDecision) {
         guard let result else { return }
-        perform { try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer)) }
+        let summary: String
+        switch decision {
+        case .continueCareer: summary = "현재 구단에서 다음 시즌을 준비합니다."
+        case .militaryService: summary = "두 시즌의 군 복무를 마치고 돌아옵니다."
+        case .freeAgency: summary = "FA를 신청했습니다."
+        case .retire: summary = "은퇴를 선택했습니다."
+        }
+        perform(summary: summary, cue: decision == .retire ? .neutral : .success) {
+            try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: decision))
+        }
+    }
+
+    /// FA 신청 자격. 코어와 같은 식(1군 등록 6년)을 쓴다 — 화면이 못 누를 버튼을 내면
+    /// 사용자는 오류 메시지로 규칙을 배우게 된다.
+    static func freeAgencyService(_ state: ProCareerSnapshot) -> Int {
+        state.serviceYears + (state.level == .major ? 1 : 0)
     }
 
     func acknowledgeGains() {
