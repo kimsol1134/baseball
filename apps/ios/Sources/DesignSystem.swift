@@ -66,6 +66,30 @@ enum BaseballTheme {
         }
     }
 
+    /// 초상 전용 팔레트. 데스크톱 `design-system.css`의 `--avatar-*`와 같은 값이다.
+    ///
+    /// 의미색이 아니라 **그림 재료**다. 상태를 나타내지 않으므로 고대비 모드에서도 바꾸지
+    /// 않는다 — 피부색을 대비 규칙으로 밀면 사람이 사람으로 안 보인다. 대신 초상은 언제나
+    /// 글자와 함께 나오고, 글자 쪽이 대비를 책임진다.
+    enum Avatar {
+        static let skin: [Color] = [
+            plain(0xF2CFA5), plain(0xE8BD8F), plain(0xD9A878), plain(0xC98E5F), plain(0xB97A4E),
+        ]
+        static let hair: [Color] = [plain(0x20242B), plain(0x3A2D22), plain(0x54402C)]
+        static let hairGray = plain(0x6D6F76)
+        static let jersey: [Color] = [
+            plain(0x3D5A44), plain(0x2F4858), plain(0x5A4632), plain(0x44415A), plain(0x5C3A3A),
+        ]
+        static let cap = plain(0x274232)
+        static let capBrim = plain(0x1C3125)
+        static let helmet = plain(0x32405C)
+        static let mask = plain(0x8B93A1)
+        static let line = plain(0x1A1D22)
+        static let highlight = plain(0xFFFFFF)
+    }
+
+    private static func plain(_ hex: UInt32) -> Color { Color(uiColor: platformColor(hex)) }
+
     /// 명암 모드와 무관하게 같은 색. 고대비 설정만 반영한다.
     private static func fixed(_ value: UInt32, highContrast: UInt32) -> Color {
         Color(uiColor: UIColor { traits in

@@ -36,6 +36,7 @@
 		910EAAC15C26A49FEDEC9847 /* CareerSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB11CD9FB866181225768DD /* CareerSetupView.swift */; };
 		98F47F2D21DE7C84E44394A0 /* CareerFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */; };
 		A0FAD88E95958BEC56B0DC78 /* HighSchoolCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE0F40C01B6D49B74C3C25A /* HighSchoolCareerStore.swift */; };
+		A4546BE3ADDBE84CF693B456 /* AvatarFace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77876A24C70FB76B972B1BFB /* AvatarFace.swift */; };
 		A6EE8A5F5E6BBF61B55F2378 /* SoundBankTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAD4A6060A2CDCE715AC68FA /* SoundBankTests.swift */; };
 		A7A1E4BCB6F2294E361B74CD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88829ECACC67B2EBCDBC9538 /* Assets.xcassets */; };
 		A8800D4D45BE21DE1315474E /* GameLineFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6400E3C7B6732A0F7E8EE94 /* GameLineFormat.swift */; };
@@ -44,6 +45,7 @@
 		B2563DD8BA0252148CCDCA7A /* AbilityGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F060404E63A14ED602332946 /* AbilityGaugeView.swift */; };
 		B534AF17C3954F02B54B3161 /* PitchSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84D0F09EB96CC29A52B238F /* PitchSessionTests.swift */; };
 		BBB25AB032932D614C965083 /* PitchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F72E6C8CF9034C5EF75C8C51 /* PitchView.swift */; };
+		C29511996618BCC2A9EC95F7 /* AvatarFaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44A2719CCDD3666B7FD20946 /* AvatarFaceTests.swift */; };
 		C4DCFA950D310CE7A1593078 /* AchievementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A1FF7372CAEE9C5547CF458 /* AchievementsView.swift */; };
 		D461F48E6FD8C03B8697AAA5 /* SimulationCore in Frameworks */ = {isa = PBXBuildFile; productRef = 17CAB6B06F634AF92AC437D2 /* SimulationCore */; };
 		D5AB687C52FABB539699F9D3 /* OpeningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F94A4FC0E937518324E7DD23 /* OpeningView.swift */; };
@@ -89,6 +91,7 @@
 		3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAudioCueMapping.swift; sourceTree = "<group>"; };
 		3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerFlowView.swift; sourceTree = "<group>"; };
 		4098E0B38E32E1CCF6BC0549 /* DeliveryControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveryControl.swift; sourceTree = "<group>"; };
+		44A2719CCDD3666B7FD20946 /* AvatarFaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarFaceTests.swift; sourceTree = "<group>"; };
 		4B08F1209CBA0DDEF9A93A9A /* HighSchoolPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolPresentation.swift; sourceTree = "<group>"; };
 		598D8EDA6137AA0633E3390B /* PromoCaptureUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCaptureUITests.swift; sourceTree = "<group>"; };
 		5A43585B38B15CFA1150CE37 /* PresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationTests.swift; sourceTree = "<group>"; };
@@ -96,6 +99,7 @@
 		5F3552DE680E36021D69234E /* PitchScenario.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchScenario.swift; sourceTree = "<group>"; };
 		6987D517241132311CC896B0 /* PitchSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchSession.swift; sourceTree = "<group>"; };
 		75533AB861B98CEA53BE960B /* RetentionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionTests.swift; sourceTree = "<group>"; };
+		77876A24C70FB76B972B1BFB /* AvatarFace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarFace.swift; sourceTree = "<group>"; };
 		79173A1105F3877F88315737 /* CareerSmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerSmokeUITests.swift; sourceTree = "<group>"; };
 		7A1D59E198E4D5D56F06F17C /* PitchDramaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchDramaView.swift; sourceTree = "<group>"; };
 		88829ECACC67B2EBCDBC9538 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -177,6 +181,7 @@
 				9A1FF7372CAEE9C5547CF458 /* AchievementsView.swift */,
 				356AC8C39D52A759CC575D92 /* AppShell.swift */,
 				88829ECACC67B2EBCDBC9538 /* Assets.xcassets */,
+				77876A24C70FB76B972B1BFB /* AvatarFace.swift */,
 				2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */,
 				B6FD9FC4DABDF4993821FE27 /* BaseballIOS.entitlements */,
 				D56DF85AD3C0B33592326F37 /* CareerBootstrap.swift */,
@@ -236,6 +241,7 @@
 		ED6F75DE7FADB777F495C646 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				44A2719CCDD3666B7FD20946 /* AvatarFaceTests.swift */,
 				8914567CCE3DC83C86EC8133 /* CareerBootstrapTests.swift */,
 				902334DCFD6C688F66710F0E /* DeliveryControlTests.swift */,
 				2837CAF42ACF84B7B70646F4 /* GameLineFormatTests.swift */,
@@ -371,6 +377,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C29511996618BCC2A9EC95F7 /* AvatarFaceTests.swift in Sources */,
 				0536C6C57B7D39C5CC96C3D8 /* CareerBootstrapTests.swift in Sources */,
 				539AC44A52E0B08CD1390416 /* DeliveryControlTests.swift in Sources */,
 				59B324B22D4C3D696852895B /* GameLineFormatTests.swift in Sources */,
@@ -393,6 +400,7 @@
 				D938E46F882A5F6954C0CD9D /* Achievements.swift in Sources */,
 				C4DCFA950D310CE7A1593078 /* AchievementsView.swift in Sources */,
 				F51A7AAC0D43BBCA3CB6D7AC /* AppShell.swift in Sources */,
+				A4546BE3ADDBE84CF693B456 /* AvatarFace.swift in Sources */,
 				13EA77018AE302361EDCB5D0 /* BaseballApp.swift in Sources */,
 				5077858E4A40AC8E73811CA4 /* CareerBootstrap.swift in Sources */,
 				98F47F2D21DE7C84E44394A0 /* CareerFlowView.swift in Sources */,

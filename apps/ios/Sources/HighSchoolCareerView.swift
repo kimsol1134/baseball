@@ -285,10 +285,12 @@ private struct SchoolSelectionCard: View {
                             .font(.footnote).foregroundStyle(BaseballTheme.warning)
                             .fixedSize(horizontal: false, vertical: true)
                         Divider()
-                        Text("감독 \(school.coachName) · \(school.coachArchetype)")
-                            .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
-                        Text("포수 \(school.catcherName) · \(school.catcherArchetype)")
-                            .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                        // 3년을 함께할 두 사람이다. 이름만 적혀 있으면 학교 선택이
+                        // 스펙 비교표가 되고, 누구와 지낼지는 선택에 들어오지 않는다.
+                        AvatarRow(seed: school.coachName, role: .coach,
+                                  name: "\(school.coachName) 감독", caption: school.coachArchetype, size: 40)
+                        AvatarRow(seed: school.catcherName, role: .catcher,
+                                  name: "\(school.catcherName) 포수", caption: school.catcherArchetype, size: 40)
                     }
                     .padding(BaseballMetrics.gutter)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -446,13 +448,44 @@ private struct RelationshipCard: View {
         }
     }
 
+    /// 이 대화에 얼굴이 있는가. 감독·포수·라이벌만 사람이고 나머지는 상황이다 —
+    /// "팬레터"나 "시험 주간"에 얼굴을 붙이면 없는 인물을 만들어 내는 셈이 된다.
+    static func portrait(
+        for category: String,
+        state: HighSchoolCareerSnapshot
+    ) -> (seed: String, role: AvatarFace.Role, name: String)? {
+        switch category {
+        case "coach":
+            guard let school = state.school else { return nil }
+            return (school.coachName, .coach, "\(school.coachName) 감독")
+        case "catcher":
+            guard let school = state.school else { return nil }
+            return (school.catcherName, .catcher, "\(school.catcherName) 포수")
+        case "rival":
+            return (state.rival.name, .rival, state.rival.name)
+        default:
+            return nil
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             // 대화가 이 화면의 주인공이다. 예전에는 요약 한 줄이 작은 글씨로 붙고 선택지가
             // 화면을 채워서, 무슨 일이 일어났는지보다 버튼 세 개가 먼저 눈에 들어왔다.
             if let event = state.currentRelationshipEvent {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(Self.speaker(for: event.category)).eyebrowStyle(BaseballTheme.information)
+                    HStack(spacing: 10) {
+                        if let portrait = Self.portrait(for: event.category, state: state) {
+                            AvatarFace(seed: portrait.seed, role: portrait.role, size: 44)
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(Self.speaker(for: event.category)).eyebrowStyle(BaseballTheme.information)
+                            if let portrait = Self.portrait(for: event.category, state: state) {
+                                Text(portrait.name).font(.subheadline.weight(.bold))
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
                     Text(event.title)
                         .font(.title3.weight(.bold))
                         .foregroundStyle(BaseballTheme.textPrimary)
@@ -507,14 +540,13 @@ private struct ImportantGameCard: View {
                 }
             }
             BaseballCard(title: "상대", tone: .warning) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(state.rival.name).font(.headline)
-                    Text(state.rival.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                VStack(alignment: .leading, spacing: 8) {
+                    AvatarRow(seed: state.rival.name, role: .rival,
+                              name: state.rival.name, caption: state.rival.archetype, size: 48)
                     if let record = state.rival.signatureRecord {
                         Text(record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
                     }
                 }
-                .accessibilityElement(children: .combine)
             }
             PrimaryButton(title: "마운드에 오르기", identifier: "hs.game.start", action: onStart)
         }
@@ -717,6 +749,19 @@ private struct CompletionCard: View {
                         Text("가져온 기억 \(career.inheritance.memories.count)장 · 야구혼 \(career.inheritance.soulPoints)")
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(BaseballTheme.milestone)
+                    }
+                }
+            }
+
+            // 지명된 구단에서 누가 기다리는지. 이름만 있으면 "어느 팀"이 문자열 하나이고,
+            // 프로 첫 시즌의 경쟁 구도가 시작 전에 서지 않는다.
+            if let team = state.draftResult?.team, state.draftResult?.outcome == .drafted {
+                BaseballCard(title: "\(team.name)에서 기다리는 사람", tone: .milestone) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        AvatarRow(seed: team.proCoach, role: .coach,
+                                  name: "\(team.proCoach) 코치", caption: team.coachProfile ?? team.developmentPlan, size: 44)
+                        AvatarRow(seed: team.positionCompetitor, role: .player,
+                                  name: team.positionCompetitor, caption: team.competitorProfile ?? "같은 자리를 두고 겨룰 선수", size: 44)
                     }
                 }
             }
