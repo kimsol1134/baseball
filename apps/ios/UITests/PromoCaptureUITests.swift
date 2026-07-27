@@ -38,6 +38,20 @@ final class PromoCaptureUITests: XCTestCase {
         if start.waitForExistence(timeout: 5) { start.tap() }
     }
 
+    /// 단계형 선수 만들기를 마지막 단계까지 넘긴다. `hs.start`가 보이면 참을 돌려준다.
+    @discardableResult
+    private func advanceSetup(_ app: XCUIApplication) -> Bool {
+        let start = app.buttons["hs.start"]
+        let next = app.buttons["hs.setup.next"]
+        guard start.waitForExistence(timeout: timeout) || next.waitForExistence(timeout: timeout) else { return false }
+        var hops = 0
+        while !start.exists, next.exists, hops < 6 {
+            next.tap()
+            hops += 1
+        }
+        return start.waitForExistence(timeout: timeout)
+    }
+
     private func hold(_ seconds: TimeInterval) {
         Thread.sleep(forTimeInterval: seconds)
     }
@@ -50,7 +64,7 @@ final class PromoCaptureUITests: XCTestCase {
         app.launch()
         startedAt = Date()
 
-        XCTAssertTrue(app.buttons["hs.start"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(advanceSetup(app), "선수 만들기 화면이 열리지 않았습니다.")
         hold(1.0)
         app.buttons["hs.start"].tap()
         XCTAssertTrue(app.buttons["hs.prologue.throw"].waitForExistence(timeout: timeout))
@@ -94,11 +108,10 @@ final class PromoCaptureUITests: XCTestCase {
         mark("launch")
 
         dismissOpening(app)
-        let start = app.buttons["hs.start"]
-        XCTAssertTrue(start.waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
+        XCTAssertTrue(advanceSetup(app), "고교 시작 화면이 열리지 않았습니다.")
         hold(2.0)
         mark("setup")
-        start.tap()
+        app.buttons["hs.start"].tap()
 
         let throwFirst = app.buttons["hs.prologue.throw"]
         XCTAssertTrue(throwFirst.waitForExistence(timeout: timeout), "프롤로그가 열리지 않았습니다.")

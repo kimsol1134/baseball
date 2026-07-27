@@ -1,10 +1,25 @@
 import SwiftUI
 import SimulationCore
 
-/// 고교 커리어 시작 화면. 2회차 이후에는 계승분과 카르마 선택이 함께 나온다.
+/// 고교 커리어 시작 화면. 한 화면에 한 가지만 묻는다.
+///
+/// 예전에는 이름·투수 유형·난이도·핸디캡이 한 페이지에 세로로 늘어서 있었다. 실기기에서
+/// 처음 켠 사람이 **"이름 입력하고 이런 게 잘 안 보인다"**고 했다. 당연하다 — 이름은
+/// 카드 네 개 중 하나였고, 화면을 열면 눈에 먼저 들어오는 건 능력치 막대가 그려진
+/// 투수 유형 카드였다. 스크롤 없이 보이는 첫 화면에서 "지금 뭘 해야 하는지"가 읽히지
+/// 않으면 사람은 나간다.
+///
+/// 그래서 단계로 쪼갠다. 한 단계에는 질문 하나와 그 질문에 답하는 것만 있다.
+/// 첫 회차는 두 단계(이름 → 투수 유형), 2회차부터 세 단계(+ 난이도·핸디캡)다.
 struct HighSchoolSetupView: View {
     let career: HighSchoolCareerStore
 
+    /// 설정 단계. 순서가 곧 화면 순서다.
+    private enum Step: Int, CaseIterable {
+        case name, style, handicap
+    }
+
+    @State private var step: Step = .name
     @State private var playerName = ""
     @State private var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
     @State private var selectedKarmas: Set<KarmaID> = []
@@ -17,115 +32,247 @@ struct HighSchoolSetupView: View {
     }
     private var isRebirth: Bool { career.inheritance.lifeNumber > 1 }
 
-    /// 카르마 보상 합계(‰). 자발적 핸디캡이 다음 생 계승분을 키운다.
+    /// 첫 회차에는 난이도·핸디캡 단계가 아예 없다.
+    ///
+    /// 처음 켠 사람은 **다음 회차가 뭔지 아직 모른다.** "고르면 다음 회차 계승이 커집니다"가
+    /// 읽히려면 한 번 끝까지 가 보고 계승을 겪어야 한다. Rogue Legacy도 첫 죽음 전까지
+    /// 특성을 보여 주지 않는다.
+    private var steps: [Step] { isRebirth ? Step.allCases : [.name, .style] }
+    private var stepIndex: Int { steps.firstIndex(of: step) ?? 0 }
+    private var isLastStep: Bool { stepIndex == steps.count - 1 }
+
+    /// 카르마 보상 합계(‰). 자발적 핸디캡이 다음 회차 계승분을 키운다.
     private var rewardPermille: Int {
         selectedKarmas.reduce(0) { $0 + $1.rewardPermille }
     }
 
+    /// 이름을 비워 둔 채로 넘어가면 이 이름으로 시작한다.
+    private var suggestedName: String { selectedPreset?.pitcher.name ?? "이름" }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                KeyArtHeader(
-                    art: .careerIntro,
-                    eyebrow: isRebirth ? "\(career.inheritance.lifeNumber)회차" : "선수 만들기",
-                    title: isRebirth ? "다시 한 번, 고교 1학년부터" : "어떤 투수로 시작할지 고르세요"
-                )
-
-                if isRebirth {
-                    BaseballCard(title: "가져온 것", tone: .milestone) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("영혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
-                            if career.inheritance.memories.isEmpty {
-                                Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                            } else {
-                                ForEach(career.inheritance.memories, id: \.self) { memory in
-                                    let copy = HighSchoolPresentation.memory(memory)
-                                    Text("· \(copy.title)").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                                }
-                            }
-                        }
+        VStack(spacing: 0) {
+            header
+            ScrollView {
+                VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                    switch step {
+                    case .name: nameStep
+                    case .style: styleStep
+                    case .handicap: handicapStep
                     }
                 }
-
-                BaseballCard(title: "선수 이름") {
-                    TextField(selectedPreset?.pitcher.name ?? "이름", text: $playerName)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .focused($nameFocused)
-                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                        .submitLabel(.done)
-                        .onSubmit { nameFocused = false }
-                }
-
-                Text("투수 유형").font(.headline)
-                ForEach(presets, id: \.id) { preset in
-                    PresetRow(preset: preset, selected: preset.id == selectedPresetID) {
-                        selectedPresetID = preset.id
-                    }
-                }
-
-                // 난이도와 핸디캡은 2회차부터 나온다.
-                //
-                // 첫 회차에 핸디캡을 보여 주면 "고르면 다음 회차 계승이 커집니다"라고 말하게
-                // 되는데, 처음 켠 사람은 **다음 회차가 뭔지 아직 모른다.** 한 번 죽어 보고
-                // 계승을 겪은 뒤에야 이 거래가 읽힌다. Rogue Legacy도 첫 죽음 전까지 특성을
-                // 보여 주지 않는다.
-                if isRebirth {
-                BaseballCard(title: "난이도") {
-                    HStack(spacing: 6) {
-                        ForEach(DifficultyLevel.allCases, id: \.self) { level in
-                            Button { harshness = level } label: {
-                                Text(Self.difficultyLabel(level))
-                                    .font(.footnote.weight(.semibold))
-                                    .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                            }
-                            .buttonStyle(.plain)
-                            .background(
-                                harshness == level ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surfaceRaised,
-                                in: RoundedRectangle(cornerRadius: 8)
-                            )
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(harshness == level ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6),
-                                            lineWidth: harshness == level ? 2 : 1)
-                            }
-                            .accessibilityAddTraits(harshness == level ? .isSelected : [])
-                        }
-                    }
-                }
-
-                Text("핸디캡").font(.headline)
-                Text("고르면 이번 회차가 어려워집니다. 대신 다음 회차로 넘어가는 계승이 커집니다. 지금 +\(rewardPermille / 10)%")
-                    .font(.footnote)
-                    .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
-                ForEach(KarmaID.allCases, id: \.self) { karma in
-                    KarmaRow(
-                        karma: karma,
-                        selected: selectedKarmas.contains(karma),
-                        onToggle: {
-                            if selectedKarmas.contains(karma) { selectedKarmas.remove(karma) }
-                            else { selectedKarmas.insert(karma) }
-                        }
-                    )
-                }
-                }
-
-                PrimaryButton(title: isRebirth ? "다시 태어나기" : "고교 1학년 시작", identifier: "hs.start") {
-                    nameFocused = false
-                    if let selectedPreset {
-                        career.startCareer(
-                            preset: selectedPreset,
-                            playerName: playerName,
-                            difficulty: CareerDifficultySnapshot(careerHarshness: harshness),
-                            karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue }
-                        )
-                    }
-                }
+                .padding(BaseballMetrics.gutter)
             }
-            .padding(BaseballMetrics.gutter)
+            footer
         }
         .background(BaseballTheme.canvas)
         .scrollDismissesKeyboard(.interactively)
+        .animation(.snappy, value: step)
+    }
+
+    // MARK: - 머리
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text(isRebirth ? "\(career.inheritance.lifeNumber)회차 · \(stepIndex + 1) / \(steps.count)"
+                     : "선수 만들기 · \(stepIndex + 1) / \(steps.count)")
+                    .eyebrowStyle(BaseballTheme.action)
+                Spacer()
+            }
+            HStack(spacing: 4) {
+                ForEach(steps, id: \.self) { item in
+                    Capsule()
+                        .fill(steps.firstIndex(of: item)! <= stepIndex
+                              ? BaseballTheme.action : BaseballTheme.border)
+                        .frame(height: 3)
+                }
+            }
+            .accessibilityHidden(true)
+        }
+        .padding(.horizontal, BaseballMetrics.gutter)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
+        .background(BaseballTheme.surface)
+    }
+
+    // MARK: - 1단계 이름
+
+    private var nameStep: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            Text(isRebirth ? "다시 태어날 이름을 정하세요" : "선수의 이름을 정하세요")
+                .font(.title.bold())
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("고교 3년 동안 이 이름으로 불립니다.")
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+
+            // 입력칸이 화면에서 가장 큰 요소다. 여기가 지금 할 일이라는 뜻이다.
+            VStack(alignment: .leading, spacing: 8) {
+                TextField(suggestedName, text: $playerName)
+                    .font(.system(.title, design: .default, weight: .bold))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .focused($nameFocused)
+                    .submitLabel(.done)
+                    .onSubmit { advance() }
+                    .frame(minHeight: 56)
+                    .accessibilityIdentifier("hs.setup.name")
+                Rectangle()
+                    .fill(nameFocused ? BaseballTheme.action : BaseballTheme.border)
+                    .frame(height: 2)
+            }
+            .padding(.horizontal, BaseballMetrics.gutter)
+            .padding(.vertical, 4)
+            .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+
+            Button {
+                playerName = suggestedName
+                nameFocused = false
+            } label: {
+                Label("\(suggestedName) 쓰기", systemImage: "wand.and.stars")
+                    .font(.footnote.weight(.semibold))
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(BaseballTheme.action)
+            .accessibilityIdentifier("hs.setup.suggestName")
+
+            if isRebirth { inheritanceCard }
+        }
+        .onAppear { nameFocused = true }
+    }
+
+    private var inheritanceCard: some View {
+        BaseballCard(title: "가져온 것", tone: .milestone) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("영혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
+                if career.inheritance.memories.isEmpty {
+                    Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                } else {
+                    ForEach(career.inheritance.memories, id: \.self) { memory in
+                        let copy = HighSchoolPresentation.memory(memory)
+                        Text("· \(copy.title)").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - 2단계 투수 유형
+
+    private var styleStep: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            Text("어떤 공을 던지는 투수인가요?")
+                .font(.title.bold())
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("시작 능력치만 다릅니다. 3년 동안의 훈련으로 얼마든지 바뀝니다.")
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ForEach(presets, id: \.id) { preset in
+                PresetRow(preset: preset, selected: preset.id == selectedPresetID) {
+                    selectedPresetID = preset.id
+                }
+            }
+        }
+    }
+
+    // MARK: - 3단계 난이도·핸디캡 (2회차부터)
+
+    private var handicapStep: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            Text("이번 회차를 얼마나 어렵게 갈까요?")
+                .font(.title.bold())
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            BaseballCard(title: "난이도") {
+                HStack(spacing: 6) {
+                    ForEach(DifficultyLevel.allCases, id: \.self) { level in
+                        Button { harshness = level } label: {
+                            Text(Self.difficultyLabel(level))
+                                .font(.footnote.weight(.semibold))
+                                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        }
+                        .buttonStyle(.plain)
+                        .background(
+                            harshness == level ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surfaceRaised,
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(harshness == level ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6),
+                                        lineWidth: harshness == level ? 2 : 1)
+                        }
+                        .accessibilityAddTraits(harshness == level ? .isSelected : [])
+                    }
+                }
+            }
+
+            Text("핸디캡").font(.headline)
+            Text("고르면 이번 회차가 어려워집니다. 대신 다음 회차로 넘어가는 계승이 커집니다. 지금 +\(rewardPermille / 10)%")
+                .font(.footnote)
+                .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(KarmaID.allCases, id: \.self) { karma in
+                KarmaRow(
+                    karma: karma,
+                    selected: selectedKarmas.contains(karma),
+                    onToggle: {
+                        if selectedKarmas.contains(karma) { selectedKarmas.remove(karma) }
+                        else { selectedKarmas.insert(karma) }
+                    }
+                )
+            }
+        }
+    }
+
+    // MARK: - 발
+
+    private var footer: some View {
+        VStack(spacing: 8) {
+            if isLastStep {
+                PrimaryButton(title: isRebirth ? "다시 태어나기" : "고교 1학년 시작", identifier: "hs.start") {
+                    nameFocused = false
+                    guard let selectedPreset else { return }
+                    career.startCareer(
+                        preset: selectedPreset,
+                        playerName: playerName,
+                        difficulty: CareerDifficultySnapshot(careerHarshness: harshness),
+                        karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue }
+                    )
+                }
+            } else {
+                PrimaryButton(title: "다음", identifier: "hs.setup.next") { advance() }
+            }
+
+            if stepIndex > 0 {
+                Button("뒤로") { back() }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("hs.setup.back")
+            }
+        }
+        .padding(BaseballMetrics.gutter)
+        .background(BaseballTheme.surface)
+    }
+
+    private func advance() {
+        nameFocused = false
+        guard stepIndex + 1 < steps.count else { return }
+        step = steps[stepIndex + 1]
+    }
+
+    private func back() {
+        nameFocused = false
+        guard stepIndex > 0 else { return }
+        step = steps[stepIndex - 1]
     }
 
     static func difficultyLabel(_ level: DifficultyLevel) -> String {

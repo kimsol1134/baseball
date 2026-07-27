@@ -11,6 +11,23 @@ final class CareerSmokeUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// 선수 만들기가 단계형이라 마지막 단계에 닿아야 `hs.start`가 나온다.
+    /// 첫 회차는 이름 → 투수 유형 두 단계, 2회차부터 난이도·핸디캡이 하나 더 붙는다.
+    @discardableResult
+    private func completeSetup(_ app: XCUIApplication) -> Bool {
+        let start = app.buttons["hs.start"]
+        let next = app.buttons["hs.setup.next"]
+        guard start.waitForExistence(timeout: timeout) || next.waitForExistence(timeout: timeout) else { return false }
+        var hops = 0
+        while !start.exists, next.exists, hops < 6 {
+            next.tap()
+            hops += 1
+        }
+        guard start.waitForExistence(timeout: timeout) else { return false }
+        start.tap()
+        return true
+    }
+
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         // 자동 릴리스로 돌린다. 타이밍 제스처는 사람이 손으로 확인하고, 이 테스트는 흐름을 본다.
@@ -23,10 +40,9 @@ final class CareerSmokeUITests: XCTestCase {
         let app = launch()
 
         dismissOpening(app)
-        let start = app.buttons["hs.start"]
-        XCTAssertTrue(start.waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
+        XCTAssertTrue(app.buttons["hs.setup.next"].waitForExistence(timeout: timeout), "선수 만들기 화면이 열리지 않았습니다.")
         capture(app, name: "01-highschool-setup")
-        start.tap()
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
 
         XCTAssertTrue(
             app.buttons["hs.prologue.throw"].waitForExistence(timeout: timeout),
@@ -47,7 +63,7 @@ final class CareerSmokeUITests: XCTestCase {
                 XCTAssertTrue(reachedDraft, "드래프트를 거치지 않고 완료에 도달했습니다.")
                 tapIfPresent(app.buttons["hs.rebirth"])
                 XCTAssertTrue(
-                    app.buttons["hs.start"].waitForExistence(timeout: timeout),
+                    app.buttons["hs.setup.next"].waitForExistence(timeout: timeout),
                     "다시 태어나기 뒤 새 회차 화면이 열리지 않았습니다."
                 )
                 capture(app, name: "09-rebirth")
@@ -111,8 +127,7 @@ final class CareerSmokeUITests: XCTestCase {
     func testDraftedRunCanEnterProCareer() {
         let app = launch()
         dismissOpening(app)
-        XCTAssertTrue(app.buttons["hs.start"].waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
-        tapIfPresent(app.buttons["hs.start"])
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
 
         var steps = 0
         while steps < maximumSteps {
@@ -176,9 +191,7 @@ final class CareerSmokeUITests: XCTestCase {
         let app = launch()
 
         dismissOpening(app)
-        let start = app.buttons["hs.start"]
-        XCTAssertTrue(start.waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
-        tapIfPresent(start)
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
 
         let throwFirst = app.buttons["hs.prologue.throw"]
         XCTAssertTrue(throwFirst.waitForExistence(timeout: timeout), "프롤로그에 첫 불펜이 없습니다.")
@@ -206,9 +219,7 @@ final class CareerSmokeUITests: XCTestCase {
         app.launch()
 
         dismissOpening(app)
-        let start = app.buttons["hs.start"]
-        XCTAssertTrue(start.waitForExistence(timeout: timeout), "고교 시작 화면이 열리지 않았습니다.")
-        tapIfPresent(start)
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
 
         // 첫 불펜이 바로 나오므로 거기서 제스처를 검증한다.
         tapIfPresent(app.buttons["hs.prologue.throw"])
