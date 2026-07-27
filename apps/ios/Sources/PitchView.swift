@@ -30,11 +30,18 @@ enum PitchCopy {
         }
     }
 
-    static func intentDetail(_ intent: ZoneIntent) -> String {
+    /// 노림 설명은 코스에 따라 달라진다.
+    ///
+    /// "볼 유도"를 한복판에서 고르면 공은 낮은 쪽으로 빠진다 — 커널이 그렇게 던진다.
+    /// 화면이 그 말을 안 하면 플레이어는 한복판에 볼을 던진다고 읽는다.
+    static func intentDetail(_ intent: ZoneIntent, zone: PitchZone) -> String {
         switch intent {
         case .strike: "스트라이크 확률이 높고 맞을 위험도 함께 커집니다."
         case .edge: "경계를 노려 배트를 늦추지만 제구 난도가 높습니다."
-        case .chase: "헛스윙을 노리는 대신 볼이 될 확률이 큽니다."
+        case .chase:
+            ZoneIntent.options(for: zone).count == 2
+                ? "한복판에서는 낮은 쪽으로 빼는 공이 됩니다. 헛스윙을 노리는 대신 볼이 될 확률이 큽니다."
+                : "고른 코스 바깥으로 빼서 헛스윙을 노리는 대신 볼이 될 확률이 큽니다."
         }
     }
 
@@ -273,18 +280,24 @@ struct PitchView: View {
             StrikeZoneGrid(
                 selected: session.selectedZone,
                 recommended: preparation.primaryRecommendation.call.zone,
-                onSelect: { session.selectedZone = $0 }
+                onSelect: { zone in
+                    session.selectedZone = zone
+                    // 한복판으로 옮기면 "존 경계"는 뜻을 잃는다. 고른 채로 두면 아무 일도
+                    // 하지 않는 노림으로 던지게 되므로 성립하는 노림으로 되돌린다.
+                    session.selectedIntent = ZoneIntent.clamped(session.selectedIntent, for: zone)
+                }
             )
         }
 
         BaseballCard(title: "노림") {
             VStack(alignment: .leading, spacing: 8) {
-                OptionRow(items: ZoneIntent.allCases, selection: session.selectedIntent) { intent in
+                OptionRow(items: ZoneIntent.options(for: session.selectedZone), selection: session.selectedIntent) { intent in
                     session.selectedIntent = intent
                 } label: { PitchCopy.intent($0) }
-                Text(PitchCopy.intentDetail(session.selectedIntent))
+                Text(PitchCopy.intentDetail(session.selectedIntent, zone: session.selectedZone))
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
 

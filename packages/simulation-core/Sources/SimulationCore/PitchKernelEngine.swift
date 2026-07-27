@@ -34,12 +34,18 @@ public struct CatcherRecommendationEngine: Sendable {
             )
             : desiredPitch
         let primaryProfile = pitcher.profile(for: primaryPitch)
+        // 약점 코스가 기준점이고, 상황이 그 위에서 한 칸씩 민다. 스카우팅의 가치는 그대로다.
+        let primaryZone = situation.shift(scouting.coldZone)
         let primary = CatcherRecommendation(
             call: PitchCall(
                 pitchType: primaryPitch,
-                // 약점 코스가 기준점이고, 상황이 그 위에서 한 칸씩 민다. 스카우팅의 가치는 그대로다.
-                zone: situation.shift(scouting.coldZone),
-                zoneIntent: situation.zoneIntent(protectZone: protectZone, twoStrikes: twoStrikes),
+                zone: primaryZone,
+                // 밀린 코스가 한복판이면 "존 끝"은 뜻을 잃는다. 목표 좌표가 한복판 그대로라
+                // 포수가 아무것도 요구하지 않는 사인을 내는 셈이었다.
+                zoneIntent: ZoneIntent.clamped(
+                    situation.zoneIntent(protectZone: protectZone, twoStrikes: twoStrikes),
+                    for: primaryZone
+                ),
                 intensity: situation.demandsControl || protectZone || primaryProfile?.role == .development
                     ? .controlled
                     : .normal
@@ -86,7 +92,7 @@ public struct CatcherRecommendationEngine: Sendable {
             call: PitchCall(
                 pitchType: alternativePitch,
                 zone: alternativeZone,
-                zoneIntent: protectZone ? .strike : .edge,
+                zoneIntent: ZoneIntent.clamped(protectZone ? .strike : .edge, for: alternativeZone),
                 intensity: context.fatigue >= 60 ? .controlled : .normal
             ),
             confidence: ScoutingEstimate.adjustedConfidence(

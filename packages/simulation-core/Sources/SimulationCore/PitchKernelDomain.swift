@@ -4,6 +4,28 @@ public enum ZoneIntent: String, Codable, CaseIterable, Sendable {
     case strike
     case edge
     case chase
+
+    /// 이 코스에서 실제로 뜻이 있는 노림.
+    ///
+    /// 한복판은 **존 끝이 될 수 없다.** `targetCoordinates`가 한복판의 좌표를 (0, 0)으로
+    /// 잡으므로 `.edge`를 골라도 `.strike`와 목표가 글자 그대로 같았다 — 화면에는 선택지가
+    /// 세 개 있는데 그중 하나는 아무 일도 하지 않았다.
+    ///
+    /// `.chase`는 한복판에서도 뜻이 있다. 축이 정해지지 않은 자리라 낮은 쪽으로 빼는 공이
+    /// 되고, 그건 실제 야구에서 흔한 유인구다. 그래서 남긴다 — 대신 화면이 "낮게 뺀다"고
+    /// 말해 주어야 한다.
+    public static func options(for zone: PitchZone) -> [ZoneIntent] {
+        isCenter(zone) ? [.strike, .chase] : allCases
+    }
+
+    /// 코스가 바뀌어 지금 노림이 뜻을 잃었을 때 대신 쓸 노림.
+    public static func clamped(_ intent: ZoneIntent, for zone: PitchZone) -> ZoneIntent {
+        options(for: zone).contains(intent) ? intent : .strike
+    }
+
+    static func isCenter(_ zone: PitchZone) -> Bool {
+        zone.row == 1 && zone.column == 1
+    }
 }
 
 public struct PitchCall: Codable, Equatable, Sendable {
