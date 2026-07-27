@@ -89,6 +89,7 @@ struct HighSchoolCareerView: View {
                 }
                 .background(BaseballTheme.canvas)
                 .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
+                .phaseCurtain(state.phase, disabled: reduceMotion)
             }
         }
     }
@@ -747,6 +748,43 @@ private struct CompletionCard: View {
             .frame(minHeight: BaseballMetrics.minimumTapTarget)
             .accessibilityIdentifier("hs.rebirth")
         }
+    }
+}
+
+/// 국면이 바뀔 때 아주 짧게 어두워진다.
+///
+/// 예전에는 `.snappy` 크로스페이드만 있었다. 두 국면의 글자가 서로 비쳐 보였고(품질 평가
+/// §3-F3), 무엇보다 **3년의 국면 변화가 전부 같은 질감으로 흘렀다.** 장면이 바뀌었다는
+/// 감각이 없으면 학교 선택도 드래프트도 같은 목록을 스크롤하는 일이 된다.
+///
+/// 문장부호 정도의 길이만 쓴다(0.14초 암전). 전환 자체를 볼거리로 만들지 않는다 —
+/// 정점 연출은 드물어서 정점이다.
+private struct PhaseCurtain: ViewModifier {
+    let phase: HighSchoolCareerPhase
+    let disabled: Bool
+
+    @State private var dim: Double = 0
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                BaseballTheme.canvas
+                    .opacity(dim)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .onChange(of: phase) { _, _ in
+                guard !disabled else { return }
+                withAnimation(.easeIn(duration: 0.07)) { dim = 1 }
+                withAnimation(.easeOut(duration: 0.07).delay(0.07)) { dim = 0 }
+            }
+    }
+}
+
+extension View {
+    func phaseCurtain(_ phase: HighSchoolCareerPhase, disabled: Bool) -> some View {
+        modifier(PhaseCurtain(phase: phase, disabled: disabled))
     }
 }
 
