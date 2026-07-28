@@ -201,6 +201,41 @@ final class PitchSessionTests: XCTestCase {
         }
     }
 
+    /// 이닝을 막아낸 등판의 아웃이 0으로 기록되던 버그를 지킨다.
+    ///
+    /// 초가 끝나면 이닝 상태가 말(아웃 0)로 넘어간다. 최종 상태에서 아웃을 역산하면
+    /// 그 순간 막 잡은 3아웃이 통째로 사라진다 — 잘 던질수록 이닝이 기록되지 않아
+    /// RA/9가 부풀고 화면에 "0.0이닝"이 찍혔다.
+    func testOutsSurviveTheInningFlip() {
+        XCTAssertEqual(PitchSession.totalOuts(InningStateSnapshot(inning: 6, half: .top, outs: 2)), 32)
+        XCTAssertEqual(PitchSession.totalOuts(InningStateSnapshot(inning: 6, half: .bottom, outs: 0)), 33)
+
+        var verifiedInningEnd = false
+        for seed in (1...60).map(String.init) {
+            let session = PitchSession(state: snapshot(), seed: seed)
+            session.start()
+            var steps = 0
+            while steps < 200 {
+                steps += 1
+                switch session.stage {
+                case .ready: session.throwPitch()
+                case .betweenBatters: session.advanceToNextBatter()
+                case .finished, .failed: steps = 200
+                }
+            }
+            guard let state = session.gameState.inningState else { continue }
+            // 이 픽스처는 무사(아웃 0)에서 시작한다. 이닝이 실제로 끝났으면 아웃은 정확히 3,
+            // 타자 제한으로 끊겼으면 현재 아웃과 같아야 한다.
+            if state.half == .bottom || state.inning > 7 {
+                XCTAssertEqual(session.report(scenarioNumber: 1).outs, 3, "시드 \(seed)")
+                verifiedInningEnd = true
+                break
+            }
+            XCTAssertEqual(session.report(scenarioNumber: 1).outs, state.outs, "시드 \(seed)")
+        }
+        XCTAssertTrue(verifiedInningEnd, "60개 시드 중 이닝을 끝낸 세션이 없습니다.")
+    }
+
     /// 누적 리포트는 실제 투구 수와 일치해야 한다.
     func testReportMatchesWhatWasActuallyThrown() {
         let session = PitchSession(state: snapshot(), seed: "20260725")

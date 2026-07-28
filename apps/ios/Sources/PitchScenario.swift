@@ -38,7 +38,7 @@ struct PitchScenario {
     // MARK: - 프로 커리어
 
     static func pro(state: ProCareerSnapshot) -> PitchScenario {
-        let situation = proSituation(for: state.seasonTrigger)
+        let situation = proSituation(for: state.seasonTrigger, season: state.season, week: state.week)
         return PitchScenario(
             id: "pa-\(state.proCareerID)-\(state.season)-\(state.week)",
             pitcher: state.pitcher,
@@ -70,23 +70,33 @@ struct PitchScenario {
 
     /// 무사에서 시작한다. 1사로 시작하면 병살 하나에 이닝이 끝나 승부 한 번이 한 구로 끝나는
     /// 일이 생긴다. 유료앱의 주력 장면이 그렇게 짧아지면 안 된다.
-    private static func proSituation(for trigger: ProSeasonTrigger?) -> ProSituation {
+    ///
+    /// 점수 국면은 트리거마다 다르고, 기록·순위 승부는 시즌·주차에 따라 리드와 열세를
+    /// 오간다. 예전에는 6종 전부 "리드 중"으로 고정이라 12시즌 60여 번의 승부에 지고 있는
+    /// 마운드가 한 번도 없었다.
+    private static func proSituation(for trigger: ProSeasonTrigger?, season: Int, week: Int) -> ProSituation {
         let onSecond = BaserunnerStateSnapshot(firstOccupied: false, secondOccupied: true, thirdOccupied: false, leadRunnerSpeed: 52)
         let onFirst = BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 54)
         let corners = BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: true, thirdOccupied: false, leadRunnerSpeed: 56)
+        // 결정론: 같은 시즌·주차면 같은 국면. 홀짝만 쓰므로 저장·복원에도 흔들리지 않는다.
+        let leading = (season + week) % 2 == 0
         switch trigger {
         case .majorDebut:
-            return ProSituation(inning: 6, outs: 0, runners: onSecond, scoreDifferential: 1, leverage: 780, headline: "1군 데뷔 등판", detail: "한 점 차 · 무사 2루")
+            return ProSituation(inning: 6, outs: 0, runners: onSecond, scoreDifferential: 0, leverage: 780, headline: "1군 데뷔 등판", detail: "동점 · 무사 2루")
         case .callUpAudition:
-            return ProSituation(inning: 7, outs: 0, runners: onSecond, scoreDifferential: 1, leverage: 820, headline: "콜업을 결정할 등판", detail: "한 점 차 · 무사 2루")
+            return ProSituation(inning: 7, outs: 0, runners: onSecond, scoreDifferential: -1, leverage: 820, headline: "콜업을 결정할 등판", detail: "한 점 뒤짐 · 무사 2루 — 여기서 끊어야 반격이 산다")
         case .roleShowdown:
-            return ProSituation(inning: 8, outs: 0, runners: onFirst, scoreDifferential: 1, leverage: 900, headline: "보직을 가를 등판", detail: "한 점 차 · 무사 1루")
+            return ProSituation(inning: 8, outs: 0, runners: onFirst, scoreDifferential: 1, leverage: 900, headline: "보직을 가를 등판", detail: "한 점 앞섬 · 무사 1루")
         case .recordChase:
-            return ProSituation(inning: 7, outs: 0, runners: onFirst, scoreDifferential: 2, leverage: 700, headline: "기록이 걸린 등판", detail: "두 점 차 · 무사 1루")
+            return leading
+                ? ProSituation(inning: 7, outs: 0, runners: onFirst, scoreDifferential: 2, leverage: 700, headline: "기록이 걸린 등판", detail: "두 점 앞섬 · 무사 1루")
+                : ProSituation(inning: 7, outs: 0, runners: onFirst, scoreDifferential: -2, leverage: 700, headline: "기록이 걸린 등판", detail: "두 점 뒤짐 · 무사 1루 — 점수와 상관없이 기록은 쌓인다")
         case .standingsRace:
-            return ProSituation(inning: 9, outs: 0, runners: corners, scoreDifferential: 1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 차 · 무사 1·2루")
+            return leading
+                ? ProSituation(inning: 9, outs: 0, runners: corners, scoreDifferential: 1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 앞섬 · 무사 1·2루")
+                : ProSituation(inning: 9, outs: 0, runners: corners, scoreDifferential: -1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 뒤짐 · 무사 1·2루 — 더 내주면 역전의 문이 닫힌다")
         case .openingStatement, .none:
-            return ProSituation(inning: 5, outs: 0, runners: onSecond, scoreDifferential: 1, leverage: 720, headline: "시즌 첫 승부처", detail: "한 점 차 · 무사 2루")
+            return ProSituation(inning: 5, outs: 0, runners: onSecond, scoreDifferential: 1, leverage: 720, headline: "시즌 첫 승부처", detail: "한 점 앞섬 · 무사 2루")
         }
     }
 
@@ -155,8 +165,9 @@ struct PitchScenario {
             outs: content?.outs ?? 0,
             runners: content?.runners ?? .empty,
             leverage: content?.leverage ?? 500,
-            // 고교 중요 경기는 한 점 차 방어를 기본으로 둔다. 코어 시나리오에 점수 차가 없다.
-            scoreDifferential: 1,
+            // 시나리오가 점수 차를 들고 온다. 예전에는 전부 "1점 앞섬" 고정이라 고교 3년의
+            // 모든 승부가 리드를 지키는 경기였다 — 지고 있는 마운드가 한 번도 없었다.
+            scoreDifferential: content?.scoreDifferential ?? 1,
             fatigue: min(100, max(0, state.fatigue)),
             headline: content?.title ?? "중요 경기",
             detail: content?.narrative ?? "이 이닝을 막아야 합니다.",

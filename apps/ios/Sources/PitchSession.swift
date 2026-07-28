@@ -29,7 +29,6 @@ final class PitchSession {
     private(set) var context: PlateAppearanceContext
     private(set) var gameState: GameStateSnapshot
     /// 등판을 시작한 시점의 누적 아웃카운트. 실제로 몇 아웃을 잡았는지를 재려면 기준점이 필요하다.
-    private let entryTotalOuts: Int
     private(set) var gameLog: GameLogSnapshot
     private(set) var rivalMemory: RivalMemorySnapshot?
     private(set) var scouting: BatterScoutingSnapshot
@@ -80,8 +79,6 @@ final class PitchSession {
         self.seed = seed
         self.scouting = scenario.scouting
         self.gameState = scenario.gameState
-        self.entryTotalOuts = (scenario.gameState.inningState?.inning ?? scenario.inning).advanced(by: -1) * 3
-            + (scenario.gameState.inningState?.outs ?? scenario.outs)
         self.gameLog = GameLogSnapshot(gameID: scenario.id, revision: 0, totalPitches: 0, entries: [])
         self.context = PlateAppearanceContext(
             plateAppearanceID: "\(scenario.id)-b0",
@@ -163,14 +160,19 @@ final class PitchSession {
         }
     }
 
-    /// 이번 등판에서 실제로 잡은 아웃카운트.
+    /// 이번 등판에서 실제로 잡은 아웃카운트. 매 투구의 차이로 누적한다.
     ///
-    /// 예전에는 이 값을 넘기지 않아 코어가 이닝을 `투구수 / 5`로 어림했다. 삼진을 많이 잡아
-    /// 투구수가 늘면 던지지도 않은 이닝이 성적에 붙었다.
-    var outsRecorded: Int {
-        let inning = gameState.inningState?.inning ?? context.inning
-        let outs = gameState.inningState?.outs ?? context.outs
-        return max(0, (inning - 1) * 3 + outs - entryTotalOuts)
+    /// 예전에는 이 값을 넘기지 않아 코어가 이닝을 `투구수 / 5`로 어림했다. 그다음에는
+    /// 최종 상태에서 역산했는데, 이닝을 막아내면 초가 말(아웃 0)로 넘어가며 **막 잡은
+    /// 3아웃이 통째로 사라졌다** — 잘 던질수록 이닝이 기록되지 않아 RA/9가 부풀고
+    /// 화면에 "0.0이닝"이 찍혔다.
+    private(set) var outsRecorded = 0
+
+    /// 회·초말·아웃을 한 줄의 절대 아웃 수로 편다. 초가 끝나면 말의 아웃 0으로 리셋되므로,
+    /// 회·아웃만 보면 이닝 종료 순간의 아웃이 사라진다.
+    static func totalOuts(_ state: InningStateSnapshot?) -> Int {
+        guard let state else { return 0 }
+        return (state.inning - 1) * 6 + (state.half == .bottom ? 3 : 0) + state.outs
     }
 
     /// 지금까지 던진 결과로 프로 커리어에 넘길 리포트를 만든다.
@@ -193,11 +195,13 @@ final class PitchSession {
     // MARK: - 내부
 
     private func absorb(_ result: PitchKernelResult, call: PitchCall) {
+        let outsBefore = Self.totalOuts(gameState.inningState)
         lastResult = result
         seed = result.nextSeed
         gameState = result.gameState
         gameLog = result.gameLog
         rivalMemory = result.rivalMemory
+        outsRecorded += max(0, Self.totalOuts(result.gameState.inningState) - outsBefore)
 
         let snapshot = result.snapshot
         lastCues = GameAudioMapping.cues(for: snapshot)
