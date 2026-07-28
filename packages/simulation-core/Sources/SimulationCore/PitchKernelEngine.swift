@@ -1021,15 +1021,20 @@ public struct PitchKernelEngine: Sendable {
         let intensityPenalty: Int
         let velocityBonus: Int
         switch params.call.intensity {
+        // 힘 배분은 **거래**여야 한다. 예전에는 controlled가 피출루·삼진·홈런·실점·피로
+        // 전부에서 우월해서 고를 이유가 하나뿐이었다(실측 OBP controlled .250 대 전력 .346,
+        // 심지어 삼진도 controlled가 더 많았다 — 앞뒤가 맞지 않는다).
+        //
+        // 지금은 제구를 잃는 대신 구속을 얻고, 구속은 헛스윙과 약한 타구로 돌아온다.
         case .controlled:
-            intensityPenalty = -70
-            velocityBonus = -18
+            intensityPenalty = -42
+            velocityBonus = -70
         case .normal:
             intensityPenalty = 0
             velocityBonus = 0
         case .maxEffort:
-            intensityPenalty = 130
-            velocityBonus = 32
+            intensityPenalty = 62
+            velocityBonus = 95
         }
         let profile = params.pitcher.profile(for: params.call.pitchType)
         let commandRating = profile.map {
@@ -1044,7 +1049,7 @@ public struct PitchKernelEngine: Sendable {
         var offsetX = generator.nextInt(upperBound: spread * 2 + 1) - spread
         var offsetY = generator.nextInt(upperBound: spread * 2 + 1) - spread
         let wildChance = clamp(
-            8 + params.context.fatigue / 10 + (params.call.intensity == .maxEffort ? 4 : 0)
+            8 + params.context.fatigue / 10 + (params.call.intensity == .maxEffort ? 2 : 0)
                 - (commandRating - 50) / 4,
             3,
             20
@@ -1190,6 +1195,32 @@ public struct PitchKernelEngine: Sendable {
         )
         let pitchMatched = plan.expectedPitch == params.call.pitchType
         let zoneMatched = zonesAreNear(plan.expectedZone, params.call.zone)
+        // **타자의 약점과 강점이 판정에 들어온다.**
+        //
+        // 예전에는 이 판정이 스카우팅에서 `chaseTendency` 하나만 읽었다. 약점 구종과 약점
+        // 코스는 포수 추천과 화면 점수에만 쓰이고 결과에는 닿지 않았다. 그래서 실측하면
+        // **약점 구종을 던진 쪽이 강점 구종보다 결과가 나쁜 역설**이 나왔다 — 포수가 투수에게
+        // 더 나쁜 공을 권하고 있었다는 뜻이다.
+        //
+        // 공이 실제로 어디로 갔는지로 코스를 판정한다. 부른 코스로 하면 약점 코스를 부르고
+        // 한복판으로 빠져도 약점 취급을 받는다.
+        let weaknessMatched = params.call.pitchType == params.scouting.pitchWeakness
+        let strengthMatched = params.call.pitchType == params.scouting.pitchStrength
+        let landedZone = PitchZone(
+            row: execution.actualY >= 165 ? 0 : execution.actualY <= -165 ? 2 : 1,
+            column: execution.actualX <= -165 ? 0 : execution.actualX >= 165 ? 2 : 1
+        )
+        let coldZoneHit = wasInZone && landedZone == params.scouting.coldZone
+        let hotZoneHit = wasInZone && landedZone == params.scouting.hotZone
+        // 약점을 찌르면 배트가 늦고 정타가 줄어든다. 강점은 반대다.
+        //
+        // 크기는 실측으로 잡았다. 포수는 거의 항상 약점 구종·약점 코스를 부르므로 이 보정이
+        // 사실상 상시로 걸린다 — 처음 잡았던 크기(−127)로는 인플레이 타구가 통째로 약해져
+        // BABIP가 밴드 아래(0.228)로 떨어졌다. 스카우팅은 우위이지 필살기가 아니다.
+        let scoutingContact = (weaknessMatched ? -30 : 0) + (strengthMatched ? 26 : 0)
+            + (coldZoneHit ? -22 : 0) + (hotZoneHit ? 24 : 0)
+        let scoutingQuality = (weaknessMatched ? -36 : 0) + (strengthMatched ? 32 : 0)
+            + (coldZoneHit ? -28 : 0) + (hotZoneHit ? 29 : 0)
         let cappedAdaptation = min(RivalMemoryEngine.resolveDamageCap, adaptation.level)
         let patternRecognitionBonus = (pitchMatched ? cappedAdaptation / 6 : 0)
             + (zoneMatched ? cappedAdaptation / 10 : 0)
@@ -1243,7 +1274,10 @@ public struct PitchKernelEngine: Sendable {
                 + (params.pitcher.movement - 50) * 5
                 + max(0, execution.executionQuality - 500) / 2
         }
-        let velocityEdge = clamp((execution.velocityTenthsKPH - 1_370) / 4, -45, 70)
+        // 구속의 값어치. 예전에는 기울기가 얕고(1/4) 상한이 낮아(70), 전력투구가 얻는
+        // +3.2km/h가 +8점밖에 되지 않았다 — 제구 페널티(−95점 상당)를 이길 수 없는 구조라
+        // 힘 배분 축이 controlled 하나로 지배됐다.
+        let velocityEdge = clamp((execution.velocityTenthsKPH - 1_370) / 2, -80, 180)
         let pitchDifficulty = ratingDifficulty + velocityEdge
         let platoonContact = platoonContactBonus(
             pitcherHand: params.pitcher.throwingHand,
@@ -1258,6 +1292,7 @@ public struct PitchKernelEngine: Sendable {
                 + (pitchMatched ? cappedAdaptation / 5 : 0)
                 + plan.bias.contactShift
                 + platoonContact
+                + scoutingContact
                 - pitchDifficulty,
             120,
             940
@@ -1285,6 +1320,9 @@ public struct PitchKernelEngine: Sendable {
                 + (pitchMatched ? cappedAdaptation / 8 : 0)
                 - ((profile?.weakContact ?? 50) - 50) * 2
                 - max(0, execution.executionQuality - 500) / 3
+                + scoutingQuality
+                // 빠른 공은 늦게 맞는다. 전력투구가 제구를 잃는 대신 얻는 것이 이것이다.
+                - max(0, execution.velocityTenthsKPH - 1_400) / 10
                 + generator.nextInt(upperBound: 301) - 150,
             0,
             1_000

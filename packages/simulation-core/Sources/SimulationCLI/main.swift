@@ -214,12 +214,35 @@ let scouting = BatterScoutingSnapshot(
     pitchWeakness: .slider,
     chaseTendency: 48
 )
-let fixedPitch = pitcher.pitchProfiles?.first(where: { $0.role == .primary })?.pitchType ?? .slider
+// 축 하나만 바꿔 가며 재려면 고정 콜의 각 축을 밖에서 지정할 수 있어야 한다.
+// 이게 없으면 "구종을 바꿔도 결과가 같다" 같은 주장을 측정으로 확인할 수 없다.
+let fixedPitch: PitchType = {
+    guard let index = arguments.firstIndex(of: "--pitch") else {
+        return pitcher.pitchProfiles?.first(where: { $0.role == .primary })?.pitchType ?? .slider
+    }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex) else { return .slider }
+    return PitchType(rawValue: arguments[valueIndex]) ?? .slider
+}()
+let fixedIntensity: PitchIntensity = {
+    guard let index = arguments.firstIndex(of: "--intensity") else { return .normal }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex) else { return .normal }
+    return PitchIntensity(rawValue: arguments[valueIndex]) ?? .normal
+}()
+let fixedZone: PitchZone = {
+    guard let index = arguments.firstIndex(of: "--zone") else { return PitchZone(row: 2, column: 0) }
+    let valueIndex = arguments.index(after: index)
+    guard arguments.indices.contains(valueIndex) else { return PitchZone(row: 2, column: 0) }
+    let parts = arguments[valueIndex].split(separator: ",").compactMap { Int($0) }
+    guard parts.count == 2 else { return PitchZone(row: 2, column: 0) }
+    return PitchZone(row: min(2, max(0, parts[0])), column: min(2, max(0, parts[1])))
+}()
 let fixedCall = PitchCall(
     pitchType: fixedPitch,
-    zone: PitchZone(row: 2, column: 0),
+    zone: fixedZone,
     zoneIntent: .edge,
-    intensity: .normal
+    intensity: fixedIntensity
 )
 let batchFielders = FielderPosition.allCases.map {
     FielderSnapshot(
