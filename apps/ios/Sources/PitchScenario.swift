@@ -42,7 +42,9 @@ struct PitchScenario {
         return PitchScenario(
             id: "pa-\(state.proCareerID)-\(state.season)-\(state.week)",
             pitcher: state.pitcher,
-            lineup: ProRivalBatterStats.lineup(rival: state.currentRival, teamID: state.team.id),
+            // 프로도 시즌이 갈수록 리그가 자신에게 맞춰 온다.
+            lineup: ProRivalBatterStats.lineup(rival: state.currentRival, teamID: state.team.id)
+                .map { DifficultyScale.scaled($0, by: DifficultyScale.pro(season: state.season)) },
             scouting: ProRivalBatterStats.scouting(for: state.currentRival),
             defense: ProRivalBatterStats.defense(teamID: state.team.id),
             park: ParkSnapshot(id: state.team.id, name: "\(state.team.name) 홈 구장", hitFactor: 1_000, homeRunFactor: 1_000),
@@ -143,12 +145,18 @@ struct PitchScenario {
     static func highSchool(state: HighSchoolCareerSnapshot) -> PitchScenario {
         let content = state.currentGameScenario
         let rival = state.rival
-        let rivalBatter = BatterSnapshot(
-            id: rival.id,
-            name: rival.name,
-            contact: rival.contact,
-            discipline: rival.discipline,
-            power: rival.power
+        // 상대는 학년이 오르고 회차가 쌓일수록 세진다. 안 그러면 플레이어만 성장해
+        // 난이도 곡선이 단조 하강한다 — 뒤로 갈수록 쉬워지는 게임이 된다.
+        let scale = DifficultyScale.highSchool(chapter: state.chapter.number, lifeNumber: state.lifeNumber)
+        let rivalBatter = DifficultyScale.scaled(
+            BatterSnapshot(
+                id: rival.id,
+                name: rival.name,
+                contact: rival.contact,
+                discipline: rival.discipline,
+                power: rival.power
+            ),
+            by: scale
         )
         // 고교 수비는 프로보다 낮고 편차가 크다. 학교마다 결정론적으로 갈린다.
         let defense = HighSchoolPresentation.defense(schoolID: state.school?.id)
@@ -157,7 +165,7 @@ struct PitchScenario {
             pitcher: state.pitcher,
             lineup: [rivalBatter] + HighSchoolPresentation.followUpBatters(
                 seedText: "\(state.careerID)|\(state.performance.importantGamesCompleted)"
-            ),
+            ).map { DifficultyScale.scaled($0, by: scale) },
             scouting: HighSchoolPresentation.scouting(rival: rival, clarity: state.difficulty.informationClarity),
             defense: defense,
             park: ParkSnapshot(id: "hs-park", name: "고교 구장", hitFactor: 1_000, homeRunFactor: 1_000),

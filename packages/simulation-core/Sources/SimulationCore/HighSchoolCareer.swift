@@ -1533,9 +1533,28 @@ public struct HighSchoolCareerEngine: Sendable {
     /// 고교 자동 경기의 평균 9이닝당 실점(천분율). 드래프트 시즌 항의 영점이다.
     /// `AutoOutingSimulator`나 타자 오프셋을 바꾸면 이 값을 다시 재야 한다 —
     /// 안 그러면 시즌 항이 전원 가산점이나 전원 감점으로 무너진다.
-    /// 2026-07-27 재실측: 1_610. 커널의 장타 재보정(2루타 경계 690→620, 홈런 경계 790→775)
-    /// 뒤에 다시 쟀다. 영점을 안 옮기면 시즌 항이 한쪽으로 쏠린다.
-    static let highSchoolBaselineRA9Permille = 1_610
+    /// 고교 자동 경기의 평균 9이닝당 실점 영점(‰). 드래프트 시즌 항이 이 값을 0으로 삼는다.
+    ///
+    /// **실제 회차를 돌려서 잰다.** 예전에는 오프셋 −6 고정으로 120경기를 돌려 1_610을 얻었는데,
+    /// 실제 일정은 대회 챕터가 프로 수준(오프셋 0)이라 그 값이 처음부터 낮았다. 난이도 보정까지
+    /// 들어오자 격차가 벌어져 드래프트 통과율이 30%에서 10%로 떨어졌다 — 리그 전체가 세졌는데
+    /// 영점만 옛날 자리에 있으면 **모든 회차가 평균 이하로 찍힌다.**
+    ///
+    /// 실측(회차당 25시드, 자동 경기만): 1회차 2_529‰ · 3회차 4_259‰. 난이도 보정 1점당
+    /// 약 432‰다.
+    static let highSchoolBaselineRA9Permille = 2_530
+    /// 난이도 보정 1점당 오르는 9이닝당 실점(‰).
+    static let ra9PermillePerOffsetPoint = 432
+
+    /// 이 회차의 시즌 항 영점. 상대가 세진 만큼 "평균"의 자리도 올라간다.
+    static func highSchoolBaseline(lifeNumber: Int) -> Int {
+        func meanScale(_ life: Int) -> Int {
+            let scales = (1...8).map { DifficultyScale.highSchool(chapter: $0, lifeNumber: life) }
+            return scales.reduce(0, +) * 100 / scales.count   // 100배 고정소수
+        }
+        let delta = meanScale(lifeNumber) - meanScale(1)
+        return highSchoolBaselineRA9Permille + ra9PermillePerOffsetPoint * delta / 100
+    }
 
     /// 챕터 하나가 지나는 동안 팀이 치르는 경기.
     ///
@@ -1554,7 +1573,10 @@ public struct HighSchoolCareerEngine: Sendable {
         let simulator = AutoOutingSimulator()
         // 고교 타자는 프로 기준선보다 약하다. 대회 챕터만 프로 수준으로 올린다 —
         // 전국 무대에서 갑자기 상대가 세지는 것이 이 게임의 긴장 구조다.
-        let offset = chapter.theme.contains("대회") ? 0 : -6
+        // 대회 챕터는 프로 수준, 나머지는 고교 수준. 여기에 학년·회차 보정을 더한다 —
+        // 직접 던진 경기만 세지고 자동 경기가 그대로면 시즌 기록이 두 세계로 갈린다.
+        let base = chapter.theme.contains("대회") ? 0 : -6
+        let offset = base + DifficultyScale.highSchool(chapter: chapter.number, lifeNumber: state.lifeNumber)
         let alreadyPlayed = state.seasonLog?.count ?? 0
 
         return (0..<2).map { index in
@@ -1646,7 +1668,7 @@ public struct HighSchoolCareerEngine: Sendable {
         // RA9 0.6 → +4, 1.61 → 0, 2.6 → -4.
         let seasonTerm = autoOuts == 0
             ? 0
-            : clamp((Self.highSchoolBaselineRA9Permille - autoRuns * 27_000 / autoOuts) * 4 / 1_000, -4, 4)
+            : clamp((Self.highSchoolBaseline(lifeNumber: params.state.lifeNumber) - autoRuns * 27_000 / autoOuts) * 4 / 1_000, -4, 4)
         let score = clamp(ratingScore + performanceScore + processBonus + awakeningScore + relationshipScore + seasonTerm + variance - karmaPenalty - overusePenalty, 20, 95)
         let threshold = params.state.difficulty.careerHarshness == .relaxed ? 57
             : params.state.difficulty.careerHarshness == .challenging ? 65 : 61

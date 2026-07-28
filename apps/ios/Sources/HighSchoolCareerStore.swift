@@ -210,7 +210,15 @@ final class HighSchoolCareerStore {
 
     func beginImportantGame() {
         guard let result, result.snapshot.phase == .importantGame, pitchSession == nil else { return }
-        let session = PitchSession(highSchool: result.snapshot, seed: result.nextSeed)
+        // 프로와 같은 이유로 시드를 넘기고 저장한다. 결과 반영 전에 앱을 껐다 켜면 같은
+        // 이닝을 같은 난수로 다시 던질 수 있었다(무제한 리트라이).
+        let sessionSeed = MobileCareerStore.advanced(result.nextSeed)
+        self.result = HighSchoolCareerResult(
+            revision: result.revision, nextSeed: sessionSeed, events: result.events,
+            snapshot: result.snapshot, eventHash: result.eventHash
+        )
+        save()
+        let session = PitchSession(highSchool: result.snapshot, seed: sessionSeed)
         session.start()
         pitchSession = session
     }

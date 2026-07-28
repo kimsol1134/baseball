@@ -128,9 +128,26 @@ final class MobileCareerStore {
     func beginImportantGame() {
         guard let result, result.snapshot.phase == .importantGame else { return }
         guard pitchSession == nil else { return }
-        let session = PitchSession(state: result.snapshot, seed: result.nextSeed)
+        // **등판을 시작하는 순간 시드를 넘기고 저장한다.**
+        //
+        // 예전에는 여기서 저장하지 않았다. 그래서 결과를 반영하기 전에 앱을 강제 종료하면
+        // 저장본에 같은 시드가 그대로 남아, **같은 이닝을 똑같은 난수로 다시 던질 수 있었다.**
+        // 한 번 겪어 타자의 노림수와 결과를 알아낸 뒤 되돌리는 것이라, 이 게임이 파는
+        // "한 번뿐인 승부"가 성립하지 않는다.
+        //
+        // 시드를 넘기면 다시 시도해도 다른 이닝이 된다. 배운 정보가 남지 않는다.
+        let sessionSeed = Self.advanced(result.nextSeed)
+        self.result = ProCareerResult(snapshot: result.snapshot, nextSeed: sessionSeed, events: result.events)
+        save()
+        let session = PitchSession(state: result.snapshot, seed: sessionSeed)
         session.start()
         pitchSession = session
+    }
+
+    /// 시드를 한 칸 굴린다. 코어와 같은 SplitMix64를 쓴다.
+    nonisolated static func advanced(_ seed: String) -> String {
+        var generator = SplitMix64(seed: UInt64(seed) ?? 0x9E37_79B9_7F4A_7C15)
+        return String(max(1, generator.next() >> 1))
     }
 
     /// 세션에서 실제로 누적된 리포트를 프로 커리어에 반영한다.
