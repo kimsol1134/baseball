@@ -22,6 +22,9 @@ final class HighSchoolCareerStore {
         var memories: [MemoryCardID]
         var soulPoints: Int
         var karmas: [KarmaID]
+        /// 야구혼으로 이미 접은 프로 커리어. 같은 커리어를 두 번 계산하지 않기 위한 표식이다.
+        /// 옵셔널이라 이 필드가 없는 옛 저장본도 그대로 열린다.
+        var creditedProCareerID: String?
 
         static let firstLife = Inheritance(lifeNumber: 1, memories: [], soulPoints: 0, karmas: [])
     }
@@ -99,6 +102,7 @@ final class HighSchoolCareerStore {
     func startCareer(
         preset: PitcherPresetSnapshot,
         playerName: String,
+        region: String = "서울",
         difficulty: CareerDifficultySnapshot = .standard,
         karmas: [KarmaID] = []
     ) {
@@ -108,7 +112,9 @@ final class HighSchoolCareerStore {
             name: name,
             throwingHand: preset.pitcher.throwingHand,
             bodyType: .balanced,
-            region: "서울"
+            // 코어가 모르는 지역이 오면 서울로 받는다 — 학교 이름이 조용히 서울로 바뀌는
+            // 것보다, 여기서 한 번 거르는 쪽이 원인을 찾기 쉽다.
+            region: HighSchoolCareerEngine.regions.contains(region) ? region : "서울"
         )
         var carried = inheritance
         carried.karmas = karmas
@@ -249,17 +255,23 @@ final class HighSchoolCareerStore {
         // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
         archive.removeAll { $0.lifeNumber == closed.lifeNumber }
         archive.insert(closed, at: 0)
+        AchievementStore.shared.record(AchievementRules.fromArchive(archive))
         selectedMemories = []
         save()
     }
 
     /// 다음 회차를 시작한다. 계승분은 유지하고 진행만 비운다.
+    ///
+    /// 진행을 비운 직후에도 **즉시 저장한다.** 예전에는 여기서 저장을 지우기만 했고
+    /// `save()`가 진행 없이는 아무것도 쓰지 않아서, "다시 태어나기"를 누른 순간부터
+    /// 새 선수 생성 완료까지 계승분(야구혼·기억·아카이브)이 메모리에만 있었다 —
+    /// 그 사이가 하필 이름을 고민하는 화면이라, 앱이 내려가면 회차 전체가 1회차로 리셋됐다.
     func beginNextLife() {
-        sync.clear()
         result = nil
         pitchSession = nil
         pendingGains = []
         loadState = .needsSetup
+        save()
     }
 
     /// 끝난 회차를 한 장으로 접는다. 순수 함수라 테스트할 수 있다.
@@ -296,13 +308,46 @@ final class HighSchoolCareerStore {
         let ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
         let record = state.performance.strikeouts * 2 - state.performance.walks - state.performance.runsAllowed * 2
         let base = max(4, ratings / 8 + max(0, record) / 4)
-        let rewarded = base * (1_000 + state.legacyRewardPermille) / 1_000
+        // 코어의 legacyRewardPermille는 이미 1000(×1.0)을 포함한 배율이다. 여기서 1000을
+        // 또 더하면 카르마 없이 ×2.0이 되고, 화면의 "+35%"가 실제로는 절반만 전달된다.
+        let rewarded = base * max(1_000, state.legacyRewardPermille) / 1_000
         return Inheritance(
             lifeNumber: previous.lifeNumber + 1,
             memories: memories,
             soulPoints: previous.soulPoints + rewarded,
             karmas: previous.karmas
         )
+    }
+
+    // MARK: - 프로 커리어의 계승
+
+    /// 은퇴한 프로 커리어를 다음 회차의 야구혼으로 접는다.
+    ///
+    /// 예전에는 15년 명예의 전당 커리어도 계승에 0을 남겼다 — 환생 루프가 고교 스냅숏만
+    /// 읽어서, 드래프트 직후 바로 접은 회차와 전설로 은퇴한 회차가 다음 회차에서 완전히
+    /// 같았다. 프로에서의 시간이 환생과 아무 관계가 없으면, 게임의 후반 전체가 루프
+    /// 바깥에 있게 된다.
+    func recordProLegacy(_ state: ProCareerSnapshot?) {
+        guard let state, inheritance.creditedProCareerID != state.proCareerID else { return }
+        inheritance.creditedProCareerID = state.proCareerID
+        inheritance.soulPoints += Self.proSoulBonus(for: state)
+        save()
+    }
+
+    /// 프로 커리어가 남기는 야구혼. 스펙(메타 계승)의 프로 스케일을 따른다:
+    /// 짧은 2군 커리어 ~30, 평범한 1군 커리어 ~80~120, 전설(12시즌·수상 다수·명전) ~220+.
+    nonisolated static func proSoulBonus(for state: ProCareerSnapshot) -> Int {
+        proSoulBonus(
+            seasons: state.careerStats.count,
+            strikeouts: state.careerStats.reduce(0) { $0 + $1.strikeouts },
+            awards: state.awards.count,
+            hallOfFameScore: state.hallOfFameScore ?? 0
+        )
+    }
+
+    nonisolated static func proSoulBonus(seasons: Int, strikeouts: Int, awards: Int, hallOfFameScore: Int) -> Int {
+        // 20은 지명받아 프로 유니폼을 입었다는 것 자체의 무게다.
+        20 + seasons * 3 + strikeouts / 25 + awards * 8 + hallOfFameScore / 2
     }
 
     func acknowledgeGains() {
@@ -315,9 +360,15 @@ final class HighSchoolCareerStore {
 
     // MARK: - 저장
 
+    /// 회차를 넘어 단조 증가하는 저장 리비전. 진행(result)이 없는 계승-전용 레코드도
+    /// 이 값으로 충돌 판정을 이겨야, 오래된 iCloud 사본이 방금 끝난 회차를 되살리지 않는다.
+    private var savedRevision: UInt64 = 0
+
     func save() {
-        guard let result else { return }
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive)
+        // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
+        // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
+        savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -331,21 +382,32 @@ final class HighSchoolCareerStore {
         feedbackTrigger += 1
     }
 
-    private struct SaveRecord: Codable {
-        let result: HighSchoolCareerResult
+    /// 진행이 없어도(회차 사이) 계승분을 담을 수 있게 `result`가 옵셔널이다.
+    /// 테스트에서 인코딩 호환을 검증하므로 private이 아니다.
+    struct SaveRecord: Codable {
+        let result: HighSchoolCareerResult?
         let inheritance: Inheritance
         /// 옵셔널이라 이 필드가 없는 옛 저장본도 그대로 열린다.
         var archive: [LifeRecord]?
+        /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
+        var revision: UInt64?
+
+        var effectiveRevision: UInt64 {
+            max(revision ?? 0, result?.snapshot.revision ?? 0)
+        }
     }
 
     private func restore() -> Bool {
         guard let data = sync.read(revision: { data in
-            try? JSONDecoder().decode(SaveRecord.self, from: data).result.snapshot.revision
+            (try? JSONDecoder().decode(SaveRecord.self, from: data))?.effectiveRevision
         }) else { return false }
         guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else { return false }
-        result = record.result
         inheritance = record.inheritance
         archive = record.archive ?? []
+        savedRevision = record.effectiveRevision
+        // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
+        guard let saved = record.result else { return false }
+        result = saved
         return true
     }
 

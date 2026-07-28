@@ -112,7 +112,11 @@ final class MobileCareerStore {
         perform {
             var current = result
             for _ in 0..<3 where current.snapshot.phase == .weeklyPlan {
+                let before = current.snapshot
                 current = try engine.planWeek(.init(seed: current.nextSeed, state: current.snapshot, plan: selectedPlan))
+                // 화면이 "선발·불펜 역할 변화가 생기면 멈춥니다"라고 약속한다. 역할·소속이
+                // 바뀌었는데 남은 주를 그대로 흘려보내면 그 약속이 거짓이 된다.
+                if current.snapshot.role != before.role || current.snapshot.level != before.level { break }
             }
             return current
         }

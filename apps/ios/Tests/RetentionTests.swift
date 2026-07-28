@@ -121,6 +121,28 @@ final class RetentionTests: XCTestCase {
         XCTAssertTrue(AchievementRules.fromLifeNumber(1).isEmpty)
         XCTAssertTrue(AchievementRules.fromLifeNumber(3).contains(.thirdLife))
         XCTAssertTrue(AchievementRules.fromLifeNumber(7).contains(.thirdLife))
+        // 회차 사다리: 3회차 하나로 끝나면 3회차 시작 순간 회차 목표가 소진된다.
+        XCTAssertFalse(AchievementRules.fromLifeNumber(4).contains(.fifthLife))
+        XCTAssertTrue(AchievementRules.fromLifeNumber(5).contains(.fifthLife))
+        XCTAssertTrue(AchievementRules.fromLifeNumber(10).contains(.tenthLife))
+    }
+
+    /// 수집형 업적: 아카이브가 콘텐츠 풀(학교·지명)을 가리켜야 반복 이유가 생긴다.
+    func testArchiveAchievements() {
+        func life(_ number: Int, school: String, drafted: Bool) -> HighSchoolCareerStore.LifeRecord {
+            HighSchoolCareerStore.LifeRecord(
+                lifeNumber: number, playerName: "테스트", schoolName: school, drafted: drafted,
+                evaluationScore: 60, teamName: drafted ? "구단" : nil, memories: [], games: 5,
+                strikeouts: 30, walks: 8, runsAllowed: 10, soulPoints: 40
+            )
+        }
+        let threeSchools = [life(1, school: "가", drafted: true), life(2, school: "나", drafted: true), life(3, school: "다", drafted: false)]
+        XCTAssertFalse(AchievementRules.fromArchive(threeSchools).contains(.fourSchools))
+        let fourSchools = threeSchools + [life(4, school: "라", drafted: true)]
+        XCTAssertTrue(AchievementRules.fromArchive(fourSchools).contains(.fourSchools))
+        XCTAssertFalse(AchievementRules.fromArchive(fourSchools).contains(.fiveDrafts))
+        let fiveDrafts = fourSchools + [life(5, school: "가", drafted: true), life(6, school: "나", drafted: true)]
+        XCTAssertTrue(AchievementRules.fromArchive(fiveDrafts).contains(.fiveDrafts))
     }
 
     /// 같은 업적을 두 번 기록해도 새로 달성한 것으로 치지 않는다.
@@ -154,20 +176,34 @@ final class RetentionTests: XCTestCase {
     // MARK: - 환생 계승
 
     /// 실패한 회차도 다음 생에 무언가를 남긴다. 0이 되면 다시 켤 이유가 사라진다.
+    /// 코어의 legacyRewardPermille는 1000이 ×1.0이다(카르마 없음).
     func testFailedRunStillCarriesSomethingForward() {
-        let state = Self.highSchoolSnapshot(strikeouts: 0, walks: 12, runsAllowed: 9, rewardPermille: 0)
+        let state = Self.highSchoolSnapshot(strikeouts: 0, walks: 12, runsAllowed: 9, rewardPermille: 1_000)
         let next = HighSchoolCareerStore.nextInheritance(from: state, memories: [], previous: .firstLife)
         XCTAssertEqual(next.lifeNumber, 2)
         XCTAssertGreaterThan(next.soulPoints, 0)
     }
 
-    /// 카르마 보상 배율이 계승분을 키운다.
-    func testKarmaRewardIncreasesInheritance() {
-        let plain = Self.highSchoolSnapshot(strikeouts: 20, walks: 4, runsAllowed: 3, rewardPermille: 0)
-        let burdened = Self.highSchoolSnapshot(strikeouts: 20, walks: 4, runsAllowed: 3, rewardPermille: 350)
+    /// 카르마 보상 배율이 계승분을 정확히 표기만큼 키운다. 예전에는 스토어가 1000을 한 번
+    /// 더 더해서 기본이 ×2.0이 됐고, 화면의 "+35%"가 실제로는 +17.5%만 전달됐다.
+    func testKarmaRewardIncreasesInheritanceExactly() {
+        let plain = Self.highSchoolSnapshot(strikeouts: 20, walks: 4, runsAllowed: 3, rewardPermille: 1_000)
+        let burdened = Self.highSchoolSnapshot(strikeouts: 20, walks: 4, runsAllowed: 3, rewardPermille: 1_350)
         let a = HighSchoolCareerStore.nextInheritance(from: plain, memories: [], previous: .firstLife)
         let b = HighSchoolCareerStore.nextInheritance(from: burdened, memories: [], previous: .firstLife)
         XCTAssertGreaterThan(b.soulPoints, a.soulPoints)
+        // 정수 나눗셈 오차 1 이내에서 정확히 ×1.35여야 한다.
+        XCTAssertLessThanOrEqual(abs(b.soulPoints - a.soulPoints * 1_350 / 1_000), 1)
+    }
+
+    /// 배율 필드가 없거나 0인 저장본(구버전 데스크톱 등)도 ×1.0 밑으로 떨어지지 않는다.
+    func testDegenerateRewardPermilleStillPaysFull() {
+        let zero = Self.highSchoolSnapshot(strikeouts: 20, walks: 4, runsAllowed: 3, rewardPermille: 0)
+        let full = Self.highSchoolSnapshot(strikeouts: 20, walks: 4, runsAllowed: 3, rewardPermille: 1_000)
+        XCTAssertEqual(
+            HighSchoolCareerStore.nextInheritance(from: zero, memories: [], previous: .firstLife).soulPoints,
+            HighSchoolCareerStore.nextInheritance(from: full, memories: [], previous: .firstLife).soulPoints
+        )
     }
 
     /// 회차가 쌓이면 영혼도 쌓인다.
@@ -182,6 +218,41 @@ final class RetentionTests: XCTestCase {
             XCTAssertEqual(carried.memories, [.coachLetter])
             previousPoints = carried.soulPoints
         }
+    }
+
+    /// 프로 커리어가 길고 빛날수록 다음 회차에 남기는 야구혼이 커야 한다.
+    /// 예전에는 15년 명예의 전당 커리어도 계승에 0을 남겼다.
+    func testProCareerLeavesSoulProportionalToItsWeight() {
+        let short = HighSchoolCareerStore.proSoulBonus(seasons: 2, strikeouts: 90, awards: 0, hallOfFameScore: 0)
+        let steady = HighSchoolCareerStore.proSoulBonus(seasons: 8, strikeouts: 700, awards: 1, hallOfFameScore: 30)
+        let legend = HighSchoolCareerStore.proSoulBonus(seasons: 12, strikeouts: 1_800, awards: 6, hallOfFameScore: 90)
+        XCTAssertGreaterThan(short, 0)
+        XCTAssertGreaterThan(steady, short)
+        XCTAssertGreaterThan(legend, steady)
+        // 전설 커리어는 스펙의 프로 계승 스케일(~220+)에 닿아야 한다.
+        XCTAssertGreaterThanOrEqual(legend, 200)
+    }
+
+    /// 회차 사이(진행 없음)에도 계승분이 저장 레코드로 남아야 한다. 이게 깨지면
+    /// "다시 태어나기" 직후 앱이 내려갈 때 야구혼·기억·아카이브가 통째로 사라진다.
+    func testLegacyOnlyRecordRoundTrips() throws {
+        let inheritance = HighSchoolCareerStore.Inheritance(
+            lifeNumber: 3, memories: [.coachLetter, .recoveryRoutine], soulPoints: 87, karmas: [.noLastChance]
+        )
+        let life = HighSchoolCareerStore.LifeRecord(
+            lifeNumber: 2, playerName: "테스트", schoolName: "서울덕성고", drafted: false,
+            evaluationScore: 55, teamName: nil, memories: [.coachLetter], games: 5,
+            strikeouts: 40, walks: 9, runsAllowed: 12, soulPoints: 41
+        )
+        let record = HighSchoolCareerStore.SaveRecord(
+            result: nil, inheritance: inheritance, archive: [life], revision: 42
+        )
+        let data = try JSONEncoder().encode(record)
+        let decoded = try JSONDecoder().decode(HighSchoolCareerStore.SaveRecord.self, from: data)
+        XCTAssertNil(decoded.result)
+        XCTAssertEqual(decoded.inheritance, inheritance)
+        XCTAssertEqual(decoded.archive, [life])
+        XCTAssertEqual(decoded.effectiveRevision, 42)
     }
 
     // MARK: - 고정물

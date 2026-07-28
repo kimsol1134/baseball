@@ -10,17 +10,18 @@ import SimulationCore
 /// 않으면 사람은 나간다.
 ///
 /// 그래서 단계로 쪼갠다. 한 단계에는 질문 하나와 그 질문에 답하는 것만 있다.
-/// 첫 회차는 두 단계(이름 → 투수 유형), 2회차부터 세 단계(+ 난이도·핸디캡)다.
+/// 첫 회차는 세 단계(이름 → 지역 → 투수 유형), 2회차부터 네 단계(+ 난이도·핸디캡)다.
 struct HighSchoolSetupView: View {
     let career: HighSchoolCareerStore
 
     /// 설정 단계. 순서가 곧 화면 순서다.
     private enum Step: Int, CaseIterable {
-        case name, style, handicap
+        case name, region, style, handicap
     }
 
     @State private var step: Step = .name
     @State private var playerName = ""
+    @State private var selectedRegion = "서울"
     @State private var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
     @State private var selectedKarmas: Set<KarmaID> = []
     @State private var harshness: DifficultyLevel = .standard
@@ -37,7 +38,7 @@ struct HighSchoolSetupView: View {
     /// 처음 켠 사람은 **다음 회차가 뭔지 아직 모른다.** "고르면 다음 회차 계승이 커집니다"가
     /// 읽히려면 한 번 끝까지 가 보고 계승을 겪어야 한다. Rogue Legacy도 첫 죽음 전까지
     /// 특성을 보여 주지 않는다.
-    private var steps: [Step] { isRebirth ? Step.allCases : [.name, .style] }
+    private var steps: [Step] { isRebirth ? Step.allCases : [.name, .region, .style] }
     private var stepIndex: Int { steps.firstIndex(of: step) ?? 0 }
     private var isLastStep: Bool { stepIndex == steps.count - 1 }
 
@@ -56,6 +57,7 @@ struct HighSchoolSetupView: View {
                 VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                     switch step {
                     case .name: nameStep
+                    case .region: regionStep
                     case .style: styleStep
                     case .handicap: handicapStep
                     }
@@ -160,7 +162,51 @@ struct HighSchoolSetupView: View {
         }
     }
 
-    // MARK: - 2단계 투수 유형
+    // MARK: - 2단계 지역
+
+    /// 어느 지역에서 시작하는가. 지역이 학교 네 곳의 이름을 정한다 — 감독·포수·훈련 색은
+    /// 학교 유형에 붙어 있으므로, 지역은 "누구와 3년을 보내는가"가 아니라 "어느 이름의
+    /// 교정에서 그 3년이 흘러가는가"를 정한다. 회차마다 다른 지역을 고르면 다른 학교
+    /// 이름들이 아카이브에 쌓인다.
+    private var regionStep: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            Text("어느 지역에서 시작할까요?")
+                .font(.title.bold())
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("중학교 마지막 대회를 치른 지역입니다. 이 지역의 네 고교가 손을 내밉니다.")
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                ForEach(HighSchoolCareerEngine.regions, id: \.self) { region in
+                    Button {
+                        selectedRegion = region
+                    } label: {
+                        Text(region)
+                            .font(.subheadline.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                    }
+                    .buttonStyle(.plain)
+                    .background(
+                        selectedRegion == region ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surface,
+                        in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                            .stroke(selectedRegion == region ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6),
+                                    lineWidth: selectedRegion == region ? 2 : 1)
+                    }
+                    .accessibilityAddTraits(selectedRegion == region ? .isSelected : [])
+                    .accessibilityIdentifier("hs.setup.region.\(region)")
+                }
+            }
+        }
+    }
+
+    // MARK: - 3단계 투수 유형
 
     private var styleStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -182,7 +228,7 @@ struct HighSchoolSetupView: View {
         }
     }
 
-    // MARK: - 3단계 난이도·핸디캡 (2회차부터)
+    // MARK: - 4단계 난이도·핸디캡 (2회차부터)
 
     private var handicapStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -215,17 +261,20 @@ struct HighSchoolSetupView: View {
             }
 
             Text("핸디캡").font(.headline)
-            Text("고르면 이번 회차가 어려워집니다. 대신 다음 회차로 넘어가는 계승이 커집니다. 지금 +\(rewardPermille / 10)%")
+            Text("최대 2개. 고르면 이번 회차가 어려워집니다. 대신 다음 회차로 넘어가는 계승이 커집니다. 지금 +\(rewardPermille / 10)%")
                 .font(.footnote)
                 .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(KarmaID.allCases, id: \.self) { karma in
+                // 코어가 카르마를 2개까지만 받는다(HighSchoolCareerEngine.start). 3개를 보내면
+                // 커리어 생성이 실패하고, 그 화면의 유일한 버튼이 진행 삭제다 — 여기서 막는다.
                 KarmaRow(
                     karma: karma,
                     selected: selectedKarmas.contains(karma),
+                    atCapacity: selectedKarmas.count >= 2,
                     onToggle: {
                         if selectedKarmas.contains(karma) { selectedKarmas.remove(karma) }
-                        else { selectedKarmas.insert(karma) }
+                        else if selectedKarmas.count < 2 { selectedKarmas.insert(karma) }
                     }
                 )
             }
@@ -243,6 +292,7 @@ struct HighSchoolSetupView: View {
                     career.startCareer(
                         preset: selectedPreset,
                         playerName: playerName,
+                        region: selectedRegion,
                         difficulty: CareerDifficultySnapshot(careerHarshness: harshness),
                         karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue }
                     )
@@ -326,13 +376,17 @@ private struct PresetRow: View {
 private struct KarmaRow: View {
     let karma: KarmaID
     let selected: Bool
+    /// 이미 2개를 골랐는가. 선택된 행은 계속 눌러서 해제할 수 있어야 하므로 별도로 받는다.
+    var atCapacity: Bool = false
     let onToggle: () -> Void
+
+    private var locked: Bool { atCapacity && !selected }
 
     var body: some View {
         Button(action: onToggle) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: selected ? "checkmark.square.fill" : "square")
-                    .foregroundStyle(selected ? BaseballTheme.warning : BaseballTheme.border)
+                    .foregroundStyle(selected ? BaseballTheme.warning : BaseballTheme.border.opacity(locked ? 0.4 : 1))
                 VStack(alignment: .leading, spacing: 2) {
                     let copy = HighSchoolPresentation.karma(karma)
                     Text(copy.title).font(.subheadline.weight(.bold))
@@ -356,6 +410,8 @@ private struct KarmaRow: View {
             }
         }
         .buttonStyle(.plain)
+        .opacity(locked ? 0.45 : 1)
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityHint(locked ? "핸디캡은 두 개까지 고를 수 있습니다. 다른 것을 빼면 고를 수 있습니다." : "")
     }
 }
