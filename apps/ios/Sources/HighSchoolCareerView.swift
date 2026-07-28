@@ -395,6 +395,36 @@ private struct TrainingCard: View {
     @State private var focus: TrainingFocus = .command
     @State private var intensity: TrainingIntensity = .standard
 
+    /// 전망 계산용. 엔진은 상태가 없어서 화면이 하나 들고 있어도 된다.
+    private let engine = HighSchoolCareerEngine()
+
+    /// 학교 특기와 오늘의 기회가 이 훈련에서 겹치는가 — 이 턴이 몰아붙일 턴이다.
+    private var doubleBonus: Bool {
+        state.school?.strength == focus && state.trainingOpportunity?.focus == focus
+    }
+
+    private var outlook: HighSchoolCareerEngine.TrainingGrowthOutlook {
+        engine.trainingOutlook(state: state, focus: focus, intensity: intensity)
+    }
+
+    /// 전망을 말로 옮긴다. 확률 숫자가 아니라 구간만 말한다 — 판정의 무작위 폭은 그대로다.
+    private var outlookCopy: (text: String, tone: Color) {
+        switch outlook {
+        case .wall:
+            return ("지금은 재능의 벽에 막혀 수치가 오르지 않습니다. 대신 계속 두드리면 벽이 열립니다.", BaseballTheme.milestone)
+        case .two:
+            return ("크게 오를 훈련입니다. +2가 유력합니다.", BaseballTheme.positive)
+        case .oneOrTwo:
+            return ("+1은 확실하고, 잘 풀리면 +2까지 오릅니다.", BaseballTheme.positive)
+        case .one:
+            return ("+1이 확실한 훈련입니다.", BaseballTheme.textSecondary)
+        case .zeroOrOne:
+            return ("+1이 나올 수도, 성장 없이 지날 수도 있습니다.", BaseballTheme.textSecondary)
+        case .none:
+            return ("이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다.", BaseballTheme.warning)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             let health = HighSchoolPresentation.armHealth(armHealth)
@@ -416,6 +446,7 @@ private struct TrainingCard: View {
             Text("무엇을 훈련할까요").font(.headline)
             ForEach(TrainingFocus.allCases, id: \.self) { option in
                 let isOpportunity = state.trainingOpportunity?.focus == option
+                let isSchoolStrength = state.school?.strength == option
                 Button { focus = option } label: {
                     HStack(spacing: 12) {
                         Image(systemName: HighSchoolPresentation.focusSymbol(option))
@@ -431,6 +462,16 @@ private struct TrainingCard: View {
                                         .padding(.horizontal, 6).padding(.vertical, 2)
                                         .background(BaseballTheme.milestone.opacity(0.25), in: Capsule())
                                         .foregroundStyle(BaseballTheme.milestone)
+                                }
+                                // 학교 특기는 3년 내내 붙는 상수 보너스인데, 학교 선택 화면
+                                // 이후로는 어디에도 안 보였다. 기회와 특기가 겹치는 턴을
+                                // 알아보는 것이 훈련의 진짜 결정이라 여기 있어야 한다.
+                                if isSchoolStrength {
+                                    Text("특기")
+                                        .font(.caption2.weight(.bold))
+                                        .padding(.horizontal, 6).padding(.vertical, 2)
+                                        .background(BaseballTheme.action.opacity(0.25), in: Capsule())
+                                        .foregroundStyle(BaseballTheme.action)
                                 }
                             }
                             Text(HighSchoolPresentation.focusDetail(option))
@@ -457,25 +498,38 @@ private struct TrainingCard: View {
             }
 
             BaseballCard(title: "강도") {
-                HStack(spacing: 6) {
-                    ForEach(TrainingIntensity.allCases, id: \.self) { option in
-                        Button { intensity = option } label: {
-                            Text(HighSchoolPresentation.intensity(option, focus: focus))
-                                .font(.footnote.weight(.semibold))
-                                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 6) {
+                        ForEach(TrainingIntensity.allCases, id: \.self) { option in
+                            Button { intensity = option } label: {
+                                Text(HighSchoolPresentation.intensity(option, focus: focus))
+                                    .font(.footnote.weight(.semibold))
+                                    .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                            }
+                            .buttonStyle(.plain)
+                            .background(
+                                intensity == option ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surfaceRaised,
+                                in: RoundedRectangle(cornerRadius: 8)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(intensity == option ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6),
+                                            lineWidth: intensity == option ? 2 : 1)
+                            }
+                            .accessibilityAddTraits(intensity == option ? .isSelected : [])
                         }
-                        .buttonStyle(.plain)
-                        .background(
-                            intensity == option ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surfaceRaised,
-                            in: RoundedRectangle(cornerRadius: 8)
-                        )
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(intensity == option ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6),
-                                        lineWidth: intensity == option ? 2 : 1)
-                        }
-                        .accessibilityAddTraits(intensity == option ? .isSelected : [])
                     }
+                    if doubleBonus {
+                        Text("오늘은 학교 특기와 기회가 겹칩니다. 몰아붙일 자리입니다.")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Text(outlookCopy.text)
+                        .font(.footnote)
+                        .foregroundStyle(outlookCopy.tone)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("hs.training.outlook")
                 }
             }
 
@@ -860,7 +914,12 @@ private struct CompletionCard: View {
                 }
             }
 
-            if let draft = state.draftResult, draft.outcome == .drafted {
+            // 기억을 이미 확정한 회차는 결정이 끝난 회차다. 이 구분이 없던 동안, 지명 회차를
+            // 접기로 하고 기억까지 고른 사용자가 "이 회차를 접고 다시 시작"을 누를 때마다
+            // 다시 기억 선택으로 끌려갔다 — 환생에 영영 닿지 못하는 무한 순환이었다.
+            let legacyConfirmed = !state.selectedMemories.isEmpty
+
+            if let draft = state.draftResult, draft.outcome == .drafted, !legacyConfirmed {
                 PrimaryButton(title: "프로 커리어 시작", identifier: "hs.enterPro") {
                     onEnterPro(draft, state.pitcher, state.identity)
                 }
@@ -869,14 +928,14 @@ private struct CompletionCard: View {
             }
 
             // 지명된 회차는 아직 끝나지 않았다. 접겠다고 결정할 때 비로소 기억을 고른다.
-            let drafted = state.draftResult?.outcome == .drafted
+            let opensLegacy = state.draftResult?.outcome == .drafted && !legacyConfirmed
             Button {
-                if drafted { career.openLegacy() } else { onRebirth() }
+                if opensLegacy { career.openLegacy() } else { onRebirth() }
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(drafted ? "이 회차를 접고 다시 시작" : "다시 태어나기")
+                    Text(opensLegacy ? "이 회차를 접고 다시 시작" : "다시 태어나기")
                         .font(.subheadline.weight(.semibold))
-                    Text(drafted
+                    Text(opensLegacy
                          ? "프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르게 됩니다."
                          : "\(career.inheritance.lifeNumber)회차를 기억 \(career.inheritance.memories.count)장과 함께 시작합니다.")
                         .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
@@ -896,8 +955,10 @@ private struct CompletionCard: View {
 /// §3-F3), 무엇보다 **3년의 국면 변화가 전부 같은 질감으로 흘렀다.** 장면이 바뀌었다는
 /// 감각이 없으면 학교 선택도 드래프트도 같은 목록을 스크롤하는 일이 된다.
 ///
-/// 문장부호 정도의 길이만 쓴다(0.14초 암전). 전환 자체를 볼거리로 만들지 않는다 —
-/// 정점 연출은 드물어서 정점이다.
+/// 커튼은 아래 크로스페이드(.snappy ≈ 0.3초 + 정착)가 **끝날 때까지** 완전히 덮어야 한다.
+/// 처음 넣었던 0.07+0.07초 커튼은 전환보다 먼저 걷혀서 전환 후반에 두 국면의 글자가
+/// 다시 겹쳐 보였고, 그 프레임이 스토어 스크린샷에 그대로 찍혔다. 전환 자체를 볼거리로
+/// 만들지는 않는다 — 정점 연출은 드물어서 정점이다.
 private struct PhaseCurtain: ViewModifier {
     let phase: HighSchoolCareerPhase
     let disabled: Bool
@@ -915,8 +976,8 @@ private struct PhaseCurtain: ViewModifier {
             }
             .onChange(of: phase) { _, _ in
                 guard !disabled else { return }
-                withAnimation(.easeIn(duration: 0.07)) { dim = 1 }
-                withAnimation(.easeOut(duration: 0.07).delay(0.07)) { dim = 0 }
+                withAnimation(.easeIn(duration: 0.08)) { dim = 1 }
+                withAnimation(.easeOut(duration: 0.14).delay(0.34)) { dim = 0 }
             }
     }
 }

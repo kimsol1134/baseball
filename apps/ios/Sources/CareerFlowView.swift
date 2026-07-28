@@ -490,6 +490,14 @@ private struct RetiredView: View {
 
             CareerTotals(state: state)
 
+            // 이 커리어가 다음 회차에 남기는 것. 프로의 시간이 환생 루프와 무관하면
+            // 은퇴가 끝이 되지만, 야구혼으로 이어지면 은퇴가 다음 회차의 시작이 된다.
+            BaseballCard(title: "다음 회차로", tone: .milestone) {
+                Text("이 커리어가 야구혼 \(HighSchoolCareerStore.proSoulBonus(for: state))을 남깁니다. 다시 태어날 때 시작 능력에 스며듭니다.")
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             if !state.awards.isEmpty {
                 BaseballCard(title: "수상", tone: .milestone) {
                     VStack(alignment: .leading, spacing: 6) {

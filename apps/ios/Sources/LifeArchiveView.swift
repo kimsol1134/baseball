@@ -11,9 +11,32 @@ import SimulationCore
 struct LifeArchiveSection: View {
     let records: [HighSchoolCareerStore.LifeRecord]
 
+    /// 회차를 가로지르는 누적. 아카이브가 목록로만 있으면 "다음 회차에 깨야 할 숫자"가
+    /// 생기지 않는다 — 로그라이트 아카이브의 핵심은 목록이 아니라 누적 곡선이다.
+    private var totals: (drafted: Int, strikeouts: Int, bestEvaluation: Int, soul: Int) {
+        records.reduce((0, 0, 0, 0)) {
+            ($0.0 + ($1.drafted ? 1 : 0), $0.1 + $1.strikeouts,
+             max($0.2, $1.evaluationScore), $0.3 + $1.soulPoints)
+        }
+    }
+
     var body: some View {
         BaseballCard(title: "지난 회차 \(records.count)") {
             VStack(alignment: .leading, spacing: 0) {
+                if records.count >= 2 {
+                    HStack(spacing: 16) {
+                        archiveStat("지명", "\(totals.drafted)/\(records.count)")
+                        archiveStat("통산 K", "\(totals.strikeouts)")
+                        archiveStat("최고 평가", "\(totals.bestEvaluation)")
+                        archiveStat("모은 야구혼", "\(totals.soul)")
+                    }
+                    .padding(.bottom, 10)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("지난 회차 통산. 지명 \(totals.drafted)회, 통산 탈삼진 \(totals.strikeouts), 최고 평가 \(totals.bestEvaluation)점, 모은 야구혼 \(totals.soul)")
+                    Rectangle()
+                        .fill(BaseballTheme.border.opacity(0.35))
+                        .frame(height: 1)
+                }
                 ForEach(records) { record in
                     LifeArchiveRow(record: record)
                     if record.id != records.last?.id {
@@ -24,6 +47,17 @@ struct LifeArchiveSection: View {
                 }
             }
             .accessibilityIdentifier("record.lifeArchive")
+        }
+    }
+
+    private func archiveStat(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textTertiary)
+            Text(value)
+                .font(.subheadline.monospacedDigit().weight(.bold))
+                .foregroundStyle(BaseballTheme.textPrimary)
         }
     }
 }

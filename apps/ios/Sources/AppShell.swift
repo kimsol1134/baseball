@@ -81,8 +81,10 @@ struct AppShell: View {
             CareerFailureView(message: message, career: pro)
         case .ready:
             ProCareerTabs(career: pro) {
-                // 은퇴한 선수의 커리어를 접고 고교로 돌아간다. 프로 저장본만 지우고
-                // 고교 회차는 그대로 두므로, 완료 화면에서 기억을 고르고 다시 시작한다.
+                // 은퇴한 선수의 커리어를 접고 고교로 돌아간다. 프로에서의 시간을 야구혼으로
+                // 계승분에 먼저 얹은 뒤 프로 저장본만 지운다 — 고교 회차는 그대로 있으므로,
+                // 완료 화면에서 기억을 고르고 다시 시작한다.
+                highSchool.recordProLegacy(pro.state)
                 pro.deleteCareer()
                 selection = .highSchool
             }
@@ -315,12 +317,14 @@ private struct TodayDashboard: View {
     }
 
     static func actionText(_ phase: ProCareerPhase) -> String {
+        // "커리어 탭"은 존재하지 않는다 — 탭 바에는 고교/프로/기록/설정뿐이고, 실제로는
+        // 프로 화면 위의 "이번 주" 세그먼트다. 없는 곳을 가리키면 처음 온 사람이 길을 잃는다.
         switch phase {
         case .weeklyPlan: "이번 주에 가장 신경 쓸 훈련을 고르세요."
-        case .importantGame: "등판이 잡혔습니다. 커리어 탭에서 승부를 시작하세요."
+        case .importantGame: "등판이 잡혔습니다. 위의 '이번 주'에서 승부를 시작하세요."
         case .seasonReview: "올해 경기 기록과 수상 결과를 확인하세요."
         case .offseasonDecision: "현재 구단에 남을지 결정하세요."
-        default: "커리어 탭에서 다음 일정을 확인하세요."
+        default: "위의 '이번 주'에서 다음 일정을 확인하세요."
         }
     }
 }

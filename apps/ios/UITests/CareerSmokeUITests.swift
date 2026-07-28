@@ -31,7 +31,10 @@ final class CareerSmokeUITests: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         // 자동 릴리스로 돌린다. 타이밍 제스처는 사람이 손으로 확인하고, 이 테스트는 흐름을 본다.
-        app.launchArguments = ["-uiTestResetCareer", "-uiTestAutoRelease"]
+        // 소리는 끈다 — 스모크가 검증할 대상이 아니고, 호스트 오디오 상태가 나쁘면
+        // AVAudioPlayerNode.scheduleBuffer의 NSException으로 앱이 통째로 죽어 흐름 검증까지
+        // 무너진다(시뮬레이터에서 재현, HEAD에서도 동일). 인자 도메인이라 앱 코드는 그대로다.
+        app.launchArguments = ["-uiTestResetCareer", "-uiTestAutoRelease", "-baseball.audio.sound", "NO"]
         app.launch()
         return app
     }
@@ -238,7 +241,8 @@ final class CareerSmokeUITests: XCTestCase {
     /// 유닛 테스트는 미터 값 → 정확도 변환을, 이 테스트는 제스처가 실제로 투구를 만드는지 본다.
     func testManualDeliveryGestureThrowsAPitch() {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetCareer"]
+        // 소리를 끄는 이유는 launch()와 같다.
+        app.launchArguments = ["-uiTestResetCareer", "-baseball.audio.sound", "NO"]
         app.launch()
 
         dismissOpening(app)

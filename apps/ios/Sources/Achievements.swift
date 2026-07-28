@@ -12,8 +12,13 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
     case majorDebut = "major_debut"
     case hundredStrikeouts = "hundred_strikeouts"
     case thirdLife = "third_life"
+    case fifthLife = "fifth_life"
+    case tenthLife = "tenth_life"
     case karmaRun = "karma_run"
+    case doubleKarma = "double_karma"
     case awakenedThrice = "awakened_thrice"
+    case fourSchools = "four_schools"
+    case fiveDrafts = "five_drafts"
     case hallOfFame = "hall_of_fame"
 
     var id: String { rawValue }
@@ -27,8 +32,13 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
         case .majorDebut: "1군 데뷔"
         case .hundredStrikeouts: "한 시즌 100탈삼진"
         case .thirdLife: "세 번째 도전"
+        case .fifthLife: "다섯 번째 인생"
+        case .tenthLife: "열 번째 인생"
         case .karmaRun: "짐을 지고"
+        case .doubleKarma: "두 짐을 지고"
         case .awakenedThrice: "세 번 각성"
+        case .fourSchools: "네 갈래 길"
+        case .fiveDrafts: "다섯 번의 호명"
         case .hallOfFame: "명예의 전당"
         }
     }
@@ -42,8 +52,13 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
         case .majorDebut: "프로 1군에 올라갑니다."
         case .hundredStrikeouts: "한 시즌에 100개의 삼진을 잡습니다."
         case .thirdLife: "3회차를 시작합니다."
+        case .fifthLife: "5회차를 시작합니다."
+        case .tenthLife: "10회차를 시작합니다."
         case .karmaRun: "핸디캡을 안고 시작한 회차로 드래프트까지 갑니다."
+        case .doubleKarma: "핸디캡 두 개를 안고 시작한 회차로 드래프트까지 갑니다."
         case .awakenedThrice: "한 회차에서 각성을 세 번 고릅니다."
+        case .fourSchools: "서로 다른 학교 네 곳에서 회차를 마칩니다."
+        case .fiveDrafts: "통산 다섯 번 지명을 받습니다."
         case .hallOfFame: "명예의 전당 점수 70을 넘깁니다."
         }
     }
@@ -77,6 +92,16 @@ enum AchievementRules {
         if state.performance.strikeouts >= 1 { earned.append(.firstStrikeout) }
         if state.selectedAwakenings.count >= 3 { earned.append(.awakenedThrice) }
         if !state.karmas.isEmpty, state.draftResult != nil { earned.append(.karmaRun) }
+        if state.karmas.count >= 2, state.draftResult != nil { earned.append(.doubleKarma) }
+        return earned
+    }
+
+    /// 회차 아카이브를 가로지르는 수집형. 콘텐츠 풀(학교·지명)을 업적이 가리켜야
+    /// "다른 학교로 가 볼까"라는 반복 이유가 생긴다.
+    static func fromArchive(_ records: [HighSchoolCareerStore.LifeRecord]) -> [Achievement] {
+        var earned: [Achievement] = []
+        if Set(records.compactMap(\.schoolName)).count >= 4 { earned.append(.fourSchools) }
+        if records.filter(\.drafted).count >= 5 { earned.append(.fiveDrafts) }
         return earned
     }
 
@@ -102,7 +127,11 @@ enum AchievementRules {
     }
 
     static func fromLifeNumber(_ lifeNumber: Int) -> [Achievement] {
-        lifeNumber >= 3 ? [.thirdLife] : []
+        var earned: [Achievement] = []
+        if lifeNumber >= 3 { earned.append(.thirdLife) }
+        if lifeNumber >= 5 { earned.append(.fifthLife) }
+        if lifeNumber >= 10 { earned.append(.tenthLife) }
+        return earned
     }
 }
 
