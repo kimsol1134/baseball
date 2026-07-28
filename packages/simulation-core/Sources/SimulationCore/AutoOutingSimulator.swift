@@ -53,6 +53,7 @@ public struct AutoOutingSimulator: Sendable {
         var runsOnBoard = 0
         var carriedGameLog = GameLogSnapshot(gameID: "week-outing", revision: 0, totalPitches: 0, entries: [])
         var currentFatigue = clamp(startingFatigue, 0, 95)
+        var benchMemory: RivalMemorySnapshot?
         var paIndex = 0
         while line.outs < outsTarget && line.pitches < pitchCap && paIndex < 60 {
             paIndex += 1
@@ -92,7 +93,13 @@ public struct AutoOutingSimulator: Sendable {
                 scoreDifferential: 0, leverage: 500, fatigue: currentFatigue
             )
             var seed = String(max(1, rng.next() >> 1))
-            var paMemory: RivalMemorySnapshot?
+            // 자동 등판도 사람이 던지는 등판과 같은 규칙을 쓴다. 상대 벤치가 등판 전체를
+            // 지켜보므로 기억이 타석을 넘어 이어진다 — 두 경로가 다른 규칙 위에 있으면
+            // 화면에 나오는 성적이 어디서 나왔는지 추적할 수 없다.
+            if benchMemory == nil {
+                benchMemory = RivalMemoryEngine().benchMemory(pitcher: pitcher, benchID: "outing")
+            }
+            var paMemory: RivalMemorySnapshot? = benchMemory
             guard var preparation = try? engine.preparePitch(PreparePitchParams(
                 seed: seed, pitcher: pitcher, batter: batter, scouting: scouting,
                 context: context, rivalMemory: paMemory, gameState: gameState, gameLog: gameLog
@@ -106,6 +113,7 @@ public struct AutoOutingSimulator: Sendable {
                     rivalMemory: paMemory, gameState: gameState, gameLog: gameLog
                 )) else { return line }
                 paMemory = result.rivalMemory
+                benchMemory = result.rivalMemory
                 gameState = result.gameState
                 gameLog = result.gameLog
                 line.pitches += 1

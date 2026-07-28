@@ -146,13 +146,43 @@ public struct RivalMemoryEngine: Sendable {
         )
     }
 
+    /// **상대 벤치가 지켜본다.** 한 명의 타자가 아니라 등판 전체를 한 매치업으로 기억한다.
+    ///
+    /// 예전에는 기억이 투수-타자 한 쌍에 묶여 있어서, 타자가 바뀌면 화면이 기억을 버려야 했다
+    /// (안 버리면 커널이 matchupID 불일치로 거부한다). 그래서 한 타석 안에서만 학습이 일어났고,
+    /// `plateAppearancesSeen`이 0에 머물러 적응도가 420에서 하드캡됐다 — "완전히 읽힘"(600 이상)과
+    /// 포수의 반복 경고는 **도달할 수 없는 죽은 코드**였다. 스토어 문안이 약속하는
+    /// "같은 공을 반복하면 타자가 읽습니다"가 실제 승부에서 성립하지 않았다는 뜻이다.
+    ///
+    /// 야구에서도 타자 혼자 읽지 않는다. 더그아웃이 함께 보고 다음 타자에게 말해 준다.
+    public func benchMemory(pitcher: PitcherSnapshot, benchID: String) -> RivalMemorySnapshot {
+        RivalMemorySnapshot(
+            matchupID: Self.benchMatchupID(pitcherID: pitcher.id, benchID: benchID),
+            revision: 0,
+            plateAppearancesSeen: 0,
+            totalPitchesSeen: 0,
+            recentObservations: []
+        )
+    }
+
+    /// 벤치 스코프의 매치업 식별자.
+    ///
+    /// 스코프를 식별자 문자열 자체에 넣는다. 그래야 커널의 호출 규약(파라미터 구조체)을
+    /// 바꾸지 않고, 옛 저장본의 타자별 기억도 그대로 통과한다.
+    public static func benchMatchupID(pitcherID: String, benchID: String) -> String {
+        "\(pitcherID):bench:\(benchID)"
+    }
+
     public func validate(
         _ memory: RivalMemorySnapshot?,
         pitcher: PitcherSnapshot,
         batter: BatterSnapshot
     ) throws {
         guard let memory else { return }
-        guard memory.matchupID == matchupID(pitcher: pitcher, batter: batter) else {
+        // 벤치 스코프 기억은 타자가 바뀌어도 같은 매치업이다. 투수만 일치하면 된다.
+        let benchPrefix = "\(pitcher.id):bench:"
+        guard memory.matchupID == matchupID(pitcher: pitcher, batter: batter)
+                || memory.matchupID.hasPrefix(benchPrefix) else {
             throw SimulationError.invalidRivalMemory("matchupID does not match pitcher and batter")
         }
         guard memory.plateAppearancesSeen >= 0,

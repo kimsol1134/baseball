@@ -106,6 +106,8 @@ final class PitchSession {
 
     func start() {
         guard preparation == nil else { return }
+        // 등판 하나가 곧 하나의 매치업이다. 시나리오 id를 벤치 식별자로 쓴다.
+        rivalMemory = RivalMemoryEngine().benchMemory(pitcher: pitcher, benchID: scenario.id)
         prepare()
     }
 
@@ -113,9 +115,13 @@ final class PitchSession {
     func advanceToNextBatter() {
         guard case .betweenBatters = stage else { return }
         batterIndex += 1
-        // 라이벌 기억은 투수-타자 조합 하나에 묶여 있다. 타자가 바뀌면 버려야 코어가
-        // matchupID 불일치로 거부하지 않는다.
-        rivalMemory = nil
+        // **기억을 버리지 않는다.** 상대 벤치가 등판 전체를 지켜본다.
+        //
+        // 예전에는 여기서 `rivalMemory = nil`이었다. 기억이 투수-타자 한 쌍에 묶여 있어
+        // 안 버리면 커널이 거부했기 때문이다. 그 결과 학습이 한 타석 안에서만 일어나
+        // 적응도가 420에서 하드캡됐고, "완전히 읽힘"과 포수의 반복 경고는 도달할 수 없는
+        // 죽은 코드였다 — 이 게임이 파는 "같은 공을 반복하면 읽힌다"가 실제 승부에서
+        // 성립하지 않았다는 뜻이다. 지금은 벤치 스코프라 타자가 바뀌어도 이어진다.
         // 직전 타자의 결과를 지운다. 안 지우면 새 타자와 붙는 화면에 "안타"가 그대로 떠
         // 있어서, 방금 그 공에 맞은 것처럼 보인다. 승부 장면·판정·소리 모두 같은 문제다.
         lastResult = nil
