@@ -18,8 +18,13 @@ public struct ImportantGameScenarioContent: Codable, Equatable, Sendable {
     public let runners: BaserunnerStateSnapshot
     public let leverage: Int
     public let narrative: String
-    public init(id: String, title: String, inning: Int, outs: Int, runners: BaserunnerStateSnapshot, leverage: Int, narrative: String) {
+    /// 우리 팀 기준 점수 차(+면 리드). 이 필드가 없던 동안 화면이 전부 "1점 앞섬"으로
+    /// 고정돼, 고교 3년의 모든 승부가 리드를 지키는 경기였다 — 지고 있는 마운드가 없었다.
+    /// 옵셔널이라 이 필드가 없는 옛 저장본도 그대로 열린다.
+    public let scoreDifferential: Int?
+    public init(id: String, title: String, inning: Int, outs: Int, runners: BaserunnerStateSnapshot, leverage: Int, narrative: String, scoreDifferential: Int? = nil) {
         self.id = id; self.title = title; self.inning = inning; self.outs = outs; self.runners = runners; self.leverage = leverage; self.narrative = narrative
+        self.scoreDifferential = scoreDifferential
     }
 }
 
@@ -89,26 +94,30 @@ public enum HighSchoolContentCatalog {
         BaserunnerStateSnapshot(firstOccupied: first, secondOccupied: second, thirdOccupied: third, leadRunnerSpeed: speed)
     }
 
+    // scoreDifferential은 서사와 반드시 일치해야 한다 — "동점입니다"라고 말하며 화면이
+    // "1점 앞섬"을 띄우면 플레이어가 배우는 상황 읽기 자체가 틀린다.
+    // 분포: 리드 8 · 동점 6 · 열세 6. 뒤진 마운드에도 개인 스테이크(스카우트·기록·라이벌)를
+    // 남겨서 "이미 진 경기"가 아니라 "잃을 수 없는 공"으로 읽히게 한다.
     public static let scenarios: [ImportantGameScenarioContent] = [
-        .init(id: "game-debut", title: "고교 데뷔", inning: 3, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 350, narrative: "첫 공식 등판. 상대 타자도 아직 내 공을 본 적이 없습니다."),
-        .init(id: "game-runner-first", title: "1사 1루", inning: 5, outs: 1, runners: runners(true, false, false, speed: 64), leverage: 610, narrative: "빠른 주자가 1루에서 리드를 길게 잡고 있습니다."),
-        .init(id: "game-rival-rematch", title: "라이벌 재대결", inning: 6, outs: 1, runners: runners(false, true, false, speed: 61), leverage: 760, narrative: "지난 경기의 구종 순서를 기억하는 중심타자가 들어섭니다."),
-        .init(id: "game-corners", title: "1사 1·3루", inning: 7, outs: 1, runners: runners(true, false, true, speed: 67), leverage: 900, narrative: "땅볼 하나면 병살이지만 외야로 뜨면 동점입니다."),
-        .init(id: "game-loaded", title: "무사 만루", inning: 4, outs: 0, runners: runners(true, true, true, speed: 60), leverage: 950, narrative: "볼넷을 피하면서 약한 타구가 필요한 상황"),
-        .init(id: "game-two-outs", title: "2사 2루", inning: 8, outs: 2, runners: runners(false, true, false, speed: 65), leverage: 880, narrative: "한 타자에 이닝이 걸린 승부"),
-        .init(id: "game-fatigue", title: "피로한 7회", inning: 7, outs: 0, runners: runners(true, false, false, speed: 59), leverage: 720, narrative: "직구가 느려진 7회, 어떤 공으로 버틸지 정해야 합니다."),
-        .init(id: "game-scout", title: "스카우트 관전", inning: 5, outs: 1, runners: runners(false, false, false, speed: 55), leverage: 690, narrative: "스카우트가 구속보다 같은 코스를 반복하는지 지켜봅니다."),
-        .init(id: "game-rain", title: "우천 중단 뒤", inning: 6, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 540, narrative: "두 시간 동안 경기가 멈춰 몸이 식은 뒤 만나는 첫 타자입니다."),
-        .init(id: "game-one-run", title: "한 점 차", inning: 9, outs: 0, runners: runners(false, true, false, speed: 68), leverage: 980, narrative: "드래프트 전 마지막 고교 이닝"),
-        .init(id: "game-new-catcher", title: "새 포수와 첫 경기", inning: 4, outs: 1, runners: runners(true, false, false, speed: 62), leverage: 570, narrative: "새 포수와 아직 구종 사인을 충분히 맞추지 못했습니다."),
-        .init(id: "game-national-final", title: "전국 결승", inning: 8, outs: 2, runners: runners(true, true, false, speed: 66), leverage: 1_000, narrative: "2사 1·2루. 마지막 아웃 하나에 우승이 걸렸습니다."),
-        .init(id: "game-walkoff-defense", title: "9회말 리드 방어", inning: 9, outs: 1, runners: runners(false, true, true, speed: 63), leverage: 985, narrative: "한 점 앞선 9회말 1사 2·3루. 외야로 뜨기만 해도 동점, 안타면 경기가 끝납니다."),
-        .init(id: "game-extra-tiebreak", title: "연장 승부치기", inning: 10, outs: 0, runners: runners(true, true, false, speed: 67), leverage: 940, narrative: "연장 승부치기. 무사 1·2루에서 시작합니다. 아웃부터 잡지 못하면 큰 이닝이 됩니다."),
-        .init(id: "game-ace-duel", title: "0-0 투수전", inning: 8, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 810, narrative: "8회까지 0의 행진. 상대 에이스도 지지 않습니다. 먼저 실수하는 쪽이 집니다."),
-        .init(id: "game-damage-control", title: "실점 뒤 수습", inning: 6, outs: 1, runners: runners(true, true, true, speed: 58), leverage: 875, narrative: "이미 이 이닝에 석 점을 내줬습니다. 다시 만루. 여기서 더 내주면 경기가 넘어갑니다."),
-        .init(id: "game-rain-grip", title: "빗속의 공", inning: 2, outs: 0, runners: runners(true, false, false, speed: 60), leverage: 470, narrative: "빗물을 머금은 공이 손끝에서 자꾸 미끄러집니다. 노린 코스보다 한 뼘씩 벗어납니다."),
-        .init(id: "game-doubleheader", title: "더블헤더 2차전", inning: 4, outs: 2, runners: runners(false, true, false, speed: 64), leverage: 640, narrative: "오늘 두 번째 경기. 낮 경기에서 이미 던진 팔이 무겁게 남아 있습니다."),
-        .init(id: "game-scout-showcase", title: "스카우트 총출동", inning: 7, outs: 2, runners: runners(false, false, false, speed: 55), leverage: 960, narrative: "관중석 첫 줄이 스카우트로 가득 찼습니다. 공 하나하나가 순위표에 적힙니다."),
-        .init(id: "game-rival-away", title: "라이벌 원정", inning: 6, outs: 2, runners: runners(true, false, false, speed: 61), leverage: 830, narrative: "라이벌 학교 원정. 마운드에 설 때마다 스탠드가 야유로 덮습니다. 소리를 지워야 공이 보입니다.")
+        .init(id: "game-debut", title: "고교 데뷔", inning: 3, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 350, narrative: "첫 공식 등판. 한 점 뒤진 채 받은 기회지만, 상대 타자도 아직 내 공을 본 적이 없습니다.", scoreDifferential: -1),
+        .init(id: "game-runner-first", title: "1사 1루", inning: 5, outs: 1, runners: runners(true, false, false, speed: 64), leverage: 610, narrative: "빠른 주자가 1루에서 리드를 길게 잡고 있습니다.", scoreDifferential: 1),
+        .init(id: "game-rival-rematch", title: "라이벌 재대결", inning: 6, outs: 1, runners: runners(false, true, false, speed: 61), leverage: 760, narrative: "동점 6회, 지난 경기의 구종 순서를 기억하는 중심타자가 들어섭니다.", scoreDifferential: 0),
+        .init(id: "game-corners", title: "1사 1·3루", inning: 7, outs: 1, runners: runners(true, false, true, speed: 67), leverage: 900, narrative: "땅볼 하나면 병살이지만 외야로 뜨면 동점입니다.", scoreDifferential: 1),
+        .init(id: "game-loaded", title: "무사 만루", inning: 4, outs: 0, runners: runners(true, true, true, speed: 60), leverage: 950, narrative: "볼넷을 피하면서 약한 타구가 필요한 상황", scoreDifferential: 2),
+        .init(id: "game-two-outs", title: "2사 2루", inning: 8, outs: 2, runners: runners(false, true, false, speed: 65), leverage: 880, narrative: "한 타자에 이닝이 걸린 승부", scoreDifferential: 1),
+        .init(id: "game-fatigue", title: "피로한 7회", inning: 7, outs: 0, runners: runners(true, false, false, speed: 59), leverage: 720, narrative: "직구가 느려진 7회, 어떤 공으로 버틸지 정해야 합니다.", scoreDifferential: 1),
+        .init(id: "game-scout", title: "스카우트 관전", inning: 5, outs: 1, runners: runners(false, false, false, speed: 55), leverage: 690, narrative: "팀은 한 점 뒤져 있지만, 스카우트는 점수가 아니라 같은 코스를 반복하는지 지켜봅니다.", scoreDifferential: -1),
+        .init(id: "game-rain", title: "우천 중단 뒤", inning: 6, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 540, narrative: "두 시간 동안 경기가 멈춰 몸이 식은 뒤 만나는 첫 타자입니다.", scoreDifferential: 0),
+        .init(id: "game-one-run", title: "한 점 차", inning: 9, outs: 0, runners: runners(false, true, false, speed: 68), leverage: 980, narrative: "드래프트 전 마지막 고교 이닝", scoreDifferential: 1),
+        .init(id: "game-new-catcher", title: "새 포수와 첫 경기", inning: 4, outs: 1, runners: runners(true, false, false, speed: 62), leverage: 570, narrative: "새 포수와 아직 구종 사인을 충분히 맞추지 못했습니다.", scoreDifferential: 1),
+        .init(id: "game-national-final", title: "전국 결승", inning: 8, outs: 2, runners: runners(true, true, false, speed: 66), leverage: 1_000, narrative: "2사 1·2루. 마지막 아웃 하나에 우승이 걸렸습니다.", scoreDifferential: 1),
+        .init(id: "game-walkoff-defense", title: "9회말 리드 방어", inning: 9, outs: 1, runners: runners(false, true, true, speed: 63), leverage: 985, narrative: "한 점 앞선 9회말 1사 2·3루. 외야로 뜨기만 해도 동점, 안타면 경기가 끝납니다.", scoreDifferential: 1),
+        .init(id: "game-extra-tiebreak", title: "연장 승부치기", inning: 10, outs: 0, runners: runners(true, true, false, speed: 67), leverage: 940, narrative: "연장 승부치기. 무사 1·2루에서 시작합니다. 아웃부터 잡지 못하면 큰 이닝이 됩니다.", scoreDifferential: 0),
+        .init(id: "game-ace-duel", title: "0-0 투수전", inning: 8, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 810, narrative: "8회까지 0의 행진. 상대 에이스도 지지 않습니다. 먼저 실수하는 쪽이 집니다.", scoreDifferential: 0),
+        .init(id: "game-damage-control", title: "실점 뒤 수습", inning: 6, outs: 1, runners: runners(true, true, true, speed: 58), leverage: 875, narrative: "이 이닝에만 석 점을 내줘 동점이 됐습니다. 다시 만루. 여기서 더 내주면 경기가 넘어갑니다.", scoreDifferential: 0),
+        .init(id: "game-rain-grip", title: "빗속의 공", inning: 2, outs: 0, runners: runners(true, false, false, speed: 60), leverage: 470, narrative: "빗물을 머금은 공이 손끝에서 자꾸 미끄러집니다. 노린 코스보다 한 뼘씩 벗어납니다.", scoreDifferential: 0),
+        .init(id: "game-doubleheader", title: "더블헤더 2차전", inning: 4, outs: 2, runners: runners(false, true, false, speed: 64), leverage: 640, narrative: "오늘 두 번째 경기. 한 점 뒤진 채, 낮 경기에서 이미 던진 팔이 무겁게 남아 있습니다.", scoreDifferential: -1),
+        .init(id: "game-scout-showcase", title: "스카우트 총출동", inning: 7, outs: 2, runners: runners(false, false, false, speed: 55), leverage: 960, narrative: "팀은 두 점 뒤졌지만 관중석 첫 줄은 스카우트로 가득합니다. 공 하나하나가 순위표에 적힙니다.", scoreDifferential: -2),
+        .init(id: "game-rival-away", title: "라이벌 원정", inning: 6, outs: 2, runners: runners(true, false, false, speed: 61), leverage: 830, narrative: "라이벌 학교 원정, 한 점 뒤진 6회. 마운드에 설 때마다 스탠드가 야유로 덮습니다. 소리를 지워야 공이 보입니다.", scoreDifferential: -1)
     ]
 }

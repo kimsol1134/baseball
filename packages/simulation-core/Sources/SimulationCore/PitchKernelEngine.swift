@@ -1583,7 +1583,9 @@ public struct PitchKernelEngine: Sendable {
         let inningText = inningTransition.outsRecorded > 0
             ? " \(inningTransition.shortExplanation)"
             : ""
-        let detail = "공 선택은 \(selectionDisplayName(selection)), 노린 코스에는 \(Self.executionBand(execution.executionQuality))(\(execution.executionQuality)/1000). \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
+        // 밴드 문구만 쓴다. 원시 수치(700/1000)는 내부 단위라 사용자 화면에 새면 안 된다 —
+        // 실제로 스토어 스크린샷에 "(1000/1000)"이 찍혀 나간 적이 있다.
+        let detail = "공 선택은 \(selectionDisplayName(selection)), 노린 코스에는 \(Self.executionBand(execution.executionQuality)). \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
         return (short, detail)
     }
 

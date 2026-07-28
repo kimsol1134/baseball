@@ -12,6 +12,52 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertEqual(MemoryCardID.allCases.count, 18)
     }
 
+    /// 야구혼 계승은 회차당 상한까지만 스며들고, 이번 회차의 재능 벽을 넘지 않는다.
+    ///
+    /// 예전에는 누적 야구혼 전액이 한 능력(분야 미선택이면 제구)에 들어가 첫 환생 한 번에
+    /// 제구가 80에 닿았고, 2회차와 30회차의 시작 선수가 완전히 같아졌다 — 환생 루프가
+    /// 한 번 돌고 수학적으로 멈추는 구조였다.
+    func testSoulInheritanceCapsSpreadsAndRespectsTalentWalls() throws {
+        let engine = HighSchoolCareerEngine()
+        let base = try engine.start(.init(seed: "20260728", presetID: "power_prospect", lifeNumber: 2))
+        let inherited = try engine.start(
+            .init(seed: "20260728", presetID: "power_prospect", lifeNumber: 2, inheritedSoulPoints: 600)
+        )
+
+        func total(_ pitcher: PitcherSnapshot) -> Int {
+            pitcher.stuff + pitcher.command + pitcher.movement + pitcher.stamina
+        }
+        let gain = total(inherited.snapshot.pitcher) - total(base.snapshot.pitcher)
+        XCTAssertGreaterThan(gain, 0)
+        XCTAssertLessThanOrEqual(gain, 20)
+
+        // 한 능력 몰빵 금지: 야구혼 600으로도 제구가 혼자 80으로 튀지 않는다.
+        XCTAssertLessThan(inherited.snapshot.pitcher.command, 80)
+
+        // 재능 벽 존중: 계승이 벽을 넘으면 그 능력의 만개가 영원히 사라진다.
+        let talent = try XCTUnwrap(inherited.snapshot.talent)
+        let pitcher = inherited.snapshot.pitcher
+        XCTAssertLessThanOrEqual(pitcher.stuff, min(80, talent.ceiling(.stuff)))
+        XCTAssertLessThanOrEqual(pitcher.command, min(80, talent.ceiling(.command)))
+        XCTAssertLessThanOrEqual(pitcher.movement, min(80, talent.ceiling(.movement)))
+        XCTAssertLessThanOrEqual(pitcher.stamina, min(80, talent.ceiling(.stamina)))
+
+        // 총량이 쌓이면 스며드는 상한도 천천히 자라고(8→20), 그 뒤로는 멈춘다.
+        XCTAssertEqual(HighSchoolCareerEngine.inheritancePointCap(for: 48), 8)
+        XCTAssertEqual(HighSchoolCareerEngine.inheritancePointCap(for: 300), 13)
+        XCTAssertEqual(HighSchoolCareerEngine.inheritancePointCap(for: 100_000), 20)
+    }
+
+    /// 지역 목록은 학교 이름 사전과 정확히 일치해야 하고, 76개 이름은 전부 달라야 한다.
+    /// 이 목록이 iOS 지역 선택 화면의 데이터 소스다.
+    func testRegionListCoversEveryRegionalSchoolName() {
+        XCTAssertEqual(HighSchoolCareerEngine.regions.count, 19)
+        XCTAssertEqual(Set(HighSchoolCareerEngine.regions).count, 19)
+        let allNames = HighSchoolCareerEngine.regions.flatMap { HighSchoolCareerEngine.schools(for: $0).map(\.name) }
+        XCTAssertEqual(allNames.count, 76)
+        XCTAssertEqual(Set(allNames).count, 76, "지역별 학교 이름이 겹칩니다.")
+    }
+
     func testSchoolOffersStayInThePlayersSelectedRegion() throws {
         let engine = HighSchoolCareerEngine()
         let incheon = try engine.start(
@@ -314,6 +360,39 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertFalse(extended.isEmpty, "later slots must surface non-core event categories")
         XCTAssertEqual(Set(extended).count, extended.count, "extended slots must draw distinct categories")
         XCTAssertEqual(Set(categories).count, relationshipTotal, "a single run should span one distinct category per relationship slot")
+    }
+
+    /// 2회차부터는 회차 자각(환생) 사건을 한 회차에 최소 한 번 반드시 만난다.
+    ///
+    /// 슬롯마다 1/3 확률만 걸었을 때는 2회차의 절반 가까이가 환생 사건을 한 번도 못 만났다.
+    /// 회차 자각은 2회차의 간판이라 "가끔 나오는 보너스"가 아니라 "반드시 오는 장면"이어야 한다.
+    /// 같은 회차 안에서 중요 경기 시나리오가 반복되지 않는 것도 여기서 함께 지킨다.
+    func testSecondLifeAlwaysMeetsARebirthEventAndScenariosNeverRepeat() throws {
+        let rebirthIDs = Set(HighSchoolContentCatalog.rebirthEvents.map(\.id))
+        for seed in ["11", "22", "33", "44", "55", "66", "77", "88", "99", "110"] {
+            let engine = HighSchoolCareerEngine()
+            var result = try engine.start(.init(seed: seed, presetID: "power_prospect", lifeNumber: 2))
+            result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+            result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: .haedongPower))
+
+            var sawRebirth = false
+            var scenarioIDs: [String] = []
+            for _ in 0..<80 {
+                if result.snapshot.phase == .relationship,
+                   let event = result.snapshot.currentRelationshipEvent, rebirthIDs.contains(event.id) {
+                    sawRebirth = true
+                }
+                if result.snapshot.phase == .importantGame,
+                   let scenario = result.snapshot.currentGameScenario {
+                    scenarioIDs.append(scenario.id)
+                }
+                result = try advanceOneStep(engine, result)
+                if [.draft, .legacy, .completed].contains(result.snapshot.phase) { break }
+            }
+            XCTAssertTrue(sawRebirth, "seed \(seed): 2회차가 환생 사건을 한 번도 만나지 못했습니다.")
+            XCTAssertEqual(Set(scenarioIDs).count, scenarioIDs.count,
+                           "seed \(seed): 같은 회차 안에서 중요 경기 시나리오가 반복됐습니다.")
+        }
     }
 
     func testEveryImportantGameScenarioIsWellFormed() {

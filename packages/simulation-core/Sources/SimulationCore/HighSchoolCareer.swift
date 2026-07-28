@@ -865,6 +865,16 @@ public struct HighSchoolCareerEngine: Sendable {
         .init(number: 8, title: "드래프트 데이", schoolYear: 3, season: "여름", theme: "마지막 전국대회를 치르고 드래프트 결과를 기다린다")
     ]
 
+    /// 지역 선택 UI가 쓰는 순서 있는 목록. 사전 키 순회는 순서가 흔들리므로 여기서 고정한다.
+    ///
+    /// 학교 이름 76개(19지역 × 4)는 처음부터 쓰여 있었는데, iOS가 지역을 "서울"로 하드코딩해
+    /// 4개만 노출됐다 — 모든 회차가 같은 네 학교에서 시작하는 이유가 데이터 부족이 아니라
+    /// 배선 누락이었다.
+    public static let regions: [String] = [
+        "서울", "인천", "수원", "대전", "광주", "대구", "부산", "창원", "울산", "세종",
+        "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
+    ]
+
     public static func schools(for region: String) -> [SchoolSnapshot] {
         let names = regionalSchoolNames[region] ?? regionalSchoolNames["서울"]!
         return [
@@ -1050,12 +1060,15 @@ public struct HighSchoolCareerEngine: Sendable {
               !params.identity.region.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw SimulationError.invalidPitcherLab("career creation or inherited memories are invalid")
         }
+        let careerID = "career-\(params.seed)-life-\(params.lifeNumber)"
+        // 재능을 계승보다 먼저 뽑는다. 계승이 이번 회차의 벽(재능 상한)을 넘지 않아야
+        // "왜 안 오르지"의 답이 회차 시작부터 일관된다.
+        let talent = TalentRules.make(careerID: careerID)
         var pitcher = renamed(params.identity.name, pitcher: applyCreation(params.creationAllocation, to: preset.pitcher), hand: params.identity.throwingHand)
-        pitcher = applyInheritance(params.inheritedSoulPoints, domain: params.inheritedSoulDomain, memories: params.inheritedMemories, to: pitcher)
+        pitcher = applyInheritance(params.inheritedSoulPoints, domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: talent, to: pitcher)
         pitcher = applyKarmas(params.karmas, to: pitcher)
         let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille }
         let memorySlots = params.karmas.contains(.erasedMemory) ? 2 : 3
-        let careerID = "career-\(params.seed)-life-\(params.lifeNumber)"
         let base = HighSchoolCareerSnapshot(
             careerID: careerID, revision: 0, lifeNumber: params.lifeNumber,
             phase: .prologue, identity: params.identity, difficulty: params.difficulty, karmas: params.karmas,
@@ -1069,7 +1082,7 @@ public struct HighSchoolCareerEngine: Sendable {
             news: Self.prologueNews(identity: params.identity, lifeNumber: params.lifeNumber, inheritedMemoryCount: params.inheritedMemories.count), fanInterest: 5,
             draftResult: nil, legacyOptions: [], selectedMemories: [], balanceVersion: PitcherPresetCatalog.balanceVersion,
             armRisk: 0, injuryRecovery: 0, schedule: Self.makeSchedule(careerID: careerID),
-            talent: TalentRules.make(careerID: careerID),
+            talent: talent,
             stateCommitment: ""
         )
         return result(seed: seed, state: signed(base), event: "high_school_career_started")
@@ -1166,6 +1179,65 @@ public struct HighSchoolCareerEngine: Sendable {
         return result(seed: seed, state: signed(next), event: "school_selected", reasons: ["school.\(school.id.rawValue)"])
     }
 
+    /// 훈련 판정의 결정론 부분. 무작위 폭(±45)을 제외한 신호 합.
+    ///
+    /// `commitTraining`과 `trainingOutlook`이 같은 식을 써야 한다 — 화면이 판정식을
+    /// 흉내 내다 어긋나면 전망이 거짓말이 된다.
+    private static func trainingSignalBase(
+        state: HighSchoolCareerSnapshot, focus: TrainingFocus, intensity: TrainingIntensity,
+        schedule: CareerScheduleSnapshot, opportunityHit: Bool
+    ) -> Int {
+        let base = intensity == .light ? 130 : intensity == .standard ? 210 : 280
+        let schoolBonus = state.school?.strength == focus ? 110 : 0
+        let fatiguePenalty = max(0, state.fatigue - 45) * 3
+        // 훈련 수가 적은 회차 보정: 결손(16 - 총 훈련)에 비례해 성장 신호를 올려 총 성장 기대를
+        // 16회 기준 근처(±15%)에 붙인다. 드래프트 밸런스를 스케줄 가변화로부터 보호한다.
+        let scheduleCompensation = max(0, 16 - schedule.trainingTotal) * trainingCompensationPerDeficit
+        return base + schoolBonus + (opportunityHit ? 90 : 0) - fatiguePenalty + scheduleCompensation
+    }
+
+    private static func trainingGrowth(signal: Int) -> Int {
+        signal >= 430 ? 2 : signal >= 260 ? 1 : 0
+    }
+
+    /// 훈련 한 번의 성장 전망. 화면이 코어에 물어본다.
+    ///
+    /// 훈련의 진짜 결정 — "학교 특기와 오늘의 기회가 겹치는 턴에 강도를 몰아붙인다" — 이
+    /// 화면에 전혀 드러나지 않아서, 최적 행동이 "기회 배지를 따라 누르기"로 납작해졌다.
+    /// 무작위 폭은 그대로 두고 구간만 말한다. 정확한 결과를 약속하지 않는다.
+    public enum TrainingGrowthOutlook: String, Codable, Sendable {
+        /// 재능 벽에 막혀 수치는 오르지 않는다. 대신 만개 게이지가 쌓인다.
+        case wall
+        case none
+        case zeroOrOne
+        case one
+        case oneOrTwo
+        case two
+    }
+
+    public func trainingOutlook(
+        state: HighSchoolCareerSnapshot, focus: TrainingFocus, intensity: TrainingIntensity
+    ) -> TrainingGrowthOutlook {
+        if (state.injuryRecovery ?? 0) > 0 { return .none }
+        let talent = state.talent ?? .unlimited
+        let ability = TalentAbility.from(focus)
+        if rating(for: focus, pitcher: state.pitcher) >= min(80, talent.ceiling(ability)) { return .wall }
+        let deterministic = Self.trainingSignalBase(
+            state: state, focus: focus, intensity: intensity,
+            schedule: schedule(for: state),
+            opportunityHit: state.trainingOpportunity?.focus == focus
+        )
+        let lowest = Self.trainingGrowth(signal: max(60, deterministic - 45))
+        let highest = Self.trainingGrowth(signal: max(60, deterministic + 45))
+        switch (lowest, highest) {
+        case (2, _): return .two
+        case (1, 2): return .oneOrTwo
+        case (1, 1): return .one
+        case (0, 0): return .none
+        default: return .zeroOrOne
+        }
+    }
+
     public func commitTraining(_ params: CommitCareerTrainingParams) throws -> HighSchoolCareerResult {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .training)
         let schedule = schedule(for: params.state)
@@ -1180,16 +1252,13 @@ public struct HighSchoolCareerEngine: Sendable {
         let isRehab = injuryRecovery > 0
         let effectiveFocus: TrainingFocus = isRehab ? .recovery : params.focus
         var generator = SplitMix64(seed: seed ^ UInt64(number) ^ 0x4341_5245_4552)
-        let base = params.intensity == .light ? 130 : params.intensity == .standard ? 210 : 280
-        let schoolBonus = params.state.school?.strength == params.focus ? 110 : 0
-        let fatiguePenalty = max(0, params.state.fatigue - 45) * 3
-        // 훈련 수가 적은 회차 보정: 결손(16 - 총 훈련)에 비례해 성장 신호를 올려 총 성장 기대를
-        // 16회 기준 근처(±15%)에 붙인다. 드래프트 밸런스를 스케줄 가변화로부터 보호한다.
-        let scheduleCompensation = max(0, 16 - schedule.trainingTotal) * Self.trainingCompensationPerDeficit
         let opportunityHit = !isRehab && params.focus == params.state.trainingOpportunity?.focus
-        let opportunityBonus = opportunityHit ? 90 : 0
-        let signal = max(60, base + schoolBonus + opportunityBonus - fatiguePenalty + scheduleCompensation + generator.nextInt(upperBound: 91) - 45)
-        let rawGrowth = isRehab ? 0 : (signal >= 430 ? 2 : signal >= 260 ? 1 : 0)
+        let deterministicSignal = Self.trainingSignalBase(
+            state: params.state, focus: params.focus, intensity: params.intensity,
+            schedule: schedule, opportunityHit: opportunityHit
+        )
+        let signal = max(60, deterministicSignal + generator.nextInt(upperBound: 91) - 45)
+        let rawGrowth = isRehab ? 0 : Self.trainingGrowth(signal: signal)
         // 재능이 성장을 자른다. 한계에 막힌 훈련은 헛되지 않고 만개 게이지로 쌓인다 —
         // 막혔다는 이유로 훈련이 낭비가 되면 재능은 그냥 벌점이 된다.
         let ability = TalentAbility.from(params.focus)
@@ -1756,9 +1825,17 @@ public struct HighSchoolCareerEngine: Sendable {
             var rebirthGenerator = SplitMix64(
                 seed: UInt64(StableHash.fnv1a64("rebirth_event|\(state.careerID)|\(slot)"), radix: 16) ?? seed
             )
-            // 확장 슬롯의 대략 3분의 1을 환생 사건에 준다. 전부 주면 회차 자각이 배경이 되고,
-            // 하나도 안 주면 지금처럼 회차가 화면에서 사라진다.
-            if rebirthGenerator.nextInt(upperBound: 3) == 0 {
+            // 회차마다 확장 슬롯 하나는 환생 사건이 **반드시** 나온다. 슬롯마다 1/3 확률만
+            // 걸었을 때는 2회차의 절반 가까이가 회차 자각 장면을 한 번도 못 만났다 —
+            // "처음 밟는데 익숙한 마운드"는 2회차의 간판인데 절반에게 안 보였다.
+            // 나머지 슬롯은 예전처럼 1/3 확률로만 얹는다. 전부 주면 회차 자각이 배경이 된다.
+            let extendedSlot = slot - Self.coreRelationshipCategories.count
+            let extendedSlotCount = max(1, schedule(for: state).relationshipTotal - Self.coreRelationshipCategories.count)
+            var guaranteeGenerator = SplitMix64(
+                seed: UInt64(StableHash.fnv1a64("rebirth_guarantee|\(state.careerID)"), radix: 16) ?? seed
+            )
+            let guaranteedSlot = guaranteeGenerator.nextInt(upperBound: extendedSlotCount)
+            if extendedSlot == guaranteedSlot || rebirthGenerator.nextInt(upperBound: 3) == 0 {
                 let pool = HighSchoolContentCatalog.rebirthEvents
                 return pool[rebirthGenerator.nextInt(upperBound: pool.count)]
             }
@@ -1882,6 +1959,11 @@ public struct HighSchoolCareerEngine: Sendable {
         case ("legacy", .listen): return .init(trust: 3, fatigue: 0, fanInterest: 1, growthFocus: nil, outcome: "가장 좋았던 경기와 힘들었던 경기를 조용히 되짚었습니다.")
         case ("legacy", .explain): return .init(trust: 3, fatigue: 0, fanInterest: 2, growthFocus: .gamePlanning, outcome: "세 해의 기록에서 남길 것을 골라 적었습니다.")
         case ("legacy", .challenge): return .init(trust: 2, fatigue: 2, fanInterest: 2, growthFocus: .command, outcome: "다음 선수에게 남길 한 가지를 분명히 정했습니다.")
+        // 환생 사건(2회차부터). 케이스가 없던 동안 세 응답이 전부 default(+2 고정)로
+        // 떨어져서, 회차 자각용으로 넣은 장면의 선택지가 장식이었다.
+        case ("rebirth", .listen): return .init(trust: 4, fatigue: -4, fanInterest: 0, growthFocus: nil, outcome: "낯익은 감각을 부정하지 않고 받아들이자 마음이 오히려 가라앉았습니다.")
+        case ("rebirth", .explain): return .init(trust: 3, fatigue: 0, fanInterest: 0, growthFocus: .gamePlanning, outcome: "몸이 먼저 아는 것들을 노트에 적어 승부 계획으로 바꿨습니다.")
+        case ("rebirth", .challenge): return .init(trust: 1, fatigue: 3, fanInterest: 2, growthFocus: .velocity, outcome: "설명할 수 없는 확신을 시험하려고, 그 공을 그 코스에 다시 던져 봤습니다.")
         default: return .init(trust: 2, fatigue: 0, fanInterest: 1, growthFocus: nil, outcome: "이번 일을 차분히 넘기며 마음을 다잡았습니다.")
         }
     }
@@ -1940,7 +2022,12 @@ public struct HighSchoolCareerEngine: Sendable {
 
     private func gameScenario(for state: HighSchoolCareerSnapshot, seed: UInt64) -> ImportantGameScenarioContent {
         let count = state.performance.importantGamesCompleted
-        let index = (Int(seed % UInt64(HighSchoolContentCatalog.scenarios.count)) + count * 5)
+        // 기준값은 회차 안에서 고정이어야 하고(careerID), 보폭은 풀 크기(20)와 서로소여야
+        // 한다(7). 예전에는 기준값이 매 행동마다 바뀌는 체인 시드라 어떤 보폭을 써도
+        // 생일 문제로 한 회차의 41%가 같은 장면을 두 번 봤다. 회차 고정 기준 + 서로소
+        // 보폭이면 경기 20번까지 중복이 없고, 회차가 바뀌면 기준이 바뀐다.
+        let runBase = UInt64(StableHash.fnv1a64("game_scenario|\(state.careerID)"), radix: 16) ?? seed
+        let index = (Int(runBase % UInt64(HighSchoolContentCatalog.scenarios.count)) + count * 7)
             % HighSchoolContentCatalog.scenarios.count
         return HighSchoolContentCatalog.scenarios[index]
     }
@@ -1984,9 +2071,51 @@ public struct HighSchoolCareerEngine: Sendable {
         return value
     }
 
-    private func applyInheritance(_ points: Int, domain: SoulDomain?, memories: [MemoryCardID], to pitcher: PitcherSnapshot) -> PitcherSnapshot {
-        let focus: TrainingFocus = domain == .body ? .velocity : domain == .technique ? .command : .gamePlanning
-        var value = grow(pitcher, focus: focus, points: max(0, points))
+    /// 야구혼이 시작 능력으로 스며드는 회차당 상한.
+    ///
+    /// 예전에는 누적 야구혼 **전액**이 한 능력에 들어갔다(분야 미선택이면 제구). 첫 회차
+    /// 보상(+40~60)만으로 제구가 80에 닿아 2회차와 30회차의 시작 선수가 완전히 같아졌고,
+    /// 제구를 올리는 기억 카드 10장이 2회차부터 죽었다 — 환생 루프가 한 번 돌고 멈췄다.
+    ///
+    /// 스펙(META-002)의 "초기 능력 보너스 8~10% 이내"를 따르되, 야구혼 총량이 쌓이면
+    /// 상한도 천천히 자란다(8 + 총량/60, 최대 20). 총량은 기록이고, 스며드는 양은 상한이
+    /// 정한다 — 10회차쯤까지 완만하게 오르다 멈추는 곡선이다.
+    static func inheritancePointCap(for points: Int) -> Int {
+        min(20, 8 + max(0, points) / 60)
+    }
+
+    private func applyInheritance(
+        _ points: Int, domain: SoulDomain?, memories: [MemoryCardID],
+        talent: TalentSnapshot, to pitcher: PitcherSnapshot
+    ) -> PitcherSnapshot {
+        var value = pitcher
+        var remaining = min(max(0, points), Self.inheritancePointCap(for: points))
+
+        // 이번 회차의 벽 아래에서만 스며든다. 계승이 벽을 뚫으면 만개(벽이 열리는 순간)가
+        // 그 능력에서 영원히 사라진다.
+        func headroom(_ focus: TrainingFocus) -> Bool {
+            let ability = TalentAbility.from(focus)
+            return rating(for: focus, pitcher: value) < min(80, talent.ceiling(ability))
+        }
+
+        // 분야를 골랐으면 절반을 그 분야에 먼저 준다. 나머지는 가장 낮은 능력부터 1점씩 —
+        // 한 능력 몰빵이 아니라 밑을 끌어올리는 계승이라, 훈련과 기억 카드가 할 일이 남는다.
+        if let domain, remaining > 0 {
+            let focus: TrainingFocus = domain == .body ? .velocity : domain == .technique ? .command : .gamePlanning
+            var share = remaining / 2
+            while share > 0, headroom(focus) {
+                value = grow(value, focus: focus, points: 1)
+                share -= 1
+                remaining -= 1
+            }
+        }
+        let rotation: [TrainingFocus] = [.velocity, .command, .breakingBall, .stamina]
+        while remaining > 0 {
+            let open = rotation.filter(headroom)
+            guard let lowest = open.min(by: { rating(for: $0, pitcher: value) < rating(for: $1, pitcher: value) }) else { break }
+            value = grow(value, focus: lowest, points: 1)
+            remaining -= 1
+        }
         for memory in memories {
             switch memory {
             case .velocityBlueprint: value = tuned(value, stuff: 2, command: -1, pitch: .fourSeam, velocity: 10, whiff: 2)
