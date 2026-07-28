@@ -34,6 +34,7 @@
 		77B6A10F10B42E5D0C183205 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19519846B2DF9369A5DA8FC /* SettingsView.swift */; };
 		81B9B8504D8A35973B155E63 /* HighSchoolCareerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB871919CDBE86B35708EEBF /* HighSchoolCareerView.swift */; };
 		828A1169DEA7E2BA3CC7348B /* SoundBank.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F71BD5BC715F678CF9E14C5 /* SoundBank.swift */; };
+		87D08E2396235CB38A0946CF /* UmpireVoiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 428C02967C4E89685CFBD9C4 /* UmpireVoiceTests.swift */; };
 		910EAAC15C26A49FEDEC9847 /* CareerSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEB11CD9FB866181225768DD /* CareerSetupView.swift */; };
 		98F47F2D21DE7C84E44394A0 /* CareerFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */; };
 		A0FAD88E95958BEC56B0DC78 /* HighSchoolCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE0F40C01B6D49B74C3C25A /* HighSchoolCareerStore.swift */; };
@@ -95,6 +96,7 @@
 		3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAudioCueMapping.swift; sourceTree = "<group>"; };
 		3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerFlowView.swift; sourceTree = "<group>"; };
 		4098E0B38E32E1CCF6BC0549 /* DeliveryControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveryControl.swift; sourceTree = "<group>"; };
+		428C02967C4E89685CFBD9C4 /* UmpireVoiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UmpireVoiceTests.swift; sourceTree = "<group>"; };
 		44A2719CCDD3666B7FD20946 /* AvatarFaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarFaceTests.swift; sourceTree = "<group>"; };
 		4B08F1209CBA0DDEF9A93A9A /* HighSchoolPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolPresentation.swift; sourceTree = "<group>"; };
 		598D8EDA6137AA0633E3390B /* PromoCaptureUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCaptureUITests.swift; sourceTree = "<group>"; };
@@ -261,6 +263,7 @@
 				0920357104804755EEFF843D /* PromoFrameExportTests.swift */,
 				75533AB861B98CEA53BE960B /* RetentionTests.swift */,
 				CAD4A6060A2CDCE715AC68FA /* SoundBankTests.swift */,
+				428C02967C4E89685CFBD9C4 /* UmpireVoiceTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -397,6 +400,7 @@
 				F4A9E1973C7F28B581107BAA /* PromoFrameExportTests.swift in Sources */,
 				3379C95CA8A90F2403DF846D /* RetentionTests.swift in Sources */,
 				A6EE8A5F5E6BBF61B55F2378 /* SoundBankTests.swift in Sources */,
+				87D08E2396235CB38A0946CF /* UmpireVoiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

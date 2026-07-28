@@ -261,18 +261,38 @@ final class GameAudio {
             ]
 
         case .umpireStrike:
-            // 심판의 외침. 사인파 두 음은 야구가 아니라 메뉴 소리로 들렸다.
-            // 사람 목소리 대역(600~1,300Hz)의 노이즈를 두 음절로 끊어 멀리서 지르는 느낌을 만든다.
+            // 심판의 외침. **목소리로 합성한다.**
+            //
+            // 예전에는 목소리 대역의 밴드패스 노이즈였다. 대역을 아무리 맞춰도 음정이 없어서
+            // "쉬" 소리로 남았고, 야구장이 아니라 메뉴에서 나는 소리로 들렸다.
+            //
+            // 스트라이크 콜은 두 박이다 — 짧게 끊고("스트라") 길게 지른다("이크"). 두 번째가
+            // 더 높고 길다. 그래서 첫 박은 짧고 낮게, 둘째 박은 음정이 올라갔다 떨어지게 잡았다.
+            // 모음은 "아"(700·1150·2500) → "이"에 가까운 밝은 쪽(520·1800·2600)으로 옮긴다.
+            //
+            // 마지막 한 겹은 **반사음**이다. 심판은 포수 뒤에 있고 그 소리는 백스톱을 때리고
+            // 돌아온다. 이 겹이 없으면 소리가 머릿속에서 나고, 있으면 구장에서 난다.
             return [
-                .noise(duration: 0.1, attack: 0.012, gain: 0.06, centerHz: 780, bandwidth: 0.85, curve: 2.0, pan: -0.5),
-                .noise(duration: 0.19, attack: 0.016, gain: 0.066, centerHz: 1_020, bandwidth: 0.8, curve: 1.8,
-                       delay: 0.12, pan: -0.5),
+                .shout(duration: 0.11, attack: 0.008, gain: 0.115,
+                       pitchHz: 138, glide: 1.06, formants: (700, 1_150, 2_500),
+                       breath: 0.10, curve: 2.4, pan: -0.45),
+                .shout(duration: 0.30, attack: 0.010, gain: 0.135,
+                       pitchHz: 152, glide: 1.28, formants: (520, 1_800, 2_600),
+                       breath: 0.14, curve: 1.5, delay: 0.11, pan: -0.45),
+                .noise(duration: 0.07, attack: 0.004, gain: 0.030, centerHz: 3_400, bandwidth: 1.6,
+                       curve: 3.0, delay: 0.38, pan: -0.4),
+                .shout(duration: 0.20, attack: 0.02, gain: 0.030,
+                       pitchHz: 152, glide: 1.28, formants: (520, 1_800, 2_600),
+                       breath: 0.2, curve: 2.2, delay: 0.17, pan: 0.35),
             ]
 
         case .umpireBall:
-            // 볼 콜은 한 음절. 스트라이크보다 낮고 짧아 귀에 덜 남는다.
+            // 볼 콜은 한 박이고, 스트라이크보다 낮고 짧다. 심판은 볼을 외치지 않고 말한다 —
+            // 그 차이가 귀에 남는 정도를 가른다. 음정이 처지고("오" 모음) 반사음도 없다.
             return [
-                .noise(duration: 0.15, attack: 0.014, gain: 0.077, centerHz: 640, bandwidth: 0.9, curve: 2.0, pan: -0.5),
+                .shout(duration: 0.17, attack: 0.012, gain: 0.088,
+                       pitchHz: 124, glide: 0.86, formants: (480, 850, 2_400),
+                       breath: 0.16, curve: 1.9, pan: -0.45),
             ]
 
         case .crowdCheer:
@@ -321,10 +341,36 @@ final class GameAudio {
     /// 단발 소리 하나.
     struct Voice: Equatable {
         enum Source: Equatable {
+            // 튜플 연관값이 있어 Equatable이 자동 합성되지 않는다. 손으로 적는다.
+            static func == (lhs: Source, rhs: Source) -> Bool {
+                switch (lhs, rhs) {
+                case (.noise(let a, let b), .noise(let c, let d)): (a, b) == (c, d)
+                case (.tone(let a, let b), .tone(let c, let d)): a == c && b == d
+                case (.sweep(let a, let b), .sweep(let c, let d)): (a, b) == (c, d)
+                case (.shout(let a, let b, let c, let d), .shout(let e, let f, let g, let h)):
+                    a == e && b == f && c == g && d == h
+                default: false
+                }
+            }
+
             case noise(centerHz: Double, bandwidth: Double)
             case tone(frequencyHz: Double, shape: Shape)
             /// 아래로(또는 위로) 미끄러지는 음. 미트에 꽂히는 소리와 방망이 소리의 몸통이다.
             case sweep(fromHz: Double, toHz: Double)
+            /// 사람의 외침.
+            ///
+            /// 밴드패스 노이즈로는 목소리가 되지 않는다 — 아무리 목소리 대역에 맞춰도 음정이
+            /// 없어서 "쉬" 소리로 남는다. 사람 소리로 들리려면 셋이 필요하다:
+            /// **음정이 있는 성대 파형**(톱니), **모음을 정하는 공명점 세 개**(포먼트),
+            /// 그리고 **음정의 오르내림**. 여기서 그 셋을 만든다.
+            ///
+            /// - Parameters:
+            ///   - pitchHz: 시작 기본 주파수. 성인 남성이 지르면 130~190Hz 근처다.
+            ///   - glide: 소리가 끝날 때의 음정 배율. 1보다 크면 올라가고 작으면 내려간다.
+            ///   - formants: 공명점 셋(F1·F2·F3). 이 조합이 곧 모음이다 —
+            ///     "아"는 대략 (700, 1150, 2500), "오"는 (480, 850, 2400).
+            ///   - breath: 섞을 숨소리 양(0~1). 지르는 소리에는 항상 조금 있다.
+            case shout(pitchHz: Double, glide: Double, formants: (Double, Double, Double), breath: Double)
         }
         let source: Source
         let duration: Double
@@ -356,6 +402,16 @@ final class GameAudio {
             curve: Double = 2.2, delay: Double = 0, pan: Double = 0
         ) -> Voice {
             Voice(source: .tone(frequencyHz: frequencyHz, shape: shape),
+                  duration: duration, attack: attack, gain: gain, delay: delay, curve: curve, pan: pan)
+        }
+
+        static func shout(
+            duration: Double, attack: Double, gain: Double,
+            pitchHz: Double, glide: Double, formants: (Double, Double, Double),
+            breath: Double = 0.12,
+            curve: Double = 1.6, delay: Double = 0, pan: Double = 0
+        ) -> Voice {
+            Voice(source: .shout(pitchHz: pitchHz, glide: glide, formants: formants, breath: breath),
                   duration: duration, attack: attack, gain: gain, delay: delay, curve: curve, pan: pan)
         }
 
@@ -428,6 +484,9 @@ final class VoiceBank: AudioRenderer, @unchecked Sendable {
         var frame: Int
         var phase: Double
         var filter: BandPass
+        /// 사람 목소리는 공명점이 셋이라야 모음으로 들린다. 하나로는 어떤 값을 줘도 "쉬" 소리다.
+        var formant2: BandPass
+        var formant3: BandPass
         var noise: FastNoise
     }
 
@@ -442,7 +501,8 @@ final class VoiceBank: AudioRenderer, @unchecked Sendable {
         if live.count < Self.maximumVoices {
             seedCounter = seedCounter &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
             live.append(
-                Live(voice: voice, frame: 0, phase: 0, filter: BandPass(), noise: FastNoise(seed: seedCounter))
+                Live(voice: voice, frame: 0, phase: 0, filter: BandPass(),
+                     formant2: BandPass(), formant3: BandPass(), noise: FastNoise(seed: seedCounter))
             )
         }
         lock.unlock()
@@ -512,6 +572,22 @@ final class VoiceBank: AudioRenderer, @unchecked Sendable {
                     voice.phase += frequency / sampleRate
                     if voice.phase > 1 { voice.phase -= 1 }
                     sample = sin(voice.phase * 2 * .pi)
+                case .shout(let pitchHz, let glide, let formants, let breath):
+                    // 성대: 톱니파. 배음이 촘촘해야 공명점이 걸릴 것이 있다.
+                    let frequency = pitchHz * pow(max(0.2, glide), progress)
+                    voice.phase += frequency / sampleRate
+                    if voice.phase > 1 { voice.phase -= 1 }
+                    let glottal = 2 * voice.phase - 1
+                    let source = glottal * (1 - breath) + voice.noise.next() * breath
+                    // 성도: 공명점 셋. 위로 갈수록 약해지는 것이 실제 목소리의 기울기다.
+                    func resonate(_ filter: inout BandPass, _ hz: Double, _ weight: Double) -> Double {
+                        let f = min(0.9, 2 * sin(.pi * min(hz, sampleRate * 0.45) / sampleRate))
+                        return filter.process(source, f: f, q: 0.16) * weight
+                    }
+                    sample = resonate(&voice.filter, formants.0, 1.0)
+                        + resonate(&voice.formant2, formants.1, 0.62)
+                        + resonate(&voice.formant3, formants.2, 0.28)
+                    sample = tanh(sample * 1.7) * 0.5
                 }
 
                 let value = sample * envelope * voice.voice.gain
