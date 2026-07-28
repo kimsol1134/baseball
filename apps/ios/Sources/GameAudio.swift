@@ -113,6 +113,14 @@ final class GameAudio {
         guard soundEnabled else { return }
         if !isRunning { start() }
         guard isRunning else { return }
+        // 엔진은 우리 플래그와 무관하게 밖에서 멈출 수 있다 — 오디오 서버 리셋, 인터럽션,
+        // 출력 장치 변경(이어폰 분리). 멈춘 엔진의 플레이어에 버퍼를 걸면 NSException으로
+        // 앱이 통째로 죽는다. 소리는 게임의 전제 조건이 아니므로, 되살리지 못하면 조용히 접는다.
+        if !engine.isRunning {
+            isRunning = false
+            start()
+            guard isRunning, engine.isRunning else { return }
+        }
         // 녹음 음원이 있으면 그것을, 없으면 합성으로. 큐 단위로 갈리므로 음원을 하나씩
         // 채워 넣을 수 있고, 하나도 없어도 지금과 똑같이 들린다.
         if let asset = SoundAsset.asset(for: cue), let buffer = bank.buffer(for: asset) {
