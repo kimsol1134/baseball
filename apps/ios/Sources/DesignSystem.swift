@@ -189,7 +189,7 @@ enum BaseballCardTone {
 ///
 /// 의미색(milestone·positive·warning·negative)이 붙은 것만 면을 갖는다. 상태가 바뀐 순간
 /// —기회, 경고, 성장, 결과— 은 화면에 드물게 나타나므로, 이 규칙만으로 "강조는 화면당 한 곳"이
-/// 저절로 지켜진다. 좌측 강조 레일은 쓰지 않는다: 데스크톱 원본도 GameCast의 ABS 판정 한 곳에만
+/// 저절로 지켜진다. 좌측 강조 레일은 쓰지 않는다: 데스크톱 원본도 GameCast의 존 판정 한 곳에만
 /// 쓰는 장치이고, 모든 카드가 반복하면 신호가 아니라 배경이 된다.
 struct BaseballCard<Content: View>: View {
     let title: String

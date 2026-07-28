@@ -928,7 +928,7 @@ export function GameCastReplay({
   }, [reducedMotion, timeline.total]);
 
   const phase = gameCastPhase(elapsed, timeline, hasContact);
-  const phaseLabel = !hasContact && phase === "contact" ? "ABS·스윙 판정 중" : PHASE_LABELS[phase];
+  const phaseLabel = !hasContact && phase === "contact" ? "존·스윙 판정 중" : PHASE_LABELS[phase];
   const revealResult = phase === "result" || status === "complete";
   const pitchProgress = clamp(elapsed / Math.max(1, timeline.pitchEnd), 0, 1);
   const fieldProgress = hasContact
@@ -1049,7 +1049,7 @@ export function GameCastReplay({
             <Metric label="수직 움직임" value={`${execution.verticalBreakTenthsCM >= 0 ? "+" : ""}${(execution.verticalBreakTenthsCM / 10).toFixed(1)} cm`} />
             <Metric label="코스 정확도" value={revealResult ? `${execution.executionQuality} / 1000` : "계산 중"} accent />
           </div>
-          <div className={`gamecast-zone-call gamecast-zone-call--${revealResult ? tone : "pending"}`}><span>ABS 판정</span><strong>{revealResult ? Math.abs(execution.actualX) <= 500 && Math.abs(execution.actualY) <= 500 ? "존 안" : "존 밖" : "판독 중"}</strong></div>
+          <div className={`gamecast-zone-call gamecast-zone-call--${revealResult ? tone : "pending"}`}><span>존 판정</span><strong>{revealResult ? Math.abs(execution.actualX) <= 500 && Math.abs(execution.actualY) <= 500 ? "존 안" : "존 밖" : "판독 중"}</strong></div>
           {!revealResult ? <div className="gamecast-analysis-state" aria-label={`${phaseLabel}, ${Math.round(pitchProgress * 100)}퍼센트 분석`}>
             <div><span>현재 분석</span><strong>{phaseLabel}</strong></div>
             <div className="gamecast-analysis-progress"><i style={{ width: `${Math.round(pitchProgress * 100)}%` }} /></div>

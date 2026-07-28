@@ -2038,7 +2038,7 @@ export function App() {
                 </button> : null}
                 <p className="result-detail">{lastResult.snapshot.detailFeedback}</p>
                 <dl className="result-facts">
-                  <div><dt>ABS</dt><dd>{Math.abs(lastResult.snapshot.execution.actualX) <= 500 && Math.abs(lastResult.snapshot.execution.actualY) <= 500 ? "존 안" : "존 밖"}</dd></div>
+                  <div><dt>존 판정</dt><dd>{Math.abs(lastResult.snapshot.execution.actualX) <= 500 && Math.abs(lastResult.snapshot.execution.actualY) <= 500 ? "존 안" : "존 밖"}</dd></div>
                   <div><dt>구속</dt><dd>{(lastResult.snapshot.execution.velocityTenthsKPH / 10).toFixed(1)} km/h</dd></div>
                   <div><dt>코스 정확도</dt><dd>{lastResult.snapshot.execution.executionQuality} / 1000</dd></div>
                 </dl>

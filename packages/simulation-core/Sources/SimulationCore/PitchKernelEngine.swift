@@ -1550,7 +1550,7 @@ public struct PitchKernelEngine: Sendable {
         var short: String
         switch outcome {
         case .ball: short = "타자가 골라내 볼이 됐습니다."
-        case .calledStrike: short = "ABS가 스트라이크를 선언했습니다."
+        case .calledStrike: short = "심판이 스트라이크를 선언했습니다."
         case .swingingStrike: short = "타자의 배트를 끌어내 헛스윙을 만들었습니다."
         case .foul: short = "타자가 걷어내 파울이 됐습니다."
         case .inPlayOut: short = "약한 타구를 유도해 아웃을 만들었습니다."
