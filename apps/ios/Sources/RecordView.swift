@@ -218,7 +218,8 @@ private struct RecordBoard: View {
 
                 StandingsCard(
                     season: state.season, seed: state.proCareerID,
-                    week: state.week, myTeamID: state.team.id
+                    week: state.week, myTeamID: state.team.id,
+                    myGames: state.gameLines ?? []
                 )
 
                 PitcherLeaderboardCard(

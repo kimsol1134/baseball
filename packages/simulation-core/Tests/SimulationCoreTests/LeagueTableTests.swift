@@ -180,4 +180,47 @@ final class LeagueTableTests: XCTestCase {
         XCTAssertEqual(LeagueTable.gamesPlayed(week: 24), 144)
         XCTAssertEqual(LeagueTable.gamesPlayed(week: 12), 72)
     }
+
+    // MARK: - 내 성적 연동
+
+    /// 내가 등판한 경기의 실제 결과가 우리 팀 기록에 들어간다. 예전에는 열 팀 전부가
+    /// 시드에서 생성돼 내가 아무리 잘 던져도 우리 팀 순위가 움직이지 않았다.
+    func testPlayerResultsMoveTheirTeam() {
+        let team = HighSchoolCareerEngine.teams[0].id
+        let allWins = (0..<30).map { _ in LeagueTable.PlayerGameResult(teamRuns: 5, opponentRuns: 1) }
+        let allLosses = (0..<30).map { _ in LeagueTable.PlayerGameResult(teamRuns: 1, opponentRuns: 5) }
+        let winning = LeagueTable.standings(season: 3, seed: "link", gamesPlayed: 72,
+                                            playerTeamID: team, playerResults: allWins)
+        let losing = LeagueTable.standings(season: 3, seed: "link", gamesPlayed: 72,
+                                           playerTeamID: team, playerResults: allLosses)
+        let winRow = winning.first { $0.teamID == team }!
+        let loseRow = losing.first { $0.teamID == team }!
+        XCTAssertGreaterThan(winRow.wins, loseRow.wins + 20, "30연승과 30연패의 차이가 팀 기록에 보이지 않습니다")
+        let winRank = winning.firstIndex { $0.teamID == team }!
+        let loseRank = losing.firstIndex { $0.teamID == team }!
+        XCTAssertLessThan(winRank, loseRank, "이기는 팀이 순위에서 더 아래에 있습니다")
+    }
+
+    /// 내 결과를 넣어도 리그의 승수 합 == 패수 합은 유지된다.
+    func testPlayerResultsKeepTheLeagueBalanced() {
+        let team = HighSchoolCareerEngine.teams[2].id
+        let mixed = (0..<20).map {
+            LeagueTable.PlayerGameResult(teamRuns: $0 % 3 == 0 ? 2 : 6, opponentRuns: 4)
+        }
+        let rows = LeagueTable.standings(season: 5, seed: "bal", gamesPlayed: 96,
+                                         playerTeamID: team, playerResults: mixed)
+        XCTAssertEqual(rows.reduce(0) { $0 + $1.wins }, rows.reduce(0) { $0 + $1.losses })
+        for row in rows { XCTAssertEqual(row.games, 96, "\(row.teamName)") }
+    }
+
+    /// 균형 맞추기가 내 팀을 건드리면 안 된다. 실제 결과가 들어간 기록을 고치면 다시 거짓말이 된다.
+    func testBalancingNeverTouchesThePlayerTeam() {
+        let team = HighSchoolCareerEngine.teams[4].id
+        let results = (0..<24).map { _ in LeagueTable.PlayerGameResult(teamRuns: 7, opponentRuns: 0) }
+        let rows = LeagueTable.standings(season: 2, seed: "pin", gamesPlayed: 48,
+                                         playerTeamID: team, playerResults: results)
+        let mine = rows.first { $0.teamID == team }!
+        // 24경기 전승 + 나머지 24경기 생성분. 전승 부분은 그대로 남아야 한다.
+        XCTAssertGreaterThanOrEqual(mine.wins, 24, "실제 전승 기록이 균형 맞추기에 깎였습니다")
+    }
 }

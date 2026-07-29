@@ -95,11 +95,20 @@ struct StandingsCard: View {
     let season: Int
     let seed: String
     let week: Int
-    /// 내 팀. 목록에서 강조한다.
+    /// 내 팀. 목록에서 강조하고, 내 경기의 실제 결과가 이 팀 기록에 들어간다.
     let myTeamID: String
+    /// 내가 등판한 경기들. 이게 없으면 내가 아무리 잘 던져도 우리 팀 순위가 안 움직인다.
+    var myGames: [ProGameLine] = []
 
     private var rows: [LeagueTable.StandingRow] {
-        LeagueTable.standings(season: season, seed: seed, gamesPlayed: LeagueTable.gamesPlayed(week: week))
+        LeagueTable.standings(
+            season: season, seed: seed,
+            gamesPlayed: LeagueTable.gamesPlayed(week: week),
+            playerTeamID: myTeamID,
+            playerResults: myGames.map {
+                LeagueTable.PlayerGameResult(teamRuns: $0.teamRuns, opponentRuns: $0.opponentRuns)
+            }
+        )
     }
 
     var body: some View {

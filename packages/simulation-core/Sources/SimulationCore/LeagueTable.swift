@@ -42,10 +42,35 @@ public enum LeagueTable {
         Double((leader.wins - row.wins) + (row.losses - leader.losses)) / 2
     }
 
+    /// 내 등판이 낀 경기의 실제 결과. `ProGameLine`에서 만든다.
+    public struct PlayerGameResult: Equatable, Sendable {
+        public let teamRuns: Int
+        public let opponentRuns: Int
+        public init(teamRuns: Int, opponentRuns: Int) {
+            self.teamRuns = teamRuns
+            self.opponentRuns = opponentRuns
+        }
+        var won: Bool? { teamRuns == opponentRuns ? nil : teamRuns > opponentRuns }
+    }
+
     /// 이 시점까지의 순위표. 승률 내림차순, 동률이면 승수.
     ///
-    /// - Parameter gamesPlayed: 각 팀이 치른 경기 수. 주차에서 환산해 넘긴다.
-    public static func standings(season: Int, seed: String, gamesPlayed: Int) -> [StandingRow] {
+    /// - Parameters:
+    ///   - gamesPlayed: 각 팀이 치른 경기 수. 주차에서 환산해 넘긴다.
+    ///   - playerTeamID: 내 팀. `playerResults`가 이 팀의 기록에 들어간다.
+    ///   - playerResults: 내가 등판한 경기들의 실제 결과.
+    ///
+    /// **내 팀의 기록에는 내 경기가 실제로 들어간다.** 예전에는 열 팀 전부를 시드에서
+    /// 만들어서, 내가 아무리 잘 던져도 우리 팀 순위가 움직이지 않았다 — 순위표를 아는
+    /// 사람이 며칠이면 알아챌 거짓말이다. 내가 등판한 경기는 실제 결과를 쓰고, 내가 없던
+    /// 경기만 시드에서 만든다. 야구에서도 선발 하나가 팀의 5분의 1을 책임진다.
+    public static func standings(
+        season: Int,
+        seed: String,
+        gamesPlayed: Int,
+        playerTeamID: String? = nil,
+        playerResults: [PlayerGameResult] = []
+    ) -> [StandingRow] {
         let played = min(gamesPerSeason, max(0, gamesPlayed))
         guard played > 0 else {
             return HighSchoolCareerEngine.teams.map {
@@ -86,9 +111,32 @@ public enum LeagueTable {
             ))
         }
 
+        // 내 팀의 기록에 내 경기를 실제로 반영한다. 내가 등판한 경기 수만큼 생성분을
+        // 비례로 줄이고 그 자리에 실제 결과를 넣는다.
+        if let playerTeamID, !playerResults.isEmpty,
+           let index = rows.firstIndex(where: { $0.teamID == playerTeamID }) {
+            let generated = rows[index]
+            let mine = Array(playerResults.prefix(played))
+            let myWins = mine.count { $0.won == true }
+            let myLosses = mine.count { $0.won == false }
+            let myDraws = mine.count - myWins - myLosses
+            let remaining = max(0, played - mine.count)
+            // 생성분을 남은 경기 수에 비례로 줄인다. 반올림 오차는 패에 흡수시킨다.
+            let scaledWins = generated.wins * remaining / max(1, played)
+            let scaledDraws = min(remaining - min(remaining, scaledWins), generated.draws * remaining / max(1, played))
+            let scaledLosses = max(0, remaining - scaledWins - scaledDraws)
+            winTotal += myWins + scaledWins - generated.wins
+            rows[index] = StandingRow(
+                teamID: generated.teamID, teamName: generated.teamName,
+                wins: myWins + scaledWins,
+                losses: myLosses + scaledLosses,
+                draws: myDraws + scaledDraws
+            )
+        }
+
         // 승수 합과 패수 합을 맞춘다. 리그에서 누군가 이기면 누군가는 진다 — 이게 안 맞으면
         // 순위표를 아는 사람은 곧바로 알아본다.
-        rows = balanced(rows, winTotal: winTotal)
+        rows = balanced(rows, winTotal: winTotal, pinned: playerTeamID)
         return rows.sorted {
             let left = $0.winRate ?? 0
             let right = $1.winRate ?? 0
@@ -104,13 +152,15 @@ public enum LeagueTable {
     /// `surplus`는 항상 짝수다(위에서 승부 경기 총합을 짝수로 맞춘다). 예전에는 그 보장이
     /// 없어서 홀수일 때 ±2 조정이 0을 지나쳐 되돌아오기를 반복했고, 400번 반복하는 동안
     /// 상위 팀은 승률 .84, 하위 팀은 .15까지 벌어졌다 — 야구가 아닌 순위표가 나왔다.
-    private static func balanced(_ rows: [StandingRow], winTotal: Int) -> [StandingRow] {
+    private static func balanced(_ rows: [StandingRow], winTotal: Int, pinned: String? = nil) -> [StandingRow] {
         let lossTotal = rows.reduce(0) { $0 + $1.losses }
         var surplus = winTotal - lossTotal
         guard surplus != 0 else { return rows }
         var adjusted = rows
         // 승이 남으면 승수가 많은 팀부터, 모자라면 승수가 적은 팀부터 한 경기씩.
-        let order = rows.indices.sorted {
+        // 내 팀(pinned)은 건드리지 않는다 — 실제 결과가 들어간 기록을 균형 맞추느라
+        // 고치면 그건 다시 거짓말이 된다.
+        let order = rows.indices.filter { rows[$0].teamID != pinned }.sorted {
             surplus > 0 ? (rows[$0].wins > rows[$1].wins) : (rows[$0].wins < rows[$1].wins)
         }
         var index = 0
