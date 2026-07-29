@@ -17,8 +17,8 @@
 | `bat-foul.wav` | 파울 팁 | 정타(`bat-contact-hard`)와 같은 녹음에서 파생 — 고역 통과 1.5kHz×2 + 90ms 절단. 빗맞아 스치면 "딱" 대신 "틱"이 되는 물리를 흉내 낸다 | **CC0** | 불필요 |
 | `swing-miss.wav` | 헛스윙 | [Freesound 59995](https://freesound.org/people/qubodup/sounds/59995/) · qubodup, "stick cutting air" — 막대가 실제로 공기를 가르는 녹음 | **CC0** | 불필요 |
 | `pitch-release` | 릴리스 | — | — | — |
-| `umpire-strike.wav` | 스트라이크 콜 | [Freesound 625473](https://freesound.org/people/jcookvoice/sounds/625473/) · jcookvoice — "Strike three, you're out"에서 첫 단어("Strike!")만 잘라 냄. **음성 인식(whisper)으로 내용을 검증했다** — 봉투 모양만 보고 자르면 "Strike three"를 매 스트라이크마다 외치게 된다(실제로 한 번 그랬다) | **CC0** | 불필요 |
-| `umpire-ball` | 볼 콜 | **의도적 무음.** 실제 심판은 볼을 외치지 않고, 미트 소리가 이미 공 하나를 표시한다. 슬롯은 남겨 둔다 | — | — |
+| `umpire-strike.wav` | 스트라이크 콜 | [Freesound 625473](https://freesound.org/people/jcookvoice/sounds/625473/) · jcookvoice — "Strike three, you're out"에서 첫 단어("Strike!")만. **whisper로 부분 컷을 전사해 단어 경계를 확정했다** — "three!"의 어택(5.20초)이 물리지 않게 5.195초에서 끊었다. 봉투 모양만 보고 자르면 "Strike three"를 매 스트라이크마다 외치게 된다(실제로 한 번 그랬다) | **CC0** | 불필요 |
+| `umpire-out.wav` | 삼진 확정 콜 | 같은 녹음의 첫 세그먼트("You're out!", 1.84–3.20초)를 통째로. 잘라 낸 최종본을 다시 whisper에 넣어 "You're out!"으로 전사되는 것까지 확인했다 | **CC0** | 불필요 || `umpire-ball` | 볼 콜 | **의도적 무음.** 실제 심판은 볼을 외치지 않고, 미트 소리가 이미 공 하나를 표시한다. 슬롯은 남겨 둔다 | — | — |
 
 성장·기념·UI 음은 화면 피드백이라 녹음을 쓰지 않고 합성음을 유지한다(`SoundAsset.asset(for:)`).
 

@@ -83,7 +83,7 @@ final class RetentionTests: XCTestCase {
         // 미트 소리가 이미 공 하나를 표시한다(UmpireVoiceTests.testBallCallIsSilent가 지킨다).
         let cues: [GameAudioCue] = [
             .pitchRelease, .gloveCatch, .swingMiss, .batContact(power: 0.8), .batFoul,
-            .umpireStrike, .crowdCheer, .crowdGroan, .growth, .milestone, .uiSelect
+            .umpireStrike, .umpireOut, .crowdCheer, .crowdGroan, .growth, .milestone, .uiSelect
         ]
         for cue in cues {
             let voices = GameAudio.voices(for: cue)

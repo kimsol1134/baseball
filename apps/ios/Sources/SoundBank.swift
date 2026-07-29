@@ -19,6 +19,7 @@ enum SoundAsset: String, CaseIterable {
     case batFoul = "bat-foul"
     case umpireStrike = "umpire-strike"
     case umpireBall = "umpire-ball"
+    case umpireOut = "umpire-out"
     case crowdCheer = "crowd-cheer"
     case crowdGroan = "crowd-groan"
     /// 이어서 도는 관중 웅성거림. 이 하나만 넣어도 체감이 가장 크게 바뀐다.
@@ -37,6 +38,7 @@ enum SoundAsset: String, CaseIterable {
         case .batFoul: .batFoul
         case .umpireStrike: .umpireStrike
         case .umpireBall: .umpireBall
+        case .umpireOut: .umpireOut
         case .crowdCheer: .crowdCheer
         case .crowdGroan: .crowdGroan
         // 성장·기념·UI 음은 게임 안의 소리가 아니라 화면 피드백이다. 맑은 합성음이 더 맞고,

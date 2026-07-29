@@ -37,7 +37,7 @@ final class SoundBankTests: XCTestCase {
         bank.load()
         for asset in [
             SoundAsset.batContactHard, .batContactWeak, .batFoul, .gloveCatch,
-            .umpireStrike, .swingMiss, .crowdCheer, .crowdGroan,
+            .umpireStrike, .umpireOut, .swingMiss, .crowdCheer, .crowdGroan,
         ] {
             XCTAssertTrue(
                 bank.loadedAssets.contains(asset),
@@ -50,6 +50,7 @@ final class SoundBankTests: XCTestCase {
             // 자르면 뚝 끊긴 티가 난다. 파울 팁은 스치는 소리라 0.1초보다 짧을 수 있다.
             let bounds: ClosedRange<Double> = switch asset {
             case .crowdCheer, .crowdGroan: 1.0...5.0
+            case .umpireOut: 0.5...2.0
             case .batFoul: 0.03...0.5
             default: 0.1...1.0
             }

@@ -23,6 +23,9 @@ enum GameAudioMapping {
 
         switch snapshot.result {
         case .strikeout:
+            // 심판은 삼진을 "스트라이크" 콜에서 멈추지 않는다 — "아웃!"까지 지른다.
+            // 이 한 마디가 삼진을 다른 스트라이크와 다른 사건으로 만든다.
+            cues.append(.umpireOut)
             cues.append(.crowdCheer)
         case .inPlayOut:
             cues.append(snapshot.runsScored > 0 ? .crowdGroan : .crowdCheer)

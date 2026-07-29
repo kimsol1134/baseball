@@ -12,6 +12,7 @@ enum GameAudioCue: Equatable {
     case batFoul
     case umpireStrike
     case umpireBall
+    case umpireOut
     case crowdCheer
     case crowdGroan
     case growth
@@ -331,6 +332,24 @@ final class GameAudio {
                 .shout(duration: 0.20, attack: 0.02, gain: 0.030,
                        pitchHz: 152, glide: 1.28, formants: (520, 1_800, 2_600),
                        breath: 0.2, curve: 2.2, delay: 0.17, pan: 0.35),
+            ]
+
+        case .umpireOut:
+            // 삼진 확정 콜("유어 아웃"). 스트라이크 콜과 같은 목소리 합성인데 두 박의
+            // 무게가 반대다 — 첫 박("유어")은 낮고 빠르게 지나가고, 둘째 박("아웃")에
+            // 힘이 실린다. 모음도 "이" 쪽이 아니라 "아우"(어두운 쪽)로 내려간다.
+            return [
+                .shout(duration: 0.10, attack: 0.008, gain: 0.10,
+                       pitchHz: 128, glide: 1.02, formants: (450, 1_000, 2_400),
+                       breath: 0.12, curve: 2.6, pan: -0.45),
+                .shout(duration: 0.34, attack: 0.012, gain: 0.14,
+                       pitchHz: 146, glide: 1.22, formants: (640, 1_050, 2_450),
+                       breath: 0.14, curve: 1.6, delay: 0.10, pan: -0.45),
+                .noise(duration: 0.07, attack: 0.004, gain: 0.028, centerHz: 3_200, bandwidth: 1.6,
+                       curve: 3.0, delay: 0.40, pan: -0.4),
+                .shout(duration: 0.22, attack: 0.02, gain: 0.028,
+                       pitchHz: 146, glide: 1.22, formants: (640, 1_050, 2_450),
+                       breath: 0.2, curve: 2.2, delay: 0.19, pan: 0.35),
             ]
 
         case .umpireBall:
