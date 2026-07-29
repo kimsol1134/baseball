@@ -46,6 +46,9 @@ final class PitchSession {
     /// 누적 중인 리포트 필드. 타석이 끝날 때마다 갱신된다.
     private(set) var pitches = 0
     private(set) var strikeouts = 0
+    /// 타자 연속 삼진. 이닝이 바뀌어도 등판 안에서는 이어진다 — 실제 "○타자 연속 삼진"
+    /// 기록이 그렇게 센다. 삼진이 아닌 타석 결과가 나오면 끊긴다.
+    private(set) var consecutiveStrikeouts = 0
     private(set) var walks = 0
     private(set) var runsAllowed = 0
     private(set) var expectedDamage = 0
@@ -213,6 +216,9 @@ final class PitchSession {
         lastCues = GameAudioMapping.cues(for: snapshot)
         pitches += 1
         strikeouts += snapshot.result == .strikeout ? 1 : 0
+        if let plateResult = snapshot.result {
+            consecutiveStrikeouts = plateResult == .strikeout ? consecutiveStrikeouts + 1 : 0
+        }
         walks += snapshot.result == .walk ? 1 : 0
         runsAllowed += snapshot.runsScored
         recommendationAccepted += snapshot.recommendationAccepted ? 1 : 0

@@ -306,7 +306,8 @@ struct PitchView: View {
                         outcome: result.snapshot.outcome,
                         plateResult: result.snapshot.result,
                         inningEnded: result.snapshot.inningTransition?.inningEnded ?? false,
-                        landingDistanceTenthsMeters: result.snapshot.fieldingResolution?.landingDistanceTenthsMeters
+                        landingDistanceTenthsMeters: result.snapshot.fieldingResolution?.landingDistanceTenthsMeters,
+                        consecutiveStrikeouts: session.consecutiveStrikeouts
                     ) {
                         HighlightStamp(kind: kind, velocityTenthsKPH: result.snapshot.execution.velocityTenthsKPH)
                             .id(result.snapshot.revision)
@@ -469,6 +470,11 @@ struct PitchView: View {
         // 전에는 포구와 콜이 같은 순간에 겹쳐서 심판이 공보다 빨랐다.
         let cues = session.lastCues
         if let release = cues.first { audio.play(release) }
+        // 3타자 연속 삼진부터는 축하음이 함성 위에 얹힌다. 풀콜(1.32~3.2초)이 끝나고
+        // 함성이 부풀어 있는 자리다. 매 삼진마다 울리면 3연속이 아무것도 아니게 된다.
+        if session.consecutiveStrikeouts >= 3, session.lastResult?.snapshot.result == .strikeout {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) { audio.play(.milestone) }
+        }
         for (index, cue) in cues.dropFirst().enumerated() {
             // 삼진 풀콜은 반 박 더 뜸을 들인다 — 심판이 펀치아웃 동작과 함께 지르는 그 사이.
             let delay = if cue == .umpireStrikeout { 1.32 } else {

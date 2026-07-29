@@ -100,6 +100,36 @@ final class PresentationTests: XCTestCase {
     }
 
     /// 존 라벨은 row·column 순서를 데스크톱과 같게 읽어야 한다.
+    /// 스탬프 우선순위 — 홈런 > 연속 스트릭(2+) > 이닝 종료 삼진 > 없음.
+    /// 스트릭이 이닝 종료를 이기는 이유: "3타자 연속"은 쌓아 온 서사고 이닝 종료는 사실 하나다.
+    func testHighlightStampEscalatesWithStrikeoutStreak() {
+        XCTAssertEqual(
+            HighlightStamp.kind(outcome: .swingingStrike, plateResult: .strikeout,
+                                inningEnded: true, landingDistanceTenthsMeters: nil,
+                                consecutiveStrikeouts: 3),
+            .strikeoutStreak(count: 3)
+        )
+        XCTAssertEqual(
+            HighlightStamp.kind(outcome: .calledStrike, plateResult: .strikeout,
+                                inningEnded: true, landingDistanceTenthsMeters: nil,
+                                consecutiveStrikeouts: 1),
+            .inningEndingStrikeout
+        )
+        // 홈런은 스트릭 여부와 무관하게 홈런이다(맞은 순간 스트릭은 이미 끊겼다).
+        XCTAssertEqual(
+            HighlightStamp.kind(outcome: .homeRun, plateResult: .hit,
+                                inningEnded: false, landingDistanceTenthsMeters: 1_150,
+                                consecutiveStrikeouts: 4),
+            .homeRun(distanceMeters: 115)
+        )
+        // 이닝 중간의 단발 삼진은 스탬프가 없다 — 매 삼진마다 찍으면 배경이 된다.
+        XCTAssertNil(
+            HighlightStamp.kind(outcome: .swingingStrike, plateResult: .strikeout,
+                                inningEnded: false, landingDistanceTenthsMeters: nil,
+                                consecutiveStrikeouts: 1)
+        )
+    }
+
     func testZoneLabels() {
         XCTAssertEqual(PitchCopy.zone(PitchZone(row: 0, column: 0)), "높은 몸쪽")
         XCTAssertEqual(PitchCopy.zone(PitchZone(row: 1, column: 1)), "가운데")

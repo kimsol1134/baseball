@@ -306,11 +306,13 @@ struct HighlightStamp: View {
     enum Kind: Equatable {
         case homeRun(distanceMeters: Int)
         case inningEndingStrikeout
+        /// 2타자 연속부터. 숫자가 올라갈수록 이 스탬프 하나가 하이라이트가 된다.
+        case strikeoutStreak(count: Int)
 
         var title: String {
             switch self {
             case .homeRun: "홈런"
-            case .inningEndingStrikeout: "삼진"
+            case .inningEndingStrikeout, .strikeoutStreak: "삼진"
             }
         }
 
@@ -318,6 +320,7 @@ struct HighlightStamp: View {
             switch self {
             case .homeRun(let distance): distance > 0 ? "\(distance)m" : nil
             case .inningEndingStrikeout: "이닝 종료"
+            case .strikeoutStreak(let count): "\(count)타자 연속"
             }
         }
 
@@ -325,6 +328,7 @@ struct HighlightStamp: View {
             switch self {
             case .homeRun: BaseballTheme.negative
             case .inningEndingStrikeout: BaseballTheme.action
+            case .strikeoutStreak: BaseballTheme.milestone
             }
         }
     }
@@ -342,10 +346,16 @@ struct HighlightStamp: View {
         outcome: PitchOutcome,
         plateResult: PlateAppearanceResult?,
         inningEnded: Bool,
-        landingDistanceTenthsMeters: Int?
+        landingDistanceTenthsMeters: Int?,
+        consecutiveStrikeouts: Int = 0
     ) -> Kind? {
         if outcome == .homeRun {
             return .homeRun(distanceMeters: (landingDistanceTenthsMeters ?? 0) / 10)
+        }
+        // 연속 스트릭이 이닝 종료보다 위다. "3타자 연속"은 쌓아 온 서사고,
+        // 이닝 종료는 그 공 하나의 사실이다.
+        if plateResult == .strikeout, consecutiveStrikeouts >= 2 {
+            return .strikeoutStreak(count: consecutiveStrikeouts)
         }
         if plateResult == .strikeout, inningEnded {
             return .inningEndingStrikeout
