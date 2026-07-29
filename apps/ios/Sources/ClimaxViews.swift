@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 import SimulationCore
 
@@ -24,6 +25,7 @@ struct DraftRevealView: View {
     let onFinish: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.requestReview) private var requestReview
 
     /// 공개 단계. 순서가 곧 긴장의 순서다.
     private enum Stage: Int {
@@ -107,7 +109,17 @@ struct DraftRevealView: View {
             PrimaryPill(
                 title: stage == .revealed ? "계속" : "건너뛰기",
                 identifier: "hs.draft.reveal.done",
-                action: { stage == .revealed ? onFinish() : skipToReveal() }
+                action: {
+                    guard stage == .revealed else { return skipToReveal() }
+                    // 별점 요청은 이 게임의 감정 최고점 — 지명 확정 스탬프를 닫는 순간 —
+                    // 에서만 한다. 시스템이 연 3회로 제한하는 카드를 아무 데서나 쓰면
+                    // 화난 순간에 떠서 별점을 깎는 쪽으로 작동한다. 미지명이면 안 묻는다.
+                    // UI 테스트에서는 끈다 — 시뮬레이터에서 시트가 실제로 떠서 다음 탭을 막는다.
+                    if drafted, !ProcessInfo.processInfo.arguments.contains("-uiTestResetCareer") {
+                        requestReview()
+                    }
+                    onFinish()
+                }
             )
             .padding(.horizontal, BaseballMetrics.gutter)
             .padding(.bottom, BaseballMetrics.gutter)
