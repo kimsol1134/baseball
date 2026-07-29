@@ -54,7 +54,7 @@ targets:
         # CFBundleDisplayName이고, 한글 PRODUCT_NAME은 TEST_HOST 경로를 깨뜨린다.
         PRODUCT_NAME: BaseballIOS
         MARKETING_VERSION: 1.0.0
-        CURRENT_PROJECT_VERSION: 7
+        CURRENT_PROJECT_VERSION: 8
         CODE_SIGN_STYLE: Automatic
         # 아카이브·업로드에 필요하다. 없으면 "requires a development team"으로 실패한다.
         DEVELOPMENT_TEAM: D48DDX5D5W
