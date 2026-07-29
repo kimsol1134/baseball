@@ -9,47 +9,39 @@
 | 파일 | 쓰이는 곳 | 출처 | 라이선스 | 저작자 표기 필요 |
 |---|---|---|---|---|
 | `crowd-loop.m4a` | 경기 중 관중 웅성거림(이어 재생) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:360703_eguobyte_large-crowd-medium-distance-stereo.wav) · eguobyte, "large crowd medium distance stereo" | **CC0** (공용 저작물 기증) | 불필요 |
-| `crowd-cheer` | 삼진·호투 뒤 함성 | — | — | — |
+| `crowd-cheer.wav` | 삼진·호투 뒤 함성 | [Freesound 634512](https://freesound.org/people/cpark12/sounds/634512/) · cpark12, 고교 야구 실경기 녹음에서 타격 직후 관중 반응을 잘라 냄 | **CC0** | 불필요 |
 | `crowd-groan` | 피안타·홈런 뒤 탄식 | — | — | — |
-| `glove-catch.wav` | 포수 미트 포구 | [Freesound 164499](https://freesound.org/people/martinimeniscus/sounds/164499/) · martinimeniscus, "Glove Catch 1 FF014" — *One glove catch. Quick smack.* | **CC0** | 불필요 |
-| `bat-contact-hard.wav` | 정타 | [Freesound 162863](https://freesound.org/people/martinimeniscus/sounds/162863/) · martinimeniscus, "Bat Hit 1 FF103" — *Baseball Bat slam, hit close Ext.* | **CC0** | 불필요 |
+| `glove-catch.wav` | 포수 미트 포구 | [Freesound 649084](https://freesound.org/people/MPooman/sounds/649084/) · MPooman, "Baseball Glove Sounds (High Quality)"에서 첫 포구를 잘라 냄 | **CC0** | 불필요 |
+| `bat-contact-hard.wav` | 정타 | [Freesound 628352](https://freesound.org/people/Urkki69/sounds/628352/) · Urkki69, "Hitting a Finnish baseball" — 야외에서 방망이로 공을 실제로 친 단독 녹음 | **CC0** | 불필요 |
 | `bat-contact-weak.wav` | 빗맞은 타구 | 위 `bat-contact-hard`와 **같은 녹음에서 파생** (가공 내역 아래) | **CC0** | 불필요 |
 | `bat-foul` | 파울 팁 | — | — | — |
 | `swing-miss` | 헛스윙 | — | — | — |
 | `pitch-release` | 릴리스 | — | — | — |
-| `umpire-strike.wav` | 스트라이크 콜 | [Freesound 625473](https://freesound.org/people/jcookvoice/sounds/625473/) · jcookvoice, "American Baseball The Umpire" — 성우가 연기한 심판 콜 모음에서 "스트라이크" 부분을 잘라 냄 | **CC0** | 불필요 |
+| `umpire-strike.wav` | 스트라이크 콜 | [Freesound 625473](https://freesound.org/people/jcookvoice/sounds/625473/) · jcookvoice — "Strike three, you're out"에서 첫 단어("Strike!")만 잘라 냄. **음성 인식(whisper)으로 내용을 검증했다** — 봉투 모양만 보고 자르면 "Strike three"를 매 스트라이크마다 외치게 된다(실제로 한 번 그랬다) | **CC0** | 불필요 |
 | `umpire-ball` | 볼 콜 | **의도적 무음.** 실제 심판은 볼을 외치지 않고, 미트 소리가 이미 공 하나를 표시한다. 슬롯은 남겨 둔다 | — | — |
 
 성장·기념·UI 음은 화면 피드백이라 녹음을 쓰지 않고 합성음을 유지한다(`SoundAsset.asset(for:)`).
 
-## bat-contact-*.wav · glove-catch.wav 가공 내역
+## 실녹음 가공 내역
 
-두 원본 모두 같은 사람(martinimeniscus)이 같은 장비로 녹음한 CC0 짝이다. 배트와 미트가
-서로 다른 세계에서 온 소리로 들리지 않는 것이 이 조합의 이유다.
+처음 세트(martinimeniscus의 "Bat Hit"/"Glove Catch")는 실기기에서 "소리가 다 이상하다"는
+피드백을 받았다. 확인하니 그 "Bat Hit"의 설명은 *Bat slam* — 방망이로 무언가를 친 소리지
+공이 맞는 소리가 아니었다. **제목이 아니라 내용을 검증해야 한다.** 지금 세트는 실제로 공을
+친 녹음(핀란드 야구 타격), 포구 전용 고품질 녹음, 실경기 관중 반응으로 갈아 끼웠고,
+트랜지언트(피크 순간)를 찾아 그 앞 10ms부터 잘랐다.
 
-내려받은 것은 Freesound의 미리듣기 MP3(48kHz)다. 원본 AIFF는 로그인이 필요한데, **한 방
-소리(one-shot)에서는 손실 압축이 문제가 되지 않는다.** 인코더가 붙이는 앞뒤 여분 샘플은
-이어 붙여 반복할 때만 틈으로 들리고(그래서 `crowd-loop`은 무손실을 골랐다), 여기서는
-어택 앞의 무음을 어차피 잘라 내기 때문이다.
+빗맞은 타구는 정타와 같은 녹음에서 파생했다(저역 통과 1.4kHz — 배트 끝에 맞으면 그렇게
+들린다). 빗맞은 타구만 따로 녹음한 CC0가 없어서, 없는 녹음을 있는 척하지 않고 여기 적는다.
 
-1. 모노로 접었다. 앱이 `GameAudio`에서 등파워 패닝을 직접 건다.
-2. 앞뒤 무음을 잘라 어택을 파일 맨 앞으로 당겼다. 판정과 소리 사이의 지연이 손맛을 깎는다.
-3. 길이를 잘랐다 — 정타 0.62초, 포구 0.45초. 원본 배트는 1.17초인데 뒤쪽은 야외 잔향이고,
-   피크 이후 60ms면 이미 92% 잦아든다. 길게 두면 다음 큐를 덮는다.
-4. **피크 기준으로 맞췄다**(정타 −1.5dB, 포구 −3dB). 한 방 소리에 LUFS를 쓰면 안 된다 —
-   게이팅 창이 400ms라 0.5초짜리는 측정 자체가 성립하지 않는다(실제로 −30 LUFS가 나왔다).
-5. `bat-contact-weak`은 정타와 같은 녹음에서 파생했다. 저역 통과(1.4kHz)로 고역의 "깡"을
-   덜고 피크를 −7dB로 낮췄다 — 배트 끝에 맞으면 실제로 그렇게 들린다. 빗맞은 타구를 따로
-   녹음한 CC0 음원이 없어서, 없는 녹음을 있는 척하지 않고 파생임을 여기 적는다.
-
-`bat-foul`은 합성음으로 남긴다. 파울 팁은 배트를 스치고 미트로 들어가는 두 소리의 합이라,
-같은 타격음을 세 번째로 줄여 쓰면 셋 다 같은 소리로 들린다.
+내려받은 것은 Freesound의 미리듣기 MP3다. 원본은 로그인이 필요한데, **한 방 소리에서는
+손실 압축이 문제가 되지 않는다** — 인코더가 붙이는 앞뒤 여분 샘플은 어택 앞의 무음을
+어차피 잘라 내기 때문이다. 반복 루프(crowd-loop, menu-theme)만 무손실이 필요하다.
 
 ## 다음에 채울 칸 (외부 에셋 대기)
 
 | 우선 | 파일 | 무엇을 구해야 하나 |
 |---|---|---|
-| 1 | `crowd-cheer` / `crowd-groan` | 함성·탄식. 관중 루프와 같은 거리감이어야 한다 |
+| 1 | `crowd-groan` | 탄식. 함성은 실경기 녹음으로 채웠다 |
 | 2 | `bat-foul` | 파울 팁. 위 가공 내역 참고 |
 | 3 | `pitch-release` / `swing-miss` | 바람 소리. 합성이 오히려 자연스러울 수 있다 |
 | 4 | `menu-theme` | 메뉴 음악 루프. 없으면 합성 패드가 돈다. 무손실이어야 한다(이음매) |
