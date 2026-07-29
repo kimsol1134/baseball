@@ -129,7 +129,8 @@ final class HighSchoolCareerStore {
         playerName: String,
         region: String = "서울",
         difficulty: CareerDifficultySnapshot = .standard,
-        karmas: [KarmaID] = []
+        karmas: [KarmaID] = [],
+        soulDomain: SoulDomain? = nil
     ) {
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = trimmed.isEmpty ? preset.pitcher.name : trimmed
@@ -150,6 +151,7 @@ final class HighSchoolCareerStore {
                     presetID: preset.id,
                     lifeNumber: carried.lifeNumber,
                     inheritedSoulPoints: carried.soulPoints,
+                    inheritedSoulDomain: soulDomain,
                     inheritedMemories: carried.memories,
                     identity: identity,
                     difficulty: difficulty,

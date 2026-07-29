@@ -24,6 +24,8 @@ struct HighSchoolSetupView: View {
     @State private var selectedRegion = "서울"
     @State private var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
     @State private var selectedKarmas: Set<KarmaID> = []
+    /// 계승한 야구혼을 어디에 붓는가. 2회차부터만 고른다.
+    @State private var soulDomain: SoulDomain = .technique
     @State private var harshness: DifficultyLevel = .standard
     @FocusState private var nameFocused: Bool
 
@@ -260,6 +262,43 @@ struct HighSchoolSetupView: View {
                 }
             }
 
+            // 야구혼을 어디에 붓는지 고른다. 코어는 처음부터 이 값을 받았는데 화면이
+            // 넘기지 않아 늘 기본값(제구)으로 갔다 — 회차마다 같은 곳만 오르는 원인 하나였다.
+            if career.inheritance.soulPoints > 0 {
+                BaseballCard(title: "야구혼 \(career.inheritance.soulPoints)을 어디에") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            ForEach(SoulDomain.allCases, id: \.self) { domain in
+                                Button { soulDomain = domain } label: {
+                                    Text(Self.domainLabel(domain))
+                                        .font(.footnote.weight(.semibold))
+                                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                                }
+                                .buttonStyle(.plain)
+                                .background(
+                                    soulDomain == domain ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surfaceRaised,
+                                    in: RoundedRectangle(cornerRadius: 8)
+                                )
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(soulDomain == domain ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6),
+                                                lineWidth: soulDomain == domain ? 2 : 1)
+                                }
+                                .accessibilityAddTraits(soulDomain == domain ? .isSelected : [])
+                            }
+                        }
+                        Text(Self.domainDetail(soulDomain))
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("고른 쪽에 절반이 먼저 가고, 나머지는 가장 낮은 능력부터 채웁니다. 재능의 한계는 넘지 않습니다.")
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
             Text("핸디캡").font(.headline)
             Text("최대 2개. 고르면 이번 회차가 어려워집니다. 대신 다음 회차로 넘어가는 계승이 커집니다. 지금 +\(rewardPermille / 10)%")
                 .font(.footnote)
@@ -294,7 +333,8 @@ struct HighSchoolSetupView: View {
                         playerName: playerName,
                         region: selectedRegion,
                         difficulty: CareerDifficultySnapshot(careerHarshness: harshness),
-                        karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue }
+                        karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue },
+                        soulDomain: career.inheritance.soulPoints > 0 ? soulDomain : nil
                     )
                 }
             } else {
@@ -323,6 +363,22 @@ struct HighSchoolSetupView: View {
         nameFocused = false
         guard stepIndex > 0 else { return }
         step = steps[stepIndex - 1]
+    }
+
+    static func domainLabel(_ domain: SoulDomain) -> String {
+        switch domain {
+        case .body: "몸"
+        case .technique: "기술"
+        case .game: "경기 운영"
+        }
+    }
+
+    static func domainDetail(_ domain: SoulDomain) -> String {
+        switch domain {
+        case .body: "구위와 체력에 먼저 들어갑니다. 긴 이닝을 버티는 쪽입니다."
+        case .technique: "제구와 변화구에 먼저 들어갑니다. 원하는 곳에 꽂는 쪽입니다."
+        case .game: "제구와 타자 상대법에 먼저 들어갑니다. 수 싸움으로 버티는 쪽입니다."
+        }
     }
 
     static func difficultyLabel(_ level: DifficultyLevel) -> String {

@@ -285,6 +285,14 @@ private struct PrologueCard: View {
                          : "\u{201C}몸부터 풀자. 불펜에서 한 구 던져 봐.\u{201D} — 감독")
                         .font(.subheadline)
                         .fixedSize(horizontal: false, vertical: true)
+                    // 1회차에는 코어가 만든 중학교 맥락을 감독의 말 아래에 붙인다.
+                    // 이 한 줄이 없으면 "왜 이 학교들이 나를 부르는가"가 화면에 없다.
+                    if lifeNumber == 1, let context = state.news.first {
+                        Text(context)
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if !state.karmas.isEmpty {
                         Divider()
                         Text("핸디캡").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.warning)
