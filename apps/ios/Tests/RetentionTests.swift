@@ -56,6 +56,21 @@ final class RetentionTests: XCTestCase {
         }
     }
 
+    /// 삼진은 낱개 스트라이크 콜 대신 풀콜("스트라이크 쓰리, 유어 아웃") 하나로 나간다.
+    /// 둘 다 나가면 "스트라이크"를 두 번 외치는 심판이 된다.
+    func testStrikeoutUsesTheFullCallInsteadOfTheStrikeCall() {
+        for outcome in [PitchOutcome.calledStrike, .swingingStrike] {
+            let cues = GameAudioMapping.cues(for: Self.snapshot(outcome: outcome, result: .strikeout))
+            XCTAssertTrue(cues.contains(.umpireStrikeout), "\(outcome) 삼진에 풀콜이 없습니다.")
+            XCTAssertFalse(cues.contains(.umpireStrike), "\(outcome) 삼진에 낱개 콜이 겹칩니다.")
+            XCTAssertTrue(cues.contains(.crowdCheer))
+        }
+        // 삼진이 아닌 스트라이크는 여전히 낱개 콜이다.
+        let ordinary = GameAudioMapping.cues(for: Self.snapshot(outcome: .calledStrike))
+        XCTAssertTrue(ordinary.contains(.umpireStrike))
+        XCTAssertFalse(ordinary.contains(.umpireStrikeout))
+    }
+
     /// 잘 맞은 타구는 더 두꺼운 소리를 낸다.
     func testContactPowerFollowsContactQuality() {
         XCTAssertEqual(GameAudioMapping.contactPower(nil), 0.5)
@@ -83,7 +98,7 @@ final class RetentionTests: XCTestCase {
         // 미트 소리가 이미 공 하나를 표시한다(UmpireVoiceTests.testBallCallIsSilent가 지킨다).
         let cues: [GameAudioCue] = [
             .pitchRelease, .gloveCatch, .swingMiss, .batContact(power: 0.8), .batFoul,
-            .umpireStrike, .umpireOut, .crowdCheer, .crowdGroan, .growth, .milestone, .uiSelect
+            .umpireStrike, .umpireStrikeout, .crowdCheer, .crowdGroan, .growth, .milestone, .uiSelect
         ]
         for cue in cues {
             let voices = GameAudio.voices(for: cue)
@@ -259,14 +274,16 @@ final class RetentionTests: XCTestCase {
 
     // MARK: - 고정물
 
-    private static func snapshot(outcome: PitchOutcome) -> PlateAppearanceSnapshot {
+    private static func snapshot(
+        outcome: PitchOutcome, result: PlateAppearanceResult? = nil
+    ) -> PlateAppearanceSnapshot {
         PlateAppearanceSnapshot(
             revision: 1,
             balls: 0,
             strikes: 1,
             pitchNumber: 1,
-            ended: false,
-            result: nil,
+            ended: result != nil,
+            result: result,
             outcome: outcome,
             selectionQuality: .good,
             recommendationAccepted: true,

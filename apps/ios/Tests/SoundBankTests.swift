@@ -37,20 +37,24 @@ final class SoundBankTests: XCTestCase {
         bank.load()
         for asset in [
             SoundAsset.batContactHard, .batContactWeak, .batFoul, .gloveCatch,
-            .umpireStrike, .umpireOut, .swingMiss, .crowdCheer, .crowdGroan,
+            .umpireStrike, .umpireStrikeout, .swingMiss, .crowdCheer, .crowdGroan,
         ] {
             XCTAssertTrue(
                 bank.loadedAssets.contains(asset),
                 "\(asset.rawValue) 음원이 번들에 없습니다. apps/ios/Audio/를 확인하세요."
             )
-            let buffer = try XCTUnwrap(bank.buffer(for: asset), "\(asset.rawValue)을 PCM으로 읽지 못했습니다.")
+            // 변주 전 장을 검사한다. 회전 재생에서 한 장만 무음이어도 세 번에 한 번
+            // 소리가 사라진다 — 그건 늘 나는 무음보다 찾기 어렵다.
+            let variants = bank.allBuffers(for: asset)
+            XCTAssertFalse(variants.isEmpty, "\(asset.rawValue)을 PCM으로 읽지 못했습니다.")
+            for buffer in variants {
             let seconds = Double(buffer.frameLength) / buffer.format.sampleRate
             // 한 방 소리는 짧아야 한다. 길면 판정과 소리가 어긋나고 다음 큐를 덮는다.
             // 관중 반응만은 예외 — 함성·탄식은 붓듯이 일어났다 가라앉는 소리라 1초로
             // 자르면 뚝 끊긴 티가 난다. 파울 팁은 스치는 소리라 0.1초보다 짧을 수 있다.
             let bounds: ClosedRange<Double> = switch asset {
             case .crowdCheer, .crowdGroan: 1.0...5.0
-            case .umpireOut: 0.5...2.0
+            case .umpireStrikeout: 1.2...2.5
             case .batFoul: 0.03...0.5
             default: 0.1...1.0
             }
@@ -70,6 +74,20 @@ final class SoundBankTests: XCTestCase {
                 }
             }
             XCTAssertGreaterThan(peak, 0.05, "\(asset.rawValue)이 사실상 무음입니다(피크 \(peak)).")
+            }
+        }
+    }
+
+    /// 반복 피로 장치가 실제로 작동하는지 — 변주가 있는 음원은 연속 호출에서 다른 장이 나온다.
+    func testFrequentSoundsRotateVariants() {
+        let bank = SoundBank()
+        bank.load()
+        for asset in [SoundAsset.gloveCatch, .batContactHard, .crowdCheer, .crowdGroan, .umpireStrike] {
+            let count = bank.allBuffers(for: asset).count
+            XCTAssertGreaterThanOrEqual(count, 2, "\(asset.rawValue)에 변주가 없습니다. 매번 같은 소리가 납니다.")
+            let first = bank.buffer(for: asset)
+            let second = bank.buffer(for: asset)
+            XCTAssertTrue(first !== second, "\(asset.rawValue)이 연속으로 같은 장을 내놓습니다.")
         }
     }
 

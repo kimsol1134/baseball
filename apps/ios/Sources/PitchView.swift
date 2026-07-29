@@ -470,10 +470,13 @@ struct PitchView: View {
         let cues = session.lastCues
         if let release = cues.first { audio.play(release) }
         for (index, cue) in cues.dropFirst().enumerated() {
-            let delay = switch index {
-            case 0: 0.92
-            case 1: 1.18
-            default: 1.5
+            // 삼진 풀콜은 반 박 더 뜸을 들인다 — 심판이 펀치아웃 동작과 함께 지르는 그 사이.
+            let delay = if cue == .umpireStrikeout { 1.32 } else {
+                switch index {
+                case 0: 0.92
+                case 1: 1.18
+                default: 1.5
+                }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { audio.play(cue) }
         }

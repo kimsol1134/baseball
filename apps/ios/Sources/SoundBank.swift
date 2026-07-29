@@ -19,7 +19,9 @@ enum SoundAsset: String, CaseIterable {
     case batFoul = "bat-foul"
     case umpireStrike = "umpire-strike"
     case umpireBall = "umpire-ball"
-    case umpireOut = "umpire-out"
+    /// 삼진 확정의 이어지는 풀콜("Strike three! You're out!"). 스트라이크 콜과 따로 두는 이유:
+    /// "three"는 세 번째 스트라이크에만 맞는 말이라 일반 스트라이크에는 쓸 수 없다.
+    case umpireStrikeout = "umpire-strikeout"
     case crowdCheer = "crowd-cheer"
     case crowdGroan = "crowd-groan"
     /// 이어서 도는 관중 웅성거림. 이 하나만 넣어도 체감이 가장 크게 바뀐다.
@@ -38,7 +40,7 @@ enum SoundAsset: String, CaseIterable {
         case .batFoul: .batFoul
         case .umpireStrike: .umpireStrike
         case .umpireBall: .umpireBall
-        case .umpireOut: .umpireOut
+        case .umpireStrikeout: .umpireStrikeout
         case .crowdCheer: .crowdCheer
         case .crowdGroan: .crowdGroan
         // 성장·기념·UI 음은 게임 안의 소리가 아니라 화면 피드백이다. 맑은 합성음이 더 맞고,
@@ -49,46 +51,68 @@ enum SoundAsset: String, CaseIterable {
 }
 
 /// 번들 음원을 미리 읽어 두는 창고. 재생 시점에 디스크를 읽으면 첫 소리가 늦게 난다.
+///
+/// 한 음원에 변주가 여러 장 있을 수 있다(`glove-catch.wav`, `glove-catch-2.wav`, …).
+/// 포구음은 매 투구마다 나는데 똑같은 파일이 반복되면 몇 이닝 안에 "녹음 튼 소리"로 들린다.
+/// 실제 포구가 매번 조금씩 다르듯, 변주를 돌려 가며 낸다.
 final class SoundBank: @unchecked Sendable {
-    private var buffers: [SoundAsset: AVAudioPCMBuffer] = [:]
+    private var buffers: [SoundAsset: [AVAudioPCMBuffer]] = [:]
+    private var cursor: [SoundAsset: Int] = [:]
     private let lock = NSLock()
 
     /// 지원 확장자. 무압축이 가장 빠르지만 용량이 커서 m4a도 받는다.
     private static let extensions = ["wav", "m4a", "caf", "aiff", "mp3"]
+    /// 변주 파일 접미사. 기본 파일이 없으면 변주도 찾지 않는다.
+    private static let variantSuffixes = ["", "-2", "-3"]
 
     /// 번들에서 찾을 수 있는 것을 모두 읽는다. 없는 것은 조용히 건너뛴다.
     func load(bundle: Bundle = .main) {
-        var loaded: [SoundAsset: AVAudioPCMBuffer] = [:]
+        var loaded: [SoundAsset: [AVAudioPCMBuffer]] = [:]
         for asset in SoundAsset.allCases {
-            guard let url = Self.url(for: asset, in: bundle) else { continue }
-            guard let file = try? AVAudioFile(forReading: url) else { continue }
-            let frames = AVAudioFrameCount(file.length)
-            guard frames > 0,
-                  let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: frames),
-                  (try? file.read(into: buffer)) != nil else { continue }
-            loaded[asset] = buffer
+            let variants = Self.variantSuffixes.compactMap { suffix -> AVAudioPCMBuffer? in
+                guard let url = Self.url(for: asset.rawValue + suffix, in: bundle),
+                      let file = try? AVAudioFile(forReading: url) else { return nil }
+                let frames = AVAudioFrameCount(file.length)
+                guard frames > 0,
+                      let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: frames),
+                      (try? file.read(into: buffer)) != nil else { return nil }
+                return buffer
+            }
+            if !variants.isEmpty { loaded[asset] = variants }
         }
         lock.lock()
         buffers = loaded
+        cursor = [:]
         lock.unlock()
     }
 
-    private static func url(for asset: SoundAsset, in bundle: Bundle) -> URL? {
+    private static func url(for name: String, in bundle: Bundle) -> URL? {
         for ext in extensions {
-            if let url = bundle.url(forResource: asset.rawValue, withExtension: ext, subdirectory: "Audio") {
+            if let url = bundle.url(forResource: name, withExtension: ext, subdirectory: "Audio") {
                 return url
             }
-            if let url = bundle.url(forResource: asset.rawValue, withExtension: ext) {
+            if let url = bundle.url(forResource: name, withExtension: ext) {
                 return url
             }
         }
         return nil
     }
 
+    /// 다음 변주를 내놓는다. 변주가 한 장이면 늘 그 한 장이다.
     func buffer(for asset: SoundAsset) -> AVAudioPCMBuffer? {
         lock.lock()
         defer { lock.unlock() }
-        return buffers[asset]
+        guard let variants = buffers[asset], !variants.isEmpty else { return nil }
+        let index = cursor[asset, default: 0]
+        cursor[asset] = (index + 1) % variants.count
+        return variants[index]
+    }
+
+    /// 한 음원의 모든 변주. 테스트가 전 장의 내용(길이·가청성)을 검사할 때 쓴다.
+    func allBuffers(for asset: SoundAsset) -> [AVAudioPCMBuffer] {
+        lock.lock()
+        defer { lock.unlock() }
+        return buffers[asset] ?? []
     }
 
     var isEmpty: Bool {

@@ -6,13 +6,18 @@ import SimulationCore
 enum GameAudioMapping {
     static func cues(for snapshot: PlateAppearanceSnapshot) -> [GameAudioCue] {
         var cues: [GameAudioCue] = [.pitchRelease]
+        // 삼진이면 낱개 스트라이크 콜을 생략한다 — 실제 심판은 "스트라이크"와 "아웃"을
+        // 따로 외치지 않고 "스트라이크 쓰리, 유어 아웃"을 한 호흡으로 지른다.
+        let isStrikeout = snapshot.result == .strikeout
         switch snapshot.outcome {
         case .ball:
             cues += [.gloveCatch, .umpireBall]
         case .calledStrike:
-            cues += [.gloveCatch, .umpireStrike]
+            cues.append(.gloveCatch)
+            if !isStrikeout { cues.append(.umpireStrike) }
         case .swingingStrike:
-            cues += [.swingMiss, .umpireStrike]
+            cues.append(.swingMiss)
+            if !isStrikeout { cues.append(.umpireStrike) }
         case .foul:
             cues.append(.batFoul)
         case .inPlayOut, .single, .double, .triple, .homeRun:
@@ -25,9 +30,8 @@ enum GameAudioMapping {
 
         switch snapshot.result {
         case .strikeout:
-            // 심판은 삼진을 "스트라이크" 콜에서 멈추지 않는다 — "아웃!"까지 지른다.
-            // 이 한 마디가 삼진을 다른 스트라이크와 다른 사건으로 만든다.
-            cues.append(.umpireOut)
+            // 삼진 풀콜이 이 게임의 가장 큰 순간을 다른 스트라이크와 구별해 준다.
+            cues.append(.umpireStrikeout)
             cues.append(.crowdCheer)
         case .inPlayOut:
             cues.append(snapshot.runsScored > 0 ? .crowdGroan : .crowdCheer)
