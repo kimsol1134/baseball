@@ -96,6 +96,15 @@ private struct LifeArchiveRow: View {
 
             if expanded {
                 VStack(alignment: .leading, spacing: 6) {
+                    if let chronicle = record.chronicle, !chronicle.isEmpty {
+                        ForEach(chronicle, id: \.self) { line in
+                            Text(line)
+                                .font(.caption)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Rectangle().fill(BaseballTheme.border.opacity(0.3)).frame(height: 1)
+                    }
                     if let nicknames = record.nicknames, !nicknames.isEmpty {
                         Text("세상이 부른 이름: \(nicknames.map { "'\($0)'" }.joined(separator: " "))")
                             .font(.footnote.weight(.semibold))

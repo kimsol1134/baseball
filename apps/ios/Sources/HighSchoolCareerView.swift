@@ -175,7 +175,7 @@ struct HighSchoolCareerView: View {
         case .chapterReview:
             ChapterReviewCard(state: state, onContinue: career.advanceChapter)
         case .draft:
-            DraftCard(state: state, onResolve: career.resolveDraft)
+            DraftCard(state: state, chronicle: career.chronicle, onResolve: career.resolveDraft)
         case .legacy:
             LegacyCard(career: career, state: state)
         case .completed:
@@ -789,8 +789,36 @@ private struct ChapterReviewCard: View {
     }
 }
 
+/// 이 회차가 살아온 순간들. 결과(기록 카드)가 아니라 과정을 보여 준다 —
+/// 드래프트 직전과 회차를 접는 순간, 두 번의 되돌아보는 자리에 선다.
+private struct ChronicleCard: View {
+    let entries: [HighSchoolCareerStore.ChronicleEntry]
+
+    var body: some View {
+        if !entries.isEmpty {
+            BaseballCard(title: "3년의 이야기") {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(entry.stage)
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                            Text(entry.text)
+                                .font(.footnote)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+            .accessibilityIdentifier("hs.chronicle")
+        }
+    }
+}
+
 private struct DraftCard: View {
     let state: HighSchoolCareerSnapshot
+    let chronicle: [HighSchoolCareerStore.ChronicleEntry]
     let onResolve: () -> Void
 
     var body: some View {
@@ -813,6 +841,7 @@ private struct DraftCard: View {
             if let log = state.seasonLog, !log.isEmpty {
                 SeasonRecordCard(log: log)
             }
+            ChronicleCard(entries: chronicle)
             PrimaryButton(title: "결과 확인", identifier: "hs.draft.resolve", action: onResolve)
         }
     }
@@ -824,6 +853,7 @@ private struct LegacyCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            ChronicleCard(entries: career.chronicle)
             if let draft = state.draftResult {
                 BaseballCard(title: draft.outcome == .drafted ? "지명" : "미지명",
                              tone: draft.outcome == .drafted ? .positive : .negative) {

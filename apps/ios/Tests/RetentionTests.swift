@@ -252,6 +252,42 @@ final class RetentionTests: XCTestCase {
 
     /// 회차 사이(진행 없음)에도 계승분이 저장 레코드로 남아야 한다. 이게 깨지면
     /// "다시 태어나기" 직후 앱이 내려갈 때 야구혼·기억·아카이브가 통째로 사라진다.
+    /// 별명·연대기가 없는 옛 저장본이 그대로 열리고, 있는 것은 온전히 돌아온다.
+    func testNicknamesAndChronicleSurviveTheRoundTripAndOldSavesStillOpen() throws {
+        let life = HighSchoolCareerStore.LifeRecord(
+            lifeNumber: 4, playerName: "테스트", schoolName: nil, drafted: true,
+            evaluationScore: 70, teamName: "부산 돌핀스", memories: [], games: 4,
+            strikeouts: 30, walks: 3, runsAllowed: 0, soulPoints: 50,
+            nicknames: ["제로", "핀포인트"],
+            chronicle: ["1학년 봄 — 입학.", "3학년 여름 — 드래프트 1라운드 지명."]
+        )
+        let record = HighSchoolCareerStore.SaveRecord(
+            result: nil,
+            inheritance: .init(lifeNumber: 4, memories: [], soulPoints: 10, karmas: []),
+            archive: [life],
+            nicknames: [Nickname(id: "zero", title: "제로", reason: "무실점")],
+            chronicle: [.init(stage: "3학년 여름", text: "드래프트 지명.")],
+            revision: 9
+        )
+        let decoded = try JSONDecoder().decode(
+            HighSchoolCareerStore.SaveRecord.self, from: JSONEncoder().encode(record)
+        )
+        XCTAssertEqual(decoded.archive?.first?.nicknames, ["제로", "핀포인트"])
+        XCTAssertEqual(decoded.archive?.first?.chronicle?.count, 2)
+        XCTAssertEqual(decoded.nicknames?.first?.title, "제로")
+        XCTAssertEqual(decoded.chronicle?.first?.text, "드래프트 지명.")
+
+        // 새 키가 하나도 없는 옛 저장본 — 필드 추가가 복원을 깨면 안 된다.
+        let old = """
+        {"inheritance":{"lifeNumber":1,"memories":[],"soulPoints":0,"karmas":[]},"revision":1}
+        """
+        let legacy = try JSONDecoder().decode(
+            HighSchoolCareerStore.SaveRecord.self, from: Data(old.utf8)
+        )
+        XCTAssertNil(legacy.nicknames)
+        XCTAssertNil(legacy.chronicle)
+    }
+
     func testLegacyOnlyRecordRoundTrips() throws {
         let inheritance = HighSchoolCareerStore.Inheritance(
             lifeNumber: 3, memories: [.coachLetter, .recoveryRoutine], soulPoints: 87, karmas: [.noLastChance]

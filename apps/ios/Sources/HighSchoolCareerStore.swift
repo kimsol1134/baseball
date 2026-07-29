@@ -56,6 +56,8 @@ final class HighSchoolCareerStore {
         var schoolStrength: String?
         /// 이번 회차에 얻은 별명. 없는 옛 기록은 nil이다.
         var nicknames: [String]? = nil
+        /// 이번 회차의 연대기("2학년 여름 — …"). 없는 옛 기록은 nil이다.
+        var chronicle: [String]? = nil
 
         /// "미지명 · 평가 57점" / "3라운드 서울 …". 목록 한 줄에 결말이 들어가야 한다.
         var outcomeLine: String {
@@ -92,6 +94,7 @@ final class HighSchoolCareerStore {
     /// 프로로 넘어간 사실을 기록한다. 화면이 프로 진입 직후에 부른다.
     func markEnteredPro() {
         enteredProCareerID = state?.careerID
+        note("프로 유니폼을 입었습니다.")
         save()
     }
 
@@ -105,6 +108,15 @@ final class HighSchoolCareerStore {
     /// 이번 회차에 세상이 붙여 준 별명들. 한 번 얻으면 회차가 끝날 때까지 남는다 —
     /// 세상은 별명을 회수하지 않는다. 조건 판정은 커널(NicknameRules)이 한다.
     private(set) var nicknames: [Nickname] = []
+    /// 이번 회차의 연대기 — 이 선수가 살아온 순간들. 능력치 그래프는 결과만 남기지만
+    /// 연대기는 과정을 남긴다. 애착은 과정에서 생긴다.
+    private(set) var chronicle: [ChronicleEntry] = []
+
+    struct ChronicleEntry: Codable, Equatable {
+        /// 언제였는가 — "2학년 여름".
+        let stage: String
+        let text: String
+    }
 
     private let engine = HighSchoolCareerEngine()
     private let sync = SaveSync(key: "baseball-mobile-highschool-v1.json")
@@ -164,8 +176,9 @@ final class HighSchoolCareerStore {
                 )
             )
             inheritance = carried
-            // 별명은 이번 회차의 것이다. 환생하면 세상은 아직 이 선수를 모른다.
+            // 별명과 연대기는 이번 회차의 것이다. 환생하면 새로 쓴다.
             nicknames = []
+            chronicle = []
             AchievementStore.shared.record(AchievementRules.fromLifeNumber(carried.lifeNumber))
             AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
             result = created
@@ -212,6 +225,7 @@ final class HighSchoolCareerStore {
     }
 
     func chooseSchool(_ schoolID: SchoolID) {
+        defer { if let school = result?.snapshot.school { note("\(school.name) 입학. 3년이 시작됩니다.") } }
         perform { try engine.chooseSchool(.init(seed: $0.nextSeed, state: $0.snapshot, schoolID: schoolID)) }
     }
 
@@ -225,6 +239,8 @@ final class HighSchoolCareerStore {
 
     func chooseAwakening(_ awakening: AwakeningID) {
         perform(cue: .growth) { try engine.chooseAwakening(.init(seed: $0.nextSeed, state: $0.snapshot, awakening: awakening)) }
+        // 엔진이 만든 각성 문장("'○○'을 익혔습니다…")을 그대로 적는다.
+        if let line = result?.snapshot.news.first { note(line) }
     }
 
     func advanceChapter() {
@@ -238,6 +254,13 @@ final class HighSchoolCareerStore {
 
     func resolveDraft() {
         perform(cue: .success) { try engine.resolveDraft(.init(seed: $0.nextSeed, state: $0.snapshot)) }
+        if let draft = result?.snapshot.draftResult {
+            if draft.outcome == .drafted, let team = draft.team {
+                note("드래프트 \(draft.round.map { "\($0)라운드 " } ?? "")\(team.name) 지명. 3년이 응답받았습니다.")
+            } else {
+                note("드래프트 미지명. 하지만 이 3년은 다음 회차의 밑천이 됩니다.")
+            }
+        }
     }
 
     // MARK: - 중요 경기
@@ -267,6 +290,23 @@ final class HighSchoolCareerStore {
             try engine.recordImportantGame(.init(seed: $0.nextSeed, state: $0.snapshot, report: report))
         }
         earnNicknames()
+        noteGame(report: report, summary: summary)
+    }
+
+    /// 경기 전부를 적지 않는다 — 처음, 완벽, 압도, 붕괴. 이야기가 되는 경기만.
+    private func noteGame(report: ImportantInningReport, summary: String) {
+        let games = result?.snapshot.performance.importantGamesCompleted ?? 0
+        if games == 1 { return note("첫 공식 등판 — \(summary)") }
+        if report.runsAllowed == 0 { return note("무실점 호투 — \(summary)") }
+        if report.strikeouts >= 6 { return note("탈삼진 \(report.strikeouts)개로 압도 — \(summary)") }
+        if report.runsAllowed >= 5 { return note("무너진 날 — \(summary). 이 경기를 기억해야 합니다.") }
+    }
+
+    /// 연대기에 한 줄을 적는다. 드물게 불러야 한다 — 매주 적으면 일기가 아니라 로그다.
+    private func note(_ text: String) {
+        guard let chapter = result?.snapshot.chapter else { return }
+        chronicle.append(ChronicleEntry(stage: "\(chapter.schoolYear)학년 \(chapter.season)", text: text))
+        save()
     }
 
     /// 별명이 있으면 이름 앞에 붙인다 — '제로' 김솔. 호명·프로필이 같은 규칙을 쓴다.
@@ -283,6 +323,7 @@ final class HighSchoolCareerStore {
             .filter { earned in !nicknames.contains { $0.id == earned.id } }
         guard !fresh.isEmpty else { return }
         nicknames.append(contentsOf: fresh)
+        for earned in fresh { note("'\(earned.title)'(이)라는 별명을 얻었습니다. \(earned.reason)") }
         if let first = fresh.first {
             lastSummary = "이제 사람들이 '\(first.title)'(이)라고 부릅니다. \(first.reason)"
             feedbackCue = .success
@@ -315,7 +356,7 @@ final class HighSchoolCareerStore {
         perform(summary: "기억 \(chosen.count)장을 다음 회차로 가져갑니다.", cue: .growth) {
             try engine.selectLegacy(.init(seed: $0.nextSeed, state: $0.snapshot, memoryCards: chosen))
         }
-        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance, nicknames: nicknames)
+        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance, nicknames: nicknames, chronicle: chronicle)
         inheritance = Self.nextInheritance(from: current.snapshot, memories: chosen, previous: inheritance)
         // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
         archive.removeAll { $0.lifeNumber == closed.lifeNumber }
@@ -344,7 +385,8 @@ final class HighSchoolCareerStore {
         from state: HighSchoolCareerSnapshot,
         memories: [MemoryCardID],
         previous: Inheritance,
-        nicknames: [Nickname] = []
+        nicknames: [Nickname] = [],
+        chronicle: [ChronicleEntry] = []
     ) -> LifeRecord {
         LifeRecord(
             lifeNumber: state.lifeNumber,
@@ -365,7 +407,8 @@ final class HighSchoolCareerStore {
             karmas: state.karmas,
             harshness: state.difficulty.careerHarshness.rawValue,
             schoolStrength: state.school.map { HighSchoolPresentation.focus($0.strength) },
-            nicknames: nicknames.isEmpty ? nil : nicknames.map(\.title)
+            nicknames: nicknames.isEmpty ? nil : nicknames.map(\.title),
+            chronicle: chronicle.isEmpty ? nil : chronicle.map { "\($0.stage) — \($0.text)" }
         )
     }
 
@@ -440,7 +483,7 @@ final class HighSchoolCareerStore {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
         savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, revision: savedRevision)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -465,6 +508,8 @@ final class HighSchoolCareerStore {
         var enteredProCareerID: String?
         /// 이번 회차의 별명. 없는 옛 저장본은 빈 목록으로 시작한다.
         var nicknames: [Nickname]? = nil
+        /// 이번 회차의 연대기. 없는 옛 저장본은 빈 목록으로 시작한다.
+        var chronicle: [ChronicleEntry]? = nil
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
         var revision: UInt64?
 
@@ -482,6 +527,7 @@ final class HighSchoolCareerStore {
         archive = record.archive ?? []
         enteredProCareerID = record.enteredProCareerID
         nicknames = record.nicknames ?? []
+        chronicle = record.chronicle ?? []
         savedRevision = record.effectiveRevision
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return false }
@@ -506,6 +552,10 @@ final class HighSchoolCareerStore {
                training.number != before.lastTraining?.number,
                let ability = training.bloomedAbility, let grade = training.bloomedGrade {
                 pendingBloom = Bloom(ability: ability, grade: grade)
+                chronicle.append(ChronicleEntry(
+                    stage: "\(updated.snapshot.chapter.schoolYear)학년 \(updated.snapshot.chapter.season)",
+                    text: "만개 — 막혀 있던 \(ability.label) 재능이 \(grade.label)까지 열렸습니다."
+                ))
             }
             lastSummary = summary ?? Self.progressSummary(before: before, after: updated.snapshot)
             feedbackCue = cue ?? (pendingGains.isEmpty ? .neutral : .growth)
