@@ -54,6 +54,8 @@ final class HighSchoolCareerStore {
         var karmas: [KarmaID]?
         var harshness: String?
         var schoolStrength: String?
+        /// 이번 회차에 얻은 별명. 없는 옛 기록은 nil이다.
+        var nicknames: [String]? = nil
 
         /// "미지명 · 평가 57점" / "3라운드 서울 …". 목록 한 줄에 결말이 들어가야 한다.
         var outcomeLine: String {
@@ -100,6 +102,9 @@ final class HighSchoolCareerStore {
     private(set) var inheritance: Inheritance = .firstLife
     /// 끝난 회차들. 최근이 앞이다.
     private(set) var archive: [LifeRecord] = []
+    /// 이번 회차에 세상이 붙여 준 별명들. 한 번 얻으면 회차가 끝날 때까지 남는다 —
+    /// 세상은 별명을 회수하지 않는다. 조건 판정은 커널(NicknameRules)이 한다.
+    private(set) var nicknames: [Nickname] = []
 
     private let engine = HighSchoolCareerEngine()
     private let sync = SaveSync(key: "baseball-mobile-highschool-v1.json")
@@ -159,6 +164,8 @@ final class HighSchoolCareerStore {
                 )
             )
             inheritance = carried
+            // 별명은 이번 회차의 것이다. 환생하면 세상은 아직 이 선수를 모른다.
+            nicknames = []
             AchievementStore.shared.record(AchievementRules.fromLifeNumber(carried.lifeNumber))
             AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
             result = created
@@ -259,6 +266,29 @@ final class HighSchoolCareerStore {
         perform(summary: summary, cue: report.runsAllowed == 0 ? .success : .setback) {
             try engine.recordImportantGame(.init(seed: $0.nextSeed, state: $0.snapshot, report: report))
         }
+        earnNicknames()
+    }
+
+    /// 별명이 있으면 이름 앞에 붙인다 — '제로' 김솔. 호명·프로필이 같은 규칙을 쓴다.
+    func displayName(_ name: String) -> String {
+        guard let latest = nicknames.last else { return name }
+        return "'\(latest.title)' \(name)"
+    }
+
+    /// 경기 뒤 별명 획득 판정. 새로 얻은 별명은 그 주의 소식이 된다 —
+    /// 능력치 숫자보다 "세상이 내 아이를 알아봤다"는 문장이 오래 남는다.
+    private func earnNicknames() {
+        guard let performance = result?.snapshot.performance else { return }
+        let fresh = NicknameRules.earned(performance: performance)
+            .filter { earned in !nicknames.contains { $0.id == earned.id } }
+        guard !fresh.isEmpty else { return }
+        nicknames.append(contentsOf: fresh)
+        if let first = fresh.first {
+            lastSummary = "이제 사람들이 '\(first.title)'(이)라고 부릅니다. \(first.reason)"
+            feedbackCue = .success
+            feedbackTrigger += 1
+        }
+        save()
     }
 
     func abandonImportantGame() {
@@ -285,7 +315,7 @@ final class HighSchoolCareerStore {
         perform(summary: "기억 \(chosen.count)장을 다음 회차로 가져갑니다.", cue: .growth) {
             try engine.selectLegacy(.init(seed: $0.nextSeed, state: $0.snapshot, memoryCards: chosen))
         }
-        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance)
+        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance, nicknames: nicknames)
         inheritance = Self.nextInheritance(from: current.snapshot, memories: chosen, previous: inheritance)
         // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
         archive.removeAll { $0.lifeNumber == closed.lifeNumber }
@@ -313,7 +343,8 @@ final class HighSchoolCareerStore {
     nonisolated static func lifeRecord(
         from state: HighSchoolCareerSnapshot,
         memories: [MemoryCardID],
-        previous: Inheritance
+        previous: Inheritance,
+        nicknames: [Nickname] = []
     ) -> LifeRecord {
         LifeRecord(
             lifeNumber: state.lifeNumber,
@@ -333,7 +364,8 @@ final class HighSchoolCareerStore {
             awakenings: state.selectedAwakenings,
             karmas: state.karmas,
             harshness: state.difficulty.careerHarshness.rawValue,
-            schoolStrength: state.school.map { HighSchoolPresentation.focus($0.strength) }
+            schoolStrength: state.school.map { HighSchoolPresentation.focus($0.strength) },
+            nicknames: nicknames.isEmpty ? nil : nicknames.map(\.title)
         )
     }
 
@@ -408,7 +440,7 @@ final class HighSchoolCareerStore {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
         savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, revision: savedRevision)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -431,6 +463,8 @@ final class HighSchoolCareerStore {
         var archive: [LifeRecord]?
         /// 이미 프로로 보낸 회차. 없는 옛 저장본은 nil이다.
         var enteredProCareerID: String?
+        /// 이번 회차의 별명. 없는 옛 저장본은 빈 목록으로 시작한다.
+        var nicknames: [Nickname]? = nil
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
         var revision: UInt64?
 
@@ -447,6 +481,7 @@ final class HighSchoolCareerStore {
         inheritance = record.inheritance
         archive = record.archive ?? []
         enteredProCareerID = record.enteredProCareerID
+        nicknames = record.nicknames ?? []
         savedRevision = record.effectiveRevision
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return false }

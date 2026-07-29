@@ -73,7 +73,8 @@ struct HighSchoolCareerView: View {
             guard previous == nil, current != nil,
                   let state = career.state, let draft = state.draftResult else { return }
             draftReveal = DraftReveal(
-                result: draft, playerName: state.identity.name, careerID: state.careerID
+                // 3년의 정산 장면이니 별명을 함께 부른다 — "'제로' 김솔".
+                result: draft, playerName: career.displayName(state.identity.name), careerID: state.careerID
             )
         }
         // 스탬프가 **먼저** 뜨고, 닫히면서 회차를 넘긴다.

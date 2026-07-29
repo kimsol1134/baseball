@@ -96,6 +96,11 @@ private struct LifeArchiveRow: View {
 
             if expanded {
                 VStack(alignment: .leading, spacing: 6) {
+                    if let nicknames = record.nicknames, !nicknames.isEmpty {
+                        Text("세상이 부른 이름: \(nicknames.map { "'\($0)'" }.joined(separator: " "))")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                    }
                     Text(record.outcomeLine)
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.textSecondary)
