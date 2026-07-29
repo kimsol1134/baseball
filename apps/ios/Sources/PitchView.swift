@@ -180,6 +180,19 @@ struct PitchView: View {
                     withAnimation(reduceMotion ? nil : .easeOut(duration: 0.28)) {
                         proxy.scrollTo(Self.dramaAnchor, anchor: .top)
                     }
+                    // 결과를 본 다음에는 **결정하는 자리로 되돌린다.**
+                    //
+                    // 예전에는 승부 장면에서 멈췄다. 배합을 바꾸려면 매번 스크롤을 내려야
+                    // 했고, 그래서 적응 경고("같은 공이 읽히고 있습니다")를 보고도 그 자리에서
+                    // 손을 쓸 수 없었다 — 경고를 보고 배합을 바꾸는 것이 이 게임의 학습
+                    // 루프인데 그 두 동작 사이에 스크롤이 끼어 있었다.
+                    let delay = reduceMotion ? 0.0 : 1.7
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        guard case .ready = session.stage else { return }
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
+                            proxy.scrollTo(Self.controlsAnchor, anchor: .top)
+                        }
+                    }
                 }
             }
             footer
@@ -254,6 +267,7 @@ struct PitchView: View {
             if let preparation = session.preparation {
                 lastPitchPanel
                 AdaptationBar(adaptation: preparation.rivalAdaptation)
+                    .id(Self.controlsAnchor)
                 CatcherCard(preparation: preparation, session: session)
                 controls(preparation: preparation)
             } else {
@@ -264,6 +278,8 @@ struct PitchView: View {
 
     /// 던진 뒤 이 지점으로 스크롤한다.
     static let dramaAnchor = "pitch.drama"
+    /// 결과를 보고 난 뒤 되돌아오는 지점. 다음 배합을 고르는 자리다.
+    static let controlsAnchor = "pitch.controls"
 
     @ViewBuilder private var lastPitchPanel: some View {
         if let result = session.lastResult {

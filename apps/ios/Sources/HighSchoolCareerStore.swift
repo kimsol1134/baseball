@@ -47,6 +47,13 @@ final class HighSchoolCareerStore {
         let walks: Int
         let runsAllowed: Int
         let soulPoints: Int
+        /// **왜 그 회차가 그렇게 끝났는지**를 아카이브가 답할 수 있게 하는 값들.
+        /// 전부 옵셔널이라 이 필드가 없는 옛 기록도 그대로 읽힌다.
+        var talent: TalentSnapshot?
+        var awakenings: [AwakeningID]?
+        var karmas: [KarmaID]?
+        var harshness: String?
+        var schoolStrength: String?
 
         /// "미지명 · 평가 57점" / "3라운드 서울 …". 목록 한 줄에 결말이 들어가야 한다.
         var outcomeLine: String {
@@ -67,6 +74,24 @@ final class HighSchoolCareerStore {
     var selectedMemories: [MemoryCardID] = []
     /// 방금 만개한 재능. 화면이 축하하고 나서 비운다.
     private(set) var pendingBloom: Bloom?
+    /// 이미 프로로 보낸 회차의 careerID.
+    ///
+    /// 프로 저장본의 유무로 판단하면 안 된다 — 은퇴하고 "새 선수로 다시 시작"을 누르면 프로
+    /// 저장본이 지워지므로, 같은 지명으로 프로 커리어를 무한히 새로 만들 수 있다(은퇴 계승
+    /// 야구혼이 그때마다 다시 적립될 여지도 있다). 고교 쪽에 사실을 남긴다.
+    private(set) var enteredProCareerID: String?
+
+    /// 지금 회차가 이미 프로에 다녀왔는가.
+    var hasEnteredPro: Bool {
+        guard let state, let entered = enteredProCareerID else { return false }
+        return entered == state.careerID
+    }
+
+    /// 프로로 넘어간 사실을 기록한다. 화면이 프로 진입 직후에 부른다.
+    func markEnteredPro() {
+        enteredProCareerID = state?.careerID
+        save()
+    }
 
     struct Bloom: Equatable {
         let ability: TalentAbility
@@ -301,7 +326,12 @@ final class HighSchoolCareerStore {
             walks: state.performance.walks,
             runsAllowed: state.performance.runsAllowed,
             soulPoints: nextInheritance(from: state, memories: memories, previous: previous).soulPoints
-                - previous.soulPoints
+                - previous.soulPoints,
+            talent: state.talent,
+            awakenings: state.selectedAwakenings,
+            karmas: state.karmas,
+            harshness: state.difficulty.careerHarshness.rawValue,
+            schoolStrength: state.school.map { HighSchoolPresentation.focus($0.strength) }
         )
     }
 
@@ -376,7 +406,7 @@ final class HighSchoolCareerStore {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
         savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, revision: savedRevision)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -397,6 +427,8 @@ final class HighSchoolCareerStore {
         let inheritance: Inheritance
         /// 옵셔널이라 이 필드가 없는 옛 저장본도 그대로 열린다.
         var archive: [LifeRecord]?
+        /// 이미 프로로 보낸 회차. 없는 옛 저장본은 nil이다.
+        var enteredProCareerID: String?
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
         var revision: UInt64?
 
@@ -412,6 +444,7 @@ final class HighSchoolCareerStore {
         guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else { return false }
         inheritance = record.inheritance
         archive = record.archive ?? []
+        enteredProCareerID = record.enteredProCareerID
         savedRevision = record.effectiveRevision
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return false }

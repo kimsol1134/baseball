@@ -102,6 +102,34 @@ private struct LifeArchiveRow: View {
                     Text("\(record.games)등판 · \(record.strikeouts)K \(record.walks)BB \(record.runsAllowed)실점 · 야구혼 +\(record.soulPoints)")
                         .font(.footnote.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
+                    // 왜 그 회차가 그렇게 끝났는지. 숫자만 있으면 "3회차는 왜 실패했나"에
+                    // 아카이브가 답하지 못한다.
+                    if let talent = record.talent {
+                        Text("재능 · " + TalentAbility.allCases
+                            .map { "\($0.label) \(talent.grade($0).label)" }
+                            .joined(separator: " · "))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                    }
+                    if let awakenings = record.awakenings, !awakenings.isEmpty {
+                        Text("각성 · " + awakenings.map { HighSchoolPresentation.awakening($0).title }
+                            .joined(separator: " · "))
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if let karmas = record.karmas, !karmas.isEmpty {
+                        Text("핸디캡 · " + karmas.map { HighSchoolPresentation.karma($0).title }
+                            .joined(separator: " · "))
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.warning)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if let strength = record.schoolStrength {
+                        Text("학교 강점 · \(strength)")
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                    }
                     if !record.memories.isEmpty {
                         Text("가져간 기억 · " + record.memories.map { HighSchoolPresentation.memory($0).title }.joined(separator: " · "))
                             .font(.caption)

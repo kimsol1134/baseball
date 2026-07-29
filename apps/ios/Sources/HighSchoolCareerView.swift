@@ -6,6 +6,8 @@ struct HighSchoolCareerView: View {
     let career: HighSchoolCareerStore
     /// 지명을 받고 프로로 넘어갈 때 호출된다.
     let onEnterPro: (DraftResultSnapshot, PitcherSnapshot, PlayerIdentitySnapshot) -> Void
+    /// 이 회차로 프로에 이미 진출했는가. 은퇴 뒤 돌아왔을 때 다시 들어가지 못하게 한다.
+    var hasEnteredPro = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var achievements = AchievementStore.shared
@@ -176,7 +178,7 @@ struct HighSchoolCareerView: View {
         case .legacy:
             LegacyCard(career: career, state: state)
         case .completed:
-            CompletionCard(career: career, state: state, onEnterPro: onEnterPro) {
+            CompletionCard(career: career, state: state, hasEnteredPro: hasEnteredPro, onEnterPro: onEnterPro) {
                 rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
             }
         }
@@ -879,6 +881,8 @@ private struct LegacyCard: View {
 private struct CompletionCard: View {
     let career: HighSchoolCareerStore
     let state: HighSchoolCareerSnapshot
+    /// 이 회차로 프로에 이미 진출했는가.
+    let hasEnteredPro: Bool
     let onEnterPro: (DraftResultSnapshot, PitcherSnapshot, PlayerIdentitySnapshot) -> Void
     /// 환생 스탬프를 띄우고 나서 다음 회차로 넘어간다. 화면이 갈아 끼워지기 전에
     /// 회차 번호를 보여 줘야 회차가 쌓이는 감각이 생긴다.
@@ -919,7 +923,12 @@ private struct CompletionCard: View {
             // 다시 기억 선택으로 끌려갔다 — 환생에 영영 닿지 못하는 무한 순환이었다.
             let legacyConfirmed = !state.selectedMemories.isEmpty
 
-            if let draft = state.draftResult, draft.outcome == .drafted, !legacyConfirmed {
+            // 프로에 이미 다녀왔으면 다시 들어가지 않는다.
+            //
+            // 예전에는 프로에서 은퇴하고 고교 완료 화면으로 돌아오면 "프로 커리어 시작"이
+            // 다시 살아났다. 같은 지명으로 프로 커리어를 무한히 새로 만들 수 있었고, 은퇴
+            // 계승(야구혼)도 그때마다 다시 적립될 여지가 있었다.
+            if let draft = state.draftResult, draft.outcome == .drafted, !legacyConfirmed, !hasEnteredPro {
                 PrimaryButton(title: "프로 커리어 시작", identifier: "hs.enterPro") {
                     onEnterPro(draft, state.pitcher, state.identity)
                 }

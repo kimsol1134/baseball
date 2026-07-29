@@ -45,6 +45,27 @@ struct SettingsView: View {
                 if let state = pro.state {
                     LabeledContent("프로", value: "\(state.team.name) \(state.season)시즌")
                 }
+                // **시드를 보여 준다.**
+                //
+                // 코어가 완전 결정론이라 같은 시드는 같은 회차를 만든다. 그런데 그 시드를
+                // 볼 방법이 없어서 "이 시드 해 봐라"가 성립하지 않았다 — 커뮤니티에서
+                // 검증된 바이럴 경로 하나가 통째로 막혀 있었던 셈이다. UI 한 줄이면 된다.
+                if let seed = highSchool.state?.careerID {
+                    LabeledContent("이번 회차 시드") {
+                        HStack(spacing: 8) {
+                            Text(seed)
+                                .font(.caption.monospaced())
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                            ShareLink(item: seed) {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            .accessibilityLabel("시드 공유")
+                            .accessibilityIdentifier("settings.shareSeed")
+                        }
+                    }
+                }
             }
 
             Section {

@@ -38,10 +38,15 @@ struct AppShell: View {
         TabView(selection: $selection) {
             if showsHighSchool {
                 NavigationStack {
-                    HighSchoolCareerView(career: highSchool) { draft, pitcher, identity in
-                        pro.startProCareer(draft: draft, pitcher: pitcher, identity: identity)
-                        selection = .pro
-                    }
+                    HighSchoolCareerView(
+                        career: highSchool,
+                        onEnterPro: { draft, pitcher, identity in
+                            pro.startProCareer(draft: draft, pitcher: pitcher, identity: identity)
+                            selection = .pro
+                        },
+                        // 프로 저장본이 남아 있으면(은퇴 포함) 이 회차는 이미 프로에 다녀왔다.
+                        hasEnteredPro: pro.loadState == .ready
+                    )
                     // 키아트가 제목을 맡는다. 내비게이션 바를 두면 제목이 두 번 나오고 눈썹 라벨을 가린다.
                     .toolbar(.hidden, for: .navigationBar)
                 }
