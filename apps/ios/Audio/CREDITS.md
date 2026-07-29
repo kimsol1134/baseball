@@ -10,12 +10,12 @@
 |---|---|---|---|---|
 | `crowd-loop.m4a` | 경기 중 관중 웅성거림(이어 재생) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:360703_eguobyte_large-crowd-medium-distance-stereo.wav) · eguobyte, "large crowd medium distance stereo" | **CC0** (공용 저작물 기증) | 불필요 |
 | `crowd-cheer.wav` | 삼진·호투 뒤 함성 | [Freesound 634512](https://freesound.org/people/cpark12/sounds/634512/) · cpark12, 고교 야구 실경기 녹음에서 타격 직후 관중 반응을 잘라 냄 | **CC0** | 불필요 |
-| `crowd-groan` | 피안타·홈런 뒤 탄식 | — | — | — |
+| `crowd-groan.wav` | 피안타·홈런 뒤 탄식 | [Freesound 324897](https://freesound.org/people/deleted_user_2104797/sounds/324897/) · "Crowd Ouch" — 관중이 "오우…" 하는 반응 네 테이크 중 두 번째를 잘라 냄 | **CC0** | 불필요 |
 | `glove-catch.wav` | 포수 미트 포구 | [Freesound 649084](https://freesound.org/people/MPooman/sounds/649084/) · MPooman, "Baseball Glove Sounds (High Quality)"에서 첫 포구를 잘라 냄 | **CC0** | 불필요 |
 | `bat-contact-hard.wav` | 정타 | [Freesound 628352](https://freesound.org/people/Urkki69/sounds/628352/) · Urkki69, "Hitting a Finnish baseball" — 야외에서 방망이로 공을 실제로 친 단독 녹음 | **CC0** | 불필요 |
 | `bat-contact-weak.wav` | 빗맞은 타구 | 위 `bat-contact-hard`와 **같은 녹음에서 파생** (가공 내역 아래) | **CC0** | 불필요 |
-| `bat-foul` | 파울 팁 | — | — | — |
-| `swing-miss` | 헛스윙 | — | — | — |
+| `bat-foul.wav` | 파울 팁 | 정타(`bat-contact-hard`)와 같은 녹음에서 파생 — 고역 통과 1.5kHz×2 + 90ms 절단. 빗맞아 스치면 "딱" 대신 "틱"이 되는 물리를 흉내 낸다 | **CC0** | 불필요 |
+| `swing-miss.wav` | 헛스윙 | [Freesound 59995](https://freesound.org/people/qubodup/sounds/59995/) · qubodup, "stick cutting air" — 막대가 실제로 공기를 가르는 녹음 | **CC0** | 불필요 |
 | `pitch-release` | 릴리스 | — | — | — |
 | `umpire-strike.wav` | 스트라이크 콜 | [Freesound 625473](https://freesound.org/people/jcookvoice/sounds/625473/) · jcookvoice — "Strike three, you're out"에서 첫 단어("Strike!")만 잘라 냄. **음성 인식(whisper)으로 내용을 검증했다** — 봉투 모양만 보고 자르면 "Strike three"를 매 스트라이크마다 외치게 된다(실제로 한 번 그랬다) | **CC0** | 불필요 |
 | `umpire-ball` | 볼 콜 | **의도적 무음.** 실제 심판은 볼을 외치지 않고, 미트 소리가 이미 공 하나를 표시한다. 슬롯은 남겨 둔다 | — | — |
@@ -41,9 +41,7 @@
 
 | 우선 | 파일 | 무엇을 구해야 하나 |
 |---|---|---|
-| 1 | `crowd-groan` | 탄식. 함성은 실경기 녹음으로 채웠다 |
-| 2 | `bat-foul` | 파울 팁. 위 가공 내역 참고 |
-| 3 | `pitch-release` / `swing-miss` | 바람 소리. 합성이 오히려 자연스러울 수 있다 |
+| 1 | `pitch-release` | 공이 날아가는 바람 소리. 합성이 오히려 자연스러울 수 있어 우선순위 낮음 |
 | 4 | `menu-theme` | 메뉴 음악 루프. 없으면 합성 패드가 돈다. 무손실이어야 한다(이음매) |
 
 **수용 규격**

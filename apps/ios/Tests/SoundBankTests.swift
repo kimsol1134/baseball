@@ -35,7 +35,10 @@ final class SoundBankTests: XCTestCase {
     func testImpactRecordingsAreBundled() throws {
         let bank = SoundBank()
         bank.load()
-        for asset in [SoundAsset.batContactHard, .batContactWeak, .gloveCatch, .umpireStrike] {
+        for asset in [
+            SoundAsset.batContactHard, .batContactWeak, .batFoul, .gloveCatch,
+            .umpireStrike, .swingMiss, .crowdCheer, .crowdGroan,
+        ] {
             XCTAssertTrue(
                 bank.loadedAssets.contains(asset),
                 "\(asset.rawValue) 음원이 번들에 없습니다. apps/ios/Audio/를 확인하세요."
@@ -43,8 +46,17 @@ final class SoundBankTests: XCTestCase {
             let buffer = try XCTUnwrap(bank.buffer(for: asset), "\(asset.rawValue)을 PCM으로 읽지 못했습니다.")
             let seconds = Double(buffer.frameLength) / buffer.format.sampleRate
             // 한 방 소리는 짧아야 한다. 길면 판정과 소리가 어긋나고 다음 큐를 덮는다.
-            XCTAssertLessThan(seconds, 1.0, "\(asset.rawValue)이 \(seconds)초로 너무 깁니다.")
-            XCTAssertGreaterThan(seconds, 0.1, "\(asset.rawValue)이 \(seconds)초로 너무 짧습니다.")
+            // 관중 반응만은 예외 — 함성·탄식은 붓듯이 일어났다 가라앉는 소리라 1초로
+            // 자르면 뚝 끊긴 티가 난다. 파울 팁은 스치는 소리라 0.1초보다 짧을 수 있다.
+            let bounds: ClosedRange<Double> = switch asset {
+            case .crowdCheer, .crowdGroan: 1.0...5.0
+            case .batFoul: 0.03...0.5
+            default: 0.1...1.0
+            }
+            XCTAssertTrue(
+                bounds.contains(seconds),
+                "\(asset.rawValue)이 \(seconds)초 — 기대 범위 \(bounds)를 벗어났습니다."
+            )
             // **들리는 소리인지도 본다.** 파일이 실려 있고 길이가 맞아도 내용이 디지털
             // 무음일 수 있다 — 실제로 잘림 명령의 페이드 버그로 무음 심판 콜을 번들에
             // 넣을 뻔했다. 길이·존재 검사만으로는 그걸 절대 못 잡는다.
