@@ -155,6 +155,17 @@ private struct WeeklyPlanView: View {
         let symbol: String
     }
 
+    static func segmentName(_ segment: ProSeasonSegment?) -> String {
+        switch segment {
+        case .springCamp: "스프링캠프"
+        case .opening: "개막"
+        case .firstHalf: "전반기"
+        case .allStarBreak: "올스타 브레이크"
+        case .pennantRace: "페넌트레이스"
+        case .seasonFinale, .none: "시즌 막바지"
+        }
+    }
+
     private static let plans: [PlanCopy] = [
         PlanCopy(plan: .developWeapon, title: "결정구 불펜", effect: "구위와 변화구가 오릅니다", cost: "피로가 크게 쌓입니다", symbol: "flame"),
         PlanCopy(plan: .refineCommand, title: "코스 제구 훈련", effect: "제구가 오릅니다", cost: "피로가 쌓입니다", symbol: "scope"),
@@ -181,10 +192,11 @@ private struct WeeklyPlanView: View {
 
             PrimaryPill(title: "1주 진행", identifier: "pro.advanceWeek", action: career.advanceWeek)
 
-            Button(action: career.advanceBlock) {
+            Button(action: career.advanceSegment) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("같은 계획으로 3주 진행").font(.subheadline.weight(.semibold))
-                    Text("중요 경기나 선발·불펜 역할 변화가 생기면 멈춥니다.")
+                    Text("\(Self.segmentName(state.seasonSegment)) 끝까지 진행")
+                        .font(.subheadline.weight(.semibold))
+                    Text("중요 경기·역할 변화·부상이 생기면 그 자리에서 멈춥니다.")
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
@@ -192,6 +204,7 @@ private struct WeeklyPlanView: View {
             }
             .buttonStyle(.bordered)
             .frame(minHeight: BaseballMetrics.minimumTapTarget)
+            .accessibilityIdentifier("pro.advanceSegment")
         }
     }
 

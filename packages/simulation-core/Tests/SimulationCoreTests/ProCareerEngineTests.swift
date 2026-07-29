@@ -261,4 +261,74 @@ final class ProCareerEngineTests: XCTestCase {
     private func drafted() -> DraftResultSnapshot {
         .init(outcome: .drafted, evaluationScore: 72, projectedRange: "2~3라운드", team: ProCareerEngine.proTeams[0], round: 2, overallPick: 18, signingBonus: 120_000_000, firstSeasonGoal: "2군 선발", summary: "지명")
     }
+
+    /// **감독의 믿음은 내려가기도 한다.** 한 방향으로만 움직이는 값은 스테이크가 아니라
+    /// 시간의 함수다 — 주차를 넘기기만 하면 언젠가 선발이 된다.
+    func testBadOutingsCostManagerTrust() throws {
+        var result = try engine.start(startParams(seed: "9091"))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        var sawDrop = false
+        var previous = result.snapshot.managerTrust
+        for _ in 0..<60 {
+            switch result.snapshot.phase {
+            case .weeklyPlan:
+                result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: .developWeapon))
+                if result.snapshot.managerTrust < previous { sawDrop = true }
+                previous = result.snapshot.managerTrust
+            case .importantGame:
+                result = try engine.resolveImportantGame(.init(
+                    seed: result.nextSeed, state: result.snapshot,
+                    report: .init(scenarioNumber: 1, pitches: 20, strikeouts: 0, walks: 3,
+                                  runsAllowed: 5, expectedDamage: 1_200, actualDamage: 3_000,
+                                  recommendationAccepted: 0)
+                ))
+                previous = result.snapshot.managerTrust
+            default:
+                sawDrop ? () : XCTFail("시즌이 끝날 때까지 감독의 믿음이 한 번도 내려가지 않았습니다.")
+                return
+            }
+            if sawDrop { return }
+        }
+        XCTAssertTrue(sawDrop, "60주를 돌리는 동안 감독의 믿음이 한 번도 내려가지 않았습니다.")
+    }
+
+    /// **2군행이 존재한다.** 한번 올라가면 안 내려온다면 1군은 승급이 아니라 통과 지점이고,
+    /// 그러면 남은 시즌에 걸린 것이 없어진다.
+    ///
+    /// 손으로 스냅숏을 짜지 않는다 — 커밋 해시를 통과시켜야 하고, 무엇보다 실제 경로에서
+    /// 강등이 일어나는지가 알고 싶은 것이다.
+    func testMajorLeagueDemotionIsPossible() throws {
+        var result = try engine.start(startParams(seed: "4242"))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        var reachedMajor = false
+        var demoted = false
+        // 여러 시즌을 돌리며 1군에 올라간 뒤 계속 무너지는 등판을 넣는다.
+        for _ in 0..<600 {
+            switch result.snapshot.phase {
+            case .weeklyPlan:
+                if result.snapshot.level == .major { reachedMajor = true }
+                if reachedMajor, result.snapshot.level == .minor { demoted = true }
+                // 1군에 올라가기 전에는 믿음을 쌓고, 올라간 뒤에는 방치한다.
+                let plan: ProWeekPlan = reachedMajor ? .developWeapon : .earnTrust
+                result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: plan))
+            case .importantGame:
+                let report: ImportantInningReport = reachedMajor
+                    ? .init(scenarioNumber: 1, pitches: 22, strikeouts: 0, walks: 4, runsAllowed: 6,
+                            expectedDamage: 1_400, actualDamage: 3_600, recommendationAccepted: 0)
+                    : .init(scenarioNumber: 1, pitches: 16, strikeouts: 4, walks: 0, runsAllowed: 0,
+                            expectedDamage: 400, actualDamage: 150, recommendationAccepted: 10)
+                result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report))
+            case .seasonReview:
+                result = try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
+            case .offseasonDecision:
+                result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer))
+            default:
+                break
+            }
+            if demoted { break }
+            if [.retirementDecision, .completed].contains(result.snapshot.phase) { break }
+        }
+        XCTAssertTrue(reachedMajor, "1군에 올라가지 못해 강등을 확인할 수 없었습니다.")
+        XCTAssertTrue(demoted, "믿음이 바닥까지 떨어졌는데도 1군에서 내려오지 않았습니다.")
+    }
 }

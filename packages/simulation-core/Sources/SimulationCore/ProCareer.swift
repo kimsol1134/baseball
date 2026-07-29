@@ -369,12 +369,32 @@ public struct ProCareerEngine: Sendable {
         let fatigue = clamp(state.fatigue + fatigueDelta, 0, 100)
         let injuryRoll = rng.nextInt(upperBound: 100)
         let newInjury = !recovering && injuryRoll < max(2, fatigue - 72) ? 2 + rng.nextInt(upperBound: 4) : max(0, state.injuryWeeks - 1)
-        let trustGain = recovering ? -1 : params.plan == .earnTrust ? 5 : params.plan == .recover ? 0 : (runs <= 2 ? 3 : 0)
+        // 감독의 믿음은 **내려가기도 해야 한다.**
+        //
+        // 예전에는 잘 던지면 오르고 아니면 그대로였다(0). 한 방향으로만 움직이는 값은
+        // 스테이크가 아니라 시간의 함수다 — 주차를 넘기기만 하면 언젠가 선발이 된다.
+        // 실측상 프로 등판이 감독의 믿음을 평균 +1.9밖에 못 움직였던 이유가 이것이다.
+        let performanceTrust: Int
+        switch runs {
+        case ...2: performanceTrust = 3
+        case 3: performanceTrust = 0
+        case 4...5: performanceTrust = -3
+        default: performanceTrust = -6
+        }
+        let trustGain = recovering ? -1
+            : params.plan == .earnTrust ? 5
+            : params.plan == .recover ? 0
+            : performanceTrust
         let trust = clamp(state.managerTrust + trustGain, 0, 100)
         let stats = ProSeasonStats(season: state.season, teamID: state.team.id, games: state.currentStats.games + games, starts: state.currentStats.starts + starts, inningsOuts: state.currentStats.inningsOuts + weekLine.outs, strikeouts: state.currentStats.strikeouts + strikeouts, walks: state.currentStats.walks + walks, runsAllowed: state.currentStats.runsAllowed + runs, wins: state.currentStats.wins + newGameLines.count { $0.decision == .win }, losses: state.currentStats.losses + newGameLines.count { $0.decision == .loss }, saves: state.currentStats.saves + newGameLines.count { $0.decision == .save })
         let earnedCallUp = trust >= 60 && skill >= 46
             && (state.season > 1 || stats.games >= 12 || stats.strikeouts >= 40)
-        let level: ProLevel = state.level == .major || earnedCallUp ? .major : .minor
+        // **2군행이 있다.** 예전에는 한번 올라가면 내려오지 않았다 — 1군이 승급이 아니라
+        // 통과 지점이었다는 뜻이고, 그러면 남은 시즌에 걸린 것이 없어진다.
+        //
+        // 되돌릴 수 있는 세트백이다. 다시 던져서 믿음을 쌓으면 올라온다.
+        let demoted = state.level == .major && trust < Self.demotionTrust && !recovering
+        let level: ProLevel = demoted ? .minor : (state.level == .major || earnedCallUp ? .major : .minor)
         let role: ProRole = level == .major
             ? trust >= 74 ? .starter : trust >= 62 ? .longRelief : .setup
             : trust >= 52 ? .starter : .longRelief
@@ -400,8 +420,12 @@ public struct ProCareerEngine: Sendable {
             news.insert("\(nextWeek)주차 · \(games)경기 · \(strikeouts)K · \(walks)볼넷 · \(runs)실점", at: 0)
         }
         if state.level != level {
-            milestones = addingUnique("1군 콜업", to: milestones)
-            news.insert("2군 기록과 감독의 믿음을 쌓아 1군 출전 명단에 합류했습니다.", at: 0)
+            if level == .major {
+                milestones = addingUnique("1군 콜업", to: milestones)
+                news.insert("2군 기록과 감독의 믿음을 쌓아 1군 출전 명단에 합류했습니다.", at: 0)
+            } else {
+                news.insert("최근 등판이 이어지지 않아 2군으로 내려갑니다. 기록을 다시 쌓아야 합니다.", at: 0)
+            }
         }
         if state.role != role {
             let roleName = role == .starter ? "선발" : role == .longRelief ? "긴 이닝 구원" : role == .setup ? "필승조" : "마무리"
@@ -550,6 +574,10 @@ public struct ProCareerEngine: Sendable {
         let updated = replacing(baseAdvanced, news: Array(([tensionHeadline(tensions)] + baseAdvanced.news).prefix(30)), seasonSegment: .springCamp, seasonTrigger: clearedTrigger, currentRival: clearedRival, seasonTensions: tensions, seasonImportantGames: 0)
         return result(updated, nextSeed: String(rng.next()), events: ["pro_offseason_resolved"])
     }
+
+    /// 이 아래로 내려가면 1군에서 빠진다. 콜업 기준(60)보다 한참 낮게 둔다 —
+    /// 한 주 못 던졌다고 내려가면 세트백이 아니라 변덕이다.
+    static let demotionTrust = 34
 
     public static let proTeams: [DraftTeamSnapshot] = HighSchoolCareerEngine.teams
 

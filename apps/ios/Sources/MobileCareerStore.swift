@@ -107,6 +107,32 @@ final class MobileCareerStore {
         perform { try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: selectedPlan)) }
     }
 
+    /// 다음 구간 어귀까지 자동으로 진행한다.
+    ///
+    /// 24주를 한 주씩 넘기는 것이 프로 후반의 실제 경험이었다. 같은 카드 다섯 장에서 하나를
+    /// 고르는 일이 시즌마다 24번, 12시즌이면 288번이다. 구간(스프링캠프·개막·전반기·올스타
+    /// 브레이크·페넌트레이스·시즌 막바지)은 이미 코어가 알고 있으니, **결정이 필요한 자리에서만
+    /// 멈추게** 한다 — 구간이 바뀌거나, 중요 경기가 잡히거나, 역할·소속이 움직이거나, 다치거나.
+    func advanceSegment() {
+        guard let result else { return }
+        perform {
+            var current = result
+            let startSegment = current.snapshot.seasonSegment
+            for _ in 0..<24 where current.snapshot.phase == .weeklyPlan {
+                let before = current.snapshot
+                current = try engine.planWeek(
+                    .init(seed: current.nextSeed, state: current.snapshot, plan: selectedPlan)
+                )
+                let after = current.snapshot
+                // 여기서 멈춘다: 화면이 약속한 것들이다.
+                if after.seasonSegment != startSegment { break }
+                if after.role != before.role || after.level != before.level { break }
+                if after.injuryWeeks > before.injuryWeeks { break }
+            }
+            return current
+        }
+    }
+
     func advanceBlock() {
         guard let result else { return }
         perform {
