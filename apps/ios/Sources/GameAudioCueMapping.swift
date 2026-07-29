@@ -18,7 +18,9 @@ enum GameAudioMapping {
         case .inPlayOut, .single, .double, .triple, .homeRun:
             cues.append(.batContact(power: contactPower(snapshot.battedBall)))
         case .hitByPitch:
-            cues.append(.batFoul)
+            // 몸에 맞는 공은 방망이 소리가 아니다 — 저역만 남긴 둔탁한 충돌음(빗맞음
+            // 음원의 최저 세기)이 파울 팁의 "틱"보다 몸에 맞는 물리에 가깝다.
+            cues.append(.batContact(power: 0))
         }
 
         switch snapshot.result {

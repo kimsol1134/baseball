@@ -453,24 +453,29 @@ struct PitchView: View {
     private func replay() {
         guard !reduceMotion else {
             replayProgress = 1
-            for cue in session.lastCues { audio.play(cue) }
+            // 장면은 건너뛰어도 소리의 박자는 남긴다 — 전부 겹치면 죽 소리가 된다.
+            // 비행을 기다릴 필요만 없으니 간격을 압축한다(충돌 → 콜 → 관중).
+            for (index, cue) in session.lastCues.enumerated() {
+                let delay = 0.28 * Double(min(index, 3))
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) { audio.play(cue) }
+            }
             return
         }
         replayProgress = 0
         withAnimation(.linear(duration: 1.6)) { replayProgress = 1 }
 
-        // 릴리스는 바로, 나머지는 공이 도착하는 순간(0.58 × 1.6초)에 맞춘다.
+        // 릴리스는 바로, 물리적 충돌(포구·타격)은 공이 도착하는 순간(0.58 × 1.6초)에.
+        // 그 뒤는 실제 야구의 박자다 — 포구, 한 박 쉬고 심판 콜, 또 한 박 뒤에 관중.
+        // 전에는 포구와 콜이 같은 순간에 겹쳐서 심판이 공보다 빨랐다.
         let cues = session.lastCues
         if let release = cues.first { audio.play(release) }
-        let impact = cues.dropFirst()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.92) {
-            for cue in impact.prefix(2) { audio.play(cue) }
-        }
-        // 관중은 판정이 읽힌 뒤에 반응한다.
-        if impact.count > 2 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) {
-                for cue in impact.dropFirst(2) { audio.play(cue) }
+        for (index, cue) in cues.dropFirst().enumerated() {
+            let delay = switch index {
+            case 0: 0.92
+            case 1: 1.18
+            default: 1.5
             }
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { audio.play(cue) }
         }
     }
 }
