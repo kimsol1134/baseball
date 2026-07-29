@@ -27,6 +27,7 @@ struct SettingsView: View {
 
             Section("소리와 진동") {
                 Toggle("소리", isOn: Binding(get: { audio.soundEnabled }, set: { audio.soundEnabled = $0 }))
+                Toggle("음악", isOn: Binding(get: { audio.musicEnabled }, set: { audio.musicEnabled = $0 }))
                 Toggle("진동", isOn: Binding(get: { audio.hapticsEnabled }, set: { audio.hapticsEnabled = $0 }))
                 Text("소리는 다른 앱의 음악을 멈추지 않고, 무음 스위치를 따릅니다.")
                     .font(.footnote)

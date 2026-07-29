@@ -23,6 +23,9 @@ enum SoundAsset: String, CaseIterable {
     case crowdGroan = "crowd-groan"
     /// 이어서 도는 관중 웅성거림. 이 하나만 넣어도 체감이 가장 크게 바뀐다.
     case crowdLoop = "crowd-loop"
+    /// 메뉴·커리어 화면 아래 이어 도는 음악. 파일이 없으면 합성 패드가 대신 깔린다.
+    /// 이어 붙는 루프이므로 무손실(wav/aiff/caf/ALAC)이어야 한다 — 손실 압축은 이음매에 틈이 생긴다.
+    case menuTheme = "menu-theme"
 
     /// 큐를 음원으로 옮긴다. 타격은 세기에 따라 두 장으로 갈린다.
     static func asset(for cue: GameAudioCue) -> SoundAsset? {

@@ -52,17 +52,40 @@ final class GameAudio {
         }
     }
 
+    /// 음악 0~1. 메뉴·커리어 화면에서 깔리고 승부 중에는 0으로 내린다 —
+    /// 마운드에서는 관중과 심판이 음악이다.
+    var musicIntensity: Double = 0.5 {
+        didSet { applyMusicVolume() }
+    }
+
+    /// 음악만 따로 끌 수 있다. 소리는 좋은데 음악은 싫은 사람이 실제로 있다.
+    var musicEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(musicEnabled, forKey: Self.musicKey)
+            applyMusicVolume()
+        }
+    }
+
+    private func applyMusicVolume() {
+        let effective = musicEnabled ? min(1, max(0, musicIntensity)) : 0
+        pad.setTarget(intensity: effective)
+        // 녹음 음원을 쓰는 중이면 볼륨으로. 0.28은 음악이 배경이라는 뜻이다.
+        musicPlayer?.volume = Float(effective) * 0.28
+    }
+
     var hapticsEnabled: Bool {
         didSet { UserDefaults.standard.set(hapticsEnabled, forKey: Self.hapticsKey) }
     }
 
     private static let soundKey = "baseball.audio.sound"
     private static let hapticsKey = "baseball.audio.haptics"
+    private static let musicKey = "baseball.audio.music"
     private static let sampleRate: Double = 44_100
 
     private let engine = AVAudioEngine()
     private let voices = VoiceBank()
     private let crowd = CrowdBed()
+    private let pad = PadBed()
     private var attached = false
 
     /// 번들에 실린 녹음 음원. 있으면 합성보다 먼저 쓴다.
@@ -72,12 +95,16 @@ final class GameAudio {
     private var nextPlayer = 0
     /// 이어 도는 관중 음원. 있으면 CrowdBed 대신 이걸 튼다.
     private var crowdPlayer: AVAudioPlayerNode?
+    /// 이어 도는 음악 음원. 있으면 합성 패드 대신 이걸 튼다.
+    private var musicPlayer: AVAudioPlayerNode?
 
     private init() {
         let defaults = UserDefaults.standard
         defaults.register(defaults: [Self.soundKey: true, Self.hapticsKey: true])
+        defaults.register(defaults: [Self.musicKey: true])
         soundEnabled = defaults.bool(forKey: Self.soundKey)
         hapticsEnabled = defaults.bool(forKey: Self.hapticsKey)
+        musicEnabled = defaults.bool(forKey: Self.musicKey)
     }
 
     // MARK: - 수명 주기
@@ -92,6 +119,7 @@ final class GameAudio {
             try engine.start()
             // 루프는 엔진이 돌기 시작한 뒤에 재생을 걸어야 한다.
             if let player = crowdPlayer, !player.isPlaying { player.play() }
+            if let player = musicPlayer, !player.isPlaying { player.play() }
             isRunning = true
         } catch {
             // 오디오는 게임 진행의 전제 조건이 아니다. 실패하면 조용히 무음으로 간다.
@@ -176,6 +204,25 @@ final class GameAudio {
             let crowdNode = Self.makeSourceNode(format: format, renderer: crowd)
             engine.attach(crowdNode)
             engine.connect(crowdNode, to: engine.mainMixerNode, format: format)
+        }
+
+        // 음악: 녹음 루프가 있으면 그것을, 없으면 합성 패드를.
+        //
+        // "유료 게임의 첫 30초에 음악이 없으면 미완성 앱으로 읽힌다"는 지적에 대한 답이다.
+        // 관중 루프와 같은 두 벌 구조라, 나중에 실제 곡을 `menu-theme`로 넣으면 코드 변경
+        // 없이 교체된다.
+        if let theme = bank.buffer(for: .menuTheme) {
+            let player = AVAudioPlayerNode()
+            engine.attach(player)
+            engine.connect(player, to: engine.mainMixerNode, format: theme.format)
+            player.volume = Float(musicEnabled ? musicIntensity : 0) * 0.28
+            player.scheduleBuffer(theme, at: nil, options: [.loops], completionHandler: nil)
+            musicPlayer = player
+        } else {
+            let padNode = Self.makeSourceNode(format: format, renderer: pad)
+            engine.attach(padNode)
+            engine.connect(padNode, to: engine.mainMixerNode, format: format)
+            pad.setTarget(intensity: musicEnabled ? musicIntensity : 0)
         }
 
         // 단발 음원 재생기. 미트 소리와 관중 반응이 겹치는 순간이 있어 여러 장이 필요하다.
@@ -287,13 +334,12 @@ final class GameAudio {
             ]
 
         case .umpireBall:
-            // 볼 콜은 한 박이고, 스트라이크보다 낮고 짧다. 심판은 볼을 외치지 않고 말한다 —
-            // 그 차이가 귀에 남는 정도를 가른다. 음정이 처지고("오" 모음) 반사음도 없다.
-            return [
-                .shout(duration: 0.17, attack: 0.012, gain: 0.088,
-                       pitchHz: 124, glide: 0.86, formants: (480, 850, 2_400),
-                       breath: 0.16, curve: 1.9, pan: -0.45),
-            ]
+            // **볼 콜은 소리가 없다.** 실제 심판은 볼을 외치지 않는다 — 스트라이크만 지르고
+            // 볼은 자세로만 표시하거나 낮게 말한다. 합성 목소리로 두 콜을 다 내 봤지만
+            // "볼이 이상하다"는 실기기 피드백이 맞았다. 미트 소리가 이미 공 하나를 표시하므로
+            // 볼에는 콜을 얹지 않는 쪽이 오히려 야구답다. (음원 슬롯 `umpire-ball`은 남겨 둔다 —
+            // 파일을 넣으면 그때부터 난다.)
+            return []
 
         case .crowdCheer:
             // 함성은 한 번에 터지지 않는다. 웅성거림이 부풀고 위쪽 대역이 뒤늦게 따라온다.
@@ -707,5 +753,139 @@ final class CrowdBed: AudioRenderer, @unchecked Sendable {
                 for frame in 0..<frameCount { pointer[frame] = source[frame] }
             }
         }
+    }
+}
+
+/// 메뉴와 커리어 화면 아래 조용히 깔리는 음악.
+///
+/// 작곡된 트랙이 아니라 **밤 구장의 무드 패드**다. 느린 화음 세 개가 18초씩 머물다
+/// 서로에게 건너가고, 숨 쉬듯 커졌다 작아진다. 목표는 "음악이 나온다"가 아니라
+/// "조용하지 않다"이다 — 유료 게임의 첫 30초가 무음이면 미완성으로 읽힌다.
+///
+/// `menu-theme` 음원이 번들에 있으면 이 렌더러 대신 그 파일이 돈다(두 벌 구조).
+final class PadBed: AudioRenderer, @unchecked Sendable {
+    private let lock = NSLock()
+    private var target: Double = 0
+    private var current: Double = 0
+
+    /// 밤 구장의 화음 셋. 라단조 어귀를 돈다 — 어둡지만 가라앉지는 않는 자리다.
+    /// 전화기 스피커는 200Hz 아래가 거의 안 나오므로 중음역에 둔다.
+    private static let chords: [[Double]] = [
+        [293.66, 349.23, 440.00, 659.26],   // 레 단조 add9
+        [233.08, 293.66, 349.23, 440.00],   // 시플랫 장7
+        [220.00, 261.63, 329.63, 440.00],   // 라 단조
+        [233.08, 293.66, 349.23, 523.25],   // 시플랫 장조, 꼭대기만 도로
+    ]
+    /// 화음 하나가 머무는 시간(초). 마지막 22%에서 다음 화음으로 건너간다.
+    private static let segmentSeconds = 18.0
+    private static let sampleRate = 44_100.0
+
+    /// 두 뱅크 × 화음 4성.
+    ///
+    /// 처음에는 성부마다 디튠 짝(+0.15%)을 겹쳤는데, 같은 크기의 두 진동이 2초마다
+    /// 완전히 상쇄돼 **맥놀이로 출렁였다** — 클릭 검사가 그걸 잡아냈다. 대신 성부마다
+    /// 아주 느린 비브라토(±0.08%, 성부별로 다른 주기)를 준다. 폭은 생기고 맥놀이는 없다.
+    private var phasesA = [Double](repeating: 0, count: 4)
+    private var phasesB = [Double](repeating: 0, count: 4)
+    private var vibratoPhases: [Double] = [0.0, 0.31, 0.62, 0.87]
+    private static let vibratoRates: [Double] = [0.11, 0.073, 0.127, 0.091]
+    private var lastIndex = -1
+    private var clock = 0
+    /// 숨. 서로 나누어떨어지지 않는 두 주기.
+    private var breathA = 0.0
+    private var breathB = 0.53
+
+    func setTarget(intensity: Double) {
+        lock.lock()
+        target = min(1, max(0, intensity))
+        lock.unlock()
+    }
+
+    func render(frameCount: Int, into buffers: UnsafeMutableAudioBufferListPointer) {
+        for buffer in buffers {
+            memset(buffer.mData, 0, Int(buffer.mDataByteSize))
+        }
+        lock.lock()
+        let goal = target
+        lock.unlock()
+
+        // 목표까지 약 1.2초. 화면 전환마다 음악이 홱 커지면 안 된다.
+        let glide = 1 - exp(-Double(frameCount) / (1.2 * Self.sampleRate))
+        current += (goal - current) * glide
+        guard current > 0.001 else {
+            clock += frameCount
+            return
+        }
+
+        let segment = Int(Self.segmentSeconds * Self.sampleRate)
+        let count = Self.chords.count
+        let position = Double(clock % (segment * count)) / Double(segment)
+        let index = Int(position) % count
+        let next = (index + 1) % count
+        let fraction = position - floor(position)
+        // 마지막 22%에서 다음 화음으로. smoothstep이라 귀에 모서리가 없다.
+        let raw = max(0, (fraction - 0.78) / 0.22)
+        let crossfade = raw * raw * (3 - 2 * raw)
+
+        if index != lastIndex {
+            // 화음이 넘어간 순간, 방금까지 뱅크 B가 내던 소리를 뱅크 A가 이어받는다.
+            // 위상을 그대로 복사하면 같은 파형이 이어져 이음매가 들리지 않는다.
+            phasesA = phasesB
+            lastIndex = index
+        }
+
+        breathA += 0.047 * Double(frameCount) / Self.sampleRate
+        breathB += 0.031 * Double(frameCount) / Self.sampleRate
+        if breathA > 1 { breathA -= 1 }
+        if breathB > 1 { breathB -= 1 }
+        let breath = 0.72 + 0.2 * sin(breathA * 2 * .pi) + 0.08 * sin(breathB * 2 * .pi)
+        // 음악은 배경이다. 관중 웅성거림보다 뒤에 있어야 한다.
+        let gain = current * 0.042 * breath
+
+        let chordA = Self.chords[index]
+        let chordB = Self.chords[next]
+        let channels = buffers.count
+        // 낮은 성부가 조금 크다. 위로 갈수록 물러난다.
+        let weights: [Double] = [1.0, 0.8, 0.62, 0.4]
+
+        // 비브라토는 블록마다 한 번 계산한다. 12밀리초 안에서는 귀에 이어져 들린다.
+        var vibrato = [Double](repeating: 1, count: 4)
+        for voice in 0..<4 {
+            vibratoPhases[voice] += Self.vibratoRates[voice] * Double(frameCount) / Self.sampleRate
+            if vibratoPhases[voice] > 1 { vibratoPhases[voice] -= 1 }
+            vibrato[voice] = 1 + 0.0008 * sin(vibratoPhases[voice] * 2 * .pi)
+        }
+
+        for frame in 0..<frameCount {
+            var left = 0.0
+            var right = 0.0
+            for voice in 0..<4 {
+                let weight = weights[voice]
+                phasesA[voice] += chordA[voice] * vibrato[voice] / Self.sampleRate
+                if phasesA[voice] > 1 { phasesA[voice] -= 1 }
+                let sampleA = sin(phasesA[voice] * 2 * .pi)
+                phasesB[voice] += chordB[voice] * vibrato[voice] / Self.sampleRate
+                if phasesB[voice] > 1 { phasesB[voice] -= 1 }
+                let sampleB = sin(phasesB[voice] * 2 * .pi)
+                let mixed = (sampleA * (1 - crossfade) + sampleB * crossfade) * weight
+                // 성부를 좌우로 살짝 벌린다. 가운데 뭉치면 좁게 들린다.
+                if voice % 2 == 0 {
+                    left += mixed * 0.62; right += mixed * 0.38
+                } else {
+                    left += mixed * 0.38; right += mixed * 0.62
+                }
+            }
+            let l = Float(left * gain)
+            let r = Float(right * gain)
+            if channels >= 2 {
+                buffers[0].mData!.assumingMemoryBound(to: Float.self)[frame] += l
+                buffers[1].mData!.assumingMemoryBound(to: Float.self)[frame] += r
+            } else {
+                for buffer in buffers {
+                    buffer.mData!.assumingMemoryBound(to: Float.self)[frame] += Float((left + right) * 0.5 * gain)
+                }
+            }
+        }
+        clock += frameCount
     }
 }

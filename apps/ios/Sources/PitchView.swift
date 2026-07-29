@@ -215,8 +215,13 @@ struct PitchView: View {
         .onAppear {
             audio.start()
             audio.crowdIntensity = GameAudioMapping.crowdIntensity(leverage: session.scenario.leverage)
+            // 마운드에서는 관중과 심판이 음악이다. 패드는 화면을 나갈 때 돌아온다.
+            audio.musicIntensity = 0
         }
-        .onDisappear { audio.crowdIntensity = 0.15 }
+        .onDisappear {
+            audio.crowdIntensity = 0.15
+            audio.musicIntensity = 0.5
+        }
     }
 
     // MARK: - 구성
