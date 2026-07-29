@@ -149,9 +149,12 @@ public enum LeagueTable {
     /// 남는 승은 이미 많이 이긴 팀에서, 모자란 승은 이미 많이 진 팀에게서 뺀다. 그래야
     /// 균형을 맞추는 과정이 순위를 뒤집지 않고 극단만 눌러 준다.
     ///
-    /// `surplus`는 항상 짝수다(위에서 승부 경기 총합을 짝수로 맞춘다). 예전에는 그 보장이
-    /// 없어서 홀수일 때 ±2 조정이 0을 지나쳐 되돌아오기를 반복했고, 400번 반복하는 동안
-    /// 상위 팀은 승률 .84, 하위 팀은 .15까지 벌어졌다 — 야구가 아닌 순위표가 나왔다.
+    /// `surplus`가 짝수라는 보장은 **여기서 직접 만든다.** 생성 단계가 승부 경기 총합을
+    /// 짝수로 맞추지만, 내 경기 반영이 내 팀의 무승부 수를 바꾸면 그 보장이 깨진다.
+    /// 홀수 surplus에서 ±2 조정만 하면 0을 지나쳐 +1↔−1을 영원히 반복하는데, 조정이
+    /// 성공할 때마다 정체 카운터가 리셋되므로 탈출도 못 한다 — 실제로 이 함수가 메인
+    /// 스레드에서 무한 루프에 걸렸다. 그래서 홀수면 먼저 승부 한 경기를 무승부로(또는
+    /// 반대로) 바꿔 ±1을 한 번 만들어 짝수로 내려놓고 시작한다.
     private static func balanced(_ rows: [StandingRow], winTotal: Int, pinned: String? = nil) -> [StandingRow] {
         let lossTotal = rows.reduce(0) { $0 + $1.losses }
         var surplus = winTotal - lossTotal
@@ -163,6 +166,30 @@ public enum LeagueTable {
         let order = rows.indices.filter { rows[$0].teamID != pinned }.sorted {
             surplus > 0 ? (rows[$0].wins > rows[$1].wins) : (rows[$0].wins < rows[$1].wins)
         }
+        if surplus % 2 != 0 {
+            for target in order {
+                let row = adjusted[target]
+                if surplus > 0, row.wins > 0 {
+                    adjusted[target] = StandingRow(
+                        teamID: row.teamID, teamName: row.teamName,
+                        wins: row.wins - 1, losses: row.losses, draws: row.draws + 1
+                    )
+                    surplus -= 1
+                    break
+                }
+                if surplus < 0, row.losses > 0 {
+                    adjusted[target] = StandingRow(
+                        teamID: row.teamID, teamName: row.teamName,
+                        wins: row.wins, losses: row.losses - 1, draws: row.draws + 1
+                    )
+                    surplus += 1
+                    break
+                }
+            }
+        }
+        // 여전히 홀수면(옮길 경기가 하나도 없는 병리적 입력) 완벽한 균형을 포기하고
+        // 반환한다. 순위표가 한 경기 어긋나는 것은 흠이지만, 여기서 돌면 앱이 멈춘다.
+        guard surplus % 2 == 0 else { return adjusted }
         var index = 0
         var stalled = 0
         while surplus != 0, stalled < order.count {

@@ -202,6 +202,34 @@ final class LeagueTableTests: XCTestCase {
     }
 
     /// 내 결과를 넣어도 리그의 승수 합 == 패수 합은 유지된다.
+    /// 내 경기 반영이 무승부 수를 바꾸면 승부 경기 총합의 짝수 보장이 깨질 수 있다.
+    /// 홀수 잉여에서 균형 루프가 +1↔−1을 영원히 반복해 **메인 스레드가 멈추는 실제
+    /// 버그였다.** 여러 시드·경기 수·무승부 조합을 훑어 항상 (a) 함수가 돌아오고
+    /// (b) 승수 합 == 패수 합이고 (c) 경기 수가 보존되는지 본다.
+    func testOddDrawParityNeverHangsOrUnbalances() {
+        let team = HighSchoolCareerEngine.teams[1].id
+        for seed in ["bal", "odd", "환생", "p7"] {
+            for games in [12, 47, 48, 95, 96] {
+                for drawCount in 0...3 {
+                    // 무승부 drawCount개 + 승패 섞인 실제 결과
+                    let results = (0..<20).map { i in
+                        i < drawCount
+                            ? LeagueTable.PlayerGameResult(teamRuns: 3, opponentRuns: 3)
+                            : LeagueTable.PlayerGameResult(teamRuns: i % 2 == 0 ? 5 : 1, opponentRuns: 2)
+                    }
+                    let rows = LeagueTable.standings(season: 3, seed: seed, gamesPlayed: games,
+                                                     playerTeamID: team, playerResults: results)
+                    let wins = rows.reduce(0) { $0 + $1.wins }
+                    let losses = rows.reduce(0) { $0 + $1.losses }
+                    XCTAssertEqual(wins, losses, "\(seed)/\(games)경기/무\(drawCount): 승 \(wins) != 패 \(losses)")
+                    for row in rows {
+                        XCTAssertEqual(row.games, min(games, 96), "\(seed)/\(games): \(row.teamName)")
+                    }
+                }
+            }
+        }
+    }
+
     func testPlayerResultsKeepTheLeagueBalanced() {
         let team = HighSchoolCareerEngine.teams[2].id
         let mixed = (0..<20).map {
