@@ -278,13 +278,19 @@ final class CareerSmokeUITests: XCTestCase {
         // 누른 채 조금 끌었다가 뗀다. 실제 손동작과 같은 경로다.
         pad.press(forDuration: 0.6, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.1)
 
+        // **되돌아오기 전에** 찍는다. 리플레이가 끝나면 화면이 다음 배합을 고르는 자리로
+        // 자동 복귀하므로(학습 루프), 그 뒤에 찍으면 조작부만 나온다 — 스토어 2번 슬롯이
+        // 요구하는 것은 궤적과 판정이다. 요소 조회는 느리므로 조회 전에 먼저 찍는다.
+        capture(app, name: "12-delivery-result")
+
         XCTAssertTrue(
             app.buttons["pitch.nextBatter"].waitForExistence(timeout: timeout)
                 || app.buttons["pitch.finish"].waitForExistence(timeout: 1)
                 || windUpPad(app).exists,
             "제스처로 던진 뒤 승부가 진행되지 않았습니다."
         )
-        capture(app, name: "12-delivery-result")
+        // 복귀까지 마친 화면. 결과를 보고 나면 조작부로 돌아온다는 계약의 증거다.
+        capture(app, name: "14-controls-after-result")
     }
 
     /// 와인드업 패드. 라벨만 갖고 있어 종류를 특정하지 않고 찾는다.
