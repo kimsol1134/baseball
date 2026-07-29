@@ -940,7 +940,12 @@ public struct HighSchoolCareerEngine: Sendable {
     // 중요 경기 투구 수/피로가 바닥을 넘을 때만 팔에 부담이 쌓인다. 가벼운 등판(투구 ≤24·피로 ≤55)은
     // 위험을 0으로 두므로, 회복 훈련으로 피로만 관리하면 경고 없이 완주할 수 있다.
     static let armFatigueFloor = 55
-    static let armPitchFloor = 24
+    /// 실측 등판의 투구 수 분포에 맞춘 바닥.
+    ///
+    /// 24로 두면 한 이닝 등판(실측 평균 15구)이 거의 이 선을 넘지 못해, 팔 위험이 쌓이지
+    /// 않고 트레이너·재활 콘텐츠가 통째로 사장됐다. 혹사 시스템은 만들어 두고 도달할 수
+    /// 없으면 없는 것과 같다.
+    static let armPitchFloor = 23
     static let armPushThroughRisk = 15   // "참고 던진다"가 올리는 위험
     static let armRestRelief = 45        // "짧은 휴식"이 덜어 내는 위험
     static let armExamRelief = 8         // "정밀 검진" 뒤 남는 최소 피로 회복
@@ -965,6 +970,13 @@ public struct HighSchoolCareerEngine: Sendable {
     static func makeSchedule(careerID: String) -> CareerScheduleSnapshot {
         var generator = SplitMix64(seed: UInt64(StableHash.fnv1a64("run_skeleton|\(careerID)"), radix: 16) ?? 0x5348_4c53_4b45_4c00)
         let trainingTotal = 12 + generator.nextInt(upperBound: 5)      // 12–16
+        // 4–6.
+        //
+        // 5–7로 늘려 확장 사건 26종의 노출률 병목(개당 4~5%)을 풀려 했지만 되돌렸다.
+        // 관계 슬롯 수는 저장본 검증(`relationshipsCompleted` 범위)과 회차 뼈대 패킹,
+        // 그리고 환생 사건 보장 슬롯 계산에 함께 걸려 있어서, 한 칸을 늘리자 그 셋이 동시에
+        // 어긋났다. 노출률은 **확장 사건을 늘리는 쪽**으로 푸는 것이 맞다 — 슬롯을 늘리면
+        // 회차가 길어지기만 하고 콘텐츠 절대량은 그대로다.
         let relationshipTotal = 4 + generator.nextInt(upperBound: 3)   // 4–6
         let gameTotal = 4 + generator.nextInt(upperBound: 3)           // 4–6
 
