@@ -17,8 +17,8 @@
 | `bat-foul` | 파울 팁 | — | — | — |
 | `swing-miss` | 헛스윙 | — | — | — |
 | `pitch-release` | 릴리스 | — | — | — |
-| `umpire-strike` | 스트라이크 콜 | — | — | — |
-| `umpire-ball` | 볼 콜 | — | — | — |
+| `umpire-strike.wav` | 스트라이크 콜 | [Freesound 625473](https://freesound.org/people/jcookvoice/sounds/625473/) · jcookvoice, "American Baseball The Umpire" — 성우가 연기한 심판 콜 모음에서 "스트라이크" 부분을 잘라 냄 | **CC0** | 불필요 |
+| `umpire-ball` | 볼 콜 | **의도적 무음.** 실제 심판은 볼을 외치지 않고, 미트 소리가 이미 공 하나를 표시한다. 슬롯은 남겨 둔다 | — | — |
 
 성장·기념·UI 음은 화면 피드백이라 녹음을 쓰지 않고 합성음을 유지한다(`SoundAsset.asset(for:)`).
 
@@ -49,10 +49,10 @@
 
 | 우선 | 파일 | 무엇을 구해야 하나 |
 |---|---|---|
-| 1 | `umpire-strike` / `umpire-ball` | 심판 콜. 한국어 콜이면 가장 좋고, 없으면 합성 유지 |
-| 2 | `crowd-cheer` / `crowd-groan` | 함성·탄식. 관중 루프와 같은 거리감이어야 한다 |
-| 3 | `bat-foul` | 파울 팁. 위 가공 내역 참고 |
+| 1 | `crowd-cheer` / `crowd-groan` | 함성·탄식. 관중 루프와 같은 거리감이어야 한다 |
+| 2 | `bat-foul` | 파울 팁. 위 가공 내역 참고 |
 | 3 | `pitch-release` / `swing-miss` | 바람 소리. 합성이 오히려 자연스러울 수 있다 |
+| 4 | `menu-theme` | 메뉴 음악 루프. 없으면 합성 패드가 돈다. 무손실이어야 한다(이음매) |
 
 **수용 규격**
 

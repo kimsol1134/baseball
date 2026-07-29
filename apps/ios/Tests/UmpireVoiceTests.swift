@@ -67,14 +67,13 @@ final class UmpireVoiceTests: XCTestCase {
         XCTAssertTrue((100...260).contains(hz), "기본 주파수 \(hz)Hz는 사람이 지르는 소리의 범위가 아닙니다")
     }
 
-    func testBallCallIsVoicedAndLowerThanStrike() {
-        let ball = periodicity(render(.umpireBall), minHz: 80, maxHz: 320)
-        let strike = periodicity(render(.umpireStrike), minHz: 90, maxHz: 320)
-        XCTAssertGreaterThan(ball.strength, 0.35, "볼 콜에 음정이 없습니다")
-        XCTAssertLessThan(ball.hz, strike.hz, "볼 콜이 스트라이크보다 높으면 두 콜이 뒤바뀌어 들린다")
+    /// 볼 콜은 **무음**이다. 실제 심판은 볼을 외치지 않고, 미트 소리가 이미 공 하나를
+    /// 표시한다. 실기기 피드백("볼이 이상하다")이 맞았다.
+    func testBallCallIsSilent() {
+        XCTAssertTrue(GameAudio.voices(for: .umpireBall).isEmpty, "볼에 목소리가 다시 붙었습니다")
     }
 
-    /// 스트라이크는 두 박, 볼은 한 박. 박의 수가 두 콜을 가장 빨리 구분시킨다.
+    /// 스트라이크는 두 박. 합성 폴백의 계약이다(번들에 실녹음이 있으면 그쪽이 먼저 난다).
     func testStrikeHasTwoBeatsAndBallHasOne() {
         func beats(_ cue: GameAudioCue) -> Int {
             let samples = render(cue)
@@ -98,7 +97,6 @@ final class UmpireVoiceTests: XCTestCase {
             return count
         }
         XCTAssertGreaterThanOrEqual(beats(.umpireStrike), 2, "스트라이크 콜이 한 박으로 들립니다")
-        XCTAssertEqual(beats(.umpireBall), 1, "볼 콜은 한 박이어야 합니다")
     }
 
     /// 들어 보라고 파일로 내보낸다.
@@ -107,7 +105,7 @@ final class UmpireVoiceTests: XCTestCase {
     /// `-baseball.audio.export <디렉터리>`를 주면 그 자리에 WAV를 쓴다.
     func testExportCallsForListening() throws {
         let directory = NSTemporaryDirectory()
-        for (cue, name) in [(GameAudioCue.umpireStrike, "umpire-strike"), (.umpireBall, "umpire-ball"),
+        for (cue, name) in [(GameAudioCue.umpireStrike, "umpire-strike"),
                             (.crowdCheer, "crowd-cheer"), (.crowdGroan, "crowd-groan")] {
             let samples = render(cue, seconds: 2.0)
             var data = Data()
@@ -130,7 +128,7 @@ final class UmpireVoiceTests: XCTestCase {
 
     /// 콜이 길면 다음 투구를 덮는다. 심판은 짧게 외친다.
     func testCallsStayShort() {
-        for cue in [GameAudioCue.umpireStrike, .umpireBall] {
+        for cue in [GameAudioCue.umpireStrike] {
             let longest = GameAudio.voices(for: cue).map { $0.delay + $0.duration }.max() ?? 0
             XCTAssertLessThan(longest, 0.6, "\(cue) 콜이 \(longest)초로 너무 깁니다")
         }

@@ -79,9 +79,11 @@ final class RetentionTests: XCTestCase {
 
     /// 모든 큐가 실제로 소리 낼 보이스를 만들어야 한다. 정의만 있고 소리가 없는 큐는 버그다.
     func testEveryCueProducesVoices() {
+        // umpireBall은 **의도적 무음**이라 여기서 빠진다. 실제 심판은 볼을 외치지 않고,
+        // 미트 소리가 이미 공 하나를 표시한다(UmpireVoiceTests.testBallCallIsSilent가 지킨다).
         let cues: [GameAudioCue] = [
             .pitchRelease, .gloveCatch, .swingMiss, .batContact(power: 0.8), .batFoul,
-            .umpireStrike, .umpireBall, .crowdCheer, .crowdGroan, .growth, .milestone, .uiSelect
+            .umpireStrike, .crowdCheer, .crowdGroan, .growth, .milestone, .uiSelect
         ]
         for cue in cues {
             let voices = GameAudio.voices(for: cue)
