@@ -10,6 +10,7 @@
 		0536C6C57B7D39C5CC96C3D8 /* CareerBootstrapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8914567CCE3DC83C86EC8133 /* CareerBootstrapTests.swift */; };
 		05793DCA31745B85E30FE7DC /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFB40C23D4863D2F7565C54 /* DesignSystem.swift */; };
 		081602F5FA74589497AF94AC /* GameAudioCueMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */; };
+		0AEB3543D58F52B829F69F2D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 077E4203F2191CBF2178BCCE /* GoogleService-Info.plist */; };
 		0BA1F21987CA928F926B930B /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 5EB7D7DD80808D2ADC11E76C /* FirebaseAnalytics */; };
 		0BEB448E80D1A7A1BED0B560 /* GameAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC349CC26A5D3281BE20CAE6 /* GameAnalytics.swift */; };
 		0E8B47740AB64ADAAD5B3CCF /* MobileCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */; };
@@ -90,6 +91,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		077E4203F2191CBF2178BCCE /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		0920357104804755EEFF843D /* PromoFrameExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoFrameExportTests.swift; sourceTree = "<group>"; };
 		0AFB40C23D4863D2F7565C54 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		0F62F6768821513F9AA61316 /* LifeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeCardView.swift; sourceTree = "<group>"; };
@@ -224,6 +226,7 @@
 				8B412E9D5634221ADBA8ED35 /* GameAudio.swift */,
 				3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */,
 				D6400E3C7B6732A0F7E8EE94 /* GameLineFormat.swift */,
+				077E4203F2191CBF2178BCCE /* GoogleService-Info.plist */,
 				E42DDAB867B43BEE748D08DB /* GrowthCelebrationView.swift */,
 				A0414F684F40EFF55736026F /* Haptics.swift */,
 				BFE0F40C01B6D49B74C3C25A /* HighSchoolCareerStore.swift */,
@@ -408,6 +411,7 @@
 			files = (
 				A7A1E4BCB6F2294E361B74CD /* Assets.xcassets in Resources */,
 				B235CA178BDA7E4B371B1F37 /* Audio in Resources */,
+				0AEB3543D58F52B829F69F2D /* GoogleService-Info.plist in Resources */,
 				2002DF8C14E6ACE3382A1C57 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
