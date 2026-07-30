@@ -20,6 +20,12 @@ public struct Nickname: Codable, Equatable, Sendable, Identifiable {
 }
 
 public enum NicknameRules {
+    /// 도감 크기. 별명을 추가하면 함께 올린다 — 테스트가 어긋나면 여기를 잊은 것이다.
+    public static let catalogCount = 13
+
+    /// 통산 탈삼진 사다리. 아카이브가 "다음 회차에 깨야 할 숫자"를 만들 때 쓴다.
+    public static let strikeoutLadder = [25, 50, 100, 200, 300, 500, 1_000]
+
     /// 지금까지의 커리어 누적으로 얻을 자격이 있는 별명 전부. 결정론적 순수 함수.
     ///
     /// 구조는 **계열 × 티어**다. 같은 계열 안에서는 가장 높은 티어 하나만 나온다 —

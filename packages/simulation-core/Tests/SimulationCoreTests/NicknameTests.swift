@@ -63,6 +63,31 @@ final class NicknameTests: XCTestCase {
             .contains { $0.id == "rough-diamond" })
     }
 
+    /// 도감 크기 상수가 실제 도감과 같은지 — 별명을 추가하고 상수를 잊으면
+    /// 아카이브의 "별명 도감 N/13"이 거짓말이 된다.
+    func testCatalogCountMatchesReachableNicknames() {
+        let probes: [CareerPerformanceSnapshot] = [
+            performance(games: 2, strikeouts: 15, walks: 9, runsAllowed: 9),   // k-hunter
+            performance(games: 2, strikeouts: 25, walks: 9, runsAllowed: 9),   // k-machine
+            performance(games: 2, strikeouts: 45, walks: 9, runsAllowed: 9),   // k-monster
+            performance(games: 3, strikeouts: 0, walks: 8, runsAllowed: 0),    // zero
+            performance(games: 5, strikeouts: 0, walks: 20, runsAllowed: 0),   // iron-wall
+            performance(games: 3, strikeouts: 0, walks: 3, runsAllowed: 2),    // pinpoint
+            performance(games: 4, strikeouts: 0, walks: 0, runsAllowed: 2),    // flawless
+            performance(games: 2, strikeouts: 30, walks: 9, runsAllowed: 2),   // untouchable
+            performance(games: 4, strikeouts: 24, walks: 9, runsAllowed: 20),  // nine-k
+            performance(games: 5, strikeouts: 1, walks: 8, runsAllowed: 9),    // workhorse
+            performance(games: 3, strikeouts: 1, walks: 9, runsAllowed: 2),    // wild-thing
+            performance(games: 3, strikeouts: 1, walks: 2, runsAllowed: 12),   // batting-practice
+            performance(games: 3, strikeouts: 16, walks: 2, runsAllowed: 10),  // rough-diamond
+        ]
+        var ids = Set<String>()
+        for probe in probes {
+            for nickname in NicknameRules.earned(performance: probe) { ids.insert(nickname.id) }
+        }
+        XCTAssertEqual(ids.count, NicknameRules.catalogCount)
+    }
+
     /// 같은 입력 → 같은 결과. 별명 판정에는 난수가 없다.
     func testDeterministic() {
         let sample = performance(games: 4, strikeouts: 30, walks: 2, runsAllowed: 0)

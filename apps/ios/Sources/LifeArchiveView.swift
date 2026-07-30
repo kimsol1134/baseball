@@ -20,6 +20,21 @@ struct LifeArchiveSection: View {
         }
     }
 
+    /// 역대 얻은 별명(중복 제거). 도감이 채워질수록 "다 모아 보고 싶다"가 환생의 이유가 된다.
+    private var collectedNicknames: Set<String> {
+        Set(records.flatMap { $0.nicknames ?? [] })
+    }
+
+    /// 통산 탈삼진의 다음 이정표. 전부 넘었으면 nil — 그때는 숫자 자체가 전설이다.
+    private var nextStrikeoutMilestone: Int? {
+        NicknameRules.strikeoutLadder.first { $0 > totals.strikeouts }
+    }
+
+    /// 한 회차 최다 탈삼진 — 역대 최고 기록은 깨라고 있는 것이다.
+    private var bestStrikeoutLife: HighSchoolCareerStore.LifeRecord? {
+        records.max { $0.strikeouts < $1.strikeouts }
+    }
+
     var body: some View {
         BaseballCard(title: "지난 회차 \(records.count)") {
             VStack(alignment: .leading, spacing: 0) {
@@ -33,6 +48,27 @@ struct LifeArchiveSection: View {
                     .padding(.bottom, 10)
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("지난 회차 통산. 지명 \(totals.drafted)회, 통산 탈삼진 \(totals.strikeouts), 최고 평가 \(totals.bestEvaluation)점, 모은 야구혼 \(totals.soul)")
+                    Rectangle()
+                        .fill(BaseballTheme.border.opacity(0.35))
+                        .frame(height: 1)
+                }
+                if !records.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let next = nextStrikeoutMilestone {
+                            Text("통산 탈삼진 \(next)까지 \(next - totals.strikeouts)개 — 모든 회차의 기록은 영원히 쌓입니다.")
+                        }
+                        if let best = bestStrikeoutLife, best.strikeouts > 0 {
+                            Text("한 회차 최다 탈삼진 \(best.strikeouts) (\(best.lifeNumber)회차) — 역대 기록은 깨라고 있는 것입니다.")
+                        }
+                        Text("별명 도감 \(collectedNicknames.count)/\(NicknameRules.catalogCount)"
+                             + (collectedNicknames.count >= NicknameRules.catalogCount
+                                ? " — 세상이 부르는 모든 이름을 모았습니다."
+                                : " — 아직 못 얻은 이름이 있습니다."))
+                    }
+                    .font(.caption)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .padding(.vertical, 8)
+                    .accessibilityIdentifier("archive.legacyBoard")
                     Rectangle()
                         .fill(BaseballTheme.border.opacity(0.35))
                         .frame(height: 1)
