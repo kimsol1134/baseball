@@ -150,7 +150,9 @@ UAC는 소재를 조합해 자동 생성한다. **광고문안 5개 · 이미지
 - [x] Amplitude 프로젝트 생성 → API 키 입력 (워크스페이스 purple-shape-779806, 인제스천 검증 완료)
 - [ ] **개인정보 라벨 "수집함"으로 갱신·게시** (분석 빌드 제출 전 필수! — 1.0 승인 후 진행)
 - [ ] 1.0 승인 후 → 분석 포함 1.0.1 빌드 제출 (빌드 20 TestFlight 업로드는 완료, ASC 제출만 남음)
-- [ ] Firebase: activation 이벤트 "전환으로 표시" + Google Ads 연결 (이벤트가 콘솔에 노출되는 최대 24h 후 가능)
-- [ ] Google Ads: 전환 가져오기(1회 집계) → 캠페인 게시 (계정·결제 프로필 생성은 사용자 몫)
+- [x] Google Ads 계정 생성 + GA4 링크 — 계정 **273-057-1629** (Firebase 프로젝트와 같은 구글 계정 220614pinecone@gmail.com 소유), GA4 속성과 링크 완료(개인 맞춤 광고 ON, 자동 태깅 기본). 데이터 반영 최대 24h.
+- [ ] activation_first_game "주요 이벤트(전환)" 표시 — GA4 이벤트 허브는 이벤트가 최초 유입돼야 별표 지정 가능. **빌드 20(TestFlight)으로 첫 중요 경기 1판 완주하면 유입됨** → GA4 관리 > 데이터 표시 > 이벤트에서 별표.
+- [ ] Google Ads 초기 설정 마법사 완료 — 앱이 미출시라 "앱 다운로드 페이지" 연결·URL 검증이 막힘. **출시 후** 실제 App Store URL로 마법사 완료. 결제 프로필 입력은 사용자 직접.
+- [ ] Google Ads: 전환 가져오기(1회 집계) → 캠페인 게시 (마법사·결제 완료 후)
 - [x] Amplitude: 퍼널·리텐션·대시보드 3종 생성 — Activation Funnel(4단), Retention(activation→game_finished), 대시보드 "야구환생 — Activation"
 - [ ] D1~D7 운영표 기록 → D7 결산
