@@ -1627,7 +1627,28 @@ public struct PitchKernelEngine: Sendable {
             : ""
         // 밴드 문구만 쓴다. 원시 수치(700/1000)는 내부 단위라 사용자 화면에 새면 안 된다 —
         // 실제로 스토어 스크린샷에 "(1000/1000)"이 찍혀 나간 적이 있다.
-        let detail = "공 선택은 \(selectionDisplayName(selection)), 노린 코스에는 \(Self.executionBand(execution.executionQuality)). \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
+        // 두 절을 쉼표로 잇지 않는다 — "공 선택은 좋았습니다, 노린 코스에는 손에서
+        // 빠졌습니다"는 한 회차에 수백 번 읽히는 비문이었다(QA P1-3). 조준 절은
+        // 밴드별 완성 문장으로 쓰고, 최하 밴드는 "노린 코스" 접두 자체가 성립하지
+        // 않으므로(공이 손에서 빠진 것) 접두 없이 말한다.
+        let aim: String = switch execution.executionQuality {
+        case 850...: "공은 노린 코스에 그대로 꽂혔습니다"
+        case 700..<850: "공이 노린 코스에 거의 붙었습니다"
+        case 520..<700: "공이 노린 코스에서 조금 벗어났습니다"
+        case 350..<520: "공이 노린 코스에서 많이 벗어났습니다"
+        default: "공이 손에서 빠졌습니다"
+        }
+        let selectionStem: String = switch selection {
+        case .poor: "위험했"
+        case .risky: "다소 위험했"
+        case .good: "좋았"
+        case .excellent: "매우 좋았"
+        }
+        // 선택과 조준의 방향이 같으면 순접(-고), 어긋나면 역접(-지만).
+        let selectionWasGood = selection == .good || selection == .excellent
+        let aimWasGood = execution.executionQuality >= 700
+        let connective = selectionWasGood == aimWasGood ? "고" : "지만"
+        let detail = "공 선택은 \(selectionStem)\(connective), \(aim). \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
         return (short, detail)
     }
 
