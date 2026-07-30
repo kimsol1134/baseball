@@ -401,10 +401,12 @@ private struct SchoolSelectionCard: View {
                         Divider()
                         // 3년을 함께할 두 사람이다. 이름만 적혀 있으면 학교 선택이
                         // 스펙 비교표가 되고, 누구와 지낼지는 선택에 들어오지 않는다.
+                        // 네 학교의 감독이 나란한 목록 — 사진 3종으로는 중복이 필연이라
+                        // 절차 아바타(전원 다른 얼굴)를 쓴다. 사진은 1:1 장면의 것이다.
                         AvatarRow(seed: school.coachName, role: .coach,
-                                  name: "\(school.coachName) 감독", caption: school.coachArchetype, size: 40)
+                                  name: "\(school.coachName) 감독", caption: school.coachArchetype, size: 40, usesPhoto: false)
                         AvatarRow(seed: school.catcherName, role: .catcher,
-                                  name: "\(school.catcherName) 포수", caption: school.catcherArchetype, size: 40)
+                                  name: "\(school.catcherName) 포수", caption: school.catcherArchetype, size: 40, usesPhoto: false)
                     }
                     .padding(BaseballMetrics.gutter)
                     .frame(maxWidth: .infinity, alignment: .leading)

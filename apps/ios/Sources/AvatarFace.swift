@@ -354,10 +354,15 @@ struct PortraitView: View {
     let seed: String
     let role: AvatarFace.Role
     var size: CGFloat = 46
+    /// 목록(학교 선택처럼 같은 역할이 나란한 화면)에서는 사진을 쓰지 않는다 —
+    /// 변주 3장으로는 중복이 필연이고, 같은 얼굴 둘이 나란히 서는 순간 깨진다
+    /// (실기기 피드백). 절차 아바타는 이름마다 전부 다르다.
+    var usesPhoto = true
 
     private static let variants = 3
 
     private var assetName: String? {
+        guard usesPhoto else { return nil }
         let index = 1 + Int(AvatarParts.hash("portrait:\(seed)") % UInt32(Self.variants))
         switch role {
         case .coach: return "PortraitCoach\(index)"
@@ -391,11 +396,12 @@ struct AvatarRow<Trailing: View>: View {
     let name: String
     let caption: String?
     var size: CGFloat = 46
+    var usesPhoto = true
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            PortraitView(seed: seed, role: role, size: size)
+            PortraitView(seed: seed, role: role, size: size, usesPhoto: usesPhoto)
             VStack(alignment: .leading, spacing: 1) {
                 Text(name).font(.subheadline.weight(.bold))
                 if let caption {
@@ -412,7 +418,7 @@ struct AvatarRow<Trailing: View>: View {
 }
 
 extension AvatarRow where Trailing == EmptyView {
-    init(seed: String, role: AvatarFace.Role, name: String, caption: String? = nil, size: CGFloat = 46) {
-        self.init(seed: seed, role: role, name: name, caption: caption, size: size) { EmptyView() }
+    init(seed: String, role: AvatarFace.Role, name: String, caption: String? = nil, size: CGFloat = 46, usesPhoto: Bool = true) {
+        self.init(seed: seed, role: role, name: name, caption: caption, size: size, usesPhoto: usesPhoto) { EmptyView() }
     }
 }

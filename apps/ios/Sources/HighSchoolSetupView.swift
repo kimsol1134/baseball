@@ -462,10 +462,12 @@ private struct PresetRow: View {
                 // 스타일 아트 — 3년을 함께할 몸을 고르는 화면이 표(스탯)로만 말하면
                 // 첫인상 구간을 통째로 버리는 것이다. 이미지가 없으면 지금 그대로.
                 if UIImage(named: "PresetArt-\(preset.id)") != nil {
+                    // 가운데 크롭은 와인드업의 머리를 잘랐다(실기기 피드백) —
+                    // 위 정렬 밴드로 인물의 상단을 지킨다.
                     Image("PresetArt-\(preset.id)")
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 96)
+                        .scaledToFill()
+                        .frame(height: 150, alignment: .top)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 HStack(spacing: 10) {
