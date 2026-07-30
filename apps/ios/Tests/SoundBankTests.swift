@@ -118,6 +118,15 @@ final class SoundBankTests: XCTestCase {
         XCTAssertLessThan(ratio, 1.6, "루프의 처음과 끝 크기가 \(ratio)배 차이납니다. 반복할 때 튑니다.")
     }
 
+    /// ObjC 심이 NSException을 실제로 삼키는지 — 이 보장이 깨지면 지연 재생 큐가
+    /// 죽은 오디오 엔진에 버퍼를 걸 때 앱이 통째로 죽는다(TestFlight 크래시 AOE-R6qN).
+    func testExceptionCatcherSwallowsNSExceptions() {
+        XCTAssertTrue(ExceptionCatcher.catchException { _ = 1 + 1 })
+        XCTAssertFalse(ExceptionCatcher.catchException {
+            NSException(name: .genericException, reason: "시험용", userInfo: nil).raise()
+        })
+    }
+
     /// 소리 종류마다 음원이 있으면 쓰고 없으면 합성으로 간다. 그 갈림이 실제로 작동하는지 본다.
     func testAssetMappingCoversPlayableCues() {
         XCTAssertEqual(SoundAsset.asset(for: .batContact(power: 0.9)), .batContactHard)

@@ -100,6 +100,18 @@ final class GameAudio {
     private var musicPlayer: AVAudioPlayerNode?
 
     private init() {
+        // 전화·시리·이어폰 분리는 엔진을 밖에서 멈춘다. 그 순간을 우리가 먼저 알고
+        // 접어야 지연 재생 큐가 죽은 엔진에 버퍼를 걸지 않는다.
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { GameAudio.shared.isRunning = false }
+        }
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main
+        ) { _ in
+            MainActor.assumeIsolated { GameAudio.shared.isRunning = false }
+        }
         let defaults = UserDefaults.standard
         defaults.register(defaults: [Self.soundKey: true, Self.hapticsKey: true])
         defaults.register(defaults: [Self.musicKey: true])
@@ -172,13 +184,27 @@ final class GameAudio {
 
     private func playSample(_ buffer: AVAudioPCMBuffer, gain: Float) {
         guard !samplePlayers.isEmpty else { return }
+        // play()의 가드 이후에도 엔진은 밖에서 멈출 수 있다 — 특히 소리 박자가 생긴
+        // 뒤로는 투구 1~1.5초 뒤에 지연 큐가 발화하므로, 그 사이 인터럽션·백그라운드
+        // 전환이 끼면 아래 scheduleBuffer가 NSException을 던져 앱이 통째로 죽는다
+        // (TestFlight 크래시 AOE-R6qN, 빌드 12). 재확인 + ObjC 심으로 이중 방어한다.
+        guard engine.isRunning else {
+            isRunning = false
+            return
+        }
         let player = samplePlayers[nextPlayer]
         nextPlayer = (nextPlayer + 1) % samplePlayers.count
         player.volume = gain
         // 이미 무언가 울리고 있으면 멈추고 새로 건다. 미트 소리가 겹쳐 뭉치는 것보다 낫다.
-        player.stop()
-        player.scheduleBuffer(buffer, at: nil, options: [.interrupts], completionHandler: nil)
-        player.play()
+        let survived = ExceptionCatcher.catchException {
+            player.stop()
+            player.scheduleBuffer(buffer, at: nil, options: [.interrupts], completionHandler: nil)
+            player.play()
+        }
+        if !survived {
+            // 소리는 게임의 전제 조건이 아니다. 조용히 접고 다음 play()가 재시작한다.
+            isRunning = false
+        }
     }
 
     private func attachNodesIfNeeded() {

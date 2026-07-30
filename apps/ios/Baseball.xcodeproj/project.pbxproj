@@ -13,6 +13,7 @@
 		0E8B47740AB64ADAAD5B3CCF /* MobileCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */; };
 		13C737FE1665F41707DAA29E /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0414F684F40EFF55736026F /* Haptics.swift */; };
 		13EA77018AE302361EDCB5D0 /* BaseballApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */; };
+		1FFF80CE5E3E359F4EB4BE24 /* ExceptionCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = BBE3704F64563F164CBC134B /* ExceptionCatcher.m */; };
 		2002DF8C14E6ACE3382A1C57 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8C9444147D2AD6F238142F71 /* PrivacyInfo.xcprivacy */; };
 		200EF99598BFB8511E960E60 /* AchievementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF6E7A55BE0B0DB5D70E46A /* AchievementStore.swift */; };
 		2105A4026AD256C1307FDCAA /* HighSchoolPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B08F1209CBA0DDEF9A93A9A /* HighSchoolPresentation.swift */; };
@@ -123,15 +124,18 @@
 		907AEA8BF7BCC3156FC0CCA1 /* TrajectorySample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectorySample.swift; sourceTree = "<group>"; };
 		95282FF06EE465F155ADEDBE /* BaseballIOSTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BaseballIOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A1FF7372CAEE9C5547CF458 /* AchievementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsView.swift; sourceTree = "<group>"; };
+		9CD9548761DD9A3D82C5232D /* ExceptionCatcher.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExceptionCatcher.h; sourceTree = "<group>"; };
 		A0414F684F40EFF55736026F /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		AB871919CDBE86B35708EEBF /* HighSchoolCareerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerView.swift; sourceTree = "<group>"; };
 		B19519846B2DF9369A5DA8FC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B6FD9FC4DABDF4993821FE27 /* BaseballIOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BaseballIOS.entitlements; sourceTree = "<group>"; };
+		BBE3704F64563F164CBC134B /* ExceptionCatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ExceptionCatcher.m; sourceTree = "<group>"; };
 		BFE0F40C01B6D49B74C3C25A /* HighSchoolCareerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerStore.swift; sourceTree = "<group>"; };
 		C5042CCB3A22057F66C30688 /* SaveSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveSync.swift; sourceTree = "<group>"; };
 		C84D0F09EB96CC29A52B238F /* PitchSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchSessionTests.swift; sourceTree = "<group>"; };
 		C95C0C193AE57D564D00ED12 /* RecordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordView.swift; sourceTree = "<group>"; };
 		CAD4A6060A2CDCE715AC68FA /* SoundBankTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundBankTests.swift; sourceTree = "<group>"; };
+		CAE818C69560F1A67590ECA0 /* BaseballIOS-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "BaseballIOS-Bridging-Header.h"; sourceTree = "<group>"; };
 		CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobileCareerStore.swift; sourceTree = "<group>"; };
 		CDD8B42501E979FDCAA6CA15 /* PitchDramaRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchDramaRenderTests.swift; sourceTree = "<group>"; };
 		D56DF85AD3C0B33592326F37 /* CareerBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerBootstrap.swift; sourceTree = "<group>"; };
@@ -197,6 +201,7 @@
 				88829ECACC67B2EBCDBC9538 /* Assets.xcassets */,
 				77876A24C70FB76B972B1BFB /* AvatarFace.swift */,
 				2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */,
+				CAE818C69560F1A67590ECA0 /* BaseballIOS-Bridging-Header.h */,
 				B6FD9FC4DABDF4993821FE27 /* BaseballIOS.entitlements */,
 				D56DF85AD3C0B33592326F37 /* CareerBootstrap.swift */,
 				3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */,
@@ -204,6 +209,8 @@
 				F78149DDA8DDF2C728669E79 /* ClimaxViews.swift */,
 				4098E0B38E32E1CCF6BC0549 /* DeliveryControl.swift */,
 				0AFB40C23D4863D2F7565C54 /* DesignSystem.swift */,
+				9CD9548761DD9A3D82C5232D /* ExceptionCatcher.h */,
+				BBE3704F64563F164CBC134B /* ExceptionCatcher.m */,
 				8B412E9D5634221ADBA8ED35 /* GameAudio.swift */,
 				3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */,
 				D6400E3C7B6732A0F7E8EE94 /* GameLineFormat.swift */,
@@ -432,6 +439,7 @@
 				E40F7D998E88BAC84C6D72C7 /* ClimaxViews.swift in Sources */,
 				DD20655886A0B897AA32DC44 /* DeliveryControl.swift in Sources */,
 				05793DCA31745B85E30FE7DC /* DesignSystem.swift in Sources */,
+				1FFF80CE5E3E359F4EB4BE24 /* ExceptionCatcher.m in Sources */,
 				74CC5DD9D7ECD32F61707E5D /* GameAudio.swift in Sources */,
 				081602F5FA74589497AF94AC /* GameAudioCueMapping.swift in Sources */,
 				A8800D4D45BE21DE1315474E /* GameLineFormat.swift in Sources */,
@@ -676,6 +684,7 @@
 				PRODUCT_NAME = BaseballIOS;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/BaseballIOS-Bridging-Header.h";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -718,6 +727,7 @@
 				PRODUCT_NAME = BaseballIOS;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/BaseballIOS-Bridging-Header.h";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
