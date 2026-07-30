@@ -57,12 +57,21 @@ struct HighSchoolSetupView: View {
             header
             ScrollView {
                 VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                    switch step {
-                    case .name: nameStep
-                    case .region: regionStep
-                    case .style: styleStep
-                    case .handicap: handicapStep
+                    // 크로스페이드는 전환 중 두 단계의 한글이 겹쳐 보인다 — 첫 30초에
+                    // "고장난 앱"으로 읽히는 P0(QA 문서). 밀어내기는 겹치지 않는다.
+                    Group {
+                        switch step {
+                        case .name: nameStep
+                        case .region: regionStep
+                        case .style: styleStep
+                        case .handicap: handicapStep
+                        }
                     }
+                    .id(step)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
                 }
                 .padding(BaseballMetrics.gutter)
             }

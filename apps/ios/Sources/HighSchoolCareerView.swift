@@ -158,7 +158,9 @@ struct HighSchoolCareerView: View {
                     .padding(BaseballMetrics.gutter)
                 }
                 .background(BaseballTheme.canvas)
-                .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
+                // 화면 전체에 .animation(value:)을 걸면 같은 국면 안의 카드 교체
+                // (훈련→훈련)에서 옛 글자와 새 글자가 두 겹으로 보인다(QA P0-2).
+                // 갱신은 즉시가 맞다 — 회차당 수백 번 겪는 전환은 연출보다 빠름이 이긴다.
                 .phaseCurtain(state.phase, disabled: reduceMotion)
             }
         }
@@ -321,6 +323,14 @@ private struct PrologueCard: View {
                     }
                 }
             }
+            // 주 행동이 능력치 표보다 먼저다 — 첫 화면에서 "다음에 뭘 누르지"가
+            // 접힘선 아래에 있으면 유료 게임의 첫 30초를 버리는 것이다(QA P0-1).
+            // 이 게임에서 가장 좋은 것은 투구다. 사는 사람이 그걸 두 번째 탭에서 만나게 한다.
+            PrimaryButton(title: "첫 공을 던진다", identifier: "hs.prologue.throw", action: onThrow)
+            Button("바로 학교 고르기", action: onSkip)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("hs.prologue.continue")
             BaseballCard(title: "지금의 나") {
                 VStack(alignment: .leading, spacing: 10) {
                     // 재능 등급과 한계선을 함께 보여 준다. 이 회차가 어떤 투수인지가
@@ -332,12 +342,6 @@ private struct PrologueCard: View {
                     AbilityGaugeView(label: "체력", value: state.pitcher.stamina, talent: talent.stamina)
                 }
             }
-            // 이 게임에서 가장 좋은 것은 투구다. 사는 사람이 그걸 두 번째 탭에서 만나게 한다.
-            PrimaryButton(title: "첫 공을 던진다", identifier: "hs.prologue.throw", action: onThrow)
-            Button("바로 학교 고르기", action: onSkip)
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                .accessibilityIdentifier("hs.prologue.continue")
         }
     }
 }
@@ -1184,8 +1188,10 @@ private struct PhaseCurtain: ViewModifier {
             }
             .onChange(of: phase) { _, _ in
                 guard !disabled else { return }
-                withAnimation(.easeIn(duration: 0.08)) { dim = 1 }
-                withAnimation(.easeOut(duration: 0.14).delay(0.34)) { dim = 0 }
+                // 총 0.24초 — 국면 전환은 회차당 수십 번이라, 커튼이 길면 "검은 화면"
+                // 프레임이 눈에 밟힐 만큼 자주 보인다(QA P0-2: 무작위 110장 중 2장에 걸림).
+                withAnimation(.easeIn(duration: 0.06)) { dim = 1 }
+                withAnimation(.easeOut(duration: 0.10).delay(0.08)) { dim = 0 }
             }
     }
 }

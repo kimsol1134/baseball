@@ -17,10 +17,25 @@ struct RecordView: View {
             } else if let hs = highSchool.state {
                 HighSchoolRecordBoard(state: hs, archive: highSchool.archive, highSchoolPersonality: highSchool.personality)
             } else if !highSchool.archive.isEmpty {
-                // 회차를 끝내고 아직 새로 시작하지 않은 상태. 역사는 남아 있다.
+                // 회차를 끝내고 아직 새로 시작하지 않은 상태 — 로그라이트의 재시작 동력은
+                // "내가 남긴 것"을 보는 순간에 생긴다. 방금 끝낸 회차의 카드가 먼저 서고,
+                // 그 아래 통산 보드(다음 이정표·별명 도감)가 다음 회차의 이유를 만든다.
                 ScrollView {
-                    LifeArchiveSection(records: highSchool.archive)
-                        .padding(BaseballMetrics.gutter)
+                    VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                        if let last = highSchool.archive.first {
+                            BaseballCard(title: "\(last.lifeNumber)회차가 남긴 것", tone: .milestone) {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    LifeCardView(record: last)
+                                        .scaleEffect(0.72, anchor: .top)
+                                        .frame(height: LifeCardView.size.height * 0.72)
+                                        .frame(maxWidth: .infinity)
+                                    LifeCardShareButton(record: last)
+                                }
+                            }
+                        }
+                        LifeArchiveSection(records: highSchool.archive)
+                    }
+                    .padding(BaseballMetrics.gutter)
                 }
                 .background(BaseballTheme.canvas)
             } else {
@@ -99,8 +114,19 @@ private struct HighSchoolRecordBoard: View {
                     }
                 }
 
+                if lines.isEmpty, state.performance.importantGamesCompleted == 0 {
+                    // 0과 대시 12칸의 벽은 "내가 이해 못 하는 빈 표"다(QA P1-13).
+                    BaseballCard(title: "기록") {
+                        Text("첫 등판을 던지면 여기에 쌓입니다. 탈삼진·볼넷·실점부터 WHIP·FIP 같은 세부 지표까지, 던진 만큼 정확해집니다.")
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } else {
                 AdvancedStatsCard(
-                    title: "고교 통산 지표",
+                    // 회차 카드·아카이브의 "탈삼진"은 직접 등판 기준이라, 기준을 안 적으면
+                    // 같은 회차에 두 개의 탈삼진이 존재하게 된다(QA P1-5).
+                    title: "고교 통산 지표 · 팀 경기 포함",
                     outs: lines.reduce(0) { $0 + $1.outs },
                     hits: lines.reduce(0) { $0 + ($1.hits ?? 0) },
                     walks: lines.reduce(0) { $0 + $1.walks },
@@ -109,6 +135,7 @@ private struct HighSchoolRecordBoard: View {
                     runsAllowed: lines.reduce(0) { $0 + $1.runsAllowed },
                     lines: lines
                 )
+                }
 
                 if lines.isEmpty {
                     BaseballCard(title: "경기 기록") {

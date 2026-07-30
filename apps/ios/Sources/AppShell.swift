@@ -34,6 +34,16 @@ struct AppShell: View {
     /// 시작"뿐이고, 그건 되돌릴 수 없는 선택이라 확인을 거쳐 간다.
     private var showsHighSchool: Bool { pro.loadState != .ready }
 
+    /// 첫 회차의 도입부(오프닝·선수 만들기·프롤로그)에는 탭 바를 감춘다.
+    ///
+    /// 게임을 시작하기도 전에 빈 탭 3개가 보이면 "게임"이 아니라 "앱 설정"으로 읽히고,
+    /// 프로 탭의 건너뛰기를 호기심에 눌러 본편(3년 육성·환생)을 통째로 우회할 수 있다
+    /// (QA P1-12). 첫 등판을 던질 즈음이면 기록 탭에도 보여 줄 것이 생긴다.
+    private var hidesTabBarForOnboarding: Bool {
+        highSchool.archive.isEmpty && pro.loadState != .ready
+            && (highSchool.state == nil || highSchool.state?.phase == .prologue)
+    }
+
     var body: some View {
         TabView(selection: $selection) {
             if showsHighSchool {
@@ -48,6 +58,7 @@ struct AppShell: View {
                         hasEnteredPro: pro.loadState == .ready
                     )
                     // 키아트가 제목을 맡는다. 내비게이션 바를 두면 제목이 두 번 나오고 눈썹 라벨을 가린다.
+                    .toolbar(hidesTabBarForOnboarding ? .hidden : .visible, for: .tabBar)
                     .toolbar(.hidden, for: .navigationBar)
                 }
                 .tabItem { Label(AppTab.highSchool.title, systemImage: AppTab.highSchool.icon) }
@@ -81,7 +92,7 @@ struct AppShell: View {
         case .loading:
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(BaseballTheme.canvas)
         case .needsSetup:
-            ProLockedView(pro: pro)
+            ProLockedView(pro: pro, hasFinishedALife: !highSchool.archive.isEmpty)
         case .failed(let message):
             CareerFailureView(message: message, career: pro)
         case .ready:
@@ -100,6 +111,7 @@ struct AppShell: View {
 /// 고교를 거치지 않고 바로 프로부터 하고 싶은 사용자를 위한 우회로. 정규 경로는 고교 드래프트다.
 private struct ProLockedView: View {
     let pro: MobileCareerStore
+    let hasFinishedALife: Bool
     @State private var showsSetup = false
 
     var body: some View {
@@ -114,12 +126,20 @@ private struct ProLockedView: View {
                     Text("고교 탭에서 3년을 보내고 드래프트를 통과하면, 그때의 능력을 그대로 안고 프로에 들어갑니다.")
                         .font(.subheadline)
                 }
-                Button("고교를 건너뛰고 바로 프로 시작") { showsSetup = true }
-                    .buttonStyle(.bordered)
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                Text("건너뛰면 지명 결과가 시드에서 만들어집니다. 고교 3년의 성장과 기억은 없습니다.")
-                    .font(.caption)
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                // 건너뛰기는 본편을 한 번 완주한 사람의 문이다. 처음 켠 사람이 이 문으로
+                // 들어가면 이 게임에서 가장 좋은 것(3년 육성·환생)을 못 본 채 평가한다.
+                if hasFinishedALife {
+                    Button("고교를 건너뛰고 바로 프로 시작") { showsSetup = true }
+                        .buttonStyle(.bordered)
+                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    Text("건너뛰면 지명 결과가 시드에서 만들어집니다. 고교 3년의 성장과 기억은 없습니다.")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                } else {
+                    Text("한 회차를 끝내면 고교를 건너뛰는 길도 열립니다.")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                }
             }
             .padding(BaseballMetrics.gutter)
         }

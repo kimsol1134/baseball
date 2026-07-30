@@ -308,11 +308,15 @@ struct HighlightStamp: View {
         case inningEndingStrikeout
         /// 2타자 연속부터. 숫자가 올라갈수록 이 스탬프 하나가 하이라이트가 된다.
         case strikeoutStreak(count: Int)
+        /// 실점 없이 이닝을 닫은 마지막 아웃(삼진 외). 병살·야수 정면으로 위기를 막는
+        /// 가장 흔한 명장면인데 아무 표시가 없었다(QA P1-7).
+        case inningShutdown
 
         var title: String {
             switch self {
             case .homeRun: "홈런"
             case .inningEndingStrikeout, .strikeoutStreak: "삼진"
+            case .inningShutdown: "위기 차단"
             }
         }
 
@@ -321,6 +325,7 @@ struct HighlightStamp: View {
             case .homeRun(let distance): distance > 0 ? "\(distance)m" : nil
             case .inningEndingStrikeout: "이닝 종료"
             case .strikeoutStreak(let count): "\(count)타자 연속"
+            case .inningShutdown: "무실점 이닝 종료"
             }
         }
 
@@ -329,6 +334,7 @@ struct HighlightStamp: View {
             case .homeRun: BaseballTheme.negative
             case .inningEndingStrikeout: BaseballTheme.action
             case .strikeoutStreak: BaseballTheme.milestone
+            case .inningShutdown: BaseballTheme.positive
             }
         }
     }
@@ -347,7 +353,8 @@ struct HighlightStamp: View {
         plateResult: PlateAppearanceResult?,
         inningEnded: Bool,
         landingDistanceTenthsMeters: Int?,
-        consecutiveStrikeouts: Int = 0
+        consecutiveStrikeouts: Int = 0,
+        runsScored: Int = 0
     ) -> Kind? {
         if outcome == .homeRun {
             return .homeRun(distanceMeters: (landingDistanceTenthsMeters ?? 0) / 10)
@@ -359,6 +366,9 @@ struct HighlightStamp: View {
         }
         if plateResult == .strikeout, inningEnded {
             return .inningEndingStrikeout
+        }
+        if inningEnded, plateResult == .inPlayOut, runsScored == 0 {
+            return .inningShutdown
         }
         return nil
     }

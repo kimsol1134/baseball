@@ -307,7 +307,8 @@ struct PitchView: View {
                         plateResult: result.snapshot.result,
                         inningEnded: result.snapshot.inningTransition?.inningEnded ?? false,
                         landingDistanceTenthsMeters: result.snapshot.fieldingResolution?.landingDistanceTenthsMeters,
-                        consecutiveStrikeouts: session.consecutiveStrikeouts
+                        consecutiveStrikeouts: session.consecutiveStrikeouts,
+                        runsScored: result.snapshot.runsScored
                     ) {
                         HighlightStamp(kind: kind, velocityTenthsKPH: result.snapshot.execution.velocityTenthsKPH)
                             .id(result.snapshot.revision)

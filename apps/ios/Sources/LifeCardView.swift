@@ -61,11 +61,19 @@ struct LifeCardView: View {
                 in: RoundedRectangle(cornerRadius: 12)
             )
 
-            HStack(spacing: 0) {
-                stat("경기", record.games)
-                stat("탈삼진", record.strikeouts)
-                stat("볼넷", record.walks)
-                stat("실점", record.runsAllowed)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 0) {
+                    stat("경기", record.games)
+                    stat("탈삼진", record.strikeouts)
+                    stat("볼넷", record.walks)
+                    stat("실점", record.runsAllowed)
+                }
+                // 기록 탭의 통산 지표는 팀 자동 경기까지 합친다 — 기준을 안 적으면
+                // 같은 회차에 서로 다른 "탈삼진"이 존재하게 된다(QA P1-5).
+                Text("직접 등판 기준")
+                    .font(.caption2)
+                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
 
             if let nicknames = record.nicknames, !nicknames.isEmpty {

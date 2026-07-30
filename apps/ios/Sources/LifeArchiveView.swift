@@ -74,7 +74,9 @@ struct LifeArchiveSection: View {
                         .frame(height: 1)
                 }
                 ForEach(records) { record in
-                    LifeArchiveRow(record: record)
+                    // 최신 회차는 기본 펼침 — 방금 끝낸 3년이 접힌 한 줄로 수축되면
+                    // 2회차를 시작할 이유가 화면에 없다(QA P0-3).
+                    LifeArchiveRow(record: record, initiallyExpanded: record.id == records.first?.id)
                     if record.id != records.last?.id {
                         Rectangle()
                             .fill(BaseballTheme.border.opacity(0.35))
@@ -101,7 +103,12 @@ struct LifeArchiveSection: View {
 private struct LifeArchiveRow: View {
     let record: HighSchoolCareerStore.LifeRecord
 
-    @State private var expanded = false
+    @State private var expanded: Bool
+
+    init(record: HighSchoolCareerStore.LifeRecord, initiallyExpanded: Bool = false) {
+        self.record = record
+        _expanded = State(initialValue: initiallyExpanded)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
