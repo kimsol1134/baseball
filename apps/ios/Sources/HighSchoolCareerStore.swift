@@ -58,6 +58,8 @@ final class HighSchoolCareerStore {
         var nicknames: [String]? = nil
         /// 이번 회차의 연대기("2학년 여름 — …"). 없는 옛 기록은 nil이다.
         var chronicle: [String]? = nil
+        /// 이 회차가 어떤 사람이었는가. 없는 옛 기록은 nil이다.
+        var personality: String? = nil
 
         /// "미지명 · 평가 57점" / "3라운드 서울 …". 목록 한 줄에 결말이 들어가야 한다.
         var outcomeLine: String {
@@ -118,6 +120,20 @@ final class HighSchoolCareerStore {
     private(set) var chapterStartStrikeouts: Int = 0
     /// 목표 축하를 이미 한 챕터 번호. 같은 챕터에서 두 번 축하하면 축하가 값싸진다.
     private(set) var goalCelebratedChapter: Int?
+    /// 관계 응답 누적 — 성격은 선택이 만든다. 경기 성적은 여기 한 획도 못 긋는다.
+    private(set) var responseTally = ResponseTally()
+
+    struct ResponseTally: Codable, Equatable {
+        var listen = 0
+        var explain = 0
+        var challenge = 0
+
+        var personality: Personality? {
+            PersonalityRules.personality(listen: listen, explain: explain, challenge: challenge)
+        }
+    }
+
+    var personality: Personality? { responseTally.personality }
 
     struct ChronicleEntry: Codable, Equatable {
         /// 언제였는가 — "2학년 여름".
@@ -188,6 +204,7 @@ final class HighSchoolCareerStore {
             chronicle = []
             chapterStartStrikeouts = 0
             goalCelebratedChapter = nil
+            responseTally = ResponseTally()
             AchievementStore.shared.record(AchievementRules.fromLifeNumber(carried.lifeNumber))
             AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
             result = created
@@ -243,7 +260,21 @@ final class HighSchoolCareerStore {
     }
 
     func resolveRelationship(_ response: RelationshipResponse) {
+        let before = responseTally.personality
         perform { try engine.resolveRelationship(.init(seed: $0.nextSeed, state: $0.snapshot, response: response)) }
+        switch response {
+        case .listen: responseTally.listen += 1
+        case .explain: responseTally.explain += 1
+        case .challenge: responseTally.challenge += 1
+        }
+        // 성격이 처음 굳거나 서서히 바뀐 순간은 연대기에 남긴다 — 능력치가 아니라
+        // 사람됨의 사건이다.
+        if let after = responseTally.personality, after != before {
+            note(before == nil
+                 ? "성격이 자리 잡았습니다 — '\(after.title)'. \(after.scoutLine)"
+                 : "성격이 달라졌습니다 — '\(after.title)'. 사람은 고정된 값이 아닙니다.")
+        }
+        save()
     }
 
     func chooseAwakening(_ awakening: AwakeningID) {
@@ -394,7 +425,7 @@ final class HighSchoolCareerStore {
         perform(summary: "기억 \(chosen.count)장을 다음 회차로 가져갑니다.", cue: .growth) {
             try engine.selectLegacy(.init(seed: $0.nextSeed, state: $0.snapshot, memoryCards: chosen))
         }
-        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance, nicknames: nicknames, chronicle: chronicle)
+        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance, nicknames: nicknames, chronicle: chronicle, personality: personality)
         inheritance = Self.nextInheritance(from: current.snapshot, memories: chosen, previous: inheritance)
         // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
         archive.removeAll { $0.lifeNumber == closed.lifeNumber }
@@ -424,7 +455,8 @@ final class HighSchoolCareerStore {
         memories: [MemoryCardID],
         previous: Inheritance,
         nicknames: [Nickname] = [],
-        chronicle: [ChronicleEntry] = []
+        chronicle: [ChronicleEntry] = [],
+        personality: Personality? = nil
     ) -> LifeRecord {
         LifeRecord(
             lifeNumber: state.lifeNumber,
@@ -446,7 +478,8 @@ final class HighSchoolCareerStore {
             harshness: state.difficulty.careerHarshness.rawValue,
             schoolStrength: state.school.map { HighSchoolPresentation.focus($0.strength) },
             nicknames: nicknames.isEmpty ? nil : nicknames.map(\.title),
-            chronicle: chronicle.isEmpty ? nil : chronicle.map { "\($0.stage) — \($0.text)" }
+            chronicle: chronicle.isEmpty ? nil : chronicle.map { "\($0.stage) — \($0.text)" },
+            personality: personality?.title
         )
     }
 
@@ -521,7 +554,7 @@ final class HighSchoolCareerStore {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
         savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, revision: savedRevision)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, responseTally: responseTally, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -551,6 +584,8 @@ final class HighSchoolCareerStore {
         /// 챕터 목표 진행 기준점·축하 여부. 없는 옛 저장본은 현재 값으로 초기화된다.
         var chapterStartStrikeouts: Int? = nil
         var goalCelebratedChapter: Int? = nil
+        /// 성격을 만든 선택들. 없는 옛 저장본은 0에서 시작한다.
+        var responseTally: ResponseTally? = nil
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
         var revision: UInt64?
 
@@ -572,6 +607,7 @@ final class HighSchoolCareerStore {
         chapterStartStrikeouts = record.chapterStartStrikeouts
             ?? record.result?.snapshot.performance.strikeouts ?? 0
         goalCelebratedChapter = record.goalCelebratedChapter
+        responseTally = record.responseTally ?? ResponseTally()
         savedRevision = record.effectiveRevision
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return false }

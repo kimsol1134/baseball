@@ -15,7 +15,7 @@ struct RecordView: View {
             if let state = career.state {
                 RecordBoard(state: state, archive: highSchool.archive)
             } else if let hs = highSchool.state {
-                HighSchoolRecordBoard(state: hs, archive: highSchool.archive)
+                HighSchoolRecordBoard(state: hs, archive: highSchool.archive, highSchoolPersonality: highSchool.personality)
             } else if !highSchool.archive.isEmpty {
                 // 회차를 끝내고 아직 새로 시작하지 않은 상태. 역사는 남아 있다.
                 ScrollView {
@@ -40,6 +40,7 @@ struct RecordView: View {
 private struct HighSchoolRecordBoard: View {
     let state: HighSchoolCareerSnapshot
     let archive: [HighSchoolCareerStore.LifeRecord]
+    var highSchoolPersonality: Personality?
 
     private var lines: [ProGameLine] { state.seasonLog ?? [] }
 
@@ -68,6 +69,23 @@ private struct HighSchoolRecordBoard: View {
                 }
 
                 ProspectRankingCard(state: state)
+
+                if let personality = highSchoolPersonality {
+                    BaseballCard(title: "스카우트 노트 — 기질") {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("'\(personality.title)'")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(BaseballTheme.milestone)
+                            Text(personality.scoutLine)
+                                .font(.footnote)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("성격은 선택이 만듭니다. 경기 성적은 성격을 바꾸지 못합니다.")
+                                .font(.caption2)
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                        }
+                    }
+                }
 
                 BaseballCard(title: "현재 능력") {
                     VStack(alignment: .leading, spacing: 10) {

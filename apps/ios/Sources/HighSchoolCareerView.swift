@@ -182,7 +182,7 @@ struct HighSchoolCareerView: View {
         case .chapterReview:
             ChapterReviewCard(state: state, onContinue: career.advanceChapter)
         case .draft:
-            DraftCard(state: state, chronicle: career.chronicle, onResolve: career.resolveDraft)
+            DraftCard(state: state, chronicle: career.chronicle, career: career, onResolve: career.resolveDraft)
         case .legacy:
             LegacyCard(career: career, state: state)
         case .completed:
@@ -886,6 +886,7 @@ private struct ChronicleCard: View {
 private struct DraftCard: View {
     let state: HighSchoolCareerSnapshot
     let chronicle: [HighSchoolCareerStore.ChronicleEntry]
+    let career: HighSchoolCareerStore
     let onResolve: () -> Void
 
     var body: some View {
@@ -893,6 +894,19 @@ private struct DraftCard: View {
             BaseballCard(title: "드래프트", tone: .milestone) {
                 Text("3년의 기록이 평가됩니다. 지명 여부가 지금 정해집니다.")
                     .font(.subheadline)
+            }
+            if let personality = career.personality {
+                BaseballCard(title: "스카우트 평가서 — 기질") {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("'\(personality.title)'")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                        Text(personality.scoutLine)
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
             BaseballCard(title: "3년의 기록") {
                 VStack(alignment: .leading, spacing: 4) {
@@ -925,7 +939,8 @@ private struct LegacyCard: View {
             // 숫자 목록을 보고 작별하는 것은 다른 경험이다.
             let provisional = HighSchoolCareerStore.lifeRecord(
                 from: state, memories: career.selectedMemories, previous: career.inheritance,
-                nicknames: career.nicknames, chronicle: career.chronicle
+                nicknames: career.nicknames, chronicle: career.chronicle,
+                personality: career.personality
             )
             BaseballCard(title: "회차 카드", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 10) {

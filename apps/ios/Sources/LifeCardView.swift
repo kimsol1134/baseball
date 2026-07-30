@@ -35,7 +35,8 @@ struct LifeCardView: View {
                     Text(record.playerName)
                         .font(BaseballType.display)
                         .foregroundStyle(BaseballTheme.textPrimary)
-                    Text(record.schoolName ?? "학교 미정")
+                    Text([record.schoolName ?? "학교 미정", record.personality.map { "'\($0)'" }]
+                        .compactMap { $0 }.joined(separator: " · "))
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
