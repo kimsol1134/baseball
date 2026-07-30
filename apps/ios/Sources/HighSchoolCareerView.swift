@@ -141,6 +141,9 @@ struct HighSchoolCareerView: View {
                         if !career.buzz.isEmpty {
                             CommunityBuzzCard(lines: career.buzz)
                         }
+                        if !career.worldNews.isEmpty {
+                            CommunityBuzzCard(title: "전국의 소식", footnote: "라이벌들도 저마다의 3년을 살고 있습니다.", lines: career.worldNews)
+                        }
                         // 드래프트가 끝난 회차에 챕터 숙제는 소음이다.
                         if state.draftResult == nil {
                             ChapterGoalCard(state: state, career: career)
@@ -831,10 +834,12 @@ private struct ChapterGoalCard: View {
 /// 기사와 능력치는 공식 세계다. 애착은 비공식 세계에서 완성된다 — 잘 던지면
 /// 감탄하고, 볼넷이 쌓이면 냉정하게 놀리는 익명의 목소리. 그 냉정함까지가 세상이다.
 private struct CommunityBuzzCard: View {
+    var title = "그라운드 밖의 목소리"
+    var footnote = "익명 야구 게시판의 반응입니다."
     let lines: [String]
 
     var body: some View {
-        BaseballCard(title: "그라운드 밖의 목소리") {
+        BaseballCard(title: title) {
             VStack(alignment: .leading, spacing: 8) {
                 ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                     HStack(alignment: .top, spacing: 6) {
@@ -847,7 +852,7 @@ private struct CommunityBuzzCard: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                Text("익명 야구 게시판의 반응입니다.")
+                Text(footnote)
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.textTertiary)
             }

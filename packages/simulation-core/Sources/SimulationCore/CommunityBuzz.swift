@@ -83,6 +83,37 @@ public enum CommunityBuzz {
         return picked
     }
 
+    /// 챕터가 넘어갈 때 세계가 혼자 만든 사건들. 내 서사가 아니라 세계의 서사 —
+    /// 라이벌들이 저희끼리 이기고 지고 다치고 돌아온다. 이 소음이 있어야
+    /// 유망주 랭킹이 종이가 아니라 전장이 된다.
+    public static func rivalNews(careerID: String, chapterNumber: Int) -> [String] {
+        var generator = SplitMix64(
+            seed: StableHash.fnv1a64Value("rival-news|\(careerID)|\(chapterNumber)")
+        )
+        // 랭킹 명단과 같은 시드 구성이라 같은 회차에서는 같은 인물들이 움직인다.
+        let board = ProspectRanking.board(
+            careerID: careerID, playerName: "", playerSchool: "",
+            performance: CareerPerformanceSnapshot()
+        ).filter { !$0.isPlayer }
+        guard board.count >= 4 else { return [] }
+        let templates: [(Int) -> String] = [
+            { "\(board[$0].name)(\(board[$0].school))이 지역 대회 결승에서 완봉승. 스카우트석이 가득 찼다는 후문." },
+            { "\(board[$0].name)(\(board[$0].school)), 팔꿈치 통증으로 등판을 걸렀다. 관리 실패라는 말과 신중하다는 말이 갈린다." },
+            { "\(board[$0].name)(\(board[$0].school))이 한 경기 탈삼진 12개 — 또래 최고 기록에 다가섰다." },
+            { "\(board[$0].name)(\(board[$0].school))의 구속이 봄보다 3km/h 올랐다. 겨울에 무엇을 했는지 다들 궁금해한다." },
+            { "\(board[$0].name)(\(board[$0].school)), 부진 끝에 선발에서 밀렸다. 재조정이 필요해 보인다." },
+        ]
+        var lines: [String] = []
+        var used = Set<Int>()
+        while lines.count < 2 {
+            let who = generator.nextInt(upperBound: min(8, board.count))
+            guard !used.contains(who) else { continue }
+            used.insert(who)
+            lines.append(templates[generator.nextInt(upperBound: templates.count)](who))
+        }
+        return lines
+    }
+
     private static func pick(_ generator: inout SplitMix64, _ pool: [String]) -> String {
         pool[generator.nextInt(upperBound: pool.count)]
     }

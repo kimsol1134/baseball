@@ -19,6 +19,18 @@ final class CommunityBuzzTests: XCTestCase {
         }
     }
 
+    /// 세계 뉴스 — 결정론이고, 랭킹 명단의 같은 인물들이 움직인다.
+    func testRivalNewsIsDeterministicAndNamesRankedRivals() {
+        let a = CommunityBuzz.rivalNews(careerID: "w", chapterNumber: 3)
+        XCTAssertEqual(a, CommunityBuzz.rivalNews(careerID: "w", chapterNumber: 3))
+        XCTAssertEqual(a.count, 2)
+        XCTAssertNotEqual(a, CommunityBuzz.rivalNews(careerID: "w", chapterNumber: 4))
+        let board = ProspectRanking.board(careerID: "w", playerName: "", playerSchool: "",
+                                          performance: CareerPerformanceSnapshot())
+        XCTAssertTrue(a.allSatisfy { line in board.contains { line.contains($0.name) } },
+                      "뉴스의 주인공은 랭킹 명단의 인물이어야 합니다.")
+    }
+
     func testContextShapesTheVoice() {
         let shutout = CommunityBuzz.reactions(careerID: "ctx", gameNumber: 1, strikeouts: 7, walks: 0, runsAllowed: 0)
         XCTAssertTrue(shutout.contains { $0.contains("무실점") || $0.contains("못 봄") || $0.contains("수첩") || $0.contains("어떻게 되는 거임") })

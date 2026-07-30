@@ -116,6 +116,8 @@ final class HighSchoolCareerStore {
     /// 방금 경기에 대한 커뮤니티 반응. 저장하지 않는다 — careerID·경기 번호로
     /// 결정론이라 필요하면 언제든 다시 만들 수 있고, 반응은 "방금"의 것일 때만 살아 있다.
     private(set) var buzz: [String] = []
+    /// 챕터가 넘어갈 때 세계가 만든 사건들. 저장하지 않는다 — 결정론 재파생 가능.
+    private(set) var worldNews: [String] = []
     /// 이번 챕터가 시작될 때의 통산 탈삼진. 챕터 목표의 진행은 이 값과의 차이다.
     private(set) var chapterStartStrikeouts: Int = 0
     /// 목표 축하를 이미 한 챕터 번호. 같은 챕터에서 두 번 축하하면 축하가 값싸진다.
@@ -286,6 +288,10 @@ final class HighSchoolCareerStore {
     func advanceChapter() {
         perform { try engine.advanceChapter(.init(seed: $0.nextSeed, state: $0.snapshot)) }
         chapterStartStrikeouts = result?.snapshot.performance.strikeouts ?? chapterStartStrikeouts
+        if let snapshot = result?.snapshot {
+            worldNews = CommunityBuzz.rivalNews(careerID: snapshot.careerID, chapterNumber: snapshot.chapter.number)
+        }
+        buzz = []
         save()
     }
 
