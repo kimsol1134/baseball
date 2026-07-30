@@ -114,6 +114,10 @@ final class HighSchoolCareerStore {
     /// 방금 경기에 대한 커뮤니티 반응. 저장하지 않는다 — careerID·경기 번호로
     /// 결정론이라 필요하면 언제든 다시 만들 수 있고, 반응은 "방금"의 것일 때만 살아 있다.
     private(set) var buzz: [String] = []
+    /// 이번 챕터가 시작될 때의 통산 탈삼진. 챕터 목표의 진행은 이 값과의 차이다.
+    private(set) var chapterStartStrikeouts: Int = 0
+    /// 목표 축하를 이미 한 챕터 번호. 같은 챕터에서 두 번 축하하면 축하가 값싸진다.
+    private(set) var goalCelebratedChapter: Int?
 
     struct ChronicleEntry: Codable, Equatable {
         /// 언제였는가 — "2학년 여름".
@@ -182,6 +186,8 @@ final class HighSchoolCareerStore {
             // 별명과 연대기는 이번 회차의 것이다. 환생하면 새로 쓴다.
             nicknames = []
             chronicle = []
+            chapterStartStrikeouts = 0
+            goalCelebratedChapter = nil
             AchievementStore.shared.record(AchievementRules.fromLifeNumber(carried.lifeNumber))
             AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
             result = created
@@ -248,6 +254,8 @@ final class HighSchoolCareerStore {
 
     func advanceChapter() {
         perform { try engine.advanceChapter(.init(seed: $0.nextSeed, state: $0.snapshot)) }
+        chapterStartStrikeouts = result?.snapshot.performance.strikeouts ?? chapterStartStrikeouts
+        save()
     }
 
     /// 지명된 회차를 접고 기억 선택으로 들어간다. 미지명은 이미 그 단계에 있다.
@@ -295,6 +303,7 @@ final class HighSchoolCareerStore {
         let before = Set(nicknames.map(\.id))
         earnNicknames()
         noteGame(report: report, summary: summary)
+        celebrateChapterGoalIfCrossed()
         buzz = CommunityBuzz.reactions(
             careerID: self.result?.snapshot.careerID ?? "",
             gameNumber: self.result?.snapshot.performance.importantGamesCompleted ?? 0,
@@ -303,6 +312,23 @@ final class HighSchoolCareerStore {
             runsAllowed: report.runsAllowed,
             newNickname: nicknames.first { !before.contains($0.id) }?.title
         )
+    }
+
+    /// 챕터 목표를 방금 넘었으면 한 번만 축하한다. 보상은 능력치가 아니라
+    /// 축하와 기록이다 — 숫자 보상을 걸면 목표가 밸런스 뒷문이 된다.
+    private func celebrateChapterGoalIfCrossed() {
+        guard let snapshot = result?.snapshot else { return }
+        let chapter = snapshot.chapter.number
+        guard goalCelebratedChapter != chapter else { return }
+        let goal = ChapterGoal.goal(careerID: snapshot.careerID, chapterNumber: chapter)
+        let progress = snapshot.performance.strikeouts - chapterStartStrikeouts
+        guard progress >= goal.targetStrikeouts else { return }
+        goalCelebratedChapter = chapter
+        note("\(goal.title) 완수 — 챕터 탈삼진 \(progress)개.")
+        lastSummary = "\(goal.title) 완수. 삼진 \(progress)개 — 숙제는 끝났고, 다음은 욕심의 영역입니다."
+        feedbackCue = .success
+        feedbackTrigger += 1
+        save()
     }
 
     /// 경기 전부를 적지 않는다 — 처음, 완벽, 압도, 붕괴. 이야기가 되는 경기만.
@@ -495,7 +521,7 @@ final class HighSchoolCareerStore {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
         savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, revision: savedRevision)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -522,6 +548,9 @@ final class HighSchoolCareerStore {
         var nicknames: [Nickname]? = nil
         /// 이번 회차의 연대기. 없는 옛 저장본은 빈 목록으로 시작한다.
         var chronicle: [ChronicleEntry]? = nil
+        /// 챕터 목표 진행 기준점·축하 여부. 없는 옛 저장본은 현재 값으로 초기화된다.
+        var chapterStartStrikeouts: Int? = nil
+        var goalCelebratedChapter: Int? = nil
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
         var revision: UInt64?
 
@@ -540,6 +569,9 @@ final class HighSchoolCareerStore {
         enteredProCareerID = record.enteredProCareerID
         nicknames = record.nicknames ?? []
         chronicle = record.chronicle ?? []
+        chapterStartStrikeouts = record.chapterStartStrikeouts
+            ?? record.result?.snapshot.performance.strikeouts ?? 0
+        goalCelebratedChapter = record.goalCelebratedChapter
         savedRevision = record.effectiveRevision
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return false }

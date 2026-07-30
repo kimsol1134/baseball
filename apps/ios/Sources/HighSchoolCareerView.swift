@@ -141,6 +141,10 @@ struct HighSchoolCareerView: View {
                         if !career.buzz.isEmpty {
                             CommunityBuzzCard(lines: career.buzz)
                         }
+                        // 드래프트가 끝난 회차에 챕터 숙제는 소음이다.
+                        if state.draftResult == nil {
+                            ChapterGoalCard(state: state, career: career)
+                        }
 
                         phaseBody(state: state)
                     }
@@ -789,6 +793,36 @@ private struct ChapterReviewCard: View {
             }
             PrimaryButton(title: "다음 챕터로", identifier: "hs.chapter.continue", action: onContinue)
         }
+    }
+}
+
+/// 이번 챕터의 숙제. "3년 뒤 드래프트"는 너무 멀다 — 오늘 훈련 하나를
+/// 누르게 만드는 것은 이번 챕터의 숫자다.
+private struct ChapterGoalCard: View {
+    let state: HighSchoolCareerSnapshot
+    let career: HighSchoolCareerStore
+
+    var body: some View {
+        let goal = ChapterGoal.goal(careerID: state.careerID, chapterNumber: state.chapter.number)
+        let progress = max(0, state.performance.strikeouts - career.chapterStartStrikeouts)
+        let done = career.goalCelebratedChapter == state.chapter.number || progress >= goal.targetStrikeouts
+        BaseballCard(title: goal.title, tone: done ? .positive : .raised) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(done ? "완수 — 숙제는 끝났고, 다음은 욕심의 영역입니다." : goal.detail)
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 10) {
+                    ProgressView(value: Double(min(progress, goal.targetStrikeouts)),
+                                 total: Double(goal.targetStrikeouts))
+                        .tint(done ? BaseballTheme.positive : BaseballTheme.action)
+                    Text("\(min(progress, goal.targetStrikeouts))/\(goal.targetStrikeouts)")
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(done ? BaseballTheme.positive : BaseballTheme.textSecondary)
+                }
+            }
+        }
+        .accessibilityIdentifier("hs.chapterGoal")
     }
 }
 
