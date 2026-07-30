@@ -345,6 +345,45 @@ struct AvatarParts: Hashable {
     }
 }
 
+/// 실사 초상이 번들에 있으면 그것을, 없으면 캔버스 아바타를 그린다 — 소리와 같은 두 벌 구조.
+///
+/// 감독·포수·라이벌은 시네마틱 초상(키아트와 같은 결)이 관계 장면의 무게를 만든다.
+/// 주인공은 캔버스 아바타를 유지한다 — 회차 카드·아카이브와 정체성이 이어져야 하고,
+/// 이름 시드로 얼굴이 변하는 것 자체가 "내 선수"라는 감각의 일부다.
+struct PortraitView: View {
+    let seed: String
+    let role: AvatarFace.Role
+    var size: CGFloat = 46
+
+    private static let variants = 3
+
+    private var assetName: String? {
+        let index = 1 + Int(AvatarParts.hash("portrait:\(seed)") % UInt32(Self.variants))
+        switch role {
+        case .coach: return "PortraitCoach\(index)"
+        case .catcher: return "PortraitCatcher\(index)"
+        case .rival: return "PortraitRival\(index)"
+        case .player: return nil
+        }
+    }
+
+    var body: some View {
+        if let name = assetName, UIImage(named: name) != nil {
+            Image(name)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: size, height: size * 76 / 58)
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: size * 0.16)
+                        .strokeBorder(BaseballTheme.border.opacity(0.5), lineWidth: 1)
+                )
+        } else {
+            AvatarFace(seed: seed, role: role, size: size)
+        }
+    }
+}
+
 /// 얼굴 + 이름 + 역할을 한 덩어리로 읽히게 묶는다. 관계 카드·학교 선택·라이벌 카드가 공유한다.
 struct AvatarRow<Trailing: View>: View {
     let seed: String
@@ -356,7 +395,7 @@ struct AvatarRow<Trailing: View>: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            AvatarFace(seed: seed, role: role, size: size)
+            PortraitView(seed: seed, role: role, size: size)
             VStack(alignment: .leading, spacing: 1) {
                 Text(name).font(.subheadline.weight(.bold))
                 if let caption {

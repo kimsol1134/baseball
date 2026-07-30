@@ -630,7 +630,7 @@ private struct RelationshipCard: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 10) {
                         if let portrait = Self.portrait(for: event.category, state: state) {
-                            AvatarFace(seed: portrait.seed, role: portrait.role, size: 44)
+                            PortraitView(seed: portrait.seed, role: portrait.role, size: 44)
                         }
                         VStack(alignment: .leading, spacing: 2) {
                             Text(Self.speaker(for: event.category)).eyebrowStyle(BaseballTheme.information)
