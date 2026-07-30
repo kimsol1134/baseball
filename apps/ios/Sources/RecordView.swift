@@ -405,6 +405,19 @@ private struct ProspectRankingCard: View {
         BaseballCard(title: "전국 유망주 랭킹", tone: .milestone) {
             if let rank = ProspectRanking.playerRank(performance: state.performance) {
                 VStack(alignment: .leading, spacing: 8) {
+                    // 가상 지명 명단 — 실제 드래프트와 같은 공식(분산만 제외)이라
+                    // 예측이 결과를 배신하지 않는다. 경계 구간은 경계라고 말한다.
+                    let forecast = HighSchoolCareerEngine.draftForecast(state: state)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("가상 지명 명단: \(forecast.band)")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(forecast.score >= forecast.threshold ? BaseballTheme.action : BaseballTheme.textPrimary)
+                        Text("평가 \(forecast.score)점 · 당락선 \(forecast.threshold)점 · \(forecast.interestedTeam)이(가) 주목")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                    }
+                    .accessibilityIdentifier("record.draftForecast")
+                    Rectangle().fill(BaseballTheme.border.opacity(0.3)).frame(height: 1)
                     if rank <= ProspectRanking.boardSize {
                         let board = ProspectRanking.board(
                             careerID: state.careerID,

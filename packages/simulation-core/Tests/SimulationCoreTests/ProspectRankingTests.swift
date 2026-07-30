@@ -36,3 +36,18 @@ final class ProspectRankingTests: XCTestCase {
         XCTAssertEqual(Set(a.map(\.name)).count, a.count)
     }
 }
+
+/// 가상 지명 명단 — 예측은 실제 드래프트와 같은 공식이라 배신하지 않는다.
+final class DraftForecastTests: XCTestCase {
+    func testForecastBandsFollowTheRealBoundaries() throws {
+        let engine = HighSchoolCareerEngine()
+        let created = try engine.start(.init(seed: "20260730", presetID: "power_prospect"))
+        let forecast = HighSchoolCareerEngine.draftForecast(state: created.snapshot)
+        // 갓 시작한 회차는 미지명권 또는 경계 — 시작하자마자 1라운드 예측이 나오면 공식이 죽은 것.
+        XCTAssertLessThan(forecast.score, 78)
+        XCTAssertFalse(forecast.band.isEmpty)
+        XCTAssertFalse(forecast.interestedTeam.isEmpty)
+        // 결정론.
+        XCTAssertEqual(forecast, HighSchoolCareerEngine.draftForecast(state: created.snapshot))
+    }
+}

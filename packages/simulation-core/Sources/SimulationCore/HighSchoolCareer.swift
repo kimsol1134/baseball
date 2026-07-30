@@ -1642,50 +1642,102 @@ public struct HighSchoolCareerEngine: Sendable {
             + (wins > 0 ? " · \(wins)승" : "")
     }
 
+    /// 드래프트 평가의 결정론 부분 — 분산(±5)만 뺀 전부.
+    ///
+    /// `resolveDraft`와 **같은 함수**를 쓰는 것이 예측의 정직함이다. 예측 공식을
+    /// 따로 두면 언젠가 둘이 어긋나고, "1라운드 예측 → 미지명"의 배신은 게임에
+    /// 대한 신뢰 전체를 무너뜨린다.
+    struct DraftEvaluationComponents {
+        let ratingScore: Int
+        let performanceScore: Int
+        let processBonus: Int
+        let awakeningScore: Int
+        let relationshipScore: Int
+        let seasonTerm: Int
+        let karmaPenalty: Int
+        let overusePenalty: Int
+
+        var total: Int {
+            ratingScore + performanceScore + processBonus + awakeningScore
+                + relationshipScore + seasonTerm - karmaPenalty - overusePenalty
+        }
+    }
+
+    static func draftEvaluationCore(state: HighSchoolCareerSnapshot) -> DraftEvaluationComponents {
+        let ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
+        let gameQuality = state.performance.strikeouts * 3 - state.performance.walks * 2 - state.performance.runsAllowed * 3
+        let processBonus = max(-8, min(10, (state.performance.expectedDamage - state.performance.actualDamage) / 350))
+        let ratingScore = ratings / 4 + 15
+        let performanceScore = gameQuality / 4
+        let awakeningScore = state.selectedAwakenings.count
+        let relationshipScore = (state.relationshipTrust - 50) / 10
+        let karmaPenalty = (state.karmas.contains(.unknownLand) ? 3 : 0)
+            + (state.karmas.contains(.noLastChance) ? 2 : 0)
+        let residualRisk = state.armRisk ?? 0
+        let overusePenalty = residualRisk >= Self.armWarningThreshold ? 4 : residualRisk >= 45 ? 2 : 0
+        // 자동 시즌 항. 캡(±4)이 분산(±5)보다 작아야 직접 던진 승부가 지배한다.
+        // 영점은 고교 리그 평균(실측 RA9, 회차별 기준선) — 프로 기준을 쓰면 전원 가산점이 된다.
+        let autoLines = (state.seasonLog ?? []).filter { !$0.played }
+        let autoOuts = autoLines.reduce(0) { $0 + $1.outs }
+        let autoRuns = autoLines.reduce(0) { $0 + $1.runsAllowed }
+        let seasonTerm = autoOuts == 0
+            ? 0
+            : min(4, max(-4, (Self.highSchoolBaseline(lifeNumber: state.lifeNumber) - autoRuns * 27_000 / autoOuts) * 4 / 1_000))
+        return DraftEvaluationComponents(
+            ratingScore: ratingScore, performanceScore: performanceScore, processBonus: processBonus,
+            awakeningScore: awakeningScore, relationshipScore: relationshipScore, seasonTerm: seasonTerm,
+            karmaPenalty: karmaPenalty, overusePenalty: overusePenalty
+        )
+    }
+
+    /// 미디어의 가상 지명 명단 — "스크롤을 내려 내 이름을 찾는" 그 화면.
+    public struct DraftForecastSnapshot: Equatable, Sendable {
+        /// 분산을 뺀 예상 점수(20~95).
+        public let score: Int
+        /// 당락 문턱. 난도에 따라 다르다.
+        public let threshold: Int
+        /// "1라운드 예상" 같은 밴드 문구.
+        public let band: String
+        /// 지금 성적 기준으로 가장 주목하는 구단.
+        public let interestedTeam: String
+    }
+
+    public static func draftForecast(state: HighSchoolCareerSnapshot) -> DraftForecastSnapshot {
+        let score = min(95, max(20, draftEvaluationCore(state: state).total))
+        let threshold = state.difficulty.careerHarshness == .relaxed ? 57
+            : state.difficulty.careerHarshness == .challenging ? 65 : 61
+        // 밴드 경계는 resolveDraft의 라운드 경계와 같다. 경계 ±분산 구간은
+        // 정직하게 "당락 경계"라고 말한다 — 예측이 확신을 팔면 안 된다.
+        let band = score >= 78 ? "1라운드 예상"
+            : score >= 70 ? "2~3라운드 예상"
+            : score >= threshold + 5 ? "4~6라운드 예상"
+            : score >= threshold - 5 ? "당락 경계 — 남은 경기가 정한다"
+            : "미지명권 — 아직 명단 밖"
+        return DraftForecastSnapshot(
+            score: score, threshold: threshold, band: band,
+            interestedTeam: bestTeam(for: state.pitcher, seed: 0).name
+        )
+    }
+
     public func resolveDraft(_ params: ResolveDraftParams) throws -> HighSchoolCareerResult {
         let seed = try validatedSeed(params.seed); try validate(params.state, phase: .draft)
         var generator = SplitMix64(seed: seed ^ 0x4452_4146_5400)
-        let ratings = params.state.pitcher.stuff + params.state.pitcher.command + params.state.pitcher.movement + params.state.pitcher.stamina
-        let gameQuality = params.state.performance.strikeouts * 3 - params.state.performance.walks * 2 - params.state.performance.runsAllowed * 3
-        let processBonus = max(-8, min(10, (params.state.performance.expectedDamage - params.state.performance.actualDamage) / 350))
+        let core = Self.draftEvaluationCore(state: params.state)
         // Amateur players are graded against the top professional league. The floor is deliberately
         // low so that an ungrown build posting only ordinary important-game lines lands just under
         // the present-50 bar and a neglected run misses the draft (spec: first-round draft rate
         // ~35–45%). Focused growth and a strong game record — not a fixed floor or the guaranteed
         // three awakenings — are what carry a run clear of the threshold, so the game record now
         // weighs more (÷4) and the awakening bonus is a light nudge (×1) rather than a flat lift.
-        let ratingScore = ratings / 4 + 15
-        let performanceScore = gameQuality / 4
-        let awakeningScore = params.state.selectedAwakenings.count
-        let relationshipScore = (params.state.relationshipTrust - 50) / 10
         let variance = generator.nextInt(upperBound: 11) - 5
-        let karmaPenalty = (params.state.karmas.contains(.unknownLand) ? 3 : 0)
-            + (params.state.karmas.contains(.noLastChance) ? 2 : 0)
         // Overwork history reads through residual arm risk at draft time: a run still carrying a
         // high, unaddressed risk takes a small durability ding, while a run that got hurt but
         // rehabbed clean (risk bled back down) passes through unpenalised — "회복 후 무사 통과".
-        let residualRisk = params.state.armRisk ?? 0
-        let overusePenalty = residualRisk >= Self.armWarningThreshold ? 4 : residualRisk >= 45 ? 2 : 0
-        // 자동 시즌 항. 시즌 로그의 9이닝당 실점을 ±4로 접는다.
-        //
-        // 캡이 분산(±5)보다 작은 것이 핵심이다 — 직접 던진 승부(performanceScore)가 지배해야
-        // 하므로 이 항은 경계선에 걸린 회차에서만 당락을 움직인다. 그렇다고 0으로 두면
-        // 시즌 기록이 화면 장식이 되고, 사는 사람은 금방 알아챈다.
-        let autoLines = (params.state.seasonLog ?? []).filter { !$0.played }
-        let autoOuts = autoLines.reduce(0) { $0 + $1.outs }
-        let autoRuns = autoLines.reduce(0) { $0 + $1.runsAllowed }
-        // 영점은 **고교 리그 평균**이어야 한다. 프로 기준(RA9 5.5)을 그대로 쓰면 고교
-        // 타자가 약한 만큼 모든 회차가 상한 +4를 받아, 항이 아니라 전원 가산점이 된다.
-        // 실측(오프셋 -6, 120경기): RA9 1.61. 그것을 0점으로 두고 ±1.0을 ±4로 편다.
-        // RA9 0.6 → +4, 1.61 → 0, 2.6 → -4.
-        let seasonTerm = autoOuts == 0
-            ? 0
-            : clamp((Self.highSchoolBaseline(lifeNumber: params.state.lifeNumber) - autoRuns * 27_000 / autoOuts) * 4 / 1_000, -4, 4)
-        let score = clamp(ratingScore + performanceScore + processBonus + awakeningScore + relationshipScore + seasonTerm + variance - karmaPenalty - overusePenalty, 20, 95)
+        let score = clamp(core.total + variance, 20, 95)
         let threshold = params.state.difficulty.careerHarshness == .relaxed ? 57
             : params.state.difficulty.careerHarshness == .challenging ? 65 : 61
         let drafted = score >= threshold
-        let team = drafted ? bestTeam(for: params.state.pitcher, seed: seed) : nil
+        let team = drafted ? Self.bestTeam(for: params.state.pitcher, seed: seed) : nil
         let round = drafted ? (score >= 78 ? 1 : score >= 70 ? 2 : 4) : nil
         let pick = round.map { ($0 - 1) * 10 + generator.nextInt(upperBound: 10) + 1 }
         let draft = DraftResultSnapshot(
@@ -1698,13 +1750,13 @@ public struct HighSchoolCareerEngine: Sendable {
             firstSeasonGoal: team.map { _ in "퓨처스 선발 10경기와 볼넷률 8% 이하" },
             // 평가가 어디서 왔는지 항목으로 보여 준다. 부호를 붙여야 무엇이 깎았는지 읽힌다.
             evaluationBreakdown: [
-                "능력 \(ratingScore)",
-                "중요 경기 \(performanceScore >= 0 ? "+" : "")\(performanceScore)",
-                "시즌 기록 \(seasonTerm >= 0 ? "+" : "")\(seasonTerm)",
-                "각성 +\(awakeningScore)",
-                "관계 \(relationshipScore >= 0 ? "+" : "")\(relationshipScore)",
-            ] + (karmaPenalty > 0 ? ["핸디캡 -\(karmaPenalty)"] : [])
-              + (overusePenalty > 0 ? ["팔 상태 -\(overusePenalty)"] : []),
+                "능력 \(core.ratingScore)",
+                "중요 경기 \(core.performanceScore >= 0 ? "+" : "")\(core.performanceScore)",
+                "시즌 기록 \(core.seasonTerm >= 0 ? "+" : "")\(core.seasonTerm)",
+                "각성 +\(core.awakeningScore)",
+                "관계 \(core.relationshipScore >= 0 ? "+" : "")\(core.relationshipScore)",
+            ] + (core.karmaPenalty > 0 ? ["핸디캡 -\(core.karmaPenalty)"] : [])
+              + (core.overusePenalty > 0 ? ["팔 상태 -\(core.overusePenalty)"] : []),
             summary: drafted
                 ? "지명 구단 · \(team?.name ?? "프로 구단"). 구위와 고교 경기 기록에서 높은 평가를 받았습니다."
                 : "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요."
@@ -2066,7 +2118,7 @@ public struct HighSchoolCareerEngine: Sendable {
         return HighSchoolContentCatalog.scenarios[index]
     }
 
-    private func bestTeam(for pitcher: PitcherSnapshot, seed: UInt64) -> DraftTeamSnapshot {
+    private static func bestTeam(for pitcher: PitcherSnapshot, seed: UInt64) -> DraftTeamSnapshot {
         let values: [TrainingFocus: Int] = [.velocity: pitcher.stuff, .command: pitcher.command, .breakingBall: pitcher.movement,
             .stamina: pitcher.stamina, .gamePlanning: pitcher.command, .recovery: pitcher.stamina]
         return Self.teams.max { lhs, rhs in
