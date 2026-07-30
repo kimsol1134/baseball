@@ -156,6 +156,19 @@ final class PresentationTests: XCTestCase {
         }
     }
 
+    /// 조사·금액 표기 — "서울덕성고으로"와 "12,000만 원"은 기계가 쓴 글의 신호다.
+    func testKoreanCopyParticlesAndMoney() {
+        XCTAssertEqual(KoreanCopy.ro("서울덕성고"), "로")
+        XCTAssertEqual(KoreanCopy.ro("한밭"), "으로")
+        XCTAssertEqual(KoreanCopy.ro("서울"), "로", "ㄹ 받침은 '로'다.")
+        XCTAssertEqual(KoreanCopy.objectParticle(number: 22), "를")
+        XCTAssertEqual(KoreanCopy.objectParticle(number: 8), "을")
+        XCTAssertEqual(KoreanCopy.objectParticle(number: 10), "을")
+        XCTAssertEqual(KoreanCopy.money(won: 120_000_000), "1억 2,000만 원")
+        XCTAssertEqual(KoreanCopy.money(won: 90_000_000), "9,000만 원")
+        XCTAssertEqual(KoreanCopy.money(won: 200_000_000), "2억 원")
+    }
+
     func testZoneLabels() {
         XCTAssertEqual(PitchCopy.zone(PitchZone(row: 0, column: 0)), "높은 몸쪽")
         XCTAssertEqual(PitchCopy.zone(PitchZone(row: 1, column: 1)), "가운데")

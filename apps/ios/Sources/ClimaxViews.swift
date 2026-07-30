@@ -140,7 +140,7 @@ struct DraftRevealView: View {
                     .font(BaseballType.scoreboard)
                     .foregroundStyle(BaseballTheme.textPrimary)
                 if let bonus = result.signingBonus {
-                    Text("계약금 \(bonus / 10_000)만 원")
+                    Text("계약금 \(KoreanCopy.money(won: bonus))")
                         .font(.subheadline.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }

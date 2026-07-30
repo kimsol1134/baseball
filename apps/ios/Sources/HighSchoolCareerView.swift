@@ -388,7 +388,7 @@ private struct SchoolSelectionCard: View {
             }
         }
         .confirmationDialog(
-            pending.map { "\($0.name)으로 가시겠습니까?" } ?? "",
+            pending.map { "\($0.name)\(KoreanCopy.ro($0.name)) 가시겠습니까?" } ?? "",
             isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
             titleVisibility: .visible,
             presenting: pending
@@ -398,7 +398,8 @@ private struct SchoolSelectionCard: View {
                 pending = nil
             }
             .accessibilityIdentifier("hs.school.confirm")
-            Button("다시 고른다", role: .cancel) { pending = nil }
+            // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣어 취소를 항상 보이게 한다.
+            Button("다시 고른다") { pending = nil }
         } message: { school in
             Text(
                 """
@@ -758,7 +759,10 @@ private struct AwakeningCard: View {
             }
         }
         .confirmationDialog(
-            pending.map { "'\(HighSchoolPresentation.awakening($0).title)'으로 각성할까요?" } ?? "",
+            pending.map {
+                let title = HighSchoolPresentation.awakening($0).title
+                return "'\(title)'\(KoreanCopy.ro(title)) 각성할까요?"
+            } ?? "",
             isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
             titleVisibility: .visible,
             presenting: pending
@@ -768,7 +772,8 @@ private struct AwakeningCard: View {
                 pending = nil
             }
             .accessibilityIdentifier("hs.awakening.confirm")
-            Button("다시 고른다", role: .cancel) { pending = nil }
+            // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣어 취소를 항상 보이게 한다.
+            Button("다시 고른다") { pending = nil }
         } message: { option in
             Text("\(HighSchoolPresentation.awakening(option).detail)\n\n한 번 고르면 고교 3년 동안 바꿀 수 없습니다.")
         }

@@ -312,6 +312,60 @@ struct ScoreboardValue: View {
 }
 
 /// DOC-19 §4: 화면당 큰 키아트는 하나. 고대비 모드에서는 이미지를 없애고 단색으로 돌아간다.
+/// 한국어 조사·금액 표기. 받침을 안 보고 "서울덕성고으로"라고 쓰면
+/// 그 순간 "기계가 쓴 글"이 된다 — 하필 가장 집중해서 읽는 화면들에서.
+enum KoreanCopy {
+    /// 받침 유무로 조사를 고른다. "\(name)\(KoreanCopy.ro(name))" → 서울덕성고로.
+    static func particle(_ word: String, final withFinal: String, open withoutFinal: String) -> String {
+        guard let scalar = lastHangulScalar(word) else { return withoutFinal }
+        let jong = (Int(scalar.value) - 0xAC00) % 28
+        return jong == 0 ? withoutFinal : withFinal
+    }
+
+    /// 으로/로 — ㄹ 받침은 예외로 '로'를 쓴다(서울로).
+    static func ro(_ word: String) -> String {
+        guard let scalar = lastHangulScalar(word) else { return "로" }
+        let jong = (Int(scalar.value) - 0xAC00) % 28
+        return (jong == 0 || jong == 8) ? "로" : "으로"
+    }
+
+    /// 숫자 뒤 조사 — 마지막 자릿수의 한글 읽기로 판별한다(22 → 이 → 를).
+    static func objectParticle(number: Int) -> String {
+        let last = abs(number) % 10
+        return [0, 1, 3, 6, 7, 8].contains(last) ? "을" : "를"
+    }
+
+    /// 원화 표기 — "12,000만 원"이 아니라 "1억 2,000만 원"이라고 쓴다.
+    static func money(won: Int) -> String {
+        let man = won / 10_000
+        let eok = man / 10_000
+        let rest = man % 10_000
+        if eok > 0 {
+            return rest > 0 ? "\(eok)억 \(formatted(rest))만 원" : "\(eok)억 원"
+        }
+        return "\(formatted(man))만 원"
+    }
+
+    private static func formatted(_ value: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+
+    private static func lastHangulScalar(_ word: String) -> Unicode.Scalar? {
+        for scalar in word.unicodeScalars.reversed() {
+            if (0xAC00...0xD7A3).contains(scalar.value) { return scalar }
+            // 숫자로 끝나면 숫자 읽기의 받침을 따른다.
+            if (0x30...0x39).contains(scalar.value) {
+                let digit = Int(scalar.value) - 0x30
+                let readings: [Unicode.Scalar?] = ["영", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"].map { $0.unicodeScalars.first }
+                return readings[digit]
+            }
+        }
+        return nil
+    }
+}
+
 enum KeyArt: String {
     case proStadiumTunnel = "KeyArtProStadiumTunnel"
     case stadiumNight = "KeyArtStadiumNight"

@@ -96,20 +96,27 @@ public enum CommunityBuzz {
             performance: CareerPerformanceSnapshot()
         ).filter { !$0.isPlayer }
         guard board.count >= 4 else { return [] }
+        // 인물과 템플릿 모두 같은 챕터 안에서 중복 금지 — 이름만 바꾼 같은 문장이
+        // 아래위로 붙는 순간 "세계"가 아니라 문자열 치환이 보인다. 수치도 변주한다.
+        let strikeoutCount = 10 + generator.nextInt(upperBound: 5)
+        let speedGain = 2 + generator.nextInt(upperBound: 4)
         let templates: [(Int) -> String] = [
             { "\(board[$0].name)(\(board[$0].school))이 지역 대회 결승에서 완봉승. 스카우트석이 가득 찼다는 후문." },
             { "\(board[$0].name)(\(board[$0].school)), 팔꿈치 통증으로 등판을 걸렀다. 관리 실패라는 말과 신중하다는 말이 갈린다." },
-            { "\(board[$0].name)(\(board[$0].school))이 한 경기 탈삼진 12개 — 또래 최고 기록에 다가섰다." },
-            { "\(board[$0].name)(\(board[$0].school))의 구속이 봄보다 3km/h 올랐다. 겨울에 무엇을 했는지 다들 궁금해한다." },
+            { "\(board[$0].name)(\(board[$0].school))이 한 경기 탈삼진 \(strikeoutCount)개 — 또래 최고 기록에 다가섰다." },
+            { "\(board[$0].name)(\(board[$0].school))의 구속이 봄보다 \(speedGain)km/h 올랐다. 겨울에 무엇을 했는지 다들 궁금해한다." },
             { "\(board[$0].name)(\(board[$0].school)), 부진 끝에 선발에서 밀렸다. 재조정이 필요해 보인다." },
         ]
         var lines: [String] = []
-        var used = Set<Int>()
+        var usedPeople = Set<Int>()
+        var usedTemplates = Set<Int>()
         while lines.count < 2 {
             let who = generator.nextInt(upperBound: min(8, board.count))
-            guard !used.contains(who) else { continue }
-            used.insert(who)
-            lines.append(templates[generator.nextInt(upperBound: templates.count)](who))
+            let template = generator.nextInt(upperBound: templates.count)
+            guard !usedPeople.contains(who), !usedTemplates.contains(template) else { continue }
+            usedPeople.insert(who)
+            usedTemplates.insert(template)
+            lines.append(templates[template](who))
         }
         return lines
     }

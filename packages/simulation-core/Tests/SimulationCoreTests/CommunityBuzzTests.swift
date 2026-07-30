@@ -31,6 +31,16 @@ final class CommunityBuzzTests: XCTestCase {
                       "뉴스의 주인공은 랭킹 명단의 인물이어야 합니다.")
     }
 
+    /// 같은 챕터의 두 소식이 같은 템플릿이면 세계가 아니라 문자열 치환이 보인다.
+    func testRivalNewsNeverRepeatsATemplateWithinAChapter() {
+        for chapter in 1...8 {
+            let lines = CommunityBuzz.rivalNews(careerID: "dup", chapterNumber: chapter)
+            // 템플릿 구별자: 문장의 꼬리(고정부). 같은 꼬리가 두 번이면 실패.
+            let tails = lines.map { String($0.suffix(12)) }
+            XCTAssertEqual(Set(tails).count, lines.count, "\(chapter)챕터 소식이 같은 틀입니다: \(lines)")
+        }
+    }
+
     func testContextShapesTheVoice() {
         let shutout = CommunityBuzz.reactions(careerID: "ctx", gameNumber: 1, strikeouts: 7, walks: 0, runsAllowed: 0)
         XCTAssertTrue(shutout.contains { $0.contains("무실점") || $0.contains("못 봄") || $0.contains("수첩") || $0.contains("어떻게 되는 거임") })

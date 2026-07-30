@@ -365,7 +365,7 @@ private struct OffseasonView: View {
                 pending = nil
             }
             .accessibilityIdentifier("pro.offseason.confirm")
-            Button("취소", role: .cancel) { pending = nil }
+            Button("취소") { pending = nil }
         } message: {
             Text(confirmMessage)
         }
@@ -472,7 +472,7 @@ private struct RetirementDecisionView: View {
         .confirmationDialog("은퇴하시겠습니까?", isPresented: $confirming, titleVisibility: .visible) {
             Button("은퇴한다", role: .destructive) { career.chooseOffseason(.retire) }
                 .accessibilityIdentifier("pro.retire.confirm")
-            Button("취소", role: .cancel) {}
+            Button("취소") {}
         } message: {
             Text("통산 \(state.careerStats.count)시즌으로 커리어가 끝납니다.")
         }
@@ -539,7 +539,7 @@ private struct RetiredView: View {
         .confirmationDialog("새 선수로 시작하시겠습니까?", isPresented: $confirming, titleVisibility: .visible) {
             Button("새 선수로 시작", role: .destructive, action: onStartNewPlayer)
                 .accessibilityIdentifier("pro.newPlayer.confirm")
-            Button("취소", role: .cancel) {}
+            Button("취소") {}
         } message: {
             Text("\(state.identity.name)의 프로 커리어가 닫히고 고교 화면으로 돌아갑니다.")
         }

@@ -85,7 +85,7 @@ struct SettingsView: View {
                 highSchool.deleteCareer()
                 pro.deleteCareer()
             }
-            Button("취소", role: .cancel) {}
+            Button("취소") {}
         } message: {
             Text("회차와 계승 기억까지 전부 사라집니다.")
         }

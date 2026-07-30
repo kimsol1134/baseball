@@ -151,7 +151,7 @@ struct HighSchoolSetupView: View {
     private var inheritanceCard: some View {
         BaseballCard(title: "가져온 것", tone: .milestone) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("영혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
+                Text("야구혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
                 if career.inheritance.memories.isEmpty {
                     Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                 } else {
@@ -265,7 +265,7 @@ struct HighSchoolSetupView: View {
             // 야구혼을 어디에 붓는지 고른다. 코어는 처음부터 이 값을 받았는데 화면이
             // 넘기지 않아 늘 기본값(제구)으로 갔다 — 회차마다 같은 곳만 오르는 원인 하나였다.
             if career.inheritance.soulPoints > 0 {
-                BaseballCard(title: "야구혼 \(career.inheritance.soulPoints)을 어디에") {
+                BaseballCard(title: "야구혼 \(career.inheritance.soulPoints)\(KoreanCopy.objectParticle(number: career.inheritance.soulPoints)) 어디에") {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 6) {
                             ForEach(SoulDomain.allCases, id: \.self) { domain in
