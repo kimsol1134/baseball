@@ -138,6 +138,9 @@ struct HighSchoolCareerView: View {
                         } else if let summary = career.lastSummary {
                             SummaryBanner(summary: summary, cue: career.feedbackCue)
                         }
+                        if !career.buzz.isEmpty {
+                            CommunityBuzzCard(lines: career.buzz)
+                        }
 
                         phaseBody(state: state)
                     }
@@ -786,6 +789,36 @@ private struct ChapterReviewCard: View {
             }
             PrimaryButton(title: "다음 챕터로", identifier: "hs.chapter.continue", action: onContinue)
         }
+    }
+}
+
+/// 어딘가의 게시판에서 모르는 사람들이 내 선수 얘기를 하고 있다.
+///
+/// 기사와 능력치는 공식 세계다. 애착은 비공식 세계에서 완성된다 — 잘 던지면
+/// 감탄하고, 볼넷이 쌓이면 냉정하게 놀리는 익명의 목소리. 그 냉정함까지가 세상이다.
+private struct CommunityBuzzCard: View {
+    let lines: [String]
+
+    var body: some View {
+        BaseballCard(title: "그라운드 밖의 목소리") {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                    HStack(alignment: .top, spacing: 6) {
+                        Text("└")
+                            .font(.caption2)
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                        Text(line)
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Text("익명 야구 게시판의 반응입니다.")
+                    .font(.caption2)
+                    .foregroundStyle(BaseballTheme.textTertiary)
+            }
+        }
+        .accessibilityIdentifier("hs.buzz")
     }
 }
 

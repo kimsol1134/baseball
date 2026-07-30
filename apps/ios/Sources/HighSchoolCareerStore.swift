@@ -111,6 +111,9 @@ final class HighSchoolCareerStore {
     /// 이번 회차의 연대기 — 이 선수가 살아온 순간들. 능력치 그래프는 결과만 남기지만
     /// 연대기는 과정을 남긴다. 애착은 과정에서 생긴다.
     private(set) var chronicle: [ChronicleEntry] = []
+    /// 방금 경기에 대한 커뮤니티 반응. 저장하지 않는다 — careerID·경기 번호로
+    /// 결정론이라 필요하면 언제든 다시 만들 수 있고, 반응은 "방금"의 것일 때만 살아 있다.
+    private(set) var buzz: [String] = []
 
     struct ChronicleEntry: Codable, Equatable {
         /// 언제였는가 — "2학년 여름".
@@ -289,8 +292,17 @@ final class HighSchoolCareerStore {
         perform(summary: summary, cue: report.runsAllowed == 0 ? .success : .setback) {
             try engine.recordImportantGame(.init(seed: $0.nextSeed, state: $0.snapshot, report: report))
         }
+        let before = Set(nicknames.map(\.id))
         earnNicknames()
         noteGame(report: report, summary: summary)
+        buzz = CommunityBuzz.reactions(
+            careerID: self.result?.snapshot.careerID ?? "",
+            gameNumber: self.result?.snapshot.performance.importantGamesCompleted ?? 0,
+            strikeouts: report.strikeouts,
+            walks: report.walks,
+            runsAllowed: report.runsAllowed,
+            newNickname: nicknames.first { !before.contains($0.id) }?.title
+        )
     }
 
     /// 경기 전부를 적지 않는다 — 처음, 완벽, 압도, 붕괴. 이야기가 되는 경기만.
