@@ -41,6 +41,28 @@ final class NicknameTests: XCTestCase {
             .contains { $0.id == "pinpoint" })
     }
 
+    /// 같은 계열 안에서는 가장 높은 티어 하나만 나온다 — "사냥꾼"이던 선수가
+    /// "머신"이 되는 것이 성장 서사이지, 두 별명을 동시에 다는 것이 아니다.
+    func testTiersReplaceWithinAFamily() {
+        let monster = NicknameRules.earned(performance: performance(games: 5, strikeouts: 45, walks: 20, runsAllowed: 30))
+        XCTAssertTrue(monster.contains { $0.id == "k-monster" })
+        XCTAssertFalse(monster.contains { $0.id == "k-machine" })
+        XCTAssertFalse(monster.contains { $0.id == "k-hunter" })
+        let wall = NicknameRules.earned(performance: performance(games: 5, strikeouts: 5, walks: 20, runsAllowed: 0))
+        XCTAssertTrue(wall.contains { $0.id == "iron-wall" })
+        XCTAssertFalse(wall.contains { $0.id == "zero" })
+    }
+
+    /// 부정 별명 — 세상은 냉정하고, 그 냉정함이 반등을 서사로 만든다.
+    func testNegativeNicknamesExist() {
+        XCTAssertTrue(NicknameRules.earned(performance: performance(games: 3, strikeouts: 5, walks: 9, runsAllowed: 4))
+            .contains { $0.id == "wild-thing" })
+        XCTAssertTrue(NicknameRules.earned(performance: performance(games: 3, strikeouts: 5, walks: 2, runsAllowed: 12))
+            .contains { $0.id == "batting-practice" })
+        XCTAssertTrue(NicknameRules.earned(performance: performance(games: 3, strikeouts: 16, walks: 2, runsAllowed: 10))
+            .contains { $0.id == "rough-diamond" })
+    }
+
     /// 같은 입력 → 같은 결과. 별명 판정에는 난수가 없다.
     func testDeterministic() {
         let sample = performance(games: 4, strikeouts: 30, walks: 2, runsAllowed: 0)
