@@ -146,6 +146,10 @@ struct HighSchoolCareerView: View {
                         }
                         // 드래프트가 끝난 회차에 챕터 숙제는 소음이다.
                         if state.draftResult == nil {
+                            if TournamentBracket.isTournamentChapter(state.chapter.number),
+                               let school = state.school {
+                                TournamentCard(state: state, schoolName: school.name)
+                            }
                             ChapterGoalCard(state: state, career: career)
                         }
 
@@ -796,6 +800,46 @@ private struct ChapterReviewCard: View {
             }
             PrimaryButton(title: "다음 챕터로", identifier: "hs.chapter.continue", action: onContinue)
         }
+    }
+}
+
+/// 대회 대진 — 같은 경기도 "왕중왕전 준결승"이라는 무대 위에서는 무게가 다르다.
+/// 커널 일정은 그대로다. 이 카드는 세계를 보여 줄 뿐, 일정에 대해 거짓말하지 않는다.
+private struct TournamentCard: View {
+    let state: HighSchoolCareerSnapshot
+    let schoolName: String
+
+    var body: some View {
+        let field = TournamentBracket.field(
+            careerID: state.careerID, chapterNumber: state.chapter.number, playerSchool: schoolName
+        )
+        BaseballCard(title: field.tournamentName, tone: .milestone) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("에이스 등판 — \(field.playerRound)")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(BaseballTheme.milestone)
+                // 대진: 두 팀씩 한 쌍. 내 학교가 굵게 빛난다.
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(0..<4, id: \.self) { pair in
+                        HStack(spacing: 6) {
+                            bracketName(field.schools[pair * 2])
+                            Text("—").font(.caption2).foregroundStyle(BaseballTheme.textTertiary)
+                            bracketName(field.schools[pair * 2 + 1])
+                        }
+                    }
+                }
+                Text("전국 8팀. 스카우트들은 이런 무대의 공 하나를 오래 기억합니다.")
+                    .font(.caption2)
+                    .foregroundStyle(BaseballTheme.textTertiary)
+            }
+        }
+        .accessibilityIdentifier("hs.tournament")
+    }
+
+    private func bracketName(_ name: String) -> some View {
+        Text(name)
+            .font(.footnote.weight(name == schoolName ? .bold : .regular))
+            .foregroundStyle(name == schoolName ? BaseballTheme.action : BaseballTheme.textSecondary)
     }
 }
 
