@@ -174,6 +174,9 @@ struct LifeCardShareButton: View {
                     .foregroundStyle(BaseballTheme.action)
             }
             .accessibilityIdentifier("life.card.share")
+            .simultaneousGesture(TapGesture().onEnded {
+                GameAnalytics.log(.lifeCardShared, ["life_number": record.lifeNumber])
+            })
         }
     }
 }

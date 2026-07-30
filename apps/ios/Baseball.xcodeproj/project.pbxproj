@@ -10,6 +10,8 @@
 		0536C6C57B7D39C5CC96C3D8 /* CareerBootstrapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8914567CCE3DC83C86EC8133 /* CareerBootstrapTests.swift */; };
 		05793DCA31745B85E30FE7DC /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFB40C23D4863D2F7565C54 /* DesignSystem.swift */; };
 		081602F5FA74589497AF94AC /* GameAudioCueMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */; };
+		0BA1F21987CA928F926B930B /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 5EB7D7DD80808D2ADC11E76C /* FirebaseAnalytics */; };
+		0BEB448E80D1A7A1BED0B560 /* GameAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC349CC26A5D3281BE20CAE6 /* GameAnalytics.swift */; };
 		0E8B47740AB64ADAAD5B3CCF /* MobileCareerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */; };
 		13C737FE1665F41707DAA29E /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0414F684F40EFF55736026F /* Haptics.swift */; };
 		13EA77018AE302361EDCB5D0 /* BaseballApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */; };
@@ -66,6 +68,7 @@
 		F5D020DF3A1B4E0A3C2DB41E /* GrowthCelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E42DDAB867B43BEE748D08DB /* GrowthCelebrationView.swift */; };
 		F69C755A97EF78CD6CB80517 /* PitchSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6987D517241132311CC896B0 /* PitchSession.swift */; };
 		FC2682FCBF2DAE8965DB929F /* LifeArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BAD21AD8917D769883E60B7 /* LifeArchiveView.swift */; };
+		FC546DF5752543E0E78A5A09 /* AmplitudeSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 596CFC81225CCDFCB6BFC130 /* AmplitudeSwift */; };
 		FE98ACA8EA08D75154851B13 /* PadBedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F8835399622943256243E1B /* PadBedTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -147,6 +150,7 @@
 		E1DD00A7AD350A34AD82027A /* HighSchoolSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolSetupView.swift; sourceTree = "<group>"; };
 		E42DDAB867B43BEE748D08DB /* GrowthCelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrowthCelebrationView.swift; sourceTree = "<group>"; };
 		E9DF09E1A64F67EAE776D832 /* BaseballIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BaseballIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		EC349CC26A5D3281BE20CAE6 /* GameAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAnalytics.swift; sourceTree = "<group>"; };
 		F060404E63A14ED602332946 /* AbilityGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AbilityGaugeView.swift; sourceTree = "<group>"; };
 		F3FA3A8BA815F3B87537D27F /* ProRivalBatter+Stats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProRivalBatter+Stats.swift"; sourceTree = "<group>"; };
 		F6526F986EB9E4B84BFD6792 /* Audio */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Audio; sourceTree = SOURCE_ROOT; };
@@ -169,6 +173,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				D461F48E6FD8C03B8697AAA5 /* SimulationCore in Frameworks */,
+				0BA1F21987CA928F926B930B /* FirebaseAnalytics in Frameworks */,
+				FC546DF5752543E0E78A5A09 /* AmplitudeSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -214,6 +220,7 @@
 				0AFB40C23D4863D2F7565C54 /* DesignSystem.swift */,
 				9CD9548761DD9A3D82C5232D /* ExceptionCatcher.h */,
 				BBE3704F64563F164CBC134B /* ExceptionCatcher.m */,
+				EC349CC26A5D3281BE20CAE6 /* GameAnalytics.swift */,
 				8B412E9D5634221ADBA8ED35 /* GameAudio.swift */,
 				3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */,
 				D6400E3C7B6732A0F7E8EE94 /* GameLineFormat.swift */,
@@ -343,6 +350,8 @@
 			name = BaseballIOS;
 			packageProductDependencies = (
 				17CAB6B06F634AF92AC437D2 /* SimulationCore */,
+				5EB7D7DD80808D2ADC11E76C /* FirebaseAnalytics */,
+				596CFC81225CCDFCB6BFC130 /* AmplitudeSwift */,
 			);
 			productName = BaseballIOS;
 			productReference = E9DF09E1A64F67EAE776D832 /* BaseballIOS.app */;
@@ -377,6 +386,8 @@
 			mainGroup = B8B39C95E1D902769D81F510;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				84749EF984996930AFA19C2B /* XCRemoteSwiftPackageReference "Amplitude-Swift" */,
+				B73EE58B1A58466DF23615EA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				94622FAF6111F98B04F64A13 /* XCLocalSwiftPackageReference "../../packages/simulation-core" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -443,6 +454,7 @@
 				DD20655886A0B897AA32DC44 /* DeliveryControl.swift in Sources */,
 				05793DCA31745B85E30FE7DC /* DesignSystem.swift in Sources */,
 				1FFF80CE5E3E359F4EB4BE24 /* ExceptionCatcher.m in Sources */,
+				0BEB448E80D1A7A1BED0B560 /* GameAnalytics.swift in Sources */,
 				74CC5DD9D7ECD32F61707E5D /* GameAudio.swift in Sources */,
 				081602F5FA74589497AF94AC /* GameAudioCueMapping.swift in Sources */,
 				A8800D4D45BE21DE1315474E /* GameLineFormat.swift in Sources */,
@@ -785,6 +797,25 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		84749EF984996930AFA19C2B /* XCRemoteSwiftPackageReference "Amplitude-Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/amplitude/Amplitude-Swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.0;
+			};
+		};
+		B73EE58B1A58466DF23615EA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		038EBE72085665C46B77DF02 /* SimulationCore */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -793,6 +824,16 @@
 		17CAB6B06F634AF92AC437D2 /* SimulationCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SimulationCore;
+		};
+		596CFC81225CCDFCB6BFC130 /* AmplitudeSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 84749EF984996930AFA19C2B /* XCRemoteSwiftPackageReference "Amplitude-Swift" */;
+			productName = AmplitudeSwift;
+		};
+		5EB7D7DD80808D2ADC11E76C /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B73EE58B1A58466DF23615EA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -102,6 +102,7 @@ struct HighSchoolSetupView: View {
         }
         .background(BaseballTheme.canvas)
         .scrollDismissesKeyboard(.interactively)
+        .onAppear { GameAnalytics.logOnce(.onboardingStarted) }
         .animation(.snappy, value: step)
     }
 

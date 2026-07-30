@@ -206,6 +206,10 @@ final class HighSchoolCareerStore {
                 )
             )
             inheritance = carried
+            GameAnalytics.logOnce(.onboardingCompleted)
+            if carried.lifeNumber > 1 {
+                GameAnalytics.log(.rebirthStarted, ["life_number": carried.lifeNumber])
+            }
             // 별명과 연대기는 이번 회차의 것이다. 환생하면 새로 쓴다.
             nicknames = []
             chronicle = []
@@ -256,6 +260,7 @@ final class HighSchoolCareerStore {
 
     /// 연습을 마치고 프롤로그를 끝낸다. 업적·기록에는 남기지 않는다.
     func finishTutorialPitch() {
+        GameAnalytics.logOnce(.firstPitch)
         completePrologue()
     }
 
@@ -299,6 +304,7 @@ final class HighSchoolCareerStore {
     func advanceChapter() {
         perform { try engine.advanceChapter(.init(seed: $0.nextSeed, state: $0.snapshot)) }
         chapterStartStrikeouts = result?.snapshot.performance.strikeouts ?? chapterStartStrikeouts
+        GameAnalytics.log(.chapterAdvanced, ["chapter": result?.snapshot.chapter.number ?? 0])
         chapterGains = [:]
         chapterTrainingCount = 0
         if let snapshot = result?.snapshot {
@@ -316,6 +322,9 @@ final class HighSchoolCareerStore {
     func resolveDraft() {
         perform(cue: .success) { try engine.resolveDraft(.init(seed: $0.nextSeed, state: $0.snapshot)) }
         if let draft = result?.snapshot.draftResult {
+            GameAnalytics.log(.draftResolved, [
+                "drafted": draft.outcome == .drafted, "score": draft.evaluationScore,
+            ])
             if draft.outcome == .drafted, let team = draft.team {
                 note("드래프트 \(draft.round.map { "\($0)라운드 " } ?? "")\(team.name) 지명. 3년이 응답받았습니다.")
             } else {
@@ -354,6 +363,10 @@ final class HighSchoolCareerStore {
         let before = Set(nicknames.map(\.id))
         earnNicknames()
         noteGame(report: report, summary: summary)
+        GameAnalytics.log(.gameFinished, [
+            "strikeouts": report.strikeouts, "walks": report.walks, "runs": report.runsAllowed,
+        ])
+        GameAnalytics.logOnce(.activationFirstGame)
         celebrateChapterGoalIfCrossed()
         buzz = CommunityBuzz.reactions(
             careerID: self.result?.snapshot.careerID ?? "",

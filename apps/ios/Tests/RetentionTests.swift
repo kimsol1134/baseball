@@ -44,6 +44,19 @@ final class RetentionTests: XCTestCase {
         XCTAssertNotNil(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 950, aimAccuracy: 950)))
     }
 
+    // MARK: - 분석
+
+    /// 전환으로 집계되는 이벤트는 1인 1회여야 한다 — 두 번 세면 광고 데이터가 거짓이 된다.
+    @MainActor
+    func testActivationEventLogsExactlyOnce() {
+        GameAnalytics.resetOnceFlags()
+        XCTAssertTrue(GameAnalytics.logOnce(.activationFirstGame), "첫 호출은 기록돼야 합니다.")
+        XCTAssertFalse(GameAnalytics.logOnce(.activationFirstGame), "두 번째 호출은 무시돼야 합니다.")
+        GameAnalytics.resetOnceFlags()
+        XCTAssertTrue(GameAnalytics.logOnce(.activationFirstGame), "리셋 후에는 다시 기록됩니다.")
+        GameAnalytics.resetOnceFlags()
+    }
+
     // MARK: - 소리
 
     /// 소리 매핑은 결과마다 반드시 무언가를 낸다. 조용한 투구는 없다.

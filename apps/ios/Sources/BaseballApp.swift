@@ -3,6 +3,11 @@ import UIKit
 
 @main
 struct BaseballApp: App {
+    init() {
+        // 분석은 설정이 있을 때만 켜진다 — 없으면 이 호출은 무동작이다.
+        GameAnalytics.configure()
+    }
+
     /// UI 스모크 테스트가 저장된 커리어를 지우고 첫 실행 상태에서 시작하도록 하는 인자.
     static let resetLaunchArgument = "-uiTestResetCareer"
     /// UI 테스트가 타이밍 제스처 없이 흐름을 통과하도록 자동 릴리스를 켠다.
