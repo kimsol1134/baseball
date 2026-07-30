@@ -48,7 +48,7 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
         case .firstDraft: "고교 드래프트에서 지명을 받습니다."
         case .firstStrikeout: "중요 경기에서 삼진을 하나 잡습니다."
         case .cleanInning: "중요 경기를 실점 없이 끝냅니다."
-        case .perfectDelivery: "릴리스와 조준이 모두 900 이상인 공을 던집니다."
+        case .perfectDelivery: "거의 완벽한 릴리스와 조준으로 한 공을 던집니다."
         case .majorDebut: "프로 1군에 올라갑니다."
         case .hundredStrikeouts: "한 시즌에 100개의 삼진을 잡습니다."
         case .thirdLife: "3회차를 시작합니다."

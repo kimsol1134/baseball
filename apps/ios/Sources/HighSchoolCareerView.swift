@@ -158,6 +158,16 @@ struct HighSchoolCareerView: View {
                     .padding(BaseballMetrics.gutter)
                 }
                 .background(BaseballTheme.canvas)
+                // 스크롤 콘텐츠가 상태바 밑을 그대로 지나면 시계와 제목이 겹친다(QA P2-3).
+                // 얇은 스크림 하나가 위를 정리한다.
+                .overlay(alignment: .top) {
+                    LinearGradient(colors: [BaseballTheme.canvas, BaseballTheme.canvas.opacity(0)],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: 28)
+                        .ignoresSafeArea(edges: .top)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
                 // 화면 전체에 .animation(value:)을 걸면 같은 국면 안의 카드 교체
                 // (훈련→훈련)에서 옛 글자와 새 글자가 두 겹으로 보인다(QA P0-2).
                 // 갱신은 즉시가 맞다 — 회차당 수백 번 겪는 전환은 연출보다 빠름이 이긴다.

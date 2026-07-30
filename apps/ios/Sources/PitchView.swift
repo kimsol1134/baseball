@@ -79,6 +79,15 @@ enum PitchCopy {
         }
     }
 
+    /// 타구가 있으면 "인플레이 아웃" 대신 타구 종류로 말한다(QA P2-4).
+    /// 엔진 용어는 정확하지만 야구 팬의 언어가 아니다.
+    static func outcome(_ outcome: PitchOutcome, battedBall: BattedBall?) -> String {
+        guard outcome == .inPlayOut, let ball = battedBall else { return Self.outcome(outcome) }
+        if ball.launchAngleTenthsDegrees < 100 { return "땅볼 아웃" }
+        if ball.launchAngleTenthsDegrees < 250 { return "직선타 아웃" }
+        return "뜬공 아웃"
+    }
+
     static func plateResult(_ result: PlateAppearanceResult) -> String {
         switch result {
         case .strikeout: "삼진"
@@ -316,7 +325,7 @@ struct PitchView: View {
                 }
                 .id(Self.dramaAnchor)
 
-                BaseballCard(title: PitchCopy.outcome(result.snapshot.outcome), tone: tone(for: result.snapshot.outcome)) {
+                BaseballCard(title: PitchCopy.outcome(result.snapshot.outcome, battedBall: result.snapshot.battedBall), tone: tone(for: result.snapshot.outcome)) {
                     VStack(alignment: .leading, spacing: 6) {
                         // 기질 특성 발동 — 보정은 전부 공개된다. 숨은 조작은 이 게임에 없다.
                         if session.lastTraitFired, let trait = session.trait {
@@ -372,9 +381,11 @@ struct PitchView: View {
             }
             BaseballCard(title: "투구 기록") {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(session.pitchLog) { entry in
+                    // 타석마다 1로 돌아가는 번호는 목록이 깨진 것처럼 보인다(QA P2-6) —
+                    // 등판 통산 순번으로 매기고, 타석 안 번호는 세부에 남는다.
+                    ForEach(Array(session.pitchLog.enumerated()), id: \.element.id) { index, entry in
                         HStack(alignment: .top, spacing: 8) {
-                            Text("\(entry.pitchNumber)").font(.caption.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary).frame(width: 18, alignment: .trailing)
+                            Text("\(index + 1)").font(.caption.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary).frame(width: 18, alignment: .trailing)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text("\(PitchCopy.pitch(entry.call.pitchType)) · \(PitchCopy.zone(entry.call.zone, batSide: session.batter.batSide)) · \(PitchCopy.outcome(entry.outcome))")
                                     .font(.footnote.weight(.semibold))
@@ -733,7 +744,10 @@ private struct PostgameAnalysisCard: View {
                                     .font(.caption.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textTertiary)
                                 Spacer()
-                                Text("존 \(PitchCopy.rate(breakdown.zoneRate)) · 헛스윙 \(PitchCopy.rate(breakdown.whiffRate)) · 강타 \(PitchCopy.rate(breakdown.hardHitRate))")
+                                // 1구짜리 표본에 "0.0%"는 정보가 아니라 소음이다(QA P2-7).
+                                Text(breakdown.pitches < 5
+                                     ? "존 \(breakdown.zoneRate * breakdown.pitches / 1_000)/\(breakdown.pitches)"
+                                     : "존 \(PitchCopy.rate(breakdown.zoneRate)) · 헛스윙 \(PitchCopy.rate(breakdown.whiffRate)) · 강타 \(PitchCopy.rate(breakdown.hardHitRate))")
                                     .font(.caption.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textSecondary)
                             }

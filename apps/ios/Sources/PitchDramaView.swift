@@ -72,7 +72,7 @@ struct PitchDramaView: View {
 
     private var accessibilityLabel: String {
         let speed = String(format: "%.1f", Double(execution.velocityTenthsKPH) / 10)
-        var text = "\(PitchCopy.outcome(outcome)). 시속 \(speed)킬로미터."
+        var text = "\(PitchCopy.outcome(outcome, battedBall: battedBall)). 시속 \(speed)킬로미터."
         if let fielding, let name = fielding.fielderName {
             let distance = Double(fielding.landingDistanceTenthsMeters ?? 0) / 10
             text += " 타구 \(Int(distance))미터, \(name)."
@@ -434,7 +434,7 @@ struct PitchDramaView: View {
     private func drawVerdict(context: GraphicsContext, size: CGSize) {
         guard verdictFlash > 0 else { return }
         let scale = min(size.width / Self.pitchBox.width, size.height / Self.pitchBox.height)
-        let text = Text(PitchCopy.outcome(outcome))
+        let text = Text(PitchCopy.outcome(outcome, battedBall: battedBall))
             .font(.system(size: 32 * scale, weight: .heavy))
             .foregroundStyle(tone)
         var resolved = context.resolve(text)

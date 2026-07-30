@@ -24,19 +24,18 @@ struct GrowthCelebrationView: View {
 
             // 데스크톱 훈련 결과 화면처럼 오른 값을 큰 숫자로 먼저 보여 주고,
             // 게이지는 그 아래에서 사다리 위 위치를 보충한다.
+            // 같은 값을 큰 숫자와 게이지로 두 번 적으면 축하가 아니라 오류로 보인다
+            // (QA P2-1). 큰 숫자 + "다음 단계까지"만 남긴다.
             ForEach(gains) { gain in
-                VStack(alignment: .leading, spacing: 8) {
-                    StatTile(
-                        label: gain.label,
-                        value: "\(gain.after)",
-                        previousValue: "\(gain.before)",
-                        caption: RatingScale.nextStep(gain.after).map {
-                            "다음 단계 \($0.label)까지 \($0.minimum - gain.after)"
-                        },
-                        tone: BaseballTheme.action
-                    )
-                    AbilityGaugeView(label: gain.label, value: gain.after, beforeValue: gain.before, showsMeaning: false)
-                }
+                StatTile(
+                    label: gain.label,
+                    value: "\(gain.after)",
+                    previousValue: "\(gain.before)",
+                    caption: RatingScale.nextStep(gain.after).map {
+                        "다음 단계 \($0.label)까지 \($0.minimum - gain.after)"
+                    },
+                    tone: BaseballTheme.action
+                )
             }
         }
         .padding(BaseballMetrics.gutter)
