@@ -92,7 +92,12 @@ struct AppShell: View {
         case .loading:
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(BaseballTheme.canvas)
         case .needsSetup:
-            ProLockedView(pro: pro, hasFinishedALife: !highSchool.archive.isEmpty)
+            ProLockedView(
+                pro: pro,
+                hasFinishedALife: !highSchool.archive.isEmpty,
+                forecast: highSchool.state.map { HighSchoolCareerEngine.draftForecast(state: $0) },
+                remainingChapters: highSchool.state.map { max(0, 8 - $0.chapter.number) }
+            )
         case .failed(let message):
             CareerFailureView(message: message, career: pro)
         case .ready:
@@ -112,6 +117,8 @@ struct AppShell: View {
 private struct ProLockedView: View {
     let pro: MobileCareerStore
     let hasFinishedALife: Bool
+    var forecast: HighSchoolCareerEngine.DraftForecastSnapshot?
+    var remainingChapters: Int?
     @State private var showsSetup = false
 
     var body: some View {
@@ -125,6 +132,24 @@ private struct ProLockedView: View {
                 BaseballCard(title: "정규 경로", tone: .raised) {
                     Text("고교 탭에서 3년을 보내고 드래프트를 통과하면, 그때의 능력을 그대로 안고 프로에 들어갑니다.")
                         .font(.subheadline)
+                }
+                // 잠긴 문 아래가 빈 검정이면 잠금이 벌처럼 느껴진다. 같은 공간이
+                // "지금 평가가 당락선에서 몇 점 모자란가"를 말하면 목표판이 된다(QA P1-12 부분).
+                if let forecast {
+                    BaseballCard(title: "이 문까지의 거리", tone: .milestone) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(forecast.band)
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(forecast.score >= forecast.threshold ? BaseballTheme.action : BaseballTheme.textPrimary)
+                            Text("현재 평가 \(forecast.score)점 · 당락선 \(forecast.threshold)점"
+                                 + (remainingChapters.map { $0 > 0 ? " · 남은 챕터 \($0)" : " · 드래프트 임박" } ?? ""))
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                            Text("\(forecast.interestedTeam)\(KoreanCopy.particle(forecast.interestedTeam, final: "이", open: "가")) 지금 성적을 지켜보고 있습니다.")
+                                .font(.caption)
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                        }
+                    }
                 }
                 // 건너뛰기는 본편을 한 번 완주한 사람의 문이다. 처음 켠 사람이 이 문으로
                 // 들어가면 이 게임에서 가장 좋은 것(3년 육성·환생)을 못 본 채 평가한다.

@@ -1329,4 +1329,14 @@ extension HighSchoolCareerEngineTests {
         XCTAssertEqual(hit.snapshot.lastTraining?.opportunityHit, true)
         XCTAssertNotEqual(miss.snapshot.lastTraining?.opportunityHit, true)
     }
+
+    /// 상시 시나리오 풀 크기는 보폭 7과 서로소여야 무중복 순환이 산다.
+    /// 시나리오를 추가·게이트할 때 이 검사가 어긋나면 보폭도 함께 바꿔야 한다.
+    func testAlwaysAvailableScenarioPoolStaysCoprimeWithStride() {
+        func gcd(_ a: Int, _ b: Int) -> Int { b == 0 ? a : gcd(b, a % b) }
+        let pool = HighSchoolContentCatalog.scenarios.filter { $0.minChapter <= 1 }
+        XCTAssertEqual(gcd(7, pool.count), 1, "상시 풀 \(pool.count)개가 보폭 7과 서로소가 아닙니다.")
+        // 시기 고정 장면은 정확히 둘 — 결승(전국대회 챕터)과 마지막 이닝(드래프트 여름).
+        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count - pool.count, 2)
+    }
 }

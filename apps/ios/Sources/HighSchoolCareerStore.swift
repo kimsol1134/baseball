@@ -399,9 +399,9 @@ final class HighSchoolCareerStore {
             .filter { earned in !nicknames.contains { $0.id == earned.id } }
         guard !fresh.isEmpty else { return }
         nicknames.append(contentsOf: fresh)
-        for earned in fresh { note("'\(earned.title)'(이)라는 별명을 얻었습니다. \(earned.reason)") }
+        for earned in fresh { note("'\(earned.title)'\(KoreanCopy.particle(earned.title, final: "이라는", open: "라는")) 별명을 얻었습니다. \(earned.reason)") }
         if let first = fresh.first {
-            lastSummary = "이제 사람들이 '\(first.title)'(이)라고 부릅니다. \(first.reason)"
+            lastSummary = "이제 사람들이 '\(first.title)'\(KoreanCopy.particle(first.title, final: "이라고", open: "라고")) 부릅니다. \(first.reason)"
             feedbackCue = .success
             feedbackTrigger += 1
         }

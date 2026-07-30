@@ -160,6 +160,8 @@ struct DraftRevealView: View {
             }
         }
         .frame(maxWidth: .infinity)
+        // 본문이 화면 끝에 닿으면 유료 게임의 정점 화면이 급조된 화면으로 읽힌다(QA 재검증 신규 2).
+        .padding(.horizontal, BaseballMetrics.gutter * 2)
         .scaleEffect(stampScale)
         .opacity(stampOpacity)
     }
@@ -384,9 +386,13 @@ struct HighlightStamp: View {
                         .font(BaseballType.scoreboard)
                         .foregroundStyle(BaseballTheme.textPrimary)
                 }
-                Text(String(format: "%.1fkm/h", Double(velocityTenthsKPH) / 10))
-                    .font(BaseballType.scoreboard)
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                // 인플레이 아웃(위기 차단)에 구속을 병기하면 타구 장면에 투구 수치가
+                // 붙는 셈이다 — 그 스탬프는 부제만으로 말한다(QA 재검증 신규 5).
+                if kind != .inningShutdown {
+                    Text(String(format: "%.1fkm/h", Double(velocityTenthsKPH) / 10))
+                        .font(BaseballType.scoreboard)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
             }
         }
         .padding(.horizontal, 18)

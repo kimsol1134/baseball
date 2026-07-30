@@ -22,9 +22,14 @@ public struct ImportantGameScenarioContent: Codable, Equatable, Sendable {
     /// 고정돼, 고교 3년의 모든 승부가 리드를 지키는 경기였다 — 지고 있는 마운드가 없었다.
     /// 옵셔널이라 이 필드가 없는 옛 저장본도 그대로 열린다.
     public let scoreDifferential: Int?
-    public init(id: String, title: String, inning: Int, outs: Int, runners: BaserunnerStateSnapshot, leverage: Int, narrative: String, scoreDifferential: Int? = nil) {
+    /// 이 장면이 성립하는 최소 챕터. "드래프트 전 마지막 이닝"이 1학년 봄에 나오면
+    /// 첫 하이라이트에서 서사가 3년 뒤를 말한다(QA 재검증 신규 1).
+    public let minChapter: Int
+
+    public init(id: String, title: String, inning: Int, outs: Int, runners: BaserunnerStateSnapshot, leverage: Int, narrative: String, scoreDifferential: Int? = nil, minChapter: Int = 1) {
         self.id = id; self.title = title; self.inning = inning; self.outs = outs; self.runners = runners; self.leverage = leverage; self.narrative = narrative
         self.scoreDifferential = scoreDifferential
+        self.minChapter = minChapter
     }
 }
 
@@ -108,9 +113,9 @@ public enum HighSchoolContentCatalog {
         .init(id: "game-fatigue", title: "피로한 7회", inning: 7, outs: 0, runners: runners(true, false, false, speed: 59), leverage: 720, narrative: "직구가 느려진 7회, 어떤 공으로 버틸지 정해야 합니다.", scoreDifferential: 1),
         .init(id: "game-scout", title: "스카우트 관전", inning: 5, outs: 1, runners: runners(false, false, false, speed: 55), leverage: 690, narrative: "팀은 한 점 뒤져 있지만, 스카우트는 점수가 아니라 같은 코스를 반복하는지 지켜봅니다.", scoreDifferential: -1),
         .init(id: "game-rain", title: "우천 중단 뒤", inning: 6, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 540, narrative: "두 시간 동안 경기가 멈춰 몸이 식은 뒤 만나는 첫 타자입니다.", scoreDifferential: 0),
-        .init(id: "game-one-run", title: "한 점 차", inning: 9, outs: 0, runners: runners(false, true, false, speed: 68), leverage: 980, narrative: "드래프트 전 마지막 고교 이닝", scoreDifferential: 1),
+        .init(id: "game-one-run", title: "한 점 차", inning: 9, outs: 0, runners: runners(false, true, false, speed: 68), leverage: 980, narrative: "드래프트 전 마지막 고교 이닝", scoreDifferential: 1, minChapter: 7),
         .init(id: "game-new-catcher", title: "새 포수와 첫 경기", inning: 4, outs: 1, runners: runners(true, false, false, speed: 62), leverage: 570, narrative: "새 포수와 아직 구종 사인을 충분히 맞추지 못했습니다.", scoreDifferential: 1),
-        .init(id: "game-national-final", title: "전국 결승", inning: 8, outs: 2, runners: runners(true, true, false, speed: 66), leverage: 1_000, narrative: "2사 1·2루. 마지막 아웃 하나에 우승이 걸렸습니다.", scoreDifferential: 1),
+        .init(id: "game-national-final", title: "전국 결승", inning: 8, outs: 2, runners: runners(true, true, false, speed: 66), leverage: 1_000, narrative: "2사 1·2루. 마지막 아웃 하나에 우승이 걸렸습니다.", scoreDifferential: 1, minChapter: 4),
         .init(id: "game-walkoff-defense", title: "9회말 리드 방어", inning: 9, outs: 1, runners: runners(false, true, true, speed: 63), leverage: 985, narrative: "한 점 앞선 9회말 1사 2·3루. 외야로 뜨기만 해도 동점, 안타면 경기가 끝납니다.", scoreDifferential: 1),
         .init(id: "game-extra-tiebreak", title: "연장 승부치기", inning: 10, outs: 0, runners: runners(true, true, false, speed: 67), leverage: 940, narrative: "연장 승부치기. 무사 1·2루에서 시작합니다. 아웃부터 잡지 못하면 큰 이닝이 됩니다.", scoreDifferential: 0),
         .init(id: "game-ace-duel", title: "0-0 투수전", inning: 8, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 810, narrative: "8회까지 0의 행진. 상대 에이스도 지지 않습니다. 먼저 실수하는 쪽이 집니다.", scoreDifferential: 0),

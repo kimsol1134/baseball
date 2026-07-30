@@ -27,7 +27,7 @@ public enum CommunityBuzz {
         if let nickname = newNickname {
             picked.append(pick(&generator, [
                 "'\(nickname)' 별명 붙은 거 봤음? 인정할 수밖에 없긴 함",
-                "요즘 애들이 '\(nickname)'(이)라고 부르던데 찰떡이긴 하다",
+                "요즘 다들 '\(nickname)' 하고 부르던데 찰떡이긴 하다",
                 "별명이 '\(nickname)'... 고교야구에서 별명 생기면 진짜라는 뜻임",
             ]))
         }

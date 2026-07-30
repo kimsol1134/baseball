@@ -2112,10 +2112,23 @@ public struct HighSchoolCareerEngine: Sendable {
         // 한다(7). 예전에는 기준값이 매 행동마다 바뀌는 체인 시드라 어떤 보폭을 써도
         // 생일 문제로 한 회차의 41%가 같은 장면을 두 번 봤다. 회차 고정 기준 + 서로소
         // 보폭이면 경기 20번까지 중복이 없고, 회차가 바뀌면 기준이 바뀐다.
+        // 시기 고정 장면은 추첨하지 않고 그 챕터에 놓는다 — "드래프트 전 마지막
+        // 이닝"이 1학년 봄에 나오면 첫 하이라이트에서 서사가 3년 뒤를 말한다(QA).
+        // 결승은 전국대회 챕터에, 마지막 이닝은 드래프트의 여름에 — 추첨보다 낫다.
+        // 상시 장면만 순환시키면 풀 크기가 고정되어 무중복 보장(서로소 보폭)도 산다.
+        if state.chapter.number == 8,
+           let finale = HighSchoolContentCatalog.scenarios.first(where: { $0.id == "game-one-run" }) {
+            return finale
+        }
+        if state.chapter.number == 4,
+           let final = HighSchoolContentCatalog.scenarios.first(where: { $0.id == "game-national-final" }) {
+            return final
+        }
+        let pool = HighSchoolContentCatalog.scenarios.filter { $0.minChapter <= 1 }
         let runBase = UInt64(StableHash.fnv1a64("game_scenario|\(state.careerID)"), radix: 16) ?? seed
-        let index = (Int(runBase % UInt64(HighSchoolContentCatalog.scenarios.count)) + count * 7)
-            % HighSchoolContentCatalog.scenarios.count
-        return HighSchoolContentCatalog.scenarios[index]
+        // 보폭 7은 상시 풀 크기(18)와 서로소다. 크기가 변하면 테스트가 막는다.
+        let index = (Int(runBase % UInt64(pool.count)) + count * 7) % pool.count
+        return pool[index]
     }
 
     private static func bestTeam(for pitcher: PitcherSnapshot, seed: UInt64) -> DraftTeamSnapshot {

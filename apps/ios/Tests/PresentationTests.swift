@@ -169,6 +169,29 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(KoreanCopy.money(won: 200_000_000), "2억 원")
     }
 
+    /// 위기 차단 스탬프 — 실점 없이 닫은 이닝의 마지막 인플레이 아웃에만 찍힌다.
+    /// 실점하며 끝난 이닝에 찍히면 "축하"가 거짓말이 된다.
+    func testInningShutdownStampRequiresAScorelessEnd() {
+        XCTAssertEqual(
+            HighlightStamp.kind(outcome: .inPlayOut, plateResult: .inPlayOut,
+                                inningEnded: true, landingDistanceTenthsMeters: nil,
+                                runsScored: 0),
+            .inningShutdown
+        )
+        XCTAssertNil(
+            HighlightStamp.kind(outcome: .inPlayOut, plateResult: .inPlayOut,
+                                inningEnded: true, landingDistanceTenthsMeters: nil,
+                                runsScored: 1),
+            "실점하며 끝난 이닝은 위기 차단이 아니다."
+        )
+        XCTAssertNil(
+            HighlightStamp.kind(outcome: .inPlayOut, plateResult: .inPlayOut,
+                                inningEnded: false, landingDistanceTenthsMeters: nil,
+                                runsScored: 0),
+            "이닝 중간의 아웃에는 찍히지 않는다."
+        )
+    }
+
     func testZoneLabels() {
         XCTAssertEqual(PitchCopy.zone(PitchZone(row: 0, column: 0)), "높은 몸쪽")
         XCTAssertEqual(PitchCopy.zone(PitchZone(row: 1, column: 1)), "가운데")

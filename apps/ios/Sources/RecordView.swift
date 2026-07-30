@@ -442,7 +442,7 @@ private struct ProspectRankingCard: View {
                         Text("가상 지명 명단: \(forecast.band)")
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(forecast.score >= forecast.threshold ? BaseballTheme.action : BaseballTheme.textPrimary)
-                        Text("평가 \(forecast.score)점 · 당락선 \(forecast.threshold)점 · \(forecast.interestedTeam)이(가) 주목")
+                        Text("평가 \(forecast.score)점 · 당락선 \(forecast.threshold)점 · \(forecast.interestedTeam)\(KoreanCopy.particle(forecast.interestedTeam, final: "이", open: "가")) 주목")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }
