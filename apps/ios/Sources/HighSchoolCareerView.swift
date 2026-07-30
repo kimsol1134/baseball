@@ -853,6 +853,22 @@ private struct LegacyCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            // 아직 접지 않은 회차의 카드를 미리 만들어 보여 준다. 3년을 함께한
+            // 선수의 얼굴·별명·기록이 한 장에 담긴 것을 보고 나서 작별하는 것과,
+            // 숫자 목록을 보고 작별하는 것은 다른 경험이다.
+            let provisional = HighSchoolCareerStore.lifeRecord(
+                from: state, memories: career.selectedMemories, previous: career.inheritance,
+                nicknames: career.nicknames, chronicle: career.chronicle
+            )
+            BaseballCard(title: "회차 카드", tone: .milestone) {
+                VStack(alignment: .leading, spacing: 10) {
+                    LifeCardView(record: provisional)
+                        .scaleEffect(0.72, anchor: .top)
+                        .frame(height: LifeCardView.size.height * 0.72)
+                        .frame(maxWidth: .infinity)
+                    LifeCardShareButton(record: provisional)
+                }
+            }
             ChronicleCard(entries: career.chronicle)
             if let draft = state.draftResult {
                 BaseballCard(title: draft.outcome == .drafted ? "지명" : "미지명",

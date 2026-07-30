@@ -96,6 +96,8 @@ private struct LifeArchiveRow: View {
 
             if expanded {
                 VStack(alignment: .leading, spacing: 6) {
+                    LifeCardShareButton(record: record)
+                        .padding(.bottom, 2)
                     if let chronicle = record.chronicle, !chronicle.isEmpty {
                         ForEach(chronicle, id: \.self) { line in
                             Text(line)

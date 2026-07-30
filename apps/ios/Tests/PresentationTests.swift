@@ -1,3 +1,4 @@
+import SwiftUI
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
@@ -128,6 +129,31 @@ final class PresentationTests: XCTestCase {
                                 inningEnded: false, landingDistanceTenthsMeters: nil,
                                 consecutiveStrikeouts: 1)
         )
+    }
+
+    /// 회차 카드가 실제로 이미지가 되는지 — 공유 버튼은 렌더 실패 시 숨으므로,
+    /// 렌더가 조용히 죽으면 기능 전체가 조용히 사라진다. 그걸 여기서 잡는다.
+    @MainActor
+    func testLifeCardRendersToAnImage() {
+        let record = HighSchoolCareerStore.LifeRecord(
+            lifeNumber: 3, playerName: "김솔", schoolName: "서울덕성고", drafted: true,
+            evaluationScore: 82, teamName: "부산 돌핀스", memories: [], games: 5,
+            strikeouts: 31, walks: 4, runsAllowed: 3, soulPoints: 44,
+            nicknames: ["삼진 사냥꾼", "탈삼진 머신"],
+            chronicle: ["1학년 봄 — 서울덕성고 입학. 3년이 시작됩니다.",
+                        "2학년 여름 — '탈삼진 머신'(이)라는 별명을 얻었습니다.",
+                        "3학년 여름 — 드래프트 1라운드 부산 돌핀스 지명. 3년이 응답받았습니다."]
+        )
+        let renderer = ImageRenderer(content: LifeCardView(record: record))
+        renderer.scale = 2
+        let image = renderer.uiImage
+        XCTAssertNotNil(image, "회차 카드가 이미지로 렌더되지 않습니다.")
+        if let image, let data = image.pngData(),
+           let dir = ProcessInfo.processInfo.environment["TMPDIR"] {
+            let url = URL(fileURLWithPath: dir).appendingPathComponent("life-card.png")
+            try? data.write(to: url)
+            print("CARD_EXPORT: \(url.path)")
+        }
     }
 
     func testZoneLabels() {
