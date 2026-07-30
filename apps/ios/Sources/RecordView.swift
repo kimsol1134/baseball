@@ -34,6 +34,7 @@ struct RecordView: View {
                             }
                         }
                         LifeArchiveSection(records: highSchool.archive)
+                        AchievementsLinkCard()
                     }
                     .padding(BaseballMetrics.gutter)
                 }
@@ -491,5 +492,29 @@ private struct ProspectRankingCard: View {
                     .foregroundStyle(BaseballTheme.textSecondary)
             }
         }
+    }
+}
+
+/// 업적으로 가는 문. 도감·수집은 환생 게임의 리텐션 장치인데 설정 탭의 토글
+/// 아래 묻혀 있었다(QA P2-10) — 기록을 보는 자리가 곧 수집을 확인하는 자리다.
+struct AchievementsLinkCard: View {
+    var body: some View {
+        NavigationLink {
+            AchievementsView(store: .shared)
+        } label: {
+            BaseballCard(title: "업적과 도감") {
+                HStack {
+                    Text("해금한 업적과 앞으로의 도전을 봅니다.")
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("record.achievements")
     }
 }

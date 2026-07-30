@@ -175,9 +175,29 @@ struct HighSchoolSetupView: View {
             .foregroundStyle(BaseballTheme.action)
             .accessibilityIdentifier("hs.setup.suggestName")
 
-            if isRebirth { inheritanceCard }
+            if isRebirth {
+                inheritanceCard
+            } else {
+                // 입력칸 아래 화면 1/3이 빈 검정이었다(QA P2-11) — 이름을 정하는 순간에
+                // 3년이 흐를 무대를 미리 보여 준다.
+                Image(KeyArt.stadiumNight.rawValue)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(height: 170)
+                    .clipShape(RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+                    .overlay(alignment: .bottomLeading) {
+                        Text("이 이름이 3년 동안 이 구장에서 불립니다.")
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .padding(10)
+                    }
+                    .accessibilityHidden(true)
+            }
         }
-        .onAppear { nameFocused = true }
+        .padding(.bottom, 16)
+        // 환생 회차에는 키보드를 먼저 올리지 않는다 — 계승 카드("가져온 것")를 키보드가
+        // 가리면 세 번째 기억이 잘린 채 시작한다(QA P2-11).
+        .onAppear { nameFocused = !isRebirth }
     }
 
     private var inheritanceCard: some View {

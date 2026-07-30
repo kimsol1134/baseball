@@ -138,14 +138,18 @@ struct HighSchoolCareerView: View {
                         } else if let summary = career.lastSummary {
                             SummaryBanner(summary: summary, cue: career.feedbackCue)
                         }
-                        if !career.buzz.isEmpty {
-                            CommunityBuzzCard(lines: career.buzz)
+                        // 3년에 세 번뿐인 각성 앞에서는 주변 소음을 접는다(QA P2-2) —
+                        // 되돌릴 수 없는 선택이 목록 한 줄로 보이면 무게가 사라진다.
+                        if state.phase != .awakening {
+                            if !career.buzz.isEmpty {
+                                CommunityBuzzCard(lines: career.buzz)
+                            }
+                            if !career.worldNews.isEmpty {
+                                CommunityBuzzCard(title: "전국의 소식", footnote: "라이벌들도 저마다의 3년을 살고 있습니다.", lines: career.worldNews)
+                            }
                         }
-                        if !career.worldNews.isEmpty {
-                            CommunityBuzzCard(title: "전국의 소식", footnote: "라이벌들도 저마다의 3년을 살고 있습니다.", lines: career.worldNews)
-                        }
-                        // 드래프트가 끝난 회차에 챕터 숙제는 소음이다.
-                        if state.draftResult == nil {
+                        // 드래프트가 끝난 회차에 챕터 숙제는 소음이다. 각성 국면도 접는다.
+                        if state.draftResult == nil, state.phase != .awakening {
                             if TournamentBracket.isTournamentChapter(state.chapter.number),
                                let school = state.school {
                                 TournamentCard(state: state, schoolName: school.name)
@@ -763,7 +767,8 @@ private struct AwakeningCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            Text("몸이 하나를 기억합니다").font(.headline)
+            // 회차당 세 번뿐인 순간 — 목록이 아니라 무대를 준다(QA P2-2).
+            KeyArtHeader(art: .awakening, eyebrow: "각성", title: "몸이 하나를 기억합니다", accent: BaseballTheme.milestone)
             Text("고른 각성은 되돌릴 수 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
             ForEach(options, id: \.self) { option in
                 let copy = HighSchoolPresentation.awakening(option)
@@ -785,6 +790,8 @@ private struct AwakeningCard: View {
                 .accessibilityIdentifier("hs.awakening.\(option.rawValue)")
             }
         }
+        // 마지막 선택지가 탭바에 잘리지 않게 — 잘린 선택지는 없는 선택지다.
+        .padding(.bottom, 24)
         .confirmationDialog(
             pending.map {
                 let title = HighSchoolPresentation.awakening($0).title
@@ -854,6 +861,13 @@ private struct TournamentCard: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 84)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
+                        // 배너 아래를 카드 배경으로 녹여 사진과 카드가 한 장으로 붙는다(QA P2-9).
+                        .overlay {
+                            LinearGradient(colors: [.clear, BaseballTheme.surface.opacity(0.55)],
+                                           startPoint: .center, endPoint: .bottom)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .allowsHitTesting(false)
+                        }
                 }
                 Text("에이스 등판 — \(field.playerRound)")
                     .font(.subheadline.weight(.bold))
