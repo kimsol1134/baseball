@@ -33,6 +33,7 @@
 		6A6106306E1AF28A5FCFE1FE /* ProRivalBatter+Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3FA3A8BA815F3B87537D27F /* ProRivalBatter+Stats.swift */; };
 		74CC5DD9D7ECD32F61707E5D /* GameAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B412E9D5634221ADBA8ED35 /* GameAudio.swift */; };
 		77B6A10F10B42E5D0C183205 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19519846B2DF9369A5DA8FC /* SettingsView.swift */; };
+		7ABAEA67E66023CCF56BCEDB /* QACaptureUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DDF52C7FC66A5A36C50638 /* QACaptureUITests.swift */; };
 		81B9B8504D8A35973B155E63 /* HighSchoolCareerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB871919CDBE86B35708EEBF /* HighSchoolCareerView.swift */; };
 		828A1169DEA7E2BA3CC7348B /* SoundBank.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F71BD5BC715F678CF9E14C5 /* SoundBank.swift */; };
 		87D08E2396235CB38A0946CF /* UmpireVoiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 428C02967C4E89685CFBD9C4 /* UmpireVoiceTests.swift */; };
@@ -128,6 +129,7 @@
 		A0414F684F40EFF55736026F /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		AB871919CDBE86B35708EEBF /* HighSchoolCareerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerView.swift; sourceTree = "<group>"; };
 		B19519846B2DF9369A5DA8FC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B6DDF52C7FC66A5A36C50638 /* QACaptureUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QACaptureUITests.swift; sourceTree = "<group>"; };
 		B6FD9FC4DABDF4993821FE27 /* BaseballIOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BaseballIOS.entitlements; sourceTree = "<group>"; };
 		BBE3704F64563F164CBC134B /* ExceptionCatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ExceptionCatcher.m; sourceTree = "<group>"; };
 		BFE0F40C01B6D49B74C3C25A /* HighSchoolCareerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerStore.swift; sourceTree = "<group>"; };
@@ -178,6 +180,7 @@
 			children = (
 				79173A1105F3877F88315737 /* CareerSmokeUITests.swift */,
 				598D8EDA6137AA0633E3390B /* PromoCaptureUITests.swift */,
+				B6DDF52C7FC66A5A36C50638 /* QACaptureUITests.swift */,
 			);
 			path = UITests;
 			sourceTree = "<group>";
@@ -473,6 +476,7 @@
 			files = (
 				E2F8C6DE5F19C9DB154A2F7F /* CareerSmokeUITests.swift in Sources */,
 				2A7BA2CA98BAB566A4978470 /* PromoCaptureUITests.swift in Sources */,
+				7ABAEA67E66023CCF56BCEDB /* QACaptureUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -672,7 +676,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -715,7 +719,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
