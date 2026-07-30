@@ -420,6 +420,7 @@ struct BloomCelebrationView: View {
     let ability: TalentAbility
     let grade: TalentGrade
     let onDismiss: () -> Void
+    // 만개 아트가 번들에 있으면 축하 카드 배경에 깔린다.
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var burst: Double = 0
@@ -457,7 +458,19 @@ struct BloomCelebrationView: View {
         }
         .padding(BaseballMetrics.gutter)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(BaseballTheme.milestoneSoft, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+        .background {
+            // 만개 아트가 있으면 깔린다 — 회차당 몇 번뿐인 순간이라 그림값을 한다.
+            if UIImage(named: "BloomArt") != nil {
+                Image("BloomArt")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .overlay(BaseballTheme.milestoneSoft.opacity(0.82))
+                    .clipShape(RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+            } else {
+                RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
+                    .fill(BaseballTheme.milestoneSoft)
+            }
+        }
         .overlay {
             RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
                 .stroke(BaseballTheme.milestone, lineWidth: 2)

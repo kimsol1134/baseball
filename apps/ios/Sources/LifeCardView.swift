@@ -101,7 +101,17 @@ struct LifeCardView: View {
         }
         .padding(20)
         .frame(width: Self.size.width, height: Self.size.height, alignment: .top)
-        .background(BaseballTheme.fieldNight)
+        .background {
+            // 밤 구장 배경이 번들에 있으면 깔린다. 글자가 주인공이라 어둡게 눌러 쓴다.
+            if UIImage(named: "LifeCardBackdrop") != nil {
+                Image("LifeCardBackdrop")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .overlay(BaseballTheme.fieldNight.opacity(0.72))
+            } else {
+                BaseballTheme.fieldNight
+            }
+        }
         .overlay(
             RoundedRectangle(cornerRadius: 20)
                 .strokeBorder(BaseballTheme.border.opacity(0.6), lineWidth: 1)

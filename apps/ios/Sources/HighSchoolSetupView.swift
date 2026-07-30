@@ -398,6 +398,15 @@ private struct PresetRow: View {
     var body: some View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 8) {
+                // 스타일 아트 — 3년을 함께할 몸을 고르는 화면이 표(스탯)로만 말하면
+                // 첫인상 구간을 통째로 버리는 것이다. 이미지가 없으면 지금 그대로.
+                if UIImage(named: "PresetArt-\(preset.id)") != nil {
+                    Image("PresetArt-\(preset.id)")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 96)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
                 HStack(spacing: 10) {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)

@@ -815,6 +815,14 @@ private struct TournamentCard: View {
         )
         BaseballCard(title: field.tournamentName, tone: .milestone) {
             VStack(alignment: .leading, spacing: 8) {
+                // 대회 배너 — 무대는 글보다 그림이 먼저 말한다.
+                if UIImage(named: "TournamentBanner\(state.chapter.number)") != nil {
+                    Image("TournamentBanner\(state.chapter.number)")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 84)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
                 Text("에이스 등판 — \(field.playerRound)")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(BaseballTheme.milestone)
