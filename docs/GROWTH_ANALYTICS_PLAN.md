@@ -146,11 +146,11 @@ UAC는 소재를 조합해 자동 생성한다. **광고문안 5개 · 이미지
 
 - [x] 이벤트 설계·코드 구현·1회성 테스트 (저장소 완료)
 - [x] SKAdNetwork 등록, ATT 미사용 확인
-- [ ] Firebase 프로젝트 생성 → plist 프로젝트에 추가
-- [ ] Amplitude 프로젝트 생성 → API 키 입력
-- [ ] **개인정보 라벨 "수집함"으로 갱신·게시** (분석 빌드 제출 전 필수!)
-- [ ] 1.0 승인 후 → 분석 포함 1.0.1 빌드 제출
-- [ ] Firebase: activation 이벤트 "전환으로 표시" + Google Ads 연결
-- [ ] Google Ads: 전환 가져오기(1회 집계) → 캠페인 게시
-- [ ] Amplitude: 퍼널·리텐션·대시보드 3종 생성
+- [x] Firebase 프로젝트 생성 → plist 프로젝트에 추가 (프로젝트 `baseball-reincarnation`, plist 커밋됨)
+- [x] Amplitude 프로젝트 생성 → API 키 입력 (워크스페이스 purple-shape-779806, 인제스천 검증 완료)
+- [ ] **개인정보 라벨 "수집함"으로 갱신·게시** (분석 빌드 제출 전 필수! — 1.0 승인 후 진행)
+- [ ] 1.0 승인 후 → 분석 포함 1.0.1 빌드 제출 (빌드 20 TestFlight 업로드는 완료, ASC 제출만 남음)
+- [ ] Firebase: activation 이벤트 "전환으로 표시" + Google Ads 연결 (이벤트가 콘솔에 노출되는 최대 24h 후 가능)
+- [ ] Google Ads: 전환 가져오기(1회 집계) → 캠페인 게시 (계정·결제 프로필 생성은 사용자 몫)
+- [x] Amplitude: 퍼널·리텐션·대시보드 3종 생성 — Activation Funnel(4단), Retention(activation→game_finished), 대시보드 "야구환생 — Activation"
 - [ ] D1~D7 운영표 기록 → D7 결산
