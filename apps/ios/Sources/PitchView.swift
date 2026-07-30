@@ -317,6 +317,12 @@ struct PitchView: View {
 
                 BaseballCard(title: PitchCopy.outcome(result.snapshot.outcome), tone: tone(for: result.snapshot.outcome)) {
                     VStack(alignment: .leading, spacing: 6) {
+                        // 기질 특성 발동 — 보정은 전부 공개된다. 숨은 조작은 이 게임에 없다.
+                        if session.lastTraitFired, let trait = session.trait {
+                            Text("『\(trait.title)』 발동 — \(trait.activationLine)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(BaseballTheme.milestone)
+                        }
                         if let verdict = session.lastDelivery.flatMap(DeliveryControl.verdict) {
                             Text(verdict.text)
                                 .font(.caption.weight(.bold))

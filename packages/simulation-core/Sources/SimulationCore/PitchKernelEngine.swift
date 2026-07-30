@@ -1217,10 +1217,14 @@ public struct PitchKernelEngine: Sendable {
         // 크기는 실측으로 잡았다. 포수는 거의 항상 약점 구종·약점 코스를 부르므로 이 보정이
         // 사실상 상시로 걸린다 — 처음 잡았던 크기(−127)로는 인플레이 타구가 통째로 약해져
         // BABIP가 밴드 아래(0.228)로 떨어졌다. 스카우팅은 우위이지 필살기가 아니다.
+        // 기질 특성. 발동 조건은 전부 이미 아는 값이라 새 난수가 없고, nil이면 0이다.
+        let traitFired = params.trait.map { $0.fires(context: params.context, runners: params.gameState?.runners) } ?? false
+        let traitContact = traitFired ? (params.trait?.contactAdjustment ?? 0) : 0
+        let traitQuality = traitFired ? (params.trait?.qualityAdjustment ?? 0) : 0
         let scoutingContact = (weaknessMatched ? -30 : 0) + (strengthMatched ? 26 : 0)
-            + (coldZoneHit ? -22 : 0) + (hotZoneHit ? 24 : 0)
+            + (coldZoneHit ? -22 : 0) + (hotZoneHit ? 24 : 0) + traitContact
         let scoutingQuality = (weaknessMatched ? -36 : 0) + (strengthMatched ? 32 : 0)
-            + (coldZoneHit ? -28 : 0) + (hotZoneHit ? 29 : 0)
+            + (coldZoneHit ? -28 : 0) + (hotZoneHit ? 29 : 0) + traitQuality
         let cappedAdaptation = min(RivalMemoryEngine.resolveDamageCap, adaptation.level)
         let patternRecognitionBonus = (pitchMatched ? cappedAdaptation / 6 : 0)
             + (zoneMatched ? cappedAdaptation / 10 : 0)

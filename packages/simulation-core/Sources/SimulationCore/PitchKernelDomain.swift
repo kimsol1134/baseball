@@ -221,6 +221,8 @@ public struct SubmitPitchParams: Codable, Equatable, Sendable {
     public let rivalMemory: RivalMemorySnapshot?
     public let gameState: GameStateSnapshot?
     public let gameLog: GameLogSnapshot?
+    /// 기질 특성. nil이면 판정이 완전히 동일하다 — 골든 픽스처가 이 보장을 지킨다.
+    public var trait: PersonalityTrait? = nil
 
     public init(
         seed: String,

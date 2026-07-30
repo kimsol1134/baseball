@@ -325,6 +325,7 @@ final class HighSchoolCareerStore {
         save()
         let session = PitchSession(highSchool: result.snapshot, seed: sessionSeed)
         session.start()
+        session.trait = personality?.trait
         pitchSession = session
     }
 

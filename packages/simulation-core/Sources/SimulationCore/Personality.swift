@@ -10,6 +10,8 @@ public struct Personality: Equatable, Sendable {
     public let title: String
     /// 스카우트 평가서에 적히는 문장 — 세상이 이 성격을 어떻게 읽는가.
     public let scoutLine: String
+    /// 이 성격이 마운드 위에서 발동하는 기질 특성.
+    public let trait: PersonalityTrait
 }
 
 public enum PersonalityRules {
@@ -27,24 +29,28 @@ public enum PersonalityRules {
         guard dominant * 100 >= total * 45 else {
             return Personality(
                 title: "유연한 중심",
-                scoutLine: "상황에 맞는 얼굴을 꺼낼 줄 압니다. 어느 클럽하우스에 놓아도 제 몫을 하는 유형."
+                scoutLine: "상황에 맞는 얼굴을 꺼낼 줄 압니다. 어느 클럽하우스에 놓아도 제 몫을 하는 유형.",
+                trait: .opener
             )
         }
         if dominant == challenge {
             return Personality(
                 title: "불같은 승부사",
-                scoutLine: "물러서는 법을 모릅니다. 큰 경기, 큰 타자 앞에서 구속이 오르는 유형."
+                scoutLine: "물러서는 법을 모릅니다. 큰 경기, 큰 타자 앞에서 구속이 오르는 유형.",
+                trait: .closer
             )
         }
         if dominant == listen {
             return Personality(
                 title: "조용한 버팀목",
-                scoutLine: "끝까지 듣고 먼저 움직입니다. 시간이 지나면 클럽하우스가 이 선수를 중심으로 돕니다."
+                scoutLine: "끝까지 듣고 먼저 움직입니다. 시간이 지나면 클럽하우스가 이 선수를 중심으로 돕니다.",
+                trait: .anchor
             )
         }
         return Personality(
             title: "차가운 분석가",
-            scoutLine: "감정을 빼고 근거로 답합니다. 볼 배합을 스스로 설계할 줄 아는 머리."
+            scoutLine: "감정을 빼고 근거로 답합니다. 볼 배합을 스스로 설계할 줄 아는 머리.",
+            trait: .tactician
         )
     }
 }

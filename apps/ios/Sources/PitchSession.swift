@@ -49,6 +49,11 @@ final class PitchSession {
     /// 타자 연속 삼진. 이닝이 바뀌어도 등판 안에서는 이어진다 — 실제 "○타자 연속 삼진"
     /// 기록이 그렇게 센다. 삼진이 아닌 타석 결과가 나오면 끊긴다.
     private(set) var consecutiveStrikeouts = 0
+    /// 기질 특성. 성격이 굳은 회차의 세션에만 실린다 — nil이면 판정이 완전히 같다.
+    var trait: PersonalityTrait?
+    /// 방금 공에서 특성이 발동했는가. 커널과 같은 조건식(fires)을 같은 입력으로
+    /// 평가한다 — 발동은 배지로 공개된다. 숨은 보정은 이 게임에 없다.
+    private(set) var lastTraitFired = false
     private(set) var walks = 0
     private(set) var runsAllowed = 0
     private(set) var expectedDamage = 0
@@ -143,21 +148,21 @@ final class PitchSession {
             intensity: selectedIntensity
         )
         do {
-            let result = try engine.submitPitch(
-                .init(
-                    seed: seed,
-                    pitcher: pitcher,
-                    batter: batter,
-                    scouting: scouting,
-                    context: context,
-                    preparationToken: preparation.preparationToken,
-                    call: call,
-                    rivalMemory: rivalMemory,
-                    gameState: gameState,
-                    gameLog: gameLog
-                ),
-                delivery: delivery
+            var params = SubmitPitchParams(
+                seed: seed,
+                pitcher: pitcher,
+                batter: batter,
+                scouting: scouting,
+                context: context,
+                preparationToken: preparation.preparationToken,
+                call: call,
+                rivalMemory: rivalMemory,
+                gameState: gameState,
+                gameLog: gameLog
             )
+            params.trait = trait
+            lastTraitFired = trait.map { $0.fires(context: context, runners: gameState.runners) } ?? false
+            let result = try engine.submitPitch(params, delivery: delivery)
             lastDelivery = delivery
             for achievement in AchievementRules.fromDelivery(delivery)
             where !bestDeliveryAchievements.contains(achievement) {
