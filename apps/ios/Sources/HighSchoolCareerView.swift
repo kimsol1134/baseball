@@ -1138,7 +1138,9 @@ private struct CompletionCard: View {
                     VStack(alignment: .leading, spacing: 10) {
                         AvatarRow(seed: team.proCoach, role: .coach,
                                   name: "\(team.proCoach) 코치", caption: team.coachProfile ?? team.developmentPlan, size: 44)
-                        AvatarRow(seed: team.positionCompetitor, role: .player,
+                        // 경쟁자를 player 역할로 두면 같은 카드에서 코치는 사진, 경쟁자는 벡터로
+                        // 갈린다(QA P1-9) — 한 화면 안 화풍 혼재는 미완성으로 읽힌다.
+                        AvatarRow(seed: team.positionCompetitor, role: .rival,
                                   name: team.positionCompetitor, caption: team.competitorProfile ?? "같은 자리를 두고 겨룰 선수", size: 44)
                     }
                 }
