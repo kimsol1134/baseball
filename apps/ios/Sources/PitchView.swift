@@ -339,7 +339,9 @@ struct PitchView: View {
                                 .foregroundStyle(BaseballTheme.action)
                                 .monospacedDigit()
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("km/h").eyebrowStyle(BaseballTheme.textTertiary)
+                                // 커브 99.8km/h는 구종 없이는 오해를 부른다(QA P2-5).
+                                Text(session.pitchLog.last.map { "\(PitchCopy.pitch($0.call.pitchType)) · km/h" } ?? "km/h")
+                                    .eyebrowStyle(BaseballTheme.textTertiary)
                                 Text(inZone ? "존 안" : "존 밖")
                                     .font(BaseballType.scoreboard)
                                     .foregroundStyle(inZone ? BaseballTheme.positive : BaseballTheme.warning)
@@ -407,7 +409,9 @@ struct PitchView: View {
             )
         }
 
-        BaseballCard(title: "노림") {
+        // 노림과 힘을 한 카드로 — 결정부가 한 화면에 들어와야 "어디에 던지는지 보이는
+        // 상태로 던지기"가 성립한다(QA P1-6). 4단 카드의 크롬 높이가 그 화면을 밀어냈다.
+        BaseballCard(title: "노림 · 힘 배분") {
             VStack(alignment: .leading, spacing: 8) {
                 OptionRow(items: ZoneIntent.options(for: session.selectedZone), selection: session.selectedIntent) { intent in
                     session.selectedIntent = intent
@@ -416,13 +420,10 @@ struct PitchView: View {
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+                OptionRow(items: PitchIntensity.allCases, selection: session.selectedIntensity) { intensity in
+                    session.selectedIntensity = intensity
+                } label: { PitchCopy.intensity($0) }
             }
-        }
-
-        BaseballCard(title: "힘 배분") {
-            OptionRow(items: PitchIntensity.allCases, selection: session.selectedIntensity) { intensity in
-                session.selectedIntensity = intensity
-            } label: { PitchCopy.intensity($0) }
         }
     }
 
@@ -749,6 +750,8 @@ private struct CatcherCard: View {
     let preparation: PitchPreparation
     let session: PitchSession
 
+    @State private var showsScouting = false
+
     private var matchesRecommendation: Bool {
         let call = preparation.primaryRecommendation.call
         return call.pitchType == session.selectedPitchType
@@ -771,17 +774,33 @@ private struct CatcherCard: View {
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
+                // 분석은 접어 둔다 — 결정 한 번에 300자를 읽히면 손맛이 성립하지
+                // 않는다(QA P1-6). 궁금한 사람만 한 탭으로 편다.
                 if let report = preparation.scoutingReport {
-                    Divider()
-                    Text("상대 분석 · \(PitchCopy.scoutBand(report.band))")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.information)
-                    Text(report.band == "trusted"
-                        ? "약점은 \(PitchCopy.pitch(report.estimatedWeakness)) · \(PitchCopy.zone(report.estimatedColdZone, batSide: session.batter.batSide))로 굳어졌습니다."
-                        : "아직 추정입니다. 약점은 \(PitchCopy.pitch(report.estimatedWeakness)) · \(PitchCopy.zone(report.estimatedColdZone, batSide: session.batter.batSide)) 근처로 보입니다.")
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Button {
+                        showsScouting.toggle()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("상대 분석 · \(PitchCopy.scoutBand(report.band))")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(BaseballTheme.information)
+                            Image(systemName: showsScouting ? "chevron.up" : "chevron.down")
+                                .font(.caption2)
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                        }
+                        .frame(minHeight: 28)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("pitch.scouting.toggle")
+                    if showsScouting {
+                        Text(report.band == "trusted"
+                            ? "약점은 \(PitchCopy.pitch(report.estimatedWeakness)) · \(PitchCopy.zone(report.estimatedColdZone, batSide: session.batter.batSide))로 굳어졌습니다."
+                            : "아직 추정입니다. 약점은 \(PitchCopy.pitch(report.estimatedWeakness)) · \(PitchCopy.zone(report.estimatedColdZone, batSide: session.batter.batSide)) 근처로 보입니다.")
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
 
                 if !matchesRecommendation {

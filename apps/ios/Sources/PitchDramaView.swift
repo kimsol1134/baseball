@@ -25,7 +25,7 @@ struct PitchDramaView: View {
     var progress: Double
 
     private static let releasePoint = CGPoint(x: 160, y: 116)
-    private static let platePlaneY: Double = 215
+    private static let platePlaneY: Double = 205
     private static let pitchBox = CGRect(x: 46, y: 62, width: 228, height: 246)
 
     /// 공이 홈플레이트에 닿는 시점. 여기서 판정이 갈린다.
@@ -94,10 +94,53 @@ struct PitchDramaView: View {
         }
 
         drawLight(context: context, size: size)
+        drawFigures(context: context, place: place, scale: scale)
         drawZone(context: context, place: place, scale: scale)
         drawMitt(context: context, place: place, scale: scale)
         drawIncomingBall(context: context, place: place, scale: scale)
         drawImpact(context: context, place: place, scale: scale)
+    }
+
+    /// 타자·포수 실루엣. 존 그리드만 있으면 계측 그래픽이고, 사람의 윤곽이 서는
+    /// 순간 야구가 된다(QA P1-8). 디테일은 넣지 않는다 — 무대는 어두운 배경이다.
+    private func drawFigures(context: GraphicsContext, place: (CGPoint) -> CGPoint, scale: Double) {
+        let zoneTopLeft = place(Self.platePoint(x: -500, y: 500))
+        let zoneBottomRight = place(Self.platePoint(x: 500, y: -500))
+        let zone = CGRect(x: zoneTopLeft.x, y: zoneTopLeft.y,
+                          width: zoneBottomRight.x - zoneTopLeft.x,
+                          height: zoneBottomRight.y - zoneTopLeft.y)
+        let ink = BaseballTheme.fieldChalk.opacity(0.09)
+
+        // 타자 — 존 왼쪽(우타 기준). 머리·몸통·다리의 큰 덩어리만.
+        let batterX = zone.minX - zone.width * 0.34
+        let headRadius = zone.width * 0.09
+        context.fill(
+            Path(ellipseIn: CGRect(x: batterX - headRadius, y: zone.minY - headRadius * 2.6,
+                                   width: headRadius * 2, height: headRadius * 2)),
+            with: .color(ink)
+        )
+        var torso = Path()
+        torso.move(to: CGPoint(x: batterX - headRadius * 1.2, y: zone.minY - headRadius * 0.4))
+        torso.addQuadCurve(to: CGPoint(x: batterX - headRadius * 1.6, y: zone.maxY + headRadius * 1.5),
+                           control: CGPoint(x: batterX - headRadius * 2.2, y: zone.midY))
+        torso.addLine(to: CGPoint(x: batterX + headRadius * 1.4, y: zone.maxY + headRadius * 1.5))
+        torso.addQuadCurve(to: CGPoint(x: batterX + headRadius * 1.1, y: zone.minY - headRadius * 0.4),
+                           control: CGPoint(x: batterX + headRadius * 1.8, y: zone.midY))
+        torso.closeSubpath()
+        context.fill(torso, with: .color(ink))
+        // 들어 올린 배트 — 어깨 뒤로 비스듬히.
+        var bat = Path()
+        bat.move(to: CGPoint(x: batterX + headRadius * 0.8, y: zone.minY - headRadius * 0.6))
+        bat.addLine(to: CGPoint(x: batterX + headRadius * 3.2, y: zone.minY - headRadius * 3.4))
+        context.stroke(bat, with: .color(ink), style: StrokeStyle(lineWidth: max(2, 3.4 * scale), lineCap: .round))
+
+        // 포수 — 존 아래 웅크린 덩어리.
+        let catcherWidth = zone.width * 0.5
+        context.fill(
+            Path(ellipseIn: CGRect(x: zone.midX - catcherWidth / 2, y: zone.maxY + zone.height * 0.06,
+                                   width: catcherWidth, height: zone.height * 0.34)),
+            with: .color(ink)
+        )
     }
 
     /// 야간 구장 조명. 부드러운 타원 하나로 무대를 만든다. 각진 삼각형은 오려 붙인 티가 난다.
@@ -409,9 +452,11 @@ struct PitchDramaView: View {
     }
 
     private static func platePoint(x: Double, y: Double) -> CGPoint {
+        // 0.08 스케일에서 존이 패널 폭의 35%였다 — 한 회차에 수백 번 보는 화면의
+        // 실질 그림이 우표 크기였다는 뜻이다(QA P1-8). 0.15로 폭 66%.
         CGPoint(
-            x: min(272, max(48, 160 + x * 0.08)),
-            y: min(282, max(48, platePlaneY - y * 0.08))
+            x: min(272, max(48, 160 + x * 0.15)),
+            y: min(292, max(48, platePlaneY - y * 0.15))
         )
     }
 
