@@ -37,7 +37,7 @@ targets:
           - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
           - SKAdNetworkIdentifier: 4fzdc2evr5.skadnetwork
         # Amplitude 프로젝트 API 키. 비워 두면 분석이 전부 꺼진 채 돈다.
-        AMPLITUDE_API_KEY: ""
+        AMPLITUDE_API_KEY: "97ebae2cd2b22130f70344dcd7e0c6b8"
         # 게임 콘텐츠가 한국어이므로 개발 지역을 한국어로 못 박는다. 자동 생성 기본값(en)은
         # App Store에서 기본 언어를 영어로 잘못 표시한다.
         CFBundleDevelopmentRegion: ko

@@ -44,6 +44,8 @@ enum GameAnalytics {
 
     /// 앱 시작 시 한 번. 설정이 없으면 조용히 꺼진 채 남는다.
     static func configure() {
+        // UI 테스트의 기계 플레이가 대시보드에 섞이면 퍼널이 거짓말이 된다.
+        guard !ProcessInfo.processInfo.arguments.contains("-uiTestResetCareer") else { return }
         // Firebase: 콘솔에서 받은 plist가 있어야만 켠다. 없는데 configure()를 부르면 크래시다.
         if Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil {
             FirebaseApp.configure()
