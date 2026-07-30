@@ -118,6 +118,11 @@ final class HighSchoolCareerStore {
     private(set) var buzz: [String] = []
     /// 챕터가 넘어갈 때 세계가 만든 사건들. 저장하지 않는다 — 결정론 재파생 가능.
     private(set) var worldNews: [String] = []
+    /// 이번 챕터의 훈련 누적(능력별 증가·횟수). 저장하지 않는 표시용 —
+    /// 100번의 +1이 낱장으로 흩어지면 훈련 구간 전체가 "같은 화면의 반복"으로
+    /// 기억된다(QA P1-15). 누적 한 줄이 "한 단위"의 체감을 만든다.
+    private(set) var chapterGains: [String: Int] = [:]
+    private(set) var chapterTrainingCount = 0
     /// 이번 챕터가 시작될 때의 통산 탈삼진. 챕터 목표의 진행은 이 값과의 차이다.
     private(set) var chapterStartStrikeouts: Int = 0
     /// 목표 축하를 이미 한 챕터 번호. 같은 챕터에서 두 번 축하하면 축하가 값싸진다.
@@ -206,6 +211,8 @@ final class HighSchoolCareerStore {
             chronicle = []
             chapterStartStrikeouts = 0
             goalCelebratedChapter = nil
+            chapterGains = [:]
+            chapterTrainingCount = 0
             responseTally = ResponseTally()
             AchievementStore.shared.record(AchievementRules.fromLifeNumber(carried.lifeNumber))
             AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
@@ -259,6 +266,10 @@ final class HighSchoolCareerStore {
 
     func commitTraining(focus: TrainingFocus, intensity: TrainingIntensity) {
         perform { try engine.commitTraining(.init(seed: $0.nextSeed, state: $0.snapshot, focus: focus, intensity: intensity)) }
+        chapterTrainingCount += 1
+        for gain in pendingGains where gain.after > gain.before {
+            chapterGains[gain.label, default: 0] += gain.after - gain.before
+        }
     }
 
     func resolveRelationship(_ response: RelationshipResponse) {
@@ -288,6 +299,8 @@ final class HighSchoolCareerStore {
     func advanceChapter() {
         perform { try engine.advanceChapter(.init(seed: $0.nextSeed, state: $0.snapshot)) }
         chapterStartStrikeouts = result?.snapshot.performance.strikeouts ?? chapterStartStrikeouts
+        chapterGains = [:]
+        chapterTrainingCount = 0
         if let snapshot = result?.snapshot {
             worldNews = CommunityBuzz.rivalNews(careerID: snapshot.careerID, chapterNumber: snapshot.chapter.number)
         }

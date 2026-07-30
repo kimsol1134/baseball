@@ -178,6 +178,19 @@ struct HighSchoolCareerView: View {
         case .schoolSelection:
             SchoolSelectionCard(options: state.schoolOptions, onChoose: career.chooseSchool)
         case .training:
+            // 챕터 누적 한 줄 — 100번의 +1이 낱장으로 흩어지지 않게 "한 단위"를 만든다.
+            if career.chapterTrainingCount > 0 {
+                let summary = career.chapterGains
+                    .sorted { $0.key < $1.key }
+                    .map { "\($0.key) +\($0.value)" }
+                    .joined(separator: " · ")
+                Text("이번 챕터 훈련 \(career.chapterTrainingCount)회"
+                     + (summary.isEmpty ? "" : " — \(summary)"))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("hs.training.tally")
+            }
             TrainingCard(state: state, armHealth: career.armHealth) { focus, intensity in
                 audio.play(.uiSelect)
                 career.commitTraining(focus: focus, intensity: intensity)

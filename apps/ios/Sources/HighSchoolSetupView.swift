@@ -12,6 +12,29 @@ import SimulationCore
 /// 그래서 단계로 쪼갠다. 한 단계에는 질문 하나와 그 질문에 답하는 것만 있다.
 /// 첫 회차는 세 단계(이름 → 지역 → 투수 유형), 2회차부터 네 단계(+ 난이도·핸디캡)다.
 struct HighSchoolSetupView: View {
+    /// 지역의 한 줄 성격. 실제 지역 야구 문화의 인상을 빌린 가상 묘사다.
+    static let regionFlavor: [String: String] = [
+        "서울": "스카우트가 가장 자주 오는 무대",
+        "인천": "바닷바람 속 끈질긴 야구",
+        "수원": "신흥 명문들의 각축전",
+        "대전": "뚝심의 원포인트 승부",
+        "광주": "타격의 고장, 투수엔 시련",
+        "대구": "더위를 이기는 근성",
+        "부산": "함성이 가장 큰 관중석",
+        "창원": "짜임새 있는 수비 야구",
+        "울산": "묵묵히 던지는 공업 도시",
+        "세종": "역사가 짧아 기회가 많다",
+        "경기": "팀 수가 가장 많은 격전지",
+        "강원": "산바람에 단련된 어깨",
+        "충북": "조용히 강한 다크호스",
+        "충남": "전통 강호의 자존심",
+        "전북": "거친 바람의 홈그라운드",
+        "전남": "느리게, 그러나 확실하게",
+        "경북": "전통과 자부심의 명문가",
+        "경남": "남쪽 끝의 탄탄한 전력",
+        "제주": "가장 먼 곳에서 온 유망주",
+    ]
+
     let career: HighSchoolCareerStore
 
     /// 설정 단계. 순서가 곧 화면 순서다.
@@ -191,14 +214,23 @@ struct HighSchoolSetupView: View {
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+            // 아무 정보 없는 16개 버튼은 "고민할 가치 없는 고민"이다(QA P1-14) —
+            // 그러면 이후의 진짜 선택(학교·각성)도 장식으로 학습된다. 한 줄의 성격이
+            // 선택의 근거를 만든다. 표시 전용이라 밸런스에는 손대지 않는다.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
                 ForEach(HighSchoolCareerEngine.regions, id: \.self) { region in
                     Button {
                         selectedRegion = region
                     } label: {
-                        Text(region)
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        VStack(spacing: 2) {
+                            Text(region)
+                                .font(.subheadline.weight(.semibold))
+                            Text(Self.regionFlavor[region] ?? "야구 열기가 뜨거운 동네")
+                                .font(.caption2)
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget + 8)
                     }
                     .buttonStyle(.plain)
                     .background(
