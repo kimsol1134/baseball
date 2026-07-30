@@ -861,7 +861,7 @@ public struct HighSchoolCareerEngine: Sendable {
         .init(number: 4, title: "전국의 시선", schoolYear: 2, season: "봄", theme: "전국대회에서 라이벌과 다시 만난다"),
         .init(number: 5, title: "흔들리는 배터리", schoolYear: 2, season: "여름", theme: "포수와 자꾸 엇갈리는 사인을 바로잡아야 한다"),
         .init(number: 6, title: "에이스의 책임", schoolYear: 2, season: "가을", theme: "피로가 쌓인 채 가을 대회 마운드에 오른다"),
-        .init(number: 7, title: "마지막 겨울", schoolYear: 3, season: "겨울", theme: "스카우트가 지켜볼 마지막 시즌을 준비한다"),
+        .init(number: 7, title: "마지막 겨울", schoolYear: 2, season: "겨울", theme: "스카우트가 지켜볼 마지막 시즌을 준비한다"),
         .init(number: 8, title: "드래프트 데이", schoolYear: 3, season: "여름", theme: "마지막 전국대회를 치르고 드래프트 결과를 기다린다")
     ]
 
