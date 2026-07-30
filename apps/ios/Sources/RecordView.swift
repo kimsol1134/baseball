@@ -67,6 +67,8 @@ private struct HighSchoolRecordBoard: View {
                     Metric(title: "실점", value: "\(state.performance.runsAllowed)")
                 }
 
+                ProspectRankingCard(state: state)
+
                 BaseballCard(title: "현재 능력") {
                     VStack(alignment: .leading, spacing: 10) {
                         AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
@@ -370,5 +372,63 @@ private struct GameLogRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(GameLineFormat.accessibilityLabel(line))
+    }
+}
+
+
+/// 전국 유망주 랭킹 — 드래프트 전에 세상이 매기는 중간 점수.
+///
+/// "전국에서 내가 몇 번째인가"가 매 경기 갱신되면 드래프트 기대감이 매주의
+/// 감정이 된다. 20위 밖이면 몇 계단 남았는지를 보여 준다 — 진입 자체가 사건이다.
+private struct ProspectRankingCard: View {
+    let state: HighSchoolCareerSnapshot
+
+    var body: some View {
+        BaseballCard(title: "전국 유망주 랭킹", tone: .milestone) {
+            if let rank = ProspectRanking.playerRank(performance: state.performance) {
+                VStack(alignment: .leading, spacing: 8) {
+                    if rank <= ProspectRanking.boardSize {
+                        let board = ProspectRanking.board(
+                            careerID: state.careerID,
+                            playerName: state.identity.name,
+                            playerSchool: state.school?.name ?? "학교 미정",
+                            performance: state.performance
+                        )
+                        // 내 순위 주변만 보여 준다 — 위로 두 칸(목표), 아래로 한 칸(추격자).
+                        let window = board.filter { abs($0.rank - rank) <= 2 || $0.rank <= 3 }
+                        ForEach(window) { entry in
+                            HStack(spacing: 8) {
+                                Text("\(entry.rank)")
+                                    .font(.caption.weight(.bold).monospacedDigit())
+                                    .foregroundStyle(entry.isPlayer ? BaseballTheme.action : BaseballTheme.textTertiary)
+                                    .frame(width: 22, alignment: .trailing)
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text("\(entry.name) · \(entry.school)")
+                                        .font(.footnote.weight(entry.isPlayer ? .bold : .regular))
+                                        .foregroundStyle(entry.isPlayer ? BaseballTheme.action : BaseballTheme.textPrimary)
+                                    Text(entry.tag)
+                                        .font(.caption2)
+                                        .foregroundStyle(BaseballTheme.textTertiary)
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
+                    } else {
+                        Text("현재 \(rank)위권 — 랭킹 발표는 20위까지입니다.")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.textPrimary)
+                        Text("스카우트들은 이미 지켜보고 있습니다. \(rank - ProspectRanking.boardSize)계단을 오르면 전국에 이름이 실립니다.")
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityIdentifier("record.prospectRanking")
+            } else {
+                Text("아직 세상이 이 이름을 모릅니다. 첫 등판이 시작입니다.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+            }
+        }
     }
 }
