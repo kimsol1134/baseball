@@ -25,7 +25,7 @@ struct LifeCardView: View {
             }
 
             HStack(alignment: .center, spacing: 14) {
-                AvatarFace(seed: record.playerName, role: .player, size: 76)
+                PortraitView(seed: record.playerName, role: .player, size: 76)
                 VStack(alignment: .leading, spacing: 3) {
                     if let nickname = latestNickname {
                         Text("'\(nickname)'")

@@ -347,9 +347,9 @@ struct AvatarParts: Hashable {
 
 /// 실사 초상이 번들에 있으면 그것을, 없으면 캔버스 아바타를 그린다 — 소리와 같은 두 벌 구조.
 ///
-/// 감독·포수·라이벌은 시네마틱 초상(키아트와 같은 결)이 관계 장면의 무게를 만든다.
-/// 주인공은 캔버스 아바타를 유지한다 — 회차 카드·아카이브와 정체성이 이어져야 하고,
-/// 이름 시드로 얼굴이 변하는 것 자체가 "내 선수"라는 감각의 일부다.
+/// 모든 역할이 시네마틱 초상(키아트와 같은 결)을 쓴다. 주인공은 20장 풀에서
+/// 이름 해시로 배정한다 — 같은 이름은 언제나 같은 얼굴이라 회차 카드·아카이브의
+/// 정체성이 이어지고, 풀이 넉넉해서 다른 이름이 같은 얼굴을 받는 일이 드물다.
 struct PortraitView: View {
     let seed: String
     let role: AvatarFace.Role
@@ -359,12 +359,13 @@ struct PortraitView: View {
     /// 해시로 고른다. 목록과 1:1 장면이 같은 시드(이름)를 쓰므로 얼굴이 이어진다.
     var usesPhoto = true
 
-    /// 역할별 사진 변주 수. 학교가 넷이라 감독·포수는 4장이 하한이다.
+    /// 역할별 사진 변주 수. 학교가 넷이라 감독·포수는 4장이 하한이고,
+    /// 주인공은 이름이 무한하므로 풀을 넉넉히 둔다.
     private static func variants(for role: AvatarFace.Role) -> Int {
         switch role {
         case .coach, .catcher: return 4
         case .rival: return 3
-        case .player: return 0
+        case .player: return 20
         }
     }
 
@@ -385,7 +386,7 @@ struct PortraitView: View {
         case .coach: return "PortraitCoach\(index)"
         case .catcher: return "PortraitCatcher\(index)"
         case .rival: return "PortraitRival\(index)"
-        case .player: return nil
+        case .player: return "PortraitPlayer\(index)"
         }
     }
 
