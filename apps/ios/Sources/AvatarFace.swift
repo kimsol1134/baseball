@@ -354,16 +354,33 @@ struct PortraitView: View {
     let seed: String
     let role: AvatarFace.Role
     var size: CGFloat = 46
-    /// 목록(학교 선택처럼 같은 역할이 나란한 화면)에서는 사진을 쓰지 않는다 —
-    /// 변주 3장으로는 중복이 필연이고, 같은 얼굴 둘이 나란히 서는 순간 깨진다
-    /// (실기기 피드백). 절차 아바타는 이름마다 전부 다르다.
+    /// 학교 선택처럼 같은 역할이 나란한 화면도 사진을 쓴다. 카탈로그의 네 학교
+    /// 인물은 아래 고정표가 변주를 하나씩 배정해 중복이 없고, 그 밖의 시드는
+    /// 해시로 고른다. 목록과 1:1 장면이 같은 시드(이름)를 쓰므로 얼굴이 이어진다.
     var usesPhoto = true
 
-    private static let variants = 3
+    /// 역할별 사진 변주 수. 학교가 넷이라 감독·포수는 4장이 하한이다.
+    private static func variants(for role: AvatarFace.Role) -> Int {
+        switch role {
+        case .coach, .catcher: return 4
+        case .rival: return 3
+        case .player: return 0
+        }
+    }
+
+    /// 카탈로그 인물의 고정 배정. 해시에 맡기면 넷 중 둘이 같은 얼굴을 받는
+    /// 충돌이 생길 수 있어서, 나란히 보이는 인물은 표로 못 박는다.
+    private static let fixedVariants: [String: Int] = [
+        "윤태문": 1, "노재형": 2, "오승렬": 3, "배도환": 4,
+        "서준호": 1, "한도윤": 2, "차민석": 3, "문하진": 4,
+    ]
 
     private var assetName: String? {
         guard usesPhoto else { return nil }
-        let index = 1 + Int(AvatarParts.hash("portrait:\(seed)") % UInt32(Self.variants))
+        let count = Self.variants(for: role)
+        guard count > 0 else { return nil }
+        let index = Self.fixedVariants[seed]
+            ?? 1 + Int(AvatarParts.hash("portrait:\(seed)") % UInt32(count))
         switch role {
         case .coach: return "PortraitCoach\(index)"
         case .catcher: return "PortraitCatcher\(index)"
