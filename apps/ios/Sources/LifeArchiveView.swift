@@ -115,7 +115,11 @@ private struct LifeArchiveRow: View {
             Button {
                 expanded.toggle()
             } label: {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
+                    // 지난 회차들이 "숫자 목록"이 아니라 "살았던 사람들"로 읽히게 —
+                    // 이름 시드가 같으면 그때 그 얼굴 그대로다.
+                    PortraitView(seed: record.playerName, role: .player, size: 30,
+                                 playerStage: record.drafted ? .pro : .ace)
                     Text("\(record.lifeNumber)회차")
                         .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(BaseballTheme.textPrimary)
@@ -258,14 +262,22 @@ struct LifeSummaryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("\(record.lifeNumber)회차")
-                .font(.system(.largeTitle, design: .monospaced, weight: .black))
-                .foregroundStyle(BaseballTheme.action)
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("\(record.lifeNumber)회차")
+                        .font(.system(.largeTitle, design: .monospaced, weight: .black))
+                        .foregroundStyle(BaseballTheme.action)
 
-            Text(record.playerName)
-                .font(.title.bold())
-                .foregroundStyle(BaseballTheme.textPrimary)
-                .padding(.top, 2)
+                    Text(record.playerName)
+                        .font(.title.bold())
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                        .padding(.top, 2)
+                }
+                Spacer(minLength: 0)
+                // 회차 카드와 같은 얼굴. 공유물 두 장의 주인공이 같아야 한다.
+                PortraitView(seed: record.playerName, role: .player, size: 64,
+                             playerStage: record.drafted ? .pro : .ace)
+            }
 
             Text(record.schoolName ?? "학교 미정")
                 .font(.subheadline)

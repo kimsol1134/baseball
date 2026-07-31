@@ -264,12 +264,16 @@ private struct ImportantGameIntro: View {
 
             if let rival = state.currentRival {
                 BaseballCard(title: "상대", tone: .milestone) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("\(rival.name) · \(rival.teamName)").font(.headline)
-                        Text(rival.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
-                        Text(rival.profile).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(rival.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+                    HStack(alignment: .top, spacing: 10) {
+                        // 고교 라이벌 카드와 같은 문법 — 상대에게 얼굴이 있어야 승부다.
+                        PortraitView(seed: rival.name, role: .rival, size: 46)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(rival.name) · \(rival.teamName)").font(.headline)
+                            Text(rival.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                            Text(rival.profile).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(rival.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+                        }
                     }
                     .accessibilityElement(children: .combine)
                 }
@@ -494,6 +498,17 @@ private struct RetiredView: View {
                 title: "\(state.identity.name)의 커리어가 끝났습니다",
                 accent: BaseballTheme.milestone
             )
+
+            // 커리어를 끝낸 그 얼굴. 세 결말(미지명·지명·은퇴) 중 여기만 얼굴이 없었다.
+            HStack(spacing: 12) {
+                PortraitView(seed: state.identity.name, role: .player, size: 56, playerStage: .pro)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(state.identity.name).font(.headline)
+                    Text("\(state.team.name) · \(state.serviceYears)년").font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
 
             if let score = state.hallOfFameScore {
                 BaseballCard(title: "명예의 전당 점수", tone: .milestone) {

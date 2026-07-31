@@ -202,15 +202,34 @@ struct HighSchoolSetupView: View {
     }
 
     private var inheritanceCard: some View {
-        BaseballCard(title: "가져온 것", tone: .milestone) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("야구혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
-                if career.inheritance.memories.isEmpty {
-                    Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                } else {
-                    ForEach(career.inheritance.memories, id: \.self) { memory in
-                        let copy = HighSchoolPresentation.memory(memory)
-                        Text("· \(copy.title)").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+        VStack(alignment: .leading, spacing: BaseballMetrics.tightSpacing) {
+            // 환생 회차의 첫 화면이 텍스트 카드뿐이었다 — 루프 재시작은 이 게임의
+            // 감정적 핵심이라, 1회차의 구장 그림과 같은 무게의 무대를 준다.
+            Image(KeyArt.reincarnation.rawValue)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+                .overlay(alignment: .bottomLeading) {
+                    Text("전생의 기억이 새 이름을 기다립니다.")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .padding(10)
+                }
+                .accessibilityHidden(true)
+            BaseballCard(title: "가져온 것", tone: .milestone) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("야구혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
+                    if career.inheritance.memories.isEmpty {
+                        Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                    } else {
+                        ForEach(career.inheritance.memories, id: \.self) { memory in
+                            let copy = HighSchoolPresentation.memory(memory)
+                            HStack(spacing: 8) {
+                                ArtThumb(assetName: "MemoryArt-\(memory.rawValue)", size: 34, cornerRadius: 7)
+                                Text(copy.title).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                            }
+                        }
                     }
                 }
             }

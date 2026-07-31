@@ -268,6 +268,8 @@ private struct TodayDashboard: View {
                 SeasonArcBar(segment: state.seasonSegment, week: state.week)
 
                 HStack(spacing: 10) {
+                    // 프로가 된 그 얼굴 — 고교 대시보드와 같은 자리, 자란 모습이다.
+                    PortraitView(seed: state.identity.name, role: .player, size: 46, playerStage: .pro)
                     Metric(title: "피로", value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
                     Metric(title: "감독의 믿음", value: "\(state.managerTrust)", tone: state.managerTrust >= 60 ? .positive : .standard)
                     Metric(title: "부상", value: state.injuryWeeks > 0 ? "\(state.injuryWeeks)주" : "정상", tone: state.injuryWeeks > 0 ? .negative : .standard)
@@ -294,10 +296,14 @@ private struct TodayDashboard: View {
 
                 if let rival = state.currentRival {
                     BaseballCard(title: "이번 승부 상대", tone: .warning) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("\(rival.name) · \(rival.teamName)").font(.headline)
-                            Text(rival.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
-                            Text(rival.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+                        HStack(spacing: 10) {
+                            // 고교 라이벌 카드와 같은 문법 — 상대에게 얼굴이 있어야 승부다.
+                            PortraitView(seed: rival.name, role: .rival, size: 46)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(rival.name) · \(rival.teamName)").font(.headline)
+                                Text(rival.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                                Text(rival.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+                            }
                         }
                         .accessibilityElement(children: .combine)
                     }

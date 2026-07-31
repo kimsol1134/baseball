@@ -260,6 +260,10 @@ private struct ChapterHeader: View {
                 title: state.school.map { "\($0.name) · \(state.chapter.title)" } ?? state.chapter.title
             )
             HStack(spacing: 10) {
+                // 주인공의 얼굴. 게임에서 가장 자주 보는 화면인데 정작 주인공이 없었다.
+                // 1학년(챕터 1~3)은 앳된 얼굴, 2학년부터는 에이스 얼굴 — 성장이 눈에 보인다.
+                PortraitView(seed: state.identity.name, role: .player, size: 46,
+                             playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
                 Metric(title: "피로", value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
                 Metric(title: "팀의 믿음", value: "\(state.relationshipTrust)")
                 Metric(title: "훈련", value: "\(state.totalTrainingsCompleted)")
@@ -665,6 +669,10 @@ private struct RelationshipCard: View {
                     HStack(spacing: 10) {
                         if let portrait = Self.portrait(for: event.category, state: state) {
                             PortraitView(seed: portrait.seed, role: portrait.role, size: 44)
+                        } else {
+                            // 사람이 아닌 화자(집·취재·팬·몸 상태…)는 얼굴 대신 상황 그림.
+                            // 없는 인물을 지어내지 않으면서 빈 자리도 남기지 않는다.
+                            ArtThumb(assetName: "SceneArt-\(event.category)", size: 44, cornerRadius: 8)
                         }
                         VStack(alignment: .leading, spacing: 2) {
                             Text(Self.speaker(for: event.category)).eyebrowStyle(BaseballTheme.information)
@@ -1089,9 +1097,12 @@ private struct LegacyCard: View {
                 let copy = HighSchoolPresentation.memory(option)
                 let selected = career.selectedMemories.contains(option)
                 Button { career.toggleMemory(option) } label: {
-                    HStack(alignment: .top, spacing: 10) {
+                    HStack(alignment: .center, spacing: 10) {
                         Image(systemName: selected ? "checkmark.square.fill" : "square")
                             .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.border)
+                        // 기억을 물건으로 보여 준다 — 회차를 넘어 가져가는 유일한 선택인데
+                        // 체크박스 목록이면 그 무게가 안 보인다.
+                        ArtThumb(assetName: "MemoryArt-\(option.rawValue)", size: 52)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(copy.title).font(.subheadline.weight(.bold))
                             Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)

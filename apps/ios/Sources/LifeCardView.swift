@@ -25,7 +25,9 @@ struct LifeCardView: View {
             }
 
             HStack(alignment: .center, spacing: 14) {
-                PortraitView(seed: record.playerName, role: .player, size: 76)
+                // 지명된 회차는 프로 유니폼의 얼굴로 남는다 — 카드가 그 회차의 결말이다.
+                PortraitView(seed: record.playerName, role: .player, size: 76,
+                             playerStage: record.drafted ? .pro : .ace)
                 VStack(alignment: .leading, spacing: 3) {
                     if let nickname = latestNickname {
                         Text("'\(nickname)'")

@@ -351,9 +351,29 @@ struct AvatarParts: Hashable {
 /// 이름 해시로 배정한다 — 같은 이름은 언제나 같은 얼굴이라 회차 카드·아카이브의
 /// 정체성이 이어지고, 풀이 넉넉해서 다른 이름이 같은 얼굴을 받는 일이 드물다.
 struct PortraitView: View {
+    /// 주인공의 성장 단계. 같은 이름(해시)이 같은 계보를 고르고, 단계는
+    /// 그 계보 안에서 나이만 바꾼다 — "같은 사람이 자란다"가 규칙이다.
+    enum PlayerStage {
+        /// 고1 (챕터 1~3) — 앳된 얼굴, 큰 유니폼.
+        case freshman
+        /// 고2~3 (챕터 4~8) — 기본 20장 풀.
+        case ace
+        /// 지명 후 프로 — 성인, 프로 유니폼.
+        case pro
+
+        var assetPrefix: String {
+            switch self {
+            case .freshman: return "PortraitPlayerYoung"
+            case .ace: return "PortraitPlayer"
+            case .pro: return "PortraitPlayerPro"
+            }
+        }
+    }
+
     let seed: String
     let role: AvatarFace.Role
     var size: CGFloat = 46
+    var playerStage: PlayerStage = .ace
     /// 학교 선택처럼 같은 역할이 나란한 화면도 사진을 쓴다. 카탈로그의 네 학교
     /// 인물은 아래 고정표가 변주를 하나씩 배정해 중복이 없고, 그 밖의 시드는
     /// 해시로 고른다. 목록과 1:1 장면이 같은 시드(이름)를 쓰므로 얼굴이 이어진다.
@@ -386,12 +406,24 @@ struct PortraitView: View {
         case .coach: return "PortraitCoach\(index)"
         case .catcher: return "PortraitCatcher\(index)"
         case .rival: return "PortraitRival\(index)"
-        case .player: return "PortraitPlayer\(index)"
+        case .player: return "\(playerStage.assetPrefix)\(index)"
         }
     }
 
+    /// 단계 사진이 아직 없는 계보는 에이스(기본) 사진으로 대신한다 — 사진이 있는데
+    /// 그림 아바타로 떨어지는 것보다, 성장 변화 없이 같은 얼굴이 낫다.
+    private var resolvedAssetName: String? {
+        guard let name = assetName else { return nil }
+        if UIImage(named: name) != nil { return name }
+        if role == .player, playerStage != .ace {
+            let fallback = "\(PlayerStage.ace.assetPrefix)\(name.drop(while: { !$0.isNumber }))"
+            if UIImage(named: fallback) != nil { return fallback }
+        }
+        return nil
+    }
+
     var body: some View {
-        if let name = assetName, UIImage(named: name) != nil {
+        if let name = resolvedAssetName {
             Image(name)
                 .resizable()
                 .aspectRatio(contentMode: .fill)

@@ -428,3 +428,25 @@ struct KeyArtHeader: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// 기억 카드·장면의 작은 그림. 번들에 파일이 없으면 아무것도 그리지 않는다 —
+/// 아트가 아직 없는 카드가 레이아웃을 깨뜨리지 않게 하는 안전판이다.
+struct ArtThumb: View {
+    let assetName: String
+    var size: CGFloat = 56
+    var cornerRadius: CGFloat = 10
+
+    var body: some View {
+        if UIImage(named: assetName) != nil {
+            Image(assetName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .strokeBorder(BaseballTheme.border.opacity(0.5), lineWidth: 1)
+                )
+        }
+    }
+}

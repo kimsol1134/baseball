@@ -464,6 +464,12 @@ private struct ProspectRankingCard: View {
                                     .font(.caption.weight(.bold).monospacedDigit())
                                     .foregroundStyle(entry.isPlayer ? BaseballTheme.action : BaseballTheme.textTertiary)
                                     .frame(width: 22, alignment: .trailing)
+                                // 명단에서 내 줄만 얼굴이 있다 — 스카우트가 명단 옆에
+                                // 붙여 둔 한 장의 사진처럼, 이 줄이 내 이야기라는 표식이다.
+                                if entry.isPlayer {
+                                    PortraitView(seed: entry.name, role: .player, size: 24,
+                                                 playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
+                                }
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text("\(entry.name) · \(entry.school)")
                                         .font(.footnote.weight(entry.isPlayer ? .bold : .regular))

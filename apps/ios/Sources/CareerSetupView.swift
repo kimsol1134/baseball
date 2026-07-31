@@ -72,6 +72,16 @@ private struct PresetCard: View {
     var body: some View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 10) {
+                // 고교 온보딩과 같은 프리셋 아트. 같은 선택인데 여기만 게이지 표였다.
+                if UIImage(named: "PresetArt-\(preset.id)") != nil {
+                    Image("PresetArt-\(preset.id)")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 110, alignment: .top)
+                        .frame(maxWidth: .infinity)
+                        .clipShape(RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+                        .accessibilityHidden(true)
+                }
                 HStack(spacing: 10) {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)
