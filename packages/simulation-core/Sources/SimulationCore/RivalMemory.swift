@@ -326,12 +326,30 @@ public struct RivalMemoryEngine: Sendable {
         "\(pitcher.id):\(batter.id)"
     }
 
+    /// 관측 하나의 무게 — 타자는 빈도가 아니라 '잘 보인 공'을 노린다.
+    /// 정타(×3)는 다음에도 노리고, 파울·범타(×2)는 타이밍이 왔다는 뜻이고,
+    /// 헛스윙을 뽑아낸 결정구(÷2)는 봤어도 여전히 못 친다. 예전에는 outcome을
+    /// 저장만 하고 안 읽어서, 3연속 헛스윙을 만든 공과 3연속 안타를 맞은 공이
+    /// 같은 무게로 '읽혔다'. 2배 스케일 정수 가중치라 결정론은 그대로다.
+    private func observationWeight(_ observation: RivalPitchObservation) -> Int {
+        switch observation.outcome {
+        case .single, .double, .triple, .homeRun: 6
+        case .foul, .inPlayOut: 4
+        case .ball, .calledStrike, .hitByPitch: 2
+        case .swingingStrike: 1
+        }
+    }
+
     private func mostFrequentPitch(
         in observations: [RivalPitchObservation]
     ) -> (pitchType: PitchType, count: Int) {
         var best = (pitchType: PitchType.fourSeam, count: -1)
+        let totalWeight = max(1, observations.reduce(0) { $0 + observationWeight($1) })
         for pitchType in PitchType.allCases {
-            let count = observations.lazy.filter { $0.pitchType == pitchType }.count
+            let weight = observations.lazy.filter { $0.pitchType == pitchType }
+                .reduce(0) { $0 + observationWeight($1) }
+            // count는 하위 계산(share)이 기존과 같은 스케일을 갖도록 관측 수 기준으로 환산.
+            let count = weight * observations.count / totalWeight
             if count > best.count {
                 best = (pitchType, count)
             }
@@ -343,9 +361,12 @@ public struct RivalMemoryEngine: Sendable {
         in observations: [RivalPitchObservation]
     ) -> (zone: PitchZone, count: Int) {
         var best = (zone: PitchZone(row: 0, column: 0), count: -1)
+        let totalWeight = max(1, observations.reduce(0) { $0 + observationWeight($1) })
         for index in 0..<9 {
             let zone = PitchZone(row: index / 3, column: index % 3)
-            let count = observations.lazy.filter { $0.zone == zone }.count
+            let weight = observations.lazy.filter { $0.zone == zone }
+                .reduce(0) { $0 + observationWeight($1) }
+            let count = weight * observations.count / totalWeight
             if count > best.count {
                 best = (zone, count)
             }

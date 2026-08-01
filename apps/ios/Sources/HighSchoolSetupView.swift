@@ -51,6 +51,9 @@ struct HighSchoolSetupView: View {
     @State private var soulDomain: SoulDomain = .technique
     /// 영혼 상점에서 담은 부스트. 잔액 안에서만 담긴다.
     @State private var selectedBoosts: Set<SoulBoostID> = []
+    /// 공유받은 시드로 시작하기. 비우면 랜덤.
+    @State private var seedInput = ""
+
     @State private var harshness: DifficultyLevel = .standard
     @FocusState private var nameFocused: Bool
 
@@ -177,6 +180,14 @@ struct HighSchoolSetupView: View {
             .buttonStyle(.plain)
             .foregroundStyle(BaseballTheme.action)
             .accessibilityIdentifier("hs.setup.suggestName")
+
+            // 시드로 시작 — 커뮤니티 도전("이 시드로 5회차 안에 지명?")의 입구.
+            // 대부분은 안 쓰므로 눈에 띄지 않게 한 줄만.
+            TextField("시드로 시작 (선택)", text: $seedInput)
+                .font(.footnote.monospaced())
+                .textFieldStyle(.roundedBorder)
+                .keyboardType(.numberPad)
+                .accessibilityIdentifier("hs.setup.seed")
 
             if isRebirth {
                 inheritanceCard
@@ -483,7 +494,8 @@ struct HighSchoolSetupView: View {
                         difficulty: CareerDifficultySnapshot(careerHarshness: harshness),
                         karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue },
                         soulDomain: career.inheritance.soulPoints > 0 ? soulDomain : nil,
-                        soulBoosts: Array(selectedBoosts).sorted { $0.rawValue < $1.rawValue }
+                        soulBoosts: Array(selectedBoosts).sorted { $0.rawValue < $1.rawValue },
+                        seedOverride: seedInput.isEmpty ? nil : seedInput
                     )
                 }
             } else {

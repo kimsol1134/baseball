@@ -1638,8 +1638,11 @@ public struct HighSchoolCareerEngine: Sendable {
             played: true
         )
 
+        // 스태미나가 등판 피로 곡선을 정한다(60 기준 기존과 동일: 80→가볍고 30→무겁다).
+        // 커널 검증만 받고 아무 데도 안 읽히던 능력치가 처음으로 마운드 위에서 일한다.
+        let staminaScale = max(60, 140 - params.state.pitcher.stamina)
         let nextBase = replacing(params.state, revision: params.state.revision + 1,
-            fatigue: clamp(params.state.fatigue + max(3, params.report.pitches / 3), 0, 100),
+            fatigue: clamp(params.state.fatigue + max(3, params.report.pitches * staminaScale / 240), 0, 100),
             performance: performance,
             seasonLog: (params.state.seasonLog ?? []) + [playedLine],
             news: ([headline] + (callback.map { [$0] } ?? []) + (armNews.map { [$0] } ?? []) + (sparkNews.map { [$0] } ?? []) + params.state.news),
@@ -2445,14 +2448,23 @@ public struct HighSchoolCareerEngine: Sendable {
     private func grow(_ pitcher: PitcherSnapshot, focus: TrainingFocus, points: Int) -> PitcherSnapshot {
         guard points > 0 else { return pitcher }
         let profiles = pitcher.pitchProfiles?.map { profile in
-            PitchProfileSnapshot(pitchType: profile.pitchType, role: profile.role,
+            // 결정구 완성 — 육성 중 구종이 제구+헛스윙+범타 합 150을 넘으면 실전
+            // 구종(secondary)으로 승격한다. 승격 전에는 포수가 승부처에서 안 부르고
+            // 대체 후보에서도 빠진다(-120 감점·필터). 로그라이트인데 레퍼토리가
+            // 영원히 고정이면 "내 결정구를 만들었다"는 서사가 시스템에 없다.
+            let promoted: PitchUsageRole = profile.role == .development
+                && profile.command + profile.whiff + profile.weakContact >= 150
+                ? .secondary : profile.role
+            return PitchProfileSnapshot(pitchType: profile.pitchType, role: promoted,
                 velocityTenthsKPH: clamp(profile.velocityTenthsKPH + (focus == .velocity ? points * 5 : 0), 1_000, 1_700),
                 control: clamp(profile.control + (focus == .command ? points : 0), 20, 80),
                 command: clamp(profile.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
                 movement: clamp(profile.movement + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
                 whiff: clamp(profile.whiff + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
                 weakContact: profile.weakContact,
-                fatigueCost: focus == .stamina ? max(0, profile.fatigueCost - points / 2) : profile.fatigueCost)
+                // 하한 1 — 피로라는 축 자체를 훈련으로 소거할 수 있으면 투구수 관리가
+                // 게임에서 사라진다. 100구를 던지면 팔은 무거워야 한다.
+                fatigueCost: focus == .stamina ? max(1, profile.fatigueCost - points / 2) : profile.fatigueCost)
         }
         return PitcherSnapshot(id: pitcher.id, name: pitcher.name,
             stuff: clamp(pitcher.stuff + (focus == .velocity ? points : 0), 20, 80),

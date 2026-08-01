@@ -433,7 +433,9 @@ struct PitchView: View {
             InningSettlementCard(session: session)
             BaseballCard(title: "이닝 종료", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("\(session.pitches)구 · \(session.strikeouts)탈삼진 · \(session.walks)볼넷 · \(session.runsAllowed)실점")
+                    Text("\(session.pitches)구 · \(session.strikeouts)탈삼진 · \(session.walks)볼넷"
+                         + (session.hitByPitches > 0 ? " · \(session.hitByPitches)사구" : "")
+                         + " · \(session.runsAllowed)실점")
                         .font(.title3.bold().monospacedDigit())
                     Text(session.actualDamage <= session.expectedDamage + 150
                         ? "구종과 코스를 고른 과정이 좋았다는 평가를 받습니다."
@@ -656,7 +658,9 @@ private struct ScoreboardBar: View {
             if session.pitches > 0 {
                 Text(
                     "\(session.outsRecorded / 3).\(session.outsRecorded % 3)이닝 · "
-                        + "\(session.strikeouts)K \(session.walks)BB \(session.runsAllowed)실점 · \(session.pitches)구"
+                        + "\(session.strikeouts)K \(session.walks)BB"
+                        + (session.hitByPitches > 0 ? " \(session.hitByPitches)사구" : "")
+                        + " \(session.runsAllowed)실점 · \(session.pitches)구"
                 )
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textTertiary)

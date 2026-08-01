@@ -106,9 +106,17 @@ struct LifeCardView: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(BaseballTheme.textTertiary)
                 Spacer()
-                Text("\(record.lifeNumber)회차 완주")
-                    .font(.caption2)
-                    .foregroundStyle(BaseballTheme.textTertiary)
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("\(record.lifeNumber)회차 완주")
+                        .font(.caption2)
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                    // 시드 각인 — 카드를 본 사람이 같은 판에 도전할 수 있는 입구.
+                    if let seed = Self.seedText(record.careerID) {
+                        Text("시드 \(seed)")
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                    }
+                }
             }
         }
         .padding(20)
@@ -129,6 +137,14 @@ struct LifeCardView: View {
                 .strokeBorder(BaseballTheme.border.opacity(0.6), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    /// careerID("career-시드-life-N")에서 시드만 뽑는다.
+    static func seedText(_ careerID: String?) -> String? {
+        guard let careerID, careerID.hasPrefix("career-") else { return nil }
+        let parts = careerID.split(separator: "-")
+        guard parts.count >= 2 else { return nil }
+        return String(parts[1])
     }
 
     private var highlightLines: [String] {

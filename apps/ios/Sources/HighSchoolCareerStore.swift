@@ -60,6 +60,9 @@ final class HighSchoolCareerStore {
         var chronicle: [String]? = nil
         /// 이 회차가 어떤 사람이었는가. 없는 옛 기록은 nil이다.
         var personality: String? = nil
+        /// 이 회차의 careerID("career-시드-life-N"). 카드에 시드를 각인해
+        /// "같은 시드로 도전"이 가능하게 한다. 없는 옛 기록은 nil이다.
+        var careerID: String? = nil
 
         /// "미지명 · 평가 57점" / "3라운드 서울 …". 목록 한 줄에 결말이 들어가야 한다.
         var outcomeLine: String {
@@ -185,7 +188,8 @@ final class HighSchoolCareerStore {
         difficulty: CareerDifficultySnapshot = .standard,
         karmas: [KarmaID] = [],
         soulDomain: SoulDomain? = nil,
-        soulBoosts: [SoulBoostID] = []
+        soulBoosts: [SoulBoostID] = [],
+        seedOverride: String? = nil
     ) {
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = trimmed.isEmpty ? preset.pitcher.name : trimmed
@@ -207,7 +211,10 @@ final class HighSchoolCareerStore {
         do {
             let created = try engine.start(
                 .init(
-                    seed: String(UInt64.random(in: 1...UInt64.max)),
+                    // 시드 입력은 커뮤니티 도전("이 시드로 지명 가능?")의 입구다.
+                    seed: seedOverride?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+                        ? seedOverride!.trimmingCharacters(in: .whitespacesAndNewlines)
+                        : String(UInt64.random(in: 1...UInt64.max)),
                     presetID: preset.id,
                     lifeNumber: carried.lifeNumber,
                     inheritedSoulPoints: carried.soulPoints,
@@ -546,7 +553,8 @@ final class HighSchoolCareerStore {
             schoolStrength: state.school.map { HighSchoolPresentation.focus($0.strength) },
             nicknames: nicknames.isEmpty ? nil : nicknames.map(\.title),
             chronicle: chronicle.isEmpty ? nil : chronicle.map { "\($0.stage) — \($0.text)" },
-            personality: personality?.title
+            personality: personality?.title,
+            careerID: state.careerID
         )
     }
 

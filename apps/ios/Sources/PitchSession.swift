@@ -55,6 +55,9 @@ final class PitchSession {
     /// 평가한다 — 발동은 배지로 공개된다. 숨은 보정은 이 게임에 없다.
     private(set) var lastTraitFired = false
     private(set) var walks = 0
+    /// 몸에 맞는 공. 기록 문화에서 사구는 볼넷이 아니다 — 커널의 coarse 결과는
+    /// walk 버킷이지만 화면은 구분해서 말한다(WHIP에 사구를 섞으면 기록이 아니다).
+    private(set) var hitByPitches = 0
     private(set) var runsAllowed = 0
     private(set) var expectedDamage = 0
     private(set) var actualDamage = 0
@@ -282,7 +285,8 @@ final class PitchSession {
             scenarioNumber: scenarioNumber,
             pitches: pitches,
             strikeouts: strikeouts,
-            walks: walks,
+            // 커널 규약(4사구 버킷)은 유지 — 화면 표기만 분리한다.
+            walks: walks + hitByPitches,
             runsAllowed: runsAllowed,
             expectedDamage: expectedDamage,
             actualDamage: actualDamage,
@@ -315,7 +319,8 @@ final class PitchSession {
                 rivalOutcomes.append(plateResult)
             }
         }
-        walks += snapshot.result == .walk ? 1 : 0
+        walks += snapshot.result == .walk && snapshot.outcome != .hitByPitch ? 1 : 0
+        hitByPitches += snapshot.outcome == .hitByPitch ? 1 : 0
         runsAllowed += snapshot.runsScored
         recommendationAccepted += snapshot.recommendationAccepted ? 1 : 0
         if let entry = result.gameLog.entries.last {

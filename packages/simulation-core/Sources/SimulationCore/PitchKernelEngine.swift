@@ -461,7 +461,8 @@ public struct PitchKernelEngine: Sendable {
             executionQuality: execution.executionQuality,
             battedBall: neutralResolution.battedBall,
             fielding: fieldingResolution,
-            recommendationAccepted: recommendationAccepted
+            recommendationAccepted: recommendationAccepted,
+            velocityTenthsKPH: execution.velocityTenthsKPH
         )
         let postgameAnalysis = gameAnalysisEngine.analyze(updatedGameLog)
         let adaptationContext = PlateAppearanceContext(
@@ -1300,7 +1301,16 @@ public struct PitchKernelEngine: Sendable {
         // +3.2km/h가 +8점밖에 되지 않았다 — 제구 페널티(−95점 상당)를 이길 수 없는 구조라
         // 힘 배분 축이 controlled 하나로 지배됐다.
         let velocityEdge = clamp((execution.velocityTenthsKPH - 1_370) / 2, -80, 180)
-        let pitchDifficulty = ratingDifficulty + velocityEdge
+        // 구속차 — 직전 공과 8km/h 이상 벌어지면 배트 타이밍이 흔들린다.
+        // "왜 체인지업을 던지는가"의 답이 처음으로 판정식에 들어온다. 직전 정보가
+        // 없으면(첫 공·옛 로그·레거시 경로) 0이라 골든 픽스처와 byte-identical하다.
+        let speedGapEdge: Int
+        if let previousVelocity = params.gameLog?.entries.last?.velocityTenthsKPH {
+            speedGapEdge = min(70, max(0, abs(execution.velocityTenthsKPH - previousVelocity) - 80) / 3)
+        } else {
+            speedGapEdge = 0
+        }
+        let pitchDifficulty = ratingDifficulty + velocityEdge + speedGapEdge
         let platoonContact = platoonContactBonus(
             pitcherHand: params.pitcher.throwingHand,
             batSide: params.batter.batSide,

@@ -334,6 +334,9 @@ public struct PitchAnalysisEntry: Codable, Equatable, Sendable {
     public let expectedDamage: Int
     public let actualDamage: Int
     public let recommendationAccepted: Bool
+    /// 이 공의 구속(0.1km/h). 구속차 판정이 직전 공을 읽는 데 쓴다.
+    /// 옛 로그·저장본에는 없어 nil이며, nil이면 구속차 항이 0이다.
+    public let velocityTenthsKPH: Int?
 
     public init(
         pitchType: PitchType,
@@ -345,7 +348,8 @@ public struct PitchAnalysisEntry: Codable, Equatable, Sendable {
         contactQuality: Int?,
         expectedDamage: Int,
         actualDamage: Int,
-        recommendationAccepted: Bool
+        recommendationAccepted: Bool,
+        velocityTenthsKPH: Int? = nil
     ) {
         self.pitchType = pitchType
         self.wasInZone = wasInZone
@@ -357,6 +361,7 @@ public struct PitchAnalysisEntry: Codable, Equatable, Sendable {
         self.expectedDamage = expectedDamage
         self.actualDamage = actualDamage
         self.recommendationAccepted = recommendationAccepted
+        self.velocityTenthsKPH = velocityTenthsKPH
     }
 }
 
@@ -1101,7 +1106,8 @@ public struct GameAnalysisEngine: Sendable {
         executionQuality: Int,
         battedBall: BattedBall?,
         fielding: FieldingResolutionSnapshot?,
-        recommendationAccepted: Bool
+        recommendationAccepted: Bool,
+        velocityTenthsKPH: Int? = nil
     ) -> GameLogSnapshot {
         let current = log ?? GameLogSnapshot(
             gameID: gameID,
@@ -1119,7 +1125,8 @@ public struct GameAnalysisEngine: Sendable {
             contactQuality: battedBall?.contactQuality,
             expectedDamage: damageValue(fielding?.neutralOutcome ?? outcome, result: plateAppearanceResult),
             actualDamage: damageValue(outcome, result: plateAppearanceResult),
-            recommendationAccepted: recommendationAccepted
+            recommendationAccepted: recommendationAccepted,
+            velocityTenthsKPH: velocityTenthsKPH
         )
         return GameLogSnapshot(
             gameID: current.gameID,

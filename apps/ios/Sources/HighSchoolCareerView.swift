@@ -1221,6 +1221,7 @@ private struct LegacyCard: View {
 }
 
 private struct CompletionCard: View {
+    @State private var confirmingFold = false
     let career: HighSchoolCareerStore
     let state: HighSchoolCareerSnapshot
     /// 이 회차로 프로에 이미 진출했는가.
@@ -1283,7 +1284,9 @@ private struct CompletionCard: View {
             // 지명된 회차는 아직 끝나지 않았다. 접겠다고 결정할 때 비로소 기억을 고른다.
             let opensLegacy = state.draftResult?.outcome == .drafted && !legacyConfirmed
             Button {
-                if opensLegacy { career.openLegacy() } else { onRebirth() }
+                // 프로 포기는 이 게임에서 가장 무거운 되돌릴 수 없는 결정인데
+                // 학교 선택보다 마찰이 낮았다 — 같은 확인 문법을 준다.
+                if opensLegacy { confirmingFold = true } else { onRebirth() }
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(opensLegacy ? "이 회차를 접고 다시 시작" : "다시 태어나기")
@@ -1298,6 +1301,17 @@ private struct CompletionCard: View {
             .buttonStyle(.bordered)
             .frame(minHeight: BaseballMetrics.minimumTapTarget)
             .accessibilityIdentifier("hs.rebirth")
+            .confirmationDialog(
+                "프로를 포기하고 이 회차를 접을까요?",
+                isPresented: $confirmingFold,
+                titleVisibility: .visible
+            ) {
+                Button("접고 기억을 고른다", role: .destructive) { career.openLegacy() }
+                // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
+                Button("돌아간다") { confirmingFold = false }
+            } message: {
+                Text("프로 커리어를 시작하지 않고 이 선수의 이야기를 끝냅니다. 지명은 사라지고 되돌릴 수 없습니다.")
+            }
         }
     }
 }
