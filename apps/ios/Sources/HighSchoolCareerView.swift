@@ -803,7 +803,8 @@ private struct RelationshipCard: View {
                         .foregroundStyle(BaseballTheme.textPrimary)
                     // 손으로 쓴 인용 대사가 있으면 그것이 본문이고, 요약은 아래로 내려간다.
                     // 없는 장면은 예전처럼 요약만 쓴다 — 없는 대사를 지어내지 않는다.
-                    let quote = scene.map { $0.quote(band) } ?? ""
+                    let quote = (scene.map { $0.quote(band) } ?? "")
+                        .replacingOccurrences(of: "{player}", with: state.identity.name)
                     if !quote.isEmpty {
                         Text(quote)
                             .font(.body)

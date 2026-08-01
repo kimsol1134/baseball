@@ -165,6 +165,8 @@ struct PitchView: View {
     @State private var confirmingAbort = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 승부 장면 높이. 고정 320은 접근성 글자 크기에서 판정 텍스트가 잘린다(3차 패널 P1).
+    @ScaledMetric(relativeTo: .body) private var dramaHeight: CGFloat = 320
     @State private var replayProgress: Double = 1
     @AppStorage("baseball.pitch.autoRelease") private var autoRelease = false
     /// 생애 최고 구속(0.1km/h). 회차를 넘어 쌓인다 — 갱신은 그 자체로 하이라이트다.
@@ -388,7 +390,7 @@ struct PitchView: View {
                     fielding: result.snapshot.fieldingResolution,
                     progress: replayProgress
                 )
-                .frame(height: 320)
+                .frame(height: dramaHeight)
                 .frame(maxWidth: .infinity)
                 .background(BaseballTheme.fieldNight, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
                 // 홈런과 이닝을 끝낸 삼진에만 스탬프가 찍힌다. 이 장면이 곧 공유용

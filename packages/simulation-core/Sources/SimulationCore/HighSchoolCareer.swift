@@ -1806,10 +1806,13 @@ public struct HighSchoolCareerEngine: Sendable {
         let seasonTerm: Int
         let karmaPenalty: Int
         let overusePenalty: Int
+        /// 팬 관심 항. 표시만 되고 판정에 안 쓰이면 "만들다 만 축"이 더 선명해진다
+        /// (3차 패널 P2) — 캡 ±3으로 관계·시즌 항보다 작게, 흥행은 실력을 못 이긴다.
+        let fanTerm: Int
 
         var total: Int {
             ratingScore + performanceScore + processBonus + awakeningScore
-                + relationshipScore + seasonTerm - karmaPenalty - overusePenalty
+                + relationshipScore + seasonTerm + fanTerm - karmaPenalty - overusePenalty
         }
     }
 
@@ -1833,10 +1836,12 @@ public struct HighSchoolCareerEngine: Sendable {
         let seasonTerm = autoOuts == 0
             ? 0
             : min(4, max(-4, (Self.highSchoolBaseline(lifeNumber: state.lifeNumber) - autoRuns * 27_000 / autoOuts) * 4 / 1_000))
+        // 팬 관심: 40이 중립. 스카우트는 소문(만원 관중)에 아주 조금 흔들린다.
+        let fanTerm = min(3, max(-3, (state.fanInterest - 40) / 15))
         return DraftEvaluationComponents(
             ratingScore: ratingScore, performanceScore: performanceScore, processBonus: processBonus,
             awakeningScore: awakeningScore, relationshipScore: relationshipScore, seasonTerm: seasonTerm,
-            karmaPenalty: karmaPenalty, overusePenalty: overusePenalty
+            karmaPenalty: karmaPenalty, overusePenalty: overusePenalty, fanTerm: fanTerm
         )
     }
 

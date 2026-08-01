@@ -109,7 +109,7 @@ public enum RelationshipVoiceCatalog {
         "evt-coach-role": Scene(speaker: .coach, quotes: [
             .low: "\u{201C}선발은 아직 이르다. 불펜부터 시작해. …이유를 따질 시간에 공이나 더 던져 봐.\u{201D}",
             .mid: "\u{201C}다음 대회는 불펜에서 시작한다. 경기 후반을 맡아 줘.\u{201D}",
-            .high: "\u{201C}이번엔 네가 경기 후반을 닫아 줘. 마지막 이닝은 아무한테나 안 맡긴다.\u{201D}",
+            .high: "\u{201C}{player}. 이번엔 네가 경기 후반을 닫아 줘. 마지막 이닝은 아무한테나 안 맡긴다.\u{201D}",
         ], choices: [
             listen("불펜으로 옮긴 이유를 묻는다", "감독이 본 약점부터 듣는다"),
             explain("최근 선발 등판 기록을 꺼내 보인다", "선발로 남고 싶은 이유를 말한다"),
@@ -138,7 +138,7 @@ public enum RelationshipVoiceCatalog {
         "evt-catcher-sign": Scene(speaker: .catcher, quotes: [
             .low: "\u{201C}또 사인이 세 번 바뀌었어. …이럴 거면 왜 나랑 배터리를 맞춰?\u{201D}",
             .mid: "\u{201C}오늘 사인이 세 번이나 바뀌었어. 내가 놓친 게 뭐였어?\u{201D}",
-            .high: "\u{201C}세 번 바꾼 거, 오늘은 다 맞았어. 이제 네가 뭘 보는지 대충 읽혀.\u{201D}",
+            .high: "\u{201C}세 번 바꾼 거, 오늘은 다 맞았어. {player} 공은 이제 내가 제일 잘 알아.\u{201D}",
         ], choices: [
             listen("포수가 본 타자 반응부터 묻는다", "내가 못 본 장면을 확인한다"),
             explain("사인을 바꾼 이유를 설명한다", "타자가 높은 공을 기다렸다고 말한다"),
@@ -189,7 +189,7 @@ public enum RelationshipVoiceCatalog {
         "evt-rival-final": Scene(speaker: .rival, quotes: [
             .low: "타석에 선 그가 포수 미트도 보지 않고 웃는다. \u{201C}어차피 거기로 올 거잖아. 다 알아.\u{201D}",
             .mid: "타석에 들어선 그가 지난 경기와 같은 코스를 배트 끝으로 가리킨다. \u{201C}또 여기로 던져 봐.\u{201D}",
-            .high: "타석에 들어선 그가 배트를 고쳐 쥐며 낮게 말한다. \u{201C}마지막이네. 네 제일 좋은 공으로 와. 그래야 이겨도 져도 남지.\u{201D}",
+            .high: "타석에 들어선 그가 배트를 고쳐 쥐며 낮게 말한다. \u{201C}{player}. 마지막이네. 네 제일 좋은 공으로 와. 그래야 이겨도 져도 남지.\u{201D}",
         ], choices: [
             listen("왜 그 코스를 가리켰는지 되묻는다", "상대가 노리는 말을 더 끌어낸다"),
             explain("지난 공은 실투가 아니었다고 답한다", "그때의 선택을 숨기지 않는다"),
@@ -487,13 +487,16 @@ public enum RelationshipVoiceCatalog {
     /// 관계가 숫자(팀의 믿음 60)로만 존재했다(품질 평가 §4.3).
     ///
     /// 신뢰도가 실제로 올랐는지 내렸는지에 따라 갈린다 — 코어가 이미 계산한 값만 읽는다.
-    public static func aftermath(speaker: Speaker, response: RelationshipResponse, trustChange: Int) -> String {
+    /// `name`은 이 회차의 실명(감독·포수·라이벌). 넣으면 "윤태문 감독은 웃었다"가 되고,
+    /// 안 넣으면 예전처럼 역할명으로 말한다 — 세계가 내 사람을 이름으로 부르는 것이
+    /// 이 게임이 파는 애착의 최소 단위다(3차 패널 P2).
+    public static func aftermath(speaker: Speaker, name: String? = nil, response: RelationshipResponse, trustChange: Int) -> String {
         let who: String
         switch speaker {
-        case .coach: who = "감독"
-        case .catcher: who = "포수"
-        case .rival: who = "상대"
-        case .named(let name): who = name
+        case .coach: who = name.map { "\($0) 감독" } ?? "감독"
+        case .catcher: who = name.map { "\($0) 포수" } ?? "포수"
+        case .rival: who = name ?? "상대"
+        case .named(let named): who = named
         }
         // 받침을 보고 조사를 고른다. "감독은(는)"은 기계가 쓴 문장이고,
         // 하필 매 관계 장면의 마지막 줄 — 가장 집중해서 읽는 자리다.

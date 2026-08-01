@@ -27,6 +27,9 @@ struct DeliveryControl: View {
     var onMeterEdge: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 접근성 글자 크기에서 안내 문구가 커지면 92pt 고정 패드 안에서 겹친다 —
+    /// 패드가 글자를 따라 자란다(3차 패널 P1, Dynamic Type).
+    @ScaledMetric(relativeTo: .body) private var padHeight: CGFloat = 92
     @State private var isPressing = false
     @State private var meter: Double = 0
     /// 손가락이 끈 거리. 흔들림을 상쇄하는 데 쓴다.
@@ -136,7 +139,7 @@ struct DeliveryControl: View {
                     .foregroundStyle(BaseballTheme.actionInk)
             }
         }
-        .frame(height: 92)
+        .frame(height: padHeight)
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)

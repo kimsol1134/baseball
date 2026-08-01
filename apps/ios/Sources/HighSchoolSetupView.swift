@@ -57,6 +57,42 @@ struct HighSchoolSetupView: View {
     @State private var harshness: DifficultyLevel = .standard
     @FocusState private var nameFocused: Bool
 
+    /// 원버튼 환생 — 지난 회차와 같은 설정(이름·지역·유형·난이도·카르마)으로 즉시 시작.
+    /// 부스트는 회차마다 다시 고르는 소비라 싣지 않는다.
+    @ViewBuilder private var quickRebirthCard: some View {
+        if isRebirth, let last = career.lastSetup,
+           let preset = presets.first(where: { $0.id == last.presetID }) {
+            BaseballCard(title: "바로 환생", tone: .raised) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("\(last.playerName.isEmpty ? preset.pitcher.name : last.playerName) · \(last.region) · 지난 회차와 같은 설정")
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                    Button {
+                        career.startCareer(
+                            preset: preset,
+                            playerName: last.playerName,
+                            region: last.region,
+                            difficulty: CareerDifficultySnapshot(
+                                careerHarshness: DifficultyLevel(rawValue: last.harshness) ?? .standard),
+                            karmas: last.karmas,
+                            soulDomain: last.soulDomain
+                        )
+                    } label: {
+                        Text("같은 설정으로 다시 태어나기")
+                            .font(.subheadline.weight(.bold))
+                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(BaseballTheme.action)
+                    .accessibilityIdentifier("hs.setup.quickRebirth")
+                    Text("영혼 상점을 쓰려면 아래에서 단계대로 진행하세요.")
+                        .font(.caption2)
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                }
+            }
+        }
+    }
+
     private var presets: [PitcherPresetSnapshot] { PitcherPresetCatalog.all }
     private var selectedPreset: PitcherPresetSnapshot? {
         presets.first { $0.id == selectedPresetID } ?? presets.first
@@ -85,6 +121,10 @@ struct HighSchoolSetupView: View {
             header
             ScrollView {
                 VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                    // 원버튼 환생 — 반복 회차의 첫 마찰(설정 4단계)을 한 탭으로 접는다.
+                    if step == .name {
+                        quickRebirthCard
+                    }
                     // 크로스페이드는 전환 중 두 단계의 한글이 겹쳐 보인다 — 첫 30초에
                     // "고장난 앱"으로 읽히는 P0(QA 문서). 밀어내기는 겹치지 않는다.
                     Group {

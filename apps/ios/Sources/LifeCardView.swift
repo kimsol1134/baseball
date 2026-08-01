@@ -87,6 +87,16 @@ struct LifeCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            // 함께한 사람들 — 이 회차를 사람 이름으로 기억하게 한다.
+            if record.coachName != nil || record.rivalName != nil {
+                Text([record.coachName.map { "\($0) 감독" },
+                      record.catcherName.map { "\($0) 포수" },
+                      record.rivalName.map { "숙적 \($0)" }]
+                    .compactMap { $0 }.joined(separator: " · "))
+                    .font(.caption2)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+            }
+
             if let chronicle = record.chronicle, !chronicle.isEmpty {
                 VStack(alignment: .leading, spacing: 5) {
                     // 처음과 마지막 — 시작한 아이와 끝낸 선수를 함께 담는다.

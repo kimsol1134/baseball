@@ -65,6 +65,11 @@ final class HighSchoolCareerStore {
         var nicknames: [String]? = nil
         /// 이번 회차의 연대기("2학년 여름 — …"). 없는 옛 기록은 nil이다.
         var chronicle: [String]? = nil
+        /// 3년을 함께한 사람들. 회차가 끝나면 감독·포수·숙적이 통째로 증발하던 것을
+        /// 여기 남긴다(3차 패널 P2 — 애착 축). 없는 옛 기록은 nil이다.
+        var coachName: String? = nil
+        var catcherName: String? = nil
+        var rivalName: String? = nil
         /// 이 회차가 어떤 사람이었는가. 없는 옛 기록은 nil이다.
         var personality: String? = nil
         /// 이 회차의 careerID("career-시드-life-N"). 카드에 시드를 각인해
@@ -188,6 +193,27 @@ final class HighSchoolCareerStore {
         loadState = restore() ? .ready : .needsSetup
     }
 
+    /// 지난 회차의 설정. 원버튼 환생("같은 설정으로 다시")의 재료다.
+    struct LastSetup: Codable, Equatable {
+        var presetID: String
+        var playerName: String
+        var region: String
+        var harshness: String
+        var karmas: [KarmaID]
+        var soulDomain: SoulDomain?
+    }
+
+    var lastSetup: LastSetup? {
+        get {
+            UserDefaults.standard.data(forKey: "baseball.lastSetup")
+                .flatMap { try? JSONDecoder().decode(LastSetup.self, from: $0) }
+        }
+        set {
+            guard let newValue, let data = try? JSONEncoder().encode(newValue) else { return }
+            UserDefaults.standard.set(data, forKey: "baseball.lastSetup")
+        }
+    }
+
     func startCareer(
         preset: PitcherPresetSnapshot,
         playerName: String,
@@ -198,6 +224,10 @@ final class HighSchoolCareerStore {
         soulBoosts: [SoulBoostID] = [],
         seedOverride: String? = nil
     ) {
+        lastSetup = LastSetup(
+            presetID: preset.id, playerName: playerName, region: region,
+            harshness: difficulty.careerHarshness.rawValue, karmas: karmas, soulDomain: soulDomain
+        )
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = trimmed.isEmpty ? preset.pitcher.name : trimmed
         let identity = PlayerIdentitySnapshot(
@@ -581,6 +611,9 @@ final class HighSchoolCareerStore {
             schoolStrength: state.school.map { HighSchoolPresentation.focus($0.strength) },
             nicknames: nicknames.isEmpty ? nil : nicknames.map(\.title),
             chronicle: chronicle.isEmpty ? nil : chronicle.map { "\($0.stage) — \($0.text)" },
+            coachName: state.school?.coachName,
+            catcherName: state.school?.catcherName,
+            rivalName: state.rival.name,
             personality: personality?.title,
             careerID: state.careerID
         )
@@ -885,8 +918,15 @@ final class HighSchoolCareerStore {
             case "rival": speaker = .rival
             default: speaker = .named("상대")
             }
+            let speakerName: String? = switch relationship.category {
+            case "coach": after.school?.coachName
+            case "catcher": after.school?.catcherName
+            case "rival": after.rival.name
+            default: nil
+            }
             let aftermath = RelationshipVoiceCatalog.aftermath(
                 speaker: speaker,
+                name: speakerName,
                 response: relationship.response,
                 trustChange: relationship.trustAfter - relationship.trustBefore
             )
