@@ -17,6 +17,8 @@ struct HighSchoolCareerView: View {
     @State private var draftReveal: DraftReveal?
     /// 환생 스탬프를 띄울 회차. 기억을 확정하고 다음 회차로 넘어가는 순간에만 켠다.
     @State private var rebirthStamp: RebirthStamp?
+    /// 오늘의 이닝(일일 도전) 표시 여부.
+    @State private var showsDaily = false
 
     /// `fullScreenCover(item:)`가 요구하는 식별 가능한 값.
     struct RebirthStamp: Identifiable {
@@ -81,6 +83,9 @@ struct HighSchoolCareerView: View {
         //
         // 반대로(회차를 먼저 넘기고 스탬프를 띄우면) 화면이 갈아 끼워지는 순간에 전면
         // 화면을 올리는 셈이라 표시가 들쭉날쭉했다. 연출이 곧 전환이면 그런 경합이 없다.
+        .fullScreenCover(isPresented: $showsDaily) {
+            DailyInningView { showsDaily = false }
+        }
         .fullScreenCover(item: $rebirthStamp) { stamp in
             RebirthStampView(lifeNumber: stamp.lifeNumber) {
                 rebirthStamp = nil
@@ -158,6 +163,31 @@ struct HighSchoolCareerView: View {
                             if !career.worldNews.isEmpty {
                                 CommunityBuzzCard(title: "전국의 소식", footnote: "라이벌들도 저마다의 3년을 살고 있습니다.", lines: career.worldNews)
                             }
+                        }
+                        // 오늘의 이닝 — 하루 한 판, 전국 같은 타순. 회차 진행과 무관한
+                        // "오늘 3분"의 이유. 훈련 국면에서만 보인다(승부·각성 앞에서는 소음).
+                        if state.phase == .training,
+                           !UserDefaults.standard.bool(forKey: "baseball.daily.played.\(PitchScenario.todayKey())") {
+                            Button { showsDaily = true } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "calendar.badge.clock")
+                                        .foregroundStyle(BaseballTheme.milestone)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text("오늘의 이닝").font(.footnote.weight(.bold))
+                                        Text("전국이 같은 타순 · 하루 한 판 · Game Center 순위")
+                                            .font(.caption2).foregroundStyle(BaseballTheme.textSecondary)
+                                    }
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "chevron.right").font(.caption2)
+                                        .foregroundStyle(BaseballTheme.textTertiary)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(BaseballTheme.milestone.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(BaseballTheme.milestone.opacity(0.5), lineWidth: 1))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("hs.daily.entry")
                         }
                         // 걸어 둔 약속 — 내기는 눈앞에 있어야 내기다.
                         if state.draftResult == nil, state.phase != .awakening,
@@ -500,8 +530,19 @@ private struct TrainingCard: View {
     let armHealth: ArmHealthState
     let onCommit: (TrainingFocus, TrainingIntensity) -> Void
 
-    @State private var focus: TrainingFocus = .command
-    @State private var intensity: TrainingIntensity = .standard
+    // 직전 선택에서 시작한다. 국면이 오갈 때마다 기본값으로 리셋되면
+    // 같은 훈련을 이어가려는 사람이 회차당 16번 재선택을 강요당한다.
+    @State private var focus: TrainingFocus
+    @State private var intensity: TrainingIntensity
+
+    init(state: HighSchoolCareerSnapshot, armHealth: ArmHealthState,
+         onCommit: @escaping (TrainingFocus, TrainingIntensity) -> Void) {
+        self.state = state
+        self.armHealth = armHealth
+        self.onCommit = onCommit
+        _focus = State(initialValue: state.lastTraining?.focus ?? .command)
+        _intensity = State(initialValue: state.lastTraining?.intensity ?? .standard)
+    }
 
     /// 전망 계산용. 엔진은 상태가 없어서 화면이 하나 들고 있어도 된다.
     private let engine = HighSchoolCareerEngine()
