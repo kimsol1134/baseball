@@ -214,7 +214,8 @@ struct HighSchoolCareerView: View {
         case .importantGame:
             ImportantGameCard(state: state, onStart: career.beginImportantGame)
         case .awakening:
-            AwakeningCard(options: state.awakeningOptions, onChoose: career.chooseAwakening)
+            AwakeningCard(options: state.awakeningOptions, sparks: state.awakeningSparks,
+                          onChoose: career.chooseAwakening)
         case .chapterReview:
             ChapterReviewCard(state: state, onContinue: career.advanceChapter)
         case .draft:
@@ -340,6 +341,18 @@ private struct PrologueCard: View {
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
+                    }
+                    // 이번 회차의 바람 — 카르마(내 선택)와 달리 세계가 정한 조건이다.
+                    // 판이 다르다는 걸 시작에서 모르면 회차 변주는 없는 것과 같다.
+                    let wind = CareerWind.wind(careerID: state.careerID)
+                    if wind.id != "calm" {
+                        Divider()
+                        Text("이번 회차의 바람").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.information)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(wind.title).font(.subheadline.weight(.semibold))
+                            Text(wind.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                     if !state.karmas.isEmpty {
                         Divider()
@@ -771,14 +784,30 @@ private struct ImportantGameCard: View {
 /// 카드에 "되돌릴 수 없습니다"라고 적어 두는 것만으로는 오조작을 막지 못한다.
 private struct AwakeningCard: View {
     let options: [AwakeningID]
+    /// 각성의 전조(코어 값). nil은 전조 개념이 없던 저장본이다.
+    var sparks: Int? = nil
     let onChoose: (AwakeningID) -> Void
 
     @State private var pending: AwakeningID?
+
+    /// 전조가 각성의 크기를 말한다. 갈래 수(코어가 이미 줄였다)에 서사를 붙여
+    /// "왜 이만큼 열렸는지"를 읽게 한다 — 개연성은 숫자가 아니라 문장에서 생긴다.
+    private var sparkLine: (text: String, tone: Color) {
+        switch sparks ?? 3 {
+        case 3...: ("시즌의 호투가 몸을 완전히 깨웠습니다 — 세 갈래가 전부 열렸습니다.", BaseballTheme.milestone)
+        case 1...2: ("증명이 조금 부족했습니다 — 몸이 절반만 깨어나 두 갈래가 열립니다.", BaseballTheme.textSecondary)
+        default: ("전조 없이 도착한 각성입니다 — 몸이 기억하는 단 하나의 길만 열립니다. 호투와 만개가 다음 각성을 넓힙니다.", BaseballTheme.warning)
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             // 회차당 세 번뿐인 순간 — 목록이 아니라 무대를 준다(QA P2-2).
             KeyArtHeader(art: .awakening, eyebrow: "각성", title: "몸이 하나를 기억합니다", accent: BaseballTheme.milestone)
+            Text(sparkLine.text)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(sparkLine.tone)
+                .fixedSize(horizontal: false, vertical: true)
             Text("고른 각성은 되돌릴 수 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
             ForEach(options, id: \.self) { option in
                 let copy = HighSchoolPresentation.awakening(option)

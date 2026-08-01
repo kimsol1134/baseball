@@ -109,9 +109,10 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertFalse(rivals.compactMap(\.signatureRecord).contains { $0.contains("통산") || $0.contains("한국시리즈") })
         XCTAssertGreaterThan(Set(rivals.map { "\($0.contact)-\($0.discipline)-\($0.power)" }).count, 4)
         let ratings = rivals.flatMap { [$0.contact, $0.discipline, $0.power] }
-        XCTAssertLessThanOrEqual(ratings.max() ?? 0, 50)
-        XCTAssertGreaterThanOrEqual(ratings.min() ?? 0, 37)
-        XCTAssertLessThan(Double(ratings.reduce(0, +)) / Double(ratings.count), 46)
+        // 회차 바람이 라이벌을 ±5까지 움직인다(괴물 세대 +5 · 무명의 해 −3).
+        XCTAssertLessThanOrEqual(ratings.max() ?? 0, 55)
+        XCTAssertGreaterThanOrEqual(ratings.min() ?? 0, 34)
+        XCTAssertLessThan(Double(ratings.reduce(0, +)) / Double(ratings.count), 47)
 
         let hardestRivals = try (1...64).map { seed in
             try HighSchoolCareerEngine().start(.init(
@@ -239,7 +240,10 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertEqual(relaxed.snapshot.schoolOptions.map(\.id), cursed.snapshot.schoolOptions.map(\.id))
         XCTAssertGreaterThan(cursed.snapshot.rival.contact, relaxed.snapshot.rival.contact)
         XCTAssertEqual(cursed.snapshot.memorySlots, 2)
-        XCTAssertEqual(cursed.snapshot.legacyRewardPermille, 1_500)
+        XCTAssertEqual(
+            cursed.snapshot.legacyRewardPermille,
+            1_500 + CareerWind.wind(careerID: cursed.snapshot.careerID).rewardBonusPermille
+        )
         XCTAssertNotEqual(relaxed.snapshot.stateCommitment, cursed.snapshot.stateCommitment)
     }
 

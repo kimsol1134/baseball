@@ -275,7 +275,8 @@ struct LifeSummaryCard: View {
                 }
                 Spacer(minLength: 0)
                 // 회차 카드와 같은 얼굴. 공유물 두 장의 주인공이 같아야 한다.
-                PortraitView(seed: record.playerName, role: .player, size: 64,
+                // 헤더 텍스트 블록(회차+이름 ≈ 76pt)과 같은 높이로 맞춘다.
+                PortraitView(seed: record.playerName, role: .player, size: 58,
                              playerStage: record.drafted ? .pro : .ace)
             }
 

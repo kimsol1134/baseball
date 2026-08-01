@@ -552,6 +552,11 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     /// nil은 재능 개념이 없던 저장본이라는 뜻이고, `TalentSnapshot.unlimited`로 읽어
     /// 예전과 똑같이 동작한다. [[focusStreak]] 패턴.
     public let talent: TalentSnapshot?
+    /// 각성의 전조(0~6). 호투·만개가 쌓아 올리고, 각성 국면이 소비한다 —
+    /// 전조가 많을수록 각성 때 열리는 갈래가 많다. 각성이 "일정이 주는 보상"이 아니라
+    /// "시즌의 증명이 부르는 순간"이 되게 하는 값이다. 옛 저장본은 nil이며 0으로 읽는다.
+    /// 커밋에는 있을 때만 넣는다. [[focusStreak]] 패턴.
+    public let awakeningSparks: Int?
     public let stateCommitment: String
 
     public init(
@@ -597,6 +602,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         schedule: CareerScheduleSnapshot? = nil,
         trainingOpportunity: TrainingOpportunitySnapshot? = nil,
         talent: TalentSnapshot? = nil,
+        awakeningSparks: Int? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -641,6 +647,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.schedule = schedule
         self.trainingOpportunity = trainingOpportunity
         self.talent = talent
+        self.awakeningSparks = awakeningSparks
         self.stateCommitment = stateCommitment
     }
 
@@ -688,6 +695,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.schedule == rhs.schedule
             && lhs.trainingOpportunity == rhs.trainingOpportunity
             && lhs.talent == rhs.talent
+            && lhs.awakeningSparks == rhs.awakeningSparks
             && lhs.stateCommitment == rhs.stateCommitment
     }
 }
@@ -1076,22 +1084,26 @@ public struct HighSchoolCareerEngine: Sendable {
         // 재능을 계승보다 먼저 뽑는다. 계승이 이번 회차의 벽(재능 상한)을 넘지 않아야
         // "왜 안 오르지"의 답이 회차 시작부터 일관된다.
         let talent = TalentRules.make(careerID: careerID)
+        // 이번 회차의 바람 — careerID가 정하는 세계의 조건. 효과는 여기서 기존 필드에
+        // 새겨지고, 표시는 화면이 careerID로 재계산한다.
+        let wind = CareerWind.wind(careerID: careerID)
         var pitcher = renamed(params.identity.name, pitcher: applyCreation(params.creationAllocation, to: preset.pitcher), hand: params.identity.throwingHand)
         pitcher = applyInheritance(params.inheritedSoulPoints, domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: talent, to: pitcher)
         pitcher = applyKarmas(params.karmas, to: pitcher)
-        let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille }
+        let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille } + wind.rewardBonusPermille
         let memorySlots = params.karmas.contains(.erasedMemory) ? 2 : 3
         let base = HighSchoolCareerSnapshot(
             careerID: careerID, revision: 0, lifeNumber: params.lifeNumber,
             phase: .prologue, identity: params.identity, difficulty: params.difficulty, karmas: params.karmas,
             legacyRewardPermille: rewardPermille, memorySlots: memorySlots,
             pitcher: pitcher, schoolOptions: Self.schools(for: params.identity.region), school: nil,
-            rival: rival(seed: seed, difficulty: params.difficulty.simulationDifficulty, karmas: params.karmas), chapter: Self.chapters[0], chapterTrainingCount: 0,
+            rival: rival(seed: seed, difficulty: params.difficulty.simulationDifficulty, karmas: params.karmas, windBonus: wind.rivalBonus), chapter: Self.chapters[0], chapterTrainingCount: 0,
             totalTrainingsCompleted: 0, milestoneIndex: 0, relationshipsCompleted: 0,
             relationshipTrust: 50, managerTrust: 50, catcherTrust: 50, rivalTrust: 50,
             selectedAwakenings: [], awakeningOptions: [], fatigue: 5,
             performance: CareerPerformanceSnapshot(), currentGameScenario: nil, currentRelationshipEvent: nil, lastTraining: nil,
-            news: Self.prologueNews(identity: params.identity, lifeNumber: params.lifeNumber, inheritedMemoryCount: params.inheritedMemories.count), fanInterest: 5,
+            news: (wind.newsLine.map { [$0] } ?? []) + Self.prologueNews(identity: params.identity, lifeNumber: params.lifeNumber, inheritedMemoryCount: params.inheritedMemories.count),
+            fanInterest: wind.startingFanInterest,
             draftResult: nil, legacyOptions: [], selectedMemories: [], balanceVersion: PitcherPresetCatalog.balanceVersion,
             armRisk: 0, injuryRecovery: 0, schedule: Self.makeSchedule(careerID: careerID),
             talent: talent,
@@ -1313,7 +1325,8 @@ public struct HighSchoolCareerEngine: Sendable {
             bloomedAbility: bloomed, bloomedGrade: bloomedGrade)
         let chapterCount = params.state.chapterTrainingCount + 1
         let phase: HighSchoolCareerPhase = chapterCount == chapterTrainings ? milestone(for: params.state.chapter.number, index: 0, schedule: schedule) : .training
-        let optionState = replacing(params.state, pitcher: pitcher, fatigue: fatigue, lastTraining: training)
+        let optionState = replacing(params.state, pitcher: pitcher, fatigue: fatigue, lastTraining: training,
+            awakeningSparks: bloomed != nil ? min(6, (params.state.awakeningSparks ?? 0) + 1) : params.state.awakeningSparks)
         let options = phase == .awakening ? awakeningOptions(state: optionState, seed: seed) : []
         let scenario = phase == .importantGame ? gameScenario(for: params.state, seed: seed) : nil
         // 경고 상태가 이어지면 다음 관계 국면을 팔 상태 선택으로 대체한다(핵심 3슬롯은 보존).
@@ -1334,7 +1347,9 @@ public struct HighSchoolCareerEngine: Sendable {
                 ? ["재활 훈련 \(number)회차 · 팔 상태를 회복합니다."] + params.state.news
                 : bloomNews.map { $0 + params.state.news },
             armRisk: nextArmRisk, injuryRecovery: nextInjuryRecovery,
-            talent: talentAfter)
+            talent: talentAfter,
+            // 재능 만개도 각성의 전조다 — 훈련장에서 몸이 먼저 깨어난다.
+            awakeningSparks: bloomed != nil ? min(6, (params.state.awakeningSparks ?? 0) + 1) : params.state.awakeningSparks)
         return result(seed: seed, state: signed(next),
             event: isRehab ? "career_training_rehab" : "career_training_completed",
             reasons: ["training.\(effectiveFocus.rawValue)"])
@@ -1500,11 +1515,58 @@ public struct HighSchoolCareerEngine: Sendable {
         let priorSignal = Self.armHealthState(armRisk: priorRisk, injuryRecovery: params.state.injuryRecovery)
         let nextSignal = Self.armHealthState(armRisk: nextRisk, injuryRecovery: params.state.injuryRecovery)
         let armNews = (nextSignal != priorSignal ? armSignalNews(nextSignal, pitches: params.report.pitches) : nil)
+
+        // 각성의 전조 — 호투가 몸을 깨운다. 무실점이나 삼진쇼는 +2, 판정(과정)이 좋았으면 +1.
+        // 각성이 일정표의 선물이 아니라 시즌의 증명이 부르는 순간이 되게 하는 적립이다.
+        let sparkGain = (params.report.runsAllowed == 0 || params.report.strikeouts >= 4 ? 2 : 0)
+            + (params.report.actualDamage <= params.report.expectedDamage ? 1 : 0)
+        let sparks = min(6, (params.state.awakeningSparks ?? 0) + sparkGain)
+        let sparkNews: String? = sparkGain >= 2 ? "등판을 마친 손끝이 낯설게 뜨겁다 — 각성의 전조."
+            : sparkGain == 1 ? "공 하나하나가 손에 남는다 — 희미한 전조." : nil
+
+        // 직접 던진 경기를 시즌 기록지에 남긴다. 예전에는 성적 합계에만 더해져서
+        // "던진 이닝"이 영원히 0이었다 — played 줄이 없으면 이닝을 셀 근거가 없다.
+        // 지역 생성기만 쓰므로 커널 RNG 스트림과 골든 픽스처에는 영향이 없다.
+        var lineRNG = SplitMix64(seed: seed ^ 0x4853_504C_4159)  // "HSPLAY"
+        let outs = params.report.outs ?? min(27, params.report.pitches / 5)
+        let support: Int
+        let opponentRuns: Int
+        if let entryDifferential = params.report.scoreDifferentialAtEntry {
+            let opponentEarlier = lineRNG.nextInt(upperBound: 3)
+            opponentRuns = opponentEarlier + params.report.runsAllowed
+            support = max(0, opponentEarlier + entryDifferential + lineRNG.nextInt(upperBound: 2))
+        } else {
+            support = LeagueBaseline.highSchoolTeamRuns(using: &lineRNG)
+            opponentRuns = params.report.runsAllowed
+                + LeagueBaseline.restOfHighSchoolTeamRuns(outsCovered: max(0, 27 - outs), using: &lineRNG)
+        }
+        let playedLine = ProGameLine(
+            season: params.state.chapter.schoolYear,
+            week: params.state.chapter.number,
+            outingNumber: (params.state.seasonLog?.count ?? 0) + 1,
+            started: false,
+            outs: outs,
+            strikeouts: params.report.strikeouts,
+            walks: params.report.walks,
+            runsAllowed: params.report.runsAllowed,
+            pitches: params.report.pitches,
+            teamRuns: support,
+            opponentRuns: opponentRuns,
+            decision: DecisionRules.decide(
+                started: false, isCloser: false, outs: outs,
+                runsAllowed: params.report.runsAllowed,
+                teamRuns: support, opponentRuns: opponentRuns
+            ),
+            played: true
+        )
+
         let nextBase = replacing(params.state, revision: params.state.revision + 1,
             fatigue: clamp(params.state.fatigue + max(3, params.report.pitches / 3), 0, 100),
             performance: performance,
-            news: ([headline] + (callback.map { [$0] } ?? []) + (armNews.map { [$0] } ?? []) + params.state.news),
-            fanInterest: interest, armRisk: nextRisk)
+            seasonLog: (params.state.seasonLog ?? []) + [playedLine],
+            news: ([headline] + (callback.map { [$0] } ?? []) + (armNews.map { [$0] } ?? []) + (sparkNews.map { [$0] } ?? []) + params.state.news),
+            fanInterest: interest, armRisk: nextRisk,
+            awakeningSparks: sparks)
         let next = advanceMilestone(nextBase, seed: seed)
         return result(seed: seed, state: signed(next), event: "career_important_game_completed", reasons: ["important_game.\(expected)"])
     }
@@ -1517,7 +1579,9 @@ public struct HighSchoolCareerEngine: Sendable {
         let nextBase = replacing(params.state, revision: params.state.revision + 1,
             pitcher: applyAwakening(params.awakening, to: params.state.pitcher),
             selectedAwakenings: params.state.selectedAwakenings + [params.awakening], awakeningOptions: [],
-            news: ["‘\(awakeningTitle(params.awakening))’을 익혔습니다. \(awakeningEffect(params.awakening))"] + params.state.news)
+            news: ["‘\(awakeningTitle(params.awakening))’을 익혔습니다. \(awakeningEffect(params.awakening))"] + params.state.news,
+            // 전조는 각성이 소비한다. 다음 각성은 다시 증명으로 채워야 한다.
+            awakeningSparks: params.state.awakeningSparks != nil ? 0 : nil)
         let next = advanceMilestone(nextBase, seed: seed)
         return result(seed: seed, state: signed(next), event: "career_awakening_selected", reasons: ["awakening.\(params.awakening.rawValue)"])
     }
@@ -1825,12 +1889,12 @@ public struct HighSchoolCareerEngine: Sendable {
             performance: state.performance, currentGameScenario: scenario, currentRelationshipEvent: relationshipEvent)
     }
 
-    private func rival(seed: UInt64, difficulty: DifficultyLevel, karmas: [KarmaID]) -> RivalSnapshot {
+    private func rival(seed: UInt64, difficulty: DifficultyLevel, karmas: [KarmaID], windBonus: Int = 0) -> RivalSnapshot {
         var generator = SplitMix64(seed: seed ^ 0x5249_5641_4c00)
         let base = Self.rivals[generator.nextInt(upperBound: Self.rivals.count)]
         let difficultyBonus = difficulty == .relaxed ? -3 : difficulty == .challenging ? 4 : 0
         let generationBonus = karmas.contains(.geniusGeneration) ? 4 : 0
-        let bonus = difficultyBonus + generationBonus
+        let bonus = difficultyBonus + generationBonus + windBonus
         return RivalSnapshot(id: base.id, name: base.name, archetype: base.archetype,
             contact: clamp(base.contact + bonus, 20, 80), discipline: clamp(base.discipline + bonus, 20, 80),
             power: clamp(base.power + bonus, 20, 80), personality: base.personality, signatureRecord: base.signatureRecord)
@@ -1871,6 +1935,13 @@ public struct HighSchoolCareerEngine: Sendable {
         }
         for option in options where result.count < 3 && !result.contains(option) {
             result.append(option)
+        }
+        // 전조가 갈래 수를 정한다. 호투·만개 없이 도착한 각성은 몸이 절반만 깨어난 것이라
+        // 길이 하나뿐이고, 시즌을 증명으로 채웠으면 세 갈래가 전부 열린다.
+        // 옛 저장본(nil)은 예전과 같은 3갈래 — 규칙이 소급해서 벌하지 않는다.
+        if let sparks = state.awakeningSparks {
+            let opened = sparks >= 3 ? 3 : sparks >= 1 ? 2 : 1
+            return Array(result.prefix(opened))
         }
         return result
     }
@@ -2371,6 +2442,7 @@ public struct HighSchoolCareerEngine: Sendable {
         legacyOptions: [MemoryCardID]? = nil, selectedMemories: [MemoryCardID]? = nil,
         balanceVersion: Int? = nil, armRisk: Int? = nil, injuryRecovery: Int? = nil,
         talent: TalentSnapshot? = nil,
+        awakeningSparks: Int?? = nil,
         stateCommitment: String? = nil
     ) -> HighSchoolCareerSnapshot {
         HighSchoolCareerSnapshot(careerID: state.careerID, revision: revision ?? state.revision, lifeNumber: state.lifeNumber,
@@ -2403,6 +2475,7 @@ public struct HighSchoolCareerEngine: Sendable {
                 careerID: state.careerID,
                 index: totalTrainingsCompleted ?? state.totalTrainingsCompleted),
             talent: talent ?? state.talent,
+            awakeningSparks: awakeningSparks ?? state.awakeningSparks,
             stateCommitment: stateCommitment ?? state.stateCommitment)
     }
 
@@ -2464,6 +2537,9 @@ public struct HighSchoolCareerEngine: Sendable {
         }
         if let injuryRecovery = state.injuryRecovery {
             canonical.append("injury_recovery:\(injuryRecovery)")
+        }
+        if let awakeningSparks = state.awakeningSparks {
+            canonical.append("awakening_sparks:\(awakeningSparks)")
         }
         // 스케줄 필드도 있을 때만 덧붙여, 이 기능 이전(스케줄 없음) 저장본이 기존 커밋먼트로 그대로
         // 검증되게 한다. 팔·focusStreak 필드와 같은 조건부 계열이다.

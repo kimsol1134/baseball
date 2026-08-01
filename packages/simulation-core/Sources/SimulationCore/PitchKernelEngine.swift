@@ -20,7 +20,13 @@ public struct CatcherRecommendationEngine: Sendable {
         let twoStrikes = context.strikes == 2
         let protectZone = context.balls == 3
         let situation = SignSituation(context: context, gameState: gameState, lastPitch: lastPitch)
-        let desiredPitch = recommendedPrimaryPitch(pitcher: pitcher, desired: scouting.pitchWeakness)
+        let desiredPitch = recommendedPrimaryPitch(
+            pitcher: pitcher,
+            desired: scouting.pitchWeakness,
+            twoStrikes: twoStrikes,
+            protectZone: protectZone,
+            lastPitchType: lastPitch?.pitchType
+        )
         let repetitionAvoided = (adaptation?.level ?? 0) >= 500
             && adaptation?.detectedPitch == desiredPitch
         // 라이벌이 패턴을 읽었거나, 상황상 같은 공을 되풀이하면 안 될 때 구종을 바꾼다.
@@ -116,19 +122,31 @@ public struct CatcherRecommendationEngine: Sendable {
     /// 고른다. 약점을 노리는 값어치를 점수로 매겨 주무기와 비교한다.
     private func recommendedPrimaryPitch(
         pitcher: PitcherSnapshot,
-        desired: PitchType
+        desired: PitchType,
+        twoStrikes: Bool = false,
+        protectZone: Bool = false,
+        lastPitchType: PitchType? = nil
     ) -> PitchType {
         guard let profiles = pitcher.pitchProfiles, !profiles.isEmpty else { return desired }
 
         /// 약점을 찌를 때 얹어 주는 값. 이만큼 못 미치는 주무기라면 약점을 노린다.
         /// 90은 세 항목 합계(command+whiff+weakContact) 기준이라 항목당 30 차이에 해당한다.
         let weaknessBonus = 90
+        /// 직전 공과 같은 구종에 무는 값. 최고 구종이라도 연속으로 부르면 배합이 아니라
+        /// 반복이다 — 이 감점 때문에 주무기·세컨드 구종이 자연스럽게 회전한다.
+        /// 90(약점 보너스)보다 작게 둬서, 약점 구종이 압도적이면 반복도 감수한다.
+        let repeatPenalty = 70
 
         func value(_ profile: PitchProfileSnapshot) -> Int {
             var score = profileScore(profile)
             if profile.pitchType == desired { score += weaknessBonus }
             // 아직 만들고 있는 구종은 승부처에서 쓰지 않는다.
             if profile.role == .development { score -= 120 }
+            if profile.pitchType == lastPitchType { score -= repeatPenalty }
+            // 카운트가 기준을 바꾼다. 2스트라이크면 헛스윙을 뽑는 공,
+            // 3볼이면 존에 꽂을 수 있는 공 — 실제 포수의 저울이다.
+            if twoStrikes { score += profile.whiff - 50 }
+            if protectZone { score += profile.command - 50 }
             return score
         }
 

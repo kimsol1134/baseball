@@ -342,7 +342,7 @@ struct PitchView: View {
                         Text(result.snapshot.detailFeedback).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                         let execution = result.snapshot.execution
                         let inZone = abs(execution.actualX) <= 500 && abs(execution.actualY) <= 500
-                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        HStack(alignment: .center, spacing: 10) {
                             Text(String(format: "%.1f", Double(execution.velocityTenthsKPH) / 10))
                                 .font(BaseballType.heroNumeral)
                                 .foregroundStyle(BaseballTheme.action)
@@ -356,6 +356,9 @@ struct PitchView: View {
                                     .foregroundStyle(inZone ? BaseballTheme.positive : BaseballTheme.warning)
                             }
                             Spacer()
+                            // 방금 공이 존 어디로 갔는지. 승부 장면은 흐르고 지나가므로
+                            // "어디 갔는지"의 답은 여기 남는다 — 목표는 링, 실제는 점.
+                            ZoneMiniMap(execution: execution)
                         }
                     }
                 }
@@ -930,5 +933,61 @@ private struct OptionRow<Item: Hashable>: View {
                 .accessibilityAddTraits(item == selection ? .isSelected : [])
             }
         }
+    }
+}
+
+/// 방금 공의 위치 요약 — 3×3 존 위에 목표(점선 링)와 실제 도달점(점).
+///
+/// 승부 장면(PitchDramaView)은 1.6초 재생으로 흐르고 지나간다. "그래서 공이 어디로
+/// 갔는데?"의 답이 화면 어디에도 남지 않아서, 존을 벗어난 공이 어느 쪽으로 얼마나
+/// 빠졌는지 알 수 없었다. 이 미니맵은 결과 카드에 상시로 남는다.
+private struct ZoneMiniMap: View {
+    let execution: PitchExecution
+
+    var body: some View {
+        Canvas { context, size in
+            // 좌표계 ±800(존은 ±500). 존 밖 실투도 어느 쪽으로 빠졌는지 보인다.
+            func place(_ x: Int, _ y: Int) -> CGPoint {
+                let cx = min(780, max(-780, x))
+                let cy = min(780, max(-780, y))
+                return CGPoint(
+                    x: size.width / 2 + CGFloat(cx) / 800 * size.width / 2,
+                    y: size.height / 2 - CGFloat(cy) / 800 * size.height / 2
+                )
+            }
+            let topLeft = place(-500, 500)
+            let bottomRight = place(500, -500)
+            let zone = CGRect(x: topLeft.x, y: topLeft.y,
+                              width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y)
+            context.fill(Path(zone), with: .color(BaseballTheme.fieldChalk.opacity(0.05)))
+            context.stroke(Path(zone), with: .color(BaseballTheme.border), lineWidth: 1)
+            for i in 1...2 {
+                let x = zone.minX + zone.width * CGFloat(i) / 3
+                let y = zone.minY + zone.height * CGFloat(i) / 3
+                var vertical = Path(); vertical.move(to: CGPoint(x: x, y: zone.minY)); vertical.addLine(to: CGPoint(x: x, y: zone.maxY))
+                var horizontal = Path(); horizontal.move(to: CGPoint(x: zone.minX, y: y)); horizontal.addLine(to: CGPoint(x: zone.maxX, y: y))
+                context.stroke(vertical, with: .color(BaseballTheme.border.opacity(0.4)), lineWidth: 0.5)
+                context.stroke(horizontal, with: .color(BaseballTheme.border.opacity(0.4)), lineWidth: 0.5)
+            }
+            // 목표 — 포수가 미트를 댄 자리.
+            let target = place(execution.targetX, execution.targetY)
+            context.stroke(
+                Path(ellipseIn: CGRect(x: target.x - 5, y: target.y - 5, width: 10, height: 10)),
+                with: .color(BaseballTheme.textTertiary),
+                style: StrokeStyle(lineWidth: 1, dash: [2, 2])
+            )
+            // 실제 — 공이 지나간 자리.
+            let actual = place(execution.actualX, execution.actualY)
+            let inZone = abs(execution.actualX) <= 500 && abs(execution.actualY) <= 500
+            context.fill(
+                Path(ellipseIn: CGRect(x: actual.x - 4, y: actual.y - 4, width: 8, height: 8)),
+                with: .color(inZone ? BaseballTheme.positive : BaseballTheme.warning)
+            )
+        }
+        .frame(width: 64, height: 64)
+        .background(BaseballTheme.fieldNight, in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityLabel(
+            abs(execution.actualX) <= 500 && abs(execution.actualY) <= 500 ? "존 안에 들어간 공" : "존을 벗어난 공"
+        )
     }
 }
