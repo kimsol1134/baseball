@@ -156,6 +156,9 @@ struct PitchView: View {
     let onFinish: () -> Void
     /// 등판 중단(진행 파기). nil이면 중단 버튼을 그리지 않는다 — 튜토리얼 불펜에는 없다.
     var onAbort: (() -> Void)? = nil
+    /// 연습 타석(프롤로그 불펜). 기록에 안 남는 판에 '각성의 전조 +2' 같은
+    /// 정산을 그리면 첫 5분에 거짓 영수증을 발행하는 셈이다.
+    var isPractice = false
 
     @State private var confirmingAbort = false
 
@@ -430,7 +433,21 @@ struct PitchView: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             // 정산 — 이 이닝이 남긴 것을 하나씩 걸어 준다. 요약 한 줄로 끝나면
             // 던진 15분이 문장 하나로 접힌다. 획득이 보여야 다음 등판을 누른다.
-            InningSettlementCard(session: session)
+            // 연습 타석은 예외 — 기록에 안 남는 판의 정산은 거짓말이다.
+            if isPractice {
+                BaseballCard(title: "몸이 풀렸습니다", tone: .raised) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("방금 배운 것 — 미터는 가운데에서 떼고, 코스는 포수 사인을 참고하되 내 공을 던진다.")
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("연습은 기록에 남지 않습니다. 이제 3년이 시작됩니다.")
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                    }
+                }
+            } else {
+                InningSettlementCard(session: session)
+            }
             BaseballCard(title: "이닝 종료", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("\(session.pitches)구 · \(session.strikeouts)탈삼진 · \(session.walks)볼넷"
@@ -444,7 +461,7 @@ struct PitchView: View {
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
             }
-            if let analysis = session.lastResult?.postgameAnalysis {
+            if !isPractice, let analysis = session.lastResult?.postgameAnalysis {
                 PostgameAnalysisCard(analysis: analysis)
             }
             BaseballCard(title: "투구 기록") {

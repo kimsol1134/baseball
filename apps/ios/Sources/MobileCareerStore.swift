@@ -167,6 +167,7 @@ final class MobileCareerStore {
         save()
         let session = PitchSession(state: result.snapshot, seed: sessionSeed)
         session.start()
+        attachCheckpoint(session)
         pitchSession = session
     }
 
@@ -183,6 +184,7 @@ final class MobileCareerStore {
         let summary = "\(report.pitches)구 · \(report.strikeouts)탈삼진 · \(report.walks)볼넷 · \(report.runsAllowed)실점"
         AchievementStore.shared.record(AchievementRules.fromInning(report: report) + session.bestDeliveryAchievements)
         pitchSession = nil
+        gameResume = nil
         perform(summary: summary, cue: report.runsAllowed == 0 ? .success : .setback) {
             try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report))
         }
@@ -190,6 +192,11 @@ final class MobileCareerStore {
 
     func abandonImportantGame() {
         pitchSession = nil
+        gameResume = nil
+        save()
+        lastSummary = "등판을 중단했습니다. 다음 마운드는 새 이닝입니다."
+        feedbackCue = .setback
+        feedbackTrigger += 1
     }
 
     // MARK: - 시즌
@@ -231,10 +238,23 @@ final class MobileCareerStore {
         pendingGains = []
     }
 
+    /// 진행 중 등판의 타석 경계 스냅샷. 고교와 같은 문법 — 프로 12시즌의
+    /// 몰입 최고점에서 전화 한 통에 이닝을 잃으면 안 된다.
+    private var gameResume: PitchSession.ResumeState?
+
+    /// 저장 래퍼. 예전에는 ProCareerResult를 그대로 썼다 — 복구 스냅샷을 실으려고
+    /// 감쌌고, 읽을 때는 레거시(맨 result)도 그대로 받는다.
+    struct ProSaveRecord: Codable {
+        let result: ProCareerResult
+        var gameResume: PitchSession.ResumeState? = nil
+    }
+
     // MARK: - 저장
 
     func save() {
-        guard let result, let data = try? JSONEncoder().encode(result) else { return }
+        guard let result else { return }
+        let record = ProSaveRecord(result: result, gameResume: gameResume)
+        guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
 
@@ -250,13 +270,35 @@ final class MobileCareerStore {
 
     private func restore() -> Bool {
         guard let data = sync.read(revision: { data in
-            try? JSONDecoder().decode(ProCareerResult.self, from: data).snapshot.revision
+            (try? JSONDecoder().decode(ProSaveRecord.self, from: data))?.result.snapshot.revision
+                ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))?.snapshot.revision
         }) else { return false }
-        guard let decoded = try? JSONDecoder().decode(ProCareerResult.self, from: data) else { return false }
+        let record = try? JSONDecoder().decode(ProSaveRecord.self, from: data)
+        let decoded = record?.result ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))
+        guard let decoded else { return false }
         // 유료앱에서는 앱 자체가 구매 증거다. 저장된 스냅숏의 권한 출처(개발 빌드 포함)를 이유로
         // 진행을 버리면 TestFlight 사용자의 커리어만 사라진다.
         result = decoded
+        // 등판 도중 내려간 앱 — 타석 경계에서 이어 던진다(고교와 같은 검사).
+        if decoded.snapshot.phase == .importantGame,
+           let resume = record?.gameResume,
+           PitchScenario.pro(state: decoded.snapshot).id == resume.scenarioID {
+            let session = PitchSession(state: decoded.snapshot, seed: resume.seed)
+            session.start()
+            session.restore(from: resume)
+            attachCheckpoint(session)
+            gameResume = resume
+            pitchSession = session
+        }
         return true
+    }
+
+    private func attachCheckpoint(_ session: PitchSession) {
+        session.onCheckpoint = { [weak self] session in
+            guard let self else { return }
+            self.gameResume = session.resumeState()
+            self.save()
+        }
     }
 
     private func perform(

@@ -109,6 +109,9 @@ final class PitchSession {
         var recommendationAccepted: Int
         var outsRecorded: Int
         var rivalOutcomes: [PlateAppearanceResult]
+        /// 빌드 29 이후 추가 — 옛 복구 스냅샷은 nil이라 0/false로 읽는다.
+        var hitByPitches: Int? = nil
+        var holdCall: Bool? = nil
     }
 
     /// 지금 상태의 저장 스냅샷. 타석이 끝난 순간(대기/종료)에만 값이 있다.
@@ -128,7 +131,8 @@ final class PitchSession {
             walks: walks, runsAllowed: runsAllowed,
             expectedDamage: expectedDamage, actualDamage: actualDamage,
             recommendationAccepted: recommendationAccepted, outsRecorded: outsRecorded,
-            rivalOutcomes: rivalOutcomes
+            rivalOutcomes: rivalOutcomes,
+            hitByPitches: hitByPitches, holdCall: holdCall
         )
     }
 
@@ -150,6 +154,8 @@ final class PitchSession {
         recommendationAccepted = resume.recommendationAccepted
         outsRecorded = resume.outsRecorded
         rivalOutcomes = resume.rivalOutcomes
+        hitByPitches = resume.hitByPitches ?? 0
+        holdCall = resume.holdCall ?? false
         context = PlateAppearanceContext(
             plateAppearanceID: "\(scenario.id)-b\(batterIndex)",
             revision: context.revision, inning: gameState.inningState?.inning ?? context.inning,

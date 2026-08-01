@@ -225,11 +225,15 @@ public struct RivalMemoryEngine: Sendable {
                 && ($0.balls == 3) == (context.balls == 3)
         }
         let evidence = matchingCount.count >= 3 ? matchingCount : memory.recentObservations
+        // 실효 표본 — 결과 가중(정타 6 ~ 헛스윙 1, 중립 2)의 합을 관측 수 스케일로.
+        // 전량 헛스윙 시퀀스는 실효 표본이 절반 이하로 줄어 '반복해도 덜 읽힌다'가
+        // 진짜로 성립한다. share 정규화만으로는 같은 결과끼리 상쇄돼 효과가 0이었다.
+        let effectiveCount = max(1, evidence.reduce(0) { $0 + observationWeight($1) } / 2)
         let topPitch = mostFrequentPitch(in: evidence)
         let topZone = mostFrequentZone(in: evidence)
         let pitchShare = topPitch.count * 1_000 / evidence.count
         let zoneShare = topZone.count * 1_000 / evidence.count
-        let sampleSignal = max(0, evidence.count - 2) * 15
+        let sampleSignal = max(0, effectiveCount - 2) * 15
         let pitchSignal = max(0, pitchShare - 400) / 2
         let zoneSignal = max(0, zoneShare - 350) / 4
         let rematchSignal = min(memory.plateAppearancesSeen * 80, 240)
@@ -241,7 +245,7 @@ public struct RivalMemoryEngine: Sendable {
         // distribution leans past uniform, keep a small floor, and are hard-capped. These —
         // not `level` — drive the batter's anticipation and contact correction downstream,
         // so a repeated pattern is bounded and a mixed sequence is never fully exempt.
-        let sampleWeight = min(evidence.count, Self.readSampleSaturation)
+        let sampleWeight = min(effectiveCount, Self.readSampleSaturation)
         let patternSample = max(0, sampleWeight - Self.readSampleFloor)
         let patternSpan = Self.readSampleSaturation - Self.readSampleFloor
         let pitchExcess = max(0, pitchShare - Self.pitchReadBaseline)

@@ -19,6 +19,7 @@ struct HighSchoolCareerView: View {
     @State private var rebirthStamp: RebirthStamp?
     /// 오늘의 이닝(일일 도전) 표시 여부.
     @State private var showsDaily = false
+    @Environment(\.requestReview) private var requestReview
 
     /// `fullScreenCover(item:)`가 요구하는 식별 가능한 값.
     struct RebirthStamp: Identifiable {
@@ -111,12 +112,17 @@ struct HighSchoolCareerView: View {
         .onChange(of: career.feedbackTrigger) { _, _ in
             if let cue = GameAudioMapping.cue(for: career.feedbackCue) { audio.play(cue) }
         }
+        // 별점 요청 — 감정이 양(+)인 순간(첫 무실점 이닝)에 스토어가 신호를 올린다.
+        // 신호만 있고 소비처가 없으면 리뷰 유입이 지명 관문(90분 뒤) 하나로 좁아진다.
+        .onChange(of: career.reviewMoment) { _, _ in
+            requestReview()
+        }
     }
 
     @ViewBuilder private var content: some View {
         if let state = career.state {
             if state.phase == .prologue, let session = career.tutorialSession {
-                PitchView(session: session, onFinish: career.finishTutorialPitch)
+                PitchView(session: session, onFinish: career.finishTutorialPitch, isPractice: true)
             } else if state.phase == .importantGame, let session = career.pitchSession {
                 PitchView(session: session, onFinish: career.finishImportantGame,
                           onAbort: career.abandonImportantGame)
@@ -167,14 +173,16 @@ struct HighSchoolCareerView: View {
                         // 오늘의 이닝 — 하루 한 판, 전국 같은 타순. 회차 진행과 무관한
                         // "오늘 3분"의 이유. 훈련 국면에서만 보인다(승부·각성 앞에서는 소음).
                         if state.phase == .training,
-                           !UserDefaults.standard.bool(forKey: "baseball.daily.played.\(PitchScenario.todayKey())") {
+                           state.performance.importantGamesCompleted >= 1 {
                             Button { showsDaily = true } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "calendar.badge.clock")
                                         .foregroundStyle(BaseballTheme.milestone)
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text("오늘의 이닝").font(.footnote.weight(.bold))
-                                        Text("전국이 같은 타순 · 하루 한 판 · Game Center 순위")
+                                        Text(UserDefaults.standard.integer(forKey: "baseball.daily.best.\(PitchScenario.todayKey())") > 0
+                                             ? "오늘 최고 \(UserDefaults.standard.integer(forKey: "baseball.daily.best.\(PitchScenario.todayKey())"))점 · 재도전"
+                                             : "전국이 같은 타순 · Game Center 순위")
                                             .font(.caption2).foregroundStyle(BaseballTheme.textSecondary)
                                     }
                                     Spacer(minLength: 0)
@@ -249,7 +257,8 @@ struct HighSchoolCareerView: View {
             )
         case .schoolSelection:
             if !career.pledgeDecided {
-                PledgeCard(careerID: state.careerID, onChoose: career.choosePledge)
+                PledgeCard(careerID: state.careerID, isFirstLife: state.lifeNumber == 1,
+                           onChoose: career.choosePledge)
             }
             SchoolSelectionCard(options: state.schoolOptions, onChoose: career.chooseSchool)
         case .training:
@@ -392,13 +401,14 @@ private struct PrologueCard: View {
                     // 첫 회차에는 감독이 말을 건다. "무엇을 해야 하는지"를 사람 말로 알려 주는 편이
                     // 안내 문구보다 잘 읽힌다.
                     Text(lifeNumber > 1
-                         ? (state.news.first ?? "고교 3년이 다시 시작됩니다.")
+                         ? (state.news.first(where: { !$0.hasPrefix("이번 회차의 바람") }) ?? "고교 3년이 다시 시작됩니다.")
                          : "\u{201C}몸부터 풀자. 불펜에서 한 구 던져 봐.\u{201D} — 감독")
                         .font(.subheadline)
                         .fixedSize(horizontal: false, vertical: true)
                     // 1회차에는 코어가 만든 중학교 맥락을 감독의 말 아래에 붙인다.
                     // 이 한 줄이 없으면 "왜 이 학교들이 나를 부르는가"가 화면에 없다.
-                    if lifeNumber == 1, let context = state.news.first {
+                    // 바람 뉴스가 첫 줄을 차지할 수 있다 — 중학교 맥락은 바람이 아닌 첫 줄이다.
+                    if lifeNumber == 1, let context = state.news.first(where: { !$0.hasPrefix("이번 회차의 바람") }) {
                         Text(context)
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
@@ -1509,12 +1519,16 @@ private struct FlowRow: View {
 /// 당당한 선택지다. 건 약속은 대시보드에 상시 노출되고, 이행하면 야구혼 +15%.
 private struct PledgeCard: View {
     let careerID: String
+    /// 1회차에는 '야구혼'이라는 아직 등장 전인 화폐 대신 결과 언어로 말한다.
+    var isFirstLife: Bool = false
     let onChoose: (String?) -> Void
 
     var body: some View {
-        BaseballCard(title: "이번 회차의 약속", tone: .milestone) {
+        BaseballCard(title: isFirstLife ? "3년의 약속" : "이번 회차의 약속", tone: .milestone) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("하나를 걸면 회차의 끝에서 정산합니다. 이행하면 야구혼 +15%.")
+                Text(isFirstLife
+                     ? "하나를 걸면 3년의 끝에서 정산합니다. 이행하면 다음 삶이 더 강하게 시작됩니다."
+                     : "하나를 걸면 회차의 끝에서 정산합니다. 이행하면 야구혼 +15%.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                 ForEach(RunPledge.options(careerID: careerID)) { pledge in

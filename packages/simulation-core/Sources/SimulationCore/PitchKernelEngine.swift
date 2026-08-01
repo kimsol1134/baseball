@@ -1304,8 +1304,10 @@ public struct PitchKernelEngine: Sendable {
         // 구속차 — 직전 공과 8km/h 이상 벌어지면 배트 타이밍이 흔들린다.
         // "왜 체인지업을 던지는가"의 답이 처음으로 판정식에 들어온다. 직전 정보가
         // 없으면(첫 공·옛 로그·레거시 경로) 0이라 골든 픽스처와 byte-identical하다.
+        // 타자가 바뀌면 타이밍 기억도 리셋된다 — 타석 첫 공(pitchNumber 1)은 0.
         let speedGapEdge: Int
-        if let previousVelocity = params.gameLog?.entries.last?.velocityTenthsKPH {
+        if params.context.pitchNumber > 1,
+           let previousVelocity = params.gameLog?.entries.last?.velocityTenthsKPH {
             speedGapEdge = min(70, max(0, abs(execution.velocityTenthsKPH - previousVelocity) - 80) / 3)
         } else {
             speedGapEdge = 0

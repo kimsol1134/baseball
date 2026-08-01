@@ -229,11 +229,19 @@ final class ProCareerEngineTests: XCTestCase {
         }
     }
 
-    // 피로가 높을수록 같은 시드의 등판 결과가 나빠지는 방향성(커널의 구속·커맨드 저하 반영).
-    func testHigherFatigueWorsensTheSameOuting() throws {
-        let fresh = engine.simulateWeeklyOuting(pitcher: PitcherPresetCatalog.all[0].pitcher, startingFatigue: 5, outsTarget: 18, pitchCap: 96, baseSeed: 991)
-        let gassed = engine.simulateWeeklyOuting(pitcher: PitcherPresetCatalog.all[0].pitcher, startingFatigue: 85, outsTarget: 18, pitchCap: 96, baseSeed: 991)
-        XCTAssertGreaterThanOrEqual(gassed.runsAllowed + (gassed.walks / 2), fresh.runsAllowed, "지친 등판이 더 좋게 나오면 피로가 커널에 반영되지 않는 것")
+    // 피로가 높을수록 등판 결과가 나빠지는 방향성(커널의 구속·커맨드 저하 반영).
+    // 단일 시드는 커널 항 하나만 바뀌어도 RNG 경로가 밀려 뒤집힌다 — 시드 묶음의
+    // 집계로 판정해야 "피로가 커널에 있는가"라는 원래 질문에 답한다.
+    func testHigherFatigueWorsensOutingsInAggregate() throws {
+        let seeds: [UInt64] = [991, 7, 42, 123, 500, 1001, 2026, 31337, 555, 808, 4444, 90210]
+        var freshBurden = 0, gassedBurden = 0
+        for seed in seeds {
+            let fresh = engine.simulateWeeklyOuting(pitcher: PitcherPresetCatalog.all[0].pitcher, startingFatigue: 5, outsTarget: 18, pitchCap: 96, baseSeed: seed)
+            let gassed = engine.simulateWeeklyOuting(pitcher: PitcherPresetCatalog.all[0].pitcher, startingFatigue: 85, outsTarget: 18, pitchCap: 96, baseSeed: seed)
+            freshBurden += fresh.runsAllowed * 2 + fresh.walks
+            gassedBurden += gassed.runsAllowed * 2 + gassed.walks
+        }
+        XCTAssertGreaterThan(gassedBurden, freshBurden, "지친 등판 묶음(실점×2+볼넷 \(gassedBurden))이 싱싱한 묶음(\(freshBurden))보다 좋으면 피로가 커널에 반영되지 않는 것")
     }
 
     private func playSeason(_ initial: ProCareerResult) throws -> ProCareerResult {

@@ -31,7 +31,8 @@ struct CareerFlowView: View {
     @ViewBuilder private var decision: some View {
         if let state = career.state {
             if state.phase == .importantGame, let session = career.pitchSession {
-                PitchView(session: session, onFinish: career.finishImportantGame)
+                PitchView(session: session, onFinish: career.finishImportantGame,
+                          onAbort: career.abandonImportantGame)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {

@@ -268,6 +268,15 @@ struct HighSchoolSetupView: View {
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+                // 숨은 비용 명시 — 잔액이 스며듦 상한을 정하므로 구매는 스며듦도 깎는다.
+                // 이걸 안 적으면 상점이 새 종류의 거짓 영수증이 된다.
+                if !selectedBoosts.isEmpty {
+                    let before = HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.soulPoints)
+                    let after = HighSchoolCareerEngine.appliedInheritance(for: remainingSoul)
+                    Text("이 구매로 자동 스며듦 +\(before) → +\(after)")
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(after < before ? BaseballTheme.warning : BaseballTheme.textSecondary)
+                }
                 ForEach(SoulBoostID.allCases, id: \.self) { boost in
                     let selected = selectedBoosts.contains(boost)
                     let affordable = selected || boost.cost <= remainingSoul

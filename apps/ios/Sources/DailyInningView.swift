@@ -105,11 +105,11 @@ struct DailyInningView: View {
             strikeouts: session.strikeouts, outs: session.outsRecorded,
             walks: session.walks, runsAllowed: session.runsAllowed
         )
-        if score > UserDefaults.standard.integer(forKey: bestKey) {
-            UserDefaults.standard.set(score, forKey: bestKey)
-        }
+        let best = max(score, UserDefaults.standard.integer(forKey: bestKey))
+        UserDefaults.standard.set(best, forKey: bestKey)
         UserDefaults.standard.set(true, forKey: playedKey)
-        AchievementStore.shared.submit([.dailyInning: score])
+        // 베스트만 제출 — 리더보드 정책이 무엇이든 낮은 재도전이 상위 기록을 덮지 않게.
+        AchievementStore.shared.submit([.dailyInning: best])
         GameAnalytics.log(.gameFinished, ["mode": "daily", "score": score])
         finished = true
     }
