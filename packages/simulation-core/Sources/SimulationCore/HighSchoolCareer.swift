@@ -927,22 +927,44 @@ public struct HighSchoolCareerEngine: Sendable {
         "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
     ]
 
+    /// 지역별 캐스트 풀 — 학교 유형(철학·아키타입·대사 톤)은 같아도 사람은 지역마다
+    /// 다르다. 전국 어디서 시작해도 감독·포수가 4쌍 고정이면 회차가 쌓일수록
+    /// "함께한 사람들"이 같은 줄로 반복된다(4차 패널 P1). 지역 인덱스로 순환하므로
+    /// 순수 함수이고, 이미 시작된 회차의 스냅숏에는 영향이 없다.
+    private static let coachPools: [SchoolID: [String]] = [
+        .hanbitTraditional: ["윤태문", "강일도", "백승관", "임동혁", "조범석"],
+        .miraeAnalytics: ["노재형", "한기표", "유상민", "신정록", "곽태윤"],
+        .haedongPower: ["오승렬", "마동준", "채희성", "도진광", "하병철"],
+        .cheongamDevelopment: ["배도환", "어재원", "편상욱", "소진철", "반석호"],
+    ]
+    private static let catcherPools: [SchoolID: [String]] = [
+        .hanbitTraditional: ["서준호", "김도현", "박성재", "이재영", "정우빈"],
+        .miraeAnalytics: ["한도윤", "송지헌", "오세민", "권혁준", "남기율"],
+        .haedongPower: ["차민석", "변진서", "육정환", "구자헌", "표재신"],
+        .cheongamDevelopment: ["문하진", "안시후", "방준서", "석민규", "탁이현"],
+    ]
+    private static func castName(_ pools: [SchoolID: [String]], _ id: SchoolID, region: String) -> String {
+        let pool = pools[id] ?? ["무명"]
+        let index = regions.firstIndex(of: region) ?? 0
+        return pool[index % max(1, pool.count)]
+    }
+
     public static func schools(for region: String) -> [SchoolSnapshot] {
         let names = regionalSchoolNames[region] ?? regionalSchoolNames["서울"]!
         return [
-            .init(id: .hanbitTraditional, name: names.traditional, philosophy: "기본기와 긴 이닝", coachName: "윤태문", coachArchetype: "원칙형", catcherName: "서준호", catcherArchetype: "안정형",
+            .init(id: .hanbitTraditional, name: names.traditional, philosophy: "기본기와 긴 이닝", coachName: castName(coachPools, .hanbitTraditional, region: region), coachArchetype: "원칙형", catcherName: castName(catcherPools, .hanbitTraditional, region: region), catcherArchetype: "안정형",
                 coachPersonality: "새벽 반복 훈련을 고집하며 핑계보다 공 하나를 더 던지게 합니다.", coachRecord: "재임 14년 · 전국대회 4강 6회",
                 catcherPersonality: "실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수입니다.", catcherRecord: "중학 마지막 시즌 26경기 · 도루저지율 .438",
                 strength: .stamina, tradeoff: "새 구종을 시험할 기회가 적습니다."),
-            .init(id: .miraeAnalytics, name: names.analytics, philosophy: "기록을 활용한 타자 상대법", coachName: "노재형", coachArchetype: "분석형", catcherName: "한도윤", catcherArchetype: "분석형",
+            .init(id: .miraeAnalytics, name: names.analytics, philosophy: "기록을 활용한 타자 상대법", coachName: castName(coachPools, .miraeAnalytics, region: region), coachArchetype: "분석형", catcherName: castName(catcherPools, .miraeAnalytics, region: region), catcherArchetype: "분석형",
                 coachPersonality: "확률표를 들고 한 베이스와 불펜 교체 시점을 끝까지 계산합니다.", coachRecord: "데이터 코치 경력 11년 · 지역대회 우승 4회",
                 catcherPersonality: "말수는 적지만 타자의 노림수를 먼저 읽고 결정적인 순간 직접 해결합니다.", catcherRecord: "전국중학대회 포수상 · 8홈런",
                 strength: .gamePlanning, tradeoff: "데이터가 적을 때 판단이 흔들릴 수 있습니다."),
-            .init(id: .haedongPower, name: names.power, philosophy: "빠른 직구와 공격적인 승부", coachName: "오승렬", coachArchetype: "승부형", catcherName: "차민석", catcherArchetype: "공격형",
+            .init(id: .haedongPower, name: names.power, philosophy: "빠른 직구와 공격적인 승부", coachName: castName(coachPools, .haedongPower, region: region), coachArchetype: "승부형", catcherName: castName(catcherPools, .haedongPower, region: region), catcherArchetype: "공격형",
                 coachPersonality: "에이스에게 가장 엄격하며 위기일수록 몸쪽 정면승부를 요구합니다.", coachRecord: "전국대회 결승 3회 · 프로 지명 투수 5명",
                 catcherPersonality: "몸쪽 사인을 두려워하지 않고 큰 경기에서 투수를 강하게 끌고 갑니다.", catcherRecord: "중학 마지막 시즌 24경기 선발 · 도루저지 11회",
                 strength: .velocity, tradeoff: "빠른 공을 많이 던질수록 피로가 쌓이고 제구가 흔들립니다."),
-            .init(id: .cheongamDevelopment, name: names.development, philosophy: "개인별 투구 동작과 변화구 훈련", coachName: "배도환", coachArchetype: "육성형", catcherName: "문하진", catcherArchetype: "공감형",
+            .init(id: .cheongamDevelopment, name: names.development, philosophy: "개인별 투구 동작과 변화구 훈련", coachName: castName(coachPools, .cheongamDevelopment, region: region), coachArchetype: "육성형", catcherName: castName(catcherPools, .cheongamDevelopment, region: region), catcherArchetype: "공감형",
                 coachPersonality: "무심한 표정으로 결단을 내리지만 큰 경기에서는 선수를 먼저 믿습니다.", coachRecord: "7년간 프로 지명 12명 · 변화구 캠프 9회",
                 catcherPersonality: "블로킹 천 번을 기본으로 여기며 투수의 버릇까지 잡아내는 완벽주의자입니다.", catcherRecord: "중학 마지막 시즌 무실책 · 4경기 연속 장타",
                 strength: .breakingBall, tradeoff: "팀이 연패하면 개인 훈련 시간이 줄어듭니다.")
