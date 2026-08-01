@@ -111,8 +111,10 @@ struct LifeCardView: View {
                         .font(.caption2)
                         .foregroundStyle(BaseballTheme.textTertiary)
                     // 시드 각인 — 카드를 본 사람이 같은 판에 도전할 수 있는 입구.
+                    // 회차를 함께 적는다: 재능·바람·일정은 시드+회차의 함수라, 회차가
+                    // 다르면 같은 시드도 다른 판이다(3차 패널 P1 — 거짓 약속 방지).
                     if let seed = Self.seedText(record.careerID) {
-                        Text("시드 \(seed)")
+                        Text("시드 \(seed) · \(record.lifeNumber)회차")
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }

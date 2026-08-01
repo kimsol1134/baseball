@@ -188,6 +188,13 @@ struct HighSchoolSetupView: View {
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.numberPad)
                 .accessibilityIdentifier("hs.setup.seed")
+            if !seedInput.isEmpty {
+                // 정직한 안내 — 판은 시드+회차의 함수다. 카드의 회차와 다르면 다른 판이다.
+                Text("판은 시드와 회차가 함께 정합니다 — 카드에 적힌 회차(지금 \(career.inheritance.lifeNumber)회차)가 같아야 같은 판입니다.")
+                    .font(.caption2)
+                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             if isRebirth {
                 inheritanceCard
