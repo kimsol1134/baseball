@@ -495,23 +495,36 @@ public enum RelationshipVoiceCatalog {
         case .rival: who = "상대"
         case .named(let name): who = name
         }
+        // 받침을 보고 조사를 고른다. "감독은(는)"은 기계가 쓴 문장이고,
+        // 하필 매 관계 장면의 마지막 줄 — 가장 집중해서 읽는 자리다.
+        let eun = particle(who, final: "은", open: "는")
+        let i = particle(who, final: "이", open: "가")
+        let gwa = particle(who, final: "과", open: "와")
         if trustChange <= -5 {
             switch response {
-            case .listen: return "\(who)은(는) 더 말하지 않았다. 듣기만 한 것이 이번에는 답이 아니었다."
+            case .listen: return "\(who)\(eun) 더 말하지 않았다. 듣기만 한 것이 이번에는 답이 아니었다."
             case .explain: return "설명은 끝까지 했지만 \(who)의 표정은 달라지지 않았다."
-            case .challenge: return "\(who)이(가) 짧게 고개를 저었다. 지금은 그 말을 받을 자리가 아니었다."
+            case .challenge: return "\(who)\(i) 짧게 고개를 저었다. 지금은 그 말을 받을 자리가 아니었다."
             }
         }
         if trustChange < 0 {
-            return "\(who)은(는) 알겠다고만 했다. 남는 것이 없는 대화였다."
+            return "\(who)\(eun) 알겠다고만 했다. 남는 것이 없는 대화였다."
         }
         if trustChange >= 7 {
             switch response {
-            case .listen: return "\(who)이(가) 하려던 말을 다 했다. 끝까지 들은 것이 오늘의 답이었다."
-            case .explain: return "\(who)이(가) 고개를 끄덕였다. 근거가 있는 말은 대체로 통한다."
-            case .challenge: return "\(who)이(가) 웃었다. \u{201C}그럼 보여 줘.\u{201D} 다음 공에 걸린 것이 하나 늘었다."
+            case .listen: return "\(who)\(i) 하려던 말을 다 했다. 끝까지 들은 것이 오늘의 답이었다."
+            case .explain: return "\(who)\(i) 고개를 끄덕였다. 근거가 있는 말은 대체로 통한다."
+            case .challenge: return "\(who)\(i) 웃었다. \u{201C}그럼 보여 줘.\u{201D} 다음 공에 걸린 것이 하나 늘었다."
             }
         }
-        return "\(who)과(와)의 대화는 조용히 마무리됐다. 서로 한 걸음씩은 알게 됐다."
+        return "\(who)\(gwa)의 대화는 조용히 마무리됐다. 서로 한 걸음씩은 알게 됐다."
+    }
+
+    /// 받침 유무로 조사를 고른다. 앱의 KoreanCopy와 같은 규칙 — 커널 문자열은
+    /// 커널이 완성해서 내보낸다(화면이 조사를 고치게 두면 두 규칙이 갈라진다).
+    static func particle(_ word: String, final withFinal: String, open withoutFinal: String) -> String {
+        let scalar = word.unicodeScalars.reversed().first { (0xAC00...0xD7A3).contains(Int($0.value)) }
+        guard let scalar else { return withoutFinal }
+        return (Int(scalar.value) - 0xAC00) % 28 == 0 ? withoutFinal : withFinal
     }
 }

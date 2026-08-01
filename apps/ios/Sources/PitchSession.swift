@@ -60,7 +60,11 @@ final class PitchSession {
     private(set) var actualDamage = 0
     private(set) var recommendationAccepted = 0
 
-    /// 플레이어가 고른 사인. 매 투구 준비마다 포수 추천으로 초기화된다.
+    /// 사인 고정 — 켜면 포수 추천이 내 선택을 덮어쓰지 않는다.
+    /// 기본은 꺼짐(추천으로 채움): 인지 부하가 가장 낮은 경로가 초보의 경로다.
+    /// 내 배합을 유지하고 싶은 순간 한 번의 토글로 의도가 살아남는다.
+    var holdCall = false
+    /// 플레이어가 고른 사인. 매 투구 준비마다 포수 추천으로 초기화된다(고정 시 유지).
     var selectedPitchType: PitchType = .fourSeam
     var selectedZone = PitchZone(row: 1, column: 1)
     var selectedIntent: ZoneIntent = .strike
@@ -73,6 +77,86 @@ final class PitchSession {
         let outcome: PitchOutcome
         let shortFeedback: String
         let acceptedRecommendation: Bool
+    }
+
+    /// 타석이 끝날 때마다 불린다. 스토어가 여기서 진행을 디스크에 남긴다 —
+    /// 이 게임의 유일한 실제 플레이 구간이 전화 한 통에 증발하면 안 된다.
+    var onCheckpoint: ((PitchSession) -> Void)?
+
+    /// 타석 경계의 저장용 스냅샷. 공 하나 단위가 아니라 타석 단위라
+    /// 리트라이 스커밍이 열리지 않고 상태량도 작다.
+    struct ResumeState: Codable, Equatable {
+        var scenarioID: String
+        var seed: String
+        var batterIndex: Int
+        /// "between"(다음 타자 대기) 또는 "finished"(결과 반영 대기).
+        var stageKind: String
+        var stageMessage: String?
+        var fatigue: Int
+        var gameState: GameStateSnapshot
+        var gameLog: GameLogSnapshot
+        var rivalMemory: RivalMemorySnapshot?
+        var pitches: Int
+        var strikeouts: Int
+        var consecutiveStrikeouts: Int
+        var walks: Int
+        var runsAllowed: Int
+        var expectedDamage: Int
+        var actualDamage: Int
+        var recommendationAccepted: Int
+        var outsRecorded: Int
+        var rivalOutcomes: [PlateAppearanceResult]
+    }
+
+    /// 지금 상태의 저장 스냅샷. 타석이 끝난 순간(대기/종료)에만 값이 있다.
+    func resumeState() -> ResumeState? {
+        let kind: String
+        let message: String?
+        switch stage {
+        case .betweenBatters(let text): kind = "between"; message = text
+        case .finished: kind = "finished"; message = nil
+        default: return nil
+        }
+        return ResumeState(
+            scenarioID: scenario.id, seed: seed, batterIndex: batterIndex,
+            stageKind: kind, stageMessage: message, fatigue: context.fatigue,
+            gameState: gameState, gameLog: gameLog, rivalMemory: rivalMemory,
+            pitches: pitches, strikeouts: strikeouts, consecutiveStrikeouts: consecutiveStrikeouts,
+            walks: walks, runsAllowed: runsAllowed,
+            expectedDamage: expectedDamage, actualDamage: actualDamage,
+            recommendationAccepted: recommendationAccepted, outsRecorded: outsRecorded,
+            rivalOutcomes: rivalOutcomes
+        )
+    }
+
+    /// 저장된 타석 경계에서 이어 던진다. 시나리오가 같은 스냅샷에서 재구성됐다는
+    /// 전제(id 일치)는 호출자가 검사한다.
+    func restore(from resume: ResumeState) {
+        seed = resume.seed
+        batterIndex = resume.batterIndex
+        gameState = resume.gameState
+        gameLog = resume.gameLog
+        rivalMemory = resume.rivalMemory
+        pitches = resume.pitches
+        strikeouts = resume.strikeouts
+        consecutiveStrikeouts = resume.consecutiveStrikeouts
+        walks = resume.walks
+        runsAllowed = resume.runsAllowed
+        expectedDamage = resume.expectedDamage
+        actualDamage = resume.actualDamage
+        recommendationAccepted = resume.recommendationAccepted
+        outsRecorded = resume.outsRecorded
+        rivalOutcomes = resume.rivalOutcomes
+        context = PlateAppearanceContext(
+            plateAppearanceID: "\(scenario.id)-b\(batterIndex)",
+            revision: context.revision, inning: gameState.inningState?.inning ?? context.inning,
+            outs: gameState.inningState?.outs ?? context.outs, balls: 0, strikes: 0,
+            pitchNumber: 1, scoreDifferential: scenario.scoreDifferential,
+            leverage: scenario.leverage, fatigue: resume.fatigue
+        )
+        stage = resume.stageKind == "finished"
+            ? .finished
+            : .betweenBatters(resume.stageMessage ?? "타석이 끝났습니다. 이어서 던집니다.")
     }
 
     private var pitcher: PitcherSnapshot { scenario.pitcher }
@@ -266,6 +350,7 @@ final class PitchSession {
             stage = .betweenBatters(snapshot.shortFeedback)
             preparation = nil
         }
+        onCheckpoint?(self)
     }
 
     private func prepare() {
@@ -305,6 +390,7 @@ final class PitchSession {
     }
 
     private func applyRecommendation(_ preparation: PitchPreparation) {
+        guard !holdCall else { return }
         let call = preparation.primaryRecommendation.call
         selectedPitchType = call.pitchType
         selectedZone = call.zone

@@ -154,6 +154,10 @@ enum PitchCopy {
 struct PitchView: View {
     let session: PitchSession
     let onFinish: () -> Void
+    /// 등판 중단(진행 파기). nil이면 중단 버튼을 그리지 않는다 — 튜토리얼 불펜에는 없다.
+    var onAbort: (() -> Void)? = nil
+
+    @State private var confirmingAbort = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var replayProgress: Double = 1
@@ -177,6 +181,25 @@ struct PitchView: View {
             HStack {
                 Text(session.scenario.headline).eyebrowStyle(BaseballTheme.milestone)
                 Spacer()
+                // 탈출구 없는 전체 화면은 함정이다. 파기는 확인을 거친다.
+                if onAbort != nil {
+                    Button("중단") { confirmingAbort = true }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                        .accessibilityIdentifier("pitch.abort")
+                }
+            }
+            .confirmationDialog(
+                "등판을 중단할까요?",
+                isPresented: $confirmingAbort,
+                titleVisibility: .visible
+            ) {
+                Button("이닝을 버리고 중단한다", role: .destructive) { onAbort?() }
+                // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
+                Button("계속 던진다") { confirmingAbort = false }
+            } message: {
+                Text("지금까지 던진 이 이닝은 사라집니다. 다음 마운드는 새 이닝입니다.")
             }
             .padding(.horizontal, BaseballMetrics.gutter)
             .padding(.top, 4)
@@ -207,7 +230,9 @@ struct PitchView: View {
                     // 했고, 그래서 적응 경고("같은 공이 읽히고 있습니다")를 보고도 그 자리에서
                     // 손을 쓸 수 없었다 — 경고를 보고 배합을 바꾸는 것이 이 게임의 학습
                     // 루프인데 그 두 동작 사이에 스크롤이 끼어 있었다.
-                    let delay = reduceMotion ? 0.0 : 1.7
+                    // 승부구 슬로모(2.6초)는 연출이 끝난 뒤에 되돌아간다. 모션 축소도
+                    // 결과를 읽을 1.2초는 남긴다 — 접근성 설정이 피드백을 삭제하면 안 된다.
+                    let delay = reduceMotion ? 1.2 : (wasClutch ? 2.9 : 1.7)
                     DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                         guard case .ready = session.stage else { return }
                         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
@@ -649,12 +674,23 @@ private struct ScoreboardBar: View {
             Rectangle().fill(BaseballTheme.action.opacity(0.6)).frame(height: 1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            "\(scoreText). \(session.context.inning)회 \(session.context.outs)아웃, "
-                + "볼 \(session.context.balls) 스트라이크 \(session.context.strikes), "
-                + "피로 \(session.context.fatigue)"
-                + (stakes.map { ". \($0)" } ?? "")
-        )
+        .accessibilityLabel(accessibilitySummary)
+    }
+
+    /// 문자열 연결이 길면 타입체커가 무너진다 — 조각을 배열로 모아 한 번에 붙인다.
+    private var accessibilitySummary: String {
+        var parts: [String] = []
+        parts.append("\(scoreText). \(session.context.inning)회 \(session.context.outs)아웃")
+        parts.append("볼 \(session.context.balls) 스트라이크 \(session.context.strikes)")
+        parts.append("피로 \(session.context.fatigue)")
+        parts.append("주자 \(RunnerDiamond.voiceOverLabel(session.gameState.runners))")
+        if session.pitches > 0 {
+            parts.append("이번 등판 \(session.strikeouts)탈삼진 \(session.walks)볼넷 \(session.runsAllowed)실점")
+        }
+        if let stakes {
+            parts.append(stakes)
+        }
+        return parts.joined(separator: ", ")
     }
 }
 
@@ -678,6 +714,15 @@ private struct CountPips: View {
 }
 
 private struct RunnerDiamond: View {
+    /// 보이스오버용 주자 설명. 시각 다이아몬드의 정보를 말로 옮긴다.
+    static func voiceOverLabel(_ runners: BaserunnerStateSnapshot) -> String {
+        var bases: [String] = []
+        if runners.firstOccupied { bases.append("1루") }
+        if runners.secondOccupied { bases.append("2루") }
+        if runners.thirdOccupied { bases.append("3루") }
+        return bases.isEmpty ? "없음" : bases.joined(separator: "·")
+    }
+
     let runners: BaserunnerStateSnapshot
 
     var body: some View {
@@ -839,6 +884,18 @@ private struct CatcherCard: View {
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                // 사인 고정 — 켜면 포수 추천이 다음 공에서 내 선택을 덮지 않는다.
+                // "이 타자한테는 낮은 슬라이더로 민다"는 의도가 매 투구 2~4탭 없이 살아남는다.
+                Toggle(isOn: Binding(get: { session.holdCall }, set: { session.holdCall = $0 })) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("내 배합 유지").font(.footnote.weight(.semibold))
+                        Text("포수 사인이 내 선택을 덮어쓰지 않습니다.")
+                            .font(.caption2).foregroundStyle(BaseballTheme.textTertiary)
+                    }
+                }
+                .tint(BaseballTheme.action)
+                .accessibilityIdentifier("pitch.holdCall")
 
                 // 분석은 접어 둔다 — 결정 한 번에 300자를 읽히면 손맛이 성립하지
                 // 않는다(QA P1-6). 궁금한 사람만 한 탭으로 편다.
@@ -1072,8 +1129,8 @@ private struct KBanner: View {
 
     private func pop() {
         guard !reduceMotion else { shown = count; return }
-        // 새 K는 심판 콜(리플레이 ~1.5초)이 끝난 뒤에 걸린다. 결과보다 빠른 자랑은 스포일러다.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+        // 새 K는 심판 콜이 끝난 뒤에 걸린다(슬로모 풀콜 최대 ~2.15초). 결과보다 빠른 자랑은 스포일러다.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
             withAnimation(.spring(response: 0.32, dampingFraction: 0.5)) { shown = count }
         }
     }

@@ -82,6 +82,11 @@ final class HighSchoolCareerStore {
     private(set) var pendingBloom: Bloom?
     /// 방금 닫힌 회차의 정산. 화면이 보여 주고 나서 비운다.
     var pendingRecap: RunRecapView.Recap?
+    /// 진행 중인 등판의 타석 경계 스냅샷. 앱이 죽어도 이닝이 증발하지 않는다.
+    private var gameResume: PitchSession.ResumeState?
+    /// 별점 요청 신호. 첫 무실점 이닝처럼 감정이 양(+)인 조기 지점에서 켜진다 —
+    /// 뷰가 requestReview 환경을 갖고 있으므로 스토어는 신호만 올린다.
+    var reviewMoment = 0
     /// 이미 프로로 보낸 회차의 careerID.
     ///
     /// 프로 저장본의 유무로 판단하면 안 된다 — 은퇴하고 "새 선수로 다시 시작"을 누르면 프로
@@ -179,7 +184,8 @@ final class HighSchoolCareerStore {
         region: String = "서울",
         difficulty: CareerDifficultySnapshot = .standard,
         karmas: [KarmaID] = [],
-        soulDomain: SoulDomain? = nil
+        soulDomain: SoulDomain? = nil,
+        soulBoosts: [SoulBoostID] = []
     ) {
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = trimmed.isEmpty ? preset.pitcher.name : trimmed
@@ -193,6 +199,11 @@ final class HighSchoolCareerStore {
         )
         var carried = inheritance
         carried.karmas = karmas
+        // 영혼 상점 정산 — 부스트 비용을 잔액에서 차감하고, 남은 잔액이 자동 스며듦으로
+        // 흘러간다. 잔액이 모자라면 못 산 것(선택 UI가 이미 막지만 여기서도 지킨다).
+        let boostCost = soulBoosts.reduce(0) { $0 + $1.cost }
+        let purchased = boostCost <= carried.soulPoints ? soulBoosts : []
+        carried.soulPoints -= purchased.reduce(0) { $0 + $1.cost }
         do {
             let created = try engine.start(
                 .init(
@@ -204,7 +215,8 @@ final class HighSchoolCareerStore {
                     inheritedMemories: carried.memories,
                     identity: identity,
                     difficulty: difficulty,
-                    karmas: karmas
+                    karmas: karmas,
+                    soulBoosts: purchased.isEmpty ? nil : purchased
                 )
             )
             inheritance = carried
@@ -350,6 +362,7 @@ final class HighSchoolCareerStore {
         let session = PitchSession(highSchool: result.snapshot, seed: sessionSeed)
         session.start()
         session.trait = personality?.trait
+        attachCheckpoint(session)
         pitchSession = session
     }
 
@@ -360,6 +373,14 @@ final class HighSchoolCareerStore {
         AchievementStore.shared.record(AchievementRules.fromInning(report: report) + session.bestDeliveryAchievements)
         accumulateRivalLedger(session.rivalOutcomes)
         pitchSession = nil
+        gameResume = nil
+        // 첫 무실점 이닝 — 감정이 양(+)인 가장 이른 지점에서 별점을 요청한다.
+        // 예전에는 지명 성공(1~2시간 뒤) 뒤에만 열려 출시 초 리뷰 창을 통째로 놓쳤다.
+        if report.runsAllowed == 0,
+           !UserDefaults.standard.bool(forKey: "baseball.review.cleanInning") {
+            UserDefaults.standard.set(true, forKey: "baseball.review.cleanInning")
+            reviewMoment += 1
+        }
         perform(summary: summary, cue: report.runsAllowed == 0 ? .success : .setback) {
             try engine.recordImportantGame(.init(seed: $0.nextSeed, state: $0.snapshot, report: report))
         }
@@ -437,10 +458,6 @@ final class HighSchoolCareerStore {
         save()
     }
 
-    func abandonImportantGame() {
-        pitchSession = nil
-    }
-
     // MARK: - 환생
 
     func toggleMemory(_ id: MemoryCardID) {
@@ -472,7 +489,9 @@ final class HighSchoolCareerStore {
             record: closed,
             pledgeTitle: settledPledge?.title,
             pledgeAchieved: pledgeAchieved,
-            rivalLine: rivalLedger.summaryLine.map { "숙적 \(current.snapshot.rival.name) — \($0)" }
+            rivalLine: rivalLedger.summaryLine.map { "숙적 \(current.snapshot.rival.name) — \($0)" },
+            soulBalance: inheritance.soulPoints,
+            soulAutoApplied: HighSchoolCareerEngine.appliedInheritance(for: inheritance.soulPoints)
         )
         // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
         archive.removeAll { $0.lifeNumber == closed.lifeNumber }
@@ -671,7 +690,7 @@ final class HighSchoolCareerStore {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
         savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, responseTally: responseTally, revision: savedRevision)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, responseTally: responseTally, gameResume: gameResume, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -703,6 +722,8 @@ final class HighSchoolCareerStore {
         var goalCelebratedChapter: Int? = nil
         /// 성격을 만든 선택들. 없는 옛 저장본은 0에서 시작한다.
         var responseTally: ResponseTally? = nil
+        /// 진행 중 등판의 타석 경계 스냅샷. 없는 옛 저장본은 nil이다.
+        var gameResume: PitchSession.ResumeState? = nil
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
         var revision: UInt64?
 
@@ -729,7 +750,41 @@ final class HighSchoolCareerStore {
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return false }
         result = saved
+        // 등판 도중에 내려간 앱 — 타석 경계에서 이어 던진다. 시나리오가 지금 스냅샷에서
+        // 같은 id로 재구성될 때만 복원한다(스냅샷이 달라졌으면 그 이닝은 이미 다른 세계다).
+        if saved.snapshot.phase == .importantGame,
+           let resume = record.gameResume,
+           PitchScenario.highSchool(state: saved.snapshot).id == resume.scenarioID {
+            let session = PitchSession(highSchool: saved.snapshot, seed: resume.seed)
+            session.start()
+            session.restore(from: resume)
+            session.trait = personality?.trait
+            attachCheckpoint(session)
+            gameResume = resume
+            pitchSession = session
+        }
         return true
+    }
+
+    /// 세션의 타석 경계마다 진행을 디스크로. 등판이 통째로 날아가는 일은 유료 게임의
+    /// 환불 사유다 — 체크포인트는 타석 단위라 리트라이 스커밍도 열리지 않는다.
+    private func attachCheckpoint(_ session: PitchSession) {
+        session.onCheckpoint = { [weak self] session in
+            guard let self else { return }
+            self.gameResume = session.resumeState()
+            self.save()
+        }
+    }
+
+    /// 등판 중단 — 지금까지의 이닝을 버린다. 시드는 이미 넘어가 있어 같은 이닝의
+    /// 리트라이는 아니다(안티치트 설계 그대로).
+    func abandonImportantGame() {
+        pitchSession = nil
+        gameResume = nil
+        save()
+        lastSummary = "등판을 중단했습니다. 다음 마운드는 새 이닝입니다."
+        feedbackCue = .setback
+        feedbackTrigger += 1
     }
 
     private func perform(

@@ -82,6 +82,8 @@ private struct HighSchoolRecordBoard: View {
                     Metric(title: "탈삼진", value: "\(state.performance.strikeouts)", tone: .positive)
                     Metric(title: "볼넷", value: "\(state.performance.walks)", tone: .warning)
                     Metric(title: "실점", value: "\(state.performance.runsAllowed)")
+                    // 팬 관심 — 호투가 쌓아 온 시선. 어디에도 안 보이면 죽은 숫자다.
+                    Metric(title: "팬 관심", value: "\(state.fanInterest)")
                 }
 
                 ProspectRankingCard(state: state)

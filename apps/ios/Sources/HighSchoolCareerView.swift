@@ -113,7 +113,8 @@ struct HighSchoolCareerView: View {
             if state.phase == .prologue, let session = career.tutorialSession {
                 PitchView(session: session, onFinish: career.finishTutorialPitch)
             } else if state.phase == .importantGame, let session = career.pitchSession {
-                PitchView(session: session, onFinish: career.finishImportantGame)
+                PitchView(session: session, onFinish: career.finishImportantGame,
+                          onAbort: career.abandonImportantGame)
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -843,8 +844,7 @@ private struct AwakeningCard: View {
     private var sparkLine: (text: String, tone: Color) {
         switch sparks ?? 3 {
         case 3...: ("시즌의 호투가 몸을 완전히 깨웠습니다 — 세 갈래가 전부 열렸습니다.", BaseballTheme.milestone)
-        case 1...2: ("증명이 조금 부족했습니다 — 몸이 절반만 깨어나 두 갈래가 열립니다.", BaseballTheme.textSecondary)
-        default: ("전조 없이 도착한 각성입니다 — 몸이 기억하는 단 하나의 길만 열립니다. 호투와 만개가 다음 각성을 넓힙니다.", BaseballTheme.warning)
+        default: ("전조가 부족해 두 갈래만 열렸습니다. 호투(무실점·삼진쇼)와 만개가 다음 각성을 넓힙니다.", BaseballTheme.textSecondary)
         }
     }
 
@@ -1119,6 +1119,8 @@ private struct DraftCard: View {
 }
 
 private struct LegacyCard: View {
+    @State private var confirmingLegacy = false
+
     let career: HighSchoolCareerStore
     let state: HighSchoolCareerSnapshot
 
@@ -1202,8 +1204,18 @@ private struct LegacyCard: View {
                 .accessibilityIdentifier("hs.memory.\(option.rawValue)")
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
-            PrimaryButton(title: "기억을 확정한다", identifier: "hs.legacy.confirm") { career.confirmLegacy() }
+            PrimaryButton(title: "기억을 확정한다", identifier: "hs.legacy.confirm") { confirmingLegacy = true }
                 .disabled(career.selectedMemories.count != state.memorySlots)
+                .confirmationDialog(
+                    "기억 \(career.selectedMemories.count)장을 확정할까요?",
+                    isPresented: $confirmingLegacy,
+                    titleVisibility: .visible
+                ) {
+                    Button("확정하고 이 회차를 닫는다") { career.confirmLegacy() }
+                    Button("다시 고른다") { confirmingLegacy = false }
+                } message: {
+                    Text("이 회차가 닫히고 되돌릴 수 없습니다. 고른 기억만 다음 회차로 갑니다.")
+                }
         }
     }
 }

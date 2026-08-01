@@ -49,6 +49,8 @@ struct HighSchoolSetupView: View {
     @State private var selectedKarmas: Set<KarmaID> = []
     /// 계승한 야구혼을 어디에 붓는가. 2회차부터만 고른다.
     @State private var soulDomain: SoulDomain = .technique
+    /// 영혼 상점에서 담은 부스트. 잔액 안에서만 담긴다.
+    @State private var selectedBoosts: Set<SoulBoostID> = []
     @State private var harshness: DifficultyLevel = .standard
     @FocusState private var nameFocused: Bool
 
@@ -220,6 +222,10 @@ struct HighSchoolSetupView: View {
             BaseballCard(title: "가져온 것", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("야구혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
+                    // 정직한 계승 안내 — 자동 스며듦은 상한이 있고, 나머지는 상점의 돈이다.
+                    Text("자동 스며듦 +\(HighSchoolCareerEngine.appliedInheritance(for: remainingSoul)) · 상점 사용 가능 \(remainingSoul)혼")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textSecondary)
                     if career.inheritance.memories.isEmpty {
                         Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                     } else {
@@ -233,6 +239,67 @@ struct HighSchoolSetupView: View {
                     }
                 }
             }
+            soulShopCard
+        }
+    }
+
+    /// 상점에서 산 것을 빼고 남는 잔액. 자동 스며듦은 이 값 기준으로 계산된다.
+    private var remainingSoul: Int {
+        career.inheritance.soulPoints - selectedBoosts.reduce(0) { $0 + $1.cost }
+    }
+
+    /// 영혼 상점 — 상한 너머의 야구혼이 처음으로 흘러갈 배수구.
+    /// 스탯이 아니라 규칙을 판다: 재능 돌파·기억 확장·조기 성장·성장 리듬.
+    private var soulShopCard: some View {
+        BaseballCard(title: "영혼 상점", tone: .raised) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("야구혼을 소비해 이번 회차의 규칙을 삽니다. 남는 잔액은 자동으로 스며듭니다.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(SoulBoostID.allCases, id: \.self) { boost in
+                    let selected = selectedBoosts.contains(boost)
+                    let affordable = selected || boost.cost <= remainingSoul
+                    Button {
+                        if selected { selectedBoosts.remove(boost) }
+                        else if affordable { selectedBoosts.insert(boost) }
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selected ? BaseballTheme.milestone : affordable ? BaseballTheme.textSecondary : BaseballTheme.border)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(Self.boostCopy(boost).title).font(.subheadline.weight(.semibold))
+                                Text(Self.boostCopy(boost).detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                            }
+                            Spacer()
+                            Text("\(boost.cost)혼")
+                                .font(.footnote.weight(.bold).monospacedDigit())
+                                .foregroundStyle(affordable ? BaseballTheme.milestone : BaseballTheme.textTertiary)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(selected ? BaseballTheme.milestone.opacity(0.12) : BaseballTheme.surface,
+                                    in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                                .stroke(selected ? BaseballTheme.milestone : BaseballTheme.border, lineWidth: selected ? 2 : 1)
+                        }
+                        .opacity(affordable ? 1 : 0.5)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!affordable && !selected)
+                    .accessibilityIdentifier("hs.shop.\(boost.rawValue)")
+                }
+            }
+        }
+    }
+
+    static func boostCopy(_ boost: SoulBoostID) -> (title: String, detail: String) {
+        switch boost {
+        case .talentBreak: ("재능 돌파", "가장 낮은 재능 등급이 한 단계 열린 채 시작합니다.")
+        case .extraMemory: ("기억 확장", "이번 회차의 기억 슬롯이 3장에서 4장이 됩니다.")
+        case .headStart: ("조기 성장", "자동 스며듦 상한 너머로 +6이 추가로 스며듭니다.")
+        case .trainingRhythm: ("성장 리듬", "이번 회차 훈련 대성공 확률이 16% → 26%가 됩니다.")
         }
     }
 
@@ -415,7 +482,8 @@ struct HighSchoolSetupView: View {
                         region: selectedRegion,
                         difficulty: CareerDifficultySnapshot(careerHarshness: harshness),
                         karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue },
-                        soulDomain: career.inheritance.soulPoints > 0 ? soulDomain : nil
+                        soulDomain: career.inheritance.soulPoints > 0 ? soulDomain : nil,
+                        soulBoosts: Array(selectedBoosts).sorted { $0.rawValue < $1.rawValue }
                     )
                 }
             } else {

@@ -15,6 +15,11 @@ struct RunRecapView: View {
         let pledgeAchieved: Bool
         /// 숙적 상대 전적 한 줄(타석이 있을 때만).
         let rivalLine: String?
+        /// 정산 후 야구혼 잔액. 상점에서 쓸 수 있는 돈이다.
+        var soulBalance: Int = 0
+        /// 그 잔액이 다음 회차에 자동으로 스며드는 양(상한 적용 후 실제값).
+        /// 화면이 이 값을 말하지 않으면 게임이 거짓 영수증을 발행하는 셈이다.
+        var soulAutoApplied: Int = 0
     }
 
     let recap: Recap
@@ -79,18 +84,31 @@ struct RunRecapView: View {
                     .font(.system(size: 64, weight: .black, design: .rounded).monospacedDigit())
                     .foregroundStyle(BaseballTheme.milestone)
                     .contentTransition(.numericText(value: Double(shownSoul)))
-                Text("다음 회차의 시작 능력에 스며듭니다.")
+                // 정직한 영수증 — 적립·잔액·자동 스며듦을 전부 말한다.
+                // 큰 숫자만 보여 주고 상한을 숨기면, 유저가 계산하는 순간 신뢰가 무너진다.
+                Text("잔액 \(recap.soulBalance)혼 · 다음 회차 자동 스며듦 +\(recap.soulAutoApplied)")
+                    .font(.footnote.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                    .opacity(soulDone ? 1 : 0)
+                Text("남는 야구혼은 환생할 때 영혼 상점에서 씁니다 — 재능 돌파·기억 확장·성장 리듬.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
+                    .opacity(soulDone ? 1 : 0)
             }
             .padding(.top, 6)
             .opacity(revealed >= stamps.count ? 1 : 0)
 
             Spacer(minLength: 0)
 
-            PrimaryButton(title: "기억을 안고 다음 회차로", identifier: "hs.recap.continue") { onDismiss() }
-                .opacity(soulDone ? 1 : 0.25)
-                .disabled(!soulDone)
+            HStack(spacing: 10) {
+                // 감정이 가장 높은 순간에 공유가 있어야 한다 — 아카이브 탭은 감정이 식은 뒤다.
+                LifeCardShareButton(record: recap.record)
+                    .opacity(soulDone ? 1 : 0.25)
+                    .disabled(!soulDone)
+                PrimaryButton(title: "기억을 안고 다음 회차로", identifier: "hs.recap.continue") { onDismiss() }
+                    .opacity(soulDone ? 1 : 0.25)
+                    .disabled(!soulDone)
+            }
         }
         .padding(BaseballMetrics.gutter)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)

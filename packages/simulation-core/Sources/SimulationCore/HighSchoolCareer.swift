@@ -557,6 +557,8 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     /// nil은 재능 개념이 없던 저장본이라는 뜻이고, `TalentSnapshot.unlimited`로 읽어
     /// 예전과 똑같이 동작한다. [[focusStreak]] 패턴.
     public let talent: TalentSnapshot?
+    /// 이번 회차에 적용된 영혼 상점 부스트. 옛 저장본은 nil. 커밋에는 있을 때만 넣는다.
+    public let soulBoosts: [String]?
     /// 각성의 전조(0~6). 호투·만개가 쌓아 올리고, 각성 국면이 소비한다 —
     /// 전조가 많을수록 각성 때 열리는 갈래가 많다. 각성이 "일정이 주는 보상"이 아니라
     /// "시즌의 증명이 부르는 순간"이 되게 하는 값이다. 옛 저장본은 nil이며 0으로 읽는다.
@@ -607,6 +609,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         schedule: CareerScheduleSnapshot? = nil,
         trainingOpportunity: TrainingOpportunitySnapshot? = nil,
         talent: TalentSnapshot? = nil,
+        soulBoosts: [String]? = nil,
         awakeningSparks: Int? = nil,
         stateCommitment: String
     ) {
@@ -652,6 +655,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.schedule = schedule
         self.trainingOpportunity = trainingOpportunity
         self.talent = talent
+        self.soulBoosts = soulBoosts
         self.awakeningSparks = awakeningSparks
         self.stateCommitment = stateCommitment
     }
@@ -700,8 +704,34 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.schedule == rhs.schedule
             && lhs.trainingOpportunity == rhs.trainingOpportunity
             && lhs.talent == rhs.talent
+            && lhs.soulBoosts == rhs.soulBoosts
             && lhs.awakeningSparks == rhs.awakeningSparks
             && lhs.stateCommitment == rhs.stateCommitment
+    }
+}
+
+/// 영혼 상점 — 환생 때 야구혼 잔액을 소비해 이번 회차의 규칙을 산다.
+///
+/// 자동 스며듦(상한 8~20)은 공짜 계승이고, 상점은 그 너머의 잔액이 흘러갈 배수구다.
+/// 스탯이 아니라 규칙을 팔아야 상한 인플레이션이 생기지 않는다.
+public enum SoulBoostID: String, Codable, CaseIterable, Sendable {
+    /// 가장 낮은 재능 등급을 한 단계 올린 채 시작한다.
+    case talentBreak = "talent_break"
+    /// 기억 슬롯 3 → 4. 전생의 기억을 한 장 더 가져온다.
+    case extraMemory = "extra_memory"
+    /// 자동 스며듦 상한 너머로 +6이 추가로 스며든다(재능 벽은 그대로 존중).
+    case headStart = "head_start"
+    /// 이번 회차 훈련 대성공(잭팟) 확률 16% → 26%.
+    case trainingRhythm = "training_rhythm"
+
+    /// 야구혼 비용. 회차당 획득이 대략 30~60이라, 큰 물건은 두세 회차를 모아야 한다.
+    public var cost: Int {
+        switch self {
+        case .talentBreak: 240
+        case .extraMemory: 160
+        case .headStart: 120
+        case .trainingRhythm: 90
+        }
     }
 }
 
@@ -716,6 +746,8 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
     public let identity: PlayerIdentitySnapshot
     public let difficulty: CareerDifficultySnapshot
     public let karmas: [KarmaID]
+    /// 영혼 상점에서 산 부스트. 잔액 검증은 앱(지갑 주인)이 하고 커널은 적용만 한다.
+    public let soulBoosts: [SoulBoostID]?
 
     public init(
         seed: String,
@@ -727,7 +759,8 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         inheritedMemories: [MemoryCardID] = [],
         identity: PlayerIdentitySnapshot = .defaultPitcher,
         difficulty: CareerDifficultySnapshot = .standard,
-        karmas: [KarmaID] = []
+        karmas: [KarmaID] = [],
+        soulBoosts: [SoulBoostID]? = nil
     ) {
         self.seed = seed
         self.presetID = presetID
@@ -739,6 +772,7 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         self.identity = identity
         self.difficulty = difficulty
         self.karmas = karmas
+        self.soulBoosts = soulBoosts
     }
 }
 
@@ -1079,7 +1113,9 @@ public struct HighSchoolCareerEngine: Sendable {
         guard let preset = PitcherPresetCatalog.all.first(where: { $0.id == params.presetID }) else {
             throw SimulationError.invalidPitcherLab("unknown career pitcher preset")
         }
-        guard params.creationAllocation.total == 5, params.inheritedMemories.count <= 3,
+        let boosts = Set(params.soulBoosts ?? [])
+        // 직전 회차가 기억 확장(슬롯 4)으로 골랐을 수 있으므로 계승은 4장까지 받는다.
+        guard params.creationAllocation.total == 5, params.inheritedMemories.count <= 4,
               params.karmas.count == Set(params.karmas).count, params.karmas.count <= 2,
               !params.identity.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !params.identity.region.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -1088,15 +1124,25 @@ public struct HighSchoolCareerEngine: Sendable {
         let careerID = "career-\(params.seed)-life-\(params.lifeNumber)"
         // 재능을 계승보다 먼저 뽑는다. 계승이 이번 회차의 벽(재능 상한)을 넘지 않아야
         // "왜 안 오르지"의 답이 회차 시작부터 일관된다.
-        let talent = TalentRules.make(careerID: careerID)
+        var talent = TalentRules.make(careerID: careerID)
+        // 재능 돌파 — 가장 낮은 등급 하나를 한 단계 위로. 벽을 없애지 않고 옮긴다.
+        if boosts.contains(.talentBreak) {
+            let abilities: [TalentAbility] = [.stuff, .command, .movement, .stamina]
+            if let lowest = abilities.min(by: { talent.grade($0) < talent.grade($1) }),
+               let index = TalentGrade.allCases.firstIndex(of: talent.grade(lowest)),
+               index + 1 < TalentGrade.allCases.count {
+                talent.setGrade(TalentGrade.allCases[index + 1], for: lowest)
+            }
+        }
         // 이번 회차의 바람 — careerID가 정하는 세계의 조건. 효과는 여기서 기존 필드에
         // 새겨지고, 표시는 화면이 careerID로 재계산한다.
         let wind = CareerWind.wind(careerID: careerID)
         var pitcher = renamed(params.identity.name, pitcher: applyCreation(params.creationAllocation, to: preset.pitcher), hand: params.identity.throwingHand)
-        pitcher = applyInheritance(params.inheritedSoulPoints, domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: talent, to: pitcher)
+        pitcher = applyInheritance(params.inheritedSoulPoints, domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: talent,
+            bonusPoints: boosts.contains(.headStart) ? 6 : 0, to: pitcher)
         pitcher = applyKarmas(params.karmas, to: pitcher)
         let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille } + wind.rewardBonusPermille
-        let memorySlots = params.karmas.contains(.erasedMemory) ? 2 : 3
+        let memorySlots = (params.karmas.contains(.erasedMemory) ? 2 : 3) + (boosts.contains(.extraMemory) ? 1 : 0)
         let base = HighSchoolCareerSnapshot(
             careerID: careerID, revision: 0, lifeNumber: params.lifeNumber,
             phase: .prologue, identity: params.identity, difficulty: params.difficulty, karmas: params.karmas,
@@ -1112,6 +1158,7 @@ public struct HighSchoolCareerEngine: Sendable {
             draftResult: nil, legacyOptions: [], selectedMemories: [], balanceVersion: PitcherPresetCatalog.balanceVersion,
             armRisk: 0, injuryRecovery: 0, schedule: Self.makeSchedule(careerID: careerID),
             talent: talent,
+            soulBoosts: boosts.isEmpty ? nil : boosts.map(\.rawValue).sorted(),
             stateCommitment: ""
         )
         return result(seed: seed, state: signed(base), event: "high_school_career_started")
@@ -1290,8 +1337,11 @@ public struct HighSchoolCareerEngine: Sendable {
         // 대성공(잭팟) — 16% 확률로 성장이 두 배가 된다. 가변 보상은 훈련 버튼을
         // 누르는 손에 긴장을 만든다: 이번엔 터질까. 재능 벽은 TalentRules.apply가
         // 뒤에서 그대로 자르므로 잭팟도 벽을 넘지 못하고, 초과분은 만개 게이지로 쌓인다.
-        let jackpot = !isRehab && generator.nextInt(upperBound: 100) < 16
-        let baseGrowth = isRehab ? 0 : Self.trainingGrowth(signal: signal)
+        let jackpotChance = params.state.soulBoosts?.contains(SoulBoostID.trainingRhythm.rawValue) == true ? 26 : 16
+        let jackpot = !isRehab && effectiveFocus != .recovery && generator.nextInt(upperBound: 100) < jackpotChance
+        // 회복은 회복만 한다. 예전에는 회복 훈련도 스태미나가 +1~2씩 올라서
+        // '강한 회복'이 피로 -3에 무료 성장이었다 — 강도 선택의 긴장이 0이 되는 지점.
+        let baseGrowth = (isRehab || effectiveFocus == .recovery) ? 0 : Self.trainingGrowth(signal: signal)
         let rawGrowth = jackpot ? baseGrowth * 2 : baseGrowth
         // 재능이 성장을 자른다. 한계에 막힌 훈련은 헛되지 않고 만개 게이지로 쌓인다 —
         // 막혔다는 이유로 훈련이 낭비가 되면 재능은 그냥 벌점이 된다.
@@ -1376,8 +1426,11 @@ public struct HighSchoolCareerEngine: Sendable {
         let eventCategory = params.state.currentRelationshipEvent?.category ?? "coach"
         let relationshipCategory = trustChannel(for: eventCategory)
         let isCoach = relationshipCategory == "coach"
-        let trustChange = params.state.karmas.contains(.stubbornCoach) && isCoach && impact.trust < 0
-            ? impact.trust * 2 : impact.trust
+        // 고집불통 감독: 신뢰를 잃을 땐 두 배로 잃고, 얻을 땐 절반만 얻는다.
+        // 예전에는 잃는 쪽만 두 배라 '도전'만 안 고르면 완전 무료 +15%였다.
+        let trustChange = params.state.karmas.contains(.stubbornCoach) && isCoach
+            ? (impact.trust < 0 ? impact.trust * 2 : impact.trust / 2)
+            : impact.trust
         // 대화로 얻는 성장도 재능의 한계를 넘지 않는다. 여기만 뚫리면 훈련으로 막힌 능력을
         // 대화로 올리는 우회로가 생기고, 재능이라는 규칙이 그 자리에서 무의미해진다.
         let talentBefore = params.state.talent ?? .unlimited
@@ -1460,8 +1513,15 @@ public struct HighSchoolCareerEngine: Sendable {
                 nextInjuryRecovery = severity
                 nextRisk = 50 // 부상 뒤에도 마모는 남는다
                 fatigueDelta = 6
-                outcome = "무리한 등판이 겹쳐 팔에 이상이 왔습니다. 다음 훈련 \(severity)회는 재활로 씁니다."
-                headline = "팔 부상 · \(state.pitcher.name), 무리한 등판이 반복돼 재활에 들어갑니다."
+                if state.karmas.contains(.noLastChance) {
+                    // '마지막 기회는 없다' — 문구가 약속한 그대로. 부상 하나가 시즌을 끝내고
+                    // 지금까지의 성적으로 드래프트 평가를 받는다. 이것이 이 카르마의 값이다.
+                    outcome = "팔이 버티지 못했습니다. 시즌이 여기서 끝났고, 지금까지의 기록으로 평가받습니다."
+                    headline = "시즌 아웃 · \(state.pitcher.name), 부상으로 조기 드래프트 평가에 들어갑니다."
+                } else {
+                    outcome = "무리한 등판이 겹쳐 팔에 이상이 왔습니다. 다음 훈련 \(severity)회는 재활로 씁니다."
+                    headline = "팔 부상 · \(state.pitcher.name), 무리한 등판이 반복돼 재활에 들어갑니다."
+                }
             } else {
                 fatigueDelta = 4
                 outcome = "오늘도 예정대로 던졌습니다. 능력은 지켰지만 팔의 위험이 더 커졌습니다."
@@ -1498,6 +1558,13 @@ public struct HighSchoolCareerEngine: Sendable {
             fatigue: fatigueAfter, lastRelationship: relationshipResult,
             news: [headline] + state.news, fanInterest: fanAfter,
             armRisk: nextRisk, injuryRecovery: nextInjuryRecovery)
+        // noLastChance 부상은 남은 3년을 지운다 — 커리어가 드래프트 평가로 직행한다.
+        if injured, state.karmas.contains(.noLastChance) {
+            let ended = replacing(nextBase, phase: .draft, awakeningOptions: [])
+            return result(seed: seed, state: signed(ended),
+                event: "career_arm_injury_season_ending",
+                reasons: ["arm_care.\(response.rawValue)", "karma.no_last_chance"])
+        }
         let next = advanceMilestone(nextBase, seed: seed)
         return result(seed: seed, state: signed(next),
             event: injured ? "career_arm_injury" : "career_arm_care",
@@ -1951,7 +2018,8 @@ public struct HighSchoolCareerEngine: Sendable {
         // 길이 하나뿐이고, 시즌을 증명으로 채웠으면 세 갈래가 전부 열린다.
         // 옛 저장본(nil)은 예전과 같은 3갈래 — 규칙이 소급해서 벌하지 않는다.
         if let sparks = state.awakeningSparks {
-            let opened = sparks >= 3 ? 3 : sparks >= 1 ? 2 : 1
+            // 전조 0이어도 두 갈래는 남긴다 — 선택지가 하나면 선택이 아니라 통보다.
+            let opened = sparks >= 3 ? 3 : 2
             return Array(result.prefix(opened))
         }
         return result
@@ -2261,16 +2329,22 @@ public struct HighSchoolCareerEngine: Sendable {
     /// 스펙(META-002)의 "초기 능력 보너스 8~10% 이내"를 따르되, 야구혼 총량이 쌓이면
     /// 상한도 천천히 자란다(8 + 총량/60, 최대 20). 총량은 기록이고, 스며드는 양은 상한이
     /// 정한다 — 10회차쯤까지 완만하게 오르다 멈추는 곡선이다.
-    static func inheritancePointCap(for points: Int) -> Int {
+    public static func inheritancePointCap(for points: Int) -> Int {
         min(20, 8 + max(0, points) / 60)
+    }
+
+    /// 잔액이 이번 회차에 실제로 스며드는 양. 정산·상점 화면이 이 값을 쓴다 —
+    /// 화면이 상한을 모르고 큰 숫자를 약속하면 게임이 거짓 영수증을 발행하는 셈이다.
+    public static func appliedInheritance(for points: Int) -> Int {
+        min(max(0, points), inheritancePointCap(for: points))
     }
 
     private func applyInheritance(
         _ points: Int, domain: SoulDomain?, memories: [MemoryCardID],
-        talent: TalentSnapshot, to pitcher: PitcherSnapshot
+        talent: TalentSnapshot, bonusPoints: Int = 0, to pitcher: PitcherSnapshot
     ) -> PitcherSnapshot {
         var value = pitcher
-        var remaining = min(max(0, points), Self.inheritancePointCap(for: points))
+        var remaining = min(max(0, points), Self.inheritancePointCap(for: points)) + max(0, bonusPoints)
 
         // 이번 회차의 벽 아래에서만 스며든다. 계승이 벽을 뚫으면 만개(벽이 열리는 순간)가
         // 그 능력에서 영원히 사라진다.
@@ -2415,7 +2489,7 @@ public struct HighSchoolCareerEngine: Sendable {
         let suffix = remaining > 0
             ? " 한 번 더 밀어붙이면 열릴 수도 있습니다(남은 두드림 \(remaining)회)."
             : ""
-        return "\(ability.label)이(가) 지금 재능의 한계(\(grade.ceiling))에 닿아 있습니다.\(suffix)"
+        return "\(ability.label)\(RelationshipVoiceCatalog.particle(ability.label, final: "이", open: "가")) 지금 재능의 한계(\(grade.ceiling))에 닿아 있습니다.\(suffix)"
     }
 
     private func trainingFeedback(focus: TrainingFocus, growth: Int, fatigueChange: Int) -> String {
@@ -2486,6 +2560,7 @@ public struct HighSchoolCareerEngine: Sendable {
                 careerID: state.careerID,
                 index: totalTrainingsCompleted ?? state.totalTrainingsCompleted),
             talent: talent ?? state.talent,
+            soulBoosts: state.soulBoosts,
             awakeningSparks: awakeningSparks ?? state.awakeningSparks,
             stateCommitment: stateCommitment ?? state.stateCommitment)
     }
@@ -2551,6 +2626,9 @@ public struct HighSchoolCareerEngine: Sendable {
         }
         if let awakeningSparks = state.awakeningSparks {
             canonical.append("awakening_sparks:\(awakeningSparks)")
+        }
+        if let soulBoosts = state.soulBoosts, !soulBoosts.isEmpty {
+            canonical.append("soul_boosts:\(soulBoosts.joined(separator: ","))")
         }
         // 스케줄 필드도 있을 때만 덧붙여, 이 기능 이전(스케줄 없음) 저장본이 기존 커밋먼트로 그대로
         // 검증되게 한다. 팔·focusStreak 필드와 같은 조건부 계열이다.
