@@ -52,6 +52,7 @@
 		A7A1E4BCB6F2294E361B74CD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88829ECACC67B2EBCDBC9538 /* Assets.xcassets */; };
 		A8800D4D45BE21DE1315474E /* GameLineFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6400E3C7B6732A0F7E8EE94 /* GameLineFormat.swift */; };
 		AC643EFE859422711140B702 /* PitchDramaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1D59E198E4D5D56F06F17C /* PitchDramaView.swift */; };
+		B1D2BF816D32C7FAD957AD3B /* DailyInningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D779C208B26C99AC08FD12 /* DailyInningView.swift */; };
 		B235CA178BDA7E4B371B1F37 /* Audio in Resources */ = {isa = PBXBuildFile; fileRef = F6526F986EB9E4B84BFD6792 /* Audio */; };
 		B2563DD8BA0252148CCDCA7A /* AbilityGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F060404E63A14ED602332946 /* AbilityGaugeView.swift */; };
 		B534AF17C3954F02B54B3161 /* PitchSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84D0F09EB96CC29A52B238F /* PitchSessionTests.swift */; };
@@ -137,6 +138,7 @@
 		AB871919CDBE86B35708EEBF /* HighSchoolCareerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerView.swift; sourceTree = "<group>"; };
 		B19519846B2DF9369A5DA8FC /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B1C8F87051DCDE81B44A819D /* RunRecapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunRecapView.swift; sourceTree = "<group>"; };
+		B6D779C208B26C99AC08FD12 /* DailyInningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyInningView.swift; sourceTree = "<group>"; };
 		B6DDF52C7FC66A5A36C50638 /* QACaptureUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QACaptureUITests.swift; sourceTree = "<group>"; };
 		B6FD9FC4DABDF4993821FE27 /* BaseballIOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BaseballIOS.entitlements; sourceTree = "<group>"; };
 		BBE3704F64563F164CBC134B /* ExceptionCatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ExceptionCatcher.m; sourceTree = "<group>"; };
@@ -222,6 +224,7 @@
 				3D26B37B23B71DC22DBFBA27 /* CareerFlowView.swift */,
 				DEB11CD9FB866181225768DD /* CareerSetupView.swift */,
 				F78149DDA8DDF2C728669E79 /* ClimaxViews.swift */,
+				B6D779C208B26C99AC08FD12 /* DailyInningView.swift */,
 				4098E0B38E32E1CCF6BC0549 /* DeliveryControl.swift */,
 				0AFB40C23D4863D2F7565C54 /* DesignSystem.swift */,
 				9CD9548761DD9A3D82C5232D /* ExceptionCatcher.h */,
@@ -461,6 +464,7 @@
 				98F47F2D21DE7C84E44394A0 /* CareerFlowView.swift in Sources */,
 				910EAAC15C26A49FEDEC9847 /* CareerSetupView.swift in Sources */,
 				E40F7D998E88BAC84C6D72C7 /* ClimaxViews.swift in Sources */,
+				B1D2BF816D32C7FAD957AD3B /* DailyInningView.swift in Sources */,
 				DD20655886A0B897AA32DC44 /* DeliveryControl.swift in Sources */,
 				05793DCA31745B85E30FE7DC /* DesignSystem.swift in Sources */,
 				1FFF80CE5E3E359F4EB4BE24 /* ExceptionCatcher.m in Sources */,
@@ -700,7 +704,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -743,7 +747,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 28;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
