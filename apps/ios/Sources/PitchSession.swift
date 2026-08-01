@@ -181,6 +181,9 @@ final class PitchSession {
     /// 3아웃이 통째로 사라졌다** — 잘 던질수록 이닝이 기록되지 않아 RA/9가 부풀고
     /// 화면에 "0.0이닝"이 찍혔다.
     private(set) var outsRecorded = 0
+    /// 숙적(라이벌)을 상대한 타석 결과들. 고교 중요 경기의 1번 타자가 언제나 그다 —
+    /// 통산 상대 전적은 스토어가 회차 단위로 쌓는다.
+    private(set) var rivalOutcomes: [PlateAppearanceResult] = []
 
     /// 회·초말·아웃을 한 줄의 절대 아웃 수로 편다. 초가 끝나면 말의 아웃 0으로 리셋되므로,
     /// 회·아웃만 보면 이닝 종료 순간의 아웃이 사라진다.
@@ -223,6 +226,10 @@ final class PitchSession {
         strikeouts += snapshot.result == .strikeout ? 1 : 0
         if let plateResult = snapshot.result {
             consecutiveStrikeouts = plateResult == .strikeout ? consecutiveStrikeouts + 1 : 0
+            // 라이벌 타석이 끝났다. batterIndex는 아직 이 타자를 가리킨다.
+            if scenario.id.hasPrefix("hs-"), batter.id == scenario.lineup.first?.id {
+                rivalOutcomes.append(plateResult)
+            }
         }
         walks += snapshot.result == .walk ? 1 : 0
         runsAllowed += snapshot.runsScored

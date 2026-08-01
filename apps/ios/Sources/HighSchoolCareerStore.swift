@@ -80,6 +80,8 @@ final class HighSchoolCareerStore {
     var selectedMemories: [MemoryCardID] = []
     /// 방금 만개한 재능. 화면이 축하하고 나서 비운다.
     private(set) var pendingBloom: Bloom?
+    /// 방금 닫힌 회차의 정산. 화면이 보여 주고 나서 비운다.
+    var pendingRecap: RunRecapView.Recap?
     /// 이미 프로로 보낸 회차의 careerID.
     ///
     /// 프로 저장본의 유무로 판단하면 안 된다 — 은퇴하고 "새 선수로 다시 시작"을 누르면 프로
@@ -356,6 +358,7 @@ final class HighSchoolCareerStore {
         let report = session.report(scenarioNumber: result.snapshot.performance.importantGamesCompleted + 1)
         let summary = "\(report.pitches)구 · \(report.strikeouts)탈삼진 · \(report.walks)볼넷 · \(report.runsAllowed)실점"
         AchievementStore.shared.record(AchievementRules.fromInning(report: report) + session.bestDeliveryAchievements)
+        accumulateRivalLedger(session.rivalOutcomes)
         pitchSession = nil
         perform(summary: summary, cue: report.runsAllowed == 0 ? .success : .setback) {
             try engine.recordImportantGame(.init(seed: $0.nextSeed, state: $0.snapshot, report: report))
@@ -455,11 +458,22 @@ final class HighSchoolCareerStore {
         // 코어는 정확히 memorySlots장을 요구한다. 모자라면 조용히 아무것도 하지 않는다.
         guard selectedMemories.count == current.snapshot.memorySlots else { return }
         let chosen = selectedMemories
+        // 약속 정산 — 이행했으면 야구혼에 +15%가 붙는다. 기록과 계승이 같은 배율을 쓴다.
+        let settledPledge = pledge
+        let pledgeAchieved = settledPledge?.achieved(state: current.snapshot) ?? false
+        let pledgeBonus = pledgeAchieved ? RunPledge.bonusPermille : 0
         perform(summary: "기억 \(chosen.count)장을 다음 회차로 가져갑니다.", cue: .growth) {
             try engine.selectLegacy(.init(seed: $0.nextSeed, state: $0.snapshot, memoryCards: chosen))
         }
-        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance, nicknames: nicknames, chronicle: chronicle, personality: personality)
-        inheritance = Self.nextInheritance(from: current.snapshot, memories: chosen, previous: inheritance)
+        let closed = Self.lifeRecord(from: current.snapshot, memories: chosen, previous: inheritance, nicknames: nicknames, chronicle: chronicle, personality: personality, pledgeBonusPermille: pledgeBonus)
+        inheritance = Self.nextInheritance(from: current.snapshot, memories: chosen, previous: inheritance, pledgeBonusPermille: pledgeBonus)
+        // 정산 폭발 — 위업이 도장으로 찍히고 야구혼이 차오른 뒤에야 다음 회차다.
+        pendingRecap = RunRecapView.Recap(
+            record: closed,
+            pledgeTitle: settledPledge?.title,
+            pledgeAchieved: pledgeAchieved,
+            rivalLine: rivalLedger.summaryLine.map { "숙적 \(current.snapshot.rival.name) — \($0)" }
+        )
         // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
         archive.removeAll { $0.lifeNumber == closed.lifeNumber }
         archive.insert(closed, at: 0)
@@ -489,7 +503,8 @@ final class HighSchoolCareerStore {
         previous: Inheritance,
         nicknames: [Nickname] = [],
         chronicle: [ChronicleEntry] = [],
-        personality: Personality? = nil
+        personality: Personality? = nil,
+        pledgeBonusPermille: Int = 0
     ) -> LifeRecord {
         LifeRecord(
             lifeNumber: state.lifeNumber,
@@ -503,7 +518,7 @@ final class HighSchoolCareerStore {
             strikeouts: state.performance.strikeouts,
             walks: state.performance.walks,
             runsAllowed: state.performance.runsAllowed,
-            soulPoints: nextInheritance(from: state, memories: memories, previous: previous).soulPoints
+            soulPoints: nextInheritance(from: state, memories: memories, previous: previous, pledgeBonusPermille: pledgeBonusPermille).soulPoints
                 - previous.soulPoints,
             talent: state.talent,
             awakenings: state.selectedAwakenings,
@@ -520,7 +535,8 @@ final class HighSchoolCareerStore {
     nonisolated static func nextInheritance(
         from state: HighSchoolCareerSnapshot,
         memories: [MemoryCardID],
-        previous: Inheritance
+        previous: Inheritance,
+        pledgeBonusPermille: Int = 0
     ) -> Inheritance {
         // 영혼 포인트는 능력 총합과 경기 기록, 카르마 보상 배율에서 나온다. 실패한 회차도
         // 0이 되지는 않는다 — 환생물의 재접속 장치는 "다음엔 조금 더 강하다"이다.
@@ -529,7 +545,9 @@ final class HighSchoolCareerStore {
         let base = max(4, ratings / 8 + max(0, record) / 4)
         // 코어의 legacyRewardPermille는 이미 1000(×1.0)을 포함한 배율이다. 여기서 1000을
         // 또 더하면 카르마 없이 ×2.0이 되고, 화면의 "+35%"가 실제로는 절반만 전달된다.
-        let rewarded = base * max(1_000, state.legacyRewardPermille) / 1_000
+        // 약속 이행 보너스는 배율에 가산한다(‰). 이중 가산 금지 원칙은 그대로 —
+        // 1000(×1.0)은 legacyRewardPermille가 이미 품고 있다.
+        let rewarded = base * (max(1_000, state.legacyRewardPermille) + pledgeBonusPermille) / 1_000
         return Inheritance(
             lifeNumber: previous.lifeNumber + 1,
             memories: memories,
@@ -571,6 +589,72 @@ final class HighSchoolCareerStore {
 
     func acknowledgeGains() {
         pendingGains = []
+    }
+
+    // MARK: - 숙적 전적 · 회차 약속
+
+    /// 라이벌 상대 통산(회차 내) 전적. 타석·삼진·안타만 있으면 서사는 화면이 만든다.
+    struct RivalLedger: Codable, Equatable {
+        var plateAppearances = 0
+        var strikeouts = 0
+        var walks = 0
+        var hits = 0
+        var summaryLine: String? {
+            guard plateAppearances > 0 else { return nil }
+            return "\(plateAppearances)타석 \(strikeouts)삼진 \(hits)피안타"
+        }
+    }
+
+    private func rivalLedgerKey(_ careerID: String) -> String { "baseball.rivalLedger.\(careerID)" }
+
+    var rivalLedger: RivalLedger {
+        guard let careerID = result?.snapshot.careerID,
+              let data = UserDefaults.standard.data(forKey: rivalLedgerKey(careerID)),
+              let ledger = try? JSONDecoder().decode(RivalLedger.self, from: data) else { return RivalLedger() }
+        return ledger
+    }
+
+    private func accumulateRivalLedger(_ outcomes: [PlateAppearanceResult]) {
+        guard let careerID = result?.snapshot.careerID, !outcomes.isEmpty else { return }
+        var ledger = rivalLedger
+        for outcome in outcomes {
+            ledger.plateAppearances += 1
+            switch outcome {
+            case .strikeout: ledger.strikeouts += 1
+            case .walk: ledger.walks += 1
+            case .hit: ledger.hits += 1
+            case .inPlayOut: break
+            }
+        }
+        if let data = try? JSONEncoder().encode(ledger) {
+            UserDefaults.standard.set(data, forKey: rivalLedgerKey(careerID))
+        }
+    }
+
+    private func pledgeKey(_ careerID: String) -> String { "baseball.pledge.\(careerID)" }
+
+    /// 이번 회차에 걸어 둔 약속. 프롤로그에서 한 번 고르면 회차가 끝날 때 정산된다.
+    var pledge: RunPledge? {
+        guard let careerID = result?.snapshot.careerID,
+              let id = UserDefaults.standard.string(forKey: pledgeKey(careerID)) else { return nil }
+        return RunPledge.pledge(id: id)
+    }
+
+    /// 약속을 걸었는가(넘긴 것도 결정이다) — 프롤로그 카드가 다시 묻지 않기 위한 표식.
+    var pledgeDecided: Bool {
+        guard let careerID = result?.snapshot.careerID else { return true }
+        return UserDefaults.standard.object(forKey: pledgeKey(careerID)) != nil
+    }
+
+    func choosePledge(_ id: String?) {
+        guard let careerID = result?.snapshot.careerID else { return }
+        UserDefaults.standard.set(id ?? "", forKey: pledgeKey(careerID))
+        if let id, let chosen = RunPledge.pledge(id: id) {
+            note("이번 회차의 약속 — \(chosen.title).")
+            lastSummary = "약속을 걸었습니다: \(chosen.title). 이행하면 야구혼 +15%."
+            feedbackCue = .growth
+            feedbackTrigger += 1
+        }
     }
 
     func acknowledgeBloom() {

@@ -87,6 +87,14 @@ struct HighSchoolCareerView: View {
                 career.beginNextLife()
             }
         }
+        // 회차 정산 — 기억을 확정한 순간 위업과 야구혼이 폭발한다. 조용한 전환은
+        // 로그라이트의 끝이 아니다: 정산이 다음 회차를 시작하는 이유다.
+        .fullScreenCover(item: Binding(
+            get: { career.pendingRecap },
+            set: { if $0 == nil { career.pendingRecap = nil } }
+        )) { recap in
+            RunRecapView(recap: recap) { career.pendingRecap = nil }
+        }
         .sensoryFeedback(trigger: career.feedbackTrigger) { _, _ in
             switch career.feedbackCue {
             case .growth: .impact(weight: .heavy)
@@ -150,6 +158,23 @@ struct HighSchoolCareerView: View {
                                 CommunityBuzzCard(title: "전국의 소식", footnote: "라이벌들도 저마다의 3년을 살고 있습니다.", lines: career.worldNews)
                             }
                         }
+                        // 걸어 둔 약속 — 내기는 눈앞에 있어야 내기다.
+                        if state.draftResult == nil, state.phase != .awakening,
+                           let pledge = career.pledge {
+                            HStack(spacing: 8) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundStyle(BaseballTheme.milestone)
+                                Text("약속 · \(pledge.title)")
+                                    .font(.footnote.weight(.bold))
+                                Text(pledge.progressLine(state: state))
+                                    .font(.footnote.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: 10))
+                        }
                         // 드래프트가 끝난 회차에 챕터 숙제는 소음이다. 각성 국면도 접는다.
                         if state.draftResult == nil, state.phase != .awakening {
                             if TournamentBracket.isTournamentChapter(state.chapter.number),
@@ -192,6 +217,9 @@ struct HighSchoolCareerView: View {
                 onSkip: career.completePrologue
             )
         case .schoolSelection:
+            if !career.pledgeDecided {
+                PledgeCard(careerID: state.careerID, onChoose: career.choosePledge)
+            }
             SchoolSelectionCard(options: state.schoolOptions, onChoose: career.chooseSchool)
         case .training:
             // 챕터 누적 한 줄 — 100번의 +1이 낱장으로 흩어지지 않게 "한 단위"를 만든다.
@@ -214,7 +242,8 @@ struct HighSchoolCareerView: View {
         case .relationship:
             RelationshipCard(state: state, onRespond: career.resolveRelationship)
         case .importantGame:
-            ImportantGameCard(state: state, onStart: career.beginImportantGame)
+            ImportantGameCard(state: state, rivalLine: career.rivalLedger.summaryLine,
+                              onStart: career.beginImportantGame)
         case .awakening:
             AwakeningCard(options: state.awakeningOptions, sparks: state.awakeningSparks,
                           onChoose: career.chooseAwakening)
@@ -752,7 +781,12 @@ private struct RelationshipCard: View {
 
 private struct ImportantGameCard: View {
     let state: HighSchoolCareerSnapshot
+    /// 숙적과의 이번 회차 상대 전적 한 줄. 타석이 쌓이기 전에는 nil.
+    var rivalLine: String? = nil
     let onStart: () -> Void
+
+    /// 8챕터 — 이 회차에서 그를 상대하는 마지막 마운드다.
+    private var isFinalShowdown: Bool { state.chapter.number == 8 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -766,12 +800,24 @@ private struct ImportantGameCard: View {
                     }
                 }
             }
-            BaseballCard(title: "상대", tone: .warning) {
+            BaseballCard(title: isFinalShowdown ? "숙적 — 마지막 승부" : "상대", tone: .warning) {
                 VStack(alignment: .leading, spacing: 8) {
                     AvatarRow(seed: state.rival.name, role: .rival,
                               name: state.rival.name, caption: state.rival.archetype, size: 48)
                     if let record = state.rival.signatureRecord {
                         Text(record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+                    }
+                    // 쌓인 역사. 전적이 있어야 이 타석이 서사가 된다.
+                    if let rivalLine {
+                        Text("이번 회차 상대 전적 — \(rivalLine)")
+                            .font(.footnote.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(BaseballTheme.milestone)
+                    }
+                    if isFinalShowdown {
+                        Text("3년의 마지막 마운드. 이 승부가 서로의 마지막 기억이 됩니다.")
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
@@ -1387,5 +1433,46 @@ private struct FlowRow: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("평가 항목: " + items.joined(separator: ", "))
+    }
+}
+
+/// 회차 약속 — 시작에서 하나를 건다.
+///
+/// 학교를 고르는 자리(선택의 국면)에 함께 둔다. 강요하지 않는다 — "약속 없이 간다"도
+/// 당당한 선택지다. 건 약속은 대시보드에 상시 노출되고, 이행하면 야구혼 +15%.
+private struct PledgeCard: View {
+    let careerID: String
+    let onChoose: (String?) -> Void
+
+    var body: some View {
+        BaseballCard(title: "이번 회차의 약속", tone: .milestone) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("하나를 걸면 회차의 끝에서 정산합니다. 이행하면 야구혼 +15%.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                ForEach(RunPledge.options(careerID: careerID)) { pledge in
+                    Button { onChoose(pledge.id) } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pledge.title).font(.subheadline.weight(.bold))
+                            Text(pledge.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(BaseballTheme.milestone.opacity(0.1), in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                                .stroke(BaseballTheme.milestone.opacity(0.6), lineWidth: 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hs.pledge.\(pledge.id)")
+                }
+                Button("약속 없이 간다") { onChoose(nil) }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("hs.pledge.skip")
+            }
+        }
     }
 }
