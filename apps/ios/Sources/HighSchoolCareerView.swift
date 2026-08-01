@@ -338,7 +338,13 @@ struct HighSchoolCareerView: View {
         case .draft:
             DraftCard(state: state, chronicle: career.chronicle, career: career, onResolve: career.resolveDraft)
         case .legacy:
-            LegacyCard(career: career, state: state)
+            // 도전 런은 대부분 미지명으로 끝나 여기로 온다 — 기억 확정(실계승 덮어쓰기)
+            // 대신 도전 마감으로 보낸다(5차 패널 P0).
+            if career.isChallengeRun {
+                ChallengeEndCard(state: state) { career.endChallengeRun() }
+            } else {
+                LegacyCard(career: career, state: state)
+            }
         case .completed:
             if career.isChallengeRun {
                 ChallengeEndCard(state: state) { career.endChallengeRun() }

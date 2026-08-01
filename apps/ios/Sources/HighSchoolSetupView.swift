@@ -116,10 +116,16 @@ struct HighSchoolSetupView: View {
     /// 이름을 비워 둔 채로 넘어가면 이 이름으로 시작한다.
     private var suggestedName: String { selectedPreset?.pitcher.name ?? "이름" }
 
+    /// 입력에서 숫자와 하이픈만 남긴다. 카드 각인("도전 12345-4")을 스크린샷에서
+    /// 그대로 옮겨 적어도 열려야 한다 — 접두어·공백에 파서가 까다로우면
+    /// 바이럴 경로가 무반응 버튼에서 끝난다(5차 패널 P1).
+    private var normalizedSeedInput: String {
+        seedInput.filter { $0.isNumber || $0 == "-" }
+    }
+
     /// "시드-회차" 토큰이면 도전 런이다. 카드의 각인과 같은 형식이다.
     private var parsedChallenge: (seed: String, lifeNumber: Int)? {
-        let trimmed = seedInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        let parts = trimmed.split(separator: "-")
+        let parts = normalizedSeedInput.split(separator: "-")
         guard parts.count == 2, UInt64(parts[0]) != nil,
               let life = Int(parts[1]), (1...999).contains(life) else { return nil }
         return (String(parts[0]), life)
@@ -128,9 +134,8 @@ struct HighSchoolSetupView: View {
     /// 시드 입력의 인라인 오류. 시작 버튼이 이 값으로 잠긴다 — 오타가 커널
     /// 오류 화면까지 가면 안 된다(4차 패널 P0).
     private var seedFieldError: String? {
-        let trimmed = seedInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        if UInt64(trimmed) != nil || parsedChallenge != nil { return nil }
+        guard !seedInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        if UInt64(normalizedSeedInput) != nil || parsedChallenge != nil { return nil }
         return "시드는 숫자, 도전은 \"시드-회차\" 형식입니다. 카드의 각인을 그대로 옮겨 주세요."
     }
 
@@ -560,6 +565,12 @@ struct HighSchoolSetupView: View {
 
     private var footer: some View {
         VStack(spacing: 8) {
+            if isLastStep, let error = seedFieldError {
+                Text("시드 입력을 확인해 주세요 — \(error)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.warning)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if isLastStep {
                 PrimaryButton(title: parsedChallenge != nil ? "도전 런 시작"
                               : isRebirth ? "다시 태어나기" : "고교 1학년 시작", identifier: "hs.start") {
@@ -573,10 +584,12 @@ struct HighSchoolSetupView: View {
                         karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue },
                         soulDomain: career.inheritance.soulPoints > 0 ? soulDomain : nil,
                         soulBoosts: Array(selectedBoosts).sorted { $0.rawValue < $1.rawValue },
-                        seedOverride: parsedChallenge?.seed ?? (seedInput.isEmpty ? nil : seedInput),
+                        seedOverride: parsedChallenge?.seed ?? (normalizedSeedInput.isEmpty ? nil : normalizedSeedInput),
                         challengeLifeNumber: parsedChallenge?.lifeNumber
                     )
                 }
+                .disabled(seedFieldError != nil)
+                .opacity(seedFieldError != nil ? 0.5 : 1)
             } else {
                 PrimaryButton(title: "다음", identifier: "hs.setup.next") { advance() }
             }

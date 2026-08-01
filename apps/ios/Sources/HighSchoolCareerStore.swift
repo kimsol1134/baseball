@@ -303,6 +303,7 @@ final class HighSchoolCareerStore {
                 AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
             }
             result = created
+            challengeCareerID = isChallenge ? created.snapshot.careerID : nil
             lastSummary = isChallenge
                 ? "도전 런 — 이 판의 결과는 기록과 계승에 남지 않습니다."
                 : carried.lifeNumber > 1
@@ -322,11 +323,17 @@ final class HighSchoolCareerStore {
         loadState = result == nil ? .needsSetup : .ready
     }
 
-    /// 지금 진행이 도전 런인가. 도전 런은 카드의 회차로 시작하므로 계승분의
-    /// 회차 번호와 어긋난다 — 별도 플래그 없이 데이터에서 판별된다(저장 호환 무비용).
+    /// 진행 중 도전 런의 careerID. nil이면 도전이 아니다.
+    ///
+    /// 처음에는 "스냅숏 회차 != 계승 회차"로 파생 판별했다 — confirmLegacy가 계승
+    /// 회차를 +1 올리는 순간 **모든 정상 회차**가 도전 런으로 오판돼 마지막 화면
+    /// (환생 스탬프·프로 진입)이 사라졌고, 회차가 우연히 같은 도전은 반대로 실계승을
+    /// 오염시켰다(5차 패널 P0 ×2). 명시 플래그는 옵셔널이라 옛 저장본은 nil = 비도전.
+    private(set) var challengeCareerID: String?
+
     var isChallengeRun: Bool {
-        guard let result else { return false }
-        return result.snapshot.lifeNumber != inheritance.lifeNumber
+        guard let result, let challengeCareerID else { return false }
+        return result.snapshot.careerID == challengeCareerID
     }
 
     /// 도전 런을 닫는다. 아카이브·계승·야구혼 어디에도 반영하지 않는다.
@@ -335,11 +342,13 @@ final class HighSchoolCareerStore {
         pitchSession = nil
         tutorialSession = nil
         pendingGains = []
+        challengeCareerID = nil
         loadState = .needsSetup
         save()
     }
 
     func deleteCareer() {
+        challengeCareerID = nil
         sync.clear()
         result = nil
         pitchSession = nil
@@ -582,6 +591,12 @@ final class HighSchoolCareerStore {
 
     /// 기억 카드를 확정하고 다음 회차로 넘길 계승분을 만든다.
     func confirmLegacy() {
+        // 도전 런은 여기로 오면 안 되지만(화면이 분기한다), 방어선을 겹친다 —
+        // 이 함수가 실계승·아카이브를 덮는 유일한 문이다(5차 패널 P0).
+        guard !isChallengeRun else {
+            endChallengeRun()
+            return
+        }
         guard let current = result else { return }
         // 코어는 정확히 memorySlots장을 요구한다. 모자라면 조용히 아무것도 하지 않는다.
         guard selectedMemories.count == current.snapshot.memorySlots else { return }
@@ -809,7 +824,7 @@ final class HighSchoolCareerStore {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
         savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, responseTally: responseTally, chapterGains: chapterGains.isEmpty ? nil : chapterGains, chapterTrainingCount: chapterTrainingCount == 0 ? nil : chapterTrainingCount, gameResume: gameResume, revision: savedRevision)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, responseTally: responseTally, chapterGains: chapterGains.isEmpty ? nil : chapterGains, chapterTrainingCount: chapterTrainingCount == 0 ? nil : chapterTrainingCount, gameResume: gameResume, challengeCareerID: challengeCareerID, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -847,6 +862,8 @@ final class HighSchoolCareerStore {
         var chapterTrainingCount: Int? = nil
         /// 진행 중 등판의 타석 경계 스냅샷. 없는 옛 저장본은 nil이다.
         var gameResume: PitchSession.ResumeState? = nil
+        /// 진행 중 도전 런의 careerID. 없는 옛 저장본은 nil = 비도전이다.
+        var challengeCareerID: String? = nil
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
         var revision: UInt64?
 
@@ -874,6 +891,7 @@ final class HighSchoolCareerStore {
         responseTally = record.responseTally ?? ResponseTally()
         chapterGains = record.chapterGains ?? [:]
         chapterTrainingCount = record.chapterTrainingCount ?? 0
+        challengeCareerID = record.challengeCareerID
         savedRevision = record.effectiveRevision
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return false }
@@ -956,8 +974,11 @@ final class HighSchoolCareerStore {
             // relationship.category는 신뢰 회계용 채널이라 집·취재·팬 장면도 coach/catcher로
             // 접힌다 — 그대로 화자를 만들면 없는 자리의 감독이 "웃었다"(4차 패널 P1).
             // 원본 장면의 카테고리(방금 소비된 이벤트)가 핵심 3인일 때만 반응을 붙인다.
-            let originalCategory = before.currentRelationshipEvent?.category
-            guard originalCategory == nil || ["coach", "catcher", "rival"].contains(originalCategory!) else {
+            // 화자·이름은 **원본 카테고리**에서 뽑는다. relationship.category는 신뢰
+            // 회계 채널이라 rival 장면이 coach로 접히기도 한다(5차 패널 P2).
+            // 원본을 모르는 경로(nil)에는 반응을 붙이지 않는다 — 지어낸 화자보다 침묵.
+            guard let originalCategory = before.currentRelationshipEvent?.category,
+                  ["coach", "catcher", "rival"].contains(originalCategory) else {
                 return relationship.feedback
             }
             // 코어의 결과 문구 앞에 "그 사람이 어떻게 반응했는지"를 한 줄 붙인다.
@@ -965,17 +986,15 @@ final class HighSchoolCareerStore {
             // 예전에는 응답을 누르면 결과 요약 한 줄로 끝났다. 포수가 어떻게 반응했는지가
             // 없으니 관계가 숫자(팀의 믿음 60)로만 존재했다(품질 평가 §4.3).
             let speaker: RelationshipVoiceCatalog.Speaker
-            switch relationship.category {
+            switch originalCategory {
             case "coach": speaker = .coach
             case "catcher": speaker = .catcher
-            case "rival": speaker = .rival
-            default: speaker = .named("상대")
+            default: speaker = .rival
             }
-            let speakerName: String? = switch relationship.category {
+            let speakerName: String? = switch originalCategory {
             case "coach": after.school?.coachName
             case "catcher": after.school?.catcherName
-            case "rival": after.rival.name
-            default: nil
+            default: after.rival.name
             }
             let aftermath = RelationshipVoiceCatalog.aftermath(
                 speaker: speaker,

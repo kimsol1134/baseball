@@ -28,6 +28,35 @@ final class RetentionTests: XCTestCase {
         }
     }
 
+    /// 도전 런 격리 — 회차가 **같아도** 도전으로 판별되고(1회차 카드→1회차 유저가
+    /// 최빈 공유 경로), confirmLegacy가 계승·아카이브를 건드리지 못한다(5차 패널 P0).
+    @MainActor
+    func testChallengeRunIsIsolatedFromLegacyAndArchive() throws {
+        let store = HighSchoolCareerStore()
+        store.deleteCareer()
+        store.startCareer(preset: PitcherPresetCatalog.all[0], playerName: "도전자",
+                          seedOverride: "424242", challengeLifeNumber: 1)
+        guard store.result != nil else { throw XCTSkip("커리어 시작 실패 — 환경 문제") }
+        XCTAssertTrue(store.isChallengeRun, "회차가 같아도 도전 런으로 판별돼야 합니다")
+        let inheritanceBefore = store.inheritance
+        let archiveBefore = store.archive
+        store.confirmLegacy()
+        XCTAssertNil(store.result, "도전 런의 confirmLegacy는 즉시 닫혀야 합니다")
+        XCTAssertEqual(store.inheritance, inheritanceBefore, "도전 런이 계승을 덮었습니다")
+        XCTAssertEqual(store.archive, archiveBefore, "도전 런이 아카이브를 덮었습니다")
+        XCTAssertFalse(store.isChallengeRun, "닫힌 뒤에도 플래그가 남아 있습니다")
+    }
+
+    /// 정상 회차는 어떤 시점에도 도전 런으로 오판되면 안 된다 — 파생 판별의 재발 방지.
+    @MainActor
+    func testNormalRunNeverBecomesChallengeRun() throws {
+        let store = HighSchoolCareerStore()
+        store.deleteCareer()
+        store.startCareer(preset: PitcherPresetCatalog.all[0], playerName: "일반 회차")
+        guard store.result != nil else { throw XCTSkip("커리어 시작 실패 — 환경 문제") }
+        XCTAssertFalse(store.isChallengeRun)
+    }
+
     /// 분리 회계: 구매 차감이 평생 총량(스며듦 기준)을 깎으면 상점이 벌금이 된다.
     func testSoulTotalSurvivesSpendingFromLegacyBalance() {
         // 옛 저장본(soulTotalEarned nil) — 총량은 잔액으로 근사된다.
