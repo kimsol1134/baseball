@@ -959,7 +959,10 @@ final class HighSchoolCareerStore {
             feedbackCue = cue ?? (pendingGains.isEmpty ? .neutral : .growth)
             feedbackTrigger += 1
             loadState = .ready
-            AchievementStore.shared.record(AchievementRules.fromHighSchool(updated.snapshot))
+            // 도전 런은 업적도 쌓지 않는다 — "기록에 남지 않습니다"는 업적 포함이다.
+            if !isChallengeRun {
+                AchievementStore.shared.record(AchievementRules.fromHighSchool(updated.snapshot))
+            }
             save()
         } catch {
             loadState = .failed(error.localizedDescription)
