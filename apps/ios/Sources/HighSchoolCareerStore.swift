@@ -25,6 +25,13 @@ final class HighSchoolCareerStore {
         /// 야구혼으로 이미 접은 프로 커리어. 같은 커리어를 두 번 계산하지 않기 위한 표식이다.
         /// 옵셔널이라 이 필드가 없는 옛 저장본도 그대로 열린다.
         var creditedProCareerID: String?
+        /// 평생 획득한 야구혼 총량. 스며듦 곡선은 이 값이 정하고, soulPoints(잔액)는
+        /// 상점의 화폐다 — 구매가 다음 회차를 약하게 만들면 상점은 함정이다.
+        /// 옵셔널: 없는 옛 저장본은 잔액을 총량으로 본다(쓴 만큼은 복구 불가, 최선의 근사).
+        var soulTotalEarned: Int?
+
+        /// 스며듦 계산에 쓰는 총량. 잔액보다 작아질 수는 없다.
+        var soulTotal: Int { max(soulTotalEarned ?? soulPoints, soulPoints) }
 
         static let firstLife = Inheritance(lifeNumber: 1, memories: [], soulPoints: 0, karmas: [])
     }
@@ -223,7 +230,8 @@ final class HighSchoolCareerStore {
                     identity: identity,
                     difficulty: difficulty,
                     karmas: karmas,
-                    soulBoosts: purchased.isEmpty ? nil : purchased
+                    soulBoosts: purchased.isEmpty ? nil : purchased,
+                    inheritedSoulTotal: carried.soulTotal
                 )
             )
             inheritance = carried
@@ -275,6 +283,19 @@ final class HighSchoolCareerStore {
     func beginTutorialPitch() {
         guard let result, result.snapshot.phase == .prologue, tutorialSession == nil else { return }
         let session = PitchSession(scenario: .tutorial(state: result.snapshot), seed: result.nextSeed)
+        session.start()
+        tutorialSession = session
+    }
+
+    /// 불펜을 다시 연다. 시드를 바꿔 같은 타석의 반복 암기가 안 되게 한다.
+    private var bullpenRetries = 0
+    func retryTutorialPitch() {
+        guard let result, result.snapshot.phase == .prologue else { return }
+        bullpenRetries += 1
+        let session = PitchSession(
+            scenario: .tutorial(state: result.snapshot),
+            seed: "\(result.nextSeed)-bullpen-\(bullpenRetries)"
+        )
         session.start()
         tutorialSession = session
     }
@@ -498,7 +519,7 @@ final class HighSchoolCareerStore {
             pledgeAchieved: pledgeAchieved,
             rivalLine: rivalLedger.summaryLine.map { "숙적 \(current.snapshot.rival.name) — \($0)" },
             soulBalance: inheritance.soulPoints,
-            soulAutoApplied: HighSchoolCareerEngine.appliedInheritance(for: inheritance.soulPoints)
+            soulAutoApplied: HighSchoolCareerEngine.appliedInheritance(for: inheritance.soulTotal)
         )
         // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
         archive.removeAll { $0.lifeNumber == closed.lifeNumber }
@@ -575,12 +596,14 @@ final class HighSchoolCareerStore {
         // 약속 이행 보너스는 배율에 가산한다(‰). 이중 가산 금지 원칙은 그대로 —
         // 1000(×1.0)은 legacyRewardPermille가 이미 품고 있다.
         let rewarded = base * (max(1_000, state.legacyRewardPermille) + pledgeBonusPermille) / 1_000
-        return Inheritance(
+        var next = Inheritance(
             lifeNumber: previous.lifeNumber + 1,
             memories: memories,
             soulPoints: previous.soulPoints + rewarded,
             karmas: previous.karmas
         )
+        next.soulTotalEarned = previous.soulTotal + rewarded
+        return next
     }
 
     // MARK: - 프로 커리어의 계승
@@ -594,7 +617,9 @@ final class HighSchoolCareerStore {
     func recordProLegacy(_ state: ProCareerSnapshot?) {
         guard let state, inheritance.creditedProCareerID != state.proCareerID else { return }
         inheritance.creditedProCareerID = state.proCareerID
-        inheritance.soulPoints += Self.proSoulBonus(for: state)
+        let bonus = Self.proSoulBonus(for: state)
+        inheritance.soulTotalEarned = inheritance.soulTotal + bonus
+        inheritance.soulPoints += bonus
         save()
     }
 

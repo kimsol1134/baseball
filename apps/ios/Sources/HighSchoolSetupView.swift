@@ -233,8 +233,8 @@ struct HighSchoolSetupView: View {
             BaseballCard(title: "가져온 것", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("야구혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
-                    // 정직한 계승 안내 — 자동 스며듦은 상한이 있고, 나머지는 상점의 돈이다.
-                    Text("자동 스며듦 +\(HighSchoolCareerEngine.appliedInheritance(for: remainingSoul)) · 상점 사용 가능 \(remainingSoul)혼")
+                    // 정직한 계승 안내 — 스며듦은 총량이 정하고, 잔액은 상점의 돈이다.
+                    Text("자동 스며듦 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.soulTotal)) · 상점 사용 가능 \(remainingSoul)혼")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                     if career.inheritance.memories.isEmpty {
@@ -264,19 +264,10 @@ struct HighSchoolSetupView: View {
     private var soulShopCard: some View {
         BaseballCard(title: "영혼 상점", tone: .raised) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("야구혼을 소비해 이번 회차의 규칙을 삽니다. 남는 잔액은 자동으로 스며듭니다.")
+                Text("야구혼을 소비해 이번 회차의 규칙을 삽니다. 스며듦은 평생 총량이 정합니다 — 구매해도 줄지 않습니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                // 숨은 비용 명시 — 잔액이 스며듦 상한을 정하므로 구매는 스며듦도 깎는다.
-                // 이걸 안 적으면 상점이 새 종류의 거짓 영수증이 된다.
-                if !selectedBoosts.isEmpty {
-                    let before = HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.soulPoints)
-                    let after = HighSchoolCareerEngine.appliedInheritance(for: remainingSoul)
-                    Text("이 구매로 자동 스며듦 +\(before) → +\(after)")
-                        .font(.caption.weight(.bold).monospacedDigit())
-                        .foregroundStyle(after < before ? BaseballTheme.warning : BaseballTheme.textSecondary)
-                }
                 ForEach(SoulBoostID.allCases, id: \.self) { boost in
                     let selected = selectedBoosts.contains(boost)
                     let affordable = selected || boost.cost <= remainingSoul
@@ -288,8 +279,9 @@ struct HighSchoolSetupView: View {
                             Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(selected ? BaseballTheme.milestone : affordable ? BaseballTheme.textSecondary : BaseballTheme.border)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(Self.boostCopy(boost).title).font(.subheadline.weight(.semibold))
-                                Text(Self.boostCopy(boost).detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                                let copy = Self.boostCopy(boost, baseSlots: selectedKarmas.contains(.erasedMemory) ? 2 : 3)
+                                Text(copy.title).font(.subheadline.weight(.semibold))
+                                Text(copy.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                             }
                             Spacer()
                             Text("\(boost.cost)혼")
@@ -314,10 +306,12 @@ struct HighSchoolSetupView: View {
         }
     }
 
-    static func boostCopy(_ boost: SoulBoostID) -> (title: String, detail: String) {
+    /// baseSlots: 카르마(기억 소거)로 기본 슬롯이 2장인 회차도 있다 — 고정 "3장에서
+    /// 4장" 문구는 그 회차에 거짓말이 된다(2차 패널 P1).
+    static func boostCopy(_ boost: SoulBoostID, baseSlots: Int = 3) -> (title: String, detail: String) {
         switch boost {
         case .talentBreak: ("재능 돌파", "가장 낮은 재능 등급이 한 단계 열린 채 시작합니다.")
-        case .extraMemory: ("기억 확장", "이번 회차의 기억 슬롯이 3장에서 4장이 됩니다.")
+        case .extraMemory: ("기억 확장", "이번 회차의 기억 슬롯이 \(baseSlots)장에서 \(baseSlots + 1)장이 됩니다.")
         case .headStart: ("조기 성장", "자동 스며듦 상한 너머로 +6이 추가로 스며듭니다.")
         case .trainingRhythm: ("성장 리듬", "이번 회차 훈련 대성공 확률이 16% → 26%가 됩니다.")
         }

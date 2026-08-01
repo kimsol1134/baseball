@@ -159,6 +159,8 @@ struct PitchView: View {
     /// 연습 타석(프롤로그 불펜). 기록에 안 남는 판에 '각성의 전조 +2' 같은
     /// 정산을 그리면 첫 5분에 거짓 영수증을 발행하는 셈이다.
     var isPractice = false
+    /// 연습 타석 다시 던지기. 배우는 자리는 한 번에 끝내라고 강요하지 않는다.
+    var onRetry: (() -> Void)? = nil
 
     @State private var confirmingAbort = false
 
@@ -217,6 +219,9 @@ struct PitchView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                        if isPractice, session.pitches < 6, session.stage == .ready {
+                            bullpenCoachCard
+                        }
                         matchupCard
                         stage
                     }
@@ -282,6 +287,25 @@ struct PitchView: View {
     }
 
     // MARK: - 구성
+
+    /// 첫 불펜 3구 스크립트 — 공마다 코치가 할 일 하나를 짚는다.
+    /// 첫 화면에서 구종·존·사인·릴리스를 한꺼번에 만나면 아무것도 안 배운다.
+    private var bullpenCoachCard: some View {
+        let line: String
+        if session.pitches == 0 {
+            line = "① 먼저 사인대로 — 포수가 추천한 구종과 코스를 그대로 던져 보자. 미트만 보고."
+        } else if session.context.strikes >= 2 {
+            line = "③ 결정구 — 상대가 약한 구종으로 유인하자. 존을 살짝 벗어나도 방망이가 나온다."
+        } else {
+            line = "② 같은 곳에 두 번은 없다 — 구종이나 코스를 바꿔 타자의 눈을 흔들자."
+        }
+        return BaseballCard(title: "코치", tone: .raised) {
+            Text(line)
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityIdentifier("pitch.coach")
+    }
 
     private var matchupCard: some View {
         BaseballCard(title: "타석", tone: .raised) {
@@ -445,6 +469,14 @@ struct PitchView: View {
                             .foregroundStyle(BaseballTheme.textSecondary)
                     }
                 }
+                if let onRetry {
+                    Button("한 번 더 던지기") { onRetry() }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.action)
+                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        .background(BaseballTheme.actionSoft, in: RoundedRectangle(cornerRadius: 12))
+                        .accessibilityIdentifier("pitch.retry")
+                }
             } else {
                 InningSettlementCard(session: session)
             }
@@ -536,6 +568,16 @@ struct PitchView: View {
                     },
                     onMeterEdge: { audio.play(.uiSelect) }
                 )
+                // 미터 제스처가 버거운 손을 위한 출구가 설정 화면에만 있으면
+                // 정작 미터 앞에서 막힌 사람이 못 찾는다 — 그 자리에서 켠다.
+                Toggle(isOn: $autoRelease) {
+                    Text("자동 릴리스 — 탭 한 번으로 중립 투구")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                }
+                .controlSize(.mini)
+                .tint(BaseballTheme.action)
+                .accessibilityIdentifier("pitch.autoRelease")
             case .betweenBatters:
                 PrimaryPill(title: "다음 타자", identifier: "pitch.nextBatter") {
                     session.advanceToNextBatter()

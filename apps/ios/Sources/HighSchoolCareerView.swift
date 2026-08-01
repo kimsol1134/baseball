@@ -122,7 +122,8 @@ struct HighSchoolCareerView: View {
     @ViewBuilder private var content: some View {
         if let state = career.state {
             if state.phase == .prologue, let session = career.tutorialSession {
-                PitchView(session: session, onFinish: career.finishTutorialPitch, isPractice: true)
+                PitchView(session: session, onFinish: career.finishTutorialPitch, isPractice: true,
+                          onRetry: career.retryTutorialPitch)
             } else if state.phase == .importantGame, let session = career.pitchSession {
                 PitchView(session: session, onFinish: career.finishImportantGame,
                           onAbort: career.abandonImportantGame)
@@ -288,7 +289,8 @@ struct HighSchoolCareerView: View {
             AwakeningCard(options: state.awakeningOptions, sparks: state.awakeningSparks,
                           onChoose: career.chooseAwakening)
         case .chapterReview:
-            ChapterReviewCard(state: state, onContinue: career.advanceChapter)
+            ChapterReviewCard(state: state, gains: career.chapterGains,
+                              trainingCount: career.chapterTrainingCount, onContinue: career.advanceChapter)
         case .draft:
             DraftCard(state: state, chronicle: career.chronicle, career: career, onResolve: career.resolveDraft)
         case .legacy:
@@ -954,17 +956,56 @@ private struct AwakeningCard: View {
 
 private struct ChapterReviewCard: View {
     let state: HighSchoolCareerSnapshot
+    /// 이번 챕터에 오른 능력치(라벨→증가폭). 첫 세션의 마지막 화면이 요약문 한 줄이면
+    /// 40분의 훈련이 감정 없이 접힌다 — 여기가 작은 정산이어야 한다(2차 패널 P1).
+    let gains: [String: Int]
+    let trainingCount: Int
     let onContinue: () -> Void
+
+    private var verdict: String {
+        let p = state.performance
+        if p.importantGamesCompleted == 0 { return "마운드 밖의 챕터였습니다. 다음 무대는 공으로 말할 차례입니다." }
+        if p.walks == 0 && p.strikeouts >= 2 { return "볼넷 없는 챕터 — 스카우트 수첩에 밑줄이 그어졌습니다." }
+        if p.strikeouts > p.walks * 2 { return "삼진이 볼넷을 압도했습니다. 공이 소문을 내기 시작합니다." }
+        return "숫자보다 과정이 남은 챕터입니다. 폼은 거짓말하지 않습니다."
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            BaseballCard(title: "\(state.chapter.title) 마무리", tone: .raised) {
+            BaseballCard(title: "\(state.chapter.title) 마무리", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(state.chapter.theme).font(.subheadline)
+                    Text(verdict)
+                        .font(.subheadline.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
                     Divider()
                     Text("중요 경기 \(state.performance.importantGamesCompleted)회 · \(state.performance.strikeouts)탈삼진 · \(state.performance.walks)볼넷")
                         .font(.footnote.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
+                }
+            }
+            // 성장 정산 — 훈련이 실제로 몸에 남긴 것. 없으면 없다고 적는다.
+            BaseballCard(title: "이번 챕터의 성장", tone: .raised) {
+                if gains.isEmpty {
+                    Text(trainingCount == 0
+                         ? "훈련 없이 지나간 챕터입니다."
+                         : "훈련 \(trainingCount)회 — 아직 숫자로 드러나지 않은 성장입니다.")
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                } else {
+                    VStack(alignment: .leading, spacing: 5) {
+                        ForEach(gains.sorted { $0.value > $1.value }, id: \.key) { label, delta in
+                            HStack {
+                                Text(label).font(.subheadline)
+                                Spacer()
+                                Text("+\(delta)")
+                                    .font(.subheadline.weight(.heavy).monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.milestone)
+                            }
+                        }
+                        Text("훈련 \(trainingCount)회의 결과입니다.")
+                            .font(.caption2)
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                    }
                 }
             }
             BaseballCard(title: "능력") {
@@ -974,6 +1015,11 @@ private struct ChapterReviewCard: View {
                     AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
                     AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
                 }
+            }
+            if !state.rival.name.isEmpty {
+                Text("다음 챕터 — 상대는 더 강해집니다. \(state.rival.name)도 이 챕터를 지켜봤습니다.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
             }
             PrimaryButton(title: "다음 챕터로", identifier: "hs.chapter.continue", action: onContinue)
         }

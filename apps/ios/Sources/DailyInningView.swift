@@ -1,5 +1,6 @@
 import SwiftUI
 import SimulationCore
+import UserNotifications
 
 /// 오늘의 이닝 — 하루 한 판, 전국이 같은 타순을 상대한다.
 ///
@@ -11,6 +12,9 @@ struct DailyInningView: View {
 
     @State private var session: PitchSession?
     @State private var finished = false
+    @State private var showingBoard = false
+    /// 저녁 알림 옵트인. 켜는 순간 권한을 묻는다 — 첫 실행에서 묻는 것보다 늦고 정직하다.
+    @AppStorage("baseball.daily.reminder") private var reminderOn = false
 
     private let dateKey = PitchScenario.todayKey()
 
@@ -34,6 +38,12 @@ struct DailyInningView: View {
         .fullScreenCover(isPresented: $finished) {
             settlement
         }
+        .sheet(isPresented: $showingBoard) {
+            GameCenterBoardView(leaderboardID: Leaderboard.dailyInning.rawValue) {
+                showingBoard = false
+            }
+            .ignoresSafeArea()
+        }
     }
 
     private var intro: some View {
@@ -55,6 +65,27 @@ struct DailyInningView: View {
                         .font(BaseballType.heroNumeral)
                         .foregroundStyle(BaseballTheme.milestone)
                 }
+            }
+            if AchievementStore.shared.isGameCenterAuthenticated {
+                Button {
+                    showingBoard = true
+                } label: {
+                    Label("오늘 전국 순위 보기", systemImage: "trophy")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                }
+                .accessibilityIdentifier("daily.board")
+            }
+            Toggle(isOn: $reminderOn) {
+                Text("저녁마다 새 판 알림 (19:30)")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+            }
+            .tint(BaseballTheme.action)
+            .onChange(of: reminderOn) { _, on in
+                if on { DailyReminder.enable { granted in if !granted { reminderOn = false } } }
+                else { DailyReminder.disable() }
             }
             Spacer(minLength: 0)
             PrimaryButton(title: "마운드에 오르기", identifier: "daily.start") {
@@ -85,9 +116,20 @@ struct DailyInningView: View {
                 Text("\(session.strikeouts)탈삼진 · \(session.outsRecorded)아웃 · \(session.walks)볼넷 · \(session.runsAllowed)실점")
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textSecondary)
-                Text("순위는 Game Center에서 — 내일 자정에 새 판이 열립니다.")
+                Text("내일 자정에 새 판이 열립니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textTertiary)
+                if AchievementStore.shared.isGameCenterAuthenticated {
+                    Button {
+                        showingBoard = true
+                    } label: {
+                        Label("오늘 전국 순위 보기", systemImage: "trophy")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                    }
+                    .accessibilityIdentifier("daily.board.settlement")
+                }
             }
             Spacer(minLength: 0)
             PrimaryButton(title: "닫기", identifier: "daily.close") {
@@ -112,5 +154,33 @@ struct DailyInningView: View {
         AchievementStore.shared.submit([.dailyInning: best])
         GameAnalytics.log(.gameFinished, ["mode": "daily", "score": score])
         finished = true
+    }
+}
+
+
+/// 오늘의 이닝 저녁 알림 — 옵트인·하루 한 번·끄면 즉시 사라진다.
+enum DailyReminder {
+    static let requestID = "baseball.daily.reminder"
+
+    static func enable(completion: @escaping @MainActor (Bool) -> Void) {
+        Task { @MainActor in
+            let center = UNUserNotificationCenter.current()
+            let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
+            guard granted else { completion(false); return }
+            let content = UNMutableNotificationContent()
+            content.title = "오늘의 이닝이 열려 있습니다"
+            content.body = "전국이 같은 타순을 상대합니다 — 자정 전에 한 이닝."
+            content.sound = .default
+            var components = DateComponents()
+            components.hour = 19
+            components.minute = 30
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+            try? await center.add(UNNotificationRequest(identifier: requestID, content: content, trigger: trigger))
+            completion(true)
+        }
+    }
+
+    static func disable() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID])
     }
 }

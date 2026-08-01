@@ -748,6 +748,9 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
     public let karmas: [KarmaID]
     /// 영혼 상점에서 산 부스트. 잔액 검증은 앱(지갑 주인)이 하고 커널은 적용만 한다.
     public let soulBoosts: [SoulBoostID]?
+    /// 누적 야구혼 총량(평생 획득분). 스며듦은 이 값이 정한다 — 상점에서 쓴 잔액이
+    /// 스며듦을 깎으면 소비처가 벌금이 된다. nil이면 잔액을 총량으로 본다(옛 저장본).
+    public let inheritedSoulTotal: Int?
 
     public init(
         seed: String,
@@ -760,7 +763,8 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         identity: PlayerIdentitySnapshot = .defaultPitcher,
         difficulty: CareerDifficultySnapshot = .standard,
         karmas: [KarmaID] = [],
-        soulBoosts: [SoulBoostID]? = nil
+        soulBoosts: [SoulBoostID]? = nil,
+        inheritedSoulTotal: Int? = nil
     ) {
         self.seed = seed
         self.presetID = presetID
@@ -773,6 +777,7 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         self.difficulty = difficulty
         self.karmas = karmas
         self.soulBoosts = soulBoosts
+        self.inheritedSoulTotal = inheritedSoulTotal
     }
 }
 
@@ -1138,7 +1143,7 @@ public struct HighSchoolCareerEngine: Sendable {
         // 새겨지고, 표시는 화면이 careerID로 재계산한다.
         let wind = CareerWind.wind(careerID: careerID)
         var pitcher = renamed(params.identity.name, pitcher: applyCreation(params.creationAllocation, to: preset.pitcher), hand: params.identity.throwingHand)
-        pitcher = applyInheritance(params.inheritedSoulPoints, domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: talent,
+        pitcher = applyInheritance(max(params.inheritedSoulTotal ?? params.inheritedSoulPoints, params.inheritedSoulPoints), domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: talent,
             bonusPoints: boosts.contains(.headStart) ? 6 : 0, to: pitcher)
         pitcher = applyKarmas(params.karmas, to: pitcher)
         let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille } + wind.rewardBonusPermille

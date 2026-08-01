@@ -32,6 +32,7 @@
 		539AC44A52E0B08CD1390416 /* DeliveryControlTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 902334DCFD6C688F66710F0E /* DeliveryControlTests.swift */; };
 		59B324B22D4C3D696852895B /* GameLineFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2837CAF42ACF84B7B70646F4 /* GameLineFormatTests.swift */; };
 		5FEAD267314385E75FE60A57 /* PresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A43585B38B15CFA1150CE37 /* PresentationTests.swift */; };
+		61A6CBB5D16E4133B3BB21C9 /* GameCenterBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3543EFDD40B925E03F19E129 /* GameCenterBoardView.swift */; };
 		6407DCFE4D37D5E4AE6F19CF /* RecordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95C0C193AE57D564D00ED12 /* RecordView.swift */; };
 		6A6106306E1AF28A5FCFE1FE /* ProRivalBatter+Stats.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3FA3A8BA815F3B87537D27F /* ProRivalBatter+Stats.swift */; };
 		74CC5DD9D7ECD32F61707E5D /* GameAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B412E9D5634221ADBA8ED35 /* GameAudio.swift */; };
@@ -107,6 +108,7 @@
 		2E520447AA0844B41D0C8F96 /* Achievements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievements.swift; sourceTree = "<group>"; };
 		2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseballApp.swift; sourceTree = "<group>"; };
 		30658D1383A8EC0D3BF0BA21 /* BaseballIOSUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BaseballIOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3543EFDD40B925E03F19E129 /* GameCenterBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameCenterBoardView.swift; sourceTree = "<group>"; };
 		356AC8C39D52A759CC575D92 /* AppShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShell.swift; sourceTree = "<group>"; };
 		3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAudioCueMapping.swift; sourceTree = "<group>"; };
 		3B4D291F1E68F84823F3AD13 /* RivalAdaptationSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RivalAdaptationSessionTests.swift; sourceTree = "<group>"; };
@@ -232,6 +234,7 @@
 				EC349CC26A5D3281BE20CAE6 /* GameAnalytics.swift */,
 				8B412E9D5634221ADBA8ED35 /* GameAudio.swift */,
 				3B045C1EBD79FC9F35FAFE40 /* GameAudioCueMapping.swift */,
+				3543EFDD40B925E03F19E129 /* GameCenterBoardView.swift */,
 				D6400E3C7B6732A0F7E8EE94 /* GameLineFormat.swift */,
 				077E4203F2191CBF2178BCCE /* GoogleService-Info.plist */,
 				E42DDAB867B43BEE748D08DB /* GrowthCelebrationView.swift */,
@@ -471,6 +474,7 @@
 				0BEB448E80D1A7A1BED0B560 /* GameAnalytics.swift in Sources */,
 				74CC5DD9D7ECD32F61707E5D /* GameAudio.swift in Sources */,
 				081602F5FA74589497AF94AC /* GameAudioCueMapping.swift in Sources */,
+				61A6CBB5D16E4133B3BB21C9 /* GameCenterBoardView.swift in Sources */,
 				A8800D4D45BE21DE1315474E /* GameLineFormat.swift in Sources */,
 				F5D020DF3A1B4E0A3C2DB41E /* GrowthCelebrationView.swift in Sources */,
 				13C737FE1665F41707DAA29E /* Haptics.swift in Sources */,
@@ -704,7 +708,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -747,7 +751,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

@@ -90,7 +90,11 @@ struct RunRecapView: View {
                     .font(.footnote.weight(.semibold).monospacedDigit())
                     .foregroundStyle(BaseballTheme.textPrimary)
                     .opacity(soulDone ? 1 : 0)
-                Text("남는 야구혼은 환생할 때 영혼 상점에서 씁니다 — 재능 돌파·기억 확장·성장 리듬.")
+                // 조건부 문구 — 최저가(90혼)에 못 미치는 잔액에 상점을 약속하면
+                // 다음 화면에서 살 수 없는 상점이 열린다(2차 패널 P1).
+                Text(recap.soulBalance >= 90
+                     ? "잔액은 환생할 때 영혼 상점에서 씁니다 — 재능 돌파·기억 확장·성장 리듬."
+                     : "야구혼이 더 쌓이면 영혼 상점이 열립니다 — 다음 회차의 잔액으로 이어집니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .opacity(soulDone ? 1 : 0)
