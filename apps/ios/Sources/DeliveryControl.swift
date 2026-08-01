@@ -38,6 +38,11 @@ struct DeliveryControl: View {
     @State private var sway: CGSize = .zero
     @State private var wasInSweetSpot = false
     @State private var driver = MeterDriver()
+    /// 누르기 시작한 시각. 이보다 짧은 릴리스는 투구가 아니라 오탭이다.
+    @State private var pressStartedAt: CFTimeInterval = 0
+    /// 오탭 직후 안내를 띄운다. 다음 와인드업에서 지운다.
+    @State private var showHoldHint = false
+    private static let minimumHoldSeconds: CFTimeInterval = 0.14
 
     /// 미터가 한 번 왕복하는 데 걸리는 시간(초). 피로하면 짧아져 조준 창이 좁아진다.
     private var sweepSeconds: Double {
@@ -132,9 +137,9 @@ struct DeliveryControl: View {
                 Text(onTarget && inSweetSpot ? "지금" : onTarget ? "타이밍을 기다리세요" : "끌어서 맞추세요")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(onTarget && inSweetSpot ? BaseballTheme.action : BaseballTheme.textSecondary)
-                    .offset(y: 36)
+                    .offset(y: padHeight * 0.39)
             } else {
-                Text("길게 눌러 와인드업")
+                Text(showHoldHint ? "너무 짧아요 — 길게 눌러 미터를 채우세요" : "길게 눌러 와인드업")
                     .font(.headline)
                     .foregroundStyle(BaseballTheme.actionInk)
             }
@@ -170,6 +175,8 @@ struct DeliveryControl: View {
 
     private func beginWindUp() {
         isPressing = true
+        pressStartedAt = CACurrentMediaTime()
+        showHoldHint = false
         meter = 0
         drag = .zero
         sway = .zero
@@ -199,6 +206,15 @@ struct DeliveryControl: View {
         guard isPressing else { return }
         isPressing = false
         driver.stop()
+        // 오탭 게이트 — 최소 홀드 미만이면 투구를 취소한다. 첫 불펜의 가장 흔한
+        // 실수(짧은 탭)가 곧바로 최악의 공으로 처벌되면 안 된다(4차 패널 P1).
+        if CACurrentMediaTime() - pressStartedAt < Self.minimumHoldSeconds {
+            Haptics.shared.stopWindUp()
+            drag = .zero
+            sway = .zero
+            showHoldHint = true
+            return
+        }
         let delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius)
         Haptics.shared.released(
             quality: Double(delivery.releaseAccuracy + delivery.aimAccuracy) / 2_000

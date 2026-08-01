@@ -54,7 +54,29 @@ struct HighSchoolCareerView: View {
                 } description: {
                     Text(message)
                 } actions: {
-                    PrimaryPill(title: "새로 시작", identifier: "hs.restart") { career.deleteCareer() }
+                    // 비파괴 출구가 먼저다. 시드 오타 하나로 도달하는 화면의 유일한
+                    // 버튼이 "전 회차 삭제"면 그건 함정이다(4차 패널 P0).
+                    PrimaryPill(title: "설정으로 돌아가기", identifier: "hs.retry") {
+                        career.returnToSetup()
+                    }
+                    Button("모든 기록을 지우고 새로 시작", role: .destructive) {
+                        confirmingReset = true
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .accessibilityIdentifier("hs.restart")
+                    .confirmationDialog(
+                        "모든 회차 기록을 지울까요?",
+                        isPresented: $confirmingReset,
+                        titleVisibility: .visible
+                    ) {
+                        Button("야구혼·기억·아카이브를 모두 지운다", role: .destructive) {
+                            career.deleteCareer()
+                        }
+                        // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
+                        Button("돌아간다") { confirmingReset = false }
+                    } message: {
+                        Text("환생으로 쌓은 모든 것이 사라집니다. 되돌릴 수 없습니다.")
+                    }
                 }
             case .ready:
                 content
@@ -125,11 +147,14 @@ struct HighSchoolCareerView: View {
 
     /// 성장 연출 자동 스크롤 앵커.
     private static let celebrationAnchor = "career.celebration"
+    /// 전체 삭제 확인. 파괴적 출구는 반드시 한 번 더 묻는다.
+    @State private var confirmingReset = false
 
     @ViewBuilder private var content: some View {
         if let state = career.state {
             if state.phase == .prologue, let session = career.tutorialSession {
-                PitchView(session: session, onFinish: career.finishTutorialPitch, isPractice: true,
+                PitchView(session: session, onFinish: career.finishTutorialPitch,
+                          onAbort: career.finishTutorialPitch, isPractice: true,
                           onRetry: career.retryTutorialPitch)
             } else if state.phase == .importantGame, let session = career.pitchSession {
                 PitchView(session: session, onFinish: career.finishImportantGame,
@@ -314,9 +339,43 @@ struct HighSchoolCareerView: View {
         case .legacy:
             LegacyCard(career: career, state: state)
         case .completed:
-            CompletionCard(career: career, state: state, hasEnteredPro: hasEnteredPro, onEnterPro: onEnterPro) {
-                rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
+            if career.isChallengeRun {
+                ChallengeEndCard(state: state) { career.endChallengeRun() }
+            } else {
+                CompletionCard(career: career, state: state, hasEnteredPro: hasEnteredPro, onEnterPro: onEnterPro) {
+                    rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
+                }
             }
+        }
+    }
+}
+
+// MARK: - 도전 런 마감
+
+/// 도전 런의 끝 — 기록·계승 어디에도 반영되지 않는 판이므로 결과만 정직하게
+/// 보여 주고 닫는다. 공유 카드의 "이 시드로 지명 가능?"에 대한 답이 이 화면이다.
+private struct ChallengeEndCard: View {
+    let state: HighSchoolCareerSnapshot
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            Text("도전 런 결과").eyebrowStyle(BaseballTheme.milestone)
+            BaseballCard(title: state.draftResult?.outcome == .drafted ? "지명 성공" : "지명 실패",
+                         tone: state.draftResult?.outcome == .drafted ? .milestone : .raised) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("스카우트 평가 \(state.draftResult?.evaluationScore ?? 0)점")
+                        .font(.title3.weight(.heavy).monospacedDigit())
+                    Text("경기 \(state.performance.importantGamesCompleted) · \(state.performance.strikeouts)탈삼진 · \(state.performance.walks)볼넷 · \(state.performance.runsAllowed)실점")
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
+            }
+            Text("도전 런은 아카이브·야구혼·계승에 남지 않습니다. 내 회차는 그대로입니다.")
+                .font(.footnote)
+                .foregroundStyle(BaseballTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+            PrimaryButton(title: "도전을 닫는다", identifier: "hs.challenge.close", action: onClose)
         }
     }
 }

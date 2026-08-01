@@ -198,15 +198,18 @@ struct PitchView: View {
                 }
             }
             .confirmationDialog(
-                "등판을 중단할까요?",
+                isPractice ? "연습을 끝낼까요?" : "등판을 중단할까요?",
                 isPresented: $confirmingAbort,
                 titleVisibility: .visible
             ) {
-                Button("이닝을 버리고 중단한다", role: .destructive) { onAbort?() }
+                Button(isPractice ? "연습을 끝낸다" : "이닝을 버리고 중단한다",
+                       role: isPractice ? nil : .destructive) { onAbort?() }
                 // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
                 Button("계속 던진다") { confirmingAbort = false }
             } message: {
-                Text("지금까지 던진 이 이닝은 사라집니다. 다음 마운드는 새 이닝입니다.")
+                Text(isPractice
+                     ? "연습은 기록에 남지 않습니다. 바로 다음으로 넘어갑니다."
+                     : "지금까지 던진 이 이닝은 사라집니다. 다음 마운드는 새 이닝입니다.")
             }
             .padding(.horizontal, BaseballMetrics.gutter)
             .padding(.top, 4)
@@ -215,7 +218,8 @@ struct PitchView: View {
             ScoreboardBar(session: session)
             // 코치 스트립은 스크롤 밖 고정이다. 스크롤 콘텐츠에 넣었더니 투구 직후
             // 자동 스크롤이 화면 밖으로 밀어내 3구 스크립트가 1행짜리가 됐다(3차 패널 P0).
-            if isPractice, session.pitches < 6, session.stage == .ready {
+            if isPractice, session.stage == .ready,
+               session.pitches < 3 || (session.context.strikes >= 2 && session.pitches < 6) {
                 bullpenCoachStrip
             }
             // 던진 뒤 결과로 저절로 올라간다.

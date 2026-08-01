@@ -27,6 +27,7 @@ struct DailyInningView: View {
     private var bestKey: String { "baseball.daily.best.\(dateKey)" }
     private var playedKey: String { "baseball.daily.played.\(dateKey)" }
     private var attemptsKey: String { "baseball.daily.attempts.\(dateKey)" }
+    static let dailyAttemptCap = 3
 
     var body: some View {
         Group {
@@ -90,15 +91,26 @@ struct DailyInningView: View {
                 else { DailyReminder.disable() }
             }
             Spacer(minLength: 0)
-            PrimaryButton(title: "마운드에 오르기", identifier: "daily.start") {
-                UserDefaults.standard.set(
-                    UserDefaults.standard.integer(forKey: attemptsKey) + 1, forKey: attemptsKey)
-                let created = PitchSession(
-                    scenario: .daily(dateKey: dateKey),
-                    seed: PitchScenario.dailySessionSeed(dateKey: dateKey)
-                )
-                created.start()
-                session = created
+            // 하루 3회 — 같은 판의 결정론 리더보드는 캡이 없으면 실력이 아니라
+            // 반복량을 잰다(4차 패널 P1). 중단도 시작 시점에 세므로 소모된다.
+            if UserDefaults.standard.integer(forKey: attemptsKey) >= Self.dailyAttemptCap {
+                BaseballCard(title: "오늘의 도전을 다 썼습니다", tone: .raised) {
+                    Text("하루 \(Self.dailyAttemptCap)번 — 내일 자정에 새 판이 열립니다. 순위는 위에서 확인하세요.")
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
+            } else {
+                PrimaryButton(title: "마운드에 오르기 (남은 도전 \(Self.dailyAttemptCap - UserDefaults.standard.integer(forKey: attemptsKey))회)",
+                              identifier: "daily.start") {
+                    UserDefaults.standard.set(
+                        UserDefaults.standard.integer(forKey: attemptsKey) + 1, forKey: attemptsKey)
+                    let created = PitchSession(
+                        scenario: .daily(dateKey: dateKey),
+                        seed: PitchScenario.dailySessionSeed(dateKey: dateKey)
+                    )
+                    created.start()
+                    session = created
+                }
             }
             Button("닫기") { onClose() }
                 .font(.footnote.weight(.semibold))

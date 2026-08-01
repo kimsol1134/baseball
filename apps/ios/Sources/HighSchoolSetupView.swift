@@ -60,7 +60,7 @@ struct HighSchoolSetupView: View {
     /// 원버튼 환생 — 지난 회차와 같은 설정(이름·지역·유형·난이도·카르마)으로 즉시 시작.
     /// 부스트는 회차마다 다시 고르는 소비라 싣지 않는다.
     @ViewBuilder private var quickRebirthCard: some View {
-        if isRebirth, let last = career.lastSetup,
+        if isRebirth, seedInput.isEmpty, let last = career.lastSetup,
            let preset = presets.first(where: { $0.id == last.presetID }) {
             BaseballCard(title: "바로 환생", tone: .raised) {
                 VStack(alignment: .leading, spacing: 6) {
@@ -115,6 +115,24 @@ struct HighSchoolSetupView: View {
 
     /// 이름을 비워 둔 채로 넘어가면 이 이름으로 시작한다.
     private var suggestedName: String { selectedPreset?.pitcher.name ?? "이름" }
+
+    /// "시드-회차" 토큰이면 도전 런이다. 카드의 각인과 같은 형식이다.
+    private var parsedChallenge: (seed: String, lifeNumber: Int)? {
+        let trimmed = seedInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = trimmed.split(separator: "-")
+        guard parts.count == 2, UInt64(parts[0]) != nil,
+              let life = Int(parts[1]), (1...999).contains(life) else { return nil }
+        return (String(parts[0]), life)
+    }
+
+    /// 시드 입력의 인라인 오류. 시작 버튼이 이 값으로 잠긴다 — 오타가 커널
+    /// 오류 화면까지 가면 안 된다(4차 패널 P0).
+    private var seedFieldError: String? {
+        let trimmed = seedInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if UInt64(trimmed) != nil || parsedChallenge != nil { return nil }
+        return "시드는 숫자, 도전은 \"시드-회차\" 형식입니다. 카드의 각인을 그대로 옮겨 주세요."
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -223,14 +241,23 @@ struct HighSchoolSetupView: View {
 
             // 시드로 시작 — 커뮤니티 도전("이 시드로 5회차 안에 지명?")의 입구.
             // 대부분은 안 쓰므로 눈에 띄지 않게 한 줄만.
-            TextField("시드로 시작 (선택)", text: $seedInput)
+            TextField("시드로 시작 (선택) — 카드의 \"시드-회차\" 그대로", text: $seedInput)
                 .font(.footnote.monospaced())
                 .textFieldStyle(.roundedBorder)
-                .keyboardType(.numberPad)
+                .keyboardType(.numbersAndPunctuation)
                 .accessibilityIdentifier("hs.setup.seed")
-            if !seedInput.isEmpty {
-                // 정직한 안내 — 판은 시드+회차의 함수다. 카드의 회차와 다르면 다른 판이다.
-                Text("판은 시드와 회차가 함께 정합니다 — 카드에 적힌 회차(지금 \(career.inheritance.lifeNumber)회차)가 같아야 같은 판입니다.")
+            if let error = seedFieldError {
+                Text(error)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.warning)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if let challenge = parsedChallenge {
+                Text("도전 런 — \(challenge.lifeNumber)회차의 판을 맨몸으로 엽니다. 결과는 기록·계승에 남지 않습니다.")
+                    .font(.caption2)
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if !seedInput.isEmpty {
+                Text("시드만 입력하면 지금 회차(\(career.inheritance.lifeNumber)회차)의 판입니다. 카드의 판 그대로 열려면 \"시드-회차\"를 입력하세요.")
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -534,9 +561,10 @@ struct HighSchoolSetupView: View {
     private var footer: some View {
         VStack(spacing: 8) {
             if isLastStep {
-                PrimaryButton(title: isRebirth ? "다시 태어나기" : "고교 1학년 시작", identifier: "hs.start") {
+                PrimaryButton(title: parsedChallenge != nil ? "도전 런 시작"
+                              : isRebirth ? "다시 태어나기" : "고교 1학년 시작", identifier: "hs.start") {
                     nameFocused = false
-                    guard let selectedPreset else { return }
+                    guard let selectedPreset, seedFieldError == nil else { return }
                     career.startCareer(
                         preset: selectedPreset,
                         playerName: playerName,
@@ -545,7 +573,8 @@ struct HighSchoolSetupView: View {
                         karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue },
                         soulDomain: career.inheritance.soulPoints > 0 ? soulDomain : nil,
                         soulBoosts: Array(selectedBoosts).sorted { $0.rawValue < $1.rawValue },
-                        seedOverride: seedInput.isEmpty ? nil : seedInput
+                        seedOverride: parsedChallenge?.seed ?? (seedInput.isEmpty ? nil : seedInput),
+                        challengeLifeNumber: parsedChallenge?.lifeNumber
                     )
                 }
             } else {

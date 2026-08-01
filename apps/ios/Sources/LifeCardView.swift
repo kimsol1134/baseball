@@ -124,7 +124,7 @@ struct LifeCardView: View {
                     // 회차를 함께 적는다: 재능·바람·일정은 시드+회차의 함수라, 회차가
                     // 다르면 같은 시드도 다른 판이다(3차 패널 P1 — 거짓 약속 방지).
                     if let seed = Self.seedText(record.careerID) {
-                        Text("시드 \(seed) · \(record.lifeNumber)회차")
+                        Text("도전 \(seed)-\(record.lifeNumber)")
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }

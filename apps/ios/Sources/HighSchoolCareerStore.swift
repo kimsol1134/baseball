@@ -209,7 +209,10 @@ final class HighSchoolCareerStore {
                 .flatMap { try? JSONDecoder().decode(LastSetup.self, from: $0) }
         }
         set {
-            guard let newValue, let data = try? JSONEncoder().encode(newValue) else { return }
+            guard let newValue, let data = try? JSONEncoder().encode(newValue) else {
+                UserDefaults.standard.removeObject(forKey: "baseball.lastSetup")
+                return
+            }
             UserDefaults.standard.set(data, forKey: "baseball.lastSetup")
         }
     }
@@ -222,12 +225,25 @@ final class HighSchoolCareerStore {
         karmas: [KarmaID] = [],
         soulDomain: SoulDomain? = nil,
         soulBoosts: [SoulBoostID] = [],
-        seedOverride: String? = nil
+        seedOverride: String? = nil,
+        challengeLifeNumber: Int? = nil
     ) {
+        // 시드 가드 — 오타 하나가 커널 오류 화면(그리고 예전에는 저장 삭제)으로
+        // 이어지면 안 된다. 여기서 정중히 되돌린다(4차 패널 P0).
+        let trimmedSeed = seedOverride?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let trimmedSeed, !trimmedSeed.isEmpty, UInt64(trimmedSeed) == nil {
+            lastSummary = "시드는 카드에 적힌 숫자만 입력할 수 있습니다. 다시 확인해 주세요."
+            feedbackCue = .setback
+            feedbackTrigger += 1
+            return
+        }
+        let isChallenge = challengeLifeNumber != nil
+        if isChallenge {} else {
         lastSetup = LastSetup(
             presetID: preset.id, playerName: playerName, region: region,
             harshness: difficulty.careerHarshness.rawValue, karmas: karmas, soulDomain: soulDomain
         )
+        }
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = trimmed.isEmpty ? preset.pitcher.name : trimmed
         let identity = PlayerIdentitySnapshot(
@@ -252,22 +268,24 @@ final class HighSchoolCareerStore {
             let created = try engine.start(
                 .init(
                     // 시드 입력은 커뮤니티 도전("이 시드로 지명 가능?")의 입구다.
-                    seed: seedOverride?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-                        ? seedOverride!.trimmingCharacters(in: .whitespacesAndNewlines)
-                        : String(UInt64.random(in: 1...UInt64.max)),
+                    seed: trimmedSeed?.isEmpty == false ? trimmedSeed! : String(UInt64.random(in: 1...UInt64.max)),
                     presetID: preset.id,
-                    lifeNumber: carried.lifeNumber,
-                    inheritedSoulPoints: carried.soulPoints,
-                    inheritedSoulDomain: soulDomain,
-                    inheritedMemories: carried.memories,
+                    // 도전 런은 카드의 회차를 그대로 쓴다 — 판(재능·바람·일정)은
+                    // careerID("시드-회차")의 함수라 회차가 달라지면 다른 판이다.
+                    lifeNumber: challengeLifeNumber ?? carried.lifeNumber,
+                    // 도전 런은 맨몸이다: 계승·기억·카르마·상점이 실리면 같은 판의
+                    // 비교가 성립하지 않는다.
+                    inheritedSoulPoints: isChallenge ? 0 : carried.soulPoints,
+                    inheritedSoulDomain: isChallenge ? nil : soulDomain,
+                    inheritedMemories: isChallenge ? [] : carried.memories,
                     identity: identity,
                     difficulty: difficulty,
-                    karmas: karmas,
-                    soulBoosts: purchased.isEmpty ? nil : purchased,
-                    inheritedSoulTotal: carried.soulTotal
+                    karmas: isChallenge ? [] : karmas,
+                    soulBoosts: isChallenge || purchased.isEmpty ? nil : purchased,
+                    inheritedSoulTotal: isChallenge ? 0 : carried.soulTotal
                 )
             )
-            inheritance = carried
+            if !isChallenge { inheritance = carried }
             GameAnalytics.logOnce(.onboardingCompleted)
             if carried.lifeNumber > 1 {
                 GameAnalytics.log(.rebirthStarted, ["life_number": carried.lifeNumber])
@@ -280,10 +298,14 @@ final class HighSchoolCareerStore {
             chapterGains = [:]
             chapterTrainingCount = 0
             responseTally = ResponseTally()
-            AchievementStore.shared.record(AchievementRules.fromLifeNumber(carried.lifeNumber))
-            AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
+            if !isChallenge {
+                AchievementStore.shared.record(AchievementRules.fromLifeNumber(carried.lifeNumber))
+                AchievementStore.shared.submit(LeaderboardRules.scores(lifeNumber: carried.lifeNumber))
+            }
             result = created
-            lastSummary = carried.lifeNumber > 1
+            lastSummary = isChallenge
+                ? "도전 런 — 이 판의 결과는 기록과 계승에 남지 않습니다."
+                : carried.lifeNumber > 1
                 ? "\(carried.lifeNumber)회차. 기억 \(carried.memories.count)장을 안고 다시 시작합니다."
                 : "고교 첫 해가 시작됩니다."
             feedbackCue = .success
@@ -293,6 +315,28 @@ final class HighSchoolCareerStore {
         } catch {
             loadState = .failed(error.localizedDescription)
         }
+    }
+
+    /// 실패 화면의 비파괴 출구 — 저장은 그대로 두고 설정 화면으로만 돌아간다.
+    func returnToSetup() {
+        loadState = result == nil ? .needsSetup : .ready
+    }
+
+    /// 지금 진행이 도전 런인가. 도전 런은 카드의 회차로 시작하므로 계승분의
+    /// 회차 번호와 어긋난다 — 별도 플래그 없이 데이터에서 판별된다(저장 호환 무비용).
+    var isChallengeRun: Bool {
+        guard let result else { return false }
+        return result.snapshot.lifeNumber != inheritance.lifeNumber
+    }
+
+    /// 도전 런을 닫는다. 아카이브·계승·야구혼 어디에도 반영하지 않는다.
+    func endChallengeRun() {
+        result = nil
+        pitchSession = nil
+        tutorialSession = nil
+        pendingGains = []
+        loadState = .needsSetup
+        save()
     }
 
     func deleteCareer() {
@@ -327,11 +371,11 @@ final class HighSchoolCareerStore {
         bullpenRetries += 1
         // 시드는 반드시 숫자 문자열 — 커널 validate가 UInt64(seed) 파싱을 요구하므로
         // "-bullpen-N" 같은 접미사는 즉시 invalidSeed로 죽는다(3차 패널 P0).
-        let base = UInt64(result.nextSeed) ?? 0x9E37_79B9_7F4A_7C15
-        let derived = max(1, (base ^ (UInt64(bullpenRetries) &* 0x9E37_79B9_7F4A_7C15)) >> 1)
+        // 파생이 아니라 랜덤인 이유: 카운터 파생은 앱 재실행마다 같은 순서로 되돌아가
+        // 연습 판을 외울 수 있다(4차 패널 P2). 연습은 픽스처가 아니다.
         let session = PitchSession(
             scenario: .tutorial(state: result.snapshot),
-            seed: String(derived)
+            seed: String(UInt64.random(in: 1...UInt64.max))
         )
         session.start()
         tutorialSession = session
@@ -354,6 +398,8 @@ final class HighSchoolCareerStore {
         for gain in pendingGains where gain.after > gain.before {
             chapterGains[gain.label, default: 0] += gain.after - gain.before
         }
+        // perform 안의 save()는 이 두 값이 오르기 **전**이다 — 여기서 한 번 더.
+        save()
     }
 
     func resolveRelationship(_ response: RelationshipResponse) {
@@ -907,6 +953,13 @@ final class HighSchoolCareerStore {
             return training.feedback
         }
         if let relationship = after.lastRelationship, relationship.number != before.lastRelationship?.number {
+            // relationship.category는 신뢰 회계용 채널이라 집·취재·팬 장면도 coach/catcher로
+            // 접힌다 — 그대로 화자를 만들면 없는 자리의 감독이 "웃었다"(4차 패널 P1).
+            // 원본 장면의 카테고리(방금 소비된 이벤트)가 핵심 3인일 때만 반응을 붙인다.
+            let originalCategory = before.currentRelationshipEvent?.category
+            guard originalCategory == nil || ["coach", "catcher", "rival"].contains(originalCategory!) else {
+                return relationship.feedback
+            }
             // 코어의 결과 문구 앞에 "그 사람이 어떻게 반응했는지"를 한 줄 붙인다.
             //
             // 예전에는 응답을 누르면 결과 요약 한 줄로 끝났다. 포수가 어떻게 반응했는지가
