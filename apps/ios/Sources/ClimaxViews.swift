@@ -313,12 +313,16 @@ struct HighlightStamp: View {
         /// 실점 없이 이닝을 닫은 마지막 아웃(삼진 외). 병살·야수 정면으로 위기를 막는
         /// 가장 흔한 명장면인데 아무 표시가 없었다(QA P1-7).
         case inningShutdown
+        /// 생애 최고 구속 갱신. 회차를 넘어 이어지는 유일한 "내 몸의 기록"이라
+        /// 갱신 순간은 결과와 무관하게 하이라이트다.
+        case velocityRecord
 
         var title: String {
             switch self {
             case .homeRun: "홈런"
             case .inningEndingStrikeout, .strikeoutStreak: "삼진"
             case .inningShutdown: "위기 차단"
+            case .velocityRecord: "최고 구속"
             }
         }
 
@@ -328,6 +332,7 @@ struct HighlightStamp: View {
             case .inningEndingStrikeout: "이닝 종료"
             case .strikeoutStreak(let count): "\(count)타자 연속"
             case .inningShutdown: "무실점 이닝 종료"
+            case .velocityRecord: "생애 신기록"
             }
         }
 
@@ -337,6 +342,7 @@ struct HighlightStamp: View {
             case .inningEndingStrikeout: BaseballTheme.action
             case .strikeoutStreak: BaseballTheme.milestone
             case .inningShutdown: BaseballTheme.positive
+            case .velocityRecord: BaseballTheme.milestone
             }
         }
     }
@@ -356,7 +362,8 @@ struct HighlightStamp: View {
         inningEnded: Bool,
         landingDistanceTenthsMeters: Int?,
         consecutiveStrikeouts: Int = 0,
-        runsScored: Int = 0
+        runsScored: Int = 0,
+        isVelocityRecord: Bool = false
     ) -> Kind? {
         if outcome == .homeRun {
             return .homeRun(distanceMeters: (landingDistanceTenthsMeters ?? 0) / 10)
@@ -365,6 +372,10 @@ struct HighlightStamp: View {
         // 이닝 종료는 그 공 하나의 사실이다.
         if plateResult == .strikeout, consecutiveStrikeouts >= 2 {
             return .strikeoutStreak(count: consecutiveStrikeouts)
+        }
+        // 신기록은 결과보다 위다 — 맞았어도 내 팔은 어제의 나를 이겼다.
+        if isVelocityRecord {
+            return .velocityRecord
         }
         if plateResult == .strikeout, inningEnded {
             return .inningEndingStrikeout

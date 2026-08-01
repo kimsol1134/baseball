@@ -158,7 +158,19 @@ struct PitchView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var replayProgress: Double = 1
     @AppStorage("baseball.pitch.autoRelease") private var autoRelease = false
+    /// 생애 최고 구속(0.1km/h). 회차를 넘어 쌓인다 — 갱신은 그 자체로 하이라이트다.
+    @AppStorage("baseball.bestVelocityTenths") private var bestVelocityTenths = 0
+    /// 방금 공이 승부구(풀카운트·2아웃 2스트라이크)였는가. 던지는 순간 잡아 둔다 —
+    /// 결과가 반영되면 카운트가 이미 넘어가 있어 되짚을 수 없다.
+    @State private var wasClutch = false
+    /// 방금 공이 생애 최고 구속을 갈아치웠는가.
+    @State private var wasVelocityRecord = false
     private var audio: GameAudio { .shared }
+
+    /// 지금 던지면 승부구인가 — 풀카운트, 또는 2아웃에서 2스트라이크.
+    private var isClutchNow: Bool {
+        session.context.strikes == 2 && (session.context.balls == 3 || session.context.outs == 2)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -213,6 +225,14 @@ struct PitchView: View {
         // 화면에서 사라지고, 주력 장면의 몰입도 끊긴다.
         .toolbar(.hidden, for: .tabBar)
         .onChange(of: session.pitchLog.count) { _, _ in
+            // 생애 최고 구속 갱신. 첫 공은 기준선만 잡고 조용히 지나간다 —
+            // 0에서의 갱신은 신기록이 아니라 첫 기록이다.
+            if let velocity = session.lastResult?.snapshot.execution.velocityTenthsKPH {
+                wasVelocityRecord = bestVelocityTenths > 0 && velocity > bestVelocityTenths
+                if velocity > bestVelocityTenths { bestVelocityTenths = velocity }
+            } else {
+                wasVelocityRecord = false
+            }
             replay()
             // 결과를 손으로도 알려 준다. 화면을 안 보고 있어도 방금 그 공이 잡은 공인지
             // 맞은 공인지 구분된다.
@@ -317,10 +337,25 @@ struct PitchView: View {
                         inningEnded: result.snapshot.inningTransition?.inningEnded ?? false,
                         landingDistanceTenthsMeters: result.snapshot.fieldingResolution?.landingDistanceTenthsMeters,
                         consecutiveStrikeouts: session.consecutiveStrikeouts,
-                        runsScored: result.snapshot.runsScored
+                        runsScored: result.snapshot.runsScored,
+                        isVelocityRecord: wasVelocityRecord
                     ) {
                         HighlightStamp(kind: kind, velocityTenthsKPH: result.snapshot.execution.velocityTenthsKPH)
                             .id(result.snapshot.revision)
+                    }
+                }
+                // 승부구 배지 — 슬로모션이 왜 걸렸는지 화면이 말해 준다.
+                .overlay(alignment: .topLeading) {
+                    if wasClutch, replayProgress < 1 {
+                        Text("승부구")
+                            .font(.caption.weight(.heavy))
+                            .foregroundStyle(BaseballTheme.milestone)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(BaseballTheme.canvas.opacity(0.8), in: Capsule())
+                            .overlay(Capsule().stroke(BaseballTheme.milestone, lineWidth: 1))
+                            .padding(10)
+                            .transition(.opacity)
                     }
                 }
                 .id(Self.dramaAnchor)
@@ -368,6 +403,9 @@ struct PitchView: View {
 
     private var resultSummary: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            // 정산 — 이 이닝이 남긴 것을 하나씩 걸어 준다. 요약 한 줄로 끝나면
+            // 던진 15분이 문장 하나로 접힌다. 획득이 보여야 다음 등판을 누른다.
+            InningSettlementCard(session: session)
             BaseballCard(title: "이닝 종료", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("\(session.pitches)구 · \(session.strikeouts)탈삼진 · \(session.walks)볼넷 · \(session.runsAllowed)실점")
@@ -448,7 +486,10 @@ struct PitchView: View {
                 DeliveryControl(
                     fatigue: session.context.fatigue,
                     autoRelease: autoRelease,
-                    onDeliver: { session.throwPitch(delivery: $0) },
+                    onDeliver: { delivery in
+                        wasClutch = isClutchNow
+                        session.throwPitch(delivery: delivery)
+                    },
                     onMeterEdge: { audio.play(.uiSelect) }
                 )
             case .betweenBatters:
@@ -485,7 +526,10 @@ struct PitchView: View {
             return
         }
         replayProgress = 0
-        withAnimation(.linear(duration: 1.6)) { replayProgress = 1 }
+        // 승부구는 슬로모션 — 같은 1.6초면 승부구가 승부구로 안 읽힌다. 소리 박자도
+        // 같은 배율로 늘어져야 심판이 공보다 빨라지지 않는다.
+        let tempo = wasClutch ? 1.625 : 1.0
+        withAnimation(.linear(duration: 1.6 * tempo)) { replayProgress = 1 }
 
         // 릴리스는 바로, 물리적 충돌(포구·타격)은 공이 도착하는 순간(0.58 × 1.6초)에.
         // 그 뒤는 실제 야구의 박자다 — 포구, 한 박 쉬고 심판 콜, 또 한 박 뒤에 관중.
@@ -495,15 +539,15 @@ struct PitchView: View {
         // 3타자 연속 삼진부터는 축하음이 함성 위에 얹힌다. 풀콜(1.32~3.2초)이 끝나고
         // 함성이 부풀어 있는 자리다. 매 삼진마다 울리면 3연속이 아무것도 아니게 된다.
         if session.consecutiveStrikeouts >= 3, session.lastResult?.snapshot.result == .strikeout {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) { audio.play(.milestone) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.8 * tempo) { audio.play(.milestone) }
         }
         for (index, cue) in cues.dropFirst().enumerated() {
             // 삼진 풀콜은 반 박 더 뜸을 들인다 — 심판이 펀치아웃 동작과 함께 지르는 그 사이.
-            let delay = if cue == .umpireStrikeout { 1.32 } else {
+            let delay = if cue == .umpireStrikeout { 1.32 * tempo } else {
                 switch index {
-                case 0: 0.92
-                case 1: 1.18
-                default: 1.5
+                case 0: 0.92 * tempo
+                case 1: 1.18 * tempo
+                default: 1.5 * tempo
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { audio.play(cue) }
@@ -591,6 +635,11 @@ private struct ScoreboardBar: View {
                 )
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textTertiary)
+            }
+            // 삼진 현수막 — 고교야구 백스톱에 K가 한 장씩 걸리듯 쌓인다.
+            // 숫자 "3K"는 정보고, K·K·K는 자랑이다. 하나 잡을 때마다 줄이 자란다.
+            if session.strikeouts > 0 {
+                KBanner(count: session.strikeouts)
             }
         }
         .padding(.horizontal, BaseballMetrics.gutter)
@@ -989,5 +1038,106 @@ private struct ZoneMiniMap: View {
         .accessibilityLabel(
             abs(execution.actualX) <= 500 && abs(execution.actualY) <= 500 ? "존 안에 들어간 공" : "존을 벗어난 공"
         )
+    }
+}
+
+/// 삼진 현수막. 이번 등판에서 잡은 삼진이 K 한 장씩으로 걸린다 — 새 K는 튀어나오며 등장한다.
+private struct KBanner: View {
+    let count: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = 0
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<min(count, 12), id: \.self) { index in
+                Text("K")
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(index % 3 == 2 ? BaseballTheme.milestone : BaseballTheme.action)
+                    .scaleEffect(index < shown ? 1 : 2.2)
+                    .opacity(index < shown ? 1 : 0)
+            }
+            if count > 12 {
+                Text("+\(count - 12)")
+                    .font(.caption.weight(.heavy).monospacedDigit())
+                    .foregroundStyle(BaseballTheme.milestone)
+            }
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement()
+        .accessibilityLabel("탈삼진 \(count)개")
+        .onAppear { shown = reduceMotion ? count : max(0, count - 1); pop() }
+        .onChange(of: count) { _, _ in pop() }
+    }
+
+    private func pop() {
+        guard !reduceMotion else { shown = count; return }
+        // 새 K는 심판 콜(리플레이 ~1.5초)이 끝난 뒤에 걸린다. 결과보다 빠른 자랑은 스포일러다.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.5)) { shown = count }
+        }
+    }
+}
+
+/// 이닝 정산 — 획득이 한 줄씩 튀어나오며 걸린다.
+///
+/// 슬롯이 하나씩 열리는 정산은 로그라이트의 기본 문법이다: 무엇을 얻었는지가
+/// 순서대로 몸에 걸려야 "이번 판이 남는 장사였는지"를 손이 기억한다.
+private struct InningSettlementCard: View {
+    let session: PitchSession
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var revealed = 0
+
+    /// 이 이닝이 남긴 것들. 커널 규칙(recordImportantGame의 전조 적립)과 같은 식이라
+    /// 화면이 약속한 것과 코어가 주는 것이 어긋나지 않는다.
+    private var rewards: [(icon: String, text: String, tone: Color)] {
+        var items: [(String, String, Color)] = []
+        if session.strikeouts > 0 {
+            items.append(("flame.fill", "탈삼진 \(session.strikeouts)개", BaseballTheme.action))
+        }
+        if session.runsAllowed == 0 {
+            items.append(("shield.fill", "무실점 이닝", BaseballTheme.positive))
+        }
+        let sparkGain = (session.runsAllowed == 0 || session.strikeouts >= 4 ? 2 : 0)
+            + (session.actualDamage <= session.expectedDamage ? 1 : 0)
+        if sparkGain > 0 {
+            items.append(("sparkles", "각성의 전조 +\(sparkGain)", BaseballTheme.milestone))
+        }
+        if session.consecutiveStrikeouts >= 3 {
+            items.append(("bolt.fill", "\(session.consecutiveStrikeouts)타자 연속 삼진", BaseballTheme.milestone))
+        }
+        if items.isEmpty {
+            items.append(("book.fill", "다음 등판의 배합 수업", BaseballTheme.textSecondary))
+        }
+        return items
+    }
+
+    var body: some View {
+        BaseballCard(title: "이 이닝이 남긴 것", tone: .raised) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(rewards.enumerated()), id: \.offset) { index, reward in
+                    HStack(spacing: 8) {
+                        Image(systemName: reward.icon).foregroundStyle(reward.tone)
+                        Text(reward.text)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(reward.tone)
+                        Spacer(minLength: 0)
+                    }
+                    .scaleEffect(index < revealed ? 1 : 0.7, anchor: .leading)
+                    .opacity(index < revealed ? 1 : 0)
+                }
+            }
+        }
+        .onAppear {
+            guard !reduceMotion else { revealed = rewards.count; return }
+            for index in 0..<rewards.count {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35 + 0.45 * Double(index)) {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.55)) { revealed = index + 1 }
+                    if index > 0 { Haptics.shared.outcome(success: true) }
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }

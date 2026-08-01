@@ -133,7 +133,9 @@ struct HighSchoolCareerView: View {
                             .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                         }
                         if !career.pendingGains.isEmpty {
-                            GrowthCelebrationView(gains: career.pendingGains, onDismiss: career.acknowledgeGains)
+                            GrowthCelebrationView(gains: career.pendingGains,
+                                                  jackpot: career.result?.snapshot.lastTraining?.jackpot ?? false,
+                                                  onDismiss: career.acknowledgeGains)
                                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                         } else if let summary = career.lastSummary {
                             SummaryBanner(summary: summary, cue: career.feedbackCue)

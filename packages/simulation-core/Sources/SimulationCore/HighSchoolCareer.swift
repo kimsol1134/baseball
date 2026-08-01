@@ -359,6 +359,9 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
     public let bloomedAbility: TalentAbility?
     /// 만개한 뒤의 등급.
     public let bloomedGrade: TalentGrade?
+    /// 대성공 — 성장이 두 배로 붙은 훈련. 화면이 잭팟 연출을 띄우는 신호다.
+    /// 옛 저장본은 nil이며 false로 읽는다.
+    public let jackpot: Bool?
 
     public init(
         number: Int,
@@ -373,7 +376,8 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
         fatigueAfter: Int? = nil,
         opportunityHit: Bool? = nil,
         bloomedAbility: TalentAbility? = nil,
-        bloomedGrade: TalentGrade? = nil
+        bloomedGrade: TalentGrade? = nil,
+        jackpot: Bool? = nil
     ) {
         self.number = number
         self.focus = focus
@@ -388,6 +392,7 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
         self.opportunityHit = opportunityHit
         self.bloomedAbility = bloomedAbility
         self.bloomedGrade = bloomedGrade
+        self.jackpot = jackpot
     }
 }
 
@@ -1282,7 +1287,12 @@ public struct HighSchoolCareerEngine: Sendable {
             schedule: schedule, opportunityHit: opportunityHit
         )
         let signal = max(60, deterministicSignal + generator.nextInt(upperBound: 91) - 45)
-        let rawGrowth = isRehab ? 0 : Self.trainingGrowth(signal: signal)
+        // 대성공(잭팟) — 16% 확률로 성장이 두 배가 된다. 가변 보상은 훈련 버튼을
+        // 누르는 손에 긴장을 만든다: 이번엔 터질까. 재능 벽은 TalentRules.apply가
+        // 뒤에서 그대로 자르므로 잭팟도 벽을 넘지 못하고, 초과분은 만개 게이지로 쌓인다.
+        let jackpot = !isRehab && generator.nextInt(upperBound: 100) < 16
+        let baseGrowth = isRehab ? 0 : Self.trainingGrowth(signal: signal)
+        let rawGrowth = jackpot ? baseGrowth * 2 : baseGrowth
         // 재능이 성장을 자른다. 한계에 막힌 훈련은 헛되지 않고 만개 게이지로 쌓인다 —
         // 막혔다는 이유로 훈련이 낭비가 되면 재능은 그냥 벌점이 된다.
         let ability = TalentAbility.from(params.focus)
@@ -1318,11 +1328,12 @@ public struct HighSchoolCareerEngine: Sendable {
                 )
         let training = CareerTrainingSnapshot(number: number, focus: effectiveFocus, intensity: params.intensity,
             growth: growth, fatigueChange: fatigue - params.state.fatigue,
-            feedback: feedback,
+            feedback: jackpot && growth > 0 ? "대성공! 오늘은 몸이 완전히 열렸습니다. \(feedback)" : feedback,
             metricBefore: metricBefore, metricAfter: metricAfter,
             fatigueBefore: params.state.fatigue, fatigueAfter: fatigue,
             opportunityHit: opportunityHit,
-            bloomedAbility: bloomed, bloomedGrade: bloomedGrade)
+            bloomedAbility: bloomed, bloomedGrade: bloomedGrade,
+            jackpot: jackpot && growth > 0)
         let chapterCount = params.state.chapterTrainingCount + 1
         let phase: HighSchoolCareerPhase = chapterCount == chapterTrainings ? milestone(for: params.state.chapter.number, index: 0, schedule: schedule) : .training
         let optionState = replacing(params.state, pitcher: pitcher, fatigue: fatigue, lastTraining: training,

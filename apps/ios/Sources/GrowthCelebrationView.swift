@@ -4,18 +4,23 @@ import SwiftUI
 /// 숫자 증가가 무슨 뜻인지 사다리 위에서 읽히게 한다.
 struct GrowthCelebrationView: View {
     let gains: [MobileCareerStore.AbilityGain]
+    /// 대성공 훈련 — 성장이 두 배로 붙은 날. 조용한 축하 대신 잭팟 연출을 쓴다.
+    var jackpot: Bool = false
     let onDismiss: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
+    private var accent: Color { jackpot ? BaseballTheme.milestone : BaseballTheme.action }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             HStack(spacing: 8) {
-                Image(systemName: "arrow.up.right.circle.fill")
-                    .foregroundStyle(BaseballTheme.action)
-                Text("능력이 올랐습니다")
+                Image(systemName: jackpot ? "sparkles" : "arrow.up.right.circle.fill")
+                    .foregroundStyle(accent)
+                Text(jackpot ? "대성공!" : "능력이 올랐습니다")
                     .font(BaseballType.sectionTitle)
+                    .foregroundStyle(jackpot ? BaseballTheme.milestone : BaseballTheme.textPrimary)
                 Spacer()
                 Button("닫기", action: onDismiss)
                     .font(.subheadline.weight(.semibold))
@@ -34,21 +39,28 @@ struct GrowthCelebrationView: View {
                     caption: RatingScale.nextStep(gain.after).map {
                         "다음 단계 \($0.label)까지 \($0.minimum - gain.after)"
                     },
-                    tone: BaseballTheme.action
+                    tone: accent
                 )
+            }
+            if jackpot {
+                Text("몸이 완전히 열린 날 — 성장이 두 배로 붙었습니다.")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.milestone)
             }
         }
         .padding(BaseballMetrics.gutter)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(BaseballTheme.actionSoft, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+        .background(jackpot ? BaseballTheme.milestone.opacity(0.14) : BaseballTheme.actionSoft, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
         .overlay {
             RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
-                .stroke(BaseballTheme.action, lineWidth: 1)
+                .stroke(accent, lineWidth: jackpot ? 2 : 1)
         }
-        .scaleEffect(appeared || reduceMotion ? 1 : 0.96)
+        .scaleEffect(appeared || reduceMotion ? 1 : (jackpot ? 0.85 : 0.96))
         .opacity(appeared || reduceMotion ? 1 : 0)
         .onAppear {
-            withAnimation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8)) { appeared = true }
+            // 잭팟은 더 크게 튀어나온다 — 같은 스프링이면 대성공이 대성공으로 안 읽힌다.
+            withAnimation(reduceMotion ? nil : .spring(response: jackpot ? 0.5 : 0.4, dampingFraction: jackpot ? 0.55 : 0.8)) { appeared = true }
+            if jackpot { GameAudio.shared.play(.milestone) }
         }
         .accessibilityElement(children: .contain)
     }
