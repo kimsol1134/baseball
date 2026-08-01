@@ -10,6 +10,7 @@ import UserNotifications
 struct DailyInningView: View {
     let onClose: () -> Void
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 64
     @State private var session: PitchSession?
     @State private var finished = false
     @State private var showingBoard = false
@@ -127,7 +128,7 @@ struct DailyInningView: View {
             Text("오늘의 이닝 결과").eyebrowStyle(BaseballTheme.milestone)
             if let session {
                 Text("\(Self.score(strikeouts: session.strikeouts, outs: session.outsRecorded, walks: session.walks, runsAllowed: session.runsAllowed))점")
-                    .font(.system(size: 64, weight: .black, design: .rounded).monospacedDigit())
+                    .font(.system(size: heroSize, weight: .black, design: .rounded).monospacedDigit())
                     .foregroundStyle(BaseballTheme.milestone)
                 Text("\(session.strikeouts)탈삼진 · \(session.outsRecorded)아웃 · \(session.walks)볼넷 · \(session.runsAllowed)실점")
                     .font(.subheadline.monospacedDigit())

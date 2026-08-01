@@ -308,7 +308,7 @@ struct HighSchoolSetupView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("야구혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
                     // 정직한 계승 안내 — 스며듦은 총량이 정하고, 잔액은 상점의 돈이다.
-                    Text("자동 스며듦 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.soulTotal)) · 상점 사용 가능 \(remainingSoul)혼")
+                    Text("자동 스며듦 최대 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.soulTotal)) — 재능 벽에 막힌 몫은 만개 두드림으로 · 상점 \(remainingSoul)혼")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                     if career.inheritance.memories.isEmpty {
@@ -328,7 +328,7 @@ struct HighSchoolSetupView: View {
         }
     }
 
-    /// 상점에서 산 것을 빼고 남는 잔액. 자동 스며듦은 이 값 기준으로 계산된다.
+    /// 상점에서 산 것을 빼고 남는 잔액. 스며듦은 총량(soulTotal)이 정하고 이 값은 화폐다.
     private var remainingSoul: Int {
         career.inheritance.soulPoints - selectedBoosts.reduce(0) { $0 + $1.cost }
     }

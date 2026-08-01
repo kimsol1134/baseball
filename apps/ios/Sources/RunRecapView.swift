@@ -6,6 +6,9 @@ import SwiftUI
 /// 남긴 것"의 정산은 다음 판을 시작하는 이유 그 자체다: 위업이 도장처럼 하나씩
 /// 찍히고, 야구혼이 큰 숫자로 차오른 뒤에야 다음 회차 버튼이 나온다.
 struct RunRecapView: View {
+    /// 접근성 글자 크기에서 고정 64pt는 주변 본문만 커져 위계가 뒤집힌다.
+    @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 64
+
     /// 정산할 회차와 부속 결과. 스토어가 confirmLegacy에서 만들어 준다.
     struct Recap: Identifiable, Equatable {
         var id: Int { record.lifeNumber }
@@ -81,7 +84,7 @@ struct RunRecapView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("야구혼").eyebrowStyle(BaseballTheme.milestone)
                 Text("+\(shownSoul)")
-                    .font(.system(size: 64, weight: .black, design: .rounded).monospacedDigit())
+                    .font(.system(size: heroSize, weight: .black, design: .rounded).monospacedDigit())
                     .foregroundStyle(BaseballTheme.milestone)
                     .contentTransition(.numericText(value: Double(shownSoul)))
                 // 정직한 영수증 — 적립·잔액·자동 스며듦을 전부 말한다.

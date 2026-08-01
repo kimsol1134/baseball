@@ -1165,7 +1165,7 @@ public struct HighSchoolCareerEngine: Sendable {
         // 새겨지고, 표시는 화면이 careerID로 재계산한다.
         let wind = CareerWind.wind(careerID: careerID)
         var pitcher = renamed(params.identity.name, pitcher: applyCreation(params.creationAllocation, to: preset.pitcher), hand: params.identity.throwingHand)
-        pitcher = applyInheritance(max(params.inheritedSoulTotal ?? params.inheritedSoulPoints, params.inheritedSoulPoints), domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: talent,
+        pitcher = applyInheritance(max(params.inheritedSoulTotal ?? params.inheritedSoulPoints, params.inheritedSoulPoints), domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: &talent,
             bonusPoints: boosts.contains(.headStart) ? 6 : 0, to: pitcher)
         pitcher = applyKarmas(params.karmas, to: pitcher)
         let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille } + wind.rewardBonusPermille
@@ -2376,7 +2376,7 @@ public struct HighSchoolCareerEngine: Sendable {
 
     private func applyInheritance(
         _ points: Int, domain: SoulDomain?, memories: [MemoryCardID],
-        talent: TalentSnapshot, bonusPoints: Int = 0, to pitcher: PitcherSnapshot
+        talent: inout TalentSnapshot, bonusPoints: Int = 0, to pitcher: PitcherSnapshot
     ) -> PitcherSnapshot {
         var value = pitcher
         var remaining = min(max(0, points), Self.inheritancePointCap(for: points)) + max(0, bonusPoints)
@@ -2405,6 +2405,22 @@ public struct HighSchoolCareerEngine: Sendable {
             guard let lowest = open.min(by: { rating(for: $0, pitcher: value) < rating(for: $1, pitcher: value) }) else { break }
             value = grow(value, focus: lowest, points: 1)
             remaining -= 1
+        }
+        // 벽에 막힌 계승분은 소각하지 않는다 — 만개 두드림(압박)으로 스민다.
+        // 4점당 1회, 임계 직전까지만: 훈련 없이 공짜 만개가 나면 그건 이월이 아니라
+        // 다른 화폐다(4차 패널 P2 — "잔여 계승은 벽을 두드린 흔적으로 남는다").
+        if remaining >= 4 {
+            let target = TalentAbility.allCases.min {
+                talent.grade($0).ceiling != talent.grade($1).ceiling
+                    ? talent.grade($0).ceiling < talent.grade($1).ceiling
+                    : talent.pressure($0) < talent.pressure($1)
+            }
+            if let target {
+                let knocks = remaining / 4
+                let capped = min(talent.grade(target).bloomThreshold - 1,
+                                 talent.pressure(target) + knocks)
+                talent.setPressure(max(talent.pressure(target), capped), for: target)
+            }
         }
         for memory in memories {
             switch memory {

@@ -330,6 +330,7 @@ struct HighSchoolCareerView: View {
                               onStart: career.beginImportantGame)
         case .awakening:
             AwakeningCard(options: state.awakeningOptions, sparks: state.awakeningSparks,
+                          beforeFirstGame: state.performance.importantGamesCompleted == 0,
                           onChoose: career.chooseAwakening)
         case .chapterReview:
             ChapterReviewCard(state: state, gains: career.chapterGains,
@@ -966,6 +967,9 @@ private struct AwakeningCard: View {
     let options: [AwakeningID]
     /// 각성의 전조(코어 값). nil은 전조 개념이 없던 저장본이다.
     var sparks: Int? = nil
+    /// 아직 중요 경기를 안 던진 회차 초입인가. 증명할 무대가 없었던 선수에게
+    /// "전조가 부족해"라고 벌점 문구를 주면 안 된다(4차 패널 P2).
+    var beforeFirstGame = false
     let onChoose: (AwakeningID) -> Void
 
     @State private var pending: AwakeningID?
@@ -975,7 +979,9 @@ private struct AwakeningCard: View {
     private var sparkLine: (text: String, tone: Color) {
         switch sparks ?? 3 {
         case 3...: ("시즌의 호투가 몸을 완전히 깨웠습니다 — 세 갈래가 전부 열렸습니다.", BaseballTheme.milestone)
-        default: ("전조가 부족해 두 갈래만 열렸습니다. 호투(무실점·삼진쇼)와 만개가 다음 각성을 넓힙니다.", BaseballTheme.textSecondary)
+        default: beforeFirstGame
+            ? ("아직 증명할 무대가 없었습니다 — 두 갈래로 시작합니다. 마운드의 호투가 다음 각성을 넓힙니다.", BaseballTheme.textSecondary)
+            : ("전조가 부족해 두 갈래만 열렸습니다. 호투(무실점·삼진쇼)와 만개가 다음 각성을 넓힙니다.", BaseballTheme.textSecondary)
         }
     }
 
