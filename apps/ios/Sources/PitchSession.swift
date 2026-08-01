@@ -112,6 +112,18 @@ final class PitchSession {
         /// 빌드 29 이후 추가 — 옛 복구 스냅샷은 nil이라 0/false로 읽는다.
         var hitByPitches: Int? = nil
         var holdCall: Bool? = nil
+        /// 빌드 32 이후 — 복구한 이닝의 정산 화면에서 "투구 기록"이 비면
+        /// 복구 자체의 신뢰가 깎인다. 옛 스냅샷은 nil이라 빈 목록으로 읽는다.
+        var pitchLog: [LogLine]? = nil
+
+        /// PitchLogEntry의 Codable 거울. id(UUID)는 표시용이라 싣지 않는다.
+        struct LogLine: Codable, Equatable {
+            var pitchNumber: Int
+            var call: PitchCall
+            var outcome: PitchOutcome
+            var shortFeedback: String
+            var acceptedRecommendation: Bool
+        }
     }
 
     /// 지금 상태의 저장 스냅샷. 타석이 끝난 순간(대기/종료)에만 값이 있다.
@@ -132,7 +144,11 @@ final class PitchSession {
             expectedDamage: expectedDamage, actualDamage: actualDamage,
             recommendationAccepted: recommendationAccepted, outsRecorded: outsRecorded,
             rivalOutcomes: rivalOutcomes,
-            hitByPitches: hitByPitches, holdCall: holdCall
+            hitByPitches: hitByPitches, holdCall: holdCall,
+            pitchLog: pitchLog.map {
+                ResumeState.LogLine(pitchNumber: $0.pitchNumber, call: $0.call, outcome: $0.outcome,
+                                    shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation)
+            }
         )
     }
 
@@ -156,6 +172,10 @@ final class PitchSession {
         rivalOutcomes = resume.rivalOutcomes
         hitByPitches = resume.hitByPitches ?? 0
         holdCall = resume.holdCall ?? false
+        pitchLog = (resume.pitchLog ?? []).map {
+            PitchLogEntry(pitchNumber: $0.pitchNumber, call: $0.call, outcome: $0.outcome,
+                          shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation)
+        }
         context = PlateAppearanceContext(
             plateAppearanceID: "\(scenario.id)-b\(batterIndex)",
             revision: context.revision, inning: gameState.inningState?.inning ?? context.inning,

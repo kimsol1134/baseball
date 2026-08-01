@@ -113,8 +113,11 @@ struct PitchScenario {
         PitchScenario(
             id: "hs-bullpen-\(state.careerID)",
             pitcher: state.pitcher,
+            // 두 타자 — 한 타자는 첫 공 인플레이로 1구 만에 끝날 수 있어 3구 스크립트가
+            // 성립하지 않는다(3차 패널 P1). 둘이면 최소 2구, 통상 6구 안팎이다.
             lineup: [
-                BatterSnapshot(id: "bullpen-batter", name: "연습 타자", contact: 42, discipline: 40, power: 40)
+                BatterSnapshot(id: "bullpen-batter", name: "연습 타자", contact: 42, discipline: 40, power: 40),
+                BatterSnapshot(id: "bullpen-batter-2", name: "연습 타자 B", contact: 46, discipline: 44, power: 42)
             ],
             scouting: BatterScoutingSnapshot(
                 hotZone: PitchZone(row: 1, column: 1),
@@ -135,8 +138,8 @@ struct PitchScenario {
             fatigue: 0,
             headline: "첫 불펜",
             detail: "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요.",
-            // 한 타석이면 충분하다. 배우는 자리를 길게 끌면 그것도 벽이 된다.
-            maximumBatters: 1
+            // 두 타석 — 3구 스크립트(사인→흔들기→결정구)가 실제로 전달될 최소 길이.
+            maximumBatters: 2
         )
     }
 

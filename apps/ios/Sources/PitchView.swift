@@ -211,6 +211,11 @@ struct PitchView: View {
             .padding(.bottom, 2)
             .background(BaseballTheme.surface)
             ScoreboardBar(session: session)
+            // 코치 스트립은 스크롤 밖 고정이다. 스크롤 콘텐츠에 넣었더니 투구 직후
+            // 자동 스크롤이 화면 밖으로 밀어내 3구 스크립트가 1행짜리가 됐다(3차 패널 P0).
+            if isPractice, session.pitches < 6, session.stage == .ready {
+                bullpenCoachStrip
+            }
             // 던진 뒤 결과로 저절로 올라간다.
             //
             // 와인드업 패드는 화면 맨 아래에 있고 승부 장면은 그 위에 있다. 손을 떼는
@@ -219,9 +224,6 @@ struct PitchView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-                        if isPractice, session.pitches < 6, session.stage == .ready {
-                            bullpenCoachCard
-                        }
                         matchupCard
                         stage
                     }
@@ -260,7 +262,7 @@ struct PitchView: View {
         .onChange(of: session.pitchLog.count) { _, _ in
             // 생애 최고 구속 갱신. 첫 공은 기준선만 잡고 조용히 지나간다 —
             // 0에서의 갱신은 신기록이 아니라 첫 기록이다.
-            if let velocity = session.lastResult?.snapshot.execution.velocityTenthsKPH {
+            if !isPractice, let velocity = session.lastResult?.snapshot.execution.velocityTenthsKPH {
                 wasVelocityRecord = bestVelocityTenths > 0 && velocity > bestVelocityTenths
                 if velocity > bestVelocityTenths { bestVelocityTenths = velocity }
             } else {
@@ -289,21 +291,30 @@ struct PitchView: View {
     // MARK: - 구성
 
     /// 첫 불펜 3구 스크립트 — 공마다 코치가 할 일 하나를 짚는다.
-    /// 첫 화면에서 구종·존·사인·릴리스를 한꺼번에 만나면 아무것도 안 배운다.
-    private var bullpenCoachCard: some View {
+    /// 첫 공의 진짜 난관은 구종이 아니라 릴리스 미터다(구종·코스는 포수가 골라 둔다) —
+    /// 그래서 ①은 미터부터 가르친다.
+    private var bullpenCoachStrip: some View {
         let line: String
         if session.pitches == 0 {
-            line = "① 먼저 사인대로 — 포수가 추천한 구종과 코스를 그대로 던져 보자. 미트만 보고."
+            line = "① 길게 눌러 와인드업 — 미터가 가운데 초록에 올 때 떼자. 구종과 코스는 포수가 골라 뒀다."
         } else if session.context.strikes >= 2 {
             line = "③ 결정구 — 상대가 약한 구종으로 유인하자. 존을 살짝 벗어나도 방망이가 나온다."
         } else {
             line = "② 같은 곳에 두 번은 없다 — 구종이나 코스를 바꿔 타자의 눈을 흔들자."
         }
-        return BaseballCard(title: "코치", tone: .raised) {
+        return HStack(alignment: .top, spacing: 8) {
+            Text("코치")
+                .font(.caption.weight(.heavy))
+                .foregroundStyle(BaseballTheme.milestone)
             Text(line)
-                .font(.subheadline)
+                .font(.footnote)
+                .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, BaseballMetrics.gutter)
+        .padding(.vertical, 7)
+        .background(BaseballTheme.surfaceRaised)
         .accessibilityIdentifier("pitch.coach")
     }
 
@@ -583,7 +594,8 @@ struct PitchView: View {
                     session.advanceToNextBatter()
                 }
             case .finished, .failed:
-                PrimaryPill(title: "경기 결과 반영", identifier: "pitch.finish", action: onFinish)
+                PrimaryPill(title: isPractice ? "3년을 시작한다" : "경기 결과 반영",
+                            identifier: "pitch.finish", action: onFinish)
             }
         }
         .padding(BaseballMetrics.gutter)

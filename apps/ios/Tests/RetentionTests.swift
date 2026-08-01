@@ -8,6 +8,40 @@ final class RetentionTests: XCTestCase {
     // MARK: - 투구 제스처
 
     /// 미터 한가운데 + 중심 조준이 만점이어야 한다.
+    /// 재시도 시드는 반드시 숫자 문자열이어야 한다 — 커널 validate가 UInt64 파싱을
+    /// 요구하므로 접미사가 붙는 순간 튜토리얼이 100% 빨간 오류 카드가 된다(3차 패널 P0).
+    @MainActor
+    func testBullpenRetryProducesAPlayableSession() throws {
+        let store = HighSchoolCareerStore()
+        store.startCareer(preset: PitcherPresetCatalog.all[0], playerName: "회귀 테스트")
+        guard store.result != nil else { throw XCTSkip("커리어 시작 실패 — 환경 문제") }
+        store.beginTutorialPitch()
+        for _ in 0..<3 {
+            store.retryTutorialPitch()
+            guard let session = store.tutorialSession else {
+                return XCTFail("재시도 후 세션이 없습니다")
+            }
+            if case .failed(let message) = session.stage {
+                XCTFail("재시도 세션이 죽었습니다: \(message)")
+            }
+            XCTAssertNotNil(UInt64(session.seed), "재시도 시드가 숫자가 아닙니다: \(session.seed)")
+        }
+    }
+
+    /// 분리 회계: 구매 차감이 평생 총량(스며듦 기준)을 깎으면 상점이 벌금이 된다.
+    func testSoulTotalSurvivesSpendingFromLegacyBalance() {
+        // 옛 저장본(soulTotalEarned nil) — 총량은 잔액으로 근사된다.
+        var legacy = HighSchoolCareerStore.Inheritance(
+            lifeNumber: 3, memories: [], soulPoints: 300, karmas: []
+        )
+        XCTAssertEqual(legacy.soulTotal, 300)
+        // 구매 흐름과 같은 순서: 차감 **전에** 총량을 고정한다.
+        legacy.soulTotalEarned = legacy.soulTotal
+        legacy.soulPoints -= 240
+        XCTAssertEqual(legacy.soulPoints, 60)
+        XCTAssertEqual(legacy.soulTotal, 300, "구매가 스며듦 총량을 깎았습니다")
+    }
+
     func testPerfectGestureScoresFull() {
         let delivery = DeliveryControl.delivery(meter: 0.5, aim: .zero, aimRadius: 46)
         XCTAssertEqual(delivery.releaseAccuracy, 1_000)

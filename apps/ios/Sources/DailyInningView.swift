@@ -26,11 +26,13 @@ struct DailyInningView: View {
 
     private var bestKey: String { "baseball.daily.best.\(dateKey)" }
     private var playedKey: String { "baseball.daily.played.\(dateKey)" }
+    private var attemptsKey: String { "baseball.daily.attempts.\(dateKey)" }
 
     var body: some View {
         Group {
             if let session {
-                PitchView(session: session, onFinish: { finish(session) })
+                PitchView(session: session, onFinish: { finish(session) },
+                          onAbort: { self.session = nil })
             } else {
                 intro
             }
@@ -89,6 +91,8 @@ struct DailyInningView: View {
             }
             Spacer(minLength: 0)
             PrimaryButton(title: "마운드에 오르기", identifier: "daily.start") {
+                UserDefaults.standard.set(
+                    UserDefaults.standard.integer(forKey: attemptsKey) + 1, forKey: attemptsKey)
                 let created = PitchSession(
                     scenario: .daily(dateKey: dateKey),
                     seed: PitchScenario.dailySessionSeed(dateKey: dateKey)
@@ -116,6 +120,10 @@ struct DailyInningView: View {
                 Text("\(session.strikeouts)탈삼진 · \(session.outsRecorded)아웃 · \(session.walks)볼넷 · \(session.runsAllowed)실점")
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textSecondary)
+                // 같은 판 반복 도전은 설계다 — 그렇다면 몇 번째인지, 무엇이 제출되는지 적는다.
+                Text("오늘 \(UserDefaults.standard.integer(forKey: attemptsKey))번째 도전 · 최고 기록만 제출됩니다")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textTertiary)
                 Text("내일 자정에 새 판이 열립니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textTertiary)

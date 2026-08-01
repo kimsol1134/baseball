@@ -93,7 +93,7 @@ struct DeliveryControl: View {
                 Capsule().fill(BaseballTheme.surfaceRaised)
                 // 스위트 스폿. 가운데 22%.
                 Capsule()
-                    .fill(BaseballTheme.action.opacity(0.3))
+                    .fill(BaseballTheme.action.opacity(0.42))
                     .frame(width: proxy.size.width * 0.22)
                     .offset(x: proxy.size.width * 0.39)
                 Capsule()
@@ -124,9 +124,11 @@ struct DeliveryControl: View {
                     .stroke(onTarget ? BaseballTheme.action : BaseballTheme.fieldChalk, lineWidth: 2.5)
                     .frame(width: 26, height: 26)
                     .offset(x: clampedAim.width, y: clampedAim.height)
-                Text(onTarget ? "지금" : "끌어서 맞추세요")
+                // "지금"은 조준과 미터가 **둘 다** 맞는 순간에만 — 조준만 보고 외치면
+                // 유저가 그 말을 믿고 미터 끝단에서 떼는 잘못된 타이밍을 학습한다(3차 패널 P0).
+                Text(onTarget && inSweetSpot ? "지금" : onTarget ? "타이밍을 기다리세요" : "끌어서 맞추세요")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(onTarget ? BaseballTheme.action : BaseballTheme.textSecondary)
+                    .foregroundStyle(onTarget && inSweetSpot ? BaseballTheme.action : BaseballTheme.textSecondary)
                     .offset(y: 36)
             } else {
                 Text("길게 눌러 와인드업")

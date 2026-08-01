@@ -95,6 +95,7 @@ final class MobileCareerStore {
         sync.clear()
         result = nil
         pitchSession = nil
+        gameResume = nil
         pendingGains = []
         lastSummary = nil
         loadState = .needsSetup

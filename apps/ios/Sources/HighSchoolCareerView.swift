@@ -115,9 +115,16 @@ struct HighSchoolCareerView: View {
         // 별점 요청 — 감정이 양(+)인 순간(첫 무실점 이닝)에 스토어가 신호를 올린다.
         // 신호만 있고 소비처가 없으면 리뷰 유입이 지명 관문(90분 뒤) 하나로 좁아진다.
         .onChange(of: career.reviewMoment) { _, _ in
-            requestReview()
+            // UI 테스트에서는 건너뛴다 — 리뷰 시트가 떠서 다음 탭을 삼키면
+            // 스모크가 간헐 실패한다(ClimaxViews와 같은 규칙).
+            if !ProcessInfo.processInfo.arguments.contains("-uiTestResetCareer") {
+                requestReview()
+            }
         }
     }
+
+    /// 성장 연출 자동 스크롤 앵커.
+    private static let celebrationAnchor = "career.celebration"
 
     @ViewBuilder private var content: some View {
         if let state = career.state {
@@ -128,6 +135,7 @@ struct HighSchoolCareerView: View {
                 PitchView(session: session, onFinish: career.finishImportantGame,
                           onAbort: career.abandonImportantGame)
             } else {
+                ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                         // 회차 번호는 **스냅숏**에서 읽는다.
@@ -147,6 +155,7 @@ struct HighSchoolCareerView: View {
 
                         // 만개는 성장 축하보다 앞에 온다. 같은 훈련에서 둘 다 나면
                         // 먼저 읽어야 하는 것은 "벽이 열렸다"는 쪽이다.
+                        Color.clear.frame(height: 0).id(Self.celebrationAnchor)
                         if let bloom = career.pendingBloom {
                             BloomCelebrationView(ability: bloom.ability, grade: bloom.grade) {
                                 career.acknowledgeBloom()
@@ -243,6 +252,15 @@ struct HighSchoolCareerView: View {
                 // (훈련→훈련)에서 옛 글자와 새 글자가 두 겹으로 보인다(QA P0-2).
                 // 갱신은 즉시가 맞다 — 회차당 수백 번 겪는 전환은 연출보다 빠름이 이긴다.
                 .phaseCurtain(state.phase, disabled: reduceMotion)
+                // 성장·만개는 스택 위쪽에서 터지는데 유저는 방금 맨 아래 "훈련하기"를
+                // 눌렀다 — 게임의 최다 보상이 화면 밖에서 소비되고 있었다(3차 패널 P1).
+                .onChange(of: career.feedbackTrigger) { _, _ in
+                    guard career.pendingBloom != nil || !career.pendingGains.isEmpty else { return }
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) {
+                        proxy.scrollTo(Self.celebrationAnchor, anchor: .top)
+                    }
+                }
+                }
             }
         }
     }

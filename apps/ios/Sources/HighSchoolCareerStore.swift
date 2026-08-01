@@ -214,6 +214,9 @@ final class HighSchoolCareerStore {
         // 흘러간다. 잔액이 모자라면 못 산 것(선택 UI가 이미 막지만 여기서도 지킨다).
         let boostCost = soulBoosts.reduce(0) { $0 + $1.cost }
         let purchased = boostCost <= carried.soulPoints ? soulBoosts : []
+        // 차감 **전에** 평생 총량을 고정한다. soulTotalEarned가 nil인 옛 저장본은
+        // 총량을 잔액으로 대신 읽으므로, 먼저 빼면 구매가 스며듦을 깎는다(3차 패널 P0).
+        carried.soulTotalEarned = carried.soulTotal
         carried.soulPoints -= purchased.reduce(0) { $0 + $1.cost }
         do {
             let created = try engine.start(
@@ -292,9 +295,13 @@ final class HighSchoolCareerStore {
     func retryTutorialPitch() {
         guard let result, result.snapshot.phase == .prologue else { return }
         bullpenRetries += 1
+        // 시드는 반드시 숫자 문자열 — 커널 validate가 UInt64(seed) 파싱을 요구하므로
+        // "-bullpen-N" 같은 접미사는 즉시 invalidSeed로 죽는다(3차 패널 P0).
+        let base = UInt64(result.nextSeed) ?? 0x9E37_79B9_7F4A_7C15
+        let derived = max(1, (base ^ (UInt64(bullpenRetries) &* 0x9E37_79B9_7F4A_7C15)) >> 1)
         let session = PitchSession(
             scenario: .tutorial(state: result.snapshot),
-            seed: "\(result.nextSeed)-bullpen-\(bullpenRetries)"
+            seed: String(derived)
         )
         session.start()
         tutorialSession = session
@@ -723,7 +730,7 @@ final class HighSchoolCareerStore {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
         savedRevision = max(savedRevision + 1, result?.snapshot.revision ?? 0)
-        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, responseTally: responseTally, gameResume: gameResume, revision: savedRevision)
+        let record = SaveRecord(result: result, inheritance: inheritance, archive: archive, enteredProCareerID: enteredProCareerID, nicknames: nicknames.isEmpty ? nil : nicknames, chronicle: chronicle.isEmpty ? nil : chronicle, chapterStartStrikeouts: chapterStartStrikeouts, goalCelebratedChapter: goalCelebratedChapter, responseTally: responseTally, chapterGains: chapterGains.isEmpty ? nil : chapterGains, chapterTrainingCount: chapterTrainingCount == 0 ? nil : chapterTrainingCount, gameResume: gameResume, revision: savedRevision)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
     }
@@ -755,6 +762,10 @@ final class HighSchoolCareerStore {
         var goalCelebratedChapter: Int? = nil
         /// 성격을 만든 선택들. 없는 옛 저장본은 0에서 시작한다.
         var responseTally: ResponseTally? = nil
+        /// 이번 챕터의 훈련 성장 정산. 없으면 챕터 리뷰가 "훈련 없이 지나간 챕터"라고
+        /// 방금 한 플레이를 부정한다(3차 패널 P1) — 옛 저장본은 빈 값으로 시작한다.
+        var chapterGains: [String: Int]? = nil
+        var chapterTrainingCount: Int? = nil
         /// 진행 중 등판의 타석 경계 스냅샷. 없는 옛 저장본은 nil이다.
         var gameResume: PitchSession.ResumeState? = nil
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
@@ -771,6 +782,9 @@ final class HighSchoolCareerStore {
         }) else { return false }
         guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else { return false }
         inheritance = record.inheritance
+        // 분리 회계 마이그레이션 — 총량 필드가 없는 옛 저장본은 잔액을 총량으로 승계한다.
+        // 이 한 줄이 없으면 첫 구매 순간 평생 총량이 잔액으로 붕괴한다(3차 패널 P0).
+        if inheritance.soulTotalEarned == nil { inheritance.soulTotalEarned = inheritance.soulPoints }
         archive = record.archive ?? []
         enteredProCareerID = record.enteredProCareerID
         nicknames = record.nicknames ?? []
@@ -779,6 +793,8 @@ final class HighSchoolCareerStore {
             ?? record.result?.snapshot.performance.strikeouts ?? 0
         goalCelebratedChapter = record.goalCelebratedChapter
         responseTally = record.responseTally ?? ResponseTally()
+        chapterGains = record.chapterGains ?? [:]
+        chapterTrainingCount = record.chapterTrainingCount ?? 0
         savedRevision = record.effectiveRevision
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return false }
