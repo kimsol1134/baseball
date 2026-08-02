@@ -6,8 +6,8 @@ final class HighSchoolCareerEngineTests: XCTestCase {
     func testVerticalSliceContentMinimumsUseStableUniqueIDs() {
         XCTAssertEqual(HighSchoolContentCatalog.events.count, 36)
         XCTAssertEqual(Set(HighSchoolContentCatalog.events.map(\.id)).count, 36)
-        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count, 20)
-        XCTAssertEqual(Set(HighSchoolContentCatalog.scenarios.map(\.id)).count, 20)
+        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count, 30)
+        XCTAssertEqual(Set(HighSchoolContentCatalog.scenarios.map(\.id)).count, 30)
         XCTAssertEqual(AwakeningID.allCases.count, 18)
         XCTAssertEqual(MemoryCardID.allCases.count, 18)
     }
@@ -403,11 +403,11 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         // 신규 8종을 포함한 20종 시나리오 전부가 경기 상황으로 성립하는지 검증한다. 이닝 1–10,
         // 아웃 0–2, 레버리지 1–1000, 리드 주자 스피드 범위, 제목·서사 비어 있지 않음, id 고유.
         let scenarios = HighSchoolContentCatalog.scenarios
-        XCTAssertEqual(scenarios.count, 20)
-        XCTAssertEqual(Set(scenarios.map(\.id)).count, 20, "scenario ids must be unique")
-        // (이닝, 아웃, 주자 배치) 조합도 서로 겹치지 않아 20종이 실제로 다른 상황을 만든다.
+        XCTAssertEqual(scenarios.count, 30)
+        XCTAssertEqual(Set(scenarios.map(\.id)).count, 30, "scenario ids must be unique")
+        // (이닝, 아웃, 주자 배치) 조합도 서로 겹치지 않아 30종이 실제로 다른 상황을 만든다.
         let situations = scenarios.map { "\($0.inning)-\($0.outs)-\($0.runners.firstOccupied)-\($0.runners.secondOccupied)-\($0.runners.thirdOccupied)" }
-        XCTAssertEqual(Set(situations).count, 20, "each scenario must be a distinct (inning, outs, runners) situation")
+        XCTAssertEqual(Set(situations).count, 30, "each scenario must be a distinct (inning, outs, runners) situation")
         for scenario in scenarios {
             XCTAssertTrue((1...10).contains(scenario.inning), "\(scenario.id): inning out of range")
             XCTAssertTrue((0...2).contains(scenario.outs), "\(scenario.id): outs out of range")
@@ -1338,9 +1338,15 @@ extension HighSchoolCareerEngineTests {
     /// 시나리오를 추가·게이트할 때 이 검사가 어긋나면 보폭도 함께 바꿔야 한다.
     func testAlwaysAvailableScenarioPoolStaysCoprimeWithStride() {
         func gcd(_ a: Int, _ b: Int) -> Int { b == 0 ? a : gcd(b, a % b) }
-        let pool = HighSchoolContentCatalog.scenarios.filter { $0.minChapter <= 1 }
-        XCTAssertEqual(gcd(7, pool.count), 1, "상시 풀 \(pool.count)개가 보폭 7과 서로소가 아닙니다.")
-        // 시기 고정 장면은 정확히 둘 — 결승(전국대회 챕터)과 마지막 이닝(드래프트 여름).
-        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count - pool.count, 2)
+        // 챕터가 오를 때마다 게이트가 열려 풀 크기가 변한다 — **모든 챕터의 풀**이
+        // 보폭 7과 서로소여야 순환이 살아 있다(챕터 하나만 배수여도 그 챕터의
+        // 시나리오 다양성이 1/7로 무너진다).
+        for chapter in 1...9 {
+            let pool = HighSchoolContentCatalog.scenarios.filter { $0.minChapter <= chapter }
+            XCTAssertEqual(gcd(7, pool.count), 1, "챕터 \(chapter) 풀 \(pool.count)개가 보폭 7과 서로소가 아닙니다.")
+        }
+        // 시기 고정 장면 5 — 결승·마지막 이닝·한여름·선배들의 마지막·퍼펙트.
+        let always = HighSchoolContentCatalog.scenarios.filter { $0.minChapter <= 1 }
+        XCTAssertEqual(HighSchoolContentCatalog.scenarios.count - always.count, 5)
     }
 }

@@ -92,7 +92,19 @@ public enum HighSchoolContentCatalog {
         .init(id: "evt-memory-ache", title: "기억의 통증", category: "rebirth",
               summary: "지난번에 팔을 다쳤던 그 주차입니다. 아프지 않은데 그 자리가 신경 쓰입니다."),
         .init(id: "evt-second-summer", title: "다시 맞는 3학년 여름", category: "rebirth",
-              summary: "같은 계절, 같은 대회. 이번에는 결과를 알고 시작합니다.")
+              summary: "같은 계절, 같은 대회. 이번에는 결과를 알고 시작합니다."),
+        .init(id: "evt-remembered-pitch", title: "그 코스의 사인", category: "rebirth",
+              summary: "지난 삶에서 홈런을 맞았던 바로 그 코스에 사인이 나옵니다. 포수는 아무것도 모릅니다."),
+        .init(id: "evt-lost-teammate", title: "그만둔 동료", category: "rebirth",
+              summary: "지난 삶에서 끝까지 함께 던졌던 동료가, 이번 삶에서는 야구를 그만뒀다는 소식을 듣습니다."),
+        .init(id: "evt-future-news", title: "결말을 아는 뉴스", category: "rebirth",
+              summary: "라디오가 올해의 우승 후보를 읊습니다. 지난 삶과 한 글자도 다르지 않아, 결말을 아는 책 같습니다."),
+        .init(id: "evt-old-nickname", title: "지난 삶의 별명", category: "rebirth",
+              summary: "처음 만난 상대 포수가 당신을 지난 삶의 별명으로 부릅니다. 이번 삶에는 아직 없는 이름입니다."),
+        .init(id: "evt-glove-worn", title: "길들여진 새 글러브", category: "rebirth",
+              summary: "새 글러브인데 지난 삶에서 길들인 자리부터 부드럽습니다. 손이 먼저 접던 각도로 접힙니다."),
+        .init(id: "evt-undrafted-deja", title: "그 방의 기시감", category: "rebirth",
+              summary: "드래프트 중계를 트는 순간, 이름이 불리지 않은 채 끝났던 그 방의 공기가 먼저 돌아옵니다.")
     ]
 
     private static func runners(_ first: Bool, _ second: Bool, _ third: Bool, speed: Int) -> BaserunnerStateSnapshot {
@@ -123,6 +135,17 @@ public enum HighSchoolContentCatalog {
         .init(id: "game-rain-grip", title: "빗속의 공", inning: 2, outs: 0, runners: runners(true, false, false, speed: 60), leverage: 470, narrative: "빗물을 머금은 공이 손끝에서 자꾸 미끄러집니다. 노린 코스보다 한 뼘씩 벗어납니다.", scoreDifferential: 0),
         .init(id: "game-doubleheader", title: "더블헤더 2차전", inning: 4, outs: 2, runners: runners(false, true, false, speed: 64), leverage: 640, narrative: "오늘 두 번째 경기. 한 점 뒤진 채, 낮 경기에서 이미 던진 팔이 무겁게 남아 있습니다.", scoreDifferential: -1),
         .init(id: "game-scout-showcase", title: "스카우트 총출동", inning: 7, outs: 2, runners: runners(false, false, false, speed: 55), leverage: 960, narrative: "팀은 두 점 뒤졌지만 관중석 첫 줄은 스카우트로 가득합니다. 공 하나하나가 순위표에 적힙니다.", scoreDifferential: -2),
-        .init(id: "game-rival-away", title: "라이벌 원정", inning: 6, outs: 2, runners: runners(true, false, false, speed: 61), leverage: 830, narrative: "라이벌 학교 원정, 한 점 뒤진 6회. 마운드에 설 때마다 스탠드가 야유로 덮습니다. 소리를 지워야 공이 보입니다.", scoreDifferential: -1)
+        .init(id: "game-rival-away", title: "라이벌 원정", inning: 6, outs: 2, runners: runners(true, false, false, speed: 61), leverage: 830, narrative: "라이벌 학교 원정, 한 점 뒤진 6회. 마운드에 설 때마다 스탠드가 야유로 덮습니다. 소리를 지워야 공이 보입니다.", scoreDifferential: -1),
+        // 확장 10종(볼륨 20→30). 분포 합계: 리드 11 · 동점 9 · 열세 10.
+        .init(id: "game-cold-spring", title: "이른 봄의 손끝", inning: 2, outs: 0, runners: runners(false, false, false, speed: 55), leverage: 420, narrative: "3월의 첫 대회. 입김이 보이는 추위에 공이 돌덩이처럼 미끄럽고, 손끝의 감각이 절반만 돌아와 있습니다.", scoreDifferential: 0),
+        .init(id: "game-fireman", title: "떠안은 주자", inning: 6, outs: 0, runners: runners(false, true, true, speed: 66), leverage: 930, narrative: "앞선 투수가 남긴 무사 2·3루를 떠안고 오릅니다. 여기서 들어오는 점수는 내 기록이 아니지만, 경기는 내 손에 있습니다.", scoreDifferential: -1),
+        .init(id: "game-mercy-watch", title: "다섯 점의 함정", inning: 5, outs: 0, runners: runners(true, false, false, speed: 57), leverage: 380, narrative: "다섯 점 리드. 긴장이 풀리는 딱 그 지점에서 실점이 시작됩니다. 스카우트는 큰 리드에서의 집중력을 봅니다.", scoreDifferential: 5),
+        .init(id: "game-nightfall", title: "일몰 직전", inning: 7, outs: 1, runners: runners(false, true, false, speed: 62), leverage: 700, narrative: "조명 없는 구장, 해가 산 뒤로 넘어가고 있습니다. 심판이 이 이닝이 오늘의 마지막이라고 알렸습니다. 동점이면 내일 처음부터 다시입니다.", scoreDifferential: 0),
+        .init(id: "game-heatwave", title: "한여름 낮 경기", inning: 6, outs: 0, runners: runners(true, false, false, speed: 60), leverage: 660, narrative: "35도의 낮 경기. 유니폼이 몸에 감기고 로진백도 눅눅합니다. 한 점 리드가 이 더위 속에서 여덟 아웃만큼 멀어 보입니다.", scoreDifferential: 1, minChapter: 2),
+        .init(id: "game-third-look", title: "세 번째 만나는 4번", inning: 6, outs: 2, runners: runners(false, true, false, speed: 63), leverage: 850, narrative: "오늘 세 번째로 만나는 상대 4번 타자. 앞선 두 타석의 공을 전부 기억하고 있을 겁니다. 같은 순서는 이제 통하지 않습니다.", scoreDifferential: -1),
+        .init(id: "game-perfect-bid", title: "5회까지 완전", inning: 6, outs: 1, runners: runners(false, false, false, speed: 55), leverage: 780, narrative: "5회까지 한 명도 내보내지 않았습니다. 더그아웃이 조용해졌습니다 — 아무도 그 단어를 입에 올리지 않습니다.", scoreDifferential: 3, minChapter: 4),
+        .init(id: "game-backup-catcher", title: "백업 포수와의 승부", inning: 7, outs: 1, runners: runners(true, false, false, speed: 61), leverage: 740, narrative: "주전 포수가 파울 타구에 손가락을 맞아 교체됐습니다. 백업 포수와는 불펜 한 번 맞춰 본 게 전부입니다.", scoreDifferential: 0),
+        .init(id: "game-seniors-last", title: "선배들의 마지막", inning: 8, outs: 1, runners: runners(true, true, false, speed: 64), leverage: 890, narrative: "두 점 뒤진 8회. 지면 3학년 선배들의 고교 야구가 오늘로 끝납니다. 더그아웃의 눈이 전부 마운드를 보고 있습니다.", scoreDifferential: -2, minChapter: 2),
+        .init(id: "game-sign-leak", title: "새는 사인", inning: 5, outs: 0, runners: runners(false, true, false, speed: 65), leverage: 720, narrative: "상대 2루 주자가 타자에게 무언가를 전달하는 정황. 사인이 읽히고 있다면, 이제부터는 코스보다 배짱의 승부입니다.", scoreDifferential: -1)
     ]
 }
