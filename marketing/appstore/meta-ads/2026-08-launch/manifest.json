@@ -2,8 +2,8 @@
   "campaign": "meta-kr-2026-08-launch",
   "generatedWith": "OpenAI built-in imagegen",
   "iconSelection": {
-    "selected": "icon-b-strike-zone",
-    "reason": "At 60px the gold strike-zone frame and baseball remain recognizable, and the concept directly communicates pitch control.",
+    "selected": "icon-d-user-submitted",
+    "reason": "The user-provided gold frame, baseball, and red pitch trail remain recognizable at 60px and communicate the pitching identity directly.",
     "options": [
       {
         "id": "icon-a-homeplate",
@@ -13,20 +13,26 @@
       {
         "id": "icon-b-strike-zone",
         "source": "marketing/appstore/icon-options/icon-b-strike-zone.png",
-        "preview60": "marketing/appstore/icon-options/60px/icon-b-strike-zone-60.png",
-        "selected": true
+        "preview60": "marketing/appstore/icon-options/60px/icon-b-strike-zone-60.png"
       },
       {
         "id": "icon-c-baseball",
         "source": "marketing/appstore/icon-options/icon-c-baseball.png",
         "preview60": "marketing/appstore/icon-options/60px/icon-c-baseball-60.png"
+      },
+      {
+        "id": "icon-d-user-submitted",
+        "source": "marketing/appstore/icon-options/icon-d-user-submitted.png",
+        "source1024": "marketing/appstore/icon-options/icon-d-user-submitted-1024.png",
+        "preview60": "marketing/appstore/icon-options/60px/icon-d-user-submitted-60.png",
+        "selected": true
       }
     ],
     "selectedAssets": {
       "default": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
       "dark": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-Dark.png",
       "tinted": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-Tinted.png",
-      "comparison60": "marketing/appstore/icon-options/selected-comparison-60px.png"
+      "comparison60": "marketing/appstore/icon-options/60px/icon-d-user-submitted-60.png"
     }
   },
   "adAssets": [

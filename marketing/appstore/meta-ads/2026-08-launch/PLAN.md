@@ -13,13 +13,13 @@ Meta는 Advantage+ 앱 캠페인에서 입찰·오디언스·배치·예산을 �
 ## 집행 전 조건
 
 - 앱 심사 승인 및 한국 스토어 노출 확인
-- build 39에서 새 아이콘과 `com.solkim.baseball.ios://daily-inning` 딥링크 동작 확인
+- build 40에서 새 아이콘과 `com.solkim.baseball.ios://daily-inning` 딥링크 동작 확인
 - 오늘의 이닝 이벤트 카드가 실제로 노출되는지 확인
 - App Store Connect에서 캠페인 링크 생성
 - Meta 광고 계정의 결제·앱 등록·iOS App Store 연결 확인
 - 개인정보 라벨과 분석 수집 고지 상태 재확인
 
-현재 제출된 build 38을 심사 중간에 교체하지 않고, build 39는 우선 로컬 아카이브와 테스트용으로 준비한다. 심사 전략을 바꿀 때만 App Store Connect에 새 빌드를 올린다.
+현재 제출된 build 38을 심사 중간에 교체하지 않고, build 40은 우선 로컬 아카이브와 테스트용으로 준비한다. 심사 전략을 바꿀 때만 App Store Connect에 새 빌드를 올린다.
 
 ## 캠페인 구조
 

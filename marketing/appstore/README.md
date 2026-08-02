@@ -50,13 +50,13 @@ xcrun xcresulttool export attachments --path /tmp/shots.xcresult --output-path .
 `apps/ios/Sources/Assets.xcassets/AppIcon.appiconset`에 라이트·다크·틴티드 3종이 있다.
 다크/틴티드는 `tools/`가 아니라 원본에서 파생한 것이라, 원본을 교체하면 세 장을 함께 갱신한다.
 
-2026-08-02 비교 결과, **B안 스트라이크 존**을 선택했다. 금색 존 프레임과 공의 대비가
-60px에서도 남아 투구 조작이라는 게임 정체성을 가장 빨리 전달한다. A안은 홈플레이트
-디테일이 줄어들고, C안은 일반 야구 아이콘과 구별되는 정보가 약했다.
+2026-08-02 사용자 제공 이미지인 **D안 골드 프레임·투구 공**을 최종 아이콘으로 반영했다.
+60px에서도 금색 프레임, 공, 붉은 투구 궤적이 함께 남아 게임의 투구 정체성을 전달한다.
 
-- 비교표: `icon-options/selected-comparison-60px.png`
-- 원본 3안: `icon-options/icon-a-homeplate.png`, `icon-options/icon-b-strike-zone.png`, `icon-options/icon-c-baseball.png`
-- build 39 반영본: `AppIcon.png`, `AppIcon-Dark.png`, `AppIcon-Tinted.png`
+- 60px 확인본: `icon-options/60px/icon-d-user-submitted-60.png`
+- 사용자 원본: `icon-options/icon-d-user-submitted.png`
+- 기존 3안 비교 자산: `icon-options/icon-a-homeplate.png`, `icon-options/icon-b-strike-zone.png`, `icon-options/icon-c-baseball.png`
+- build 40 반영본: `AppIcon.png`, `AppIcon-Dark.png`, `AppIcon-Tinted.png`
 
 ## 3. 스토어 텍스트
 
