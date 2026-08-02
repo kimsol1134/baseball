@@ -84,6 +84,10 @@ struct SettingsView: View {
             Button("삭제", role: .destructive) {
                 highSchool.deleteCareer()
                 pro.deleteCareer()
+                // "모든 진행"에는 UserDefaults의 진행 흔적도 포함된다 — 남기면
+                // 새 회차의 첫 신기록·첫 별점 순간이 이미 소모돼 있다.
+                UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
+                UserDefaults.standard.removeObject(forKey: "baseball.review.cleanInning")
             }
             Button("취소") {}
         } message: {

@@ -92,12 +92,17 @@ final class MobileCareerStore {
     }
 
     func deleteCareer() {
-        sync.clear()
+        // clear() 대신 묘비 — 고교 쪽과 같은 이유(iCloud 부활 방지).
+        let tombstone = max(syncedRevision, result?.snapshot.revision ?? 0) + 1
+        syncedRevision = tombstone
         result = nil
         pitchSession = nil
         gameResume = nil
         pendingGains = []
         lastSummary = nil
+        if let data = try? JSONEncoder().encode(ProSaveRecord(result: nil, deletedRevision: tombstone)) {
+            sync.write(data)
+        }
         loadState = .needsSetup
     }
 
@@ -246,14 +251,21 @@ final class MobileCareerStore {
     /// 저장 래퍼. 예전에는 ProCareerResult를 그대로 썼다 — 복구 스냅샷을 실으려고
     /// 감쌌고, 읽을 때는 레거시(맨 result)도 그대로 받는다.
     struct ProSaveRecord: Codable {
-        let result: ProCareerResult
+        /// nil이면 삭제 묘비다. 예전엔 필수였지만 옛 레코드는 항상 값이 있어 호환된다.
+        let result: ProCareerResult?
         var gameResume: PitchSession.ResumeState? = nil
+        /// 묘비의 리비전. iCloud의 옛 사본을 이기기 위해 존재한다.
+        var deletedRevision: UInt64? = nil
     }
+
+    /// 마지막으로 알게 된 저장 리비전 — 묘비가 이 값보다 커야 부활을 막는다.
+    private var syncedRevision: UInt64 = 0
 
     // MARK: - 저장
 
     func save() {
         guard let result else { return }
+        syncedRevision = max(syncedRevision, result.snapshot.revision)
         let record = ProSaveRecord(result: result, gameResume: gameResume)
         guard let data = try? JSONEncoder().encode(record) else { return }
         sync.write(data)
@@ -271,12 +283,18 @@ final class MobileCareerStore {
 
     private func restore() -> Bool {
         guard let data = sync.read(revision: { data in
-            (try? JSONDecoder().decode(ProSaveRecord.self, from: data))?.result.snapshot.revision
+            (try? JSONDecoder().decode(ProSaveRecord.self, from: data)).flatMap { $0.result?.snapshot.revision ?? $0.deletedRevision }
                 ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))?.snapshot.revision
         }) else { return false }
         let record = try? JSONDecoder().decode(ProSaveRecord.self, from: data)
+        if let tombstone = record?.deletedRevision, record?.result == nil {
+            // 삭제 묘비 — 옛 사본이 아니라 삭제가 최신이다.
+            syncedRevision = tombstone
+            return false
+        }
         let decoded = record?.result ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))
         guard let decoded else { return false }
+        syncedRevision = max(syncedRevision, decoded.snapshot.revision)
         // 유료앱에서는 앱 자체가 구매 증거다. 저장된 스냅숏의 권한 출처(개발 빌드 포함)를 이유로
         // 진행을 버리면 TestFlight 사용자의 커리어만 사라진다.
         result = decoded

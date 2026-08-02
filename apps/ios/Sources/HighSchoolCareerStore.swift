@@ -349,12 +349,26 @@ final class HighSchoolCareerStore {
 
     func deleteCareer() {
         challengeCareerID = nil
-        sync.clear()
         result = nil
         pitchSession = nil
+        tutorialSession = nil
         pendingGains = []
         selectedMemories = []
         inheritance = .firstLife
+        archive = []
+        nicknames = []
+        chronicle = []
+        chapterStartStrikeouts = 0
+        goalCelebratedChapter = nil
+        responseTally = ResponseTally()
+        chapterGains = [:]
+        chapterTrainingCount = 0
+        gameResume = nil
+        lastSetup = nil
+        // clear() 대신 **묘비를 쓴다.** iCloud 키-값 저장은 결국적 일관성이라 지운
+        // 자리에 업로드 지연분·다른 기기의 옛 저장본이 되살아난다 — "모든 진행 삭제가
+        // 가끔 안 먹힌다"의 원인. 리비전 +1의 빈 레코드는 어떤 옛 사본과 만나도 이긴다.
+        save()
         loadState = .needsSetup
     }
 

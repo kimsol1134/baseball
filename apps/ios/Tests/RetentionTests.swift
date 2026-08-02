@@ -28,6 +28,25 @@ final class RetentionTests: XCTestCase {
         }
     }
 
+    /// 삭제는 묘비를 남겨야 한다 — clear()만 하면 iCloud 결국적 일관성이
+    /// 옛 사본을 되살린다("모든 진행 삭제가 가끔 안 먹힘"의 원인).
+    @MainActor
+    func testDeleteCareerWritesTombstoneThatSurvivesReload() throws {
+        let store = HighSchoolCareerStore()
+        store.startCareer(preset: PitcherPresetCatalog.all[0], playerName: "삭제 테스트")
+        guard store.result != nil else { throw XCTSkip("커리어 시작 실패 — 환경 문제") }
+        store.deleteCareer()
+        XCTAssertNil(store.lastSetup, "삭제 후에도 빠른 환생 카드 재료가 남아 있습니다")
+        let reloaded = HighSchoolCareerStore()
+        reloaded.restoreOrCreate()
+        XCTAssertNil(reloaded.result, "삭제 후 재실행에서 진행이 되살아났습니다")
+        // 로드 마이그레이션이 soulTotalEarned를 0으로 채우므로 필드 단위로 비교한다.
+        XCTAssertEqual(reloaded.inheritance.lifeNumber, 1, "회차가 초기화되지 않았습니다")
+        XCTAssertEqual(reloaded.inheritance.soulPoints, 0, "야구혼이 초기화되지 않았습니다")
+        XCTAssertTrue(reloaded.inheritance.memories.isEmpty, "기억이 초기화되지 않았습니다")
+        XCTAssertTrue(reloaded.archive.isEmpty, "아카이브가 초기화되지 않았습니다")
+    }
+
     /// 도전 런 격리 — 회차가 **같아도** 도전으로 판별되고(1회차 카드→1회차 유저가
     /// 최빈 공유 경로), confirmLegacy가 계승·아카이브를 건드리지 못한다(5차 패널 P0).
     @MainActor
