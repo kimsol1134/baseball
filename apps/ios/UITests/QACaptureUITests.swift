@@ -411,8 +411,17 @@ final class QACaptureUITests: XCTestCase {
 
     @discardableResult
     private func tapIfPresent(_ element: XCUIElement) -> Bool {
-        guard element.exists, bringIntoView(element) else { return false }
-        element.tap()
+        guard element.exists else { return false }
+        if bringIntoView(element) {
+            element.tap()
+            return true
+        }
+        // isHittable 거짓 음성 폴백 — 화면상 보이는 활성 버튼이 hittable=false로
+        // 보고되는 사례(기억 확정)가 있었다. 프레임이 있으면 좌표로 두드린다.
+        let frame = element.frame
+        guard !frame.isEmpty, frame.midY > 0 else { return false }
+        XCUIApplication().coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
         return true
     }
 

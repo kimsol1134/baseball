@@ -31,6 +31,10 @@ targets:
       path: Sources/Info.plist
       properties:
         CFBundleDisplayName: 야구 못하면 또 환생함
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Viewer
+            CFBundleURLSchemes:
+              - com.solkim.baseball.ios
         # 광고 어트리뷰션(SKAdNetwork). IDFA·ATT는 쓰지 않는다 — 프롬프트 없이
         # 애플의 프라이버시 보존 어트리뷰션만 쓴다.
         SKAdNetworkItems:

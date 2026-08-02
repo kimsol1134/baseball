@@ -125,7 +125,7 @@ struct LifeCardView: View {
                     // 다르면 같은 시드도 다른 판이다(3차 패널 P1 — 거짓 약속 방지).
                     if let seed = Self.seedText(record.careerID) {
                         Text("도전 \(seed)-\(record.lifeNumber)")
-                            .font(.system(size: 11, design: .monospaced))
+                            .font(BaseballType.scoreboardLabel)
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }
                 }

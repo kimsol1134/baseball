@@ -26,6 +26,13 @@ struct AppShell: View {
     let highSchool: HighSchoolCareerStore
     let pro: MobileCareerStore
     @State private var selection: AppTab = .highSchool
+    @State private var showsDailyFromDeepLink = false
+
+    /// App Store 이벤트에서 바로 오늘의 이닝으로 들어오는 링크만 허용한다.
+    /// 다른 URL은 앱 상태를 바꾸지 않는다.
+    static func isDailyInningDeepLink(_ url: URL) -> Bool {
+        url.scheme == "com.solkim.baseball.ios" && url.host == "daily-inning"
+    }
 
     /// 프로에 입단하면 고교 탭을 숨긴다.
     ///
@@ -83,6 +90,14 @@ struct AppShell: View {
         // 고교 탭이 사라지는 순간 그 탭을 보고 있으면 빈 화면이 남는다.
         .onChange(of: showsHighSchool) { _, shows in
             if !shows, selection == .highSchool { selection = .pro }
+        }
+        .fullScreenCover(isPresented: $showsDailyFromDeepLink) {
+            DailyInningView { showsDailyFromDeepLink = false }
+        }
+        .onOpenURL { url in
+            if Self.isDailyInningDeepLink(url) {
+                showsDailyFromDeepLink = true
+            }
         }
     }
 

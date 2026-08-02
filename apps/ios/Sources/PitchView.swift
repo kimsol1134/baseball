@@ -1202,7 +1202,7 @@ private struct KBanner: View {
         HStack(spacing: 5) {
             ForEach(0..<min(count, 12), id: \.self) { index in
                 Text("K")
-                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .font(BaseballType.strikeoutMark)
                     .foregroundStyle(index % 3 == 2 ? BaseballTheme.milestone : BaseballTheme.action)
                     .scaleEffect(index < shown ? 1 : 2.2)
                     .opacity(index < shown ? 1 : 0)

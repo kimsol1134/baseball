@@ -67,7 +67,7 @@ struct HighSchoolSetupView: View {
                     Text("\(last.playerName.isEmpty ? preset.pitcher.name : last.playerName) · \(last.region) · 지난 회차와 같은 설정")
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
-                    Button {
+                    PrimaryPill(title: "같은 설정으로 다시 태어나기", identifier: "hs.setup.quickRebirth") {
                         career.startCareer(
                             preset: preset,
                             playerName: last.playerName,
@@ -77,14 +77,7 @@ struct HighSchoolSetupView: View {
                             karmas: last.karmas,
                             soulDomain: last.soulDomain
                         )
-                    } label: {
-                        Text("같은 설정으로 다시 태어나기")
-                            .font(.subheadline.weight(.bold))
-                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(BaseballTheme.action)
-                    .accessibilityIdentifier("hs.setup.quickRebirth")
                     Text("영혼 상점을 쓰려면 아래에서 단계대로 진행하세요.")
                         .font(.caption2)
                         .foregroundStyle(BaseballTheme.textTertiary)

@@ -121,6 +121,8 @@ enum BaseballType {
     /// 스코어보드 줄의 숫자.
     static let scoreboard = Font.system(.subheadline, design: .monospaced, weight: .bold)
     static let scoreboardLabel = Font.system(.caption2, design: .monospaced, weight: .semibold)
+    /// 삼진 현수막의 K. 고정 포인트 크기를 쓰지 않고 Dynamic Type을 따른다.
+    static let strikeoutMark = Font.system(.subheadline, design: .rounded, weight: .black)
 }
 
 extension View {

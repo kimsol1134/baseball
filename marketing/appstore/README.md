@@ -21,9 +21,10 @@
 |---|---|---|
 | 6.9" 아이폰 | 1320 × 2868 또는 1290 × 2796 | iPhone 16 Pro Max / 17 Pro Max |
 | 6.5" 아이폰 (선택) | 1242 × 2688 | iPhone 11 Pro Max |
-| 13" 아이패드 | 2064 × 2752 | iPad Pro 13-inch (M4) |
+| 아이패드 | 이번 릴리스 제외 | `TARGETED_DEVICE_FAMILY: "1"` (iPhone 전용) |
 
-`TARGETED_DEVICE_FAMILY: "1,2"`이므로 **아이패드 스크린샷이 필수**다.
+이번 릴리스는 `TARGETED_DEVICE_FAMILY: "1"`인 **iPhone 전용 제출본**이다. 따라서 아이패드
+스크린샷은 제출하지 않으며, iPad 레이아웃 검증은 후속 범위로 남긴다.
 
 ### 생성
 
@@ -69,4 +70,4 @@ Steam 스토어 초안(`docs/STEAM_STORE_PAGE_DRAFT.md`)을 재사용하되 다�
 - [ ] 연령 등급 설문 (폭력·도박 없음)
 - [ ] 수출 규정: `ITSAppUsesNonExemptEncryption: false` — project.yml에 설정됨
 - [ ] `PrivacyInfo.xcprivacy` 수집 없음 상태 유지
-- [ ] 아이패드 레이아웃 확인 (커리어 탭 분할 뷰)
+- [x] 지원 기기 범위 확인 — iPhone 전용, iPad는 이번 릴리스에서 제외
