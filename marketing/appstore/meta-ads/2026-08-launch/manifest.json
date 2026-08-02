@@ -1,0 +1,52 @@
+{
+  "campaign": "meta-kr-2026-08-launch",
+  "generatedWith": "OpenAI built-in imagegen",
+  "iconSelection": {
+    "selected": "icon-b-strike-zone",
+    "reason": "At 60px the gold strike-zone frame and baseball remain recognizable, and the concept directly communicates pitch control.",
+    "options": [
+      {
+        "id": "icon-a-homeplate",
+        "source": "marketing/appstore/icon-options/icon-a-homeplate.png",
+        "preview60": "marketing/appstore/icon-options/60px/icon-a-homeplate-60.png"
+      },
+      {
+        "id": "icon-b-strike-zone",
+        "source": "marketing/appstore/icon-options/icon-b-strike-zone.png",
+        "preview60": "marketing/appstore/icon-options/60px/icon-b-strike-zone-60.png",
+        "selected": true
+      },
+      {
+        "id": "icon-c-baseball",
+        "source": "marketing/appstore/icon-options/icon-c-baseball.png",
+        "preview60": "marketing/appstore/icon-options/60px/icon-c-baseball-60.png"
+      }
+    ],
+    "selectedAssets": {
+      "default": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+      "dark": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-Dark.png",
+      "tinted": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-Tinted.png",
+      "comparison60": "marketing/appstore/icon-options/selected-comparison-60px.png"
+    }
+  },
+  "adAssets": [
+    {
+      "id": "meta-portrait",
+      "path": "marketing/appstore/meta-ads/2026-08-launch/meta-portrait-1080x1920.png",
+      "size": "1080x1920",
+      "copy": ["오늘의 이닝", "세 번 던지고, 전국 순위에 도전", "야구 못하면 또 환생함"]
+    },
+    {
+      "id": "meta-square",
+      "path": "marketing/appstore/meta-ads/2026-08-launch/meta-square-1080x1080.png",
+      "size": "1080x1080",
+      "copy": ["한 구씩 직접 던집니다", "야구 못하면 또 환생함"]
+    },
+    {
+      "id": "meta-landscape",
+      "path": "marketing/appstore/meta-ads/2026-08-launch/meta-landscape-1200x628.png",
+      "size": "1200x628",
+      "copy": ["못하면 다시 태어납니다", "야구 못하면 또 환생함"]
+    }
+  ]
+}

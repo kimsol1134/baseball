@@ -74,6 +74,7 @@ UX: 슬로모 스크롤 템포 연동 · K 현수막 콜 이후 · reduceMotion 
 ## 배포 상태 (2026-08-02)
 - 1.0 스토어 배포됨(READY_FOR_DISTRIBUTION)
 - **1.0.1 심사 대기 중(WAITING_FOR_REVIEW, 빌드 38, 승인 후 자동 배포)** — ASO 문안·iPhone 6.9/6.5 미디어를 갱신하고 빌드 38로 재제출 완료. 개인정보 라벨은 제품 상호작용·기기 ID·충돌 데이터, 연결 안 함·추적 안 함.
+- **build 39 로컬 릴리스 후보 준비 완료** — 60px 비교 후 B안 스트라이크 존 아이콘과 `com.solkim.baseball.ios://daily-inning` 딥링크를 반영하고 Release 아카이브·IPA를 생성·검증했다. 현재 ASC에 업로드하거나 심사 빌드로 교체하지 않았다.
 - 현재 소스 게이트 완료: Dynamic Type·공통 CTA 정리, QA 캡처 버튼 좌표 폴백(다음 빌드 반영 대상). 빌드 38에는 iCloud 삭제 묘비 수정, 시나리오 20→30·환생 사건 6→12가 반영됨.
 - 초기 4차 계획(기록 보존): OptionRow AX 세로 전환 · 시드 각인 · 내러티브 이름 호명 · fanInterest 드래프트 항 · 원버튼 환생 · `@ScaledMetric` 확대.
 
@@ -96,6 +97,7 @@ UX: 슬로모 스크롤 템포 연동 · K 현수막 콜 이후 · reduceMotion 
 - App Store Connect 미디어 매니저 확인: iPhone 6.9인치·6.5인치 각각 앱 미리보기 1개와 스크린샷 9개.
 - 빌드 38: TestFlight `VALID`, 1.0.1에 연결되어 심사 제출 완료.
 - 앱 내 이벤트 `today-inning-2026-08-02`: 한국어 문구, 챌린지·무상·상위 우선순위·모든 사용자 대상, `com.solkim.baseball.ios://daily-inning` 딥 링크, KOR 일정(2026-08-03 00:00~2026-08-31 23:59 KST), 카드·상세 영상 처리 완료 후 `WAITING_FOR_REVIEW` 제출.
+- 한국 Meta 광고 준비: 아이콘 3안·60px 비교표, 한국 출시 테스트 계획, 세로·정사각·가로 소재 3종을 `marketing/appstore/meta-ads/2026-08-launch/`에 저장.
 
 ## 반복 루프
 각 웨이브 완료 시 6관점 서브에이전트 재검토(Workflow critical-review-panel 재사용) → 새 발견 반영 → "유료 1위 확신" 판정.

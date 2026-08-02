@@ -50,8 +50,13 @@ xcrun xcresulttool export attachments --path /tmp/shots.xcresult --output-path .
 `apps/ios/Sources/Assets.xcassets/AppIcon.appiconset`에 라이트·다크·틴티드 3종이 있다.
 다크/틴티드는 `tools/`가 아니라 원본에서 파생한 것이라, 원본을 교체하면 세 장을 함께 갱신한다.
 
-**남은 문제**: 현재 아이콘은 야간 구장 사진이라 60pt 홈 화면 크기에서 디테일이 뭉갠다.
-단일 실루엣(홈플레이트 또는 공) 중심으로 다시 그리는 것이 좋다. 이번 범위 밖.
+2026-08-02 비교 결과, **B안 스트라이크 존**을 선택했다. 금색 존 프레임과 공의 대비가
+60px에서도 남아 투구 조작이라는 게임 정체성을 가장 빨리 전달한다. A안은 홈플레이트
+디테일이 줄어들고, C안은 일반 야구 아이콘과 구별되는 정보가 약했다.
+
+- 비교표: `icon-options/selected-comparison-60px.png`
+- 원본 3안: `icon-options/icon-a-homeplate.png`, `icon-options/icon-b-strike-zone.png`, `icon-options/icon-c-baseball.png`
+- build 39 반영본: `AppIcon.png`, `AppIcon-Dark.png`, `AppIcon-Tinted.png`
 
 ## 3. 스토어 텍스트
 
@@ -71,3 +76,10 @@ Steam 스토어 초안(`docs/STEAM_STORE_PAGE_DRAFT.md`)을 재사용하되 다�
 - [ ] 수출 규정: `ITSAppUsesNonExemptEncryption: false` — project.yml에 설정됨
 - [ ] `PrivacyInfo.xcprivacy` 수집 없음 상태 유지
 - [x] 지원 기기 범위 확인 — iPhone 전용, iPad는 이번 릴리스에서 제외
+
+## 5. 한국 Meta 광고
+
+출시 직후 한국 App Store 유료 구매를 검증하기 위한 7일 계획과 소재 매니페스트는
+`meta-ads/2026-08-launch/PLAN.md`와 `meta-ads/2026-08-launch/manifest.json`에 있다.
+세로·정사각·가로 광고 소재도 같은 폴더에 보관한다. 현재는 광고를 집행하지 않았으며,
+App Store 심사 승인 후 캠페인 링크와 Meta 결제 설정을 확인하고 시작한다.
