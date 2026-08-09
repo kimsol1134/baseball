@@ -11,6 +11,7 @@ struct DailyInningView: View {
     let onClose: () -> Void
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 64
+    @Environment(\.requestReview) private var requestReview
     @State private var session: PitchSession?
     @State private var finished = false
     @State private var showingBoard = false
@@ -26,6 +27,9 @@ struct DailyInningView: View {
     }
 
     private var bestKey: String { "baseball.daily.best.\(dateKey)" }
+    /// 날짜를 가로지르는 개인 최고 기록. 하루짜리 best는 매일 0에서 시작해서
+    /// "내 기록을 깼다"를 판정할 수 없다.
+    static let bestEverKey = "baseball.daily.bestEver"
     private var playedKey: String { "baseball.daily.played.\(dateKey)" }
     private var attemptsKey: String { "baseball.daily.attempts.\(dateKey)" }
     static let dailyAttemptCap = 3
@@ -174,6 +178,14 @@ struct DailyInningView: View {
         // 베스트만 제출 — 리더보드 정책이 무엇이든 낮은 재도전이 상위 기록을 덮지 않게.
         AchievementStore.shared.submit([.dailyInning: best])
         GameAnalytics.log(.gameFinished, ["mode": "daily", "score": score])
+        // 개인 기록 경신 — 커리어를 접은 사람도 오늘의 이닝은 계속 켠다. 그쪽 유입로에
+        // 별점 관문이 하나도 없었다. 첫 판은 무조건 신기록이라 감흥이 없으므로,
+        // 이전 기록이 실제로 있고 그걸 넘었을 때만 묻는다.
+        let bestEver = UserDefaults.standard.integer(forKey: Self.bestEverKey)
+        if score > bestEver { UserDefaults.standard.set(score, forKey: Self.bestEverKey) }
+        if bestEver > 0, score > bestEver, ReviewPrompt.shouldAsk(.dailyBest) {
+            requestReview()
+        }
         finished = true
     }
 }

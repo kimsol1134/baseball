@@ -290,6 +290,11 @@ final class HighSchoolCareerStore {
             if carried.lifeNumber > 1 {
                 GameAnalytics.log(.rebirthStarted, ["life_number": carried.lifeNumber])
             }
+            // 3회차를 시작한다 = 환생 루프를 스스로 두 번 돌았다. 이 게임을 좋아한다는
+            // 가장 강한 신호이고, 도전 런은 기록에 남지 않으니 세지 않는다.
+            if !isChallenge, carried.lifeNumber >= 3, ReviewPrompt.shouldAsk(.thirdLife) {
+                reviewMoment += 1
+            }
             // 별명과 연대기는 이번 회차의 것이다. 환생하면 새로 쓴다.
             nicknames = []
             chronicle = []
@@ -510,9 +515,7 @@ final class HighSchoolCareerStore {
         gameResume = nil
         // 첫 무실점 이닝 — 감정이 양(+)인 가장 이른 지점에서 별점을 요청한다.
         // 예전에는 지명 성공(1~2시간 뒤) 뒤에만 열려 출시 초 리뷰 창을 통째로 놓쳤다.
-        if report.runsAllowed == 0,
-           !UserDefaults.standard.bool(forKey: "baseball.review.cleanInning") {
-            UserDefaults.standard.set(true, forKey: "baseball.review.cleanInning")
+        if report.runsAllowed == 0, ReviewPrompt.shouldAsk(.cleanInning) {
             reviewMoment += 1
         }
         perform(summary: summary, cue: report.runsAllowed == 0 ? .success : .setback) {
@@ -633,6 +636,16 @@ final class HighSchoolCareerStore {
             soulBalance: inheritance.soulPoints,
             soulAutoApplied: HighSchoolCareerEngine.appliedInheritance(for: inheritance.soulTotal)
         )
+        // 정산이 잘 끝났으면 여기서 별점을 묻는다 — **미지명이어도.** 지명 관문 하나만
+        // 열어 두면 이 게임의 컨셉(첫 회차는 대개 미지명)상 대다수가 리뷰 창을 못 본다.
+        if Self.recapDeservesReview(
+            closed,
+            pledgeAchieved: pledgeAchieved,
+            previousBestEvaluation: archive.filter { $0.lifeNumber != closed.lifeNumber }
+                .map(\.evaluationScore).max() ?? 0
+        ), ReviewPrompt.shouldAsk(.goodRecap) {
+            reviewMoment += 1
+        }
         // 같은 회차를 두 번 적지 않는다. 저장본을 되돌려 다시 확정하는 경로가 있다.
         archive.removeAll { $0.lifeNumber == closed.lifeNumber }
         archive.insert(closed, at: 0)
@@ -653,6 +666,22 @@ final class HighSchoolCareerStore {
         pendingGains = []
         loadState = .needsSetup
         save()
+    }
+
+    /// 이 정산이 별점을 물어도 좋은 회차인가. 순수 함수라 테스트할 수 있다.
+    ///
+    /// "잘 끝났다"는 지명 여부가 아니다 — 세상이 이름을 붙여 줬거나, 걸었던 약속을
+    /// 지켰거나, 지난 회차들보다 나은 평가를 받았으면 플레이어는 만족한 상태로
+    /// 이 화면을 본다. 아무것도 해당하지 않는 회차(첫 판을 망친 경우)에서는 묻지 않는다.
+    nonisolated static func recapDeservesReview(
+        _ record: LifeRecord,
+        pledgeAchieved: Bool,
+        previousBestEvaluation: Int
+    ) -> Bool {
+        if record.drafted { return true }
+        if pledgeAchieved { return true }
+        if record.nicknames?.isEmpty == false { return true }
+        return record.evaluationScore > previousBestEvaluation
     }
 
     /// 끝난 회차를 한 장으로 접는다. 순수 함수라 테스트할 수 있다.

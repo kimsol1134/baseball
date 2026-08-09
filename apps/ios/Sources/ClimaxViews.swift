@@ -111,11 +111,9 @@ struct DraftRevealView: View {
                 identifier: "hs.draft.reveal.done",
                 action: {
                     guard stage == .revealed else { return skipToReveal() }
-                    // 별점 요청은 이 게임의 감정 최고점 — 지명 확정 스탬프를 닫는 순간 —
-                    // 에서만 한다. 시스템이 연 3회로 제한하는 카드를 아무 데서나 쓰면
-                    // 화난 순간에 떠서 별점을 깎는 쪽으로 작동한다. 미지명이면 안 묻는다.
-                    // UI 테스트에서는 끈다 — 시뮬레이터에서 시트가 실제로 떠서 다음 탭을 막는다.
-                    if drafted, !ProcessInfo.processInfo.arguments.contains("-uiTestResetCareer") {
+                    // 지명 확정 스탬프를 닫는 순간은 이 게임의 감정 최고점이다.
+                    // 물어도 되는지(이유 소진·간격·UI 테스트)는 ReviewPrompt가 판단한다.
+                    if drafted, ReviewPrompt.shouldAsk(.drafted) {
                         requestReview()
                     }
                     onFinish()

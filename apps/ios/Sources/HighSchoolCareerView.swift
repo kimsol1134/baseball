@@ -134,14 +134,11 @@ struct HighSchoolCareerView: View {
         .onChange(of: career.feedbackTrigger) { _, _ in
             if let cue = GameAudioMapping.cue(for: career.feedbackCue) { audio.play(cue) }
         }
-        // 별점 요청 — 감정이 양(+)인 순간(첫 무실점 이닝)에 스토어가 신호를 올린다.
-        // 신호만 있고 소비처가 없으면 리뷰 유입이 지명 관문(90분 뒤) 하나로 좁아진다.
+        // 별점 요청 — 감정이 양(+)인 순간(첫 무실점 이닝·좋은 회차 정산·3회차 진입)에
+        // 스토어가 신호를 올린다. 신호를 올릴지 말지는 이미 ReviewPrompt가 걸렀으므로
+        // 여기서는 그대로 연다.
         .onChange(of: career.reviewMoment) { _, _ in
-            // UI 테스트에서는 건너뛴다 — 리뷰 시트가 떠서 다음 탭을 삼키면
-            // 스모크가 간헐 실패한다(ClimaxViews와 같은 규칙).
-            if !ProcessInfo.processInfo.arguments.contains("-uiTestResetCareer") {
-                requestReview()
-            }
+            requestReview()
         }
     }
 

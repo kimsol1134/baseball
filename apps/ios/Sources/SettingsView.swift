@@ -87,7 +87,8 @@ struct SettingsView: View {
                 // "모든 진행"에는 UserDefaults의 진행 흔적도 포함된다 — 남기면
                 // 새 회차의 첫 신기록·첫 별점 순간이 이미 소모돼 있다.
                 UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
-                UserDefaults.standard.removeObject(forKey: "baseball.review.cleanInning")
+                UserDefaults.standard.removeObject(forKey: DailyInningView.bestEverKey)
+                ReviewPrompt.reset()
             }
             Button("취소") {}
         } message: {
