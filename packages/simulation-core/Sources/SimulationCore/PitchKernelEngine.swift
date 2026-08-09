@@ -1569,7 +1569,7 @@ public struct PitchKernelEngine: Sendable {
         } else if recommendation.reasonCodes.contains("sequence.avoid_repeat") {
             baseReason = "방금 그 공에 타이밍이 맞았습니다. \(zoneName) \(pitchName)으로 바꿉니다."
         } else if recommendation.reasonCodes.contains("scouting.pitch_weakness") {
-            baseReason = "타자의 약점인 \(zoneName) \(pitchName)\(pitchObjectParticle(recommendation.call.pitchType)) \(intent)로 공략합니다."
+            baseReason = "타자의 약점인 \(zoneName) \(pitchName)\(pitchObjectParticle(recommendation.call.pitchType)) \(intent)\(directionParticle(intent)) 공략합니다."
         } else {
             baseReason = "강한 코스를 피해 \(zoneName) \(pitchName)으로 타이밍을 바꿉니다."
         }
@@ -1898,6 +1898,15 @@ public struct PitchKernelEngine: Sendable {
         case .fourSeam, .changeup: return "을"
         case .slider, .curveball: return "를"
         }
+    }
+
+    /// 으로/로는 ㄹ 받침이 예외다. 사인 문구의 `존 끝로` 같은 기계 번역 흔적을 막는다.
+    private func directionParticle(_ word: String) -> String {
+        guard let scalar = word.unicodeScalars.reversed().first(where: {
+            (0xAC00...0xD7A3).contains($0.value)
+        }) else { return "로" }
+        let jong = (Int(scalar.value) - 0xAC00) % 28
+        return (jong == 0 || jong == 8) ? "로" : "으로"
     }
 
     private func zoneDisplayName(_ zone: PitchZone) -> String {

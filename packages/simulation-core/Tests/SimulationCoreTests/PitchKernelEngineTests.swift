@@ -84,6 +84,13 @@ final class PitchKernelEngineTests: XCTestCase {
             studiedPreparation.primaryRecommendation.call.pitchType,
             studied.scouting.pitchWeakness
         )
+        let expectedDirection = switch studiedPreparation.primaryRecommendation.call.zoneIntent {
+        case .strike: "존 안으로"
+        case .edge: "존 끝으로"
+        case .chase: "존 밖 유인으로"
+        }
+        XCTAssertTrue(studiedPreparation.primaryRecommendation.shortReason.contains(expectedDirection))
+        XCTAssertFalse(studiedPreparation.primaryRecommendation.shortReason.contains("존 끝로"))
     }
 
     func testScoutingReliabilityDoesNotChangeExecutionOrResolution() throws {
@@ -412,6 +419,8 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertEqual(repeatedAdaptation.detectedZone, PitchZone(row: 2, column: 0))
         XCTAssertGreaterThan(repeatedAdaptation.level, mixedAdaptation.level)
         XCTAssertEqual(repeatedAdaptation.band, .lockedOn)
+        XCTAssertTrue(repeatedAdaptation.warning.contains("슬라이더와"))
+        XCTAssertFalse(repeatedAdaptation.warning.contains("슬라이더과"))
     }
 
     func testChangingMemoryAfterPreparationInvalidatesToken() throws {

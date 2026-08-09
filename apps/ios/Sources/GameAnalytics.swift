@@ -12,6 +12,9 @@ struct AnalyticsContext: Equatable {
         case debug
         case testflight
         case appStore = "app_store"
+        /// Ad-hoc/enterprise Release builds can have no App Store receipt. They must never
+        /// masquerade as the production cohort merely because `DEBUG` is absent.
+        case unknown
     }
 
     enum Environment: String, Equatable {
@@ -45,8 +48,10 @@ struct AnalyticsContext: Equatable {
             distribution = .debug
         } else if receiptURL?.lastPathComponent == "sandboxReceipt" {
             distribution = .testflight
-        } else {
+        } else if receiptURL != nil {
             distribution = .appStore
+        } else {
+            distribution = .unknown
         }
         return AnalyticsContext(
             appVersion: appVersion,
@@ -124,6 +129,26 @@ enum GameAnalytics {
         case weeklyProgramCompleted = "weekly_program_completed"
         /// 프로 시즌 중 3주 단위 결정을 확정한 시점.
         case proSeasonDecisionSelected = "pro_season_decision_selected"
+        /// 프로 은퇴 기록·야구혼·대표 유산 후보가 고교 저장에 원자적으로 접힌 시점.
+        case proLegacyRecorded = "pro_legacy_recorded"
+        /// 결산·기록·다음 회차에서 전 선수가 남긴 말을 실제로 본 시점.
+        case playerLegacySeen = "player_legacy_seen"
+        /// 선수가 실제 중요한 순간에 건넨 속마음 카드가 보인 시점.
+        case playerHeartlineSeen = "player_heartline_seen"
+        /// 3년 돌아보기에서 다음 선수로 넘어가는 주 행동을 누른 시점.
+        case recapContinueTapped = "recap_continue_tapped"
+        /// 한 선수의 성장·경기 기록으로 합성된 대표 유산 세 후보가 실제로 보인 시점.
+        case signatureLegacyOptionsSeen = "signature_legacy_options_seen"
+        /// 대표 유산 세 후보 중 하나를 직접 고른 시점.
+        case signatureLegacySelected = "signature_legacy_selected"
+        /// 발견 목록의 대표 유산 하나가 새 선수의 시작 능력에 실제 적용된 시점.
+        case signatureLegacyEquipped = "signature_legacy_equipped"
+        /// 기억·대표 유산·야구혼까지 원자적으로 정산돼 한 선수의 인생이 닫힌 시점.
+        case lifeCompleted = "life_completed"
+        /// 사용자가 고른 훈련이 상태에 실제 반영된 시점.
+        case careerTrainingCompleted = "career_training_completed"
+        /// 직접 던진 과정이 능력치 성장으로 실제 반영된 시점.
+        case gameGrowthApplied = "game_growth_applied"
 
         // MARK: - 이탈 지점을 보기 위한 계측 (2026-08 Amplitude 분석)
         //
@@ -151,6 +176,8 @@ enum GameAnalytics {
     private static var amplitude: Amplitude?
     private static var enabled = false
     private static var context = AnalyticsContext.current()
+    /// Unit-test observation point. Analytics SDK configuration remains unnecessary in tests.
+    static var eventSinkForTesting: ((Event, [String: Any]) -> Void)?
     private static let onceKeyPrefix = "baseball.analytics.once."
     /// 기기를 가로지르는 안정 식별자 키. iCloud 키-값 저장소에도 거울을 둔다.
     private static let stableIDKey = "baseball.analytics.stableID"
@@ -201,6 +228,7 @@ enum GameAnalytics {
     }
 
     static func log(_ event: Event, _ properties: [String: Any] = [:]) {
+        eventSinkForTesting?(event, properties)
         guard enabled else { return }
         let reserved = Set(context.properties.keys)
         let collisions = reserved.intersection(properties.keys)
@@ -222,6 +250,27 @@ enum GameAnalytics {
         let key = onceKeyPrefix + event.rawValue
         guard !UserDefaults.standard.bool(forKey: key) else { return false }
         UserDefaults.standard.set(true, forKey: key)
+        log(event, properties)
+        return true
+    }
+
+    /// One event per local scope (for example one wind impression per career) without sending
+    /// the high-cardinality scope itself to analytics.
+    @discardableResult
+    static func logOnce(
+        _ event: Event,
+        scope: String,
+        properties: [String: Any] = [:],
+        defaults: UserDefaults = .standard
+    ) -> Bool {
+        var hash: UInt64 = 0xCBF2_9CE4_8422_2325
+        for byte in scope.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= 0x0000_0100_0000_01B3
+        }
+        let key = "\(onceKeyPrefix)\(event.rawValue).\(String(hash, radix: 16))"
+        guard !defaults.bool(forKey: key) else { return false }
+        defaults.set(true, forKey: key)
         log(event, properties)
         return true
     }

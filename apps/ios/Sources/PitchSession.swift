@@ -35,6 +35,10 @@ final class PitchSession {
     private(set) var preparation: PitchPreparation?
     private(set) var lastResult: PitchKernelResult?
     private(set) var pitchLog: [PitchLogEntry] = []
+    /// 이미 판정이 끝난 공 위에 얹는 순수한 배합 피드백. 커널 결과에는 손대지 않는다.
+    private(set) var sequenceMoments: [PitchSequenceMoment] = []
+    private(set) var lastSequenceMoment: PitchSequenceMoment?
+    var sequenceMasteryCount: Int { sequenceMoments.count }
     /// 직전 투구가 내야 할 소리. 화면이 읽어 재생한다. 세션이 직접 소리를 내지 않으므로
     /// 유닛 테스트가 오디오 엔진을 켜지 않는다.
     private(set) var lastCues: [GameAudioCue] = []
@@ -63,6 +67,30 @@ final class PitchSession {
     private(set) var actualDamage = 0
     private(set) var recommendationAccepted = 0
 
+    /// `game_finished`에는 공 단위 이벤트 대신 등판 집계만 보낸다.
+    var recommendationAcceptancePermille: Int {
+        pitches > 0 ? recommendationAccepted * 1_000 / pitches : 0
+    }
+
+    /// Analytics convention for fields ending in `_rate`: normalized 0...1 ratio.
+    /// UI can keep the integer permille value to avoid floating-point display drift.
+    var recommendationAcceptanceRate: Double {
+        Double(recommendationAcceptancePermille) / 1_000
+    }
+
+    /// Shared aggregate contract for high-school, pro, and daily `game_finished` events.
+    var gameFinishedAnalyticsMetrics: [String: Any] {
+        [
+            "sequence_mastery_count": sequenceMasteryCount,
+            "sequence_tags": sequenceTagIDs.joined(separator: ","),
+            "recommendation_acceptance_rate": recommendationAcceptanceRate,
+        ]
+    }
+
+    var sequenceTagIDs: [String] {
+        Array(Set(sequenceMoments.map(\.tag.rawValue))).sorted().prefix(6).map { $0 }
+    }
+
     /// 사인 고정 — 켜면 포수 추천이 내 선택을 덮어쓰지 않는다.
     /// 기본은 꺼짐(추천으로 채움): 인지 부하가 가장 낮은 경로가 초보의 경로다.
     /// 내 배합을 유지하고 싶은 순간 한 번의 토글로 의도가 살아남는다.
@@ -80,6 +108,7 @@ final class PitchSession {
         let outcome: PitchOutcome
         let shortFeedback: String
         let acceptedRecommendation: Bool
+        let sequenceMoment: PitchSequenceMoment?
     }
 
     /// 타석이 끝날 때마다 불린다. 스토어가 여기서 진행을 디스크에 남긴다 —
@@ -92,6 +121,9 @@ final class PitchSession {
         var scenarioID: String
         var seed: String
         var batterIndex: Int
+        /// 이 등판을 시작했을 때의 최대 상대 타자 수. 없는 옛 체크포인트는 당시 고정값
+        /// 4타자로 복원해, 앱 업데이트가 진행 중인 경기의 길이를 바꾸지 않는다.
+        var maximumBatters: Int? = nil
         /// "between"(다음 타자 대기) 또는 "finished"(결과 반영 대기).
         var stageKind: String
         var stageMessage: String?
@@ -115,6 +147,8 @@ final class PitchSession {
         /// 빌드 32 이후 — 복구한 이닝의 정산 화면에서 "투구 기록"이 비면
         /// 복구 자체의 신뢰가 깎인다. 옛 스냅샷은 nil이라 빈 목록으로 읽는다.
         var pitchLog: [LogLine]? = nil
+        /// 수싸움 적중 도입 전 복구본은 nil이며, 빈 목록으로 이어진다.
+        var sequenceMoments: [PitchSequenceMoment]? = nil
 
         /// PitchLogEntry의 Codable 거울. id(UUID)는 표시용이라 싣지 않는다.
         struct LogLine: Codable, Equatable {
@@ -123,6 +157,7 @@ final class PitchSession {
             var outcome: PitchOutcome
             var shortFeedback: String
             var acceptedRecommendation: Bool
+            var sequenceMoment: PitchSequenceMoment? = nil
         }
     }
 
@@ -137,6 +172,7 @@ final class PitchSession {
         }
         return ResumeState(
             scenarioID: scenario.id, seed: seed, batterIndex: batterIndex,
+            maximumBatters: scenario.maximumBatters,
             stageKind: kind, stageMessage: message, fatigue: context.fatigue,
             gameState: gameState, gameLog: gameLog, rivalMemory: rivalMemory,
             pitches: pitches, strikeouts: strikeouts, consecutiveStrikeouts: consecutiveStrikeouts,
@@ -147,8 +183,10 @@ final class PitchSession {
             hitByPitches: hitByPitches, holdCall: holdCall,
             pitchLog: pitchLog.map {
                 ResumeState.LogLine(pitchNumber: $0.pitchNumber, call: $0.call, outcome: $0.outcome,
-                                    shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation)
-            }
+                                    shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation,
+                                    sequenceMoment: $0.sequenceMoment)
+            },
+            sequenceMoments: sequenceMoments
         )
     }
 
@@ -174,7 +212,16 @@ final class PitchSession {
         holdCall = resume.holdCall ?? false
         pitchLog = (resume.pitchLog ?? []).map {
             PitchLogEntry(pitchNumber: $0.pitchNumber, call: $0.call, outcome: $0.outcome,
-                          shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation)
+                          shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation,
+                          sequenceMoment: $0.sequenceMoment)
+        }
+        sequenceMoments = resume.sequenceMoments ?? pitchLog.compactMap(\.sequenceMoment)
+        if let lastLog = pitchLog.last {
+            // An explicit nil means the last pitch did not earn a badge. Do not resurrect
+            // an older moment merely because one exists earlier in the inning.
+            lastSequenceMoment = lastLog.sequenceMoment
+        } else {
+            lastSequenceMoment = sequenceMoments.last
         }
         context = PlateAppearanceContext(
             plateAppearanceID: "\(scenario.id)-b\(batterIndex)",
@@ -246,6 +293,7 @@ final class PitchSession {
         // 직전 타자의 결과를 지운다. 안 지우면 새 타자와 붙는 화면에 "안타"가 그대로 떠
         // 있어서, 방금 그 공에 맞은 것처럼 보인다. 승부 장면·판정·소리 모두 같은 문제다.
         lastResult = nil
+        lastSequenceMoment = nil
         lastCues = []
         lastDelivery = nil
         stage = .ready
@@ -287,6 +335,35 @@ final class PitchSession {
         }
     }
 
+    /// 현재 타석만 포수의 추천 사인과 중립 릴리스로 빠르게 진행한다.
+    ///
+    /// 코어를 우회하거나 결과를 미리 만들지 않는다. 화면에서 한 구씩 누를 때와 같은
+    /// `preparePitch → submitPitch` 경로를 그대로 반복하며, 타석 종료/이닝 종료에서 멈춘다.
+    /// 호출자가 저위험 상황에만 버튼을 노출하므로 승부처는 계속 직접 던진다.
+    @discardableResult
+    func fastForwardCurrentBatter(maximumPitches: Int = 12) -> Int {
+        guard case .ready = stage, maximumPitches > 0 else { return 0 }
+        let startingBatter = batterIndex
+        let startingPitches = pitches
+        let previousHoldCall = holdCall
+        holdCall = false
+        defer { holdCall = previousHoldCall }
+
+        while batterIndex == startingBatter,
+              pitches - startingPitches < maximumPitches,
+              case .ready = stage {
+            if let preparation {
+                let call = preparation.primaryRecommendation.call
+                selectedPitchType = call.pitchType
+                selectedZone = call.zone
+                selectedIntent = call.zoneIntent
+                selectedIntensity = call.intensity
+            }
+            throwPitch(delivery: .neutral)
+        }
+        return pitches - startingPitches
+    }
+
     /// 이번 등판에서 실제로 잡은 아웃카운트. 매 투구의 차이로 누적한다.
     ///
     /// 예전에는 이 값을 넘기지 않아 코어가 이닝을 `투구수 / 5`로 어림했다. 그다음에는
@@ -319,7 +396,8 @@ final class PitchSession {
             recommendationAccepted: recommendationAccepted,
             outs: outsRecorded,
             // 절대 점수 배분은 코어의 일이다. 화면은 등판 시점의 점수 차만 알려 준다.
-            scoreDifferentialAtEntry: scenario.scoreDifferential
+            scoreDifferentialAtEntry: scenario.scoreDifferential,
+            sequenceMasteryCount: sequenceMasteryCount
         )
     }
 
@@ -327,6 +405,25 @@ final class PitchSession {
 
     private func absorb(_ result: PitchKernelResult, call: PitchCall) {
         let outsBefore = Self.totalOuts(gameState.inningState)
+        // 반드시 결과 메모리로 교체하기 전에 평가한다. `counter_read`는 이 공을 던지기
+        // 직전에 보였던 반복 경고를 읽어야 하며, 방금 공으로 새로 생긴 경고를 소급해
+        // 칭찬하면 안 된다.
+        let currentSequencePitch = sequencePitch(call: call, outcome: result.snapshot.outcome)
+        // `pitchNumber` restarts at 1 for each batter. Only pitches from the current plate
+        // appearance can form a vertical/horizontal/speed sequence with this pitch.
+        let currentPlateAppearanceHistoryCount = min(3, max(0, context.pitchNumber - 1))
+        let recentSequencePitches = pitchLog.suffix(currentPlateAppearanceHistoryCount).map {
+            sequencePitch(call: $0.call, outcome: $0.outcome)
+        }
+        let sequenceMoment = PitchSequenceEvaluator.evaluate(
+            recent: recentSequencePitches,
+            context: context,
+            current: currentSequencePitch,
+            rivalMemory: rivalMemory
+        )
+        lastSequenceMoment = sequenceMoment
+        if let sequenceMoment { sequenceMoments.append(sequenceMoment) }
+
         lastResult = result
         seed = result.nextSeed
         gameState = result.gameState
@@ -359,7 +456,8 @@ final class PitchSession {
                 call: call,
                 outcome: snapshot.outcome,
                 shortFeedback: snapshot.shortFeedback,
-                acceptedRecommendation: snapshot.recommendationAccepted
+                acceptedRecommendation: snapshot.recommendationAccepted,
+                sequenceMoment: sequenceMoment
             )
         )
 
@@ -427,6 +525,35 @@ final class PitchSession {
         selectedZone = call.zone
         selectedIntent = call.zoneIntent
         selectedIntensity = call.intensity
+    }
+
+    /// 무작위 실측 구속이 아니라 선택한 구종·힘 배분의 기대 구속을 쓴다. 그래야 같은
+    /// 선택과 결과는 항상 같은 배합 태그를 만들고, 우연한 ±1km/h가 숙련 판정을 바꾸지 않는다.
+    private func sequencePitch(call: PitchCall, outcome: PitchOutcome) -> PitchSequencePitch {
+        let baseTenths: Int
+        if let profile = pitcher.profile(for: call.pitchType) {
+            baseTenths = profile.velocityTenthsKPH
+        } else {
+            let pitchBase: Int = switch call.pitchType {
+            case .fourSeam: 1_420
+            case .slider: 1_275
+            case .curveball: 1_165
+            case .changeup: 1_285
+            }
+            baseTenths = pitchBase + (pitcher.stuff - 50) * 4
+        }
+        let intensityBonus: Int = switch call.intensity {
+        case .controlled: -70
+        case .normal: 0
+        case .maxEffort: 95
+        }
+        return PitchSequencePitch(
+            pitchType: call.pitchType,
+            zone: call.zone,
+            intent: call.zoneIntent,
+            expectedVelocityKPH: max(1, (baseTenths + intensityBonus) / 10),
+            outcome: outcome
+        )
     }
 
     /// 타석이 이어질 때 코어가 내부에서 쓴 것과 같은 다음 컨텍스트를 재구성한다.

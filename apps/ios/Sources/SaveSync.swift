@@ -26,10 +26,16 @@ struct SaveSync {
     // MARK: - 쓰기
 
     /// 로컬에 원자적으로 쓰고 iCloud에도 올린다.
-    func write(_ data: Data) {
-        try? data.write(to: fileURL, options: .atomic)
+    @discardableResult
+    func write(_ data: Data) -> Bool {
+        do {
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            return false
+        }
         store.set(data, forKey: key)
         store.synchronize()
+        return true
     }
 
     func clear() {

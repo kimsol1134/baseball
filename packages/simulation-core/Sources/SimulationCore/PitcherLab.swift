@@ -228,6 +228,8 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
     /// 코어가 팀 득점을 독립적으로 뽑으면 무실점으로 막고도 2:5 패배를 통보받는다.
     /// 등판 시점의 점수 차를 받아 최종 스코어를 거기서 파생시킨다.
     public let scoreDifferentialAtEntry: Int?
+    /// 결과 확률과 분리된 수싸움 적중 횟수. Wave 3 이전 리포트에는 없으므로 optional이다.
+    public let sequenceMasteryCount: Int?
 
     public init(
         scenarioNumber: Int,
@@ -240,7 +242,8 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         recommendationAccepted: Int,
         outs: Int? = nil,
         teamRuns: Int? = nil,
-        scoreDifferentialAtEntry: Int? = nil
+        scoreDifferentialAtEntry: Int? = nil,
+        sequenceMasteryCount: Int? = nil
     ) {
         self.scenarioNumber = scenarioNumber
         self.pitches = pitches
@@ -253,6 +256,7 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         self.outs = outs
         self.teamRuns = teamRuns
         self.scoreDifferentialAtEntry = scoreDifferentialAtEntry
+        self.sequenceMasteryCount = sequenceMasteryCount
     }
 }
 

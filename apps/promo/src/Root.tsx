@@ -3,11 +3,35 @@ import { Composition } from "remotion";
 import { AppPreview, PREVIEW_FRAMES } from "./AppPreview";
 import { SHOTS, Screenshots } from "./Screenshots";
 import { BEATS, HeroLoop, Trailer } from "./Trailer";
+import { WebContestTrailer } from "./web-trailer/WebContestTrailer";
+import { OpeningScene } from "./web-trailer/OpeningScene";
+import { CareerScene } from "./web-trailer/CareerScene";
+import { TrainingScene } from "./web-trailer/TrainingScene";
+import { PitchScene } from "./web-trailer/PitchScene";
+import { RebirthScene } from "./web-trailer/RebirthScene";
+import { ClosingScene } from "./web-trailer/ClosingScene";
+import { Folder } from "remotion";
 
 const TRAILER_FRAMES = Object.values(BEATS).reduce((sum, length) => sum + length, 0);
 
 export const RemotionRoot: React.FC = () => (
   <>
+    <Folder name="Web-Contest-Trailer-Scenes">
+      <Composition id="WebOpeningScene" component={OpeningScene} durationInFrames={105} fps={30} width={1920} height={1080} />
+      <Composition id="WebCareerScene" component={CareerScene} durationInFrames={165} fps={30} width={1920} height={1080} />
+      <Composition id="WebTrainingScene" component={TrainingScene} durationInFrames={180} fps={30} width={1920} height={1080} />
+      <Composition id="WebPitchScene" component={PitchScene} durationInFrames={180} fps={30} width={1920} height={1080} />
+      <Composition id="WebRebirthScene" component={RebirthScene} durationInFrames={165} fps={30} width={1920} height={1080} />
+      <Composition id="WebClosingScene" component={ClosingScene} durationInFrames={165} fps={30} width={1920} height={1080} />
+    </Folder>
+    <Composition
+      id="WebContestTrailer"
+      component={WebContestTrailer}
+      durationInFrames={900}
+      fps={30}
+      width={1920}
+      height={1080}
+    />
     {/* 본편. 30fps라 Trailer의 프레임 상수가 그대로 초로 읽힌다. */}
     <Composition
       id="Trailer"

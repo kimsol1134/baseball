@@ -36,26 +36,22 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertFalse(result.snapshot.news.isEmpty)
     }
 
-    func testTwentyDeterministicCareersReachRetirementWithoutNegativeResources() throws {
-        for seedValue in 100..<106 {   // 커널 통일로 주간 비용 증가 — 6시드로 결정론 의도 유지
-            var first = try engine.start(startParams(seed: String(seedValue)))
-            first = try engine.signContract(.init(seed: first.nextSeed, state: first.snapshot))
-            var second = try engine.start(startParams(seed: String(seedValue)))
-            second = try engine.signContract(.init(seed: second.nextSeed, state: second.snapshot))
-            for _ in 1...12 {
-                first = try playSeason(first)
-                second = try playSeason(second)
-                XCTAssertEqual(first, second)
-                if first.snapshot.phase == .retirementDecision { break }
-                first = try engine.chooseOffseason(.init(seed: first.nextSeed, state: first.snapshot, decision: .continueCareer))
-                second = try engine.chooseOffseason(.init(seed: second.nextSeed, state: second.snapshot, decision: .continueCareer))
-            }
-            first = try engine.chooseOffseason(.init(seed: first.nextSeed, state: first.snapshot, decision: .retire))
-            XCTAssertEqual(first.snapshot.phase, .completed)
-            XCTAssertNotNil(first.snapshot.hallOfFameScore)
-            XCTAssertGreaterThanOrEqual(first.snapshot.fatigue, 0)
-            XCTAssertTrue(first.snapshot.careerStats.allSatisfy { $0.games >= 0 && $0.runsAllowed >= 0 })
+    func testTwentyCompletedSeedsReachRetirementWithoutNegativeResourcesOrDecisionOverflow() throws {
+        var firstReplay: ProCareerResult?
+        for seedValue in 100..<120 {
+            let completed = try completeCareer(seed: String(seedValue))
+            if seedValue == 100 { firstReplay = completed }
+            XCTAssertEqual(completed.snapshot.phase, .completed)
+            XCTAssertNotNil(completed.snapshot.hallOfFameScore)
+            XCTAssertGreaterThanOrEqual(completed.snapshot.fatigue, 0)
+            XCTAssertTrue(completed.snapshot.careerStats.allSatisfy { $0.games >= 0 && $0.runsAllowed >= 0 })
+            let decisionsBySeason = Dictionary(grouping: completed.snapshot.decisionHistory ?? [], by: \.season)
+            XCTAssertTrue(decisionsBySeason.values.allSatisfy { $0.count <= ProCareerEngine.maximumSeasonDecisions })
+            XCTAssertTrue((completed.snapshot.decisionHistory ?? []).allSatisfy {
+                ProCareerEngine.seasonDecisionWeeks.contains($0.week)
+            })
         }
+        XCTAssertEqual(firstReplay, try completeCareer(seed: "100"), "완주 전체도 같은 시드와 선택이면 결정론적이어야 한다")
     }
 
     // Phase 3-2: 중요 경기는 더 이상 고정 주차 [3,7,12,18,23]가 아니라 상황 트리거로 발동한다.
@@ -79,6 +75,8 @@ final class ProCareerEngineTests: XCTestCase {
                 // 경기 해소 뒤 라이벌/트리거는 정리된다.
                 XCTAssertNil(result.snapshot.currentRival)
                 XCTAssertNil(result.snapshot.seasonTrigger)
+            } else if result.snapshot.phase == .seasonDecision {
+                result = try resolvePendingDecision(result)
             } else {
                 result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: .earnTrust))
             }
@@ -101,6 +99,8 @@ final class ProCareerEngineTests: XCTestCase {
                 if result.snapshot.phase == .importantGame {
                     count += 1
                     result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report(result.snapshot.week)))
+                } else if result.snapshot.phase == .seasonDecision {
+                    result = try resolvePendingDecision(result)
                 } else {
                     let plan: ProWeekPlan = result.snapshot.fatigue > 72 ? .recover : result.snapshot.managerTrust < 62 ? .earnTrust : .refineCommand
                     result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: plan))
@@ -124,6 +124,10 @@ final class ProCareerEngineTests: XCTestCase {
                         let trigger = result.snapshot.seasonTrigger?.rawValue ?? "-"
                         log.append("s\(result.snapshot.season)w\(result.snapshot.week):\(trigger):\(rival)")
                         result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report(result.snapshot.week)))
+                    } else if result.snapshot.phase == .seasonDecision {
+                        let decision = try XCTUnwrap(result.snapshot.pendingDecision)
+                        log.append("decision:s\(decision.season)w\(decision.week):\(decision.type.rawValue)")
+                        result = try resolvePendingDecision(result)
                     } else {
                         result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: .earnTrust))
                     }
@@ -153,7 +157,7 @@ final class ProCareerEngineTests: XCTestCase {
 
         let encoded = try JSONEncoder().encode(result.snapshot)
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
-        for key in ["seasonSegment", "seasonTrigger", "currentRival", "seasonTensions", "seasonImportantGames"] {
+        for key in ["seasonSegment", "seasonTrigger", "currentRival", "seasonTensions", "seasonImportantGames", "pendingDecision", "decisionHistory"] {
             object.removeValue(forKey: key)
         }
         let stripped = try JSONSerialization.data(withJSONObject: object)
@@ -164,12 +168,431 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertNil(legacy.seasonTensions)
         XCTAssertNil(legacy.seasonImportantGames)
         XCTAssertNil(legacy.currentRival)
+        XCTAssertNil(legacy.pendingDecision)
+        XCTAssertNil(legacy.decisionHistory)
 
         // 크래시 없이 이어서 진행되고, 아크 필드가 결정론적으로 백필된다.
         let resumed = try engine.planWeek(.init(seed: result.nextSeed, state: legacy, plan: .refineCommand))
         XCTAssertNotNil(resumed.snapshot.seasonSegment)
         XCTAssertEqual(resumed.snapshot.seasonTensions?.count, 3)
         XCTAssertNotNil(resumed.snapshot.seasonImportantGames)
+    }
+
+    func testSeasonDecisionCatalogIsDeterministicAndAlwaysShowsThreeExactChoices() throws {
+        var result = try engine.start(startParams(seed: "610"))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+
+        let first = ProCareerEngine.seasonDecisionWeeks.compactMap {
+            engine.seasonDecision(for: result.snapshot, week: $0)
+        }
+        let second = ProCareerEngine.seasonDecisionWeeks.compactMap {
+            engine.seasonDecision(for: result.snapshot, week: $0)
+        }
+
+        XCTAssertEqual(first, second)
+        XCTAssertEqual(first.count, ProCareerEngine.maximumSeasonDecisions)
+        XCTAssertEqual(Set(first.map(\.type)), Set(ProSeasonDecisionType.allCases))
+        for decision in first {
+            XCTAssertEqual(decision.choices.count, 3)
+            XCTAssertEqual(Set(decision.choices.map(\.id)).count, 3)
+            XCTAssertTrue(decision.choices.allSatisfy { !$0.detail.isEmpty && !$0.effect.summary.isEmpty })
+        }
+    }
+
+    func testScheduledDecisionStopsWeeklyAdvanceAndAppliesOnlyConfirmedChoice() throws {
+        let pendingResult = try firstDecision(seed: "611")
+        let pending = try XCTUnwrap(pendingResult.snapshot.pendingDecision)
+        XCTAssertEqual(pendingResult.snapshot.phase, .seasonDecision)
+        XCTAssertTrue(ProCareerEngine.seasonDecisionWeeks.contains(pendingResult.snapshot.week))
+        XCTAssertEqual(pendingResult.snapshot.injuryWeeks, 0)
+        XCTAssertNil(pendingResult.snapshot.seasonTrigger)
+        XCTAssertNil(pendingResult.snapshot.currentRival)
+        XCTAssertThrowsError(try engine.planWeek(.init(seed: pendingResult.nextSeed, state: pendingResult.snapshot, plan: .earnTrust)))
+
+        let choice = pending.choices[0]
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: pendingResult.nextSeed,
+            state: pendingResult.snapshot,
+            decisionID: "stale-decision",
+            choiceID: choice.id
+        )))
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: pendingResult.nextSeed,
+            state: pendingResult.snapshot,
+            decisionID: pending.id,
+            choiceID: "missing-choice"
+        )))
+
+        let before = pendingResult.snapshot
+        let applied = try engine.applySeasonDecision(.init(
+            seed: pendingResult.nextSeed,
+            state: before,
+            decisionID: pending.id,
+            choiceID: choice.id
+        ))
+        XCTAssertEqual(applied.snapshot.phase, .weeklyPlan)
+        XCTAssertNil(applied.snapshot.pendingDecision)
+        XCTAssertEqual(applied.nextSeed, pendingResult.nextSeed, "수치 적용은 RNG를 소비하지 않는다")
+        XCTAssertEqual(applied.snapshot.pitcher.stuff, clampedAbility(before.pitcher.stuff + choice.effect.stuffDelta))
+        XCTAssertEqual(applied.snapshot.pitcher.command, clampedAbility(before.pitcher.command + choice.effect.commandDelta))
+        XCTAssertEqual(applied.snapshot.pitcher.movement, clampedAbility(before.pitcher.movement + choice.effect.movementDelta))
+        XCTAssertEqual(applied.snapshot.pitcher.stamina, clampedAbility(before.pitcher.stamina + choice.effect.staminaDelta))
+        XCTAssertEqual(applied.snapshot.managerTrust, min(100, max(0, before.managerTrust + choice.effect.managerTrustDelta)))
+        XCTAssertEqual(applied.snapshot.catcherTrust, min(100, max(0, before.catcherTrust + choice.effect.catcherTrustDelta)))
+        XCTAssertEqual(applied.snapshot.fatigue, min(100, max(0, before.fatigue + choice.effect.fatigueDelta)))
+        XCTAssertEqual(applied.snapshot.role, choice.effect.roleTarget ?? before.role)
+        let record = try XCTUnwrap(applied.snapshot.decisionHistory?.last)
+        XCTAssertEqual(record.decisionID, pending.id)
+        XCTAssertEqual(record.choiceID, choice.id)
+        XCTAssertEqual(record.effect, choice.effect)
+    }
+
+    func testPendingDecisionSaveResumeProducesIdenticalApplication() throws {
+        let pendingResult = try firstDecision(seed: "612")
+        let encoded = try JSONEncoder().encode(pendingResult.snapshot)
+        let resumedState = try JSONDecoder().decode(ProCareerSnapshot.self, from: encoded)
+        XCTAssertEqual(resumedState, pendingResult.snapshot)
+        let decision = try XCTUnwrap(resumedState.pendingDecision)
+        let choice = decision.choices[1]
+
+        let uninterrupted = try engine.applySeasonDecision(.init(
+            seed: pendingResult.nextSeed,
+            state: pendingResult.snapshot,
+            decisionID: decision.id,
+            choiceID: choice.id
+        ))
+        let resumed = try engine.applySeasonDecision(.init(
+            seed: pendingResult.nextSeed,
+            state: resumedState,
+            decisionID: decision.id,
+            choiceID: choice.id
+        ))
+        XCTAssertEqual(uninterrupted, resumed)
+    }
+
+    func testDecisionPhaseRequiresPendingAndOtherPhasesRejectIt() throws {
+        let result = try firstDecision(seed: "614")
+        let decision = try XCTUnwrap(result.snapshot.pendingDecision)
+        let choice = decision.choices[0]
+        let encoded = try JSONEncoder().encode(result.snapshot)
+        var missingObject = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        missingObject.removeValue(forKey: "pendingDecision")
+        let missing = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: missingObject)
+        )
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: missing,
+            decisionID: decision.id,
+            choiceID: choice.id
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("season decision phase and pending decision must match"))
+        }
+
+        var unexpectedObject = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        unexpectedObject["phase"] = ProCareerPhase.weeklyPlan.rawValue
+        let unexpected = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: unexpectedObject)
+        )
+        XCTAssertThrowsError(try engine.planWeek(.init(
+            seed: result.nextSeed,
+            state: unexpected,
+            plan: .recover
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("season decision phase and pending decision must match"))
+        }
+
+        var offseasonObject = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        offseasonObject["phase"] = ProCareerPhase.offseasonDecision.rawValue
+        let unexpectedOffseason = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: offseasonObject)
+        )
+        XCTAssertThrowsError(try engine.chooseOffseason(.init(
+            seed: result.nextSeed,
+            state: unexpectedOffseason,
+            decision: .continueCareer
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("season decision phase and pending decision must match"))
+        }
+    }
+
+    func testPendingDecisionRejectsMismatchedWeekAndNonUniqueChoiceSet() throws {
+        let result = try firstDecision(seed: "615")
+        let decision = try XCTUnwrap(result.snapshot.pendingDecision)
+        let choice = decision.choices[0]
+        let encoded = try JSONEncoder().encode(result.snapshot)
+
+        var weekObject = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var weekPending = try XCTUnwrap(weekObject["pendingDecision"] as? [String: Any])
+        weekPending["week"] = decision.week + 3
+        weekObject["pendingDecision"] = weekPending
+        let wrongWeek = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: weekObject)
+        )
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: wrongWeek,
+            decisionID: decision.id,
+            choiceID: choice.id
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("pending decision season or week mismatch"))
+        }
+
+        var shortObject = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var shortPending = try XCTUnwrap(shortObject["pendingDecision"] as? [String: Any])
+        var shortChoices = try XCTUnwrap(shortPending["choices"] as? [[String: Any]])
+        shortChoices.removeLast()
+        shortPending["choices"] = shortChoices
+        shortObject["pendingDecision"] = shortPending
+        let shortChoiceSet = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: shortObject)
+        )
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: shortChoiceSet,
+            decisionID: decision.id,
+            choiceID: choice.id
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("pending decision requires three unique choices"))
+        }
+
+        var choiceObject = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var choicePending = try XCTUnwrap(choiceObject["pendingDecision"] as? [String: Any])
+        var choices = try XCTUnwrap(choicePending["choices"] as? [[String: Any]])
+        choices[1] = choices[0]
+        choicePending["choices"] = choices
+        choiceObject["pendingDecision"] = choicePending
+        let duplicateChoice = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: choiceObject)
+        )
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: duplicateChoice,
+            decisionID: decision.id,
+            choiceID: choice.id
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("pending decision requires three unique choices"))
+        }
+    }
+
+    func testDecisionHistoryTamperingFailsConditionalCommitment() throws {
+        let pendingResult = try firstDecision(seed: "616")
+        let decision = try XCTUnwrap(pendingResult.snapshot.pendingDecision)
+        let applied = try engine.applySeasonDecision(.init(
+            seed: pendingResult.nextSeed,
+            state: pendingResult.snapshot,
+            decisionID: decision.id,
+            choiceID: decision.choices[0].id
+        ))
+        let encoded = try JSONEncoder().encode(applied.snapshot)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var history = try XCTUnwrap(object["decisionHistory"] as? [[String: Any]])
+        history[0]["choiceTitle"] = "변조된 선택"
+        object["decisionHistory"] = history
+        let tampered = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        XCTAssertThrowsError(try engine.planWeek(.init(
+            seed: applied.nextSeed,
+            state: tampered,
+            plan: .recover
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("state commitment mismatch"))
+        }
+    }
+
+    func testCommitmentValidOlderCatalogDecisionAppliesPersistedCopyAndEffectOnce() throws {
+        let result = try firstDecision(seed: "617")
+        let current = try XCTUnwrap(result.snapshot.pendingDecision)
+        let persistedEffect = ProDecisionEffect(
+            stuffDelta: 2, commandDelta: -1,
+            managerTrustDelta: 9, catcherTrustDelta: 2, fatigueDelta: -5
+        )
+        let persistedChoice = ProSeasonDecisionChoice(
+            id: current.choices[0].id,
+            title: "이전 버전의 선택",
+            detail: "그때 화면에서 확인한 설명입니다.",
+            effect: persistedEffect
+        )
+        let persisted = ProSeasonDecision(
+            id: current.id,
+            type: current.type,
+            season: current.season,
+            week: current.week,
+            title: "이전 버전의 갈림길",
+            detail: "카탈로그가 바뀌기 전에 저장된 결정입니다.",
+            choices: [persistedChoice] + Array(current.choices.dropFirst())
+        )
+
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(result.snapshot)) as? [String: Any]
+        )
+        object["pendingDecision"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(persisted))
+        let unsigned = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        )
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: unsigned,
+            decisionID: persisted.id,
+            choiceID: persistedChoice.id
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("state commitment mismatch"))
+        }
+
+        object["commitment"] = engine.commitment(unsigned)
+        let signedOlderSave = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        )
+        let applied = try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: signedOlderSave,
+            decisionID: persisted.id,
+            choiceID: persistedChoice.id
+        ))
+
+        XCTAssertEqual(applied.nextSeed, result.nextSeed)
+        XCTAssertEqual(applied.snapshot.pitcher.stuff, clampedAbility(signedOlderSave.pitcher.stuff + 2))
+        XCTAssertEqual(applied.snapshot.pitcher.command, clampedAbility(signedOlderSave.pitcher.command - 1))
+        XCTAssertEqual(applied.snapshot.managerTrust, min(100, signedOlderSave.managerTrust + 9))
+        XCTAssertEqual(applied.snapshot.catcherTrust, min(100, signedOlderSave.catcherTrust + 2))
+        XCTAssertEqual(applied.snapshot.fatigue, max(0, signedOlderSave.fatigue - 5))
+        XCTAssertEqual(applied.snapshot.decisionHistory?.last?.choiceTitle, persistedChoice.title)
+        XCTAssertEqual(applied.snapshot.decisionHistory?.last?.effect, persistedEffect)
+        XCTAssertEqual(applied.snapshot.news.first, "\(persisted.title) · \(persistedChoice.title) — \(persistedEffect.summary)")
+        XCTAssertNil(applied.snapshot.pendingDecision)
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: applied.nextSeed,
+            state: applied.snapshot,
+            decisionID: persisted.id,
+            choiceID: persistedChoice.id
+        )))
+    }
+
+    func testSignedPendingDecisionStillRejectsOutOfRangePersistedEffect() throws {
+        let result = try firstDecision(seed: "618")
+        let current = try XCTUnwrap(result.snapshot.pendingDecision)
+        let invalidChoice = ProSeasonDecisionChoice(
+            id: current.choices[0].id,
+            title: current.choices[0].title,
+            detail: current.choices[0].detail,
+            effect: .init(stuffDelta: 5)
+        )
+        let invalid = ProSeasonDecision(
+            id: current.id, type: current.type, season: current.season, week: current.week,
+            title: current.title, detail: current.detail,
+            choices: [invalidChoice] + Array(current.choices.dropFirst())
+        )
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(result.snapshot)) as? [String: Any]
+        )
+        object["pendingDecision"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(invalid))
+        let unsigned = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        )
+        object["commitment"] = engine.commitment(unsigned)
+        let signed = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        )
+        XCTAssertThrowsError(try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: signed,
+            decisionID: invalid.id,
+            choiceID: invalidChoice.id
+        ))) { error in
+            XCTAssertEqual(error as? SimulationError, .invalidProCareer("pending decision effect is out of range"))
+        }
+    }
+
+    func testSeasonDecisionWeeksAreUniqueAndNeverExceedSevenPerSeason() throws {
+        var result = try engine.start(startParams(seed: "613"))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        var openedWeeks: [Int] = []
+        while result.snapshot.phase != .seasonReview {
+            switch result.snapshot.phase {
+            case .weeklyPlan:
+                result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: .recover))
+            case .seasonDecision:
+                XCTAssertEqual(result.snapshot.injuryWeeks, 0)
+                XCTAssertNil(result.snapshot.seasonTrigger)
+                openedWeeks.append(result.snapshot.week)
+                result = try resolvePendingDecision(result)
+            case .importantGame:
+                XCTAssertNil(result.snapshot.pendingDecision, "중요 경기와 시즌 결정은 같은 주에 열리지 않는다")
+                result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report(result.snapshot.week)))
+            default:
+                XCTFail("시즌 진행 중 예상하지 않은 phase: \(result.snapshot.phase)")
+                return
+            }
+        }
+        XCTAssertLessThanOrEqual(openedWeeks.count, ProCareerEngine.maximumSeasonDecisions)
+        XCTAssertEqual(Set(openedWeeks).count, openedWeeks.count)
+        XCTAssertTrue(openedWeeks.allSatisfy { ProCareerEngine.seasonDecisionWeeks.contains($0) })
+        XCTAssertEqual(result.snapshot.decisionHistory?.filter { $0.season == 1 }.count, openedWeeks.count)
+        XCTAssertNil(result.snapshot.pendingDecision, "시즌 전환에는 pending 결정을 남기지 않는다")
+    }
+
+    func testNilSequenceMasteryKeepsLegacyTrustFormula() throws {
+        let game = try firstImportantGame(seed: "701")
+        let value = report(game.snapshot.week, sequenceMasteryCount: nil)
+        let resolved = try engine.resolveImportantGame(.init(seed: game.nextSeed, state: game.snapshot, report: value))
+        let soundProcess = value.actualDamage <= value.expectedDamage + 150
+            || value.recommendationAccepted * 2 >= value.pitches
+        let expectedManager = min(100, max(0,
+            game.snapshot.managerTrust + value.strikeouts * 2 - value.walks * 2
+                - value.runsAllowed * 3 + (soundProcess ? 2 : 0)
+        ))
+        let expectedCatcher = min(100, max(0, game.snapshot.catcherTrust + (soundProcess ? 2 : -1)))
+        XCTAssertEqual(resolved.snapshot.managerTrust, expectedManager)
+        XCTAssertEqual(resolved.snapshot.catcherTrust, expectedCatcher)
+    }
+
+    func testZeroSequenceMasteryIsExactIdentityWithLegacyNil() throws {
+        let game = try firstImportantGame(seed: "702")
+        let legacy = try engine.resolveImportantGame(.init(
+            seed: game.nextSeed,
+            state: game.snapshot,
+            report: report(game.snapshot.week, sequenceMasteryCount: nil)
+        ))
+        let zero = try engine.resolveImportantGame(.init(
+            seed: game.nextSeed,
+            state: game.snapshot,
+            report: report(game.snapshot.week, sequenceMasteryCount: 0)
+        ))
+        XCTAssertEqual(zero, legacy)
+    }
+
+    func testSequenceMasteryAboveThreeCapsBothTrustRewardsAtThree() throws {
+        let game = try firstImportantGame(seed: "703")
+        let baseline = try engine.resolveImportantGame(.init(
+            seed: game.nextSeed,
+            state: game.snapshot,
+            report: report(game.snapshot.week, sequenceMasteryCount: nil)
+        ))
+        let three = try engine.resolveImportantGame(.init(
+            seed: game.nextSeed,
+            state: game.snapshot,
+            report: report(game.snapshot.week, sequenceMasteryCount: 3)
+        ))
+        let aboveCap = try engine.resolveImportantGame(.init(
+            seed: game.nextSeed,
+            state: game.snapshot,
+            report: report(game.snapshot.week, sequenceMasteryCount: 99)
+        ))
+        XCTAssertEqual(aboveCap, three)
+        XCTAssertEqual(aboveCap.snapshot.managerTrust - baseline.snapshot.managerTrust, 3)
+        XCTAssertEqual(aboveCap.snapshot.catcherTrust - baseline.snapshot.catcherTrust, 3)
     }
 
     func testProTeamsPreserveDistinctDraftDevelopmentPlans() {
@@ -244,11 +667,24 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertGreaterThan(gassedBurden, freshBurden, "지친 등판 묶음(실점×2+볼넷 \(gassedBurden))이 싱싱한 묶음(\(freshBurden))보다 좋으면 피로가 커널에 반영되지 않는 것")
     }
 
+    private func completeCareer(seed: String) throws -> ProCareerResult {
+        var result = try engine.start(startParams(seed: seed))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        for _ in 1...12 {
+            result = try playSeason(result)
+            if result.snapshot.phase == .retirementDecision { break }
+            result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer))
+        }
+        return try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .retire))
+    }
+
     private func playSeason(_ initial: ProCareerResult) throws -> ProCareerResult {
         var result = initial
         while result.snapshot.phase != .seasonReview {
             if result.snapshot.phase == .importantGame {
                 result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report(result.snapshot.week)))
+            } else if result.snapshot.phase == .seasonDecision {
+                result = try resolvePendingDecision(result)
             } else {
                 let plan: ProWeekPlan = result.snapshot.fatigue > 72 ? .recover : result.snapshot.managerTrust < 62 ? .earnTrust : .refineCommand
                 result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: plan))
@@ -257,9 +693,72 @@ final class ProCareerEngineTests: XCTestCase {
         return try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
     }
 
-    private func report(_ number: Int) -> ImportantInningReport {
-        .init(scenarioNumber: number, pitches: 18, strikeouts: 2, walks: 0, runsAllowed: 0, expectedDamage: 380, actualDamage: 240, recommendationAccepted: 12)
+    private func firstDecision(seed: String) throws -> ProCareerResult {
+        var result = try engine.start(startParams(seed: seed))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        for _ in 0..<120 {
+            switch result.snapshot.phase {
+            case .seasonDecision:
+                return result
+            case .weeklyPlan:
+                result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: .recover))
+            case .importantGame:
+                result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report(result.snapshot.week)))
+            case .seasonReview:
+                result = try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
+            case .offseasonDecision:
+                result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer))
+            default:
+                throw SimulationError.invalidProCareer("테스트에서 시즌 결정에 도달하지 못했습니다.")
+            }
+        }
+        throw SimulationError.invalidProCareer("테스트에서 시즌 결정 탐색 한도를 넘었습니다.")
     }
+
+    private func firstImportantGame(seed: String) throws -> ProCareerResult {
+        var result = try engine.start(startParams(seed: seed))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        for _ in 0..<120 {
+            switch result.snapshot.phase {
+            case .importantGame:
+                return result
+            case .weeklyPlan:
+                result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: .earnTrust))
+            case .seasonDecision:
+                result = try resolvePendingDecision(result)
+            case .seasonReview:
+                result = try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
+            case .offseasonDecision:
+                result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer))
+            default:
+                throw SimulationError.invalidProCareer("테스트에서 중요 경기에 도달하지 못했습니다.")
+            }
+        }
+        throw SimulationError.invalidProCareer("테스트에서 중요 경기 탐색 한도를 넘었습니다.")
+    }
+
+    /// 기존 장기 회귀는 갈림길에서 회복 부담이 가장 낮은 선택을 일관되게 고른다.
+    private func resolvePendingDecision(_ result: ProCareerResult) throws -> ProCareerResult {
+        let decision = try XCTUnwrap(result.snapshot.pendingDecision)
+        let choice = try XCTUnwrap(decision.choices.min { lhs, rhs in
+            if lhs.effect.fatigueDelta != rhs.effect.fatigueDelta {
+                return lhs.effect.fatigueDelta < rhs.effect.fatigueDelta
+            }
+            return lhs.id < rhs.id
+        })
+        return try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            decisionID: decision.id,
+            choiceID: choice.id
+        ))
+    }
+
+    private func report(_ number: Int, sequenceMasteryCount: Int? = nil) -> ImportantInningReport {
+        .init(scenarioNumber: number, pitches: 18, strikeouts: 2, walks: 0, runsAllowed: 0, expectedDamage: 380, actualDamage: 240, recommendationAccepted: 12, sequenceMasteryCount: sequenceMasteryCount)
+    }
+
+    private func clampedAbility(_ value: Int) -> Int { min(80, max(20, value)) }
 
     private func startParams(seed: String, entitlement: ProEntitlementSnapshot? = nil) -> StartProCareerParams {
         .init(seed: seed, identity: .defaultPitcher, pitcher: pitcher(), draftResult: drafted(), entitlement: entitlement ?? activeEntitlement())
@@ -290,6 +789,9 @@ final class ProCareerEngineTests: XCTestCase {
                                   runsAllowed: 5, expectedDamage: 1_200, actualDamage: 3_000,
                                   recommendationAccepted: 0)
                 ))
+                previous = result.snapshot.managerTrust
+            case .seasonDecision:
+                result = try resolvePendingDecision(result)
                 previous = result.snapshot.managerTrust
             default:
                 sawDrop ? () : XCTFail("시즌이 끝날 때까지 감독의 믿음이 한 번도 내려가지 않았습니다.")
@@ -326,6 +828,8 @@ final class ProCareerEngineTests: XCTestCase {
                     : .init(scenarioNumber: 1, pitches: 16, strikeouts: 4, walks: 0, runsAllowed: 0,
                             expectedDamage: 400, actualDamage: 150, recommendationAccepted: 10)
                 result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report))
+            case .seasonDecision:
+                result = try resolvePendingDecision(result)
             case .seasonReview:
                 result = try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
             case .offseasonDecision:

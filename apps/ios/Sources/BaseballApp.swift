@@ -36,6 +36,9 @@ struct BaseballApp: App {
             "life_number": highSchool.state?.lifeNumber ?? highSchool.inheritance.lifeNumber,
             "games": highSchool.state?.performance.importantGamesCompleted ?? 0,
             "phase": highSchool.state?.phase.rawValue ?? "none",
+            "act_number": highSchool.state.map {
+                HighSchoolPresentation.actNumber(chapter: $0.chapter.number)
+            } ?? 0,
             "lives_finished": highSchool.archive.count,
         ])
     }

@@ -11,6 +11,7 @@ struct DailyInningView: View {
     let onClose: () -> Void
     /// 어느 입구로 들어왔는가. 어떤 자리가 실제로 쓰이는지 재려고 이벤트에 싣는다.
     var source: String = "unknown"
+    var weekly: WeeklyProgramStore = .shared
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 64
     @Environment(\.requestReview) private var requestReview
@@ -184,6 +185,10 @@ struct DailyInningView: View {
     }
 
     private func finish(_ session: PitchSession) {
+        // PitchView can deliver its CTA twice before the cover transition consumes the first
+        // tap. Claim completion before analytics/rewards so the second callback is a no-op.
+        guard Self.canClaimFinish(alreadyFinished: finished) else { return }
+        finished = true
         let score = Self.score(
             strikeouts: session.strikeouts, outs: session.outsRecorded,
             walks: session.walks, runsAllowed: session.runsAllowed
@@ -196,10 +201,13 @@ struct DailyInningView: View {
         // 오늘 몫을 던졌으니 오늘 저녁 알림은 취소한다 — 이미 한 일을 하라고 부르면
         // 알림이 소음이 되고, 다음 알림까지 통째로 무시된다.
         DailyReminder.refresh()
-        GameAnalytics.log(.gameFinished, [
+        let gameFinishedProperties = session.gameFinishedAnalyticsMetrics.merging([
             "mode": "daily", "result": "completed", "score": score,
             "streak": DailyStreak.current(),
-        ])
+        ]) { _, modeSpecific in modeSpecific }
+        GameAnalytics.log(.gameFinished, gameFinishedProperties)
+        weekly.record(.dailyInningCompleted)
+        weekly.record(.sequenceMasteryTriggered, amount: session.sequenceMasteryCount)
         // 개인 기록 경신 — 커리어를 접은 사람도 오늘의 이닝은 계속 켠다. 그쪽 유입로에
         // 별점 관문이 하나도 없었다. 첫 판은 무조건 신기록이라 감흥이 없으므로,
         // 이전 기록이 실제로 있고 그걸 넘었을 때만 묻는다.
@@ -208,7 +216,7 @@ struct DailyInningView: View {
         if bestEver > 0, score > bestEver, ReviewPrompt.shouldAsk(.dailyBest) {
             requestReview()
         }
-        finished = true
     }
-}
 
+    static func canClaimFinish(alreadyFinished: Bool) -> Bool { !alreadyFinished }
+}

@@ -14,10 +14,16 @@ final class CareerSmokeUITests: XCTestCase {
     /// 선수 만들기가 단계형이라 마지막 단계에 닿아야 `hs.start`가 나온다.
     /// 첫 회차는 이름 → 투수 유형 두 단계, 2회차부터 난이도·핸디캡이 하나 더 붙는다.
     @discardableResult
-    private func completeSetup(_ app: XCUIApplication) -> Bool {
+    private func completeSetup(_ app: XCUIApplication, seed: String? = nil) -> Bool {
         let start = app.buttons["hs.start"]
         let next = app.buttons["hs.setup.next"]
         guard start.waitForExistence(timeout: timeout) || next.waitForExistence(timeout: timeout) else { return false }
+        if let seed {
+            let seedField = app.textFields["hs.setup.seed"]
+            guard seedField.waitForExistence(timeout: timeout) else { return false }
+            seedField.tap()
+            seedField.typeText(seed)
+        }
         var hops = 0
         while !start.exists, next.exists, hops < 6 {
             next.tap()
@@ -57,6 +63,7 @@ final class CareerSmokeUITests: XCTestCase {
         var capturedTraining = false
         var capturedPitch = false
         var reachedDraft = false
+        var usedFastForwardDuringRun = false
 
         while steps < maximumSteps {
             steps += 1
@@ -73,14 +80,31 @@ final class CareerSmokeUITests: XCTestCase {
                 continue
             }
 
+            if app.buttons["hs.recap.continue"].exists {
+                XCTAssertTrue(reachedDraft, "드래프트 전인데 3년 결산이 열렸습니다.")
+                XCTAssertTrue(
+                    finishRecapAndAssertPlayerContinuity(app),
+                    "결산에서 다음 선수의 편지까지 이어지지 않았습니다."
+                )
+                return
+            }
+
             if app.buttons["hs.rebirth"].exists {
                 capture(app, name: "08-completed")
                 XCTAssertTrue(reachedDraft, "드래프트를 거치지 않고 완료에 도달했습니다.")
                 // 지명된 회차에서 같은 버튼은 "이 회차를 접고 다시 시작"이고, 누르면 새
-                // 회차가 아니라 **기억 선택**으로 간다. 루프가 이어서 처리하게 둔다.
+                // 회차가 아니라 확인창을 거쳐 **기억 선택**으로 간다.
                 let drafted = app.buttons["hs.enterPro"].exists
-                tapIfPresent(app.buttons["hs.rebirth"])
-                if drafted { continue }
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.rebirth"]))
+                if drafted {
+                    let confirmFold = app.buttons["접고 기억을 고른다"]
+                    XCTAssertTrue(
+                        confirmFold.waitForExistence(timeout: timeout),
+                        "프로를 접는 확인창이 열리지 않았습니다."
+                    )
+                    confirmFold.tap()
+                    continue
+                }
                 // 환생 스탬프가 전면을 덮는다. **먼저** 이것이 사라지기를 기다린다 —
                 // 덮인 동안에는 아래 화면이 접근성 트리에 잡히지 않는다.
                 // 스탬프는 접근성 요소로 합쳐지므로 종류를 가리지 않고 찾는다.
@@ -106,7 +130,9 @@ final class CareerSmokeUITests: XCTestCase {
                     capturedTraining = true
                     capture(app, name: "04-training")
                 }
-                tapIfPresent(app.buttons["hs.training.commit"])
+                if !tapIfPresent(app.buttons["hs.training.commitBlock"]) {
+                    tapIfPresent(app.buttons["hs.training.commit"])
+                }
                 continue
             }
             if tapFirst(app, prefix: "hs.response.") { continue }
@@ -120,24 +146,36 @@ final class CareerSmokeUITests: XCTestCase {
                     _ = app.buttons["pitch.throw"].waitForExistence(timeout: timeout)
                     capture(app, name: "05-pitch-decision")
                 }
-                playInning(app, capturePitchResult: !capturedPitch)
+                usedFastForwardDuringRun = playInning(
+                    app, capturePitchResult: !capturedPitch, usesFastForwardWhenAvailable: true
+                ) || usedFastForwardDuringRun
                 continue
             }
 
             if app.buttons["hs.draft.resolve"].exists {
                 reachedDraft = true
+                XCTAssertTrue(
+                    usedFastForwardDuringRun,
+                    "한 회차 동안 저위험 타석 빠른 진행을 한 번도 사용할 수 없었습니다."
+                )
                 capture(app, name: "06-draft")
                 tapIfPresent(app.buttons["hs.draft.resolve"])
                 continue
             }
 
             if app.buttons["hs.legacy.confirm"].exists {
-                selectRequiredMemories(app)
+                selectRequiredLegacy(app)
                 capture(app, name: "07-legacy")
                 XCTAssertTrue(
                     tapIfPresent(app.buttons["hs.legacy.confirm"]),
                     "필요한 만큼 기억을 골랐는데도 확정할 수 없습니다."
                 )
+                let closeLife = app.buttons["확정하고 이 선수의 이야기를 닫는다"]
+                XCTAssertTrue(
+                    closeLife.waitForExistence(timeout: timeout),
+                    "기억 확정 확인창이 열리지 않았습니다."
+                )
+                closeLife.tap()
                 continue
             }
 
@@ -152,13 +190,22 @@ final class CareerSmokeUITests: XCTestCase {
     func testDraftedRunCanEnterProCareer() {
         let app = launch()
         dismissOpening(app)
-        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
+        // 실제 PitchKernel 정책에서 지명되는 고정 시드. 미지명 때 조용히 끝내지 않고
+        // 고교→프로 전환(탭 선택 대상 교체 포함)을 매 실행 검증한다.
+        XCTAssertTrue(completeSetup(app, seed: "1"), "고교 시작 화면이 열리지 않았습니다.")
 
         var steps = 0
+        var usedFastForwardDuringRun = false
         while steps < maximumSteps {
             steps += 1
             if tapIfPresent(app.buttons["hs.draft.reveal.done"]) { continue }
+            if app.buttons["hs.recap.continue"].exists {
+                capture(app, name: "99-seed-1-undrafted-recap")
+                XCTFail("프로 진입 회귀용 고정 시드가 미지명 정산으로 들어갔습니다.")
+                return
+            }
             if app.buttons["hs.enterPro"].exists {
+                XCTAssertTrue(usedFastForwardDuringRun)
                 tapIfPresent(app.buttons["hs.enterPro"])
                 XCTAssertTrue(
                     app.staticTexts["다음 행동"].waitForExistence(timeout: timeout)
@@ -166,29 +213,39 @@ final class CareerSmokeUITests: XCTestCase {
                     "프로 커리어 화면이 열리지 않았습니다."
                 )
                 capture(app, name: "10-pro-entered")
+                XCTAssertTrue(
+                    finishProCareer(app),
+                    "프로 첫 주부터 은퇴까지 화면 흐름을 완료하지 못했습니다."
+                )
                 return
             }
             if app.buttons["hs.rebirth"].exists {
-                // 미지명 회차였다. 프로 진입 버튼이 없는 것이 정상이다.
-                XCTAssertFalse(app.buttons["hs.enterPro"].exists)
+                capture(app, name: "99-seed-1-undrafted")
+                XCTFail("프로 진입 회귀용 고정 시드가 미지명으로 끝났습니다. 정책과 시드를 다시 보정해야 합니다.")
                 return
             }
 
             if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
             if tapFirst(app, prefix: "hs.school.") { confirmSchool(app); continue }
-            if tapIfPresent(app.buttons["hs.training.commit"]) { continue }
+            if tapIfPresent(app.buttons["hs.training.commitBlock"])
+                || tapIfPresent(app.buttons["hs.training.commit"]) { continue }
             if tapFirst(app, prefix: "hs.response.") { continue }
             if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
             if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
             if app.buttons["hs.game.start"].exists {
                 tapIfPresent(app.buttons["hs.game.start"])
-                playInning(app, capturePitchResult: false)
+                usedFastForwardDuringRun = playInning(
+                    app, capturePitchResult: false, usesFastForwardWhenAvailable: true
+                ) || usedFastForwardDuringRun
                 continue
             }
             if tapIfPresent(app.buttons["hs.draft.resolve"]) { continue }
             if app.buttons["hs.legacy.confirm"].exists {
-                selectRequiredMemories(app)
-                tapIfPresent(app.buttons["hs.legacy.confirm"])
+                selectRequiredLegacy(app)
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.legacy.confirm"]))
+                let closeLife = app.buttons["확정하고 이 선수의 이야기를 닫는다"]
+                XCTAssertTrue(closeLife.waitForExistence(timeout: timeout))
+                closeLife.tap()
                 continue
             }
             capture(app, name: "99-stuck-pro")
@@ -198,9 +255,76 @@ final class CareerSmokeUITests: XCTestCase {
         XCTFail("회차가 끝나지 않았습니다.")
     }
 
-    /// 코어는 기억을 정확히 memorySlots장 요구한다. 확정 버튼이 눌릴 때까지 고른다.
-    private func selectRequiredMemories(_ app: XCUIApplication) {
+    /// 프로는 구간 진행을 사용하되, 시즌 갈림길과 중요 경기는 실제 화면에서 직접 처리한다.
+    /// 코어 완주 테스트만으로는 화면의 누락 국면·빈 화면·확인창 연결 단절을 잡을 수 없다.
+    private func finishProCareer(_ app: XCUIApplication) -> Bool {
+        var steps = 0
+        while steps < 700 {
+            steps += 1
+
+            if app.buttons["pro.newPlayer"].exists {
+                capture(app, name: "11-pro-retired")
+                return true
+            }
+            if tapIfPresent(app.buttons["pro.advanceSegment"]) { continue }
+
+            let choices = app.buttons.matching(
+                NSPredicate(format: "identifier BEGINSWITH %@", "pro.seasonDecision.choice.")
+            )
+            if choices.count > 0 {
+                let choice = choices.element(boundBy: 0)
+                guard choice.exists, bringIntoView(choice) else { return false }
+                choice.tap()
+                let confirm = app.buttons["pro.seasonDecision.confirm"]
+                guard confirm.waitForExistence(timeout: timeout) else { return false }
+                confirm.tap()
+                continue
+            }
+
+            if tapIfPresent(app.buttons["pro.game.start"]) {
+                _ = playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true)
+                continue
+            }
+            if tapIfPresent(app.buttons["시즌 기록 확인"]) { continue }
+
+            if tapIfPresent(app.buttons["pro.offseason.arrow.forward.circle"]) {
+                let confirm = app.buttons["pro.offseason.confirm"]
+                guard confirm.waitForExistence(timeout: timeout) else { return false }
+                confirm.tap()
+                continue
+            }
+            if tapIfPresent(app.buttons["pro.retire"]) {
+                let confirm = app.buttons["pro.retire.confirm"]
+                guard confirm.waitForExistence(timeout: timeout) else { return false }
+                confirm.tap()
+                continue
+            }
+
+            // 화면 전환 애니메이션 한가운데라면 잠깐 안정화를 기다리고 한 번 더 판정한다.
+            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+            if app.buttons["pro.advanceSegment"].exists
+                || app.buttons["pro.game.start"].exists
+                || app.buttons["pro.retire"].exists { continue }
+            capture(app, name: "99-stuck-pro-career")
+            return false
+        }
+        capture(app, name: "99-pro-career-step-limit")
+        return false
+    }
+
+    /// 새 회차는 대표 유산 하나를, 기능 도입 전 저장은 기존 기억을 필요한 만큼 고른다.
+    private func selectRequiredLegacy(_ app: XCUIApplication) {
         let confirm = app.buttons["hs.legacy.confirm"]
+        let signatureOptions = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "hs.signatureLegacy.")
+        )
+        if !confirm.isEnabled, signatureOptions.count > 0 {
+            let option = signatureOptions.element(boundBy: 0)
+            if option.exists, bringIntoView(option) {
+                option.tap()
+            }
+        }
+
         let options = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.memory."))
         var index = 0
         while !confirm.isEnabled, index < options.count {
@@ -300,16 +424,61 @@ final class CareerSmokeUITests: XCTestCase {
 
     // MARK: - 보조
 
-    private func playInning(_ app: XCUIApplication, capturePitchResult: Bool) {
+    /// 끝난 선수의 편지가 결산에서 보이고, 빠른 환생 뒤 새 선수에게 실제로 도착하는지 걷는다.
+    /// 수치 계승만 검증하면 감정 연속성 UI가 끊겨도 테스트가 초록색으로 남는다.
+    private func finishRecapAndAssertPlayerContinuity(_ app: XCUIApplication) -> Bool {
+        let continueButton = app.buttons["hs.recap.continue"]
+        guard continueButton.waitForExistence(timeout: timeout) else { return false }
+
+        let legacy = app.descendants(matching: .any)
+            .matching(identifier: "hs.recap.playerLegacy").firstMatch
+        guard legacy.waitForExistence(timeout: timeout) else { return false }
+        _ = bringIntoView(legacy)
+        capture(app, name: "08-player-farewell")
+
+        let enabled = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "enabled == true"), object: continueButton
+        )
+        guard XCTWaiter.wait(for: [enabled], timeout: timeout) == .completed else { return false }
+        continueButton.tap()
+
+        let stamp = app.descendants(matching: .any)
+            .matching(identifier: "hs.rebirth.stamp").firstMatch
+        if stamp.waitForExistence(timeout: 4) {
+            capture(app, name: "09-rebirth")
+            _ = stamp.waitForNonExistence(timeout: timeout)
+        }
+
+        let inheritedLetter = app.descendants(matching: .any)
+            .matching(identifier: "hs.previousPlayerLetter").firstMatch
+        guard inheritedLetter.waitForExistence(timeout: timeout) else { return false }
+        _ = bringIntoView(inheritedLetter)
+        capture(app, name: "10-previous-player-letter")
+        return true
+    }
+
+    @discardableResult
+    private func playInning(
+        _ app: XCUIApplication,
+        capturePitchResult: Bool,
+        usesFastForwardWhenAvailable: Bool = false
+    ) -> Bool {
         let throwButton = app.buttons["pitch.throw"]
+        let fastForward = app.buttons["pitch.fastForwardBatter"]
         let nextBatter = app.buttons["pitch.nextBatter"]
         let finish = app.buttons["pitch.finish"]
         XCTAssertTrue(throwButton.waitForExistence(timeout: timeout), "승부 화면이 열리지 않았습니다.")
+        XCTAssertFalse(app.tabBars.firstMatch.exists, "투구 조작 위에 하단 탭 바가 겹치면 안 됩니다.")
 
         var pitches = 0
         var captured = false
+        var usedFastForward = false
         while !finish.exists, pitches < 120 {
-            if throwButton.exists, bringIntoView(throwButton) {
+            if usesFastForwardWhenAvailable, fastForward.exists, bringIntoView(fastForward) {
+                fastForward.tap()
+                usedFastForward = true
+                pitches += 1
+            } else if throwButton.exists, bringIntoView(throwButton) {
                 throwButton.tap()
                 pitches += 1
                 if capturePitchResult, !captured, pitches >= 2 {
@@ -330,9 +499,9 @@ final class CareerSmokeUITests: XCTestCase {
         )
         _ = bringIntoView(finish)
         finish.tap()
+        return usedFastForward
     }
 
-    @discardableResult
     /// 1회차에는 오프닝 장면이 먼저 뜬다. 넘기지 않으면 선수 만들기 화면에 닿지 못한다.
     private func dismissOpening(_ app: XCUIApplication) {
         let start = app.buttons["hs.opening.start"]

@@ -4,17 +4,31 @@
 
 | 이벤트 | 소유 화면/로직 | 필수 속성 | 의미 |
 |---|---|---|---|
-| `game_finished` | 고교·프로 스토어, 오늘의 이닝 | `mode`, `result`; 고교는 `life_number` | 실제 경기 완료 |
+| `game_finished` | 고교·프로 스토어, 오늘의 이닝 | `mode`, `result`; 고교는 `life_number`, `act_number`, `target_batters`, `batters` | 실제 경기 완료 |
 | `life_card_share_tapped` | 공통 공유 버튼 | `life_number` | 시스템 공유 UI 열기 |
 | `life_card_share_completed` | 공통 공유 완료 콜백 | `life_number` | 취소·오류 없는 공유 완료 |
 | `life_card_shared` | 공통 공유 버튼 | `life_number` | 1.0.2 호환용 탭 이벤트. 다음 스키마 버전에서 폐기 |
-| `run_pledge_selected` | 고교 커리어 스토어 | `pledge_id`, `tier`, `life_number`, `recommended` | 회차 약속 선택 |
-| `run_pledge_resolved` | 고교 회차 정산 | `pledge_id`, `achieved`, `progress_ratio`, `reward_permille` | 약속 결과 확정 |
+| `run_pledge_selected` | 고교 커리어 스토어 | `pledge_id`, `tier`, `life_number`, `recommended` | 고교 3년 목표 선택 |
+| `run_pledge_resolved` | 고교 회차 정산 | `pledge_id`, `achieved`, `progress_ratio`(Double, 0...1), `reward_permille`(Int, 0...350) | 약속 결과 확정 |
 | `career_wind_seen` | 고교 프롤로그 | `wind_id`, `rules_version` | 바람 카드 최초 실제 노출 |
 | `next_run_intent_saved` | 회차 정산 | `pledge_id`, `source_life_number` | 다음 회차 목표 저장 |
 | `next_run_intent_applied` | 약속 선택 | `pledge_id`, `life_number` | 저장 목표 재도전 |
 | `weekly_program_opened` | 주간 야구 노트 | `week_key`, `source` | 주간 상세 진입 |
 | `weekly_program_completed` | 주간 프로그램 스토어 | `week_key`, `completed_tasks` | 2/3 완료 및 보상 확정 |
 | `pro_season_decision_selected` | 프로 시즌 결정 | `decision_id`, `choice_id`, `season`, `week` | 3주 단위 결정 확정 |
+| `pro_legacy_recorded` | 프로 은퇴 → 대표 유산 선택 | `life_number`, `pro_seasons`, `soul_bonus`, `has_signature_candidates` | 프로 원본을 지우기 전에 통산 기록·야구혼·대표 유산 후보가 고교 저장에 원자적으로 기록된 시점 |
+| `player_heartline_seen` | 고교 커리어의 실제 갈림길·건강 경고 | `branch_id`, `life_number`, `phase` | 첫 공식 경기 뒤 의미 있는 속마음 카드가 실제로 보인 시점. 커리어·회차·branch별 1회 |
+| `player_legacy_seen` | 3년 돌아보기·선수 기록·다음 선수 프롤로그 | `source`(`recap`/`archive`/`next_life`), `life_number`, `drafted`, `has_frozen_legacy` | 끝난 선수의 편지가 실제로 보인 시점. recap은 인용문 reveal 뒤, archive는 펼친 인용문 표시 뒤에 화면·회차별 1회 |
+| `recap_continue_tapped` | 고교 3년 돌아보기 하단 행동 | `life_number`, `drafted`, `entry_path`(`quick_rebirth`/`completion_flow`/`customize`), `has_suggested_intent`, `intent_saved` | 정산을 본 뒤 다음 선수 동선으로 나간 시점 |
+| `pro_career_started` | 고교 완료 → 프로 생성 | `round`, `evaluation`, `life_number`, `source=high_school_draft` | 프로 저장 상태가 실제로 새로 생성되어 ready가 된 시점. 생성 시도·실패는 제외 |
+| `signature_legacy_options_seen` | 고교 3년 또는 프로 은퇴 결산 | `life_number`, `drafted`, `includes_pro_career`, 정렬·중복 제거한 `option_ids` | 실제 성장·경기 기록으로 합성된 대표 유산 세 후보 카드가 화면에 들어온 시점 |
+| `signature_legacy_selected` | 선수 정산 | `legacy_id`, `family`, `life_number`, `drafted`, `rating_growth`, `includes_pro_career`, `pro_seasons` | 후보 하나를 확정하고 아카이브·계승에 원자적으로 저장한 시점 |
+| `signature_legacy_equipped` | 새 선수 생성 | `legacy_id`, `family`, `life_number`, `total_rating_bonus`, `inheritance_rules_version`, `soul_total`, `soul_wallet`, `soul_lifetime_earned`, `soul_applied` | 발견 목록에서 고른 대표 유산과 야구혼이 새 선수의 시작 능력에 실제 적용된 시점 |
+| `rebirth_started` | 새 선수 생성 | `life_number`, `entry_point`, `selected_legacy_id`, `inheritance_rules_version`, `soul_total`, `soul_wallet`, `soul_lifetime_earned`, `soul_applied` | 이전 선수의 유산을 들고 다음 선수의 저장이 실제로 완료된 시점 |
+| `life_completed` | 고교 선수 정산 | `life_number`, `act_number`, `drafted`, `evaluation`, `trainings`, `important_games`, `pitches`, `legacy_id`, `legacy_rules_version`, `unlocked_legacy_count`, `inheritance_rules_version`, `soul_total`, `soul_wallet`, `soul_lifetime_earned`, `soul_applied` | 기억·대표 유산·야구혼·아카이브 정산이 로컬 원본에 모두 저장돼 한 선수의 이야기가 닫힌 시점 |
+| `career_training_completed` | 고교 훈련 확정 | `life_number`, `act_number`, `focus_id`, `intensity_id`, `growth_points`, `fatigue_delta` | 사용자가 고른 훈련이 상태에 실제 반영된 시점 |
+| `game_growth_applied` | 고교 공식 경기 확정 | `life_number`, `act_number`, `reason_id`, `growth_focus`, `growth_points` | 직접 던진 과정이 능력치 성장으로 실제 반영된 시점 |
 
-`game_finished`에는 웨이브 3부터 `sequence_mastery_count`, 정렬된 고유 `sequence_tags`(최대 6개), `recommendation_acceptance_rate`가 추가된다. 이벤트 소유자는 각 기능 스토어이며, 스키마 변경 검토 소유자는 iOS 클라이언트 담당자다.
+야구혼 속성에서 `soul_total`은 이번 선수 능력에 스며들 수 있는 자동 누적, `soul_wallet`은 구매 뒤 남은 지갑, `soul_lifetime_earned`는 프로 보상을 포함한 평생 획득량이다. 프로 보상은 지갑과 평생 획득량만 올리고 자동 누적에는 더하지 않는다.
+
+`game_finished`에는 웨이브 3부터 `sequence_mastery_count`, 정렬된 고유 `sequence_tags`(최대 6개), `recommendation_acceptance_rate`(Double, 0...1)가 추가된다. 고교·프로·오늘의 이닝은 모두 `PitchSession.recommendationAcceptanceRate`를 사용한다. 이벤트 소유자는 각 기능 스토어이며, 스키마 변경 검토 소유자는 iOS 클라이언트 담당자다. `weekly_program_opened`는 기록 탭의 상세가 실제로 나타날 때마다 기록하며 주 단위로 영구 중복 제거하지 않는다.

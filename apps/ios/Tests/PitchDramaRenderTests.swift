@@ -98,6 +98,25 @@ final class PitchDramaRenderTests: XCTestCase {
         }
     }
 
+    /// 결과를 가리지 않는 한 개의 배합 숙련 배지가 완성 프레임에 남는다.
+    func testSequenceMasteryBadgeFrame() {
+        let moment = PitchSequenceMoment(
+            pitchNumber: 2,
+            tag: .eyeLevelChange,
+            headline: "눈높이를 바꿨다",
+            detail: "높은 코스와 낮은 코스를 이어 타자의 시선을 흔들었습니다."
+        )
+        let view = PitchDramaView(
+            execution: execution(),
+            outcome: .swingingStrike,
+            battedBall: nil,
+            fielding: nil,
+            sequenceMoment: moment,
+            progress: 1
+        )
+        XCTAssertTrue(render(view, name: "sequence-mastery"))
+    }
+
     /// 스윙 여부는 코어 판정에서만 나온다. 볼·루킹은 절대 배트가 나가면 안 된다.
     func testBatOnlyMovesWhenTheCoreSaysTheBatterSwung() {
         let silent: [PitchOutcome] = [.ball, .calledStrike, .hitByPitch]

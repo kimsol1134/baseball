@@ -183,6 +183,28 @@ struct PitchView: View {
         session.context.strikes == 2 && (session.context.balls == 3 || session.context.outs == 2)
     }
 
+    /// 빠른 진행은 저위험 타석에서만 연다. 득점 기대가 크게 흔들리는 승부처나
+    /// 풀카운트/2스트라이크는 이 게임의 핵심이므로 한 구씩 직접 던진다.
+    static func canFastForwardCurrentBatter(
+        isPractice: Bool,
+        totalPitches: Int,
+        leverage: Int,
+        balls: Int,
+        strikes: Int
+    ) -> Bool {
+        !isPractice && totalPitches > 0 && leverage < 780 && balls < 3 && strikes < 2
+    }
+
+    private var canFastForwardCurrentBatter: Bool {
+        Self.canFastForwardCurrentBatter(
+            isPractice: isPractice,
+            totalPitches: session.pitches,
+            leverage: session.context.leverage,
+            balls: session.context.balls,
+            strikes: session.context.strikes
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -392,6 +414,7 @@ struct PitchView: View {
                     outcome: result.snapshot.outcome,
                     battedBall: result.snapshot.battedBall,
                     fielding: result.snapshot.fieldingResolution,
+                    sequenceMoment: session.lastSequenceMoment,
                     progress: replayProgress
                 )
                 .frame(height: dramaHeight)
@@ -444,6 +467,22 @@ struct PitchView: View {
                         }
                         Text(result.snapshot.shortFeedback).font(.subheadline.weight(.semibold))
                         Text(result.snapshot.detailFeedback).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                        if let moment = session.lastSequenceMoment {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Label("수싸움 적중 · \(moment.headline)", systemImage: "brain.head.profile")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(BaseballTheme.information)
+                                // 같은 유형은 첫 발동에만 이유를 풀어 말한다. 이후에는
+                                // 승부 장면의 짧은 배지만 남겨 투구 흐름을 끊지 않는다.
+                                if session.sequenceMoments.filter({ $0.tag == moment.tag }).count == 1 {
+                                    Text(moment.detail)
+                                        .font(.caption)
+                                        .foregroundStyle(BaseballTheme.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
                         let execution = result.snapshot.execution
                         let inZone = abs(execution.actualX) <= 500 && abs(execution.actualY) <= 500
                         HStack(alignment: .center, spacing: 10) {
@@ -524,6 +563,11 @@ struct PitchView: View {
                                 Text("\(PitchCopy.pitch(entry.call.pitchType)) · \(PitchCopy.zone(entry.call.zone, batSide: session.batter.batSide)) · \(PitchCopy.outcome(entry.outcome))")
                                     .font(.footnote.weight(.semibold))
                                 Text(entry.shortFeedback).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                                if let moment = entry.sequenceMoment {
+                                    Label(moment.headline, systemImage: "brain.head.profile")
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(BaseballTheme.information)
+                                }
                             }
                         }
                         .accessibilityElement(children: .combine)
@@ -595,12 +639,30 @@ struct PitchView: View {
                 .controlSize(.mini)
                 .tint(BaseballTheme.action)
                 .accessibilityIdentifier("pitch.autoRelease")
+                if canFastForwardCurrentBatter {
+                    Button {
+                        wasClutch = false
+                        _ = session.fastForwardCurrentBatter()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("이 타석 빠르게 진행")
+                                .font(.subheadline.weight(.semibold))
+                            Text("포수 추천과 무난한 릴리스로 타석이 끝날 때까지 던집니다.")
+                                .font(.caption)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("pitch.fastForwardBatter")
+                }
             case .betweenBatters:
                 PrimaryPill(title: "다음 타자", identifier: "pitch.nextBatter") {
                     session.advanceToNextBatter()
                 }
             case .finished, .failed:
-                PrimaryPill(title: isPractice ? "3년을 시작한다" : "경기 결과 반영",
+                PrimaryPill(title: isPractice ? "3년을 시작한다" : "등판 마치기",
                             identifier: "pitch.finish", action: onFinish)
             }
         }
@@ -970,7 +1032,7 @@ private struct CatcherCard: View {
                 // "이 타자한테는 낮은 슬라이더로 민다"는 의도가 매 투구 2~4탭 없이 살아남는다.
                 Toggle(isOn: Binding(get: { session.holdCall }, set: { session.holdCall = $0 })) {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("내 배합 유지").font(.footnote.weight(.semibold))
+                        Text("내 선택 유지").font(.footnote.weight(.semibold))
                         Text("포수 사인이 내 선택을 덮어쓰지 않습니다.")
                             .font(.caption2).foregroundStyle(BaseballTheme.textTertiary)
                     }
@@ -1257,8 +1319,19 @@ private struct InningSettlementCard: View {
         if session.consecutiveStrikeouts >= 3 {
             items.append(("bolt.fill", "\(session.consecutiveStrikeouts)타자 연속 삼진", BaseballTheme.milestone))
         }
+        if session.sequenceMasteryCount > 0 {
+            var seen = Set<PitchSequenceTag>()
+            let tagTitles = session.sequenceMoments.compactMap { moment -> String? in
+                seen.insert(moment.tag).inserted ? moment.headline : nil
+            }
+            items.append((
+                "brain.head.profile",
+                "수싸움 적중 \(session.sequenceMasteryCount)회 · \(tagTitles.joined(separator: " · "))",
+                BaseballTheme.information
+            ))
+        }
         if items.isEmpty {
-            items.append(("book.fill", "다음 등판의 배합 수업", BaseballTheme.textSecondary))
+            items.append(("book.fill", "다음 등판의 수싸움", BaseballTheme.textSecondary))
         }
         return items
     }

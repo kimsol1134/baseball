@@ -1,0 +1,442 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Rebirth Pretendard";
+      src: url("assets/fonts/Pretendard-Black.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 900;
+      font-display: block;
+    }
+
+    @font-face {
+      font-family: "Rebirth Plex Mono";
+      src: url("assets/fonts/IBMPlexMono-SemiBold.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      isolation: isolate;
+    }
+
+    [id="02-memory-game-ground"],
+    [id="02-memory-game-scene-1"],
+    [id="02-memory-game-scene-2"],
+    [id="02-memory-game-scene-3"] {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    [id="02-memory-game-ground"] {
+      z-index: 0;
+      background: #A5AC9D;
+    }
+
+    [id="02-memory-game-scene-1"] {
+      z-index: 1;
+      background: #070A09;
+      transform-origin: 50% 50%;
+    }
+
+    [id="02-memory-game-intro-world"] {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      transform-origin: 50% 50%;
+    }
+
+    [id="02-memory-game-media-stage"] {
+      position: absolute;
+      inset: 0 0 auto;
+      width: 100cqw;
+      height: 83cqh;
+      overflow: hidden;
+      background: #070A09;
+    }
+
+    [id="02-memory-game-key-art"],
+    [id="02-memory-game-intro-dim"] {
+      --dof: 0px;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      will-change: filter;
+    }
+
+    [id="02-memory-game-key-art"] {
+      z-index: 1;
+      opacity: 0.52;
+      filter: brightness(0.72) saturate(0.8) blur(var(--dof));
+    }
+
+    [id="02-memory-game-intro-dim"] {
+      z-index: 2;
+      opacity: 0.9;
+      filter: brightness(0.65) saturate(0.9) blur(var(--dof));
+    }
+
+    [id="02-memory-game-title-focus"],
+    [id="02-memory-game-dossier-focus"] {
+      --dof: 0px;
+      position: absolute;
+      z-index: 3;
+      overflow: hidden;
+      will-change: filter;
+      filter: blur(var(--dof));
+    }
+
+    [id="02-memory-game-title-focus"] {
+      left: 4.2cqw;
+      top: 23.6cqh;
+      width: 32cqw;
+      height: 47cqh;
+    }
+
+    [id="02-memory-game-dossier-focus"] {
+      left: 70.3cqw;
+      top: 29.4cqh;
+      width: 25.4cqw;
+      height: 44.3cqh;
+    }
+
+    [id="02-memory-game-title-focus"] img,
+    [id="02-memory-game-dossier-focus"] img {
+      position: absolute;
+      width: 100cqw;
+      height: 83cqh;
+      object-fit: cover;
+      object-position: center top;
+      filter: brightness(1.04) saturate(1.02);
+    }
+
+    [id="02-memory-game-title-focus"] img {
+      left: -4.2cqw;
+      top: -23.6cqh;
+    }
+
+    [id="02-memory-game-dossier-focus"] img {
+      left: -70.3cqw;
+      top: -29.4cqh;
+    }
+
+    [id="02-memory-game-kicker-wrap"] {
+      position: absolute;
+      z-index: 4;
+      left: 6.25cqw;
+      top: 8.1cqh;
+      width: 31cqw;
+      color: #E7E7E5;
+    }
+
+    [id="02-memory-game-kicker"] {
+      margin: 0 0 1.25cqh;
+      font-family: "Rebirth Plex Mono";
+      font-size: 0.78cqw;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    [id="02-memory-game-kicker-rule"] {
+      display: block;
+      width: 27cqw;
+      height: 4px;
+      overflow: visible;
+    }
+
+    [id="02-memory-game-kicker-rule"] path {
+      fill: none;
+      stroke: #C8F24A;
+      stroke-width: 2;
+      stroke-linecap: square;
+    }
+
+    [id="02-memory-game-scene-2"],
+    [id="02-memory-game-scene-3"] {
+      background: #A5AC9D;
+      color: #070A09;
+      transform-origin: 50% 50%;
+    }
+
+    [id="02-memory-game-scene-2"] {
+      z-index: 2;
+    }
+
+    [id="02-memory-game-scene-3"] {
+      z-index: 3;
+    }
+
+    [id="02-memory-game-rule-one"] {
+      position: absolute;
+      left: 5.5cqw;
+      top: 15.2cqh;
+      width: 60cqw;
+      margin: 0;
+      transform-origin: 50% 50%;
+      font-family: "Rebirth Pretendard";
+      font-size: 7.1cqw;
+      font-weight: 900;
+      line-height: 0.96;
+      letter-spacing: -0.045em;
+      word-break: keep-all;
+    }
+
+    [id="02-memory-game-rule-one"] > span {
+      display: block;
+    }
+
+    [id="02-memory-game-rule-one"] [id="02-memory-game-rule-one-mid"] {
+      display: inline;
+      color: #C8F24A;
+    }
+
+    [id="02-memory-game-rule-two"] {
+      position: absolute;
+      left: 10.8cqw;
+      top: 14.8cqh;
+      width: 65cqw;
+      margin: 0;
+      font-family: "Rebirth Pretendard";
+      font-size: 6.45cqw;
+      font-weight: 900;
+      line-height: 0.98;
+      letter-spacing: -0.042em;
+      word-break: keep-all;
+    }
+
+    [id="02-memory-game-rule-two"] > span {
+      display: block;
+    }
+
+    [id="02-memory-game-rule-two-accent"] {
+      display: inline;
+      color: #070A09;
+    }
+
+    [id="02-memory-game-inherit-label"] {
+      position: absolute;
+      left: 10.8cqw;
+      top: 75.5cqh;
+      margin: 0;
+      color: #070A09;
+      font-family: "Rebirth Plex Mono";
+      font-size: 0.78cqw;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+  </style>
+
+  <div id="root" data-composition-id="02-memory-game" data-width="1920" data-height="1080" data-duration="8.4">
+    <div
+      id="02-memory-game-ground"
+      class="clip"
+      data-start="0"
+      data-duration="8.4"
+      data-track-index="0"
+    ></div>
+
+    <section
+      id="02-memory-game-scene-1"
+      class="clip"
+      data-start="0"
+      data-duration="2.8"
+      data-track-index="1"
+      aria-label="실제 게임 인트로"
+    >
+      <div id="02-memory-game-intro-world">
+        <div id="02-memory-game-media-stage">
+          <img
+            id="02-memory-game-key-art"
+            src="assets/hero-key-art.png"
+            alt=""
+            draggable="false"
+          />
+          <img
+            id="02-memory-game-intro-dim"
+            src="assets/game-01-intro.png"
+            alt="게임 제목과 선수 dossier가 보이는 실제 인트로"
+            draggable="false"
+          />
+          <div id="02-memory-game-title-focus" aria-hidden="true">
+            <img src="assets/game-01-intro.png" alt="" draggable="false" />
+          </div>
+          <div id="02-memory-game-dossier-focus" aria-hidden="true">
+            <img src="assets/game-01-intro.png" alt="" draggable="false" />
+          </div>
+          <div id="02-memory-game-kicker-wrap">
+            <p id="02-memory-game-kicker">BROWSER PITCHING ROGUELITE</p>
+            <svg
+              id="02-memory-game-kicker-rule"
+              viewBox="0 0 520 4"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path id="02-memory-game-kicker-path" d="M 0 2 H 520" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      id="02-memory-game-scene-2"
+      class="clip"
+      data-start="2.2"
+      data-duration="2.5"
+      data-track-index="2"
+      aria-label="첫 번째 기억 규칙"
+    >
+      <p id="02-memory-game-rule-one">
+        <span>타자는</span>
+        <span><span id="02-memory-game-rule-one-mid">직전 공</span>을</span>
+        <span>기억한다.</span>
+      </p>
+    </section>
+
+    <section
+      id="02-memory-game-scene-3"
+      class="clip"
+      data-start="4.7"
+      data-duration="3.7"
+      data-track-index="3"
+      aria-label="두 번째 기억 규칙"
+    >
+      <p id="02-memory-game-rule-two">
+        <span>플레이어는</span>
+        <span><span id="02-memory-game-rule-two-accent">실패한 삶</span>을</span>
+        <span>기억한다.</span>
+      </p>
+      <p id="02-memory-game-inherit-label">PLAY → FAIL → INHERIT</p>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+    (() => {
+      const byId = (id) => document.getElementById(id);
+      const introWorld = byId("02-memory-game-intro-world");
+      const sceneOne = byId("02-memory-game-scene-1");
+      const sceneTwo = byId("02-memory-game-scene-2");
+      const sceneThree = byId("02-memory-game-scene-3");
+      const ruleOne = byId("02-memory-game-rule-one");
+      const inheritLabel = byId("02-memory-game-inherit-label");
+      const accent = byId("02-memory-game-rule-two-accent");
+      const kicker = byId("02-memory-game-kicker");
+      const kickerPath = byId("02-memory-game-kicker-path");
+
+      const drawLength = kickerPath.getTotalLength();
+      kickerPath.style.strokeDasharray = `${drawLength}`;
+      kickerPath.style.strokeDashoffset = `${drawLength}`;
+
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["02-memory-game"] = tl;
+
+      tl.fromTo(
+        introWorld,
+        { opacity: 0, scale: 1.015 },
+        { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" },
+        0,
+      );
+
+      tl.fromTo(
+        kicker,
+        { opacity: 0, y: 9 },
+        { opacity: 1, y: 0, duration: 0.42, ease: "power2.out" },
+        1.28,
+      );
+      tl.to(
+        kickerPath,
+        { strokeDashoffset: 0, duration: 0.58, ease: "power2.out" },
+        1.42,
+      );
+
+      const focusLayers = [
+        { el: byId("02-memory-game-key-art"), blur: "12px", opacity: 0.12 },
+        { el: byId("02-memory-game-intro-dim"), blur: "7px", opacity: 0.22 },
+        { el: byId("02-memory-game-title-focus"), blur: "9px", opacity: 0.18 },
+        { el: byId("02-memory-game-dossier-focus"), blur: "9px", opacity: 0.18 },
+      ];
+
+      focusLayers.forEach(({ el, blur, opacity }) => {
+        tl.to(
+          el,
+          {
+            "--dof": blur,
+            opacity,
+            duration: 0.48,
+            ease: "power2.inOut",
+          },
+          2.2,
+        );
+      });
+
+      tl.to(
+        sceneOne,
+        { opacity: 0, scale: 0.975, duration: 0.42, ease: "power2.in" },
+        2.2,
+      );
+      tl.fromTo(
+        sceneTwo,
+        { opacity: 0, scale: 0.985 },
+        { opacity: 1, scale: 1, duration: 0.56, ease: "back.out(1.4)" },
+        2.22,
+      );
+      tl.fromTo(
+        ruleOne,
+        { opacity: 0, scale: 0.97, y: 18 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.62, ease: "back.out(1.4)" },
+        2.32,
+      );
+
+      tl.set(sceneTwo, { opacity: 0 }, 4.7);
+      tl.set(sceneThree, { opacity: 1 }, 4.7);
+
+      const accentStates = [
+        { t: 0, active: false },
+        { t: 5.8, active: true },
+      ];
+      const accentStateAt = (time) => {
+        for (let i = accentStates.length - 1; i >= 0; i -= 1) {
+          if (time >= accentStates[i].t) return accentStates[i];
+        }
+        return accentStates[0];
+      };
+      const accentDriver = { t: 0 };
+      tl.to(
+        accentDriver,
+        {
+          t: 8,
+          duration: 8,
+          ease: "none",
+          onUpdate: () => {
+            const state = accentStateAt(accentDriver.t);
+            accent.style.color = state.active ? "#C8F24A" : "#070A09";
+          },
+        },
+        0,
+      );
+
+      tl.fromTo(
+        inheritLabel,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" },
+        5.92,
+      );
+    })();
+  </script>
+</template>

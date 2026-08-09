@@ -149,7 +149,7 @@ struct DraftRevealView: View {
                     .foregroundStyle(BaseballTheme.textPrimary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("3년은 여기서 끝납니다. 다음 회차로 무엇을 가져갈지 고르게 됩니다.")
+                Text("3년은 여기서 끝납니다. 새 선수에게 무엇을 남길지 고르게 됩니다.")
                     .font(.subheadline)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .multilineTextAlignment(.center)
@@ -237,7 +237,7 @@ struct RebirthStampView: View {
                 .onTapGesture(perform: onFinish)
             VStack(spacing: 10) {
                 Text("다시 태어납니다").eyebrowStyle(BaseballTheme.milestone)
-                Text("\(lifeNumber)회차")
+                Text("\(lifeNumber)번째 선수")
                     .font(BaseballType.display)
                     .foregroundStyle(BaseballTheme.textPrimary)
                     .monospacedDigit()
@@ -251,7 +251,7 @@ struct RebirthStampView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hs.rebirth.stamp")
-        .accessibilityLabel("\(lifeNumber)회차. 고교 1학년 봄으로 돌아갑니다.")
+        .accessibilityLabel("\(lifeNumber)번째 선수. 고교 1학년 봄으로 돌아갑니다.")
         .onAppear {
             Haptics.shared.outcome(success: true)
             GameAudio.shared.play(.milestone)

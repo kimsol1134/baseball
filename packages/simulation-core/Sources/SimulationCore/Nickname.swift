@@ -82,7 +82,7 @@ public enum NicknameRules {
         }
         if games >= 5 {
             earned.append(.init(id: "workhorse", title: "철완",
-                reason: "\(games)번의 중요 경기를 전부 소화 — 마운드에서 내려가지 않는 어깨입니다."))
+                reason: "\(games)번의 고교 공식 경기를 전부 소화 — 마운드에서 내려가지 않는 어깨입니다."))
         }
 
         // ── 부정 계열: 세상은 냉정하다. 이 이름들을 지우는 것이 다음 서사가 된다 ──

@@ -167,7 +167,7 @@ final class QACaptureUITests: XCTestCase {
             if app.buttons["hs.legacy.confirm"].exists {
                 capture("legacy-lifecard")
                 captureScrolled(app, "legacy-memories", swipes: 3)
-                selectRequiredMemories(app)
+                selectRequiredLegacy(app)
                 capture("legacy-selected")
                 if !tapIfPresent(app.buttons["hs.legacy.confirm"]) {
                     capture("legacy-stuck")
@@ -393,8 +393,18 @@ final class QACaptureUITests: XCTestCase {
 
     // MARK: - 보조
 
-    private func selectRequiredMemories(_ app: XCUIApplication) {
+    private func selectRequiredLegacy(_ app: XCUIApplication) {
         let confirm = app.buttons["hs.legacy.confirm"]
+        let signatureOptions = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "hs.signatureLegacy.")
+        )
+        if !confirm.isEnabled, signatureOptions.count > 0 {
+            let option = signatureOptions.element(boundBy: 0)
+            if option.exists, bringIntoView(option) {
+                option.tap()
+            }
+        }
+
         let options = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.memory."))
         var index = 0
         while !confirm.isEnabled, index < options.count {

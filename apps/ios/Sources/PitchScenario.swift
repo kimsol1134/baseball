@@ -145,7 +145,37 @@ struct PitchScenario {
 
     // MARK: - 고교 커리어
 
-    static func highSchool(state: HighSchoolCareerSnapshot) -> PitchScenario {
+    /// 중요한 순간의 길이는 상황이 정한다. 2사 승부는 한두 타자로 날카롭게 끝나고,
+    /// 무사 만루·마지막 여름처럼 무게가 큰 장면은 최대 여섯 타자까지 책임진다.
+    /// 모든 경기를 같은 네 타자로 고정하면 3년이 같은 미니게임의 반복이 된다.
+    static func highSchoolMaximumBatters(state: HighSchoolCareerSnapshot) -> Int {
+        highSchoolMaximumBatters(
+            outs: state.currentGameScenario?.outs ?? 0,
+            leverage: state.currentGameScenario?.leverage ?? 0,
+            chapter: state.chapter.number,
+            balanceVersion: state.balanceVersion
+        )
+    }
+
+    static func highSchoolMaximumBatters(
+        outs: Int,
+        leverage: Int,
+        chapter: Int,
+        balanceVersion: Int? = PitcherPresetCatalog.balanceVersion
+    ) -> Int {
+        // 기능 도입 전에 시작한 선수는 남은 고교 공식 경기도 당시의 4타자 규칙으로
+        // 끝낸다. 진행 중 저장을 업데이트만으로 더 길거나 짧은 경기로 바꾸지 않는다.
+        guard (balanceVersion ?? 1) >= 4 else { return 4 }
+        if outs >= 2 { return 2 }
+        if leverage >= 900 || chapter == 8 { return 6 }
+        if chapter >= 5 { return 5 }
+        return 4
+    }
+
+    static func highSchool(
+        state: HighSchoolCareerSnapshot,
+        maximumBattersOverride: Int? = nil
+    ) -> PitchScenario {
         let content = state.currentGameScenario
         let rival = state.rival
         // 상대는 학년이 오르고 회차가 쌓일수록 세진다. 안 그러면 플레이어만 성장해
@@ -167,7 +197,8 @@ struct PitchScenario {
             id: "hs-\(state.careerID)-\(state.performance.importantGamesCompleted)",
             pitcher: state.pitcher,
             lineup: [rivalBatter] + HighSchoolPresentation.followUpBatters(
-                seedText: "\(state.careerID)|\(state.performance.importantGamesCompleted)"
+                seedText: "\(state.careerID)|\(state.performance.importantGamesCompleted)",
+                count: 5
             ).map { DifficultyScale.scaled($0, by: scale) },
             scouting: HighSchoolPresentation.scouting(rival: rival, clarity: state.difficulty.informationClarity),
             defense: defense,
@@ -180,9 +211,9 @@ struct PitchScenario {
             // 모든 승부가 리드를 지키는 경기였다 — 지고 있는 마운드가 한 번도 없었다.
             scoreDifferential: content?.scoreDifferential ?? 1,
             fatigue: min(100, max(0, state.fatigue)),
-            headline: content?.title ?? "중요 경기",
+            headline: content?.title ?? "고교 공식 경기",
             detail: content?.narrative ?? "이 이닝을 막아야 합니다.",
-            maximumBatters: 4
+            maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state)
         )
     }
 }
@@ -210,7 +241,7 @@ extension PitchScenario {
             throwingHand: .right
         )
         // 오늘의 4번 타자 — 날짜가 능력과 약점을 정한다.
-        let names = ["강백호", "서진혁", "차도윤", "임세준", "한결", "표지훈", "위성곤"]
+        let names = ["강태건", "서진혁", "차도윤", "임세준", "한결", "표지훈", "위성곤"]
         let slugger = BatterSnapshot(
             id: "daily-slugger-\(dateKey)",
             name: names[generator.nextInt(upperBound: names.count)],

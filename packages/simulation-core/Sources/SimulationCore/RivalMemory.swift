@@ -273,7 +273,8 @@ public struct RivalMemoryEngine: Sendable {
 
         let warning: String
         if let detectedPitch, let detectedZone {
-            warning = "\(pitchDisplayName(detectedPitch))과 \(zoneDisplayName(detectedZone)) 반복을 함께 읽고 있습니다."
+            let pitchName = pitchDisplayName(detectedPitch)
+            warning = "\(pitchName)\(RelationshipVoiceCatalog.particle(pitchName, final: "과", open: "와")) \(zoneDisplayName(detectedZone)) 반복을 함께 읽고 있습니다."
         } else if let detectedPitch {
             warning = "\(pitchDisplayName(detectedPitch)) 사용 비중이 읽히기 시작했습니다."
         } else if let detectedZone {

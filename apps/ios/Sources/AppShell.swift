@@ -25,6 +25,7 @@ enum AppTab: Hashable, CaseIterable, Identifiable {
 struct AppShell: View {
     let highSchool: HighSchoolCareerStore
     let pro: MobileCareerStore
+    var weekly: WeeklyProgramStore = .shared
     @State private var selection: AppTab = .highSchool
     @State private var showsDailyFromDeepLink = false
     /// 오늘의 이닝을 무엇이 열었는가. 알림이 실제로 사람을 데려오는지 재는 값이다.
@@ -34,6 +35,16 @@ struct AppShell: View {
     /// 다른 URL은 앱 상태를 바꾸지 않는다.
     static func isDailyInningDeepLink(_ url: URL) -> Bool {
         url.scheme == "com.solkim.baseball.ios" && url.host == "daily-inning"
+    }
+
+    /// 프로 생성 호출이 실제 새 저장 상태로 끝났는지 판정하는 순수 경계.
+    static func proCareerCreationSucceeded(
+        previousCareerID: String?,
+        currentCareerID: String?,
+        isReady: Bool
+    ) -> Bool {
+        guard isReady, let currentCareerID else { return false }
+        return currentCareerID != previousCareerID
     }
 
     /// 프로에 입단하면 고교 탭을 숨긴다.
@@ -53,6 +64,106 @@ struct AppShell: View {
             && (highSchool.state == nil || highSchool.state?.phase == .prologue)
     }
 
+    /// 투구 화면은 화면 아래의 릴리스 패드가 주 조작이다. 부모가 탭 바를 `.visible`로
+    /// 강제하면 `PitchView`의 숨김 요청보다 우선해 패드와 프로 탭이 같은 자리를 차지한다.
+    /// 실제 완주에서 화면 밖 투구 버튼을 누르려다 프로 탭이 눌린 원인이었다.
+    static func shouldHideHighSchoolTabBar(
+        isOnboarding: Bool,
+        hasPitchSession: Bool,
+        hasTutorialSession: Bool
+    ) -> Bool {
+        isOnboarding || hasPitchSession || hasTutorialSession
+    }
+
+    private var hidesHighSchoolTabBar: Bool {
+        Self.shouldHideHighSchoolTabBar(
+            isOnboarding: hidesTabBarForOnboarding,
+            hasPitchSession: highSchool.pitchSession != nil,
+            hasTutorialSession: highSchool.tutorialSession != nil
+        )
+    }
+
+    /// 주간 목표는 지금 실제로 열려 있거나 이번 회차 안에서 도달 가능한 행동만 뽑는다.
+    private var weeklyEligibility: WeeklyProgramEligibility {
+        let highSchoolState = highSchool.state
+        let remainingImportantGames = highSchoolState.map {
+            max(0, ($0.schedule ?? .fixedDefault).importantGameTotal
+                - $0.performance.importantGamesCompleted)
+        } ?? 0
+        let remainingChapterAdvances = highSchoolState.map { max(0, 8 - $0.chapter.number) } ?? 0
+        return Self.weeklyEligibility(
+            highSchoolPhase: highSchoolState?.phase,
+            importantGamesCompleted: highSchoolState?.performance.importantGamesCompleted ?? 0,
+            remainingImportantGames: remainingImportantGames,
+            remainingChapterAdvances: remainingChapterAdvances,
+            isChallengeRun: highSchool.isChallengeRun,
+            hasArchive: !highSchool.archive.isEmpty,
+            hasPreviousSchool: highSchool.archive.first?.schoolName != nil,
+            pledgeDecided: highSchool.pledgeDecided,
+            proPhase: pro.state?.phase
+        )
+    }
+
+    /// 화면 상태에서 주간 목표 자격으로 가는 순수 경계. 프롤로그뿐 아니라 학교 선택
+    /// 화면에서도 약속 카드가 보이므로, 두 국면 모두 약속 목표를 실제로 수행할 수 있다.
+    static func weeklyEligibility(
+        highSchoolPhase: HighSchoolCareerPhase?,
+        importantGamesCompleted: Int,
+        remainingImportantGames: Int,
+        remainingChapterAdvances: Int,
+        isChallengeRun: Bool,
+        hasArchive: Bool,
+        hasPreviousSchool: Bool,
+        pledgeDecided: Bool,
+        proPhase: ProCareerPhase?
+    ) -> WeeklyProgramEligibility {
+        let hasPlayableProWeeks = proPhase.map {
+            $0 != .completed && $0 != .retirementDecision
+        } ?? false
+        if hasPlayableProWeeks {
+            // 프로가 고교 탭을 숨긴 동안에는 고교 경기·챕터·환생 목표를 내지 않는다.
+            // 오늘의 이닝과 수싸움 적중은 독립 모드라 계속 플레이할 수 있다.
+            return WeeklyProgramEligibility(
+                hasHighSchoolCareer: false,
+                remainingImportantGames: 0,
+                remainingChapterAdvances: 0,
+                dailyInningUnlocked: true,
+                canStartNextRun: false,
+                canSelectPledge: false,
+                canChooseDifferentSchool: false,
+                hasProCareer: true
+            )
+        }
+
+        let beforeSchoolChoice = highSchoolPhase.map {
+            $0 == .prologue || $0 == .schoolSelection
+        } ?? false
+        let highSchoolIsPlayable = highSchoolPhase.map {
+            switch $0 {
+            case .prologue, .schoolSelection, .training, .relationship,
+                 .importantGame, .awakening, .chapterReview:
+                true
+            case .draft, .legacy, .completed:
+                false
+            }
+        } ?? false
+        let highSchoolIsActive = highSchoolIsPlayable && proPhase == nil && !isChallengeRun
+        // 완료된 프로 화면에서는 "새 선수로 다시 시작"이 즉시 가능하지만, 아직 시작하지
+        // 않은 고교 경기·챕터를 목표로 내서는 안 된다.
+        let canStartNextRun = !isChallengeRun && hasArchive
+            && (proPhase == nil || proPhase == .completed)
+        return WeeklyProgramEligibility(
+            hasHighSchoolCareer: highSchoolIsActive,
+            remainingImportantGames: highSchoolIsActive ? max(0, remainingImportantGames) : 0,
+            remainingChapterAdvances: highSchoolIsActive ? max(0, remainingChapterAdvances) : 0,
+            dailyInningUnlocked: importantGamesCompleted >= 1 || hasArchive,
+            canStartNextRun: canStartNextRun,
+            canSelectPledge: highSchoolIsActive && beforeSchoolChoice && !pledgeDecided,
+            canChooseDifferentSchool: highSchoolIsActive && beforeSchoolChoice && hasPreviousSchool,
+            hasProCareer: false
+        )
+    }
+
     var body: some View {
         TabView(selection: $selection) {
             if showsHighSchool {
@@ -60,21 +171,51 @@ struct AppShell: View {
                     HighSchoolCareerView(
                         career: highSchool,
                         onEnterPro: { draft, pitcher, identity in
+                            let previousCareerID = pro.state?.proCareerID
+                            guard let sourceHighSchoolCareerID = highSchool.state?.careerID else { return }
+                            // 선택된 탭을 먼저 옮긴다. 프로 저장 성공으로 고교 탭이 사라진
+                            // 다음에 selection을 바꾸면 SwiftUI TabView가 선택 대상을 잃어
+                            // 하단 탭만 남은 빈 화면에 머물 수 있다.
+                            selection = .pro
+                            guard pro.startProCareer(
+                                draft: draft,
+                                pitcher: pitcher,
+                                identity: identity,
+                                sourceHighSchoolCareerID: sourceHighSchoolCareerID
+                            ) else {
+                                selection = .highSchool
+                                return
+                            }
+                            guard Self.proCareerCreationSucceeded(
+                                previousCareerID: previousCareerID,
+                                currentCareerID: pro.state?.proCareerID,
+                                isReady: pro.loadState == .ready
+                            ) else {
+                                selection = .highSchool
+                                return
+                            }
+                            guard highSchool.markEnteredPro() else {
+                                // 양쪽 저장 중 하나만 성공한 반쪽 진입을 남기지 않는다.
+                                _ = pro.deleteCareer()
+                                selection = .highSchool
+                                return
+                            }
                             // 드래프트 이후의 **정상 분기**다. 이 계측이 없으면 대시보드에서
                             // "드래프트를 봤는데 환생하지 않은 사람"이 전부 이탈로 잡힌다 —
                             // 실제로는 프로로 넘어간 사람이 섞여 있다(2026-08 분석의 맹점).
                             GameAnalytics.log(.proCareerStarted, [
                                 "round": draft.round ?? 0,
                                 "evaluation": draft.evaluationScore,
+                                "life_number": highSchool.state?.lifeNumber ?? 0,
+                                "source": "high_school_draft",
                             ])
-                            pro.startProCareer(draft: draft, pitcher: pitcher, identity: identity)
-                            selection = .pro
                         },
                         // 프로 저장본이 남아 있으면(은퇴 포함) 이 회차는 이미 프로에 다녀왔다.
-                        hasEnteredPro: pro.loadState == .ready
+                        hasEnteredPro: pro.loadState == .ready || highSchool.hasEnteredPro,
+                        weekly: weekly
                     )
                     // 키아트가 제목을 맡는다. 내비게이션 바를 두면 제목이 두 번 나오고 눈썹 라벨을 가린다.
-                    .toolbar(hidesTabBarForOnboarding ? .hidden : .visible, for: .tabBar)
+                    .toolbar(hidesHighSchoolTabBar ? .hidden : .visible, for: .tabBar)
                     .toolbar(.hidden, for: .navigationBar)
                 }
                 .tabItem { Label(AppTab.highSchool.title, systemImage: AppTab.highSchool.icon) }
@@ -85,7 +226,17 @@ struct AppShell: View {
                 .tabItem { Label(AppTab.pro.title, systemImage: AppTab.pro.icon) }
                 .tag(AppTab.pro)
 
-            NavigationStack { RecordView(highSchool: highSchool, career: pro) }
+            NavigationStack {
+                RecordView(
+                    highSchool: highSchool,
+                    career: pro,
+                    weekly: weekly,
+                    onOpenDailyInning: {
+                        deepLinkSource = "records"
+                        showsDailyFromDeepLink = true
+                    }
+                )
+            }
                 .tabItem { Label(AppTab.records.title, systemImage: AppTab.records.icon) }
                 .tag(AppTab.records)
 
@@ -101,7 +252,11 @@ struct AppShell: View {
             if !shows, selection == .highSchool { selection = .pro }
         }
         .fullScreenCover(isPresented: $showsDailyFromDeepLink) {
-            DailyInningView(onClose: { showsDailyFromDeepLink = false }, source: deepLinkSource)
+            DailyInningView(
+                onClose: { showsDailyFromDeepLink = false },
+                source: deepLinkSource,
+                weekly: weekly
+            )
         }
         .onOpenURL { url in
             if Self.isDailyInningDeepLink(url) {
@@ -112,6 +267,9 @@ struct AppShell: View {
         // 복귀 알림을 눌러 들어온 경로. `onOpenURL`은 알림 탭에서 불리지 않으므로
         // 이 다리가 없으면 알림이 홈 화면만 띄운다 — D1 훅의 마지막 한 걸음이 없는 셈이다.
         .task {
+            if weekly.configure(eligibility: weeklyEligibility) {
+                _ = highSchool.retryPendingGameCompletion()
+            }
             NotificationRouter.shared.onDeepLink = { url in
                 guard Self.isDailyInningDeepLink(url) else { return }
                 deepLinkSource = "notification"
@@ -123,6 +281,11 @@ struct AppShell: View {
                     deepLinkSource = "notification"
                     showsDailyFromDeepLink = true
                 }
+            }
+        }
+        .onChange(of: weeklyEligibility) { _, eligibility in
+            if weekly.configure(eligibility: eligibility) {
+                _ = highSchool.retryPendingGameCompletion()
             }
         }
     }
@@ -142,12 +305,33 @@ struct AppShell: View {
         case .failed(let message):
             CareerFailureView(message: message, career: pro)
         case .ready:
-            ProCareerTabs(career: pro) {
-                // 은퇴한 선수의 커리어를 접고 고교로 돌아간다. 프로에서의 시간을 야구혼으로
-                // 계승분에 먼저 얹은 뒤 프로 저장본만 지운다 — 고교 회차는 그대로 있으므로,
-                // 완료 화면에서 기억을 고르고 다시 시작한다.
-                highSchool.recordProLegacy(pro.state)
-                pro.deleteCareer()
+            let allowsLegacySourceMigration = pro.careerOrigin == nil
+            let linksToCurrentHighSchool = pro.careerOrigin != .direct
+                && highSchool.canAttachProLegacy(
+                    pro.state,
+                    sourceHighSchoolCareerID: pro.sourceHighSchoolCareerID,
+                    allowsLegacySourceMigration: allowsLegacySourceMigration
+                )
+            ProCareerTabs(career: pro, retiresIntoSignatureLegacy: linksToCurrentHighSchool) {
+                // 고교부터 프로 은퇴까지의 기록과 야구혼을 한 번에 저장한 뒤에만 프로
+                // 저장본을 지운다. 저장 실패 때 원본 프로 커리어를 남겨 재시도할 수 있다.
+                let recorded: Bool
+                if linksToCurrentHighSchool {
+                    recorded = highSchool.recordProLegacy(
+                        pro.state,
+                        sourceHighSchoolCareerID: pro.sourceHighSchoolCareerID,
+                        allowsLegacySourceMigration: allowsLegacySourceMigration
+                    )
+                } else if pro.careerOrigin == .direct
+                            || (pro.careerOrigin == nil && pro.sourceHighSchoolCareerID == nil) {
+                    // 고교를 건너뛴 프로는 엉뚱한 진행에 후보를 붙이지 않고 야구혼만 계정에 남긴다.
+                    recorded = highSchool.recordStandaloneProLegacy(pro.state)
+                } else {
+                    // 명시된 원본 고교와 현재 저장이 다르면 어느 쪽도 지우지 않는다.
+                    recorded = false
+                }
+                guard recorded else { return }
+                guard pro.deleteCareer() else { return }
                 selection = .highSchool
             }
         }
@@ -183,7 +367,7 @@ private struct ProLockedView: View {
                                 .font(.subheadline.weight(.bold))
                                 .foregroundStyle(forecast.score >= forecast.threshold ? BaseballTheme.action : BaseballTheme.textPrimary)
                             Text("현재 평가 \(forecast.score)점 · 당락선 \(forecast.threshold)점"
-                                 + (remainingChapters.map { $0 > 0 ? " · 남은 챕터 \($0)" : " · 드래프트 임박" } ?? ""))
+                                 + (remainingChapters.map { $0 > 0 ? " · 남은 이야기 \($0)장" : " · 드래프트 임박" } ?? ""))
                                 .font(.caption.monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textSecondary)
                             Text("\(forecast.interestedTeam)\(KoreanCopy.particle(forecast.interestedTeam, final: "이", open: "가")) 지금 성적을 지켜보고 있습니다.")
@@ -202,7 +386,7 @@ private struct ProLockedView: View {
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 } else {
-                    Text("한 회차를 끝내면 고교를 건너뛰는 길도 열립니다.")
+                    Text("고교 3년을 한 번 마치면 고교를 건너뛰는 길도 열립니다.")
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textTertiary)
                 }
@@ -233,6 +417,7 @@ private struct ProLockedView: View {
 /// 프로 커리어 안의 오늘/이번 주 두 화면.
 private struct ProCareerTabs: View {
     let career: MobileCareerStore
+    let retiresIntoSignatureLegacy: Bool
     let onStartNewPlayer: () -> Void
     @State private var showsToday = true
 
@@ -249,7 +434,11 @@ private struct ProCareerTabs: View {
             if showsToday {
                 TodayView(career: career)
             } else {
-                CareerFlowView(career: career, onStartNewPlayer: onStartNewPlayer)
+                CareerFlowView(
+                    career: career,
+                    onStartNewPlayer: onStartNewPlayer,
+                    retiresIntoSignatureLegacy: retiresIntoSignatureLegacy
+                )
             }
         }
         .background(BaseballTheme.canvas)

@@ -51,6 +51,8 @@ struct HighSchoolSetupView: View {
     @State private var soulDomain: SoulDomain = .technique
     /// 영혼 상점에서 담은 부스트. 잔액 안에서만 담긴다.
     @State private var selectedBoosts: Set<SoulBoostID> = []
+    /// 발견한 대표 유산 중 이번 선수에게 직접 이어 줄 한 자리.
+    @State private var selectedSignatureLegacyID: CareerSignatureLegacyID?
     /// 공유받은 시드로 시작하기. 비우면 랜덤.
     @State private var seedInput = ""
 
@@ -64,7 +66,7 @@ struct HighSchoolSetupView: View {
            let preset = presets.first(where: { $0.id == last.presetID }) {
             BaseballCard(title: "바로 환생", tone: .raised) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("\(last.playerName.isEmpty ? preset.pitcher.name : last.playerName) · \(last.region) · 지난 회차와 같은 설정")
+                    Text("\(last.playerName.isEmpty ? preset.pitcher.name : last.playerName) · \(last.region) · 지난 선수와 같은 설정")
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                     PrimaryPill(title: "같은 설정으로 다시 태어나기", identifier: "hs.setup.quickRebirth") {
@@ -82,7 +84,35 @@ struct HighSchoolSetupView: View {
     private var selectedPreset: PitcherPresetSnapshot? {
         presets.first { $0.id == selectedPresetID } ?? presets.first
     }
-    private var isRebirth: Bool { career.inheritance.lifeNumber > 1 }
+    /// 고교 회차 번호가 1이어도 direct Pro 은퇴 보너스가 있으면 이미 계승 자원을 가진
+    /// 숙련 사용자다. 이 경우 상점을 숨기면 wallet-only로 분리한 프로 보상을 쓸 수 없다.
+    private var isRebirth: Bool {
+        career.inheritance.lifeNumber > 1
+            || career.inheritance.soulPoints > 0
+            || career.inheritance.automaticSoulTotal > 0
+            || !career.inheritance.memories.isEmpty
+            || career.inheritance.equippedSignatureLegacyID != nil
+    }
+    private var unlockedSignatureLegacies: [CareerSignatureLegacy] {
+        (career.inheritance.unlockedSignatureLegacies ?? []).map { discovered in
+            let definition = CareerSignatureLegacy.definition(for: discovered.id)
+            return CareerSignatureLegacy(
+                id: definition.id,
+                family: definition.family,
+                title: definition.title,
+                detail: definition.detail,
+                effect: definition.effect,
+                evidence: discovered.evidence
+            )
+        }
+    }
+    private var selectedSignatureLegacy: CareerSignatureLegacy? {
+        guard let id = selectedSignatureLegacyID ?? career.inheritance.equippedSignatureLegacyID else {
+            return nil
+        }
+        return unlockedSignatureLegacies.first { $0.id == id }
+            ?? CareerSignatureLegacy.definition(for: id)
+    }
 
     /// 첫 회차에는 난이도·핸디캡 단계가 아예 없다.
     ///
@@ -108,7 +138,7 @@ struct HighSchoolSetupView: View {
         seedInput.filter { $0.isNumber || $0 == "-" }
     }
 
-    /// "시드-회차" 토큰이면 도전 런이다. 카드의 각인과 같은 형식이다.
+    /// "시드-회차" 토큰이면 challenge 모드다. 카드의 각인과 같은 형식이다.
     private var parsedChallenge: (seed: String, lifeNumber: Int)? {
         let parts = normalizedSeedInput.split(separator: "-")
         guard parts.count == 2, UInt64(parts[0]) != nil,
@@ -121,7 +151,7 @@ struct HighSchoolSetupView: View {
     private var seedFieldError: String? {
         guard !seedInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
         if UInt64(normalizedSeedInput) != nil || parsedChallenge != nil { return nil }
-        return "시드는 숫자, 도전은 \"시드-회차\" 형식입니다. 카드의 각인을 그대로 옮겨 주세요."
+        return "숫자 시드나 카드에 적힌 공유 코드를 그대로 입력해 주세요."
     }
 
     var body: some View {
@@ -156,6 +186,11 @@ struct HighSchoolSetupView: View {
         .background(BaseballTheme.canvas)
         .scrollDismissesKeyboard(.interactively)
         .onAppear { GameAnalytics.logOnce(.onboardingStarted) }
+        .onAppear {
+            if selectedSignatureLegacyID == nil {
+                selectedSignatureLegacyID = career.inheritance.equippedSignatureLegacyID
+            }
+        }
         .animation(.snappy, value: step)
     }
 
@@ -164,7 +199,7 @@ struct HighSchoolSetupView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Text(isRebirth ? "\(career.inheritance.lifeNumber)회차 · \(stepIndex + 1) / \(steps.count)"
+                Text(isRebirth ? "\(career.inheritance.lifeNumber)번째 선수 · \(stepIndex + 1) / \(steps.count)"
                      : "선수 만들기 · \(stepIndex + 1) / \(steps.count)")
                     .eyebrowStyle(BaseballTheme.action)
                 Spacer()
@@ -231,7 +266,7 @@ struct HighSchoolSetupView: View {
 
             // 시드로 시작 — 커뮤니티 도전("이 시드로 5회차 안에 지명?")의 입구.
             // 대부분은 안 쓰므로 눈에 띄지 않게 한 줄만.
-            TextField("시드로 시작 (선택) — 카드의 \"시드-회차\" 그대로", text: $seedInput)
+            TextField("시드 또는 카드 공유 코드 (선택)", text: $seedInput)
                 .font(.footnote.monospaced())
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.numbersAndPunctuation)
@@ -242,18 +277,18 @@ struct HighSchoolSetupView: View {
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
             } else if let challenge = parsedChallenge {
-                Text("도전 런 — \(challenge.lifeNumber)회차의 판을 맨몸으로 엽니다. 결과는 기록·계승에 남지 않습니다.")
+                Text("기록 없는 도전 — \(challenge.lifeNumber)번째 선수와 같은 조건을 계승 도움 없이 엽니다. 결과는 선수 기록·야구혼에 남지 않습니다.")
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.milestone)
                     .fixedSize(horizontal: false, vertical: true)
             } else if !seedInput.isEmpty {
-                Text("시드만 입력하면 지금 회차(\(career.inheritance.lifeNumber)회차)의 판입니다. 카드의 판 그대로 열려면 \"시드-회차\"를 입력하세요.")
+                Text("숫자만 입력하면 지금 만들 \(career.inheritance.lifeNumber)번째 선수의 조건입니다. 카드와 똑같이 도전하려면 카드의 공유 코드를 입력하세요.")
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if isRebirth {
+            if isRebirth, parsedChallenge == nil {
                 inheritanceCard
             } else {
                 // 입력칸 아래 화면 1/3이 빈 검정이었다(QA P2-11) — 이름을 정하는 순간에
@@ -297,13 +332,14 @@ struct HighSchoolSetupView: View {
             BaseballCard(title: "가져온 것", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("야구혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
-                    // 정직한 계승 안내 — 스며듦은 총량이 정하고, 잔액은 상점의 돈이다.
-                    Text("자동 스며듦 최대 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.soulTotal)) — 재능 벽에 막힌 몫은 만개 두드림으로 · 상점 \(remainingSoul)혼")
+                    // 정직한 계승 안내 — 고교·주간에서 모은 자동 누적과 프로 보너스를
+                    // 포함한 지갑은 다르다. 화면에서도 한 숫자로 섞지 않는다.
+                    Text("자동 성장 \(career.inheritance.automaticSoulTotal)혼 중 이번 선수 능력에 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.automaticSoulTotal, storedRulesVersion: career.inheritance.inheritanceRulesVersion)) · 쓸 수 있는 야구혼 \(remainingSoul)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
-                    if career.inheritance.memories.isEmpty {
+                    if career.inheritance.memories.isEmpty, selectedSignatureLegacy == nil {
                         Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                    } else {
+                    } else if !career.inheritance.memories.isEmpty {
                         ForEach(career.inheritance.memories, id: \.self) { memory in
                             let copy = HighSchoolPresentation.memory(memory)
                             HStack(spacing: 8) {
@@ -312,15 +348,28 @@ struct HighSchoolSetupView: View {
                             }
                         }
                     }
+                    if let legacy = selectedSignatureLegacy {
+                        Divider()
+                        Text("대표 유산 · \(legacy.title)")
+                            .font(.footnote.weight(.bold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                        Text(Self.signatureLegacyEffectLine(legacy.effect))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                    }
                 }
             }
             soulShopCard
         }
     }
 
-    /// 상점에서 산 것을 빼고 남는 잔액. 스며듦은 총량(soulTotal)이 정하고 이 값은 화폐다.
+    /// 상점에서 산 것을 빼고 남는 지갑 잔액. 자동 성장 누적과는 독립적이다.
     private var remainingSoul: Int {
         career.inheritance.soulPoints - selectedBoosts.reduce(0) { $0 + $1.cost }
+    }
+
+    static func showsSoulDomain(automaticSoulTotal: Int, isChallenge: Bool) -> Bool {
+        !isChallenge && automaticSoulTotal > 0
     }
 
     /// 영혼 상점 — 상한 너머의 야구혼이 처음으로 흘러갈 배수구.
@@ -328,7 +377,7 @@ struct HighSchoolSetupView: View {
     private var soulShopCard: some View {
         BaseballCard(title: "영혼 상점", tone: .raised) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("야구혼을 소비해 이번 회차의 규칙을 삽니다. 스며듦은 평생 총량이 정합니다 — 구매해도 줄지 않습니다.")
+                Text("야구혼을 소비해 이번 고교 3년에 적용할 규칙을 삽니다. 자동 성장은 별도로 쌓여 있어 구매해도 줄지 않습니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -375,9 +424,9 @@ struct HighSchoolSetupView: View {
     static func boostCopy(_ boost: SoulBoostID, baseSlots: Int = 3) -> (title: String, detail: String) {
         switch boost {
         case .talentBreak: ("재능 돌파", "가장 낮은 재능 등급이 한 단계 열린 채 시작합니다.")
-        case .extraMemory: ("기억 확장", "이번 회차의 기억 슬롯이 \(baseSlots)장에서 \(baseSlots + 1)장이 됩니다.")
-        case .headStart: ("조기 성장", "자동 스며듦 상한 너머로 +6이 추가로 스며듭니다.")
-        case .trainingRhythm: ("성장 리듬", "이번 회차 훈련 대성공 확률이 16% → 26%가 됩니다.")
+        case .extraMemory: ("기억 확장", "이번에 가져갈 기억이 \(baseSlots)장에서 \(baseSlots + 1)장으로 늘어납니다.")
+        case .headStart: ("조기 성장", "자동 스며듦 상한 너머로 +5가 추가로 스며듭니다.")
+        case .trainingRhythm: ("성장 리듬", "이번 고교 3년의 훈련 대성공 확률이 16% → 26%가 됩니다.")
         }
     }
 
@@ -460,7 +509,7 @@ struct HighSchoolSetupView: View {
 
     private var handicapStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            Text("이번 회차를 얼마나 어렵게 갈까요?")
+            Text("이번 고교 3년을 얼마나 어렵게 갈까요?")
                 .font(.title.bold())
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -488,10 +537,68 @@ struct HighSchoolSetupView: View {
                 }
             }
 
+            if parsedChallenge != nil {
+                BaseballCard(title: "같은 조건으로 겨루는 도전", tone: .milestone) {
+                    Text("지난 선수의 기억·대표 유산·야구혼·핸디캡은 쓰지 않습니다. 고른 난이도와 직접 투구만 이 판에 반영됩니다.")
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if parsedChallenge == nil, !unlockedSignatureLegacies.isEmpty {
+                BaseballCard(title: "이번 선수에게 이어 줄 대표 유산", tone: .milestone) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("지난 선수들이 남긴 강점 중 하나만 직접 이어집니다. 다른 유산은 사라지지 않고 다음에도 다시 고를 수 있습니다.")
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        ForEach(unlockedSignatureLegacies) { legacy in
+                            let selected = (selectedSignatureLegacyID
+                                            ?? career.inheritance.equippedSignatureLegacyID) == legacy.id
+                            Button { selectedSignatureLegacyID = legacy.id } label: {
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: selected ? "checkmark.seal.fill" : "seal")
+                                        .foregroundStyle(selected ? BaseballTheme.milestone : BaseballTheme.textTertiary)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(legacy.title)
+                                            .font(.subheadline.weight(.bold))
+                                            .foregroundStyle(BaseballTheme.textPrimary)
+                                        Text(legacy.detail)
+                                            .font(.caption)
+                                            .foregroundStyle(BaseballTheme.textSecondary)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                        Text(Self.signatureLegacyEffectLine(legacy.effect))
+                                            .font(.caption2.weight(.semibold).monospacedDigit())
+                                            .foregroundStyle(BaseballTheme.milestone)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(selected ? BaseballTheme.milestone.opacity(0.12) : BaseballTheme.surfaceRaised,
+                                            in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                                        .stroke(selected ? BaseballTheme.milestone : BaseballTheme.border,
+                                                lineWidth: selected ? 2 : 1)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(selected ? .isSelected : [])
+                            .accessibilityIdentifier("hs.setup.signatureLegacy.\(legacy.id.rawValue)")
+                        }
+                    }
+                }
+            }
+
             // 야구혼을 어디에 붓는지 고른다. 코어는 처음부터 이 값을 받았는데 화면이
             // 넘기지 않아 늘 기본값(제구)으로 갔다 — 회차마다 같은 곳만 오르는 원인 하나였다.
-            if career.inheritance.soulPoints > 0 {
-                BaseballCard(title: "야구혼 \(career.inheritance.soulPoints)\(KoreanCopy.objectParticle(number: career.inheritance.soulPoints)) 어디에") {
+            if Self.showsSoulDomain(
+                automaticSoulTotal: career.inheritance.automaticSoulTotal,
+                isChallenge: parsedChallenge != nil
+            ) {
+                BaseballCard(title: "자동 성장 \(career.inheritance.automaticSoulTotal)혼을 어디에") {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 6) {
                             ForEach(SoulDomain.allCases, id: \.self) { domain in
@@ -525,23 +632,25 @@ struct HighSchoolSetupView: View {
                 }
             }
 
-            Text("핸디캡").font(.headline)
-            Text("최대 2개. 고르면 이번 회차가 어려워집니다. 대신 다음 회차로 넘어가는 계승이 커집니다. 지금 +\(rewardPermille / 10)%")
-                .font(.footnote)
-                .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            ForEach(KarmaID.allCases, id: \.self) { karma in
-                // 코어가 카르마를 2개까지만 받는다(HighSchoolCareerEngine.start). 3개를 보내면
-                // 커리어 생성이 실패하고, 그 화면의 유일한 버튼이 진행 삭제다 — 여기서 막는다.
-                KarmaRow(
-                    karma: karma,
-                    selected: selectedKarmas.contains(karma),
-                    atCapacity: selectedKarmas.count >= 2,
-                    onToggle: {
-                        if selectedKarmas.contains(karma) { selectedKarmas.remove(karma) }
-                        else if selectedKarmas.count < 2 { selectedKarmas.insert(karma) }
-                    }
-                )
+            if parsedChallenge == nil {
+                Text("핸디캡").font(.headline)
+                Text("최대 2개. 고르면 이번 고교 3년이 어려워집니다. 대신 새 선수가 이어받는 힘이 커집니다. 지금 +\(rewardPermille / 10)%")
+                    .font(.footnote)
+                    .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(KarmaID.allCases, id: \.self) { karma in
+                    // 코어가 카르마를 2개까지만 받는다(HighSchoolCareerEngine.start). 3개를 보내면
+                    // 커리어 생성이 실패하고, 그 화면의 유일한 버튼이 진행 삭제다 — 여기서 막는다.
+                    KarmaRow(
+                        karma: karma,
+                        selected: selectedKarmas.contains(karma),
+                        atCapacity: selectedKarmas.count >= 2,
+                        onToggle: {
+                            if selectedKarmas.contains(karma) { selectedKarmas.remove(karma) }
+                            else if selectedKarmas.count < 2 { selectedKarmas.insert(karma) }
+                        }
+                    )
+                }
             }
         }
     }
@@ -557,18 +666,24 @@ struct HighSchoolSetupView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if isLastStep {
-                PrimaryButton(title: parsedChallenge != nil ? "도전 런 시작"
+                PrimaryButton(title: parsedChallenge != nil ? "기록 없는 도전 시작"
                               : isRebirth ? "다시 태어나기" : "고교 1학년 시작", identifier: "hs.start") {
                     nameFocused = false
                     guard let selectedPreset, seedFieldError == nil else { return }
+                    let isChallenge = parsedChallenge != nil
                     career.startCareer(
                         preset: selectedPreset,
                         playerName: playerName,
                         region: selectedRegion,
                         difficulty: CareerDifficultySnapshot(careerHarshness: harshness),
-                        karmas: Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue },
-                        soulDomain: career.inheritance.soulPoints > 0 ? soulDomain : nil,
-                        soulBoosts: Array(selectedBoosts).sorted { $0.rawValue < $1.rawValue },
+                        karmas: isChallenge ? [] : Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue },
+                        soulDomain: Self.showsSoulDomain(
+                            automaticSoulTotal: career.inheritance.automaticSoulTotal,
+                            isChallenge: isChallenge
+                        ) ? soulDomain : nil,
+                        soulBoosts: isChallenge ? [] : Array(selectedBoosts).sorted { $0.rawValue < $1.rawValue },
+                        signatureLegacyID: isChallenge ? nil : (selectedSignatureLegacyID
+                            ?? career.inheritance.equippedSignatureLegacyID),
                         seedOverride: parsedChallenge?.seed ?? (normalizedSeedInput.isEmpty ? nil : normalizedSeedInput),
                         challengeLifeNumber: parsedChallenge?.lifeNumber
                     )
@@ -588,6 +703,7 @@ struct HighSchoolSetupView: View {
             }
         }
         .padding(BaseballMetrics.gutter)
+        .safeAreaPadding(.bottom, 4)
         .background(BaseballTheme.surface)
     }
 
@@ -617,6 +733,15 @@ struct HighSchoolSetupView: View {
         case .technique: "제구와 변화구에 먼저 들어갑니다. 원하는 곳에 꽂는 쪽입니다."
         case .game: "제구와 타자 상대법에 먼저 들어갑니다. 수 싸움으로 버티는 쪽입니다."
         }
+    }
+
+    static func signatureLegacyEffectLine(_ effect: CareerSignatureLegacyEffect) -> String {
+        var parts: [String] = []
+        if effect.stuff != 0 { parts.append("구위 +\(effect.stuff)") }
+        if effect.command != 0 { parts.append("제구 +\(effect.command)") }
+        if effect.movement != 0 { parts.append("변화구 +\(effect.movement)") }
+        if effect.stamina != 0 { parts.append("체력 +\(effect.stamina)") }
+        return parts.isEmpty ? "시작 능력 변화 없음" : parts.joined(separator: " · ")
     }
 
     static func difficultyLabel(_ level: DifficultyLevel) -> String {

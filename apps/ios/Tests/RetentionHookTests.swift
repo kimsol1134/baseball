@@ -9,6 +9,11 @@ import SimulationCore
 /// (알림 스위치가 오늘의 이닝 화면에만 존재)과, 하루 건너뛰어도 잃을 것이 없었던 것이다.
 /// 여기 있는 판정들이 그 두 가지를 고친 규칙이다.
 final class RetentionHookTests: XCTestCase {
+    func testDailyInningCompletionGateRejectsRepeatedFinish() {
+        XCTAssertTrue(DailyInningView.canClaimFinish(alreadyFinished: false))
+        XCTAssertFalse(DailyInningView.canClaimFinish(alreadyFinished: true))
+    }
+
     private var defaults: UserDefaults!
     private var suiteName: String!
 
@@ -160,6 +165,29 @@ final class RetentionHookTests: XCTestCase {
 /// 회차 종료 → 다음 회차의 마찰. 2026-08 데이터에서 드래프트를 본 42명 중 27명만
 /// 다음 회차를 시작했다.
 final class RebirthFrictionTests: XCTestCase {
+
+    /// 다음 회차 추천은 동기 장치이자 저장 데이터다. 새 필드는 왕복하고, 필드가 없는
+    /// 기존 저장본은 추천 없이 그대로 열려야 한다.
+    func testNextRunIntentRoundTripsAndOldSaveDefaultsToNone() throws {
+        let intent = NextRunIntent(
+            pledgeID: "strikeout_master", sourceLifeNumber: 3,
+            reason: "탈삼진 목표까지 다섯 개가 남았습니다."
+        )
+        let record = HighSchoolCareerStore.SaveRecord(
+            result: nil, inheritance: .firstLife, nextRunIntent: intent, revision: 7
+        )
+        let decoded = try JSONDecoder().decode(
+            HighSchoolCareerStore.SaveRecord.self, from: JSONEncoder().encode(record)
+        )
+        XCTAssertEqual(decoded.nextRunIntent, intent)
+
+        let legacy = """
+        {"inheritance":{"lifeNumber":1,"memories":[],"soulPoints":0,"karmas":[]},"revision":1}
+        """
+        XCTAssertNil(try JSONDecoder().decode(
+            HighSchoolCareerStore.SaveRecord.self, from: Data(legacy.utf8)
+        ).nextRunIntent)
+    }
 
     /// 정산 화면에서 곧장 다음 판으로 가려면 지난 설정이 재생 가능해야 한다.
     @MainActor

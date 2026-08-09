@@ -175,6 +175,44 @@ final class PitchSessionTests: XCTestCase {
         XCTFail("세션이 끝나지 않았습니다.")
     }
 
+    func testFastForwardUsesCatcherRecommendationsAndStopsAtBatterBoundary() {
+        let session = PitchSession(state: snapshot(), seed: "20260725")
+        session.start()
+        XCTAssertEqual(session.stage, .ready)
+        let startingBatter = session.batterIndex
+
+        let advanced = session.fastForwardCurrentBatter()
+
+        XCTAssertGreaterThan(advanced, 0)
+        XCTAssertLessThanOrEqual(advanced, 12)
+        XCTAssertEqual(session.pitchLog.count, advanced)
+        XCTAssertTrue(session.pitchLog.allSatisfy(\.acceptedRecommendation))
+        XCTAssertEqual(session.lastDelivery, .neutral)
+        if case .ready = session.stage {
+            XCTAssertEqual(advanced, 12, "타석이 끝나지 않았다면 안전 상한에서 멈춰야 합니다.")
+        } else {
+            XCTAssertTrue(session.batterIndex != startingBatter || session.stage != .ready)
+        }
+    }
+
+    func testFastForwardVisibilityKeepsPracticeAndClutchCountsManual() {
+        XCTAssertFalse(PitchView.canFastForwardCurrentBatter(
+            isPractice: true, totalPitches: 1, leverage: 100, balls: 0, strikes: 0
+        ))
+        XCTAssertFalse(PitchView.canFastForwardCurrentBatter(
+            isPractice: false, totalPitches: 1, leverage: 800, balls: 0, strikes: 0
+        ))
+        XCTAssertFalse(PitchView.canFastForwardCurrentBatter(
+            isPractice: false, totalPitches: 1, leverage: 100, balls: 3, strikes: 1
+        ))
+        XCTAssertFalse(PitchView.canFastForwardCurrentBatter(
+            isPractice: false, totalPitches: 1, leverage: 100, balls: 1, strikes: 2
+        ))
+        XCTAssertTrue(PitchView.canFastForwardCurrentBatter(
+            isPractice: false, totalPitches: 1, leverage: 300, balls: 1, strikes: 1
+        ))
+    }
+
     /// 타자가 바뀌어도 세션이 실패하지 않아야 한다. 라이벌 기억은 투수-타자 조합에 묶여 있어
     /// 다음 타자로 그대로 넘기면 코어가 matchupID 불일치로 거부한다.
     func testAdvancingBattersDoesNotFailTheSession() {
@@ -271,5 +309,217 @@ final class PitchSessionTests: XCTestCase {
         XCTAssertNil(session.lastResult, "다음 타자로 넘어갔는데 직전 결과가 남아 있습니다.")
         XCTAssertTrue(session.lastCues.isEmpty, "직전 투구의 소리가 남아 있습니다.")
         XCTAssertNil(session.lastDelivery, "직전 릴리스 판정이 남아 있습니다.")
+    }
+
+    func testResumePreservesSequenceMomentsWithoutResurrectingAnOlderBadge() throws {
+        let older = PitchSequenceMoment(
+            pitchNumber: 1,
+            tag: .stealStrike,
+            headline: "카운트를 되찾았다",
+            detail: "타자 우세 카운트에서 스트라이크를 넣었습니다."
+        )
+        let first = PitchSession.ResumeState.LogLine(
+            pitchNumber: 1,
+            call: call(type: .fourSeam, row: 1, column: 1),
+            outcome: .calledStrike,
+            shortFeedback: "스트라이크",
+            acceptedRecommendation: true,
+            sequenceMoment: older
+        )
+        let lastWithoutBadge = PitchSession.ResumeState.LogLine(
+            pitchNumber: 2,
+            call: call(type: .slider, row: 1, column: 1),
+            outcome: .ball,
+            shortFeedback: "볼",
+            acceptedRecommendation: false,
+            sequenceMoment: nil
+        )
+        var resume = syntheticResume(log: [first, lastWithoutBadge])
+        resume.sequenceMoments = [older]
+
+        let decoded = try JSONDecoder().decode(
+            PitchSession.ResumeState.self,
+            from: JSONEncoder().encode(resume)
+        )
+        let restored = PitchSession(state: snapshot(), seed: "resume-sequence")
+        restored.restore(from: decoded)
+
+        XCTAssertEqual(restored.sequenceMoments, [older])
+        XCTAssertEqual(restored.sequenceMasteryCount, 1)
+        XCTAssertNil(restored.lastSequenceMoment, "마지막 공의 명시적 nil이 이전 배지를 되살리면 안 됩니다.")
+        XCTAssertEqual(restored.report(scenarioNumber: 8).sequenceMasteryCount, 1)
+    }
+
+    func testLegacyResumeWithoutSequenceFieldsLoadsAnEmptySequence() throws {
+        let older = PitchSequenceMoment(
+            pitchNumber: 1,
+            tag: .insideOutside,
+            headline: "가로 폭을 썼다",
+            detail: "몸쪽과 바깥쪽을 갈랐습니다."
+        )
+        var current = syntheticResume(log: [
+            .init(
+                pitchNumber: 1,
+                call: call(type: .fourSeam, row: 1, column: 0),
+                outcome: .calledStrike,
+                shortFeedback: "스트라이크",
+                acceptedRecommendation: true,
+                sequenceMoment: older
+            ),
+        ])
+        current.sequenceMoments = [older]
+        current.maximumBatters = 6
+        let data = try JSONEncoder().encode(current)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object.removeValue(forKey: "sequenceMoments")
+        object.removeValue(forKey: "maximumBatters")
+        if var lines = object["pitchLog"] as? [[String: Any]] {
+            for index in lines.indices { lines[index].removeValue(forKey: "sequenceMoment") }
+            object["pitchLog"] = lines
+        }
+
+        let legacy = try JSONDecoder().decode(
+            PitchSession.ResumeState.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        let restored = PitchSession(state: snapshot(), seed: "legacy-sequence")
+        restored.restore(from: legacy)
+        XCTAssertNil(legacy.maximumBatters, "옛 체크포인트는 당시 고정 길이 4타자로 해석할 수 있어야 합니다.")
+        XCTAssertTrue(restored.sequenceMoments.isEmpty)
+        XCTAssertNil(restored.lastSequenceMoment)
+        XCTAssertNil(restored.pitchLog.first?.sequenceMoment)
+    }
+
+    func testFirstPitchToNextBatterCannotUsePreviousBattersPitchForTwoPitchTag() {
+        let previousBatterPitch = PitchSession.ResumeState.LogLine(
+            pitchNumber: 3,
+            call: call(type: .fourSeam, row: 0, column: 0),
+            outcome: .calledStrike,
+            shortFeedback: "타석 종료",
+            acceptedRecommendation: true,
+            sequenceMoment: nil
+        )
+        let session = PitchSession(state: snapshot(), seed: "44771")
+        session.restore(from: syntheticResume(log: [previousBatterPitch]))
+        session.advanceToNextBatter()
+        XCTAssertEqual(session.context.pitchNumber, 1)
+
+        session.selectedPitchType = .changeup
+        session.selectedZone = PitchZone(row: 2, column: 2)
+        session.selectedIntent = .strike
+        session.selectedIntensity = .normal
+        session.throwPitch()
+
+        let forbidden: Set<PitchSequenceTag> = [.speedLadder, .eyeLevelChange, .insideOutside]
+        XCTAssertFalse(session.lastSequenceMoment.map { forbidden.contains($0.tag) } ?? false)
+    }
+
+    func testSequenceAnalyticsAreAggregatedSortedAndRecommendationRateIsNormalized() {
+        let moments = [
+            PitchSequenceMoment(pitchNumber: 1, tag: .speedLadder, headline: "속도차 적중", detail: "속도차"),
+            PitchSequenceMoment(pitchNumber: 2, tag: .counterRead, headline: "읽힘을 역이용했다", detail: "반복 끊기"),
+            PitchSequenceMoment(pitchNumber: 3, tag: .speedLadder, headline: "속도차 적중", detail: "속도차"),
+        ]
+        var resume = syntheticResume(log: [])
+        resume.pitches = 4
+        resume.recommendationAccepted = 3
+        resume.sequenceMoments = moments
+        let session = PitchSession(state: snapshot(), seed: "analytics-sequence")
+        session.restore(from: resume)
+
+        XCTAssertEqual(session.sequenceMasteryCount, 3)
+        XCTAssertEqual(session.sequenceTagIDs, ["counter_read", "speed_ladder"])
+        XCTAssertEqual(session.recommendationAcceptancePermille, 750)
+        XCTAssertEqual(session.recommendationAcceptanceRate, 0.75, accuracy: 0.000_001)
+        let metrics = session.gameFinishedAnalyticsMetrics
+        XCTAssertEqual(metrics["recommendation_acceptance_rate"] as? Double, 0.75)
+        XCTAssertEqual(metrics["sequence_mastery_count"] as? Int, 3)
+        XCTAssertEqual(metrics["sequence_tags"] as? String, "counter_read,speed_ladder")
+        XCTAssertEqual(session.report(scenarioNumber: 8).sequenceMasteryCount, 3)
+
+        resume.pitches = 0
+        resume.recommendationAccepted = 0
+        session.restore(from: resume)
+        XCTAssertEqual(session.recommendationAcceptanceRate, 0)
+
+        resume.pitches = 4
+        resume.recommendationAccepted = 4
+        session.restore(from: resume)
+        XCTAssertEqual(session.recommendationAcceptanceRate, 1)
+    }
+
+    func testDeliberateAlternatingSequencesEarnMoreMasteryThanAutoRecommendations() {
+        func mastery(seed: String, deliberate: Bool) -> Int {
+            let session = PitchSession(state: snapshot(), seed: seed)
+            session.start()
+            var decisions = 0
+            while decisions < 120 {
+                decisions += 1
+                switch session.stage {
+                case .ready:
+                    if deliberate {
+                        let even = session.context.pitchNumber.isMultiple(of: 2)
+                        session.selectedPitchType = even ? .curveball : .fourSeam
+                        session.selectedZone = PitchZone(
+                            row: even ? 2 : 0,
+                            column: even ? 2 : 0
+                        )
+                        session.selectedIntent = session.context.strikes == 2 ? .chase : .strike
+                        session.selectedIntensity = .controlled
+                    }
+                    session.throwPitch()
+                case .betweenBatters:
+                    session.advanceToNextBatter()
+                case .finished, .failed:
+                    return session.sequenceMasteryCount
+                }
+            }
+            return session.sequenceMasteryCount
+        }
+
+        let seeds = (1...16).map { String($0 * 7_919) }
+        let automatic = seeds.reduce(0) { $0 + mastery(seed: $1, deliberate: false) }
+        let deliberate = seeds.reduce(0) { $0 + mastery(seed: $1, deliberate: true) }
+        XCTAssertGreaterThan(deliberate, automatic, "의도적인 속도·눈높이 변화가 자동 사인만 따른 세션보다 더 많이 인식돼야 합니다.")
+    }
+
+    private func call(type: PitchType, row: Int, column: Int) -> PitchCall {
+        PitchCall(
+            pitchType: type,
+            zone: PitchZone(row: row, column: column),
+            zoneIntent: .strike,
+            intensity: .normal
+        )
+    }
+
+    private func syntheticResume(
+        log: [PitchSession.ResumeState.LogLine]
+    ) -> PitchSession.ResumeState {
+        let base = PitchSession(state: snapshot(), seed: "99117")
+        return PitchSession.ResumeState(
+            scenarioID: base.scenario.id,
+            seed: "99117",
+            batterIndex: 0,
+            stageKind: "between",
+            stageMessage: "타석이 끝났습니다.",
+            fatigue: base.context.fatigue,
+            gameState: base.gameState,
+            gameLog: base.gameLog,
+            rivalMemory: nil,
+            pitches: log.count,
+            strikeouts: 0,
+            consecutiveStrikeouts: 0,
+            walks: 0,
+            runsAllowed: 0,
+            expectedDamage: 0,
+            actualDamage: 0,
+            recommendationAccepted: log.filter(\.acceptedRecommendation).count,
+            outsRecorded: 0,
+            rivalOutcomes: [],
+            hitByPitches: 0,
+            holdCall: false,
+            pitchLog: log,
+            sequenceMoments: log.compactMap(\.sequenceMoment)
+        )
     }
 }

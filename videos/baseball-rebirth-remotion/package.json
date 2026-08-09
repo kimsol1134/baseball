@@ -1,0 +1,38 @@
+{
+  "name": "baseball-rebirth-remotion",
+  "version": "1.0.0",
+  "description": "Player-development-first contest demo for 야구 못하면 또 환생함",
+  "repository": {},
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.507",
+    "@remotion/media": "4.0.507",
+    "@remotion/sfx": "4.0.507",
+    "@remotion/tailwind-v4": "4.0.507",
+    "@remotion/transitions": "4.0.507",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.507",
+    "tailwindcss": "4.0.0"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.507",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.19.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio --no-open",
+    "build": "remotion bundle",
+    "capture": "node scripts/capture-game-states.mjs",
+    "render": "remotion render BaseballRebirthDevelopmentDemo renders/baseball-rebirth-development-demo-final.mp4 --codec h264 --audio-codec aac --crf 18 --pixel-format yuv420p",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}

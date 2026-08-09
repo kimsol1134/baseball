@@ -21,10 +21,10 @@ public enum ChapterGoal {
         // 챕터가 갈수록 숙제가 커진다. 1챕터 4~6개 → 후반 8~10개.
         let target = 3 + min(chapterNumber, 5) + generator.nextInt(upperBound: 3)
         let frames: [(String, String)] = [
-            ("감독의 숙제", "감독이 지나가듯 말했다 — 이번 챕터에 삼진 \(target)개는 잡아 보라고."),
-            ("스카우트의 시선", "관중석 뒤편의 수첩이 이번 챕터 탈삼진 \(target)개를 기다립니다."),
-            ("포수의 내기", "포수가 장비를 챙기며 웃었다 — 이번 챕터 삼진 \(target)개, 내기할까?"),
-            ("나와의 약속", "소등 전에 적어 둔 한 줄 — 이번 챕터, 삼진 \(target)개."),
+            ("감독의 숙제", "감독이 지나가듯 말했다 — 이번 이야기에 삼진 \(target)개는 잡아 보라고."),
+            ("스카우트의 시선", "관중석 뒤편의 수첩이 이번 이야기 탈삼진 \(target)개를 기다립니다."),
+            ("포수의 내기", "포수가 장비를 챙기며 웃었다 — 이번 이야기 삼진 \(target)개, 내기할까?"),
+            ("나와의 약속", "소등 전에 적어 둔 한 줄 — 이번 이야기, 삼진 \(target)개."),
         ]
         let frame = frames[generator.nextInt(upperBound: frames.count)]
         return Goal(title: frame.0, detail: frame.1, targetStrikeouts: target)

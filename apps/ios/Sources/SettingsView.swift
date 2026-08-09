@@ -60,7 +60,7 @@ struct SettingsView: View {
             }
 
             Section("진행") {
-                LabeledContent("회차", value: "\(highSchool.inheritance.lifeNumber)회차")
+                LabeledContent("다음 선수", value: "\(highSchool.inheritance.lifeNumber)번째")
                 LabeledContent("가져온 기억", value: "\(highSchool.inheritance.memories.count)장")
                 LabeledContent("영혼", value: "\(highSchool.inheritance.soulPoints)")
                 if let state = pro.state {
@@ -72,7 +72,7 @@ struct SettingsView: View {
                 // 볼 방법이 없어서 "이 시드 해 봐라"가 성립하지 않았다 — 커뮤니티에서
                 // 검증된 바이럴 경로 하나가 통째로 막혀 있었던 셈이다. UI 한 줄이면 된다.
                 if let seed = highSchool.state?.careerID {
-                    LabeledContent("이번 회차 시드") {
+                    LabeledContent("이번 선수 공유 코드") {
                         HStack(spacing: 8) {
                             Text(seed)
                                 .font(.caption.monospaced())
@@ -119,7 +119,7 @@ struct SettingsView: View {
             }
             Button("취소") {}
         } message: {
-            Text("회차와 계승 기억까지 전부 사라집니다.")
+            Text("선수 기록과 계승 유산까지 전부 사라집니다.")
         }
     }
 }

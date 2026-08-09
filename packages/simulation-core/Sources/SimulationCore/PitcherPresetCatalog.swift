@@ -29,9 +29,11 @@ struct PitcherBalanceMigration {
 }
 
 public enum PitcherPresetCatalog {
-    public static let balanceVersion = 3
+    public static let balanceVersion = 4
 
-    public static let all: [PitcherPresetSnapshot] = [
+    // v3 저장본을 새 공통 능력 예산으로 옮길 때, 이미 얻은 성장분과 구종 성장을
+    // 한 점도 잃지 않도록 직전 카탈로그를 그대로 보존한다.
+    static let balanceV3: [PitcherPresetSnapshot] = [
         PitcherPresetSnapshot(
             id: "power_prospect",
             name: "강속구 원석",
@@ -117,6 +119,37 @@ public enum PitcherPresetCatalog {
             )
         )
     ]
+
+    /// 네 시작 유형은 강점의 위치만 다르고 네 능력 합은 모두 150이다.
+    ///
+    /// v3에서는 제구형·변화구형·체력형이 3~5점을 더 들고 시작해 같은 노력으로도
+    /// 스카우트 총점이 먼저 올랐다. 강점은 그대로 두고 비주력 능력만 내려 선택 예산을 맞춘다.
+    public static let all: [PitcherPresetSnapshot] = balanceV3.map { preset in
+        let pitcher = preset.pitcher
+        let ratings: (stuff: Int, command: Int, movement: Int, stamina: Int) = switch preset.id {
+        case "precision_commander": (34, 43, 35, 38)
+        case "breaking_ball_artist": (37, 34, 44, 35)
+        case "innings_eater": (34, 38, 34, 44)
+        default: (pitcher.stuff, pitcher.command, pitcher.movement, pitcher.stamina)
+        }
+        return PitcherPresetSnapshot(
+            id: preset.id,
+            name: preset.name,
+            tagline: preset.tagline,
+            strengths: preset.strengths,
+            tradeoff: preset.tradeoff,
+            pitcher: PitcherSnapshot(
+                id: pitcher.id,
+                name: pitcher.name,
+                stuff: ratings.stuff,
+                command: ratings.command,
+                movement: ratings.movement,
+                stamina: ratings.stamina,
+                pitchProfiles: pitcher.pitchProfiles,
+                throwingHand: pitcher.throwingHand
+            )
+        )
+    }
 
     // Kept to translate v2 saves while preserving every point earned after creation.
     static let balanceV2: [PitcherPresetSnapshot] = [
@@ -206,12 +239,17 @@ public enum PitcherPresetCatalog {
         )
     ]
 
-    static func migrate(_ pitcher: PitcherSnapshot, fromVersion: Int?) -> PitcherBalanceMigration? {
+    static func migrate(
+        _ pitcher: PitcherSnapshot,
+        fromVersion: Int?,
+        targetVersion: Int = balanceVersion
+    ) -> PitcherBalanceMigration? {
         let version = fromVersion ?? 1
-        guard version < balanceVersion else { return nil }
-        let sourceCatalog = version <= 1 ? balanceV1 : balanceV2
+        guard version < targetVersion, (3...balanceVersion).contains(targetVersion) else { return nil }
+        let sourceCatalog = version <= 1 ? balanceV1 : version == 2 ? balanceV2 : balanceV3
+        let targetCatalog = targetVersion == 3 ? balanceV3 : all
         guard let source = sourceCatalog.first(where: { $0.pitcher.id == pitcher.id })?.pitcher,
-              let calibrated = all.first(where: { $0.pitcher.id == pitcher.id })?.pitcher else { return nil }
+              let calibrated = targetCatalog.first(where: { $0.pitcher.id == pitcher.id })?.pitcher else { return nil }
         let offsets: [TrainingFocus: Int] = [
             .velocity: calibrated.stuff - source.stuff,
             .command: calibrated.command - source.command,
@@ -241,14 +279,15 @@ public enum PitcherPresetCatalog {
                 command: clamp(pitcher.command + calibrated.command - source.command, 20, 80),
                 movement: clamp(pitcher.movement + calibrated.movement - source.movement, 20, 80),
                 stamina: clamp(pitcher.stamina + calibrated.stamina - source.stamina, 20, 80),
-                pitchProfiles: profiles
+                pitchProfiles: profiles,
+                throwingHand: pitcher.throwingHand
             ),
             ratingOffsets: offsets
         )
     }
 
     static func inferredLegacyVersion(for pitcher: PitcherSnapshot) -> Int {
-        let candidates = [(1, balanceV1), (2, balanceV2)]
+        let candidates = [(1, balanceV1), (2, balanceV2), (3, balanceV3)]
         return candidates.min { lhs, rhs in
             distance(from: pitcher, to: lhs.1) < distance(from: pitcher, to: rhs.1)
         }?.0 ?? 2

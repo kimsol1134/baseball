@@ -5,6 +5,7 @@ struct CareerFlowView: View {
     let career: MobileCareerStore
     /// 은퇴 뒤 새 선수로 시작한다. 프로 저장본을 지우고 고교 탭으로 돌려보낸다.
     var onStartNewPlayer: () -> Void = {}
+    var retiresIntoSignatureLegacy = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -32,7 +33,7 @@ struct CareerFlowView: View {
         if let state = career.state {
             if state.phase == .importantGame, let session = career.pitchSession {
                 PitchView(session: session, onFinish: career.finishImportantGame,
-                          onAbort: career.abandonImportantGame)
+                          onAbort: { _ = career.abandonImportantGame() })
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -48,6 +49,12 @@ struct CareerFlowView: View {
                         switch state.phase {
                         case .weeklyPlan:
                             WeeklyPlanView(career: career, state: state)
+                        case .seasonDecision:
+                            if let pending = state.pendingDecision {
+                                ProSeasonDecisionView(career: career, decision: pending)
+                            } else {
+                                ContentUnavailableView("시즌 결정을 불러올 수 없습니다", systemImage: "exclamationmark.triangle")
+                            }
                         case .importantGame:
                             ImportantGameIntro(state: state, onStart: career.beginImportantGame)
                         case .seasonReview:
@@ -62,12 +69,17 @@ struct CareerFlowView: View {
                         case .retirementDecision:
                             RetirementDecisionView(career: career, state: state)
                         case .completed:
-                            RetiredView(state: state, onStartNewPlayer: onStartNewPlayer)
+                            RetiredView(
+                                state: state,
+                                retiresIntoSignatureLegacy: retiresIntoSignatureLegacy,
+                                onStartNewPlayer: onStartNewPlayer
+                            )
                         default:
                             ContentUnavailableView("이번 일정은 끝났습니다", systemImage: "checkmark.circle")
                         }
                     }
                     .padding(BaseballMetrics.gutter)
+                    .safeAreaPadding(.bottom, 12)
                 }
                 .background(BaseballTheme.canvas)
                 .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
@@ -135,11 +147,113 @@ private struct CareerSummary: View {
                             .foregroundStyle(milestone == state.milestones.last ? BaseballTheme.milestone : BaseballTheme.textSecondary)
                     }
                 }
+                if let decisions = state.decisionHistory, !decisions.isEmpty {
+                    Section("시즌 선택 기록") {
+                        ForEach(Array(decisions.suffix(7).reversed())) { decision in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(decision.choiceTitle)
+                                    .font(.subheadline.weight(.semibold))
+                                Text("\(decision.season)시즌 \(decision.week)주차 · \(decision.effect.summary)")
+                                    .font(.caption)
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+                    }
+                }
             }
         }
         .scrollContentBackground(.hidden)
         .background(BaseballTheme.canvas)
         .navigationTitle("커리어")
+    }
+}
+
+/// 세 주마다 멈추는 시즌 갈림길. 선택지는 효과와 비용을 코어가 계산한 숫자 그대로
+/// 공개하며, 확인 전에는 어떤 상태도 바꾸지 않는다.
+struct ProSeasonDecisionView: View {
+    let career: MobileCareerStore
+    let decision: ProSeasonDecision
+    @State private var pendingChoice: ProSeasonDecisionChoice?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            KeyArtHeader(
+                art: .stadiumNight,
+                eyebrow: "\(decision.season)시즌 · \(decision.week)주차 결정",
+                title: decision.title,
+                accent: BaseballTheme.milestone
+            )
+
+            Text(decision.detail)
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ForEach(decision.choices) { choice in
+                Button { pendingChoice = choice } label: {
+                    VStack(alignment: .leading, spacing: 7) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(choice.title)
+                                .font(.headline)
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right.circle.fill")
+                                .foregroundStyle(BaseballTheme.selection)
+                        }
+                        Text(choice.detail)
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Label(choice.effect.summary, systemImage: "plusminus.circle")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.information)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
+                    .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                            .stroke(BaseballTheme.border, lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Self.accessibilityLabel(for: choice))
+                .accessibilityHint("두 번 탭하면 되돌릴 수 없는 선택을 확인합니다.")
+                .accessibilityIdentifier("pro.seasonDecision.choice.\(choice.id)")
+            }
+
+            Label("확인한 뒤에는 되돌릴 수 없습니다. 자동 진행도 이 결정을 건너뛰지 않습니다.", systemImage: "exclamationmark.circle")
+                .font(.caption)
+                .foregroundStyle(BaseballTheme.warning)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityIdentifier("pro.seasonDecision")
+        .confirmationDialog(
+            pendingChoice?.title ?? "선택 확인",
+            isPresented: Binding(
+                get: { pendingChoice != nil },
+                set: { if !$0 { pendingChoice = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("이 선택으로 결정") {
+                guard let pendingChoice else { return }
+                career.applySeasonDecision(decisionID: decision.id, choiceID: pendingChoice.id)
+                self.pendingChoice = nil
+            }
+            .accessibilityIdentifier("pro.seasonDecision.confirm")
+            Button("취소", role: .cancel) { pendingChoice = nil }
+        } message: {
+            if let pendingChoice {
+                Text("\(pendingChoice.detail) 효과: \(pendingChoice.effect.summary). 이 선택은 되돌릴 수 없습니다.")
+            }
+        }
+    }
+
+    static func accessibilityLabel(for choice: ProSeasonDecisionChoice) -> String {
+        "\(choice.title). \(choice.detail). 효과: \(choice.effect.summary)"
     }
 }
 
@@ -197,7 +311,7 @@ private struct WeeklyPlanView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(Self.segmentName(state.seasonSegment)) 끝까지 진행")
                         .font(.subheadline.weight(.semibold))
-                    Text("중요 경기·역할 변화·부상이 생기면 그 자리에서 멈춥니다.")
+                    Text("승부처 경기·역할 변화·부상이 생기면 그 자리에서 멈춥니다.")
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
@@ -487,6 +601,7 @@ private struct RetirementDecisionView: View {
 /// 은퇴한 뒤. 커리어의 마지막 화면이라 회고와 통산 기록만 남는다.
 private struct RetiredView: View {
     let state: ProCareerSnapshot
+    let retiresIntoSignatureLegacy: Bool
     let onStartNewPlayer: () -> Void
 
     @State private var confirming = false
@@ -505,7 +620,8 @@ private struct RetiredView: View {
                 PortraitView(seed: state.identity.name, role: .player, size: 56, playerStage: .pro)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(state.identity.name).font(.headline)
-                    Text("\(state.team.name) · \(state.serviceYears)년").font(.footnote)
+                    Text("\(state.team.name) · \(MobileCareerStore.retirementDurationText(state))")
+                        .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
                 Spacer(minLength: 0)
@@ -521,10 +637,19 @@ private struct RetiredView: View {
 
             // 이 커리어가 다음 회차에 남기는 것. 프로의 시간이 환생 루프와 무관하면
             // 은퇴가 끝이 되지만, 야구혼으로 이어지면 은퇴가 다음 회차의 시작이 된다.
-            BaseballCard(title: "다음 회차로", tone: .milestone) {
-                Text("이 커리어가 야구혼 \(HighSchoolCareerStore.proSoulBonus(for: state))을 남깁니다. 다시 태어날 때 시작 능력에 스며듭니다.")
+            BaseballCard(
+                title: retiresIntoSignatureLegacy
+                    ? "프로 기록을 대표 유산으로 남기기" : "프로 기록을 야구혼으로 남기기",
+                tone: .milestone
+            ) {
+                Text(retiresIntoSignatureLegacy
+                     ? "고교 시절부터 은퇴까지 직접 키운 능력과 통산 기록으로 대표 유산 세 가지를 찾습니다. 그중 하나를 다음 선수에게 직접 남길 수 있습니다."
+                     : "고교를 건너뛰고 시작한 프로 기록은 야구혼으로 남습니다. 진행 중인 고교 선수나 다음 고교 선수에게 사용할 수 있습니다.")
                     .font(.subheadline)
                     .fixedSize(horizontal: false, vertical: true)
+                Text("야구혼 +\(HighSchoolCareerStore.proSoulBonus(for: state))")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.milestone)
             }
 
             if !state.awards.isEmpty {
@@ -546,18 +671,33 @@ private struct RetiredView: View {
                 }
             }
 
-            PrimaryPill(title: "새 선수로 다시 시작", identifier: "pro.newPlayer") { confirming = true }
-            Text("이 커리어를 접고 고교 1학년부터 다시 시작합니다. 지금까지의 기록은 남습니다.")
+            PrimaryPill(
+                title: retiresIntoSignatureLegacy
+                    ? "유산을 남기고 다음 선수 준비" : "야구혼을 남기고 고교로 돌아가기",
+                identifier: "pro.newPlayer"
+            ) { confirming = true }
+            Text(retiresIntoSignatureLegacy
+                 ? "프로 기록을 안전하게 저장한 뒤, 다음 선수에게 남길 대표 유산 하나를 고릅니다."
+                 : "프로 기록을 안전하게 저장한 뒤 기존 고교 진행으로 돌아갑니다.")
                 .font(.caption)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .confirmationDialog("새 선수로 시작하시겠습니까?", isPresented: $confirming, titleVisibility: .visible) {
-            Button("새 선수로 시작", role: .destructive, action: onStartNewPlayer)
+        .confirmationDialog(
+            retiresIntoSignatureLegacy ? "이 선수의 유산을 남길까요?" : "프로 기록을 야구혼으로 남길까요?",
+            isPresented: $confirming,
+            titleVisibility: .visible
+        ) {
+            Button(
+                retiresIntoSignatureLegacy ? "프로 기록을 유산으로 남기기" : "야구혼을 남기고 돌아가기",
+                action: onStartNewPlayer
+            )
                 .accessibilityIdentifier("pro.newPlayer.confirm")
             Button("취소") {}
         } message: {
-            Text("\(state.identity.name)의 프로 커리어가 닫히고 고교 화면으로 돌아갑니다.")
+            Text(retiresIntoSignatureLegacy
+                 ? "\(state.identity.name)의 프로 커리어를 닫고, 대표 유산을 고르는 화면으로 이동합니다."
+                 : "\(state.identity.name)의 프로 커리어를 닫고 고교 화면으로 돌아갑니다.")
         }
     }
 }

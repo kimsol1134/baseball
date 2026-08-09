@@ -6,17 +6,32 @@ import SimulationCore
 enum HighSchoolPresentation {
     // MARK: - 라벨
 
+    /// 저장 규칙의 8개 진행 구간은 그대로 두고, 사용자가 한 번에 이해할 수 있는 네 장으로
+    /// 묶는다. 파생값이라 옛 저장과 결정론을 건드리지 않는다.
+    static func actNumber(chapter: Int) -> Int {
+        min(4, max(1, (chapter + 1) / 2))
+    }
+
+    static func actTitle(chapter: Int) -> String {
+        switch actNumber(chapter: chapter) {
+        case 1: "1장 · 자리를 얻다"
+        case 2: "2장 · 내 공을 만들다"
+        case 3: "3장 · 책임을 지다"
+        default: "4장 · 이름을 남기다"
+        }
+    }
+
     static func phase(_ phase: HighSchoolCareerPhase) -> String {
         switch phase {
         case .prologue: "다시 태어남"
         case .schoolSelection: "학교 선택"
         case .training: "훈련"
         case .relationship: "사람들"
-        case .importantGame: "중요 경기"
+        case .importantGame: "고교 공식 경기"
         case .awakening: "각성"
-        case .chapterReview: "챕터 마무리"
+        case .chapterReview: "이야기 마무리"
         case .draft: "드래프트"
-        case .legacy: "다음 회차에 가져갈 것"
+        case .legacy: "새 선수에게 남길 것"
         case .completed: "완료"
         }
     }
@@ -99,7 +114,7 @@ enum HighSchoolPresentation {
         case "catcher":
             switch response {
             case .listen: "포수 리드에 맡긴다"
-            case .explain: "원하는 배합을 이야기한다"
+            case .explain: "던지고 싶은 공을 설명한다"
             case .challenge: "내 공을 믿어 달라고 한다"
             }
         case "rival":
@@ -143,7 +158,7 @@ enum HighSchoolPresentation {
 
     static func responseDetail(_ response: RelationshipResponse) -> String {
         switch response {
-        case .listen: "상대와의 믿음이 오르고 피로가 줄어듭니다."
+        case .listen: "상대와의 믿음을 쌓는 가장 안전한 선택입니다."
         case .explain: "믿음이 오르고 관련 능력이 조금 오릅니다."
         case .challenge: "위험하지만 성공하면 능력이 크게 오릅니다."
         }
@@ -217,12 +232,13 @@ enum HighSchoolPresentation {
 
     // MARK: - 승부 장면 파생
 
-    /// 고교 후속 타순. 라이벌 뒤에 설 세 타자를 학교·경기 번호에서 결정론적으로 만든다.
-    static func followUpBatters(seedText: String) -> [BatterSnapshot] {
+    /// 고교 후속 타순. 기본은 기존 세 타자를 유지하고, 긴 승부 장면만 다섯 타자까지
+    /// 요청한다. 같은 seed/count는 언제나 같은 타순이라 저장 복구와 재현성이 흔들리지 않는다.
+    static func followUpBatters(seedText: String, count: Int = 3) -> [BatterSnapshot] {
         var rng = SplitMix64(seed: seedValue(seedText))
         let names = ["구본휘", "설재빈", "천유겸", "봉시원", "옥준서", "석다온"]
         var used: Set<String> = []
-        return (0..<3).map { slot in
+        return (0..<min(max(0, count), names.count)).map { slot in
             var name = names[rng.nextInt(upperBound: names.count)]
             var attempts = 0
             while used.contains(name), attempts < names.count {

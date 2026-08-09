@@ -1,0 +1,99 @@
+{
+  "summary": {
+    "webAnimations": 2,
+    "cssDeclarations": 5,
+    "scrollTargets": 0,
+    "cdpAnimations": 4,
+    "canvases": 0
+  },
+  "namedAnimations": [
+    "live-pulse",
+    "hero-breathe",
+    "rise-in"
+  ],
+  "scrollTriggeredElements": 0,
+  "representativeAnimations": [
+    {
+      "type": "CSSAnimation",
+      "playState": "finished",
+      "animationName": "rise-in",
+      "targetSelector": "section.intro-copy",
+      "targetRect": {
+        "x": 120,
+        "y": 329.515625,
+        "width": 650,
+        "height": 440.953125,
+        "top": 329.515625,
+        "right": 770,
+        "bottom": 770.46875,
+        "left": 120
+      },
+      "keyframes": [
+        {
+          "offset": 0,
+          "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+          "composite": "auto",
+          "transform": "translateY(20px)",
+          "opacity": "0",
+          "computedOffset": 0
+        },
+        {
+          "offset": 1,
+          "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+          "composite": "auto",
+          "transform": "translateY(0px)",
+          "opacity": "1",
+          "computedOffset": 1
+        }
+      ],
+      "timing": {
+        "duration": 1,
+        "delay": 80,
+        "iterations": 1,
+        "easing": "linear",
+        "direction": "normal"
+      }
+    },
+    {
+      "type": "CSSAnimation",
+      "playState": "finished",
+      "animationName": "rise-in",
+      "targetSelector": "aside.player-dossier",
+      "targetRect": {
+        "x": 1380,
+        "y": 332,
+        "width": 420,
+        "height": 436,
+        "top": 332,
+        "right": 1800,
+        "bottom": 768,
+        "left": 1380
+      },
+      "keyframes": [
+        {
+          "offset": 0,
+          "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+          "composite": "auto",
+          "transform": "translateY(20px)",
+          "opacity": "0",
+          "computedOffset": 0
+        },
+        {
+          "offset": 1,
+          "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+          "composite": "auto",
+          "transform": "translateY(0px)",
+          "opacity": "1",
+          "computedOffset": 1
+        }
+      ],
+      "timing": {
+        "duration": 1,
+        "delay": 220,
+        "iterations": 1,
+        "easing": "linear",
+        "direction": "normal"
+      }
+    }
+  ]
+}

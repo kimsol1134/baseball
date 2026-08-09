@@ -21,8 +21,26 @@ struct PitchDramaView: View {
     let outcome: PitchOutcome
     let battedBall: BattedBall?
     let fielding: FieldingResolutionSnapshot?
+    /// 결과 판정 뒤에 붙는 수싸움 적중 한 건. 한 공에 최대 하나만 들어온다.
+    let sequenceMoment: PitchSequenceMoment?
     /// 재생 진행도 0~1. 밖에서 애니메이션한다.
     var progress: Double
+
+    init(
+        execution: PitchExecution,
+        outcome: PitchOutcome,
+        battedBall: BattedBall?,
+        fielding: FieldingResolutionSnapshot?,
+        sequenceMoment: PitchSequenceMoment? = nil,
+        progress: Double
+    ) {
+        self.execution = execution
+        self.outcome = outcome
+        self.battedBall = battedBall
+        self.fielding = fielding
+        self.sequenceMoment = sequenceMoment
+        self.progress = progress
+    }
 
     private static let releasePoint = CGPoint(x: 160, y: 116)
     private static let platePlaneY: Double = 205
@@ -66,6 +84,23 @@ struct PitchDramaView: View {
             }
             drawVerdict(context: context, size: size)
         }
+        .overlay(alignment: .bottomLeading) {
+            if let sequenceMoment {
+                Label(sequenceMoment.headline, systemImage: "brain.head.profile")
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(BaseballTheme.information)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(BaseballTheme.canvas.opacity(0.9), in: Capsule())
+                    .overlay(Capsule().stroke(BaseballTheme.information, lineWidth: 1))
+                    .padding(10)
+                    // 숙련 배지는 결과가 나온 뒤 페이드만 한다. 모션 축소에서는
+                    // PitchView가 progress를 곧바로 1로 두므로 즉시 완성 상태다.
+                    .opacity(sequenceBadgeOpacity)
+                    .accessibilityHidden(true)
+                    .accessibilityIdentifier("pitch.sequence.badge")
+            }
+        }
         .accessibilityElement()
         .accessibilityLabel(accessibilityLabel)
     }
@@ -77,7 +112,15 @@ struct PitchDramaView: View {
             let distance = Double(fielding.landingDistanceTenthsMeters ?? 0) / 10
             text += " 타구 \(Int(distance))미터, \(name)."
         }
+        if let sequenceMoment {
+            // VoiceOver 순서는 판정 → 배합 이유다.
+            text += " 수싸움 적중. \(sequenceMoment.headline). \(sequenceMoment.detail)"
+        }
         return text
+    }
+
+    private var sequenceBadgeOpacity: Double {
+        min(1, max(0, (progress - 0.62) / 0.14))
     }
 
     // MARK: - 1컷 · 포수 시점

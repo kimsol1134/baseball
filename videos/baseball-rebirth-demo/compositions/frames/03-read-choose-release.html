@@ -1,0 +1,623 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Rebirth Plex Mono";
+      src: url("assets/fonts/IBMPlexMono-SemiBold.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+    }
+
+    [id="03-read-choose-release-ground"] {
+      position: absolute;
+      inset: 0;
+      background: #070a09;
+    }
+
+    [id="03-read-choose-release-stage"] {
+      position: absolute;
+      inset: 0 0 auto 0;
+      width: 1920px;
+      height: 896px;
+      overflow: hidden;
+    }
+
+    [class~="03-read-choose-release-capture"] {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+      object-fit: cover;
+      object-position: 50% 0%;
+      transform-origin: 50% 50%;
+      user-select: none;
+    }
+
+    [id="03-read-choose-release-game02"] {
+      z-index: 1;
+    }
+
+    [id="03-read-choose-release-game03"] {
+      z-index: 2;
+    }
+
+    [id="03-read-choose-release-static-scrim"] {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      background: rgba(7, 10, 9, 0.08);
+      pointer-events: none;
+    }
+
+    [id="03-read-choose-release-final-dim"] {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      background: rgba(7, 10, 9, 0.52);
+      pointer-events: none;
+    }
+
+    [id="03-read-choose-release-meter-crop"] {
+      position: absolute;
+      left: 1334px;
+      top: 592px;
+      z-index: 5;
+      width: 402px;
+      height: 51px;
+      overflow: hidden;
+      border: 1px solid rgba(200, 242, 74, 0.78);
+      background: #070a09;
+      pointer-events: none;
+    }
+
+    [id="03-read-choose-release-meter-crop"] img {
+      position: absolute;
+      left: -1334px;
+      top: -592px;
+      width: 1920px;
+      height: 1080px;
+      max-width: none;
+      object-fit: cover;
+      object-position: 50% 0%;
+    }
+
+    [id="03-read-choose-release-overlays"] {
+      position: absolute;
+      inset: 0 0 auto 0;
+      z-index: 10;
+      width: 1920px;
+      height: 896px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    [id="03-read-choose-release-focus-box"] {
+      position: absolute;
+      z-index: 20;
+      box-sizing: border-box;
+      border: 1px solid #c8f24a;
+      background: rgba(200, 242, 74, 0.035);
+      transform-origin: 50% 50%;
+    }
+
+    [id="03-read-choose-release-focus-box"]::before,
+    [id="03-read-choose-release-focus-box"]::after {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      content: "";
+      pointer-events: none;
+    }
+
+    [id="03-read-choose-release-focus-box"]::before {
+      left: -1px;
+      top: -1px;
+      border-left: 3px solid #c8f24a;
+      border-top: 3px solid #c8f24a;
+    }
+
+    [id="03-read-choose-release-focus-box"]::after {
+      right: -1px;
+      bottom: -1px;
+      border-right: 3px solid #c8f24a;
+      border-bottom: 3px solid #c8f24a;
+    }
+
+    [class~="03-read-choose-release-step"] {
+      position: absolute;
+      z-index: 28;
+      display: flex;
+      align-items: center;
+      min-height: 38px;
+      box-sizing: border-box;
+      padding: 8px 12px 8px 13px;
+      border-left: 2px solid #c8f24a;
+      background: rgba(7, 10, 9, 0.92);
+      color: #c8f24a;
+      font-family: "Rebirth Plex Mono";
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+
+    [id="03-read-choose-release-step01"] {
+      left: 198px;
+      top: 272px;
+    }
+
+    [id="03-read-choose-release-step02"] {
+      left: 1474px;
+      top: 210px;
+    }
+
+    [id="03-read-choose-release-step03"] {
+      left: 1380px;
+      top: 492px;
+    }
+
+    [id="03-read-choose-release-step04"] {
+      left: 1347px;
+      top: 714px;
+    }
+
+    [id="03-read-choose-release-counterread"] {
+      position: absolute;
+      left: 1338px;
+      top: 552px;
+      z-index: 28;
+      color: #c8f24a;
+      font-family: "Rebirth Plex Mono";
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    [id="03-read-choose-release-route"] {
+      position: absolute;
+      inset: 0;
+      z-index: 16;
+      width: 1920px;
+      height: 896px;
+      overflow: visible;
+    }
+
+    [id="03-read-choose-release-route-path"] {
+      fill: none;
+      stroke: #c8f24a;
+      stroke-width: 2;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+      vector-effect: non-scaling-stroke;
+    }
+
+    [class~="03-read-choose-release-ripple-site"] {
+      position: absolute;
+      z-index: 31;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    }
+
+    [class~="03-read-choose-release-ripple-ring"] {
+      position: absolute;
+      left: -25px;
+      top: -25px;
+      width: 50px;
+      height: 50px;
+      box-sizing: border-box;
+      border: 2px solid #c8f24a;
+      border-radius: 50%;
+      transform-origin: 50% 50%;
+      pointer-events: none;
+    }
+
+    [id="03-read-choose-release-cursor"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 40;
+      width: 46px;
+      height: 56px;
+      transform-origin: 4px 3px;
+      pointer-events: none;
+    }
+
+    [id="03-read-choose-release-cursor"] svg {
+      display: block;
+      width: 46px;
+      height: 56px;
+      overflow: visible;
+    }
+
+    [id="03-read-choose-release-meter-track"] {
+      position: absolute;
+      left: 1352px;
+      top: 623px;
+      z-index: 24;
+      width: 364px;
+      height: 2px;
+      overflow: hidden;
+      background: rgba(181, 183, 175, 0.34);
+      transform-origin: 0% 50%;
+    }
+
+    [id="03-read-choose-release-meter-fill"] {
+      width: 100%;
+      height: 100%;
+      background: #c8f24a;
+      transform-origin: 0% 50%;
+    }
+
+    [id="03-read-choose-release-meter-needle"] {
+      position: absolute;
+      left: 1547px;
+      top: 605px;
+      z-index: 25;
+      width: 2px;
+      height: 40px;
+      background: #c8f24a;
+    }
+  </style>
+
+  <div id="root" data-composition-id="03-read-choose-release" data-width="1920" data-height="1080" data-duration="12.45">
+    <div
+      id="03-read-choose-release-ground"
+      class="clip"
+      data-start="0"
+      data-duration="12.45"
+      data-track-index="0"
+    ></div>
+
+    <div
+      id="03-read-choose-release-stage"
+      class="clip"
+      data-start="0"
+      data-duration="12.45"
+      data-track-index="1"
+    >
+      <img
+        id="03-read-choose-release-game02"
+        class="03-read-choose-release-capture"
+        src="assets/game-02-read-and-choose.png"
+        alt="Pitch-reading and pitch-selection gameplay screen"
+      />
+      <img
+        id="03-read-choose-release-game03"
+        class="03-read-choose-release-capture"
+        src="assets/game-03-hold-release.png"
+        alt="Pitch hold-and-release gameplay screen"
+      />
+      <div id="03-read-choose-release-static-scrim"></div>
+      <div id="03-read-choose-release-final-dim"></div>
+      <div id="03-read-choose-release-meter-crop">
+        <img src="assets/game-03-hold-release.png" alt="Release meter detail" />
+      </div>
+    </div>
+
+    <div
+      id="03-read-choose-release-overlays"
+      class="clip"
+      data-start="0"
+      data-duration="12.45"
+      data-track-index="2"
+    >
+      <svg id="03-read-choose-release-route" viewBox="0 0 1920 896" aria-hidden="true">
+        <path
+          id="03-read-choose-release-route-path"
+          d="M 344 410 L 1534 292 L 1588 519"
+        ></path>
+      </svg>
+
+      <div id="03-read-choose-release-focus-box"></div>
+
+      <div id="03-read-choose-release-step01" class="03-read-choose-release-step">
+        01 · READ
+      </div>
+      <div id="03-read-choose-release-step02" class="03-read-choose-release-step">
+        02 · PITCH
+      </div>
+      <div id="03-read-choose-release-step03" class="03-read-choose-release-step">
+        03 · ZONE
+      </div>
+      <div id="03-read-choose-release-step04" class="03-read-choose-release-step">
+        04 · HOLD / RELEASE
+      </div>
+      <div id="03-read-choose-release-counterread">TAJAUI NORIM BANDE</div>
+
+      <div
+        class="03-read-choose-release-ripple-site"
+        data-ripple-site="read"
+        style="left: 344px; top: 410px"
+      >
+        <span class="03-read-choose-release-ripple-ring"></span>
+        <span class="03-read-choose-release-ripple-ring"></span>
+      </div>
+      <div
+        class="03-read-choose-release-ripple-site"
+        data-ripple-site="pitch"
+        style="left: 1534px; top: 292px"
+      >
+        <span class="03-read-choose-release-ripple-ring"></span>
+        <span class="03-read-choose-release-ripple-ring"></span>
+      </div>
+      <div
+        class="03-read-choose-release-ripple-site"
+        data-ripple-site="zone"
+        style="left: 1588px; top: 519px"
+      >
+        <span class="03-read-choose-release-ripple-ring"></span>
+        <span class="03-read-choose-release-ripple-ring"></span>
+      </div>
+      <div
+        class="03-read-choose-release-ripple-site"
+        data-ripple-site="release"
+        style="left: 1534px; top: 671px"
+      >
+        <span class="03-read-choose-release-ripple-ring"></span>
+        <span class="03-read-choose-release-ripple-ring"></span>
+      </div>
+
+      <div id="03-read-choose-release-meter-track">
+        <div id="03-read-choose-release-meter-fill"></div>
+      </div>
+      <div id="03-read-choose-release-meter-needle"></div>
+
+      <div id="03-read-choose-release-cursor" aria-hidden="true">
+        <svg viewBox="0 0 46 56">
+          <path
+            d="M4 2 L4 40 L14.5 31 L23.2 51 L31 47.5 L22.2 28.5 L36.5 28.5 Z"
+            fill="#c8f24a"
+            stroke="#070a09"
+            stroke-width="3"
+            stroke-linejoin="miter"
+          ></path>
+          <path
+            d="M4 2 L4 40 L14.5 31 L23.2 51 L31 47.5 L22.2 28.5 L36.5 28.5 Z"
+            fill="none"
+            stroke="#e7e7e5"
+            stroke-width="1"
+            stroke-linejoin="miter"
+          ></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const composition = document.querySelector('[data-composition-id="03-read-choose-release"]');
+      const game02 = document.getElementById("03-read-choose-release-game02");
+      const game03 = document.getElementById("03-read-choose-release-game03");
+      const focus = document.getElementById("03-read-choose-release-focus-box");
+      const cursor = document.getElementById("03-read-choose-release-cursor");
+      const route = document.getElementById("03-read-choose-release-route-path");
+      const finalDim = document.getElementById("03-read-choose-release-final-dim");
+      const meterCrop = document.getElementById("03-read-choose-release-meter-crop");
+      const meterTrack = document.getElementById("03-read-choose-release-meter-track");
+      const meterFill = document.getElementById("03-read-choose-release-meter-fill");
+      const meterNeedle = document.getElementById("03-read-choose-release-meter-needle");
+      const counterRead = document.getElementById("03-read-choose-release-counterread");
+      const steps = Array.from(
+        composition.querySelectorAll('[class~="03-read-choose-release-step"]'),
+      );
+      const rings = Array.from(
+        composition.querySelectorAll('[class~="03-read-choose-release-ripple-ring"]'),
+      );
+      const routeLength = route.getTotalLength();
+
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["03-read-choose-release"] = tl;
+
+      tl.set(game03, { opacity: 0, scale: 0.985 }, 0);
+      tl.set(steps, { opacity: 0, y: 0 }, 0);
+      tl.set(counterRead, { opacity: 0, y: 0 }, 0);
+      tl.set(rings, { opacity: 0, scale: 0 }, 0);
+      tl.set(route, {
+        opacity: 0,
+        strokeDasharray: routeLength,
+        strokeDashoffset: routeLength,
+      }, 0);
+      tl.set(finalDim, { opacity: 0 }, 0);
+      tl.set(meterCrop, { opacity: 0 }, 0);
+      tl.set(meterTrack, { opacity: 0 }, 0);
+      tl.set(meterFill, { scaleX: 0 }, 0);
+      tl.set(meterNeedle, { opacity: 0 }, 0);
+      tl.set(cursor, { x: 956, y: 420, opacity: 0, scale: 1 }, 0);
+      tl.set(focus, {
+        left: 198,
+        top: 321,
+        width: 291,
+        height: 180,
+        opacity: 0,
+        scale: 1,
+      }, 0);
+
+      tl.fromTo(
+        game02,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.45, ease: "power2.out" },
+        0,
+      );
+      tl.fromTo(
+        cursor,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.24, ease: "power2.out" },
+        0.28,
+      );
+      tl.fromTo(
+        focus,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.28, ease: "power2.out" },
+        0.42,
+      );
+
+      const click = (site, at) => {
+        const siteRings = Array.from(
+          composition.querySelectorAll(
+            `[data-ripple-site="${site}"] [class~="03-read-choose-release-ripple-ring"]`,
+          ),
+        );
+
+        tl.to(cursor, { scale: 0.86, duration: 0.08, ease: "power2.in" }, at);
+        tl.to(focus, { scale: 0.96, duration: 0.08, ease: "power2.in" }, at);
+        tl.to(cursor, { scale: 1, duration: 0.09, ease: "power2.out" }, at + 0.08);
+        tl.to(focus, { scale: 1, duration: 0.09, ease: "power2.out" }, at + 0.08);
+        tl.fromTo(
+          siteRings,
+          { opacity: 0.8, scale: 0.2 },
+          {
+            opacity: 0,
+            scale: 3.2,
+            duration: 0.64,
+            ease: "power3.out",
+            stagger: 0.08,
+            immediateRender: false,
+          },
+          at,
+        );
+      };
+
+      const FOCUS_BASE_DURATION = 0.7;
+      const FOCUS_SEC_PER_CHAR = 0.05;
+      const focusContent = [
+        { key: "read", body: "READ", hold: 1.4, left: 198, top: 321, width: 291, height: 180 },
+        { key: "pitch", body: "PITCH", hold: 1.85, left: 1474, top: 256, width: 120, height: 72 },
+        { key: "zone", body: "ZONE", hold: 1.9, left: 1562, top: 492, width: 52, height: 54 },
+        {
+          key: "release",
+          body: "HOLD RELEASE",
+          hold: 2.8,
+          left: 1347,
+          top: 642,
+          width: 373,
+          height: 59,
+        },
+      ];
+      let focusCumulative = 0;
+      const focusTimeline = focusContent.map((entry) => {
+        const duration =
+          FOCUS_BASE_DURATION + entry.body.length * FOCUS_SEC_PER_CHAR + entry.hold;
+        const start = focusCumulative;
+        focusCumulative += duration;
+        return { ...entry, start, end: focusCumulative };
+      });
+      const focusAt = (time) => {
+        for (let index = focusTimeline.length - 1; index >= 0; index -= 1) {
+          if (time >= focusTimeline[index].start) return focusTimeline[index];
+        }
+        return focusTimeline[0];
+      };
+      const focusDriver = { time: 0 };
+      let lastFocusKey = "read";
+
+      tl.to(
+        focusDriver,
+        {
+          time: focusCumulative,
+          duration: focusCumulative,
+          ease: "none",
+          onUpdate: () => {
+            const state = focusAt(focusDriver.time);
+            if (state.key !== lastFocusKey) {
+              gsap.set(focus, {
+                left: state.left,
+                top: state.top,
+                width: state.width,
+                height: state.height,
+                scale: 1,
+              });
+              lastFocusKey = state.key;
+            }
+          },
+        },
+        0,
+      );
+
+      tl.set(focus, { left: 1346, top: 598, width: 374, height: 34, scale: 1 }, 10);
+
+      const labelSequence = [
+        { element: steps[0], reveal: 1.4, clear: 2.3 },
+        { element: steps[1], reveal: 3.16, clear: 5.1 },
+        { element: steps[2], reveal: 6.55, clear: 7.9 },
+        { element: steps[3], reveal: 9.08, clear: 12 },
+      ];
+
+      labelSequence.forEach((state) => {
+        tl.fromTo(
+          state.element,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.22, ease: "power3.out" },
+          state.reveal,
+        );
+        if (state.clear < 12) {
+          tl.set(state.element, { opacity: 0 }, state.clear);
+        }
+      });
+
+      tl.to(cursor, { x: 340, y: 408, duration: 0.72, ease: "power2.inOut" }, 0.36);
+      click("read", 1.12);
+
+      tl.to(cursor, { x: 1530, y: 290, duration: 0.72, ease: "power2.inOut" }, 2.32);
+      click("pitch", 3.12);
+
+      tl.set(route, { opacity: 0.72 }, 5.18);
+      tl.to(
+        route,
+        { strokeDashoffset: 0, duration: 1.38, ease: "power2.out" },
+        5.18,
+      );
+      tl.to(cursor, { x: 1584, y: 517, duration: 0.66, ease: "power2.inOut" }, 5.16);
+      click("zone", 5.92);
+      tl.fromTo(
+        counterRead,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.28, ease: "power3.out" },
+        6.82,
+      );
+
+      tl.set(counterRead, { opacity: 0 }, 7.9);
+      tl.set(route, { opacity: 0 }, 7.9);
+      tl.to(cursor, { x: 1530, y: 669, duration: 0.62, ease: "power2.inOut" }, 7.94);
+      click("release", 8.66);
+
+      tl.to(
+        game02,
+        { opacity: 0, scale: 0.985, duration: 0.38, ease: "power2.in" },
+        8.76,
+      );
+      tl.to(
+        game03,
+        { opacity: 1, scale: 1, duration: 0.58, ease: "back.out(1.4)" },
+        8.98,
+      );
+
+      tl.to(finalDim, { opacity: 1, duration: 0.28, ease: "power2.out" }, 10);
+      tl.to(meterCrop, { opacity: 1, duration: 0.32, ease: "power2.out" }, 10.04);
+      tl.set(meterTrack, { opacity: 1 }, 10.08);
+      tl.to(
+        meterFill,
+        { scaleX: 0.54, duration: 0.82, ease: "power2.out" },
+        10.1,
+      );
+      tl.fromTo(
+        meterNeedle,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.16, ease: "power2.out" },
+        10.84,
+      );
+    })();
+  </script>
+</template>

@@ -1,0 +1,558 @@
+<template>
+  <div
+    id="root"
+    data-composition-id="01-last-pitch"
+    data-width="1920"
+    data-height="1080"
+    data-duration="7.5"
+  >
+    <div
+      class="clip 01-last-pitch-ground"
+      data-start="0"
+      data-duration="7.5"
+      data-track-index="0"
+    ></div>
+
+    <div
+      class="clip 01-last-pitch-depth-back"
+      data-start="0"
+      data-duration="7.5"
+      data-track-index="1"
+    >
+      <img
+        id="01-last-pitch-depth-image"
+        class="01-last-pitch-depth-image"
+        data-depth="3"
+        src="assets/scene-game.webp"
+        alt=""
+      />
+    </div>
+
+    <div
+      class="clip 01-last-pitch-background-dimmer"
+      data-start="0"
+      data-duration="7.5"
+      data-track-index="2"
+    ></div>
+
+    <div
+      class="clip 01-last-pitch-camera-scene"
+      data-start="0"
+      data-duration="7.5"
+      data-track-index="3"
+    >
+      <div id="01-last-pitch-zoom-outer" class="01-last-pitch-zoom-outer">
+        <div id="01-last-pitch-zoom-inner" class="01-last-pitch-zoom-inner">
+          <div id="01-last-pitch-focus-plane" class="01-last-pitch-focus-plane">
+            <div class="01-last-pitch-game-stage">
+              <img
+                class="01-last-pitch-game-surface"
+                src="assets/game-03-hold-release.png"
+                alt=""
+              />
+              <div
+                id="01-last-pitch-release-target"
+                class="01-last-pitch-release-target"
+                aria-label="release meter target"
+              >
+                <div class="01-last-pitch-release-zone"></div>
+                <div
+                  id="01-last-pitch-release-needle-echo"
+                  class="01-last-pitch-release-needle-echo"
+                ></div>
+                <div
+                  id="01-last-pitch-release-needle"
+                  class="01-last-pitch-release-needle"
+                ></div>
+              </div>
+              <div class="01-last-pitch-stage-border"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="clip 01-last-pitch-kicker"
+      data-start="0"
+      data-duration="7.5"
+      data-track-index="4"
+    >
+      <div id="01-last-pitch-kicker-rule" class="01-last-pitch-kicker-rule"></div>
+      <div id="01-last-pitch-kicker-copy" class="01-last-pitch-kicker-copy">
+        OUT ONE · LIFE ONE
+      </div>
+    </div>
+
+    <div
+      class="clip 01-last-pitch-statement"
+      data-start="0"
+      data-duration="7.5"
+      data-track-index="5"
+      aria-label="한 구가 한 생을 바꾼다"
+    >
+      <div id="01-last-pitch-statement-primary" class="01-last-pitch-statement-primary">
+        <img
+          src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNTE1IiBoZWlnaHQ9IjIxNiIgdmlld0JveD0iMCAwIDUxNSAyMTYiPgo8ZGVmcz4KPGc+CjxnIGlkPSJnbHlwaC0wLTAiPgo8cGF0aCBkPSJNIDM4LjE2MDE1NiAtNjIuNDYwOTM4IEMgMzguMTYwMTU2IC02OC41NzgxMjUgNDQuMjgxMjUgLTcyLjUzOTA2MiA1MS44Mzk4NDQgLTcyLjUzOTA2MiBDIDU5LjM5ODQzOCAtNzIuNTM5MDYyIDY1LjUxOTUzMSAtNjguNTc4MTI1IDY1LjUxOTUzMSAtNjIuNDYwOTM4IEMgNjUuNTE5NTMxIC01Ni4zMzk4NDQgNTkuMzk4NDM4IC01Mi41NTg1OTQgNTEuODM5ODQ0IC01Mi41NTg1OTQgQyA0NC4yODEyNSAtNTIuNTU4NTk0IDM4LjE2MDE1NiAtNTYuMzM5ODQ0IDM4LjE2MDE1NiAtNjIuNDYwOTM4IFogTSA5MS4yNjE3MTkgLTYyLjQ2MDkzOCBDIDkxLjI2MTcxOSAtNzguNDgwNDY5IDc1LjIzODI4MSAtOTIuMzM5ODQ0IDUxLjY2MDE1NiAtOTIuMzM5ODQ0IEMgMjcuNzE4NzUgLTkyLjMzOTg0NCAxMi4wNTg1OTQgLTc4LjQ4MDQ2OSAxMi4wNTg1OTQgLTYyLjQ2MDkzOCBDIDEyLjA1ODU5NCAtNDUuODk4NDM4IDI3Ljg5ODQzOCAtMzIuMzk4NDM4IDUxLjY2MDE1NiAtMzIuMzk4NDM4IEMgNzUuMjM4MjgxIC0zMi4zOTg0MzggOTEuMjYxNzE5IC00NS43MTg3NSA5MS4yNjE3MTkgLTYyLjQ2MDkzOCBaIE0gOTguNDYwOTM4IC05NS4yMTg3NSBMIDk4LjQ2MDkzOCAtMTE3LjM1OTM3NSBMIDQuMTQwNjI1IC0xMTcuMzU5Mzc1IEwgNC4xNDA2MjUgLTk1LjIxODc1IFogTSA3NS45NjA5MzggLTEyMi43NjE3MTkgTCA3NS45NjA5MzggLTE0NC4zNTkzNzUgTCAyNy44OTg0MzggLTE0NC4zNTkzNzUgTCAyNy44OTg0MzggLTEyMi43NjE3MTkgWiBNIDEzNS44OTg0MzggMTQuMDM5MDYyIEwgMTM1Ljg5ODQzOCAtOC4yODEyNSBMIDUxLjEyMTA5NCAtOC4yODEyNSBMIDUxLjEyMTA5NCAtMjguMjYxNzE5IEwgMjIuNSAtMjguMjYxNzE5IEwgMjIuNSAxNC4wMzkwNjIgWiBNIDE1MyAtNzEuNDYwOTM4IEwgMTUzIC05NC42Nzk2ODggTCAxMzMuMDE5NTMxIC05NC42Nzk2ODggTCAxMzMuMDE5NTMxIC0xNDcuMDU4NTk0IEwgMTA1LjMwMDc4MSAtMTQ3LjA1ODU5NCBMIDEwNS4zMDA3ODEgLTI1LjU1ODU5NCBMIDEzMy4wMTk1MzEgLTI1LjU1ODU5NCBMIDEzMy4wMTk1MzEgLTcxLjQ2MDkzOCBaIE0gMTUzIC03MS40NjA5MzggIi8+CjwvZz4KPGcgaWQ9ImdseXBoLTAtMSI+CjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIwIiBoZWlnaHQ9IjAiIG1hc2s9InVybCgjbWFzay0wKSIvPgo8L2c+CjxnIGlkPSJnbHlwaC0wLTIiPgo8cGF0aCBkPSJNIDkxLjA3ODEyNSAxNC45NDE0MDYgTCA5MS4wNzgxMjUgLTQ3LjUxOTUzMSBMIDE1MS4wMTk1MzEgLTQ3LjUxOTUzMSBMIDE1MS4wMTk1MzEgLTY5LjEyMTA5NCBMIDEzMC4xNDA2MjUgLTY5LjEyMTA5NCBDIDEzMy4wMTk1MzEgLTgyLjA3ODEyNSAxMzUuNTM5MDYyIC0xMDQuMjE4NzUgMTM1LjUzOTA2MiAtMTI3Ljk4MDQ2OSBMIDEzNS41MzkwNjIgLTEzOC4yMzgyODEgTCAyMC41MTk1MzEgLTEzOC4yMzgyODEgTCAyMC41MTk1MzEgLTExNS45MjE4NzUgTCAxMDggLTExNS45MjE4NzUgQyAxMDggLTExMy41NzgxMjUgMTA4LjE3OTY4OCAtMTExLjA1ODU5NCAxMDguMTc5Njg4IC0xMDguNzE4NzUgQyAxMDguMTc5Njg4IC05My4yMzgyODEgMTA2LjU1ODU5NCAtNzkuMzc4OTA2IDEwNC4yMTg3NSAtNjkuMTIxMDk0IEwgNC41IC02OS4xMjEwOTQgTCA0LjUgLTQ3LjUxOTUzMSBMIDYyLjgyMDMxMiAtNDcuNTE5NTMxIEwgNjIuODIwMzEyIDE0Ljk0MTQwNiBaIE0gOTEuMDc4MTI1IDE0Ljk0MTQwNiAiLz4KPC9nPgo8ZyBpZD0iZ2x5cGgtMC0zIj4KPHBhdGggZD0iTSA4OS42NDA2MjUgLTEzMC42Nzk2ODggTCAxMS4xNjAxNTYgLTEzMC42Nzk2ODggTCAxMS4xNjAxNTYgLTEwNy42NDA2MjUgTCA2MC4zMDA3ODEgLTEwNy42NDA2MjUgQyA1Ni42OTkyMTkgLTc4LjY2MDE1NiAzNC4zNzg5MDYgLTQ3Ljg3ODkwNiAxLjQ0MTQwNiAtMzIuOTQxNDA2IEwgMTYuOTIxODc1IC0xMS4xNjAxNTYgQyA3My45ODA0NjkgLTQyLjY2MDE1NiA4OC4wMTk1MzEgLTg1LjMyMDMxMiA4OS42NDA2MjUgLTEzMC42Nzk2ODggWiBNIDE1My4xNzk2ODggLTY0LjA3ODEyNSBMIDE1My4xNzk2ODggLTg3LjMwMDc4MSBMIDEzMi4zMDA3ODEgLTg3LjMwMDc4MSBMIDEzMi4zMDA3ODEgLTE0Ny4wNTg1OTQgTCAxMDQuMzk4NDM4IC0xNDcuMDU4NTk0IEwgMTA0LjM5ODQzOCAxNC45NDE0MDYgTCAxMzIuMzAwNzgxIDE0Ljk0MTQwNiBMIDEzMi4zMDA3ODEgLTY0LjA3ODEyNSBaIE0gMTUzLjE3OTY4OCAtNjQuMDc4MTI1ICIvPgo8L2c+CjwvZz4KPGltYWdlIGlkPSJzb3VyY2UtMTEiIHg9IjAiIHk9IjAiIHdpZHRoPSIwIiBoZWlnaHQ9IjAiLz4KPG1hc2sgaWQ9Im1hc2stMCI+Cjx1c2UgeGxpbms6aHJlZj0iI3NvdXJjZS0xMSIvPgo8L21hc2s+CjwvZGVmcz4KPGcgZmlsbD0icmdiKDkwLjU4ODIzNSUsIDkwLjU4ODIzNSUsIDg5LjgwMzkyMiUpIiBmaWxsLW9wYWNpdHk9IjEiPgo8dXNlIHhsaW5rOmhyZWY9IiNnbHlwaC0wLTAiIHg9IjAiIHk9IjE2MiIvPgo8dXNlIHhsaW5rOmhyZWY9IiNnbHlwaC0wLTEiIHg9IjE1NiIgeT0iMTYyIi8+Cjx1c2UgeGxpbms6aHJlZj0iI2dseXBoLTAtMiIgeD0iMjAzIiB5PSIxNjIiLz4KPHVzZSB4bGluazpocmVmPSIjZ2x5cGgtMC0zIiB4PSIzNTkiIHk9IjE2MiIvPgo8L2c+Cjwvc3ZnPgo="
+          alt=""
+        />
+      </div>
+      <div class="01-last-pitch-statement-accent">
+        <div
+          id="01-last-pitch-word-han"
+          class="01-last-pitch-accent-word 01-last-pitch-accent-word-han"
+        >
+          <img
+            src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTU2IiBoZWlnaHQ9IjIxNiIgdmlld0JveD0iMCAwIDE1NiAyMTYiPgo8ZGVmcz4KPGc+CjxnIGlkPSJnbHlwaC0wLTAiPgo8cGF0aCBkPSJNIDM4LjE2MDE1NiAtNjIuNDYwOTM4IEMgMzguMTYwMTU2IC02OC41NzgxMjUgNDQuMjgxMjUgLTcyLjUzOTA2MiA1MS44Mzk4NDQgLTcyLjUzOTA2MiBDIDU5LjM5ODQzOCAtNzIuNTM5MDYyIDY1LjUxOTUzMSAtNjguNTc4MTI1IDY1LjUxOTUzMSAtNjIuNDYwOTM4IEMgNjUuNTE5NTMxIC01Ni4zMzk4NDQgNTkuMzk4NDM4IC01Mi41NTg1OTQgNTEuODM5ODQ0IC01Mi41NTg1OTQgQyA0NC4yODEyNSAtNTIuNTU4NTk0IDM4LjE2MDE1NiAtNTYuMzM5ODQ0IDM4LjE2MDE1NiAtNjIuNDYwOTM4IFogTSA5MS4yNjE3MTkgLTYyLjQ2MDkzOCBDIDkxLjI2MTcxOSAtNzguNDgwNDY5IDc1LjIzODI4MSAtOTIuMzM5ODQ0IDUxLjY2MDE1NiAtOTIuMzM5ODQ0IEMgMjcuNzE4NzUgLTkyLjMzOTg0NCAxMi4wNTg1OTQgLTc4LjQ4MDQ2OSAxMi4wNTg1OTQgLTYyLjQ2MDkzOCBDIDEyLjA1ODU5NCAtNDUuODk4NDM4IDI3Ljg5ODQzOCAtMzIuMzk4NDM4IDUxLjY2MDE1NiAtMzIuMzk4NDM4IEMgNzUuMjM4MjgxIC0zMi4zOTg0MzggOTEuMjYxNzE5IC00NS43MTg3NSA5MS4yNjE3MTkgLTYyLjQ2MDkzOCBaIE0gOTguNDYwOTM4IC05NS4yMTg3NSBMIDk4LjQ2MDkzOCAtMTE3LjM1OTM3NSBMIDQuMTQwNjI1IC0xMTcuMzU5Mzc1IEwgNC4xNDA2MjUgLTk1LjIxODc1IFogTSA3NS45NjA5MzggLTEyMi43NjE3MTkgTCA3NS45NjA5MzggLTE0NC4zNTkzNzUgTCAyNy44OTg0MzggLTE0NC4zNTkzNzUgTCAyNy44OTg0MzggLTEyMi43NjE3MTkgWiBNIDEzNS44OTg0MzggMTQuMDM5MDYyIEwgMTM1Ljg5ODQzOCAtOC4yODEyNSBMIDUxLjEyMTA5NCAtOC4yODEyNSBMIDUxLjEyMTA5NCAtMjguMjYxNzE5IEwgMjIuNSAtMjguMjYxNzE5IEwgMjIuNSAxNC4wMzkwNjIgWiBNIDE1MyAtNzEuNDYwOTM4IEwgMTUzIC05NC42Nzk2ODggTCAxMzMuMDE5NTMxIC05NC42Nzk2ODggTCAxMzMuMDE5NTMxIC0xNDcuMDU4NTk0IEwgMTA1LjMwMDc4MSAtMTQ3LjA1ODU5NCBMIDEwNS4zMDA3ODEgLTI1LjU1ODU5NCBMIDEzMy4wMTk1MzEgLTI1LjU1ODU5NCBMIDEzMy4wMTk1MzEgLTcxLjQ2MDkzOCBaIE0gMTUzIC03MS40NjA5MzggIi8+CjwvZz4KPC9nPgo8L2RlZnM+CjxnIGZpbGw9InJnYig3OC40MzEzNzMlLCA5NC45MDE5NjElLCAyOS4wMTk2MDglKSIgZmlsbC1vcGFjaXR5PSIxIj4KPHVzZSB4bGluazpocmVmPSIjZ2x5cGgtMC0wIiB4PSIwIiB5PSIxNjIiLz4KPC9nPgo8L3N2Zz4K"
+            alt=""
+          />
+        </div>
+        <div
+          id="01-last-pitch-word-saengeul"
+          class="01-last-pitch-accent-word 01-last-pitch-accent-word-saengeul"
+        >
+          <img
+            src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMzEyIiBoZWlnaHQ9IjIxNiIgdmlld0JveD0iMCAwIDMxMiAyMTYiPgo8ZGVmcz4KPGc+CjxnIGlkPSJnbHlwaC0wLTAiPgo8cGF0aCBkPSJNIDE0NC43MTg3NSAtNDguNzgxMjUgTCAxNDQuNzE4NzUgLTE0Ny4wNTg1OTQgTCAxMTguNjIxMDk0IC0xNDcuMDU4NTk0IEwgMTE4LjYyMTA5NCAtMTA4LjcxODc1IEwgMTA5Ljk4MDQ2OSAtMTA4LjcxODc1IEwgMTA5Ljk4MDQ2OSAtMTQ0IEwgODQuMjM4MjgxIC0xNDQgTCA4NC4yMzgyODEgLTc4LjY2MDE1NiBDIDY0LjYyMTA5NCAtODguNTU4NTk0IDU5Ljc2MTcxOSAtMTA2LjAxOTUzMSA1OS43NjE3MTkgLTEyNiBMIDU5Ljc2MTcxOSAtMTM3Ljg3ODkwNiBMIDMxLjg1OTM3NSAtMTM3Ljg3ODkwNiBMIDMxLjg1OTM3NSAtMTI1LjEwMTU2MiBDIDMxLjg1OTM3NSAtMTAyLjk2MDkzOCAyMy43NjE3MTkgLTgwLjQ2MDkzOCAwLjcxODc1IC03MC4zNzg5MDYgTCAxNS40ODA0NjkgLTQ5LjMyMDMxMiBDIDI4LjI2MTcxOSAtNTQuNTM5MDYyIDQwLjg1OTM3NSAtNzAuMDE5NTMxIDQ1LjcxODc1IC04Mi42MjEwOTQgQyA0OS4zMjAzMTIgLTcyLjUzOTA2MiA2Mi42NDA2MjUgLTU5LjAzOTA2MiA3MiAtNTUuNDQxNDA2IEwgODQuMjM4MjgxIC03My4wNzgxMjUgTCA4NC4yMzgyODEgLTU0LjM1OTM3NSBMIDEwOS45ODA0NjkgLTU0LjM1OTM3NSBMIDEwOS45ODA0NjkgLTg1Ljg1OTM3NSBMIDExOC42MjEwOTQgLTg1Ljg1OTM3NSBMIDExOC42MjEwOTQgLTQ4Ljc4MTI1IFogTSAxNDQuMzU5Mzc1IC0xNi41NTg1OTQgQyAxNDQuMzU5Mzc1IC0zNi41MzkwNjIgMTIyLjAzOTA2MiAtNDguOTYwOTM4IDg1LjY3OTY4OCAtNDguOTYwOTM4IEMgNTAuMjE4NzUgLTQ4Ljk2MDkzOCAyNy44OTg0MzggLTM2LjUzOTA2MiAyNy44OTg0MzggLTE2LjU1ODU5NCBDIDI3Ljg5ODQzOCAzLjA1ODU5NCA1MC4yMTg3NSAxNS40ODA0NjkgODUuNjc5Njg4IDE1LjQ4MDQ2OSBDIDEyMi4wMzkwNjIgMTUuNDgwNDY5IDE0NC4zNTkzNzUgMy4wNTg1OTQgMTQ0LjM1OTM3NSAtMTYuNTU4NTk0IFogTSA4NS42Nzk2ODggLTI4LjA3ODEyNSBDIDEwNC4wMzkwNjIgLTI4LjA3ODEyNSAxMTUuMDE5NTMxIC0yMy4wMzkwNjIgMTE1LjAxOTUzMSAtMTYuNTU4NTk0IEMgMTE1LjAxOTUzMSAtMTAuODAwNzgxIDEwNC4wMzkwNjIgLTUuNzYxNzE5IDg1LjY3OTY4OCAtNS43NjE3MTkgQyA2OC4zOTg0MzggLTUuNzYxNzE5IDU3LjQyMTg3NSAtMTAuODAwNzgxIDU3LjQyMTg3NSAtMTYuNTU4NTk0IEMgNTcuNDIxODc1IC0yMy4wMzkwNjIgNjguMzk4NDM4IC0yOC4wNzgxMjUgODUuNjc5Njg4IC0yOC4wNzgxMjUgWiBNIDg1LjY3OTY4OCAtMjguMDc4MTI1ICIvPgo8L2c+CjxnIGlkPSJnbHlwaC0wLTEiPgo8cGF0aCBkPSJNIDc3LjU3ODEyNSAtMTIzLjEyMTA5NCBDIDk2LjQ4MDQ2OSAtMTIzLjEyMTA5NCAxMDYuNTU4NTk0IC0xMTkuMzM5ODQ0IDEwNi41NTg1OTQgLTExNS4xOTkyMTkgQyAxMDYuNTU4NTk0IC0xMTAuODc4OTA2IDk2LjQ4MDQ2OSAtMTA2LjkyMTg3NSA3Ny41NzgxMjUgLTEwNi45MjE4NzUgQyA1OC44NTkzNzUgLTEwNi45MjE4NzUgNDguNzgxMjUgLTExMC44Nzg5MDYgNDguNzgxMjUgLTExNS4xOTkyMTkgQyA0OC43ODEyNSAtMTE5LjMzOTg0NCA1OC44NTkzNzUgLTEyMy4xMjEwOTQgNzcuNTc4MTI1IC0xMjMuMTIxMDk0IFogTSAxMzcuMzM5ODQ0IC0xMTUuMzc4OTA2IEMgMTM3LjMzOTg0NCAtMTMxLjU3ODEyNSAxMTUuMDE5NTMxIC0xNDMuODIwMzEyIDc3LjU3ODEyNSAtMTQzLjgyMDMxMiBDIDQwLjE0MDYyNSAtMTQzLjgyMDMxMiAxOC4xNzk2ODggLTEzMS41NzgxMjUgMTguMTc5Njg4IC0xMTUuMzc4OTA2IEMgMTguMTc5Njg4IC05OS4xNzk2ODggNDAuMTQwNjI1IC04Ni45NDE0MDYgNzcuNTc4MTI1IC04Ni45NDE0MDYgQyAxMTUuMDE5NTMxIC04Ni45NDE0MDYgMTM3LjMzOTg0NCAtOTkuMTc5Njg4IDEzNy4zMzk4NDQgLTExNS4zNzg5MDYgWiBNIDEzOC40MjE4NzUgMTMuNSBMIDEzOC40MjE4NzUgLTcuNTU4NTk0IEwgNDguNDIxODc1IC03LjU1ODU5NCBMIDQ4LjQyMTg3NSAtMTIuOTYwOTM4IEwgMTM1IC0xMi45NjA5MzggTCAxMzUgLTU1LjQ0MTQwNiBMIDIwLjE2MDE1NiAtNTUuNDQxNDA2IEwgMjAuMTYwMTU2IC0zNS40NjA5MzggTCAxMDYuNTU4NTk0IC0zNS40NjA5MzggTCAxMDYuNTU4NTk0IC0zMC4wNTg1OTQgTCAyMC4xNjAxNTYgLTMwLjA1ODU5NCBMIDIwLjE2MDE1NiAxMy41IFogTSAxNTEuMDE5NTMxIC02MC44Mzk4NDQgTCAxNTEuMDE5NTMxIC04My41MTk1MzEgTCA0LjUgLTgzLjUxOTUzMSBMIDQuNSAtNjAuODM5ODQ0IFogTSAxNTEuMDE5NTMxIC02MC44Mzk4NDQgIi8+CjwvZz4KPC9nPgo8L2RlZnM+CjxnIGZpbGw9InJnYig3OC40MzEzNzMlLCA5NC45MDE5NjElLCAyOS4wMTk2MDglKSIgZmlsbC1vcGFjaXR5PSIxIj4KPHVzZSB4bGluazpocmVmPSIjZ2x5cGgtMC0wIiB4PSIwIiB5PSIxNjIiLz4KPHVzZSB4bGluazpocmVmPSIjZ2x5cGgtMC0xIiB4PSIxNTYiIHk9IjE2MiIvPgo8L2c+Cjwvc3ZnPgo="
+            alt=""
+          />
+        </div>
+        <div
+          id="01-last-pitch-word-bakkunda"
+          class="01-last-pitch-accent-word 01-last-pitch-accent-word-bakkunda"
+        >
+          <img
+            src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iNDY4IiBoZWlnaHQ9IjIxNiIgdmlld0JveD0iMCAwIDQ2OCAyMTYiPgo8ZGVmcz4KPGc+CjxnIGlkPSJnbHlwaC0wLTAiPgo8cGF0aCBkPSJNIDYxLjU1ODU5NCAtNDMuOTIxODc1IEwgMzYuMzU5Mzc1IC00My45MjE4NzUgTCAzNi4zNTkzNzUgLTc1LjQyMTg3NSBMIDYxLjU1ODU5NCAtNzUuNDIxODc1IFogTSA5MCAtMjEuNDIxODc1IEwgOTAgLTEzNC40NjA5MzggTCA2MS41NTg1OTQgLTEzNC40NjA5MzggTCA2MS41NTg1OTQgLTk3LjczODI4MSBMIDM2LjM1OTM3NSAtOTcuNzM4MjgxIEwgMzYuMzU5Mzc1IC0xMzQuNDYwOTM4IEwgOC42NDA2MjUgLTEzNC40NjA5MzggTCA4LjY0MDYyNSAtMjEuNDIxODc1IFogTSAxNTIuNjQwNjI1IC02NC44MDA3ODEgTCAxNTIuNjQwNjI1IC04OC4wMTk1MzEgTCAxMzIuNDgwNDY5IC04OC4wMTk1MzEgTCAxMzIuNDgwNDY5IC0xNDcuMDU4NTk0IEwgMTA0LjU3ODEyNSAtMTQ3LjA1ODU5NCBMIDEwNC41NzgxMjUgMTQuOTQxNDA2IEwgMTMyLjQ4MDQ2OSAxNC45NDE0MDYgTCAxMzIuNDgwNDY5IC02NC44MDA3ODEgWiBNIDE1Mi42NDA2MjUgLTY0LjgwMDc4MSAiLz4KPC9nPgo8ZyBpZD0iZ2x5cGgtMC0xIj4KPHBhdGggZD0iTSA3Mi4xNzk2ODggLTE0MC41NzgxMjUgTCAxNi43MzgyODEgLTE0MC41NzgxMjUgTCAxNi43MzgyODEgLTExOS4xNjAxNTYgTCA0My45MjE4NzUgLTExOS4xNjAxNTYgQyA0My45MjE4NzUgLTEwNS4zMDA3ODEgNDAuNSAtOTAuMTc5Njg4IDM2LjUzOTA2MiAtODEuMTc5Njg4IEwgNC41IC04MS4xNzk2ODggTCA0LjUgLTU5LjAzOTA2MiBMIDY2LjYwMTU2MiAtNTkuMDM5MDYyIEwgNjYuNjAxNTYyIC0yNS4zNzg5MDYgTCA5NS4wMzkwNjIgLTI1LjM3ODkwNiBMIDk1LjAzOTA2MiAtNTkuMDM5MDYyIEwgMTUxLjAxOTUzMSAtNTkuMDM5MDYyIEwgMTUxLjAxOTUzMSAtODEuMTc5Njg4IEwgMTI5LjIzODI4MSAtODEuMTc5Njg4IEMgMTM0LjI4MTI1IC0xMDQuMzk4NDM4IDEzNS4xNzk2ODggLTEyMi4zOTg0MzggMTM1LjE3OTY4OCAtMTQwLjU3ODEyNSBMIDc5LjczODI4MSAtMTQwLjU3ODEyNSBMIDc5LjczODI4MSAtMTE5LjE2MDE1NiBMIDEwNy4yODEyNSAtMTE5LjE2MDE1NiBDIDEwNy4yODEyNSAtMTE0LjY2MDE1NiAxMDYuMzc4OTA2IC05Ny4zNzg5MDYgMTAxLjMzOTg0NCAtODEuMTc5Njg4IEwgNjQuOTgwNDY5IC04MS4xNzk2ODggQyA3MC43MzgyODEgLTk4LjY0MDYyNSA3Mi4xNzk2ODggLTEyMy4xMjEwOTQgNzIuMTc5Njg4IC0xNDAuNTc4MTI1IFogTSAxMzQuNjQwNjI1IDExLjUxOTUzMSBMIDEzNC42NDA2MjUgLTEwLjI2MTcxOSBMIDUxLjEyMTA5NCAtMTAuMjYxNzE5IEwgNTEuMTIxMDk0IC00MS4zOTg0MzggTCAyMy4wMzkwNjIgLTQxLjM5ODQzOCBMIDIzLjAzOTA2MiAxMS41MTk1MzEgWiBNIDEzNC42NDA2MjUgMTEuNTE5NTMxICIvPgo8L2c+CjxnIGlkPSJnbHlwaC0wLTIiPgo8cGF0aCBkPSJNIDk1LjU3ODEyNSAtNTAuNTc4MTI1IEMgODAuMTAxNTYyIC00Ny41MTk1MzEgNTkuNTc4MTI1IC00Ni4wNzgxMjUgNDEuMzk4NDM4IC00Ni4wNzgxMjUgTCAzOC4xNjAxNTYgLTQ2LjA3ODEyNSBMIDM4LjE2MDE1NiAtMTA5LjQ0MTQwNiBMIDg1LjY3OTY4OCAtMTA5LjQ0MTQwNiBMIDg1LjY3OTY4OCAtMTMyLjQ4MDQ2OSBMIDEwLjQ0MTQwNiAtMTMyLjQ4MDQ2OSBMIDEwLjQ0MTQwNiAtMjIuMzIwMzEyIEwgMjUuMTk5MjE5IC0yMi4zMjAzMTIgQyA1NC43MTg3NSAtMjIuMzIwMzEyIDg0LjQyMTg3NSAtMjQuODM5ODQ0IDk4LjEwMTU2MiAtMjcuNzE4NzUgWiBNIDE1NC40NDE0MDYgLTY2LjQyMTg3NSBMIDE1NC40NDE0MDYgLTg5LjQ2MDkzOCBMIDEzMi44Mzk4NDQgLTg5LjQ2MDkzOCBMIDEzMi44Mzk4NDQgLTE0Ny4wNTg1OTQgTCAxMDQuNzYxNzE5IC0xNDcuMDU4NTk0IEwgMTA0Ljc2MTcxOSAxNC45NDE0MDYgTCAxMzIuODM5ODQ0IDE0Ljk0MTQwNiBMIDEzMi44Mzk4NDQgLTY2LjQyMTg3NSBaIE0gMTU0LjQ0MTQwNiAtNjYuNDIxODc1ICIvPgo8L2c+CjwvZz4KPC9kZWZzPgo8ZyBmaWxsPSJyZ2IoNzguNDMxMzczJSwgOTQuOTAxOTYxJSwgMjkuMDE5NjA4JSkiIGZpbGwtb3BhY2l0eT0iMSI+Cjx1c2UgeGxpbms6aHJlZj0iI2dseXBoLTAtMCIgeD0iMCIgeT0iMTYyIi8+Cjx1c2UgeGxpbms6aHJlZj0iI2dseXBoLTAtMSIgeD0iMTU2IiB5PSIxNjIiLz4KPHVzZSB4bGluazpocmVmPSIjZ2x5cGgtMC0yIiB4PSIzMTIiIHk9IjE2MiIvPgo8L2c+Cjwvc3ZnPgo="
+            alt=""
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @font-face {
+      font-family: "Rebirth Plex Mono";
+      src: url("assets/fonts/IBMPlexMono-SemiBold.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      container-type: size;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    [class~="01-last-pitch-ground"],
+    [class~="01-last-pitch-depth-back"],
+    [class~="01-last-pitch-background-dimmer"],
+    [class~="01-last-pitch-camera-scene"],
+    [class~="01-last-pitch-kicker"],
+    [class~="01-last-pitch-statement"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    [class~="01-last-pitch-ground"] {
+      background: #a5ac9d;
+    }
+
+    [class~="01-last-pitch-depth-image"] {
+      --dof: 12px;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      filter: blur(var(--dof));
+      will-change: filter, transform;
+    }
+
+    [class~="01-last-pitch-background-dimmer"] {
+      background: #070a09;
+      opacity: 0.45;
+    }
+
+    [class~="01-last-pitch-camera-scene"] {
+      overflow: hidden;
+    }
+
+    [class~="01-last-pitch-zoom-outer"],
+    [class~="01-last-pitch-zoom-inner"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      will-change: transform;
+    }
+
+    [class~="01-last-pitch-zoom-outer"] {
+      transform-origin: 50% 50%;
+    }
+
+    [class~="01-last-pitch-focus-plane"] {
+      --dof: 10px;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      filter: blur(var(--dof));
+      will-change: filter, opacity;
+    }
+
+    [class~="01-last-pitch-game-stage"] {
+      position: absolute;
+      left: 192px;
+      top: 30px;
+      width: 1536px;
+      height: 864px;
+      overflow: hidden;
+    }
+
+    [class~="01-last-pitch-game-surface"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: fill;
+    }
+
+    [class~="01-last-pitch-stage-border"] {
+      position: absolute;
+      inset: 0;
+      border: 1px solid rgba(165, 172, 157, 0.55);
+      pointer-events: none;
+    }
+
+    [class~="01-last-pitch-release-target"] {
+      position: absolute;
+      left: 1080.8px;
+      top: 494px;
+      width: 291.2px;
+      height: 15px;
+      overflow: hidden;
+      background: rgba(7, 10, 9, 0.38);
+      border: 1px solid rgba(165, 172, 157, 0.6);
+    }
+
+    [class~="01-last-pitch-release-zone"] {
+      position: absolute;
+      left: 37%;
+      top: 0;
+      width: 21%;
+      height: 100%;
+      background: rgba(200, 242, 74, 0.28);
+      border-left: 1px solid #c8f24a;
+      border-right: 1px solid #c8f24a;
+    }
+
+    [class~="01-last-pitch-release-needle-echo"],
+    [class~="01-last-pitch-release-needle"] {
+      position: absolute;
+      left: 43.2%;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      transform-origin: 50% 50%;
+    }
+
+    [class~="01-last-pitch-release-needle-echo"] {
+      width: 6px;
+      margin-left: -2px;
+      background: rgba(200, 242, 74, 0.42);
+    }
+
+    [class~="01-last-pitch-release-needle"] {
+      background: #e7e7e5;
+    }
+
+    [class~="01-last-pitch-kicker"] {
+      pointer-events: none;
+    }
+
+    [class~="01-last-pitch-kicker-rule"] {
+      position: absolute;
+      left: 104px;
+      top: 80px;
+      width: 36px;
+      height: 2px;
+      background: #c8f24a;
+      transform-origin: 0 50%;
+    }
+
+    [class~="01-last-pitch-kicker-copy"] {
+      position: absolute;
+      left: 158px;
+      top: 70px;
+      color: #e7e7e5;
+      font-family: "Rebirth Plex Mono";
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+
+    [class~="01-last-pitch-statement"] {
+      pointer-events: none;
+    }
+
+    [class~="01-last-pitch-statement-primary"] {
+      position: absolute;
+      left: 96px;
+      top: 112px;
+      width: 346px;
+      height: 145px;
+    }
+
+    [class~="01-last-pitch-statement-primary"] img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    [class~="01-last-pitch-statement-accent"] {
+      position: absolute;
+      left: 96px;
+      top: 246px;
+      height: 190px;
+      min-height: 190px;
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
+    }
+
+    [class~="01-last-pitch-accent-word"] {
+      height: 190px;
+      flex: 0 0 auto;
+      will-change: transform, opacity, filter;
+    }
+
+    [class~="01-last-pitch-accent-word"] img {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    [class~="01-last-pitch-accent-word-han"] {
+      width: 137.2px;
+    }
+
+    [class~="01-last-pitch-accent-word-saengeul"] {
+      width: 274.4px;
+    }
+
+    [class~="01-last-pitch-accent-word-bakkunda"] {
+      width: 411.7px;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+    (() => {
+      const compositionId = "01-last-pitch";
+      const root = document.querySelector('[data-composition-id="' + compositionId + '"]');
+      const outer = document.getElementById("01-last-pitch-zoom-outer");
+      const inner = document.getElementById("01-last-pitch-zoom-inner");
+      const target = document.getElementById("01-last-pitch-release-target");
+      const focusPlane = document.getElementById("01-last-pitch-focus-plane");
+      const depthImage = document.getElementById("01-last-pitch-depth-image");
+      const needle = document.getElementById("01-last-pitch-release-needle");
+      const needleEcho = document.getElementById("01-last-pitch-release-needle-echo");
+      const kickerRule = document.getElementById("01-last-pitch-kicker-rule");
+      const kickerCopy = document.getElementById("01-last-pitch-kicker-copy");
+      const statementPrimary = document.getElementById("01-last-pitch-statement-primary");
+      const wordHan = document.getElementById("01-last-pitch-word-han");
+      const wordSaengeul = document.getElementById("01-last-pitch-word-saengeul");
+      const wordBakkunda = document.getElementById("01-last-pitch-word-bakkunda");
+
+      const rootRect = root.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const rootScaleX = rootRect.width > 0 ? 1920 / rootRect.width : 1;
+      const rootScaleY = rootRect.height > 0 ? 1080 / rootRect.height : 1;
+      const targetWidth = targetRect.width * rootScaleX;
+      const targetHeight = targetRect.height * rootScaleY;
+      const targetOffsetX =
+        (targetRect.left + targetRect.width / 2 - (rootRect.left + rootRect.width / 2)) *
+        rootScaleX;
+      const targetOffsetY =
+        (targetRect.top + targetRect.height / 2 - (rootRect.top + rootRect.height / 2)) *
+        rootScaleY;
+      const maxOpeningScale = Math.min(
+        (0.88 * 1920) / targetWidth,
+        (0.88 * 1080) / targetHeight,
+      );
+      const openingScale = Math.min(6.25, maxOpeningScale);
+
+      const camera = {
+        scale: openingScale,
+        x: -targetOffsetX,
+        y: -targetOffsetY,
+      };
+
+      const applyCamera = () => {
+        gsap.set(outer, { scale: camera.scale });
+        gsap.set(inner, { x: camera.x, y: camera.y });
+      };
+      applyCamera();
+
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines[compositionId] = tl;
+
+      tl.fromTo(
+        depthImage,
+        { "--dof": "12px", scale: 1.06, opacity: 0.7 },
+        {
+          "--dof": "4px",
+          scale: 1,
+          opacity: 1,
+          duration: 1.45,
+          ease: "power2.inOut",
+          immediateRender: true,
+        },
+        0,
+      );
+
+      tl.fromTo(
+        focusPlane,
+        { "--dof": "10px", opacity: 0.76 },
+        {
+          "--dof": "0px",
+          opacity: 1,
+          duration: 1.35,
+          ease: "power2.inOut",
+          immediateRender: true,
+        },
+        0,
+      );
+
+      tl.fromTo(
+        needleEcho,
+        { scaleY: 0.55, opacity: 0.2 },
+        {
+          scaleY: 1.7,
+          opacity: 0.72,
+          duration: 0.16,
+          ease: "power2.out",
+          immediateRender: true,
+        },
+        0.34,
+      );
+      tl.to(
+        needleEcho,
+        { scaleY: 1, opacity: 0.38, duration: 0.2, ease: "power2.inOut" },
+        0.5,
+      );
+      tl.fromTo(
+        needle,
+        { scaleY: 0.68, opacity: 0.65 },
+        {
+          scaleY: 1.2,
+          opacity: 1,
+          duration: 0.13,
+          ease: "power3.out",
+          immediateRender: true,
+        },
+        0.78,
+      );
+      tl.to(needle, { scaleY: 1, duration: 0.18, ease: "power2.out" }, 0.91);
+
+      tl.fromTo(
+        camera,
+        {
+          scale: openingScale,
+          x: -targetOffsetX,
+          y: -targetOffsetY,
+        },
+        {
+          scale: 1,
+          x: 0,
+          y: 0,
+          duration: 3.2,
+          ease: "power4.out",
+          onUpdate: applyCamera,
+          immediateRender: true,
+        },
+        1.7,
+      );
+
+      tl.fromTo(
+        kickerRule,
+        { scaleX: 0, opacity: 0 },
+        {
+          scaleX: 1,
+          opacity: 1,
+          duration: 0.42,
+          ease: "power3.out",
+          immediateRender: true,
+        },
+        3.14,
+      );
+      tl.fromTo(
+        kickerCopy,
+        { x: -24, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.38,
+          ease: "power3.out",
+          immediateRender: true,
+        },
+        3.2,
+      );
+
+      tl.fromTo(
+        statementPrimary,
+        { x: -38, opacity: 0, filter: "blur(8px)" },
+        {
+          x: 0,
+          opacity: 1,
+          filter: "blur(0px)",
+          duration: 0.32,
+          ease: "power3.out",
+          immediateRender: true,
+        },
+        4.9,
+      );
+
+      const wordContent = [
+        { element: wordHan, body: "한" },
+        { element: wordSaengeul, body: "생을" },
+        { element: wordBakkunda, body: "바꾼다" },
+      ];
+      const baseDuration = 0.08;
+      const secondsPerCharacter = 0.025;
+      let cumulative = 0;
+      const wordTimeline = wordContent.map((entry) => {
+        const duration = baseDuration + Array.from(entry.body).length * secondsPerCharacter;
+        const start = cumulative;
+        cumulative += duration;
+        return { ...entry, start, end: cumulative };
+      });
+
+      wordTimeline.forEach((entry) => {
+        tl.fromTo(
+          entry.element,
+          { x: -42, opacity: 0, filter: "blur(9px)" },
+          {
+            x: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 0.22,
+            ease: "power3.out",
+            immediateRender: true,
+          },
+          5.18 + entry.start,
+        );
+      });
+    })();
+  </script>
+</template>

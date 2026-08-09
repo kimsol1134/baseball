@@ -1,0 +1,212 @@
+{
+  "typography": [
+    {
+      "role": "display",
+      "fontFamily": "Pretendard",
+      "fontSize": "32px",
+      "fontWeight": "700",
+      "lineHeight": "28.16px",
+      "letterSpacing": "-2.72px",
+      "color": "#EEF0DF",
+      "sampleText": "야구 못하면또 환생함"
+    },
+    {
+      "role": "heading",
+      "fontFamily": "Pretendard",
+      "fontSize": "29px",
+      "fontWeight": "950",
+      "lineHeight": "normal",
+      "letterSpacing": "-1.74px",
+      "color": "#EEF0DF",
+      "sampleText": "민서준"
+    },
+    {
+      "role": "body",
+      "fontFamily": "Pretendard",
+      "fontSize": "23px",
+      "fontWeight": "600",
+      "lineHeight": "38.64px",
+      "letterSpacing": "-0.69px",
+      "color": "#EEF0DF",
+      "sampleText": "드래프트까지 아웃 하나.읽고, 고르고, 초록 구간에서 놓으세요."
+    },
+    {
+      "role": "label",
+      "fontFamily": "Pretendard",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "lineHeight": "normal",
+      "letterSpacing": "normal",
+      "color": "#EEF0DF",
+      "sampleText": "게임으로 바로가기야구 못하면또 환생함WEB EDITION약 3분소리 끔조작 안내CURRENT LIFE02한 "
+    },
+    {
+      "role": "link",
+      "fontFamily": "Pretendard",
+      "fontSize": "13px",
+      "fontWeight": "900",
+      "lineHeight": "normal",
+      "letterSpacing": "normal",
+      "color": "#070A09",
+      "sampleText": "게임으로 바로가기"
+    },
+    {
+      "role": "body-small",
+      "fontFamily": "Pretendard",
+      "fontSize": "10px",
+      "fontWeight": "700",
+      "lineHeight": "10px",
+      "letterSpacing": "0.8px",
+      "color": "#A5AC9D",
+      "sampleText": "야구 못하면"
+    }
+  ],
+  "spacing": {
+    "observed": [
+      7,
+      8,
+      9,
+      10,
+      12,
+      14,
+      18,
+      22,
+      24,
+      28,
+      100
+    ],
+    "baseUnit": 4
+  },
+  "radius": [],
+  "shadows": [
+    {
+      "value": "rgba(150, 190, 34, 0.18) 0px 12px 38px 0px",
+      "count": 1
+    }
+  ],
+  "buttons": [
+    {
+      "label": "야구 못하면또 환생함",
+      "background": "transparent",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#EEF0DF",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "0px none rgb(238, 240, 223)",
+      "boxShadow": "none",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "34px"
+    },
+    {
+      "label": "소리 끔",
+      "background": "#FFFFFF",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#A5AC9D",
+      "padding": "0px 12px",
+      "borderRadius": "0px",
+      "border": "1px solid rgba(225, 234, 207, 0.16)",
+      "boxShadow": "none",
+      "fontSize": "11px",
+      "fontWeight": "800",
+      "height": "34px"
+    },
+    {
+      "label": "마지막 타자 상대하기→",
+      "background": "#C8F24A",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#12170D",
+      "padding": "0px 24px",
+      "borderRadius": "2px",
+      "border": "1px solid rgb(200, 242, 74)",
+      "boxShadow": "rgba(150, 190, 34, 0.18) 0px 12px 38px 0px",
+      "fontSize": "16px",
+      "fontWeight": "950",
+      "height": "62px"
+    },
+    {
+      "label": "60초 조작법 보기",
+      "background": "transparent",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#A5AC9D",
+      "padding": "0px 12px",
+      "borderRadius": "0px",
+      "border": "1px solid rgba(225, 234, 207, 0.16)",
+      "boxShadow": "none",
+      "fontSize": "11px",
+      "fontWeight": "800",
+      "height": "34px"
+    }
+  ],
+  "cards": [],
+  "nav": {
+    "label": "navigation",
+    "background": "transparent",
+    "backgroundImage": "linear-gradient(rgba(5, 8, 7, 0.94), rgba(5, 8, 7, 0.76))",
+    "backdropFilter": "blur(18px)",
+    "color": "#EEF0DF",
+    "padding": "0px 54px",
+    "borderRadius": "0px",
+    "border": "",
+    "boxShadow": "none",
+    "fontSize": "16px",
+    "fontWeight": "400",
+    "height": "72px"
+  },
+  "chips": [
+    {
+      "label": "CURRENT LIFE02",
+      "background": "transparent",
+      "color": "#EEF0DF",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "0px none rgb(238, 240, 223)",
+      "boxShadow": "none",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "34.1875px"
+    }
+  ],
+  "statCells": [],
+  "tabs": [],
+  "backgrounds": [
+    {
+      "value": "radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.22) 0px, rgba(255, 255, 255, 0.22) 0.5px, rgba(0, 0, 0, 0) 0.7px), radial-gradient(circle at 70% 60%, rgba(200, 242, 74, 0.12) 0px, rgba(200, 242, 74, 0.12) 0.45px, rgba(0, 0, 0, 0) 0.7px)",
+      "area": 2073600
+    },
+    {
+      "value": "linear-gradient(rgba(200, 242, 74, 0.12) 1px, rgba(0, 0, 0, 0) 1px), linear-gradient(90deg, rgba(200, 242, 74, 0.12) 1px, rgba(0, 0, 0, 0) 1px)",
+      "area": 2073600
+    },
+    {
+      "value": "linear-gradient(90deg, rgba(3, 6, 5, 0.96) 0%, rgba(3, 6, 5, 0.83) 36%, rgba(3, 6, 5, 0.13) 72%, rgba(3, 6, 5, 0.46) 100%), linear-gradient(0deg, rgba(3, 6, 5, 0.88), rgba(0, 0, 0, 0) 44%)",
+      "area": 2073600
+    },
+    {
+      "value": "linear-gradient(rgba(5, 8, 7, 0.94), rgba(5, 8, 7, 0.76))",
+      "area": 138240
+    }
+  ],
+  "glass": [
+    {
+      "backdropFilter": "blur(16px)",
+      "background": "linear-gradient(145deg, rgba(15, 22, 18, 0.9), rgba(6, 10, 8, 0.74))",
+      "border": "1px solid rgba(225, 234, 207, 0.34)",
+      "borderRadius": "0px",
+      "boxShadow": "rgba(0, 0, 0, 0.44) 0px 26px 80px 0px",
+      "area": 183120
+    },
+    {
+      "backdropFilter": "blur(18px)",
+      "background": "linear-gradient(rgba(5, 8, 7, 0.94), rgba(5, 8, 7, 0.76))",
+      "border": "",
+      "borderRadius": "0px",
+      "boxShadow": "",
+      "area": 138240
+    }
+  ]
+}

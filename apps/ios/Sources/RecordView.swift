@@ -9,21 +9,41 @@ import SimulationCore
 struct RecordView: View {
     let highSchool: HighSchoolCareerStore
     let career: MobileCareerStore
+    var weekly: WeeklyProgramStore = .shared
+    var onOpenDailyInning: (() -> Void)? = nil
 
     var body: some View {
         Group {
             if let state = career.state {
-                RecordBoard(state: state, archive: highSchool.archive)
+                RecordBoard(
+                    state: state,
+                    archive: highSchool.archive,
+                    weekly: weekly,
+                    highSchool: highSchool,
+                    onOpenDailyInning: onOpenDailyInning
+                )
             } else if let hs = highSchool.state {
-                HighSchoolRecordBoard(state: hs, archive: highSchool.archive, highSchoolPersonality: highSchool.personality)
+                HighSchoolRecordBoard(
+                    state: hs,
+                    archive: highSchool.archive,
+                    highSchoolPersonality: highSchool.personality,
+                    weekly: weekly,
+                    highSchool: highSchool,
+                    onOpenDailyInning: onOpenDailyInning
+                )
             } else if !highSchool.archive.isEmpty {
                 // 회차를 끝내고 아직 새로 시작하지 않은 상태 — 로그라이트의 재시작 동력은
                 // "내가 남긴 것"을 보는 순간에 생긴다. 방금 끝낸 회차의 카드가 먼저 서고,
                 // 그 아래 통산 보드(다음 이정표·별명 도감)가 다음 회차의 이유를 만든다.
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                        WeeklyProgramView(
+                            store: weekly,
+                            highSchool: highSchool,
+                            onOpenDailyInning: onOpenDailyInning
+                        )
                         if let last = highSchool.archive.first {
-                            BaseballCard(title: "\(last.lifeNumber)회차가 남긴 것", tone: .milestone) {
+                            BaseballCard(title: "\(last.lifeNumber)번째 선수가 남긴 것", tone: .milestone) {
                                 VStack(alignment: .leading, spacing: 10) {
                                     LifeCardView(record: last)
                                         .scaleEffect(0.72, anchor: .top)
@@ -39,6 +59,17 @@ struct RecordView: View {
                     .padding(BaseballMetrics.gutter)
                 }
                 .background(BaseballTheme.canvas)
+            } else if weekly.program != nil || !weekly.stamps.isEmpty {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                        WeeklyProgramView(
+                            store: weekly,
+                            highSchool: highSchool,
+                            onOpenDailyInning: onOpenDailyInning
+                        )
+                    }
+                    .padding(BaseballMetrics.gutter)
+                }
             } else {
                 ContentUnavailableView("기록 없음", systemImage: "chart.bar")
             }
@@ -57,6 +88,9 @@ private struct HighSchoolRecordBoard: View {
     let state: HighSchoolCareerSnapshot
     let archive: [HighSchoolCareerStore.LifeRecord]
     var highSchoolPersonality: Personality?
+    let weekly: WeeklyProgramStore
+    let highSchool: HighSchoolCareerStore
+    let onOpenDailyInning: (() -> Void)?
 
     private var lines: [ProGameLine] { state.seasonLog ?? [] }
 
@@ -70,6 +104,11 @@ private struct HighSchoolRecordBoard: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                WeeklyProgramView(
+                    store: weekly,
+                    highSchool: highSchool,
+                    onOpenDailyInning: onOpenDailyInning
+                )
                 Text("\(state.chapter.title) · \(state.school?.name ?? "학교 미정")")
                     .eyebrowStyle(BaseballTheme.action)
 
@@ -142,7 +181,7 @@ private struct HighSchoolRecordBoard: View {
 
                 if lines.isEmpty {
                     BaseballCard(title: "경기 기록") {
-                        Text("아직 치른 경기가 없습니다. 첫 중요 경기를 던지면 여기에 쌓입니다.")
+                        Text("아직 치른 경기가 없습니다. 첫 고교 공식 경기를 던지면 여기에 쌓입니다.")
                             .font(.subheadline)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -189,6 +228,9 @@ private struct HighSchoolRecordBoard: View {
 private struct RecordBoard: View {
     let state: ProCareerSnapshot
     let archive: [HighSchoolCareerStore.LifeRecord]
+    let weekly: WeeklyProgramStore
+    let highSchool: HighSchoolCareerStore
+    let onOpenDailyInning: (() -> Void)?
 
     /// 아웃 카운트를 "이닝.아웃" 표기로 바꾼다. 야구 기록지와 같은 읽기 방식이다.
     private static func innings(_ outs: Int) -> String {
@@ -231,6 +273,14 @@ private struct RecordBoard: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                WeeklyProgramView(
+                    store: weekly,
+                    highSchool: highSchool,
+                    onOpenDailyInning: onOpenDailyInning
+                )
+                if let decisions = state.decisionHistory, !decisions.isEmpty {
+                    ProDecisionHistoryCard(decisions: decisions)
+                }
                 HStack(spacing: 10) {
                     Metric(title: "경기", value: "\(state.currentStats.games)")
                     Metric(title: "이닝", value: Self.innings(state.currentStats.inningsOuts))
@@ -342,6 +392,39 @@ private struct RecordBoard: View {
             .padding(BaseballMetrics.gutter)
         }
         .background(BaseballTheme.canvas)
+    }
+}
+
+/// iPhone에서도 시즌 선택이 한 번 쓰고 사라지지 않도록 기록 탭에 남기는 압축 기록.
+struct ProDecisionHistoryCard: View {
+    let decisions: [ProDecisionRecord]
+
+    var body: some View {
+        BaseballCard(title: "시즌 선택 기록", tone: .milestone) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(decisions.suffix(7).reversed())) { decision in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("\(decision.season)시즌 · \(decision.week)주차")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                        Text(decision.choiceTitle)
+                            .font(.subheadline.weight(.bold))
+                        Text(decision.effect.summary)
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(Self.accessibilityLabel(for: decision))
+                }
+            }
+        }
+        .accessibilityIdentifier("record.proDecisionHistory")
+    }
+
+    static func accessibilityLabel(for decision: ProDecisionRecord) -> String {
+        "\(decision.season)시즌 \(decision.week)주차, \(decision.choiceTitle), 효과: \(decision.effect.summary)"
     }
 }
 
@@ -512,7 +595,7 @@ struct AchievementsLinkCard: View {
         } label: {
             BaseballCard(title: "업적과 도감") {
                 HStack {
-                    Text("해금한 업적과 앞으로의 도전을 봅니다.")
+                    Text("달성한 기록과 앞으로의 도전을 봅니다.")
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                     Spacer()

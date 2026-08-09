@@ -1,5 +1,6 @@
 import SwiftUI
 import SimulationCore
+import UIKit
 
 /// 고교 커리어 10단계 화면. 게임 제목("야구 못하면 또 환생함")의 본편이다.
 struct HighSchoolCareerView: View {
@@ -8,6 +9,7 @@ struct HighSchoolCareerView: View {
     let onEnterPro: (DraftResultSnapshot, PitcherSnapshot, PlayerIdentitySnapshot) -> Void
     /// 이 회차로 프로에 이미 진출했는가. 은퇴 뒤 돌아왔을 때 다시 들어가지 못하게 한다.
     var hasEnteredPro = false
+    var weekly: WeeklyProgramStore = .shared
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var achievements = AchievementStore.shared
@@ -21,8 +23,6 @@ struct HighSchoolCareerView: View {
     @State private var showsDaily = false
     /// 복귀 알림 권유 카드를 지금 띄우는가. 한 번 답하면 이 세션에서는 다시 묻지 않는다.
     @State private var showsReminderNudge = DailyReminder.shouldOfferOptIn()
-    /// 환생 스탬프가 닫히면 설정을 건너뛰고 바로 다음 회차를 시작할 것인가.
-    @State private var quickRebirthAfterStamp = false
     @Environment(\.requestReview) private var requestReview
 
     /// 오늘의 이닝 입구를 지금 화면에 두어도 되는가. 순수 함수라 테스트할 수 있다.
@@ -41,6 +41,9 @@ struct HighSchoolCareerView: View {
     /// `fullScreenCover(item:)`가 요구하는 식별 가능한 값.
     struct RebirthStamp: Identifiable {
         let lifeNumber: Int
+        /// 정산 화면에서 곧장 온 스탬프인지 값 자체에 싣는다. 별도 `@State`로 두면
+        /// cover가 만들어지는 프레임과 플래그 갱신 프레임이 엇갈려 설정 화면으로 빠질 수 있다.
+        var startsImmediately = false
         var id: Int { lifeNumber }
     }
 
@@ -82,7 +85,7 @@ struct HighSchoolCareerView: View {
                     .font(.footnote.weight(.semibold))
                     .accessibilityIdentifier("hs.restart")
                     .confirmationDialog(
-                        "모든 회차 기록을 지울까요?",
+                        "모든 선수 기록을 지울까요?",
                         isPresented: $confirmingReset,
                         titleVisibility: .visible
                     ) {
@@ -124,14 +127,13 @@ struct HighSchoolCareerView: View {
         // 반대로(회차를 먼저 넘기고 스탬프를 띄우면) 화면이 갈아 끼워지는 순간에 전면
         // 화면을 올리는 셈이라 표시가 들쭉날쭉했다. 연출이 곧 전환이면 그런 경합이 없다.
         .fullScreenCover(isPresented: $showsDaily) {
-            DailyInningView(onClose: { showsDaily = false }, source: "career_entry")
+            DailyInningView(onClose: { showsDaily = false }, source: "career_entry", weekly: weekly)
         }
         .fullScreenCover(item: $rebirthStamp) { stamp in
             RebirthStampView(lifeNumber: stamp.lifeNumber) {
                 rebirthStamp = nil
                 // 정산 화면에서 바로 온 경우엔 설정을 건너뛰고 같은 조건으로 시작한다.
-                if quickRebirthAfterStamp {
-                    quickRebirthAfterStamp = false
+                if stamp.startsImmediately {
                     career.beginNextLife()
                     career.startQuickRebirth(entryPoint: "recap")
                 } else {
@@ -139,7 +141,7 @@ struct HighSchoolCareerView: View {
                 }
             }
         }
-        // 회차 정산 — 기억을 확정한 순간 위업과 야구혼이 폭발한다. 조용한 전환은
+        // 3년 돌아보기 — 기억을 확정한 순간 위업과 야구혼이 폭발한다. 조용한 전환은
         // 로그라이트의 끝이 아니다: 정산이 다음 회차를 시작하는 이유다.
         .fullScreenCover(item: Binding(
             get: { career.pendingRecap },
@@ -151,8 +153,13 @@ struct HighSchoolCareerView: View {
                 // 설정을 다시 물을 것이 없는 회차는 정산 화면에서 곧장 다음 판으로 간다.
                 onQuickRebirth: career.quickRebirthPreset == nil ? nil : {
                     career.pendingRecap = nil
-                    rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
-                    quickRebirthAfterStamp = true
+                    rebirthStamp = RebirthStamp(
+                        lifeNumber: career.inheritance.lifeNumber,
+                        startsImmediately: true
+                    )
+                },
+                onSaveIntent: { intent in
+                    _ = career.saveNextRunIntent(intent)
                 }
             )
         }
@@ -167,7 +174,7 @@ struct HighSchoolCareerView: View {
         .onChange(of: career.feedbackTrigger) { _, _ in
             if let cue = GameAudioMapping.cue(for: career.feedbackCue) { audio.play(cue) }
         }
-        // 별점 요청 — 감정이 양(+)인 순간(첫 무실점 이닝·좋은 회차 정산·3회차 진입)에
+        // 별점 요청 — 감정이 양(+)인 순간(첫 무실점 이닝·좋은 3년 마무리·3회차 진입)에
         // 스토어가 신호를 올린다. 신호를 올릴지 말지는 이미 ReviewPrompt가 걸렀으므로
         // 여기서는 그대로 연다.
         .onChange(of: career.reviewMoment) { _, _ in
@@ -188,11 +195,11 @@ struct HighSchoolCareerView: View {
                           onRetry: career.retryTutorialPitch)
             } else if state.phase == .importantGame, let session = career.pitchSession {
                 PitchView(session: session, onFinish: career.finishImportantGame,
-                          onAbort: career.abandonImportantGame)
+                          onAbort: { _ = career.abandonImportantGame() })
             } else {
                 ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                    LazyVStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                         // 회차 번호는 **스냅숏**에서 읽는다.
                         //
                         // 예전에는 스토어의 계승분(`inheritance.lifeNumber`)을 그대로 썼다. 그건
@@ -246,6 +253,7 @@ struct HighSchoolCareerView: View {
                         if Self.showsDailyEntry(phase: state.phase,
                                                 gamesCompleted: state.performance.importantGamesCompleted) {
                             DailyInningEntryRow { showsDaily = true }
+                            WeeklyProgramSummaryRow(store: weekly)
                         }
                         // 복귀 알림 권유 — 첫 중요 경기를 끝낸 직후(감정이 양)에 딱 한 번.
                         // 예전에는 이 스위치가 오늘의 이닝 화면 **안에만** 있었다. 즉 7%만
@@ -267,19 +275,31 @@ struct HighSchoolCareerView: View {
                         // 걸어 둔 약속 — 내기는 눈앞에 있어야 내기다.
                         if state.draftResult == nil, state.phase != .awakening,
                            let pledge = career.pledge {
-                            HStack(spacing: 8) {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .foregroundStyle(BaseballTheme.milestone)
-                                Text("약속 · \(pledge.title)")
-                                    .font(.footnote.weight(.bold))
-                                Text(pledge.progressLine(state: state))
+                            let progress = pledge.progress(in: .init(
+                                state: state, rivalLedger: career.rivalLedger
+                            ))
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.seal.fill")
+                                        .foregroundStyle(BaseballTheme.milestone)
+                                    Text("목표 · \(pledge.title)")
+                                        .font(.footnote.weight(.bold))
+                                    Spacer(minLength: 0)
+                                    Text("\(progress.ratioPermille / 10)%")
+                                        .font(.caption.monospacedDigit().weight(.bold))
+                                        .foregroundStyle(BaseballTheme.milestone)
+                                }
+                                Text(progress.line)
                                     .font(.footnote.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textSecondary)
-                                Spacer(minLength: 0)
+                                ProgressView(value: Double(progress.ratioPermille), total: 1_000)
+                                    .tint(BaseballTheme.milestone)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: 10))
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel("\(pledge.tier.title) 목표, \(pledge.title), \(progress.line), 보상 야구혼 \(pledge.rewardPermille / 10)퍼센트 추가")
                         }
                         // 드래프트가 끝난 회차에 챕터 숙제는 소음이다. 각성 국면도 접는다.
                         if state.draftResult == nil, state.phase != .awakening {
@@ -291,9 +311,25 @@ struct HighSchoolCareerView: View {
                         }
 
                         phaseBody(state: state)
+                        // 선수의 말은 첫 경기 이후 실제 갈림길·건강 신호에서만 보이고,
+                        // 그 국면의 주 행동보다 아래에 둔다. 상시 상단 카드가 진행을 밀어내지 않는다.
+                        if let presentation = PlayerBondStory.heartlinePresentation(
+                            for: state,
+                            personality: career.personality
+                        ) {
+                            PlayerHeartCard(state: state, presentation: presentation)
+                        }
                     }
                     .padding(BaseballMetrics.gutter)
+                    // 완료·유산처럼 긴 화면의 마지막 CTA가 시스템 탭 바와 맞닿지 않게
+                    // 실제 안전 영역 안에 한 번 더 숨을 준다.
+                    .safeAreaPadding(.bottom, 12)
                 }
+                // 빠른 환생은 같은 화면 안에서 새 careerID로 즉시 갈아탄다. ScrollView를
+                // 재사용하면 직전 결산의 깊은 스크롤 위치가 남아 새 프롤로그·지난 선수의
+                // 편지가 화면 위쪽 밖에 갇힌다. 회차마다 새 스크롤 정체성을 줘 맨 위에서
+                // 시작한다.
+                .id(state.careerID)
                 .background(BaseballTheme.canvas)
                 // 스크롤 콘텐츠가 상태바 밑을 그대로 지나면 시계와 제목이 겹친다(QA P2-3).
                 // 얇은 스크림 하나가 위를 정리한다.
@@ -325,6 +361,11 @@ struct HighSchoolCareerView: View {
     @ViewBuilder private func phaseBody(state: HighSchoolCareerSnapshot) -> some View {
         switch state.phase {
         case .prologue:
+            if !career.isChallengeRun,
+               let previous = career.archive.first,
+               previous.lifeNumber < state.lifeNumber {
+                PreviousPlayerLetterCard(record: previous, currentPlayerName: state.identity.name)
+            }
             PrologueCard(
                 state: state,
                 lifeNumber: state.lifeNumber,
@@ -332,9 +373,12 @@ struct HighSchoolCareerView: View {
                 onSkip: career.completePrologue
             )
         case .schoolSelection:
-            if !career.pledgeDecided {
-                PledgeCard(careerID: state.careerID, isFirstLife: state.lifeNumber == 1,
-                           onChoose: career.choosePledge)
+            if !career.isChallengeRun && !career.pledgeDecided {
+                PledgeCard(state: state, intent: career.nextRunIntent,
+                           rivalLedger: career.rivalLedger, isFirstLife: state.lifeNumber == 1,
+                           onChoose: { pledgeID in
+                               _ = career.choosePledge(pledgeID)
+                           })
             }
             SchoolSelectionCard(options: state.schoolOptions, onChoose: career.chooseSchool)
         case .training:
@@ -344,17 +388,25 @@ struct HighSchoolCareerView: View {
                     .sorted { $0.key < $1.key }
                     .map { "\($0.key) +\($0.value)" }
                     .joined(separator: " · ")
-                Text("이번 챕터 훈련 \(career.chapterTrainingCount)회"
+                Text("이번 이야기 훈련 \(career.chapterTrainingCount)회"
                      + (summary.isEmpty ? "" : " — \(summary)"))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("hs.training.tally")
             }
-            TrainingCard(state: state, armHealth: career.armHealth) { focus, intensity in
-                audio.play(.uiSelect)
-                career.commitTraining(focus: focus, intensity: intensity)
-            }
+            TrainingCard(
+                state: state,
+                armHealth: career.armHealth,
+                onCommit: { focus, intensity in
+                    audio.play(.uiSelect)
+                    career.commitTraining(focus: focus, intensity: intensity)
+                },
+                onCommitBlock: { focus, intensity in
+                    audio.play(.uiSelect)
+                    career.commitTrainingBlock(focus: focus, intensity: intensity)
+                }
+            )
         case .relationship:
             RelationshipCard(state: state, onRespond: career.resolveRelationship)
         case .importantGame:
@@ -370,7 +422,7 @@ struct HighSchoolCareerView: View {
         case .draft:
             DraftCard(state: state, chronicle: career.chronicle, career: career, onResolve: career.resolveDraft)
         case .legacy:
-            // 도전 런은 대부분 미지명으로 끝나 여기로 온다 — 기억 확정(실계승 덮어쓰기)
+            // challenge 모드는 대부분 미지명으로 끝나 여기로 온다 — 기억 확정(실계승 덮어쓰기)
             // 대신 도전 마감으로 보낸다(5차 패널 P0).
             if career.isChallengeRun {
                 ChallengeEndCard(state: state) { career.endChallengeRun() }
@@ -462,9 +514,9 @@ private struct ReminderNudgeCard: View {
     }
 }
 
-// MARK: - 도전 런 마감
+// MARK: - Challenge 마감
 
-/// 도전 런의 끝 — 기록·계승 어디에도 반영되지 않는 판이므로 결과만 정직하게
+/// challenge 모드의 끝 — 기록·계승 어디에도 반영되지 않는 판이므로 결과만 정직하게
 /// 보여 주고 닫는다. 공유 카드의 "이 시드로 지명 가능?"에 대한 답이 이 화면이다.
 private struct ChallengeEndCard: View {
     let state: HighSchoolCareerSnapshot
@@ -472,7 +524,7 @@ private struct ChallengeEndCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            Text("도전 런 결과").eyebrowStyle(BaseballTheme.milestone)
+            Text("기록 없는 도전 결과").eyebrowStyle(BaseballTheme.milestone)
             BaseballCard(title: state.draftResult?.outcome == .drafted ? "지명 성공" : "지명 실패",
                          tone: state.draftResult?.outcome == .drafted ? .milestone : .raised) {
                 VStack(alignment: .leading, spacing: 6) {
@@ -483,7 +535,7 @@ private struct ChallengeEndCard: View {
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
             }
-            Text("도전 런은 아카이브·야구혼·계승에 남지 않습니다. 내 회차는 그대로입니다.")
+            Text("이 도전은 선수 기록·야구혼·계승에 남지 않습니다. 원래 진행은 그대로입니다.")
                 .font(.footnote)
                 .foregroundStyle(BaseballTheme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -497,6 +549,7 @@ private struct ChallengeEndCard: View {
 private struct ChapterHeader: View {
     let state: HighSchoolCareerSnapshot
     let lifeNumber: Int
+    @State private var windExpanded = false
 
     /// 되돌릴 수 없는 순간에만 전용 그림을 준다. 나머지는 야간 구장 한 장으로 통일한다 —
     /// 모든 화면에 다른 그림이 있으면 어느 것도 특별하지 않다(DOC-19 §7.5).
@@ -518,8 +571,8 @@ private struct ChapterHeader: View {
                 // 1회차에는 회차 표시를 하지 않는다. 처음 하는 사람에게 "1회차"는 아무 뜻이 없고,
                 // 반복하는 게임이라는 사실은 한 번 죽어 봐야 의미가 생긴다.
                 eyebrow: lifeNumber > 1
-                    ? "\(lifeNumber)회차 · \(state.chapter.schoolYear)학년 \(state.chapter.season)"
-                    : "\(state.chapter.schoolYear)학년 \(state.chapter.season)",
+                    ? "\(lifeNumber)번째 선수 · \(HighSchoolPresentation.actTitle(chapter: state.chapter.number)) · \(state.chapter.schoolYear)학년 \(state.chapter.season)"
+                    : "\(HighSchoolPresentation.actTitle(chapter: state.chapter.number)) · \(state.chapter.schoolYear)학년 \(state.chapter.season)",
                 title: state.school.map { "\($0.name) · \(state.chapter.title)" } ?? state.chapter.title
             )
             HStack(spacing: 10) {
@@ -530,6 +583,42 @@ private struct ChapterHeader: View {
                 Metric(title: "피로", value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
                 Metric(title: "팀의 믿음", value: "\(state.relationshipTrust)")
                 Metric(title: "훈련", value: "\(state.totalTrainingsCompleted)")
+            }
+            if state.phase != .prologue {
+                let wind = state.careerWind
+                Button { windExpanded.toggle() } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "wind")
+                        Text(wind.title)
+                            .font(.caption.weight(.bold))
+                        Spacer(minLength: 0)
+                        Image(systemName: windExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(BaseballTheme.information)
+                    .padding(.horizontal, 10)
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .background(BaseballTheme.surfaceRaised, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("hs.wind.chip")
+                .accessibilityLabel("이번 3년의 바람, \(wind.title), 효과 설명 \(windExpanded ? "접기" : "펼치기")")
+
+                if windExpanded {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(wind.detail)
+                        ForEach(wind.effectDescriptions, id: \.self) { effect in
+                            Text("· \(effect)")
+                        }
+                        if wind.effectDescriptions.isEmpty {
+                            Text("· 능력과 보상 보정 없음")
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityElement(children: .combine)
+                }
             }
         }
     }
@@ -592,14 +681,14 @@ private struct PrologueCard: View {
                     // 첫 회차에는 감독이 말을 건다. "무엇을 해야 하는지"를 사람 말로 알려 주는 편이
                     // 안내 문구보다 잘 읽힌다.
                     Text(lifeNumber > 1
-                         ? (state.news.first(where: { !$0.hasPrefix("이번 회차의 바람") }) ?? "고교 3년이 다시 시작됩니다.")
+                         ? (state.news.first(where: { !$0.hasPrefix("이번 3년의 바람") }) ?? "고교 3년이 다시 시작됩니다.")
                          : "\u{201C}몸부터 풀자. 불펜에서 한 구 던져 봐.\u{201D} — 감독")
                         .font(.subheadline)
                         .fixedSize(horizontal: false, vertical: true)
                     // 1회차에는 코어가 만든 중학교 맥락을 감독의 말 아래에 붙인다.
                     // 이 한 줄이 없으면 "왜 이 학교들이 나를 부르는가"가 화면에 없다.
                     // 바람 뉴스가 첫 줄을 차지할 수 있다 — 중학교 맥락은 바람이 아닌 첫 줄이다.
-                    if lifeNumber == 1, let context = state.news.first(where: { !$0.hasPrefix("이번 회차의 바람") }) {
+                    if lifeNumber == 1, let context = state.news.first(where: { !$0.hasPrefix("이번 3년의 바람") }) {
                         Text(context)
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
@@ -607,14 +696,22 @@ private struct PrologueCard: View {
                     }
                     // 이번 회차의 바람 — 카르마(내 선택)와 달리 세계가 정한 조건이다.
                     // 판이 다르다는 걸 시작에서 모르면 회차 변주는 없는 것과 같다.
-                    let wind = CareerWind.wind(careerID: state.careerID)
-                    if wind.id != "calm" {
-                        Divider()
-                        Text("이번 회차의 바람").font(.caption.weight(.bold)).foregroundStyle(BaseballTheme.information)
+                    let wind = state.careerWind
+                    Divider()
+                    BaseballCard(title: "이번 3년의 바람 · \(wind.title)", tone: .raised) {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(wind.title).font(.subheadline.weight(.semibold))
                             Text(wind.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
+                            ForEach(wind.effectDescriptions, id: \.self) { effect in
+                                Text("· \(effect)")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.information)
+                            }
+                            if wind.effectDescriptions.isEmpty {
+                                Text("능력과 보상 보정 없이 실력만으로 승부합니다.")
+                                    .font(.caption)
+                                    .foregroundStyle(BaseballTheme.textTertiary)
+                            }
                         }
                     }
                     if !state.karmas.isEmpty {
@@ -649,6 +746,17 @@ private struct PrologueCard: View {
                     AbilityGaugeView(label: "체력", value: state.pitcher.stamina, talent: talent.stamina)
                 }
             }
+        }
+        .onAppear {
+            let wind = state.careerWind
+            GameAnalytics.logOnce(
+                .careerWindSeen,
+                scope: state.careerID,
+                properties: [
+                    "wind_id": wind.id,
+                    "rules_version": state.effectiveWorldRulesVersion.rawValue,
+                ]
+            )
         }
     }
 }
@@ -730,6 +838,7 @@ private struct TrainingCard: View {
     let state: HighSchoolCareerSnapshot
     let armHealth: ArmHealthState
     let onCommit: (TrainingFocus, TrainingIntensity) -> Void
+    let onCommitBlock: (TrainingFocus, TrainingIntensity) -> Void
 
     // 직전 선택에서 시작한다. 국면이 오갈 때마다 기본값으로 리셋되면
     // 같은 훈련을 이어가려는 사람이 회차당 16번 재선택을 강요당한다.
@@ -737,10 +846,12 @@ private struct TrainingCard: View {
     @State private var intensity: TrainingIntensity
 
     init(state: HighSchoolCareerSnapshot, armHealth: ArmHealthState,
-         onCommit: @escaping (TrainingFocus, TrainingIntensity) -> Void) {
+         onCommit: @escaping (TrainingFocus, TrainingIntensity) -> Void,
+         onCommitBlock: @escaping (TrainingFocus, TrainingIntensity) -> Void) {
         self.state = state
         self.armHealth = armHealth
         self.onCommit = onCommit
+        self.onCommitBlock = onCommitBlock
         _focus = State(initialValue: state.lastTraining?.focus ?? .command)
         _intensity = State(initialValue: state.lastTraining?.intensity ?? .standard)
     }
@@ -773,6 +884,20 @@ private struct TrainingCard: View {
         case .none:
             return ("이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다.", BaseballTheme.warning)
         }
+    }
+
+    private func windEffect(for option: TrainingFocus) -> String? {
+        let wind = state.careerWind
+        var effects: [String] = []
+        let growth = wind.rules.trainingGrowthBonus(for: option)
+        if growth != 0 { effects.append("성장 \(growth > 0 ? "+" : "")\(growth)") }
+        if option == .recovery, wind.rules.recoveryBonus != 0 {
+            let bonus = wind.rules.recoveryBonus
+            effects.append("회복 \(bonus > 0 ? "+" : "")\(bonus)")
+        }
+        let fatigue = wind.rules.trainingFatigueModifier(for: option)
+        if fatigue != 0 { effects.append("피로 \(fatigue > 0 ? "+" : "")\(fatigue)") }
+        return effects.isEmpty ? nil : "\(wind.title): " + effects.joined(separator: " · ")
     }
 
     var body: some View {
@@ -826,6 +951,11 @@ private struct TrainingCard: View {
                             }
                             Text(HighSchoolPresentation.focusDetail(option))
                                 .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                            if let windEffect = windEffect(for: option) {
+                                Text(windEffect)
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.information)
+                            }
                         }
                         Spacer()
                         Image(systemName: focus == option ? "checkmark.circle.fill" : "circle")
@@ -884,6 +1014,21 @@ private struct TrainingCard: View {
             }
 
             PrimaryButton(title: "훈련하기", identifier: "hs.training.commit") { onCommit(focus, intensity) }
+            Button {
+                onCommitBlock(focus, intensity)
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("같은 훈련 최대 3회")
+                        .font(.subheadline.weight(.semibold))
+                    Text("대화·각성·공식 경기 또는 높은 피로 앞에서 자동으로 멈춥니다.")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.bordered)
+            .frame(minHeight: BaseballMetrics.minimumTapTarget)
+            .accessibilityIdentifier("hs.training.commitBlock")
         }
     }
 }
@@ -947,6 +1092,23 @@ private struct RelationshipCard: View {
         )
     }
 
+    private var windEffect: String? {
+        guard let category = state.currentRelationshipEvent?.category else { return nil }
+        // Keep this presentation source-of-truth aligned with simulation. Extended
+        // moments (growth/game/awakening/fan, for example) still settle against one
+        // of the three trust channels and therefore receive the same wind modifier.
+        let target = HighSchoolCareerEngine.relationshipTarget(forEventCategory: category)
+        let wind = state.careerWind
+        var effects: [String] = []
+        if target == wind.rules.favoredRelationship, wind.rules.favoredRelationshipBonus != 0 {
+            effects.append("믿음 변화 +\(wind.rules.favoredRelationshipBonus)")
+        }
+        if wind.rules.relationshipLossPenalty != 0 {
+            effects.append("실패하면 믿음 손실 \(wind.rules.relationshipLossPenalty) 추가")
+        }
+        return effects.isEmpty ? nil : "\(wind.title): " + effects.joined(separator: " · ")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             // 대화가 이 화면의 주인공이다. 예전에는 요약 한 줄이 작은 글씨로 붙고 선택지가
@@ -994,6 +1156,12 @@ private struct RelationshipCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, 4)
+            }
+            if let windEffect {
+                Label(windEffect, systemImage: "wind")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(BaseballTheme.information)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Text("어떻게 답할까요").font(.headline)
             ForEach(RelationshipResponse.allCases, id: \.self) { response in
@@ -1053,7 +1221,7 @@ private struct ImportantGameCard: View {
                     }
                     // 쌓인 역사. 전적이 있어야 이 타석이 서사가 된다.
                     if let rivalLine {
-                        Text("이번 회차 상대 전적 — \(rivalLine)")
+                        Text("고교 3년 상대 전적 — \(rivalLine)")
                             .font(.footnote.weight(.semibold).monospacedDigit())
                             .foregroundStyle(BaseballTheme.milestone)
                     }
@@ -1107,9 +1275,13 @@ private struct AwakeningCard: View {
             Text("고른 각성은 되돌릴 수 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
             ForEach(options, id: \.self) { option in
                 let copy = HighSchoolPresentation.awakening(option)
+                let family = RunPledge.awakeningFamily(for: option)
                 Button { pending = option } label: {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(copy.title).font(.subheadline.weight(.bold))
+                        Text("\(family.title) 계열")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.milestone)
                         Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -1122,6 +1294,7 @@ private struct AwakeningCard: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("\(family.title) 계열, \(copy.title), \(copy.detail)")
                 .accessibilityIdentifier("hs.awakening.\(option.rawValue)")
             }
         }
@@ -1144,7 +1317,7 @@ private struct AwakeningCard: View {
             // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣어 취소를 항상 보이게 한다.
             Button("다시 고른다") { pending = nil }
         } message: { option in
-            Text("\(HighSchoolPresentation.awakening(option).detail)\n\n한 번 고르면 고교 3년 동안 바꿀 수 없습니다.")
+            Text("\(RunPledge.awakeningFamily(for: option).title) 계열\n\(HighSchoolPresentation.awakening(option).detail)\n\n한 번 고르면 고교 3년 동안 바꿀 수 없습니다.")
         }
     }
 }
@@ -1159,10 +1332,10 @@ private struct ChapterReviewCard: View {
 
     private var verdict: String {
         let p = state.performance
-        if p.importantGamesCompleted == 0 { return "마운드 밖의 챕터였습니다. 다음 무대는 공으로 말할 차례입니다." }
-        if p.walks == 0 && p.strikeouts >= 2 { return "볼넷 없는 챕터 — 스카우트 수첩에 밑줄이 그어졌습니다." }
+        if p.importantGamesCompleted == 0 { return "마운드 밖에서 보낸 시기였습니다. 다음 무대는 공으로 말할 차례입니다." }
+        if p.walks == 0 && p.strikeouts >= 2 { return "볼넷 없이 지나온 시기 — 스카우트 수첩에 밑줄이 그어졌습니다." }
         if p.strikeouts > p.walks * 2 { return "삼진이 볼넷을 압도했습니다. 공이 소문을 내기 시작합니다." }
-        return "숫자보다 과정이 남은 챕터입니다. 폼은 거짓말하지 않습니다."
+        return "숫자보다 과정이 남은 시기입니다. 폼은 거짓말하지 않습니다."
     }
 
     var body: some View {
@@ -1173,16 +1346,16 @@ private struct ChapterReviewCard: View {
                         .font(.subheadline.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
                     Divider()
-                    Text("중요 경기 \(state.performance.importantGamesCompleted)회 · \(state.performance.strikeouts)탈삼진 · \(state.performance.walks)볼넷")
+                    Text("고교 공식 경기 \(state.performance.importantGamesCompleted)회 · \(state.performance.strikeouts)탈삼진 · \(state.performance.walks)볼넷")
                         .font(.footnote.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
             }
             // 성장 정산 — 훈련이 실제로 몸에 남긴 것. 없으면 없다고 적는다.
-            BaseballCard(title: "이번 챕터의 성장", tone: .raised) {
+            BaseballCard(title: "이번 이야기의 성장", tone: .raised) {
                 if gains.isEmpty {
                     Text(trainingCount == 0
-                         ? "훈련 없이 지나간 챕터입니다."
+                         ? "훈련 없이 지나간 시기입니다."
                          : "훈련 \(trainingCount)회 — 아직 숫자로 드러나지 않은 성장입니다.")
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
@@ -1212,11 +1385,11 @@ private struct ChapterReviewCard: View {
                 }
             }
             if !state.rival.name.isEmpty {
-                Text("다음 챕터 — 상대는 더 강해집니다. \(state.rival.name)도 이 챕터를 지켜봤습니다.")
+                Text("다음 이야기 — 상대는 더 강해집니다. \(state.rival.name)도 이 시기를 지켜봤습니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
             }
-            PrimaryButton(title: "다음 챕터로", identifier: "hs.chapter.continue", action: onContinue)
+            PrimaryButton(title: "다음 이야기로", identifier: "hs.chapter.continue", action: onContinue)
         }
     }
 }
@@ -1392,7 +1565,7 @@ private struct DraftCard: View {
             }
             BaseballCard(title: "3년의 기록") {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("중요 경기 \(state.performance.importantGamesCompleted)회")
+                    Text("고교 공식 경기 \(state.performance.importantGamesCompleted)회")
                     Text("\(state.performance.strikeouts)탈삼진 · \(state.performance.walks)볼넷 · \(state.performance.runsAllowed)실점")
                     Text("각성 \(state.selectedAwakenings.count)회 · 훈련 \(state.totalTrainingsCompleted)회")
                 }
@@ -1417,6 +1590,12 @@ private struct LegacyCard: View {
     let state: HighSchoolCareerSnapshot
 
     var body: some View {
+        let signatureCandidates = career.usesSignatureLegacyRules
+            ? career.signatureLegacyCandidates(for: state)
+            : []
+        let selectedSignatureLegacy = signatureCandidates.first {
+            $0.id == career.selectedSignatureLegacyID
+        }
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             // 아직 접지 않은 회차의 카드를 미리 만들어 보여 준다. 3년을 함께한
             // 선수의 얼굴·별명·기록이 한 장에 담긴 것을 보고 나서 작별하는 것과,
@@ -1424,9 +1603,11 @@ private struct LegacyCard: View {
             let provisional = HighSchoolCareerStore.lifeRecord(
                 from: state, memories: career.selectedMemories, previous: career.inheritance,
                 nicknames: career.nicknames, chronicle: career.chronicle,
-                personality: career.personality
+                personality: career.personality,
+                signatureLegacy: selectedSignatureLegacy,
+                signatureLegacyCandidates: signatureCandidates
             )
-            BaseballCard(title: "회차 카드", tone: .milestone) {
+            BaseballCard(title: "선수 기록 카드", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 10) {
                     LifeCardView(record: provisional)
                         .scaleEffect(0.72, anchor: .top)
@@ -1451,62 +1632,147 @@ private struct LegacyCard: View {
                     }
                 }
             }
-            BaseballCard(title: "다음 회차로 가져갈 기억 · \(career.selectedMemories.count)/\(state.memorySlots)", tone: .milestone) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("고른 기억은 다음 회차의 시작 능력에 더해집니다.")
-                        .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                    // 코어는 정확히 memorySlots장을 요구한다. 부족한 채로 확정하면 오류가 나므로
-                    // 화면에서 막고 남은 장수를 알려 준다.
-                    if career.selectedMemories.count < state.memorySlots {
-                        Text("\(state.memorySlots - career.selectedMemories.count)장 더 고르세요.")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.warning)
+            WindSettlementCard(wind: state.careerWind)
+            if career.usesSignatureLegacyRules {
+                BaseballCard(
+                    title: "이 선수가 남길 대표 유산 · \(selectedSignatureLegacy == nil ? "0" : "1")/1",
+                    tone: .milestone
+                ) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("직접 키운 능력과 실제 경기 기록으로 세 가지 유산이 만들어졌습니다.")
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                        Text("고른 하나는 새 선수에게 바로 이어지고, 나머지도 발견 목록에 남아 다음에 다시 고를 수 있습니다.")
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-            }
-            ForEach(state.legacyOptions, id: \.self) { option in
-                let copy = HighSchoolPresentation.memory(option)
-                let selected = career.selectedMemories.contains(option)
-                Button { career.toggleMemory(option) } label: {
-                    HStack(alignment: .center, spacing: 10) {
-                        Image(systemName: selected ? "checkmark.square.fill" : "square")
-                            .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.border)
-                        // 기억을 물건으로 보여 준다 — 회차를 넘어 가져가는 유일한 선택인데
-                        // 체크박스 목록이면 그 무게가 안 보인다.
-                        ArtThumb(assetName: "MemoryArt-\(option.rawValue)", size: 52)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(copy.title).font(.subheadline.weight(.bold))
-                            Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Spacer()
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        selected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
-                        in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                .onViewportExposure {
+                    guard career.prepareSignatureLegacyCandidates() else { return }
+                    GameAnalytics.logOnce(
+                        .signatureLegacyOptionsSeen,
+                        scope: "signature-options:\(state.careerID)",
+                        properties: [
+                            "life_number": state.lifeNumber,
+                            "drafted": state.draftResult?.outcome == .drafted,
+                            "includes_pro_career": signatureCandidates.contains {
+                                $0.evidence.proPerformance != nil
+                            },
+                            "option_ids": Array(Set(signatureCandidates.map { $0.id.rawValue }))
+                                .sorted().joined(separator: ","),
+                        ]
                     )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                            .stroke(selected ? BaseballTheme.selection : BaseballTheme.border, lineWidth: selected ? 2 : 1)
+                }
+                ForEach(signatureCandidates) { legacy in
+                    let selected = legacy.id == career.selectedSignatureLegacyID
+                    Button { career.selectSignatureLegacy(legacy.id) } label: {
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: selected ? "checkmark.seal.fill" : "seal")
+                                .foregroundStyle(selected ? BaseballTheme.milestone : BaseballTheme.border)
+                                .font(.title3)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(legacy.title)
+                                    .font(.subheadline.weight(.heavy))
+                                    .foregroundStyle(BaseballTheme.textPrimary)
+                                Text(legacy.detail)
+                                    .font(.footnote)
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(legacy.evidence.summary)
+                                    .font(.caption)
+                                    .foregroundStyle(BaseballTheme.information)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(HighSchoolSetupView.signatureLegacyEffectLine(legacy.effect))
+                                    .font(.caption2.weight(.bold).monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.milestone)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            selected ? BaseballTheme.milestone.opacity(0.12) : BaseballTheme.surface,
+                            in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                                .stroke(selected ? BaseballTheme.milestone : BaseballTheme.border,
+                                        lineWidth: selected ? 2 : 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hs.signatureLegacy.\(legacy.id.rawValue)")
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+            if !career.usesSignatureLegacyRules {
+                BaseballCard(title: "새 선수에게 남길 기억 · \(career.selectedMemories.count)/\(state.memorySlots)", tone: .milestone) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("기능 업데이트 전에 시작한 선수입니다. 당시 규칙대로 기억을 고릅니다.")
+                            .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                        // 구규칙은 정확히 memorySlots장을 요구한다. 부족한 채로 확정하면
+                        // 오류가 나므로 화면에서 막고 남은 장수를 알려 준다.
+                        if career.selectedMemories.count < state.memorySlots {
+                            Text("\(state.memorySlots - career.selectedMemories.count)장 더 고르세요.")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(BaseballTheme.warning)
+                        }
                     }
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("hs.memory.\(option.rawValue)")
-                .accessibilityAddTraits(selected ? .isSelected : [])
+                ForEach(state.legacyOptions, id: \.self) { option in
+                    let copy = HighSchoolPresentation.memory(option)
+                    let selected = career.selectedMemories.contains(option)
+                    Button { career.toggleMemory(option) } label: {
+                        HStack(alignment: .center, spacing: 10) {
+                            Image(systemName: selected ? "checkmark.square.fill" : "square")
+                                .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.border)
+                            ArtThumb(assetName: "MemoryArt-\(option.rawValue)", size: 52)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(copy.title).font(.subheadline.weight(.bold))
+                                Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            selected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
+                            in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                                .stroke(selected ? BaseballTheme.selection : BaseballTheme.border, lineWidth: selected ? 2 : 1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("hs.memory.\(option.rawValue)")
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
             }
-            PrimaryButton(title: "기억을 확정한다", identifier: "hs.legacy.confirm") { confirmingLegacy = true }
-                .disabled(career.selectedMemories.count != state.memorySlots)
+            PrimaryButton(
+                title: career.usesSignatureLegacyRules ? "대표 유산을 확정한다" : "기억을 확정한다",
+                identifier: "hs.legacy.confirm"
+            ) { confirmingLegacy = true }
+                .disabled(
+                    career.usesSignatureLegacyRules
+                        ? selectedSignatureLegacy == nil
+                        : career.selectedMemories.count != state.memorySlots
+                )
                 .confirmationDialog(
-                    "기억 \(career.selectedMemories.count)장을 확정할까요?",
+                    career.usesSignatureLegacyRules
+                        ? "\(selectedSignatureLegacy?.title ?? "대표 유산")\(KoreanCopy.particle(selectedSignatureLegacy?.title ?? "대표 유산", final: "을", open: "를")) 새 선수에게 남길까요?"
+                        : "기억 \(career.selectedMemories.count)장을 확정할까요?",
                     isPresented: $confirmingLegacy,
                     titleVisibility: .visible
                 ) {
-                    Button("확정하고 이 회차를 닫는다") { career.confirmLegacy() }
+                    Button("확정하고 이 선수의 이야기를 닫는다") { career.confirmLegacy() }
                     Button("다시 고른다") { confirmingLegacy = false }
                 } message: {
-                    Text("이 회차가 닫히고 되돌릴 수 없습니다. 고른 기억만 다음 회차로 갑니다.")
+                    Text(career.usesSignatureLegacyRules
+                         ? "이 선수의 고교 3년이 닫히고 되돌릴 수 없습니다. 고른 대표 유산 하나만 새 선수에게 직접 이어집니다."
+                         : "기능 업데이트 전에 시작한 선수입니다. 당시 규칙대로 고른 기억만 새 선수에게 이어집니다.")
                 }
         }
     }
@@ -1539,6 +1805,7 @@ private struct CompletionCard: View {
                     }
                 }
             }
+            WindSettlementCard(wind: state.careerWind)
 
             // 지명된 구단에서 누가 기다리는지. 이름만 있으면 "어느 팀"이 문자열 하나이고,
             // 프로 첫 시즌의 경쟁 구도가 시작 전에 서지 않는다.
@@ -1559,6 +1826,7 @@ private struct CompletionCard: View {
             // 접기로 하고 기억까지 고른 사용자가 "이 회차를 접고 다시 시작"을 누를 때마다
             // 다시 기억 선택으로 끌려갔다 — 환생에 영영 닿지 못하는 무한 순환이었다.
             let legacyConfirmed = !state.selectedMemories.isEmpty
+                || career.inheritance.lifeNumber > state.lifeNumber
 
             // 프로에 이미 다녀왔으면 다시 들어가지 않는다.
             //
@@ -1573,8 +1841,12 @@ private struct CompletionCard: View {
                     .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
             }
 
-            // 지명된 회차는 아직 끝나지 않았다. 접겠다고 결정할 때 비로소 기억을 고른다.
-            let opensLegacy = state.draftResult?.outcome == .drafted && !legacyConfirmed
+            // 지명된 회차는 아직 끝나지 않았다. 프로에 들어가지 않았다면 포기 확인 뒤
+            // 유산을 고르고, 이미 프로에 들어갔다면 은퇴 기록이 돌아올 때까지 기다린다.
+            let awaitsProRetirement = state.draftResult?.outcome == .drafted
+                && !legacyConfirmed && hasEnteredPro
+            let opensLegacy = state.draftResult?.outcome == .drafted
+                && !legacyConfirmed && !hasEnteredPro
 
             // 이 회차의 카드를 여기서 나눈다.
             //
@@ -1592,8 +1864,14 @@ private struct CompletionCard: View {
             // 남은 행동이 하나뿐인 화면에서 그 버튼이 회색 테두리면, 화면은 "끝났다"로
             // 읽힌다. 기억까지 확정한 회차의 다음 행동은 환생 하나뿐이므로 주 버튼으로
             // 세운다 — 드래프트를 본 42명 중 27명만 다음 회차를 시작했다(2026-08).
-            if !opensLegacy {
-                PrimaryButton(title: "\(career.inheritance.lifeNumber)회차로 다시 태어나기",
+            if awaitsProRetirement {
+                BaseballCard(title: "프로에서 이어지는 이야기", tone: .milestone) {
+                    Text("이 선수의 프로 커리어를 마치면 고교 시절과 통산 기록을 함께 돌아보고, 다음 선수에게 남길 대표 유산을 고릅니다.")
+                        .font(.subheadline)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else if !opensLegacy {
+                PrimaryButton(title: "\(career.inheritance.lifeNumber)번째 선수로 다시 시작",
                               identifier: "hs.rebirth", action: onRebirth)
                 Text("기억 \(career.inheritance.memories.count)장 · 야구혼 \(career.inheritance.soulPoints)"
                      + "\(KoreanCopy.objectParticle(number: career.inheritance.soulPoints)) 안고 시작합니다.")
@@ -1606,7 +1884,7 @@ private struct CompletionCard: View {
                     confirmingFold = true
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("이 회차를 접고 다시 시작")
+                        Text("이 선수의 이야기를 접고 다시 시작")
                             .font(.subheadline.weight(.semibold))
                         Text("프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르게 됩니다.")
                             .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
@@ -1617,7 +1895,7 @@ private struct CompletionCard: View {
                 .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 .accessibilityIdentifier("hs.rebirth")
                 .confirmationDialog(
-                    "프로를 포기하고 이 회차를 접을까요?",
+                    "프로 진출을 포기하고 이 선수의 이야기를 마칠까요?",
                     isPresented: $confirmingFold,
                     titleVisibility: .visible
                 ) {
@@ -1778,29 +2056,79 @@ private struct FlowRow: View {
     }
 }
 
-/// 회차 약속 — 시작에서 하나를 건다.
+/// 드래프트 점수와 야구혼은 서로 다른 회계다. 회차 바람이 둘 중 어디에 손댔는지
+/// 정산에서 따로 보여 줘야 최종 점수와 다음 회차 보상을 역산할 수 있다.
+private struct WindSettlementCard: View {
+    let wind: CareerWind
+
+    @ViewBuilder var body: some View {
+        if wind.rules.draftEvaluationDelta != 0 || wind.rewardBonusPermille != 0 {
+            BaseballCard(title: "3년의 바람 돌아보기 · \(wind.title)", tone: .raised) {
+                VStack(alignment: .leading, spacing: 5) {
+                    if wind.rules.draftEvaluationDelta != 0 {
+                        let delta = wind.rules.draftEvaluationDelta
+                        Text("드래프트 평가 보정 \(delta > 0 ? "+" : "")\(delta)점")
+                    }
+                    if wind.rewardBonusPermille != 0 {
+                        let percent = wind.rewardBonusPermille / 10
+                        Text("야구혼 보정 \(percent > 0 ? "+" : "")\(percent)%")
+                    }
+                    Text(wind.detail)
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
+                .font(.footnote.monospacedDigit().weight(.semibold))
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+}
+
+/// 고교 3년 목표 — 시작에서 하나를 고른다.
 ///
 /// 학교를 고르는 자리(선택의 국면)에 함께 둔다. 강요하지 않는다 — "약속 없이 간다"도
-/// 당당한 선택지다. 건 약속은 대시보드에 상시 노출되고, 이행하면 야구혼 +15%.
+/// 당당한 선택지다. 건 약속은 대시보드에 상시 노출되고, 등급에 따라 야구혼 +10~35%.
 private struct PledgeCard: View {
-    let careerID: String
+    let state: HighSchoolCareerSnapshot
+    let intent: NextRunIntent?
+    let rivalLedger: HighSchoolCareerStore.RivalLedger
     /// 1회차에는 '야구혼'이라는 아직 등장 전인 화폐 대신 결과 언어로 말한다.
     var isFirstLife: Bool = false
     let onChoose: (String?) -> Void
 
     var body: some View {
-        BaseballCard(title: isFirstLife ? "3년의 약속" : "이번 회차의 약속", tone: .milestone) {
+        BaseballCard(title: "고교 3년 목표", tone: .milestone) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(isFirstLife
-                     ? "하나를 걸면 3년의 끝에서 정산합니다. 이행하면 다음 삶이 더 강하게 시작됩니다."
-                     : "하나를 걸면 회차의 끝에서 정산합니다. 이행하면 야구혼 +15%.")
+                     ? "하나를 고르면 3년을 마칠 때 돌아봅니다. 이루면 새 선수가 더 강하게 시작됩니다."
+                     : "하나를 고르면 고교 3년을 마칠 때 돌아봅니다. 등급에 따라 야구혼을 더 얻습니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
-                ForEach(RunPledge.options(careerID: careerID)) { pledge in
+                ForEach(RunPledge.options(careerID: state.careerID, state: state, intent: intent)) { pledge in
+                    let progress = pledge.progress(in: .init(state: state, rivalLedger: rivalLedger))
+                    let carried = intent?.pledgeID == pledge.id
                     Button { onChoose(pledge.id) } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                if carried {
+                                    Text("지난 고교 3년에서 이어짐")
+                                        .font(.caption2.weight(.heavy))
+                                        .foregroundStyle(BaseballTheme.milestone)
+                                }
+                                Text(pledge.tier.title)
+                                    .font(.caption2.weight(.heavy))
+                                    .foregroundStyle(pledge.tier == .legendary
+                                                     ? BaseballTheme.warning : BaseballTheme.textSecondary)
+                                Spacer(minLength: 0)
+                                Text("야구혼 +\(pledge.rewardPermille / 10)%")
+                                    .font(.caption.monospacedDigit().weight(.bold))
+                                    .foregroundStyle(BaseballTheme.milestone)
+                            }
                             Text(pledge.title).font(.subheadline.weight(.bold))
                             Text(pledge.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                            Text(pledge.alignmentReason(state: state))
+                                .font(.caption2)
+                                .foregroundStyle(BaseballTheme.textTertiary)
                         }
                         .padding(10)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1812,13 +2140,46 @@ private struct PledgeCard: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("hs.pledge.\(pledge.id)")
+                    .accessibilityLabel(pledge.accessibilityLabel(progress: progress, carried: carried))
                 }
-                Button("약속 없이 간다") { onChoose(nil) }
+                Button("목표 없이 시작") { onChoose(nil) }
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
                     .accessibilityIdentifier("hs.pledge.skip")
             }
         }
+    }
+}
+
+/// `onAppear`는 긴 `ScrollView`의 아직 보이지 않는 자식에도 호출될 수 있다. 분석 퍼널의
+/// 노출은 카드가 실제 화면에 들어온 순간 한 번만 기록한다.
+private struct ViewportExposureModifier: ViewModifier {
+    @State private var hasReported = false
+    let action: () -> Void
+
+    func body(content: Content) -> some View {
+        content.background {
+            GeometryReader { proxy in
+                let frame = proxy.frame(in: .global)
+                Color.clear
+                    .onAppear { reportIfVisible(frame) }
+                    .onChange(of: frame) { _, newFrame in reportIfVisible(newFrame) }
+            }
+        }
+    }
+
+    private func reportIfVisible(_ frame: CGRect) {
+        guard !hasReported, frame.width > 0, frame.height > 0 else { return }
+        let visible = frame.intersection(UIScreen.main.bounds)
+        guard !visible.isNull, visible.height >= min(44, frame.height * 0.25) else { return }
+        hasReported = true
+        action()
+    }
+}
+
+private extension View {
+    func onViewportExposure(perform action: @escaping () -> Void) -> some View {
+        modifier(ViewportExposureModifier(action: action))
     }
 }

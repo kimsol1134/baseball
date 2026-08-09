@@ -1,0 +1,451 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Pretendard";
+      src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+    }
+
+    @font-face {
+      font-family: "Pretendard";
+      src: url("assets/fonts/Pretendard-Black.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 900;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      isolation: isolate;
+      color: #e7e7e5;
+      font-family: "Pretendard";
+    }
+
+    #root,
+    #root * {
+      box-sizing: border-box;
+    }
+
+    #root [id="04-failure-ground"] {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background: #070a09;
+    }
+
+    #root [id="04-failure-result-scene"],
+    #root [id="04-failure-gameover-scene"] {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    #root [id="04-failure-result-scene"] {
+      z-index: 1;
+    }
+
+    #root [id="04-failure-result-image"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 896px;
+      object-fit: cover;
+      object-position: center center;
+      opacity: 0.75;
+      user-select: none;
+    }
+
+    #root [id="04-failure-result-hairline"] {
+      position: absolute;
+      top: 338px;
+      left: 680px;
+      width: 560px;
+      height: 1px;
+      background: #ff685c;
+      transform-origin: left center;
+    }
+
+    #root [id="04-failure-result-phrase"] {
+      position: absolute;
+      top: 94px;
+      left: 106px;
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      max-width: 1500px;
+      color: #e7e7e5;
+      font-size: 76px;
+      font-weight: 900;
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+    }
+
+    #root [data-04-failure-chunk-mask] {
+      display: inline-block;
+      overflow: hidden;
+      padding: 0 0 8px;
+    }
+
+    #root [data-04-failure-chunk] {
+      display: inline-block;
+      will-change: transform, opacity;
+    }
+
+    #root [id="04-failure-beat-stage"] {
+      position: absolute;
+      top: 220px;
+      left: 106px;
+      width: 1708px;
+      height: 470px;
+      overflow: hidden;
+    }
+
+    #root [data-04-failure-beat-word] {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 270px;
+      font-weight: 900;
+      line-height: 0.86;
+      letter-spacing: -0.05em;
+      white-space: nowrap;
+      will-change: transform, opacity, filter;
+    }
+
+    #root [id="04-failure-beat-ending"] {
+      color: #e7e7e5;
+    }
+
+    #root [id="04-failure-beat-hit"] {
+      color: #ff685c;
+    }
+
+    #root [id="04-failure-gameover-scene"] {
+      z-index: 2;
+    }
+
+    #root [id="04-failure-legacy-image"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 896px;
+      object-fit: cover;
+      object-position: center 44%;
+      opacity: 0.5;
+      user-select: none;
+    }
+
+    #root [id="04-failure-game-surface"] {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 55%;
+      height: 896px;
+      overflow: hidden;
+      border-left: 1px solid rgba(217, 217, 215, 0.26);
+      background: #070a09;
+    }
+
+    #root [id="04-failure-memory-image"] {
+      position: absolute;
+      top: -92px;
+      left: -864px;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0.88;
+      user-select: none;
+    }
+
+    #root [id="04-failure-surface-darkener"] {
+      position: absolute;
+      inset: 0;
+      background: rgba(7, 10, 9, 0.28);
+      opacity: 0.12;
+    }
+
+    #root [id="04-failure-left-copy"] {
+      position: absolute;
+      top: 238px;
+      left: 106px;
+      width: 690px;
+    }
+
+    #root [id="04-failure-life-mask"],
+    #root [id="04-failure-final-mask"] {
+      width: 100%;
+      overflow: hidden;
+      padding: 0 0 14px;
+    }
+
+    #root [id="04-failure-life-line"] {
+      display: block;
+      color: #e7e7e5;
+      font-size: 112px;
+      font-weight: 900;
+      line-height: 0.9;
+      letter-spacing: -0.045em;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+
+    #root [id="04-failure-final-mask"] {
+      margin-top: 28px;
+      overflow: visible;
+    }
+
+    #root [id="04-failure-final-line"] {
+      display: block;
+      width: max-content;
+      color: #ff685c;
+      font-size: 132px;
+      font-weight: 900;
+      line-height: 0.86;
+      letter-spacing: -0.05em;
+      white-space: nowrap;
+      filter: url("#04-failure-streak-filter");
+      will-change: transform, opacity, filter;
+    }
+  </style>
+
+  <div id="root" data-composition-id="04-failure" data-width="1920" data-height="1080" data-duration="9.5">
+    <div
+      id="04-failure-ground"
+      class="clip"
+      data-start="0"
+      data-duration="9.5"
+      data-track-index="0"
+      aria-hidden="true"
+    ></div>
+
+    <section
+      id="04-failure-result-scene"
+      class="clip"
+      data-start="0"
+      data-duration="4.7"
+      data-track-index="1"
+      aria-label="실제 끝내기 안타 결과"
+    >
+      <img
+        id="04-failure-result-image"
+        src="assets/game-04-first-life-hit.png"
+        alt="가운데 포심이 끝내기 안타로 이어진 실제 게임 결과 화면"
+      />
+
+      <div id="04-failure-result-hairline" aria-hidden="true"></div>
+
+      <div id="04-failure-result-phrase">
+        <span data-04-failure-chunk-mask><span data-04-failure-chunk>기다리던</span></span>
+        <span data-04-failure-chunk-mask><span data-04-failure-chunk>공</span></span>
+        <span data-04-failure-chunk-mask><span data-04-failure-chunk>이었다.</span></span>
+      </div>
+
+      <div id="04-failure-beat-stage" aria-hidden="true">
+        <div id="04-failure-beat-ending" data-04-failure-beat-word>끝내기</div>
+        <div id="04-failure-beat-hit" data-04-failure-beat-word>안타</div>
+      </div>
+    </section>
+
+    <section
+      id="04-failure-gameover-scene"
+      class="clip"
+      data-start="4.7"
+      data-duration="4.8"
+      data-track-index="2"
+      aria-label="이번 생 종료와 기억 선택"
+    >
+      <img
+        id="04-failure-legacy-image"
+        src="assets/scene-legacy.webp"
+        alt="오래된 야구공과 기억을 돌아보는 선수"
+      />
+
+      <div id="04-failure-game-surface">
+        <img
+          id="04-failure-memory-image"
+          src="assets/game-05-memory-choice.png"
+          alt="이번 생 종료 후 하나의 기억을 고르는 실제 게임 화면"
+        />
+        <div id="04-failure-surface-darkener" aria-hidden="true"></div>
+      </div>
+
+      <div id="04-failure-left-copy">
+        <div id="04-failure-life-mask">
+          <span id="04-failure-life-line">이번 생은</span>
+        </div>
+        <div id="04-failure-final-mask">
+          <span id="04-failure-final-line">여기까지.</span>
+        </div>
+      </div>
+
+      <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+        <filter id="04-failure-streak-filter" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur
+            id="04-failure-streak-blur"
+            in="SourceGraphic"
+            stdDeviation="24 0"
+          ></feGaussianBlur>
+        </filter>
+      </svg>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (() => {
+      const root = document.querySelector('[data-composition-id="04-failure"]');
+      const byId = (id) => document.getElementById(id);
+
+      const resultScene = byId("04-failure-result-scene");
+      const resultImage = byId("04-failure-result-image");
+      const resultPhrase = byId("04-failure-result-phrase");
+      const resultHairline = byId("04-failure-result-hairline");
+      const beatEnding = byId("04-failure-beat-ending");
+      const beatHit = byId("04-failure-beat-hit");
+      const gameoverScene = byId("04-failure-gameover-scene");
+      const lifeLine = byId("04-failure-life-line");
+      const finalLine = byId("04-failure-final-line");
+      const surfaceDarkener = byId("04-failure-surface-darkener");
+      const blurNode = byId("04-failure-streak-blur");
+      const chunks = Array.from(root.querySelectorAll("[data-04-failure-chunk]"));
+
+      const tl = gsap.timeline({ paused: true });
+
+      tl.set(chunks, { opacity: 0 }, 0);
+      tl.set(resultHairline, { opacity: 0, scaleX: 0 }, 0);
+      tl.set([beatEnding, beatHit, lifeLine, finalLine], { opacity: 0 }, 0);
+
+      const CONTENT = chunks.map((element) => ({
+        element,
+        body: element.textContent.trim(),
+      }));
+      const BASE_DURATION = 0.12;
+      const SEC_PER_CHAR = 0.045;
+      let cumulative = 0;
+      const CHUNK_TIMELINE = CONTENT.map((entry) => {
+        const duration = BASE_DURATION + entry.body.length * SEC_PER_CHAR;
+        const start = 1 + cumulative;
+        cumulative += duration;
+        return { ...entry, start, end: 1 + cumulative };
+      });
+
+      tl.fromTo(
+        resultHairline,
+        { scaleX: 0, opacity: 1 },
+        { scaleX: 1, opacity: 1, duration: 0.64, ease: "power4.out" },
+        1,
+      );
+
+      CHUNK_TIMELINE.forEach((entry) => {
+        tl.fromTo(
+          entry.element,
+          { yPercent: 118, opacity: 0 },
+          {
+            yPercent: 0,
+            opacity: 1,
+            duration: 0.34,
+            ease: "power4.out",
+            immediateRender: false,
+          },
+          entry.start,
+        );
+      });
+
+      tl.set([resultPhrase, resultHairline], { opacity: 0 }, 2.4);
+      tl.to(resultImage, { opacity: 0.5, duration: 0.25, ease: "power2.out" }, 2.4);
+
+      const PULSE = 0.3;
+      const BEAT_ORIGIN = 2.5;
+      const BEATS = [BEAT_ORIGIN, BEAT_ORIGIN + PULSE * 4];
+
+      tl.fromTo(
+        beatEnding,
+        { x: -140, scale: 1.5, filter: "blur(16px)", opacity: 0 },
+        {
+          x: 0,
+          scale: 1,
+          filter: "blur(0px)",
+          opacity: 1,
+          duration: 0.5,
+          ease: "power4.out",
+          immediateRender: false,
+        },
+        BEATS[0],
+      );
+
+      tl.set(beatEnding, { opacity: 0 }, BEATS[1]);
+      tl.set(beatHit, { opacity: 1 }, BEATS[1]);
+      tl.fromTo(
+        beatHit,
+        { x: 420 },
+        { x: 0, duration: 0.45, ease: "expo.out", immediateRender: false },
+        BEATS[1],
+      );
+
+      tl.to(resultScene, { y: 230, duration: 0.3, ease: "power4.in" }, 4.4);
+      tl.to(resultScene, { opacity: 0, duration: 0.18, ease: "power1.in" }, 4.52);
+      tl.fromTo(
+        gameoverScene,
+        { y: -230, opacity: 0.35 },
+        { y: 0, opacity: 1, duration: 0.3, ease: "power4.out" },
+        4.7,
+      );
+
+      tl.fromTo(
+        lifeLine,
+        { yPercent: 118, opacity: 0 },
+        {
+          yPercent: 0,
+          opacity: 1,
+          duration: 0.52,
+          ease: "power4.out",
+          immediateRender: false,
+        },
+        5.05,
+      );
+
+      tl.to(surfaceDarkener, { opacity: 0.28, duration: 0.38, ease: "power2.out" }, 6.8);
+
+      const blurProxy = { value: 24 };
+      const writeBlur = () => {
+        blurNode.setAttribute("stdDeviation", `${blurProxy.value} 0`);
+      };
+      writeBlur();
+
+      tl.fromTo(
+        finalLine,
+        { x: -650, opacity: 0 },
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.52,
+          ease: "power4.out",
+          immediateRender: false,
+        },
+        7.2,
+      );
+      tl.to(
+        blurProxy,
+        {
+          value: 0,
+          duration: 0.52,
+          ease: "power4.out",
+          onUpdate: writeBlur,
+        },
+        7.2,
+      );
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["04-failure"] = tl;
+    })();
+  </script>
+</template>

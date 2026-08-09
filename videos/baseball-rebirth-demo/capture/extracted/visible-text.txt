@@ -1,0 +1,34 @@
+[a] 게임으로 바로가기
+[small] 야구 못하면
+[strong] 또 환생함
+[span] WEB EDITION
+[span] 약 3분
+[button] 소리 끔
+[button] 조작 안내
+[span] CURRENT LIFE
+[p] 한 구가 인생을 바꾸는 투수 로그라이트
+[span] 야구 못하면
+[strong] 또 환생함
+[p] 드래프트까지 아웃 하나.
+[p] 읽고, 고르고, 초록 구간에서 놓으세요.
+[span] 마지막 타자 상대하기
+[button] 60초 조작법 보기
+[li] 설치 없음
+[li] 로그인 없음
+[li] 키보드·터치 지원
+[li] 진행 자동 저장
+[span] PLAYER DOSSIER
+[strong] LIVE
+[small] 서울 · 우투 · 18세
+[h2] 민서준
+[p] 지명까지 남은 아웃
+[span] 전생에서 가져온 기억
+[b] / 6
+[span] 손끝의 기억
+[span] 현재 예상 지명
+[strong] 지명 경계
+[span] 01 읽기
+[span] 02 선택
+[span] 03 릴리스
+[strong] 실패하면 기억을 남긴다
+[p] 실존 구단·선수·대회를 사용하지 않은 독자적인 가상 야구 세계관입니다.

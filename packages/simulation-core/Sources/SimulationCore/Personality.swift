@@ -49,7 +49,7 @@ public enum PersonalityRules {
         }
         return Personality(
             title: "차가운 분석가",
-            scoutLine: "감정을 빼고 근거로 답합니다. 볼 배합을 스스로 설계할 줄 아는 머리.",
+            scoutLine: "감정을 빼고 근거로 답합니다. 타자와의 수싸움을 스스로 설계할 줄 아는 머리.",
             trait: .tactician
         )
     }

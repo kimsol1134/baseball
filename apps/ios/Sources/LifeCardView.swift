@@ -16,7 +16,7 @@ struct LifeCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("\(record.lifeNumber)회차의 기록")
+                Text("\(record.lifeNumber)번째 선수의 기록")
                     .eyebrowStyle(BaseballTheme.milestone)
                 Spacer()
                 Text(record.drafted ? "지명" : "미지명")
@@ -39,7 +39,8 @@ struct LifeCardView: View {
                     Text(record.playerName)
                         .font(BaseballType.display)
                         .foregroundStyle(BaseballTheme.textPrimary)
-                    Text([record.schoolName ?? "학교 미정", record.personality.map { "'\($0)'" }]
+                    Text([record.schoolName ?? "학교 미정", record.personality.map { "'\($0)'" },
+                          record.windTitle.map { "바람 · \($0)" }]
                         .compactMap { $0 }.joined(separator: " · "))
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
@@ -87,6 +88,14 @@ struct LifeCardView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            if let signature = record.signatureLegacy {
+                Label("대표 유산 · \(signature.title)", systemImage: "seal.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityLabel("대표 유산 \(signature.title)")
+            }
+
             // 함께한 사람들 — 이 회차를 사람 이름으로 기억하게 한다.
             if record.coachName != nil || record.rivalName != nil {
                 Text([record.coachName.map { "\($0) 감독" },
@@ -117,7 +126,7 @@ struct LifeCardView: View {
                     .foregroundStyle(BaseballTheme.textTertiary)
                 Spacer()
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text("\(record.lifeNumber)회차 완주")
+                    Text("\(record.lifeNumber)번째 선수 완주")
                         .font(.caption2)
                         .foregroundStyle(BaseballTheme.textTertiary)
                     // 시드 각인 — 카드를 본 사람이 같은 판에 도전할 수 있는 입구.
@@ -198,7 +207,7 @@ struct LifeCardShareButton: View {
         if let image = LifeCardRenderer.image(for: record) {
             ActivityShareButton(
                 items: [image],
-                subject: "\(record.playerName)의 \(record.lifeNumber)회차",
+                subject: "\(record.playerName) · \(record.lifeNumber)번째 선수",
                 onTapped: {
                     let properties: [String: Any] = ["life_number": record.lifeNumber]
                     GameAnalytics.log(.lifeCardShareTapped, properties)
@@ -209,7 +218,7 @@ struct LifeCardShareButton: View {
                     GameAnalytics.log(.lifeCardShareCompleted, ["life_number": record.lifeNumber])
                 }
             ) {
-                Label("회차 카드 공유", systemImage: "square.and.arrow.up")
+                Label("선수 카드 공유", systemImage: "square.and.arrow.up")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(BaseballTheme.action)
             }

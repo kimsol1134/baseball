@@ -1,0 +1,602 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Pretendard";
+      src: url("assets/fonts/Pretendard-Regular.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 400;
+      font-display: block;
+    }
+
+    @font-face {
+      font-family: "Pretendard";
+      src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 700;
+      font-display: block;
+    }
+
+    @font-face {
+      font-family: "Pretendard";
+      src: url("assets/fonts/Pretendard-Black.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 900;
+      font-display: block;
+    }
+
+    @font-face {
+      font-family: "IBM Plex Mono";
+      src: url("assets/fonts/IBMPlexMono-SemiBold.woff2") format("woff2");
+      font-style: normal;
+      font-weight: 600;
+      font-display: block;
+    }
+
+    #root[data-composition-id="05-inherit-memory"] {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      color: #070a09;
+      font-family: "Pretendard", sans-serif;
+      isolation: isolate;
+    }
+
+    #root[data-composition-id="05-inherit-memory"] *,
+    #root[data-composition-id="05-inherit-memory"] *::before,
+    #root[data-composition-id="05-inherit-memory"] *::after {
+      box-sizing: border-box;
+    }
+
+    .f05-inherit-memory-ground,
+    .f05-inherit-memory-choice-stage,
+    .f05-inherit-memory-selected-stage,
+    .f05-inherit-memory-closing {
+      position: absolute;
+      inset: 0;
+    }
+
+    .f05-inherit-memory-ground {
+      overflow: hidden;
+      background: #a5ac9d;
+    }
+
+    .f05-inherit-memory-ground-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.56;
+      will-change: transform;
+    }
+
+    .f05-inherit-memory-ground-veil {
+      position: absolute;
+      inset: 0;
+      background: rgba(7, 10, 9, 0.42);
+    }
+
+    .f05-inherit-memory-choice-stage {
+      height: 896px;
+      overflow: hidden;
+    }
+
+    .f05-inherit-memory-kicker {
+      position: absolute;
+      top: 82px;
+      left: 106px;
+      color: #c8f24a;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .f05-inherit-memory-kicker::before {
+      content: "";
+      display: inline-block;
+      width: 36px;
+      height: 2px;
+      margin-right: 18px;
+      vertical-align: 5px;
+      background: #c8f24a;
+    }
+
+    .f05-inherit-memory-header-rule {
+      position: absolute;
+      top: 132px;
+      left: 106px;
+      width: 1708px;
+      height: 1px;
+      background: rgba(217, 217, 215, 0.4);
+      transform-origin: 0 50%;
+      will-change: transform;
+    }
+
+    .f05-inherit-memory-slot {
+      position: absolute;
+      top: 242px;
+      width: 420px;
+      height: 390px;
+      border: 1px solid rgba(217, 217, 215, 0.22);
+      background: rgba(7, 10, 9, 0.18);
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    .f05-inherit-memory-slot-a {
+      left: 210px;
+    }
+
+    .f05-inherit-memory-slot-b {
+      left: 750px;
+    }
+
+    .f05-inherit-memory-slot-c {
+      left: 1290px;
+    }
+
+    .f05-inherit-memory-card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 420px;
+      height: 390px;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    .f05-inherit-memory-card-media {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border: 1px solid rgba(217, 217, 215, 0.48);
+      background: #070a09;
+    }
+
+    .f05-inherit-memory-card-media svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      filter: brightness(2.08) contrast(1.08);
+      will-change: filter;
+    }
+
+    .f05-inherit-memory-effect-mask {
+      position: absolute;
+      top: 56%;
+      left: 5%;
+      width: 90%;
+      height: 15%;
+      background: rgba(7, 10, 9, 0.96);
+      transform-origin: 100% 50%;
+      will-change: transform;
+    }
+
+    .f05-inherit-memory-marker {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      width: 20px;
+      height: 20px;
+      background: #c8f24a;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    .f05-inherit-memory-focus-line {
+      position: absolute;
+      inset: -2px;
+      border: 2px solid #c8f24a;
+      opacity: 0;
+      pointer-events: none;
+      will-change: opacity;
+    }
+
+    .f05-inherit-memory-selected-stage {
+      height: 896px;
+      overflow: hidden;
+    }
+
+    .f05-inherit-memory-selected-label {
+      position: absolute;
+      top: 104px;
+      left: 786px;
+      color: #c8f24a;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .f05-inherit-memory-selected-panel {
+      position: absolute;
+      top: 154px;
+      left: 786px;
+      width: 1028px;
+      height: 534px;
+      overflow: hidden;
+      border: 1px solid rgba(217, 217, 215, 0.52);
+      background: #070a09;
+    }
+
+    .f05-inherit-memory-selected-panel svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .f05-inherit-memory-selected-accent {
+      position: absolute;
+      top: 153px;
+      left: 786px;
+      width: 148px;
+      height: 3px;
+      background: #c8f24a;
+    }
+
+    .f05-inherit-memory-closing {
+      height: 896px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .f05-inherit-memory-closing-copy {
+      position: absolute;
+      top: 246px;
+      left: 106px;
+      width: 620px;
+    }
+
+    .f05-inherit-memory-closing-lead {
+      margin: 0 0 28px;
+      color: #e7e7e5;
+      font-size: 54px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      will-change: transform, opacity;
+    }
+
+    .f05-inherit-memory-closing-display {
+      display: flex;
+      align-items: baseline;
+      gap: 22px;
+      min-height: 112px;
+      color: #c8f24a;
+      font-size: 84px;
+      font-weight: 900;
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+    }
+
+    .f05-inherit-memory-closing-word {
+      display: inline-block;
+      will-change: transform, opacity;
+    }
+
+    .f05-inherit-memory-closing-rule {
+      width: 500px;
+      height: 1px;
+      margin-top: 38px;
+      background: rgba(217, 217, 215, 0.42);
+      transform-origin: 0 50%;
+      will-change: transform, opacity;
+    }
+  </style>
+
+  <div id="root" data-composition-id="05-inherit-memory" data-width="1920" data-height="1080" data-duration="11.5">
+    <div
+      class="clip f05-inherit-memory-ground"
+      data-start="0"
+      data-duration="11.5"
+      data-track-index="0"
+      aria-hidden="true"
+    >
+      <img
+        class="f05-inherit-memory-ground-image"
+        src="assets/game-05-memory-choice.png"
+        alt=""
+      />
+      <div class="f05-inherit-memory-ground-veil"></div>
+    </div>
+
+    <section
+      class="clip f05-inherit-memory-choice-stage"
+      data-start="0"
+      data-duration="6.7"
+      data-track-index="1"
+      aria-label="Memory choices assembling"
+    >
+      <div class="f05-inherit-memory-kicker">CHOOSE ONE MEMORY</div>
+      <div class="f05-inherit-memory-header-rule"></div>
+
+      <div class="f05-inherit-memory-slot f05-inherit-memory-slot-a"></div>
+      <div class="f05-inherit-memory-slot f05-inherit-memory-slot-b"></div>
+      <div class="f05-inherit-memory-slot f05-inherit-memory-slot-c"></div>
+
+      <article
+        class="f05-inherit-memory-card"
+        data-target-x="-540"
+        data-target-y="18"
+        data-entry="0.28"
+        aria-label="First memory card"
+      >
+        <div class="f05-inherit-memory-card-media">
+          <svg viewBox="900 455 288 268" preserveAspectRatio="none" aria-hidden="true">
+            <image href="assets/game-05-memory-choice.png" x="0" y="0" width="1920" height="1080"></image>
+          </svg>
+          <div class="f05-inherit-memory-effect-mask"></div>
+        </div>
+        <div class="f05-inherit-memory-marker"></div>
+        <div class="f05-inherit-memory-focus-line"></div>
+      </article>
+
+      <article
+        class="f05-inherit-memory-card"
+        data-target-x="0"
+        data-target-y="18"
+        data-entry="3.1"
+        aria-label="Second memory card"
+      >
+        <div class="f05-inherit-memory-card-media">
+          <svg viewBox="1196 455 288 268" preserveAspectRatio="none" aria-hidden="true">
+            <image href="assets/game-05-memory-choice.png" x="0" y="0" width="1920" height="1080"></image>
+          </svg>
+          <div class="f05-inherit-memory-effect-mask"></div>
+        </div>
+        <div class="f05-inherit-memory-marker"></div>
+      </article>
+
+      <article
+        class="f05-inherit-memory-card"
+        data-target-x="540"
+        data-target-y="18"
+        data-entry="4.5"
+        aria-label="Third memory card"
+      >
+        <div class="f05-inherit-memory-card-media">
+          <svg viewBox="1492 455 288 268" preserveAspectRatio="none" aria-hidden="true">
+            <image href="assets/game-05-memory-choice.png" x="0" y="0" width="1920" height="1080"></image>
+          </svg>
+          <div class="f05-inherit-memory-effect-mask"></div>
+        </div>
+        <div class="f05-inherit-memory-marker"></div>
+      </article>
+    </section>
+
+    <section
+      class="clip f05-inherit-memory-selected-stage"
+      data-start="6.7"
+      data-duration="4.8"
+      data-track-index="1"
+      aria-label="Selected memory state"
+    >
+      <div class="f05-inherit-memory-selected-label">MEMORY SELECTED</div>
+      <div class="f05-inherit-memory-selected-accent"></div>
+      <div class="f05-inherit-memory-selected-panel">
+        <svg viewBox="865 327 950 493" preserveAspectRatio="none" aria-label="Selected catcher note and enabled next-life action">
+          <image href="assets/game-06-memory-selected.png" x="0" y="0" width="1920" height="1080"></image>
+        </svg>
+      </div>
+    </section>
+
+    <section
+      class="clip f05-inherit-memory-closing"
+      data-start="8.4"
+      data-duration="3.1"
+      data-track-index="2"
+      aria-label="Failure becomes ability"
+    >
+      <div class="f05-inherit-memory-closing-copy">
+        <p class="f05-inherit-memory-closing-lead">실패는</p>
+        <div class="f05-inherit-memory-closing-display" aria-label="능력이 된다.">
+          <span class="f05-inherit-memory-closing-word">능력이</span>
+          <span class="f05-inherit-memory-closing-word">된다.</span>
+        </div>
+        <div class="f05-inherit-memory-closing-rule"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script>
+    (() => {
+      const composition = document.querySelector('[data-composition-id="05-inherit-memory"]');
+      if (!composition || typeof gsap === "undefined") return;
+
+      const query = (selector) => composition.querySelector(selector);
+      const queryAll = (selector) => Array.from(composition.querySelectorAll(selector));
+      const choiceStage = query(".f05-inherit-memory-choice-stage");
+      const selectedStage = query(".f05-inherit-memory-selected-stage");
+      const cards = queryAll(".f05-inherit-memory-card");
+      const slots = queryAll(".f05-inherit-memory-slot");
+
+      const tl = gsap.timeline({ paused: true });
+
+      tl.fromTo(
+        query(".f05-inherit-memory-ground-image"),
+        { scale: 1.01, x: 0, y: 0 },
+        { scale: 1.045, x: -18, y: -8, duration: 6.2, ease: "power1.inOut" },
+        2.2,
+      );
+
+      tl.fromTo(
+        query(".f05-inherit-memory-kicker"),
+        { x: -28, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.48, ease: "power3.out" },
+        0,
+      );
+
+      tl.fromTo(
+        query(".f05-inherit-memory-header-rule"),
+        { scaleX: 0, opacity: 0.2 },
+        { scaleX: 1, opacity: 1, duration: 1.35, ease: "power3.out" },
+        0.12,
+      );
+
+      slots.forEach((slot, index) => {
+        tl.fromTo(
+          slot,
+          { scaleX: 0.72, opacity: 0 },
+          { scaleX: 1, opacity: 1, duration: 0.72, ease: "power2.out" },
+          0.26 + index * 0.08,
+        );
+      });
+
+      const entries = [
+        { at: 0.28, effectAt: 1.32, markerAt: 1.02 },
+        { at: 3.1, effectAt: 3.86, markerAt: 3.5 },
+        { at: 4.5, effectAt: 5.18, markerAt: 4.88 },
+      ];
+
+      cards.forEach((card, index) => {
+        const targetX = Number(card.dataset.targetX);
+        const targetY = Number(card.dataset.targetY);
+        const startProgress = 0.32;
+        const mediaMask = card.querySelector(".f05-inherit-memory-effect-mask");
+        const marker = card.querySelector(".f05-inherit-memory-marker");
+
+        tl.fromTo(
+          card,
+          {
+            xPercent: -50,
+            yPercent: -50,
+            x: targetX * startProgress,
+            y: targetY * startProgress,
+            scale: 0.72,
+            opacity: 0,
+          },
+          {
+            x: targetX,
+            y: targetY,
+            scale: 1,
+            opacity: 0.76,
+            duration: index === 0 ? 1.05 : 0.94,
+            ease: "power3.out",
+          },
+          entries[index].at,
+        );
+
+        tl.fromTo(
+          mediaMask,
+          { scaleX: 1 },
+          { scaleX: 0, duration: 0.54, ease: "power2.out" },
+          entries[index].effectAt,
+        );
+
+        tl.fromTo(
+          marker,
+          { scale: 0, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.5, ease: "power3.out" },
+          entries[index].markerAt,
+        );
+      });
+
+      tl.to(
+        cards[0],
+        { x: 385, y: 24, scale: 1.55, opacity: 1, duration: 0.76, ease: "power3.inOut" },
+        5.8,
+      );
+      tl.to(
+        cards[1],
+        { x: -500, y: 44, scale: 0.7, opacity: 0.24, duration: 0.72, ease: "power3.inOut" },
+        5.8,
+      );
+      tl.to(
+        cards[2],
+        { x: -250, y: 44, scale: 0.7, opacity: 0.12, duration: 0.72, ease: "power3.inOut" },
+        5.8,
+      );
+      tl.to(
+        cards[0].querySelector("svg"),
+        { filter: "brightness(2.5) contrast(1.12)", duration: 0.58, ease: "power2.out" },
+        5.82,
+      );
+      tl.to(
+        query(".f05-inherit-memory-focus-line"),
+        { opacity: 1, duration: 0.42, ease: "power2.out" },
+        6.08,
+      );
+
+      const stateSequence = [
+        { t: 0, state: "choice" },
+        { t: 6.7, state: "selected" },
+      ];
+
+      const stateAt = (time) => {
+        for (let index = stateSequence.length - 1; index >= 0; index -= 1) {
+          if (time >= stateSequence[index].t) return stateSequence[index].state;
+        }
+        return stateSequence[0].state;
+      };
+
+      let lastState = "";
+      const applyState = (state) => {
+        if (state === lastState) return;
+        choiceStage.style.visibility = state === "choice" ? "visible" : "hidden";
+        selectedStage.style.visibility = state === "selected" ? "visible" : "hidden";
+        lastState = state;
+      };
+
+      applyState("choice");
+      const stateDriver = { t: 0 };
+      tl.to(
+        stateDriver,
+        {
+          t: 11,
+          duration: 11,
+          ease: "none",
+          onUpdate: () => applyState(stateAt(stateDriver.t)),
+        },
+        0,
+      );
+
+      tl.fromTo(
+        query(".f05-inherit-memory-closing-lead"),
+        { x: -42, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.58, ease: "power3.out" },
+        8.4,
+      );
+
+      const closingWords = queryAll(".f05-inherit-memory-closing-word");
+      const wordContent = closingWords.map((element) => element.textContent.trim());
+      let cumulative = 0;
+      const wordSchedule = wordContent.map((word) => {
+        const start = cumulative;
+        cumulative += 0.14 + word.length * 0.022;
+        return { word, start };
+      });
+
+      closingWords.forEach((word, index) => {
+        tl.fromTo(
+          word,
+          { x: -54, opacity: 0 },
+          { x: 0, opacity: 1, duration: 0.46, ease: "power3.out" },
+          9.3 + wordSchedule[index].start,
+        );
+      });
+
+      tl.fromTo(
+        query(".f05-inherit-memory-closing-rule"),
+        { scaleX: 0, opacity: 0 },
+        { scaleX: 1, opacity: 1, duration: 0.58, ease: "power3.out" },
+        9.42,
+      );
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["05-inherit-memory"] = tl;
+    })();
+  </script>
+</template>
