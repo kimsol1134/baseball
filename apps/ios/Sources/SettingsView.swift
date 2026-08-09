@@ -6,6 +6,7 @@ struct SettingsView: View {
     let pro: MobileCareerStore
 
     @AppStorage("baseball.pitch.autoRelease") private var autoRelease = false
+    @AppStorage(DailyReminder.enabledKey) private var reminderOn = false
     @State private var audio = GameAudio.shared
     @State private var achievements = AchievementStore.shared
     @State private var confirmingReset = false
@@ -32,6 +33,25 @@ struct SettingsView: View {
                 Text("소리는 다른 앱의 음악을 멈추지 않고, 무음 스위치를 따릅니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
+            }
+
+            // 복귀 알림은 설정에 있어야 한다.
+            //
+            // 예전에는 이 스위치가 오늘의 이닝 화면 안에만 있었다 — DAU의 7%만 여는
+            // 화면이다. 켠 사람을 찾을 수 없으니 끄려는 사람도 찾을 수 없었다.
+            Section {
+                Toggle("오늘의 이닝 알림", isOn: Binding(
+                    get: { reminderOn },
+                    set: { on in
+                        if on { DailyReminder.enable(source: "settings") { granted in reminderOn = granted } }
+                        else { DailyReminder.disable(source: "settings") }
+                    }
+                ))
+                .accessibilityIdentifier("settings.reminder")
+            } header: {
+                Text("알림")
+            } footer: {
+                Text("매일 저녁 7시 30분, 그날의 이닝이 열렸다고 알려 드립니다. 이미 던진 날은 보내지 않고, 며칠 동안 열지 않으면 저절로 멈춥니다.")
             }
 
             Section {
@@ -89,6 +109,13 @@ struct SettingsView: View {
                 UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
                 UserDefaults.standard.removeObject(forKey: DailyInningView.bestEverKey)
                 ReviewPrompt.reset()
+                // 연속 기록도 진행이다. 남기면 새 시작이 "12일 연속"에서 출발한다.
+                for key in UserDefaults.standard.dictionaryRepresentation().keys
+                where key.hasPrefix(DailyStreak.playedKeyPrefix) {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
+                // 알림 권유는 다시 물어볼 수 있어야 한다 — 지운 사람은 다시 시작할 사람이다.
+                UserDefaults.standard.removeObject(forKey: DailyReminder.promptedKey)
             }
             Button("취소") {}
         } message: {

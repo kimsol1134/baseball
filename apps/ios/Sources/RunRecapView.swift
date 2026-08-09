@@ -27,6 +27,9 @@ struct RunRecapView: View {
 
     let recap: Recap
     let onDismiss: () -> Void
+    /// 지난 회차와 같은 설정으로 곧장 다음 회차를 여는 길. 없으면 nil이고, 그때는
+    /// 예전처럼 완료 화면을 거친다.
+    var onQuickRebirth: (() -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = 0
@@ -107,14 +110,37 @@ struct RunRecapView: View {
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 10) {
-                // 감정이 가장 높은 순간에 공유가 있어야 한다 — 아카이브 탭은 감정이 식은 뒤다.
-                LifeCardShareButton(record: recap.record)
+            VStack(spacing: 8) {
+                HStack(spacing: 10) {
+                    // 감정이 가장 높은 순간에 공유가 있어야 한다 — 아카이브 탭은 감정이 식은 뒤다.
+                    LifeCardShareButton(record: recap.record)
+                        .opacity(soulDone ? 1 : 0.25)
+                        .disabled(!soulDone)
+                    // 야구혼이 다 차오른 **바로 그 순간**이 다음 판을 시작하는 자리다.
+                    // 예전에는 여기서 완료 화면으로 나가 "다시 태어나기"를 한 번 더 누르고,
+                    // 스탬프를 지나, 설정 4단계를 다시 통과해야 했다. 로그라이트의 "한 판 더"가
+                    // 다섯 걸음이면 그건 루프가 아니라 출구다.
+                    PrimaryButton(
+                        title: onQuickRebirth != nil
+                            ? "\(recap.record.lifeNumber + 1)회차 바로 시작" : "기억을 안고 다음 회차로",
+                        identifier: "hs.recap.continue"
+                    ) {
+                        if let onQuickRebirth { onQuickRebirth() } else { onDismiss() }
+                    }
                     .opacity(soulDone ? 1 : 0.25)
                     .disabled(!soulDone)
-                PrimaryButton(title: "기억을 안고 다음 회차로", identifier: "hs.recap.continue") { onDismiss() }
-                    .opacity(soulDone ? 1 : 0.25)
-                    .disabled(!soulDone)
+                }
+                // 설정을 바꿔서 시작하는 길은 그대로 둔다 — 영혼 상점·핸디캡·지역은
+                // 회차마다 바꾸는 것이 이 게임의 메타다.
+                if onQuickRebirth != nil {
+                    Button("설정을 바꿔서 시작") { onDismiss() }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        .opacity(soulDone ? 1 : 0.25)
+                        .disabled(!soulDone)
+                        .accessibilityIdentifier("hs.recap.customize")
+                }
             }
         }
         .padding(BaseballMetrics.gutter)

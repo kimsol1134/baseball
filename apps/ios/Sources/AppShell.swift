@@ -27,6 +27,8 @@ struct AppShell: View {
     let pro: MobileCareerStore
     @State private var selection: AppTab = .highSchool
     @State private var showsDailyFromDeepLink = false
+    /// 오늘의 이닝을 무엇이 열었는가. 알림이 실제로 사람을 데려오는지 재는 값이다.
+    @State private var deepLinkSource = "url"
 
     /// App Store 이벤트에서 바로 오늘의 이닝으로 들어오는 링크만 허용한다.
     /// 다른 URL은 앱 상태를 바꾸지 않는다.
@@ -58,6 +60,13 @@ struct AppShell: View {
                     HighSchoolCareerView(
                         career: highSchool,
                         onEnterPro: { draft, pitcher, identity in
+                            // 드래프트 이후의 **정상 분기**다. 이 계측이 없으면 대시보드에서
+                            // "드래프트를 봤는데 환생하지 않은 사람"이 전부 이탈로 잡힌다 —
+                            // 실제로는 프로로 넘어간 사람이 섞여 있다(2026-08 분석의 맹점).
+                            GameAnalytics.log(.proCareerStarted, [
+                                "round": draft.round ?? 0,
+                                "evaluation": draft.evaluationScore,
+                            ])
                             pro.startProCareer(draft: draft, pitcher: pitcher, identity: identity)
                             selection = .pro
                         },
@@ -92,11 +101,28 @@ struct AppShell: View {
             if !shows, selection == .highSchool { selection = .pro }
         }
         .fullScreenCover(isPresented: $showsDailyFromDeepLink) {
-            DailyInningView { showsDailyFromDeepLink = false }
+            DailyInningView(onClose: { showsDailyFromDeepLink = false }, source: deepLinkSource)
         }
         .onOpenURL { url in
             if Self.isDailyInningDeepLink(url) {
+                deepLinkSource = "url"
                 showsDailyFromDeepLink = true
+            }
+        }
+        // 복귀 알림을 눌러 들어온 경로. `onOpenURL`은 알림 탭에서 불리지 않으므로
+        // 이 다리가 없으면 알림이 홈 화면만 띄운다 — D1 훅의 마지막 한 걸음이 없는 셈이다.
+        .task {
+            NotificationRouter.shared.onDeepLink = { url in
+                guard Self.isDailyInningDeepLink(url) else { return }
+                deepLinkSource = "notification"
+                showsDailyFromDeepLink = true
+            }
+            if let pending = NotificationRouter.shared.pendingDeepLink {
+                NotificationRouter.shared.pendingDeepLink = nil
+                if Self.isDailyInningDeepLink(pending) {
+                    deepLinkSource = "notification"
+                    showsDailyFromDeepLink = true
+                }
             }
         }
     }

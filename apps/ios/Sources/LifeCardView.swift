@@ -182,12 +182,11 @@ struct LifeCardView: View {
 /// 공유시키는 것보다 낫다.
 enum LifeCardRenderer {
     @MainActor
-    static func image(for record: HighSchoolCareerStore.LifeRecord) -> Image? {
+    static func image(for record: HighSchoolCareerStore.LifeRecord) -> UIImage? {
         let renderer = ImageRenderer(content: LifeCardView(record: record))
         renderer.scale = 3
         renderer.isOpaque = true
-        guard let rendered = renderer.uiImage else { return nil }
-        return Image(uiImage: rendered)
+        return renderer.uiImage
     }
 }
 
@@ -197,18 +196,24 @@ struct LifeCardShareButton: View {
 
     var body: some View {
         if let image = LifeCardRenderer.image(for: record) {
-            ShareLink(
-                item: image,
-                preview: SharePreview("\(record.playerName)의 \(record.lifeNumber)회차", image: image)
+            ActivityShareButton(
+                items: [image],
+                subject: "\(record.playerName)의 \(record.lifeNumber)회차",
+                onTapped: {
+                    let properties: [String: Any] = ["life_number": record.lifeNumber]
+                    GameAnalytics.log(.lifeCardShareTapped, properties)
+                    // One-version dashboard compatibility. This legacy event is removed after 1.0.2.
+                    GameAnalytics.log(.lifeCardShared, properties)
+                },
+                onCompleted: {
+                    GameAnalytics.log(.lifeCardShareCompleted, ["life_number": record.lifeNumber])
+                }
             ) {
                 Label("회차 카드 공유", systemImage: "square.and.arrow.up")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(BaseballTheme.action)
             }
             .accessibilityIdentifier("life.card.share")
-            .simultaneousGesture(TapGesture().onEnded {
-                GameAnalytics.log(.lifeCardShared, ["life_number": record.lifeNumber])
-            })
         }
     }
 }

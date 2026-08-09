@@ -3,6 +3,74 @@ import FirebaseCore
 import FirebaseAnalytics
 import AmplitudeSwift
 
+/// Every analytics event carries the same low-cardinality build context.
+///
+/// Distribution detection is kept pure so a Release build using a sandbox receipt is never
+/// mistaken for production traffic. UI tests are filtered before either SDK is configured.
+struct AnalyticsContext: Equatable {
+    enum Distribution: String, Equatable {
+        case debug
+        case testflight
+        case appStore = "app_store"
+    }
+
+    enum Environment: String, Equatable {
+        case development
+        case production
+    }
+
+    let appVersion: String
+    let build: String
+    let distribution: Distribution
+    let environment: Environment
+
+    var properties: [String: Any] {
+        [
+            "app_version": appVersion,
+            "build": build,
+            "distribution": distribution.rawValue,
+            "environment": environment.rawValue,
+            "platform": "ios",
+        ]
+    }
+
+    static func resolve(
+        appVersion: String,
+        build: String,
+        isDebug: Bool,
+        receiptURL: URL?
+    ) -> AnalyticsContext {
+        let distribution: Distribution
+        if isDebug {
+            distribution = .debug
+        } else if receiptURL?.lastPathComponent == "sandboxReceipt" {
+            distribution = .testflight
+        } else {
+            distribution = .appStore
+        }
+        return AnalyticsContext(
+            appVersion: appVersion,
+            build: build,
+            distribution: distribution,
+            environment: distribution == .appStore ? .production : .development
+        )
+    }
+
+    static func current(bundle: Bundle = .main) -> AnalyticsContext {
+        #if DEBUG
+        let isDebug = true
+        #else
+        let isDebug = false
+        #endif
+        return resolve(
+            appVersion: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
+            build: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown",
+            isDebug: isDebug,
+            receiptURL: bundle.appStoreReceiptURL
+        )
+    }
+}
+
 /// 게임 분석 — activation 퍼널(설치 → 온보딩 → 첫 경기 → 반복)을 눈으로 보기 위한 최소 계측.
 ///
 /// 원칙:
@@ -36,16 +104,66 @@ enum GameAnalytics {
         case rebirthStarted = "rebirth_started"
         /// 회차 카드 공유(바이럴 신호).
         case lifeCardShared = "life_card_shared"
+        /// 시스템 공유 UI를 연 시점. 완료와 구분한다.
+        case lifeCardShareTapped = "life_card_share_tapped"
+        /// 시스템 공유 콜백이 성공으로 끝난 시점.
+        case lifeCardShareCompleted = "life_card_share_completed"
+        /// 회차 시작에서 약속을 고른 시점.
+        case runPledgeSelected = "run_pledge_selected"
+        /// 회차 끝에서 약속 결과가 확정된 시점.
+        case runPledgeResolved = "run_pledge_resolved"
+        /// 회차의 바람 카드가 실제로 처음 노출된 시점.
+        case careerWindSeen = "career_wind_seen"
+        /// 다음 회차에서 다시 시도할 약속을 저장한 시점.
+        case nextRunIntentSaved = "next_run_intent_saved"
+        /// 저장한 약속을 다음 회차에서 실제로 선택한 시점.
+        case nextRunIntentApplied = "next_run_intent_applied"
+        /// 주간 야구 노트 상세를 연 시점.
+        case weeklyProgramOpened = "weekly_program_opened"
+        /// 주간 야구 노트의 2/3 보상을 확정한 시점.
+        case weeklyProgramCompleted = "weekly_program_completed"
+        /// 프로 시즌 중 3주 단위 결정을 확정한 시점.
+        case proSeasonDecisionSelected = "pro_season_decision_selected"
+
+        // MARK: - 이탈 지점을 보기 위한 계측 (2026-08 Amplitude 분석)
+        //
+        // 위 9개만으로는 **화면 단위 이탈이 안 보인다.** 실제 데이터에서 first_pitch(53명)
+        // → activation_first_game(43명) 사이에서 19%가 사라졌는데, 그 사이에 있는 네
+        // 국면(학교 선택·훈련·관계·중요 경기) 중 어디서 끊겼는지 알 방법이 없었다.
+
+        /// 고교 커리어 국면 진입. `phase` 속성으로 어느 계단에서 끊기는지 본다.
+        case phaseEntered = "phase_entered"
+        /// 중요 경기를 던지다 중단. 손맛 구간의 이탈이다.
+        case gameAbandoned = "game_abandoned"
+        /// 오늘의 이닝 화면 진입. `source`로 어느 입구가 실제로 쓰이는지 본다.
+        case dailyInningOpened = "daily_inning_opened"
+        /// 프로 커리어 진입. draft_resolved 이후의 **정상 분기**라, 이게 없으면
+        /// "드래프트 후 환생하지 않은 사람 = 이탈"이라는 잘못된 결론이 나온다.
+        case proCareerStarted = "pro_career_started"
+        /// 복귀 알림 상태 변화. `enabled`가 켜짐/꺼짐, `source`가 어디서 결정됐는지다.
+        case reminderChanged = "reminder_changed"
+        /// 복귀 알림을 눌러 앱으로 돌아옴. D1 훅이 실제로 작동하는지의 증거다.
+        case reminderOpened = "reminder_opened"
+        /// 세션 종료(백그라운드 전환). `games`로 세션 깊이를 잰다.
+        case sessionEnded = "session_ended"
     }
 
     private static var amplitude: Amplitude?
     private static var enabled = false
+    private static var context = AnalyticsContext.current()
     private static let onceKeyPrefix = "baseball.analytics.once."
+    /// 기기를 가로지르는 안정 식별자 키. iCloud 키-값 저장소에도 거울을 둔다.
+    private static let stableIDKey = "baseball.analytics.stableID"
 
     /// 앱 시작 시 한 번. 설정이 없으면 조용히 꺼진 채 남는다.
     static func configure() {
         // UI 테스트의 기계 플레이가 대시보드에 섞이면 퍼널이 거짓말이 된다.
-        guard !ProcessInfo.processInfo.arguments.contains("-uiTestResetCareer") else { return }
+        guard !isUITest(arguments: ProcessInfo.processInfo.arguments) else {
+            amplitude = nil
+            enabled = false
+            return
+        }
+        context = .current()
         // Firebase: 콘솔에서 받은 plist가 있어야만 켠다. 없는데 configure()를 부르면 크래시다.
         if Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil {
             FirebaseApp.configure()
@@ -56,12 +174,45 @@ enum GameAnalytics {
             amplitude = Amplitude(configuration: Configuration(apiKey: key))
             enabled = true
         }
+        guard enabled else { return }
+        let id = stableID()
+        amplitude?.setUserId(userId: id)
+        Analytics.setUserID(id)
+    }
+
+    /// 앱을 지웠다 다시 깔아도 같은 사람으로 이어지는 익명 ID.
+    ///
+    /// 기본 식별자는 기기별 설치 ID라, 재설치하면 같은 사람이 새 유저로 잡힌다. 회차를
+    /// 수십 시간 쌓는 게임에서 그건 리텐션 통계를 낙관적으로 왜곡한다(이탈로 세지 않고
+    /// 신규로 센다). 세이브와 같은 iCloud 키-값 저장소에 거울을 두어 기기·재설치를
+    /// 가로지른다. IDFA·IDFV·전화번호 같은 기기 식별자는 쓰지 않는다 — 이 값은 앱이
+    /// 스스로 만든 난수이고, 진행을 지우면 함께 사라진다.
+    static func stableID(defaults: UserDefaults = .standard) -> String {
+        if let local = defaults.string(forKey: stableIDKey), !local.isEmpty { return local }
+        let cloud = NSUbiquitousKeyValueStore.default
+        if let remote = cloud.string(forKey: stableIDKey), !remote.isEmpty {
+            defaults.set(remote, forKey: stableIDKey)
+            return remote
+        }
+        let fresh = UUID().uuidString
+        defaults.set(fresh, forKey: stableIDKey)
+        cloud.set(fresh, forKey: stableIDKey)
+        return fresh
     }
 
     static func log(_ event: Event, _ properties: [String: Any] = [:]) {
         guard enabled else { return }
-        Analytics.logEvent(event.rawValue, parameters: properties.isEmpty ? nil : properties)
-        amplitude?.track(eventType: event.rawValue, eventProperties: properties)
+        let reserved = Set(context.properties.keys)
+        let collisions = reserved.intersection(properties.keys)
+        assert(collisions.isEmpty, "Analytics context keys are reserved: \(collisions.sorted())")
+        // Common context wins in Release too, so a caller can never forge production traffic.
+        let merged = properties.merging(context.properties) { _, common in common }
+        Analytics.logEvent(event.rawValue, parameters: merged)
+        amplitude?.track(eventType: event.rawValue, eventProperties: merged)
+    }
+
+    nonisolated static func isUITest(arguments: [String]) -> Bool {
+        arguments.contains("-uiTestResetCareer") || arguments.contains("-uiTestPromoCapture")
     }
 
     /// 1인 1회 이벤트. 전환으로 집계되는 계단(activation 등)은 두 번 세면 데이터가 거짓이 된다.

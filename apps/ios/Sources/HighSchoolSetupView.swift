@@ -68,15 +68,7 @@ struct HighSchoolSetupView: View {
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                     PrimaryPill(title: "같은 설정으로 다시 태어나기", identifier: "hs.setup.quickRebirth") {
-                        career.startCareer(
-                            preset: preset,
-                            playerName: last.playerName,
-                            region: last.region,
-                            difficulty: CareerDifficultySnapshot(
-                                careerHarshness: DifficultyLevel(rawValue: last.harshness) ?? .standard),
-                            karmas: last.karmas,
-                            soulDomain: last.soulDomain
-                        )
+                        career.startQuickRebirth(entryPoint: "quick_rebirth")
                     }
                     Text("영혼 상점을 쓰려면 아래에서 단계대로 진행하세요.")
                         .font(.caption2)

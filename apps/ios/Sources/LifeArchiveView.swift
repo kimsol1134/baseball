@@ -216,14 +216,22 @@ struct LifeShareButton: View {
     let record: HighSchoolCareerStore.LifeRecord
 
     @Environment(\.displayScale) private var displayScale
-    @State private var rendered: Image?
+    @State private var rendered: UIImage?
 
     var body: some View {
         Group {
             if let rendered {
-                ShareLink(
-                    item: rendered,
-                    preview: SharePreview("\(record.lifeNumber)회차 요약", image: rendered)
+                ActivityShareButton(
+                    items: [rendered],
+                    subject: "\(record.lifeNumber)회차 요약",
+                    onTapped: {
+                        let properties: [String: Any] = ["life_number": record.lifeNumber]
+                        GameAnalytics.log(.lifeCardShareTapped, properties)
+                        GameAnalytics.log(.lifeCardShared, properties)
+                    },
+                    onCompleted: {
+                        GameAnalytics.log(.lifeCardShareCompleted, ["life_number": record.lifeNumber])
+                    }
                 ) {
                     Label("이 회차 공유", systemImage: "square.and.arrow.up")
                         .font(.footnote.weight(.semibold))
@@ -245,11 +253,10 @@ struct LifeShareButton: View {
 
     /// 카드 한 장을 이미지로 굽는다. `ImageRenderer`는 메인 액터에서만 동작한다.
     @MainActor
-    static func render(_ record: HighSchoolCareerStore.LifeRecord, scale: CGFloat) -> Image? {
+    static func render(_ record: HighSchoolCareerStore.LifeRecord, scale: CGFloat) -> UIImage? {
         let renderer = ImageRenderer(content: LifeSummaryCard(record: record))
         renderer.scale = max(2, scale)
-        guard let image = renderer.uiImage else { return nil }
-        return Image(uiImage: image)
+        return renderer.uiImage
     }
 }
 

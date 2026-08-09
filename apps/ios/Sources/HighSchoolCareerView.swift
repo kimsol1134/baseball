@@ -19,7 +19,24 @@ struct HighSchoolCareerView: View {
     @State private var rebirthStamp: RebirthStamp?
     /// 오늘의 이닝(일일 도전) 표시 여부.
     @State private var showsDaily = false
+    /// 복귀 알림 권유 카드를 지금 띄우는가. 한 번 답하면 이 세션에서는 다시 묻지 않는다.
+    @State private var showsReminderNudge = DailyReminder.shouldOfferOptIn()
+    /// 환생 스탬프가 닫히면 설정을 건너뛰고 바로 다음 회차를 시작할 것인가.
+    @State private var quickRebirthAfterStamp = false
     @Environment(\.requestReview) private var requestReview
+
+    /// 오늘의 이닝 입구를 지금 화면에 두어도 되는가. 순수 함수라 테스트할 수 있다.
+    ///
+    /// 첫 중요 경기를 끝내기 전에는 보여 주지 않는다 — 본편의 손맛을 보기도 전에 곁가지
+    /// 모드가 보이면 무엇이 이 게임인지 흐려진다. 그 뒤로는 승부(투구 화면)와 각성
+    /// (되돌릴 수 없는 선택) 두 국면만 뺀다.
+    static func showsDailyEntry(phase: HighSchoolCareerPhase, gamesCompleted: Int) -> Bool {
+        guard gamesCompleted >= 1 else { return false }
+        switch phase {
+        case .importantGame, .awakening, .prologue: return false
+        default: return true
+        }
+    }
 
     /// `fullScreenCover(item:)`가 요구하는 식별 가능한 값.
     struct RebirthStamp: Identifiable {
@@ -107,12 +124,19 @@ struct HighSchoolCareerView: View {
         // 반대로(회차를 먼저 넘기고 스탬프를 띄우면) 화면이 갈아 끼워지는 순간에 전면
         // 화면을 올리는 셈이라 표시가 들쭉날쭉했다. 연출이 곧 전환이면 그런 경합이 없다.
         .fullScreenCover(isPresented: $showsDaily) {
-            DailyInningView { showsDaily = false }
+            DailyInningView(onClose: { showsDaily = false }, source: "career_entry")
         }
         .fullScreenCover(item: $rebirthStamp) { stamp in
             RebirthStampView(lifeNumber: stamp.lifeNumber) {
                 rebirthStamp = nil
-                career.beginNextLife()
+                // 정산 화면에서 바로 온 경우엔 설정을 건너뛰고 같은 조건으로 시작한다.
+                if quickRebirthAfterStamp {
+                    quickRebirthAfterStamp = false
+                    career.beginNextLife()
+                    career.startQuickRebirth(entryPoint: "recap")
+                } else {
+                    career.beginNextLife()
+                }
             }
         }
         // 회차 정산 — 기억을 확정한 순간 위업과 야구혼이 폭발한다. 조용한 전환은
@@ -121,7 +145,16 @@ struct HighSchoolCareerView: View {
             get: { career.pendingRecap },
             set: { if $0 == nil { career.pendingRecap = nil } }
         )) { recap in
-            RunRecapView(recap: recap) { career.pendingRecap = nil }
+            RunRecapView(
+                recap: recap,
+                onDismiss: { career.pendingRecap = nil },
+                // 설정을 다시 물을 것이 없는 회차는 정산 화면에서 곧장 다음 판으로 간다.
+                onQuickRebirth: career.quickRebirthPreset == nil ? nil : {
+                    career.pendingRecap = nil
+                    rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
+                    quickRebirthAfterStamp = true
+                }
+            )
         }
         .sensoryFeedback(trigger: career.feedbackTrigger) { _, _ in
             switch career.feedbackCue {
@@ -203,31 +236,33 @@ struct HighSchoolCareerView: View {
                             }
                         }
                         // 오늘의 이닝 — 하루 한 판, 전국 같은 타순. 회차 진행과 무관한
-                        // "오늘 3분"의 이유. 훈련 국면에서만 보인다(승부·각성 앞에서는 소음).
-                        if state.phase == .training,
-                           state.performance.importantGamesCompleted >= 1 {
-                            Button { showsDaily = true } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "calendar.badge.clock")
-                                        .foregroundStyle(BaseballTheme.milestone)
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text("오늘의 이닝").font(.footnote.weight(.bold))
-                                        Text(UserDefaults.standard.integer(forKey: "baseball.daily.best.\(PitchScenario.todayKey())") > 0
-                                             ? "오늘 최고 \(UserDefaults.standard.integer(forKey: "baseball.daily.best.\(PitchScenario.todayKey())"))점 · 재도전"
-                                             : "전국이 같은 타순 · Game Center 순위")
-                                            .font(.caption2).foregroundStyle(BaseballTheme.textSecondary)
-                                    }
-                                    Spacer(minLength: 0)
-                                    Image(systemName: "chevron.right").font(.caption2)
-                                        .foregroundStyle(BaseballTheme.textTertiary)
+                        // "오늘 3분"의 이유.
+                        //
+                        // 예전에는 **훈련 국면에서만** 보였다. 2026-08 데이터에서 DAU 43명 중
+                        // 이 화면을 연 사람은 3명(7%)이었고 D2 리텐션은 0%였다 — 사람들은 첫
+                        // 세션에 1회차를 통째로 끝내고(1인당 10.6경기) 떠나는데, 그 마지막
+                        // 화면들(드래프트·기억 선택·완료)에는 내일 켤 이유가 하나도 없었다.
+                        // 이제 승부·각성처럼 집중이 필요한 국면만 빼고 늘 보인다.
+                        if Self.showsDailyEntry(phase: state.phase,
+                                                gamesCompleted: state.performance.importantGamesCompleted) {
+                            DailyInningEntryRow { showsDaily = true }
+                        }
+                        // 복귀 알림 권유 — 첫 중요 경기를 끝낸 직후(감정이 양)에 딱 한 번.
+                        // 예전에는 이 스위치가 오늘의 이닝 화면 **안에만** 있었다. 즉 7%만
+                        // 여는 화면 안에 리텐션 장치가 갇혀 있었다.
+                        if state.performance.importantGamesCompleted >= 1,
+                           state.phase != .importantGame, state.phase != .awakening,
+                           showsReminderNudge {
+                            ReminderNudgeCard(
+                                onEnable: {
+                                    DailyReminder.enable(source: "after_first_game")
+                                    showsReminderNudge = false
+                                },
+                                onDismiss: {
+                                    DailyReminder.declineOptIn()
+                                    showsReminderNudge = false
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(BaseballTheme.milestone.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
-                                .overlay(RoundedRectangle(cornerRadius: 10).stroke(BaseballTheme.milestone.opacity(0.5), lineWidth: 1))
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("hs.daily.entry")
+                            )
                         }
                         // 걸어 둔 약속 — 내기는 눈앞에 있어야 내기다.
                         if state.draftResult == nil, state.phase != .awakening,
@@ -348,6 +383,79 @@ struct HighSchoolCareerView: View {
             } else {
                 CompletionCard(career: career, state: state, hasEnteredPro: hasEnteredPro, onEnterPro: onEnterPro) {
                     rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 내일 켤 이유
+
+/// 오늘의 이닝 입구 한 줄. 연속 기록이 있으면 그것이 문구가 된다 — 숫자가 쌓여 있으면
+/// 하루 건너뛰는 데 비용이 생기고, 그 비용이 내일 켜는 이유다.
+private struct DailyInningEntryRow: View {
+    let onOpen: () -> Void
+
+    private var todayBest: Int {
+        UserDefaults.standard.integer(forKey: "baseball.daily.best.\(PitchScenario.todayKey())")
+    }
+
+    var body: some View {
+        let streakCaption = DailyStreak.caption()
+        let played = DailyStreak.playedToday()
+        Button(action: onOpen) {
+            HStack(spacing: 8) {
+                Image(systemName: played ? "flame.fill" : "calendar.badge.clock")
+                    .foregroundStyle(BaseballTheme.milestone)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("오늘의 이닝").font(.footnote.weight(.bold))
+                    Text(streakCaption
+                         ?? (todayBest > 0 ? "오늘 최고 \(todayBest)점 · 재도전"
+                             : "전국이 같은 타순 · Game Center 순위"))
+                        .font(.caption2).foregroundStyle(BaseballTheme.textSecondary)
+                }
+                Spacer(minLength: 0)
+                // 오늘 아직 안 던졌다는 사실이 한눈에 보여야 배지가 일을 한다.
+                if !played {
+                    Text("오늘 아직")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(BaseballTheme.canvas)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(BaseballTheme.milestone, in: Capsule())
+                }
+                Image(systemName: "chevron.right").font(.caption2)
+                    .foregroundStyle(BaseballTheme.textTertiary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(BaseballTheme.milestone.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(BaseballTheme.milestone.opacity(0.5), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("hs.daily.entry")
+    }
+}
+
+/// 복귀 알림 권유. 정직하게 무엇을 언제 보내는지 적고, 거절도 한 탭이다.
+private struct ReminderNudgeCard: View {
+    let onEnable: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        BaseballCard(title: "내일도 한 이닝", tone: .raised) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("매일 저녁 7시 30분, 그날의 이닝이 열렸다고 알려 드립니다. 이미 던진 날은 보내지 않고, 며칠 안 열면 저절로 멈춥니다.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 10) {
+                    PrimaryPill(title: "알림 켜기", identifier: "hs.reminder.enable", action: onEnable)
+                    Button("괜찮습니다") { onDismiss() }
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                        .accessibilityIdentifier("hs.reminder.decline")
                 }
             }
         }
@@ -1467,34 +1575,58 @@ private struct CompletionCard: View {
 
             // 지명된 회차는 아직 끝나지 않았다. 접겠다고 결정할 때 비로소 기억을 고른다.
             let opensLegacy = state.draftResult?.outcome == .drafted && !legacyConfirmed
-            Button {
-                // 프로 포기는 이 게임에서 가장 무거운 되돌릴 수 없는 결정인데
-                // 학교 선택보다 마찰이 낮았다 — 같은 확인 문법을 준다.
-                if opensLegacy { confirmingFold = true } else { onRebirth() }
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(opensLegacy ? "이 회차를 접고 다시 시작" : "다시 태어나기")
-                        .font(.subheadline.weight(.semibold))
-                    Text(opensLegacy
-                         ? "프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르게 됩니다."
-                         : "\(career.inheritance.lifeNumber)회차를 기억 \(career.inheritance.memories.count)장과 함께 시작합니다.")
-                        .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // 이 회차의 카드를 여기서 나눈다.
+            //
+            // 예전에는 공유 버튼이 기억 선택 화면과 정산 화면에만 있었다. 지명에 성공한
+            // 회차는 **정산 화면을 거치지 않고** 곧장 이 화면으로 오므로, 이 게임에서
+            // 감정이 가장 높은 순간에 공유 경로가 통째로 없었다(2026-08 기준 공유 5%).
+            if legacyConfirmed || state.draftResult != nil {
+                LifeCardShareButton(record: HighSchoolCareerStore.lifeRecord(
+                    from: state, memories: career.selectedMemories, previous: career.inheritance,
+                    nicknames: career.nicknames, chronicle: career.chronicle,
+                    personality: career.personality
+                ))
             }
-            .buttonStyle(.bordered)
-            .frame(minHeight: BaseballMetrics.minimumTapTarget)
-            .accessibilityIdentifier("hs.rebirth")
-            .confirmationDialog(
-                "프로를 포기하고 이 회차를 접을까요?",
-                isPresented: $confirmingFold,
-                titleVisibility: .visible
-            ) {
-                Button("접고 기억을 고른다", role: .destructive) { career.openLegacy() }
-                // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
-                Button("돌아간다") { confirmingFold = false }
-            } message: {
-                Text("프로 커리어를 시작하지 않고 이 선수의 이야기를 끝냅니다. 지명은 사라지고 되돌릴 수 없습니다.")
+
+            // 남은 행동이 하나뿐인 화면에서 그 버튼이 회색 테두리면, 화면은 "끝났다"로
+            // 읽힌다. 기억까지 확정한 회차의 다음 행동은 환생 하나뿐이므로 주 버튼으로
+            // 세운다 — 드래프트를 본 42명 중 27명만 다음 회차를 시작했다(2026-08).
+            if !opensLegacy {
+                PrimaryButton(title: "\(career.inheritance.lifeNumber)회차로 다시 태어나기",
+                              identifier: "hs.rebirth", action: onRebirth)
+                Text("기억 \(career.inheritance.memories.count)장 · 야구혼 \(career.inheritance.soulPoints)"
+                     + "\(KoreanCopy.objectParticle(number: career.inheritance.soulPoints)) 안고 시작합니다.")
+                    .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Button {
+                    // 프로 포기는 이 게임에서 가장 무거운 되돌릴 수 없는 결정인데
+                    // 학교 선택보다 마찰이 낮았다 — 같은 확인 문법을 준다.
+                    confirmingFold = true
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("이 회차를 접고 다시 시작")
+                            .font(.subheadline.weight(.semibold))
+                        Text("프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르게 됩니다.")
+                            .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.bordered)
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                .accessibilityIdentifier("hs.rebirth")
+                .confirmationDialog(
+                    "프로를 포기하고 이 회차를 접을까요?",
+                    isPresented: $confirmingFold,
+                    titleVisibility: .visible
+                ) {
+                    Button("접고 기억을 고른다", role: .destructive) { career.openLegacy() }
+                    // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
+                    Button("돌아간다") { confirmingFold = false }
+                } message: {
+                    Text("프로 커리어를 시작하지 않고 이 선수의 이야기를 끝냅니다. 지명은 사라지고 되돌릴 수 없습니다.")
+                }
             }
         }
     }

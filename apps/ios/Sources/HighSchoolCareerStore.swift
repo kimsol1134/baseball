@@ -226,7 +226,10 @@ final class HighSchoolCareerStore {
         soulDomain: SoulDomain? = nil,
         soulBoosts: [SoulBoostID] = [],
         seedOverride: String? = nil,
-        challengeLifeNumber: Int? = nil
+        challengeLifeNumber: Int? = nil,
+        /// 어느 입구로 회차를 시작했는가(`setup_flow` / `quick_rebirth` / `recap`).
+        /// 환생 전환율을 입구별로 갈라 봐야 어느 마찰을 없앤 것이 실제로 들었는지 안다.
+        entryPoint: String = "setup_flow"
     ) {
         // 시드 가드 — 오타 하나가 커널 오류 화면(그리고 예전에는 저장 삭제)으로
         // 이어지면 안 된다. 여기서 정중히 되돌린다(4차 패널 P0).
@@ -288,7 +291,9 @@ final class HighSchoolCareerStore {
             if !isChallenge { inheritance = carried }
             GameAnalytics.logOnce(.onboardingCompleted)
             if carried.lifeNumber > 1 {
-                GameAnalytics.log(.rebirthStarted, ["life_number": carried.lifeNumber])
+                GameAnalytics.log(.rebirthStarted, [
+                    "life_number": carried.lifeNumber, "entry_point": entryPoint,
+                ])
             }
             // 3회차를 시작한다 = 환생 루프를 스스로 두 번 돌았다. 이 게임을 좋아한다는
             // 가장 강한 신호이고, 도전 런은 기록에 남지 않으니 세지 않는다.
@@ -525,6 +530,9 @@ final class HighSchoolCareerStore {
         earnNicknames()
         noteGame(report: report, summary: summary)
         GameAnalytics.log(.gameFinished, [
+            "mode": "high_school",
+            "life_number": result?.snapshot.lifeNumber ?? inheritance.lifeNumber,
+            "result": report.runsAllowed == 0 ? "scoreless" : "runs_allowed",
             "strikeouts": report.strikeouts, "walks": report.walks, "runs": report.runsAllowed,
         ])
         GameAnalytics.logOnce(.activationFirstGame)
@@ -666,6 +674,32 @@ final class HighSchoolCareerStore {
         pendingGains = []
         loadState = .needsSetup
         save()
+    }
+
+    /// 지난 회차와 같은 설정으로 곧장 다음 회차를 연다. 설정을 다시 물을 것이 없으면 nil.
+    ///
+    /// 왜: 회차가 끝난 뒤 다음 회차까지의 길이 정산 → 완료 화면 → 다시 태어나기 → 스탬프
+    /// → 설정 4단계였다. 2026-08 데이터에서 드래프트를 본 42명 중 27명만 다음 회차를
+    /// 시작했다. 로그라이트에서 "다시 한 판"은 마찰이 0에 가까워야 하는 행동이다.
+    /// 영혼 상점을 쓰려면 여전히 단계대로 갈 수 있다 — 그 길을 없애지는 않는다.
+    var quickRebirthPreset: PitcherPresetSnapshot? {
+        guard !isChallengeRun, let last = lastSetup else { return nil }
+        return PitcherPresetCatalog.all.first { $0.id == last.presetID }
+    }
+
+    /// 위 프리셋으로 즉시 시작한다. 부스트는 회차마다 다시 고르는 소비라 싣지 않는다.
+    func startQuickRebirth(entryPoint: String) {
+        guard let preset = quickRebirthPreset, let last = lastSetup else { return }
+        startCareer(
+            preset: preset,
+            playerName: last.playerName,
+            region: last.region,
+            difficulty: CareerDifficultySnapshot(
+                careerHarshness: DifficultyLevel(rawValue: last.harshness) ?? .standard),
+            karmas: last.karmas,
+            soulDomain: last.soulDomain,
+            entryPoint: entryPoint
+        )
     }
 
     /// 이 정산이 별점을 물어도 좋은 회차인가. 순수 함수라 테스트할 수 있다.
@@ -968,6 +1002,13 @@ final class HighSchoolCareerStore {
     /// 등판 중단 — 지금까지의 이닝을 버린다. 시드는 이미 넘어가 있어 같은 이닝의
     /// 리트라이는 아니다(안티치트 설계 그대로).
     func abandonImportantGame() {
+        // 손맛 구간에서 나간 사람. 국면 계측이 "중요 경기에 들어갔다"까지만 알려 주므로,
+        // 들어가서 던지다 나간 것과 화면만 보고 나간 것을 여기서 가른다.
+        GameAnalytics.log(.gameAbandoned, [
+            "pitches": pitchSession?.pitches ?? 0,
+            "chapter": result?.snapshot.chapter.number ?? 0,
+            "games_completed": result?.snapshot.performance.importantGamesCompleted ?? 0,
+        ])
         pitchSession = nil
         gameResume = nil
         save()
@@ -986,6 +1027,16 @@ final class HighSchoolCareerStore {
             let before = current.snapshot
             let updated = try action(current)
             result = updated
+            // 국면 진입 계측. 이게 없어서 first_pitch(53명) → activation_first_game(43명)
+            // 사이 네 국면 중 어디서 19%가 사라졌는지 알 방법이 없었다(2026-08 분석).
+            // 도전 런은 기록에 남지 않으므로 퍼널에도 섞지 않는다.
+            if updated.snapshot.phase != before.phase, !isChallengeRun {
+                GameAnalytics.log(.phaseEntered, [
+                    "phase": updated.snapshot.phase.rawValue,
+                    "chapter": updated.snapshot.chapter.number,
+                    "life_number": updated.snapshot.lifeNumber,
+                ])
+            }
             pendingGains = MobileCareerStore.gains(before: before.pitcher, after: updated.snapshot.pitcher)
             // 이번 동작에서 새로 만개했는가. 훈련 번호가 바뀐 것만 센다 — 안 그러면 같은
             // 훈련 결과를 들고 있는 동안 화면을 넘길 때마다 축하가 다시 뜬다.

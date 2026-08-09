@@ -194,6 +194,13 @@ final class MobileCareerStore {
         perform(summary: summary, cue: report.runsAllowed == 0 ? .success : .setback) {
             try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report))
         }
+        GameAnalytics.log(.gameFinished, [
+            "mode": "pro",
+            "result": report.runsAllowed == 0 ? "scoreless" : "runs_allowed",
+            "strikeouts": report.strikeouts,
+            "walks": report.walks,
+            "runs": report.runsAllowed,
+        ])
     }
 
     func abandonImportantGame() {

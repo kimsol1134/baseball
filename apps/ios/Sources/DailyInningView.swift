@@ -9,6 +9,8 @@ import UserNotifications
 /// 커리어와 완전히 분리돼 밸런스에 손대지 않는다.
 struct DailyInningView: View {
     let onClose: () -> Void
+    /// 어느 입구로 들어왔는가. 어떤 자리가 실제로 쓰이는지 재려고 이벤트에 싣는다.
+    var source: String = "unknown"
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 64
     @Environment(\.requestReview) private var requestReview
@@ -52,6 +54,11 @@ struct DailyInningView: View {
             }
             .ignoresSafeArea()
         }
+        .onAppear {
+            GameAnalytics.log(.dailyInningOpened, [
+                "source": source, "streak": DailyStreak.current(),
+            ])
+        }
     }
 
     private var intro: some View {
@@ -74,6 +81,15 @@ struct DailyInningView: View {
                         .foregroundStyle(BaseballTheme.milestone)
                 }
             }
+            // 연속 일수 — 하루 건너뛰면 잃는 것이 있어야 "내일 3분"이 이유가 된다.
+            if let caption = DailyStreak.caption() {
+                BaseballCard(title: "연속 기록", tone: .raised) {
+                    Label(caption, systemImage: "flame.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(BaseballTheme.milestone)
+                }
+                .accessibilityIdentifier("daily.streak")
+            }
             if AchievementStore.shared.isGameCenterAuthenticated {
                 Button {
                     showingBoard = true
@@ -92,8 +108,8 @@ struct DailyInningView: View {
             }
             .tint(BaseballTheme.action)
             .onChange(of: reminderOn) { _, on in
-                if on { DailyReminder.enable { granted in if !granted { reminderOn = false } } }
-                else { DailyReminder.disable() }
+                if on { DailyReminder.enable(source: "daily_screen") { granted in if !granted { reminderOn = false } } }
+                else { DailyReminder.disable(source: "daily_screen") }
             }
             Spacer(minLength: 0)
             // 하루 3회 — 같은 판의 결정론 리더보드는 캡이 없으면 실력이 아니라
@@ -177,7 +193,13 @@ struct DailyInningView: View {
         UserDefaults.standard.set(true, forKey: playedKey)
         // 베스트만 제출 — 리더보드 정책이 무엇이든 낮은 재도전이 상위 기록을 덮지 않게.
         AchievementStore.shared.submit([.dailyInning: best])
-        GameAnalytics.log(.gameFinished, ["mode": "daily", "score": score])
+        // 오늘 몫을 던졌으니 오늘 저녁 알림은 취소한다 — 이미 한 일을 하라고 부르면
+        // 알림이 소음이 되고, 다음 알림까지 통째로 무시된다.
+        DailyReminder.refresh()
+        GameAnalytics.log(.gameFinished, [
+            "mode": "daily", "result": "completed", "score": score,
+            "streak": DailyStreak.current(),
+        ])
         // 개인 기록 경신 — 커리어를 접은 사람도 오늘의 이닝은 계속 켠다. 그쪽 유입로에
         // 별점 관문이 하나도 없었다. 첫 판은 무조건 신기록이라 감흥이 없으므로,
         // 이전 기록이 실제로 있고 그걸 넘었을 때만 묻는다.
@@ -190,30 +212,3 @@ struct DailyInningView: View {
     }
 }
 
-
-/// 오늘의 이닝 저녁 알림 — 옵트인·하루 한 번·끄면 즉시 사라진다.
-enum DailyReminder {
-    static let requestID = "baseball.daily.reminder"
-
-    static func enable(completion: @escaping @MainActor (Bool) -> Void) {
-        Task { @MainActor in
-            let center = UNUserNotificationCenter.current()
-            let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
-            guard granted else { completion(false); return }
-            let content = UNMutableNotificationContent()
-            content.title = "오늘의 이닝이 열려 있습니다"
-            content.body = "전국이 같은 타순을 상대합니다 — 자정 전에 한 이닝."
-            content.sound = .default
-            var components = DateComponents()
-            components.hour = 19
-            components.minute = 30
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-            try? await center.add(UNNotificationRequest(identifier: requestID, content: content, trigger: trigger))
-            completion(true)
-        }
-    }
-
-    static func disable() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [requestID])
-    }
-}
