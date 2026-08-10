@@ -230,6 +230,9 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
     public let scoreDifferentialAtEntry: Int?
     /// 결과 확률과 분리된 수싸움 적중 횟수. Wave 3 이전 리포트에는 없으므로 optional이다.
     public let sequenceMasteryCount: Int?
+    /// 맞은 안타 수. WHIP·피안타 같은 야구다운 지표를 카드와 기록에 적으려면 필요하다.
+    /// 이 값이 없던 리포트는 nil이라 그 지표만 접힌다.
+    public let hits: Int?
 
     public init(
         scenarioNumber: Int,
@@ -243,7 +246,8 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         outs: Int? = nil,
         teamRuns: Int? = nil,
         scoreDifferentialAtEntry: Int? = nil,
-        sequenceMasteryCount: Int? = nil
+        sequenceMasteryCount: Int? = nil,
+        hits: Int? = nil
     ) {
         self.scenarioNumber = scenarioNumber
         self.pitches = pitches
@@ -257,6 +261,7 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         self.teamRuns = teamRuns
         self.scoreDifferentialAtEntry = scoreDifferentialAtEntry
         self.sequenceMasteryCount = sequenceMasteryCount
+        self.hits = hits
     }
 }
 

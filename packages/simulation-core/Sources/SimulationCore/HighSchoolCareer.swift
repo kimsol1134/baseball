@@ -221,6 +221,10 @@ public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
     public let runsAllowed: Int
     public let expectedDamage: Int
     public let actualDamage: Int
+    /// 실제로 잡은 아웃과 맞은 안타. 이닝·방어율·WHIP처럼 야구팬이 읽는 지표는 이 둘이
+    /// 없으면 만들 수 없다. 이 필드가 없던 저장본은 nil이라 해당 지표만 접힌다.
+    public let outs: Int?
+    public let hits: Int?
 
     public init(
         importantGamesCompleted: Int = 0,
@@ -229,7 +233,9 @@ public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
         walks: Int = 0,
         runsAllowed: Int = 0,
         expectedDamage: Int = 0,
-        actualDamage: Int = 0
+        actualDamage: Int = 0,
+        outs: Int? = nil,
+        hits: Int? = nil
     ) {
         self.importantGamesCompleted = importantGamesCompleted
         self.pitches = pitches
@@ -238,6 +244,8 @@ public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
         self.runsAllowed = runsAllowed
         self.expectedDamage = expectedDamage
         self.actualDamage = actualDamage
+        self.outs = outs
+        self.hits = hits
     }
 
     func adding(_ report: ImportantInningReport) -> CareerPerformanceSnapshot {
@@ -248,7 +256,9 @@ public struct CareerPerformanceSnapshot: Codable, Equatable, Sendable {
             walks: walks + report.walks,
             runsAllowed: runsAllowed + report.runsAllowed,
             expectedDamage: expectedDamage + report.expectedDamage,
-            actualDamage: actualDamage + report.actualDamage
+            actualDamage: actualDamage + report.actualDamage,
+            outs: (outs ?? 0) + (report.outs ?? 0),
+            hits: (hits ?? 0) + (report.hits ?? 0)
         )
     }
 }

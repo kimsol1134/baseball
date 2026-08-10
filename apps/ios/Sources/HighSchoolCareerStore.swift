@@ -135,6 +135,33 @@ final class HighSchoolCareerStore {
         /// 남으면서 정작 어느 선수가 만든 유산인지 아카이브에서 사라지면 수집의 의미가 약해진다.
         var signatureLegacyCandidates: [CareerSignatureLegacy]? = nil
 
+        /// 3년 동안 실제로 던진 공의 수. 성적을 "몇 경기"보다 구체적으로 말한다.
+        var pitches: Int? = nil
+        /// 이닝(아웃 수)과 피안타. 방어율·WHIP은 이 둘이 있어야 만들어진다.
+        var outs: Int? = nil
+        var hits: Int? = nil
+        /// 시작과 끝의 네 능력. 이 회차가 **무엇을 얼마나 키웠는지**가 카드의 자랑거리다.
+        /// 없는 옛 기록은 nil이라 카드가 그 줄을 통째로 접는다.
+        var abilityStart: AbilityLine? = nil
+        var abilityFinal: AbilityLine? = nil
+
+        /// 구위·제구·변화·체력 네 값. 카드와 아카이브가 함께 쓴다.
+        struct AbilityLine: Codable, Equatable {
+            let stuff: Int
+            let command: Int
+            let movement: Int
+            let stamina: Int
+
+            init(_ pitcher: PitcherSnapshot) {
+                stuff = pitcher.stuff
+                command = pitcher.command
+                movement = pitcher.movement
+                stamina = pitcher.stamina
+            }
+
+            var total: Int { stuff + command + movement + stamina }
+        }
+
         /// "미지명 · 평가 57점" / "3라운드 서울 …". 목록 한 줄에 결말이 들어가야 한다.
         var outcomeLine: String {
             drafted ? "지명 · \(teamName ?? "구단 미정")" : "미지명 · 평가 \(evaluationScore)점"
@@ -1384,7 +1411,8 @@ final class HighSchoolCareerStore {
                 nicknames: nicknames, chronicle: chronicle, personality: personality,
                 pledgeBonusPermille: pledgeBonus, pledge: settledPledge, pledgeProgress: pledgeProgress,
                 signatureLegacy: signatureLegacy,
-                signatureLegacyCandidates: signatureCandidates.isEmpty ? nil : signatureCandidates
+                signatureLegacyCandidates: signatureCandidates.isEmpty ? nil : signatureCandidates,
+                startingPitcher: careerStartingPitcher
             )
             let nextInheritance = Self.nextInheritance(
                 from: current.snapshot,
@@ -1579,7 +1607,9 @@ final class HighSchoolCareerStore {
         pledge: RunPledge? = nil,
         pledgeProgress: RunPledgeProgress? = nil,
         signatureLegacy: CareerSignatureLegacy? = nil,
-        signatureLegacyCandidates: [CareerSignatureLegacy]? = nil
+        signatureLegacyCandidates: [CareerSignatureLegacy]? = nil,
+        /// 이 회차를 시작할 때의 능력. 카드가 "얼마나 키웠는지"를 말하려면 시작점이 있어야 한다.
+        startingPitcher: PitcherSnapshot? = nil
     ) -> LifeRecord {
         var record = LifeRecord(
             lifeNumber: state.lifeNumber,
@@ -1621,6 +1651,13 @@ final class HighSchoolCareerStore {
             signatureLegacy: signatureLegacy,
             signatureLegacyCandidates: signatureLegacyCandidates
         )
+        record.pitches = state.performance.pitches
+        record.outs = state.performance.outs
+        record.hits = state.performance.hits
+        record.abilityFinal = LifeRecord.AbilityLine(state.pitcher)
+        // 시작 능력을 모르는 경로(옛 저장에서 이어 온 회차)에서는 성장 줄을 접는다 —
+        // 최종만 있는데 "얼마나 키웠나"를 말하면 거짓이 된다.
+        record.abilityStart = startingPitcher.map(LifeRecord.AbilityLine.init)
         record.playerLegacy = PlayerBondStory.legacy(for: record)
         return record
     }

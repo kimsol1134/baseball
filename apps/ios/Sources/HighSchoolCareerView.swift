@@ -1861,7 +1861,8 @@ private struct CompletionCard: View {
                 LifeCardShareButton(record: HighSchoolCareerStore.lifeRecord(
                     from: state, memories: career.selectedMemories, previous: career.inheritance,
                     nicknames: career.nicknames, chronicle: career.chronicle,
-                    personality: career.personality
+                    personality: career.personality,
+                    startingPitcher: career.careerStartingPitcher
                 ))
             }
 

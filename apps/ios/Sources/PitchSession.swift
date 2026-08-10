@@ -67,6 +67,9 @@ final class PitchSession {
     /// walk 버킷이지만 화면은 구분해서 말한다(WHIP에 사구를 섞으면 기록이 아니다).
     private(set) var hitByPitches = 0
     private(set) var runsAllowed = 0
+    /// 맞은 안타. WHIP·피안타는 야구팬이 가장 먼저 보는 수치인데 지금까지 어디에도
+    /// 세어 두지 않았다. 사구는 여기 섞지 않는다(기록 문화 그대로).
+    private(set) var hitsAllowed = 0
     private(set) var expectedDamage = 0
     private(set) var actualDamage = 0
     private(set) var recommendationAccepted = 0
@@ -149,6 +152,8 @@ final class PitchSession {
         var consecutiveStrikeouts: Int
         var walks: Int
         var runsAllowed: Int
+        /// 이어하기에서도 안타 수가 살아 있어야 WHIP이 반쪽이 되지 않는다. 옛 저장은 nil이다.
+        var hitsAllowed: Int? = nil
         var expectedDamage: Int
         var actualDamage: Int
         var recommendationAccepted: Int
@@ -192,6 +197,7 @@ final class PitchSession {
             gameState: gameState, gameLog: gameLog, rivalMemory: rivalMemory,
             pitches: pitches, strikeouts: strikeouts, consecutiveStrikeouts: consecutiveStrikeouts,
             walks: walks, runsAllowed: runsAllowed,
+            hitsAllowed: hitsAllowed,
             expectedDamage: expectedDamage, actualDamage: actualDamage,
             recommendationAccepted: recommendationAccepted, outsRecorded: outsRecorded,
             rivalOutcomes: rivalOutcomes,
@@ -222,6 +228,7 @@ final class PitchSession {
         actualDamage = resume.actualDamage
         recommendationAccepted = resume.recommendationAccepted
         outsRecorded = resume.outsRecorded
+        hitsAllowed = resume.hitsAllowed ?? 0
         rivalOutcomes = resume.rivalOutcomes
         hitByPitches = resume.hitByPitches ?? 0
         holdCall = resume.holdCall ?? false
@@ -423,7 +430,8 @@ final class PitchSession {
             outs: outsRecorded,
             // 절대 점수 배분은 코어의 일이다. 화면은 등판 시점의 점수 차만 알려 준다.
             scoreDifferentialAtEntry: scenario.scoreDifferential,
-            sequenceMasteryCount: sequenceMasteryCount
+            sequenceMasteryCount: sequenceMasteryCount,
+            hits: hitsAllowed
         )
     }
 
@@ -488,6 +496,10 @@ final class PitchSession {
             }
         }
         walks += snapshot.result == .walk && snapshot.outcome != .hitByPitch ? 1 : 0
+        switch snapshot.outcome {
+        case .single, .double, .triple, .homeRun: hitsAllowed += 1
+        default: break
+        }
         hitByPitches += snapshot.outcome == .hitByPitch ? 1 : 0
         runsAllowed += snapshot.runsScored
         recommendationAccepted += snapshot.recommendationAccepted ? 1 : 0
