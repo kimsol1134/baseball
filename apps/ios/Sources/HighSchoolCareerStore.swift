@@ -2187,9 +2187,10 @@ final class HighSchoolCareerStore {
         }
         let currentRevision = savedRevision
         let outcome = restore()
-        guard outcome != .unavailable, savedRevision > currentRevision else { return }
+        guard outcome != .unavailable else { return }
         switch outcome {
         case .live:
+            guard savedRevision > currentRevision else { return }
             loadState = .ready
             _ = retryPendingGameCompletion()
             lastSummary = "다른 기기의 진행을 불러왔습니다."
@@ -2211,10 +2212,10 @@ final class HighSchoolCareerStore {
     private func applyHigherResultlessRecordDuringSession() -> Bool {
         guard let data = sync.read(revision: { data in
             (try? JSONDecoder().decode(SaveRecord.self, from: data))?.effectiveRevision
-        }),
+        }, conflictPriority: Self.saveConflictPriority),
         let record = try? JSONDecoder().decode(SaveRecord.self, from: data),
         record.result == nil,
-        record.effectiveRevision > savedRevision else { return false }
+        record.effectiveRevision >= savedRevision else { return false }
 
         let removedCareerID = result?.snapshot.careerID
         inheritance = record.inheritance
@@ -2308,6 +2309,15 @@ final class HighSchoolCareerStore {
         }
     }
 
+    /// 같은 리비전에서 다른 기기의 live 진행과 삭제/회차-사이 레코드가 충돌하면
+    /// result-less 쪽이 이긴다. stable ID나 문구가 아니라 저장 의미만 본다.
+    private static func saveConflictPriority(_ data: Data) -> Int {
+        guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else {
+            return 0
+        }
+        return record.result == nil ? 1 : 0
+    }
+
     private enum RestoreOutcome: Equatable {
         case live
         case needsSetup
@@ -2317,7 +2327,7 @@ final class HighSchoolCareerStore {
     private func restore() -> RestoreOutcome {
         guard let data = sync.read(revision: { data in
             (try? JSONDecoder().decode(SaveRecord.self, from: data))?.effectiveRevision
-        }) else { return .unavailable }
+        }, conflictPriority: Self.saveConflictPriority) else { return .unavailable }
         guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else {
             return .unavailable
         }

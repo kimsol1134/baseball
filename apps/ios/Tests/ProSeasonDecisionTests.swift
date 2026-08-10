@@ -382,7 +382,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         let sync = isolatedSync("pro-remote-tombstone")
         sync.clear()
         defer { sync.clear() }
-        let live = try firstDecision(seed: 91_004)
+        let live = try firstImportantGame(seed: 91_004)
         XCTAssertTrue(sync.write(try JSONEncoder().encode(
             MobileCareerStore.ProSaveRecord(
                 result: live,
@@ -396,12 +396,12 @@ final class ProSeasonDecisionTests: XCTestCase {
         XCTAssertEqual(store.sourceHighSchoolCareerID, "hs-source-for-tombstone")
         XCTAssertEqual(store.careerOrigin, .highSchool)
         XCTAssertEqual(store.loadState, .ready)
-        let activeSession = PitchSession(state: live.snapshot, seed: "91004-session")
-        activeSession.start()
-        store.pitchSession = activeSession
+        store.beginImportantGame()
         XCTAssertNotNil(store.pitchSession)
 
-        let tombstoneRevision = live.snapshot.revision + 1_000
+        // Pro checkpoints use the snapshot revision, so this is an intentional equal-revision
+        // remote tombstone versus local live collision.
+        let tombstoneRevision = live.snapshot.revision
         XCTAssertTrue(sync.write(try JSONEncoder().encode(
             MobileCareerStore.ProSaveRecord(
                 result: nil,
@@ -415,6 +415,11 @@ final class ProSeasonDecisionTests: XCTestCase {
         XCTAssertNil(store.pitchSession)
         XCTAssertNil(store.sourceHighSchoolCareerID)
         XCTAssertNil(store.careerOrigin)
+        XCTAssertEqual(store.loadState, .needsSetup)
+        // UI callbacks already queued before the remote reload must be harmless.
+        store.finishImportantGame()
+        store.abandonImportantGame()
+        XCTAssertNil(store.result)
         XCTAssertEqual(store.loadState, .needsSetup)
         XCTAssertFalse(store.save(), "result가 없는 tombstone 상태를 옛 live로 저장하면 안 됩니다.")
         let reloaded = MobileCareerStore(sync: sync)

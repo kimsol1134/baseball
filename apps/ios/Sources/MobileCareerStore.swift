@@ -501,9 +501,10 @@ final class MobileCareerStore {
         }
         let currentRevision = syncedRevision
         let outcome = restore()
-        guard outcome != .unavailable, syncedRevision > currentRevision else { return }
+        guard outcome != .unavailable else { return }
         switch outcome {
         case .live:
+            guard syncedRevision > currentRevision else { return }
             loadState = .ready
             lastSummary = "다른 기기의 진행을 불러왔습니다."
             feedbackTrigger += 1
@@ -525,11 +526,11 @@ final class MobileCareerStore {
             (try? JSONDecoder().decode(ProSaveRecord.self, from: data))
                 .flatMap { $0.result?.snapshot.revision ?? $0.deletedRevision }
                 ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))?.snapshot.revision
-        }),
+        }, conflictPriority: Self.saveConflictPriority),
         let record = try? JSONDecoder().decode(ProSaveRecord.self, from: data),
         record.result == nil,
         let tombstone = record.deletedRevision,
-        tombstone > syncedRevision else { return false }
+        tombstone >= syncedRevision else { return false }
 
         syncedRevision = tombstone
         result = nil
@@ -549,11 +550,20 @@ final class MobileCareerStore {
         case unavailable
     }
 
+    /// ProSaveRecord의 명시적 삭제 묘비만 live보다 높은 동률 우선순위를 갖는다.
+    /// wrapper 도입 전 raw ProCareerResult는 기존 live 저장으로 그대로 취급한다.
+    private static func saveConflictPriority(_ data: Data) -> Int {
+        guard let record = try? JSONDecoder().decode(ProSaveRecord.self, from: data),
+              record.result == nil,
+              record.deletedRevision != nil else { return 0 }
+        return 1
+    }
+
     private func restore() -> RestoreOutcome {
         guard let data = sync.read(revision: { data in
             (try? JSONDecoder().decode(ProSaveRecord.self, from: data)).flatMap { $0.result?.snapshot.revision ?? $0.deletedRevision }
                 ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))?.snapshot.revision
-        }) else { return .unavailable }
+        }, conflictPriority: Self.saveConflictPriority) else { return .unavailable }
         let record = try? JSONDecoder().decode(ProSaveRecord.self, from: data)
         if let tombstone = record?.deletedRevision, record?.result == nil {
             // 삭제 묘비 — 옛 사본이 아니라 삭제가 최신이다.
