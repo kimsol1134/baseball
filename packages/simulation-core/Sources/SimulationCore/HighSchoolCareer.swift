@@ -1507,7 +1507,17 @@ public struct HighSchoolCareerEngine: Sendable {
         let jackpot = !isRehab && effectiveFocus != .recovery && generator.nextInt(upperBound: 100) < jackpotChance
         // 회복은 회복만 한다. 예전에는 회복 훈련도 스태미나가 +1~2씩 올라서
         // '강한 회복'이 피로 -3에 무료 성장이었다 — 강도 선택의 긴장이 0이 되는 지점.
-        let baseGrowth = (isRehab || effectiveFocus == .recovery) ? 0 : Self.trainingGrowth(signal: signal)
+        var baseGrowth = (isRehab || effectiveFocus == .recovery) ? 0 : Self.trainingGrowth(signal: signal)
+        // 첫 선수의 **첫 훈련 한 번**은 반드시 무언가를 준다.
+        //
+        // 육성 게임에서 처음 누른 육성 버튼의 결과가 "이번 훈련에서는 능력치가 오르지
+        // 않았습니다"이고 피로만 올라가면, "뭘 해도 랜덤"이라는 인상이 그 자리에서 굳는다.
+        // 보상 총량을 늘리는 것이 아니라 **첫 1회의 분산만 없앤다** — 두 번째 훈련부터는
+        // 그대로 확률이다.
+        if baseGrowth == 0, number == 1, params.state.lifeNumber == 1,
+           !isRehab, effectiveFocus != .recovery {
+            baseGrowth = 1
+        }
         let windGrowth = isRehab ? 0 : windRules.trainingGrowthBonus(for: effectiveFocus)
         // 바람의 +1은 잭팟에 곱해지지 않는다. 표시에 적힌 고정 보너스와 실제 값이 같다.
         let rawGrowth = (jackpot ? baseGrowth * 2 : baseGrowth) + windGrowth
