@@ -465,6 +465,18 @@ public final class CareerScheduleSnapshot: Codable, Equatable, Sendable {
         milestonesByChapter.reduce(0) { $0 + $1.filter { $0 == phase }.count }
     }
 
+    /// 이 장에 공식 경기가 있는가.
+    ///
+    /// 탈삼진 목표는 공식 경기에서만 쌓인다(불펜은 "기록에 남지 않는 연습"이다). 1장은
+    /// 마일스톤이 관계 하나뿐이라 던질 기회가 아예 없는데, 화면은 "이번 이야기 탈삼진
+    /// N개"를 네 곳에서 반복하고 게이지는 0에서 한 번도 움직이지 않은 채 장이 끝났다.
+    /// 목표를 낼 자격이 있는 장인지 먼저 묻는다.
+    public func hasImportantGame(inChapter chapterNumber: Int) -> Bool {
+        let index = chapterNumber - 1
+        guard milestonesByChapter.indices.contains(index) else { return false }
+        return milestonesByChapter[index].contains(.importantGame)
+    }
+
     /// Phase 4 이전의 고정 뼈대(훈련 16 / 관계 5 / 중요 경기 5 / 각성 3). 스케줄 필드가 없는 옛
     /// 저장본이 이 값으로 백필돼 저장 호환과 진행 중 회차의 리듬을 유지한다.
     public static let fixedDefault = CareerScheduleSnapshot(

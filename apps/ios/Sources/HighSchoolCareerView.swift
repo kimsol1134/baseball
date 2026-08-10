@@ -307,7 +307,13 @@ struct HighSchoolCareerView: View {
                                let school = state.school {
                                 TournamentCard(state: state, schoolName: school.name)
                             }
-                            ChapterGoalCard(state: state, career: career)
+                            // 공식 경기가 없는 장에서는 탈삼진 숙제를 내지 않는다 —
+                            // 던질 기회를 안 주고 "삼진 5개"를 네 화면에서 반복하면,
+                            // 게임이 지키지 못할 약속을 하는 것이 된다.
+                            if (state.schedule ?? .fixedDefault)
+                                .hasImportantGame(inChapter: state.chapter.number) {
+                                ChapterGoalCard(state: state, career: career)
+                            }
                         }
 
                         phaseBody(state: state)
