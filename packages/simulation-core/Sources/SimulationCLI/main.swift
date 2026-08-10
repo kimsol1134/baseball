@@ -198,7 +198,22 @@ guard let preset = PitcherPresetCatalog.all.first(where: { $0.id == presetID }) 
     FileHandle.standardError.write(Data("Unknown preset '\(presetID)'. Available: \(available)\n".utf8))
     exit(2)
 }
-let pitcher = preset.pitcher
+// 투수 스탯 덮어쓰기. 타자 쪽에는 있는데 투수 쪽에 없어서 "구위를 올리면 실제로
+// 결과가 달라지는가"를 하네스로 답할 수 없었다. 밸런스 작업의 기본 질문이라 열어 둔다.
+let pitcher: PitcherSnapshot = {
+    let base = preset.pitcher
+    let stuff = batterRating("--stuff", default: base.stuff)
+    let command = batterRating("--command", default: base.command)
+    let movement = batterRating("--movement", default: base.movement)
+    let stamina = batterRating("--stamina", default: base.stamina)
+    guard stuff != base.stuff || command != base.command
+        || movement != base.movement || stamina != base.stamina else { return base }
+    return PitcherSnapshot(
+        id: base.id, name: base.name, stuff: stuff, command: command,
+        movement: movement, stamina: stamina, pitchProfiles: base.pitchProfiles,
+        throwingHand: base.throwingHand
+    )
+}()
 let batter = BatterSnapshot(
     id: "batter-1",
     name: "이준호",

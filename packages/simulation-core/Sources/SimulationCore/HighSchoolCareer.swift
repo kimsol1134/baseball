@@ -1989,11 +1989,15 @@ public struct HighSchoolCareerEngine: Sendable {
         guard (balanceVersion ?? 1) >= 4 else {
             return highSchoolBaseline(lifeNumber: lifeNumber)
         }
+        // 영점은 **그 시대의 실측 RA9**다. 판정식을 KBO 수준으로 옮기면서 리그 득점이
+        // 1.7배가 됐고, 옛 영점을 그대로 두면 모든 투수가 기준 미달로 읽혀 시즌 항이
+        // 바닥(-2)에 붙는다 — 실제로 중립 회차가 부진 회차와 같은 점수를 받았다.
+        // 같은 비율로 함께 올려 "평균 대비 얼마나"라는 뜻을 유지한다.
         let firstLifeBaseline: Int = switch pitcherID {
-        case "pitcher-command": 1_120
-        case "pitcher-artist": 1_590
-        case "pitcher-stamina": 1_710
-        default: 2_900
+        case "pitcher-command": 1_900
+        case "pitcher-artist": 2_700
+        case "pitcher-stamina": 2_900
+        default: 4_930
         }
         return difficultyAdjustedHighSchoolBaseline(
             firstLifeBaseline: firstLifeBaseline,
@@ -2116,7 +2120,16 @@ public struct HighSchoolCareerEngine: Sendable {
     static func draftEvaluationCore(state: HighSchoolCareerSnapshot) -> DraftEvaluationComponents {
         let usesV4Balance = (state.balanceVersion ?? 1) >= 4
         let ratings = state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina
-        let gameQuality = state.performance.strikeouts * 3 - state.performance.walks * 2 - state.performance.runsAllowed * 3
+        // 좋은 투구의 값은 **그 시대의 평균**에 대해 매겨진다.
+        //
+        // 옛 계수(K×3 − BB×2 − R×3)는 삼진 25%·실점 0.07/타석이던 저득점 환경에 맞춰져
+        // 있었다. 판정식을 KBO 수준(삼진 18%·피안타 24%·실점 0.12)으로 바꾸자 같은 투구가
+        // 훨씬 낮은 점수를 받아 **중립 자동 진행의 지명률이 10%에서 0%로 떨어졌다** —
+        // 난이도가 관문이 아니라 벽이 됐다. 삼진이 귀해진 만큼 삼진의 값을 올리고,
+        // 실점이 흔해진 만큼 실점의 벌을 낮춘다. 저장된 v3 이하 회차는 당시 식 그대로다.
+        let gameQuality = usesV4Balance
+            ? state.performance.strikeouts * 4 - state.performance.walks * 2 - state.performance.runsAllowed * 2
+            : state.performance.strikeouts * 3 - state.performance.walks * 2 - state.performance.runsAllowed * 3
         let processBonus = max(-8, min(10, (state.performance.expectedDamage - state.performance.actualDamage) / 350))
         let ratingScore = ratings / 4 + 15
         // 실제 경기의 결과와 기대 피해 차이는 서로 연관된 신호다. v4는 둘을 함께 보여 주되

@@ -2,6 +2,23 @@ import XCTest
 @testable import SimulationCore
 
 final class PitchKernelEngineTests: XCTestCase {
+    /// 타구 방향의 부호는 야구와 같아야 한다 — 음수가 좌익이다.
+    ///
+    /// 코스 축을 넣으면서 부호를 뒤집어, 대다수인 우타를 상대로 몸쪽 공이 우익으로
+    /// 굴러간 적이 있다. 수비 위치·병살·장타 코스가 통째로 반대로 돌았는데 이걸 잡는
+    /// 테스트가 한 줄도 없었다.
+    func testInsidePitchPullsToTheCorrectFieldForEachBatSide() {
+        // 우타 몸쪽 → 좌익(음수), 우타 바깥쪽 → 우익(양수)
+        XCTAssertLessThan(PitchKernelEngine.pullShift(batSide: .right, column: 0), 0)
+        XCTAssertGreaterThan(PitchKernelEngine.pullShift(batSide: .right, column: 2), 0)
+        // 좌타는 같은 칸에서 정확히 반대
+        XCTAssertGreaterThan(PitchKernelEngine.pullShift(batSide: .left, column: 0), 0)
+        XCTAssertLessThan(PitchKernelEngine.pullShift(batSide: .left, column: 2), 0)
+        // 가운데는 어느 쪽으로도 밀지 않는다
+        XCTAssertEqual(PitchKernelEngine.pullShift(batSide: .right, column: 1), 0)
+        XCTAssertEqual(PitchKernelEngine.pullShift(batSide: .left, column: 1), 0)
+    }
+
     private let engine = PitchKernelEngine()
 
     func testBatterPlanIsCommittedBeforePlayerCall() throws {

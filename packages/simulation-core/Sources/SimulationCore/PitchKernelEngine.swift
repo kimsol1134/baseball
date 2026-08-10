@@ -979,6 +979,27 @@ public struct PitchKernelEngine: Sendable {
             zoneSwingShift -= 30
             chaseShift -= 40
         }
+        // 볼카운트가 스윙의 **질**을 바꾼다.
+        //
+        // 예전에는 카운트가 접근법(2스트라이크=보호, 3볼=참기)으로 스윙 여부만 바꾸고,
+        // 그 스윙이 어떤 타구가 되는지에는 한 글자도 관여하지 않았다. 그래서 이 게임이
+        // 파는 "수싸움"이 규칙이 아니라 문구였다 — 2스트라이크의 유인구도 헛스윙을
+        // 더 만들지 못했고, 3볼의 한복판도 평소와 똑같이 맞았다.
+        //
+        // 몰린 타자는 배트를 짧게 잡는다: 커트해서 살아남고(파울↑) 타구는 약해진다.
+        // 앞선 타자는 노리고 들어온다: 스트라이크만 골라 세게 친다.
+        if context.strikes == 2 {
+            // 파울을 더 키우면 타석은 길어지지만 파울률·삼진이 KBO를 넘어선다(150에서
+            // 파울 20.1%·삼진 20.0%). 타석당 투구수 3.9는 파울이 아니라 **헛스윙 채널**을
+            // 올려야 닿는 값이라, 여기서는 무리하지 않고 남은 과제로 둔다.
+            foulShift += 100
+            contactShift -= 45
+        } else if context.balls >= 3 || (context.balls == 2 && context.strikes == 0) {
+            // 타자에게 유리한 카운트. 존 안이면 노리고 있던 공이다.
+            zoneSwingShift += 35
+            contactShift += 55
+            foulShift -= 25
+        }
         // Leverage amplifies the batter's *own* discipline (focus), not the outcome: a
         // disciplined hitter chases less as the stakes climb, a free-swinger a touch more.
         // This is exactly zero at league-average discipline (50), so leverage on its own can
@@ -987,7 +1008,11 @@ public struct PitchKernelEngine: Sendable {
         chaseShift -= (discipline - 50) * leverageOverNeutral / 250
 
         let note: String
-        if driveInRun {
+        if context.strikes == 2 {
+            note = "몰린 타자가 배트를 짧게 잡습니다 — 커트를 노립니다."
+        } else if context.balls >= 3 {
+            note = "앞선 카운트라 타자가 스트라이크를 노리고 들어옵니다."
+        } else if driveInRun {
             note = "득점권이라 타자가 컨택 위주로 적극적입니다."
         } else if patientSpot {
             note = "주자가 없어 타자가 공을 신중히 고릅니다."
@@ -1296,9 +1321,24 @@ public struct PitchKernelEngine: Sendable {
         let profile = params.pitcher.profile(for: params.call.pitchType)
         let ratingDifficulty: Int
         if let profile {
-            ratingDifficulty = (params.pitcher.stuff - 50) * 2
+            // 키운 능력이 실제 판정에 들어간다.
+            //
+            // 예전에는 구종 프로필이 있으면 `pitcher.movement`가 **한 번도 쓰이지 않았다** —
+            // 변화 35와 80의 결과가 소수점까지 같았다. 육성 게임에서 훈련한 능력이 결과를
+            // 바꾸지 않으면 그 훈련은 없는 것과 같다. 제구는 이미 `commandRating`에서
+            // 투수 능력과 프로필을 섞고 있었으므로, 구위·변화도 같은 방식으로 섞는다.
+            // 50이 영점이라 평균 투수에서는 값이 그대로다 — KBO 기준 보정은 흔들리지 않는다.
+            ratingDifficulty = (params.pitcher.stuff - 50) * 3
                 + (profile.whiff - 50) * 3
+                + (params.pitcher.movement - 50) * 2
                 + (profile.movement - 50) * 2
+                // 잘 던진 공이 배트를 헛돌게 한다.
+                //
+                // 이 항을 /6으로 줄여 "제구는 헛스윙을 만들지 않는다"를 시도한 적이 있다.
+                // 논리는 야구에 맞았지만 이 모델에서는 **헛스윙 채널이 사실상 여기 하나**라,
+                // 줄이자 헛스윙이 11.5%에서 5.7%로 반토막 나고 저장소 밸런스 게이트의
+                // 헛스윙 하한(0.08)과 9이닝 실점 상한(4.6)이 함께 깨졌다. 힘 배분의
+                // 역전은 제구 이득 자체가 아니라 강도 상수(`PitchAbilityRules`)로 잡는다.
                 + max(0, execution.executionQuality - 500) / 2
         } else {
             ratingDifficulty = (params.pitcher.stuff - 50) * 6
@@ -1327,7 +1367,7 @@ public struct PitchKernelEngine: Sendable {
             pitchType: params.call.pitchType
         )
         let contactChance = clamp(
-            720
+            790
                 + (params.batter.contact - 50) * 6
                 + (pitchMatched ? 90 : -70)
                 + (zoneMatched ? 50 : -35)
@@ -1354,7 +1394,7 @@ public struct PitchKernelEngine: Sendable {
         }
 
         let contactQuality = clamp(
-            430
+            455
                 + (params.batter.power - 50) * 3
                 + (params.batter.contact - 50) * 2
                 + (pitchMatched ? 90 : -70)
@@ -1364,11 +1404,13 @@ public struct PitchKernelEngine: Sendable {
                 - max(0, execution.executionQuality - 500) / 3
                 + scoutingQuality
                 // 빠른 공은 늦게 맞는다. 전력투구가 제구를 잃는 대신 얻는 것이 이것이다.
-                - max(0, execution.velocityTenthsKPH - 1_400) / 10
+                - max(0, execution.velocityTenthsKPH - 1_400) / 5
                 + generator.nextInt(upperBound: 301) - 150,
             0,
             1_000
         )
+        // 몸쪽(column 0)일수록 당겨치고 바깥쪽(column 2)일수록 밀어친다. 좌타자는 부호가 뒤집힌다.
+        let pullShift = Self.pullShift(batSide: params.batter.batSide, column: landedZone.column)
         let exitVelocity = clamp(
             1_000
                 + contactQuality * 3 / 4
@@ -1377,8 +1419,16 @@ public struct PitchKernelEngine: Sendable {
             700,
             1_900
         )
+        // 높낮이가 발사각을 정한다.
+        //
+        // 예전에는 9칸이 서로 대칭이라 어느 칸을 골라도 같은 함수였다 — 실측에서 모서리
+        // 네 칸의 RA9가 0.27 안에 몰려 코스 축이 사실상 "가운데를 피한다" 2지선다였다.
+        // 높은 공은 배트 밑을 지나 뜬공이 되고, 낮은 공은 위를 때려 땅볼이 된다.
+        // 이게 있어야 "병살이 필요한 무사 1루에서는 낮게"가 규칙이 된다.
+        let heightAngleShift = (1 - landedZone.row) * 55
         let launchAngle = clamp(
-            -100 + generator.nextInt(upperBound: 521) + (contactQuality - 450) / 8,
+            -100 + generator.nextInt(upperBound: 521) + (contactQuality - 450) / 8
+                + heightAngleShift,
             -150,
             520
         )
@@ -1389,7 +1439,15 @@ public struct PitchKernelEngine: Sendable {
         let battedBall = BattedBall(
             exitVelocityTenthsKPH: exitVelocity,
             launchAngleTenthsDegrees: launchAngle,
-            directionTenthsDegrees: -450 + generator.nextInt(upperBound: 901),
+            // 안팎이 타구 방향을 정한다. 몸쪽은 당겨지고 바깥쪽은 밀린다 — 좌타자는
+            // 반대다. 방향이 정해져야 수비 위치·병살·장타 코스가 코스 선택과 이어진다.
+            // 자르지 않고 **표본 구간을 민다.**
+            //
+            // 잘라내면 당겨친 타구의 90/901 ≈ 10%가 파울라인 한 점(±450)에 쌓여, 수비
+            // 배치와 비거리 기하가 그 극단에 몰린다. 구간을 좁혀 밀면 분포가 균등하게
+            // 남으면서 방향만 이동한다.
+            directionTenthsDegrees: -450 + max(0, pullShift)
+                + generator.nextInt(upperBound: 901 - abs(pullShift)),
             contactQuality: battedQuality
         )
         // 수비 판정 전의 중립 결과. 최종 결과는 `FieldingResolver`가 같은 표로 다시 정한다.
@@ -1612,6 +1670,21 @@ public struct PitchKernelEngine: Sendable {
             reasonCodes: recommendation.reasonCodes,
             shortReason: shortReason
         )
+    }
+
+    /// 안팎에 따른 타구 방향 이동.
+    ///
+    /// 부호 규약: **음수가 좌익 방향**이다(`GameSituation`의 thirdBase/leftField 판정과
+    /// `PitchDramaView`의 좌표계가 같은 규약을 쓴다). 우타자는 몸쪽(column 0)을 당겨
+    /// 좌익(음수)으로 보내고, 바깥쪽(column 2)은 밀어 우익(양수)으로 보낸다. 좌타자는
+    /// 반대다.
+    ///
+    /// 처음 넣을 때 이 부호를 뒤집어, **대다수인 우타를 상대로 몸쪽 공이 우익으로**
+    /// 굴러갔다 — 수비 위치·병살·장타 코스가 전부 야구와 반대로 돌았다. 그걸 잡는
+    /// 테스트가 한 줄도 없어서 순수 함수로 꺼내 둔다.
+    static func pullShift(batSide: BatSide, column: Int) -> Int {
+        let pullDirection = batSide == .left ? 1 : -1
+        return (1 - column) * 90 * pullDirection
     }
 
     private func feedback(

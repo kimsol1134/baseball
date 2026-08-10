@@ -111,9 +111,25 @@ public enum PitchAbilityRules {
 
     static func intensityEffect(_ intensity: PitchIntensity) -> IntensityEffect {
         switch intensity {
-        case .controlled: IntensityEffect(commandPenalty: -42, velocityBonusTenthsKPH: -70)
+        // 셋 중 하나가 네 축(삼진·볼넷·피안타·실점) 전부에서 이기면 그건 선택지가 아니라
+        // 정답이다. 실측에서 `controlled`가 정확히 그랬다 — 삼진 26.8/볼넷 8.5/피안타 16.4로
+        // 전부 우월했고 피로까지 덜 든다. 힘 배분 줄은 몇 판 만에 학습되어 마찰만 남았다.
+        //
+        // 전역 구속 기울기를 건드리면 리그 전체 난이도가 함께 움직여 방금 잡은 지명률
+        // 보정이 무너진다. 그래서 **강도 축 안에서만** 거래를 세운다: 힘을 빼면 제구 이득이
+        // 줄고 구속을 더 잃는다(맞혀 잡는 쪽), 전력이면 제구를 덜 잃고 구속을 더 얻는다
+        // (헛스윙 쪽). 어느 쪽도 공짜가 아니게 만드는 것이 목적이다.
+        //
+        // 구속 폭(±10.5·13.0km/h)은 실제 투수의 완급보다 크다. −90/+115까지 낮춰 봤더니
+        // 전력투구의 삼진 우위가 사라져(26.1 = 힘 빼기와 동률) 거래가 다시 무너졌다.
+        // 야구적 사실성보다 **선택이 성립하는 것**을 택했다. 20,000타석 실측:
+        //   힘 빼기 삼진 26.1 / 볼넷 9.4 / 피안타 16.4 / 실점 0.064
+        //   보통     삼진 25.2 / 볼넷 10.4 / 피안타 17.2 / 실점 0.070
+        //   전력     삼진 26.5 / 볼넷 12.5 / 피안타 17.1 / 실점 0.075
+        // 전력이 삼진을 사고 볼넷을 판다. 힘 빼기는 실점을 막지만 삼진은 못 산다.
+        case .controlled: IntensityEffect(commandPenalty: -18, velocityBonusTenthsKPH: -105)
         case .normal: IntensityEffect(commandPenalty: 0, velocityBonusTenthsKPH: 0)
-        case .maxEffort: IntensityEffect(commandPenalty: 62, velocityBonusTenthsKPH: 95)
+        case .maxEffort: IntensityEffect(commandPenalty: 34, velocityBonusTenthsKPH: 130)
         }
     }
 

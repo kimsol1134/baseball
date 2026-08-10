@@ -67,8 +67,27 @@ final class PitchAbilityRulesTests: XCTestCase {
             call: call(.fourSeam, intensity: .maxEffort),
             context: context()
         )
-        XCTAssertEqual(maxEffort.nominalVelocityTenthsKPH, 1_545)
+        // 화면 표기는 판정에 쓰는 값과 같아야 한다 — 강도 상수를 바꾸면 여기도 함께 움직인다.
+        XCTAssertEqual(
+            maxEffort.nominalVelocityTenthsKPH,
+            normal.nominalVelocityTenthsKPH
+                + PitchAbilityRules.intensityEffect(.maxEffort).velocityBonusTenthsKPH
+        )
         XCTAssertEqual(maxEffort.fatigueCost, 2)
+        // 힘 배분 세 축이 서로 다른 것을 사고판다: 전력은 구속을 얻고 제구를 잃는다.
+        let controlled = PitchAbilityRules.readout(
+            pitcher: pitcher,
+            call: call(.fourSeam, intensity: .controlled),
+            context: context()
+        )
+        XCTAssertGreaterThan(maxEffort.nominalVelocityTenthsKPH, normal.nominalVelocityTenthsKPH)
+        XCTAssertLessThan(controlled.nominalVelocityTenthsKPH, normal.nominalVelocityTenthsKPH)
+        // commandRating은 구종 자체의 제구값이라 강도와 무관하다 — 강도가 사고파는 것은
+        // 규칙 상수 쪽에서 확인한다.
+        XCTAssertGreaterThan(
+            PitchAbilityRules.intensityEffect(.maxEffort).commandPenalty,
+            PitchAbilityRules.intensityEffect(.controlled).commandPenalty
+        )
     }
 
     func testAbilityMomentOnlyCelebratesARelevantResolvedStrength() {
