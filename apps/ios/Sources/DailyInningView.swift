@@ -103,7 +103,7 @@ struct DailyInningView: View {
                 .accessibilityIdentifier("daily.board")
             }
             Toggle(isOn: $reminderOn) {
-                Text("저녁마다 새 판 알림 (19:30)")
+                Text("저녁마다 이어 할 한 가지 알림 (19:30)")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
             }
@@ -206,6 +206,7 @@ struct DailyInningView: View {
             "streak": DailyStreak.current(),
         ]) { _, modeSpecific in modeSpecific }
         GameAnalytics.log(.gameFinished, gameFinishedProperties)
+        GameAnalytics.recordCompletedGame()
         weekly.record(.dailyInningCompleted)
         weekly.record(.sequenceMasteryTriggered, amount: session.sequenceMasteryCount)
         // 개인 기록 경신 — 커리어를 접은 사람도 오늘의 이닝은 계속 켠다. 그쪽 유입로에

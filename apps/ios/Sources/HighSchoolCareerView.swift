@@ -487,9 +487,9 @@ private struct ReminderNudgeCard: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        BaseballCard(title: "내일도 한 이닝", tone: .raised) {
+        BaseballCard(title: "내일도 이어 던지기", tone: .raised) {
             VStack(alignment: .leading, spacing: 10) {
-                Text("매일 저녁 7시 30분, 그날의 이닝이 열렸다고 알려 드립니다. 이미 던진 날은 보내지 않고, 며칠 안 열면 저절로 멈춥니다.")
+                Text("매일 저녁 7시 30분, 지금 키우는 선수의 다음 목표나 그날의 이닝 중 이어 할 한 가지를 알려 드립니다. 며칠 안 열면 저절로 멈춥니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -502,6 +502,9 @@ private struct ReminderNudgeCard: View {
                         .accessibilityIdentifier("hs.reminder.decline")
                 }
             }
+        }
+        .onAppear {
+            GameAnalytics.logOnce(.reminderOfferShown, ["source": "after_first_game"])
         }
     }
 }

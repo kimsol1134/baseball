@@ -40,7 +40,7 @@ struct SettingsView: View {
             // 예전에는 이 스위치가 오늘의 이닝 화면 안에만 있었다 — DAU의 7%만 여는
             // 화면이다. 켠 사람을 찾을 수 없으니 끄려는 사람도 찾을 수 없었다.
             Section {
-                Toggle("오늘의 이닝 알림", isOn: Binding(
+                Toggle("이어하기 알림", isOn: Binding(
                     get: { reminderOn },
                     set: { on in
                         if on { DailyReminder.enable(source: "settings") { granted in reminderOn = granted } }
@@ -51,7 +51,7 @@ struct SettingsView: View {
             } header: {
                 Text("알림")
             } footer: {
-                Text("매일 저녁 7시 30분, 그날의 이닝이 열렸다고 알려 드립니다. 이미 던진 날은 보내지 않고, 며칠 동안 열지 않으면 저절로 멈춥니다.")
+                Text("매일 저녁 7시 30분, 현재 선수의 다음 목표나 그날의 이닝 중 이어 할 한 가지를 알려 드립니다. 며칠 동안 열지 않으면 저절로 멈춥니다.")
             }
 
             Section {

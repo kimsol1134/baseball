@@ -991,7 +991,7 @@ final class RetentionTests: XCTestCase {
         let sync = SaveSync(key: "hs-remote-tombstone-\(UUID().uuidString).json")
         sync.clear()
         defer { sync.clear() }
-        let live = try Self.careerResult(seed: "74005", at: .training)
+        let live = try Self.careerResult(seed: "74005", at: .importantGame)
         XCTAssertTrue(sync.write(try JSONEncoder().encode(
             HighSchoolCareerStore.SaveRecord(
                 result: live,
@@ -1004,12 +1004,12 @@ final class RetentionTests: XCTestCase {
         store.restoreOrCreate()
         XCTAssertEqual(store.state?.careerID, live.snapshot.careerID)
         XCTAssertEqual(store.loadState, .ready)
-        let activeSession = PitchSession(highSchool: live.snapshot, seed: "74005-session")
-        activeSession.start()
-        store.pitchSession = activeSession
+        store.beginImportantGame()
         XCTAssertNotNil(store.pitchSession)
 
-        let tombstoneRevision = live.snapshot.revision + 1_000
+        // beginImportantGame writes one record revision without advancing the core snapshot.
+        // The remote deletion deliberately collides at that exact revision.
+        let tombstoneRevision = live.snapshot.revision + 1
         XCTAssertTrue(sync.write(try JSONEncoder().encode(
             HighSchoolCareerStore.SaveRecord(
                 result: nil,
@@ -1026,12 +1026,113 @@ final class RetentionTests: XCTestCase {
         XCTAssertNil(store.tutorialSession)
         XCTAssertNil(store.pendingGameCompletion)
         XCTAssertEqual(store.loadState, .needsSetup)
+        // UI callbacks already queued before the remote reload must not recreate the deleted run.
+        store.finishImportantGame()
+        XCTAssertFalse(store.abandonImportantGame())
+        XCTAssertNil(store.result)
+        XCTAssertEqual(store.loadState, .needsSetup)
         // A later background/meta save must extend the tombstone, never republish `live`.
         XCTAssertTrue(store.save())
         let reloaded = HighSchoolCareerStore(sync: sync)
         reloaded.restoreOrCreate()
         XCTAssertNil(reloaded.result)
         XCTAssertEqual(reloaded.loadState, .needsSetup)
+    }
+
+    @MainActor
+    func testSaveSyncEqualRevisionPrefersTombstoneAndDeterministicallyHealsBothCopies() throws {
+        struct Fixture: Codable, Equatable {
+            let revision: UInt64
+            let tombstone: Bool
+            let value: String
+        }
+
+        final class MemoryRemoteStore: SaveSyncRemoteStoring {
+            private(set) var values: [String: Data] = [:]
+
+            func data(forKey key: String) -> Data? {
+                values[key]
+            }
+
+            func set(_ value: Any?, forKey key: String) {
+                values[key] = value as? Data
+            }
+
+            func removeObject(forKey key: String) {
+                values.removeValue(forKey: key)
+            }
+
+            @discardableResult
+            func synchronize() -> Bool { true }
+        }
+
+        let cloud = MemoryRemoteStore()
+        let sync = SaveSync(
+            key: "equal-revision-conflict-\(UUID().uuidString).json",
+            store: cloud
+        )
+        sync.clear()
+        defer { sync.clear() }
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        let liveA = try encoder.encode(Fixture(revision: 7, tombstone: false, value: "alpha"))
+        let liveB = try encoder.encode(Fixture(revision: 7, tombstone: false, value: "bravo"))
+        let tombstone = try encoder.encode(Fixture(revision: 7, tombstone: true, value: "deleted"))
+        let revision: (Data) -> UInt64? = {
+            (try? decoder.decode(Fixture.self, from: $0))?.revision
+        }
+        let priority: (Data) -> Int = {
+            (try? decoder.decode(Fixture.self, from: $0))?.tombstone == true ? 1 : 0
+        }
+        // local live vs remote tombstone: deletion wins and is copied to the local file.
+        XCTAssertTrue(sync.write(liveA))
+        cloud.set(tombstone, forKey: sync.key)
+        cloud.synchronize()
+        XCTAssertEqual(
+            sync.read(revision: revision, conflictPriority: priority), tombstone
+        )
+
+        // Reverse orientation: the same local tombstone heals a remote live copy too.
+        cloud.set(liveA, forKey: sync.key)
+        cloud.synchronize()
+        XCTAssertEqual(
+            sync.read(revision: revision, conflictPriority: priority), tombstone
+        )
+        XCTAssertEqual(cloud.data(forKey: sync.key), tombstone)
+
+        // Two equal-revision live branches choose the same raw-data winner on every device.
+        XCTAssertTrue(sync.write(liveA))
+        cloud.set(liveB, forKey: sync.key)
+        cloud.synchronize()
+        let expectedLive = liveA.lexicographicallyPrecedes(liveB) ? liveB : liveA
+        XCTAssertEqual(
+            sync.read(revision: revision, conflictPriority: priority), expectedLive
+        )
+        XCTAssertEqual(cloud.data(forKey: sync.key), expectedLive)
+
+        // Semantic priority is only an equal-revision tie-break; a higher live revision and a
+        // decodable old-format candidate keep the existing monotonic revision contract.
+        let higherLive = try encoder.encode(
+            Fixture(revision: 8, tombstone: false, value: "newer")
+        )
+        XCTAssertEqual(
+            SaveSync.preferredData(
+                local: tombstone,
+                remote: higherLive,
+                revision: revision,
+                conflictPriority: priority
+            ),
+            higherLive
+        )
+        XCTAssertEqual(
+            SaveSync.preferredData(
+                local: higherLive,
+                remote: Data("not-json".utf8),
+                revision: revision,
+                conflictPriority: priority
+            ),
+            higherLive
+        )
     }
 
     @MainActor

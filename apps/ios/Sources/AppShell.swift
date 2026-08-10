@@ -26,15 +26,35 @@ struct AppShell: View {
     let highSchool: HighSchoolCareerStore
     let pro: MobileCareerStore
     var weekly: WeeklyProgramStore = .shared
+    var returnWelcomePlan: DailyReminder.Plan?
+    var onDismissReturnWelcome: () -> Void = {}
     @State private var selection: AppTab = .highSchool
     @State private var showsDailyFromDeepLink = false
+    @State private var returnPlanHighSchoolRevision: UInt64?
+    @State private var returnPlanProRevision: UInt64?
     /// 오늘의 이닝을 무엇이 열었는가. 알림이 실제로 사람을 데려오는지 재는 값이다.
     @State private var deepLinkSource = "url"
 
     /// App Store 이벤트에서 바로 오늘의 이닝으로 들어오는 링크만 허용한다.
     /// 다른 URL은 앱 상태를 바꾸지 않는다.
     static func isDailyInningDeepLink(_ url: URL) -> Bool {
-        url.scheme == "com.solkim.baseball.ios" && url.host == "daily-inning"
+        DailyReminder.Destination.resolve(url) == .dailyInning
+    }
+
+    private func openReminderLink(_ url: URL, source: String) {
+        guard let destination = DailyReminder.Destination.resolve(url) else { return }
+        onDismissReturnWelcome()
+        switch destination {
+        case .dailyInning:
+            deepLinkSource = source
+            showsDailyFromDeepLink = true
+        case .highSchool:
+            showsDailyFromDeepLink = false
+            selection = showsHighSchool ? .highSchool : .pro
+        case .pro:
+            showsDailyFromDeepLink = false
+            selection = .pro
+        }
     }
 
     /// 프로 생성 호출이 실제 새 저장 상태로 끝났는지 판정하는 순수 경계.
@@ -247,9 +267,39 @@ struct AppShell: View {
         .tint(BaseballTheme.action)
         .foregroundStyle(BaseballTheme.textPrimary)
         .background(BaseballTheme.canvas.ignoresSafeArea())
+        .modifier(ReturnWelcomeInset(
+            plan: returnWelcomePlan,
+            onShown: {
+                returnPlanHighSchoolRevision = highSchool.result?.revision
+                returnPlanProRevision = pro.state?.revision
+            },
+            onContinue: { plan in
+                guard let url = URL(string: plan.destination.deepLink) else {
+                    onDismissReturnWelcome()
+                    return
+                }
+                openReminderLink(url, source: "return_plan")
+            },
+            onDismiss: onDismissReturnWelcome
+        ))
         // 고교 탭이 사라지는 순간 그 탭을 보고 있으면 빈 화면이 남는다.
         .onChange(of: showsHighSchool) { _, shows in
             if !shows, selection == .highSchool { selection = .pro }
+        }
+        // 카드를 무시하고도 실제 행동을 했다면 오래된 한 가지를 계속 붙잡지 않는다.
+        .onChange(of: highSchool.result?.revision) { _, revision in
+            if returnWelcomePlan != nil,
+               let baseline = returnPlanHighSchoolRevision,
+               revision != baseline {
+                onDismissReturnWelcome()
+            }
+        }
+        .onChange(of: pro.state?.revision) { _, revision in
+            if returnWelcomePlan != nil,
+               let baseline = returnPlanProRevision,
+               revision != baseline {
+                onDismissReturnWelcome()
+            }
         }
         .fullScreenCover(isPresented: $showsDailyFromDeepLink) {
             DailyInningView(
@@ -259,10 +309,7 @@ struct AppShell: View {
             )
         }
         .onOpenURL { url in
-            if Self.isDailyInningDeepLink(url) {
-                deepLinkSource = "url"
-                showsDailyFromDeepLink = true
-            }
+            openReminderLink(url, source: "url")
         }
         // 복귀 알림을 눌러 들어온 경로. `onOpenURL`은 알림 탭에서 불리지 않으므로
         // 이 다리가 없으면 알림이 홈 화면만 띄운다 — D1 훅의 마지막 한 걸음이 없는 셈이다.
@@ -271,16 +318,11 @@ struct AppShell: View {
                 _ = highSchool.retryPendingGameCompletion()
             }
             NotificationRouter.shared.onDeepLink = { url in
-                guard Self.isDailyInningDeepLink(url) else { return }
-                deepLinkSource = "notification"
-                showsDailyFromDeepLink = true
+                openReminderLink(url, source: "notification")
             }
             if let pending = NotificationRouter.shared.pendingDeepLink {
                 NotificationRouter.shared.pendingDeepLink = nil
-                if Self.isDailyInningDeepLink(pending) {
-                    deepLinkSource = "notification"
-                    showsDailyFromDeepLink = true
-                }
+                openReminderLink(pending, source: "notification")
             }
         }
         .onChange(of: weeklyEligibility) { _, eligibility in
@@ -335,6 +377,93 @@ struct AppShell: View {
                 selection = .highSchool
             }
         }
+    }
+}
+
+/// 앱을 다시 열었을 때 가장 먼저 보이는 한 가지. 출석 보상이 아니라 지난 플레이의
+/// 미완성 장면을 그대로 이어 주며, 탭하면 문구와 일치하는 실제 화면으로 이동한다.
+private struct ReturnWelcomeInset: ViewModifier {
+    let plan: DailyReminder.Plan?
+    let onShown: () -> Void
+    let onContinue: (DailyReminder.Plan) -> Void
+    let onDismiss: () -> Void
+
+    func body(content: Content) -> some View {
+        ZStack(alignment: .top) {
+            content
+            if let plan {
+                ReturnWelcomeCard(
+                    plan: plan,
+                    onShown: onShown,
+                    onContinue: { onContinue(plan) },
+                    onDismiss: onDismiss
+                )
+                .id("\(plan.destination.rawValue):\(plan.reason)")
+                .padding(.horizontal, BaseballMetrics.gutter)
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .accessibilitySortPriority(10)
+            }
+        }
+        .animation(.easeOut(duration: 0.22), value: plan)
+    }
+}
+
+private struct ReturnWelcomeCard: View {
+    let plan: DailyReminder.Plan
+    let onShown: () -> Void
+    let onContinue: () -> Void
+    let onDismiss: () -> Void
+    @State private var exposureLogged = false
+
+    var body: some View {
+        BaseballCard(title: "다음에 이어 할 한 가지", tone: .milestone) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(plan.title)
+                        .font(.headline.weight(.heavy))
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                    Spacer(minLength: 0)
+                    Button(action: dismissTapped) {
+                        Image(systemName: "xmark")
+                            .font(.caption.weight(.bold))
+                            .frame(width: BaseballMetrics.minimumTapTarget,
+                                   height: BaseballMetrics.minimumTapTarget)
+                    }
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .accessibilityLabel("이어하기 카드 닫기")
+                    .accessibilityIdentifier("return.plan.dismiss")
+                }
+                Text(plan.body)
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                PrimaryPill(
+                    title: plan.destination.continueTitle,
+                    identifier: "return.plan.continue",
+                    action: continueTapped
+                )
+            }
+        }
+        .onAppear {
+            guard !exposureLogged else { return }
+            exposureLogged = true
+            onShown()
+            GameAnalytics.log(.returnPlanShown, DailyReminder.analyticsProperties(plan))
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func continueTapped() {
+        GameAnalytics.log(.returnPlanTapped, DailyReminder.analyticsProperties(plan))
+        DailyReminder.markWelcomeHandled(plan)
+        onContinue()
+    }
+
+    private func dismissTapped() {
+        GameAnalytics.log(.returnPlanDismissed, DailyReminder.analyticsProperties(plan))
+        DailyReminder.markWelcomeHandled(plan)
+        onDismiss()
     }
 }
 

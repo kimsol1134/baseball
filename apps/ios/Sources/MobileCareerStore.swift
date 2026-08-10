@@ -337,6 +337,7 @@ final class MobileCareerStore {
             "runs": report.runsAllowed,
         ]) { _, modeSpecific in modeSpecific }
         GameAnalytics.log(.gameFinished, gameFinishedProperties)
+        GameAnalytics.recordCompletedGame()
     }
 
     nonisolated static func importantGameSummary(_ report: ImportantInningReport) -> String {

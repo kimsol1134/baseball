@@ -4,10 +4,9 @@ import SimulationCore
 
 /// 리텐션 훅(연속 기록·복귀 알림·오늘의 이닝 노출)의 순수 판정.
 ///
-/// 배경: 2026-08 Amplitude에서 D2 리텐션이 0%였고, 하루 DAU 43명 중 오늘의 이닝을 연
-/// 사람은 3명이었다. 원인은 리텐션 장치가 자신이 살려야 할 화면 안에 갇혀 있었던 것
-/// (알림 스위치가 오늘의 이닝 화면에만 존재)과, 하루 건너뛰어도 잃을 것이 없었던 것이다.
-/// 여기 있는 판정들이 그 두 가지를 고친 규칙이다.
+/// 배경: 2026-08 정식 신규 코호트는 첫날 평균 11.6경기를 했지만 D1 의미 세션은 5/36이었다.
+/// 첫날 플레이를 제한하는 대신, 사용자가 직접 남긴 목표를 3일 비반복 알림과 정확한 화면으로
+/// 이어 준다. 여기 있는 판정들은 그 복귀 약속과 기존 일일 연속 기록을 함께 고정한다.
 final class RetentionHookTests: XCTestCase {
     func testDailyInningCompletionGateRejectsRepeatedFinish() {
         XCTAssertTrue(DailyInningView.canClaimFinish(alreadyFinished: false))
@@ -103,6 +102,329 @@ final class RetentionHookTests: XCTestCase {
             from: date("2026-08-09 10:00"), horizon: 3, playedKeys: ["20260809", "20260810"]
         )
         XCTAssertEqual(entries.map(\.id), [DailyReminder.requestPrefix + "20260811"])
+    }
+
+    /// 첫날 실제 유저는 평균 2회차 이상을 끝냈다. 다음날 알림은 막연한 출석 요구가
+    /// 아니라 사용자가 직접 남긴 목표와 그 화면으로 이어져야 한다.
+    func testCareerReturnPlanPersistsAndBuildsMatchingDeepLinkCopy() {
+        let plan = DailyReminder.Plan(
+            title: "이번 선수의 목표가 남아 있습니다",
+            body: "시즌 5탈삼진 · 탈삼진 3/5 — 이어서 완성해 보세요.",
+            destination: .highSchool,
+            reason: "run_pledge",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue
+        )
+
+        DailyReminder.savePlan(plan, defaults: defaults)
+        XCTAssertEqual(DailyReminder.storedPlan(defaults: defaults), plan)
+
+        let copy = DailyReminder.notificationCopy(plan: plan, streak: 7)
+        XCTAssertEqual(copy.title, plan.title)
+        XCTAssertEqual(copy.body, plan.body)
+        XCTAssertEqual(copy.link, "com.solkim.baseball.ios://high-school")
+        XCTAssertEqual(copy.destination, "high_school")
+        XCTAssertEqual(copy.reason, "run_pledge")
+        XCTAssertFalse(copy.body.contains("7일 연속"), "커리어 목표를 출석 문구로 덮으면 안 됩니다")
+
+        DailyReminder.savePlan(nil, defaults: defaults)
+        XCTAssertNil(DailyReminder.storedPlan(defaults: defaults))
+    }
+
+    /// 첫 설치에는 카드가 없고, 한 번 떠났다가 돌아왔을 때만 현재 진행을 보여 준다.
+    func testWelcomePlanRequiresAPreviousSessionAndUsesCurrentProgress() {
+        let previous = DailyReminder.Plan(
+            title: "이번 선수의 목표가 남아 있습니다",
+            body: "탈삼진 2/5",
+            destination: .highSchool,
+            reason: "run_pledge",
+            receiptID: "receipt-a",
+            savedDayKey: "20260809",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue,
+            developmentRulesVersion: 4
+        )
+        let current = DailyReminder.Plan(
+            title: "이번 선수의 목표가 남아 있습니다",
+            body: "탈삼진 4/5",
+            destination: .highSchool,
+            reason: "run_pledge"
+        )
+
+        XCTAssertNil(DailyReminder.welcomePlan(previous: nil, current: current))
+        XCTAssertEqual(DailyReminder.welcomePlan(previous: previous, current: current), current)
+        XCTAssertNil(DailyReminder.welcomePlan(previous: previous, current: nil))
+    }
+
+    func testHandledWelcomePlanDoesNotNagAgainUntilThePlanOrDayChanges() {
+        let previous = DailyReminder.Plan(
+            title: "이번 선수의 목표가 남아 있습니다",
+            body: "탈삼진 2/5",
+            destination: .highSchool,
+            reason: "run_pledge",
+            receiptID: "receipt-a",
+            savedDayKey: "20260809",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue,
+            developmentRulesVersion: 4
+        )
+        let current = DailyReminder.Plan(
+            title: "이번 선수의 목표가 남아 있습니다",
+            body: "탈삼진 4/5",
+            destination: .highSchool,
+            reason: "run_pledge"
+        )
+        let today = date("2026-08-10 12:00")
+        let tomorrow = date("2026-08-11 12:00")
+
+        DailyReminder.markWelcomeHandled(current, now: today, defaults: defaults)
+        let handled = DailyReminder.storedWelcomeHandled(defaults: defaults)
+
+        XCTAssertNil(DailyReminder.welcomePlan(
+            previous: previous, current: current, handled: handled, now: today
+        ))
+        XCTAssertEqual(DailyReminder.welcomePlan(
+            previous: previous, current: current, handled: handled, now: tomorrow
+        ), current)
+        XCTAssertEqual(DailyReminder.welcomePlan(
+            previous: previous, current: previous, handled: handled, now: today
+        ), previous, "진행 문구가 달라지면 같은 날에도 새 목표를 보여 줘야 합니다")
+    }
+
+    func testReturnPlanButtonsNameTheActualDestination() {
+        XCTAssertEqual(DailyReminder.Destination.highSchool.continueTitle, "이 선수 이어서 키우기")
+        XCTAssertEqual(DailyReminder.Destination.pro.continueTitle, "프로 시즌 이어가기")
+        XCTAssertEqual(DailyReminder.Destination.dailyInning.continueTitle, "오늘의 이닝 열기")
+    }
+
+    @MainActor
+    func testReturnCopyMatchesTheActualPrologueAction() {
+        XCTAssertEqual(
+            BaseballApp.highSchoolReturnDetail(for: .prologue),
+            "감독이 기다립니다. 불펜에서 첫 공을 던질 차례입니다."
+        )
+        XCTAssertNotEqual(
+            BaseballApp.highSchoolReturnDetail(for: .prologue),
+            BaseballApp.highSchoolReturnDetail(for: .schoolSelection)
+        )
+    }
+
+    @MainActor
+    func testReturnExperimentRulesVersionFollowsItsResolvedDestination() {
+        XCTAssertEqual(
+            BaseballApp.developmentRulesVersion(
+                for: .pro,
+                proRulesVersion: 4,
+                highSchoolRulesVersion: 3
+            ),
+            4,
+            "활성 프로와 옛 고교 저장이 함께 있어도 프로 경기와 같은 코호트여야 합니다"
+        )
+        XCTAssertEqual(
+            BaseballApp.developmentRulesVersion(
+                for: .highSchool,
+                proRulesVersion: 4,
+                highSchoolRulesVersion: 3
+            ),
+            3
+        )
+        XCTAssertEqual(
+            BaseballApp.developmentRulesVersion(
+                for: .dailyInning,
+                proRulesVersion: 3,
+                highSchoolRulesVersion: 3
+            ),
+            PitcherPresetCatalog.balanceVersion,
+            "기록에 남지 않는 도전의 일일 fallback은 현재 규칙으로 비교합니다"
+        )
+    }
+
+    func testDailyFallbackKeepsExistingStreakMessageAndRoute() {
+        let copy = DailyReminder.notificationCopy(plan: nil, streak: 3)
+        XCTAssertEqual(copy.title, "오늘의 이닝이 열려 있습니다")
+        XCTAssertTrue(copy.body.contains("3일 연속"))
+        XCTAssertEqual(copy.link, DailyReminder.deepLink)
+        XCTAssertEqual(copy.destination, "daily_inning")
+        XCTAssertEqual(copy.reason, "daily_inning")
+    }
+
+    func testCompletedDailyDoesNotSuppressACareerReturnPlan() {
+        let played = Set(["20260809", "20260810"])
+        let career = DailyReminder.Plan(
+            title: "프로 시즌의 다음 선택",
+            body: "이번 시즌의 중요한 선택을 직접 결정할 차례입니다.",
+            destination: .pro,
+            reason: "pro_phase",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue
+        )
+        XCTAssertTrue(DailyReminder.playedKeysToSkip(
+            plan: career, playedDailyKeys: played
+        ).isEmpty)
+        XCTAssertEqual(
+            DailyReminder.playedKeysToSkip(plan: nil, playedDailyKeys: played),
+            played
+        )
+    }
+
+    func testReminderOpenedPropertiesSupportNewAndLegacyRequests() {
+        let current = DailyReminder.openedProperties(userInfo: [
+            DailyReminder.linkUserInfoKey: "com.solkim.baseball.ios://pro",
+            DailyReminder.destinationUserInfoKey: "pro",
+            DailyReminder.reasonUserInfoKey: "pro_phase",
+            DailyReminder.receiptUserInfoKey: "receipt-a",
+            DailyReminder.experimentUserInfoKey: DailyReminder.returnExperimentID,
+            DailyReminder.variantUserInfoKey: "guided",
+            DailyReminder.savedDayUserInfoKey: "20260809",
+            DailyReminder.rulesVersionUserInfoKey: 4,
+        ])
+        XCTAssertEqual(current["destination"] as? String, "pro")
+        XCTAssertEqual(current["reason"] as? String, "pro_phase")
+        XCTAssertEqual(current["plan_receipt"] as? String, "receipt-a")
+        XCTAssertEqual(current["variant"] as? String, "guided")
+        XCTAssertEqual(current["development_rules_version"] as? Int, 4)
+
+        let legacy = DailyReminder.openedProperties(userInfo: [
+            DailyReminder.linkUserInfoKey: DailyReminder.deepLink,
+        ])
+        XCTAssertEqual(legacy["destination"] as? String, "daily_inning")
+        XCTAssertEqual(legacy["reason"] as? String, "legacy")
+        XCTAssertEqual(legacy["plan_receipt"] as? String, "legacy")
+        XCTAssertEqual(legacy["development_rules_version"] as? Int, 0)
+    }
+
+    @MainActor
+    func testReturnExperimentFreezesAStableReceiptVariantAndRulesVersion() {
+        let base = DailyReminder.Plan(
+            title: "이번 선수 이어가기", body: "다음 훈련이 기다립니다.",
+            destination: .highSchool, reason: "high_school_phase"
+        )
+        let now = date("2026-08-09 21:00")
+        let first = DailyReminder.preparedForNextReturn(
+            base, stableID: "stable-player", rulesVersion: 4, now: now
+        )
+        let replay = DailyReminder.preparedForNextReturn(
+            base, stableID: "stable-player", rulesVersion: 4, now: now
+        )
+        let nextDay = DailyReminder.preparedForNextReturn(
+            base, stableID: "stable-player", rulesVersion: 4,
+            now: date("2026-08-10 21:00")
+        )
+        let legacyRules = DailyReminder.preparedForNextReturn(
+            base, stableID: "stable-player", rulesVersion: 3, now: now
+        )
+
+        XCTAssertEqual(first.receiptID, replay.receiptID)
+        XCTAssertEqual(first.experimentVariant, replay.experimentVariant)
+        XCTAssertEqual(first.savedDayKey, "20260809")
+        XCTAssertEqual(first.developmentRulesVersion, 4)
+        XCTAssertNotEqual(first.receiptID, nextDay.receiptID)
+        XCTAssertNotEqual(
+            first.receiptID,
+            legacyRules.receiptID,
+            "같은 날 같은 화면이어도 규칙 버전이 다르면 별도 D1 코호트여야 합니다"
+        )
+
+        let assignments = (0..<10_000).map {
+            DailyReminder.experimentVariant(stableID: "player-\($0)")
+        }
+        let guidedCount = assignments.filter { $0 == .guided }.count
+        XCTAssertTrue(
+            4_800...5_200 ~= guidedCount,
+            "안정 ID 10,000개의 50:50 배정이 허용 오차를 벗어났습니다: guided=\(guidedCount)"
+        )
+        XCTAssertEqual(
+            assignments,
+            (0..<10_000).map {
+                DailyReminder.experimentVariant(stableID: "player-\($0)")
+            },
+            "같은 안정 ID의 실험군은 재실행해도 바뀌면 안 됩니다"
+        )
+    }
+
+    func testOnlyGuidedCohortGetsPersonalizedCardAndNotification() {
+        let current = DailyReminder.Plan(
+            title: "프로 시즌의 다음 선택", body: "3주차 결정을 이어 가세요.",
+            destination: .pro, reason: "pro_phase"
+        )
+        let holdout = DailyReminder.Plan(
+            title: current.title, body: current.body,
+            destination: current.destination, reason: current.reason,
+            receiptID: "holdout-r", savedDayKey: "20260809",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.holdout.rawValue,
+            developmentRulesVersion: 4
+        )
+        let guided = DailyReminder.Plan(
+            title: current.title, body: current.body,
+            destination: current.destination, reason: current.reason,
+            receiptID: "guided-r", savedDayKey: "20260809",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue,
+            developmentRulesVersion: 4
+        )
+
+        XCTAssertNil(DailyReminder.welcomePlan(previous: holdout, current: current))
+        let card = DailyReminder.welcomePlan(previous: guided, current: current)
+        XCTAssertEqual(card?.receiptID, "guided-r")
+
+        let holdoutCopy = DailyReminder.notificationCopy(plan: holdout, streak: 2)
+        XCTAssertEqual(holdoutCopy.destination, "daily_inning")
+        XCTAssertEqual(holdoutCopy.reason, "daily_inning")
+        let guidedCopy = DailyReminder.notificationCopy(plan: guided, streak: 2)
+        XCTAssertEqual(guidedCopy.destination, "pro")
+        XCTAssertEqual(guidedCopy.reason, "pro_phase")
+    }
+
+    func testColdStartUsesNextKSTDateAndCarriesComparableProperties() {
+        let plan = DailyReminder.Plan(
+            title: "이번 선수 이어가기", body: "다음 훈련이 기다립니다.",
+            destination: .highSchool, reason: "high_school_phase",
+            receiptID: "receipt-a", savedDayKey: "20260809",
+            experimentVariant: "guided", developmentRulesVersion: 4
+        )
+        XCTAssertNil(DailyReminder.coldStartProperties(
+            plan, now: date("2026-08-09 23:59")
+        ))
+        let properties = DailyReminder.coldStartProperties(
+            plan, now: date("2026-08-10 00:01")
+        )
+        XCTAssertEqual(properties?["day_gap"] as? Int, 1)
+        XCTAssertEqual(properties?["return_day_key"] as? String, "20260810")
+        XCTAssertEqual(properties?["plan_receipt"] as? String, "receipt-a")
+        XCTAssertEqual(properties?["development_rules_version"] as? Int, 4)
+    }
+
+    func testLegacyPlanDecodesAndSavingCurrentCopyPreservesFrozenExperiment() throws {
+        let legacy = try JSONDecoder().decode(
+            DailyReminder.Plan.self,
+            from: Data(#"{"title":"이어가기","body":"다음 훈련","destination":"high_school","reason":"high_school_phase"}"#.utf8)
+        )
+        XCTAssertNil(legacy.receiptID)
+        XCTAssertNil(legacy.experimentVariant)
+
+        let prepared = DailyReminder.Plan(
+            title: legacy.title, body: legacy.body,
+            destination: legacy.destination, reason: legacy.reason,
+            receiptID: "receipt-a", savedDayKey: "20260809",
+            experimentVariant: "guided", developmentRulesVersion: 4
+        )
+        DailyReminder.savePlan(prepared, defaults: defaults)
+        DailyReminder.savePlan(legacy, defaults: defaults)
+        let restored = DailyReminder.storedPlan(defaults: defaults)
+        XCTAssertEqual(restored?.receiptID, "receipt-a")
+        XCTAssertEqual(restored?.experimentVariant, "guided")
+        XCTAssertEqual(restored?.developmentRulesVersion, 4)
+    }
+
+    func testReminderDeepLinksResolveOnlyKnownAppRoutes() {
+        XCTAssertEqual(
+            DailyReminder.Destination.resolve(URL(string: DailyReminder.deepLink)!),
+            .dailyInning
+        )
+        XCTAssertEqual(
+            DailyReminder.Destination.resolve(URL(string: "com.solkim.baseball.ios://high-school")!),
+            .highSchool
+        )
+        XCTAssertEqual(
+            DailyReminder.Destination.resolve(URL(string: "com.solkim.baseball.ios://pro")!),
+            .pro
+        )
+        XCTAssertNil(DailyReminder.Destination.resolve(URL(string: "https://example.com/pro")!))
     }
 
     // MARK: - 옵트인 관문

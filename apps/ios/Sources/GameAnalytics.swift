@@ -167,8 +167,20 @@ enum GameAnalytics {
         case proCareerStarted = "pro_career_started"
         /// 복귀 알림 상태 변화. `enabled`가 켜짐/꺼짐, `source`가 어디서 결정됐는지다.
         case reminderChanged = "reminder_changed"
+        /// 복귀 알림 권유 카드가 실제 화면 계층에 나타난 시점. 허용률의 분모다.
+        case reminderOfferShown = "reminder_offer_shown"
         /// 복귀 알림을 눌러 앱으로 돌아옴. D1 훅이 실제로 작동하는지의 증거다.
         case reminderOpened = "reminder_opened"
+        /// 이전 세션에서 남긴 한 가지를 앱 안의 복귀 카드로 실제 보여 준 시점.
+        case returnPlanShown = "return_plan_shown"
+        /// 복귀 카드에서 약속한 화면으로 바로 이어 간 시점.
+        case returnPlanTapped = "return_plan_tapped"
+        /// 복귀 카드를 닫고 다른 행동을 택한 시점. 반복 노출이 성가신지 보는 가드레일이다.
+        case returnPlanDismissed = "return_plan_dismissed"
+        /// 사용자가 떠날 때 다음 행동이 있었고 대조군·실험군이 고정된 시점.
+        case returnPlanEligible = "return_plan_eligible"
+        /// 저장된 계획 다음 서울 날짜에 앱 프로세스가 새로 시작된 시점.
+        case returnPlanColdStart = "return_plan_cold_start"
         /// 세션 종료(백그라운드 전환). `games`로 세션 깊이를 잰다.
         case sessionEnded = "session_ended"
     }
@@ -181,6 +193,7 @@ enum GameAnalytics {
     private static let onceKeyPrefix = "baseball.analytics.once."
     /// 기기를 가로지르는 안정 식별자 키. iCloud 키-값 저장소에도 거울을 둔다.
     private static let stableIDKey = "baseball.analytics.stableID"
+    private static let completedGameCountKey = "baseball.analytics.completedGameCount"
 
     /// 앱 시작 시 한 번. 설정이 없으면 조용히 꺼진 채 남는다.
     static func configure() {
@@ -225,6 +238,17 @@ enum GameAnalytics {
         defaults.set(fresh, forKey: stableIDKey)
         cloud.set(fresh, forKey: stableIDKey)
         return fresh
+    }
+
+    /// 세션의 실제 경기 완료 수. 고교 누적 경기 수를 세션 값으로 잘못 보내던 계측을
+    /// 대체한다. UI 테스트의 기계 플레이는 이 카운터에도 섞지 않는다.
+    static func completedGameCount(defaults: UserDefaults = .standard) -> Int {
+        defaults.integer(forKey: completedGameCountKey)
+    }
+
+    static func recordCompletedGame(defaults: UserDefaults = .standard) {
+        guard !isUITest(arguments: ProcessInfo.processInfo.arguments) else { return }
+        defaults.set(completedGameCount(defaults: defaults) + 1, forKey: completedGameCountKey)
     }
 
     static func log(_ event: Event, _ properties: [String: Any] = [:]) {
