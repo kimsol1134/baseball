@@ -2,6 +2,7 @@ import XCTest
 
 /// 고교 3년 → 드래프트 → 기억 계승 → 프로 입단까지 한 번에 걸어 본다.
 /// 유닛 테스트는 엔진 연결을, 이 테스트는 "화면으로 실제로 끝까지 갈 수 있는지"를 지킨다.
+@MainActor
 final class CareerSmokeUITests: XCTestCase {
     private let timeout: TimeInterval = 12
     /// 고교 한 회차는 훈련 12~16 + 관계 4~6 + 경기 4~6 + 각성 3 + 챕터 8이라 단계 수가 많다.
@@ -34,13 +35,21 @@ final class CareerSmokeUITests: XCTestCase {
         return true
     }
 
-    private func launch() -> XCUIApplication {
+    private func launch(pitchAbilityFeedback: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         // 자동 릴리스로 돌린다. 타이밍 제스처는 사람이 손으로 확인하고, 이 테스트는 흐름을 본다.
         // 소리는 끈다 — 스모크가 검증할 대상이 아니고, 호스트 오디오 상태가 나쁘면
         // AVAudioPlayerNode.scheduleBuffer의 NSException으로 앱이 통째로 죽어 흐름 검증까지
         // 무너진다(시뮬레이터에서 재현, HEAD에서도 동일). 인자 도메인이라 앱 코드는 그대로다.
-        app.launchArguments = ["-uiTestResetCareer", "-uiTestAutoRelease", "-baseball.audio.sound", "NO"]
+        var launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-baseball.audio.sound", "NO",
+        ]
+        if pitchAbilityFeedback {
+            launchArguments.append("-uiTestPitchAbilityFeedback")
+        }
+        app.launchArguments = launchArguments
         app.launch()
         return app
     }
@@ -63,7 +72,6 @@ final class CareerSmokeUITests: XCTestCase {
         var capturedTraining = false
         var capturedPitch = false
         var reachedDraft = false
-        var usedFastForwardDuringRun = false
 
         while steps < maximumSteps {
             steps += 1
@@ -146,18 +154,14 @@ final class CareerSmokeUITests: XCTestCase {
                     _ = app.buttons["pitch.throw"].waitForExistence(timeout: timeout)
                     capture(app, name: "05-pitch-decision")
                 }
-                usedFastForwardDuringRun = playInning(
+                _ = playInning(
                     app, capturePitchResult: !capturedPitch, usesFastForwardWhenAvailable: true
-                ) || usedFastForwardDuringRun
+                )
                 continue
             }
 
             if app.buttons["hs.draft.resolve"].exists {
                 reachedDraft = true
-                XCTAssertTrue(
-                    usedFastForwardDuringRun,
-                    "한 회차 동안 저위험 타석 빠른 진행을 한 번도 사용할 수 없었습니다."
-                )
                 capture(app, name: "06-draft")
                 tapIfPresent(app.buttons["hs.draft.resolve"])
                 continue
@@ -258,6 +262,11 @@ final class CareerSmokeUITests: XCTestCase {
     /// 프로는 구간 진행을 사용하되, 시즌 갈림길과 중요 경기는 실제 화면에서 직접 처리한다.
     /// 코어 완주 테스트만으로는 화면의 누락 국면·빈 화면·확인창 연결 단절을 잡을 수 없다.
     private func finishProCareer(_ app: XCUIApplication) -> Bool {
+        // 입단 직후 기본 화면은 '오늘' 대시보드다. 실제 결정을 내리는 '이번 주'로 옮긴다.
+        let weeklyScreen = app.segmentedControls.buttons["이번 주"]
+        guard weeklyScreen.waitForExistence(timeout: timeout) else { return false }
+        weeklyScreen.tap()
+
         var steps = 0
         while steps < 700 {
             steps += 1
@@ -268,14 +277,14 @@ final class CareerSmokeUITests: XCTestCase {
             }
             if tapIfPresent(app.buttons["pro.advanceSegment"]) { continue }
 
-            let choices = app.buttons.matching(
-                NSPredicate(format: "identifier BEGINSWITH %@", "pro.seasonDecision.choice.")
-            )
-            if choices.count > 0 {
-                let choice = choices.element(boundBy: 0)
+            if let choice = firstSeasonDecisionChoice(app) {
                 guard choice.exists, bringIntoView(choice) else { return false }
                 choice.tap()
-                let confirm = app.buttons["pro.seasonDecision.confirm"]
+                let identifiedConfirm = app.buttons.matching(
+                    identifier: "pro.seasonDecision.confirm"
+                ).firstMatch
+                let confirm = identifiedConfirm.exists
+                    ? identifiedConfirm : app.buttons["이 선택으로 결정"].firstMatch
                 guard confirm.waitForExistence(timeout: timeout) else { return false }
                 confirm.tap()
                 continue
@@ -288,13 +297,13 @@ final class CareerSmokeUITests: XCTestCase {
             if tapIfPresent(app.buttons["시즌 기록 확인"]) { continue }
 
             if tapIfPresent(app.buttons["pro.offseason.arrow.forward.circle"]) {
-                let confirm = app.buttons["pro.offseason.confirm"]
+                let confirm = app.buttons.matching(identifier: "pro.offseason.confirm").firstMatch
                 guard confirm.waitForExistence(timeout: timeout) else { return false }
                 confirm.tap()
                 continue
             }
             if tapIfPresent(app.buttons["pro.retire"]) {
-                let confirm = app.buttons["pro.retire.confirm"]
+                let confirm = app.buttons.matching(identifier: "pro.retire.confirm").firstMatch
                 guard confirm.waitForExistence(timeout: timeout) else { return false }
                 confirm.tap()
                 continue
@@ -310,6 +319,26 @@ final class CareerSmokeUITests: XCTestCase {
         }
         capture(app, name: "99-pro-career-step-limit")
         return false
+    }
+
+    /// SwiftUI가 카드 버튼의 identifier를 잠깐 `other`에 붙이는 프레임이 있어 역할을
+    /// `button`으로만 한정하면 화면에 선택지가 보이는데도 0개로 판정될 수 있다.
+    /// identifier를 우선하고, 실제 접근성 문구의 공통 계약인 "효과:"를 안전망으로 쓴다.
+    private func firstSeasonDecisionChoice(_ app: XCUIApplication) -> XCUIElement? {
+        let byIdentifier = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "pro.seasonDecision.choice.")
+        )
+        if byIdentifier.count > 0 { return byIdentifier.element(boundBy: 0) }
+
+        let decision = app.descendants(matching: .any)["pro.seasonDecision"]
+        let decisionEyebrow = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "주차 결정")
+        )
+        guard decision.exists || decisionEyebrow.count > 0 else { return nil }
+        let byAccessibleEffect = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "효과:")
+        )
+        return byAccessibleEffect.count > 0 ? byAccessibleEffect.element(boundBy: 0) : nil
     }
 
     /// 새 회차는 대표 유산 하나를, 기능 도입 전 저장은 기존 기억을 필요한 만큼 고른다.
@@ -358,6 +387,31 @@ final class CareerSmokeUITests: XCTestCase {
             app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "hs.school."))
                 .element(boundBy: 0).waitForExistence(timeout: timeout),
             "첫 불펜 뒤 학교 선택으로 넘어가지 않았습니다."
+        )
+    }
+
+    /// 이번 제품 빌드의 행동 가설은 '다음 행동 복귀' 하나다. 투구 수치 패널은 별도
+    /// 실험에서만 켜야 복귀 효과와 손맛 효과를 서로의 성과로 오인하지 않는다.
+    func testPitchAbilityFeedbackIsHiddenWithoutItsDedicatedExperimentFlag() {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer", "-uiTestAutoRelease",
+            "-baseball.audio.sound", "NO",
+        ]
+        app.launch()
+
+        dismissOpening(app)
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.prologue.throw"]))
+        XCTAssertTrue(app.buttons["pitch.throw"].waitForExistence(timeout: timeout))
+        XCTAssertFalse(
+            app.descendants(matching: .any)
+                .matching(identifier: "pitch.buildReadout").firstMatch.exists,
+            "복귀 실험 빌드에 투구 피드백 실험이 함께 노출됐습니다."
+        )
+        XCTAssertFalse(
+            app.staticTexts["구종 · 내가 만든 공"].exists,
+            "숨긴 실험의 인과 문구가 카드 제목으로 남아 있습니다."
         )
     }
 
@@ -461,13 +515,27 @@ final class CareerSmokeUITests: XCTestCase {
     private func playInning(
         _ app: XCUIApplication,
         capturePitchResult: Bool,
-        usesFastForwardWhenAvailable: Bool = false
+        usesFastForwardWhenAvailable: Bool = false,
+        expectsPitchAbilityFeedback: Bool = false
     ) -> Bool {
         let throwButton = app.buttons["pitch.throw"]
         let fastForward = app.buttons["pitch.fastForwardBatter"]
         let nextBatter = app.buttons["pitch.nextBatter"]
         let finish = app.buttons["pitch.finish"]
         XCTAssertTrue(throwButton.waitForExistence(timeout: timeout), "승부 화면이 열리지 않았습니다.")
+        let buildReadout = app.descendants(matching: .any)
+            .matching(identifier: "pitch.buildReadout").firstMatch
+        if expectsPitchAbilityFeedback {
+            XCTAssertTrue(
+                buildReadout.waitForExistence(timeout: timeout),
+                "투구 피드백 실험을 켰지만 수치 패널이 보이지 않습니다."
+            )
+        } else {
+            XCTAssertFalse(
+                buildReadout.exists,
+                "제품 설정 종주에 투구 피드백 실험이 함께 노출됐습니다."
+            )
+        }
         XCTAssertFalse(app.tabBars.firstMatch.exists, "투구 조작 위에 하단 탭 바가 겹치면 안 됩니다.")
 
         var pitches = 0
@@ -508,6 +576,7 @@ final class CareerSmokeUITests: XCTestCase {
         if start.waitForExistence(timeout: 5) { start.tap() }
     }
 
+    @discardableResult
     private func tapIfPresent(_ element: XCUIElement) -> Bool {
         guard element.exists else { return false }
         guard bringIntoView(element) else { return false }

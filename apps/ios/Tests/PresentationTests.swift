@@ -197,4 +197,28 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(PitchCopy.zone(PitchZone(row: 1, column: 1)), "가운데")
         XCTAssertEqual(PitchCopy.zone(PitchZone(row: 2, column: 2)), "낮은 바깥쪽")
     }
+
+    func testPitchBuildCopyTranslatesEngineValuesIntoPlayerLanguage() {
+        let readout = PitchAbilityReadout(
+            pitchType: .slider,
+            stuffRating: 61,
+            commandRating: 57,
+            movementRating: 66,
+            staminaRating: 58,
+            whiffRating: 64,
+            weakContactRating: 59,
+            nominalVelocityTenthsKPH: 1_327,
+            fatigueCost: 1
+        )
+
+        XCTAssertEqual(PitchBuildCopy.velocity(readout.nominalVelocityTenthsKPH), "132.7")
+        XCTAssertEqual(
+            PitchBuildCopy.moment(.movement, readout: readout),
+            "키운 변화가 살아난 공 · 움직임 66 · 범타 59"
+        )
+        XCTAssertEqual(
+            PitchBuildCopy.accessibilitySummary(readout),
+            "기준 구속 132.7킬로미터, 코스 57, 움직임 66, 체력 58, 한 구 팔 부담 1"
+        )
+    }
 }
