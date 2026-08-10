@@ -24,6 +24,9 @@ struct PitchScenario {
     let detail: String
     /// 이닝이 끝나지 않아도 여기서 멈춘다. 볼넷이 이어질 때 세션이 무한히 길어지는 것을 막는다.
     let maximumBatters: Int
+    /// 투구 수 상한. 튜토리얼처럼 "배우는 자리"의 길이를 타자 수가 아니라 구 수로
+    /// 못 박아야 할 때만 쓴다. nil이면 타자 수만 본다.
+    var maximumPitches: Int?
     /// 같은 앱 빌드 안의 보존 v3와 신규 v4 결과를 분석에서 섞지 않는다.
     let developmentRulesVersion: Int
 
@@ -59,6 +62,7 @@ struct PitchScenario {
             headline: situation.headline,
             detail: situation.detail,
             maximumBatters: 4,
+            maximumPitches: nil,
             developmentRulesVersion: state.balanceVersion ?? 1
         )
     }
@@ -143,6 +147,10 @@ struct PitchScenario {
             detail: "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요.",
             // 두 타석 — 3구 스크립트(사인→흔들기→결정구)가 실제로 전달될 최소 길이.
             maximumBatters: 2,
+            // 실측에서 첫 불펜이 13구까지 갔다(주석의 "통상 6구 안팎"과 두 배 이상 차이).
+            // 게다가 기본값이 사인 추종이라 13구가 전부 같은 코스였다 — 배우는 자리가
+            // 아니라 같은 버튼을 열세 번 누르는 자리였다. 8구면 3구 스크립트가 두 바퀴 돈다.
+            maximumPitches: 8,
             developmentRulesVersion: state.balanceVersion ?? 1
         )
     }
@@ -218,6 +226,7 @@ struct PitchScenario {
             headline: content?.title ?? "고교 공식 경기",
             detail: content?.narrative ?? "이 이닝을 막아야 합니다.",
             maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state),
+            maximumPitches: nil,
             developmentRulesVersion: state.balanceVersion ?? 1
         )
     }
@@ -279,6 +288,7 @@ extension PitchScenario {
             headline: "오늘의 이닝",
             detail: "9회초, 한 점 리드. 전국이 오늘 같은 타순을 상대합니다.",
             maximumBatters: 6,
+            maximumPitches: nil,
             developmentRulesVersion: PitcherPresetCatalog.balanceVersion
         )
     }

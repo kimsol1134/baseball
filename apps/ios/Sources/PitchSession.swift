@@ -507,7 +507,11 @@ final class PitchSession {
             )
         )
 
-        if let next = result.nextPreparation {
+        // 투구 수 상한에 닿으면 타석 도중이라도 여기서 접는다. 튜토리얼에서만 쓰는
+        // 장치라 기록에 남지 않고, 길이가 배움을 넘어서는 것을 막는 쪽이 이득이다.
+        let reachedPitchCap = scenario.maximumPitches.map { pitches >= $0 } ?? false
+
+        if let next = result.nextPreparation, !reachedPitchCap {
             // 타석이 이어진다. 코어가 만들어 준 다음 준비를 그대로 쓴다.
             context = Self.nextContext(from: context, snapshot: snapshot, gameState: result.gameState)
             preparation = next
@@ -518,7 +522,7 @@ final class PitchSession {
 
         let inningEnded = snapshot.inningTransition?.inningEnded ?? false
         let reachedCap = batterIndex + 1 >= min(scenario.maximumBatters, scenario.lineup.count)
-        if inningEnded || reachedCap {
+        if inningEnded || reachedCap || reachedPitchCap {
             stage = .finished
             preparation = nil
         } else {
