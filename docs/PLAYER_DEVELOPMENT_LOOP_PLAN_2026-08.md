@@ -61,25 +61,25 @@ flowchart LR
 
 ### 2.1 저장된 Amplitude 분석에서 확인된 방향
 
-분석 기준은 [Amplitude 성장 분석 노트북](../artifacts/analysis/amplitude-2026-08-09/amplitude_growth_analysis.ipynb)과 [게임플레이 리텐션 구현 계획](./GAMEPLAY_RETENTION_IMPLEMENTATION_PLAN_2026-08.md)이다.
+분석 기준은 [신규 유저 리텐션 분석 노트북](../artifacts/analysis/amplitude-2026-08-10/new_user_retention_analysis.ipynb)과 [게임플레이 리텐션 구현 계획](./GAMEPLAY_RETENTION_IMPLEMENTATION_PLAN_2026-08.md)이다.
 
 | 관측 | 값 | 이 계획에 주는 의미 | 신뢰도 |
 |---|---:|---|---|
-| 온보딩 시작 → 첫 투구 | 57 → 53, **93.0%** | 투구를 빨리 보여 주는 현재 입구는 보존한다. | 중간 |
-| 첫 투구 → 첫 공식 경기 완료 | 53 → 43, **81.1%** | 직접 투구 자체보다 그 이후의 장기 목적이 우선 과제다. | 중간 |
-| 드래프트 → 다음 인생 시작 | 42 → 27, **64.3%** | 결말에서 다음 육성의 차이를 즉시 보여 줄 필요가 있다. | 낮음~중간 |
-| 사용자당 경기 완료 | 약 **10.62회** | 첫날 소비 깊이는 높다. 한 세션 완주와 여러 세션 복귀를 분리해 측정해야 한다. | 낮음~중간 |
-| 오늘의 이닝 진입 | 약 **6.98%** | 별도 모드보다 진행 중 선수와 다음 목표의 연결이 먼저다. | 낮음 |
-| D2 | **0% 관측** | 다음 날 돌아올 이유가 약하다는 경고 신호일 뿐 절대 유지율이 아니다. | 낮음 |
+| 온보딩 시작 → 첫 투구 | 219 → 210, **95.9%** | 투구를 빨리 보여 주는 현재 입구는 보존한다. | 높음 |
+| 온보딩 시작 → 첫 공식 경기 완료 | 219 → 190, **86.8%** | 첫 경기까지의 핵심 손맛은 작동한다. | 높음 |
+| 활성한 하루당 경기 완료 | **11.63회** | 첫날 콘텐츠 부족이 아니라 세션 간 연결이 우선 과제다. | 높음 |
+| 드래프트 사용자-일당 결과 | **2.24회** | 첫날 여러 선수를 자발적으로 반복한다. 강제 대기·에너지 제한은 피한다. | 높음 |
+| D1 의미 세션 | 36명 중 5명, **13.9%** | 첫 경기 뒤 다음 24시간에 다시 경기를 끝내는 복귀가 약하다. | 중간 |
+| Apple 첫 다운로드 ↔ 첫 경기 신규 | 8/8에 **41 ↔ 41** | 독립 계측이 일치해 정식 신규 코호트로 신뢰할 수 있다. | 높음 |
 
-현재 가장 안전한 해석은 “첫 투구와 첫 경기까지의 재미는 작동하지만, 첫날 소비 뒤 다음 세션에 남는 선수·목표·수집 동기가 약하다”이다. 인터뷰에서 확인된 선수 애착과 세대 계승은 이 문제를 설명하는 정성 근거이며, 출시 후 행동 변화는 별도로 검증해야 한다.
+현재 가장 안전한 해석은 “첫 투구와 첫날 반복 재미는 작동하지만, 떠나는 순간 다음 세션에 이어 할 구체적인 선수·목표가 앱 밖에 남지 않는다”이다. 첫날 난도를 올리거나 플레이를 제한하지 않고, 사용자가 고른 회차 목표·현재 국면·프로 결정을 3일 비반복 알림 한 가지로 이어 주는 것이 첫 실험이다. 선수 애착과 세대 계승이 복귀를 실제로 올리는지는 대상 빌드의 행동 변화로 별도 검증한다.
 
 ### 2.2 반드시 함께 표시할 데이터 한계
 
-- 분석 당일 App Store 유료 다운로드는 1건인데 Amplitude 활성 사용자는 59명이다. TestFlight·개발·HTTP·합성 이벤트 혼입 가능성이 크다.
-- 온보딩 완료 76회가 시작 57회보다 많고, 한 번만 기록되어야 할 활성화가 약 51명에게 96회 발생했다.
-- HTTP API와 iOS SDK 이벤트가 섞였고, 검토 세션에는 안정적인 User ID가 없었다.
-- 1.0.2가 분석 당일 출시되어 성숙한 D1·D7 코호트가 없었다.
+- Apple 일별 리포트는 8/8까지만 완성됐다. Amplitude의 8/9 신규 165명은 다음 Apple 리포트가 나올 때까지 선행 지표다.
+- D1 적격자는 36명뿐이다. 13.9%의 Wilson 95% 구간은 약 6.1~28.7%로 넓으며, D2 이후 분모는 한 자릿수라 판단에 쓰지 않는다.
+- 8/8~8/9의 플레이 깊이는 일별 고유 사용자 합인 사용자-일 기준이다. 양일에 온 사용자는 두 번 포함되므로 장기 고유 사용자 수가 아니다.
+- 정식 유저가 사용한 빌드 42에는 `pro_career_started`와 새 복귀 계측이 없다. 드래프트 뒤 환생하지 않은 사람을 이탈로 단정하지 않는다.
 - 과거 `draft_resolved → rebirth_started`에는 정상적으로 프로로 간 사용자가 분모에 섞였다. 앞으로는 `pro_career_started`를 제외한 적격 사용자만 센다.
 
 따라서 위 수치는 우선순위와 초기 목표의 닻으로만 사용한다. `distribution=app_store`, `environment=production`, 대상 기능 버전이 동일한 코호트가 쌓이기 전에는 “기능이 유지율을 올렸다”는 문장을 쓰지 않는다. 정식 사용자 200명 미만에서는 노출 수·절대 전환·변화폭을 함께 제시하고 통계적 유의성을 주장하지 않는다.
@@ -386,7 +386,7 @@ D7 의미 세션 **≥8%**를 장기 결과 가드레일로 함께 본다. 표�
 
 ## 9. 분석 이벤트 계약
 
-모든 이벤트에는 기존 공통 속성 `app_version`, `build`, `distribution`, `environment`, `platform`과 새 `development_rules_version`을 붙인다. 이름, 자유 입력 문장, 원시 시드, `careerID`, 구체적 인물명은 보내지 않는다.
+모든 이벤트에는 공통 속성 `app_version`, `build`, `distribution`, `environment`, `platform`을 붙인다. 규칙이 결과를 바꾸는 `game_finished`, 복귀 적격·콜드스타트·카드, `session_ended`에는 새 `development_rules_version`을 필수로 붙여 같은 규칙 코호트끼리만 비교한다. 이름, 자유 입력 문장, 원시 시드, `careerID`, 구체적 인물명은 보내지 않는다.
 
 ### 9.1 새 이벤트와 기존 이벤트 확장
 
@@ -402,6 +402,8 @@ D7 의미 세션 **≥8%**를 장기 결과 가드레일로 함께 본다. 표�
 | `legacy_selected` | 한 후보의 효과·영수증·저장이 모두 성공한 뒤 | `life_number`, `drafted`, `legacy_id`, `category`, `newly_added`, `direct_effect_type` | 선택·수집·계승 |
 | `undrafted_epilogue_presented` | 미지명 전용 후일담의 핵심 내용이 실제로 보일 때 | `life_number`, `primary_reason_id`, `relationship_role`, `artifact_id` | 후일담 노출 |
 | `undrafted_epilogue_completed` | 사용자가 후일담을 끝내고 유산 선택으로 이동할 때 | `life_number`, `active_seconds`, `primary_reason_id` | 적격 다음 세대 전환 분모 |
+| `return_plan_eligible` | 세션 종료에서 다음 행동·규칙 버전·실험군을 동결한 뒤 | `plan_receipt`, `experiment_id`, `variant`, `destination`, `reason`, `saved_day_key`, `development_rules_version` | 복귀 실험의 생존자 편향 없는 분모 |
+| `return_plan_cold_start` | 적격 세션 다음 KST 날짜에 앱 프로세스를 시작할 때 | 위 속성 + `return_day_key`, `day_gap` | holdout 대비 실제 날짜 복귀 |
 
 기존 이벤트 확장:
 
@@ -419,7 +421,7 @@ D7 의미 세션 **≥8%**를 장기 결과 가드레일로 함께 본다. 표�
 2. **미지명 계승 퍼널**: `draft_resolved(drafted=false) → undrafted_epilogue_presented → undrafted_epilogue_completed → legacy_candidates_presented → legacy_selected → rebirth_started`.
 3. **프로 정상 분기**: `draft_resolved(drafted=true) → pro_career_started`; 이 사용자는 미지명 계승 분모에 들어가지 않는다.
 4. **세대 깊이**: 2번째·3번째 선수의 `career_act_completed(1)`과 `draft_resolved`를 첫 선수와 비교한다.
-5. **복귀**: 첫 `clutch_moment_completed`를 시작점으로 D1·D7 `game_finished`를 본다.
+5. **복귀**: `return_plan_eligible`의 동일 규칙 버전·안정 식별자를 분모로 guided/holdout의 다음 KST `return_plan_cold_start`와 같은 세션 `game_finished`를 본다. 카드 탭은 D1 원인이 아닌 탐색 보조지표다.
 
 이벤트 QA는 필수 속성 누락 0, enum 허용값 위반 0, 완료 이벤트의 중복 0을 출시 조건으로 둔다. 화면 `onAppear`만으로 “읽음”을 추정하지 않고, 실제 콘텐츠 노출 또는 상태 적용 시점에 기록한다.
 

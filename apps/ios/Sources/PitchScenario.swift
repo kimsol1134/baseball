@@ -24,6 +24,8 @@ struct PitchScenario {
     let detail: String
     /// 이닝이 끝나지 않아도 여기서 멈춘다. 볼넷이 이어질 때 세션이 무한히 길어지는 것을 막는다.
     let maximumBatters: Int
+    /// 같은 앱 빌드 안의 보존 v3와 신규 v4 결과를 분석에서 섞지 않는다.
+    let developmentRulesVersion: Int
 
     var gameState: GameStateSnapshot {
         GameStateSnapshot(
@@ -56,7 +58,8 @@ struct PitchScenario {
             fatigue: min(100, max(0, state.fatigue)),
             headline: situation.headline,
             detail: situation.detail,
-            maximumBatters: 4
+            maximumBatters: 4,
+            developmentRulesVersion: state.balanceVersion ?? 1
         )
     }
 
@@ -139,7 +142,8 @@ struct PitchScenario {
             headline: "첫 불펜",
             detail: "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요.",
             // 두 타석 — 3구 스크립트(사인→흔들기→결정구)가 실제로 전달될 최소 길이.
-            maximumBatters: 2
+            maximumBatters: 2,
+            developmentRulesVersion: state.balanceVersion ?? 1
         )
     }
 
@@ -213,7 +217,8 @@ struct PitchScenario {
             fatigue: min(100, max(0, state.fatigue)),
             headline: content?.title ?? "고교 공식 경기",
             detail: content?.narrative ?? "이 이닝을 막아야 합니다.",
-            maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state)
+            maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state),
+            developmentRulesVersion: state.balanceVersion ?? 1
         )
     }
 }
@@ -273,7 +278,8 @@ extension PitchScenario {
             fatigue: 20,
             headline: "오늘의 이닝",
             detail: "9회초, 한 점 리드. 전국이 오늘 같은 타순을 상대합니다.",
-            maximumBatters: 6
+            maximumBatters: 6,
+            developmentRulesVersion: PitcherPresetCatalog.balanceVersion
         )
     }
 

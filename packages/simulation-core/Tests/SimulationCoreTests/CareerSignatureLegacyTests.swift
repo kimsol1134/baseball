@@ -457,6 +457,57 @@ final class CareerSignatureLegacyTests: XCTestCase {
         )
     }
 
+    func testV4StaminaTrainingNeverWorsensZeroCostPitchWhileV3RemainsExact() throws {
+        let engine = HighSchoolCareerEngine()
+        var result = try engine.start(.init(seed: "918229", presetID: "power_prospect"))
+        result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.chooseSchool(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            schoolID: try XCTUnwrap(result.snapshot.schoolOptions.first?.id)
+        ))
+        XCTAssertEqual(result.snapshot.phase, .training)
+
+        func zeroCostState(version: Int) throws -> HighSchoolCareerSnapshot {
+            try rewritingState(result.snapshot) { object in
+                object["balanceVersion"] = version
+                var pitcher = try XCTUnwrap(object["pitcher"] as? [String: Any])
+                var profiles = try XCTUnwrap(pitcher["pitchProfiles"] as? [[String: Any]])
+                XCTAssertFalse(profiles.isEmpty)
+                profiles[0]["fatigueCost"] = 0
+                pitcher["pitchProfiles"] = profiles
+                object["pitcher"] = pitcher
+            }
+        }
+
+        let v3 = try zeroCostState(version: 3)
+        let v4 = try zeroCostState(version: 4)
+        var chosenSeed: String?
+        var current: HighSchoolCareerResult?
+        for value in 918_300..<918_400 {
+            let seed = String(value)
+            let candidate = try engine.commitTraining(.init(
+                seed: seed, state: v4, focus: .stamina, intensity: .standard
+            ))
+            if (candidate.snapshot.lastTraining?.growth ?? 0) > 0 {
+                chosenSeed = seed
+                current = candidate
+                break
+            }
+        }
+        let seed = try XCTUnwrap(chosenSeed)
+        let v4Result = try XCTUnwrap(current)
+        let v3Result = try engine.commitTraining(.init(
+            seed: seed, state: v3, focus: .stamina, intensity: .standard
+        ))
+
+        XCTAssertEqual(v4Result.snapshot.pitcher.pitchProfiles?.first?.fatigueCost, 0)
+        XCTAssertEqual(
+            v3Result.snapshot.pitcher.pitchProfiles?.first?.fatigueCost, 1,
+            "이미 시작된 v3 회차의 역사적 0→1 결과는 저장 결정론을 위해 보존합니다"
+        )
+    }
+
     func testV1V2NormalizationTargetsV3AndV3MigrationIsAnIdentity() throws {
         let v2 = try XCTUnwrap(
             PitcherPresetCatalog.balanceV2.first { $0.id == "precision_commander" }?.pitcher

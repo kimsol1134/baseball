@@ -270,6 +270,10 @@ final class HighSchoolCareerStore {
         let achievements: [Achievement]
         let sequenceTags: [String]
         let recommendationAcceptanceRate: Double
+        var developmentRulesVersion: Int? = nil
+        /// 직접 키운 능력이 실제 결과에서 살아난 공. 옛 영수증은 nil이다.
+        var abilityMomentCount: Int? = nil
+        var abilityMomentTypes: [String]? = nil
         let targetBatters: Int
         let batters: Int
         let lifeNumber: Int
@@ -973,6 +977,9 @@ final class HighSchoolCareerStore {
                         + AchievementRules.fromHighSchool(updated.snapshot),
                     sequenceTags: session.sequenceTagIDs,
                     recommendationAcceptanceRate: session.recommendationAcceptanceRate,
+                    developmentRulesVersion: current.snapshot.balanceVersion ?? 1,
+                    abilityMomentCount: session.abilityMomentCount,
+                    abilityMomentTypes: session.abilityMomentIDs,
                     targetBatters: session.scenario.maximumBatters,
                     batters: session.batterIndex + 1,
                     lifeNumber: updated.snapshot.lifeNumber,
@@ -1102,12 +1109,17 @@ final class HighSchoolCareerStore {
             "sequence_mastery_count": report.sequenceMasteryCount ?? 0,
             "sequence_tags": completion.sequenceTags.joined(separator: ","),
             "recommendation_acceptance_rate": completion.recommendationAcceptanceRate,
+            "development_rules_version": completion.developmentRulesVersion ?? 1,
+            "ability_moment_count": completion.abilityMomentCount ?? 0,
+            "ability_moment_types": (completion.abilityMomentTypes ?? []).joined(separator: ","),
             "target_batters": completion.targetBatters,
             "batters": completion.batters,
         ] as [String: Any]
-        GameAnalytics.logOnce(
+        if GameAnalytics.logOnce(
             .gameFinished, scope: completion.id, properties: analytics
-        )
+        ) {
+            GameAnalytics.recordCompletedGame()
+        }
         GameAnalytics.logOnce(.activationFirstGame)
         if let enteredPhase = completion.enteredPhase {
             GameAnalytics.logOnce(

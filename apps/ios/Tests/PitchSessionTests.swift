@@ -71,6 +71,51 @@ final class PitchSessionTests: XCTestCase {
         XCTAssertEqual(session.pitchLog.count, 1)
     }
 
+    func testSelectedBuildReadoutChangesBeforeThePitchWithEffort() {
+        let session = PitchSession(state: snapshot(stuff: 64, command: 61, movement: 59), seed: "build-readout")
+        session.start()
+        session.selectedPitchType = .fourSeam
+        session.selectedIntensity = .controlled
+        let controlled = session.selectedAbilityReadout
+        session.selectedIntensity = .maxEffort
+        let maximum = session.selectedAbilityReadout
+
+        XCTAssertGreaterThan(maximum.nominalVelocityTenthsKPH, controlled.nominalVelocityTenthsKPH)
+        XCTAssertGreaterThanOrEqual(maximum.fatigueCost, controlled.fatigueCost)
+        XCTAssertEqual(maximum.commandRating, controlled.commandRating)
+    }
+
+    func testRealStrongPitchingCanEarnOnlyOutcomeBackedAbilityMoments() {
+        var moments: [PitchSession.PitchLogEntry] = []
+        for seed in ["71", "991", "20260725", "44771", "8675309"] {
+            let session = PitchSession(
+                state: snapshot(stuff: 72, command: 72, movement: 72, stamina: 72),
+                seed: seed
+            )
+            session.start()
+            var decisions = 0
+            while decisions < 100 {
+                decisions += 1
+                switch session.stage {
+                case .ready:
+                    session.selectedPitchType = decisions.isMultiple(of: 2) ? .slider : .fourSeam
+                    session.selectedIntensity = .controlled
+                    session.throwPitch()
+                case .betweenBatters:
+                    session.advanceToNextBatter()
+                case .finished, .failed:
+                    moments.append(contentsOf: session.pitchLog.filter { $0.abilityMoment != nil })
+                    decisions = 100
+                }
+            }
+        }
+
+        XCTAssertFalse(moments.isEmpty, "강한 능력이 실제 성공 결과를 만들었는데도 체감 순간이 한 번도 잡히지 않았습니다.")
+        XCTAssertTrue(moments.allSatisfy {
+            [.calledStrike, .swingingStrike, .inPlayOut].contains($0.outcome)
+        }, "볼·안타·파울에 능력 칭찬을 붙이면 결과를 왜곡합니다.")
+    }
+
     /// 같은 시드에 같은 사인이면 같은 결과가 나온다. 코어 결정론이 셸을 통과해도 유지돼야 한다.
     func testSameSeedAndSameCallsGiveSameOutcomes() {
         func run() -> [PitchOutcome] {
@@ -446,6 +491,82 @@ final class PitchSessionTests: XCTestCase {
         resume.recommendationAccepted = 4
         session.restore(from: resume)
         XCTAssertEqual(session.recommendationAcceptanceRate, 1)
+    }
+
+    func testAbilityMomentsSurviveResumeAndAggregateWithoutDuplicateTypes() throws {
+        let lines: [PitchSession.ResumeState.LogLine] = [
+            .init(
+                pitchNumber: 1,
+                call: call(type: .fourSeam, row: 1, column: 1),
+                outcome: .swingingStrike,
+                shortFeedback: "헛스윙",
+                acceptedRecommendation: true,
+                abilityMoment: .power
+            ),
+            .init(
+                pitchNumber: 2,
+                call: call(type: .slider, row: 2, column: 2),
+                outcome: .inPlayOut,
+                shortFeedback: "땅볼 아웃",
+                acceptedRecommendation: false,
+                abilityMoment: .movement
+            ),
+            .init(
+                pitchNumber: 3,
+                call: call(type: .fourSeam, row: 0, column: 0),
+                outcome: .swingingStrike,
+                shortFeedback: "헛스윙",
+                acceptedRecommendation: true,
+                abilityMoment: .power
+            ),
+        ]
+        let resume = syntheticResume(log: lines)
+        let decoded = try JSONDecoder().decode(
+            PitchSession.ResumeState.self,
+            from: JSONEncoder().encode(resume)
+        )
+        let restored = PitchSession(state: snapshot(), seed: "ability-resume")
+        restored.restore(from: decoded)
+
+        XCTAssertEqual(restored.abilityMomentCount, 3)
+        XCTAssertEqual(restored.abilityMomentIDs, ["movement", "power"])
+        XCTAssertEqual(restored.lastAbilityMoment, .power)
+        XCTAssertEqual(restored.gameFinishedAnalyticsMetrics["ability_moment_count"] as? Int, 3)
+        XCTAssertEqual(
+            restored.gameFinishedAnalyticsMetrics["ability_moment_types"] as? String,
+            "movement,power"
+        )
+    }
+
+    func testLegacyResumeWithoutAbilityMomentLoadsWithoutInventingOne() throws {
+        let resume = syntheticResume(log: [
+            .init(
+                pitchNumber: 1,
+                call: call(type: .fourSeam, row: 1, column: 1),
+                outcome: .calledStrike,
+                shortFeedback: "스트라이크",
+                acceptedRecommendation: true,
+                abilityMoment: .command
+            ),
+        ])
+        let data = try JSONEncoder().encode(resume)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        if var lines = object["pitchLog"] as? [[String: Any]] {
+            for index in lines.indices { lines[index].removeValue(forKey: "abilityMoment") }
+            object["pitchLog"] = lines
+        }
+
+        let legacy = try JSONDecoder().decode(
+            PitchSession.ResumeState.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        let restored = PitchSession(state: snapshot(), seed: "legacy-ability")
+        restored.restore(from: legacy)
+
+        XCTAssertNil(restored.pitchLog.first?.abilityMoment)
+        XCTAssertNil(restored.lastAbilityMoment)
+        XCTAssertEqual(restored.abilityMomentCount, 0)
+        XCTAssertEqual(restored.gameFinishedAnalyticsMetrics["ability_moment_types"] as? String, "")
     }
 
     func testDeliberateAlternatingSequencesEarnMoreMasteryThanAutoRecommendations() {

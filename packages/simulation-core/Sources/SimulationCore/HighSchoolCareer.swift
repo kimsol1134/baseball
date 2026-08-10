@@ -1511,7 +1511,10 @@ public struct HighSchoolCareerEngine: Sendable {
                 points: rawGrowth
             )
             : (0, talentBefore, nil)
-        let pitcher = grow(params.state.pitcher, focus: params.focus, points: growthSignal)
+        let pitcher = grow(
+            params.state.pitcher, focus: params.focus, points: growthSignal,
+            balanceVersion: params.state.balanceVersion
+        )
         let baseFatigueCost = params.intensity == .light ? 3 : params.intensity == .standard ? 8 : 15
         let fatigueCost = baseFatigueCost + windRules.trainingFatigueModifier(for: effectiveFocus)
         let recovery = params.focus == .recovery ? windRules.adjustedRecovery(18) : 0
@@ -1611,7 +1614,10 @@ public struct HighSchoolCareerEngine: Sendable {
             )
             talentAfter = updated
             relationshipBloom = bloomed
-            pitcher = grow(params.state.pitcher, focus: focus, points: allowed)
+            pitcher = grow(
+                params.state.pitcher, focus: focus, points: allowed,
+                balanceVersion: params.state.balanceVersion
+            )
         } else {
             pitcher = params.state.pitcher
         }
@@ -2812,7 +2818,12 @@ public struct HighSchoolCareerEngine: Sendable {
             pitchProfiles: profiles, throwingHand: pitcher.throwingHand)
     }
 
-    private func grow(_ pitcher: PitcherSnapshot, focus: TrainingFocus, points: Int) -> PitcherSnapshot {
+    private func grow(
+        _ pitcher: PitcherSnapshot,
+        focus: TrainingFocus,
+        points: Int,
+        balanceVersion: Int? = PitcherPresetCatalog.balanceVersion
+    ) -> PitcherSnapshot {
         guard points > 0 else { return pitcher }
         let profiles = pitcher.pitchProfiles?.map { profile in
             // 결정구 완성 — 육성 중 구종이 제구+헛스윙+범타 합 150을 넘으면 실전
@@ -2831,7 +2842,11 @@ public struct HighSchoolCareerEngine: Sendable {
                 weakContact: profile.weakContact,
                 // 하한 1 — 피로라는 축 자체를 훈련으로 소거할 수 있으면 투구수 관리가
                 // 게임에서 사라진다. 100구를 던지면 팔은 무거워야 한다.
-                fatigueCost: focus == .stamina ? max(1, profile.fatigueCost - points / 2) : profile.fatigueCost)
+                fatigueCost: focus == .stamina
+                    ? ((balanceVersion ?? 1) >= 4
+                        ? PitchAbilityRules.reducedFatigueCost(profile.fatigueCost, by: points / 2)
+                        : max(1, profile.fatigueCost - points / 2))
+                    : profile.fatigueCost)
         }
         return PitcherSnapshot(id: pitcher.id, name: pitcher.name,
             stuff: clamp(pitcher.stuff + (focus == .velocity ? points : 0), 20, 80),

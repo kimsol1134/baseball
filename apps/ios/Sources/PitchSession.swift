@@ -44,6 +44,10 @@ final class PitchSession {
     private(set) var lastCues: [GameAudioCue] = []
     /// 직전 투구의 릴리스 품질. 손맛 판정을 화면에 보여 주는 데 쓴다.
     private(set) var lastDelivery: PitchDelivery?
+    /// 선택 순간의 실제 능력 입력과, 그 입력이 결과에서 의미 있게 살아난 종류.
+    /// 화면은 이 값을 읽기만 하며 결과를 다시 해석하지 않는다.
+    private(set) var lastAbilityReadout: PitchAbilityReadout?
+    private(set) var lastAbilityMoment: PitchAbilityKind?
     /// 이번 이닝에 나온 릴리스 관련 업적. 이닝이 끝날 때 한 번에 기록한다.
     private(set) var bestDeliveryAchievements: [Achievement] = []
 
@@ -84,11 +88,19 @@ final class PitchSession {
             "sequence_mastery_count": sequenceMasteryCount,
             "sequence_tags": sequenceTagIDs.joined(separator: ","),
             "recommendation_acceptance_rate": recommendationAcceptanceRate,
+            "ability_moment_count": abilityMomentCount,
+            "ability_moment_types": abilityMomentIDs.joined(separator: ","),
+            "development_rules_version": scenario.developmentRulesVersion,
         ]
     }
 
     var sequenceTagIDs: [String] {
         Array(Set(sequenceMoments.map(\.tag.rawValue))).sorted().prefix(6).map { $0 }
+    }
+
+    var abilityMomentCount: Int { pitchLog.compactMap(\.abilityMoment).count }
+    var abilityMomentIDs: [String] {
+        Array(Set(pitchLog.compactMap(\.abilityMoment).map(\.rawValue))).sorted()
     }
 
     /// 사인 고정 — 켜면 포수 추천이 내 선택을 덮어쓰지 않는다.
@@ -109,6 +121,7 @@ final class PitchSession {
         let shortFeedback: String
         let acceptedRecommendation: Bool
         let sequenceMoment: PitchSequenceMoment?
+        let abilityMoment: PitchAbilityKind?
     }
 
     /// 타석이 끝날 때마다 불린다. 스토어가 여기서 진행을 디스크에 남긴다 —
@@ -158,6 +171,8 @@ final class PitchSession {
             var shortFeedback: String
             var acceptedRecommendation: Bool
             var sequenceMoment: PitchSequenceMoment? = nil
+            /// 직접 키운 능력 피드백 도입 전 체크포인트는 nil로 읽힌다.
+            var abilityMoment: PitchAbilityKind? = nil
         }
     }
 
@@ -184,7 +199,7 @@ final class PitchSession {
             pitchLog: pitchLog.map {
                 ResumeState.LogLine(pitchNumber: $0.pitchNumber, call: $0.call, outcome: $0.outcome,
                                     shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation,
-                                    sequenceMoment: $0.sequenceMoment)
+                                    sequenceMoment: $0.sequenceMoment, abilityMoment: $0.abilityMoment)
             },
             sequenceMoments: sequenceMoments
         )
@@ -213,16 +228,19 @@ final class PitchSession {
         pitchLog = (resume.pitchLog ?? []).map {
             PitchLogEntry(pitchNumber: $0.pitchNumber, call: $0.call, outcome: $0.outcome,
                           shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation,
-                          sequenceMoment: $0.sequenceMoment)
+                          sequenceMoment: $0.sequenceMoment, abilityMoment: $0.abilityMoment)
         }
         sequenceMoments = resume.sequenceMoments ?? pitchLog.compactMap(\.sequenceMoment)
         if let lastLog = pitchLog.last {
             // An explicit nil means the last pitch did not earn a badge. Do not resurrect
             // an older moment merely because one exists earlier in the inning.
             lastSequenceMoment = lastLog.sequenceMoment
+            lastAbilityMoment = lastLog.abilityMoment
         } else {
             lastSequenceMoment = sequenceMoments.last
+            lastAbilityMoment = nil
         }
+        lastAbilityReadout = nil
         context = PlateAppearanceContext(
             plateAppearanceID: "\(scenario.id)-b\(batterIndex)",
             revision: context.revision, inning: gameState.inningState?.inning ?? context.inning,
@@ -240,6 +258,10 @@ final class PitchSession {
     var pitcherName: String { scenario.pitcher.name }
     var repertoire: [PitchType] {
         scenario.pitcher.pitchProfiles.map { $0.map(\.pitchType) } ?? PitchType.allCases
+    }
+
+    var selectedAbilityReadout: PitchAbilityReadout {
+        PitchAbilityRules.readout(pitcher: pitcher, call: selectedCall, context: context)
     }
 
     init(scenario: PitchScenario, seed: String) {
@@ -296,17 +318,17 @@ final class PitchSession {
         lastSequenceMoment = nil
         lastCues = []
         lastDelivery = nil
+        lastAbilityReadout = nil
+        lastAbilityMoment = nil
         stage = .ready
         prepare()
     }
 
     func throwPitch(delivery: PitchDelivery? = nil) {
         guard case .ready = stage, let preparation else { return }
-        let call = PitchCall(
-            pitchType: selectedPitchType,
-            zone: selectedZone,
-            zoneIntent: selectedIntent,
-            intensity: selectedIntensity
+        let call = selectedCall
+        let abilityReadout = PitchAbilityRules.readout(
+            pitcher: pitcher, call: call, context: context
         )
         do {
             var params = SubmitPitchParams(
@@ -329,7 +351,11 @@ final class PitchSession {
             where !bestDeliveryAchievements.contains(achievement) {
                 bestDeliveryAchievements.append(achievement)
             }
-            absorb(result, call: call)
+            absorb(
+                result,
+                call: call,
+                abilityReadout: abilityReadout
+            )
         } catch {
             stage = .failed(error.localizedDescription)
         }
@@ -403,7 +429,20 @@ final class PitchSession {
 
     // MARK: - 내부
 
-    private func absorb(_ result: PitchKernelResult, call: PitchCall) {
+    private var selectedCall: PitchCall {
+        PitchCall(
+            pitchType: selectedPitchType,
+            zone: selectedZone,
+            zoneIntent: selectedIntent,
+            intensity: selectedIntensity
+        )
+    }
+
+    private func absorb(
+        _ result: PitchKernelResult,
+        call: PitchCall,
+        abilityReadout: PitchAbilityReadout
+    ) {
         let outsBefore = Self.totalOuts(gameState.inningState)
         // 반드시 결과 메모리로 교체하기 전에 평가한다. `counter_read`는 이 공을 던지기
         // 직전에 보였던 반복 경고를 읽어야 하며, 방금 공으로 새로 생긴 경고를 소급해
@@ -425,6 +464,12 @@ final class PitchSession {
         if let sequenceMoment { sequenceMoments.append(sequenceMoment) }
 
         lastResult = result
+        lastAbilityReadout = abilityReadout
+        lastAbilityMoment = PitchAbilityRules.moment(
+            outcome: result.snapshot.outcome,
+            execution: result.snapshot.execution,
+            readout: abilityReadout
+        )
         seed = result.nextSeed
         gameState = result.gameState
         gameLog = result.gameLog
@@ -457,7 +502,8 @@ final class PitchSession {
                 outcome: snapshot.outcome,
                 shortFeedback: snapshot.shortFeedback,
                 acceptedRecommendation: snapshot.recommendationAccepted,
-                sequenceMoment: sequenceMoment
+                sequenceMoment: sequenceMoment,
+                abilityMoment: lastAbilityMoment
             )
         )
 

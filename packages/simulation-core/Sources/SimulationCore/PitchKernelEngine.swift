@@ -398,7 +398,10 @@ public struct PitchKernelEngine: Sendable {
         let fatigueAfterPitch = min(
             100,
             params.context.fatigue
-                + fatigueCost(params.call.intensity, profile: params.pitcher.profile(for: params.call.pitchType))
+                + PitchAbilityRules.fatigueCost(
+                    params.call.intensity,
+                    profile: params.pitcher.profile(for: params.call.pitchType)
+                )
         )
         let updatedMemory = rivalMemoryEngine.record(
             params.rivalMemory,
@@ -1037,30 +1040,16 @@ public struct PitchKernelEngine: Sendable {
             seed: derivedSeed(seed, domain: 0x4558_4543, ordinal: params.context.pitchNumber)
         )
         let target = targetCoordinates(for: params.call)
-        let intensityPenalty: Int
-        let velocityBonus: Int
-        switch params.call.intensity {
         // 힘 배분은 **거래**여야 한다. 예전에는 controlled가 피출루·삼진·홈런·실점·피로
         // 전부에서 우월해서 고를 이유가 하나뿐이었다(실측 OBP controlled .250 대 전력 .346,
         // 심지어 삼진도 controlled가 더 많았다 — 앞뒤가 맞지 않는다).
         //
         // 지금은 제구를 잃는 대신 구속을 얻고, 구속은 헛스윙과 약한 타구로 돌아온다.
-        case .controlled:
-            intensityPenalty = -42
-            velocityBonus = -70
-        case .normal:
-            intensityPenalty = 0
-            velocityBonus = 0
-        case .maxEffort:
-            intensityPenalty = 62
-            velocityBonus = 95
-        }
+        let intensityEffect = PitchAbilityRules.intensityEffect(params.call.intensity)
         let profile = params.pitcher.profile(for: params.call.pitchType)
-        let commandRating = profile.map {
-            (params.pitcher.command * 4 + $0.control * 4 + $0.command * 2) / 10
-        } ?? params.pitcher.command
+        let commandRating = PitchAbilityRules.commandRating(pitcher: params.pitcher, profile: profile)
         let effectiveCommand = clamp(
-            commandRating * 10 - params.context.fatigue * 2 - intensityPenalty,
+            commandRating * 10 - params.context.fatigue * 2 - intensityEffect.commandPenalty,
             100,
             900
         )
@@ -1100,30 +1089,28 @@ public struct PitchKernelEngine: Sendable {
             0,
             1_000
         )
-        let baseVelocity: Int
         let horizontalBreak: Int
         let verticalBreak: Int
         switch params.call.pitchType {
         case .fourSeam:
-            baseVelocity = 1_420
             horizontalBreak = 70
             verticalBreak = 160
         case .slider:
-            baseVelocity = 1_275
             horizontalBreak = -145
             verticalBreak = 35
         case .curveball:
-            baseVelocity = 1_165
             horizontalBreak = -65
             verticalBreak = -185
         case .changeup:
-            baseVelocity = 1_285
             horizontalBreak = 105
             verticalBreak = -45
         }
-        let velocity = (profile?.velocityTenthsKPH ?? baseVelocity + (params.pitcher.stuff - 50) * 4)
-            + velocityBonus
-            - params.context.fatigue
+        let velocity = PitchAbilityRules.nominalVelocity(
+            pitcher: params.pitcher,
+            pitchType: params.call.pitchType,
+            intensity: params.call.intensity,
+            fatigue: params.context.fatigue
+        )
             + generator.nextInt(upperBound: 21) - 10
             // ±1.0 km/h from the release. Small, but it is the number the player watches after a
             // delivery they felt good about. Zero at neutral.
@@ -1854,26 +1841,6 @@ public struct PitchKernelEngine: Sendable {
     private func derivedSeed(_ seed: UInt64, domain: UInt64, ordinal: Int) -> UInt64 {
         var generator = SplitMix64(seed: seed ^ domain ^ (UInt64(ordinal) &* 0x9E37_79B9))
         return generator.next()
-    }
-
-    private func fatigueCost(
-        _ intensity: PitchIntensity,
-        profile: PitchProfileSnapshot?
-    ) -> Int {
-        if let profile {
-            let intensityModifier: Int
-            switch intensity {
-            case .controlled: intensityModifier = -1
-            case .normal: intensityModifier = 0
-            case .maxEffort: intensityModifier = 1
-            }
-            return max(0, profile.fatigueCost + intensityModifier)
-        }
-        switch intensity {
-        case .controlled: return 0
-        case .normal: return 1
-        case .maxEffort: return 2
-        }
     }
 
     private func contactBand(_ quality: Int) -> String {

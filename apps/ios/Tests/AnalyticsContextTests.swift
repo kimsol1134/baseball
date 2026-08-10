@@ -94,6 +94,13 @@ final class AnalyticsContextTests: XCTestCase {
         XCTAssertEqual(GameAnalytics.Event.lifeCompleted.rawValue, "life_completed")
         XCTAssertEqual(GameAnalytics.Event.careerTrainingCompleted.rawValue, "career_training_completed")
         XCTAssertEqual(GameAnalytics.Event.gameGrowthApplied.rawValue, "game_growth_applied")
+        XCTAssertEqual(GameAnalytics.Event.reminderOfferShown.rawValue, "reminder_offer_shown")
+        XCTAssertEqual(GameAnalytics.Event.reminderOpened.rawValue, "reminder_opened")
+        XCTAssertEqual(GameAnalytics.Event.returnPlanShown.rawValue, "return_plan_shown")
+        XCTAssertEqual(GameAnalytics.Event.returnPlanTapped.rawValue, "return_plan_tapped")
+        XCTAssertEqual(GameAnalytics.Event.returnPlanDismissed.rawValue, "return_plan_dismissed")
+        XCTAssertEqual(GameAnalytics.Event.returnPlanEligible.rawValue, "return_plan_eligible")
+        XCTAssertEqual(GameAnalytics.Event.returnPlanColdStart.rawValue, "return_plan_cold_start")
     }
 
     @MainActor
@@ -105,5 +112,17 @@ final class AnalyticsContextTests: XCTestCase {
         XCTAssertTrue(GameAnalytics.logOnce(.careerWindSeen, scope: "career-a", defaults: defaults))
         XCTAssertFalse(GameAnalytics.logOnce(.careerWindSeen, scope: "career-a", defaults: defaults))
         XCTAssertTrue(GameAnalytics.logOnce(.careerWindSeen, scope: "career-b", defaults: defaults))
+    }
+
+    @MainActor
+    func testCompletedGameCounterTracksSessionDeltaWithoutAnalyticsSDK() {
+        let name = "AnalyticsContextTests.games.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defer { defaults.removePersistentDomain(forName: name) }
+
+        XCTAssertEqual(GameAnalytics.completedGameCount(defaults: defaults), 0)
+        GameAnalytics.recordCompletedGame(defaults: defaults)
+        GameAnalytics.recordCompletedGame(defaults: defaults)
+        XCTAssertEqual(GameAnalytics.completedGameCount(defaults: defaults), 2)
     }
 }

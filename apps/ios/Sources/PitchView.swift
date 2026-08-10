@@ -150,6 +150,31 @@ enum PitchCopy {
     }
 }
 
+/// 현재 선수 능력과 구종 프로필이 실제 투구 판정에 들어가는 값의 번역.
+/// 숫자는 `PitchAbilityRules`가 엔진 식에서 직접 주고, 화면은 야구 말로만 바꾼다.
+enum PitchBuildCopy {
+    static func velocity(_ tenthsKPH: Int) -> String {
+        String(format: "%.1f", Double(tenthsKPH) / 10)
+    }
+
+    static func moment(_ kind: PitchAbilityKind, readout: PitchAbilityReadout) -> String {
+        switch kind {
+        case .power:
+            "키운 구위가 살아난 공 · 구위 \(readout.stuffRating) · 헛스윙 \(readout.whiffRating)"
+        case .command:
+            "키운 제구가 살아난 공 · 코스 \(readout.commandRating)"
+        case .movement:
+            "키운 변화가 살아난 공 · 움직임 \(readout.movementRating) · 범타 \(readout.weakContactRating)"
+        }
+    }
+
+    static func accessibilitySummary(_ readout: PitchAbilityReadout) -> String {
+        "기준 구속 \(velocity(readout.nominalVelocityTenthsKPH))킬로미터, "
+            + "코스 \(readout.commandRating), 움직임 \(readout.movementRating), "
+            + "체력 \(readout.staminaRating), 한 구 팔 부담 \(readout.fatigueCost)"
+    }
+}
+
 /// 중요 경기 승부 화면. App Store 스크린샷의 주력 화면이다(계획 문서 §2.3).
 struct PitchView: View {
     let session: PitchSession
@@ -467,6 +492,15 @@ struct PitchView: View {
                         }
                         Text(result.snapshot.shortFeedback).font(.subheadline.weight(.semibold))
                         Text(result.snapshot.detailFeedback).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                        if PitchAbilityFeedbackExperiment.isVisible,
+                           let moment = session.lastAbilityMoment,
+                           let readout = session.lastAbilityReadout {
+                            Label(PitchBuildCopy.moment(moment, readout: readout), systemImage: "sparkles")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(BaseballTheme.milestone)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("pitch.abilityMoment")
+                        }
                         if let moment = session.lastSequenceMoment {
                             VStack(alignment: .leading, spacing: 2) {
                                 Label("수싸움 적중 · \(moment.headline)", systemImage: "brain.head.profile")
@@ -578,10 +612,15 @@ struct PitchView: View {
     }
 
     @ViewBuilder private func controls(preparation: PitchPreparation) -> some View {
-        BaseballCard(title: "구종") {
-            OptionRow(items: session.repertoire, selection: session.selectedPitchType) { type in
-                session.selectedPitchType = type
-            } label: { PitchCopy.pitch($0) }
+        BaseballCard(title: PitchAbilityFeedbackExperiment.isVisible ? "구종 · 내가 만든 공" : "구종") {
+            VStack(alignment: .leading, spacing: 10) {
+                OptionRow(items: session.repertoire, selection: session.selectedPitchType) { type in
+                    session.selectedPitchType = type
+                } label: { PitchCopy.pitch($0) }
+                if PitchAbilityFeedbackExperiment.isVisible {
+                    PitchBuildReadoutView(readout: session.selectedAbilityReadout)
+                }
+            }
         }
 
         BaseballCard(title: "코스 · \(PitchCopy.zone(session.selectedZone, batSide: session.batter.batSide))") {
@@ -883,6 +922,54 @@ private struct RunnerDiamond: View {
             .fill(occupied ? BaseballTheme.milestone : BaseballTheme.border.opacity(0.35))
             .frame(width: 8, height: 8)
             .rotationEffect(.degrees(45))
+    }
+}
+
+/// 지금 고른 공에 내 육성이 어떻게 남아 있는지, 던지기 전에 보여 준다.
+/// 별도 카드 면을 더 만들지 않고 구종 카드 안에 들어가 결정 흐름을 늘리지 않는다.
+private struct PitchBuildReadoutView: View {
+    let readout: PitchAbilityReadout
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 5) {
+                GridRow {
+                    metric("기준 구속", "\(PitchBuildCopy.velocity(readout.nominalVelocityTenthsKPH)) km/h")
+                    metric("코스", "\(readout.commandRating)")
+                }
+                GridRow {
+                    metric("움직임", "\(readout.movementRating)")
+                    metric("체력 · 부담", "\(readout.staminaRating) · +\(readout.fatigueCost)")
+                }
+            }
+            Text("구속·코스·움직임·한 구 부담은 이번 공의 판정값이고, 체력은 이닝 전체 부담에 반영됩니다.")
+                .font(.caption)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(PitchBuildCopy.accessibilitySummary(readout))
+        .accessibilityIdentifier("pitch.buildReadout")
+    }
+
+    private func metric(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textTertiary)
+            Text(value)
+                .font(.footnote.weight(.bold).monospacedDigit())
+                .foregroundStyle(BaseballTheme.textPrimary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// 반복 재미 가설을 한 빌드에 하나씩 검증하기 위한 노출 관문.
+/// 현재 제품 실험은 '다음 행동 복귀' 하나이며, 투구 피드백은 전용 UI QA에서만 켠다.
+private enum PitchAbilityFeedbackExperiment {
+    static var isVisible: Bool {
+        ProcessInfo.processInfo.arguments.contains(BaseballApp.pitchAbilityFeedbackLaunchArgument)
     }
 }
 

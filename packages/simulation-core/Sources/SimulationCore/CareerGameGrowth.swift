@@ -146,7 +146,9 @@ public struct CareerGameGrowth: Codable, Equatable, Sendable {
                     profile.whiff + (ability == .movement && profile.pitchType != .fourSeam ? points : 0), 20, 80
                 ),
                 weakContact: profile.weakContact,
-                fatigueCost: ability == .stamina ? max(1, profile.fatigueCost - points / 2) : profile.fatigueCost
+                fatigueCost: ability == .stamina
+                    ? PitchAbilityRules.reducedFatigueCost(profile.fatigueCost, by: points / 2)
+                    : profile.fatigueCost
             )
         }
         return PitcherSnapshot(
