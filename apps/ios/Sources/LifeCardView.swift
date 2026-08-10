@@ -230,6 +230,31 @@ enum LifeCardRenderer {
     }
 }
 
+/// 공유되는 물건이 앱으로 돌아오는 길.
+///
+/// 예전에는 공유 아이템이 이미지 한 장뿐이라, 카드가 아무리 돌아도 그것을 본 사람이
+/// 앱에 닿을 방법이 없었다 — 저장소 어디에도 스토어 주소가 없었다. 카드에 도전 시드를
+/// 각인해 두고 "같은 판에 도전할 수 있는 입구"라고 적어 놓고는, 정작 그 입구를 열어 줄
+/// 문장을 함께 보내지 않고 있었다.
+enum LifeCardShareText {
+    static let storeURL = "https://apps.apple.com/kr/app/id6794754217"
+
+    static func body(for record: HighSchoolCareerStore.LifeRecord) -> String {
+        var lines = ["\(record.playerName) · \(record.lifeNumber)번째 선수"]
+        if record.drafted, let team = record.teamName {
+            lines.append("\(team) 지명 · 스카우트 평가 \(record.evaluationScore)점")
+        } else {
+            lines.append("드래프트 미지명 · 스카우트 평가 \(record.evaluationScore)점")
+        }
+        // 시드는 "같은 판"을 여는 열쇠다. 카드에 각인된 문자열과 같은 형식으로 적는다.
+        if let seed = LifeCardView.seedText(record.careerID) {
+            lines.append("같은 판에 도전: \(seed)-\(record.lifeNumber)")
+        }
+        lines.append(storeURL)
+        return lines.joined(separator: "\n")
+    }
+}
+
 /// 아카이브·회차 마감 화면에서 쓰는 공유 버튼. 카드 미리보기와 함께 놓는다.
 struct LifeCardShareButton: View {
     let record: HighSchoolCareerStore.LifeRecord
@@ -237,7 +262,7 @@ struct LifeCardShareButton: View {
     var body: some View {
         if let image = LifeCardRenderer.image(for: record) {
             ActivityShareButton(
-                items: [image],
+                items: [image, LifeCardShareText.body(for: record)],
                 subject: "\(record.playerName) · \(record.lifeNumber)번째 선수",
                 onTapped: {
                     let properties: [String: Any] = ["life_number": record.lifeNumber]
