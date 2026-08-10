@@ -1609,14 +1609,12 @@ private struct LegacyCard: View {
                 nicknames: career.nicknames, chronicle: career.chronicle,
                 personality: career.personality,
                 signatureLegacy: selectedSignatureLegacy,
-                signatureLegacyCandidates: signatureCandidates
+                signatureLegacyCandidates: signatureCandidates,
+                startingPitcher: career.careerStartingPitcher
             )
             BaseballCard(title: "선수 기록 카드", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 10) {
-                    LifeCardView(record: provisional)
-                        .scaleEffect(0.72, anchor: .top)
-                        .frame(height: LifeCardView.size.height * 0.72)
-                        .frame(maxWidth: .infinity)
+                    LifeCardPreview(record: provisional)
                     LifeCardShareButton(record: provisional)
                 }
             }

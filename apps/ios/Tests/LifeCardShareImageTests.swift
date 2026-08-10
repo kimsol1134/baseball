@@ -29,6 +29,53 @@ final class LifeCardShareImageTests: XCTestCase {
         )
         record.windTitle = "무명의 해"
         record.signatureLegacy = .definition(for: .commandMap)
+        record.pitches = 132
+        record.outs = 19
+        record.hits = 4
+        record.abilityStart = .init(PitcherSnapshot(
+            id: "start", name: "민서준", stuff: 38, command: 34, movement: 40, stamina: 38,
+            pitchProfiles: nil, throwingHand: .right
+        ))
+        record.abilityFinal = .init(PitcherSnapshot(
+            id: "final", name: "민서준", stuff: 52, command: 61, movement: 47, stamina: 45,
+            pitchProfiles: nil, throwingHand: .right
+        ))
+
+        // 회차 종료 화면이 카드를 담는 **그 컨테이너 그대로** 굽는다. 예전 미리보기는
+        // `scaleEffect` 뒤에 `frame(height:)`를 걸어, 600pt 뷰가 432pt 상자에서 세로
+        // 가운데로 정렬되는 바람에 카드가 84pt 위로 밀려 잘렸다("삐뚤어져 보인다").
+        // 이 스냅숏이 그 자리를 지킨다.
+        let screen = BaseballCard(title: "선수 기록 카드", tone: .milestone) {
+            LifeCardPreview(record: record)
+        }
+        .padding(BaseballMetrics.gutter)
+        .background(BaseballTheme.canvas)
+        .frame(width: 440)
+        let screenRenderer = ImageRenderer(content: screen)
+        screenRenderer.scale = 3
+        screenRenderer.isOpaque = true
+        let screenImage = try XCTUnwrap(screenRenderer.uiImage, "회차 종료 화면 카드가 렌더되지 않습니다.")
+        // 카드는 내용에 맞춰 자라야 한다. 높이를 못 박으면 성장 막대·투구 지표가 들어온
+        // 순간 푸터가 밖으로 밀려 잘린다(실제로 그렇게 잘렸다). 내용이 적은 기록보다
+        // 반드시 커야 한다는 것으로 그 성질을 지킨다.
+        var sparse = record
+        sparse.abilityStart = nil
+        sparse.abilityFinal = nil
+        sparse.outs = nil
+        sparse.chronicle = ["1학년 봄 — 입학."]
+        let sparseImage = try XCTUnwrap(LifeCardRenderer.image(for: sparse))
+        let richImage = try XCTUnwrap(LifeCardRenderer.image(for: record))
+        XCTAssertGreaterThan(
+            richImage.size.height, sparseImage.size.height,
+            "내용이 늘었는데 카드가 자라지 않았습니다 — 아래쪽이 잘립니다."
+        )
+        XCTAssertGreaterThanOrEqual(sparseImage.size.height, LifeCardView.size.height,
+                                    "내용이 적어도 최소 높이는 지켜야 합니다.")
+        if let data = screenImage.pngData() {
+            let url = URL(fileURLWithPath: "/tmp/claude-501/run-end-card-screen.png")
+            try? data.write(to: url)
+            print("SCREEN_CARD \(url.path) size=\(screenImage.size)")
+        }
 
         let image = try XCTUnwrap(LifeCardRenderer.image(for: record), "공유 카드가 렌더되지 않습니다.")
         let data = try XCTUnwrap(image.pngData())

@@ -9,7 +9,9 @@ import SwiftUI
 struct LifeCardView: View {
     let record: HighSchoolCareerStore.LifeRecord
 
-    static let size = CGSize(width: 360, height: 600)
+    /// 능력 성장 줄이 들어오면서 600으로는 연대기가 한 줄까지 밀렸다. 공유물은 세로로
+    /// 길어도 손해가 없다 — 카톡·트위터 모두 세로 카드를 그대로 보여 준다.
+    static let size = CGSize(width: 360, height: 680)
 
     private var latestNickname: String? { record.nicknames?.last }
 
@@ -44,6 +46,9 @@ struct LifeCardView: View {
                         .compactMap { $0 }.joined(separator: " · "))
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
+                        // 카드가 빡빡해지면 SwiftUI가 이 줄부터 눌러 "…무…"로 끊는다.
+                        // 학교·성격·바람은 이 선수가 누구였는지라 잘리면 안 된다.
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
             }
@@ -66,17 +71,57 @@ struct LifeCardView: View {
                 in: RoundedRectangle(cornerRadius: 12)
             )
 
+            // 3년 동안 키운 것 — 이 카드의 진짜 자랑거리.
+            //
+            // 예전 카드는 경기·탈삼진·볼넷·실점 네 숫자만 있었다. 그건 "무슨 일이
+            // 있었나"이지 "내가 무엇을 해냈나"가 아니다. 육성 게임의 자랑은 키운
+            // 폭이므로 시작과 끝을 나란히 두고 오른 만큼을 굵게 적는다.
+            if let start = record.abilityStart, let end = record.abilityFinal {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text("3년 동안 키운 것").eyebrowStyle(BaseballTheme.action)
+                        Spacer(minLength: 0)
+                        let delta = end.total - start.total
+                        Text(delta > 0 ? "+\(delta)" : "\(delta)")
+                            .font(.title3.weight(.black).monospacedDigit())
+                            .foregroundStyle(delta > 0 ? BaseballTheme.action : BaseballTheme.textTertiary)
+                        Text("총합 \(start.total)→\(end.total)")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                    }
+                    VStack(spacing: 5) {
+                        growth("구위", start.stuff, end.stuff)
+                        growth("제구", start.command, end.command)
+                        growth("변화", start.movement, end.movement)
+                        growth("체력", start.stamina, end.stamina)
+                    }
+                }
+                .padding(10)
+                .background(BaseballTheme.actionSoft, in: RoundedRectangle(cornerRadius: 12))
+            }
+
             VStack(alignment: .leading, spacing: 3) {
+                Text("3년 성적").eyebrowStyle(BaseballTheme.textTertiary)
+                // 야구를 아는 사람이 먼저 보는 줄. 이닝이 있어야 방어율·WHIP이 성립한다.
+                if let rate = rateLine {
+                    HStack(spacing: 0) {
+                        rateStat("이닝", rate.innings)
+                        rateStat("방어율", rate.era)
+                        rateStat("WHIP", rate.whip)
+                        rateStat("K/9", rate.strikeoutsPerNine)
+                    }
+                }
                 HStack(spacing: 0) {
                     stat("경기", record.games)
                     stat("탈삼진", record.strikeouts)
+                    stat("피안타", record.hits ?? 0)
                     stat("볼넷", record.walks)
                     stat("실점", record.runsAllowed)
                 }
-                // 기록 탭의 통산 지표는 팀 자동 경기까지 합친다 — 기준을 안 적으면
-                // 같은 회차에 서로 다른 "탈삼진"이 존재하게 된다(QA P1-5).
-                Text("직접 등판 기준")
-                    .font(.caption2)
+                // 던진 공 수와 탈삼진/볼넷은 "얼마나 잘 던졌나"를 한 줄로 말한다.
+                // 기록 탭의 통산 지표는 팀 자동 경기까지 합치므로 기준을 함께 적는다(QA P1-5).
+                Text(seasonLine)
+                    .font(.caption2.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
@@ -148,7 +193,12 @@ struct LifeCardView: View {
             }
         }
         .padding(20)
-        .frame(width: Self.size.width, height: Self.size.height, alignment: .top)
+        // 높이를 못 박으면 내용이 넘칠 때 **푸터가 밖으로 밀려 잘린다** — 성장 막대와
+        // 투구 지표를 넣자마자 실제로 그렇게 됐다. 공유물은 세로로 길어도 손해가 없으므로
+        // 최소 높이만 정하고 내용에 맞춰 늘어나게 둔다. 미리보기는 굽힌 이미지의 실제
+        // 비율을 그대로 쓰므로 카드가 길어져도 어긋나지 않는다.
+        .frame(width: Self.size.width)
+        .frame(minHeight: Self.size.height, alignment: .top)
         .background {
             // 밤 구장 배경이 번들에 있으면 깔린다. 글자가 주인공이라 어둡게 눌러 쓴다.
             if UIImage(named: "LifeCardBackdrop") != nil {
@@ -205,6 +255,91 @@ struct LifeCardView: View {
         }
     }
 
+    /// 이닝이 있어야 만들어지는 지표들. 아웃 수를 남기지 않던 옛 기록에서는 nil이라
+    /// 이 줄이 통째로 접힌다 — 이닝을 투구수로 어림해서 방어율을 지어내지 않는다.
+    private var rateLine: (innings: String, era: String, whip: String, strikeoutsPerNine: String)? {
+        guard let outs = record.outs, outs > 0 else { return nil }
+        let innings = Double(outs) / 3
+        // 야구 표기: 1.1 = 1과 3분의 1이닝. 소수 첫째 자리가 남은 아웃 수다.
+        let inningsText = "\(outs / 3).\(outs % 3)"
+        let era = Double(record.runsAllowed) * 9 / innings
+        let whip = Double(record.walks + (record.hits ?? 0)) / innings
+        let kPerNine = Double(record.strikeouts) * 9 / innings
+        return (
+            inningsText,
+            String(format: "%.2f", era),
+            String(format: "%.2f", whip),
+            String(format: "%.1f", kPerNine)
+        )
+    }
+
+    /// "132구 · 탈삼진/볼넷 3.1 · 직접 등판 기준". 숫자 넉 줄만으로는 잘 던졌는지가
+    /// 안 잡힌다 — 비율 하나가 그것을 말해 준다.
+    private var seasonLine: String {
+        var parts: [String] = []
+        if let pitches = record.pitches, pitches > 0 { parts.append("\(pitches)구") }
+        if record.walks > 0 {
+            let ratio = Double(record.strikeouts) / Double(record.walks)
+            parts.append(String(format: "탈삼진/볼넷 %.1f", ratio))
+        } else if record.strikeouts > 0 {
+            parts.append("볼넷 없이 \(record.strikeouts)탈삼진")
+        }
+        parts.append("직접 등판 기준")
+        return parts.joined(separator: " · ")
+    }
+
+    /// 비율 지표는 값이 주인공이다 — 이름은 작게 아래에 둔다.
+    private func rateStat(_ title: String, _ value: String) -> some View {
+        VStack(spacing: 1) {
+            Text(value)
+                .font(.title3.weight(.heavy).monospacedDigit())
+                .foregroundStyle(BaseballTheme.milestone)
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(BaseballTheme.textTertiary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// 한 줄짜리 성장 막대. 숫자 넉 줄보다 **길이**가 먼저 읽힌다 — 흐린 막대가
+    /// 시작점이고, 그 위에 덧칠된 밝은 막대가 3년 동안 늘린 만큼이다.
+    private func growth(_ title: String, _ start: Int, _ end: Int) -> some View {
+        let delta = end - start
+        let scale = 99.0
+        return HStack(spacing: 8) {
+            Text(title)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .frame(width: 26, alignment: .leading)
+            GeometryReader { proxy in
+                let width = proxy.size.width
+                ZStack(alignment: .leading) {
+                    Capsule().fill(BaseballTheme.surfaceRaised)
+                    // 시작 구간 — 물려받아 출발한 자리.
+                    Capsule()
+                        .fill(BaseballTheme.textTertiary.opacity(0.55))
+                        .frame(width: width * min(1, Double(start) / scale))
+                    // 늘린 구간은 시작 위에서 이어 그린다. 겹치지 않게 시작만큼 밀어 둔다.
+                    Capsule()
+                        .fill(BaseballTheme.action)
+                        .frame(width: width * min(1, Double(max(0, delta)) / scale))
+                        .offset(x: width * min(1, Double(start) / scale))
+                }
+            }
+            .frame(height: 10)
+            Text("\(end)")
+                .font(.subheadline.weight(.heavy).monospacedDigit())
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .frame(width: 26, alignment: .trailing)
+            Text(delta > 0 ? "+\(delta)" : "±0")
+                .font(.caption2.weight(.heavy).monospacedDigit())
+                .foregroundStyle(delta > 0 ? BaseballTheme.action : BaseballTheme.textTertiary)
+                .frame(width: 28, alignment: .trailing)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title) \(start)에서 \(end)로 \(delta > 0 ? "\(delta) 올랐습니다" : "변화 없습니다")")
+    }
+
     private func stat(_ title: String, _ value: Int) -> some View {
         VStack(spacing: 2) {
             Text("\(value)")
@@ -252,6 +387,33 @@ enum LifeCardShareText {
         }
         lines.append(storeURL)
         return lines.joined(separator: "\n")
+    }
+}
+
+/// 화면에 보이는 미리보기 = 실제로 공유되는 이미지.
+///
+/// 예전에는 `LifeCardView`를 그대로 놓고 `scaleEffect` 뒤에 `frame(height:)`를 걸었다.
+/// `scaleEffect`는 레이아웃 크기를 바꾸지 않으므로 600pt짜리 뷰가 432pt 상자 안에서
+/// **세로 가운데로 정렬**됐고, 축소는 위(anchor: .top) 기준이라 카드가 84pt 위로 밀려
+/// 잘렸다 — "삐뚤어져 보인다"의 실체다. 굽힌 이미지를 그대로 보여 주면 그 어긋남이
+/// 원천적으로 없고, 공유 전에 무엇이 나갈지 정확히 보인다.
+struct LifeCardPreview: View {
+    let record: HighSchoolCareerStore.LifeRecord
+    var maximumWidth: CGFloat = LifeCardView.size.width
+
+    var body: some View {
+        if let image = LifeCardRenderer.image(for: record) {
+            // 비율은 이미지 자신의 것을 쓴다. 카드 크기 상수로 계산해 넘기면 굽힌 결과와
+            // 1pt만 어긋나도 아래쪽(푸터)이 잘린다 — 실제로 그렇게 잘렸다.
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: maximumWidth)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel("\(record.playerName) 선수 기록 카드")
+        }
     }
 }
 

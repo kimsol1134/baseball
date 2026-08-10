@@ -45,10 +45,7 @@ struct RecordView: View {
                         if let last = highSchool.archive.first {
                             BaseballCard(title: "\(last.lifeNumber)번째 선수가 남긴 것", tone: .milestone) {
                                 VStack(alignment: .leading, spacing: 10) {
-                                    LifeCardView(record: last)
-                                        .scaleEffect(0.72, anchor: .top)
-                                        .frame(height: LifeCardView.size.height * 0.72)
-                                        .frame(maxWidth: .infinity)
+                                    LifeCardPreview(record: last)
                                     LifeCardShareButton(record: last)
                                 }
                             }
