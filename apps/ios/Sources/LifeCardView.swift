@@ -107,14 +107,21 @@ struct LifeCardView: View {
             }
 
             if let chronicle = record.chronicle, !chronicle.isEmpty {
-                VStack(alignment: .leading, spacing: 5) {
-                    // 처음과 마지막 — 시작한 아이와 끝낸 선수를 함께 담는다.
-                    ForEach(Array(highlightLines.enumerated()), id: \.offset) { _, line in
-                        Text(line)
-                            .font(.caption)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .lineLimit(2)
-                    }
+                // 카드는 600pt 고정인데 연대기는 회차마다 길이가 다르다. 다 넣으려 들면
+                // VStack이 남은 높이에 맞춰 각 줄을 **한 줄로 눌러 버리고**, 문장이
+                // 단어 중간에서 "…"로 끊긴다("끝까지…", "더 꾸…") — 공유된 카드가
+                // 깨져 보인다는 제보의 실체다. 대표 유산·사람들 줄이 함께 있는 회차에서
+                // 특히 그랬다.
+                //
+                // 그래서 줄 수를 미리 정하지 않고, **들어가는 만큼만** 넣는다.
+                ViewThatFits(in: .vertical) {
+                    chronicleBlock(lines(5))
+                    chronicleBlock(lines(4))
+                    chronicleBlock(lines(3))
+                    chronicleBlock(lines(2))
+                    chronicleBlock(lines(1))
+                    // 마지막 보루 — 한 줄짜리 연대기도 안 들어가는 극단(초대형 글꼴)에서만.
+                    chronicleBlock(lines(1), lineLimit: 3)
                 }
             }
 
@@ -172,6 +179,30 @@ struct LifeCardView: View {
         guard let chronicle = record.chronicle else { return [] }
         if chronicle.count <= 5 { return chronicle }
         return [chronicle[0]] + chronicle.suffix(4)
+    }
+
+    /// 줄 수를 줄일 때 무엇을 버릴 것인가 — 입학(처음)과 결말(마지막)은 남기고
+    /// 가운데를 덜어낸다. 3년의 시작과 끝이 카드의 이야기이기 때문이다.
+    private func lines(_ count: Int) -> [String] {
+        let all = highlightLines
+        guard count < all.count else { return all }
+        guard count > 1 else { return Array(all.suffix(1)) }
+        return [all[0]] + all.suffix(count - 1)
+    }
+
+    /// 기본은 줄 수 제한 없음 — 한 문장을 두 줄로 자르면 "…"가 단어 한가운데를 끊는다.
+    /// 대신 **줄 수가 아니라 항목 수**로 분량을 맞춘다(위의 `ViewThatFits`).
+    private func chronicleBlock(_ lines: [String], lineLimit: Int? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            // 처음과 마지막 — 시작한 아이와 끝낸 선수를 함께 담는다.
+            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.caption)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .lineLimit(lineLimit)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     private func stat(_ title: String, _ value: Int) -> some View {
