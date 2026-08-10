@@ -132,6 +132,8 @@ public enum ScoutingEstimate {
             band: band,
             estimatedWeakness: estimate.pitchWeakness,
             estimatedColdZone: estimate.coldZone,
+            estimatedStrength: estimate.pitchStrength,
+            estimatedHotZone: estimate.hotZone,
             estimatedChaseTendency: estimate.chaseTendency,
             chaseTendencyMargin: margin
         )

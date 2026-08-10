@@ -627,6 +627,8 @@ struct PitchView: View {
             StrikeZoneGrid(
                 selected: session.selectedZone,
                 recommended: preparation.primaryRecommendation.call.zone,
+                hotZone: preparation.scoutingReport?.estimatedHotZone,
+                coldZone: preparation.scoutingReport?.estimatedColdZone,
                 batSide: session.batter.batSide,
                 onSelect: { zone in
                     session.selectedZone = zone
@@ -1153,6 +1155,18 @@ private struct CatcherCard: View {
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
+                        // 노릴 곳만 말하고 피할 곳을 감추면, 실점을 가장 크게 가르는
+                        // 정보의 절반이 화면 밖에 남는다. 강점 구종과 hot zone을 같이 적는다.
+                        if let strength = report.estimatedStrength, let hot = report.estimatedHotZone {
+                            Label(
+                                "피할 것 — \(PitchCopy.pitch(strength)) · \(PitchCopy.zone(hot, batSide: session.batter.batSide))",
+                                systemImage: "exclamationmark.triangle.fill"
+                            )
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.warning)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("pitch.scouting.avoid")
+                        }
                     }
                 }
 
@@ -1175,6 +1189,10 @@ private struct CatcherCard: View {
 struct StrikeZoneGrid: View {
     let selected: PitchZone
     let recommended: PitchZone
+    /// 타자가 강한 칸·약한 칸. 격자에 칠해 두지 않으면 유저는 9칸을 매번 고민하면서도
+    /// 무엇이 다른지 모른다. 추정이 없는 상황(스카우팅 리포트 없음)에서는 nil이다.
+    var hotZone: PitchZone? = nil
+    var coldZone: PitchZone? = nil
     /// 코스 이름을 읽어 줄 기준. 좌타자면 몸쪽·바깥쪽이 뒤집힌다.
     var batSide: BatSide = .right
     let onSelect: (PitchZone) -> Void
@@ -1194,6 +1212,17 @@ struct StrikeZoneGrid: View {
             Label("포수가 요구한 코스", systemImage: "target")
                 .font(.caption)
                 .foregroundStyle(BaseballTheme.information)
+            if hotZone != nil || coldZone != nil {
+                HStack(spacing: 10) {
+                    Label("강한 칸", systemImage: "square.fill")
+                        .foregroundStyle(BaseballTheme.warning)
+                    Label("약한 칸", systemImage: "square.fill")
+                        .foregroundStyle(BaseballTheme.positive)
+                }
+                .font(.caption2)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("강한 칸은 주황, 약한 칸은 초록으로 표시됩니다.")
+            }
         }
     }
 
@@ -1201,12 +1230,19 @@ struct StrikeZoneGrid: View {
         let zone = PitchZone(row: row, column: column)
         let isSelected = zone == selected
         let isRecommended = zone == recommended
+        let isHot = zone == hotZone
+        let isCold = zone == coldZone
         return Button {
             onSelect(zone)
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 6)
                     .fill(isSelected ? BaseballTheme.selection.opacity(0.35) : BaseballTheme.surfaceRaised)
+                // 색은 선택 표시를 덮지 않을 만큼만 옅게 깐다 — 어느 칸을 골랐는지가 먼저다.
+                if isHot || isCold {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill((isHot ? BaseballTheme.warning : BaseballTheme.positive).opacity(0.22))
+                }
                 if isRecommended {
                     Image(systemName: "target")
                         .font(.subheadline.weight(.semibold))
@@ -1221,7 +1257,11 @@ struct StrikeZoneGrid: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(PitchCopy.zone(zone, batSide: batSide) + (isRecommended ? ", 포수 추천" : ""))
+        .accessibilityLabel(
+            PitchCopy.zone(zone, batSide: batSide)
+                + (isRecommended ? ", 포수 추천" : "")
+                + (isHot ? ", 타자가 강한 칸" : isCold ? ", 타자가 약한 칸" : "")
+        )
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

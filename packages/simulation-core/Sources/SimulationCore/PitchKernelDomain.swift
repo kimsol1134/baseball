@@ -101,6 +101,10 @@ public struct ScoutingReportSnapshot: Codable, Equatable, Sendable {
     public let band: String
     public let estimatedWeakness: PitchType
     public let estimatedColdZone: PitchZone
+    /// 피해야 할 쪽. 화면이 "무엇을 노릴까"만 말하고 "무엇을 피할까"를 감추면, 실점을
+    /// 1.76배로 벌리는 구종 선택이 유저에게 주사위로 읽힌다. 옛 스냅숏은 nil이다.
+    public let estimatedStrength: PitchType?
+    public let estimatedHotZone: PitchZone?
     public let estimatedChaseTendency: Int
     public let chaseTendencyMargin: Int
 
@@ -110,6 +114,8 @@ public struct ScoutingReportSnapshot: Codable, Equatable, Sendable {
         band: String,
         estimatedWeakness: PitchType,
         estimatedColdZone: PitchZone,
+        estimatedStrength: PitchType? = nil,
+        estimatedHotZone: PitchZone? = nil,
         estimatedChaseTendency: Int,
         chaseTendencyMargin: Int
     ) {
@@ -118,6 +124,8 @@ public struct ScoutingReportSnapshot: Codable, Equatable, Sendable {
         self.band = band
         self.estimatedWeakness = estimatedWeakness
         self.estimatedColdZone = estimatedColdZone
+        self.estimatedStrength = estimatedStrength
+        self.estimatedHotZone = estimatedHotZone
         self.estimatedChaseTendency = estimatedChaseTendency
         self.chaseTendencyMargin = chaseTendencyMargin
     }
