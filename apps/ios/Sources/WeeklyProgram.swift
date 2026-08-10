@@ -1,5 +1,8 @@
 import Foundation
 
+/// 알 수 없는 원소를 통과시키기 위한 자리 표시자. 값은 쓰지 않는다.
+private struct AnyCodableSkip: Codable {}
+
 enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
     /// 유일하게 **하루 안에 끝낼 수 없는** 목표.
     ///
@@ -60,8 +63,38 @@ struct WeeklyTask: Codable, Equatable, Identifiable, Sendable {
     let target: Int
     var progress: Int
 
+    /// 모르는 목표 종류를 만나면 **그 항목만** 버린다.
+    ///
+    /// 이 파일은 iCloud로 동기화된다. 새 버전이 새 `kind`를 담아 올리면, 아직 옛 버전인
+    /// 다른 기기는 `SaveRecord` 디코딩이 통째로 실패해 **주간 노트·누적 스탬프·처리
+    /// 영수증 원장·revision을 전부 잃는다.** 영수증 원장이 비면 같은 행동이 두 번
+    /// 반영될 수도 있다. 목표 종류는 앞으로도 계속 늘 것이므로 이번 한 번의 문제가 아니다.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        target = try container.decode(Int.self, forKey: .target)
+        progress = try container.decode(Int.self, forKey: .progress)
+        let rawKind = try container.decode(String.self, forKey: .kind)
+        guard let known = WeeklyTaskKind(rawValue: rawKind) else {
+            throw WeeklyTaskDecodingError.unknownKind(rawKind)
+        }
+        kind = known
+    }
+
+    init(id: String, kind: WeeklyTaskKind, target: Int, progress: Int) {
+        self.id = id
+        self.kind = kind
+        self.target = target
+        self.progress = progress
+    }
+
     var isCompleted: Bool { progress >= target }
     var boundedProgress: Int { min(target, max(0, progress)) }
+}
+
+/// 모르는 목표 종류를 만났다는 신호. 보드 디코딩이 이 항목만 건너뛰게 한다.
+enum WeeklyTaskDecodingError: Error {
+    case unknownKind(String)
 }
 
 struct WeeklyProgram: Codable, Equatable, Sendable {
@@ -69,6 +102,33 @@ struct WeeklyProgram: Codable, Equatable, Sendable {
     var tasks: [WeeklyTask]
     var completedTaskIDs: Set<String>
     var claimed: Bool
+
+    /// 알 수 없는 항목은 빼고 나머지는 살린다. 보드가 세 칸이 아니게 되더라도
+    /// **스탬프·영수증·revision을 지키는 쪽**이 언제나 낫다.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        weekKey = try container.decode(String.self, forKey: .weekKey)
+        completedTaskIDs = try container.decode(Set<String>.self, forKey: .completedTaskIDs)
+        claimed = try container.decode(Bool.self, forKey: .claimed)
+        var list = try container.nestedUnkeyedContainer(forKey: .tasks)
+        var decoded: [WeeklyTask] = []
+        while !list.isAtEnd {
+            if let task = try? list.decode(WeeklyTask.self) {
+                decoded.append(task)
+            } else {
+                // 자리를 건너뛰어야 다음 항목을 읽을 수 있다.
+                _ = try? list.decode(AnyCodableSkip.self)
+            }
+        }
+        tasks = decoded
+    }
+
+    init(weekKey: String, tasks: [WeeklyTask], completedTaskIDs: Set<String>, claimed: Bool) {
+        self.weekKey = weekKey
+        self.tasks = tasks
+        self.completedTaskIDs = completedTaskIDs
+        self.claimed = claimed
+    }
 
     var completedCount: Int { tasks.filter { completedTaskIDs.contains($0.id) }.count }
     var isRewardReady: Bool { completedCount >= 2 }

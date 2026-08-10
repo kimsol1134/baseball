@@ -45,7 +45,14 @@ final class WeeklyProgramStore {
     @ObservationIgnored private var processedReceiptIDs: Set<String> = []
 
     init(
-        sync: SaveSync = SaveSync(key: "baseball-weekly-program.json"),
+        // 저장 파일을 버전으로 가른다.
+        //
+        // 이 파일은 iCloud로 동기화되는데, 새 목표 종류가 담긴 보드를 옛 버전 기기가
+        // 읽으면 디코딩이 통째로 실패해 **스탬프·영수증 원장·revision까지 전부 잃는다**
+        // (원장이 비면 같은 행동이 두 번 반영될 수도 있다). 옛 버전은 고칠 수 없으므로
+        // 파일을 나눠 서로 건드리지 않게 한다. v1은 아래 `migrateLegacyRecordIfNeeded`가
+        // 한 번만 읽어 스탬프를 넘겨받는다.
+        sync: SaveSync = SaveSync(key: "baseball-weekly-program-v2.json"),
         stableUserID: String = GameAnalytics.stableID(),
         saveWriter: ((Data) -> Bool)? = nil,
         outboxSync: SaveSync? = nil,
@@ -56,6 +63,7 @@ final class WeeklyProgramStore {
         self.stableUserID = stableUserID
         self.saveWriter = saveWriter
         self.outboxWriter = outboxWriter
+        migrateLegacyRecordIfNeeded()
         restore()
         restoreOutbox()
     }
@@ -263,6 +271,31 @@ final class WeeklyProgramStore {
     private struct OutboxRecord: Codable {
         var receipts: [ProgressReceipt]
         var revision: UInt64
+    }
+
+    /// v1 파일의 누적(스탬프·영수증 원장)을 한 번만 물려받는다.
+    ///
+    /// 옛 파일은 **읽기만 한다** — 거기에 쓰면 옛 버전 기기가 다시 깨진다.
+    private func migrateLegacyRecordIfNeeded() {
+        guard sync.key.contains("-v2"), !hasStoredRecord() else { return }
+        let legacy = SaveSync(key: "baseball-weekly-program.json")
+        guard let data = legacy.read(revision: { data in
+            (try? JSONDecoder().decode(SaveRecord.self, from: data))?.revision
+        }), let saved = try? JSONDecoder().decode(SaveRecord.self, from: data) else { return }
+        // 보드 자체는 새 규칙으로 다시 만든다. 넘겨받는 것은 되돌릴 수 없는 누적뿐이다.
+        _ = persist(
+            program: nil,
+            stamps: saved.stamps,
+            lastObservedWeekStart: saved.lastObservedWeekStart,
+            processedReceiptIDs: saved.processedReceiptIDs ?? [],
+            pendingReceipts: saved.pendingReceipts ?? []
+        )
+    }
+
+    private func hasStoredRecord() -> Bool {
+        sync.read(revision: { data in
+            (try? JSONDecoder().decode(SaveRecord.self, from: data))?.revision
+        }) != nil
     }
 
     @discardableResult
