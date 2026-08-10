@@ -66,13 +66,22 @@ struct AbilityGaugeView: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(label).eyebrowStyle(BaseballTheme.textTertiary)
+                // **"재능"을 붙여 읽는다.**
+                //
+                // 알파벳만 있으면 그 글자를 현재 실력의 등급으로 읽는다. 그래서 구위 45(S)와
+                // 제구 50(C)가 나란히 서면 "낮은데 등급이 더 높다"는 모순으로 보인다. 이 글자는
+                // 실력이 아니라 **성장 한계**다 — S는 80까지 열려 있다는 뜻이고, 지금 45라는
+                // 사실과 아무 충돌이 없다. 한 단어와 한계 숫자가 그 오해를 통째로 없앤다.
                 if let talent {
-                    Text(talent.label)
+                    Text("재능 \(talent.label)")
                         .font(.caption2.weight(.black))
                         .foregroundStyle(BaseballTheme.actionInk)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(RatingScale.tone(talent.ceiling), in: Capsule())
+                    Text(talent == .s ? "한계 없음" : "\(talent.ceiling)까지")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textTertiary)
                 }
                 Spacer()
                 if gained, let beforeValue {

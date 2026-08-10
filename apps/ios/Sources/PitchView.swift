@@ -208,6 +208,44 @@ struct PitchView: View {
         session.context.strikes == 2 && (session.context.balls == 3 || session.context.outs == 2)
     }
 
+    /// 지금 이 순간의 조임(0~1). 심장박동 진동의 세기와 빠르기가 된다.
+    ///
+    /// 세 가지가 겹칠 때 실제로 손에 땀이 난다 — **경기의 무게**(레버리지), **주자**(한 방이면
+    /// 점수가 들어온다), **볼카운트**(다음 한 구가 타석을 끝낸다). 셋 다 코어가 이미 들고 있는
+    /// 값이라 새 상태를 만들지 않는다.
+    static func tension(
+        leverage: Int,
+        runners: BaserunnerStateSnapshot,
+        balls: Int,
+        strikes: Int,
+        outs: Int
+    ) -> Double {
+        // 620 미만은 조여 오지 않는 이닝이다. 거기서도 폰이 뛰면 진동이 배경 소음이 된다.
+        let byLeverage = min(1, max(0, Double(leverage - 620) / 330))
+        guard byLeverage > 0 else { return 0 }
+        // 득점권 주자. 3루는 외야 뜬공 하나로도 들어온다.
+        let byRunners = runners.thirdOccupied ? 0.30 : runners.secondOccupied ? 0.20
+            : runners.firstOccupied ? 0.08 : 0
+        // 다음 한 구가 타석을 끝낼 수 있는 카운트.
+        let byCount = (balls == 3 && strikes == 2) ? 0.28
+            : strikes == 2 ? 0.16 : balls == 3 ? 0.12 : 0
+        let byOuts = outs == 2 ? 0.08 : 0
+        return min(1, byLeverage * 0.62 + byRunners + byCount + byOuts)
+    }
+
+    private var currentTension: Double {
+        // 던지고 결과를 보는 동안에는 박동을 멈춘다. 판정이 나오는 자리에 다른 진동이
+        // 겹치면 "잡은 공인지 맞은 공인지"를 손이 구분하지 못한다.
+        guard case .ready = session.stage, !isPractice else { return 0 }
+        return Self.tension(
+            leverage: session.context.leverage,
+            runners: session.gameState.runners,
+            balls: session.context.balls,
+            strikes: session.context.strikes,
+            outs: session.context.outs
+        )
+    }
+
     /// 빠른 진행은 저위험 타석에서만 연다. 득점 기대가 크게 흔들리는 승부처나
     /// 풀카운트/2스트라이크는 이 게임의 핵심이므로 한 구씩 직접 던진다.
     static func canFastForwardCurrentBatter(
@@ -232,9 +270,28 @@ struct PitchView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text(session.scenario.headline).eyebrowStyle(BaseballTheme.milestone)
-                Spacer()
+            HStack(alignment: .firstTextBaseline) {
+                // **어떤 경기인지 먼저 말한다.**
+                //
+                // 예전에는 경기 이름이 눈썹 글자 한 줄이었고 무게는 어디에도 없었다. 그래서
+                // 3년 내내 "그냥 또 한 이닝"으로 읽혔다 — 마지막 여름의 결승과 1학년 봄의
+                // 연습경기가 화면에서 구분되지 않으면, 이 게임이 파는 긴장이 성립하지 않는다.
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(session.scenario.headline)
+                        .font(.subheadline.weight(.heavy))
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(session.scenario.detail)
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("pitch.scenario")
+                Spacer(minLength: 8)
+                StakesBadge(leverage: session.context.leverage)
                 // 탈출구 없는 전체 화면은 함정이다. 파기는 확인을 거친다.
                 if onAbort != nil {
                     Button("중단") { confirmingAbort = true }
@@ -334,10 +391,19 @@ struct PitchView: View {
             audio.crowdIntensity = GameAudioMapping.crowdIntensity(leverage: session.scenario.leverage)
             // 마운드에서는 관중과 심판이 음악이다. 패드는 화면을 나갈 때 돌아온다.
             audio.musicIntensity = 0
+            Haptics.shared.prepare()
+            Haptics.shared.setHeartbeat(tension: currentTension)
         }
         .onDisappear {
             audio.crowdIntensity = 0.15
             audio.musicIntensity = 0.5
+            // 마운드를 떠나면 반드시 멈춘다 — 화면 밖에서 계속 뛰는 진동은 고장이다.
+            Haptics.shared.setHeartbeat(tension: 0)
+        }
+        // 카운트·주자·아웃이 바뀔 때마다 조임을 다시 건다. 풀카운트로 들어가는 순간
+        // 손 안에서 박동이 빨라지는 것이 이 장치의 전부다.
+        .onChange(of: currentTension) { _, tension in
+            Haptics.shared.setHeartbeat(tension: tension)
         }
     }
 
@@ -386,9 +452,8 @@ struct PitchView: View {
                 Text("공 맞히기 \(session.batter.contact) · 볼 고르기 \(session.batter.discipline) · 장타력 \(session.batter.power)")
                     .font(.footnote.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textSecondary)
-                Text(session.scenario.detail)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.milestone)
+                // 시나리오 설명은 화면 맨 위 상황 머리글이 맡는다 — 같은 문장을 두 번 적으면
+                // 둘 다 안 읽힌다.
             }
             .accessibilityElement(children: .combine)
         }
@@ -440,6 +505,7 @@ struct PitchView: View {
                     battedBall: result.snapshot.battedBall,
                     fielding: result.snapshot.fieldingResolution,
                     sequenceMoment: session.lastSequenceMoment,
+                    batSide: session.batter.batSide,
                     progress: replayProgress
                 )
                 .frame(height: dramaHeight)
@@ -459,6 +525,20 @@ struct PitchView: View {
                     ) {
                         HighlightStamp(kind: kind, velocityTenthsKPH: result.snapshot.execution.velocityTenthsKPH)
                             .id(result.snapshot.revision)
+                    }
+                }
+                // 퍼펙트 릴리스 — 던진 손이 만든 결과라 승부 장면 위에 남는다.
+                // 결과가 안타든 삼진이든, 정확히 가운데에서 뗀 사실은 그 자체로 보상이다.
+                .overlay(alignment: .topTrailing) {
+                    if session.lastDelivery?.isPerfectRelease == true {
+                        Label("퍼펙트 릴리스", systemImage: "target")
+                            .font(.caption.weight(.heavy))
+                            .foregroundStyle(BaseballTheme.canvas)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(BaseballTheme.milestone, in: Capsule())
+                            .padding(10)
+                            .accessibilityIdentifier("pitch.perfectRelease")
                     }
                 }
                 // 승부구 배지 — 슬로모션이 왜 걸렸는지 화면이 말해 준다.
@@ -773,7 +853,7 @@ struct PitchView: View {
 /// 지금은 점수 차를 가장 크게 놓고, 그 아래에 이닝·아웃·볼카운트·주자를 붙인다. 그리고 이
 /// 승부가 얼마나 중요한지(`leverage`)를 말로 한 줄 적는다 — 숫자는 사람에게 무게를 전달하지
 /// 못한다.
-private struct ScoreboardBar: View {
+struct ScoreboardBar: View {
     let session: PitchSession
 
     /// 점수 차를 읽는 말. 부호만으로는 어느 쪽이 앞서는지 헷갈린다.
@@ -794,34 +874,34 @@ private struct ScoreboardBar: View {
         }
     }
 
-    /// 이 승부의 무게. 레버리지 숫자를 그대로 보여 주면 아무 뜻도 전달되지 않는다.
-    private var stakes: String? {
-        switch session.context.leverage {
-        case 900...: "여기서 끝난다"
-        case 780..<900: "승부처"
-        case 620..<780: "흐름이 갈린다"
-        default: nil
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(scoreText)
                     .font(BaseballType.scoreboard)
                     .foregroundStyle(scoreTone)
-                Text("\(session.context.inning)회 \(session.context.outs)아웃")
+                Text("\(session.context.inning)회")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textSecondary)
+                // 아웃카운트는 숫자 대신 점으로. 야구 중계의 문법이고, 흘깃 봐도 읽힌다.
+                CountPips(label: "OUT", filled: session.context.outs, total: 2, tone: BaseballTheme.negative)
                 Spacer()
-                if let stakes {
-                    Text(stakes).eyebrowStyle(BaseballTheme.action)
-                }
+                // 중요도는 화면 맨 위 배지가 맡는다 — 같은 말을 두 줄에 적지 않는다.
             }
             HStack(spacing: 14) {
                 CountPips(label: "B", filled: session.context.balls, total: 3, tone: BaseballTheme.warning)
                 CountPips(label: "S", filled: session.context.strikes, total: 2, tone: BaseballTheme.action)
+                // 주자는 다이아몬드 하나로만 두면 26pt짜리 회색 마름모 셋이라, 이 이닝이
+                // 무사 만루인지 2사 주자 없음인지가 눈에 안 들어온다. 야구 팬이 실제로
+                // 쓰는 말("2사 만루")을 그림 옆에 붙인다.
                 RunnerDiamond(runners: session.gameState.runners)
+                Text(Self.situationLine(outs: session.context.outs, runners: session.gameState.runners))
+                    .font(.footnote.weight(.heavy))
+                    .foregroundStyle(session.gameState.runners.firstOccupied
+                                     || session.gameState.runners.secondOccupied
+                                     || session.gameState.runners.thirdOccupied
+                                     ? BaseballTheme.warning : BaseballTheme.textSecondary)
+                    .accessibilityHidden(true)
                 Spacer()
                 HStack(spacing: 6) {
                     Text("피로").eyebrowStyle(BaseballTheme.textTertiary)
@@ -861,20 +941,92 @@ private struct ScoreboardBar: View {
         .accessibilityLabel(accessibilitySummary)
     }
 
+    /// "2사 만루" 같은 한 마디. 야구를 아는 사람이 상황을 읽는 최소 단위다.
+    static func situationLine(outs: Int, runners: BaserunnerStateSnapshot) -> String {
+        let outsText = "\(min(2, max(0, outs)))사"
+        let occupied = [runners.firstOccupied, runners.secondOccupied, runners.thirdOccupied]
+        switch occupied {
+        case [false, false, false]: return "\(outsText) 주자 없음"
+        case [true, true, true]: return "\(outsText) 만루"
+        default:
+            let bases = zip(occupied, ["1루", "2루", "3루"])
+                .filter(\.0).map(\.1).joined(separator: "·")
+            return "\(outsText) \(bases)"
+        }
+    }
+
     /// 문자열 연결이 길면 타입체커가 무너진다 — 조각을 배열로 모아 한 번에 붙인다.
     private var accessibilitySummary: String {
         var parts: [String] = []
-        parts.append("\(scoreText). \(session.context.inning)회 \(session.context.outs)아웃")
+        parts.append("\(scoreText). \(session.context.inning)회 "
+                     + Self.situationLine(outs: session.context.outs, runners: session.gameState.runners))
+        parts.append(StakesBadge.label(session.context.leverage))
         parts.append("볼 \(session.context.balls) 스트라이크 \(session.context.strikes)")
         parts.append("피로 \(session.context.fatigue)")
         parts.append("주자 \(RunnerDiamond.voiceOverLabel(session.gameState.runners))")
         if session.pitches > 0 {
             parts.append("이번 등판 \(session.strikeouts)탈삼진 \(session.walks)볼넷 \(session.runsAllowed)실점")
         }
-        if let stakes {
-            parts.append(stakes)
-        }
         return parts.joined(separator: ", ")
+    }
+}
+
+/// 이 승부의 무게. 레버리지 숫자(0~1000)는 사람에게 아무 뜻도 전달하지 못한다 —
+/// 등급 이름과 색, 그리고 채워지는 눈금 셋으로 옮긴다.
+///
+/// 이 배지가 화면 맨 위 경기 이름 옆에 있어야, 마운드에 오르기 전에 "이건 흘려도 되는
+/// 이닝인가, 여기서 끝나는 이닝인가"가 정해진다. 무게를 모르면 전력투구를 언제 쓸지도 못 고른다.
+struct StakesBadge: View {
+    let leverage: Int
+
+    static func label(_ leverage: Int) -> String {
+        switch leverage {
+        case 900...: "여기서 끝난다"
+        case 780..<900: "승부처"
+        case 620..<780: "흐름이 갈린다"
+        default: "일상적인 이닝"
+        }
+    }
+
+    static func level(_ leverage: Int) -> Int {
+        switch leverage {
+        case 900...: 3
+        case 780..<900: 2
+        case 620..<780: 1
+        default: 0
+        }
+    }
+
+    private var tone: Color {
+        switch Self.level(leverage) {
+        case 3: BaseballTheme.negative
+        case 2: BaseballTheme.milestone
+        case 1: BaseballTheme.warning
+        default: BaseballTheme.textTertiary
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text("중요도").font(.caption2.weight(.semibold)).foregroundStyle(BaseballTheme.textTertiary)
+            Text(Self.label(leverage))
+                .font(.caption.weight(.heavy))
+                .foregroundStyle(tone)
+            HStack(spacing: 3) {
+                ForEach(0..<3, id: \.self) { index in
+                    Capsule()
+                        .fill(index < Self.level(leverage) ? tone : BaseballTheme.border.opacity(0.35))
+                        .frame(width: 12, height: 4)
+                }
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(tone.opacity(Self.level(leverage) >= 2 ? 0.14 : 0.06),
+                    in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("이 승부의 중요도, \(Self.label(leverage))")
+        .accessibilityIdentifier("pitch.stakes")
     }
 }
 
@@ -911,18 +1063,20 @@ private struct RunnerDiamond: View {
 
     var body: some View {
         ZStack {
-            base(occupied: runners.secondOccupied).offset(y: -8)
-            base(occupied: runners.thirdOccupied).offset(x: -8)
-            base(occupied: runners.firstOccupied).offset(x: 8)
+            base(occupied: runners.secondOccupied).offset(y: -11)
+            base(occupied: runners.thirdOccupied).offset(x: -11)
+            base(occupied: runners.firstOccupied).offset(x: 11)
         }
-        .frame(width: 26, height: 22)
+        .frame(width: 34, height: 30)
         .accessibilityHidden(true)
     }
 
     private func base(occupied: Bool) -> some View {
         Rectangle()
-            .fill(occupied ? BaseballTheme.milestone : BaseballTheme.border.opacity(0.35))
-            .frame(width: 8, height: 8)
+            // 채워진 베이스는 위험 신호다. 이전의 마일스톤 금색은 "좋은 것"으로 읽혔다 —
+            // 마운드에 선 사람에게 주자는 좋은 것이 아니다.
+            .fill(occupied ? BaseballTheme.warning : BaseballTheme.border.opacity(0.3))
+            .frame(width: 11, height: 11)
             .rotationEffect(.degrees(45))
     }
 }

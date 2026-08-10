@@ -4,6 +4,10 @@ import SwiftUI
 struct SettingsView: View {
     let highSchool: HighSchoolCareerStore
     let pro: MobileCareerStore
+    /// 모든 진행을 지운 직후. 앱을 다시 깐 것과 같은 자리(첫 화면)로 돌려보내는 일은
+    /// 탭을 소유한 껍데기만 할 수 있다 — 여기서 지우고 그대로 두면 사용자는 삭제된
+    /// 설정 화면에 남아 "그래서 뭐가 지워졌지"를 확인할 방법이 없다.
+    var onResetAll: () -> Void = {}
 
     @AppStorage("baseball.pitch.autoRelease") private var autoRelease = false
     @AppStorage(DailyReminder.enabledKey) private var reminderOn = false
@@ -102,8 +106,11 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("모든 진행을 삭제할까요?", isPresented: $confirmingReset, titleVisibility: .visible) {
             Button("삭제", role: .destructive) {
-                highSchool.deleteCareer()
-                pro.deleteCareer()
+                // 삭제가 실제로 성공했을 때만 첫 화면으로 되돌린다. 저장 쓰기가 실패하면
+                // 진행은 그대로 남아 있는데 화면만 오프닝으로 가서, 되돌릴 수 없는 것을
+                // 되돌린 것처럼 보이게 된다.
+                let clearedHighSchool = highSchool.deleteCareer()
+                let clearedPro = pro.deleteCareer()
                 // "모든 진행"에는 UserDefaults의 진행 흔적도 포함된다 — 남기면
                 // 새 회차의 첫 신기록·첫 별점 순간이 이미 소모돼 있다.
                 UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
@@ -116,6 +123,9 @@ struct SettingsView: View {
                 }
                 // 알림 권유는 다시 물어볼 수 있어야 한다 — 지운 사람은 다시 시작할 사람이다.
                 UserDefaults.standard.removeObject(forKey: DailyReminder.promptedKey)
+                // 지운 다음의 첫 화면은 오프닝이어야 한다. 껍데기가 탭을 고교로 되돌리고
+                // 오프닝 표시 상태까지 초기화한다.
+                if clearedHighSchool && clearedPro { onResetAll() }
             }
             Button("취소") {}
         } message: {

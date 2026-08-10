@@ -196,7 +196,13 @@ final class CareerSmokeUITests: XCTestCase {
         dismissOpening(app)
         // 실제 PitchKernel 정책에서 지명되는 고정 시드. 미지명 때 조용히 끝내지 않고
         // 고교→프로 전환(탭 선택 대상 교체 포함)을 매 실행 검증한다.
-        XCTAssertTrue(completeSetup(app, seed: "1"), "고교 시작 화면이 열리지 않았습니다.")
+        //
+        // 밸런스를 만지면 이 시드는 재보정해야 한다. 후보는 `RealPlayDraftRateTests`의
+        // `[real-play-draft] smoke-autopilot drafted-seeds=`에서 가져오되, **그 목록이 곧
+        // 정답은 아니다** — 실측에서 그 목록의 앞쪽 여섯 개가 여기서는 미지명으로 끝났다.
+        // 하네스는 엔진을 직접 돌리고 이 테스트는 화면을 거치므로 승부 진행이 완전히
+        // 같지 않다. 후보를 좁히는 용도로만 쓰고, 최종 확인은 이 테스트로 한다.
+        XCTAssertTrue(completeSetup(app, seed: "44"), "고교 시작 화면이 열리지 않았습니다.")
 
         var steps = 0
         var usedFastForwardDuringRun = false

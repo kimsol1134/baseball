@@ -17,7 +17,8 @@ struct DailyInningView: View {
     @Environment(\.requestReview) private var requestReview
     @State private var session: PitchSession?
     @State private var finished = false
-    @State private var showingBoard = false
+    /// 리더보드를 열지 못했다. 아무 반응 없이 삼켜 버리면 "버튼이 고장 났다"가 된다.
+    @State private var boardUnavailable = false
     /// 저녁 알림 옵트인. 켜는 순간 권한을 묻는다 — 첫 실행에서 묻는 것보다 늦고 정직하다.
     @AppStorage("baseball.daily.reminder") private var reminderOn = false
 
@@ -49,11 +50,10 @@ struct DailyInningView: View {
         .fullScreenCover(isPresented: $finished) {
             settlement
         }
-        .sheet(isPresented: $showingBoard) {
-            GameCenterBoardView(leaderboardID: Leaderboard.dailyInning.rawValue) {
-                showingBoard = false
-            }
-            .ignoresSafeArea()
+        .alert("전국 순위를 열 수 없습니다", isPresented: $boardUnavailable) {
+            Button("확인") {}
+        } message: {
+            Text("Game Center에 로그인되어 있지 않습니다. 설정 앱 > Game Center에서 로그인하면 오늘의 순위를 볼 수 있습니다.")
         }
         .onAppear {
             GameAnalytics.log(.dailyInningOpened, [
@@ -91,17 +91,7 @@ struct DailyInningView: View {
                 }
                 .accessibilityIdentifier("daily.streak")
             }
-            if AchievementStore.shared.isGameCenterAuthenticated {
-                Button {
-                    showingBoard = true
-                } label: {
-                    Label("오늘 전국 순위 보기", systemImage: "trophy")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.milestone)
-                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                }
-                .accessibilityIdentifier("daily.board")
-            }
+            leaderboardButton(identifier: "daily.board")
             Toggle(isOn: $reminderOn) {
                 Text("저녁마다 이어 할 한 가지 알림 (19:30)")
                     .font(.footnote)
@@ -161,27 +151,54 @@ struct DailyInningView: View {
                 Text("내일 자정에 새 판이 열립니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textTertiary)
-                if AchievementStore.shared.isGameCenterAuthenticated {
-                    Button {
-                        showingBoard = true
-                    } label: {
-                        Label("오늘 전국 순위 보기", systemImage: "trophy")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.milestone)
-                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                    }
-                    .accessibilityIdentifier("daily.board.settlement")
-                }
+                leaderboardButton(identifier: "daily.board.settlement")
             }
             Spacer(minLength: 0)
-            PrimaryButton(title: "닫기", identifier: "daily.close") {
-                finished = false
-                onClose()
-            }
+            PrimaryButton(title: "닫기", identifier: "daily.close") { closeAll() }
         }
         .padding(BaseballMetrics.gutter)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(BaseballTheme.fieldNight.ignoresSafeArea())
+        // 정산은 별도의 전면 화면이라 바깥 알림이 여기까지 오지 않는다.
+        .alert("전국 순위를 열 수 없습니다", isPresented: $boardUnavailable) {
+            Button("확인") {}
+        } message: {
+            Text("Game Center에 로그인되어 있지 않습니다. 설정 앱 > Game Center에서 로그인하면 오늘의 순위를 볼 수 있습니다.")
+        }
+    }
+
+    /// 전국 순위 입구. **인증 여부로 숨기지 않는다.**
+    ///
+    /// 예전에는 미인증이면 버튼 자체가 없었다. 그러면 "왜 순위가 없지"의 답이 화면 어디에도
+    /// 없고, 인증된 사람에게는 시트 충돌로 빈 화면이 떴다. 지금은 늘 보이고, 못 열면
+    /// 왜 못 여는지 말한다.
+    private func leaderboardButton(identifier: String) -> some View {
+        Button {
+            if !GameCenterBoard.present(leaderboardID: Leaderboard.dailyInning.gameCenterID) {
+                boardUnavailable = true
+            }
+        } label: {
+            Label("오늘 전국 순위 보기", systemImage: "trophy")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(BaseballTheme.milestone)
+                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+        }
+        .accessibilityIdentifier(identifier)
+    }
+
+    /// 정산 화면에서 오늘의 이닝을 통째로 닫는다.
+    ///
+    /// **한 프레임에 두 겹을 닫지 않는다.** 이 화면(`settlement`)은 전면 화면이고, 오늘의
+    /// 이닝 자체도 부모의 전면 화면이다. `finished = false`와 `onClose()`를 같은 프레임에
+    /// 부르면 UIKit 표시 스택이 아직 사라지는 중인 화면 위에서 부모까지 내리려다 엉켜,
+    /// 아무것도 그려지지 않는 검은 화면이 남고 탭이 먹지 않는다. 안쪽을 먼저 내리고,
+    /// 전환이 끝난 뒤에 바깥을 닫는다.
+    private func closeAll() {
+        finished = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            session = nil
+            onClose()
+        }
     }
 
     private func finish(_ session: PitchSession) {

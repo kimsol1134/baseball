@@ -183,6 +183,36 @@ final class HighSchoolCareerStore {
     var selectedSignatureLegacyID: CareerSignatureLegacyID?
     /// 방금 만개한 재능. 화면이 축하하고 나서 비운다.
     private(set) var pendingBloom: Bloom?
+    /// 방금 끝난 훈련의 영수증.
+    ///
+    /// 왜 따로 두는가: `pendingGains`는 **오른 것이 있을 때만** 채워진다. 그래서 성장 0으로
+    /// 지나간 훈련은 화면에 아무 결과도 남기지 않았고, 사용자는 "눌렀는데 아무 일도 안
+    /// 일어났다"로 읽었다. 훈련은 눌렀으면 언제나 결과가 있다 — 안 오른 것도 결과다.
+    /// 이 값이 있는 동안 화면 아래에 결과 패널이 붙어, 스크롤 없이 그 자리에서 읽힌다.
+    private(set) var trainingReceipt: TrainingReceipt?
+
+    struct TrainingReceipt: Equatable {
+        var focus: TrainingFocus
+        /// "구위 +2" 같은 한 줄. 성장이 없으면 "능력 변화 없음".
+        var headline: String
+        /// 코어가 만든 설명 문장.
+        var detail: String
+        var gains: [MobileCareerStore.AbilityGain]
+        var jackpot: Bool
+        var bloom: Bloom?
+        var fatigueAfter: Int
+        var fatigueChange: Int
+        /// 오늘의 기회를 맞춰 던진 훈련인가.
+        var opportunityHit: Bool
+    }
+
+    /// 결과 패널을 닫는다. 같은 자리에서 축하(성장·만개)까지 함께 소비한다 —
+    /// 패널이 이미 그 둘을 보여 줬으므로, 남겨 두면 스크롤 위쪽에 같은 축하가 또 뜬다.
+    func acknowledgeTrainingReceipt() {
+        trainingReceipt = nil
+        pendingGains = []
+        pendingBloom = nil
+    }
     /// 방금 닫힌 회차의 정산. 화면이 보여 주고 나서 비운다.
     var pendingRecap: RunRecapView.Recap?
     /// 지난 회차에서 사용자가 직접 저장한 재도전 목표. 선택하거나 버릴 때까지 유지한다.
@@ -609,6 +639,7 @@ final class HighSchoolCareerStore {
         tutorialSession = nil
         pendingGameCompletion = nil
         pendingGains = []
+        trainingReceipt = nil
         selectedSignatureLegacyID = nil
         careerStartingPitcher = nil
         signatureLegacyRulesVersion = nil
@@ -656,6 +687,7 @@ final class HighSchoolCareerStore {
         pitchSession = nil
         tutorialSession = nil
         pendingGains = []
+        trainingReceipt = nil
         selectedMemories = []
         selectedSignatureLegacyID = nil
         careerStartingPitcher = nil
@@ -748,6 +780,8 @@ final class HighSchoolCareerStore {
         for gain in pendingGains where gain.after > gain.before {
             chapterGains[gain.label, default: 0] += gain.after - gain.before
         }
+        trainingReceipt = Self.receipt(training: after.lastTraining, gains: pendingGains,
+                                       bloom: pendingBloom, fatigueAfter: after.fatigue, focus: focus)
         if countsTowardWeeklyProgram {
             GameAnalytics.log(.careerTrainingCompleted, [
                 "life_number": after.lifeNumber,
@@ -771,6 +805,9 @@ final class HighSchoolCareerStore {
     ) {
         guard maximumSessions > 1,
               let startingPitcher = result?.snapshot.pitcher else { return }
+        // 묶음 전체의 피로 변화를 재려면 묶음이 시작될 때의 값이 필요하다. 마지막 한 번의
+        // `fatigueBefore`를 쓰면 3회를 돌고도 마지막 1회분만 오른 것처럼 적힌다.
+        let startingFatigue = result?.snapshot.fatigue ?? 0
         var completed = 0
 
         while completed < maximumSessions,
@@ -794,6 +831,46 @@ final class HighSchoolCareerStore {
         lastSummary = "같은 훈련 \(completed)회 완료 · 능력 성장 +\(growth)"
         feedbackCue = growth > 0 ? .growth : .neutral
         feedbackTrigger += 1
+        // 묶음 훈련은 마지막 한 번이 아니라 묶음 전체가 결과다.
+        trainingReceipt = TrainingReceipt(
+            focus: focus,
+            headline: Self.gainHeadline(pendingGains),
+            detail: "\(HighSchoolPresentation.focus(focus)) 훈련 \(completed)회를 이어서 마쳤습니다.",
+            gains: pendingGains,
+            jackpot: result?.snapshot.lastTraining?.jackpot ?? false,
+            bloom: pendingBloom,
+            fatigueAfter: result?.snapshot.fatigue ?? 0,
+            fatigueChange: (result?.snapshot.fatigue ?? 0) - startingFatigue,
+            opportunityHit: false
+        )
+    }
+
+    /// 훈련 하나의 영수증. 코어가 준 값만 옮긴다 — 화면이 결과를 다시 해석하지 않는다.
+    static func receipt(
+        training: CareerTrainingSnapshot?,
+        gains: [MobileCareerStore.AbilityGain],
+        bloom: Bloom?,
+        fatigueAfter: Int,
+        focus: TrainingFocus
+    ) -> TrainingReceipt {
+        TrainingReceipt(
+            focus: training?.focus ?? focus,
+            headline: gainHeadline(gains),
+            detail: training?.feedback ?? "훈련을 마쳤습니다.",
+            gains: gains,
+            jackpot: training?.jackpot ?? false,
+            bloom: bloom,
+            fatigueAfter: fatigueAfter,
+            fatigueChange: training?.fatigueChange ?? 0,
+            opportunityHit: training?.opportunityHit ?? false
+        )
+    }
+
+    /// "구위 +2 · 체력 +1" 또는 "능력 변화 없음".
+    static func gainHeadline(_ gains: [MobileCareerStore.AbilityGain]) -> String {
+        let risen = gains.filter { $0.after > $0.before }
+        guard !risen.isEmpty else { return "능력 변화 없음" }
+        return risen.map { "\($0.label) +\($0.after - $0.before)" }.joined(separator: " · ")
     }
 
     func resolveRelationship(_ response: RelationshipResponse) {
@@ -1545,6 +1622,7 @@ final class HighSchoolCareerStore {
         result = nil
         pitchSession = nil
         pendingGains = []
+        trainingReceipt = nil
         selectedSignatureLegacyID = nil
         careerStartingPitcher = nil
         signatureLegacyRulesVersion = nil
@@ -2305,6 +2383,7 @@ final class HighSchoolCareerStore {
         tutorialSession = nil
         gameResume = nil
         pendingGains = []
+        trainingReceipt = nil
         pendingBloom = nil
         pendingRecap = nil
         selectedMemories = []
@@ -2424,6 +2503,7 @@ final class HighSchoolCareerStore {
         tutorialSession = nil
         gameResume = nil
         pendingGains = []
+        trainingReceipt = nil
         pendingBloom = nil
         pendingRecap = nil
         selectedMemories = []

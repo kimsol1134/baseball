@@ -27,9 +27,18 @@ final class AchievementStore {
     }
 
     /// 조용히 시도한다. 실패해도 앱은 그대로 돌아간다.
+    ///
+    /// 로그인 화면(`viewController`)은 **반드시 띄워야 한다.** 예전에는 이 인자를 버렸다.
+    /// 그러면 Game Center에 한 번도 로그인한 적 없는 기기는 영원히 미인증으로 남고,
+    /// "오늘 전국 순위"가 아예 나타나지 않거나 눌러도 빈 화면이 된다 — 로그인을 물어본
+    /// 적이 없으니 당연하다. 물어보는 것까지가 인증이다.
     func authenticate() {
-        GKLocalPlayer.local.authenticateHandler = { [weak self] _, _ in
+        GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, _ in
             Task { @MainActor in
+                if let viewController {
+                    GameCenterBoard.presentAuthentication(viewController)
+                    return
+                }
                 self?.isGameCenterAuthenticated = GKLocalPlayer.local.isAuthenticated
                 if GKLocalPlayer.local.isAuthenticated { self?.syncUnlockedToGameCenter() }
             }

@@ -184,6 +184,21 @@ struct AppShell: View {
         )
     }
 
+    /// "모든 진행 삭제" 직후의 화면 복원. 저장은 스토어가 이미 지웠고, 여기서는
+    /// **보고 있는 자리**를 첫 실행과 같게 되돌린다: 열려 있는 전면 화면을 닫고,
+    /// 탭을 고교로 옮기고, 오프닝을 다시 보여 준다.
+    private func resetToFirstLaunch() {
+        showsDailyFromDeepLink = false
+        onDismissReturnWelcome()
+        selection = .highSchool
+        // 고교 뷰의 오프닝 표시 상태는 그 뷰의 @State다. 정체성을 갈아 끼워 새로 만든다.
+        firstLaunchToken &+= 1
+    }
+
+    /// 오프닝을 포함한 고교 화면 전체를 새로 만들기 위한 정체성. 값이 바뀌면 SwiftUI가
+    /// 뷰를 버리고 다시 만들어 `openingDismissed` 같은 화면 상태가 초기값으로 돌아간다.
+    @State private var firstLaunchToken: UInt64 = 0
+
     var body: some View {
         TabView(selection: $selection) {
             if showsHighSchool {
@@ -237,6 +252,7 @@ struct AppShell: View {
                     // 키아트가 제목을 맡는다. 내비게이션 바를 두면 제목이 두 번 나오고 눈썹 라벨을 가린다.
                     .toolbar(hidesHighSchoolTabBar ? .hidden : .visible, for: .tabBar)
                     .toolbar(.hidden, for: .navigationBar)
+                    .id(firstLaunchToken)
                 }
                 .tabItem { Label(AppTab.highSchool.title, systemImage: AppTab.highSchool.icon) }
                 .tag(AppTab.highSchool)
@@ -260,7 +276,9 @@ struct AppShell: View {
                 .tabItem { Label(AppTab.records.title, systemImage: AppTab.records.icon) }
                 .tag(AppTab.records)
 
-            NavigationStack { SettingsView(highSchool: highSchool, pro: pro) }
+            NavigationStack {
+                SettingsView(highSchool: highSchool, pro: pro, onResetAll: resetToFirstLaunch)
+            }
                 .tabItem { Label(AppTab.settings.title, systemImage: AppTab.settings.icon) }
                 .tag(AppTab.settings)
         }

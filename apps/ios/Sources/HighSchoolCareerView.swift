@@ -109,7 +109,20 @@ struct HighSchoolCareerView: View {
         // 오버레이로 덮으면 탭 바가 그 위에 남고, 화면 맨 아래의 주 행동 버튼이 탭 바에
         // 가려 눌리지 않는다. 실제로 그렇게 만들었다가 UI 테스트가 막혔다.
         .fullScreenCover(item: $draftReveal) { reveal in
-            DraftRevealView(result: reveal.result, playerName: reveal.playerName) { draftReveal = nil }
+            // 호명 그 순간의 카드를 함께 넘긴다 — 감정 최고점에서 바로 자랑할 수 있게.
+            DraftRevealView(
+                result: reveal.result,
+                playerName: reveal.playerName,
+                shareRecord: career.state.map { state in
+                    HighSchoolCareerStore.lifeRecord(
+                        from: state, memories: career.selectedMemories,
+                        previous: career.inheritance,
+                        nicknames: career.nicknames, chronicle: career.chronicle,
+                        personality: career.personality,
+                        startingPitcher: career.careerStartingPitcher
+                    )
+                }
+            ) { draftReveal = nil }
         }
         // **결과가 나오는 순간**에만 연출한다. 조건식(`draftResult != nil`)으로 띄우면
         // 기억을 고르는 내내 조건이 참이라 화면이 계속 덮인다. `onChange`는 값이 바뀔 때만
@@ -218,19 +231,25 @@ struct HighSchoolCareerView: View {
                         // 만개는 성장 축하보다 앞에 온다. 같은 훈련에서 둘 다 나면
                         // 먼저 읽어야 하는 것은 "벽이 열렸다"는 쪽이다.
                         Color.clear.frame(height: 0).id(Self.celebrationAnchor)
-                        if let bloom = career.pendingBloom {
-                            BloomCelebrationView(ability: bloom.ability, grade: bloom.grade) {
-                                career.acknowledgeBloom()
-                            }
-                            .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-                        }
-                        if !career.pendingGains.isEmpty {
-                            GrowthCelebrationView(gains: career.pendingGains,
-                                                  jackpot: career.result?.snapshot.lastTraining?.jackpot ?? false,
-                                                  onDismiss: career.acknowledgeGains)
+                        // 훈련 결과는 화면 **아래**의 고정 패널이 맡는다(`TrainingResultPanel`).
+                        // 여기 목록 안에 두면 방금 맨 아래 "훈련하기"를 누른 손과 결과가
+                        // 한 화면 밖에서 만나, 자동 스크롤이 어긋난 순간 결과가 통째로
+                        // 사라진다. 훈련이 아닌 성장(관계·경기)만 흐름에 남긴다.
+                        if career.trainingReceipt == nil {
+                            if let bloom = career.pendingBloom {
+                                BloomCelebrationView(ability: bloom.ability, grade: bloom.grade) {
+                                    career.acknowledgeBloom()
+                                }
                                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
-                        } else if let summary = career.lastSummary {
-                            SummaryBanner(summary: summary, cue: career.feedbackCue)
+                            }
+                            if !career.pendingGains.isEmpty {
+                                GrowthCelebrationView(gains: career.pendingGains,
+                                                      jackpot: career.result?.snapshot.lastTraining?.jackpot ?? false,
+                                                      onDismiss: career.acknowledgeGains)
+                                    .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                            } else if let summary = career.lastSummary {
+                                SummaryBanner(summary: summary, cue: career.feedbackCue)
+                            }
                         }
                         // 3년에 세 번뿐인 각성 앞에서는 주변 소음을 접는다(QA P2-2) —
                         // 되돌릴 수 없는 선택이 목록 한 줄로 보이면 무게가 사라진다.
@@ -316,6 +335,19 @@ struct HighSchoolCareerView: View {
                             }
                         }
 
+                        // 훈련 결과는 **주 행동 바로 위**에 선다.
+                        //
+                        // 이 목록의 맨 아래가 "훈련하기"다. 결과 카드를 목록 위쪽에 두면
+                        // 방금 버튼을 누른 손과 결과가 한 화면 안에 같이 있을 수 없고,
+                        // 자동 스크롤로 메우려 해도 게으른 스택에서는 어긋나 게임의 최다
+                        // 보상이 화면 밖에서 소비된다. 눌린 자리 바로 위면 스크롤이 아예
+                        // 필요 없다 — 다음 훈련 카드도 바로 아래에 이어진다.
+                        if let receipt = career.trainingReceipt {
+                            TrainingResultPanel(receipt: receipt,
+                                                onDismiss: career.acknowledgeTrainingReceipt)
+                                .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                        }
+
                         phaseBody(state: state)
                         // 선수의 말은 첫 경기 이후 실제 갈림길·건강 신호에서만 보이고,
                         // 그 국면의 주 행동보다 아래에 둔다. 상시 상단 카드가 진행을 밀어내지 않는다.
@@ -346,7 +378,10 @@ struct HighSchoolCareerView: View {
                 // 성장·만개는 스택 위쪽에서 터지는데 유저는 방금 맨 아래 "훈련하기"를
                 // 눌렀다 — 게임의 최다 보상이 화면 밖에서 소비되고 있었다(3차 패널 P1).
                 .onChange(of: career.feedbackTrigger) { _, _ in
-                    guard career.pendingBloom != nil || !career.pendingGains.isEmpty else { return }
+                    // 훈련 결과는 아래 패널이 그 자리에서 보여 준다 — 스크롤을 건드리면
+                    // 오히려 방금 누른 버튼이 화면 밖으로 밀려난다.
+                    guard career.trainingReceipt == nil,
+                          career.pendingBloom != nil || !career.pendingGains.isEmpty else { return }
                     withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) {
                         proxy.scrollTo(Self.celebrationAnchor, anchor: .top)
                     }
@@ -413,6 +448,7 @@ struct HighSchoolCareerView: View {
         case .awakening:
             AwakeningCard(options: state.awakeningOptions, sparks: state.awakeningSparks,
                           beforeFirstGame: state.performance.importantGamesCompleted == 0,
+                          selected: state.selectedAwakenings,
                           onChoose: career.chooseAwakening)
         case .chapterReview:
             ChapterReviewCard(state: state, gains: career.chapterGains,
@@ -435,6 +471,109 @@ struct HighSchoolCareerView: View {
                     rebirthStamp = RebirthStamp(lifeNumber: career.inheritance.lifeNumber)
                 }
             }
+        }
+    }
+}
+
+// MARK: - 훈련 결과
+
+/// 방금 끝난 훈련이 무엇을 남겼는지, 누른 자리에서 그대로 읽히는 카드.
+///
+/// 목록의 **주 행동 바로 위**에 선다(`content` 참고). 화면 아래 고정 패널로도 만들어 봤지만
+/// 그 방식은 화면 하단을 통째로 점유해 아래 카드의 조작을 가렸다 — UI 스모크가 훈련
+/// 버튼을 못 찾고 회차가 그 자리에서 멈췄다. 흐름 안의 카드면 결과와 다음 행동이 세로로
+/// 이어져, 스크롤 없이 읽고 그대로 다음 훈련을 누른다.
+///
+/// 성장이 0인 훈련도 여기 뜬다. 안 오른 것도 결과이고, 아무것도 안 뜨는 것이 가장 나쁘다.
+private struct TrainingResultPanel: View {
+    let receipt: HighSchoolCareerStore.TrainingReceipt
+    let onDismiss: () -> Void
+
+    private var grew: Bool { receipt.gains.contains { $0.after > $0.before } }
+    private var accent: Color {
+        if receipt.bloom != nil || receipt.jackpot { return BaseballTheme.milestone }
+        return grew ? BaseballTheme.action : BaseballTheme.textSecondary
+    }
+
+    private var title: String {
+        if receipt.bloom != nil { return "재능이 만개했습니다" }
+        if receipt.jackpot { return "대성공!" }
+        return grew ? "훈련 결과" : "훈련 결과 · 이번엔 오르지 않았습니다"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: receipt.bloom != nil ? "sparkles"
+                      : grew ? "arrow.up.right.circle.fill" : "checkmark.circle")
+                    .foregroundStyle(accent)
+                Text(title)
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(accent)
+                if receipt.opportunityHit {
+                    Text("기회 적중")
+                        .font(.caption2.weight(.heavy))
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(BaseballTheme.milestone.opacity(0.22), in: Capsule())
+                }
+                Spacer(minLength: 0)
+                Button("닫기", action: onDismiss)
+                    .font(.footnote.weight(.bold))
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("hs.training.result.dismiss")
+            }
+
+            // 오른 값이 주인공이다. 큰 글자 한 줄이면 스치듯 봐도 읽힌다.
+            Text(receipt.headline)
+                .font(BaseballType.scoreboard)
+                .foregroundStyle(grew ? accent : BaseballTheme.textSecondary)
+                .accessibilityIdentifier("hs.training.result.headline")
+
+            ForEach(receipt.gains.filter { $0.after > $0.before }) { gain in
+                Text("\(gain.label) \(gain.before) → \(gain.after)")
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textSecondary)
+            }
+
+            if let bloom = receipt.bloom {
+                Text(TalentRules.bloomHeadline(ability: bloom.ability, to: bloom.grade))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Text(receipt.detail)
+                .font(.footnote)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // 피로는 훈련의 가격이다. 결과와 같은 자리에서 보여야 다음 강도를 고를 수 있다.
+            HStack(spacing: 6) {
+                Image(systemName: "battery.50").font(.caption2)
+                Text("피로 \(receipt.fatigueAfter)"
+                     + (receipt.fatigueChange == 0 ? ""
+                        : " (\(receipt.fatigueChange > 0 ? "+" : "")\(receipt.fatigueChange))"))
+                    .font(.caption.monospacedDigit().weight(.semibold))
+            }
+            .foregroundStyle(receipt.fatigueAfter >= 70 ? BaseballTheme.warning : BaseballTheme.textTertiary)
+        }
+        .padding(BaseballMetrics.gutter)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            (receipt.bloom != nil || receipt.jackpot
+             ? BaseballTheme.milestone.opacity(0.14)
+             : grew ? BaseballTheme.actionSoft : BaseballTheme.surface),
+            in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
+                .stroke(accent, lineWidth: receipt.bloom != nil || receipt.jackpot ? 2 : 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hs.training.result")
+        .onAppear {
+            if receipt.bloom != nil || receipt.jackpot { GameAudio.shared.play(.milestone) }
         }
     }
 }
@@ -748,6 +887,10 @@ private struct PrologueCard: View {
                     AbilityGaugeView(label: "제구", value: state.pitcher.command, talent: talent.command)
                     AbilityGaugeView(label: "변화구", value: state.pitcher.movement, talent: talent.movement)
                     AbilityGaugeView(label: "체력", value: state.pitcher.stamina, talent: talent.stamina)
+                    Text("큰 숫자가 지금 실력이고, 알파벳은 훈련으로 닿을 수 있는 한계입니다. 재능이 높아도 지금 수치가 낮을 수 있습니다.")
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -1242,10 +1385,17 @@ private struct ImportantGameCard: View {
     }
 }
 
-/// 각성 선택.
+/// 각성 스킬트리.
+///
+/// 회차당 세 번뿐인 선택을 낱장 카드 세 장으로 보여 주면, 세 번이 서로 아무 관계가 없어
+/// "이 선수를 이렇게 만들었다"가 남지 않는다. 트리는 그 셋을 한 줄기로 묶는다 — 뿌리를
+/// 찍으면 그 갈래의 다음 가지가 열리고, 세 번으로 **한 갈래를 끝까지 파거나 여러 갈래를
+/// 얕게 가져가거나**를 고르게 된다.
+///
+/// 잠긴 가지도 **지운다기보다 보여 준다.** 앞으로 갈 수 있는 길이 보여야 지금의 한 번이
+/// 결정처럼 느껴진다. 잠긴 이유(무엇을 먼저 찍어야 하는지)를 그 자리에 적는다.
 ///
 /// 학교 선택과 같은 이유로 확인을 받는다 — 되돌릴 수 없는데 한 번 누르면 확정된다.
-/// 카드에 "되돌릴 수 없습니다"라고 적어 두는 것만으로는 오조작을 막지 못한다.
 private struct AwakeningCard: View {
     let options: [AwakeningID]
     /// 각성의 전조(코어 값). nil은 전조 개념이 없던 저장본이다.
@@ -1253,53 +1403,59 @@ private struct AwakeningCard: View {
     /// 아직 중요 경기를 안 던진 회차 초입인가. 증명할 무대가 없었던 선수에게
     /// "전조가 부족해"라고 벌점 문구를 주면 안 된다(4차 패널 P2).
     var beforeFirstGame = false
+    /// 이번 회차에서 이미 찍은 각성.
+    var selected: [AwakeningID] = []
     let onChoose: (AwakeningID) -> Void
+
+    /// 회차당 각성 횟수. 코어의 마일스톤 배치(2 + 마지막 장 1)와 업적 `awakenedThrice`가
+    /// 같은 값을 전제한다.
+    static let totalAwakenings = 3
 
     @State private var pending: AwakeningID?
 
-    /// 전조가 각성의 크기를 말한다. 갈래 수(코어가 이미 줄였다)에 서사를 붙여
-    /// "왜 이만큼 열렸는지"를 읽게 한다 — 개연성은 숫자가 아니라 문장에서 생긴다.
+    private var availableSet: Set<AwakeningID> { Set(options) }
+    private var takenSet: Set<AwakeningID> { Set(selected) }
+
+    /// 전조는 이제 "갈래를 몇 개 보여 줄까"가 아니라 **한 단계를 건너뛸 수 있는가**를
+    /// 정한다. 트리에서는 그쪽이 훨씬 분명한 보상이다 — 2단을 건너뛰고 3단에 닿는다.
     private var sparkLine: (text: String, tone: Color) {
-        switch sparks ?? 3 {
-        case 3...: ("시즌의 호투가 몸을 완전히 깨웠습니다 — 세 갈래가 전부 열렸습니다.", BaseballTheme.milestone)
-        default: beforeFirstGame
-            ? ("아직 증명할 무대가 없었습니다 — 두 갈래로 시작합니다. 마운드의 호투가 다음 각성을 넓힙니다.", BaseballTheme.textSecondary)
-            : ("전조가 부족해 두 갈래만 열렸습니다. 호투(무실점·삼진쇼)와 만개가 다음 각성을 넓힙니다.", BaseballTheme.textSecondary)
+        if (sparks ?? AwakeningTree.leapSparks) >= AwakeningTree.leapSparks {
+            return ("시즌의 호투가 몸을 완전히 깨웠습니다 — 한 단계를 건너뛰고 찍을 수 있습니다.",
+                    BaseballTheme.milestone)
         }
+        return beforeFirstGame
+            ? ("아직 증명할 무대가 없었습니다 — 순서대로만 열립니다. 마운드의 호투가 다음 각성에서 건너뛰기를 엽니다.",
+               BaseballTheme.textSecondary)
+            : ("전조가 부족합니다 — 이번에는 순서대로만 열립니다. 호투(무실점·삼진쇼)와 만개가 다음 각성에서 건너뛰기를 엽니다.",
+               BaseballTheme.textSecondary)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             // 회차당 세 번뿐인 순간 — 목록이 아니라 무대를 준다(QA P2-2).
             KeyArtHeader(art: .awakening, eyebrow: "각성", title: "몸이 하나를 기억합니다", accent: BaseballTheme.milestone)
+            // **몇 번째 각성인지 먼저 말한다.**
+            //
+            // 예전에는 "한 번 고르면 고교 3년 동안 바꿀 수 없습니다"만 있었다. 그 문장은
+            // "각성은 한 번뿐"으로 읽힌다 — 그래서 두 번째 각성이 왔을 때 게임이 방금
+            // 한 약속을 어긴 것처럼 보였다. 실제 규칙은 "3년에 세 번, 각각 되돌릴 수 없음"이다.
+            // 처음부터 세 번이라고 말하면 아무것도 어긋나지 않는다.
+            Text("고교 3년 동안 \(Self.totalAwakenings)번 각성합니다 — 지금은 \(selected.count + 1)번째입니다.")
+                .font(.subheadline.weight(.heavy))
+                .foregroundStyle(BaseballTheme.milestone)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("hs.awakening.counter")
+            Text("하나를 찍으면 그 갈래의 다음 가지가 열립니다. 남은 각성 \(max(0, Self.totalAwakenings - selected.count - 1))번 — 한 갈래를 끝까지 팔지, 여러 갈래를 나눠 가질지 고르세요.")
+                .font(.footnote)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             Text(sparkLine.text)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(sparkLine.tone)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("고른 각성은 되돌릴 수 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-            ForEach(options, id: \.self) { option in
-                let copy = HighSchoolPresentation.awakening(option)
-                let family = RunPledge.awakeningFamily(for: option)
-                Button { pending = option } label: {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(copy.title).font(.subheadline.weight(.bold))
-                        Text("\(family.title) 계열")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.milestone)
-                        Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
-                    .background(BaseballTheme.milestone.opacity(0.12), in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                            .stroke(BaseballTheme.milestone, lineWidth: 1)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(family.title) 계열, \(copy.title), \(copy.detail)")
-                .accessibilityIdentifier("hs.awakening.\(option.rawValue)")
+
+            ForEach(AwakeningTree.Branch.allCases, id: \.self) { branch in
+                branchSection(branch)
             }
         }
         // 마지막 선택지가 탭바에 잘리지 않게 — 잘린 선택지는 없는 선택지다.
@@ -1321,8 +1477,144 @@ private struct AwakeningCard: View {
             // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣어 취소를 항상 보이게 한다.
             Button("다시 고른다") { pending = nil }
         } message: { option in
-            Text("\(RunPledge.awakeningFamily(for: option).title) 계열\n\(HighSchoolPresentation.awakening(option).detail)\n\n한 번 고르면 고교 3년 동안 바꿀 수 없습니다.")
+            Text("\(AwakeningTree.branch(option).title) 갈래 \(AwakeningTree.tier(option))단\n\(HighSchoolPresentation.awakening(option).detail)\n\n한 번 고르면 고교 3년 동안 바꿀 수 없습니다.")
         }
+    }
+
+    @ViewBuilder private func branchSection(_ branch: AwakeningTree.Branch) -> some View {
+        let branchNodes = AwakeningTree.nodes.filter { $0.branch == branch }
+        let ownedCount = branchNodes.filter { takenSet.contains($0.id) }.count
+        BaseballCard(title: "\(branch.title) 갈래", tone: ownedCount > 0 ? .milestone : .standard) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: branch.symbol).foregroundStyle(BaseballTheme.milestone)
+                    Text(branch.detail)
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    if ownedCount > 0 {
+                        Text("\(ownedCount)개 찍음")
+                            .font(.caption2.weight(.heavy))
+                            .foregroundStyle(BaseballTheme.milestone)
+                    }
+                }
+                ForEach(branchNodes, id: \.id) { node in
+                    nodeRow(node)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func nodeRow(_ node: AwakeningTree.Node) -> some View {
+        let owned = takenSet.contains(node.id)
+        let open = availableSet.contains(node.id)
+        // **찍을 수 있는 노드만 버튼이다.**
+        //
+        // 처음에는 18개 노드를 전부 버튼으로 그리고 잠긴 것을 `.disabled`로 두었다. 화면은
+        // 같아 보이지만 접근성 트리에 18개의 조작 요소가 생겨, XCUI가 화면을 한 번 훑는
+        // 비용이 폭발했다 — 3년 완주 스모크가 330초에서 685초로 늘고 결국 쿼리 타임아웃으로
+        // 죽었다. 실제 사용자에게도 같은 값을 치른다(보이스오버가 못 누르는 항목 18개를
+        // 하나씩 읽는다). 누를 수 없는 것은 조작 요소가 아니라 그림이어야 한다.
+        if open && !owned {
+            Button { pending = node.id } label: { nodeBody(node, owned: false, open: true) }
+                .buttonStyle(.plain)
+                .accessibilityLabel(nodeVoiceLabel(node, owned: false, open: true))
+                .accessibilityIdentifier("hs.awakening.\(node.id.rawValue)")
+        } else {
+            nodeBody(node, owned: owned, open: false)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(nodeVoiceLabel(node, owned: owned, open: false))
+        }
+    }
+
+    @ViewBuilder private func nodeBody(_ node: AwakeningTree.Node, owned: Bool, open: Bool) -> some View {
+        let copy = HighSchoolPresentation.awakening(node.id)
+        let leap = open && AwakeningTree.isLeap(node.id, selected: selected)
+        let tone: Color = owned ? BaseballTheme.positive
+            : open ? BaseballTheme.milestone : BaseballTheme.textTertiary
+
+        HStack(alignment: .top, spacing: 10) {
+            // 단수만큼 들여쓴다. 줄기가 아래로 자라는 모양이 한눈에 읽힌다.
+            // 세로 강조 레일은 쓰지 않으므로(DOC-19 §7.2) 여백과 갈래 기호로만 깊이를 말한다.
+            if node.tier > 1 {
+                Image(systemName: "arrow.turn.down.right")
+                    .font(.caption2)
+                    .foregroundStyle(tone.opacity(owned || open ? 0.8 : 0.35))
+                    .padding(.leading, CGFloat((node.tier - 1) * 12))
+                    .accessibilityHidden(true)
+            }
+            Image(systemName: owned ? "checkmark.circle.fill" : open ? "circle.circle" : "lock.fill")
+                .font(.subheadline)
+                .foregroundStyle(tone)
+                .frame(width: 20)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(copy.title)
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(owned || open ? BaseballTheme.textPrimary : BaseballTheme.textTertiary)
+                    Text("\(node.tier)단")
+                        .font(.caption2.weight(.heavy))
+                        .foregroundStyle(tone)
+                    if leap {
+                        Text("건너뛰기")
+                            .font(.caption2.weight(.heavy))
+                            .foregroundStyle(BaseballTheme.canvas)
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .background(BaseballTheme.milestone, in: Capsule())
+                    }
+                    Spacer(minLength: 0)
+                    if open {
+                        Text("찍기")
+                            .font(.caption2.weight(.heavy))
+                            .foregroundStyle(BaseballTheme.milestone)
+                    }
+                }
+                // 잠긴 가지는 **제목만** 보여 준다. 앞으로 갈 길이 보이는 것이 목적이지
+                // 지금 읽을 설명이 아니고, 18개 분량의 설명문이 한 화면에 깔리면 정작
+                // 지금 고를 수 있는 네 가지가 그 안에 묻힌다.
+                if owned || open {
+                    Text(copy.detail)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if let reason = lockReason(node) {
+                    // 잠긴 이유는 그 자리에 적는다. "왜 못 누르지"가 남으면 트리가 벽이 된다.
+                    Text(reason)
+                        .font(.caption2)
+                        .foregroundStyle(BaseballTheme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget, alignment: .leading)
+        .background(
+            owned ? BaseballTheme.positive.opacity(0.12)
+                : open ? BaseballTheme.milestone.opacity(0.12) : BaseballTheme.surfaceRaised.opacity(0.5),
+            in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                .stroke(tone.opacity(owned || open ? 1 : 0.35), lineWidth: open ? 2 : 1)
+        }
+        .contentShape(Rectangle())
+    }
+
+    private func nodeVoiceLabel(_ node: AwakeningTree.Node, owned: Bool, open: Bool) -> String {
+        let copy = HighSchoolPresentation.awakening(node.id)
+        let head = "\(AwakeningTree.branch(node.id).title) 갈래 \(node.tier)단, \(copy.title)"
+        if owned { return head + ", 이미 찍음" }
+        if open { return head + ", \(copy.detail), 지금 찍을 수 있음" }
+        return head + ", 잠김. " + (lockReason(node) ?? "")
+    }
+
+    private func lockReason(_ node: AwakeningTree.Node) -> String? {
+        let missing = node.parents.filter { !takenSet.contains($0) }
+        guard !missing.isEmpty else { return nil }
+        let names = missing.map { HighSchoolPresentation.awakening($0).title }.joined(separator: " · ")
+        return "먼저 '\(names)'을(를) 찍어야 열립니다."
     }
 }
 
@@ -1382,10 +1674,13 @@ private struct ChapterReviewCard: View {
             }
             BaseballCard(title: "능력") {
                 VStack(alignment: .leading, spacing: 10) {
-                    AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
-                    AbilityGaugeView(label: "제구", value: state.pitcher.command)
-                    AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
-                    AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
+                    // 장 정산은 "어디까지 갈 수 있나"를 다시 읽는 자리다. 재능(한계)이
+                    // 빠지면 다음 장의 훈련 계획을 세울 근거가 사라진다.
+                    let talent = state.talent ?? .unlimited
+                    AbilityGaugeView(label: "구위", value: state.pitcher.stuff, talent: talent.stuff)
+                    AbilityGaugeView(label: "제구", value: state.pitcher.command, talent: talent.command)
+                    AbilityGaugeView(label: "변화구", value: state.pitcher.movement, talent: talent.movement)
+                    AbilityGaugeView(label: "체력", value: state.pitcher.stamina, talent: talent.stamina)
                 }
             }
             if !state.rival.name.isEmpty {
@@ -2160,6 +2455,16 @@ private struct PledgeCard: View {
                      : "하나를 고르면 고교 3년을 마칠 때 돌아봅니다. 등급에 따라 야구혼을 더 얻습니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
+                // **누르라고 말한다.**
+                //
+                // 목표 카드들은 색 있는 면에 테두리까지 둘러 "정보 패널"로 읽혔다 —
+                // 실제로 사용자가 이 화면에서 무엇을 눌러야 하는지 몰랐다. 카드가
+                // 버튼처럼 안 보이면 지시문 한 줄이 그 일을 대신해야 한다.
+                Label("아래 목표 중 하나를 눌러 고르세요", systemImage: "hand.tap.fill")
+                    .font(.footnote.weight(.heavy))
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("hs.pledge.hint")
                 ForEach(RunPledge.options(careerID: state.careerID, state: state, intent: intent)) { pledge in
                     let progress = pledge.progress(in: .init(state: state, rivalLedger: rivalLedger))
                     let carried = intent?.pledgeID == pledge.id
@@ -2180,14 +2485,26 @@ private struct PledgeCard: View {
                                     .font(.caption.monospacedDigit().weight(.bold))
                                     .foregroundStyle(BaseballTheme.milestone)
                             }
-                            Text(pledge.title).font(.subheadline.weight(.bold))
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(pledge.title).font(.subheadline.weight(.bold))
+                                Spacer(minLength: 0)
+                                // 화살표 하나가 "이 줄은 눌린다"를 말한다. 목록 UI의
+                                // 가장 값싸고 가장 확실한 신호다.
+                                Text("이걸로 정하기")
+                                    .font(.caption2.weight(.heavy))
+                                    .foregroundStyle(BaseballTheme.milestone)
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(BaseballTheme.milestone)
+                            }
                             Text(pledge.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                             Text(pledge.alignmentReason(state: state))
                                 .font(.caption2)
                                 .foregroundStyle(BaseballTheme.textTertiary)
                         }
                         .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget, alignment: .leading)
+                        .contentShape(Rectangle())
                         .background(BaseballTheme.milestone.opacity(0.1), in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
                         .overlay {
                             RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)

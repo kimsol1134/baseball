@@ -1079,14 +1079,31 @@ public struct PitchKernelEngine: Sendable {
         let aimShift = (delivery?.aimAccuracy ?? 500) - 500
         let releaseShift = (delivery?.releaseAccuracy ?? 500) - 500
         // Steady aim pulls the miss back toward the target by up to 24%; a shaky one pushes it out.
-        let aimScalePermille = 1_000 - aimShift * 240 / 500
+        //
+        // **Asymmetric.** A sloppy delivery now pushes the miss out further than a steady one pulls
+        // it in (34% vs 24%). Symmetric bands made execution nearly free: at neutral-ish input the
+        // pitch landed where the ratings said it would, so there was no cost to throwing carelessly
+        // and shutouts stacked up without the player ever being punished for a bad release
+        // (2026-08 play report). Identity at neutral, so no pre-delivery caller moves.
+        let aimScalePermille = 1_000 - (aimShift >= 0 ? aimShift * 240 : aimShift * 340) / 500
         offsetX = offsetX * aimScalePermille / 1_000
         offsetY = offsetY * aimScalePermille / 1_000
-        // A clean release is worth ±120 of execution quality — deliberately smaller than the spread
-        // that command ratings produce, so timing sharpens ability instead of replacing it.
-        let releaseQualityBonus = releaseShift * 120 / 500
+        // A clean release is worth +120 of execution quality — deliberately smaller than the spread
+        // that command ratings produce, so timing sharpens ability instead of replacing it. A late
+        // or early one costs up to 200: the same asymmetry, for the same reason.
+        let releaseQualityBonus = releaseShift >= 0 ? releaseShift * 120 / 500 : releaseShift * 200 / 500
+        // Perfect release. The linear curve above rates a 995 and a 940 within six points of each
+        // other, so hitting the exact centre of the meter bought the player nothing and "somewhere
+        // in the green" was the optimal strategy. This band pays for the extra precision.
+        //
+        // Determinism: pure arithmetic applied after every RNG draw, and gated on a threshold that
+        // neutral (500) and absent deliveries can never reach — the golden fixture and every
+        // pre-delivery caller stay byte-identical.
+        let perfectRelease = delivery?.isPerfectRelease ?? false
+        let perfectQualityBonus = perfectRelease ? 90 : 0
         let executionQuality = clamp(
-            1_000 - abs(offsetX) - abs(offsetY) + effectiveCommand / 5 + releaseQualityBonus,
+            1_000 - abs(offsetX) - abs(offsetY) + effectiveCommand / 5
+                + releaseQualityBonus + perfectQualityBonus,
             0,
             1_000
         )
@@ -1116,6 +1133,9 @@ public struct PitchKernelEngine: Sendable {
             // ±1.0 km/h from the release. Small, but it is the number the player watches after a
             // delivery they felt good about. Zero at neutral.
             + releaseShift * 10 / 500
+            // A perfect release adds another 0.6 km/h on top. Small in the sim, but it is the
+            // number on screen right after the throw — the player sees the reward immediately.
+            + (perfectRelease ? 6 : 0)
         let movementScale = (profile?.movement ?? params.pitcher.movement) - 50
         let actualX = target.x + offsetX
         let actualY = target.y + offsetY

@@ -90,6 +90,50 @@ final class PitchDeliveryTests: XCTestCase {
         XCTAssertGreaterThan(clean.snapshot.execution.velocityTenthsKPH, sloppy.snapshot.execution.velocityTenthsKPH)
     }
 
+    /// Hitting the exact centre of the meter must be worth more than the linear curve alone gives.
+    /// Without this band a 995 and a 940 are within six quality points of each other, so precision
+    /// buys nothing and "somewhere in the green" is optimal.
+    func testPerfectReleaseAddsABonusOnTopOfTheLinearCurve() throws {
+        let justBelow = PitchDelivery(
+            releaseAccuracy: PitchDelivery.perfectReleaseThreshold - 1, aimAccuracy: 500
+        )
+        let perfect = PitchDelivery(
+            releaseAccuracy: PitchDelivery.perfectReleaseThreshold, aimAccuracy: 500
+        )
+        XCTAssertFalse(justBelow.isPerfectRelease)
+        XCTAssertTrue(perfect.isPerfectRelease)
+
+        let near = try submit(seed: "20260725", delivery: justBelow)
+        let exact = try submit(seed: "20260725", delivery: perfect)
+        // One extra point of release accuracy would move quality by 0 on the linear curve alone
+        // (1 * 120 / 500 == 0), so the whole gap here is the perfect-release band.
+        XCTAssertGreaterThanOrEqual(
+            exact.snapshot.execution.executionQuality - near.snapshot.execution.executionQuality, 80
+        )
+        XCTAssertGreaterThan(
+            exact.snapshot.execution.velocityTenthsKPH, near.snapshot.execution.velocityTenthsKPH
+        )
+    }
+
+    /// Neutral must stay exactly neutral even though the release curve is now asymmetric — a bad
+    /// release costs more than a good one gains, but "no input" still moves nothing.
+    func testAsymmetricReleasePenaltyStillLeavesNeutralUntouched() throws {
+        let neutral = try submit(seed: "31337", delivery: .neutral)
+        let without = try submit(seed: "31337", delivery: nil)
+        XCTAssertEqual(neutral.snapshot.execution, without.snapshot.execution)
+
+        // Equidistant from neutral, and both outside the perfect band so the comparison measures
+        // only the asymmetry of the linear curve.
+        let base = without.snapshot.execution.executionQuality
+        let bad = try submit(seed: "31337", delivery: PitchDelivery(releaseAccuracy: 100, aimAccuracy: 500))
+        let good = try submit(seed: "31337", delivery: PitchDelivery(releaseAccuracy: 900, aimAccuracy: 500))
+        XCTAssertGreaterThan(
+            base - bad.snapshot.execution.executionQuality,
+            good.snapshot.execution.executionQuality - base,
+            "놓친 릴리스의 대가가 잘 던진 릴리스의 이득보다 커야 합니다"
+        )
+    }
+
     /// Steady aim must land the ball closer to where it was aimed.
     func testAimAccuracyPullsTheBallTowardTheTarget() throws {
         let shaky = try submit(seed: "31337", delivery: PitchDelivery(releaseAccuracy: 500, aimAccuracy: 0))

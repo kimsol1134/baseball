@@ -1153,6 +1153,11 @@ public struct HighSchoolCareerEngine: Sendable {
     /// 24로 두면 한 이닝 등판(실측 평균 15구)이 거의 이 선을 넘지 못해, 팔 위험이 쌓이지
     /// 않고 트레이너·재활 콘텐츠가 통째로 사장됐다. 혹사 시스템은 만들어 두고 도달할 수
     /// 없으면 없는 것과 같다.
+    ///
+    /// 난이도를 올리면서 18·21까지 내려 봤다가 되돌렸다. 이 바닥은 부상률에 대단히 민감해서
+    /// (21만 해도 평범 정책 부상률이 30%→45%로 튄다) 여기서 난이도를 가져오면 혹사 시스템이
+    /// 벌점 기계가 된다. 피로 쪽 압력은 등판 피로 계수에서 가져오고, 이 값은 실측 밴드
+    /// (15~35%)를 지키는 자리에 둔다 — `testOrdinaryPushThroughInjuryRateLandsInSpecBand`.
     static let armPitchFloor = 23
     static let armPushThroughRisk = 15   // "참고 던진다"가 올리는 위험
     static let armRestRelief = 45        // "짧은 휴식"이 덜어 내는 위험
@@ -1884,7 +1889,14 @@ public struct HighSchoolCareerEngine: Sendable {
             relationshipTrust: masteryRelationshipTrust,
             managerTrust: masteryManagerTrust,
             catcherTrust: masteryCatcherTrust,
-            fatigue: clamp(params.state.fatigue + max(3, params.report.pitches * staminaScale / 240), 0, 100),
+            // 등판의 피로 값. 240으로 나누던 시절엔 20구 등판이 피로 7이라, 경기 사이에
+            // 회복 훈련을 한 번도 안 넣어도 3년을 완주할 수 있었다 — 체력 능력치와 회복
+            // 훈련이 둘 다 고를 이유가 없는 선택지였다는 뜻이다. 200이면 같은 등판이 9가 되고,
+            // 체력이 높은 투수일수록(staminaScale이 작다) 그 차이가 실제로 보인다.
+            //
+            // 170까지 내려 봤다가 되돌렸다. 그 값에서는 팔 위험의 피로 항이 함께 밀려 올라가
+            // 평범 정책 부상률이 스펙 밴드(15~35%)를 넘었다. 200은 30%로 밴드 안이다.
+            fatigue: clamp(params.state.fatigue + max(5, params.report.pitches * staminaScale / 200), 0, 100),
             performance: performance,
             seasonLog: (params.state.seasonLog ?? []) + [playedLine],
             news: ([headline] + (callback.map { [$0] } ?? []) + (armNews.map { [$0] } ?? [])
@@ -2323,51 +2335,20 @@ public struct HighSchoolCareerEngine: Sendable {
             power: clamp(base.power + bonus, 20, 80), personality: base.personality, signatureRecord: base.signatureRecord)
     }
 
+    /// 지금 찍을 수 있는 각성. **스킬트리가 정한다.**
+    ///
+    /// 예전에는 훈련 초점·성적·최고 능력으로 세 장을 뽑아 줬다. 그러면 세 번의 각성이
+    /// 서로 무관한 낱장이 되어, 회차가 끝나도 "이 선수를 이렇게 만들었다"가 남지 않았다.
+    /// 지금은 뿌리를 찍으면 그 갈래가 열리고, 세 번으로 한 갈래를 끝까지 파거나 여러
+    /// 갈래를 얕게 가져가는 결정을 한다(`AwakeningTree`).
+    ///
+    /// 무작위를 쓰지 않는다 — 목록이 곧 트리의 현재 상태이므로 뽑을 것이 없다. 그래서
+    /// 이 경로는 난수를 소비하지 않으며, 시드 진행에 영향을 주지 않는다.
     private func awakeningOptions(state: HighSchoolCareerSnapshot, seed: UInt64) -> [AwakeningID] {
-        let focus = state.lastTraining?.focus ?? .gamePlanning
-        let focusOptions: [TrainingFocus: [AwakeningID]] = [
-            .velocity: [.explosiveFastball, .risingFourSeam],
-            .command: [.pinpointEdge, .repeatableRelease, .firstPitchStrike],
-            .breakingBall: [.disappearingBreaker, .sweepingSlider, .frozenChangeup, .curveballClock, .sinkerTunnel],
-            .stamina: [.ironArm, .lateInningReserve, .trafficController],
-            .recovery: [.calmUnderPressure, .lateInningReserve, .repeatableRelease],
-            .gamePlanning: [.twoStrikePlan, .batterySync, .pickoffRhythm, .trafficController]
-        ]
-        let performanceOptions: [AwakeningID] = state.performance.walks > state.performance.strikeouts
-            ? [.pinpointEdge, .repeatableRelease, .batterySync]
-            : state.performance.actualDamage > state.performance.expectedDamage
-                ? [.twoStrikePlan, .disappearingBreaker, .trafficController]
-                : [.scoutComposure, .calmUnderPressure, .firstPitchStrike]
-        let strongestOptions: [AwakeningID] = state.pitcher.stuff >= state.pitcher.command && state.pitcher.stuff >= state.pitcher.movement
-            ? [.explosiveFastball, .risingFourSeam]
-            : state.pitcher.command >= state.pitcher.movement
-                ? [.pinpointEdge, .repeatableRelease]
-                : [.disappearingBreaker, .sweepingSlider]
-        var generator = SplitMix64(seed: seed ^ UInt64(state.chapter.number) ^ 0x4157_414b_4500)
-        var result: [AwakeningID] = []
-        for pool in [focusOptions[focus] ?? [], performanceOptions, strongestOptions] {
-            let candidates = pool.filter { !state.selectedAwakenings.contains($0) }
-            guard !candidates.isEmpty else { continue }
-            let offset = generator.nextInt(upperBound: candidates.count)
-            let ordered = Array(candidates[offset...] + candidates[..<offset])
-            if let option = ordered.first(where: { !result.contains($0) }) { result.append(option) }
-        }
-        var options = AwakeningID.allCases.filter { !state.selectedAwakenings.contains($0) && !result.contains($0) }
-        for index in options.indices.reversed() where index > 0 {
-            options.swapAt(index, generator.nextInt(upperBound: index + 1))
-        }
-        for option in options where result.count < 3 && !result.contains(option) {
-            result.append(option)
-        }
-        // 전조가 갈래 수를 정한다. 호투·만개 없이 도착한 각성은 몸이 절반만 깨어난 것이라
-        // 길이 하나뿐이고, 시즌을 증명으로 채웠으면 세 갈래가 전부 열린다.
-        // 옛 저장본(nil)은 예전과 같은 3갈래 — 규칙이 소급해서 벌하지 않는다.
-        if let sparks = state.awakeningSparks {
-            // 전조 0이어도 두 갈래는 남긴다 — 선택지가 하나면 선택이 아니라 통보다.
-            let opened = sparks >= 3 ? 3 : 2
-            return Array(result.prefix(opened))
-        }
-        return result
+        AwakeningTree.available(
+            selected: state.selectedAwakenings,
+            sparks: state.awakeningSparks
+        )
     }
 
     private static let coreRelationshipCategories = ["coach", "catcher", "rival"]
@@ -2722,6 +2703,37 @@ public struct HighSchoolCareerEngine: Sendable {
         min(max(0, points), inheritancePointCap(for: points, rulesVersion: rulesVersion))
     }
 
+    /// 다음에 스며드는 양이 한 칸 오르는 지점. 상한에 닿았으면 nil이다.
+    ///
+    /// "24혼 모았는데 능력에는 +1"은 정직하지만 **몰수처럼** 읽힌다. 같은 숫자도 다음
+    /// 구간이 보이면 진척이 된다 — 화면이 "28혼이면 +2"를 함께 말할 수 있게 곡선의
+    /// 다음 계단을 코어가 알려 준다. 규칙이 바뀌어도 화면은 그대로 따라간다.
+    public static func nextInheritanceStep(
+        for points: Int,
+        rulesVersion: SoulInheritanceRulesVersion
+    ) -> (soulPoints: Int, applied: Int)? {
+        let current = appliedInheritance(for: points, rulesVersion: rulesVersion)
+        guard current < 20 else { return nil }
+        var probe = max(0, points) + 1
+        // 상한까지는 유한하게 끝난다. 규칙이 계단식이 아니어도 첫 증가 지점을 찾는다.
+        while probe <= max(0, points) + 4_000 {
+            let applied = appliedInheritance(for: probe, rulesVersion: rulesVersion)
+            if applied > current { return (probe, applied) }
+            probe += 1
+        }
+        return nil
+    }
+
+    public static func nextInheritanceStep(
+        for points: Int,
+        storedRulesVersion: Int?
+    ) -> (soulPoints: Int, applied: Int)? {
+        nextInheritanceStep(
+            for: points,
+            rulesVersion: .resolve(storedValue: storedRulesVersion)
+        )
+    }
+
     public static func appliedInheritance(for points: Int, storedRulesVersion: Int?) -> Int {
         appliedInheritance(
             for: points,
@@ -2986,7 +2998,9 @@ public struct HighSchoolCareerEngine: Sendable {
             schedule: state.schedule,
             trainingOpportunity: Self.trainingOpportunity(
                 careerID: state.careerID,
-                index: totalTrainingsCompleted ?? state.totalTrainingsCompleted),
+                index: totalTrainingsCompleted ?? state.totalTrainingsCompleted,
+                fatigue: fatigue ?? state.fatigue,
+                injuryRecovery: injuryRecovery ?? state.injuryRecovery ?? 0),
             talent: talent ?? state.talent,
             soulBoosts: state.soulBoosts,
             awakeningSparks: awakeningSparks ?? state.awakeningSparks,
@@ -3002,13 +3016,38 @@ public struct HighSchoolCareerEngine: Sendable {
         .gamePlanning: ["상대 타선 기록이 도착했다. 오늘 파고들자.", "포수와 사인을 맞출 시간이 났다. 수 싸움을 늘리자.", "경기 감각이 올라 있다. 상대 분석이 잘 먹힌다."],
     ]
 
-    static func trainingOpportunity(careerID: String, index: Int) -> TrainingOpportunitySnapshot {
+    /// 휴식을 "기회"라고 부를 수 있는 최소 피로. 이 아래에서는 회복 훈련이 사실상
+    /// 아무것도 하지 않으므로(회복량이 깎일 피로가 없다) 기회가 성립하지 않는다.
+    static let recoveryOpportunityFatigue = 45
+
+    /// 오늘의 기회.
+    ///
+    /// **몸 상태를 본다.** 예전에는 시드와 순번만 보고 뽑아서, 피로 5짜리 1학년에게
+    /// "팔이 무겁다는 신호다 — 오늘은 회복이 최고의 훈련이다"라고 말했다. 기회는 지금
+    /// 몸이 하는 말이어야 하는데 그 말이 몸과 무관하면, 화면의 모든 조언이 장식으로
+    /// 학습된다. 회복이 뽑혔는데 피로가 낮으면 다음 초점으로 굴린다.
+    static func trainingOpportunity(
+        careerID: String,
+        index: Int,
+        fatigue: Int = 100,
+        injuryRecovery: Int = 0
+    ) -> TrainingOpportunitySnapshot {
         let focusPool = TrainingFocus.allCases
         let seedValue = StableHash.fnv1a64Value("\(careerID)|opportunity|\(index)")
         var pick = Int(seedValue % UInt64(focusPool.count))
         if index > 0 {
             let previous = Int(StableHash.fnv1a64Value("\(careerID)|opportunity|\(index - 1)") % UInt64(focusPool.count))
             if pick == previous { pick = (pick + 1) % focusPool.count }
+        }
+        // 회복이 실제로 몸을 되돌리는 상태(피로가 쌓였거나 재활 중)가 아니면 넘긴다.
+        // 시드 순서는 그대로 두고 한 칸씩만 미뤄, 같은 회차를 다시 돌려도 결정론이 유지된다.
+        let recoveryEarned = fatigue >= recoveryOpportunityFatigue || injuryRecovery > 0
+        if !recoveryEarned {
+            var steps = 0
+            while focusPool[pick] == .recovery, steps < focusPool.count {
+                pick = (pick + 1) % focusPool.count
+                steps += 1
+            }
         }
         let focus = focusPool[pick]
         let reasons = Self.opportunityReasons[focus] ?? []

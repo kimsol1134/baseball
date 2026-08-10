@@ -735,11 +735,56 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         }
     }
 
+    /// 피로가 낮으면 "오늘은 회복이 최고의 훈련이다"라고 말하지 않는다. 기회는 지금 몸이
+    /// 하는 말이어야 하고, 몸과 무관한 조언은 화면의 모든 조언을 장식으로 만든다.
+    func testRestIsNeverTheOpportunityWhileFresh() {
+        for index in 0..<200 {
+            let fresh = HighSchoolCareerEngine.trainingOpportunity(
+                careerID: "rest-\(index)", index: index, fatigue: 5, injuryRecovery: 0
+            )
+            XCTAssertNotEqual(fresh.focus, .recovery, "피로 5인데 휴식이 기회로 나왔습니다(index \(index))")
+        }
+    }
+
+    /// 반대로, 지쳤거나 재활 중이면 회복이 기회로 나올 수 있어야 한다 — 아예 못 나오면
+    /// 회복 훈련이 기회 보너스를 영영 못 받는 반쪽 선택지가 된다.
+    func testRestStillAppearsWhenTiredOrRehabbing() {
+        let tired = (0..<200).contains {
+            HighSchoolCareerEngine.trainingOpportunity(
+                careerID: "rest-\($0)", index: $0, fatigue: 80, injuryRecovery: 0
+            ).focus == .recovery
+        }
+        XCTAssertTrue(tired, "피로가 높은데도 휴식이 한 번도 기회로 나오지 않습니다")
+
+        let rehabbing = (0..<200).contains {
+            HighSchoolCareerEngine.trainingOpportunity(
+                careerID: "rest-\($0)", index: $0, fatigue: 0, injuryRecovery: 2
+            ).focus == .recovery
+        }
+        XCTAssertTrue(rehabbing, "재활 중인데도 휴식이 한 번도 기회로 나오지 않습니다")
+    }
+
+    /// 같은 입력이면 같은 기회. 게이트를 넣으면서 결정론이 깨지면 시드 공유가 무너진다.
+    func testTrainingOpportunityStaysDeterministic() {
+        for index in 0..<50 {
+            let first = HighSchoolCareerEngine.trainingOpportunity(
+                careerID: "seed-42", index: index, fatigue: 30, injuryRecovery: 0
+            )
+            let second = HighSchoolCareerEngine.trainingOpportunity(
+                careerID: "seed-42", index: index, fatigue: 30, injuryRecovery: 0
+            )
+            XCTAssertEqual(first, second)
+        }
+    }
+
     func testAwakeningCandidatesFollowTrainingAndCreateARealTradeoff() throws {
         let engine = HighSchoolCareerEngine()
         let awakening = try reachFirstAwakening(engine, focus: .velocity)
-        XCTAssertEqual(awakening.snapshot.awakeningOptions.count, 3)
-        let chosen = try XCTUnwrap(awakening.snapshot.awakeningOptions.first { [.explosiveFastball, .risingFourSeam].contains($0) })
+        // 첫 각성에서는 네 갈래의 뿌리만 열려 있다 — 트리는 뿌리부터 내려간다.
+        XCTAssertEqual(Set(awakening.snapshot.awakeningOptions), Set(
+            AwakeningTree.nodes.filter { $0.parents.isEmpty }.map(\.id)
+        ))
+        let chosen = try XCTUnwrap(awakening.snapshot.awakeningOptions.first { $0 == .explosiveFastball })
         let before = awakening.snapshot.pitcher
         let after = try engine.chooseAwakening(.init(seed: awakening.nextSeed, state: awakening.snapshot, awakening: chosen)).snapshot.pitcher
         let beforeFastball = try XCTUnwrap(before.pitchProfiles?.first { $0.pitchType == .fourSeam })

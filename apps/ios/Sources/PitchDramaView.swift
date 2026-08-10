@@ -23,6 +23,9 @@ struct PitchDramaView: View {
     let fielding: FieldingResolutionSnapshot?
     /// 결과 판정 뒤에 붙는 수싸움 적중 한 건. 한 공에 최대 하나만 들어온다.
     let sequenceMoment: PitchSequenceMoment?
+    /// 타석에 선 쪽. 좌타자는 반대편 타석에 서므로 실루엣이 좌우로 뒤집힌다 —
+    /// 화면이 좌타자를 오른쪽 타석에 세워 두면 코스 이름(몸쪽·바깥쪽)과 그림이 어긋난다.
+    var batSide: BatSide = .right
     /// 재생 진행도 0~1. 밖에서 애니메이션한다.
     var progress: Double
 
@@ -32,6 +35,7 @@ struct PitchDramaView: View {
         battedBall: BattedBall?,
         fielding: FieldingResolutionSnapshot?,
         sequenceMoment: PitchSequenceMoment? = nil,
+        batSide: BatSide = .right,
         progress: Double
     ) {
         self.execution = execution
@@ -39,6 +43,7 @@ struct PitchDramaView: View {
         self.battedBall = battedBall
         self.fielding = fielding
         self.sequenceMoment = sequenceMoment
+        self.batSide = batSide
         self.progress = progress
     }
 
@@ -137,7 +142,7 @@ struct PitchDramaView: View {
         }
 
         drawLight(context: context, size: size)
-        drawFigures(context: context, place: place, scale: scale)
+        drawFigures(context: context, place: place)
         drawZone(context: context, place: place, scale: scale)
         drawMitt(context: context, place: place, scale: scale)
         drawIncomingBall(context: context, place: place, scale: scale)
@@ -145,45 +150,66 @@ struct PitchDramaView: View {
     }
 
     /// 타자·포수 실루엣. 존 그리드만 있으면 계측 그래픽이고, 사람의 윤곽이 서는
-    /// 순간 야구가 된다(QA P1-8). 디테일은 넣지 않는다 — 무대는 어두운 배경이다.
-    private func drawFigures(context: GraphicsContext, place: (CGPoint) -> CGPoint, scale: Double) {
+    /// 순간 야구가 된다(QA P1-8).
+    ///
+    /// 형태는 `PlateFigures`가 갖고 있다. 예전에는 여기서 타원 하나와 곡선 한 줄로 타자를
+    /// 그렸는데, 그 결과가 사람으로 읽히지 않아 장면 전체가 미완성으로 보였다 — 궤적·낙하
+    /// 지점·수비 수렴은 전부 코어의 실제 값인데 유일하게 사람만 대충 그려져 있었던 셈이다.
+    /// 지금은 헬멧 귀덮개·벌린 스탠스·굵어지는 배트까지 부위별로 서고, 좌타자는 좌우가 뒤집힌다.
+    private func drawFigures(context: GraphicsContext, place: (CGPoint) -> CGPoint) {
         let zoneTopLeft = place(Self.platePoint(x: -500, y: 500))
         let zoneBottomRight = place(Self.platePoint(x: 500, y: -500))
         let zone = CGRect(x: zoneTopLeft.x, y: zoneTopLeft.y,
                           width: zoneBottomRight.x - zoneTopLeft.x,
                           height: zoneBottomRight.y - zoneTopLeft.y)
-        let ink = BaseballTheme.fieldChalk.opacity(0.09)
+        // 무대는 어두운 배경이다. 실루엣이 진해지면 존과 공을 가린다 — 이 사람들은
+        // 장면의 주인공이 아니라 무엇을 보고 있는지 알려 주는 틀이다.
+        let ink = BaseballTheme.fieldChalk.opacity(0.11)
 
-        // 타자 — 존 왼쪽(우타 기준). 머리·몸통·다리의 큰 덩어리만.
-        let batterX = zone.minX - zone.width * 0.34
-        let headRadius = zone.width * 0.09
-        context.fill(
-            Path(ellipseIn: CGRect(x: batterX - headRadius, y: zone.minY - headRadius * 2.6,
-                                   width: headRadius * 2, height: headRadius * 2)),
-            with: .color(ink)
+        // 타자 상자 — 존 옆에 서고, 존보다 위아래로 넉넉히 길다(사람은 존보다 크다).
+        let batterHeight = zone.height * 2.35
+        let batterWidth = batterHeight * 0.62
+        let batterRect = CGRect(
+            x: batSide == .left ? zone.maxX + zone.width * 0.06 - batterWidth * 0.28
+                : zone.minX - zone.width * 0.06 - batterWidth * 0.72,
+            y: zone.minY - batterHeight * 0.42,
+            width: batterWidth,
+            height: batterHeight
         )
-        var torso = Path()
-        torso.move(to: CGPoint(x: batterX - headRadius * 1.2, y: zone.minY - headRadius * 0.4))
-        torso.addQuadCurve(to: CGPoint(x: batterX - headRadius * 1.6, y: zone.maxY + headRadius * 1.5),
-                           control: CGPoint(x: batterX - headRadius * 2.2, y: zone.midY))
-        torso.addLine(to: CGPoint(x: batterX + headRadius * 1.4, y: zone.maxY + headRadius * 1.5))
-        torso.addQuadCurve(to: CGPoint(x: batterX + headRadius * 1.1, y: zone.minY - headRadius * 0.4),
-                           control: CGPoint(x: batterX + headRadius * 1.8, y: zone.midY))
-        torso.closeSubpath()
-        context.fill(torso, with: .color(ink))
-        // 들어 올린 배트 — 어깨 뒤로 비스듬히.
-        var bat = Path()
-        bat.move(to: CGPoint(x: batterX + headRadius * 0.8, y: zone.minY - headRadius * 0.6))
-        bat.addLine(to: CGPoint(x: batterX + headRadius * 3.2, y: zone.minY - headRadius * 3.4))
-        context.stroke(bat, with: .color(ink), style: StrokeStyle(lineWidth: max(2, 3.4 * scale), lineCap: .round))
+        if PlateFigures.hasBatterAsset {
+            var layer = context
+            layer.opacity = 0.16
+            if batSide == .left {
+                layer.translateBy(x: batterRect.midX, y: 0)
+                layer.scaleBy(x: -1, y: 1)
+                layer.translateBy(x: -batterRect.midX, y: 0)
+            }
+            layer.draw(Image(PlateFigures.batterAssetName).renderingMode(.template), in: batterRect)
+        } else {
+            context.fill(
+                PlateFigures.scaled(PlateFigures.batterPath(), into: batterRect, flipped: batSide == .left),
+                with: .color(ink)
+            )
+        }
 
-        // 포수 — 존 아래 웅크린 덩어리.
-        let catcherWidth = zone.width * 0.5
-        context.fill(
-            Path(ellipseIn: CGRect(x: zone.midX - catcherWidth / 2, y: zone.maxY + zone.height * 0.06,
-                                   width: catcherWidth, height: zone.height * 0.34)),
-            with: .color(ink)
+        // 포수 — 존 아래에 등을 보이고 앉는다.
+        let catcherWidth = zone.width * 1.05
+        let catcherRect = CGRect(
+            x: zone.midX - catcherWidth / 2,
+            y: zone.maxY + zone.height * 0.10,
+            width: catcherWidth,
+            height: catcherWidth * 0.78
         )
+        if PlateFigures.hasCatcherAsset {
+            var layer = context
+            layer.opacity = 0.16
+            layer.draw(Image(PlateFigures.catcherAssetName).renderingMode(.template), in: catcherRect)
+        } else {
+            context.fill(
+                PlateFigures.scaled(PlateFigures.catcherPath(), into: catcherRect),
+                with: .color(ink)
+            )
+        }
     }
 
     /// 야간 구장 조명. 부드러운 타원 하나로 무대를 만든다. 각진 삼각형은 오려 붙인 티가 난다.

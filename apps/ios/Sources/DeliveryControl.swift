@@ -30,6 +30,8 @@ struct DeliveryControl: View {
     /// 접근성 글자 크기에서 안내 문구가 커지면 92pt 고정 패드 안에서 겹친다 —
     /// 패드가 글자를 따라 자란다(3차 패널 P1, Dynamic Type).
     @ScaledMetric(relativeTo: .body) private var padHeight: CGFloat = 92
+    /// 퍼펙트 섬광의 글자 크기. 접근성 글자 크기를 따라 커진다.
+    @ScaledMetric(relativeTo: .title2) private var perfectTextSize: CGFloat = 26
     @State private var isPressing = false
     @State private var meter: Double = 0
     /// 손가락이 끈 거리. 흔들림을 상쇄하는 데 쓴다.
@@ -42,6 +44,8 @@ struct DeliveryControl: View {
     @State private var pressStartedAt: CFTimeInterval = 0
     /// 오탭 직후 안내를 띄운다. 다음 와인드업에서 지운다.
     @State private var showHoldHint = false
+    /// 퍼펙트 릴리스 섬광의 밝기(1 → 0). 던진 그 자리에서 터져야 손과 눈이 이어진다.
+    @State private var perfectFlash: Double = 0
     private static let minimumHoldSeconds: CFTimeInterval = 0.14
 
     /// 미터가 한 번 왕복하는 데 걸리는 시간(초). 피로하면 짧아져 조준 창이 좁아진다.
@@ -104,8 +108,17 @@ struct DeliveryControl: View {
                     .fill(BaseballTheme.action.opacity(0.42))
                     .frame(width: proxy.size.width * 0.22)
                     .offset(x: proxy.size.width * 0.39)
+                // 퍼펙트 구간. **보이지 않으면 노릴 수 없다.** 스위트 스폿 안의 얇은 심지
+                // 하나가 "적당히 초록"과 "정확히 가운데"를 다른 목표로 만든다.
                 Capsule()
-                    .fill(isPressing ? BaseballTheme.action : BaseballTheme.border)
+                    .fill(BaseballTheme.milestone)
+                    .frame(width: max(3, proxy.size.width * Self.perfectBandWidth))
+                    .offset(x: proxy.size.width * (0.5 - Self.perfectBandWidth / 2))
+                    .shadow(color: BaseballTheme.milestone.opacity(inPerfectBand ? 0.9 : 0),
+                            radius: inPerfectBand ? 6 : 0)
+                Capsule()
+                    .fill(inPerfectBand ? BaseballTheme.milestone
+                          : isPressing ? BaseballTheme.action : BaseballTheme.border)
                     .frame(width: 6)
                     .offset(x: (proxy.size.width - 6) * meter)
             }
@@ -113,6 +126,15 @@ struct DeliveryControl: View {
         }
         .frame(height: 16)
         .accessibilityHidden(true)
+    }
+
+    /// 미터 전체 폭 대비 퍼펙트 구간의 너비. `delivery(meter:…)`의 선형 환산에서
+    /// `releaseAccuracy >= 950`이 되는 구간과 정확히 같아야 화면이 거짓말을 하지 않는다.
+    private static let perfectBandWidth = Double(1_000 - PitchDelivery.perfectReleaseThreshold) / 1_000
+
+    /// 지금 손을 떼면 퍼펙트인가.
+    private var inPerfectBand: Bool {
+        isPressing && abs(meter - 0.5) <= Self.perfectBandWidth / 2
     }
 
     private var gesturePad: some View {
@@ -134,9 +156,13 @@ struct DeliveryControl: View {
                     .offset(x: clampedAim.width, y: clampedAim.height)
                 // "지금"은 조준과 미터가 **둘 다** 맞는 순간에만 — 조준만 보고 외치면
                 // 유저가 그 말을 믿고 미터 끝단에서 떼는 잘못된 타이밍을 학습한다(3차 패널 P0).
-                Text(onTarget && inSweetSpot ? "지금" : onTarget ? "타이밍을 기다리세요" : "끌어서 맞추세요")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(onTarget && inSweetSpot ? BaseballTheme.action : BaseballTheme.textSecondary)
+                Text(onTarget && inPerfectBand ? "퍼펙트!"
+                     : onTarget && inSweetSpot ? "지금"
+                     : onTarget ? "타이밍을 기다리세요" : "끌어서 맞추세요")
+                    .font(onTarget && inPerfectBand ? .subheadline.weight(.black) : .caption.weight(.bold))
+                    .foregroundStyle(onTarget && inPerfectBand ? BaseballTheme.milestone
+                                     : onTarget && inSweetSpot ? BaseballTheme.action
+                                     : BaseballTheme.textSecondary)
                     .offset(y: padHeight * 0.39)
             } else {
                 Text(showHoldHint ? "너무 짧아요 — 길게 눌러 미터를 채우세요" : "길게 눌러 와인드업")
@@ -145,6 +171,27 @@ struct DeliveryControl: View {
             }
         }
         .frame(height: padHeight)
+        // 퍼펙트 섬광 — 손을 뗀 그 자리에서 터진다.
+        .overlay {
+            if perfectFlash > 0 {
+                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                    .fill(
+                        RadialGradient(
+                            colors: [BaseballTheme.milestone.opacity(0.95 * perfectFlash),
+                                     BaseballTheme.milestone.opacity(0.15 * perfectFlash),
+                                     .clear],
+                            center: .center, startRadius: 0, endRadius: 180
+                        )
+                    )
+                    .overlay {
+                        Text("PERFECT")
+                            .font(.system(size: perfectTextSize, weight: .black, design: .rounded))
+                            .foregroundStyle(BaseballTheme.canvas.opacity(perfectFlash))
+                            .scaleEffect(1 + (1 - perfectFlash) * 0.5)
+                    }
+                    .allowsHitTesting(false)
+            }
+        }
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -216,9 +263,18 @@ struct DeliveryControl: View {
             return
         }
         let delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius)
-        Haptics.shared.released(
-            quality: Double(delivery.releaseAccuracy + delivery.aimAccuracy) / 2_000
-        )
+        if delivery.isPerfectRelease {
+            // 정중앙에서 뗀 순간, 손과 눈과 귀가 동시에 안다. 이 게임에서 손으로 하는
+            // 일은 하나뿐이라, 그 하나를 완벽히 해냈을 때가 가장 크게 터져야 한다.
+            Haptics.shared.perfectRelease()
+            GameAudio.shared.play(.milestone)
+            perfectFlash = 1
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.55)) { perfectFlash = 0 }
+        } else {
+            Haptics.shared.released(
+                quality: Double(delivery.releaseAccuracy + delivery.aimAccuracy) / 2_000
+            )
+        }
         drag = .zero
         sway = .zero
         onDeliver(delivery)
@@ -240,6 +296,11 @@ struct DeliveryControl: View {
     /// 방금 던진 투구의 품질을 한 줄로 알려 준다. 손맛에는 즉시 읽히는 판정이 필요하다.
     static func verdict(_ delivery: PitchDelivery) -> (text: String, tone: BaseballCardTone)? {
         guard !delivery.isNeutral else { return nil }
+        // 정중앙 릴리스는 별도 등급이다. 아래 평균 점수는 조준이 흔들리면 850 밑으로
+        // 떨어지므로, 타이밍을 완벽히 맞힌 사실이 그 평균에 묻혀 사라졌다.
+        if delivery.isPerfectRelease {
+            return ("퍼펙트 릴리스 — 손끝에서 딱 떨어졌습니다", .milestone)
+        }
         let score = (delivery.releaseAccuracy + delivery.aimAccuracy) / 2
         switch score {
         case 850...: return ("완벽한 릴리스", .positive)
