@@ -332,15 +332,7 @@ struct HighSchoolCareerView: View {
                 .id(state.careerID)
                 .background(BaseballTheme.canvas)
                 // 스크롤 콘텐츠가 상태바 밑을 그대로 지나면 시계와 제목이 겹친다(QA P2-3).
-                // 얇은 스크림 하나가 위를 정리한다.
-                .overlay(alignment: .top) {
-                    LinearGradient(colors: [BaseballTheme.canvas, BaseballTheme.canvas.opacity(0)],
-                                   startPoint: .top, endPoint: .bottom)
-                        .frame(height: 28)
-                        .ignoresSafeArea(edges: .top)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                }
+                .topStatusScrim()
                 // 화면 전체에 .animation(value:)을 걸면 같은 국면 안의 카드 교체
                 // (훈련→훈련)에서 옛 글자와 새 글자가 두 겹으로 보인다(QA P0-2).
                 // 갱신은 즉시가 맞다 — 회차당 수백 번 겪는 전환은 연출보다 빠름이 이긴다.
@@ -1908,6 +1900,59 @@ private struct CompletionCard: View {
             }
         }
     }
+}
+
+/// 상태바 뒤를 지나가는 본문을 가리는 스크림.
+///
+/// 이 화면은 내비게이션 바를 숨긴다(키아트가 제목이라 제목이 두 번 나온다). 그래서
+/// iOS가 스크롤 가장자리에 걸어 주는 흐림이 없고, 스크롤한 본문이 시계·와이파이·배터리와
+/// **같은 자리에 그대로 겹쳐 그려진다** — "글자가 깨져 보인다"는 제보의 실체다.
+///
+/// 예전 스크림은 **높이 28 고정**이었다. 이 기기(iPhone 17 Pro)의 상단 안전 영역은
+/// 62pt라, 띠는 시계 위쪽 여백만 덮고 정작 글자가 겹치는 28~62pt 구간을 비워 두고
+/// 있었다 — 시뮬레이터에서 색 띠로 좌표를 재서 확인했다.
+///
+/// `ignoresSafeArea(edges: .top)`를 **frame 다음에** 걸어야 띠가 화면 맨 위(y=0)를
+/// 기준으로 놓인다. 걸지 않으면 안전 영역 아래(62pt)에서 시작한다. 높이는 기기마다
+/// 다르므로(다이내믹 아일랜드 62 · 노치 47~54 · SE 20) 배경의 `GeometryReader`로 잰다.
+struct TopStatusScrim: ViewModifier {
+    @State private var inset: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { inset = proxy.safeAreaInsets.top }
+                        .onChange(of: proxy.safeAreaInsets.top) { _, value in inset = value }
+                }
+            }
+            .overlay(alignment: .top) {
+                LinearGradient(
+                    stops: [
+                        .init(color: BaseballTheme.canvas, location: 0),
+                        .init(color: BaseballTheme.canvas, location: opaqueStop),
+                        .init(color: BaseballTheme.canvas.opacity(0), location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: inset + Self.fade)
+                // 이 한 줄이 띠를 화면 맨 위로 올린다. 순서를 바꾸면 안 된다.
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+    }
+
+    /// 상태바 아래로 풀어 주는 길이. 경계가 선처럼 보이지 않을 만큼만.
+    private static let fade: CGFloat = 20
+    private var opaqueStop: CGFloat { inset <= 0 ? 0 : inset / (inset + Self.fade) }
+}
+
+extension View {
+    /// 내비게이션 바를 숨긴 화면에서 상태바와 본문이 겹치지 않게 한다.
+    func topStatusScrim() -> some View { modifier(TopStatusScrim()) }
 }
 
 /// 국면이 바뀔 때 아주 짧게 어두워진다.

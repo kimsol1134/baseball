@@ -588,6 +588,8 @@ private struct TodayDashboard: View {
             .padding(BaseballMetrics.gutter)
         }
         .background(BaseballTheme.canvas)
+        // 고교 화면과 같은 이유 — 내비게이션 바가 없어 스크롤한 본문이 시계와 겹친다.
+        .topStatusScrim()
     }
 
     static func segmentLabel(_ segment: ProSeasonSegment?) -> String {
