@@ -356,12 +356,40 @@ struct LifeCardView: View {
 /// 카드를 공유 가능한 이미지로. 렌더 실패 시 버튼 자체가 숨는다 — 깨진 카드를
 /// 공유시키는 것보다 낫다.
 enum LifeCardRenderer {
+    /// 굽는 값은 기록에만 달려 있다 — 같은 기록이면 같은 그림이다.
+    ///
+    /// 캐시가 없을 때는 `body`가 평가될 때마다 1080×2040 @3x 비트맵을 메인 스레드에서
+    /// 다시 구웠다. 기억을 고르는 화면은 미리보기와 공유 버튼이 나란히 있어 한 번의
+    /// 평가에 두 번 돌았고, 체크박스를 누를 때마다 그게 반복됐다 — 감정이 가장 높은
+    /// 화면이 가장 끊겼다.
+    @MainActor private static var cache: (key: String, image: UIImage)?
+
     @MainActor
     static func image(for record: HighSchoolCareerStore.LifeRecord) -> UIImage? {
+        let key = cacheKey(for: record)
+        if let cache, cache.key == key { return cache.image }
         let renderer = ImageRenderer(content: LifeCardView(record: record))
         renderer.scale = 3
         renderer.isOpaque = true
-        return renderer.uiImage
+        guard let image = renderer.uiImage else { return nil }
+        cache = (key, image)
+        return image
+    }
+
+    /// 카드에 그려지는 것이 바뀌면 달라져야 하고, 그 외에는 같아야 한다.
+    @MainActor
+    private static func cacheKey(for record: HighSchoolCareerStore.LifeRecord) -> String {
+        let abilities = [record.abilityStart?.total, record.abilityFinal?.total]
+            .map { $0.map(String.init) ?? "-" }.joined(separator: "/")
+        return [
+            record.careerID ?? "", String(record.lifeNumber), record.playerName,
+            String(record.evaluationScore), String(record.drafted), record.teamName ?? "",
+            String(record.games), String(record.strikeouts), String(record.walks),
+            String(record.runsAllowed), String(record.outs ?? -1), String(record.hits ?? -1),
+            abilities, record.signatureLegacy?.title ?? "",
+            (record.nicknames ?? []).joined(separator: ","),
+            String((record.chronicle ?? []).count),
+        ].joined(separator: "|")
     }
 }
 

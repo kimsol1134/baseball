@@ -162,6 +162,9 @@ enum GameAnalytics {
         case gameAbandoned = "game_abandoned"
         /// 오늘의 이닝 화면 진입. `source`로 어느 입구가 실제로 쓰이는지 본다.
         case dailyInningOpened = "daily_inning_opened"
+        /// 오늘의 이닝이 커리어 통화(야구혼)로 이어진 하루. 이 모드가 커리어 유저에게
+        /// 실제로 값을 만들었는지 재려면 노출이 아니라 지급을 세야 한다.
+        case dailyInningRewarded = "daily_inning_rewarded"
         /// 프로 커리어 진입. draft_resolved 이후의 **정상 분기**라, 이게 없으면
         /// "드래프트 후 환생하지 않은 사람 = 이탈"이라는 잘못된 결론이 나온다.
         case proCareerStarted = "pro_career_started"

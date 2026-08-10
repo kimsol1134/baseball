@@ -323,7 +323,8 @@ struct AppShell: View {
             DailyInningView(
                 onClose: { showsDailyFromDeepLink = false },
                 source: deepLinkSource,
-                weekly: weekly
+                weekly: weekly,
+                highSchool: highSchool
             )
         }
         .onOpenURL { url in

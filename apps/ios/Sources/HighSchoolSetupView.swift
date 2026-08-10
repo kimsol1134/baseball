@@ -340,6 +340,22 @@ struct HighSchoolSetupView: View {
                     Text("자동 성장 \(career.inheritance.automaticSoulTotal)혼 중 이번 선수 능력에 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.automaticSoulTotal, storedRulesVersion: career.inheritance.inheritanceRulesVersion)) · 쓸 수 있는 야구혼 \(remainingSoul)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
+                    // 다음 계단을 함께 적는다. "24혼 모았는데 +1"만 있으면 정직해도
+                    // 몰수처럼 읽힌다 — 같은 숫자가 다음 구간과 나란히 서면 진척이 된다.
+                    if let step = HighSchoolCareerEngine.nextInheritanceStep(
+                        for: career.inheritance.automaticSoulTotal,
+                        storedRulesVersion: career.inheritance.inheritanceRulesVersion
+                    ) {
+                        Text("\(step.soulPoints)혼을 모으면 +\(step.applied) · 최대 +20")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.action)
+                            .accessibilityIdentifier("hs.inheritance.next")
+                    } else {
+                        Text("자동 성장은 최대치(+20)에 닿았습니다.")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.action)
+                            .accessibilityIdentifier("hs.inheritance.next")
+                    }
                     if career.inheritance.memories.isEmpty, selectedSignatureLegacy == nil {
                         Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                     } else if !career.inheritance.memories.isEmpty {

@@ -140,7 +140,8 @@ struct HighSchoolCareerView: View {
         // 반대로(회차를 먼저 넘기고 스탬프를 띄우면) 화면이 갈아 끼워지는 순간에 전면
         // 화면을 올리는 셈이라 표시가 들쭉날쭉했다. 연출이 곧 전환이면 그런 경합이 없다.
         .fullScreenCover(isPresented: $showsDaily) {
-            DailyInningView(onClose: { showsDaily = false }, source: "career_entry", weekly: weekly)
+            DailyInningView(onClose: { showsDaily = false }, source: "career_entry",
+                            weekly: weekly, highSchool: career)
         }
         .fullScreenCover(item: $rebirthStamp) { stamp in
             RebirthStampView(lifeNumber: stamp.lifeNumber) {
@@ -2136,6 +2137,30 @@ private struct CompletionCard: View {
                 }
                 Text("이 선수의 이야기는 아직 끝나지 않았습니다.")
                     .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+
+                // 잘한 회차일수록 다음 선수 이야기를 못 본다.
+                //
+                // 지명되면 대표 유산 선택은 프로를 접거나 은퇴한 뒤에야 나온다. 지명률이
+                // 회차가 갈수록 오르니 **다수의 회차가 이 경로로 빠지고**, 성공 직후에
+                // 환생 동기가 오히려 끊긴다. 고르게 하지는 않되, 무엇이 남을지는 지금
+                // 보여 준다 — 이 화면이 다음 회차를 한 글자도 말하지 않던 것을 고친다.
+                let upcoming = career.signatureLegacyCandidates(for: state)
+                if !upcoming.isEmpty {
+                    BaseballCard(title: "프로를 마치면 남길 것", tone: .raised) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("이 중 하나가 다음 선수에게 이어집니다. 선택은 프로 이야기를 마친 뒤입니다.")
+                                .font(.caption)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            ForEach(upcoming, id: \.id) { candidate in
+                                Label(candidate.title, systemImage: "seal.fill")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(BaseballTheme.milestone)
+                            }
+                        }
+                    }
+                    .accessibilityIdentifier("hs.legacyPreview")
+                }
             }
 
             // 지명된 회차는 아직 끝나지 않았다. 프로에 들어가지 않았다면 포기 확인 뒤
@@ -2169,6 +2194,33 @@ private struct CompletionCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             } else if !opensLegacy {
+                // 지명 위쪽의 목표.
+                //
+                // 계승은 4회차 전후에 상한(+20)에 닿고, 그때쯤 "지명"은 거의 자동이 된다.
+                // 그 뒤로 회차를 더 도는 이유가 업적 문구뿐이라 목표가 사라진다. 스카우트
+                // 평가는 상한이 없고 회차를 가로질러 비교되므로, 다음 회차의 과녁이 된다.
+                let bestPast = career.archive
+                    .filter { $0.lifeNumber != state.lifeNumber }
+                    .map(\.evaluationScore).max() ?? 0
+                let thisRun = state.draftResult?.evaluationScore ?? 0
+                if bestPast > 0 || thisRun > 0 {
+                    let isRecord = thisRun > bestPast
+                    BaseballCard(title: isRecord ? "최고 평가 갱신" : "다음 과녁",
+                                 tone: isRecord ? .milestone : .raised) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text("\(max(thisRun, bestPast))점")
+                                .font(BaseballType.heroNumeral)
+                                .foregroundStyle(isRecord ? BaseballTheme.milestone : BaseballTheme.textPrimary)
+                            Text(isRecord
+                                 ? "이번 선수가 이전 최고(\(bestPast)점)를 넘었습니다."
+                                 : "이번 선수는 \(thisRun)점. 다음 선수로 이 기록을 넘어 보세요.")
+                                .font(.footnote)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .accessibilityIdentifier("hs.bestEvaluation")
+                }
                 PrimaryButton(title: "\(career.inheritance.lifeNumber)번째 선수로 다시 시작",
                               identifier: "hs.rebirth", action: onRebirth)
                 Text("기억 \(career.inheritance.memories.count)장 · 야구혼 \(career.inheritance.soulPoints)"

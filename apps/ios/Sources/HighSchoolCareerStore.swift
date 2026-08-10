@@ -1231,8 +1231,10 @@ final class HighSchoolCareerStore {
             .gameFinished, scope: completion.id, properties: analytics
         ) {
             GameAnalytics.recordCompletedGame()
-            // 연속 일수는 모드를 가리지 않는다 — 오늘 마운드에 올랐으면 오늘 야구를 한 것이다.
-            DailyStreak.recordPlay()
+            // 연속 일수는 모드를 가리지 않는다 — 마운드에 올랐으면 야구를 한 것이다.
+            // 날짜는 **영수증의 완료 시각**을 쓴다. 재시도 경로가 자정을 넘겨 불리면
+            // 같은 경기가 주간 노트에는 어제로, 연속 일수에는 오늘로 들어간다.
+            DailyStreak.recordPlay(now: completion.completedAt)
         }
         GameAnalytics.logOnce(.activationFirstGame)
         if let enteredPhase = completion.enteredPhase {
@@ -1919,6 +1921,36 @@ final class HighSchoolCareerStore {
                 "has_signature_candidates": combinedCandidates != nil,
             ])
         }
+        return true
+    }
+
+    /// 오늘의 이닝 하루 몫을 야구혼으로 얹는다.
+    ///
+    /// 이 모드는 완료해도 야구혼이 0이라, 커리어를 키우는 사람에게 3분을 쓸 이유가
+    /// 순위표뿐이었다 — DAU의 7%만 열었고, 입구는 이미 거의 모든 국면에 있으니
+    /// **입구 문제가 아니라 보상 문제였다.** 하루 한 번만 지급하고(영수증에 날짜를
+    /// 박는다) 액수는 작게 둔다: 스며듦 곡선에서 +1점 남짓이라 계승 상한 구조를
+    /// 흔들지 않는다.
+    @discardableResult
+    func creditDailyInning(dayKey: String, soulPoints: Int = 5) -> Bool {
+        guard soulPoints > 0 else { return false }
+        let receipt = "daily-inning:\(dayKey)"
+        if creditedExternalRewardIDs.contains(receipt) { return true }
+
+        let previousInheritance = inheritance
+        let previousReceipts = creditedExternalRewardIDs
+        creditedExternalRewardIDs.insert(receipt)
+        inheritance.soulTotalEarned = inheritance.soulTotal + soulPoints
+        inheritance.soulPoints += soulPoints
+        guard save() else {
+            inheritance = previousInheritance
+            creditedExternalRewardIDs = previousReceipts
+            return false
+        }
+        GameAnalytics.log(.dailyInningRewarded, [
+            "soul_points": soulPoints,
+            "life_number": inheritance.lifeNumber,
+        ])
         return true
     }
 

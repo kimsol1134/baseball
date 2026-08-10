@@ -12,6 +12,8 @@ struct DailyInningView: View {
     /// 어느 입구로 들어왔는가. 어떤 자리가 실제로 쓰이는지 재려고 이벤트에 싣는다.
     var source: String = "unknown"
     var weekly: WeeklyProgramStore = .shared
+    /// 하루 몫을 야구혼으로 얹을 대상. 고교 저장이 없으면(프로 전용·도전 런) 그냥 건너뛴다.
+    var highSchool: HighSchoolCareerStore? = nil
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 64
     @Environment(\.requestReview) private var requestReview
@@ -148,6 +150,12 @@ struct DailyInningView: View {
                 Text("오늘 \(UserDefaults.standard.integer(forKey: attemptsKey))번째 도전 · 최고 기록만 제출됩니다")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
+                if highSchool != nil {
+                    Text("오늘 몫 야구혼 +5 — 키우는 선수에게 들어갑니다.")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.action)
+                        .accessibilityIdentifier("daily.soulReward")
+                }
                 Text("내일 자정에 새 판이 열립니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textTertiary)
@@ -225,6 +233,8 @@ struct DailyInningView: View {
         ]) { _, modeSpecific in modeSpecific }
         GameAnalytics.log(.gameFinished, gameFinishedProperties)
         GameAnalytics.recordCompletedGame()
+        // 커리어와 이어 준다. 하루 한 번, 오늘 날짜로 영수증을 남겨 재도전에는 안 준다.
+        highSchool?.creditDailyInning(dayKey: dateKey)
         weekly.record(.dailyInningCompleted)
         weekly.record(.playedOnTwoDays, receiptID: "played-day:\(DailyStreak.key(for: Date()))")
         weekly.record(.sequenceMasteryTriggered, amount: session.sequenceMasteryCount)

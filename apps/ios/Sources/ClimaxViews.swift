@@ -22,6 +22,12 @@ import SimulationCore
 struct DraftRevealView: View {
     let result: DraftResultSnapshot
     let playerName: String
+    /// 이 순간의 선수 카드. 감정이 가장 높은 자리에서 바로 자랑할 수 있게 한다.
+    ///
+    /// 예전에는 공유 버튼이 정산·기록 화면에만 있었다 — 호명을 본 순간과 공유 버튼
+    /// 사이에 화면이 한두 장 끼어 있었고, **그 거리가 곧 공유율이다.** 없으면 버튼을
+    /// 그리지 않는다(구저장본에서 온 연출 등).
+    var shareRecord: HighSchoolCareerStore.LifeRecord? = nil
     let onFinish: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -106,19 +112,26 @@ struct DraftRevealView: View {
         // 버튼은 항상 같은 자리에 있다. 연출 중에는 "건너뛰기", 결과가 나오면 "계속"이다 —
         // 기다리는 동안 출구가 없으면 두 번째 회차부터 이 연출이 방해물이 된다.
         .overlay(alignment: .bottom) {
-            PrimaryPill(
-                title: stage == .revealed ? "계속" : "건너뛰기",
-                identifier: "hs.draft.reveal.done",
-                action: {
-                    guard stage == .revealed else { return skipToReveal() }
-                    // 지명 확정 스탬프를 닫는 순간은 이 게임의 감정 최고점이다.
-                    // 물어도 되는지(이유 소진·간격·UI 테스트)는 ReviewPrompt가 판단한다.
-                    if drafted, ReviewPrompt.shouldAsk(.drafted) {
-                        requestReview()
-                    }
-                    onFinish()
+            VStack(spacing: 8) {
+                // 자랑이 먼저, 별점은 나중이다. 순서를 뒤집으면 별점 창이 감정을 끊고
+                // 그 뒤에 남는 공유 버튼은 이미 식은 자리가 된다.
+                if stage == .revealed, let shareRecord {
+                    LifeCardShareButton(record: shareRecord)
                 }
-            )
+                PrimaryPill(
+                    title: stage == .revealed ? "계속" : "건너뛰기",
+                    identifier: "hs.draft.reveal.done",
+                    action: {
+                        guard stage == .revealed else { return skipToReveal() }
+                        // 지명 확정 스탬프를 닫는 순간은 이 게임의 감정 최고점이다.
+                        // 물어도 되는지(이유 소진·간격·UI 테스트)는 ReviewPrompt가 판단한다.
+                        if drafted, ReviewPrompt.shouldAsk(.drafted) {
+                            requestReview()
+                        }
+                        onFinish()
+                    }
+                )
+            }
             .padding(.horizontal, BaseballMetrics.gutter)
             .padding(.bottom, BaseballMetrics.gutter)
         }
