@@ -223,7 +223,7 @@ struct DraftRevealView: View {
 /// 쌓이는 감각도 없다.
 struct RebirthStampView: View {
     let lifeNumber: Int
-    let onFinish: () -> Void
+    let onFinish: @MainActor @Sendable () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var stampScale: CGFloat = 2.2

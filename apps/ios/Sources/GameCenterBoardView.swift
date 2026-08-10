@@ -21,9 +21,10 @@ struct GameCenterBoardView: UIViewControllerRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator(onDismiss: onDismiss) }
 
-    final class Coordinator: NSObject, GKGameCenterControllerDelegate {
+    final class Coordinator: NSObject, @preconcurrency GKGameCenterControllerDelegate {
         let onDismiss: () -> Void
         init(onDismiss: @escaping () -> Void) { self.onDismiss = onDismiss }
+        @MainActor
         func gameCenterViewControllerDidFinish(_ controller: GKGameCenterViewController) {
             controller.dismiss(animated: true)
             onDismiss()
