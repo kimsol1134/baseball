@@ -10,7 +10,26 @@ import Foundation
 /// 저장은 이미 있는 `baseball.daily.played.<yyyyMMdd>` 플래그를 그대로 읽는다 —
 /// 새 저장 형식을 만들면 어제까지 플레이한 사람의 기록이 0일부터 다시 시작한다.
 enum DailyStreak {
+    /// 오늘의 이닝 전용 플래그. 복귀 알림이 "오늘 이미 던졌으니 건너뛴다"를 판단할 때도
+    /// 이 키를 본다 — 그래서 커리어 경기를 여기 섞으면 오늘의 이닝 알림이 잘못 사라진다.
     static let playedKeyPrefix = "baseball.daily.played."
+
+    /// 모드를 가리지 않는 "오늘 야구를 했다" 플래그.
+    ///
+    /// 예전에는 연속 일수가 오늘의 이닝만 셌다. 그런데 그 화면을 여는 사람은 DAU의 7%다 —
+    /// 고교 공식 경기를 열한 번 던지고 2회차를 돌아도 연속은 0일이었고, 캡션조차 뜨지
+    /// 않았다. **연속 기록 장치가 유저의 93%에게 존재하지 않았다는 뜻이다.**
+    /// 알림 판단용 키와 분리해 두면 "오늘 커리어를 했다"와 "오늘의 이닝을 던졌다"를
+    /// 각각 물을 수 있다.
+    static let playKeyPrefix = "baseball.play.day."
+
+    /// 지울 때 함께 지워야 하는 진행 흔적들.
+    static let allPlayKeyPrefixes = [playedKeyPrefix, playKeyPrefix]
+
+    /// 오늘 야구를 했다고 표시한다. 어느 모드든 한 경기를 마치면 부른다.
+    static func recordPlay(now: Date = Date(), defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: playKeyPrefix + key(for: now))
+    }
 
     /// 날짜 키(`yyyyMMdd`, 서울 기준). `PitchScenario.todayKey()`와 같은 규칙이다.
     static func key(for date: Date) -> String {
@@ -28,8 +47,23 @@ enum DailyStreak {
         return calendar.date(byAdding: .day, value: -1, to: date) ?? date
     }
 
-    static func playedToday(now: Date = Date(), defaults: UserDefaults = .standard) -> Bool {
+    /// 오늘의 이닝을 던졌는가. 그 화면의 "오늘 아직" 표시와 알림 건너뛰기가 쓴다.
+    static func playedDailyInningToday(now: Date = Date(), defaults: UserDefaults = .standard) -> Bool {
         defaults.bool(forKey: playedKeyPrefix + key(for: now))
+    }
+
+    /// 오늘 야구를 했는가 — 모드를 가리지 않는다. 연속 일수는 이쪽을 센다.
+    ///
+    /// 옛 키(오늘의 이닝 전용)도 함께 본다. 새 키만 보면 어제까지 오늘의 이닝으로
+    /// 쌓아 온 사람의 연속이 0일부터 다시 시작한다.
+    static func playedToday(now: Date = Date(), defaults: UserDefaults = .standard) -> Bool {
+        playedAny(on: now, defaults: defaults)
+    }
+
+    private static func playedAny(on date: Date, defaults: UserDefaults) -> Bool {
+        let day = key(for: date)
+        return defaults.bool(forKey: playKeyPrefix + day)
+            || defaults.bool(forKey: playedKeyPrefix + day)
     }
 
     /// 지금 몇 일 연속인가.
@@ -40,7 +74,7 @@ enum DailyStreak {
         var count = 0
         var cursor = playedToday(now: now, defaults: defaults) ? now : previousDay(now)
         // 상한을 둔다 — 저장이 깨져도 루프가 끝난다. 366일이면 어떤 표시에도 충분하다.
-        while count < 366, defaults.bool(forKey: playedKeyPrefix + key(for: cursor)) {
+        while count < 366, playedAny(on: cursor, defaults: defaults) {
             count += 1
             cursor = previousDay(cursor)
         }

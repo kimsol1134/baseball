@@ -446,7 +446,10 @@ private struct DailyInningEntryRow: View {
 
     var body: some View {
         let streakCaption = DailyStreak.caption()
-        let played = DailyStreak.playedToday()
+        // "오늘 아직" 배지는 **오늘의 이닝**을 던졌는지만 묻는다. 연속 일수(캡션)는
+        // 커리어 경기까지 세지만, 이 배지까지 그러면 오늘의 이닝을 안 던진 사람에게
+        // "다 했다"고 말하게 된다.
+        let played = DailyStreak.playedDailyInningToday()
         Button(action: onOpen) {
             HStack(spacing: 8) {
                 Image(systemName: played ? "flame.fill" : "calendar.badge.clock")

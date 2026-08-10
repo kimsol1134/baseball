@@ -1119,6 +1119,8 @@ final class HighSchoolCareerStore {
             .gameFinished, scope: completion.id, properties: analytics
         ) {
             GameAnalytics.recordCompletedGame()
+            // 연속 일수는 모드를 가리지 않는다 — 오늘 마운드에 올랐으면 오늘 야구를 한 것이다.
+            DailyStreak.recordPlay()
         }
         GameAnalytics.logOnce(.activationFirstGame)
         if let enteredPhase = completion.enteredPhase {

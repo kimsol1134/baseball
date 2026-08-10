@@ -329,6 +329,7 @@ final class MobileCareerStore {
         guard self.result?.snapshot.revision != beforeRevision else { return }
         AchievementStore.shared.record(AchievementRules.fromInning(report: report) + session.bestDeliveryAchievements)
         weekly.record(.sequenceMasteryTriggered, amount: sequenceMasteryCount)
+        weekly.record(.playedOnTwoDays, receiptID: "played-day:\(DailyStreak.key(for: Date()))")
         let gameFinishedProperties = session.gameFinishedAnalyticsMetrics.merging([
             "mode": "pro",
             "result": report.runsAllowed == 0 ? "scoreless" : "runs_allowed",
@@ -338,6 +339,8 @@ final class MobileCareerStore {
         ]) { _, modeSpecific in modeSpecific }
         GameAnalytics.log(.gameFinished, gameFinishedProperties)
         GameAnalytics.recordCompletedGame()
+        // 연속 일수는 모드를 가리지 않는다 — 프로 등판도 오늘 던진 것이다.
+        DailyStreak.recordPlay()
     }
 
     nonisolated static func importantGameSummary(_ report: ImportantInningReport) -> String {

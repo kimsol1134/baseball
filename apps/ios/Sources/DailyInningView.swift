@@ -196,6 +196,7 @@ struct DailyInningView: View {
         let best = max(score, UserDefaults.standard.integer(forKey: bestKey))
         UserDefaults.standard.set(best, forKey: bestKey)
         UserDefaults.standard.set(true, forKey: playedKey)
+        DailyStreak.recordPlay()
         // 베스트만 제출 — 리더보드 정책이 무엇이든 낮은 재도전이 상위 기록을 덮지 않게.
         AchievementStore.shared.submit([.dailyInning: best])
         // 오늘 몫을 던졌으니 오늘 저녁 알림은 취소한다 — 이미 한 일을 하라고 부르면

@@ -111,7 +111,7 @@ struct SettingsView: View {
                 ReviewPrompt.reset()
                 // 연속 기록도 진행이다. 남기면 새 시작이 "12일 연속"에서 출발한다.
                 for key in UserDefaults.standard.dictionaryRepresentation().keys
-                where key.hasPrefix(DailyStreak.playedKeyPrefix) {
+                where DailyStreak.allPlayKeyPrefixes.contains(where: key.hasPrefix) {
                     UserDefaults.standard.removeObject(forKey: key)
                 }
                 // 알림 권유는 다시 물어볼 수 있어야 한다 — 지운 사람은 다시 시작할 사람이다.
