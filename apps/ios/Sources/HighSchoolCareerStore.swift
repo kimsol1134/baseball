@@ -1090,6 +1090,14 @@ final class HighSchoolCareerStore {
                     calendar: calendar
                 ) else { return false }
             }
+            // 하루에 몇 경기를 던지든 이 목표는 하루치만 오른다. 영수증 ID에 날짜를
+            // 박아 같은 날의 두 번째 경기가 중복으로 세지 않게 한다.
+            guard weekly.record(
+                .playedOnTwoDays,
+                receiptID: "played-day:\(DailyStreak.key(for: completion.completedAt))",
+                now: completion.completedAt,
+                calendar: calendar
+            ) else { return false }
         }
 
         AchievementStore.shared.record(completion.achievements)

@@ -58,6 +58,7 @@ final class WeeklyProgramTests: XCTestCase {
             .importantGamesCompleted,
             .chaptersAdvanced,
             .sequenceMasteryTriggered,
+            .playedOnTwoDays,
         ]
         XCTAssertTrue(Set(program.tasks.map(\.kind)).isSubset(of: allowed))
         XCTAssertFalse(program.tasks.contains { task in
@@ -661,7 +662,7 @@ final class WeeklyProgramTests: XCTestCase {
         )
         XCTAssertEqual(
             Set(WeeklyProgramRules.eligibleKinds(eligibility)),
-            [.dailyInningCompleted, .sequenceMasteryTriggered, .proWeeksAdvanced]
+            [.dailyInningCompleted, .sequenceMasteryTriggered, .proWeeksAdvanced, .playedOnTwoDays]
         )
 
         let first = WeeklyProgramRules.make(
@@ -671,8 +672,18 @@ final class WeeklyProgramTests: XCTestCase {
             weekKey: "2026-W32", stableUserID: "active-pro", eligibility: eligibility
         )
         XCTAssertEqual(first, second)
-        XCTAssertEqual(Set(first?.tasks.map(\.kind) ?? []), Set(WeeklyProgramRules.eligibleKinds(eligibility)))
-        XCTAssertTrue(WeeklyProgramView.showsDailyLaunch(program: try XCTUnwrap(first)))
+        // 후보가 넷이고 칸은 셋이다 — 이틀 목표는 반드시 들어가고 나머지 둘만 해시 순서다.
+        XCTAssertTrue(first?.tasks.contains { $0.kind == .playedOnTwoDays } == true)
+        XCTAssertTrue(Set(first?.tasks.map(\.kind) ?? [])
+            .isSubset(of: Set(WeeklyProgramRules.eligibleKinds(eligibility))))
+        // 오늘의 이닝 목표가 보드에 오른 사람에게는 그 자리에서 바로 열 수 있어야 한다.
+        let dailyUser = try XCTUnwrap((0..<100).lazy.map { "active-pro-\($0)" }.first { id in
+            WeeklyProgramRules.make(weekKey: "2026-W32", stableUserID: id, eligibility: eligibility)?
+                .tasks.contains { $0.kind == .dailyInningCompleted } == true
+        })
+        XCTAssertTrue(WeeklyProgramView.showsDailyLaunch(program: try XCTUnwrap(
+            WeeklyProgramRules.make(weekKey: "2026-W32", stableUserID: dailyUser, eligibility: eligibility)
+        )))
     }
 
     func testCompletedAndRetirementProNeverOfferProOrHiddenHighSchoolProgress() {
@@ -737,7 +748,7 @@ final class WeeklyProgramTests: XCTestCase {
         XCTAssertFalse(eligibility.canChooseDifferentSchool)
         XCTAssertFalse(eligibility.canStartNextRun)
         XCTAssertTrue(eligibility.dailyInningUnlocked)
-        XCTAssertEqual(kinds, [.dailyInningCompleted, .sequenceMasteryTriggered])
+        XCTAssertEqual(kinds, [.dailyInningCompleted, .sequenceMasteryTriggered, .playedOnTwoDays])
     }
 
     func testLateHighSchoolOnlyOffersTwoStepGoalsWhenEnoughScheduleRemains() {
@@ -773,7 +784,10 @@ final class WeeklyProgramTests: XCTestCase {
             canChooseDifferentSchool: false,
             hasProCareer: false
         )
-        XCTAssertEqual(WeeklyProgramRules.eligibleKinds(lateEligibility), [.sequenceMasteryTriggered])
+        XCTAssertEqual(
+            WeeklyProgramRules.eligibleKinds(lateEligibility),
+            [.sequenceMasteryTriggered, .playedOnTwoDays]
+        )
         XCTAssertNil(WeeklyProgramRules.make(
             weekKey: "2026-W32", stableUserID: "late-season", eligibility: lateEligibility
         ))
@@ -859,9 +873,9 @@ final class WeeklyProgramTests: XCTestCase {
         )
         let weekly = WeeklyProgramStore(sync: weeklySync, stableUserID: "failed-action")
         weekly.configure(eligibility: eligibility, now: date("2026-08-09T03:00:00Z"), calendar: calendar("Asia/Seoul"))
-        let chapterBefore = try XCTUnwrap(
-            weekly.program?.tasks.first(where: { $0.kind == .chaptersAdvanced })?.progress
-        )
+        // 어떤 목표가 보드에 올라오는지는 안정 해시가 정한다(한 칸은 이틀 목표로 고정).
+        // 이 테스트가 지키는 것은 "실패한 행동은 어떤 칸도 올리지 않는다"이므로 보드 전체를 본다.
+        let boardBefore = try XCTUnwrap(weekly.program?.tasks)
         let careerSync = isolatedSync("high-school-failed-action")
         careerSync.clear()
         defer { careerSync.clear() }
@@ -870,10 +884,7 @@ final class WeeklyProgramTests: XCTestCase {
         career.advanceChapter()
         career.chooseSchool(.allCases[0])
 
-        XCTAssertEqual(
-            weekly.program?.tasks.first(where: { $0.kind == .chaptersAdvanced })?.progress,
-            chapterBefore
-        )
+        XCTAssertEqual(weekly.program?.tasks, boardBefore)
         XCTAssertEqual(weekly.program?.completedCount, 0)
     }
 

@@ -209,6 +209,7 @@ struct DailyInningView: View {
         GameAnalytics.log(.gameFinished, gameFinishedProperties)
         GameAnalytics.recordCompletedGame()
         weekly.record(.dailyInningCompleted)
+        weekly.record(.playedOnTwoDays, receiptID: "played-day:\(DailyStreak.key(for: Date()))")
         weekly.record(.sequenceMasteryTriggered, amount: session.sequenceMasteryCount)
         // 개인 기록 경신 — 커리어를 접은 사람도 오늘의 이닝은 계속 켠다. 그쪽 유입로에
         // 별점 관문이 하나도 없었다. 첫 판은 무조건 신기록이라 감흥이 없으므로,

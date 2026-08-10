@@ -1,6 +1,12 @@
 import Foundation
 
 enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
+    /// 유일하게 **하루 안에 끝낼 수 없는** 목표.
+    ///
+    /// 예전 후보 8종은 전부 한 세션에 채워졌다 — 실제로 첫 회차 드래프트가 끝나는 시점에
+    /// 이미 3/3이 떴다. 그러면 주간 노트는 복귀 장치가 아니라 첫 세션 체크리스트다.
+    /// 서로 다른 두 날에 한 경기씩이면 되고, 어느 모드로 던지든 인정한다.
+    case playedOnTwoDays = "played_on_two_days"
     case dailyInningCompleted = "daily_inning_completed"
     case importantGamesCompleted = "important_games_completed"
     case chaptersAdvanced = "chapters_advanced"
@@ -12,6 +18,7 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
 
     var title: String {
         switch self {
+        case .playedOnTwoDays: "서로 다른 두 날에 던지기"
         case .dailyInningCompleted: "오늘의 이닝 1회 완료"
         case .importantGamesCompleted: "고교 공식 경기 2번 마치기"
         case .chaptersAdvanced: "고교 이야기 2장 마치기"
@@ -25,6 +32,7 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
 
     var nextAction: String {
         switch self {
+        case .playedOnTwoDays: "오늘 한 경기, 다른 날 한 경기. 고교·프로·오늘의 이닝 어느 쪽이든 됩니다."
         case .dailyInningCompleted: "오늘의 이닝을 한 번 마치면 됩니다."
         case .importantGamesCompleted: "고교 공식 경기를 마치면 됩니다."
         case .chaptersAdvanced: "지금 이야기를 마치고 다음 장으로 가면 됩니다."
@@ -39,6 +47,7 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
     var defaultTarget: Int {
         switch self {
         case .dailyInningCompleted, .nextRunStarted, .pledgeSelected, .differentSchoolSelected: 1
+        case .playedOnTwoDays: 2
         case .importantGamesCompleted, .chaptersAdvanced: 2
         case .sequenceMasteryTriggered, .proWeeksAdvanced: 3
         }
@@ -159,7 +168,16 @@ enum WeeklyProgramRules {
             weekKey: weekKey, stableUserID: stableUserID, eligibility: eligibility
         )
         guard candidates.count >= 3 else { return nil }
-        let tasks = candidates.prefix(3).map { kind in
+        // 세 칸 중 한 칸은 반드시 이틀에 걸치는 목표로 고정한다. 나머지는 안정 해시
+        // 순서를 따른다 — 보상 경제(주간 15혼)는 건드리지 않고, 주간 노트가 한 세션에
+        // 통째로 닫히는 것만 막는다.
+        //
+        // 고정은 한 칸까지다. 두 칸을 고정하면 남는 자리가 하나뿐이라 모든 사람의 보드가
+        // 거의 같아지고, 주마다 다른 숙제를 낸다는 성질이 사라진다.
+        let ordered = candidates.contains(.playedOnTwoDays)
+            ? [.playedOnTwoDays] + candidates.filter { $0 != .playedOnTwoDays }
+            : candidates
+        let tasks = ordered.prefix(3).map { kind in
             task(weekKey: weekKey, kind: kind)
         }
         return WeeklyProgram(weekKey: weekKey, tasks: tasks, completedTaskIDs: [], claimed: false)
@@ -237,6 +255,7 @@ enum WeeklyProgramRules {
         if eligibility.canChooseDifferentSchool { result.append(.differentSchoolSelected) }
         if eligibility.hasHighSchoolCareer || eligibility.dailyInningUnlocked || eligibility.hasProCareer {
             result.append(.sequenceMasteryTriggered)
+            result.append(.playedOnTwoDays)
         }
         if eligibility.hasProCareer { result.append(.proWeeksAdvanced) }
         return result
