@@ -357,6 +357,30 @@ final class CareerSignatureLegacyTests: XCTestCase {
             )
         }
 
+        // 다음 계단 예고는 곡선을 그대로 따라가야 한다 — 화면이 "28혼이면 +2"라고
+        // 약속했는데 실제로 28혼에서 +2가 아니면 그 문장이 거짓말이 된다.
+        for example in v2Examples where example.applied < 20 {
+            let step = HighSchoolCareerEngine.nextInheritanceStep(
+                for: example.points, rulesVersion: .v2
+            )
+            guard let unwrapped = step else {
+                XCTFail("다음 계단 예고가 없습니다. points=\(example.points)")
+                continue
+            }
+            XCTAssertGreaterThan(unwrapped.applied, example.applied, "points=\(example.points)")
+            XCTAssertEqual(
+                HighSchoolCareerEngine.appliedInheritance(
+                    for: unwrapped.soulPoints, rulesVersion: .v2
+                ),
+                unwrapped.applied,
+                "예고한 지점의 실제 적용값이 다릅니다. points=\(example.points)"
+            )
+        }
+        // 상한에 닿으면 예고할 다음이 없다.
+        XCTAssertNil(HighSchoolCareerEngine.nextInheritanceStep(for: 100, rulesVersion: .v2))
+        XCTAssertNil(HighSchoolCareerEngine.nextInheritanceStep(for: 5_000, rulesVersion: .v2))
+
+
         let engine = HighSchoolCareerEngine()
         let legacyMissingVersion = StartHighSchoolCareerParams(
             seed: "918215", presetID: "power_prospect", lifeNumber: 2,
@@ -419,11 +443,13 @@ final class CareerSignatureLegacyTests: XCTestCase {
             }),
             [150]
         )
+        // 영점은 그 시대의 실측 RA9다 — 판정식이 KBO 수준으로 옮겨가면서 함께 올렸다.
+        // 유형별 **상대 순서**(제구형이 가장 낮고 파워형이 가장 높다)가 이 테스트의 뜻이다.
         let expectedBaselines = [
-            "pitcher-power": 2_900,
-            "pitcher-command": 1_120,
-            "pitcher-artist": 1_590,
-            "pitcher-stamina": 1_710,
+            "pitcher-power": 4_930,
+            "pitcher-command": 1_900,
+            "pitcher-artist": 2_700,
+            "pitcher-stamina": 2_900,
         ]
         for preset in PitcherPresetCatalog.all {
             XCTAssertEqual(

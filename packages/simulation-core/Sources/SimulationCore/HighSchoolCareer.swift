@@ -2392,7 +2392,20 @@ public struct HighSchoolCareerEngine: Sendable {
             }
             let category = order[slot]
             let candidates = HighSchoolContentCatalog.events.filter { $0.category == category }
-            return candidates[Int(seed % UInt64(candidates.count))]
+            // 회차마다 풀을 한 칸씩 돌린다.
+            //
+            // 핵심 3인은 **매 회차 반드시** 만나는데 범주별 후보가 7~9개뿐이라, 순수
+            // 난수로 뽑으면 2회차에 하나쯤 겹칠 확률이 절반을 넘는다. 지난 회차에서 본
+            // 것을 제외하는 경로는 없었다(코드 전역 확인). 시작점은 그대로 시드가 정하고
+            // 거기서 회차 수만큼 민다. 결정론은 그대로다 — 같은 시드·같은 회차는 언제나
+            // 같은 장면이다.
+            //
+            // 다만 이건 **보장이 아니라 확률을 낮추는 장치**다. 시작점도 회차마다 달라지므로
+            // 연속한 회차가 같은 장면을 만날 수 있다. 실제로 배제하려면 직전 회차에서 뽑힌
+            // 인덱스를 계승에 남겨야 한다 — 저장 형식이 바뀌는 일이라 여기서는 하지 않았다.
+            let rotation = max(0, state.lifeNumber - 1) % candidates.count
+            let start = Int(seed % UInt64(candidates.count))
+            return candidates[(start + rotation) % candidates.count]
         }
         // 2회차부터는 환생 사건이 후보에 들어온다. 처음 하는 사람에게는 뜻이 통하지 않으므로
         // 1회차에는 아예 뽑지 않는다.
@@ -3048,18 +3061,29 @@ public struct HighSchoolCareerEngine: Sendable {
         let focusPool = TrainingFocus.allCases
         let seedValue = StableHash.fnv1a64Value("\(careerID)|opportunity|\(index)")
         var pick = Int(seedValue % UInt64(focusPool.count))
-        if index > 0 {
-            let previous = Int(StableHash.fnv1a64Value("\(careerID)|opportunity|\(index - 1)") % UInt64(focusPool.count))
-            if pick == previous { pick = (pick + 1) % focusPool.count }
-        }
         // 회복이 실제로 몸을 되돌리는 상태(피로가 쌓였거나 재활 중)가 아니면 넘긴다.
         // 시드 순서는 그대로 두고 한 칸씩만 미뤄, 같은 회차를 다시 돌려도 결정론이 유지된다.
+        //
+        // **연속 방지보다 먼저 돈다.** 반대 순서였을 때는 회복을 건너뛴 결과가 직전 초점과
+        // 같아질 수 있었고, 저피로 구간에서 연속 중복이 21%까지 났다 — "오늘의 기회"가
+        // 이틀 내리 같은 것을 가리키면 그건 기회가 아니라 배경이다.
         let recoveryEarned = fatigue >= recoveryOpportunityFatigue || injuryRecovery > 0
-        if !recoveryEarned {
+        func skippingUnearnedRecovery(_ start: Int) -> Int {
+            guard !recoveryEarned else { return start }
+            var candidate = start
             var steps = 0
-            while focusPool[pick] == .recovery, steps < focusPool.count {
-                pick = (pick + 1) % focusPool.count
+            while focusPool[candidate] == .recovery, steps < focusPool.count {
+                candidate = (candidate + 1) % focusPool.count
                 steps += 1
+            }
+            return candidate
+        }
+        pick = skippingUnearnedRecovery(pick)
+        if index > 0 {
+            let previousSeed = StableHash.fnv1a64Value("\(careerID)|opportunity|\(index - 1)")
+            let previous = skippingUnearnedRecovery(Int(previousSeed % UInt64(focusPool.count)))
+            if pick == previous {
+                pick = skippingUnearnedRecovery((pick + 1) % focusPool.count)
             }
         }
         let focus = focusPool[pick]
