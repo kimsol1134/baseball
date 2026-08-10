@@ -308,9 +308,12 @@ struct HighSchoolSetupView: View {
             }
         }
         .padding(.bottom, 16)
-        // 환생 회차에는 키보드를 먼저 올리지 않는다 — 계승 카드("가져온 것")를 키보드가
-        // 가리면 세 번째 기억이 잘린 채 시작한다(QA P2-11).
-        .onAppear { nameFocused = !isRebirth }
+        // 어느 회차에서도 키보드를 먼저 올리지 않는다.
+        //
+        // 1회차에서는 앱을 켠 두 번째 화면에서 한글 키보드가 하단 40%를 덮고 그 위에
+        // `다음`이 겹쳤다 — "게임을 켰는데 회원가입 폼이 뜬다". 이름은 placeholder로
+        // 그냥 진행할 수 있고 `민서준 쓰기` 버튼도 있으므로, 키보드는 유저가 부를 때만
+        // 올라오면 된다. 환생 회차는 계승 카드가 가려지는 문제까지 있었다(QA P2-11).
     }
 
     private var inheritanceCard: some View {
