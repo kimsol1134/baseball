@@ -497,6 +497,7 @@ public struct PitchKernelEngine: Sendable {
         let feedback = feedback(
             outcome: outcome,
             selection: selection,
+            followedSign: recommendationAccepted,
             execution: execution,
             planPitchMatched: planPitchMatched,
             planZoneMatched: planZoneMatched,
@@ -1596,6 +1597,8 @@ public struct PitchKernelEngine: Sendable {
     private func feedback(
         outcome: PitchOutcome,
         selection: SelectionQuality,
+        /// 포수 사인을 그대로 던졌는가. 공로의 주어가 달라진다.
+        followedSign: Bool,
         execution: PitchExecution,
         planPitchMatched: Bool,
         planZoneMatched: Bool,
@@ -1665,7 +1668,17 @@ public struct PitchKernelEngine: Sendable {
         let selectionWasGood = selection == .good || selection == .excellent
         let aimWasGood = execution.executionQuality >= 700
         let connective = selectionWasGood == aimWasGood ? "고" : "지만"
-        let detail = "공 선택은 \(selectionStem)\(connective), \(aim). \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
+        // 공로는 실제로 고른 사람에게 돌아가야 한다.
+        //
+        // 기본 경로는 포수 사인이 네 축을 전부 채워 주고 유저는 던지기만 누르는 것이다.
+        // 그런데 예전 문구는 그 공을 "공 선택은 매우 좋았고"라고 유저를 칭찬했고, 때로는
+        // "다소 위험했고"라고 유저를 나무랐다 — 포수는 추정 정보로 사인을 내는데 채점은
+        // 진짜 정보로 하기 때문에, 게임이 스스로 고른 공을 스스로 꾸짖는 일까지 있었다.
+        // 칭찬은 공허하고 비난은 부당하다. 사인을 그대로 던졌으면 주어를 포수로 돌린다.
+        let selectionClause = followedSign
+            ? "포수의 요구를 그대로 따랐\(connective)"
+            : "공 선택은 \(selectionStem)\(connective)"
+        let detail = "\(selectionClause), \(aim). \(planText).\(adaptationText)\(contactText)\(fieldingText)\(stealText)\(runnerText)\(inningText)"
         return (short, detail)
     }
 
