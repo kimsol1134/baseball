@@ -309,6 +309,34 @@ struct DeliveryControl: View {
         default: return ("손에서 빠졌습니다", .warning)
         }
     }
+
+    /// 무엇을 놓쳤는지 한 줄로 말한다.
+    ///
+    /// 예전에는 타이밍과 조준을 평균 하나로 뭉개 "무난한 릴리스"라고만 했다. 그러면
+    /// 유저는 미터를 놓친 건지 조준을 놓친 건지 알 수 없고, 알 수 없으면 다음 공에서
+    /// 고칠 수도 없다 — 이 조작이 실력으로 나아지지 않는 가장 큰 이유였다.
+    /// 둘 중 **더 나쁜 쪽**만 짚는다. 매번 둘 다 읊으면 그것도 배경이 된다.
+    static func coachingHint(_ delivery: PitchDelivery) -> String? {
+        guard !delivery.isNeutral, !delivery.isPerfectRelease else { return nil }
+        let release = delivery.releaseAccuracy
+        let aim = delivery.aimAccuracy
+        // 둘 다 좋으면 고칠 것이 없다.
+        guard min(release, aim) < 700 else { return nil }
+        if release <= aim {
+            return release < 400
+                ? "미터를 크게 놓쳤습니다 — 초록 구간에서 떼세요"
+                : "미터를 살짝 놓쳤습니다"
+        }
+        return aim < 400
+            ? "조준이 크게 흔들렸습니다 — 손가락을 과녁에 머무르게 하세요"
+            : "조준이 살짝 흔들렸습니다"
+    }
+
+    /// 이번 등판의 릴리스 점수. 타이밍과 조준의 평균이고, 중립(자동 릴리스)은 세지 않는다.
+    static func score(_ delivery: PitchDelivery) -> Int? {
+        guard !delivery.isNeutral else { return nil }
+        return (delivery.releaseAccuracy + delivery.aimAccuracy) / 2
+    }
 }
 
 

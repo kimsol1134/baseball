@@ -196,6 +196,30 @@ struct PitchView: View {
     @AppStorage("baseball.pitch.autoRelease") private var autoRelease = false
     /// 생애 최고 구속(0.1km/h). 회차를 넘어 쌓인다 — 갱신은 그 자체로 하이라이트다.
     @AppStorage("baseball.bestVelocityTenths") private var bestVelocityTenths = 0
+    /// 등판 평균 릴리스의 개인 최고. 릴리스는 결과를 가장 크게 흔드는 조작인데,
+    /// 지금까지 **늘고 있다는 증거가 화면 어디에도 없었다.** 어제보다 나아진 숫자 하나가
+    /// 내일 다시 켤 이유가 된다.
+    @AppStorage("baseball.bestDeliveryAverage") private var bestDeliveryAverage = 0
+    /// 등판 하나에서 세운 헛스윙 개인 최고. 3년 육성의 값어치는 RA9로는 한 등판에
+    /// 0.18실점 차이라 눈에 안 보인다(실측). 반면 "헛스윙 5개"는 그 자리에서 세어진다 —
+    /// 키운 구위·변화가 **오늘 손에 잡히는 형태**로 돌아오는 자리가 필요하다.
+    @AppStorage("baseball.bestWhiffsInOuting") private var bestWhiffsInOuting = 0
+    /// 등판이 끝나는 순간의 "이게 개인 최고인가"를 굳혀 둔다.
+    ///
+    /// `@AppStorage`에 새 최고를 쓰면 뷰가 무효화되고 body가 다시 평가된다. 그때는 이미
+    /// 저장값이 갱신돼 `isRecord`가 false가 되므로, 축하 배지가 **같은 프레임에 사라졌다**.
+    /// 저장은 되고 축하만 없는 셈이라, 오늘 넣은 "나아지고 있다는 증거"가 한 순간도
+    /// 화면에 남지 않았다. 판정을 한 번만 하고 화면은 그 스냅숏을 읽는다.
+    @State private var outingRecords: OutingRecords?
+
+    /// 등판 정산에서 쓰는 굳힌 판정.
+    private struct OutingRecords: Equatable {
+        let whiffs: Int
+        let isWhiffRecord: Bool
+        let deliveryAverage: Int?
+        let isDeliveryRecord: Bool
+        let previousDeliveryBest: Int
+    }
     /// 방금 공이 승부구(풀카운트·2아웃 2스트라이크)였는가. 던지는 순간 잡아 둔다 —
     /// 결과가 반영되면 카운트가 이미 넘어가 있어 되짚을 수 없다.
     @State private var wasClutch = false
@@ -400,6 +424,12 @@ struct PitchView: View {
             // 마운드를 떠나면 반드시 멈춘다 — 화면 밖에서 계속 뛰는 진동은 고장이다.
             Haptics.shared.setHeartbeat(tension: 0)
         }
+        // 등판이 끝나는 **그 순간 한 번만** 판정하고 저장한다. body 안에서 판정하면
+        // 저장이 곧바로 판정을 뒤집어 축하 배지가 같은 프레임에 사라진다.
+        .onChange(of: session.pitchLog.count) { _, _ in
+            sealOutingRecordsIfFinished()
+        }
+        .onAppear { sealOutingRecordsIfFinished() }
         // 카운트·주자·아웃이 바뀔 때마다 조임을 다시 건다. 풀카운트로 들어가는 순간
         // 손 안에서 박동이 빨라지는 것이 이 장치의 전부다.
         .onChange(of: currentTension) { _, tension in
@@ -569,6 +599,14 @@ struct PitchView: View {
                             Text(verdict.text)
                                 .font(.caption.weight(.bold))
                                 .foregroundStyle(verdict.tone.accent)
+                        }
+                        // 무엇을 놓쳤는지 짚어 준다. 평균 한 덩어리로는 다음 공에서
+                        // 무엇을 고쳐야 하는지 알 수 없다.
+                        if let hint = session.lastDelivery.flatMap(DeliveryControl.coachingHint) {
+                            Text(hint)
+                                .font(.caption2)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .accessibilityIdentifier("pitch.deliveryHint")
                         }
                         Text(result.snapshot.shortFeedback).font(.subheadline.weight(.semibold))
                         Text(result.snapshot.detailFeedback).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
@@ -783,12 +821,93 @@ struct PitchView: View {
                     session.advanceToNextBatter()
                 }
             case .finished, .failed:
+                // 이 등판에서 손이 얼마나 정확했는가. 연습(불펜)에서도 보여 준다 —
+                // 배우는 자리야말로 나아지는 것이 보여야 한다.
+                // 오늘 이 선수가 무엇을 해냈는가 — 키운 능력이 숫자로 돌아오는 자리.
+                if let records = outingRecords, records.whiffs > 0 || session.strikeouts > 0 {
+                    let whiffs = records.whiffs
+                    let isWhiffRecord = records.isWhiffRecord
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        outingStat("헛스윙", "\(whiffs)", highlight: isWhiffRecord)
+                        outingStat("탈삼진", "\(session.strikeouts)", highlight: false)
+                        if bestVelocityTenths > 0 {
+                            outingStat("최고 구속",
+                                       PitchBuildCopy.velocity(bestVelocityTenths),
+                                       highlight: wasVelocityRecord)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("pitch.outingStats")
+                    if isWhiffRecord {
+                        Text("한 등판 최다 헛스윙 — 키운 구위가 손에 잡힙니다.")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                    }
+                }
+                if let records = outingRecords, let average = records.deliveryAverage {
+                    let isRecord = records.isDeliveryRecord
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("이번 등판 릴리스")
+                                .font(.caption)
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                            Text("\(average)")
+                                .font(.title3.weight(.heavy).monospacedDigit())
+                                .foregroundStyle(isRecord ? BaseballTheme.milestone : BaseballTheme.textPrimary)
+                            if isRecord {
+                                Text("개인 최고")
+                                    .font(.caption2.weight(.heavy))
+                                    .foregroundStyle(BaseballTheme.canvas)
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(BaseballTheme.milestone, in: Capsule())
+                            }
+                        }
+                        Text(isRecord
+                             ? "직접 던진 \(session.deliveryScores.count)구 평균 — 지금까지 가장 좋았습니다."
+                             : "직접 던진 \(session.deliveryScores.count)구 평균 · 개인 최고 \(records.previousDeliveryBest)")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("pitch.deliveryAverage")
+                }
                 PrimaryPill(title: isPractice ? "3년을 시작한다" : "등판 마치기",
                             identifier: "pitch.finish", action: onFinish)
             }
         }
         .padding(BaseballMetrics.gutter)
         .background(BaseballTheme.surface)
+    }
+
+    /// 등판이 끝났으면 개인 최고 판정을 한 번 굳히고 저장한다.
+    private func sealOutingRecordsIfFinished() {
+        guard outingRecords == nil else { return }
+        guard case .finished = session.stage else { return }
+        let whiffs = session.pitchLog.filter { $0.outcome == .swingingStrike }.count
+        let average = session.averageDeliveryScore
+        let sealed = OutingRecords(
+            whiffs: whiffs,
+            isWhiffRecord: whiffs > bestWhiffsInOuting,
+            deliveryAverage: average,
+            isDeliveryRecord: average.map { $0 > bestDeliveryAverage } ?? false,
+            previousDeliveryBest: bestDeliveryAverage
+        )
+        outingRecords = sealed
+        if sealed.isWhiffRecord { bestWhiffsInOuting = whiffs }
+        if sealed.isDeliveryRecord, let average { bestDeliveryAverage = average }
+    }
+
+    /// 등판 정산의 한 칸. 값이 주인공이고 이름은 아래에 작게 둔다.
+    private func outingStat(_ title: String, _ value: String, highlight: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(value)
+                .font(.title3.weight(.heavy).monospacedDigit())
+                .foregroundStyle(highlight ? BaseballTheme.milestone : BaseballTheme.textPrimary)
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(BaseballTheme.textTertiary)
+        }
     }
 
     private func tone(for outcome: PitchOutcome) -> BaseballCardTone {

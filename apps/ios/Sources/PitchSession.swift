@@ -44,6 +44,15 @@ final class PitchSession {
     private(set) var lastCues: [GameAudioCue] = []
     /// 직전 투구의 릴리스 품질. 손맛 판정을 화면에 보여 주는 데 쓴다.
     private(set) var lastDelivery: PitchDelivery?
+    /// 이번 등판에서 **직접 던진** 공들의 릴리스 점수. 자동 릴리스(중립)는 세지 않는다 —
+    /// 실력을 재는 자리에 실력이 개입하지 않은 공을 섞으면 평균이 거짓말을 한다.
+    private(set) var deliveryScores: [Int] = []
+
+    /// 이번 등판의 평균 릴리스. 직접 던진 공이 없으면 nil이다.
+    var averageDeliveryScore: Int? {
+        guard !deliveryScores.isEmpty else { return nil }
+        return deliveryScores.reduce(0, +) / deliveryScores.count
+    }
     /// 선택 순간의 실제 능력 입력과, 그 입력이 결과에서 의미 있게 살아난 종류.
     /// 화면은 이 값을 읽기만 하며 결과를 다시 해석하지 않는다.
     private(set) var lastAbilityReadout: PitchAbilityReadout?
@@ -354,6 +363,9 @@ final class PitchSession {
             lastTraitFired = trait.map { $0.fires(context: context, runners: gameState.runners) } ?? false
             let result = try engine.submitPitch(params, delivery: delivery)
             lastDelivery = delivery
+            if let delivery, let score = DeliveryControl.score(delivery) {
+                deliveryScores.append(score)
+            }
             for achievement in AchievementRules.fromDelivery(delivery)
             where !bestDeliveryAchievements.contains(achievement) {
                 bestDeliveryAchievements.append(achievement)
