@@ -559,6 +559,7 @@ struct HighSchoolSetupView: View {
                                         lineWidth: harshness == level ? 2 : 1)
                         }
                         .accessibilityAddTraits(harshness == level ? .isSelected : [])
+                        .accessibilityIdentifier("hs.setup.harshness.\(level.rawValue)")
                     }
                 }
             }

@@ -15,7 +15,11 @@ final class CareerSmokeUITests: XCTestCase {
     /// 선수 만들기가 단계형이라 마지막 단계에 닿아야 `hs.start`가 나온다.
     /// 첫 회차는 이름 → 투수 유형 두 단계, 2회차부터 난이도·핸디캡이 하나 더 붙는다.
     @discardableResult
-    private func completeSetup(_ app: XCUIApplication, seed: String? = nil) -> Bool {
+    private func completeSetup(
+        _ app: XCUIApplication,
+        seed: String? = nil,
+        harshness: String? = nil
+    ) -> Bool {
         let start = app.buttons["hs.start"]
         let next = app.buttons["hs.setup.next"]
         guard start.waitForExistence(timeout: timeout) || next.waitForExistence(timeout: timeout) else { return false }
@@ -27,8 +31,17 @@ final class CareerSmokeUITests: XCTestCase {
         }
         var hops = 0
         while !start.exists, next.exists, hops < 6 {
+            // 난이도 칸은 설정 흐름 중간에 있다. 지나가면서 원하는 값을 고른다.
+            if let harshness {
+                let option = app.buttons["hs.setup.harshness.\(harshness)"]
+                if option.exists, option.isHittable { option.tap() }
+            }
             next.tap()
             hops += 1
+        }
+        if let harshness {
+            let option = app.buttons["hs.setup.harshness.\(harshness)"]
+            if option.exists, option.isHittable { option.tap() }
         }
         guard start.waitForExistence(timeout: timeout) else { return false }
         start.tap()
@@ -194,15 +207,22 @@ final class CareerSmokeUITests: XCTestCase {
     func testDraftedRunCanEnterProCareer() {
         let app = launch()
         dismissOpening(app)
-        // 실제 PitchKernel 정책에서 지명되는 고정 시드. 미지명 때 조용히 끝내지 않고
-        // 고교→프로 전환(탭 선택 대상 교체 포함)을 매 실행 검증한다.
+        // **이 테스트가 지키는 것은 지명 확률이 아니라 전환 흐름이다** — 지명을 받은 회차가
+        // 프로 커리어를 열고, 그때 탭 선택 대상이 교체되며, 프로 첫 주부터 은퇴까지 화면이
+        // 이어지는가.
         //
-        // 밸런스를 만지면 이 시드는 재보정해야 한다. 후보는 `RealPlayDraftRateTests`의
-        // `[real-play-draft] smoke-autopilot drafted-seeds=`에서 가져오되, **그 목록이 곧
-        // 정답은 아니다** — 실측에서 그 목록의 앞쪽 여섯 개가 여기서는 미지명으로 끝났다.
-        // 하네스는 엔진을 직접 돌리고 이 테스트는 화면을 거치므로 승부 진행이 완전히
-        // 같지 않다. 후보를 좁히는 용도로만 쓰고, 최종 확인은 이 테스트로 한다.
-        XCTAssertTrue(completeSetup(app, seed: "44"), "고교 시작 화면이 열리지 않았습니다.")
+        // 예전에는 "표준 난이도에서 지명되는 고정 시드" 하나에 기대고 있었다. 그래서 밸런스를
+        // 만질 때마다 이 테스트가 깨졌고, 그때마다 190초짜리 실행으로 새 시드를 찾아야 했다 —
+        // 실제로 당락선을 올린 뒤에는 후보 아홉 개가 연속으로 미지명이었다. 검증 대상과
+        // 무관한 추첨에 회귀 테스트를 매달아 둔 셈이다.
+        //
+        // 완화 난이도로 시작한다. 당락선이 낮아 자동 진행도 대개 지명을 받으므로 흐름이
+        // 안정적으로 검증되고, 표준 난이도의 밸런스를 어떻게 조정하든 이 테스트는 흔들리지
+        // 않는다. 난이도별 지명률 자체는 `RealPlayDraftRateTests`가 따로 잰다.
+        XCTAssertTrue(
+            completeSetup(app, seed: "11", harshness: "relaxed"),
+            "고교 시작 화면이 열리지 않았습니다."
+        )
 
         var steps = 0
         var usedFastForwardDuringRun = false
@@ -210,8 +230,8 @@ final class CareerSmokeUITests: XCTestCase {
             steps += 1
             if tapIfPresent(app.buttons["hs.draft.reveal.done"]) { continue }
             if app.buttons["hs.recap.continue"].exists {
-                capture(app, name: "99-seed-1-undrafted-recap")
-                XCTFail("프로 진입 회귀용 고정 시드가 미지명 정산으로 들어갔습니다.")
+                capture(app, name: "99-undrafted-recap")
+                XCTFail("완화 난이도의 고정 시드가 미지명 정산으로 들어갔습니다 — 시드나 난이도 축을 다시 보정해야 합니다.")
                 return
             }
             if app.buttons["hs.enterPro"].exists {
@@ -230,8 +250,8 @@ final class CareerSmokeUITests: XCTestCase {
                 return
             }
             if app.buttons["hs.rebirth"].exists {
-                capture(app, name: "99-seed-1-undrafted")
-                XCTFail("프로 진입 회귀용 고정 시드가 미지명으로 끝났습니다. 정책과 시드를 다시 보정해야 합니다.")
+                capture(app, name: "99-undrafted")
+                XCTFail("완화 난이도의 고정 시드가 미지명으로 끝났습니다 — 시드나 난이도 축을 다시 보정해야 합니다.")
                 return
             }
 

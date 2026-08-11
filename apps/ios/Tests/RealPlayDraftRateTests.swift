@@ -37,7 +37,8 @@ final class RealPlayDraftRateTests: XCTestCase {
     private func playOneCareer(
         seed: String,
         presetID: String = "power_prospect",
-        policy: PlayPolicy = .sensible
+        policy: PlayPolicy = .sensible,
+        harshness: DifficultyLevel = .standard
     ) throws -> RunOutcome? {
         let engine = HighSchoolCareerEngine()
         // 화면이 만드는 것과 **같은 선수**로 시작한다. `HighSchoolCareerStore.startCareer`는
@@ -51,7 +52,10 @@ final class RealPlayDraftRateTests: XCTestCase {
             bodyType: .balanced,
             region: "서울"
         )
-        var result = try engine.start(.init(seed: seed, presetID: presetID, identity: identity))
+        var result = try engine.start(.init(
+            seed: seed, presetID: presetID, identity: identity,
+            difficulty: CareerDifficultySnapshot(careerHarshness: harshness)
+        ))
         result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
         let school = try XCTUnwrap(result.snapshot.schoolOptions.first)
         result = try engine.chooseSchool(.init(seed: result.nextSeed, state: result.snapshot, schoolID: school.id))
@@ -168,12 +172,16 @@ final class RealPlayDraftRateTests: XCTestCase {
     /// 기대는데, 밸런스를 만지면 그 시드가 미지명으로 넘어간다. 후보를 190초짜리 UI 실행으로
     /// 하나씩 찍어 보는 대신 여기서 같은 정책으로 훑는다.
     func testSmokeAutopilotHasDraftableSeeds() throws {
+        // UI 스모크는 **완화 난이도**로 돈다(검증 대상이 지명 확률이 아니라 전환 흐름이라서).
+        // 후보도 같은 조건에서 뽑아야 쓸모가 있다.
         var draftedSeeds: [String] = []
         for seed in (1...60).map(String.init) {
-            guard let outcome = try playOneCareer(seed: seed, policy: .smokeAutopilot) else { continue }
+            guard let outcome = try playOneCareer(
+                seed: seed, policy: .smokeAutopilot, harshness: .relaxed
+            ) else { continue }
             if outcome.drafted { draftedSeeds.append(seed) }
         }
-        print("[real-play-draft] smoke-autopilot drafted-seeds=\(draftedSeeds.joined(separator: ","))")
+        print("[real-play-draft] smoke-autopilot(relaxed) drafted-seeds=\(draftedSeeds.joined(separator: ","))")
         XCTAssertFalse(
             draftedSeeds.isEmpty,
             "가장 낮은 자동 진행 정책으로 지명되는 시드가 하나도 없습니다 — UI 회귀 테스트가 설 자리가 없고, 난이도가 관문이 아니라 벽입니다"
