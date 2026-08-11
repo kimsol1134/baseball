@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefineConstants>UNITY_EDITOR</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../../apps/android-unity/Assets/Game/Core/**/*.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Application/**/*.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Pitch/Model/*.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Pitch/Runtime/PitchPersistenceJsonCodec.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Pitch/Runtime/PitchSessionRequestFactory.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/SetupPlayerNamePolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ReturnPlanPresentationPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/CareerActionSelectionPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/PhaseTransitionAnalyticsPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/RunPledgeAnalyticsPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/CareerAnalyticsEligibility.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/WeeklyOpenAnalyticsPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ProRetirementAnalyticsPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ReminderOpenReceiptPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ContentExposurePolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsEvent.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsContracts.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsPrivacyGuard.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsService.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsStartupBuffer.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Review/ReviewPromptPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Notifications/SeoulReminderSchedule.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Notifications/AndroidReminderPlan.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Notifications/ReminderEnablementPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Share/SharePayloadPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Identity/AnonymousInstallIdentityPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/InternalQa/Development/InternalQaContracts.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Core/**/*.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Tests/EditMode/Core/**/*.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Application/**/*.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Persistence/**/*.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/PitchPresentationTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/PitchStageVisualPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/PitchDemoRequestFactory.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/SetupPlayerNamePolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ReturnPlanPresentationPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/CareerActionSelectionPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/PhaseTransitionAnalyticsPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/RunPledgeAnalyticsPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/CareerAnalyticsEligibilityTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/WeeklyOpenAnalyticsPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ProRetirementAnalyticsPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ReminderOpenReceiptPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ContentExposurePolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ProductionAnalyticsSourceContractTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Platform/AnalyticsContractTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Platform/AndroidPlatformContractTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/InternalQa/Development/Tests/InternalQaContractTests.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>Baseball.Platform.Tests</AssemblyName>
+    <DefineConstants>UNITY_ANDROID;UNITY_6000_0_OR_NEWER;ENABLE_INPUT_SYSTEM;UNITY_INCLUDE_TESTS</DefineConstants>
+    <BaseballRepositoryRoot Condition="'$(BaseballRepositoryRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)/../..'))</BaseballRepositoryRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(BaseballRepositoryRoot)/apps/android-unity/Assets/Tests/EditMode/Platform/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Baseball.Core"><HintPath>$(BaseballCoreDll)</HintPath></Reference>
+    <Reference Include="Baseball.Platform"><HintPath>$(BaseballPlatformDll)</HintPath></Reference>
+    <Reference Include="nunit.framework"><HintPath>$(UnityNUnitDll)</HintPath></Reference>
+    <Reference Include="$(UnityManaged)/*.dll" />
+  </ItemGroup>
+
+  <Target Name="ValidateUnityReferences" BeforeTargets="CoreCompile">
+    <Error Condition="!Exists('$(BaseballCoreDll)')" Text="The separately compiled Baseball.Core assembly is required." />
+    <Error Condition="!Exists('$(BaseballPlatformDll)')" Text="The separately compiled Baseball.Platform assembly is required." />
+    <Error Condition="!Exists('$(UnityNUnitDll)')" Text="Unity NUnit reference is required." />
+  </Target>
+</Project>

@@ -3,12 +3,16 @@ import { extname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const sourceRoots = [
-  "apps/windows/src",
-  "apps/ios/Sources",
-  "packages/simulation-core/Sources/SimulationCore",
-];
-const allowedExtensions = new Set([".swift", ".ts", ".tsx"]);
+const androidUnityOnly = process.argv.includes("--android-unity");
+const sourceRoots = androidUnityOnly
+  ? ["apps/android-unity/Assets/Game"]
+  : [
+      "apps/windows/src",
+      "apps/ios/Sources",
+      "packages/simulation-core/Sources/SimulationCore",
+      "apps/android-unity/Assets/Game",
+    ];
+const allowedExtensions = new Set([".swift", ".ts", ".tsx", ".cs", ".uxml", ".uss", ".json"]);
 const excludedSuffixes = [".test.ts", ".test.tsx"];
 
 // 화면에서 뜻을 바로 알 수 있는 말로 바꾼 표현들입니다. 새 콘텐츠가 예전
@@ -149,4 +153,7 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`문구 품질 검사 통과: 내부 용어 ${blockedCopy.length}종·실존 야구 IP ${blockedWorldTerms.length}종 미노출`);
+console.log(
+  `문구 품질 검사 통과 (${androidUnityOnly ? "Android Unity" : "전체 제품"}): `
+    + `내부 용어 ${blockedCopy.length}종·실존 야구 IP ${blockedWorldTerms.length}종 미노출`,
+);

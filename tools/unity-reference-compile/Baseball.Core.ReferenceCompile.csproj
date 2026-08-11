@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>Baseball.Core</AssemblyName>
+    <BaseballRepositoryRoot Condition="'$(BaseballRepositoryRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)/../..'))</BaseballRepositoryRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(BaseballRepositoryRoot)/apps/android-unity/Assets/Game/Core/**/*.cs" />
+  </ItemGroup>
+</Project>

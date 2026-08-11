@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DefineConstants>UNITY_EDITOR;UNITY_ANDROID;UNITY_6000_0_OR_NEWER;ENABLE_INPUT_SYSTEM;UNITY_INCLUDE_TESTS</DefineConstants>
+    <BaseballRepositoryRoot Condition="'$(BaseballRepositoryRoot)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)/../..'))</BaseballRepositoryRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="$(BaseballRepositoryRoot)/apps/android-unity/Assets/Game/Core/**/*.cs" />
+    <Compile Include="$(BaseballRepositoryRoot)/apps/android-unity/Assets/Game/Application/**/*.cs" />
+    <Compile Include="$(BaseballRepositoryRoot)/apps/android-unity/Assets/Game/Bootstrap/**/*.cs" />
+    <Compile Include="$(BaseballRepositoryRoot)/apps/android-unity/Assets/Game/Platform/**/*.cs" />
+    <Compile Include="$(BaseballRepositoryRoot)/apps/android-unity/Assets/Game/Presentation/**/*.cs" />
+    <Compile Include="$(BaseballRepositoryRoot)/apps/android-unity/Assets/Tests/EditMode/Presentation/**/*.cs" />
+    <Compile Include="ExternalPackageStubs.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="$(UnityManaged)/*.dll" />
+    <Reference Include="nunit.framework"><HintPath>$(UnityNUnitDll)</HintPath></Reference>
+    <Reference Include="Unity.InputSystem"><HintPath>$(UnityInputSystemDll)</HintPath></Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Runtime"><HintPath>$(UnityRenderCoreDll)</HintPath></Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime"><HintPath>$(UnityUrpDll)</HintPath></Reference>
+  </ItemGroup>
+
+  <Target Name="ValidateUnityReferences" BeforeTargets="CoreCompile">
+    <Error Condition="!Exists('$(UnityManaged)/UnityEngine.CoreModule.dll')" Text="Unity managed references are required." />
+    <Error Condition="!Exists('$(UnityManaged)/UnityEditor.dll')" Text="Unity Editor references are required." />
+    <Error Condition="!Exists('$(UnityNUnitDll)')" Text="Unity NUnit reference is required." />
+    <Error Condition="!Exists('$(UnityInputSystemDll)')" Text="Unity Input System reference is required." />
+    <Error Condition="!Exists('$(UnityRenderCoreDll)')" Text="Unity Render Pipelines Core reference is required." />
+    <Error Condition="!Exists('$(UnityUrpDll)')" Text="Unity URP reference is required." />
+  </Target>
+</Project>

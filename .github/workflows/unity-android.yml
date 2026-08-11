@@ -1,0 +1,197 @@
+name: Unity Android
+
+on:
+  push:
+    paths:
+      - "apps/android-unity/**"
+      - "apps/ios/Sources/**"
+      - "apps/ios/Tests/**"
+      - "packages/simulation-core/**"
+      - "docs/android-unity/**"
+      - "docs/ANDROID_UNITY_IMPLEMENTATION_PLAN_2026-08-11.md"
+      - "tools/check-android-unity-release.mjs"
+      - "tools/check-copy.mjs"
+      - "tools/check-unity-assets.mjs"
+      - "tools/import-ios-assets-to-unity.mjs"
+      - "tools/import-unitypackage.sh"
+      - "tools/unity-android-*.sh"
+      - "tools/unity-reference-compile.sh"
+      - "tools/unity-reference-compile/**"
+      - "tools/android-unity-smoke/**"
+      - "tools/unity-static-tests/**"
+      - "package.json"
+      - ".github/workflows/unity-android.yml"
+  pull_request:
+    paths:
+      - "apps/android-unity/**"
+      - "apps/ios/Sources/**"
+      - "apps/ios/Tests/**"
+      - "packages/simulation-core/**"
+      - "docs/android-unity/**"
+      - "docs/ANDROID_UNITY_IMPLEMENTATION_PLAN_2026-08-11.md"
+      - "tools/check-android-unity-release.mjs"
+      - "tools/check-copy.mjs"
+      - "tools/check-unity-assets.mjs"
+      - "tools/import-ios-assets-to-unity.mjs"
+      - "tools/import-unitypackage.sh"
+      - "tools/unity-android-*.sh"
+      - "tools/unity-reference-compile.sh"
+      - "tools/unity-reference-compile/**"
+      - "tools/android-unity-smoke/**"
+      - "tools/unity-static-tests/**"
+      - "package.json"
+      - ".github/workflows/unity-android.yml"
+  workflow_dispatch:
+    inputs:
+      run_unity:
+        description: "Run licensed Unity EditMode/PlayMode tests"
+        type: boolean
+        default: true
+      build_release_candidate:
+        description: "Build a signed production RC AAB"
+        type: boolean
+        default: false
+      version_name:
+        description: "Android versionName"
+        type: string
+        default: "1.0.0"
+      version_code:
+        description: "Android versionCode"
+        type: string
+        default: "1"
+
+concurrency:
+  group: unity-android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static-contracts:
+    name: Static contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 10.0.x
+      - run: npm ci
+      - run: npm run check:copy
+      - run: npm run check:design-system
+      - run: npm run check:unity-assets
+      - run: npm run check:android:unity
+      - run: npm run test:unity:static
+
+  unity-tests:
+    name: Licensed Unity tests
+    # Never execute untrusted fork code on the persistent licensed runner.
+    if: >-
+      (github.event_name != 'workflow_dispatch' || inputs.run_unity) &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    needs: static-contracts
+    runs-on: [self-hosted, macOS, unity-6000.3.19f1, android]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          clean: true
+      - run: npm run test:unity:references
+      - run: npm run test:unity
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: unity-android-test-evidence-${{ github.sha }}
+          path: artifacts/unity
+          if-no-files-found: error
+          retention-days: 14
+
+  signed-aab:
+    name: Signed production candidate (device gate pending)
+    if: github.event_name == 'workflow_dispatch' && inputs.build_release_candidate
+    needs: [static-contracts, unity-tests]
+    runs-on: [self-hosted, macOS, unity-6000.3.19f1, android]
+    timeout-minutes: 60
+    env:
+      BASEBALL_VERSION_NAME: ${{ inputs.version_name }}
+      BASEBALL_VERSION_CODE: ${{ inputs.version_code }}
+      BASEBALL_UPLOAD_KEYSTORE_PATH: ${{ runner.temp }}/baseball-upload.keystore
+      BASEBALL_FIREBASE_CLI_DIR: ${{ runner.temp }}/baseball-firebase-cli
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/baseball-firebase-service-account.json
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          clean: true
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+      - name: Require committed Unity import metadata for signed candidate
+        run: BASEBALL_REQUIRE_UNITY_META=1 node tools/check-android-unity-release.mjs
+      - name: Install locked Firebase CLI before exposing credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$BASEBALL_FIREBASE_CLI_DIR" --no-save --package-lock=false firebase-tools@15.26.0
+          test "$("$BASEBALL_FIREBASE_CLI_DIR/node_modules/.bin/firebase" --version)" = "15.26.0"
+      - name: Inject production-only configuration
+        shell: bash
+        env:
+          BASEBALL_UPLOAD_KEYSTORE_B64: ${{ secrets.BASEBALL_UPLOAD_KEYSTORE_B64 }}
+          BASEBALL_GOOGLE_SERVICES_B64: ${{ secrets.BASEBALL_GOOGLE_SERVICES_B64 }}
+          BASEBALL_AMPLITUDE_API_KEY: ${{ secrets.BASEBALL_AMPLITUDE_API_KEY }}
+          BASEBALL_FIREBASE_SERVICE_ACCOUNT_B64: ${{ secrets.BASEBALL_FIREBASE_SERVICE_ACCOUNT_B64 }}
+        run: |
+          set -euo pipefail
+          test -n "$BASEBALL_UPLOAD_KEYSTORE_B64"
+          test -n "$BASEBALL_GOOGLE_SERVICES_B64"
+          test -n "$BASEBALL_AMPLITUDE_API_KEY"
+          test -n "$BASEBALL_FIREBASE_SERVICE_ACCOUNT_B64"
+          node -e 'require("node:fs").writeFileSync(process.env.BASEBALL_UPLOAD_KEYSTORE_PATH, Buffer.from(process.env.BASEBALL_UPLOAD_KEYSTORE_B64, "base64"), { mode: 0o600 })'
+          node -e 'require("node:fs").writeFileSync("apps/android-unity/Assets/google-services.json", Buffer.from(process.env.BASEBALL_GOOGLE_SERVICES_B64, "base64"))'
+          node -e 'require("node:fs").writeFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, Buffer.from(process.env.BASEBALL_FIREBASE_SERVICE_ACCOUNT_B64, "base64"), { mode: 0o600 })'
+          node -e 'require("node:fs").writeFileSync("apps/android-unity/Assets/Game/Resources/analytics-config.generated.json", JSON.stringify({distribution:"production",firebaseEnabled:true,crashlyticsEnabled:true,amplitudeEnabled:true,amplitudeApiKey:process.env.BASEBALL_AMPLITUDE_API_KEY}))'
+      - name: Build signed production RC
+        env:
+          BASEBALL_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.BASEBALL_UPLOAD_KEYSTORE_PASSWORD }}
+          BASEBALL_UPLOAD_KEY_ALIAS: ${{ secrets.BASEBALL_UPLOAD_KEY_ALIAS }}
+          BASEBALL_UPLOAD_KEY_PASSWORD: ${{ secrets.BASEBALL_UPLOAD_KEY_PASSWORD }}
+          BASEBALL_UPLOAD_CERT_SHA256: ${{ secrets.BASEBALL_UPLOAD_CERT_SHA256 }}
+        run: npm run build:android:rc
+      - name: Upload IL2CPP symbols to Firebase Crashlytics
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_dir="artifacts/android/${BASEBALL_VERSION_NAME}-${BASEBALL_VERSION_CODE}"
+          firebase_app_id="$(node -e 'const config=require("./apps/android-unity/Assets/google-services.json"); const client=config.client?.find(value => value.client_info?.android_client_info?.package_name === "com.solkim.baseball.android"); const id=client?.client_info?.mobilesdk_app_id; if (!id) throw new Error("Firebase Android app id not found"); process.stdout.write(id)')"
+          symbol_file="$(node -e 'const manifest=require("./'"$artifact_dir"'/build-manifest.json"); if (!manifest.symbolFile) throw new Error("IL2CPP symbol archive not recorded"); process.stdout.write(manifest.symbolFile)')"
+          test -f "$artifact_dir/$symbol_file"
+          "$BASEBALL_FIREBASE_CLI_DIR/node_modules/.bin/firebase" crashlytics:symbols:upload \
+            --app="$firebase_app_id" \
+            "$artifact_dir/$symbol_file" | tee "$artifact_dir/firebase-symbol-upload.log"
+          FIREBASE_APP_ID="$firebase_app_id" SYMBOL_FILE="$symbol_file" \
+            node -e 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify({schema:"baseball-firebase-symbol-upload-v1", status:"uploaded", firebaseAppId:process.env.FIREBASE_APP_ID, symbolFile:process.env.SYMBOL_FILE, firebaseToolsVersion:"15.26.0", uploadedAtUtc:new Date().toISOString()}, null, 2) + "\n")' \
+            "$artifact_dir/firebase-symbol-upload.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: baseball-android-candidate-${{ inputs.version_name }}-${{ inputs.version_code }}-${{ github.sha }}
+          path: |
+            artifacts/android
+            artifacts/unity/android-build.log
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove injected signing and service credentials
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f -- \
+            "$BASEBALL_UPLOAD_KEYSTORE_PATH" \
+            "$GOOGLE_APPLICATION_CREDENTIALS" \
+            "apps/android-unity/Assets/google-services.json" \
+            "apps/android-unity/Assets/Game/Resources/analytics-config.generated.json"
