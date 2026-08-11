@@ -9,6 +9,9 @@ import SimulationCore
 @MainActor
 @Observable
 final class HighSchoolCareerStore {
+    static let currentSaveSchemaVersion = 2
+    static let unreadableSaveMessage = "환생 기록은 남아 있지만 현재 버전에서 읽을 수 없습니다. 앱을 삭제하거나 새 선수를 만들지 말고 다시 불러오기를 눌러 주세요."
+
     enum LoadState: Equatable {
         case loading
         case needsSetup
@@ -375,12 +378,23 @@ final class HighSchoolCareerStore {
 
     func restoreOrCreate() {
         guard result == nil else { return }
-        switch restore() {
-        case .live:
+        applyRestoreOutcome(restore())
+    }
+
+    private func applyRestoreOutcome(_ outcome: RestoreOutcome) {
+        switch outcome {
+        case .live(let recoveredFromBackup):
             loadState = .ready
             _ = retryPendingGameCompletion()
-        case .needsSetup, .unavailable:
+            if recoveredFromBackup {
+                lastSummary = "현재 환생 기록을 읽지 못해 직전 정상 백업으로 복구했습니다."
+                feedbackCue = .success
+                feedbackTrigger += 1
+            }
+        case .needsSetup:
             loadState = .needsSetup
+        case .unavailable:
+            loadState = .failed(Self.unreadableSaveMessage)
         }
     }
 
@@ -601,9 +615,14 @@ final class HighSchoolCareerStore {
         }
     }
 
-    /// 실패 화면의 비파괴 출구 — 저장은 그대로 두고 설정 화면으로만 돌아간다.
+    /// 실패 화면의 비파괴 출구. 메모리에 진행이 있으면 돌아가고, 시작 실패면 다시 복원한다.
     func returnToSetup() {
-        loadState = result == nil ? .needsSetup : .ready
+        if result != nil {
+            loadState = .ready
+            return
+        }
+        loadState = .loading
+        applyRestoreOutcome(restore())
     }
 
     /// 진행 중 challenge 모드의 careerID. nil이면 도전이 아니다.
@@ -654,7 +673,10 @@ final class HighSchoolCareerStore {
         let deletedCareerID = result?.snapshot.careerID
         // 메모리와 보조 UserDefaults를 지우기 전에 더 높은 리비전의 묘비를 먼저 내린다.
         // 실패하면 현재 화면·진행·빠른 시작 재료가 모두 그대로여야 같은 버튼으로 재시도할 수 있다.
-        let tombstoneRevision = max(savedRevision, result?.snapshot.revision ?? 0) + 1
+        let tombstoneRevision = Self.nextSavedRevision(
+            after: savedRevision,
+            atLeast: result?.snapshot.revision ?? 0
+        )
         let tombstone = SaveRecord(
             result: nil,
             inheritance: .firstLife,
@@ -676,10 +698,12 @@ final class HighSchoolCareerStore {
             nextRunIntent: nil,
             creditedExternalRewardIDs: nil,
             currentCareerRetention: nil,
-            revision: tombstoneRevision
+            revision: tombstoneRevision,
+            schemaVersion: Self.currentSaveSchemaVersion
         )
         guard let data = try? JSONEncoder().encode(tombstone),
               saveWriter?(data) ?? sync.write(data) else { return false }
+        sync.discardRecoveryCopies()
         savedRevision = tombstoneRevision
 
         challengeCareerID = nil
@@ -2306,7 +2330,10 @@ final class HighSchoolCareerStore {
     ) -> Bool {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
-        let candidateRevision = max(savedRevision + 1, candidateResult?.snapshot.revision ?? 0)
+        let candidateRevision = Self.nextSavedRevision(
+            after: savedRevision,
+            atLeast: candidateResult?.snapshot.revision ?? 0
+        )
         let currentCareerRetention = overrides?.currentCareerRetention
             ?? retentionOverride ?? candidateResult.map { current in
             retentionEnvelope(for: current.snapshot, rivalLedger: rivalLedger)
@@ -2338,7 +2365,8 @@ final class HighSchoolCareerStore {
             creditedExternalRewardIDs: creditedExternalRewardIDs.isEmpty ? nil : creditedExternalRewardIDs,
             currentCareerRetention: currentCareerRetention,
             pendingGameCompletion: persistedPendingGameCompletion,
-            revision: candidateRevision
+            revision: candidateRevision,
+            schemaVersion: Self.currentSaveSchemaVersion
         )
         guard let data = try? JSONEncoder().encode(record),
               saveWriter?(data) ?? sync.write(data) else {
@@ -2356,13 +2384,14 @@ final class HighSchoolCareerStore {
         }
         let currentRevision = savedRevision
         let outcome = restore()
-        guard outcome != .unavailable else { return }
         switch outcome {
-        case .live:
-            guard savedRevision > currentRevision else { return }
+        case .live(let recoveredFromBackup):
+            guard savedRevision > currentRevision || recoveredFromBackup else { return }
             loadState = .ready
             _ = retryPendingGameCompletion()
-            lastSummary = "다른 기기의 진행을 불러왔습니다."
+            lastSummary = recoveredFromBackup
+                ? "iCloud 환생 기록을 읽지 못해 직전 정상 백업으로 복구했습니다."
+                : "다른 기기의 진행을 불러왔습니다."
             feedbackTrigger += 1
         case .needsSetup:
             // A higher result-less record is either a remote deletion tombstone or the durable
@@ -2370,7 +2399,13 @@ final class HighSchoolCareerStore {
             loadState = .needsSetup
             lastSummary = nil
         case .unavailable:
-            break
+            if result == nil {
+                loadState = .failed(Self.unreadableSaveMessage)
+            } else {
+                lastSummary = "iCloud 환생 기록을 읽지 못해 이 기기의 진행을 유지합니다."
+                feedbackCue = .setback
+                feedbackTrigger += 1
+            }
         }
     }
 
@@ -2379,10 +2414,11 @@ final class HighSchoolCareerStore {
     /// 무시하면 이닝 종료 저장이 삭제된 선수를 다시 iCloud에 올릴 수 있다.
     @discardableResult
     private func applyHigherResultlessRecordDuringSession() -> Bool {
-        guard let data = sync.read(revision: { data in
-            (try? JSONDecoder().decode(SaveRecord.self, from: data))?.effectiveRevision
-        }, conflictPriority: Self.saveConflictPriority),
-        let record = try? JSONDecoder().decode(SaveRecord.self, from: data),
+        guard let data = sync.read(
+            revision: Self.saveRevision,
+            conflictPriority: Self.saveConflictPriority
+        ),
+        let record = Self.decodeSaveRecord(data),
         record.result == nil,
         record.effectiveRevision >= savedRevision else { return false }
 
@@ -2473,6 +2509,8 @@ final class HighSchoolCareerStore {
         var pendingGameCompletion: PendingGameCompletion? = nil
         /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
         var revision: UInt64?
+        /// nil은 버전 필드 도입 전 저장이다. 미래 버전은 덮지 않고 업데이트를 기다린다.
+        var schemaVersion: Int? = nil
 
         var effectiveRevision: UInt64 {
             max(revision ?? 0, result?.snapshot.revision ?? 0)
@@ -2482,25 +2520,52 @@ final class HighSchoolCareerStore {
     /// 같은 리비전에서 다른 기기의 live 진행과 삭제/회차-사이 레코드가 충돌하면
     /// result-less 쪽이 이긴다. stable ID나 문구가 아니라 저장 의미만 본다.
     private static func saveConflictPriority(_ data: Data) -> Int {
-        guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else {
+        guard let record = decodeSaveRecord(data) else {
             return 0
         }
         return record.result == nil ? 1 : 0
     }
 
     private enum RestoreOutcome: Equatable {
-        case live
+        case live(recoveredFromBackup: Bool)
         case needsSetup
         case unavailable
     }
 
-    private func restore() -> RestoreOutcome {
-        guard let data = sync.read(revision: { data in
-            (try? JSONDecoder().decode(SaveRecord.self, from: data))?.effectiveRevision
-        }, conflictPriority: Self.saveConflictPriority) else { return .unavailable }
+    private static func nextSavedRevision(after current: UInt64, atLeast minimum: UInt64) -> UInt64 {
+        let incremented = current == UInt64.max ? UInt64.max : current + 1
+        return max(incremented, minimum)
+    }
+
+    private static func decodeSaveRecord(_ data: Data) -> SaveRecord? {
         guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else {
-            return .unavailable
+            return nil
         }
+        let version = record.schemaVersion ?? 1
+        guard (1...currentSaveSchemaVersion).contains(version) else { return nil }
+        return record
+    }
+
+    private static func saveRevision(_ data: Data) -> UInt64? {
+        decodeSaveRecord(data)?.effectiveRevision
+    }
+
+    private func restore() -> RestoreOutcome {
+        let recovered: Bool
+        let data: Data
+        switch sync.readRecovering(
+            revision: Self.saveRevision,
+            conflictPriority: Self.saveConflictPriority
+        ) {
+        case .missing:
+            return .needsSetup
+        case .unreadable:
+            return .unavailable
+        case .value(let candidate, let source):
+            data = candidate
+            recovered = source == .backup
+        }
+        guard let record = Self.decodeSaveRecord(data) else { return .unavailable }
         inheritance = record.inheritance
         // 분리 회계 마이그레이션 — 총량 필드가 없는 옛 저장본은 잔액을 총량으로 승계한다.
         // 이 한 줄이 없으면 첫 구매 순간 평생 총량이 잔액으로 붕괴한다(3차 패널 P0).
@@ -2568,7 +2633,7 @@ final class HighSchoolCareerStore {
             gameResume = resume
             pitchSession = session
         }
-        return .live
+        return .live(recoveredFromBackup: recovered)
     }
 
     /// 세션의 타석 경계마다 진행을 디스크로. 등판이 통째로 날아가는 일은 유료 게임의

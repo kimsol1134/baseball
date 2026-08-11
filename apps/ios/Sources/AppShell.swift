@@ -599,6 +599,7 @@ private struct ProCareerTabs: View {
 private struct CareerFailureView: View {
     let message: String
     let career: MobileCareerStore
+    @State private var confirmingReset = false
 
     var body: some View {
         ContentUnavailableView {
@@ -606,7 +607,26 @@ private struct CareerFailureView: View {
         } description: {
             Text(message)
         } actions: {
-            PrimaryPill(title: "새 커리어 시작", identifier: "pro.restart") { career.deleteCareer() }
+            PrimaryPill(title: "다시 불러오기", identifier: "pro.retry") {
+                career.retryRestoreOrReturn()
+            }
+            Button("저장 데이터를 지우고 새로 시작", role: .destructive) {
+                confirmingReset = true
+            }
+            .font(.footnote.weight(.semibold))
+            .accessibilityIdentifier("pro.restart")
+            .confirmationDialog(
+                "프로 커리어를 완전히 지울까요?",
+                isPresented: $confirmingReset,
+                titleVisibility: .visible
+            ) {
+                Button("프로 저장과 백업을 모두 지운다", role: .destructive) {
+                    _ = career.deleteCareer()
+                }
+                Button("돌아간다") { confirmingReset = false }
+            } message: {
+                Text("현재 저장본과 복구용 백업이 함께 삭제됩니다. 되돌릴 수 없습니다.")
+            }
         }
         .background(BaseballTheme.canvas)
     }

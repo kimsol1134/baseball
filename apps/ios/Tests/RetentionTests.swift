@@ -47,6 +47,42 @@ final class RetentionTests: XCTestCase {
         XCTAssertTrue(reloaded.archive.isEmpty, "아카이브가 초기화되지 않았습니다")
     }
 
+    @MainActor
+    func testUnreadableHighSchoolSaveNeverBecomesAnEmptyNewLife() {
+        let sync = SaveSync(key: "hs-unreadable-\(UUID().uuidString).json")
+        sync.clear()
+        defer { sync.clear() }
+        XCTAssertTrue(sync.write(Data("broken-rebirth-save".utf8)))
+
+        let store = HighSchoolCareerStore(sync: sync)
+        store.restoreOrCreate()
+
+        guard case .failed(let message) = store.loadState else {
+            return XCTFail("읽을 수 없는 환생 기록을 1회차 설정 화면으로 보내면 안 됩니다.")
+        }
+        XCTAssertEqual(message, HighSchoolCareerStore.unreadableSaveMessage)
+        XCTAssertNil(store.result)
+        store.returnToSetup()
+        XCTAssertEqual(
+            store.loadState,
+            .failed(HighSchoolCareerStore.unreadableSaveMessage),
+            "재시도해도 원본을 덮는 설정 화면으로 내려가면 안 됩니다."
+        )
+    }
+
+    @MainActor
+    func testTrulyMissingHighSchoolSaveStillOpensSetup() {
+        let sync = SaveSync(key: "hs-missing-\(UUID().uuidString).json")
+        sync.clear()
+        defer { sync.clear() }
+
+        let store = HighSchoolCareerStore(sync: sync)
+        store.restoreOrCreate()
+
+        XCTAssertEqual(store.loadState, .needsSetup)
+        XCTAssertNil(store.result)
+    }
+
     /// 도전 런 격리 — 회차가 **같아도** 도전으로 판별되고(1회차 카드→1회차 유저가
     /// 최빈 공유 경로), confirmLegacy가 계승·아카이브를 건드리지 못한다(5차 패널 P0).
     @MainActor
@@ -1122,6 +1158,8 @@ final class RetentionTests: XCTestCase {
         XCTAssertEqual(cloud.data(forKey: sync.key), tombstone)
 
         // Two equal-revision live branches choose the same raw-data winner on every device.
+        // 앞선 삭제 묘비는 동일 리비전의 live보다 의도적으로 우선하므로 별도 충돌로 격리한다.
+        sync.clear()
         XCTAssertTrue(sync.write(liveA))
         cloud.set(liveB, forKey: sync.key)
         cloud.synchronize()

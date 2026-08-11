@@ -5,6 +5,9 @@ import SimulationCore
 @MainActor
 @Observable
 final class MobileCareerStore {
+    static let currentSaveSchemaVersion = 2
+    static let unreadableSaveMessage = "저장 데이터는 남아 있지만 현재 버전에서 읽을 수 없습니다. 앱을 삭제하거나 새 커리어를 시작하지 말고 다시 불러오기를 눌러 주세요."
+
     enum ProCareerOrigin: String, Codable, Equatable {
         case highSchool = "high_school"
         case direct
@@ -71,11 +74,32 @@ final class MobileCareerStore {
 
     func restoreOrCreateCareer() {
         guard result == nil else { return }
-        switch restore() {
-        case .live:
+        applyRestoreOutcome(restore())
+    }
+
+    /// 진행 중 오류라면 기존 상태로 돌아가고, 시작 복원 오류라면 원본을 보존한 채 다시 읽는다.
+    func retryRestoreOrReturn() {
+        if result != nil {
             loadState = .ready
-        case .needsSetup, .unavailable:
+            return
+        }
+        loadState = .loading
+        applyRestoreOutcome(restore())
+    }
+
+    private func applyRestoreOutcome(_ outcome: RestoreOutcome) {
+        switch outcome {
+        case .live(let recoveredFromBackup):
+            loadState = .ready
+            if recoveredFromBackup {
+                lastSummary = "현재 저장본을 읽지 못해 직전 정상 백업으로 복구했습니다."
+                feedbackCue = .success
+                feedbackTrigger += 1
+            }
+        case .needsSetup:
             loadState = .needsSetup
+        case .unavailable:
+            loadState = .failed(Self.unreadableSaveMessage)
         }
     }
 
@@ -179,9 +203,17 @@ final class MobileCareerStore {
     @discardableResult
     func deleteCareer() -> Bool {
         // clear() 대신 묘비 — 고교 쪽과 같은 이유(iCloud 부활 방지).
-        let tombstone = max(syncedRevision, result?.snapshot.revision ?? 0) + 1
+        let tombstone = Self.nextSyncRevision(
+            after: syncedRevision,
+            atLeast: result?.snapshot.revision ?? 0
+        )
         guard let data = try? JSONEncoder().encode(
-            ProSaveRecord(result: nil, deletedRevision: tombstone)
+            ProSaveRecord(
+                result: nil,
+                deletedRevision: tombstone,
+                schemaVersion: Self.currentSaveSchemaVersion,
+                syncRevision: tombstone
+            )
         ), sync.write(data) else {
             // 은퇴 저장은 이미 고교 쪽 유산에 접혔지만 tombstone만 실패한 상태다. `.failed`로
             // 바꾸면 AppShell이 고교 탭을 다시 열어 사용자가 다음 선수까지 진행할 수 있고,
@@ -196,6 +228,7 @@ final class MobileCareerStore {
             loadState = result == nil ? .failed(message) : .ready
             return false
         }
+        sync.discardRecoveryCopies()
         syncedRevision = tombstone
         result = nil
         sourceHighSchoolCareerID = nil
@@ -463,6 +496,14 @@ final class MobileCareerStore {
         var sourceHighSchoolCareerID: String? = nil
         /// nil은 필드 도입 전 저장이다. 새 직접 시작은 `.direct`를 명시해 legacy nil과 구분한다.
         var origin: ProCareerOrigin? = nil
+        /// nil은 래퍼 도입기 저장이다. 더 높은 버전은 원본을 보존하고 업데이트를 기다린다.
+        var schemaVersion: Int? = nil
+        /// 커리어가 바뀌어 스냅숏 리비전이 0부터 다시 시작해도 iCloud에서는 계속 증가한다.
+        var syncRevision: UInt64? = nil
+
+        var effectiveRevision: UInt64 {
+            max(syncRevision ?? 0, max(deletedRevision ?? 0, result?.snapshot.revision ?? 0))
+        }
     }
 
     /// 마지막으로 알게 된 저장 리비전 — 묘비가 이 값보다 커야 부활을 막는다.
@@ -482,12 +523,17 @@ final class MobileCareerStore {
         result: ProCareerResult,
         gameResume: PitchSession.ResumeState?
     ) -> Bool {
-        let candidateRevision = max(syncedRevision, result.snapshot.revision)
+        let candidateRevision = Self.nextSyncRevision(
+            after: syncedRevision,
+            atLeast: result.snapshot.revision
+        )
         let record = ProSaveRecord(
             result: result,
             gameResume: gameResume,
             sourceHighSchoolCareerID: sourceHighSchoolCareerID,
-            origin: careerOrigin
+            origin: careerOrigin,
+            schemaVersion: Self.currentSaveSchemaVersion,
+            syncRevision: candidateRevision
         )
         guard let data = try? JSONEncoder().encode(record) else { return false }
         let didWrite = saveWriter?(data) ?? sync.write(data)
@@ -505,12 +551,13 @@ final class MobileCareerStore {
         }
         let currentRevision = syncedRevision
         let outcome = restore()
-        guard outcome != .unavailable else { return }
         switch outcome {
-        case .live:
-            guard syncedRevision > currentRevision else { return }
+        case .live(let recoveredFromBackup):
+            guard syncedRevision > currentRevision || recoveredFromBackup else { return }
             loadState = .ready
-            lastSummary = "다른 기기의 진행을 불러왔습니다."
+            lastSummary = recoveredFromBackup
+                ? "iCloud 저장을 읽지 못해 직전 정상 백업으로 복구했습니다."
+                : "다른 기기의 진행을 불러왔습니다."
             feedbackTrigger += 1
         case .needsSetup:
             // A higher remote tombstone is authoritative. Keeping the old in-memory result here
@@ -518,7 +565,13 @@ final class MobileCareerStore {
             loadState = .needsSetup
             lastSummary = nil
         case .unavailable:
-            break
+            if result == nil {
+                loadState = .failed(Self.unreadableSaveMessage)
+            } else {
+                lastSummary = "iCloud 저장을 읽지 못해 이 기기의 진행을 유지합니다."
+                feedbackCue = .setback
+                feedbackTrigger += 1
+            }
         }
     }
 
@@ -526,14 +579,13 @@ final class MobileCareerStore {
     /// 끝날 때까지 보존하지만, 묘비를 무시하면 로컬 결과 저장이 삭제된 커리어를 부활시킨다.
     @discardableResult
     private func applyHigherTombstoneDuringSession() -> Bool {
-        guard let data = sync.read(revision: { data in
-            (try? JSONDecoder().decode(ProSaveRecord.self, from: data))
-                .flatMap { $0.result?.snapshot.revision ?? $0.deletedRevision }
-                ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))?.snapshot.revision
-        }, conflictPriority: Self.saveConflictPriority),
-        let record = try? JSONDecoder().decode(ProSaveRecord.self, from: data),
+        guard let data = sync.read(
+            revision: Self.saveRevision,
+            conflictPriority: Self.saveConflictPriority
+        ),
+        let record = Self.decodeSaveRecord(data),
         record.result == nil,
-        let tombstone = record.deletedRevision,
+        let tombstone = record.deletedRevision ?? record.syncRevision,
         tombstone >= syncedRevision else { return false }
 
         syncedRevision = tombstone
@@ -549,27 +601,64 @@ final class MobileCareerStore {
     }
 
     private enum RestoreOutcome: Equatable {
-        case live
+        case live(recoveredFromBackup: Bool)
         case needsSetup
         case unavailable
+    }
+
+    private static func nextSyncRevision(after current: UInt64, atLeast minimum: UInt64) -> UInt64 {
+        let incremented = current == UInt64.max ? UInt64.max : current + 1
+        return max(incremented, minimum)
+    }
+
+    private static func decodeSaveRecord(_ data: Data) -> ProSaveRecord? {
+        let decoder = JSONDecoder()
+        if let record = try? decoder.decode(ProSaveRecord.self, from: data) {
+            let version = record.schemaVersion ?? 1
+            if (1...currentSaveSchemaVersion).contains(version),
+               record.result != nil || record.deletedRevision != nil {
+                return record
+            }
+        }
+        guard let legacy = try? decoder.decode(ProCareerResult.self, from: data) else { return nil }
+        return ProSaveRecord(
+            result: legacy,
+            schemaVersion: 1,
+            syncRevision: legacy.snapshot.revision
+        )
+    }
+
+    private static func saveRevision(_ data: Data) -> UInt64? {
+        decodeSaveRecord(data)?.effectiveRevision
     }
 
     /// ProSaveRecord의 명시적 삭제 묘비만 live보다 높은 동률 우선순위를 갖는다.
     /// wrapper 도입 전 raw ProCareerResult는 기존 live 저장으로 그대로 취급한다.
     private static func saveConflictPriority(_ data: Data) -> Int {
-        guard let record = try? JSONDecoder().decode(ProSaveRecord.self, from: data),
+        guard let record = decodeSaveRecord(data),
               record.result == nil,
-              record.deletedRevision != nil else { return 0 }
+              record.deletedRevision != nil || record.syncRevision != nil else { return 0 }
         return 1
     }
 
     private func restore() -> RestoreOutcome {
-        guard let data = sync.read(revision: { data in
-            (try? JSONDecoder().decode(ProSaveRecord.self, from: data)).flatMap { $0.result?.snapshot.revision ?? $0.deletedRevision }
-                ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))?.snapshot.revision
-        }, conflictPriority: Self.saveConflictPriority) else { return .unavailable }
-        let record = try? JSONDecoder().decode(ProSaveRecord.self, from: data)
-        if let tombstone = record?.deletedRevision, record?.result == nil {
+        let recovered: Bool
+        let data: Data
+        switch sync.readRecovering(
+            revision: Self.saveRevision,
+            conflictPriority: Self.saveConflictPriority
+        ) {
+        case .missing:
+            return .needsSetup
+        case .unreadable:
+            return .unavailable
+        case .value(let candidate, let source):
+            data = candidate
+            recovered = source == .backup
+        }
+        guard let record = Self.decodeSaveRecord(data) else { return .unavailable }
+        if record.result == nil,
+           let tombstone = record.deletedRevision ?? record.syncRevision {
             // 삭제 묘비 — 옛 사본이 아니라 삭제가 최신이다.
             syncedRevision = tombstone
             result = nil
@@ -580,20 +669,20 @@ final class MobileCareerStore {
             pendingGains = []
             return .needsSetup
         }
-        let decoded = record?.result ?? (try? JSONDecoder().decode(ProCareerResult.self, from: data))
+        let decoded = record.result
         guard let decoded else { return .unavailable }
-        syncedRevision = max(syncedRevision, decoded.snapshot.revision)
+        syncedRevision = max(syncedRevision, record.effectiveRevision)
         // 유료앱에서는 앱 자체가 구매 증거다. 저장된 스냅숏의 권한 출처(개발 빌드 포함)를 이유로
         // 진행을 버리면 TestFlight 사용자의 커리어만 사라진다.
         result = decoded
-        sourceHighSchoolCareerID = record?.sourceHighSchoolCareerID
-        careerOrigin = record?.origin
+        sourceHighSchoolCareerID = record.sourceHighSchoolCareerID
+        careerOrigin = record.origin
         pitchSession = nil
         gameResume = nil
         pendingGains = []
         // 등판 도중 내려간 앱 — 타석 경계에서 이어 던진다(고교와 같은 검사).
         if decoded.snapshot.phase == .importantGame,
-           let resume = record?.gameResume,
+           let resume = record.gameResume,
            PitchScenario.pro(state: decoded.snapshot).id == resume.scenarioID {
             let session = PitchSession(state: decoded.snapshot, seed: resume.seed)
             session.start()
@@ -602,7 +691,7 @@ final class MobileCareerStore {
             gameResume = resume
             pitchSession = session
         }
-        return .live
+        return .live(recoveredFromBackup: recovered)
     }
 
     private func attachCheckpoint(_ session: PitchSession) {

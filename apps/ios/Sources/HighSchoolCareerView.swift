@@ -97,7 +97,7 @@ struct HighSchoolCareerView: View {
                 } actions: {
                     // 비파괴 출구가 먼저다. 시드 오타 하나로 도달하는 화면의 유일한
                     // 버튼이 "전 회차 삭제"면 그건 함정이다(4차 패널 P0).
-                    PrimaryPill(title: "설정으로 돌아가기", identifier: "hs.retry") {
+                    PrimaryPill(title: "다시 불러오기", identifier: "hs.retry") {
                         career.returnToSetup()
                     }
                     Button("모든 기록을 지우고 새로 시작", role: .destructive) {

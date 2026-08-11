@@ -3,6 +3,15 @@ import SwiftUI
 import XCTest
 @testable import BaseballIOS
 
+private final class ProMemoryRemoteStore: SaveSyncRemoteStoring {
+    private(set) var values: [String: Data] = [:]
+
+    func data(forKey key: String) -> Data? { values[key] }
+    func set(_ value: Any?, forKey key: String) { values[key] = value as? Data }
+    func removeObject(forKey key: String) { values.removeValue(forKey: key) }
+    @discardableResult func synchronize() -> Bool { true }
+}
+
 @MainActor
 final class ProSeasonDecisionTests: XCTestCase {
     private let engine = ProCareerEngine()
@@ -399,13 +408,14 @@ final class ProSeasonDecisionTests: XCTestCase {
         store.beginImportantGame()
         XCTAssertNotNil(store.pitchSession)
 
-        // Pro checkpoints use the snapshot revision, so this is an intentional equal-revision
-        // remote tombstone versus local live collision.
-        let tombstoneRevision = live.snapshot.revision
+        // beginImportantGame()이 만든 체크포인트보다 더 최신인 원격 삭제만 적용되어야 한다.
+        let tombstoneRevision = live.snapshot.revision + 2
         XCTAssertTrue(sync.write(try JSONEncoder().encode(
             MobileCareerStore.ProSaveRecord(
                 result: nil,
-                deletedRevision: tombstoneRevision
+                deletedRevision: tombstoneRevision,
+                schemaVersion: MobileCareerStore.currentSaveSchemaVersion,
+                syncRevision: tombstoneRevision
             )
         )))
 
@@ -428,6 +438,240 @@ final class ProSeasonDecisionTests: XCTestCase {
         XCTAssertNil(reloaded.sourceHighSchoolCareerID)
         XCTAssertNil(reloaded.careerOrigin)
         XCTAssertEqual(reloaded.loadState, .needsSetup)
+    }
+
+    func testUnreadableProSaveFailsClosedWithoutPretendingCareerIsMissing() {
+        let cloud = ProMemoryRemoteStore()
+        let sync = SaveSync(
+            key: "pro-unreadable-\(UUID().uuidString).json",
+            store: cloud
+        )
+        sync.clear()
+        defer { sync.clear() }
+        let broken = Data("{not-a-save".utf8)
+        XCTAssertTrue(sync.write(broken))
+
+        let store = MobileCareerStore(sync: sync)
+        store.restoreOrCreateCareer()
+
+        guard case .failed(let message) = store.loadState else {
+            return XCTFail("읽을 수 없는 저장을 신규 커리어로 보내면 안 됩니다.")
+        }
+        XCTAssertEqual(message, MobileCareerStore.unreadableSaveMessage)
+        XCTAssertNil(store.result)
+        XCTAssertEqual(cloud.data(forKey: sync.key), broken)
+        XCTAssertEqual(
+            sync.readRecovering(revision: { _ in nil }),
+            .unreadable,
+            "복원 실패 뒤에도 원본 바이트가 남아야 합니다."
+        )
+    }
+
+    func testProSaveAutomaticallyRecoversLatestValidBackupAndHealsCloud() throws {
+        let cloud = ProMemoryRemoteStore()
+        let sync = SaveSync(
+            key: "pro-backup-recovery-\(UUID().uuidString).json",
+            store: cloud
+        )
+        sync.clear()
+        defer { sync.clear() }
+        let result = try firstDecision(seed: 91_101)
+        let writer = MobileCareerStore(sync: sync)
+        writer.result = result
+        writer.loadState = .ready
+        XCTAssertTrue(writer.save())
+        XCTAssertTrue(writer.save(), "같은 스냅숏 체크포인트도 동기화 리비전은 전진해야 합니다.")
+        let latestValid = try XCTUnwrap(cloud.data(forKey: sync.key))
+
+        XCTAssertTrue(sync.write(Data("corrupted-current-generation".utf8)))
+        let restored = MobileCareerStore(sync: sync)
+        restored.restoreOrCreateCareer()
+
+        XCTAssertEqual(restored.loadState, .ready)
+        XCTAssertEqual(restored.result, result)
+        XCTAssertTrue(restored.lastSummary?.contains("백업으로 복구") == true)
+        XCTAssertEqual(cloud.data(forKey: sync.key), latestValid, "복구한 세이브가 iCloud도 치유해야 합니다.")
+    }
+
+    func testLegacyRawProSaveLoadsAndMigratesToCurrentSchema() throws {
+        let cloud = ProMemoryRemoteStore()
+        let sync = SaveSync(
+            key: "pro-legacy-migration-\(UUID().uuidString).json",
+            store: cloud
+        )
+        sync.clear()
+        defer { sync.clear() }
+        let legacy = try firstDecision(seed: 91_102)
+        XCTAssertTrue(sync.write(try JSONEncoder().encode(legacy)))
+
+        let store = MobileCareerStore(sync: sync)
+        store.restoreOrCreateCareer()
+        XCTAssertEqual(store.loadState, .ready)
+        XCTAssertEqual(store.result, legacy)
+        XCTAssertTrue(store.save())
+
+        let migratedData = try XCTUnwrap(cloud.data(forKey: sync.key))
+        let migrated = try JSONDecoder().decode(
+            MobileCareerStore.ProSaveRecord.self,
+            from: migratedData
+        )
+        XCTAssertEqual(migrated.schemaVersion, MobileCareerStore.currentSaveSchemaVersion)
+        XCTAssertNotNil(migrated.syncRevision)
+        XCTAssertEqual(migrated.result, legacy)
+    }
+
+    func testFutureProSchemaIsPreservedUntilACompatibleUpdateArrives() throws {
+        let cloud = ProMemoryRemoteStore()
+        let sync = SaveSync(
+            key: "pro-future-schema-\(UUID().uuidString).json",
+            store: cloud
+        )
+        sync.clear()
+        defer { sync.clear() }
+        let futureData = try JSONEncoder().encode(
+            MobileCareerStore.ProSaveRecord(
+                result: try firstDecision(seed: 91_104),
+                schemaVersion: MobileCareerStore.currentSaveSchemaVersion + 1,
+                syncRevision: 10_000
+            )
+        )
+        XCTAssertTrue(sync.write(futureData))
+
+        let store = MobileCareerStore(sync: sync)
+        store.restoreOrCreateCareer()
+
+        XCTAssertEqual(
+            store.loadState,
+            .failed(MobileCareerStore.unreadableSaveMessage)
+        )
+        XCTAssertEqual(cloud.data(forKey: sync.key), futureData)
+        XCTAssertEqual(sync.readRecovering(revision: { _ in nil }), .unreadable)
+    }
+
+    func testNewCareerSyncRevisionStaysAbovePriorTombstone() throws {
+        let cloud = ProMemoryRemoteStore()
+        let sync = SaveSync(
+            key: "pro-new-generation-\(UUID().uuidString).json",
+            store: cloud
+        )
+        sync.clear()
+        defer { sync.clear() }
+        let store = MobileCareerStore(sync: sync)
+        store.result = try firstDecision(seed: 91_103)
+        store.loadState = .ready
+        XCTAssertTrue(store.save())
+        XCTAssertTrue(store.deleteCareer())
+        let tombstoneData = try XCTUnwrap(cloud.data(forKey: sync.key))
+        let tombstone = try JSONDecoder().decode(
+            MobileCareerStore.ProSaveRecord.self,
+            from: tombstoneData
+        )
+
+        XCTAssertTrue(store.startNewCareer(
+            preset: PitcherPresetCatalog.all[0],
+            playerName: "새 세대"
+        ))
+        let newCareerID = try XCTUnwrap(store.state?.proCareerID)
+        let liveData = try XCTUnwrap(cloud.data(forKey: sync.key))
+        let live = try JSONDecoder().decode(
+            MobileCareerStore.ProSaveRecord.self,
+            from: liveData
+        )
+        XCTAssertGreaterThan(live.effectiveRevision, tombstone.effectiveRevision)
+
+        // 다른 기기가 늦게 올린 옛 묘비가 와도 새 세대가 이기고 cloud를 다시 치유한다.
+        cloud.set(tombstoneData, forKey: sync.key)
+        store.reloadFromSync()
+        XCTAssertEqual(store.state?.proCareerID, newCareerID)
+        XCTAssertEqual(cloud.data(forKey: sync.key), liveData)
+    }
+
+    func testTwentySeasonCareerPersistsAtEveryYearBoundary() throws {
+        let cloud = ProMemoryRemoteStore()
+        let sync = SaveSync(
+            key: "pro-twenty-season-round-trip-\(UUID().uuidString).json",
+            store: cloud
+        )
+        sync.clear()
+        defer { sync.clear() }
+        var result = try CareerBootstrap.startCareer(
+            preset: PitcherPresetCatalog.all[0],
+            playerName: "이십 시즌",
+            seed: 20_020,
+            engine: engine
+        )
+        var completedSeasons: [Int] = []
+
+        for _ in 0..<1_200 {
+            switch result.snapshot.phase {
+            case .weeklyPlan:
+                result = try engine.planWeek(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    plan: result.snapshot.fatigue > 70 ? .recover : .earnTrust
+                ))
+            case .seasonDecision:
+                let decision = try XCTUnwrap(result.snapshot.pendingDecision)
+                result = try engine.applySeasonDecision(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    decisionID: decision.id,
+                    choiceID: decision.choices[0].id
+                ))
+            case .importantGame:
+                result = try resolveImportantGame(result)
+            case .seasonReview:
+                let season = result.snapshot.season
+                result = try engine.reviewSeason(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot
+                ))
+                result = try persistAndReload(result, sync: sync)
+                completedSeasons.append(season)
+                XCTAssertEqual(result.snapshot.careerStats.count, season)
+                if season < ProCareerEngine.maximumCareerSeasons {
+                    XCTAssertEqual(result.snapshot.phase, .offseasonDecision)
+                } else {
+                    XCTAssertEqual(result.snapshot.phase, .retirementDecision)
+                }
+            case .offseasonDecision:
+                result = try engine.chooseOffseason(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    decision: .continueCareer
+                ))
+                result = try persistAndReload(result, sync: sync)
+            case .retirementDecision:
+                result = try engine.chooseOffseason(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    decision: .retire
+                ))
+                result = try persistAndReload(result, sync: sync)
+            case .completed:
+                XCTAssertEqual(
+                    completedSeasons,
+                    Array(1...ProCareerEngine.maximumCareerSeasons)
+                )
+                XCTAssertEqual(
+                    result.snapshot.careerStats.count,
+                    ProCareerEngine.maximumCareerSeasons
+                )
+                let encoded = try JSONEncoder().encode(
+                    MobileCareerStore.ProSaveRecord(
+                        result: result,
+                        schemaVersion: MobileCareerStore.currentSaveSchemaVersion,
+                        syncRevision: result.snapshot.revision
+                    )
+                )
+                XCTAssertLessThan(encoded.count, 1_000_000)
+                return
+            default:
+                XCTFail("예상하지 못한 프로 국면: \(result.snapshot.phase.rawValue)")
+                return
+            }
+        }
+        XCTFail("20시즌 저장 왕복 검사 한도를 넘었습니다.")
     }
 
     func testImportantGameAndRetirementCopyMatchesRecordedResults() {
@@ -602,6 +846,23 @@ final class ProSeasonDecisionTests: XCTestCase {
                 recommendationAccepted: 12
             )
         ))
+    }
+
+    private func persistAndReload(
+        _ result: ProCareerResult,
+        sync: SaveSync
+    ) throws -> ProCareerResult {
+        let writer = MobileCareerStore(sync: sync)
+        writer.restoreOrCreateCareer()
+        writer.result = result
+        writer.loadState = .ready
+        XCTAssertTrue(writer.save())
+
+        let reader = MobileCareerStore(sync: sync)
+        reader.restoreOrCreateCareer()
+        XCTAssertEqual(reader.loadState, .ready)
+        XCTAssertEqual(reader.result, result)
+        return try XCTUnwrap(reader.result)
     }
 
     private func isolatedSync(_ prefix: String) -> SaveSync {

@@ -20,9 +20,25 @@ extension NSUbiquitousKeyValueStore: SaveSyncRemoteStoring {}
 /// 1MB 한도에 여유가 크다. **로컬 파일이 항상 원본이고 iCloud는 거울이다** — iCloud를 못 써도
 /// 게임은 그대로 돌아간다.
 ///
-/// 충돌은 `revision`이 큰 쪽이 이긴다. 스냅숏이 이미 단조 증가하는 리비전을 갖고 있어서
-/// 별도 타임스탬프나 벡터 클록이 필요 없다.
+/// 충돌은 `revision`이 큰 쪽이 이긴다. 로컬에는 직전 두 세대도 함께 남겨, 현재 파일과
+/// iCloud 사본을 모두 읽지 못하더라도 마지막 정상 세이브로 자동 복구한다.
 struct SaveSync {
+    enum ReadSource: Equatable {
+        case local
+        case remote
+        case backup
+    }
+
+    enum RecoveryRead: Equatable {
+        /// 로컬·iCloud·백업 어디에도 저장 바이트가 없다.
+        case missing
+        /// 리비전을 해석할 수 있는 정상 후보다.
+        case value(Data, source: ReadSource)
+        /// 바이트는 남아 있지만 현재 앱이 어느 후보도 해석하지 못한다.
+        /// 이 경우 원본을 절대 덮어쓰지 않는다.
+        case unreadable
+    }
+
     /// 저장 파일 이름이자 iCloud 키.
     let key: String
 
@@ -36,18 +52,40 @@ struct SaveSync {
         self.store = store
     }
 
-    private var fileURL: URL {
+    private var storageRoot: URL {
         let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        return root.appendingPathComponent(key)
+        return root
+    }
+
+    private var fileURL: URL {
+        storageRoot.appendingPathComponent(key)
+    }
+
+    private var backupURLs: [URL] {
+        [
+            storageRoot.appendingPathComponent("\(key).backup-1"),
+            storageRoot.appendingPathComponent("\(key).backup-2"),
+        ]
+    }
+
+    private var unreadableLocalURL: URL {
+        storageRoot.appendingPathComponent("\(key).unreadable-local")
+    }
+
+    private var unreadableRemoteURL: URL {
+        storageRoot.appendingPathComponent("\(key).unreadable-remote")
     }
 
     // MARK: - 쓰기
 
-    /// 로컬에 원자적으로 쓰고 iCloud에도 올린다.
+    /// 현재 로컬 파일을 두 세대까지 보존한 뒤 새 값을 원자적으로 쓰고 iCloud에도 올린다.
     @discardableResult
     func write(_ data: Data) -> Bool {
         do {
+            if let current = try? Data(contentsOf: fileURL), current != data {
+                try preserveAsNewestBackup(current)
+            }
             try data.write(to: fileURL, options: .atomic)
         } catch {
             return false
@@ -59,8 +97,16 @@ struct SaveSync {
 
     func clear() {
         try? FileManager.default.removeItem(at: fileURL)
+        discardRecoveryCopies()
         store.removeObject(forKey: key)
         store.synchronize()
+    }
+
+    /// 명시적 전체 삭제가 성공한 뒤 옛 세대가 다시 살아나지 않게 복구용 사본만 지운다.
+    func discardRecoveryCopies() {
+        for url in backupURLs + [unreadableLocalURL, unreadableRemoteURL] {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     // MARK: - 읽기
@@ -74,38 +120,75 @@ struct SaveSync {
         revision: (Data) -> UInt64?,
         conflictPriority: (Data) -> Int = { _ in 0 }
     ) -> Data? {
+        switch readRecovering(revision: revision, conflictPriority: conflictPriority) {
+        case .value(let data, _): data
+        case .missing, .unreadable: nil
+        }
+    }
+
+    /// 로컬·iCloud·두 백업을 한 번에 판정한다. `revision`을 뽑을 수 없는 후보는 손상 또는
+    /// 미지원 스키마로 보고 승자 후보에서 제외한다. 정상 후보가 있으면 가장 높은 리비전을
+    /// 현재 로컬과 iCloud에 되심되, 덮기 전 읽을 수 없던 원본은 별도 복구 사본으로 보존한다.
+    func readRecovering(
+        revision: (Data) -> UInt64?,
+        conflictPriority: (Data) -> Int = { _ in 0 }
+    ) -> RecoveryRead {
         let local = try? Data(contentsOf: fileURL)
         store.synchronize()
         let remote = store.data(forKey: key)
+        let backups = backupURLs.compactMap { try? Data(contentsOf: $0) }
 
-        switch (local, remote) {
-        case (nil, nil):
-            return nil
-        case (let local?, nil):
-            return local
-        case (nil, let remote?):
-            // 새 기기다. 내려받은 것을 로컬에도 심어 다음 실행부터 빠르게 연다.
-            try? remote.write(to: fileURL, options: .atomic)
-            return remote
-        case (let local?, let remote?):
-            let winner = Self.preferredData(
-                local: local,
-                remote: remote,
+        let allCandidates: [(data: Data, source: ReadSource)] =
+            [(local, .local), (remote, .remote)].compactMap { data, source in
+                data.map { ($0, source) }
+            } + backups.map { ($0, .backup) }
+        guard !allCandidates.isEmpty else { return .missing }
+
+        let valid = allCandidates.filter { revision($0.data) != nil }
+        guard var winner = valid.first else { return .unreadable }
+        for candidate in valid.dropFirst() {
+            let preferred = Self.preferredData(
+                local: winner.data,
+                remote: candidate.data,
                 revision: revision,
                 conflictPriority: conflictPriority
             )
-            guard winner != local else {
-                // A deterministic local winner must heal the cloud copy too. Otherwise two
-                // devices keep seeing the same equal-revision conflict forever.
-                if remote != local {
-                    store.set(local, forKey: key)
-                    store.synchronize()
-                }
-                return local
+            if preferred != winner.data {
+                winner = candidate
             }
-            try? winner.write(to: fileURL, options: .atomic)
-            return winner
         }
+
+        if local != winner.data {
+            if let local, revision(local) != nil {
+                try? preserveAsNewestBackup(local)
+            } else {
+                preserveUnreadable(local, at: unreadableLocalURL, revision: revision)
+            }
+            try? winner.data.write(to: fileURL, options: .atomic)
+        }
+        if remote != winner.data {
+            preserveUnreadable(remote, at: unreadableRemoteURL, revision: revision)
+            store.set(winner.data, forKey: key)
+            store.synchronize()
+        }
+        return .value(winner.data, source: winner.source)
+    }
+
+    private func preserveAsNewestBackup(_ data: Data) throws {
+        if let firstBackup = try? Data(contentsOf: backupURLs[0]), firstBackup != data {
+            try firstBackup.write(to: backupURLs[1], options: .atomic)
+        }
+        try data.write(to: backupURLs[0], options: .atomic)
+    }
+
+    private func preserveUnreadable(
+        _ data: Data?,
+        at url: URL,
+        revision: (Data) -> UInt64?
+    ) {
+        guard let data, revision(data) == nil,
+              !FileManager.default.fileExists(atPath: url.path) else { return }
+        try? data.write(to: url, options: .atomic)
     }
 
     /// Pure conflict resolver used by tests and every SaveSync record type.
