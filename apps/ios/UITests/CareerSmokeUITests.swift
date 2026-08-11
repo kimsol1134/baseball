@@ -426,9 +426,9 @@ final class CareerSmokeUITests: XCTestCase {
         )
     }
 
-    /// 이번 제품 빌드의 행동 가설은 '다음 행동 복귀' 하나다. 투구 수치 패널은 별도
-    /// 실험에서만 켜야 복귀 효과와 손맛 효과를 서로의 성과로 오인하지 않는다.
-    func testPitchAbilityFeedbackIsHiddenWithoutItsDedicatedExperimentFlag() {
+    /// 키운 능력이 지금 공에 어떻게 번역됐는지는 제품 화면에서 항상 보여야 한다.
+    /// 상세 그리드는 QA 플래그에 남기고, 한 줄 요약은 기본 흐름을 늘리지 않는다.
+    func testCompactPitchAbilityFeedbackIsVisibleWithoutDetailedExperimentFlag() {
         let app = XCUIApplication()
         app.launchArguments = [
             "-uiTestResetCareer", "-uiTestAutoRelease",
@@ -440,14 +440,19 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
         XCTAssertTrue(tapIfPresent(app.buttons["hs.prologue.throw"]))
         XCTAssertTrue(app.buttons["pitch.throw"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(identifier: "pitch.buildSummary").firstMatch.waitForExistence(timeout: timeout),
+            "기본 투구 화면에 성장 수치 한 줄 요약이 없습니다."
+        )
         XCTAssertFalse(
             app.descendants(matching: .any)
                 .matching(identifier: "pitch.buildReadout").firstMatch.exists,
-            "복귀 실험 빌드에 투구 피드백 실험이 함께 노출됐습니다."
+            "상세 QA 그리드가 플래그 없이 노출됐습니다."
         )
-        XCTAssertFalse(
+        XCTAssertTrue(
             app.staticTexts["구종 · 내가 만든 공"].exists,
-            "숨긴 실험의 인과 문구가 카드 제목으로 남아 있습니다."
+            "훈련과 투구를 잇는 카드 제목이 보이지 않습니다."
         )
     }
 
@@ -559,6 +564,11 @@ final class CareerSmokeUITests: XCTestCase {
         let nextBatter = app.buttons["pitch.nextBatter"]
         let finish = app.buttons["pitch.finish"]
         XCTAssertTrue(throwButton.waitForExistence(timeout: timeout), "승부 화면이 열리지 않았습니다.")
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(identifier: "pitch.buildSummary").firstMatch.waitForExistence(timeout: timeout),
+            "지금 고른 공의 성장 수치 요약이 보이지 않습니다."
+        )
         let buildReadout = app.descendants(matching: .any)
             .matching(identifier: "pitch.buildReadout").firstMatch
         if expectsPitchAbilityFeedback {

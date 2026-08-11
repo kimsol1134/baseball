@@ -12,6 +12,8 @@ struct PitchScenario {
     /// 첫 타자가 이 승부의 주인공(라이벌)이고 뒤는 후속 타순이다.
     let lineup: [BatterSnapshot]
     let scouting: BatterScoutingSnapshot
+    /// 커리어에서 쌓은 포수와의 호흡. 분석 신뢰도와 사인 설명에 실제로 쓰인다.
+    let catcherTrust: Int
     let defense: DefenseSnapshot
     let park: ParkSnapshot
     let inning: Int
@@ -44,13 +46,18 @@ struct PitchScenario {
 
     static func pro(state: ProCareerSnapshot) -> PitchScenario {
         let situation = proSituation(for: state.seasonTrigger, season: state.season, week: state.week)
+        let catcherTrust = min(100, max(0, state.catcherTrust))
         return PitchScenario(
             id: "pa-\(state.proCareerID)-\(state.season)-\(state.week)",
             pitcher: state.pitcher,
             // 프로도 시즌이 갈수록 리그가 자신에게 맞춰 온다.
             lineup: ProRivalBatterStats.lineup(rival: state.currentRival, teamID: state.team.id)
                 .map { DifficultyScale.scaled($0, by: DifficultyScale.pro(season: state.season)) },
-            scouting: ProRivalBatterStats.scouting(for: state.currentRival),
+            scouting: scoutingWithCatcherBond(
+                ProRivalBatterStats.scouting(for: state.currentRival),
+                catcherTrust: catcherTrust
+            ),
+            catcherTrust: catcherTrust,
             defense: ProRivalBatterStats.defense(teamID: state.team.id),
             park: ParkSnapshot(id: state.team.id, name: "\(state.team.name) 홈 구장", hitFactor: 1_000, homeRunFactor: 1_000),
             inning: situation.inning,
@@ -135,6 +142,7 @@ struct PitchScenario {
                 // 연습이라 포수가 상대를 다 알려 준다. 배우는 자리에서 정보까지 감추지 않는다.
                 reliability: 100
             ),
+            catcherTrust: 50,
             defense: HighSchoolPresentation.defense(schoolID: nil),
             park: ParkSnapshot(id: "bullpen", name: "학교 불펜", hitFactor: 1_000, homeRunFactor: 1_000),
             inning: 1,
@@ -205,6 +213,7 @@ struct PitchScenario {
         )
         // 고교 수비는 프로보다 낮고 편차가 크다. 학교마다 결정론적으로 갈린다.
         let defense = HighSchoolPresentation.defense(schoolID: state.school?.id)
+        let catcherTrust = min(100, max(0, state.catcherTrust ?? state.relationshipTrust))
         return PitchScenario(
             id: "hs-\(state.careerID)-\(state.performance.importantGamesCompleted)",
             pitcher: state.pitcher,
@@ -212,7 +221,11 @@ struct PitchScenario {
                 seedText: "\(state.careerID)|\(state.performance.importantGamesCompleted)",
                 count: 5
             ).map { DifficultyScale.scaled($0, by: scale) },
-            scouting: HighSchoolPresentation.scouting(rival: rival, clarity: state.difficulty.informationClarity),
+            scouting: scoutingWithCatcherBond(
+                HighSchoolPresentation.scouting(rival: rival, clarity: state.difficulty.informationClarity),
+                catcherTrust: catcherTrust
+            ),
+            catcherTrust: catcherTrust,
             defense: defense,
             park: ParkSnapshot(id: "hs-park", name: "고교 구장", hitFactor: 1_000, homeRunFactor: 1_000),
             inning: content?.inning ?? 5,
@@ -228,6 +241,28 @@ struct PitchScenario {
             maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state),
             maximumPitches: nil,
             developmentRulesVersion: state.balanceVersion ?? 1
+        )
+    }
+
+    /// 포수 관계를 숨은 결과 보정이 아니라, 플레이어가 보고 판단하는 정보의 질로 바꾼다.
+    /// 평균 호흡 50에서는 기존 리포트와 같고, 0...100 범위가 신뢰도에 -25...+25를 준다.
+    /// 커널은 낮은 신뢰도에서 추정 사인, 높은 신뢰도에서 실제 약점 사인을 만들어 낸다.
+    static func scoutingReliability(base: Int, catcherTrust: Int) -> Int {
+        let trust = min(100, max(0, catcherTrust))
+        return min(100, max(0, base + (trust - 50) / 2))
+    }
+
+    private static func scoutingWithCatcherBond(
+        _ scouting: BatterScoutingSnapshot,
+        catcherTrust: Int
+    ) -> BatterScoutingSnapshot {
+        BatterScoutingSnapshot(
+            hotZone: scouting.hotZone,
+            coldZone: scouting.coldZone,
+            pitchStrength: scouting.pitchStrength,
+            pitchWeakness: scouting.pitchWeakness,
+            chaseTendency: scouting.chaseTendency,
+            reliability: scoutingReliability(base: scouting.reliability, catcherTrust: catcherTrust)
         )
     }
 }
@@ -277,6 +312,7 @@ extension PitchScenario {
             pitcher: pitcher,
             lineup: [slugger] + HighSchoolPresentation.followUpBatters(seedText: seedText),
             scouting: scouting,
+            catcherTrust: 50,
             defense: HighSchoolPresentation.defense(schoolID: nil),
             park: ParkSnapshot(id: "daily-park", name: "전국 공용 구장", hitFactor: 1_000, homeRunFactor: 1_000),
             inning: 9,

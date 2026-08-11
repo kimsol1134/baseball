@@ -234,13 +234,13 @@ private struct RecordBoard: View {
         "\(outs / 3)\(outs % 3 == 0 ? "" : ".\(outs % 3)")"
     }
 
-    /// 시즌 피안타·피홈런. 시즌 합계에는 없고 등판 목록에만 있다.
+    /// 새 저장은 시즌 합계를 쓰고, 도입 전 저장은 등판 목록으로 복구한다.
     private var seasonHits: Int {
-        (state.gameLines ?? []).reduce(0) { $0 + ($1.hits ?? 0) }
+        max(state.currentStats.hits, (state.gameLines ?? []).reduce(0) { $0 + ($1.hits ?? 0) })
     }
 
     private var seasonHomeRuns: Int {
-        (state.gameLines ?? []).reduce(0) { $0 + ($1.homeRuns ?? 0) }
+        max(state.currentStats.homeRuns, (state.gameLines ?? []).reduce(0) { $0 + ($1.homeRuns ?? 0) })
     }
 
     /// 투수 순위에 끼워 넣을 내 성적.
@@ -296,12 +296,16 @@ private struct RecordBoard: View {
                     )
                 }
 
-                BaseballCard(title: "현재 능력") {
+                let identity = PitcherBuildRules.identity(for: state.pitcher)
+                BaseballCard(title: "현재 능력 · \(identity.label)") {
                     VStack(alignment: .leading, spacing: 10) {
                         AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
                         AbilityGaugeView(label: "제구", value: state.pitcher.command)
                         AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
                         AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
+                        Text(identity.strength)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.positive)
                     }
                 }
 

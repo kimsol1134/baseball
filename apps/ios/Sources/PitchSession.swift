@@ -79,6 +79,7 @@ final class PitchSession {
     /// 맞은 안타. WHIP·피안타는 야구팬이 가장 먼저 보는 수치인데 지금까지 어디에도
     /// 세어 두지 않았다. 사구는 여기 섞지 않는다(기록 문화 그대로).
     private(set) var hitsAllowed = 0
+    private(set) var homeRunsAllowed = 0
     private(set) var expectedDamage = 0
     private(set) var actualDamage = 0
     private(set) var recommendationAccepted = 0
@@ -116,14 +117,42 @@ final class PitchSession {
     }
 
     /// 사인 고정 — 켜면 포수 추천이 내 선택을 덮어쓰지 않는다.
-    /// 기본은 꺼짐(추천으로 채움): 인지 부하가 가장 낮은 경로가 초보의 경로다.
-    /// 내 배합을 유지하고 싶은 순간 한 번의 토글로 의도가 살아남는다.
+    /// 첫 공은 포수가 채우지만, 플레이어가 어느 축이든 직접 바꾸는 순간 자동으로 켜진다.
+    /// 다시 포수 사인을 수락하기 전까지는 내 배합이 다음 공에도 살아남는다.
     var holdCall = false
-    /// 플레이어가 고른 사인. 매 투구 준비마다 포수 추천으로 초기화된다(고정 시 유지).
+    /// 플레이어가 고른 사인. 첫 투구 준비 때 포수 추천으로 채워지고, 직접 수정 뒤에는 유지된다.
     var selectedPitchType: PitchType = .fourSeam
     var selectedZone = PitchZone(row: 1, column: 1)
     var selectedIntent: ZoneIntent = .strike
     var selectedIntensity: PitchIntensity = .normal
+
+    func choosePitchType(_ type: PitchType) {
+        selectedPitchType = type
+        holdCall = true
+    }
+
+    func chooseZone(_ zone: PitchZone) {
+        selectedZone = zone
+        selectedIntent = ZoneIntent.clamped(selectedIntent, for: zone)
+        holdCall = true
+    }
+
+    func chooseIntent(_ intent: ZoneIntent) {
+        selectedIntent = ZoneIntent.clamped(intent, for: selectedZone)
+        holdCall = true
+    }
+
+    func chooseIntensity(_ intensity: PitchIntensity) {
+        selectedIntensity = intensity
+        holdCall = true
+    }
+
+    /// 현재 포수 사인을 명시적으로 수락하고 다음 공도 새 사인을 받는 흐름으로 돌아간다.
+    func acceptCatcherRecommendation() {
+        guard let preparation else { return }
+        holdCall = false
+        setSelectedCall(preparation.primaryRecommendation.call)
+    }
 
     struct PitchLogEntry: Identifiable {
         let id = UUID()
@@ -163,6 +192,7 @@ final class PitchSession {
         var runsAllowed: Int
         /// 이어하기에서도 안타 수가 살아 있어야 WHIP이 반쪽이 되지 않는다. 옛 저장은 nil이다.
         var hitsAllowed: Int? = nil
+        var homeRunsAllowed: Int? = nil
         var expectedDamage: Int
         var actualDamage: Int
         var recommendationAccepted: Int
@@ -171,6 +201,11 @@ final class PitchSession {
         /// 빌드 29 이후 추가 — 옛 복구 스냅샷은 nil이라 0/false로 읽는다.
         var hitByPitches: Int? = nil
         var holdCall: Bool? = nil
+        /// 빌드 33 이후 — 직접 만든 배합을 고정한 채 앱이 내려가도 같은 사인으로 이어 간다.
+        var selectedPitchType: PitchType? = nil
+        var selectedZone: PitchZone? = nil
+        var selectedIntent: ZoneIntent? = nil
+        var selectedIntensity: PitchIntensity? = nil
         /// 빌드 32 이후 — 복구한 이닝의 정산 화면에서 "투구 기록"이 비면
         /// 복구 자체의 신뢰가 깎인다. 옛 스냅샷은 nil이라 빈 목록으로 읽는다.
         var pitchLog: [LogLine]? = nil
@@ -206,11 +241,13 @@ final class PitchSession {
             gameState: gameState, gameLog: gameLog, rivalMemory: rivalMemory,
             pitches: pitches, strikeouts: strikeouts, consecutiveStrikeouts: consecutiveStrikeouts,
             walks: walks, runsAllowed: runsAllowed,
-            hitsAllowed: hitsAllowed,
+            hitsAllowed: hitsAllowed, homeRunsAllowed: homeRunsAllowed,
             expectedDamage: expectedDamage, actualDamage: actualDamage,
             recommendationAccepted: recommendationAccepted, outsRecorded: outsRecorded,
             rivalOutcomes: rivalOutcomes,
             hitByPitches: hitByPitches, holdCall: holdCall,
+            selectedPitchType: selectedPitchType, selectedZone: selectedZone,
+            selectedIntent: selectedIntent, selectedIntensity: selectedIntensity,
             pitchLog: pitchLog.map {
                 ResumeState.LogLine(pitchNumber: $0.pitchNumber, call: $0.call, outcome: $0.outcome,
                                     shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation,
@@ -238,9 +275,23 @@ final class PitchSession {
         recommendationAccepted = resume.recommendationAccepted
         outsRecorded = resume.outsRecorded
         hitsAllowed = resume.hitsAllowed ?? 0
+        homeRunsAllowed = resume.homeRunsAllowed ?? 0
         rivalOutcomes = resume.rivalOutcomes
         hitByPitches = resume.hitByPitches ?? 0
-        holdCall = resume.holdCall ?? false
+        if let pitchType = resume.selectedPitchType,
+           let zone = resume.selectedZone,
+           let intent = resume.selectedIntent,
+           let intensity = resume.selectedIntensity {
+            selectedPitchType = pitchType
+            selectedZone = zone
+            selectedIntent = intent
+            selectedIntensity = intensity
+            holdCall = resume.holdCall ?? false
+        } else {
+            // 옛 체크포인트는 holdCall만 저장하고 실제 배합은 저장하지 않았다. 기본값을 내
+            // 선택이라고 오인해 한복판 직구를 유지하지 말고, 다음 타자의 새 사인을 받는다.
+            holdCall = false
+        }
         pitchLog = (resume.pitchLog ?? []).map {
             PitchLogEntry(pitchNumber: $0.pitchNumber, call: $0.call, outcome: $0.outcome,
                           shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation,
@@ -443,7 +494,8 @@ final class PitchSession {
             // 절대 점수 배분은 코어의 일이다. 화면은 등판 시점의 점수 차만 알려 준다.
             scoreDifferentialAtEntry: scenario.scoreDifferential,
             sequenceMasteryCount: sequenceMasteryCount,
-            hits: hitsAllowed
+            hits: hitsAllowed,
+            homeRuns: homeRunsAllowed
         )
     }
 
@@ -512,6 +564,7 @@ final class PitchSession {
         case .single, .double, .triple, .homeRun: hitsAllowed += 1
         default: break
         }
+        homeRunsAllowed += snapshot.outcome == .homeRun ? 1 : 0
         hitByPitches += snapshot.outcome == .hitByPitch ? 1 : 0
         runsAllowed += snapshot.runsScored
         recommendationAccepted += snapshot.recommendationAccepted ? 1 : 0
@@ -594,7 +647,10 @@ final class PitchSession {
 
     private func applyRecommendation(_ preparation: PitchPreparation) {
         guard !holdCall else { return }
-        let call = preparation.primaryRecommendation.call
+        setSelectedCall(preparation.primaryRecommendation.call)
+    }
+
+    private func setSelectedCall(_ call: PitchCall) {
         selectedPitchType = call.pitchType
         selectedZone = call.zone
         selectedIntent = call.zoneIntent

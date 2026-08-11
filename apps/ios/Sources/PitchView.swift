@@ -165,13 +165,35 @@ enum PitchBuildCopy {
             "키운 제구가 살아난 공 · 코스 \(readout.commandRating)"
         case .movement:
             "키운 변화가 살아난 공 · 움직임 \(readout.movementRating) · 범타 \(readout.weakContactRating)"
+        case .stamina:
+            "키운 체력이 버틴 공 · 피로 \(readout.rawFatigue)→\(readout.effectiveFatigue)"
         }
     }
 
     static func accessibilitySummary(_ readout: PitchAbilityReadout) -> String {
         "기준 구속 \(velocity(readout.nominalVelocityTenthsKPH))킬로미터, "
             + "코스 \(readout.commandRating), 움직임 \(readout.movementRating), "
-            + "체력 \(readout.staminaRating), 한 구 팔 부담 \(readout.fatigueCost)"
+            + "체력 \(readout.staminaRating), 피로 \(readout.rawFatigue)에서 체감 \(readout.effectiveFatigue), "
+            + "한 구 팔 부담 \(readout.fatigueCost). \(synergy(readout))"
+    }
+
+    static func identity(_ readout: PitchAbilityReadout) -> PitcherBuildIdentity {
+        PitchAbilityRules.identity(for: readout)
+    }
+
+    static func synergy(_ readout: PitchAbilityReadout) -> String {
+        switch identity(readout) {
+        case .power:
+            readout.pitchType == .fourSeam
+                ? "강속구형 시너지 · 포심 구속과 헛스윙을 살립니다."
+                : "강속구형 보조구 · 포심과의 속도 차를 만듭니다."
+        case .command: "정밀 제구형 시너지 · 노린 코스에 붙이는 공입니다."
+        case .movement:
+            readout.pitchType == .fourSeam
+                ? "변화구형 연결구 · 결정구를 위한 포심입니다."
+                : "변화구형 시너지 · 움직임과 범타를 살립니다."
+        case .stamina: "이닝 소화형 시너지 · 누적 피로 \(readout.effectiveFatigue)로 억제 중입니다."
+        }
     }
 }
 
@@ -610,8 +632,7 @@ struct PitchView: View {
                         }
                         Text(result.snapshot.shortFeedback).font(.subheadline.weight(.semibold))
                         Text(result.snapshot.detailFeedback).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                        if PitchAbilityFeedbackExperiment.isVisible,
-                           let moment = session.lastAbilityMoment,
+                        if let moment = session.lastAbilityMoment,
                            let readout = session.lastAbilityReadout {
                             Label(PitchBuildCopy.moment(moment, readout: readout), systemImage: "sparkles")
                                 .font(.caption.weight(.bold))
@@ -730,12 +751,14 @@ struct PitchView: View {
     }
 
     @ViewBuilder private func controls(preparation: PitchPreparation) -> some View {
-        BaseballCard(title: PitchAbilityFeedbackExperiment.isVisible ? "구종 · 내가 만든 공" : "구종") {
+        BaseballCard(title: "구종 · 내가 만든 공") {
             VStack(alignment: .leading, spacing: 10) {
                 OptionRow(items: session.repertoire, selection: session.selectedPitchType) { type in
-                    session.selectedPitchType = type
+                    session.choosePitchType(type)
                 } label: { PitchCopy.pitch($0) }
+                PitchBuildCompactReadoutView(readout: session.selectedAbilityReadout)
                 if PitchAbilityFeedbackExperiment.isVisible {
+                    Divider()
                     PitchBuildReadoutView(readout: session.selectedAbilityReadout)
                 }
             }
@@ -749,10 +772,7 @@ struct PitchView: View {
                 coldZone: preparation.scoutingReport?.estimatedColdZone,
                 batSide: session.batter.batSide,
                 onSelect: { zone in
-                    session.selectedZone = zone
-                    // 한복판으로 옮기면 "존 경계"는 뜻을 잃는다. 고른 채로 두면 아무 일도
-                    // 하지 않는 노림으로 던지게 되므로 성립하는 노림으로 되돌린다.
-                    session.selectedIntent = ZoneIntent.clamped(session.selectedIntent, for: zone)
+                    session.chooseZone(zone)
                 }
             )
         }
@@ -762,14 +782,14 @@ struct PitchView: View {
         BaseballCard(title: "노림 · 힘 배분") {
             VStack(alignment: .leading, spacing: 8) {
                 OptionRow(items: ZoneIntent.options(for: session.selectedZone), selection: session.selectedIntent) { intent in
-                    session.selectedIntent = intent
+                    session.chooseIntent(intent)
                 } label: { PitchCopy.intent($0) }
                 Text(PitchCopy.intentDetail(session.selectedIntent, zone: session.selectedZone))
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 OptionRow(items: PitchIntensity.allCases, selection: session.selectedIntensity) { intensity in
-                    session.selectedIntensity = intensity
+                    session.chooseIntensity(intensity)
                 } label: { PitchCopy.intensity($0) }
             }
         }
@@ -781,6 +801,8 @@ struct PitchView: View {
             case .ready:
                 DeliveryControl(
                     fatigue: session.context.fatigue,
+                    pitchType: session.selectedPitchType,
+                    velocityTenthsKPH: session.selectedAbilityReadout.nominalVelocityTenthsKPH,
                     autoRelease: autoRelease,
                     onDeliver: { delivery in
                         wasClutch = isClutchNow
@@ -801,8 +823,6 @@ struct PitchView: View {
                 if canFastForwardCurrentBatter {
                     Button {
                         wasClutch = false
-                    pitchType: session.selectedPitchType,
-                    velocityTenthsKPH: session.selectedAbilityReadout.nominalVelocityTenthsKPH,
                         _ = session.fastForwardCurrentBatter()
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
@@ -1202,7 +1222,32 @@ private struct RunnerDiamond: View {
     }
 }
 
-/// 지금 고른 공에 내 육성이 어떻게 남아 있는지, 던지기 전에 보여 준다.
+/// 모든 플레이어에게 보이는 한 줄 성장 피드백. 훈련에서 올린 수치가 지금 고른 공의
+/// 구속·움직임·코스·부담으로 어떻게 번역됐는지 스크롤을 늘리지 않고 알려 준다.
+private struct PitchBuildCompactReadoutView: View {
+    let readout: PitchAbilityReadout
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(
+                "\(PitchBuildCopy.velocity(readout.nominalVelocityTenthsKPH)) km/h"
+                    + " · 움직임 \(readout.movementRating)"
+                    + " · 코스 \(readout.commandRating)"
+                    + " · 체감 피로 \(readout.effectiveFatigue)"
+            )
+            .font(.caption.weight(.semibold).monospacedDigit())
+            .foregroundStyle(BaseballTheme.milestone)
+            Text(PitchBuildCopy.synergy(readout))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityLabel(PitchBuildCopy.accessibilitySummary(readout))
+        .accessibilityIdentifier("pitch.buildSummary")
+    }
+}
+
+/// QA 플래그에서 여는 상세 수치. 제품 화면은 위의 한 줄 요약만 항상 보여 준다.
 /// 별도 카드 면을 더 만들지 않고 구종 카드 안에 들어가 결정 흐름을 늘리지 않는다.
 private struct PitchBuildReadoutView: View {
     let readout: PitchAbilityReadout
@@ -1216,10 +1261,10 @@ private struct PitchBuildReadoutView: View {
                 }
                 GridRow {
                     metric("움직임", "\(readout.movementRating)")
-                    metric("체력 · 부담", "\(readout.staminaRating) · +\(readout.fatigueCost)")
+                    metric("체력 · 체감 피로", "\(readout.staminaRating) · \(readout.effectiveFatigue)")
                 }
             }
-            Text("구속·코스·움직임·한 구 부담은 이번 공의 판정값이고, 체력은 이닝 전체 부담에 반영됩니다.")
+            Text("한 구 팔 부담 +\(readout.fatigueCost). \(PitchBuildCopy.synergy(readout))")
                 .font(.caption)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1242,8 +1287,8 @@ private struct PitchBuildReadoutView: View {
     }
 }
 
-/// 반복 재미 가설을 한 빌드에 하나씩 검증하기 위한 노출 관문.
-/// 현재 제품 실험은 '다음 행동 복귀' 하나이며, 투구 피드백은 전용 UI QA에서만 켠다.
+/// 상세 수치 그리드만 여는 QA 관문. 핵심 성장 피드백은 한 줄 요약과 결과 배지로 항상 보이며,
+/// 이 플래그는 작은 화면에서 상세 그리드까지 함께 펼쳤을 때의 레이아웃을 검증한다.
 private enum PitchAbilityFeedbackExperiment {
     static var isVisible: Bool {
         ProcessInfo.processInfo.arguments.contains(BaseballApp.pitchAbilityFeedbackLaunchArgument)
@@ -1378,12 +1423,49 @@ private struct CatcherCard: View {
             && call.intensity == session.selectedIntensity
     }
 
+    private var cardTitle: String {
+        guard session.holdCall else { return "포수 사인 · 연동 중" }
+        return matchesRecommendation ? "내 배합 · 사인과 일치" : "내 배합 · 직접 선택"
+    }
+
+    private var catcherBond: String {
+        switch session.scenario.catcherTrust {
+        case 75...: "한 호흡"
+        case 55...: "합이 맞음"
+        case 35...: "맞춰 가는 중"
+        default: "엇갈리는 중"
+        }
+    }
+
+    private var selectedCallSummary: String {
+        "\(PitchCopy.pitch(session.selectedPitchType)) · "
+            + "\(PitchCopy.zone(session.selectedZone, batSide: session.batter.batSide)) · "
+            + "\(PitchCopy.intent(session.selectedIntent)) · "
+            + PitchCopy.intensity(session.selectedIntensity)
+    }
+
     var body: some View {
-        // 매 투구마다 뜨는 정보라 면을 두지 않는다(A안: 의미색이 붙은 것만 면을 갖는다).
-        // 사인을 따르는지 여부는 눈썹 글자색으로만 알린다.
-        BaseballCard(title: matchesRecommendation ? "포수 사인 · 사인대로" : "포수 사인 · 수정함") {
+        // 현재 선택과 포수 제안을 한 면에서 비교한다. 무엇을 던지는지와 누구의 판단인지가
+        // 떨어져 있으면, 플레이어는 기본값으로 던지고도 자기 선택이라고 느끼기 어렵다.
+        BaseballCard(title: cardTitle) {
             VStack(alignment: .leading, spacing: 8) {
                 let call = preparation.primaryRecommendation.call
+                Text("지금 던질 공").eyebrowStyle(BaseballTheme.textTertiary)
+                Text(selectedCallSummary)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(session.holdCall ? BaseballTheme.action : BaseballTheme.positive)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("pitch.selectedCall")
+                Text(
+                    "사인 확신 \(max(0, min(100, preparation.primaryRecommendation.confidence / 10)))%"
+                        + " · 포수 호흡 \(session.scenario.catcherTrust) · \(catcherBond)"
+                )
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(BaseballTheme.textSecondary)
+
+                Divider()
+
+                Text("포수 제안").eyebrowStyle(BaseballTheme.textTertiary)
                 Text("\(PitchCopy.pitch(call.pitchType)) · \(PitchCopy.zone(call.zone, batSide: session.batter.batSide)) · \(PitchCopy.intent(call.zoneIntent))")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(matchesRecommendation ? BaseballTheme.positive : BaseballTheme.warning)
@@ -1394,10 +1476,19 @@ private struct CatcherCard: View {
 
                 // 사인 고정 — 켜면 포수 추천이 다음 공에서 내 선택을 덮지 않는다.
                 // "이 타자한테는 낮은 슬라이더로 민다"는 의도가 매 투구 2~4탭 없이 살아남는다.
-                Toggle(isOn: Binding(get: { session.holdCall }, set: { session.holdCall = $0 })) {
+                Toggle(isOn: Binding(
+                    get: { session.holdCall },
+                    set: { keepsOwnCall in
+                        if keepsOwnCall {
+                            session.holdCall = true
+                        } else {
+                            session.acceptCatcherRecommendation()
+                        }
+                    }
+                )) {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("내 선택 유지").font(.footnote.weight(.semibold))
-                        Text("포수 사인이 내 선택을 덮어쓰지 않습니다.")
+                        Text("직접 수정하면 자동으로 켜지고, 다음 공에도 같은 배합을 유지합니다.")
                             .font(.caption2).foregroundStyle(BaseballTheme.textTertiary)
                     }
                 }
@@ -1445,16 +1536,11 @@ private struct CatcherCard: View {
                     }
                 }
 
-                if !matchesRecommendation {
-                    Button("사인대로 맞추기") {
-                        let call = preparation.primaryRecommendation.call
-                        session.selectedPitchType = call.pitchType
-                        session.selectedZone = call.zone
-                        session.selectedIntent = call.zoneIntent
-                        session.selectedIntensity = call.intensity
-                    }
+                if session.holdCall || !matchesRecommendation {
+                    Button("포수 사인 수락") { session.acceptCatcherRecommendation() }
                     .font(.footnote.weight(.semibold))
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("pitch.acceptCatcherCall")
                 }
             }
         }

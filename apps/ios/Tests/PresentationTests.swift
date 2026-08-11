@@ -218,7 +218,7 @@ final class PresentationTests: XCTestCase {
         )
         XCTAssertEqual(
             PitchBuildCopy.accessibilitySummary(readout),
-            "기준 구속 132.7킬로미터, 코스 57, 움직임 66, 체력 58, 한 구 팔 부담 1"
+            "기준 구속 132.7킬로미터, 코스 57, 움직임 66, 체력 58, 피로 0에서 체감 0, 한 구 팔 부담 1. 변화구형 시너지 · 움직임과 범타를 살립니다."
         )
     }
 }

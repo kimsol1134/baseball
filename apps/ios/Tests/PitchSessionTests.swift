@@ -10,7 +10,8 @@ final class PitchSessionTests: XCTestCase {
         command: Int = 38,
         movement: Int = 40,
         stamina: Int = 40,
-        fatigue: Int = 20
+        fatigue: Int = 20,
+        catcherTrust: Int = 50
     ) -> ProCareerSnapshot {
         let team = ProCareerEngine.proTeams[0]
         let rival = ProRivalBatter(
@@ -36,7 +37,7 @@ final class PitchSessionTests: XCTestCase {
             level: .minor,
             role: .setup,
             managerTrust: 50,
-            catcherTrust: 50,
+            catcherTrust: catcherTrust,
             fatigue: fatigue,
             injuryWeeks: 0,
             serviceYears: 0,
@@ -100,6 +101,64 @@ final class PitchSessionTests: XCTestCase {
         XCTAssertNotNil(session.lastResult)
         XCTAssertEqual(session.pitches, 1)
         XCTAssertEqual(session.pitchLog.count, 1)
+    }
+
+    func testManualCallAutomaticallyHoldsUntilCatcherCallIsAccepted() throws {
+        let session = PitchSession(state: snapshot(), seed: "91731")
+        session.start()
+        let recommendation = try XCTUnwrap(session.preparation?.primaryRecommendation.call)
+        let manualPitch = session.repertoire.first(where: { $0 != recommendation.pitchType })
+            ?? recommendation.pitchType
+        let manualZone = recommendation.zone == PitchZone(row: 0, column: 0)
+            ? PitchZone(row: 2, column: 2)
+            : PitchZone(row: 0, column: 0)
+
+        session.choosePitchType(manualPitch)
+        session.chooseZone(manualZone)
+        session.chooseIntent(.edge)
+        session.chooseIntensity(.controlled)
+
+        XCTAssertTrue(session.holdCall)
+        XCTAssertEqual(session.selectedPitchType, manualPitch)
+        XCTAssertEqual(session.selectedZone, manualZone)
+        XCTAssertEqual(session.selectedIntensity, .controlled)
+
+        session.acceptCatcherRecommendation()
+        XCTAssertFalse(session.holdCall)
+        XCTAssertEqual(session.selectedPitchType, recommendation.pitchType)
+        XCTAssertEqual(session.selectedZone, recommendation.zone)
+        XCTAssertEqual(session.selectedIntent, recommendation.zoneIntent)
+        XCTAssertEqual(session.selectedIntensity, recommendation.intensity)
+    }
+
+    func testCatcherTrustChangesVisibleScoutingReliabilityWithoutChangingTheBatter() {
+        XCTAssertEqual(PitchScenario.scoutingReliability(base: 45, catcherTrust: 0), 20)
+        XCTAssertEqual(PitchScenario.scoutingReliability(base: 45, catcherTrust: 50), 45)
+        XCTAssertEqual(PitchScenario.scoutingReliability(base: 45, catcherTrust: 100), 70)
+
+        let low = PitchScenario.pro(state: snapshot(catcherTrust: 0))
+        let high = PitchScenario.pro(state: snapshot(catcherTrust: 100))
+        XCTAssertEqual(low.lineup, high.lineup)
+        XCTAssertEqual(low.scouting.reliability, 20)
+        XCTAssertEqual(high.scouting.reliability, 70)
+    }
+
+    func testHeldManualCallSurvivesResumeCheckpoint() {
+        var resume = syntheticResume(log: [])
+        resume.holdCall = true
+        resume.selectedPitchType = .slider
+        resume.selectedZone = PitchZone(row: 2, column: 2)
+        resume.selectedIntent = .chase
+        resume.selectedIntensity = .controlled
+
+        let restored = PitchSession(state: snapshot(), seed: "91732")
+        restored.restore(from: resume)
+
+        XCTAssertTrue(restored.holdCall)
+        XCTAssertEqual(restored.selectedPitchType, .slider)
+        XCTAssertEqual(restored.selectedZone, PitchZone(row: 2, column: 2))
+        XCTAssertEqual(restored.selectedIntent, .chase)
+        XCTAssertEqual(restored.selectedIntensity, .controlled)
     }
 
     func testSelectedBuildReadoutChangesBeforeThePitchWithEffort() {

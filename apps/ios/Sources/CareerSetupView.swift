@@ -97,6 +97,10 @@ private struct PresetCard: View {
                     AbilityGaugeView(label: "변화구", value: preset.pitcher.movement, showsMeaning: false)
                     AbilityGaugeView(label: "체력", value: preset.pitcher.stamina, showsMeaning: false)
                 }
+                Label(preset.strengths.joined(separator: " · "), systemImage: "sparkles")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.positive)
+                    .fixedSize(horizontal: false, vertical: true)
                 Label(preset.tradeoff, systemImage: "exclamationmark.triangle")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.warning)

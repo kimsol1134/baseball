@@ -474,13 +474,13 @@ struct HighSchoolCareerView: View {
             TrainingCard(
                 state: state,
                 armHealth: career.armHealth,
-                onCommit: { focus, intensity in
+                onCommit: { focus, intensity, targetPitch in
                     audio.play(.uiSelect)
-                    career.commitTraining(focus: focus, intensity: intensity)
+                    career.commitTraining(focus: focus, intensity: intensity, targetPitch: targetPitch)
                 },
-                onCommitBlock: { focus, intensity in
+                onCommitBlock: { focus, intensity, targetPitch in
                     audio.play(.uiSelect)
-                    career.commitTrainingBlock(focus: focus, intensity: intensity)
+                    career.commitTrainingBlock(focus: focus, intensity: intensity, targetPitch: targetPitch)
                 }
             )
         case .relationship:
@@ -1027,23 +1027,26 @@ private struct SchoolSelectionCard: View {
 private struct TrainingCard: View {
     let state: HighSchoolCareerSnapshot
     let armHealth: ArmHealthState
-    let onCommit: (TrainingFocus, TrainingIntensity) -> Void
-    let onCommitBlock: (TrainingFocus, TrainingIntensity) -> Void
+    let onCommit: (TrainingFocus, TrainingIntensity, PitchType?) -> Void
+    let onCommitBlock: (TrainingFocus, TrainingIntensity, PitchType?) -> Void
 
     // 직전 선택에서 시작한다. 국면이 오갈 때마다 기본값으로 리셋되면
     // 같은 훈련을 이어가려는 사람이 회차당 16번 재선택을 강요당한다.
     @State private var focus: TrainingFocus
     @State private var intensity: TrainingIntensity
+    @State private var targetPitch: PitchType
 
     init(state: HighSchoolCareerSnapshot, armHealth: ArmHealthState,
-         onCommit: @escaping (TrainingFocus, TrainingIntensity) -> Void,
-         onCommitBlock: @escaping (TrainingFocus, TrainingIntensity) -> Void) {
+         onCommit: @escaping (TrainingFocus, TrainingIntensity, PitchType?) -> Void,
+         onCommitBlock: @escaping (TrainingFocus, TrainingIntensity, PitchType?) -> Void) {
         self.state = state
         self.armHealth = armHealth
         self.onCommit = onCommit
         self.onCommitBlock = onCommitBlock
         _focus = State(initialValue: state.lastTraining?.focus ?? .command)
         _intensity = State(initialValue: state.lastTraining?.intensity ?? .standard)
+        _targetPitch = State(initialValue: state.pitcher.pitchProfiles?
+            .first(where: { $0.pitchType != .fourSeam })?.pitchType ?? .slider)
     }
 
     /// 전망 계산용. 엔진은 상태가 없어서 화면이 하나 들고 있어도 된다.
@@ -1056,6 +1059,23 @@ private struct TrainingCard: View {
 
     private var outlook: HighSchoolCareerEngine.TrainingGrowthOutlook {
         engine.trainingOutlook(state: state, focus: focus, intensity: intensity)
+    }
+
+    private var breakingBalls: [PitchType] {
+        (state.pitcher.pitchProfiles ?? []).map(\.pitchType).filter { $0 != .fourSeam }
+    }
+
+    private var selectedTarget: PitchType? { focus == .breakingBall ? targetPitch : nil }
+
+    private var focusTradeoff: String {
+        switch focus {
+        case .velocity: "대성공 가능성과 성장 편차가 가장 크지만 피로·팔 위험도 가장 큽니다."
+        case .command: "성장 편차와 피로가 작고 팔 위험이 없지만 대성공은 드뭅니다."
+        case .breakingBall: "고른 결정구만 빠르게 완성합니다. 강하게 할수록 팔 위험이 조금 오릅니다."
+        case .stamina: "후반 체감 피로를 낮춥니다. 당장의 구속·결정구는 오르지 않습니다."
+        case .gamePlanning: "가벼운 피로로 제구를 다듬지만 구종 자체 위력은 오르지 않습니다."
+        case .recovery: "능력 성장은 없고 피로와 팔 상태를 회복합니다."
+        }
     }
 
     /// 전망을 말로 옮긴다. 확률 숫자가 아니라 구간만 말한다 — 판정의 무작위 폭은 그대로다.
@@ -1167,6 +1187,18 @@ private struct TrainingCard: View {
                 .accessibilityAddTraits(focus == option ? .isSelected : [])
             }
 
+            if focus == .breakingBall, !breakingBalls.isEmpty {
+                BaseballCard(title: "집중할 결정구") {
+                    Picker("집중할 결정구", selection: $targetPitch) {
+                        ForEach(breakingBalls, id: \.self) { pitch in
+                            Text(PitchCopy.pitch(pitch)).tag(pitch)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("hs.training.targetPitch")
+                }
+            }
+
             BaseballCard(title: "강도") {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 6) {
@@ -1200,12 +1232,16 @@ private struct TrainingCard: View {
                         .foregroundStyle(outlookCopy.tone)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("hs.training.outlook")
+                    Text(focusTradeoff)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.warning)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
-            PrimaryButton(title: "훈련하기", identifier: "hs.training.commit") { onCommit(focus, intensity) }
+            PrimaryButton(title: "훈련하기", identifier: "hs.training.commit") { onCommit(focus, intensity, selectedTarget) }
             Button {
-                onCommitBlock(focus, intensity)
+                onCommitBlock(focus, intensity, selectedTarget)
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("같은 훈련 최대 3회")

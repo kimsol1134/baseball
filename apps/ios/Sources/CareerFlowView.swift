@@ -282,13 +282,75 @@ private struct WeeklyPlanView: View {
         }
     }
 
-    private static let plans: [PlanCopy] = [
-        PlanCopy(plan: .developWeapon, title: "결정구 불펜", effect: "구위와 변화구가 오릅니다", cost: "피로가 크게 쌓입니다", symbol: "flame"),
-        PlanCopy(plan: .refineCommand, title: "코스 제구 훈련", effect: "제구가 오릅니다", cost: "피로가 쌓입니다", symbol: "scope"),
-        PlanCopy(plan: .buildStamina, title: "긴 이닝 훈련", effect: "체력이 오릅니다", cost: "피로가 쌓입니다", symbol: "figure.run"),
-        PlanCopy(plan: .recover, title: "회복", effect: "피로가 줄고 부상 위험이 낮아집니다", cost: "능력이 오르지 않습니다", symbol: "bed.double"),
-        PlanCopy(plan: .earnTrust, title: "이번 주 경기 집중", effect: "감독의 믿음이 오릅니다", cost: "능력이 오르지 않습니다", symbol: "person.2")
-    ]
+    private static func careerArcName(_ season: Int) -> String {
+        switch season {
+        case ...3: "루키 경쟁기"
+        case ...8: "전성기"
+        default: "베테랑 승부"
+        }
+    }
+
+    private static func progressText(_ plan: ProWeekPlan, state: ProCareerSnapshot) -> String {
+        let current = state.developmentProgress?.value(for: plan) ?? 0
+        return "현재 \(current)/2 · 두 번 채우면 능력 +1"
+    }
+
+    /// 구위와 변화구를 분리해 이번 선수가 어떤 무기를 완성하는지 선택하게 한다.
+    /// 20시즌 내내 같은 카드 제목을 읽는 대신 지금 선수의 과제가 먼저 보인다.
+    private static func plans(for state: ProCareerSnapshot) -> [PlanCopy] {
+        let reliefRole = state.role != .starter
+        let veteran = state.season >= 9
+        return [
+            PlanCopy(
+                plan: .developStuff,
+                title: reliefRole ? "한 타자 강속구" : (veteran ? "포심 위력 다듬기" : "강속구 불펜"),
+                effect: "구위·포심 구속·헛스윙 성장 · \(progressText(.developStuff, state: state))",
+                cost: "폭발력이 큰 대신 피로가 가장 크게 쌓입니다",
+                symbol: "flame"
+            ),
+            PlanCopy(
+                plan: .developMovement,
+                title: "결정구 완성",
+                effect: "고른 변화구의 움직임·헛스윙 성장 · \(progressText(.developMovement, state: state))",
+                cost: "집중할 구종을 직접 골라야 합니다",
+                symbol: "hurricane"
+            ),
+            PlanCopy(plan: .refineCommand, title: "코스 제구 훈련", effect: "제구·전 구종 코스 성장 · \(progressText(.refineCommand, state: state))", cost: "성장은 안정적이고 피로 부담은 작습니다", symbol: "scope"),
+            PlanCopy(
+                plan: .buildStamina,
+                title: reliefRole ? "연투 버티기" : "긴 이닝 루틴",
+                effect: "후반 체감 피로가 줄어듭니다 · \(progressText(.buildStamina, state: state))",
+                cost: "초반 투구 위력은 바로 오르지 않습니다",
+                symbol: "figure.run"
+            ),
+            PlanCopy(
+                plan: .recover,
+                title: veteran ? "베테랑 회복 루틴" : "회복",
+                effect: "피로가 줄고 부상 위험이 낮아집니다",
+                cost: "능력이 오르지 않습니다",
+                symbol: "bed.double"
+            ),
+            PlanCopy(
+                plan: .earnTrust,
+                title: state.level == .minor ? "콜업 경쟁 집중" : (reliefRole ? "필승조 신뢰 쌓기" : "로테이션 신뢰 쌓기"),
+                effect: "감독의 믿음이 오릅니다",
+                cost: "능력이 오르지 않습니다",
+                symbol: "person.2"
+            ),
+        ]
+    }
+
+    private static func recommendation(for state: ProCareerSnapshot) -> (plan: ProWeekPlan, reason: String) {
+        if state.fatigue >= 68 { return (.recover, "부상 예방") }
+        if state.level == .minor, state.managerTrust < 60 { return (.earnTrust, "콜업 우선") }
+        let identity = PitcherBuildRules.identity(for: state.pitcher)
+        return switch identity {
+        case .power: (.developStuff, "강속구형 강화")
+        case .command: (.refineCommand, "제구형 강화")
+        case .movement: (.developMovement, "변화구형 강화")
+        case .stamina: (.buildStamina, "이닝형 강화")
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -298,11 +360,58 @@ private struct WeeklyPlanView: View {
                 Metric(title: "역할", value: MobileCareerStore.roleName(state.role))
             }
 
-            Text("이번 주에 할 일").font(.headline)
+            let identity = PitcherBuildRules.identity(for: state.pitcher)
+            BaseballCard(title: "투구 청사진 · \(identity.label)", tone: .raised) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(identity.strength).font(.footnote)
+                    Text(identity.tradeoff)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.warning)
+                    if let rolePreference = state.rolePreference {
+                        Label(
+                            "남은 시즌 역할 약속 · \(MobileCareerStore.roleName(rolePreference))",
+                            systemImage: "checkmark.seal.fill"
+                        )
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.positive)
+                    }
+                }
+            }
 
-            ForEach(Self.plans, id: \.plan) { copy in
-                PlanCard(copy: copy, selected: career.selectedPlan == copy.plan) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("이번 주에 할 일").font(.headline)
+                Text("\(Self.careerArcName(state.season)) · \(MobileCareerStore.roleName(state.role)) 루틴")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textSecondary)
+            }
+
+            let recommendation = Self.recommendation(for: state)
+
+            ForEach(Self.plans(for: state), id: \.plan) { copy in
+                PlanCard(
+                    copy: copy,
+                    selected: career.selectedPlan == copy.plan,
+                    recommendation: copy.plan == recommendation.plan ? recommendation.reason : nil
+                ) {
                     career.selectedPlan = copy.plan
+                }
+            }
+
+            if career.selectedPlan == .developMovement {
+                let breakingBalls = (state.pitcher.pitchProfiles ?? [])
+                    .map(\.pitchType)
+                    .filter { $0 != .fourSeam }
+                if !breakingBalls.isEmpty {
+                    Picker("집중할 결정구", selection: Binding(
+                        get: { career.selectedDevelopmentPitch },
+                        set: { career.selectedDevelopmentPitch = $0 }
+                    )) {
+                        ForEach(breakingBalls, id: \.self) { pitch in
+                            Text(PitchCopy.pitch(pitch)).tag(pitch)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("pro.developmentPitch")
                 }
             }
 
@@ -327,6 +436,7 @@ private struct WeeklyPlanView: View {
     private struct PlanCard: View {
         let copy: PlanCopy
         let selected: Bool
+        let recommendation: String?
         let onSelect: () -> Void
 
         var body: some View {
@@ -337,7 +447,17 @@ private struct WeeklyPlanView: View {
                         .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)
                         .frame(width: 28)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(copy.title).font(.subheadline.weight(.bold))
+                        HStack(spacing: 6) {
+                            Text(copy.title).font(.subheadline.weight(.bold))
+                            if let recommendation {
+                                Text(recommendation)
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(BaseballTheme.actionInk)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(BaseballTheme.action, in: Capsule())
+                            }
+                        }
                         Text(copy.effect).font(.footnote).foregroundStyle(BaseballTheme.positive)
                         Text(copy.cost).font(.footnote).foregroundStyle(BaseballTheme.warning)
                     }

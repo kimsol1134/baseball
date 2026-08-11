@@ -796,9 +796,19 @@ final class HighSchoolCareerStore {
         }
     }
 
-    func commitTraining(focus: TrainingFocus, intensity: TrainingIntensity) {
+    func commitTraining(
+        focus: TrainingFocus,
+        intensity: TrainingIntensity,
+        targetPitch: PitchType? = nil
+    ) {
         guard let before = result?.snapshot else { return }
-        perform { try engine.commitTraining(.init(seed: $0.nextSeed, state: $0.snapshot, focus: focus, intensity: intensity)) }
+        perform { try engine.commitTraining(.init(
+            seed: $0.nextSeed,
+            state: $0.snapshot,
+            focus: focus,
+            intensity: intensity,
+            targetPitch: targetPitch
+        )) }
         guard let after = result?.snapshot, after.revision != before.revision else { return }
         chapterTrainingCount += 1
         for gain in pendingGains where gain.after > gain.before {
@@ -812,6 +822,7 @@ final class HighSchoolCareerStore {
                 "act_number": HighSchoolPresentation.actNumber(chapter: after.chapter.number),
                 "focus_id": focus.rawValue,
                 "intensity_id": intensity.rawValue,
+                "target_pitch_id": targetPitch?.rawValue ?? "all",
                 "growth_points": pendingGains.reduce(0) { $0 + max(0, $1.after - $1.before) },
                 "fatigue_delta": after.fatigue - before.fatigue,
             ])
@@ -825,6 +836,7 @@ final class HighSchoolCareerStore {
     func commitTrainingBlock(
         focus: TrainingFocus,
         intensity: TrainingIntensity,
+        targetPitch: PitchType? = nil,
         maximumSessions: Int = 3
     ) {
         guard maximumSessions > 1,
@@ -837,7 +849,7 @@ final class HighSchoolCareerStore {
         while completed < maximumSessions,
               result?.snapshot.phase == .training {
             let beforeRevision = result?.snapshot.revision
-            commitTraining(focus: focus, intensity: intensity)
+            commitTraining(focus: focus, intensity: intensity, targetPitch: targetPitch)
             guard result?.snapshot.revision != beforeRevision else { break }
             completed += 1
 
@@ -2037,9 +2049,15 @@ final class HighSchoolCareerStore {
     /// 프로 커리어가 남기는 야구혼. 스펙(메타 계승)의 프로 스케일을 따른다:
     /// 짧은 2군 커리어 ~30, 평범한 1군 커리어 ~80~120, 20시즌 전설은 300+까지 오른다.
     nonisolated static func proSoulBonus(for state: ProCareerSnapshot) -> Int {
-        proSoulBonus(
+        let strikeouts = state.careerStats.reduce(0) { $0 + $1.strikeouts }
+        let outs = state.careerStats.reduce(0) { $0 + $1.inningsOuts }
+        let decisions = state.careerStats.reduce(0) { $0 + $1.wins + $1.saves }
+        // 탈삼진형만 다음 회차 재화를 더 받지 않도록, 이닝 소화와 승리·세이브를
+        // 탈삼진 환산치로 함께 비교한다. 기존 수치 전용 오버로드는 구테스트 호환용이다.
+        let equivalentAchievement = max(strikeouts, outs / 3, decisions * 4)
+        return proSoulBonus(
             seasons: state.careerStats.count,
-            strikeouts: state.careerStats.reduce(0) { $0 + $1.strikeouts },
+            strikeouts: equivalentAchievement,
             awards: state.awards.count,
             hallOfFameScore: state.hallOfFameScore ?? 0
         )

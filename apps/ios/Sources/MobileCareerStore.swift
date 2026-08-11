@@ -40,6 +40,8 @@ final class MobileCareerStore {
     var loadState: LoadState = .loading
     var result: ProCareerResult?
     var selectedPlan: ProWeekPlan = .earnTrust
+    /// 변화구 성장 계획에서 실제로 완성할 결정구.
+    var selectedDevelopmentPitch: PitchType = .slider
     var lastSummary: String?
     var feedbackTrigger = 0
     var feedbackCue: FeedbackCue = .neutral
@@ -246,7 +248,12 @@ final class MobileCareerStore {
     func advanceWeek() {
         guard let result else { return }
         let beforeRevision = result.snapshot.revision
-        perform { try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: selectedPlan)) }
+        perform { try engine.planWeek(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            plan: selectedPlan,
+            targetPitch: developmentTarget
+        )) }
         if self.result?.snapshot.revision != beforeRevision {
             weekly.record(.proWeeksAdvanced)
         }
@@ -268,7 +275,7 @@ final class MobileCareerStore {
             for _ in 0..<24 where current.snapshot.phase == .weeklyPlan {
                 let before = current.snapshot
                 current = try engine.planWeek(
-                    .init(seed: current.nextSeed, state: current.snapshot, plan: selectedPlan)
+                    .init(seed: current.nextSeed, state: current.snapshot, plan: selectedPlan, targetPitch: developmentTarget)
                 )
                 advancedWeeks += 1
                 let after = current.snapshot
@@ -292,7 +299,7 @@ final class MobileCareerStore {
             var current = result
             for _ in 0..<3 where current.snapshot.phase == .weeklyPlan {
                 let before = current.snapshot
-                current = try engine.planWeek(.init(seed: current.nextSeed, state: current.snapshot, plan: selectedPlan))
+                current = try engine.planWeek(.init(seed: current.nextSeed, state: current.snapshot, plan: selectedPlan, targetPitch: developmentTarget))
                 advancedWeeks += 1
                 // 화면이 "선발·불펜 역할 변화가 생기면 멈춥니다"라고 약속한다. 역할·소속이
                 // 바뀌었는데 남은 주를 그대로 흘려보내면 그 약속이 거짓이 된다.
@@ -303,6 +310,12 @@ final class MobileCareerStore {
         if self.result?.snapshot.revision != beforeRevision {
             weekly.record(.proWeeksAdvanced, amount: advancedWeeks)
         }
+    }
+
+    private var developmentTarget: PitchType? {
+        selectedPlan == .developMovement || selectedPlan == .developWeapon
+            ? selectedDevelopmentPitch
+            : nil
     }
 
     // MARK: - 중요 경기
