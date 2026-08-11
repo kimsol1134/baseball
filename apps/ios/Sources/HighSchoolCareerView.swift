@@ -390,10 +390,8 @@ struct HighSchoolCareerView: View {
                 .background(BaseballTheme.canvas)
                 // 스크롤 콘텐츠가 상태바 밑을 그대로 지나면 시계와 제목이 겹친다(QA P2-3).
                 .topStatusScrim()
-                // 화면 전체에 .animation(value:)을 걸면 같은 국면 안의 카드 교체
-                // (훈련→훈련)에서 옛 글자와 새 글자가 두 겹으로 보인다(QA P0-2).
-                // 갱신은 즉시가 맞다 — 회차당 수백 번 겪는 전환은 연출보다 빠름이 이긴다.
-                .phaseCurtain(state.phase, disabled: reduceMotion)
+                // 국면 전환은 즉시 갱신한다. 화면 전체를 덮는 커튼은 종료 애니메이션이
+                // 취소되면 탭 바만 남은 검은 화면이 될 수 있어 사용하지 않는다.
                 // 성장·만개는 스택 위쪽에서 터지는데 유저는 방금 맨 아래 "훈련하기"를
                 // 눌렀다 — 게임의 최다 보상이 화면 밖에서 소비되고 있었다(3차 패널 P1).
                 .onChange(of: career.feedbackTrigger) { _, _ in
@@ -2329,47 +2327,6 @@ struct TopStatusScrim: ViewModifier {
 extension View {
     /// 내비게이션 바를 숨긴 화면에서 상태바와 본문이 겹치지 않게 한다.
     func topStatusScrim() -> some View { modifier(TopStatusScrim()) }
-}
-
-/// 국면이 바뀔 때 아주 짧게 어두워진다.
-///
-/// 예전에는 `.snappy` 크로스페이드만 있었다. 두 국면의 글자가 서로 비쳐 보였고(품질 평가
-/// §3-F3), 무엇보다 **3년의 국면 변화가 전부 같은 질감으로 흘렀다.** 장면이 바뀌었다는
-/// 감각이 없으면 학교 선택도 드래프트도 같은 목록을 스크롤하는 일이 된다.
-///
-/// 커튼은 아래 크로스페이드(.snappy ≈ 0.3초 + 정착)가 **끝날 때까지** 완전히 덮어야 한다.
-/// 처음 넣었던 0.07+0.07초 커튼은 전환보다 먼저 걷혀서 전환 후반에 두 국면의 글자가
-/// 다시 겹쳐 보였고, 그 프레임이 스토어 스크린샷에 그대로 찍혔다. 전환 자체를 볼거리로
-/// 만들지는 않는다 — 정점 연출은 드물어서 정점이다.
-private struct PhaseCurtain: ViewModifier {
-    let phase: HighSchoolCareerPhase
-    let disabled: Bool
-
-    @State private var dim: Double = 0
-
-    func body(content: Content) -> some View {
-        content
-            .overlay {
-                BaseballTheme.canvas
-                    .opacity(dim)
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
-            .onChange(of: phase) { _, _ in
-                guard !disabled else { return }
-                // 총 0.24초 — 국면 전환은 회차당 수십 번이라, 커튼이 길면 "검은 화면"
-                // 프레임이 눈에 밟힐 만큼 자주 보인다(QA P0-2: 무작위 110장 중 2장에 걸림).
-                withAnimation(.easeIn(duration: 0.06)) { dim = 1 }
-                withAnimation(.easeOut(duration: 0.10).delay(0.08)) { dim = 0 }
-            }
-    }
-}
-
-extension View {
-    func phaseCurtain(_ phase: HighSchoolCareerPhase, disabled: Bool) -> some View {
-        modifier(PhaseCurtain(phase: phase, disabled: disabled))
-    }
 }
 
 /// 화면의 주 행동. 디자인 시스템의 라임 알약 CTA를 쓴다.
