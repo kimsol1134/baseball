@@ -656,26 +656,7 @@ namespace Baseball.Application.Stores
                     sessionSeed = pro.NextSeed;
                     break;
                 case PitchCareerKind.Daily:
-                    var dayKey = SeoulGameCalendar.DayKey(command.StartedAt);
-                    if (current.Meta.Daily.LastBaseballDayKey != null &&
-                        string.CompareOrdinal(dayKey, current.Meta.Daily.LastBaseballDayKey) < 0 ||
-                        current.Meta.Daily.DailyInning != null &&
-                        string.CompareOrdinal(dayKey, current.Meta.Daily.DailyInning.DayKey) < 0)
-                    {
-                        return Failure("daily.clock_rollback");
-                    }
-                    var daily = DailyInningRules.ForDay(current.Meta.Daily, dayKey);
-                    if (daily.AttemptCount >= DailyInningRules.AttemptLimit)
-                        return Failure("pitch.daily_attempts_exhausted");
-                    meta = current.Meta.With(
-                        daily: DailyInningRules.ReserveAttempt(current.Meta.Daily, command.StartedAt));
-                    daily = meta.Daily.DailyInning;
-                    careerId = "daily:" + dayKey;
-                    scenario = PitchScenarioFactory.Daily(dayKey);
-                    sessionSeed = daily.SessionSeed;
-                    if (!string.Equals(scenario.ScenarioId, daily.ScenarioId, StringComparison.Ordinal))
-                        return Failure("pitch.daily_scenario_invalid");
-                    break;
+                    return Failure("daily.retired");
                 default:
                     return Failure("pitch.kind_invalid");
             }
@@ -710,6 +691,7 @@ namespace Baseball.Application.Stores
             var resume = current.PitchResume;
             if (resume == null || !string.Equals(resume.GameId, command.GameId, StringComparison.Ordinal))
                 return Failure("pitch.session_mismatch");
+            if (resume.CareerKind == PitchCareerKind.Daily) return Failure("daily.retired");
             if (resume.CommittedPitch != null) return Failure("pitch.committed_result_pending");
             if (resume.AwaitingCompletion) return Failure("pitch.completion_required");
             if (command.CompletedBatters < resume.CompletedBatters ||
@@ -749,6 +731,7 @@ namespace Baseball.Application.Stores
             var resume = current.PitchResume;
             if (resume == null || !string.Equals(resume.GameId, command.GameId, StringComparison.Ordinal))
                 return Failure("pitch.session_mismatch");
+            if (resume.CareerKind == PitchCareerKind.Daily) return Failure("daily.retired");
             if (resume.CommittedPitch != null) return Failure("pitch.committed_result_pending");
             if (resume.AwaitingCompletion) return Failure("pitch.completion_required");
             string abilityMomentType;
@@ -822,6 +805,7 @@ namespace Baseball.Application.Stores
             {
                 return Failure("pitch.committed_result_mismatch");
             }
+            if (resume.CareerKind == PitchCareerKind.Daily) return Failure("daily.retired");
             if (command.CompletedBatters < resume.CompletedBatters ||
                 command.CompletedBatters > resume.CompletedBatters + 1 ||
                 command.CompletedBatters > resume.MaximumBatters ||
@@ -936,6 +920,7 @@ namespace Baseball.Application.Stores
             var report = command.Report;
             if (resume == null || !string.Equals(resume.GameId, report.GameId, StringComparison.Ordinal))
                 return Failure("pitch.session_mismatch");
+            if (resume.CareerKind == PitchCareerKind.Daily) return Failure("daily.retired");
             if (resume.CommittedPitch != null) return Failure("pitch.committed_result_pending");
             if (resume.ConsumedPitchIds.Count == 0)
                 return Failure("pitch.authoritative_pitch_required");
@@ -960,15 +945,6 @@ namespace Baseball.Application.Stores
             {
                 return Failure("pitch.report_checkpoint_mismatch");
             }
-            if (resume.CareerKind == PitchCareerKind.Daily &&
-                !string.Equals(
-                    resume.CareerId,
-                    "daily:" + SeoulGameCalendar.DayKey(command.CompletedAt),
-                    StringComparison.Ordinal))
-            {
-                return Failure("daily.day_changed");
-            }
-
             var highSchool = current.HighSchool;
             var pro = current.Pro;
             ApplicationStage stage;
@@ -1015,8 +991,7 @@ namespace Baseball.Application.Stores
                     stage = StageFor(pro);
                     break;
                 case PitchCareerKind.Daily:
-                    stage = current.Stage;
-                    break;
+                    return Failure("daily.retired");
                 default:
                     return Failure("pitch.kind_invalid");
             }
@@ -1067,6 +1042,8 @@ namespace Baseball.Application.Stores
             {
                 return Failure("pitch.session_mismatch");
             }
+            if (current.PitchResume.CareerKind == PitchCareerKind.Daily)
+                return Success(current.Commit(commandId, clearPitchResume: true));
             if (current.PitchResume.CommittedPitch != null)
                 return Failure("pitch.committed_result_pending");
             if (current.PitchResume.AwaitingCompletion)
@@ -1416,6 +1393,13 @@ namespace Baseball.Application.Stores
             {
                 return Failure("weekly.progress_invalid");
             }
+            if (string.Equals(
+                    command.Kind,
+                    WeeklyTaskKinds.DailyInningCompleted,
+                    StringComparison.Ordinal))
+            {
+                return Failure("daily.retired");
+            }
             var weekly = WeeklyProgramRules.Record(
                 current.Meta.Weekly,
                 command.Kind,
@@ -1435,39 +1419,7 @@ namespace Baseball.Application.Stores
             CompleteDailyInningCommand command,
             string commandId)
         {
-            if (command.SoulReward <= 0) return Failure("daily.reward_invalid");
-            var dayKey = SeoulGameCalendar.DayKey(command.CompletedAt);
-            if (current.Meta.Daily.LastBaseballDayKey != null &&
-                string.CompareOrdinal(dayKey, current.Meta.Daily.LastBaseballDayKey) < 0)
-            {
-                return Failure("daily.clock_rollback");
-            }
-            var rewardId = DailyInningRules.RewardId(dayKey);
-            var meta = current.Meta;
-            var alreadyCredited = meta.CreditedRewardIds.Contains(rewardId, StringComparer.Ordinal);
-            var weekly = WeeklyProgramRules.Record(
-                meta.Weekly,
-                WeeklyTaskKinds.DailyInningCompleted,
-                1,
-                rewardId,
-                command.CompletedAt);
-            weekly = WeeklyProgramRules.Record(
-                weekly,
-                WeeklyTaskKinds.PlayedOnTwoDays,
-                1,
-                rewardId + ":played",
-                command.CompletedAt);
-            meta = meta.With(
-                soulBalance: alreadyCredited ? meta.SoulBalance : meta.SoulBalance + command.SoulReward,
-                soulLifetimeEarned: alreadyCredited
-                    ? meta.SoulLifetimeEarned
-                    : meta.SoulLifetimeEarned + command.SoulReward,
-                creditedRewardIds: alreadyCredited
-                    ? meta.CreditedRewardIds
-                    : meta.CreditedRewardIds.Concat(new[] { rewardId }).ToArray(),
-                daily: DailyStreakRules.RecordDailyInning(meta.Daily, command.CompletedAt),
-                weekly: weekly);
-            return Success(current.Commit(commandId, meta: meta));
+            return Failure("daily.retired");
         }
 
         private static TransitionResult<GameSaveAggregate> ClaimWeekly(
@@ -1947,11 +1899,9 @@ namespace Baseball.Application.Stores
             DateTimeOffset completedAt,
             string commandId)
         {
+            if (kind == PitchCareerKind.Daily) return current;
             var daily = DailyStreakRules.RecordBaseball(current.Daily, completedAt);
-            var dayKey = SeoulGameCalendar.DayKey(completedAt);
-            var playedReceipt = kind == PitchCareerKind.Daily
-                ? "played-day:" + dayKey
-                : commandId + ":played-day";
+            var playedReceipt = commandId + ":played-day";
             var weekly = WeeklyProgramRules.Record(
                 current.Weekly,
                 WeeklyTaskKinds.PlayedOnTwoDays,
@@ -1960,18 +1910,14 @@ namespace Baseball.Application.Stores
                 completedAt);
             var task = kind == PitchCareerKind.HighSchool
                 ? WeeklyTaskKinds.ImportantGamesCompleted
-                : kind == PitchCareerKind.Daily
-                    ? WeeklyTaskKinds.DailyInningCompleted
-                    : null;
+                : null;
             if (task != null)
             {
                 weekly = WeeklyProgramRules.Record(
                     weekly,
                     task,
                     1,
-                    kind == PitchCareerKind.Daily
-                        ? DailyInningRules.RewardId(dayKey)
-                        : commandId + ":game",
+                    commandId + ":game",
                     completedAt);
             }
             if (report.SequenceMasteryCount > 0)
@@ -1986,20 +1932,7 @@ namespace Baseball.Application.Stores
             var achievements = AchievementRules.Unlock(
                 current.Achievements,
                 AchievementRules.FromPitch(report));
-            var updated = current.With(daily: daily, weekly: weekly, achievements: achievements);
-            if (kind != PitchCareerKind.Daily) return updated;
-
-            var rewardId = DailyInningRules.RewardId(dayKey);
-            var credited = updated.CreditedRewardIds.Contains(rewardId, StringComparer.Ordinal);
-            return updated.With(
-                soulBalance: credited ? updated.SoulBalance : updated.SoulBalance + 5,
-                soulLifetimeEarned: credited
-                    ? updated.SoulLifetimeEarned
-                    : updated.SoulLifetimeEarned + 5,
-                creditedRewardIds: credited
-                    ? updated.CreditedRewardIds
-                    : updated.CreditedRewardIds.Concat(new[] { rewardId }).ToArray(),
-                daily: DailyInningRules.RecordCompletion(updated.Daily, report, completedAt));
+            return current.With(daily: daily, weekly: weekly, achievements: achievements);
         }
 
         private static LifeArchiveRecord MakeLifeRecord(

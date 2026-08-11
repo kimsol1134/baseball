@@ -174,6 +174,10 @@ namespace Baseball.Application.Tests
             Assert.That(reconciled.Program.Tasks[0].Kind,
                 Is.EqualTo(WeeklyTaskKinds.ImportantGamesCompleted));
             Assert.That(reconciled.Program.Tasks[0].Progress, Is.EqualTo(1));
+            Assert.That(reconciled.Program.Tasks.Any(value => string.Equals(
+                value.Kind,
+                WeeklyTaskKinds.DailyInningCompleted,
+                StringComparison.Ordinal)), Is.False);
         }
 
         [Test]
@@ -913,24 +917,33 @@ namespace Baseball.Application.Tests
         {
             var repository = new RecordingGameRepository();
             var instant = new DateTimeOffset(2026, 8, 9, 1, 0, 0, TimeSpan.Zero);
-            using (var store = await GameApplicationStore.OpenAsync(
+            using (var emptyStore = await GameApplicationStore.OpenAsync(
                        repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 Assert.That(ReturnPlanRules.IsEligible(0), Is.False);
-                var ineligible = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
-                    "plan-ineligible", store.Current.Revision,
+                var ineligible = await emptyStore.DispatchAsync(new CommandEnvelope<GameCommand>(
+                    "plan-ineligible", emptyStore.Current.Revision,
                     new PrepareReturnPlanCommand(instant, 4)));
                 Assert.That(ineligible.Status, Is.EqualTo(DispatchStatus.DomainRejected));
+            }
 
-                await store.DispatchAsync(new CommandEnvelope<GameCommand>(
-                    "legacy-daily-credit", store.Current.Revision,
-                    new CompleteDailyInningCommand(instant)));
-                await store.DispatchAsync(new CommandEnvelope<GameCommand>(
-                    "setup", store.Current.Revision, new EnterSetupCommand()));
-                await store.DispatchAsync(new CommandEnvelope<GameCommand>(
-                    "start", store.Current.Revision, new StartHighSchoolCareerCommand(
-                        new Baseball.Application.HighSchool.StartHighSchoolCareerRequest(
-                            "7", "power_prospect", "민서준", "서울", 1))));
+            var progressed = GameSaveAggregate.Initial("install-a").Commit(
+                "high-school-progress",
+                stage: ApplicationStage.HighSchool,
+                highSchool: FakeHighSchoolPort.HighSchool(
+                    performance: new CareerPerformanceReadModel(importantGames: 1)));
+            repository.LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                SaveLoadStatus.LoadedCanonical,
+                new SaveEnvelope<GameSaveAggregate>(
+                    SaveSchema.Name,
+                    SaveSchema.Version,
+                    progressed.Revision,
+                    instant,
+                    new string('f', 64),
+                    progressed));
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+            {
                 var publications = 0;
                 store.StatePublished += _ => publications++;
                 repository.FailSave = true;

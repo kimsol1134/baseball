@@ -105,7 +105,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void SecondarySurfacesAreReachableFromBottomDestinations()
         {
-            Assert.That(HasActionTo(_readModel.Read(ShellRoute.Daily), ShellRoute.Weekly), Is.True);
+            Assert.That(HasActionTo(_readModel.Read(ShellRoute.Daily), ShellRoute.Weekly), Is.False);
             Assert.That(HasActionTo(_readModel.Read(ShellRoute.Records), ShellRoute.League), Is.True);
             Assert.That(HasActionTo(_readModel.Read(ShellRoute.Records), ShellRoute.Achievements), Is.True);
             Assert.That(HasActionTo(_readModel.Read(ShellRoute.Records), ShellRoute.LifeArchive), Is.True);

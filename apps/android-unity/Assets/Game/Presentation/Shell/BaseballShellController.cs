@@ -104,7 +104,7 @@ namespace Baseball.Presentation.Shell
             IBaseballShellSettings settings = _runtime as IBaseballShellSettings;
             HighContrast = settings?.HighContrast ?? false;
             ReducedMotion = settings?.ReducedMotion ?? false;
-            CurrentRoute = initialRoute;
+            CurrentRoute = NormalizeRetiredDailyRoute(initialRoute, _runtime);
             BuildShell();
             _theme.SetHighContrast(HighContrast);
             _theme.SetReducedMotion(ReducedMotion);
@@ -115,19 +115,27 @@ namespace Baseball.Presentation.Shell
         public void Navigate(ShellRoute route)
         {
             CloseModal();
+            route = NormalizeRetiredDailyRoute(route, _runtime);
             if (CurrentRoute == ShellRoute.PitchHandoff && route == ShellRoute.Awakening)
             {
                 route = _pitchReturnRoute;
             }
             if (route == CurrentRoute)
             {
+                if (route == ShellRoute.PitchHandoff)
+                {
+                    ResumePitchIfNeeded();
+                    return;
+                }
                 Announce(_copy.Get("shell.already_here"));
                 return;
             }
             if (route == ShellRoute.PitchHandoff)
             {
                 _pitchOrigin = CurrentRoute;
-                _pitchReturnRoute = CurrentRoute == ShellRoute.Daily ? ShellRoute.Records : ShellRoute.Awakening;
+                _pitchReturnRoute = CurrentRoute == ShellRoute.Daily
+                    ? NormalizeRetiredDailyRoute(CurrentRoute, _runtime)
+                    : ShellRoute.Awakening;
             }
             _history.Push(CurrentRoute);
             CurrentRoute = route;
@@ -156,7 +164,9 @@ namespace Baseball.Presentation.Shell
             ShellRoute resolved = runtimeStatus == ShellRuntimeStatus.Ready && preferredRoute != ShellRoute.PitchHandoff
                 ? preferredRoute
                 : fallbackRoute;
-            return resolved == ShellRoute.Daily ? ShellRoute.Records : resolved;
+            return resolved == ShellRoute.Daily
+                ? fallbackRoute == ShellRoute.Daily ? ShellRoute.Opening : fallbackRoute
+                : resolved;
         }
 
         public static ShellRoute ResolveInitialRoute(IBaseballShellRuntime runtime)
@@ -165,9 +175,24 @@ namespace Baseball.Presentation.Shell
             if (runtime is IBaseballExternalNavigation external &&
                 external.TryConsumeExternalRoute(out ShellRoute externalRoute))
             {
-                return externalRoute;
+                return NormalizeRetiredDailyRoute(externalRoute, runtime);
             }
-            return ShouldHoldOpening(runtime) ? ShellRoute.Opening : runtime.PreferredRoute;
+            return ShouldHoldOpening(runtime)
+                ? ShellRoute.Opening
+                : NormalizeRetiredDailyRoute(runtime.PreferredRoute, runtime);
+        }
+
+        public static ShellRoute NormalizeRetiredDailyRoute(
+            ShellRoute route,
+            IBaseballShellRuntime runtime)
+        {
+            if (route != ShellRoute.Daily) return route;
+            ShellRoute fallback =
+                (runtime as IBaseballRetiredDailyRouteFallback)?.RetiredDailyFallbackRoute ??
+                ShellRoute.Opening;
+            return fallback == ShellRoute.Daily || fallback == ShellRoute.PitchHandoff
+                ? ShellRoute.Opening
+                : fallback;
         }
 
         public void ResumePitchIfNeeded()

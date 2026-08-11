@@ -30,7 +30,8 @@ namespace Baseball.Presentation.Shell
         IBaseballShellSettings, IBaseballVisualAssets, IBaseballShellRouteObserver,
         IBaseballPitchNavigation, IBaseballLifeCardShareRuntime, IBaseballExternalNavigation,
         IBaseballShellLifecycleObserver, IBaseballLifeArchiveInteraction, IPitchFeedbackBoundary,
-        IBaseballOpeningPresentationGate, IBaseballContentExposure
+        IBaseballOpeningPresentationGate, IBaseballContentExposure,
+        IBaseballRetiredDailyRouteFallback
     {
         private readonly StoreBaseballCareerReadModel _readModel;
         private readonly AndroidHapticsService _haptics = new AndroidHapticsService();
@@ -62,6 +63,7 @@ namespace Baseball.Presentation.Shell
         private bool _reminderSettingsInFlight;
         private bool _reminderOpenInFlight;
         private bool _reminderNavigationReceiptInFlight;
+        private bool _retiredDailyCleanupInFlight;
         private ShellRoute? _pitchReturnOverride;
         private ShellRoute? _externalRoute;
         private string _externalRouteReminderToken;
@@ -98,7 +100,12 @@ namespace Baseball.Presentation.Shell
 
         public event Action Changed;
         public ShellRuntimeStatus Status => _status;
-        public ShellRoute PreferredRoute => _pitchReturnOverride ?? _readModel.PreferredRoute;
+        public ShellRoute PreferredRoute => _pitchReturnOverride ??
+            (_store?.Current?.PitchResume?.CareerKind == PitchCareerKind.Daily
+                ? RetiredDailyFallbackRoute
+                : _readModel.PreferredRoute);
+        public ShellRoute RetiredDailyFallbackRoute =>
+            StoreBaseballCareerReadModel.RetiredDailyFallbackFor(_store?.Current);
         public bool ShouldHoldOpeningForReturnPlan =>
             _status == ShellRuntimeStatus.Ready &&
             ReturnPlanPresentationPolicy.ShouldHoldOpening(_store?.Current, DateTimeOffset.UtcNow);
@@ -142,12 +149,12 @@ namespace Baseball.Presentation.Shell
                 ShellRoute origin = kind == PitchCareerKind.Tutorial
                     ? ShellRoute.Prologue
                     : kind == PitchCareerKind.Daily
-                    ? ShellRoute.Records
+                    ? RetiredDailyFallbackRoute
                     : kind == PitchCareerKind.Pro ? ShellRoute.ProWeek : ShellRoute.ImportantGame;
                 ShellRoute destination = kind == PitchCareerKind.Tutorial
                     ? ShellRoute.Prologue
                     : kind == PitchCareerKind.Daily
-                    ? ShellRoute.Records
+                    ? RetiredDailyFallbackRoute
                     : kind == PitchCareerKind.Pro ? ShellRoute.ProWeek : ShellRoute.Awakening;
                 return new PitchHandoffViewModel(origin, destination);
             }
@@ -172,7 +179,10 @@ namespace Baseball.Presentation.Shell
 
         public void AcknowledgeExternalRoute(ShellRoute renderedRoute)
         {
-            if (!_consumedExternalRoute.HasValue || _consumedExternalRoute.Value != renderedRoute)
+            if (!_consumedExternalRoute.HasValue ||
+                _consumedExternalRoute.Value != renderedRoute &&
+                !(_consumedExternalRoute.Value == ShellRoute.Daily &&
+                  RetiredDailyFallbackRoute == renderedRoute))
                 return;
             string reminderToken = _consumedExternalRouteReminderToken;
             _consumedExternalRoute = null;
@@ -208,7 +218,7 @@ namespace Baseball.Presentation.Shell
             {
                 AndroidReminderService reminders = AndroidReminderService.Instance;
                 if (reminders == null) return ShellActionResult.Failure(NotificationsUnavailableReason);
-                reminders.RequestEnabled(true);
+                reminders.RequestEnabled(true, "after_first_game");
                 return ShellActionResult.Success(null, "Android 알림 권한 결과를 확인하고 있습니다.");
             }
             if (action.Id == "dismiss_reminder_nudge")
@@ -501,6 +511,7 @@ namespace Baseball.Presentation.Shell
                 ? "백업 저장에서 안전하게 복구했습니다."
                 : string.Empty;
             ApplyPersistedSettings(store.Current);
+            ClearRetiredDailyResume();
             DrainPendingReminderSetting();
             DrainPendingReminderOpen();
             if (!_coldStartAnalyticsObserved)
@@ -558,6 +569,7 @@ namespace Baseball.Presentation.Shell
         private void OnStatePublished(GameSaveAggregate state)
         {
             ApplyPersistedSettings(state);
+            ClearRetiredDailyResume();
             Changed?.Invoke();
         }
 
@@ -567,6 +579,7 @@ namespace Baseball.Presentation.Shell
             {
                 DrainPendingReminderSetting();
                 DrainPendingReminderOpen();
+                ClearRetiredDailyResume();
             }
             Changed?.Invoke();
         }
@@ -763,8 +776,8 @@ namespace Baseball.Presentation.Shell
                     NextRunIntentState nextIntent = RunPledgeRules.SuggestedNextRunIntent(state.HighSchool);
                     return nextIntent == null ? null : new SetNextRunIntentCommand(nextIntent);
                 case "claim_weekly": return new ClaimWeeklyRewardCommand(now);
-                case "begin_pitch": return BeginPitch(state, false, now);
-                case "begin_daily_pitch": return BeginPitch(state, true, now);
+                case "begin_pitch": return BeginPitch(state, now);
+                case "begin_daily_pitch": return null;
                 case "begin_tutorial_pitch": return BeginTutorialPitch(state, now);
                 case "acknowledge_pitch_result":
                     return string.IsNullOrWhiteSpace(state.PendingPitchCompletion?.CompletionId)
@@ -782,13 +795,11 @@ namespace Baseball.Presentation.Shell
         private static GameCommand Pro(string kind, string value, DateTimeOffset now) =>
             new AdvanceProCommand(new ProCareerAction(kind, value), now);
 
-        private static GameCommand BeginPitch(GameSaveAggregate state, bool daily, DateTimeOffset now)
+        private static GameCommand BeginPitch(GameSaveAggregate state, DateTimeOffset now)
         {
-            PitchCareerKind kind = daily ? PitchCareerKind.Daily : state.Pro != null ? PitchCareerKind.Pro : PitchCareerKind.HighSchool;
+            PitchCareerKind kind = state.Pro != null ? PitchCareerKind.Pro : PitchCareerKind.HighSchool;
             string gameId = "pitch:" + kind.ToString().ToLowerInvariant() + ":" + (state.Revision + 1);
-            string scenario = daily
-                ? DailyInningRules.Project(state.Meta, now).ScenarioId
-                : kind == PitchCareerKind.Pro ? "pro-important" : "high-school-important";
+            string scenario = kind == PitchCareerKind.Pro ? "pro-important" : "high-school-important";
             return new BeginPitchSessionCommand(gameId, kind, scenario, 6, now);
         }
 
@@ -827,8 +838,7 @@ namespace Baseball.Presentation.Shell
             {
                 case "claim_weekly": return action.Target;
                 case "acknowledge_pitch_result": return action.Target;
-                case "begin_pitch":
-                case "begin_daily_pitch": return ShellRoute.PitchHandoff;
+                case "begin_pitch": return ShellRoute.PitchHandoff;
                 case "begin_tutorial_pitch": return ShellRoute.PitchHandoff;
                 default: return PreferredRoute;
             }
@@ -1024,7 +1034,41 @@ namespace Baseball.Presentation.Shell
                 case "high_school":
                 case "pro": return StoreBaseballCareerReadModel.PreferredRouteFor(_store?.Current);
                 case "daily_inning":
+                    return RetiredDailyFallbackRoute;
                 default: return StoreBaseballCareerReadModel.PreferredRouteFor(_store?.Current);
+            }
+        }
+
+        private async void ClearRetiredDailyResume()
+        {
+            if (_retiredDailyCleanupInFlight || _store == null ||
+                _status != ShellRuntimeStatus.Ready || _store.IsBusy) return;
+            PitchResumeState resume = _store.Current.PitchResume;
+            if (resume?.CareerKind != PitchCareerKind.Daily ||
+                string.IsNullOrWhiteSpace(resume.GameId)) return;
+
+            _retiredDailyCleanupInFlight = true;
+            GameSaveAggregate before = _store.Current;
+            try
+            {
+                DispatchResult<GameSaveAggregate> result = await _store.DispatchAsync(
+                    new CommandEnvelope<GameCommand>(
+                        "retired-daily:" + before.Revision + ":" + (++_commandSequence),
+                        before.Revision,
+                        new AbandonPitchSessionCommand(resume.GameId)),
+                    CancellationToken.None);
+                if (!result.IsSuccess)
+                    _statusMessage = "이전 일일 경기 기록은 보존했지만 진행 정리를 저장하지 못했습니다. 다음 실행에서 다시 확인합니다.";
+            }
+            catch (Exception exception)
+            {
+                CrashReporting.RecordUnexpected(exception, "retired_daily_cleanup");
+                _statusMessage = "이전 일일 경기 진행을 정리하지 못했습니다. 현재 커리어는 안전하게 열었습니다.";
+            }
+            finally
+            {
+                _retiredDailyCleanupInFlight = false;
+                Changed?.Invoke();
             }
         }
 

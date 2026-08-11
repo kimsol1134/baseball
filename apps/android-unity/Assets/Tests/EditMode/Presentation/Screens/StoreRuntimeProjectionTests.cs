@@ -209,6 +209,15 @@ namespace Baseball.Presentation.Tests
                     new ProspectEntryReadModel(1, "새봄", "별빛고", "제구형", true),
                     new ProspectEntryReadModel(2, "도윤", "푸른솔고", "강속구형", false),
                 },
+                gameLines: new[]
+                {
+                    new CareerGameLineReadModel(
+                        1, 1, 1, true, true, 9, 12, 6, 4, 1, 52, 3, 1, "win",
+                        homeRuns: 1, recordedHits: 4),
+                    new CareerGameLineReadModel(
+                        1, 2, 2, true, true, 6, 9, 8, 3, 2, 38, 2, 3, "loss",
+                        homeRuns: 0, recordedHits: 3),
+                },
                 fatigue: 17,
                 armRisk: 9,
                 managerTrust: 74,
@@ -242,9 +251,37 @@ namespace Baseball.Presentation.Tests
                 },
                 leaguePitchers: new[]
                 {
-                    new LeaguePitcherReadModel(1, "해온", "해오름", 63, 5, 1, 0, 51, 12, 18, 7, true),
-                    new LeaguePitcherReadModel(2, "지후", "푸른물결", 60, 4, 2, 1, 46, 14, 20, 9, false),
-                });
+                    new LeaguePitcherReadModel(1, "해온", "해오름", 63, 5, 1, 0, 51, 12, 18, 7, true,
+                        homeRuns: 2, recordedHits: 18),
+                    new LeaguePitcherReadModel(2, "지후", "푸른물결", 60, 4, 2, 1, 46, 14, 20, 9, false,
+                        homeRuns: 3, recordedHits: 20),
+                },
+                recordBook: new ProRecordBookReadModel(
+                    new PitchingRecordReadModel(
+                        1, 1, 18, 9, 2, 1, 1, 0, 0, 5, 1, 76, 1),
+                    new[]
+                    {
+                        new CareerGameLineReadModel(
+                            3, 11, 1, true, true, 18, 9, 2, 5, 1, 76, 4, 1, "win",
+                            homeRuns: 1, recordedHits: 5)
+                    },
+                    new[]
+                    {
+                        new ProSeasonLineReadModel(
+                            2, "fictional-club", 10, 90, 62, 18, 12, 1, 6, 2, 0,
+                            starts: 8, hits: 30, homeRuns: 4, pitches: 410, qualityStarts: 5)
+                    },
+                    new[] { "신인상" },
+                    new[] { "프로 통산 100탈삼진" },
+                    new[]
+                    {
+                        new ProDecisionHistoryReadModel(
+                            "decision-1", "role", 3, 8, "starter", "선발 경쟁",
+                            "선발 로테이션 기회를 얻었습니다.", managerTrustDelta: 4,
+                            roleTarget: "starter")
+                    },
+                    hallOfFameScore: 321,
+                    seasonGameLinesAvailable: true));
             GameSaveAggregate state = GameSaveAggregate.Initial("install").Commit(
                 "active-records",
                 stage: ApplicationStage.Pro,
@@ -265,7 +302,8 @@ namespace Baseball.Presentation.Tests
             Assert.That(hsRatings.Value, Is.EqualTo("구위 71 · 제구 79 · 변화 68 · 체력 73"));
             Assert.That(hsRatings.Detail, Is.EqualTo("팬 관심 88 · 포수와의 호흡 81 · 지도자의 믿음 74"));
             Assert.That(hsAdvanced.Value,
-                Is.EqualTo("9이닝당 탈삼진 18.0 · 볼넷 7.7 · 실점 3.9"));
+                Is.EqualTo("9이닝당 실점 5.40 · WHIP 4.20 · 탈삼진/볼넷 1.50"));
+            Assert.That(hsAdvanced.Detail, Does.Contain("FIP"));
             Assert.That(records.Sections.Single(section =>
                     section.Id == "records-current-high-school").Rows
                 .Single(row => row.Id == "records-current-hs-identity").Value,
@@ -289,6 +327,38 @@ namespace Baseball.Presentation.Tests
             Assert.That(records.Sections.SelectMany(section => section.Rows)
                 .Single(row => row.Id == "records-current-hs-awakenings").Value,
                 Is.EqualTo("바늘끝 제구"));
+            Assert.That(records.Sections.SelectMany(section => section.Rows)
+                .Single(row => row.Id == "records-current-pro-awards").Value,
+                Is.EqualTo("신인상"));
+            Assert.That(records.Sections.SelectMany(section => section.Rows)
+                .Single(row => row.Id == "records-current-pro-milestones").Value,
+                Is.EqualTo("프로 통산 100탈삼진"));
+            Assert.That(records.Sections.SelectMany(section => section.Rows)
+                .Single(row => row.Id == "records-current-pro-decision-0").Detail,
+                Does.Contain("지도자 믿음 +4"));
+            Assert.That(records.Sections.Single(section => section.Id == "records-pro-games").Rows,
+                Has.Count.EqualTo(1));
+        }
+
+        [Test]
+        public void RecordsFailsClosedWhenLegacyProSnapshotHasNoRecordBook()
+        {
+            var pro = new ProCareerReadModel(
+                "legacy-pro", ProCareerOrigin.Direct, ProCareerPhase.WeeklyPlan, "seed", 1,
+                "player", "해온", "fictional-club", "해오름", 2, 4,
+                new PitcherRatingsReadModel(70, 68, 66, 72),
+                new CareerPerformanceReadModel(9, 81, 22, 18, 8, 11, 5));
+            GameSaveAggregate state = GameSaveAggregate.Initial("install").Commit(
+                "legacy-pro", stage: ApplicationStage.Pro, pro: pro);
+
+            BaseballScreenViewModel records = ReadyModel(() => state).Read(ShellRoute.Records);
+            ScreenRowViewModel unavailable = records.Sections
+                .Single(section => section.Id == "records-current-pro").Rows
+                .Single(row => row.Id == "records-current-pro-performance");
+
+            Assert.That(unavailable.Value, Is.EqualTo("상세 투구 기록을 불러올 수 없음"));
+            Assert.That(unavailable.Detail, Does.Contain("이전 저장"));
+            Assert.That(records.Sections.Any(section => section.Id == "records-pro-games"), Is.False);
         }
 
         [Test]
@@ -387,7 +457,7 @@ namespace Baseball.Presentation.Tests
 
         [TestCase(ShellRoute.Awakening, ShellRoute.Awakening)]
         [TestCase(ShellRoute.ProWeek, ShellRoute.ProWeek)]
-        [TestCase(ShellRoute.Daily, ShellRoute.Records)]
+        [TestCase(ShellRoute.Daily, ShellRoute.Awakening)]
         public void CompletedPitchUsesSavedCareerRouteInsteadOfLegacyFallback(
             ShellRoute preferredRoute,
             ShellRoute expected)
@@ -1012,39 +1082,47 @@ namespace Baseball.Presentation.Tests
         }
 
         [Test]
-        public void DailyRouteProjectsSavedThreeAttemptLimitBestAndDisabledFourthAttempt()
+        public void RetiredDailyRouteShowsSafeReturnWithoutAPlayableAction()
         {
-            var instant = new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero);
-            string dayKey = SeoulGameCalendar.DayKey(instant);
-            var best = new PitchGameReport("daily-best", 3, 1, 3, 2, 0, 0, 0);
-            GameSaveAggregate initial = GameSaveAggregate.Initial("install");
-            GameSaveAggregate state = initial.Commit(
-                "daily-fixture",
-                meta: initial.Meta.With(
-                    daily: new DailyStreakState(
-                        lastDailyInningDayKey: dayKey,
-                        dailyInning: new DailyInningDayState(dayKey, 3, 1200, best)),
-                    creditedRewardIds: new[] { DailyInningRules.RewardId(dayKey) }));
+            GameSaveAggregate state = GameSaveAggregate.Initial("install");
             var model = new StoreBaseballCareerReadModel(
                 KoreanUiCopyCatalog.LoadDefault(),
                 () => state,
                 () => ShellRuntimeStatus.Ready,
-                () => string.Empty,
-                now: () => instant);
+                () => string.Empty);
 
-            BaseballScreenViewModel daily = model.Read(ShellRoute.Daily);
-            Assert.That(daily.Title, Is.EqualTo("오늘의 이닝 · " + dayKey));
-            Assert.That(daily.Lead, Is.EqualTo("전국이 같은 타순을 상대합니다"));
-            Assert.That(daily.Sections.SelectMany(section => section.Rows)
-                .Single(row => row.Id == "daily-attempts").Value, Is.EqualTo("0 / 3"));
-            Assert.That(daily.Sections.SelectMany(section => section.Rows)
-                .Single(row => row.Id == "daily-best").Value, Is.EqualTo("1200점"));
-            Assert.That(daily.Sections.SelectMany(section => section.Rows)
-                .Single(row => row.Id == "daily-reward").Value, Is.EqualTo("지급 완료"));
-            ScreenActionViewModel play = daily.Actions.Single(action => action.Id == "begin_daily_pitch");
-            Assert.That(play.IsEnabled, Is.False);
-            Assert.That(play.Hint, Does.Contain("내일"));
-            Assert.That(daily.Actions.Any(action => action.Target == ShellRoute.Weekly), Is.True);
+            BaseballScreenViewModel retired = model.Read(ShellRoute.Daily);
+            Assert.That(retired.Title, Does.Contain("새 일일 도전"));
+            Assert.That(retired.Sections.Single().Id, Is.EqualTo("retired-daily-inning"));
+            Assert.That(retired.Actions, Has.Count.EqualTo(1));
+            Assert.That(retired.Actions.Single().Id, Is.EqualTo("retired_daily_return"));
+            Assert.That(retired.Actions.Single().Target, Is.EqualTo(ShellRoute.Records));
+            Assert.That(retired.Actions.Any(action => action.Id == "begin_daily_pitch"), Is.False);
+        }
+
+        [Test]
+        public void RetiredDailyLinksPreferActiveProThenHighSchoolThenOpening()
+        {
+            var highSchool = new HighSchoolCareerReadModel(
+                "hs-career", 1, HighSchoolPhase.Training, "seed", 1, "player", "해온",
+                "power_prospect", new PitcherRatingsReadModel(60, 60, 60, 60),
+                new CareerPerformanceReadModel());
+            var pro = new ProCareerReadModel(
+                "pro-career", ProCareerOrigin.Direct, ProCareerPhase.WeeklyPlan, "pro-seed", 2,
+                "pro-player", "새봄", "fictional-club", "해오름", 1, 1,
+                new PitcherRatingsReadModel(70, 70, 70, 70), new CareerPerformanceReadModel());
+            GameSaveAggregate initial = GameSaveAggregate.Initial("install");
+            GameSaveAggregate highSchoolOnly = initial.Commit(
+                "hs", stage: ApplicationStage.HighSchool, highSchool: highSchool);
+            GameSaveAggregate withPro = highSchoolOnly.Commit(
+                "pro", stage: ApplicationStage.Pro, pro: pro);
+
+            Assert.That(StoreBaseballCareerReadModel.RetiredDailyFallbackFor(withPro),
+                Is.EqualTo(ShellRoute.ProWeek));
+            Assert.That(StoreBaseballCareerReadModel.RetiredDailyFallbackFor(highSchoolOnly),
+                Is.EqualTo(ShellRoute.Training));
+            Assert.That(StoreBaseballCareerReadModel.RetiredDailyFallbackFor(initial),
+                Is.EqualTo(ShellRoute.Opening));
         }
 
         private static LifeArchiveRecord ArchivedLife(PlayerLegacyState playerLegacy)

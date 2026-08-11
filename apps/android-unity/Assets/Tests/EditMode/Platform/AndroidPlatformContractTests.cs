@@ -165,11 +165,12 @@ namespace Baseball.Platform.Tests
             string runtime = File.ReadAllText(FindFromParents(Path.Combine(
                 "apps", "android-unity", "Assets", "Game", "Presentation", "Shell",
                 "ProductionBaseballShellRuntime.cs")));
-            Assert.That(service, Does.Contain("public void RequestEnabled(bool enabled)"));
-            Assert.That(service, Does.Contain("EnablementChanged?.Invoke(allowed, \"settings\")"));
+            Assert.That(service, Does.Contain("public void RequestEnabled(bool enabled, string source = \"settings\")"));
+            Assert.That(service, Does.Contain("EnablementChanged?.Invoke(allowed, source)"));
             Assert.That(service, Does.Contain("ResolvePersistedDenial(bool saved)"));
             Assert.That(service, Does.Not.Contain("AnalyticsEvent.ReminderChanged"));
             Assert.That(runtime, Does.Contain("AndroidReminderService.Instance.RequestEnabled(enabled)"));
+            Assert.That(runtime, Does.Contain("reminders.RequestEnabled(true, \"after_first_game\")"));
             Assert.That(runtime, Does.Contain("DrainPendingReminderSetting()"));
             Assert.That(runtime, Does.Contain("if (!busy)"));
             Assert.That(runtime, Does.Contain("DrainPendingReminderOpen()"));

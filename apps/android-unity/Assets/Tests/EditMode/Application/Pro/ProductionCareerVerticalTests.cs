@@ -39,7 +39,7 @@ namespace Baseball.Application.Tests
 
                 var sawTournament = false;
                 var sawProspects = false;
-                var completedDaily = false;
+                var rejectedRetiredDaily = false;
                 for (var guard = 0; guard < 240 && store.Current.HighSchool.Phase != HighSchoolPhase.Draft; guard++)
                 {
                     var highSchool = store.Current.HighSchool;
@@ -93,7 +93,7 @@ namespace Baseball.Application.Tests
                         case HighSchoolPhase.ImportantGame:
                             await CompletePitch(store, PitchCareerKind.HighSchool,
                                 "hs-game-" + highSchool.Performance.ImportantGames, now);
-                            if (!completedDaily)
+                            if (!rejectedRetiredDaily)
                             {
                                 var reconcile = WeeklyProgramCommandFactory.Observe(
                                     store.Current, now.AddMinutes(1));
@@ -101,9 +101,21 @@ namespace Baseball.Application.Tests
                                 {
                                     await Applied(store, Next("weekly-reconcile"), reconcile);
                                 }
-                                await CompletePitch(store, PitchCareerKind.Daily,
-                                    "daily-20260811", now.AddMinutes(2));
-                                completedDaily = true;
+                                var revision = store.Current.Revision;
+                                var retired = await store.DispatchAsync(
+                                    new CommandEnvelope<GameCommand>(
+                                        Next("retired-daily"),
+                                        revision,
+                                        new BeginPitchSessionCommand(
+                                            "daily-20260811",
+                                            PitchCareerKind.Daily,
+                                            "daily",
+                                            1,
+                                            now.AddMinutes(2))));
+                                Assert.That(retired.Status, Is.EqualTo(DispatchStatus.DomainRejected));
+                                Assert.That(retired.ErrorCode, Is.EqualTo("daily.retired"));
+                                Assert.That(store.Current.Revision, Is.EqualTo(revision));
+                                rejectedRetiredDaily = true;
                             }
                             break;
                         case HighSchoolPhase.Awakening:
@@ -127,8 +139,8 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current.HighSchool.Performance.ImportantGames, Is.GreaterThanOrEqualTo(4));
                 Assert.That(sawTournament, Is.True);
                 Assert.That(sawProspects, Is.True);
-                Assert.That(completedDaily, Is.True);
-                Assert.That(store.Current.Meta.Daily.LastDailyInningDayKey, Is.EqualTo("20260811"));
+                Assert.That(rejectedRetiredDaily, Is.True);
+                Assert.That(store.Current.Meta.Daily.LastDailyInningDayKey, Is.Null);
 
                 await AdvanceHighSchool(store, "resolve_draft", null, now);
                 Assert.That(store.Current.HighSchool.Draft.Resolved, Is.True);

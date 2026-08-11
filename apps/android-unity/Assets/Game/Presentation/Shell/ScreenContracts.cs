@@ -391,6 +391,12 @@ namespace Baseball.Presentation.Shell
         bool ShouldHoldOpeningForReturnPlan { get; }
     }
 
+    /// <summary>Safe target for links that still decode the retired daily-inning route.</summary>
+    public interface IBaseballRetiredDailyRouteFallback
+    {
+        ShellRoute RetiredDailyFallbackRoute { get; }
+    }
+
     public interface IBaseballShellLifecycleObserver
     {
         void OnApplicationPause(bool paused);

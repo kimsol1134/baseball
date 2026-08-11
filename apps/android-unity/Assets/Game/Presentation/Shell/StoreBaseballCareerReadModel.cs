@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Baseball.Application.HighSchool;
 using Baseball.Application.Meta;
@@ -89,6 +90,13 @@ namespace Baseball.Presentation.Shell
             }
         }
 
+        public static ShellRoute RetiredDailyFallbackFor(GameSaveAggregate state)
+        {
+            if (state?.Pro != null) return ProRoute(state.Pro);
+            if (state?.HighSchool != null) return HighSchoolRoute(state.HighSchool);
+            return ShellRoute.Opening;
+        }
+
         private static ShellRoute CareerRouteWithoutInterruption(GameSaveAggregate state)
         {
             if (state.Pro != null) return ProRoute(state.Pro);
@@ -136,8 +144,6 @@ namespace Baseball.Presentation.Shell
             BaseballScreenViewModel template,
             GameSaveAggregate state)
         {
-            if (route == ShellRoute.Daily)
-                return "오늘의 이닝 · " + DailyInningRules.Project(state.Meta, _now()).DayKey;
             string player = route == ShellRoute.LifeCard
                 ? SelectedLifeRecord(state)?.PlayerName
                 : state.Pro?.PlayerName ?? state.HighSchool?.PlayerName;
@@ -257,7 +263,20 @@ namespace Baseball.Presentation.Shell
                     }
                     break;
                 case ShellRoute.Daily:
-                    projected = DailySections(state, _now()).ToList();
+                    projected = new List<ScreenSectionViewModel>
+                    {
+                        new ScreenSectionViewModel(
+                            "retired-daily-inning",
+                            "일일 도전 재설계 중",
+                            ScreenSectionTone.Information,
+                            new[]
+                            {
+                                new ScreenRowViewModel(
+                                    "retired-daily-inning-copy",
+                                    "진행 중인 선수로 돌아갑니다",
+                                    "이전 링크는 현재 고교·프로 커리어의 안전한 화면으로 연결됩니다.")
+                            })
+                    };
                     break;
                 case ShellRoute.HighSchoolOverview:
                     AddHighSchoolCompetition(projected, state.HighSchool);
@@ -860,23 +879,16 @@ namespace Baseball.Presentation.Shell
                         RatingLine(state.HighSchool.Ratings),
                         "팬 관심 " + state.HighSchool.FanInterest + " · 포수와의 호흡 " +
                         state.HighSchool.CatcherTrust + " · 지도자의 믿음 " + state.HighSchool.ManagerTrust),
-                    new ScreenRowViewModel(
-                        "records-current-hs-performance",
-                        "고교 누적",
-                        performance.ImportantGames + "경기 · " + Innings(performance.Outs) +
-                        "이닝 · " + performance.Pitches + "구",
-                        "탈삼진 " + performance.Strikeouts + " · 볼넷 " + performance.Walks +
-                        " · 피안타 " + performance.Hits + " · 실점 " + performance.RunsAllowed),
-                    new ScreenRowViewModel(
-                        "records-current-hs-advanced",
-                        "고교 투구 지표",
-                        PerNineLine(
-                            performance.Strikeouts,
-                            performance.Walks,
-                            performance.RunsAllowed,
-                            performance.Outs),
-                        "피로 " + state.HighSchool.Fatigue + " · 팔 위험 " + state.HighSchool.ArmRisk),
                 };
+                bool highSchoolRecordAvailable = state.HighSchool.GameLines.Count > 0 ||
+                    performance.ImportantGames == 0 && performance.Outs == 0 && performance.Pitches == 0;
+                AddPitchingRecordRows(
+                    rows,
+                    "records-current-hs",
+                    "고교 누적",
+                    state.HighSchool.PitchingRecord,
+                    highSchoolRecordAvailable,
+                    "피로 " + state.HighSchool.Fatigue + " · 팔 위험 " + state.HighSchool.ArmRisk);
                 if (state.HighSchool.News.Count > 0)
                     rows.Add(new ScreenRowViewModel(
                         "records-current-hs-news",
@@ -918,33 +930,64 @@ namespace Baseball.Presentation.Shell
             }
             if (state.Pro != null)
             {
-                CareerPerformanceReadModel season = state.Pro.CurrentSeason ??
-                    new CareerPerformanceReadModel();
+                var proRows = new List<ScreenRowViewModel>
+                {
+                    new ScreenRowViewModel(
+                        "records-current-pro-ratings",
+                        state.Pro.PlayerName + " · 현재 능력",
+                        RatingLine(state.Pro.Ratings),
+                        state.Pro.TeamName + " · " + state.Pro.Season + "시즌 " + state.Pro.Week + "주")
+                };
+                AddPitchingRecordRows(
+                    proRows,
+                    "records-current-pro",
+                    "이번 시즌",
+                    state.Pro.RecordBook?.CurrentSeason,
+                    state.Pro.RecordBook?.CurrentSeason != null,
+                    "지도자의 믿음 " + state.Pro.ManagerTrust + " · 포수와의 호흡 " +
+                    state.Pro.CatcherTrust + " · 피로 " + state.Pro.Fatigue);
                 result.Add(new ScreenSectionViewModel(
                     "records-current-pro",
                     "현재 프로 선수",
                     ScreenSectionTone.Information,
-                    new[]
-                    {
-                        new ScreenRowViewModel(
-                            "records-current-pro-ratings",
-                            state.Pro.PlayerName + " · 현재 능력",
-                            RatingLine(state.Pro.Ratings),
-                            state.Pro.TeamName + " · " + state.Pro.Season + "시즌 " + state.Pro.Week + "주"),
-                        new ScreenRowViewModel(
-                            "records-current-pro-performance",
-                            "이번 시즌",
-                            season.ImportantGames + "경기 · " + Innings(season.Outs) +
-                            "이닝 · 탈삼진 " + season.Strikeouts,
-                            "볼넷 " + season.Walks + " · 피안타 " + season.Hits +
-                            " · 실점 " + season.RunsAllowed),
-                        new ScreenRowViewModel(
-                            "records-current-pro-advanced",
-                            "프로 투구 지표",
-                            PerNineLine(season.Strikeouts, season.Walks, season.RunsAllowed, season.Outs),
-                            "지도자의 믿음 " + state.Pro.ManagerTrust + " · 포수와의 호흡 " +
-                            state.Pro.CatcherTrust + " · 피로 " + state.Pro.Fatigue),
-                    }));
+                    proRows));
+                ProRecordBookReadModel recordBook = state.Pro.RecordBook;
+                if (recordBook != null &&
+                    (recordBook.AwardNames.Count > 0 || recordBook.Milestones.Count > 0 ||
+                     recordBook.HallOfFameScore.HasValue))
+                {
+                    var achievementRows = new List<ScreenRowViewModel>();
+                    if (recordBook.AwardNames.Count > 0)
+                        achievementRows.Add(new ScreenRowViewModel(
+                            "records-current-pro-awards",
+                            "수상",
+                            string.Join(" · ", recordBook.AwardNames)));
+                    if (recordBook.Milestones.Count > 0)
+                        achievementRows.Add(new ScreenRowViewModel(
+                            "records-current-pro-milestones",
+                            "이정표",
+                            string.Join(" · ", recordBook.Milestones)));
+                    if (recordBook.HallOfFameScore.HasValue)
+                        achievementRows.Add(new ScreenRowViewModel(
+                            "records-current-pro-hall-score",
+                            "명예의 전당 점수",
+                            recordBook.HallOfFameScore.Value.ToString(CultureInfo.InvariantCulture)));
+                    result.Add(new ScreenSectionViewModel(
+                        "records-current-pro-achievements",
+                        "프로 성취",
+                        ScreenSectionTone.Milestone,
+                        achievementRows));
+                }
+                if (recordBook?.DecisionHistory?.Count > 0)
+                    result.Add(new ScreenSectionViewModel(
+                        "records-current-pro-decisions",
+                        "커리어 선택 기록",
+                        ScreenSectionTone.Plain,
+                        recordBook.DecisionHistory.Select((decision, index) => new ScreenRowViewModel(
+                            "records-current-pro-decision-" + index,
+                            decision.Season + "시즌 " + decision.Week + "주 · " + decision.ChoiceTitle,
+                            decision.EffectSummary,
+                            ProDecisionDeltaLine(decision))).ToArray()));
                 if (state.Pro.LeagueStandings.Count > 0)
                     result.Add(new ScreenSectionViewModel(
                         "records-current-pro-standings",
@@ -970,6 +1013,7 @@ namespace Baseball.Presentation.Shell
                             "이닝 · 탈삼진 " + entry.Strikeouts,
                             entry.Wins + "승 " + entry.Losses + "패 · 세이브 " + entry.Saves +
                             " · 볼넷 " + entry.Walks + " · 실점 " + entry.RunsAllowed +
+                            " · " + AdvancedCompact(entry.PitchingRecord) +
                             (entry.IsPlayer ? " · 내 선수" : string.Empty))).ToArray()));
             }
             LifeArchiveRecord[] archive = (state.Meta?.LifeArchive ?? Array.Empty<LifeArchiveRecord>())
@@ -1077,16 +1121,41 @@ namespace Baseball.Presentation.Shell
             if (state.HighSchool?.GameLines?.Count > 0)
                 result.Add(new ScreenSectionViewModel("records-high-school", "고교 경기", ScreenSectionTone.Plain,
                     state.HighSchool.GameLines.Select((line, index) => GameLineRow("record-hs", line, index)).ToArray()));
-            if (state.Pro?.RecentGameLines?.Count > 0)
-                result.Add(new ScreenSectionViewModel("records-pro-games", "프로 최근 경기", ScreenSectionTone.Plain,
-                    state.Pro.RecentGameLines.Select((line, index) => GameLineRow("record-pro", line, index)).ToArray()));
-            if (state.Pro?.CareerSeasons?.Count > 0)
+            if (state.Pro?.RecordBook?.SeasonGameLinesAvailable == true)
+                result.Add(new ScreenSectionViewModel(
+                    "records-pro-games",
+                    "프로 이번 시즌 전체 경기",
+                    ScreenSectionTone.Plain,
+                    state.Pro.RecordBook.SeasonGameLines.Count == 0
+                        ? new[]
+                        {
+                            new ScreenRowViewModel(
+                                "records-pro-games-empty",
+                                "아직 등판 기록 없음",
+                                "이번 시즌 첫 등판 뒤 경기 기록이 저장됩니다.")
+                        }
+                        : state.Pro.RecordBook.SeasonGameLines
+                            .Select((line, index) => GameLineRow("record-pro", line, index))
+                            .ToArray()));
+            else if (state.Pro?.RecordBook != null)
+                result.Add(new ScreenSectionViewModel(
+                    "records-pro-games-unavailable",
+                    "프로 경기 기록",
+                    ScreenSectionTone.Information,
+                    new[]
+                    {
+                        new ScreenRowViewModel(
+                            "records-pro-games-unavailable-copy",
+                            "전체 경기 기록을 불러올 수 없음",
+                            "이전 저장에는 이번 시즌의 모든 경기선이 보관되지 않았습니다.")
+                    }));
+            if (state.Pro?.RecordBook?.CareerSeasons?.Count > 0)
                 result.Add(new ScreenSectionViewModel("records-pro-seasons", "프로 시즌 기록", ScreenSectionTone.Milestone,
-                    state.Pro.CareerSeasons.Select(line => new ScreenRowViewModel(
+                    state.Pro.RecordBook.CareerSeasons.Select(line => new ScreenRowViewModel(
                         "record-season-" + line.Season,
                         line.Season + "시즌",
-                        line.Games + "경기 · " + Innings(line.InningsOuts) + "이닝 · 탈삼진 " + line.Strikeouts,
-                        "승 " + line.Wins + " · 패 " + line.Losses + " · 세이브 " + line.Saves + " · 실점 " + line.RunsAllowed)).ToArray()));
+                        SeasonVolumeLine(line),
+                        SeasonResultLine(line) + " · " + AdvancedCompact(line.PitchingRecord))).ToArray()));
             if (result.Count == 0 && state.Meta?.Weekly?.Program != null)
                 result.AddRange(WeeklySections(state.Meta.Weekly));
             if (result.Count == 0)
@@ -1101,6 +1170,113 @@ namespace Baseball.Presentation.Shell
             return "9이닝당 탈삼진 " + (strikeouts * 9d / innings).ToString("0.0") +
                 " · 볼넷 " + (walks * 9d / innings).ToString("0.0") +
                 " · 실점 " + (runs * 9d / innings).ToString("0.0");
+        }
+
+        private static void AddPitchingRecordRows(
+            ICollection<ScreenRowViewModel> rows,
+            string prefix,
+            string heading,
+            PitchingRecordReadModel record,
+            bool available,
+            string context)
+        {
+            if (!available || record == null)
+            {
+                rows.Add(new ScreenRowViewModel(
+                    prefix + "-performance",
+                    heading,
+                    "상세 투구 기록을 불러올 수 없음",
+                    "이전 저장에는 경기별 원자료가 모두 보관되지 않았습니다."));
+                rows.Add(new ScreenRowViewModel(
+                    prefix + "-advanced",
+                    heading + " 고급 지표",
+                    "계산 가능한 기록 없음",
+                    context));
+                return;
+            }
+
+            rows.Add(new ScreenRowViewModel(
+                prefix + "-performance",
+                heading,
+                record.Games + "경기 · 선발 " + record.Starts + " · " + record.InningsText +
+                "이닝 · " + NullableCount(record.Pitches, "투구"),
+                "탈삼진 " + record.Strikeouts + " · 볼넷 " + record.Walks +
+                " · 실점 " + record.RunsAllowed + " · " +
+                NullableCount(record.Hits, "피안타") + " · " +
+                NullableCount(record.HomeRuns, "피홈런")));
+            rows.Add(new ScreenRowViewModel(
+                prefix + "-decisions",
+                "승패와 역할",
+                record.Wins + "승 " + record.Losses + "패 · " + record.Saves + "세이브",
+                record.QualityStarts.HasValue
+                    ? "퀄리티 스타트 " + record.QualityStarts.Value
+                    : "퀄리티 스타트는 이전 저장에서 집계되지 않았습니다."));
+            rows.Add(new ScreenRowViewModel(
+                prefix + "-advanced",
+                heading + " 고급 지표",
+                "9이닝당 실점 " + Metric(record.RunsPerNine) + " · WHIP " +
+                Metric(record.Whip) + " · 탈삼진/볼넷 " + Metric(record.StrikeoutToWalk),
+                "K/9 " + Metric(record.StrikeoutsPerNine) + " · BB/9 " +
+                Metric(record.WalksPerNine) + " · H/9 " + Metric(record.HitsPerNine) +
+                " · HR/9 " + Metric(record.HomeRunsPerNine) + " · FIP " +
+                Metric(record.FieldingIndependentPitching) + " · 상대 타자 " +
+                NullableCount(record.BattersFaced, string.Empty) + " · K% " +
+                Percent(record.StrikeoutRate) + " · BABIP " + Babip(record.BattingAverageOnBallsInPlay) +
+                ". " + context));
+        }
+
+        private static string NullableCount(int? value, string label) => value.HasValue
+            ? (string.IsNullOrWhiteSpace(label)
+                ? value.Value.ToString(CultureInfo.InvariantCulture)
+                : label + " " + value.Value.ToString(CultureInfo.InvariantCulture))
+            : (string.IsNullOrWhiteSpace(label) ? "기록 없음" : label + " 미기록");
+
+        private static string Metric(double? value) => value.HasValue
+            ? value.Value.ToString("0.00", CultureInfo.InvariantCulture)
+            : "기록 없음";
+
+        private static string Percent(double? value) => value.HasValue
+            ? value.Value.ToString("0.0%", CultureInfo.InvariantCulture)
+            : "기록 없음";
+
+        private static string Babip(double? value) => value.HasValue
+            ? value.Value.ToString("0.000", CultureInfo.InvariantCulture)
+            : "기록 없음";
+
+        private static string SeasonVolumeLine(ProSeasonLineReadModel line) =>
+            line.Games + "경기 · " +
+            (line.Starts.HasValue ? "선발 " + line.Starts.Value : "선발 미기록") + " · " +
+            Innings(line.InningsOuts) + "이닝 · " + NullableCount(line.Pitches, "투구");
+
+        private static string SeasonResultLine(ProSeasonLineReadModel line) =>
+            line.Wins + "승 " + line.Losses + "패 · " + line.Saves + "세이브 · 탈삼진 " +
+            line.Strikeouts + " · 볼넷 " + line.Walks + " · 실점 " + line.RunsAllowed +
+            " · " + NullableCount(line.Hits, "피안타") + " · " +
+            NullableCount(line.HomeRuns, "피홈런");
+
+        private static string AdvancedCompact(PitchingRecordReadModel record) =>
+            "9이닝당 실점 " + Metric(record?.RunsPerNine) + " · WHIP " +
+            Metric(record?.Whip) + " · K/9 " + Metric(record?.StrikeoutsPerNine) +
+            " · FIP " + Metric(record?.FieldingIndependentPitching);
+
+        private static string ProDecisionDeltaLine(ProDecisionHistoryReadModel decision)
+        {
+            var parts = new List<string>();
+            AddDelta(parts, "구위", decision.StuffDelta);
+            AddDelta(parts, "제구", decision.CommandDelta);
+            AddDelta(parts, "변화", decision.MovementDelta);
+            AddDelta(parts, "체력", decision.StaminaDelta);
+            AddDelta(parts, "지도자 믿음", decision.ManagerTrustDelta);
+            AddDelta(parts, "포수 호흡", decision.CatcherTrustDelta);
+            AddDelta(parts, "피로", decision.FatigueDelta);
+            if (!string.IsNullOrWhiteSpace(decision.RoleTarget))
+                parts.Add("역할 " + decision.RoleTarget);
+            return parts.Count == 0 ? "선택 결과가 저장되었습니다." : string.Join(" · ", parts);
+        }
+
+        private static void AddDelta(ICollection<string> parts, string label, int delta)
+        {
+            if (delta != 0) parts.Add(label + " " + Signed(delta));
         }
 
         private static IReadOnlyList<ScreenSectionViewModel> ProContractSections(GameSaveAggregate state)
@@ -1488,60 +1664,6 @@ namespace Baseball.Presentation.Shell
         private static string NormalizeArchiveId(string value) =>
             (value ?? string.Empty).ToLowerInvariant().Replace("_", string.Empty).Replace("-", string.Empty);
 
-        private static IReadOnlyList<ScreenSectionViewModel> DailySections(
-            GameSaveAggregate state,
-            DateTimeOffset now)
-        {
-            DailyInningReadModel daily = DailyInningRules.Project(state.Meta, now);
-            PitchGameReport best = daily.BestReport;
-            return new[]
-            {
-                new ScreenSectionViewModel(
-                    "daily-challenge",
-                    "오늘의 이닝 · " + daily.DayKey,
-                    ScreenSectionTone.Information,
-                    new[]
-                    {
-                        new ScreenRowViewModel(
-                            "daily-same-lineup",
-                            "모두 같은 승부",
-                            "전국이 같은 타순을 상대합니다",
-                            "9회초, 한 점 리드, 고정 스펙의 투수"),
-                        new ScreenRowViewModel(
-                            "daily-score-rule",
-                            "점수 규칙",
-                            "삼진 +300 · 아웃 +100 · 볼넷 −50 · 실점 −250 · 무실점 마감 +300")
-                    }),
-                new ScreenSectionViewModel(
-                    "daily-today",
-                    "오늘의 기록",
-                    daily.HasCompletedAttempt ? ScreenSectionTone.Positive : ScreenSectionTone.Plain,
-                    new[]
-                    {
-                        new ScreenRowViewModel(
-                            "daily-attempts",
-                            "남은 도전 횟수",
-                            daily.RemainingAttempts + " / " + daily.AttemptLimit,
-                            daily.CanStart
-                                ? "도전을 시작하면 중단하거나 앱이 종료되어도 한 회가 사용됩니다."
-                                : "오늘 도전은 끝났습니다. 내일 새 타순이 열립니다."),
-                        new ScreenRowViewModel(
-                            "daily-best",
-                            "오늘 최고 기록",
-                            daily.HasCompletedAttempt ? daily.BestScore + "점" : "아직 기록 없음",
-                            best == null
-                                ? "첫 이닝을 마치면 최고 기록이 여기에 저장됩니다."
-                                : best.Pitches + "구 · " + best.Outs + "아웃 · 탈삼진 " +
-                                  best.Strikeouts + " · 볼넷 " + best.Walks + " · 실점 " + best.RunsAllowed),
-                        new ScreenRowViewModel(
-                            "daily-reward",
-                            "오늘의 첫 완료 보상",
-                            daily.RewardCredited ? "지급 완료" : "첫 완료 후 지급",
-                            "같은 서울 날짜에는 한 번만 지급됩니다.")
-                    })
-            };
-        }
-
         private static IReadOnlyList<ScreenSectionViewModel> WeeklySections(WeeklyProgressState weekly)
         {
             var result = new List<ScreenSectionViewModel>();
@@ -1872,6 +1994,22 @@ namespace Baseball.Presentation.Shell
                             enabled: HasSelected("school", state.HighSchool.SchoolChoices)));
                     }
                     break;
+                case ShellRoute.PitchHandoff:
+                    if (state.PitchResume?.AwaitingCompletion == true)
+                    {
+                        return Actions(
+                            Navigate(
+                                "navigate_retry_pitch_completion",
+                                "저장된 결과 다시 완료",
+                                ShellRoute.PitchHandoff,
+                                "마지막 타자까지 저장된 경기 결과를 다시 완료합니다."),
+                            Navigate(
+                                "navigate_leave_saved_pitch",
+                                "나중에 다시 시도",
+                                CareerRouteWithoutInterruption(state),
+                                "투구 결과를 지우지 않고 현재 커리어 화면으로 돌아갑니다."));
+                    }
+                    break;
                 case ShellRoute.Training:
                     bool trainingReady = TrainingSelectionReady(state.HighSchool);
                     string trainingHint = trainingReady
@@ -2081,20 +2219,10 @@ namespace Baseball.Presentation.Shell
                         return Actions(Command("retire_pro", "은퇴 확정", ShellRoute.RunRecap, "프로 기록을 유산에 저장합니다.", ScreenActionStyle.Destructive, true));
                     break;
                 case ShellRoute.Daily:
-                    DailyInningReadModel daily = DailyInningRules.Project(state.Meta, _now());
-                    return Actions(
-                        Command(
-                            "begin_daily_pitch",
-                            daily.CanStart ? "오늘의 이닝 시작" : "오늘 도전 완료",
-                            ShellRoute.PitchHandoff,
-                            daily.CanStart
-                                ? "같은 서울 날짜의 모든 선수와 같은 타순·시드로 시작합니다."
-                                : "오늘 도전 3회를 모두 사용했습니다. 내일 다시 도전할 수 있습니다.",
-                            enabled: daily.CanStart),
-                        Navigate(
-                            "navigate_weekly_from_daily",
-                            "이번 주 목표 보기",
-                            ShellRoute.Weekly));
+                    return Actions(Navigate(
+                        "retired_daily_return",
+                        "게임으로 돌아가기",
+                        PreferredRouteFor(state)));
                 case ShellRoute.Weekly:
                     bool rewardReady = state.Meta.Weekly.Program?.RewardReady == true;
                     return Actions(

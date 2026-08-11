@@ -175,7 +175,9 @@ namespace Baseball.Application.Meta
         public int AttemptCount { get; }
         public int AttemptLimit { get; }
         public int RemainingAttempts => Math.Max(0, AttemptLimit - AttemptCount);
-        public bool CanStart => RemainingAttempts > 0;
+        /// <summary>The saved projection is retained for migration/display only.</summary>
+        public bool IsRetired => true;
+        public bool CanStart => false;
         public int BestScore { get; }
         public PitchGameReport BestReport { get; }
         public bool HasCompletedAttempt => BestReport != null;

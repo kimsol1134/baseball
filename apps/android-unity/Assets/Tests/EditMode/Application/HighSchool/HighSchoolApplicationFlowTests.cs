@@ -418,8 +418,14 @@ namespace Baseball.Application.Tests
                 using (var store = await GameApplicationStore.OpenAsync(
                            Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
+                    await Applied(store, "ability-setup", new EnterSetupCommand());
+                    await Applied(store, "ability-start", new StartHighSchoolCareerCommand(
+                        new StartHighSchoolCareerRequest(
+                            "seed", "power_prospect", "민서준", "서울", 1)));
+                    await Applied(store, "ability-game-phase", new AdvanceHighSchoolCommand(
+                        new HighSchoolAction("important_game"), instant));
                     await Applied(store, "ability-begin", new BeginPitchSessionCommand(
-                        "daily-ability", PitchCareerKind.Daily, "daily", 1, instant));
+                        "daily-ability", PitchCareerKind.HighSchool, "important", 1, instant));
                     var missingEvidence = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
                         "ability-missing",
                         store.Current.Revision,
@@ -452,19 +458,19 @@ namespace Baseball.Application.Tests
                     Assert.That(mismatched.Status, Is.EqualTo(DispatchStatus.DomainRejected));
                     await Applied(store, "ability-commit", new CommitPitchResultCommand(
                         "daily-ability", "ability-pitch", 0, "hash",
-                        "{\"outcome\":\"called_strike\"}", "{\"cue\":1}", instant,
-                        abilityMomentEvidence: AbilityEvidence(PitchAbilityKind.Command)));
+                        "{\"outcome\":\"in_play_out\"}", "{\"cue\":1}", instant,
+                        abilityMomentEvidence: AbilityEvidence(PitchAbilityKind.Movement)));
                 }
 
                 using (var restarted = await GameApplicationStore.OpenAsync(
                            Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
                 {
                     Assert.That(restarted.Current.PitchResume.CommittedPitch.AbilityMomentType,
-                        Is.EqualTo("command"));
+                        Is.EqualTo("movement"));
                     var report = new PitchGameReport(
                         "daily-ability", 1, 0, 0, 0, 0, 0, 0,
                         abilityMomentCount: 1,
-                        abilityMomentTypes: new[] { "command" });
+                        abilityMomentTypes: new[] { "movement" });
                     var envelope = new CommandEnvelope<GameCommand>(
                         "ability-consume",
                         restarted.Current.Revision,
@@ -481,7 +487,7 @@ namespace Baseball.Application.Tests
                 {
                     Assert.That(replay.Current.PitchResume.Metrics.AbilityMomentCount, Is.EqualTo(1));
                     Assert.That(replay.Current.PitchResume.Metrics.AbilityMomentTypes,
-                        Is.EqualTo(new[] { "command" }));
+                        Is.EqualTo(new[] { "movement" }));
                     Assert.That(replay.Current.PitchResume.CommittedPitch, Is.Null);
                 }
             }
@@ -533,8 +539,14 @@ namespace Baseball.Application.Tests
                 using (var store = await GameApplicationStore.OpenAsync(
                            Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
+                    await Applied(store, "terminal-setup", new EnterSetupCommand());
+                    await Applied(store, "terminal-start", new StartHighSchoolCareerCommand(
+                        new StartHighSchoolCareerRequest(
+                            "seed", "power_prospect", "민서준", "서울", 1)));
+                    await Applied(store, "terminal-game-phase", new AdvanceHighSchoolCommand(
+                        new HighSchoolAction("important_game"), instant));
                     await Applied(store, "daily-begin", new BeginPitchSessionCommand(
-                        "daily-terminal", PitchCareerKind.Daily, "daily", 1, instant));
+                        "daily-terminal", PitchCareerKind.HighSchool, "important", 6, instant));
                     Assert.That(store.Current.PitchResume.MaximumBatters, Is.EqualTo(6));
 
                     for (var batter = 0; batter < 3; batter++)
@@ -599,10 +611,10 @@ namespace Baseball.Application.Tests
                             deliveryScoreTotal: 950,
                             bestDeliveryScore: 950,
                             perfectDeliveryCount: 1,
-                            abilityMomentCount: batter + 1,
-                            abilityMomentTypes: new[] { "command", "power", "movement" }
-                                .Take(batter + 1)
-                                .ToArray());
+                            abilityMomentCount: batter == 2 ? 1 : 0,
+                            abilityMomentTypes: batter == 2
+                                ? new[] { "movement" }
+                                : Array.Empty<string>());
                         await Applied(store, "terminal-consume-" + batter,
                             new ConsumeCommittedPitchResultCommand(
                                 "daily-terminal", pitchId, batter + 1,
@@ -626,9 +638,9 @@ namespace Baseball.Application.Tests
                     Assert.That(restarted.Current.PitchResume.Metrics.DirectDeliveryCount, Is.EqualTo(1));
                     Assert.That(restarted.Current.PitchResume.Metrics.PerfectDeliveryCount, Is.EqualTo(1));
                     Assert.That(restarted.Current.PitchResume.Metrics.AverageDeliveryScore, Is.EqualTo(950));
-                    Assert.That(restarted.Current.PitchResume.Metrics.AbilityMomentCount, Is.EqualTo(3));
+                    Assert.That(restarted.Current.PitchResume.Metrics.AbilityMomentCount, Is.EqualTo(1));
                     Assert.That(restarted.Current.PitchResume.Metrics.AbilityMomentTypes,
-                        Is.EquivalentTo(new[] { "power", "command", "movement" }));
+                        Is.EqualTo(new[] { "movement" }));
                     var abandon = await restarted.DispatchAsync(new CommandEnvelope<GameCommand>(
                         "terminal-abandon", restarted.Current.Revision,
                         new AbandonPitchSessionCommand("daily-terminal")));
@@ -647,7 +659,8 @@ namespace Baseball.Application.Tests
                     Assert.That(duplicate.Status, Is.EqualTo(DispatchStatus.AlreadyApplied));
                     Assert.That(restarted.Current.PitchResume, Is.Null);
                     Assert.That(restarted.Current.PendingPitchCompletion.Report.Batters, Is.EqualTo(3));
-                    Assert.That(restarted.Current.Meta.Daily.LastDailyInningDayKey, Is.EqualTo("20260811"));
+                    Assert.That(restarted.Current.HighSchool.Performance.ImportantGames,
+                        Is.EqualTo(1));
                     Assert.That(restarted.Current.Meta.Achievements.Unlocked,
                         Does.Contain(AchievementIds.PerfectDelivery));
                 }
@@ -659,126 +672,122 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
-        public async Task DailyInning_ConsumesThreeAttemptsKeepsBestAndRewardsOnceAcrossRestart()
+        public async Task DailyInningCommands_AreRetiredWhileLegacyStateRoundTripsAndCanBeCleared()
         {
             var root = Path.Combine(
                 Path.GetTempPath(),
-                "BaseballDailyThreeAttempts",
+                "BaseballRetiredDaily",
                 Guid.NewGuid().ToString("N"));
             var instant = new DateTimeOffset(2026, 8, 11, 2, 0, 0, TimeSpan.Zero);
             var rewardId = DailyInningRules.RewardId("20260811");
             try
             {
-                var weekly = new WeeklyProgressState(
-                    new WeeklyProgramState(
-                        SeoulGameCalendar.WeekKey(instant),
-                        new[]
-                        {
-                            new WeeklyTaskState(
-                                "daily-task", WeeklyTaskKinds.DailyInningCompleted, 1, 0),
-                            new WeeklyTaskState(
-                                "played-task", WeeklyTaskKinds.PlayedOnTwoDays, 2, 0),
-                            new WeeklyTaskState(
-                                "sequence-task", WeeklyTaskKinds.SequenceMasteryTriggered, 3, 0)
-                        },
-                        Array.Empty<string>(),
-                        false),
-                    lastObservedWeekStartDayKey: SeoulGameCalendar.WeekStartDayKey(instant));
+                var legacyBest = new PitchGameReport(
+                    "legacy-daily", 3, 1, 3, 1, 0, 0, 0);
+                var legacyDaily = new DailyStreakState(
+                    "20260811",
+                    "20260811",
+                    1,
+                    1,
+                    new DailyInningDayState(
+                        "20260811",
+                        2,
+                        DailyInningRules.Score(legacyBest),
+                        legacyBest));
+                var scenario = PitchScenarioFactory.Daily("20260811");
                 var initial = GameSaveAggregate.Initial("install-a").Commit(
-                    "daily-weekly-fixture",
-                    meta: MetaProgressState.Initial.With(weekly: weekly));
+                    "legacy-daily-fixture",
+                    stage: ApplicationStage.HighSchool,
+                    highSchool: FakeHighSchoolPort.HighSchool(),
+                    meta: MetaProgressState.Initial.With(
+                        soulBalance: 5,
+                        soulLifetimeEarned: 5,
+                        creditedRewardIds: new[] { rewardId },
+                        daily: legacyDaily),
+                    pitchResume: new PitchResumeState(
+                        legacyBest.GameId,
+                        PitchCareerKind.Daily,
+                        "daily:20260811",
+                        scenario.ScenarioId,
+                        DailyInningRules.SessionSeed("20260811"),
+                        scenario.MaximumBatters,
+                        1,
+                        "{\"legacy\":true}",
+                        scenario,
+                        legacyBest,
+                        consumedPitchIds: new[] { "legacy-pitch" },
+                        awaitingCompletion: true));
                 using (var repository = Repository(root))
                 {
                     await repository.SaveAsync(initial, initial.Revision);
                 }
 
-                string scenarioId;
-                string sessionSeed;
-                string firstBatter;
                 using (var store = await GameApplicationStore.OpenAsync(
                            Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
                 {
-                    var before = DailyInningRules.Project(store.Current.Meta, instant);
-                    Assert.That(before.AttemptCount, Is.Zero);
-                    Assert.That(before.RemainingAttempts, Is.EqualTo(3));
-                    Assert.That(before.SessionSeed, Is.EqualTo("11241842111613215390"));
+                    var projection = DailyInningRules.Project(store.Current.Meta, instant);
+                    Assert.That(projection.AttemptCount, Is.EqualTo(2));
+                    Assert.That(projection.RemainingAttempts, Is.EqualTo(1));
+                    Assert.That(projection.BestScore, Is.EqualTo(900));
+                    Assert.That(projection.BestReport.GameId, Is.EqualTo("legacy-daily"));
+                    Assert.That(projection.RewardCredited, Is.True);
+                    Assert.That(projection.IsRetired, Is.True);
+                    Assert.That(projection.CanStart, Is.False);
+                    var revision = store.Current.Revision;
+                    var completion = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
+                        "retired-complete",
+                        revision,
+                        new CompletePitchSessionCommand(legacyBest, instant)));
+                    Assert.That(completion.Status, Is.EqualTo(DispatchStatus.DomainRejected));
+                    Assert.That(completion.ErrorCode, Is.EqualTo("daily.retired"));
+                    Assert.That(store.Current.Revision, Is.EqualTo(revision));
 
-                    await Applied(store, "daily-attempt-1", new BeginPitchSessionCommand(
-                        "daily-game-1", PitchCareerKind.Daily, "daily", 1, instant));
-                    scenarioId = store.Current.PitchResume.Scenario.ScenarioId;
-                    sessionSeed = store.Current.PitchResume.SessionSeed;
-                    firstBatter = store.Current.PitchResume.Scenario.Lineup[0].Name;
-                    Assert.That(store.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(1));
-                    Assert.That(sessionSeed, Is.EqualTo("11241842111613215390"));
-                    await Applied(store, "daily-abort-1", new AbandonPitchSessionCommand("daily-game-1"));
-                    Assert.That(store.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(1),
-                        "starting an attempt spends it even when the session is abandoned");
+                    await Applied(store, "retired-clear",
+                        new AbandonPitchSessionCommand("legacy-daily"));
+                    Assert.That(store.Current.PitchResume, Is.Null);
+                    Assert.That(NextActionPlanner.ResolveCoreProgress(store.Current).Route,
+                        Is.EqualTo("high-school"));
+                    Assert.That(ReturnPlanRules.DestinationForLegacyRoute("daily-inning"),
+                        Is.EqualTo(ReturnPlanDestination.HighSchool));
+                    Assert.That(WeeklyProgramCommandFactory.Eligibility(store.Current)
+                        .DailyInningUnlocked, Is.False);
 
-                    await Applied(store, "daily-attempt-2", new BeginPitchSessionCommand(
-                        "daily-game-2", PitchCareerKind.Daily, "daily", 1, instant.AddMinutes(1)));
-                    Assert.That(store.Current.PitchResume.Scenario.ScenarioId, Is.EqualTo(scenarioId));
-                    Assert.That(store.Current.PitchResume.SessionSeed, Is.EqualTo(sessionSeed));
-                    Assert.That(store.Current.PitchResume.Scenario.Lineup[0].Name, Is.EqualTo(firstBatter));
-                    var best = new PitchGameReport(
-                        "daily-game-2", 3, 1, 3, 1, 0, 0, 0);
-                    await CommitTerminalReport(
-                        store, "daily-best", best, instant.AddMinutes(2).AddSeconds(-1));
-                    await Applied(store, "daily-complete-2",
-                        new CompletePitchSessionCommand(best, instant.AddMinutes(2)));
-
-                    Assert.That(store.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(2));
-                    Assert.That(store.Current.Meta.Daily.DailyInning.BestScore, Is.EqualTo(900));
-                    Assert.That(store.Current.Meta.Daily.DailyInning.BestReport.GameId,
-                        Is.EqualTo("daily-game-2"));
+                    foreach (var command in new GameCommand[]
+                             {
+                                 new BeginPitchSessionCommand(
+                                     "new-daily", PitchCareerKind.Daily, "daily", 1,
+                                     instant.AddMinutes(1)),
+                                 new CompleteDailyInningCommand(instant.AddMinutes(1)),
+                                 new RecordWeeklyProgressCommand(
+                                     WeeklyTaskKinds.DailyInningCompleted,
+                                     1,
+                                     "retired-weekly",
+                                     instant.AddMinutes(1),
+                                     false)
+                             })
+                    {
+                        revision = store.Current.Revision;
+                        var rejected = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
+                            "retired-command-" + command.GetType().Name,
+                            revision,
+                            command));
+                        Assert.That(rejected.Status, Is.EqualTo(DispatchStatus.DomainRejected));
+                        Assert.That(rejected.ErrorCode, Is.EqualTo("daily.retired"));
+                        Assert.That(store.Current.Revision, Is.EqualTo(revision));
+                    }
                     Assert.That(store.Current.Meta.SoulBalance, Is.EqualTo(5));
-                    Assert.That(store.Current.Meta.Weekly.Program.Tasks.Single(value =>
-                        value.Kind == WeeklyTaskKinds.DailyInningCompleted).Progress, Is.EqualTo(1));
+                    Assert.That(store.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(2));
                 }
 
                 using (var restarted = await GameApplicationStore.OpenAsync(
                            Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
                 {
-                    var projection = DailyInningRules.Project(restarted.Current.Meta, instant.AddMinutes(3));
-                    Assert.That(projection.AttemptCount, Is.EqualTo(2));
-                    Assert.That(projection.RemainingAttempts, Is.EqualTo(1));
-                    Assert.That(projection.BestScore, Is.EqualTo(900));
-                    Assert.That(projection.BestReport.GameId, Is.EqualTo("daily-game-2"));
-                    Assert.That(projection.RewardCredited, Is.True);
-
-                    await Applied(restarted, "daily-ack-2", new AcknowledgePitchResultCommand(
-                        restarted.Current.PendingPitchCompletion.CompletionId));
-                    await Applied(restarted, "daily-attempt-3", new BeginPitchSessionCommand(
-                        "daily-game-3", PitchCareerKind.Daily, "daily", 1, instant.AddMinutes(4)));
-                    Assert.That(restarted.Current.PitchResume.Scenario.ScenarioId, Is.EqualTo(scenarioId));
-                    Assert.That(restarted.Current.PitchResume.SessionSeed, Is.EqualTo(sessionSeed));
-                    var lower = new PitchGameReport(
-                        "daily-game-3", 3, 1, 3, 0, 1, 0, 0);
-                    await CommitTerminalReport(
-                        restarted, "daily-lower", lower, instant.AddMinutes(5).AddSeconds(-1));
-                    await Applied(restarted, "daily-complete-3",
-                        new CompletePitchSessionCommand(lower, instant.AddMinutes(5)));
-
-                    Assert.That(restarted.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(3));
+                    Assert.That(restarted.Current.PitchResume, Is.Null);
+                    Assert.That(restarted.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(2));
                     Assert.That(restarted.Current.Meta.Daily.DailyInning.BestScore, Is.EqualTo(900));
-                    Assert.That(restarted.Current.Meta.Daily.DailyInning.BestReport.GameId,
-                        Is.EqualTo("daily-game-2"));
+                    Assert.That(restarted.Current.Meta.CreditedRewardIds,
+                        Is.EqualTo(new[] { rewardId }));
                     Assert.That(restarted.Current.Meta.SoulBalance, Is.EqualTo(5));
-                    Assert.That(restarted.Current.Meta.CreditedRewardIds.Count(value =>
-                        string.Equals(value, rewardId, StringComparison.Ordinal)), Is.EqualTo(1));
-                    Assert.That(restarted.Current.Meta.Weekly.ProcessedReceiptIds.Count(value =>
-                        string.Equals(value, rewardId, StringComparison.Ordinal)), Is.EqualTo(1));
-
-                    await Applied(restarted, "daily-ack-3", new AcknowledgePitchResultCommand(
-                        restarted.Current.PendingPitchCompletion.CompletionId));
-                    var fourth = await restarted.DispatchAsync(new CommandEnvelope<GameCommand>(
-                        "daily-attempt-4",
-                        restarted.Current.Revision,
-                        new BeginPitchSessionCommand(
-                            "daily-game-4", PitchCareerKind.Daily, "daily", 1,
-                            instant.AddMinutes(6))));
-                    Assert.That(fourth.Status, Is.EqualTo(DispatchStatus.DomainRejected));
-                    Assert.That(fourth.ErrorCode, Is.EqualTo("pitch.daily_attempts_exhausted"));
-                    Assert.That(restarted.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(3));
                 }
             }
             finally
@@ -800,18 +809,21 @@ namespace Baseball.Application.Tests
                     new PitcherRatingsReadModel(50, 50, 50, 50),
                     "오늘의 투수",
                     1);
+                var highSchool = FakeHighSchoolPort.HighSchool(
+                    phase: HighSchoolPhase.ImportantGame,
+                    careerId: "hs-pitch-cap");
                 var initial = new GameSaveAggregate(
                     GameSaveAggregate.CurrentAggregateVersion,
                     0,
                     "install-a",
-                    ApplicationStage.Opening,
-                    null,
+                    ApplicationStage.HighSchool,
+                    highSchool,
                     null,
                     MetaProgressState.Initial,
                     new PitchResumeState(
                         gameId,
-                        PitchCareerKind.Daily,
-                        "daily:20260811",
+                        PitchCareerKind.HighSchool,
+                        highSchool.CareerId,
                         scenario.ScenarioId,
                         "17",
                         scenario.MaximumBatters,

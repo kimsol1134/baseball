@@ -96,8 +96,11 @@ namespace Baseball.Platform.Notifications
             _enablementPolicy.ResolvePersistedDenial(saved);
 
         /// <summary>Requests an OS result; Presentation persists that result before analytics.</summary>
-        public void RequestEnabled(bool enabled)
+        public void RequestEnabled(bool enabled, string source = "settings")
         {
+            source = string.Equals(source, "after_first_game", StringComparison.Ordinal)
+                ? "after_first_game"
+                : "settings";
 #if UNITY_ANDROID && !UNITY_EDITOR
             PermissionStatus status = AndroidNotificationCenter.UserPermissionToPost;
             ReminderPermissionAvailability permission = status == PermissionStatus.Allowed
@@ -112,21 +115,21 @@ namespace Baseball.Platform.Notifications
                 if (_permissionRoutine != null) return;
                 PlayerPrefs.SetInt(AskedKey, 1);
                 PlayerPrefs.Save();
-                _permissionRoutine = StartCoroutine(RequestPermission());
+                _permissionRoutine = StartCoroutine(RequestPermission(source));
                 return;
             }
             SetEffectiveEnabled(resolution.EffectiveEnabled);
             if (resolution.EffectiveEnabled)
                 ScheduleNext();
             if (resolution.PublishesOutcome)
-                EnablementChanged?.Invoke(resolution.EffectiveEnabled, "settings");
+                EnablementChanged?.Invoke(resolution.EffectiveEnabled, source);
 #else
             ReminderRequestResolution resolution = ReminderEnablementPolicy.Request(
                 enabled,
                 ReminderPermissionAvailability.Allowed);
             SetEffectiveEnabled(resolution.EffectiveEnabled);
             if (resolution.PublishesOutcome)
-                EnablementChanged?.Invoke(resolution.EffectiveEnabled, "settings");
+                EnablementChanged?.Invoke(resolution.EffectiveEnabled, source);
 #endif
         }
 
@@ -219,7 +222,7 @@ namespace Baseball.Platform.Notifications
 #endif
         }
 
-        private IEnumerator RequestPermission()
+        private IEnumerator RequestPermission(string source)
         {
             var request = new PermissionRequest();
             while (request.Status == PermissionStatus.RequestPending) yield return null;
@@ -227,7 +230,7 @@ namespace Baseball.Platform.Notifications
             bool allowed = request.Status == PermissionStatus.Allowed;
             SetEffectiveEnabled(allowed);
             if (allowed) ScheduleNext();
-            EnablementChanged?.Invoke(allowed, "settings");
+            EnablementChanged?.Invoke(allowed, source);
         }
 
         private void ScheduleNext()

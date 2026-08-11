@@ -194,23 +194,6 @@ namespace Baseball.Presentation.Shell
                     cancellationToken,
                     gameId);
             }
-            if (completedKind == PitchCareerKind.Daily &&
-                DailyRewardAnalyticsPolicy.TryProject(
-                    before,
-                    after,
-                    completedAt,
-                    out int dailySoulPoints))
-            {
-                await EmitDurableOnceAsync(
-                    AnalyticsEvent.DailyInningRewarded,
-                    new Dictionary<string, object>(StringComparer.Ordinal)
-                    {
-                        ["soul_points"] = dailySoulPoints,
-                    },
-                    Baseball.Application.Meta.AnalyticsReceiptRetention.Scoped,
-                    cancellationToken,
-                    DailyRewardAnalyticsPolicy.RewardId(completedAt));
-            }
             if (completedKind == PitchCareerKind.HighSchool &&
                 countsPitchEvent &&
                 HasGameGrowth(before, after, completedResume, report))

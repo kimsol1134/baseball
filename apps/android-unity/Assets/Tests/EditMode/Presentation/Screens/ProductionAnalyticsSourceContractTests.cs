@@ -16,14 +16,14 @@ namespace Baseball.Presentation.Tests.Screens
             string source = ProductionSource();
             foreach (AnalyticsEvent analyticsEvent in Enum.GetValues(typeof(AnalyticsEvent)))
             {
-                bool intentionalChooserException = analyticsEvent == AnalyticsEvent.LifeCardShared ||
+                bool intentionalZeroCaller = analyticsEvent == AnalyticsEvent.LifeCardShared ||
                     analyticsEvent == AnalyticsEvent.LifeCardShareCompleted ||
                     analyticsEvent == AnalyticsEvent.DailyInningOpened ||
                     analyticsEvent == AnalyticsEvent.DailyInningRewarded;
                 int references = Count(source, "AnalyticsEvent." + analyticsEvent);
                 Assert.That(
                     references,
-                    intentionalChooserException ? Is.Zero : Is.GreaterThan(0),
+                    intentionalZeroCaller ? Is.Zero : Is.GreaterThan(0),
                     analyticsEvent.ToString());
             }
         }
@@ -88,6 +88,7 @@ namespace Baseball.Presentation.Tests.Screens
             Assert.That(runtime, Does.Not.Contain("SafeLog(AnalyticsEvent.GameAbandoned"));
             Assert.That(pitch, Does.Not.Contain("SafeLog(AnalyticsEvent.PhaseEntered"));
             Assert.That(runtime, Does.Contain("AndroidReminderService.Instance.RequestEnabled(enabled)"));
+            Assert.That(runtime, Does.Contain("reminders.RequestEnabled(true, \"after_first_game\")"));
             Assert.That(runtime, Does.Contain("AnalyticsEvent.ReminderChanged"));
             Assert.That(runtime, Does.Contain("case \"begin_daily_pitch\": return null;"));
             Assert.That(receipts, Does.Not.Contain("route == ShellRoute.Daily"));

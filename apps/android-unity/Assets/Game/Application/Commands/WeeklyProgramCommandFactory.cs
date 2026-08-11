@@ -39,7 +39,7 @@ namespace Baseball.Application.Commands
             if (playablePro)
             {
                 return new WeeklyEligibility(
-                    false, 0, 0, true, false, false, false, true);
+                    false, 0, 0, false, false, false, false, true);
             }
 
             var beforeSchoolChoice = highSchool != null &&
@@ -62,7 +62,7 @@ namespace Baseball.Application.Commands
                 activeHighSchool,
                 activeHighSchool ? Math.Max(0, highSchool.RemainingImportantGames) : 0,
                 activeHighSchool ? Math.Max(0, highSchool.RemainingChapterAdvances) : 0,
-                (highSchool?.Performance?.ImportantGames ?? 0) >= 1 || hasArchive,
+                false,
                 canStartNextRun,
                 activeHighSchool && beforeSchoolChoice && !highSchool.PledgeDecided,
                 activeHighSchool && beforeSchoolChoice && hasPreviousSchool,

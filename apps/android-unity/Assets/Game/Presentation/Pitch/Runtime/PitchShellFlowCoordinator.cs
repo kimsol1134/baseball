@@ -43,6 +43,7 @@ namespace Baseball.Presentation.Pitch
         private bool _presentationFinished;
         private bool _resultSaved;
         private bool _persistenceBusy;
+        private bool _recoveredCompletionActive;
         private bool _isTutorial;
         private bool _disposed;
 
@@ -61,12 +62,20 @@ namespace Baseball.Presentation.Pitch
             _shell.PitchRequested += Open;
         }
 
-        public bool IsOpen => _hud != null || _tutorialDecision != null;
+        public bool IsOpen => _hud != null || _tutorialDecision != null || _recoveredCompletionActive;
 
         public void Tick(double unscaledDeltaSeconds) => _hud?.Tick(unscaledDeltaSeconds);
 
-        public bool TryHandleBack() =>
-            _tutorialDecision?.TryHandleBack() == true || _hud?.TryHandleBack() == true;
+        public bool TryHandleBack()
+        {
+            if (_recoveredCompletionActive)
+            {
+                CloseActive();
+                _shell.Announce("경기 결과 마무리를 닫았습니다. 저장된 결과는 다시 완료할 수 있습니다.");
+                return true;
+            }
+            return _tutorialDecision?.TryHandleBack() == true || _hud?.TryHandleBack() == true;
+        }
 
         public void Dispose()
         {
@@ -114,6 +123,7 @@ namespace Baseball.Presentation.Pitch
 
                 if (loaded.AwaitingCompletion)
                 {
+                    _recoveredCompletionActive = true;
                     _shell.SetPitchPresentationActive(true);
                     _feedback.OnSessionStarted();
                     if (loaded.IsTutorial)
@@ -567,13 +577,19 @@ namespace Baseball.Presentation.Pitch
             }
             _persistenceBusy = true;
             _shell.Announce("마지막 타자까지 저장되어 경기 결과를 마무리하고 있습니다.");
+            CancellationToken recoveryToken = _sessionLifetime.Token;
             try
             {
                 ShellActionResult completed = await _persistence.CompleteAsync(
-                    _gameId, _accumulatedReport, _sessionLifetime.Token);
+                    _gameId, _accumulatedReport, recoveryToken);
+                if (recoveryToken.IsCancellationRequested || !_recoveredCompletionActive) return;
                 if (!completed.Succeeded)
                 {
-                    _shell.Announce(completed.Message);
+                    string message = string.IsNullOrWhiteSpace(completed.Message)
+                        ? "경기 결과를 마무리하지 못했습니다. 저장된 결과로 다시 시도해 주세요."
+                        : completed.Message;
+                    CloseActive();
+                    _shell.Announce(message);
                     return;
                 }
                 _shell.Announce("복구한 경기 결과를 저장했습니다. 결과 확인 후 다음 일정으로 이동할 수 있습니다.");
@@ -586,6 +602,7 @@ namespace Baseball.Presentation.Pitch
             catch (Exception exception)
             {
                 Baseball.Platform.Crash.CrashReporting.RecordUnexpected(exception, "pitch_recovered_complete");
+                CloseActive();
                 _shell.Announce("경기 결과 마무리에 실패했습니다. 저장된 진행으로 다시 시도할 수 있습니다.");
             }
             finally
@@ -755,6 +772,7 @@ namespace Baseball.Presentation.Pitch
             _presentationFinished = false;
             _resultSaved = false;
             _persistenceBusy = false;
+            _recoveredCompletionActive = false;
             _shell.SetPitchPresentationActive(false);
         }
     }

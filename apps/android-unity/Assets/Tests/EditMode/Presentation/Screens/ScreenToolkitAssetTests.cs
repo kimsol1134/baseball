@@ -178,6 +178,30 @@ namespace Baseball.Presentation.Tests.Screens
         }
 
         [Test]
+        public void RecoveredCompletionFailureRestoresShellAndKeepsExplicitRetryAndBackPaths()
+        {
+            string coordinator = File.ReadAllText(
+                "Assets/Game/Presentation/Pitch/Runtime/PitchShellFlowCoordinator.cs");
+            string model = File.ReadAllText(
+                "Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
+            string shell = File.ReadAllText(
+                "Assets/Game/Presentation/Shell/BaseballShellController.cs");
+            int method = coordinator.IndexOf(
+                "private async void FinishRecoveredSession", StringComparison.Ordinal);
+            int complete = coordinator.IndexOf("private async void Complete()", method, StringComparison.Ordinal);
+            string recovery = coordinator.Substring(method, complete - method);
+
+            StringAssert.Contains("if (!completed.Succeeded)", recovery);
+            Assert.That(recovery.Split(new[] { "CloseActive();" }, StringSplitOptions.None).Length - 1,
+                Is.GreaterThanOrEqualTo(3),
+                "missing report, save failure, exception, and success paths must all restore the shell");
+            StringAssert.Contains("_recoveredCompletionActive", coordinator);
+            StringAssert.Contains("저장된 결과 다시 완료", model);
+            StringAssert.Contains("나중에 다시 시도", model);
+            StringAssert.Contains("ResumePitchIfNeeded();", shell);
+        }
+
+        [Test]
         public void FirstBullpenUsesDurableTutorialKindAndCannotExposeAbortUi()
         {
             string model = File.ReadAllText("Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
@@ -345,6 +369,23 @@ namespace Baseball.Presentation.Tests.Screens
         }
 
         [Test]
+        public void RetiredDailyRouteHasNoMetaNavigationEntryPoint()
+        {
+            string meta = File.ReadAllText(
+                "Assets/Game/Presentation/Meta/MetaScreenController.cs");
+            string shell = File.ReadAllText(
+                "Assets/Game/Presentation/Shell/BaseballShellController.cs");
+            StringAssert.DoesNotContain("screen-meta-daily", meta);
+            StringAssert.DoesNotContain("ShellRoute.Daily", meta);
+            StringAssert.Contains("NormalizeRetiredDailyRoute", shell);
+            string runtime = File.ReadAllText(
+                "Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            StringAssert.Contains("ClearRetiredDailyResume", runtime);
+            StringAssert.Contains("new AbandonPitchSessionCommand(resume.GameId)", runtime);
+            StringAssert.Contains("case \"begin_daily_pitch\": return null;", runtime);
+        }
+
+        [Test]
         public void PendingReminderDestinationWinsInitialRouteAndIsConsumedOnce()
         {
             var runtime = new RoutingRuntime();
@@ -352,12 +393,12 @@ namespace Baseball.Presentation.Tests.Screens
             runtime.QueueExternalRoute(ShellRoute.Daily);
 
             ShellRoute initial = BaseballShellController.ResolveInitialRoute(runtime);
-            Assert.That(initial, Is.EqualTo(ShellRoute.Daily));
+            Assert.That(initial, Is.EqualTo(ShellRoute.Training));
             Assert.That(runtime.ExternalRouteConsumptionCount, Is.EqualTo(1));
             using (var controller = new BaseballShellController(
                 new VisualElement(), runtime, KoreanUiCopyCatalog.LoadDefault(), initial))
             {
-                Assert.That(controller.CurrentRoute, Is.EqualTo(ShellRoute.Daily));
+                Assert.That(controller.CurrentRoute, Is.EqualTo(ShellRoute.Training));
                 Assert.That(runtime.ExternalRouteAcknowledgementCount, Is.EqualTo(1));
             }
             Assert.That(BaseballShellController.ResolveInitialRoute(runtime), Is.EqualTo(ShellRoute.Opening));
@@ -403,12 +444,16 @@ namespace Baseball.Presentation.Tests.Screens
 
         private sealed class RoutingRuntime : IBaseballShellRuntime,
             IBaseballOpeningPresentationGate, IBaseballShellRouteObserver,
-            IBaseballExternalNavigation
+            IBaseballExternalNavigation, IBaseballRetiredDailyRouteFallback
         {
             private ShellRoute? _externalRoute;
             public event Action Changed;
             public ShellRuntimeStatus Status { get; private set; } = ShellRuntimeStatus.Loading;
             public ShellRoute PreferredRoute { get; private set; } = ShellRoute.Opening;
+            public ShellRoute RetiredDailyFallbackRoute =>
+                PreferredRoute == ShellRoute.Daily || PreferredRoute == ShellRoute.PitchHandoff
+                    ? ShellRoute.Opening
+                    : PreferredRoute;
             public bool ShouldHoldOpeningForReturnPlan { get; private set; }
             public bool IsBusy => false;
             public string StatusMessage => string.Empty;
