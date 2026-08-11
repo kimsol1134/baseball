@@ -151,7 +151,7 @@ struct DailyInningView: View {
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
                 if highSchool != nil {
-                    Text("오늘 몫 야구혼 +5 — 키우는 선수에게 들어갑니다.")
+                    Text("오늘 몫 계승 포인트 +5 — 다음 선수의 성장과 계승 상점에 씁니다.")
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(BaseballTheme.action)
                         .accessibilityIdentifier("daily.soulReward")

@@ -2201,7 +2201,7 @@ final class HighSchoolCareerStore {
             RunPledge.currentRulesVersion, forKey: pledgeRulesVersionKey(careerID)
         )
         if let chosen {
-            lastSummary = "목표를 정했습니다: \(chosen.title). 이루면 야구혼 +\(chosen.rewardPermille / 10)%."
+            lastSummary = "목표를 정했습니다: \(chosen.title). 이루면 계승 포인트 +\(chosen.rewardPermille / 10)%."
             feedbackCue = .growth
             feedbackTrigger += 1
             GameAnalytics.log(.runPledgeSelected, [

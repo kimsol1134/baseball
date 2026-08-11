@@ -101,7 +101,7 @@ struct HighSchoolCareerView: View {
                         isPresented: $confirmingReset,
                         titleVisibility: .visible
                     ) {
-                        Button("야구혼·기억·아카이브를 모두 지운다", role: .destructive) {
+                        Button("계승 포인트·기억·아카이브를 모두 지운다", role: .destructive) {
                             career.deleteCareer()
                         }
                         // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
@@ -331,7 +331,7 @@ struct HighSchoolCareerView: View {
                             .padding(.vertical, 8)
                             .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: 10))
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("\(pledge.tier.title) 목표, \(pledge.title), \(progress.line), 보상 야구혼 \(pledge.rewardPermille / 10)퍼센트 추가")
+                            .accessibilityLabel("\(pledge.tier.title) 목표, \(pledge.title), \(progress.line), 보상 계승 포인트 \(pledge.rewardPermille / 10)퍼센트 추가")
                         }
                         // 드래프트가 끝난 회차에 챕터 숙제는 소음이다. 각성 국면도 접는다.
                         if state.draftResult == nil, state.phase != .awakening {
@@ -697,7 +697,7 @@ private struct ChallengeEndCard: View {
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
             }
-            Text("이 도전은 선수 기록·야구혼·계승에 남지 않습니다. 원래 진행은 그대로입니다.")
+            Text("이 도전은 선수 기록이나 다음 회차 보상에 남지 않습니다. 원래 진행은 그대로입니다.")
                 .font(.footnote)
                 .foregroundStyle(BaseballTheme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -2115,7 +2115,7 @@ private struct CompletionCard: View {
                     if career.inheritance.memories.isEmpty {
                         EmptyView()
                     } else {
-                        Text("가져온 기억 \(career.inheritance.memories.count)장 · 야구혼 \(career.inheritance.soulPoints)")
+                        Text("가져온 기억 \(career.inheritance.memories.count)장 · 계승 포인트 \(career.inheritance.soulPoints)")
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(BaseballTheme.milestone)
                     }
@@ -2241,7 +2241,7 @@ private struct CompletionCard: View {
                 }
                 PrimaryButton(title: "\(career.inheritance.lifeNumber)번째 선수로 다시 시작",
                               identifier: "hs.rebirth", action: onRebirth)
-                Text("기억 \(career.inheritance.memories.count)장 · 야구혼 \(career.inheritance.soulPoints)"
+                Text("기억 \(career.inheritance.memories.count)장 · 계승 포인트 \(career.inheritance.soulPoints)"
                      + "\(KoreanCopy.objectParticle(number: career.inheritance.soulPoints)) 안고 시작합니다.")
                     .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -2492,7 +2492,7 @@ private struct WindSettlementCard: View {
                     }
                     if wind.rewardBonusPermille != 0 {
                         let percent = wind.rewardBonusPermille / 10
-                        Text("야구혼 보정 \(percent > 0 ? "+" : "")\(percent)%")
+                        Text("계승 포인트 보정 \(percent > 0 ? "+" : "")\(percent)%")
                     }
                     Text(wind.detail)
                         .font(.caption)
@@ -2522,7 +2522,7 @@ private struct PledgeCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text(isFirstLife
                      ? "하나를 고르면 3년을 마칠 때 돌아봅니다. 이루면 새 선수가 더 강하게 시작됩니다."
-                     : "하나를 고르면 고교 3년을 마칠 때 돌아봅니다. 등급에 따라 야구혼을 더 얻습니다.")
+                     : "하나를 고르면 고교 3년을 마칠 때 돌아봅니다. 등급에 따라 계승 포인트를 더 얻습니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                 // **누르라고 말한다.**
@@ -2551,7 +2551,7 @@ private struct PledgeCard: View {
                                     .foregroundStyle(pledge.tier == .legendary
                                                      ? BaseballTheme.warning : BaseballTheme.textSecondary)
                                 Spacer(minLength: 0)
-                                Text("야구혼 +\(pledge.rewardPermille / 10)%")
+                                Text("계승 포인트 +\(pledge.rewardPermille / 10)%")
                                     .font(.caption.monospacedDigit().weight(.bold))
                                     .foregroundStyle(BaseballTheme.milestone)
                             }

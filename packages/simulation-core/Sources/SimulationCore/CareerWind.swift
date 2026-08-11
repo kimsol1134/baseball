@@ -146,7 +146,7 @@ public struct CareerWind: Equatable, Sendable {
             result.append("대화 실패 때 믿음 손실 +\(rules.relationshipLossPenalty)")
         }
         if rewardBonusPermille != 0 {
-            result.append("야구혼 보정 \(signed(rewardBonusPermille / 10))%")
+            result.append("계승 포인트 보정 \(signed(rewardBonusPermille / 10))%")
         }
         return result
     }
@@ -169,7 +169,7 @@ public struct CareerWind: Equatable, Sendable {
             rulesVersion: .v1, rivalBonus: 0, startingFanInterest: 5,
             rewardBonusPermille: 0, rules: .neutral),
         CareerWind(id: "monster_generation", title: "괴물 세대",
-            detail: "전국에 물건들이 쏟아진 해입니다. 라이벌은 세지만, 이런 해를 버틴 야구혼은 진합니다.",
+            detail: "전국에 물건들이 쏟아진 해입니다. 라이벌은 세지만, 이런 해를 버틴 계승 포인트 보상은 큽니다.",
             rulesVersion: .v1, rivalBonus: 5, startingFanInterest: 5,
             rewardBonusPermille: 150, rules: .neutral),
         CareerWind(id: "scout_frenzy", title: "스카우트 풍년",

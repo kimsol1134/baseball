@@ -640,15 +640,15 @@ private struct RetiredView: View {
             // 은퇴가 끝이 되지만, 야구혼으로 이어지면 은퇴가 다음 회차의 시작이 된다.
             BaseballCard(
                 title: retiresIntoSignatureLegacy
-                    ? "프로 기록을 대표 유산으로 남기기" : "프로 기록을 야구혼으로 남기기",
+                    ? "프로 기록을 대표 유산으로 남기기" : "프로 기록을 계승 포인트로 남기기",
                 tone: .milestone
             ) {
                 Text(retiresIntoSignatureLegacy
                      ? "고교 시절부터 은퇴까지 직접 키운 능력과 통산 기록으로 대표 유산 세 가지를 찾습니다. 그중 하나를 다음 선수에게 직접 남길 수 있습니다."
-                     : "고교를 건너뛰고 시작한 프로 기록은 야구혼으로 남습니다. 진행 중인 고교 선수나 다음 고교 선수에게 사용할 수 있습니다.")
+                     : "고교를 건너뛰고 시작한 프로 기록은 계승 포인트로 남습니다. 진행 중인 고교 선수나 다음 고교 선수의 계승 상점에서 사용할 수 있습니다.")
                     .font(.subheadline)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("야구혼 +\(HighSchoolCareerStore.proSoulBonus(for: state))")
+                Text("계승 포인트 +\(HighSchoolCareerStore.proSoulBonus(for: state))")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
             }
@@ -674,7 +674,7 @@ private struct RetiredView: View {
 
             PrimaryPill(
                 title: retiresIntoSignatureLegacy
-                    ? "유산을 남기고 다음 선수 준비" : "야구혼을 남기고 고교로 돌아가기",
+                    ? "유산을 남기고 다음 선수 준비" : "계승 포인트를 남기고 고교로 돌아가기",
                 identifier: "pro.newPlayer"
             ) { confirming = true }
             Text(retiresIntoSignatureLegacy
@@ -685,12 +685,12 @@ private struct RetiredView: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .confirmationDialog(
-            retiresIntoSignatureLegacy ? "이 선수의 유산을 남길까요?" : "프로 기록을 야구혼으로 남길까요?",
+            retiresIntoSignatureLegacy ? "이 선수의 유산을 남길까요?" : "프로 기록을 계승 포인트로 남길까요?",
             isPresented: $confirming,
             titleVisibility: .visible
         ) {
             Button(
-                retiresIntoSignatureLegacy ? "프로 기록을 유산으로 남기기" : "야구혼을 남기고 돌아가기",
+                retiresIntoSignatureLegacy ? "프로 기록을 유산으로 남기기" : "계승 포인트를 남기고 돌아가기",
                 action: onStartNewPlayer
             )
                 .accessibilityIdentifier("pro.newPlayer.confirm")

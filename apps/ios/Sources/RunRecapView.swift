@@ -89,7 +89,7 @@ struct RunRecapView: View {
             let progressLine = progress.map { " · \($0.line)" } ?? ""
             let status: String
             if recap.pledgeAchieved {
-                status = "목표 달성 — \(pledgeTitle) · 야구혼 +\(recap.pledgeRewardPermille / 10)%"
+                status = "목표 달성 — \(pledgeTitle) · 계승 포인트 +\(recap.pledgeRewardPermille / 10)%"
             } else if (progress?.ratioPermille ?? 0) >= 800 {
                 status = "목표까지 아슬아슬 — \(pledgeTitle)\(progressLine)"
             } else {
@@ -173,22 +173,22 @@ struct RunRecapView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("야구혼").eyebrowStyle(BaseballTheme.milestone)
+                        Text("계승 포인트").eyebrowStyle(BaseballTheme.milestone)
                         Text("+\(shownSoul)")
                             .font(.system(size: heroSize, weight: .black, design: .rounded).monospacedDigit())
                             .foregroundStyle(BaseballTheme.milestone)
                             .contentTransition(.numericText(value: Double(shownSoul)))
                         // 정직한 영수증 — 적립·잔액·자동 스며듦을 전부 말한다.
                         // 큰 숫자만 보여 주고 상한을 숨기면, 유저가 계산하는 순간 신뢰가 무너진다.
-                        Text("잔액 \(recap.soulBalance)혼 · 새 선수 시작 보너스 +\(recap.soulAutoApplied)")
+                        Text("잔액 \(recap.soulBalance)P · 새 선수 시작 보너스 +\(recap.soulAutoApplied)")
                             .font(.footnote.weight(.semibold).monospacedDigit())
                             .foregroundStyle(BaseballTheme.textPrimary)
                             .opacity(soulDone ? 1 : 0)
                         // 조건부 문구 — 최저가(90혼)에 못 미치는 잔액에 상점을 약속하면
                         // 다음 화면에서 살 수 없는 상점이 열린다(2차 패널 P1).
                         Text(recap.soulBalance >= 90
-                             ? "잔액은 환생할 때 영혼 상점에서 씁니다 — 재능 돌파·기억 확장·성장 리듬."
-                             : "야구혼이 더 쌓이면 영혼 상점이 열립니다 — 새 선수에게 잔액이 이어집니다.")
+                             ? "잔액은 환생할 때 계승 상점에서 씁니다 — 재능 돌파·기억 확장·성장 리듬."
+                             : "이전 선수의 커리어가 남긴 포인트입니다. 더 쌓이면 계승 상점에서 새 선수의 규칙을 살 수 있습니다.")
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .opacity(soulDone ? 1 : 0)
@@ -218,7 +218,7 @@ struct RunRecapView: View {
                             .background(BaseballTheme.milestone.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
                             .disabled(intentSaved || onSaveIntent == nil)
                             .accessibilityIdentifier("hs.recap.intent.save")
-                            .accessibilityLabel("\(pledge.tier.title) 목표, \(pledge.title), 보상 야구혼 \(pledge.rewardPermille / 10)퍼센트 추가, 새 선수 목표로 저장")
+                            .accessibilityLabel("\(pledge.tier.title) 목표, \(pledge.title), 보상 계승 포인트 \(pledge.rewardPermille / 10)퍼센트 추가, 새 선수 목표로 저장")
                         }
                         .padding(12)
                         .background(BaseballTheme.surface.opacity(0.9), in: RoundedRectangle(cornerRadius: 12))

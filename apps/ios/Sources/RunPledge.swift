@@ -312,7 +312,7 @@ struct RunPledge: Identifiable, Equatable {
     ) -> String {
         let prefix = carried ? "지난 고교 3년에서 이어진 " : ""
         let statusText = status.map { ", \($0)" } ?? ""
-        return "\(prefix)\(tier.title) 목표, \(title), \(progressLine)\(statusText), 보상 야구혼 \(rewardPermille / 10)퍼센트 추가"
+        return "\(prefix)\(tier.title) 목표, \(title), \(progressLine)\(statusText), 보상 계승 포인트 \(rewardPermille / 10)퍼센트 추가"
     }
 
     func accessibilityLabel(

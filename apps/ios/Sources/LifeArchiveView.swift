@@ -38,7 +38,7 @@ struct ArchivedPledgePresentation: Equatable {
     }
 
     func accessibilityLabel(progressLine: String, status: String) -> String {
-        "\(tier.title) 목표, \(title), \(progressLine), \(status), 보상 야구혼 \(rewardPermille / 10)퍼센트 추가"
+        "\(tier.title) 목표, \(title), \(progressLine), \(status), 보상 계승 포인트 \(rewardPermille / 10)퍼센트 추가"
     }
 }
 
@@ -95,11 +95,11 @@ struct LifeArchiveSection: View {
                         archiveStat("지명", "\(totals.drafted)/\(records.count)")
                         archiveStat("통산 K", "\(totals.strikeouts)")
                         archiveStat("최고 평가", "\(totals.bestEvaluation)")
-                        archiveStat("모은 야구혼", "\(totals.soul)")
+                        archiveStat("모은 계승 포인트", "\(totals.soul)")
                     }
                     .padding(.bottom, 10)
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("지난 선수 통산. 지명 \(totals.drafted)회, 통산 탈삼진 \(totals.strikeouts), 최고 평가 \(totals.bestEvaluation)점, 모은 야구혼 \(totals.soul)")
+                    .accessibilityLabel("지난 선수 통산. 지명 \(totals.drafted)회, 통산 탈삼진 \(totals.strikeouts), 최고 평가 \(totals.bestEvaluation)점, 모은 계승 포인트 \(totals.soul)")
                     Rectangle()
                         .fill(BaseballTheme.border.opacity(0.35))
                         .frame(height: 1)
@@ -271,7 +271,7 @@ private struct LifeArchiveRow: View {
                     Text(record.outcomeLine)
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.textSecondary)
-                    Text("\(record.games)등판 · \(record.strikeouts)K \(record.walks)BB \(record.runsAllowed)실점 · 야구혼 +\(record.soulPoints)")
+                    Text("\(record.games)등판 · \(record.strikeouts)K \(record.walks)BB \(record.runsAllowed)실점 · 계승 포인트 +\(record.soulPoints)")
                         .font(.footnote.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                     if let signature = record.signatureLegacy {
@@ -328,7 +328,7 @@ private struct LifeArchiveRow: View {
                                     .font(.caption.weight(.bold))
                                     .foregroundStyle(achieved ? BaseballTheme.positive : BaseballTheme.textTertiary)
                             }
-                            Text("\(progressLine) · 보상 야구혼 +\(pledge.rewardPermille / 10)%")
+                            Text("\(progressLine) · 보상 계승 포인트 +\(pledge.rewardPermille / 10)%")
                                 .font(.caption2.monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textSecondary)
                             ProgressView(value: Double(ratio), total: 1_000)

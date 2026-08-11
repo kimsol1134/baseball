@@ -78,7 +78,7 @@ struct HighSchoolSetupView: View {
                     PrimaryPill(title: "같은 설정으로 다시 태어나기", identifier: "hs.setup.quickRebirth") {
                         career.startQuickRebirth(entryPoint: "quick_rebirth")
                     }
-                    Text("영혼 상점을 쓰려면 아래에서 단계대로 진행하세요.")
+                    Text("계승 상점을 쓰려면 아래에서 단계대로 진행하세요.")
                         .font(.caption2)
                         .foregroundStyle(BaseballTheme.textTertiary)
                 }
@@ -284,7 +284,7 @@ struct HighSchoolSetupView: View {
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
             } else if let challenge = parsedChallenge {
-                Text("기록 없는 도전 — \(challenge.lifeNumber)번째 선수와 같은 조건을 계승 도움 없이 엽니다. 결과는 선수 기록·야구혼에 남지 않습니다.")
+                Text("기록 없는 도전 — \(challenge.lifeNumber)번째 선수와 같은 조건을 계승 도움 없이 엽니다. 결과는 선수 기록·계승 포인트에 남지 않습니다.")
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.milestone)
                     .fixedSize(horizontal: false, vertical: true)
@@ -341,10 +341,10 @@ struct HighSchoolSetupView: View {
                 .accessibilityHidden(true)
             BaseballCard(title: "가져온 것", tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("야구혼 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
+                    Text("계승 포인트 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
                     // 정직한 계승 안내 — 고교·주간에서 모은 자동 누적과 프로 보너스를
                     // 포함한 지갑은 다르다. 화면에서도 한 숫자로 섞지 않는다.
-                    Text("자동 성장 \(career.inheritance.automaticSoulTotal)혼 중 이번 선수 능력에 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.automaticSoulTotal, storedRulesVersion: career.inheritance.inheritanceRulesVersion)) · 쓸 수 있는 야구혼 \(remainingSoul)")
+                    Text("지난 선수들이 남긴 누적 포인트 중 이번 선수 능력에 자동 성장 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.automaticSoulTotal, storedRulesVersion: career.inheritance.inheritanceRulesVersion)) · 계승 상점에서 쓸 수 있는 포인트 \(remainingSoul)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                     // 다음 계단을 함께 적는다. "24혼 모았는데 +1"만 있으면 정직해도
@@ -353,7 +353,7 @@ struct HighSchoolSetupView: View {
                         for: career.inheritance.automaticSoulTotal,
                         storedRulesVersion: career.inheritance.inheritanceRulesVersion
                     ) {
-                        Text("\(step.soulPoints)혼을 모으면 +\(step.applied) · 최대 +20")
+                        Text("계승 포인트 \(step.soulPoints)P를 모으면 +\(step.applied) · 최대 +20")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.action)
                             .accessibilityIdentifier("hs.inheritance.next")
@@ -401,9 +401,9 @@ struct HighSchoolSetupView: View {
     /// 영혼 상점 — 상한 너머의 야구혼이 처음으로 흘러갈 배수구.
     /// 스탯이 아니라 규칙을 판다: 재능 돌파·기억 확장·조기 성장·성장 리듬.
     private var soulShopCard: some View {
-        BaseballCard(title: "영혼 상점", tone: .raised) {
+        BaseballCard(title: "계승 상점", tone: .raised) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("야구혼을 소비해 이번 고교 3년에 적용할 규칙을 삽니다. 자동 성장은 별도로 쌓여 있어 구매해도 줄지 않습니다.")
+                Text("계승 포인트는 이전 선수의 커리어가 다음 선수에게 남긴 보상입니다. 여기서 이번 고교 3년에 적용할 규칙을 사고, 이미 쌓인 자동 성장 보너스는 줄지 않습니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -423,7 +423,7 @@ struct HighSchoolSetupView: View {
                                 Text(copy.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                             }
                             Spacer()
-                            Text("\(boost.cost)혼")
+                            Text("\(boost.cost)P")
                                 .font(.footnote.weight(.bold).monospacedDigit())
                                 .foregroundStyle(affordable ? BaseballTheme.milestone : BaseballTheme.textTertiary)
                         }
@@ -566,7 +566,7 @@ struct HighSchoolSetupView: View {
 
             if parsedChallenge != nil {
                 BaseballCard(title: "같은 조건으로 겨루는 도전", tone: .milestone) {
-                    Text("지난 선수의 기억·대표 유산·야구혼·핸디캡은 쓰지 않습니다. 고른 난이도와 직접 투구만 이 판에 반영됩니다.")
+                    Text("지난 선수의 기억·대표 유산·계승 포인트·핸디캡은 쓰지 않습니다. 고른 난이도와 직접 투구만 이 판에 반영됩니다.")
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -625,7 +625,7 @@ struct HighSchoolSetupView: View {
                 automaticSoulTotal: career.inheritance.automaticSoulTotal,
                 isChallenge: parsedChallenge != nil
             ) {
-                BaseballCard(title: "자동 성장 \(career.inheritance.automaticSoulTotal)혼을 어디에") {
+                BaseballCard(title: "자동 성장 포인트 \(career.inheritance.automaticSoulTotal)P를 어디에") {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 6) {
                             ForEach(SoulDomain.allCases, id: \.self) { domain in

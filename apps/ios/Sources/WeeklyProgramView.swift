@@ -99,7 +99,7 @@ struct WeeklyProgramView: View {
 
                         if let reward = store.claimableReward {
                             PrimaryPill(
-                                title: "주간 기록 도장 받기 · 야구혼 +\(reward.soulPoints)",
+                                title: "주간 기록 도장 받기 · 계승 포인트 +\(reward.soulPoints)",
                                 identifier: "weekly.claim"
                             ) {
                                 guard highSchool.acceptExternalSoulReward(
