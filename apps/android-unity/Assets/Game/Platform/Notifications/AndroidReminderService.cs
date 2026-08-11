@@ -21,17 +21,23 @@ namespace Baseball.Platform.Notifications
 
         public static AndroidReminderService Instance => _instance;
         public bool IsEnabled => _enabled;
-        public bool ShouldOfferOptIn => !_enabled && PlayerPrefs.GetInt(AskedKey, 0) == 0;
-        public bool RequiresSystemSettings
+        public bool ShouldOfferOptIn => PermissionUiState.ShouldOfferOptIn;
+        public bool RequiresSystemSettings => PermissionUiState.RequiresSystemSettings;
+        private ReminderPermissionUiState PermissionUiState
         {
             get
             {
 #if UNITY_ANDROID && !UNITY_EDITOR
                 PermissionStatus status = AndroidNotificationCenter.UserPermissionToPost;
-                return status == PermissionStatus.NotificationsBlockedForApp ||
-                    (PlayerPrefs.GetInt(AskedKey, 0) == 1 && status != PermissionStatus.Allowed);
+                ReminderPermissionAvailability permission = ReminderPermissionUiPolicy.Resolve(
+                    status == PermissionStatus.Allowed,
+                    status == PermissionStatus.RequestPending,
+                    status == PermissionStatus.NotificationsBlockedForApp,
+                    PlayerPrefs.GetInt(AskedKey, 0) == 1);
+                return ReminderPermissionUiPolicy.Project(_enabled, permission);
 #else
-                return false;
+                bool asked = PlayerPrefs.GetInt(AskedKey, 0) == 1;
+                return new ReminderPermissionUiState(!_enabled && !asked, false);
 #endif
             }
         }
@@ -101,12 +107,11 @@ namespace Baseball.Platform.Notifications
                 : "settings";
 #if UNITY_ANDROID && !UNITY_EDITOR
             PermissionStatus status = AndroidNotificationCenter.UserPermissionToPost;
-            ReminderPermissionAvailability permission = status == PermissionStatus.Allowed
-                ? ReminderPermissionAvailability.Allowed
-                : PlayerPrefs.GetInt(AskedKey, 0) == 1 ||
-                    status == PermissionStatus.NotificationsBlockedForApp
-                    ? ReminderPermissionAvailability.Denied
-                    : ReminderPermissionAvailability.Requestable;
+            ReminderPermissionAvailability permission = ReminderPermissionUiPolicy.Resolve(
+                status == PermissionStatus.Allowed,
+                status == PermissionStatus.RequestPending,
+                status == PermissionStatus.NotificationsBlockedForApp,
+                PlayerPrefs.GetInt(AskedKey, 0) == 1);
             ReminderRequestResolution resolution = ReminderEnablementPolicy.Request(enabled, permission);
             if (resolution.RequestsPermission)
             {

@@ -4,7 +4,44 @@ namespace Baseball.Platform.Notifications
     {
         Allowed,
         Requestable,
+        Pending,
         Denied,
+    }
+
+    public readonly struct ReminderPermissionUiState
+    {
+        public ReminderPermissionUiState(bool shouldOfferOptIn, bool requiresSystemSettings)
+        {
+            ShouldOfferOptIn = shouldOfferOptIn;
+            RequiresSystemSettings = requiresSystemSettings;
+        }
+
+        public bool ShouldOfferOptIn { get; }
+        public bool RequiresSystemSettings { get; }
+    }
+
+    public static class ReminderPermissionUiPolicy
+    {
+        public static ReminderPermissionAvailability Resolve(
+            bool allowed,
+            bool requestPending,
+            bool blockedBySystem,
+            bool permissionAsked)
+        {
+            if (allowed) return ReminderPermissionAvailability.Allowed;
+            if (requestPending) return ReminderPermissionAvailability.Pending;
+            if (blockedBySystem || permissionAsked) return ReminderPermissionAvailability.Denied;
+            return ReminderPermissionAvailability.Requestable;
+        }
+
+        public static ReminderPermissionUiState Project(
+            bool effectiveEnabled,
+            ReminderPermissionAvailability permission)
+        {
+            return new ReminderPermissionUiState(
+                !effectiveEnabled && permission == ReminderPermissionAvailability.Requestable,
+                permission == ReminderPermissionAvailability.Denied);
+        }
     }
 
     public readonly struct ReminderRequestResolution
@@ -43,6 +80,8 @@ namespace Baseball.Platform.Notifications
                 return new ReminderRequestResolution(true, false, true);
             if (permission == ReminderPermissionAvailability.Requestable)
                 return new ReminderRequestResolution(false, true, false);
+            if (permission == ReminderPermissionAvailability.Pending)
+                return new ReminderRequestResolution(false, false, false);
             return new ReminderRequestResolution(false, false, true);
         }
 

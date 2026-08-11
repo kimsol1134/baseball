@@ -200,6 +200,58 @@ namespace Baseball.Platform.Tests
         }
 
         [Test]
+        public void ReminderOptInAppearsOnlyWhileOsPermissionCanActuallyBeRequested()
+        {
+            ReminderPermissionAvailability requestable = ReminderPermissionUiPolicy.Resolve(
+                allowed: false,
+                requestPending: false,
+                blockedBySystem: false,
+                permissionAsked: false);
+            ReminderPermissionUiState firstOffer = ReminderPermissionUiPolicy.Project(false, requestable);
+            Assert.That(firstOffer.ShouldOfferOptIn, Is.True);
+            Assert.That(firstOffer.RequiresSystemSettings, Is.False);
+
+            ReminderPermissionAvailability afterDeniedTap = ReminderPermissionUiPolicy.Resolve(
+                allowed: false,
+                requestPending: false,
+                blockedBySystem: false,
+                permissionAsked: true);
+            ReminderPermissionUiState denied = ReminderPermissionUiPolicy.Project(false, afterDeniedTap);
+            Assert.That(denied.ShouldOfferOptIn, Is.False,
+                "a denied permission tap must not produce another first-game CTA");
+            Assert.That(denied.RequiresSystemSettings, Is.True);
+            Assert.That(ReminderPermissionUiPolicy.Project(false, afterDeniedTap).ShouldOfferOptIn,
+                Is.False, "repeated projections remain hidden");
+
+            ReminderPermissionAvailability externallyRevoked = ReminderPermissionUiPolicy.Resolve(
+                allowed: false,
+                requestPending: false,
+                blockedBySystem: true,
+                permissionAsked: true);
+            ReminderPermissionUiState revoked = ReminderPermissionUiPolicy.Project(false, externallyRevoked);
+            Assert.That(revoked.ShouldOfferOptIn, Is.False);
+            Assert.That(revoked.RequiresSystemSettings, Is.True);
+
+            ReminderPermissionAvailability resetLocalButOsStillBlocked = ReminderPermissionUiPolicy.Resolve(
+                allowed: false,
+                requestPending: false,
+                blockedBySystem: true,
+                permissionAsked: false);
+            ReminderPermissionUiState reset = ReminderPermissionUiPolicy.Project(
+                false,
+                resetLocalButOsStillBlocked);
+            Assert.That(reset.ShouldOfferOptIn, Is.False,
+                "clearing the local asked flag cannot override an OS-level block");
+            Assert.That(reset.RequiresSystemSettings, Is.True);
+
+            ReminderPermissionUiState pending = ReminderPermissionUiPolicy.Project(
+                false,
+                ReminderPermissionAvailability.Pending);
+            Assert.That(pending.ShouldOfferOptIn, Is.False);
+            Assert.That(pending.RequiresSystemSettings, Is.False);
+        }
+
+        [Test]
         public void SharePolicyAcceptsOnlyBoundedPngAndNeutralizesPaths()
         {
             byte[] png = { 137, 80, 78, 71, 13, 10, 26, 10, 0 };
