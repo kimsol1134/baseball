@@ -21,12 +21,13 @@ public enum DifficultyScale {
     /// 드래프트 통과율이 30%에서 20%로 떨어졌다(밴드 25~65%). 목표는 뒤로 갈수록 쉬워지는
     /// 것을 막는 것이지 뒤를 어렵게 만드는 것이 아니다.
     ///
-    /// 2026-08 실플레이에서 환생 0회 선수가 3~4경기 연속 무실점을 했다. 3은 곡선을
-    /// 평평하게 만들 뿐 3학년의 상대를 실제로 무겁게 만들지는 못한다는 뜻이다. 벽이 됐던
-    /// 5 대신 4로 올린다 — 마지막 장의 상대가 한 눈금 더 세지되, 통과율이 반토막 나지 않는
-    /// 자리다. 나머지 난이도는 타자 기본선(`HighSchoolPresentation.followUpBatters`)과
-    /// 릴리스 판정에서 함께 가져온다.
-    public static let chapterCeiling = 4
+    /// 2026-08 실플레이에서 환생 0회 선수가 3~4경기 연속 무실점을 했다. 그때 4로 올려
+    /// 봤다가 되돌렸다 — **실측 지명률이 3과 4에서 똑같았다**(중립 릴리스 20시드에서
+    /// 둘 다 55%, 지명된 시드 목록까지 동일). 얻는 것이 없는데 자동 경기 실점만 밀어
+    /// 올려 `testHighSchoolBaselineMatchesTheSimulator`의 영점 허용치를 1‰ 넘겼다.
+    /// 난이도는 실제로 값을 하는 곳에서 가져온다: 타자 기본선
+    /// (`HighSchoolPresentation.followUpBatters`)과 릴리스·조준 판정의 비대칭.
+    public static let chapterCeiling = 3
     /// 회차가 쌓이며 리그 전체가 세지는 폭의 상한.
     public static let rebirthCeiling = 4
     /// 프로에서 시즌이 지나며 세지는 폭의 상한.

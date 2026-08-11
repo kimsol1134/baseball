@@ -133,7 +133,7 @@ final class RealPlayDraftRateTests: XCTestCase {
         var draftedSeeds: [String] = []
         var evaluations: [Int] = []
         var thresholds: [Int] = []
-        let seeds = (1...20).map(String.init)
+        let seeds = (1...60).map(String.init)
         for seed in seeds {
             guard let outcome = try playOneCareer(seed: seed, policy: .sensible) else { continue }
             if outcome.drafted {

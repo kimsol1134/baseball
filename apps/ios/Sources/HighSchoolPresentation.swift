@@ -251,13 +251,18 @@ enum HighSchoolPresentation {
                 name: name,
                 // 고교 타자는 프로보다 낮고 편차가 크다.
                 //
-                // 기본선을 5씩 올렸다. 34/32/32에서 시작하는 타순은 평균 44 언저리라,
+                // 기본선을 34/32/32에서 45/43/43으로 올렸다. 예전 타순은 평균 44 언저리라
                 // 성장한 투수 앞에서 사실상 아웃 자판기였다 — 환생 한 번 없이 3~4경기
-                // 연속 무실점이 나온 실제 원인이다. 여전히 프로(50 기준)보다 아래이고
-                // 편차도 그대로지만, 라이벌 뒤의 타순이 이제 실점을 만들 수 있다.
-                contact: 39 + rng.nextInt(upperBound: 24),
-                discipline: 37 + rng.nextInt(upperBound: 24),
-                power: 37 + rng.nextInt(upperBound: 26),
+                // 연속 무실점이 나온 실제 원인이다. 지금도 평균은 프로 기준(50) 아래이고
+                // 편차도 그대로지만, 라이벌 뒤의 타순이 실점을 만들 수 있다.
+                //
+                // 여기서 더 올리지 않는 이유: 실측에서 이 값은 지명률을 능력 +1당 약
+                // 1%p밖에 못 움직인다(60시드에서 52/50/50 → 43%, 60/58/58 → 35%).
+                // 목표치까지 밀려면 고교 타자가 프로 평균보다 강해져야 해서 설정이 깨진다.
+                // 관문의 높이는 `draftThreshold`가 맡는다.
+                contact: 45 + rng.nextInt(upperBound: 24),
+                discipline: 43 + rng.nextInt(upperBound: 24),
+                power: 43 + rng.nextInt(upperBound: 26),
                 batSide: rng.nextInt(upperBound: 3) == 0 ? .left : .right
             )
         }

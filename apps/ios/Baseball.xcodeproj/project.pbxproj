@@ -19,6 +19,7 @@
 		0FA9962AE598131FB9B014B9 /* CareerWindIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B344405949FBBB38FD06B6EC /* CareerWindIntegrationTests.swift */; };
 		13C737FE1665F41707DAA29E /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0414F684F40EFF55736026F /* Haptics.swift */; };
 		13EA77018AE302361EDCB5D0 /* BaseballApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EA74DD86E9DE3EEACA98A97 /* BaseballApp.swift */; };
+		1EF93DE58ADDDBAB32C52EAA /* DramaSnapshotExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C79C02C912900DB7953621 /* DramaSnapshotExportTests.swift */; };
 		1FFF80CE5E3E359F4EB4BE24 /* ExceptionCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = BBE3704F64563F164CBC134B /* ExceptionCatcher.m */; };
 		2002DF8C14E6ACE3382A1C57 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8C9444147D2AD6F238142F71 /* PrivacyInfo.xcprivacy */; };
 		200EF99598BFB8511E960E60 /* AchievementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF6E7A55BE0B0DB5D70E46A /* AchievementStore.swift */; };
@@ -164,6 +165,7 @@
 		77876A24C70FB76B972B1BFB /* AvatarFace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarFace.swift; sourceTree = "<group>"; };
 		79173A1105F3877F88315737 /* CareerSmokeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerSmokeUITests.swift; sourceTree = "<group>"; };
 		7A1D59E198E4D5D56F06F17C /* PitchDramaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchDramaView.swift; sourceTree = "<group>"; };
+		87C79C02C912900DB7953621 /* DramaSnapshotExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DramaSnapshotExportTests.swift; sourceTree = "<group>"; };
 		88829ECACC67B2EBCDBC9538 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8914567CCE3DC83C86EC8133 /* CareerBootstrapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerBootstrapTests.swift; sourceTree = "<group>"; };
 		8B412E9D5634221ADBA8ED35 /* GameAudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameAudio.swift; sourceTree = "<group>"; };
@@ -355,6 +357,7 @@
 				0B07031984E281C6A1E29EDA /* CareerPacingTests.swift */,
 				B344405949FBBB38FD06B6EC /* CareerWindIntegrationTests.swift */,
 				902334DCFD6C688F66710F0E /* DeliveryControlTests.swift */,
+				87C79C02C912900DB7953621 /* DramaSnapshotExportTests.swift */,
 				2837CAF42ACF84B7B70646F4 /* GameLineFormatTests.swift */,
 				C2B3535CB3FE59963B819C22 /* LifeCardShareImageTests.swift */,
 				1F8835399622943256243E1B /* PadBedTests.swift */,
@@ -513,6 +516,7 @@
 				D3079C5E27CB2BEDC3EABCEE /* CareerPacingTests.swift in Sources */,
 				0FA9962AE598131FB9B014B9 /* CareerWindIntegrationTests.swift in Sources */,
 				539AC44A52E0B08CD1390416 /* DeliveryControlTests.swift in Sources */,
+				1EF93DE58ADDDBAB32C52EAA /* DramaSnapshotExportTests.swift in Sources */,
 				59B324B22D4C3D696852895B /* GameLineFormatTests.swift in Sources */,
 				303543BA51462FBEB3D5EF25 /* LifeCardShareImageTests.swift in Sources */,
 				FE98ACA8EA08D75154851B13 /* PadBedTests.swift in Sources */,
@@ -804,7 +808,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -847,7 +851,7 @@
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = D48DDX5D5W;
 				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

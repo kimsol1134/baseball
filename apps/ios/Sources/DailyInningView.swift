@@ -12,7 +12,7 @@ struct DailyInningView: View {
     /// 어느 입구로 들어왔는가. 어떤 자리가 실제로 쓰이는지 재려고 이벤트에 싣는다.
     var source: String = "unknown"
     var weekly: WeeklyProgramStore = .shared
-    /// 하루 몫을 야구혼으로 얹을 대상. 고교 저장이 없으면(프로 전용·도전 런) 그냥 건너뛴다.
+    /// 하루 몫을 야구혼으로 얹을 대상. 고교 저장이 없으면(프로 전용·기록 없는 도전) 그냥 건너뛴다.
     var highSchool: HighSchoolCareerStore? = nil
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 64

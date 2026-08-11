@@ -23,7 +23,18 @@ enum PlateFigures {
     static let hasBatterAsset: Bool = UIImage(named: batterAssetName) != nil
     static let hasCatcherAsset: Bool = UIImage(named: catcherAssetName) != nil
 
-    /// 단위 상자 안의 타자. 우타자가 화면 왼쪽에 서서 배트를 오른쪽 위로 들고 있는 모습.
+    /// 실루엣의 가로세로비(가로/세로). 여백을 잘라 낸 실제 그림의 비율이며, 벡터 폴백도
+    /// 같은 값으로 그려야 에셋 유무에 따라 사람 크기가 달라지지 않는다.
+    static let batterAspect: CGFloat = 613.0 / 850.0
+    static let catcherAspect: CGFloat = 694.0 / 850.0
+
+    /// 그림으로 얹을 때의 불투명도. 벡터 폴백의 `fieldChalk.opacity(0.11)`과 같은 무게로
+    /// 보이는 값이다 — 실루엣이 진해지면 존과 공을 가린다.
+    static let assetOpacity: Double = 0.13
+
+    /// 단위 상자 안의 타자. **몸이 화면 왼쪽을 향한다** — 배트를 든 손이 오른쪽 위에 있다.
+    /// 이미지 에셋(`BatterStance`)과 같은 방향이라, 어느 쪽을 쓰든 뒤집는 규칙이 같다.
+    /// 존 왼쪽 타석(우타자)에 세울 때 뒤집어야 홈플레이트를 바라본다.
     ///
     /// 좌표계는 (0,0)이 왼쪽 위, (1,1)이 오른쪽 아래다. 가로는 배트 끝까지 포함한 폭이고,
     /// 세로는 헬멧 꼭대기부터 앞발 바닥까지다.

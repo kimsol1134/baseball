@@ -464,7 +464,10 @@ final class CareerSignatureLegacyTests: XCTestCase {
 
         let engine = HighSchoolCareerEngine()
         let current = try engine.start(.init(seed: "918220", presetID: "power_prospect")).snapshot
-        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 63)
+        // v4 문턱은 밸런스에 따라 움직인다(63 → 66: 중립 자동 진행 지명률 55%를 13%로).
+        // 이 줄은 "지금 값이 얼마인가"를 적어 두는 기록이고, 아래 v3 단언이 진짜 계약이다 —
+        // 진행 중인 옛 저장의 당락선은 어떤 밸런스 변경에도 움직이면 안 된다.
+        XCTAssertEqual(HighSchoolCareerEngine.draftThreshold(state: current), 66)
         XCTAssertEqual(
             (0..<5).map { HighSchoolCareerEngine.draftVariance(balanceVersion: 4, roll: $0) },
             [-1, 0, 0, 0, 1]

@@ -166,50 +166,76 @@ struct PitchDramaView: View {
         // 장면의 주인공이 아니라 무엇을 보고 있는지 알려 주는 틀이다.
         let ink = BaseballTheme.fieldChalk.opacity(0.11)
 
-        // 타자 상자 — 존 옆에 서고, 존보다 위아래로 넉넉히 길다(사람은 존보다 크다).
-        let batterHeight = zone.height * 2.35
-        let batterWidth = batterHeight * 0.62
+        // 타자 상자.
+        //
+        // 존이 화면 폭의 3분의 2를 쓰므로 옆에 사람 하나가 통째로 설 자리는 없다. 중계
+        // 화면이 그렇듯 **일부러 프레임 밖으로 걸친다** — 몸통과 배트 쪽 절반만 보이고
+        // 나머지는 화면 밖이다. 발은 홈플레이트 선 근처에 두어 같은 바닥을 딛게 한다.
+        // 가로세로비는 실제 에셋의 것을 쓴다. 폴백과 비율이 다르면 에셋을 넣고 빼는
+        // 것만으로 사람 크기가 달라진다.
+        let batterHeight = zone.height * 1.46
+        let batterWidth = batterHeight * PlateFigures.batterAspect
         let batterRect = CGRect(
-            x: batSide == .left ? zone.maxX + zone.width * 0.06 - batterWidth * 0.28
-                : zone.minX - zone.width * 0.06 - batterWidth * 0.72,
-            y: zone.minY - batterHeight * 0.42,
+            x: batSide == .left ? zone.maxX + zone.width * 0.10 - batterWidth * 0.34
+                : zone.minX - zone.width * 0.10 - batterWidth * 0.66,
+            y: zone.maxY + zone.height * 0.34 - batterHeight,
             width: batterWidth,
             height: batterHeight
         )
-        if PlateFigures.hasBatterAsset {
-            var layer = context
-            layer.opacity = 0.16
-            if batSide == .left {
-                layer.translateBy(x: batterRect.midX, y: 0)
-                layer.scaleBy(x: -1, y: 1)
-                layer.translateBy(x: -batterRect.midX, y: 0)
-            }
-            layer.draw(Image(PlateFigures.batterAssetName).renderingMode(.template), in: batterRect)
-        } else {
-            context.fill(
-                PlateFigures.scaled(PlateFigures.batterPath(), into: batterRect, flipped: batSide == .left),
-                with: .color(ink)
-            )
-        }
+        // **타자는 존을 바라봐야 한다.**
+        //
+        // 원본 실루엣은 몸이 화면 왼쪽을 향한다(배트를 든 손이 오른쪽 위). 우타자는 존
+        // 왼쪽 타석에 서므로 존은 그의 오른쪽에 있고, 그러려면 그림을 뒤집어야 한다.
+        // 좌타자는 존 오른쪽에 서니 원본 방향 그대로가 맞다. 반대로 두면 두 타자 모두
+        // 홈플레이트에 등을 돌리고 선 그림이 된다.
+        draw(
+            asset: PlateFigures.hasBatterAsset ? PlateFigures.batterAssetName : nil,
+            fallback: PlateFigures.batterPath(),
+            in: batterRect, flipped: batSide == .right, ink: ink, context: context
+        )
 
-        // 포수 — 존 아래에 등을 보이고 앉는다.
-        let catcherWidth = zone.width * 1.05
+        // 포수는 존 아래에 등을 보이고 앉는다. 어깨 위쪽만 보이면 덩어리로 읽히므로
+        // 마스크와 무릎까지는 나오게 두되, 존을 밀어 올리지 않도록 폭을 줄인다.
+        let catcherWidth = zone.width * 1.18
         let catcherRect = CGRect(
             x: zone.midX - catcherWidth / 2,
-            y: zone.maxY + zone.height * 0.10,
+            y: zone.maxY + zone.height * 0.02,
             width: catcherWidth,
-            height: catcherWidth * 0.78
+            height: catcherWidth / PlateFigures.catcherAspect
         )
-        if PlateFigures.hasCatcherAsset {
-            var layer = context
-            layer.opacity = 0.16
-            layer.draw(Image(PlateFigures.catcherAssetName).renderingMode(.template), in: catcherRect)
-        } else {
-            context.fill(
-                PlateFigures.scaled(PlateFigures.catcherPath(), into: catcherRect),
-                with: .color(ink)
-            )
+        draw(
+            asset: PlateFigures.hasCatcherAsset ? PlateFigures.catcherAssetName : nil,
+            fallback: PlateFigures.catcherPath(),
+            in: catcherRect, flipped: false, ink: ink, context: context
+        )
+    }
+
+    /// 사람 하나를 그린다. 에셋이 있으면 그림을, 없으면 벡터를 같은 자리에 같은 잉크로 얹는다.
+    ///
+    /// 에셋은 흰 실루엣 + 알파로 구워져 있다. 그래서 `.renderingMode(.template)` 없이
+    /// 불투명도만 낮추면 벡터 폴백(`fieldChalk.opacity(0.11)`)과 같은 분필색이 된다 —
+    /// Canvas의 `draw(_:in:)`은 환경의 전경색을 template 이미지에 적용해 주지 않으므로,
+    /// 색을 코드에서 입히려 했다면 에셋만 검게 남았을 것이다.
+    private func draw(
+        asset: String?,
+        fallback: @autoclosure () -> Path,
+        in rect: CGRect,
+        flipped: Bool,
+        ink: Color,
+        context: GraphicsContext
+    ) {
+        guard let asset else {
+            context.fill(PlateFigures.scaled(fallback(), into: rect, flipped: flipped), with: .color(ink))
+            return
         }
+        var layer = context
+        layer.opacity = PlateFigures.assetOpacity
+        if flipped {
+            layer.translateBy(x: rect.midX, y: 0)
+            layer.scaleBy(x: -1, y: 1)
+            layer.translateBy(x: -rect.midX, y: 0)
+        }
+        layer.draw(Image(asset), in: rect)
     }
 
     /// 야간 구장 조명. 부드러운 타원 하나로 무대를 만든다. 각진 삼각형은 오려 붙인 티가 난다.
