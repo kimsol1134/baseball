@@ -21,6 +21,8 @@ struct HighSchoolCareerView: View {
     @State private var rebirthStamp: RebirthStamp?
     /// 오늘의 이닝(일일 도전) 표시 여부.
     @State private var showsDaily = false
+    /// 현재 선수의 스킬 진행을 어느 국면에서든 확인하는 시트.
+    @State private var skillTreePreview: SkillTreePreview?
     /// 복귀 알림 권유 카드를 지금 띄우는가. 한 번 답하면 이 세션에서는 다시 묻지 않는다.
     @State private var showsReminderNudge = DailyReminder.shouldOfferOptIn()
     @Environment(\.requestReview) private var requestReview
@@ -64,6 +66,13 @@ struct HighSchoolCareerView: View {
         let playerName: String
         let careerID: String
         var id: String { careerID }
+    }
+
+    struct SkillTreePreview: Identifiable {
+        let id = UUID()
+        let selected: [AwakeningID]
+        let sparks: Int?
+        let beforeFirstGame: Bool
     }
     private var audio: GameAudio { .shared }
 
@@ -155,6 +164,13 @@ struct HighSchoolCareerView: View {
             DailyInningView(onClose: { showsDaily = false }, source: "career_entry",
                             weekly: weekly, highSchool: career)
         }
+        .sheet(item: $skillTreePreview) { preview in
+            SkillTreeSheet(
+                selected: preview.selected,
+                sparks: preview.sparks,
+                beforeFirstGame: preview.beforeFirstGame
+            )
+        }
         .fullScreenCover(item: $rebirthStamp) { stamp in
             RebirthStampView(lifeNumber: stamp.lifeNumber) {
                 rebirthStamp = nil
@@ -233,6 +249,16 @@ struct HighSchoolCareerView: View {
                         // 1회차의 마지막 화면(완료)에 "2회차"라고 적혀 있었다 — 아직 끝나지도
                         // 않은 회차가 다음 번호를 미리 달고 있었던 셈이다.
                         ChapterHeader(state: state, lifeNumber: state.lifeNumber)
+
+                        if state.phase != .awakening {
+                            SkillTreeSummaryRow(selected: state.selectedAwakenings) {
+                                skillTreePreview = SkillTreePreview(
+                                    selected: state.selectedAwakenings,
+                                    sparks: state.awakeningSparks,
+                                    beforeFirstGame: state.performance.importantGamesCompleted == 0
+                                )
+                            }
+                        }
 
                         if !achievements.freshlyUnlocked.isEmpty {
                             AchievementBanner(achievements: achievements.freshlyUnlocked) {
@@ -1422,6 +1448,8 @@ private struct AwakeningCard: View {
     var beforeFirstGame = false
     /// 이번 회차에서 이미 찍은 각성.
     var selected: [AwakeningID] = []
+    /// 평상시 확인 화면에서는 현재·다음 상태만 보여 주고 선택은 받지 않는다.
+    var readOnly = false
     let onChoose: (AwakeningID) -> Void
 
     /// 회차당 각성 횟수. 코어의 마일스톤 배치(2 + 마지막 장 1)와 업적 `awakenedThrice`가
@@ -1449,23 +1477,31 @@ private struct AwakeningCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            // 회차당 세 번뿐인 순간 — 목록이 아니라 무대를 준다(QA P2-2).
-            KeyArtHeader(art: .awakening, eyebrow: "각성", title: "몸이 하나를 기억합니다", accent: BaseballTheme.milestone)
-            // **몇 번째 각성인지 먼저 말한다.**
-            //
-            // 예전에는 "한 번 고르면 고교 3년 동안 바꿀 수 없습니다"만 있었다. 그 문장은
-            // "각성은 한 번뿐"으로 읽힌다 — 그래서 두 번째 각성이 왔을 때 게임이 방금
-            // 한 약속을 어긴 것처럼 보였다. 실제 규칙은 "3년에 세 번, 각각 되돌릴 수 없음"이다.
-            // 처음부터 세 번이라고 말하면 아무것도 어긋나지 않는다.
-            Text("고교 3년 동안 \(Self.totalAwakenings)번 각성합니다 — 지금은 \(selected.count + 1)번째입니다.")
-                .font(.subheadline.weight(.heavy))
-                .foregroundStyle(BaseballTheme.milestone)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("hs.awakening.counter")
-            Text("하나를 찍으면 그 갈래의 다음 가지가 열립니다. 남은 각성 \(max(0, Self.totalAwakenings - selected.count - 1))번 — 한 갈래를 끝까지 팔지, 여러 갈래를 나눠 가질지 고르세요.")
-                .font(.footnote)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if readOnly {
+                Text(selected.isEmpty
+                     ? "아직 찍은 스킬이 없습니다. 다음 각성에서 네 갈래의 1단 스킬 중 하나를 고릅니다."
+                     : "찍은 스킬 \(selected.count)/\(Self.totalAwakenings) · 남은 선택 \(max(0, Self.totalAwakenings - selected.count))회")
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hs.skillTree.progress")
+                Text("체크는 현재 보유, ‘다음’은 다음 각성에서 고를 수 있는 스킬입니다. 잠긴 가지에는 먼저 필요한 스킬이 표시됩니다.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                // 회차당 세 번뿐인 순간 — 목록이 아니라 무대를 준다(QA P2-2).
+                KeyArtHeader(art: .awakening, eyebrow: "각성", title: "몸이 하나를 기억합니다", accent: BaseballTheme.milestone)
+                Text("고교 3년 동안 \(Self.totalAwakenings)번 각성합니다 — 지금은 \(selected.count + 1)번째입니다.")
+                    .font(.subheadline.weight(.heavy))
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("hs.awakening.counter")
+                Text("하나를 찍으면 그 갈래의 다음 가지가 열립니다. 남은 각성 \(max(0, Self.totalAwakenings - selected.count - 1))번 — 한 갈래를 끝까지 팔지, 여러 갈래를 나눠 가질지 고르세요.")
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Text(sparkLine.text)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(sparkLine.tone)
@@ -1533,15 +1569,15 @@ private struct AwakeningCard: View {
         // 비용이 폭발했다 — 3년 완주 스모크가 330초에서 685초로 늘고 결국 쿼리 타임아웃으로
         // 죽었다. 실제 사용자에게도 같은 값을 치른다(보이스오버가 못 누르는 항목 18개를
         // 하나씩 읽는다). 누를 수 없는 것은 조작 요소가 아니라 그림이어야 한다.
-        if open && !owned {
+        if open && !owned && !readOnly {
             Button { pending = node.id } label: { nodeBody(node, owned: false, open: true) }
                 .buttonStyle(.plain)
                 .accessibilityLabel(nodeVoiceLabel(node, owned: false, open: true))
                 .accessibilityIdentifier("hs.awakening.\(node.id.rawValue)")
         } else {
-            nodeBody(node, owned: owned, open: false)
+            nodeBody(node, owned: owned, open: readOnly && open)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(nodeVoiceLabel(node, owned: owned, open: false))
+                .accessibilityLabel(nodeVoiceLabel(node, owned: owned, open: readOnly && open))
         }
     }
 
@@ -1583,7 +1619,7 @@ private struct AwakeningCard: View {
                     }
                     Spacer(minLength: 0)
                     if open {
-                        Text("찍기")
+                        Text(readOnly ? "다음" : "찍기")
                             .font(.caption2.weight(.heavy))
                             .foregroundStyle(BaseballTheme.milestone)
                     }
@@ -1623,7 +1659,7 @@ private struct AwakeningCard: View {
         let copy = HighSchoolPresentation.awakening(node.id)
         let head = "\(AwakeningTree.branch(node.id).title) 갈래 \(node.tier)단, \(copy.title)"
         if owned { return head + ", 이미 찍음" }
-        if open { return head + ", \(copy.detail), 지금 찍을 수 있음" }
+        if open { return head + ", \(copy.detail), \(readOnly ? "다음 각성에서 선택 가능" : "지금 찍을 수 있음")" }
         return head + ", 잠김. " + (lockReason(node) ?? "")
     }
 
@@ -1632,6 +1668,87 @@ private struct AwakeningCard: View {
         guard !missing.isEmpty else { return nil }
         let names = missing.map { HighSchoolPresentation.awakening($0).title }.joined(separator: " · ")
         return "먼저 '\(names)'을(를) 찍어야 열립니다."
+    }
+}
+
+/// 현재 국면을 떠나지 않고 보유·다음 스킬을 확인하는 입구.
+private struct SkillTreeSummaryRow: View {
+    let selected: [AwakeningID]
+    let onOpen: () -> Void
+
+    private var ownedNames: String {
+        selected.map { HighSchoolPresentation.awakening($0).title }.joined(separator: " · ")
+    }
+
+    var body: some View {
+        Button(action: onOpen) {
+            HStack(spacing: 12) {
+                Image(systemName: "point.3.connected.trianglepath.dotted")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .frame(width: 30)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("스킬트리 · \(selected.count)/\(AwakeningCard.totalAwakenings)")
+                        .font(.subheadline.weight(.heavy))
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                    Text(selected.isEmpty ? "아직 찍은 스킬 없음 · 다음 경로 확인" : ownedNames)
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(BaseballTheme.textTertiary)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget, alignment: .leading)
+            .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                    .stroke(BaseballTheme.border, lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("hs.skillTree.open")
+    }
+}
+
+/// 시트가 닫기 동작을 직접 소유해 호출 화면의 상태를 단순하게 유지한다.
+private struct SkillTreeSheet: View {
+    let selected: [AwakeningID]
+    let sparks: Int?
+    let beforeFirstGame: Bool
+    @Environment(\.dismiss) private var dismiss
+
+    private var nextOptions: [AwakeningID] {
+        guard selected.count < AwakeningCard.totalAwakenings else { return [] }
+        return AwakeningTree.available(selected: selected, sparks: sparks)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                AwakeningCard(
+                    options: nextOptions,
+                    sparks: sparks,
+                    beforeFirstGame: beforeFirstGame,
+                    selected: selected,
+                    readOnly: true,
+                    onChoose: { _ in }
+                )
+                .padding(BaseballMetrics.gutter)
+            }
+            .background(BaseballTheme.canvas)
+            .navigationTitle("내 스킬트리")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("완료") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.large])
     }
 }
 
