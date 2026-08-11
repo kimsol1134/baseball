@@ -19,6 +19,10 @@ struct BaseballApp: App {
     /// 홍보 영상 촬영용. XCUITest는 자동화를 빠르게 하려고 대상 앱의 애니메이션을 꺼 버리는데,
     /// 그러면 승부 장면이 최종 프레임으로 튀어 녹화에 아무것도 남지 않는다. 촬영할 때만 되돌린다.
     nonisolated static let promoLaunchArgument = "-uiTestPromoCapture"
+#if DEBUG
+    /// 지명 완료 화면 → 프로 진입을 밸런스 시드와 분리해 검증하는 Debug 전용 픽스처.
+    nonisolated static let draftedCareerFixtureLaunchArgument = "-uiTestDraftedCareerFixture"
+#endif
 
     @Environment(\.scenePhase) private var scenePhase
     @State private var highSchool = HighSchoolCareerStore()
@@ -230,12 +234,23 @@ struct BaseballApp: App {
                     if arguments.contains(Self.resetLaunchArgument) {
                         highSchool.deleteCareer()
                         pro.deleteCareer()
+                        GameAnalytics.resetCompletedGameCountForUITesting()
+                        DailyReminder.resetForUITesting()
+                        // `previousReturnPlan`은 App 초기화 때 이미 읽힌 값이라 defaults만 지워서는
+                        // 이번 화면에 남는다. 메모리 사본도 같은 원자적 초기화에 포함한다.
+                        previousReturnPlan = nil
+                        returnWelcomePlan = nil
                         // 설정도 함께 되돌린다. 앞선 실행이 남긴 자동 릴리스가 다음 테스트로
                         // 새면 조작 경로가 통째로 달라진다.
                         UserDefaults.standard.set(
                             arguments.contains(Self.autoReleaseLaunchArgument),
                             forKey: "baseball.pitch.autoRelease"
                         )
+#if DEBUG
+                        if arguments.contains(Self.draftedCareerFixtureLaunchArgument) {
+                            _ = highSchool.installDraftedCareerFixtureForUITesting()
+                        }
+#endif
                     } else if arguments.contains(Self.autoReleaseLaunchArgument) {
                         UserDefaults.standard.set(true, forKey: "baseball.pitch.autoRelease")
                     }

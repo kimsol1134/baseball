@@ -392,6 +392,13 @@ enum DailyReminder {
         return try? JSONDecoder().decode(WelcomeHandled.self, from: data)
     }
 
+    /// UI 테스트는 이전 실행이 남긴 복귀 목적지와 닫기 영수증까지 없는 상태에서 시작한다.
+    /// 둘 중 하나라도 남으면 커리어 파일을 지운 뒤에도 복귀 카드가 첫 조작을 가릴 수 있다.
+    static func resetForUITesting(defaults: UserDefaults = .standard) {
+        savePlan(nil, defaults: defaults)
+        defaults.removeObject(forKey: welcomeHandledKey)
+    }
+
     /// 첫 설치에는 복귀 카드가 없어야 하고, 이전 세션이 있었을 때만 현재 진행을 보여 준다.
     ///
     /// 두 계획이 다를 때도 `current`를 반환한다. 다른 기기에서 한 단계 전진했거나 저장을

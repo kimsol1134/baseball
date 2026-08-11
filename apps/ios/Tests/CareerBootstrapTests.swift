@@ -61,4 +61,15 @@ final class CareerBootstrapTests: XCTestCase {
             }
         }
     }
+
+    @MainActor
+    func testDraftedUITestFixtureStartsAtCompletedDraftedState() {
+        let store = HighSchoolCareerStore(saveWriter: { _ in true })
+
+        XCTAssertTrue(store.installDraftedCareerFixtureForUITesting())
+        XCTAssertEqual(store.state?.phase, .completed)
+        XCTAssertEqual(store.state?.draftResult?.outcome, .drafted)
+        XCTAssertNotNil(store.state?.draftResult?.team)
+        XCTAssertFalse(store.hasEnteredPro)
+    }
 }

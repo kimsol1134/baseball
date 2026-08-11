@@ -125,6 +125,28 @@ final class RetentionHookTests: XCTestCase {
         XCTAssertNil(DailyReminder.storedPlan(defaults: defaults))
     }
 
+    func testUITestResetClearsReturnPlanAndHandledWelcome() {
+        let plan = DailyReminder.Plan(
+            title: "이번 선수의 목표가 남아 있습니다",
+            body: "탈삼진 4/5",
+            destination: .highSchool,
+            reason: "run_pledge"
+        )
+        DailyReminder.savePlan(plan, defaults: defaults)
+        DailyReminder.markWelcomeHandled(
+            plan,
+            now: date("2026-08-10 12:00"),
+            defaults: defaults
+        )
+        XCTAssertNotNil(DailyReminder.storedPlan(defaults: defaults))
+        XCTAssertNotNil(DailyReminder.storedWelcomeHandled(defaults: defaults))
+
+        DailyReminder.resetForUITesting(defaults: defaults)
+
+        XCTAssertNil(DailyReminder.storedPlan(defaults: defaults))
+        XCTAssertNil(DailyReminder.storedWelcomeHandled(defaults: defaults))
+    }
+
     /// 첫 설치에는 카드가 없고, 한 번 떠났다가 돌아왔을 때만 현재 진행을 보여 준다.
     func testWelcomePlanRequiresAPreviousSessionAndUsesCurrentProgress() {
         let previous = DailyReminder.Plan(

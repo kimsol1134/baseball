@@ -262,6 +262,13 @@ enum GameAnalytics {
         defaults.integer(forKey: completedGameCountKey)
     }
 
+    /// UI 테스트의 `커리어 초기화`는 화면을 바꾸는 완료 경기 수도 함께 지워야 한다.
+    /// 커리어 파일만 지우고 이 값을 남기면 복귀 안내가 새 테스트 위를 덮어, 같은 실행
+    /// 인자에서도 직전 테스트 순서에 따라 첫 화면이 달라진다.
+    static func resetCompletedGameCountForUITesting(defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: completedGameCountKey)
+    }
+
     static func recordCompletedGame(defaults: UserDefaults = .standard) {
         guard !isUITest(arguments: ProcessInfo.processInfo.arguments) else { return }
         defaults.set(completedGameCount(defaults: defaults) + 1, forKey: completedGameCountKey)

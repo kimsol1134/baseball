@@ -49,6 +49,19 @@ final class AnalyticsContextTests: XCTestCase {
         XCTAssertFalse(GameAnalytics.isUITest(arguments: ["app"]))
     }
 
+    @MainActor
+    func testUITestResetClearsCompletedGameCount() {
+        let suite = "AnalyticsContextTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        GameAnalytics.recordCompletedGame(defaults: defaults)
+        XCTAssertEqual(GameAnalytics.completedGameCount(defaults: defaults), 1)
+
+        GameAnalytics.resetCompletedGameCountForUITesting(defaults: defaults)
+        XCTAssertEqual(GameAnalytics.completedGameCount(defaults: defaults), 0)
+    }
+
     func testProCareerStartedRequiresAReadyNewCareerIdentity() {
         XCTAssertFalse(AppShell.proCareerCreationSucceeded(
             previousCareerID: nil, currentCareerID: nil, isReady: false
