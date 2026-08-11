@@ -5,6 +5,11 @@
 `AnalyticsBootstrap.Log`의 128개 startup FIFO에 넣는다. 표의 속성 외에는 SDK 공통 빌드 컨텍스트만
 붙는다. 사용자 이름, 커리어 ID, 구단·학교 자유 문자열은 보내지 않는다.
 
+이 표에서 `drafted`, `recommended`, `perfect`, `enabled`, `return_eligible`처럼 논리형으로
+정의한 속성은 privacy/schema 경계와 Amplitude payload에서 `bool`을 유지한다. Firebase Unity의
+`Parameter`가 long/double/string overload만 제공하므로 Firebase adapter에서만 `true=1L`,
+`false=0L`로 결정론적으로 인코딩한다. 문자열 `"True"`/`"False"`는 보내지 않는다.
+
 | 이벤트 | Android 발화점 | 이벤트 속성 | 반복/영수증 |
 |---|---|---|---|
 | `onboarding_started` | 선수 만들기 진입 저장 성공 | 없음 | install lifetime once |

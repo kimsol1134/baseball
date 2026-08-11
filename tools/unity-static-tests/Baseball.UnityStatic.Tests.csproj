@@ -36,6 +36,7 @@
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsEvent.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsContracts.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsPrivacyGuard.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/FirebaseAnalyticsValueAdapter.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsService.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsStartupBuffer.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Review/ReviewPromptPolicy.cs" />

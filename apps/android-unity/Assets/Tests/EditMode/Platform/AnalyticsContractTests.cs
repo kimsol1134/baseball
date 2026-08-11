@@ -52,6 +52,36 @@ namespace Baseball.Platform.Tests
         }
 
         [Test]
+        public void FirebaseBooleanAdapterUsesLongsWhileAmplitudeKeepsLogicalSchemaValues()
+        {
+            var logical = new Dictionary<string, object>(StringComparer.Ordinal)
+            {
+                ["drafted"] = true,
+                ["recommended"] = false,
+                ["perfect"] = true,
+                ["enabled"] = false,
+                ["return_eligible"] = true,
+            };
+            var amplitude = new RecordingDestination(AnalyticsDestinationKind.Amplitude);
+            var service = new AnalyticsService(
+                new AnalyticsContext("1.0.0", "7", AnalyticsDistribution.Production),
+                new[] { amplitude },
+                new MemoryOnceStore(),
+                "2ea11855f1844af680ae122b77e72e61");
+
+            service.Log(AnalyticsEvent.SessionEnded, logical);
+
+            foreach (KeyValuePair<string, object> pair in logical)
+            {
+                object firebase = FirebaseAnalyticsValueAdapter.Normalize(pair.Value);
+                Assert.That(firebase, Is.TypeOf<long>(), pair.Key);
+                Assert.That(firebase, Is.EqualTo((bool)pair.Value ? 1L : 0L), pair.Key);
+                Assert.That(amplitude.Properties[pair.Key], Is.TypeOf<bool>(), pair.Key);
+                Assert.That(amplitude.Properties[pair.Key], Is.EqualTo(pair.Value), pair.Key);
+            }
+        }
+
+        [Test]
         public void ScopedOnceHashesScopeLocallyAndSendsNoIdentifier()
         {
             var destination = new RecordingDestination(AnalyticsDestinationKind.Test);

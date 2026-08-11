@@ -42,9 +42,10 @@ namespace Baseball.Platform.Analytics
 
         private static Parameter ToParameter(KeyValuePair<string, object> pair)
         {
-            if (pair.Value is long integer) return new Parameter(pair.Key, integer);
-            if (pair.Value is double number) return new Parameter(pair.Key, number);
-            return new Parameter(pair.Key, Convert.ToString(pair.Value));
+            object value = FirebaseAnalyticsValueAdapter.Normalize(pair.Value);
+            if (value is long integer) return new Parameter(pair.Key, integer);
+            if (value is double number) return new Parameter(pair.Key, number);
+            return new Parameter(pair.Key, (string)value);
         }
     }
 
