@@ -16,6 +16,8 @@ import { FastRouteCaptureScene } from "./judge-cut/FastRouteCaptureScene";
 import { HiveScene } from "./judge-cut/HiveScene";
 import { JUDGE_CUT_FRAMES, WebContestJudgeCut } from "./judge-cut/WebContestJudgeCut";
 import { RebirthCaptureScene } from "./judge-cut/RebirthCaptureScene";
+import { PayoffHookScene } from "./judge-cut/PayoffHookScene";
+import { JudgePoster } from "./judge-cut/JudgePoster";
 
 const TRAILER_FRAMES = Object.values(BEATS).reduce((sum, length) => sum + length, 0);
 
@@ -38,10 +40,12 @@ export const RemotionRoot: React.FC = () => (
       height={1080}
     />
     <Folder name="Web-Contest-Judge-Cut-Scenes">
-      <Composition id="JudgeFastRouteCapture" component={FastRouteCaptureScene} durationInFrames={358} fps={30} width={1920} height={1080} />
-      <Composition id="JudgeRebirthCapture" component={RebirthCaptureScene} durationInFrames={228} fps={30} width={1920} height={1080} />
-      <Composition id="JudgeCodexScene" component={CodexScene} durationInFrames={270} fps={30} width={1920} height={1080} />
-      <Composition id="JudgeHiveScene" component={HiveScene} durationInFrames={240} fps={30} width={1920} height={1080} />
+      <Composition id="JudgePayoffHook" component={PayoffHookScene} durationInFrames={150} fps={30} width={1920} height={1080} />
+      <Composition id="JudgeFastRouteCapture" component={FastRouteCaptureScene} durationInFrames={330} fps={30} width={1920} height={1080} />
+      <Composition id="JudgeRebirthCapture" component={RebirthCaptureScene} durationInFrames={210} fps={30} width={1920} height={1080} />
+      <Composition id="JudgeCodexScene" component={CodexScene} durationInFrames={240} fps={30} width={1920} height={1080} />
+      <Composition id="JudgeHiveScene" component={HiveScene} durationInFrames={120} fps={30} width={1920} height={1080} />
+      <Composition id="JudgePoster" component={JudgePoster} durationInFrames={1} fps={30} width={1920} height={1080} />
     </Folder>
     <Composition
       id="WebContestJudgeCut"

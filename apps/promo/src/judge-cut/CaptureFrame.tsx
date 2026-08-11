@@ -9,7 +9,9 @@ export const CaptureFrame: React.FC<{
   title: string;
   detail: string;
   sound?: string;
-}> = ({ video, kicker, title, detail, sound = "glove-catch.wav" }) => {
+  cropScale?: number;
+  cropOrigin?: string;
+}> = ({ video, kicker, title, detail, sound = "glove-catch.wav", cropScale = 1.25, cropOrigin = "center center" }) => {
   const frame = useCurrentFrame();
   return (
     <AbsoluteFill style={{ overflow: "hidden", backgroundColor: "#050807" }}>
@@ -18,10 +20,10 @@ export const CaptureFrame: React.FC<{
         name="실제 공개 빌드 녹화"
         style={{
           position: "absolute",
-          left: 160,
+          left: 100,
           top: 90,
-          width: 1600,
-          height: 1000,
+          width: 1720,
+          height: 940,
           overflow: "hidden",
           border: "1px solid rgba(200,242,74,0.36)",
           boxShadow: "0 42px 120px rgba(0,0,0,0.72)",
@@ -41,7 +43,7 @@ export const CaptureFrame: React.FC<{
         <Video
           src={staticFile(`web-capture/${video}`)}
           volume={0}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", scale: cropScale, transformOrigin: cropOrigin }}
         />
       </Interactive.Div>
       <Interactive.Div

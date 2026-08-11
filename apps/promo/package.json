@@ -8,7 +8,7 @@
     "capture:web-judge": "node scripts/capture-web-judge.mjs",
     "render:web-contest": "remotion render WebContestTrailer out/web-contest-final.mp4 --codec=h264 --crf=18",
     "render:web-judge": "remotion render WebContestJudgeCut out/web-contest-judge-cut.mp4 --codec=h264 --crf=24",
-    "render:web-judge-poster": "remotion still WebContestJudgeCut out/web-contest-judge-poster.png --frame=2010",
+    "render:web-judge-poster": "remotion still JudgePoster out/web-contest-judge-poster.png --frame=0",
     "render:web-poster": "remotion still WebContestTrailer out/web-contest-poster.png --frame=840",
     "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=20",
     "render:loop": "remotion render HeroLoop out/hero-loop.mp4 --codec=h264 --crf=23",

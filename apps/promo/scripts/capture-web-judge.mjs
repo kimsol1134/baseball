@@ -6,7 +6,7 @@ import { completeCareerFixture } from "../../game-web/tests/complete-career.fixt
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const outputDirectory = path.resolve(scriptDirectory, "../public/web-capture");
-const gameURL = "https://baseball-rebirth-last-pitch.kimsol1134.chatgpt.site/?capture=judge";
+const gameURL = process.env.GAME_URL ?? "https://baseball-rebirth-last-pitch.kimsol1134.chatgpt.site/?capture=judge";
 
 await mkdir(outputDirectory, { recursive: true });
 
@@ -39,22 +39,25 @@ async function record(name, run) {
 await record("fast-route", async (page) => {
   await page.goto(gameURL, { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "이번 생의 커리어 시작" }).waitFor();
-  await page.waitForTimeout(1_200);
+  await page.waitForTimeout(500);
   await page.getByRole("button", { name: "이번 생의 커리어 시작" }).click();
-  await page.waitForTimeout(1_000);
-  await page.getByRole("button", { name: /90초 추천 루트 시작/ }).click();
-  await page.waitForTimeout(1_200);
-  await page.getByRole("button", { name: /추천 캠프 적용/ }).click();
-  await page.waitForTimeout(1_300);
+  await page.waitForTimeout(450);
+  await page.getByRole("button", { name: /90초 직접 육성 시작/ }).click();
+  await page.waitForTimeout(650);
+  await page.getByRole("button", { name: /몰아붙이기/ }).click();
+  await page.locator(".rookie-camp-routes").getByRole("button", { name: /압도형 에이스/ }).click();
+  await page.waitForTimeout(850);
+  await page.getByRole("button", { name: /가로지르는 슬라이더/ }).click();
+  await page.waitForTimeout(450);
   await page.getByRole("button", { name: /결정구 불펜/ }).click();
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(450);
   await page.getByRole("button", { name: /회복과 가동성/ }).click();
-  await page.waitForTimeout(1_000);
+  await page.waitForTimeout(650);
 
   const startMatch = page.getByRole("button", { name: /내 빌드 검증하러/ });
   await startMatch.scrollIntoViewIfNeeded();
   await startMatch.click();
-  await page.waitForTimeout(1_300);
+  await page.waitForTimeout(750);
 
   const release = page.getByRole("button", { name: /누르고 와인드업/ });
   const box = await release.boundingBox();
@@ -63,7 +66,7 @@ await record("fast-route", async (page) => {
   await page.mouse.down();
   await page.waitForTimeout(325);
   await page.mouse.up();
-  await page.waitForTimeout(2_200);
+  await page.waitForTimeout(1_600);
 });
 
 await record("rebirth", async (page) => {
