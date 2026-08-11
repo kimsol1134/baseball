@@ -79,6 +79,25 @@ if let outingIndex = arguments.firstIndex(of: "--outings"),
         FileHandle.standardError.write(Data("no preset\n".utf8))
         exit(1)
     }
+    func outingRating(_ flag: String, fallback: Int) -> Int {
+        guard let index = arguments.firstIndex(of: flag) else { return fallback }
+        let valueIndex = arguments.index(after: index)
+        guard arguments.indices.contains(valueIndex), let value = Int(arguments[valueIndex]) else {
+            return fallback
+        }
+        return min(80, max(20, value))
+    }
+    let outingBase = outingPreset.pitcher
+    let outingPitcher = PitcherSnapshot(
+        id: outingBase.id,
+        name: outingBase.name,
+        stuff: outingRating("--stuff", fallback: outingBase.stuff),
+        command: outingRating("--command", fallback: outingBase.command),
+        movement: outingRating("--movement", fallback: outingBase.movement),
+        stamina: outingRating("--stamina", fallback: outingBase.stamina),
+        pitchProfiles: outingBase.pitchProfiles,
+        throwingHand: outingBase.throwingHand
+    )
 
     let started = role == "starter"
     let simulator = AutoOutingSimulator()
@@ -89,7 +108,7 @@ if let outingIndex = arguments.firstIndex(of: "--outings"),
 
     for index in 0..<max(1, outingCount) {
         let line = simulator.simulate(
-            pitcher: outingPreset.pitcher,
+            pitcher: outingPitcher,
             startingFatigue: 18 + (index % 4) * 6,
             outsTarget: outsTarget,
             pitchCap: started ? 96 : 28,

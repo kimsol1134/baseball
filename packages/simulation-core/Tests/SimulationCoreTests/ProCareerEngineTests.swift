@@ -5,6 +5,51 @@ import XCTest
 final class ProCareerEngineTests: XCTestCase {
     private let engine = ProCareerEngine()
 
+    func testProDevelopmentUsesChosenAxisAndTwoSelectionProgressInsteadOfCalendarParity() throws {
+        let preset = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "power_prospect" })
+        func profiledStart(_ seed: String) throws -> ProCareerResult {
+            try engine.start(.init(
+                seed: seed,
+                identity: .defaultPitcher,
+                pitcher: preset.pitcher,
+                draftResult: drafted(),
+                entitlement: activeEntitlement()
+            ))
+        }
+        var stuffRun = try profiledStart("5001")
+        stuffRun = try engine.signContract(.init(seed: stuffRun.nextSeed, state: stuffRun.snapshot))
+        let initial = stuffRun.snapshot.pitcher
+        stuffRun = try engine.planWeek(.init(
+            seed: stuffRun.nextSeed, state: stuffRun.snapshot, plan: .developStuff
+        ))
+        XCTAssertEqual(stuffRun.snapshot.pitcher.stuff, initial.stuff)
+        XCTAssertEqual(stuffRun.snapshot.developmentProgress?.stuff, 1)
+        stuffRun = try engine.planWeek(.init(
+            seed: stuffRun.nextSeed, state: stuffRun.snapshot, plan: .developStuff
+        ))
+        XCTAssertEqual(stuffRun.snapshot.pitcher.stuff, initial.stuff + 1)
+        let initialFourSeam = try XCTUnwrap(initial.profile(for: .fourSeam))
+        XCTAssertEqual(stuffRun.snapshot.pitcher.profile(for: .fourSeam)?.velocityTenthsKPH,
+                       initialFourSeam.velocityTenthsKPH + 5)
+        XCTAssertEqual(stuffRun.snapshot.developmentProgress?.stuff, 0)
+
+        var movementRun = try profiledStart("5002")
+        movementRun = try engine.signContract(.init(seed: movementRun.nextSeed, state: movementRun.snapshot))
+        let sliderBefore = try XCTUnwrap(movementRun.snapshot.pitcher.profile(for: .slider))
+        for _ in 0..<2 {
+            movementRun = try engine.planWeek(.init(
+                seed: movementRun.nextSeed,
+                state: movementRun.snapshot,
+                plan: .developMovement,
+                targetPitch: .slider
+            ))
+        }
+        XCTAssertEqual(movementRun.snapshot.pitcher.movement, preset.pitcher.movement + 1)
+        XCTAssertEqual(movementRun.snapshot.pitcher.profile(for: .slider)?.movement, sliderBefore.movement + 2)
+        XCTAssertEqual(movementRun.snapshot.pitcher.profile(for: .curveball)?.movement,
+                       preset.pitcher.profile(for: .curveball)?.movement)
+    }
+
     func testLockedOrUndraftedPlayerCannotStartProCareer() throws {
         let locked = startParams(seed: "1", entitlement: .init(status: .locked, source: .development, verifiedAt: "2026-07-22"))
         XCTAssertThrowsError(try engine.start(locked))
@@ -81,14 +126,14 @@ final class ProCareerEngineTests: XCTestCase {
         }
         // 옛 고정 주차 집합과 정확히 일치하지 않는다.
         XCTAssertNotEqual(Set(importantWeeks), Set([3, 7, 12, 18, 23]))
-        // 시즌당 4~6회가 자연 발생한다.
-        XCTAssertTrue((4...6).contains(importantWeeks.count), "시즌 중요 경기 \(importantWeeks.count)회는 4~6 범위를 벗어난다")
+        // 대표 장면만 남겨 한 시즌의 직접 승부를 세 번 이하로 압축한다.
+        XCTAssertTrue((2...3).contains(importantWeeks.count), "시즌 중요 경기 \(importantWeeks.count)회는 2~3 범위를 벗어난다")
         XCTAssertGreaterThanOrEqual(seenTriggers.count, 2, "서로 다른 트리거가 섞여야 한다")
         XCTAssertTrue(result.snapshot.milestones.contains("프로 첫 공식 등판"))
         XCTAssertTrue(result.snapshot.milestones.contains("1군 콜업"))
     }
 
-    func testImportantGameCountStaysWithinFourToSixAcrossSeasons() throws {
+    func testImportantGameCountStaysWithinTwoToThreeAcrossSeasons() throws {
         var result = try engine.start(startParams(seed: "31"))
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
         for season in 1...5 {
@@ -104,10 +149,17 @@ final class ProCareerEngineTests: XCTestCase {
                     result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: plan))
                 }
             }
-            XCTAssertTrue((4...6).contains(count), "시즌 \(season) 중요 경기 \(count)회는 4~6 범위를 벗어난다")
+            XCTAssertTrue((2...3).contains(count), "시즌 \(season) 중요 경기 \(count)회는 2~3 범위를 벗어난다")
             result = try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
             result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer))
         }
+    }
+
+    func testVeteranSeasonsUseTwoRepresentativeImportantGames() {
+        XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 1), 3)
+        XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 8), 3)
+        XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 9), 2)
+        XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 12), 2)
     }
 
     func testSameSeedProducesSameImportantWeeksAndRivals() throws {
@@ -155,7 +207,7 @@ final class ProCareerEngineTests: XCTestCase {
 
         let encoded = try JSONEncoder().encode(result.snapshot)
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
-        for key in ["seasonSegment", "seasonTrigger", "currentRival", "seasonTensions", "seasonImportantGames", "pendingDecision", "decisionHistory"] {
+        for key in ["seasonSegment", "seasonTrigger", "currentRival", "seasonTensions", "seasonImportantGames", "pendingDecision", "decisionHistory", "developmentProgress", "rolePreference"] {
             object.removeValue(forKey: key)
         }
         // 실제 구버전 저장의 서명에는 당시 존재하지 않던 필드가 들어가지 않았다.
@@ -176,6 +228,8 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertNil(legacy.currentRival)
         XCTAssertNil(legacy.pendingDecision)
         XCTAssertNil(legacy.decisionHistory)
+        XCTAssertNil(legacy.developmentProgress)
+        XCTAssertNil(legacy.rolePreference)
 
         // 크래시 없이 이어서 진행되고, 아크 필드가 결정론적으로 백필된다.
         let resumed = try engine.planWeek(.init(seed: result.nextSeed, state: legacy, plan: .refineCommand))
@@ -197,12 +251,25 @@ final class ProCareerEngineTests: XCTestCase {
 
         XCTAssertEqual(first, second)
         XCTAssertEqual(first.count, ProCareerEngine.maximumSeasonDecisions)
-        XCTAssertEqual(Set(first.map(\.type)), Set(ProSeasonDecisionType.allCases))
+        XCTAssertEqual(Set(first.map(\.type)).count, ProCareerEngine.maximumSeasonDecisions)
         for decision in first {
             XCTAssertEqual(decision.choices.count, 3)
             XCTAssertEqual(Set(decision.choices.map(\.id)).count, 3)
             XCTAssertTrue(decision.choices.allSatisfy { !$0.detail.isEmpty && !$0.effect.summary.isEmpty })
         }
+
+        // 한 시즌에 전부 소진하지 않되, 다른 선수로 시작하면 갈림길 조합이 바뀐다.
+        var typesAcrossRuns: Set<ProSeasonDecisionType> = []
+        for seed in 610...619 {
+            var other = try engine.start(startParams(seed: String(seed)))
+            other = try engine.signContract(.init(seed: other.nextSeed, state: other.snapshot))
+            let types = ProCareerEngine.seasonDecisionWeeks.compactMap {
+                engine.seasonDecision(for: other.snapshot, week: $0)?.type
+            }
+            XCTAssertEqual(Set(types).count, ProCareerEngine.maximumSeasonDecisions)
+            typesAcrossRuns.formUnion(types)
+        }
+        XCTAssertEqual(typesAcrossRuns, Set(ProSeasonDecisionType.allCases))
     }
 
     func testScheduledDecisionStopsWeeklyAdvanceAndAppliesOnlyConfirmedChoice() throws {
@@ -251,6 +318,43 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertEqual(record.decisionID, pending.id)
         XCTAssertEqual(record.choiceID, choice.id)
         XCTAssertEqual(record.effect, choice.effect)
+    }
+
+    func testRoleMeetingPromiseSurvivesFollowingWeekAndGrowsPitchProfile() throws {
+        var meeting: ProCareerResult?
+        let profiledPitcher = PitcherPresetCatalog.all[0].pitcher
+        for seed in 620...700 {
+            let candidate = try firstDecision(seed: String(seed), pitcher: profiledPitcher)
+            if candidate.snapshot.pendingDecision?.type == .roleMeeting {
+                meeting = candidate
+                break
+            }
+        }
+        let pendingResult = try XCTUnwrap(meeting, "역할 면담을 여는 결정론 시드가 필요합니다")
+        let decision = try XCTUnwrap(pendingResult.snapshot.pendingDecision)
+        let closer = try XCTUnwrap(decision.choices.first { $0.effect.roleTarget == .closer })
+        let fourSeamBefore = try XCTUnwrap(pendingResult.snapshot.pitcher.profile(for: .fourSeam))
+
+        let applied = try engine.applySeasonDecision(.init(
+            seed: pendingResult.nextSeed,
+            state: pendingResult.snapshot,
+            decisionID: decision.id,
+            choiceID: closer.id
+        ))
+        XCTAssertEqual(applied.snapshot.role, .closer)
+        XCTAssertEqual(applied.snapshot.rolePreference, .closer)
+        XCTAssertEqual(
+            applied.snapshot.pitcher.profile(for: .fourSeam)?.control,
+            fourSeamBefore.control + closer.effect.commandDelta
+        )
+
+        let followingWeek = try engine.planWeek(.init(
+            seed: applied.nextSeed,
+            state: applied.snapshot,
+            plan: .recover
+        ))
+        XCTAssertEqual(followingWeek.snapshot.role, .closer)
+        XCTAssertEqual(followingWeek.snapshot.rolePreference, .closer)
     }
 
     func testPendingDecisionSaveResumeProducesIdenticalApplication() throws {
@@ -484,6 +588,44 @@ final class ProCareerEngineTests: XCTestCase {
         )))
     }
 
+    func testLegacyWeekThreePendingDecisionStillAppliesAfterScheduleCompression() throws {
+        let result = try firstDecision(seed: "6173")
+        let current = try XCTUnwrap(result.snapshot.pendingDecision)
+        let legacy = ProSeasonDecision(
+            id: "season-\(current.season)-week-3-\(current.type.rawValue)",
+            type: current.type,
+            season: current.season,
+            week: 3,
+            title: current.title,
+            detail: current.detail,
+            choices: current.choices
+        )
+
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(result.snapshot)) as? [String: Any]
+        )
+        object["week"] = 3
+        object["pendingDecision"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy))
+        let unsigned = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        )
+        object["commitment"] = engine.commitment(unsigned)
+        let signed = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        )
+
+        let applied = try engine.applySeasonDecision(.init(
+            seed: result.nextSeed,
+            state: signed,
+            decisionID: legacy.id,
+            choiceID: legacy.choices[0].id
+        ))
+        XCTAssertEqual(applied.snapshot.phase, .weeklyPlan)
+        XCTAssertEqual(applied.snapshot.decisionHistory?.last?.week, 3)
+    }
+
     func testSignedPendingDecisionStillRejectsOutOfRangePersistedEffect() throws {
         let result = try firstDecision(seed: "618")
         let current = try XCTUnwrap(result.snapshot.pendingDecision)
@@ -521,7 +663,9 @@ final class ProCareerEngineTests: XCTestCase {
         }
     }
 
-    func testSeasonDecisionWeeksAreUniqueAndNeverExceedSevenPerSeason() throws {
+    func testSeasonDecisionWeeksAreUniqueAndNeverExceedThreePerSeason() throws {
+        XCTAssertEqual(ProCareerEngine.seasonDecisionWeeks, [6, 13, 20])
+        XCTAssertEqual(ProCareerEngine.maximumSeasonDecisions, 3)
         var result = try engine.start(startParams(seed: "613"))
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
         var openedWeeks: [Int] = []
@@ -747,8 +891,15 @@ final class ProCareerEngineTests: XCTestCase {
         return try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
     }
 
-    private func firstDecision(seed: String) throws -> ProCareerResult {
-        var result = try engine.start(startParams(seed: seed))
+    private func firstDecision(seed: String, pitcher: PitcherSnapshot? = nil) throws -> ProCareerResult {
+        let params = StartProCareerParams(
+            seed: seed,
+            identity: .defaultPitcher,
+            pitcher: pitcher ?? self.pitcher(),
+            draftResult: drafted(),
+            entitlement: activeEntitlement()
+        )
+        var result = try engine.start(params)
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
         for _ in 0..<120 {
             switch result.snapshot.phase {

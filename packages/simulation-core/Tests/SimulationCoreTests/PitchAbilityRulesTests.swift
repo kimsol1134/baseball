@@ -57,9 +57,13 @@ final class PitchAbilityRulesTests: XCTestCase {
             pitcher: pitcher, call: call(.fourSeam), context: context()
         )
         XCTAssertEqual(normal.commandRating, 64)
-        XCTAssertEqual(normal.nominalVelocityTenthsKPH, 1_450)
+        XCTAssertEqual(
+            normal.nominalVelocityTenthsKPH,
+            1_470 + (pitcher.stuff - 50) * 2 - normal.effectiveFatigue
+        )
         XCTAssertEqual(normal.fatigueCost, 1)
-        XCTAssertEqual(normal.movementRating, 54)
+        XCTAssertEqual(normal.movementRating, 57)
+        XCTAssertEqual(normal.rawFatigue, 20)
         XCTAssertEqual(normal.whiffRating, 61)
 
         let maxEffort = PitchAbilityRules.readout(
@@ -124,6 +128,88 @@ final class PitchAbilityRulesTests: XCTestCase {
         XCTAssertEqual(PitchAbilityRules.reducedFatigueCost(0, by: 1), 0)
         XCTAssertEqual(PitchAbilityRules.reducedFatigueCost(2, by: 1), 1)
         XCTAssertEqual(PitchAbilityRules.reducedFatigueCost(1, by: 3), 1)
+    }
+
+    func testStaminaChangesLatePitchPressureButNeverTheFreshFirstPitch() {
+        XCTAssertEqual(PitchAbilityRules.effectiveFatigue(rawFatigue: 0, stamina: 20), 0)
+        XCTAssertEqual(PitchAbilityRules.effectiveFatigue(rawFatigue: 0, stamina: 80), 0)
+        XCTAssertEqual(PitchAbilityRules.effectiveFatigue(rawFatigue: 40, stamina: 50), 40)
+        XCTAssertLessThan(
+            PitchAbilityRules.effectiveFatigue(rawFatigue: 40, stamina: 80),
+            PitchAbilityRules.effectiveFatigue(rawFatigue: 40, stamina: 50)
+        )
+        XCTAssertGreaterThan(
+            PitchAbilityRules.effectiveFatigue(rawFatigue: 40, stamina: 20),
+            PitchAbilityRules.effectiveFatigue(rawFatigue: 40, stamina: 50)
+        )
+    }
+
+    func testBreakingBallWhiffBadgeFollowsTheLargerActualAbilityContribution() {
+        let base = PitchAbilityReadout(
+            pitchType: .slider,
+            stuffRating: 72,
+            commandRating: 50,
+            movementRating: 55,
+            staminaRating: 50,
+            whiffRating: 65,
+            weakContactRating: 55,
+            nominalVelocityTenthsKPH: 1_300,
+            fatigueCost: 2
+        )
+        XCTAssertEqual(PitchAbilityRules.moment(
+            outcome: .swingingStrike,
+            execution: execution(quality: 700),
+            readout: base
+        ), .power)
+
+        let movementLed = PitchAbilityReadout(
+            pitchType: .slider,
+            stuffRating: 55,
+            commandRating: 50,
+            movementRating: 70,
+            staminaRating: 50,
+            whiffRating: 65,
+            weakContactRating: 60,
+            nominalVelocityTenthsKPH: 1_300,
+            fatigueCost: 2
+        )
+        XCTAssertEqual(PitchAbilityRules.moment(
+            outcome: .swingingStrike,
+            execution: execution(quality: 700),
+            readout: movementLed
+        ), .movement)
+    }
+
+    func testStaminaGetsLateSuccessFeedbackAndStarterExtensionOnlyWhenSpecialized() {
+        let late = PitchAbilityReadout(
+            pitchType: .fourSeam,
+            stuffRating: 50,
+            commandRating: 50,
+            movementRating: 50,
+            staminaRating: 70,
+            whiffRating: 50,
+            weakContactRating: 50,
+            nominalVelocityTenthsKPH: 1_400,
+            fatigueCost: 1,
+            effectiveFatigue: 35,
+            rawFatigue: 50
+        )
+        XCTAssertEqual(PitchAbilityRules.moment(
+            outcome: .inPlayOut,
+            execution: execution(quality: 600),
+            readout: late
+        ), .stamina)
+
+        let staminaBuild = PitcherSnapshot(
+            id: "stamina", name: "체력형", stuff: 50, command: 50,
+            movement: 50, stamina: 56
+        )
+        let balanced = PitcherSnapshot(
+            id: "balanced", name: "균형형", stuff: 50, command: 50,
+            movement: 50, stamina: 50
+        )
+        XCTAssertEqual(PitchAbilityRules.starterExtensionOuts(pitcher: staminaBuild), 2)
+        XCTAssertEqual(PitchAbilityRules.starterExtensionOuts(pitcher: balanced), 0)
     }
 
     func testCareerGameStaminaGrowthAlsoPreservesZeroCostPitch() throws {

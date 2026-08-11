@@ -129,15 +129,33 @@ public enum PitcherPresetCatalog {
         let ratings: (stuff: Int, command: Int, movement: Int, stamina: Int) = switch preset.id {
         case "precision_commander": (34, 43, 35, 38)
         case "breaking_ball_artist": (37, 34, 44, 35)
-        case "innings_eater": (34, 38, 34, 44)
+        // 체력형이 제구형보다 볼넷까지 적었던 조합(34/38/34/44)을 분리한다. 같은 150점
+        // 예산 안에서 오래 버티지만 노린 곳에 던지는 힘은 양보하는 청사진이다.
+        case "innings_eater": (37, 32, 37, 44)
         default: (pitcher.stuff, pitcher.command, pitcher.movement, pitcher.stamina)
+        }
+        let profiles = pitcher.pitchProfiles?.map { profile in
+            guard preset.id == "innings_eater" else { return profile }
+            return PitchProfileSnapshot(
+                pitchType: profile.pitchType,
+                role: profile.role,
+                velocityTenthsKPH: profile.velocityTenthsKPH,
+                control: max(20, profile.control - 4),
+                command: max(20, profile.command - 4),
+                movement: profile.movement,
+                whiff: profile.whiff,
+                weakContact: profile.weakContact,
+                fatigueCost: profile.fatigueCost
+            )
         }
         return PitcherPresetSnapshot(
             id: preset.id,
             name: preset.name,
             tagline: preset.tagline,
             strengths: preset.strengths,
-            tradeoff: preset.tradeoff,
+            tradeoff: preset.id == "innings_eater"
+                ? "긴 이닝을 버티지만 정밀 제구와 초반 압도력은 낮습니다."
+                : preset.tradeoff,
             pitcher: PitcherSnapshot(
                 id: pitcher.id,
                 name: pitcher.name,
@@ -145,7 +163,7 @@ public enum PitcherPresetCatalog {
                 command: ratings.command,
                 movement: ratings.movement,
                 stamina: ratings.stamina,
-                pitchProfiles: pitcher.pitchProfiles,
+                pitchProfiles: profiles,
                 throwingHand: pitcher.throwingHand
             )
         )

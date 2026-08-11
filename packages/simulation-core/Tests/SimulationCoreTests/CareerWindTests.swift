@@ -198,7 +198,8 @@ final class CareerWindTests: XCTestCase {
         let velocityTraining = try engine.commitTraining(.init(
             seed: command.nextSeed, state: command.snapshot, focus: .velocity, intensity: .standard
         ))
-        XCTAssertEqual(velocityTraining.snapshot.lastTraining?.fatigueChange, 9)
+        // 구위 표준 훈련 8 + 구위형 피로 1 + 코스의 해 불리 보정 1.
+        XCTAssertEqual(velocityTraining.snapshot.lastTraining?.fatigueChange, 10)
 
         let heatSeed = try seed(for: "heatwave") { state in
             (state.schedule?.trainingsByChapter.first ?? 0) >= 2
@@ -209,7 +210,8 @@ final class CareerWindTests: XCTestCase {
         heat = try engine.commitTraining(.init(
             seed: heat.nextSeed, state: heat.snapshot, focus: .velocity, intensity: .intensive
         ))
-        XCTAssertEqual(heat.snapshot.lastTraining?.fatigueChange, 17)
+        // 구위 집중 훈련 15 + 구위형 피로 1 + 긴 여름 2.
+        XCTAssertEqual(heat.snapshot.lastTraining?.fatigueChange, 18)
         heat = try engine.commitTraining(.init(
             seed: heat.nextSeed, state: heat.snapshot, focus: .recovery, intensity: .standard
         ))

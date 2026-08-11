@@ -6,6 +6,7 @@ public enum PitchAbilityKind: String, Codable, CaseIterable, Hashable, Sendable 
     case power
     case command
     case movement
+    case stamina
 }
 
 public struct PitchAbilityReadout: Equatable, Sendable {
@@ -20,6 +21,11 @@ public struct PitchAbilityReadout: Equatable, Sendable {
     public let nominalVelocityTenthsKPH: Int
     /// 이 공 하나가 더하는 피로. 힘 배분까지 반영한 실제 엔진 값이다.
     public let fatigueCost: Int
+    /// 체력이 현재 원피로를 얼마나 상쇄하거나 증폭했는지 반영한 실제 판정 피로.
+    public let effectiveFatigue: Int
+    /// 체력 보정 전의 누적 피로. 두 값을 함께 보여 줘야 체력 투자의 실제 이득을 설명할 수 있다.
+    public let rawFatigue: Int
+    public var fatiguePrevented: Int { max(0, rawFatigue - effectiveFatigue) }
 
     public init(
         pitchType: PitchType,
@@ -30,7 +36,9 @@ public struct PitchAbilityReadout: Equatable, Sendable {
         whiffRating: Int,
         weakContactRating: Int,
         nominalVelocityTenthsKPH: Int,
-        fatigueCost: Int
+        fatigueCost: Int,
+        effectiveFatigue: Int = 0,
+        rawFatigue: Int = 0
     ) {
         self.pitchType = pitchType
         self.stuffRating = stuffRating
@@ -41,6 +49,8 @@ public struct PitchAbilityReadout: Equatable, Sendable {
         self.weakContactRating = weakContactRating
         self.nominalVelocityTenthsKPH = nominalVelocityTenthsKPH
         self.fatigueCost = fatigueCost
+        self.effectiveFatigue = effectiveFatigue
+        self.rawFatigue = rawFatigue
     }
 }
 
@@ -52,11 +62,15 @@ public enum PitchAbilityRules {
         context: PlateAppearanceContext
     ) -> PitchAbilityReadout {
         let profile = pitcher.profile(for: call.pitchType)
+        let fatigue = effectiveFatigue(rawFatigue: context.fatigue, stamina: pitcher.stamina)
         return PitchAbilityReadout(
             pitchType: call.pitchType,
             stuffRating: pitcher.stuff,
             commandRating: commandRating(pitcher: pitcher, profile: profile),
-            movementRating: profile?.movement ?? pitcher.movement,
+            // 글로벌 변화와 선택 구종의 움직임은 커널에서 함께 쓰인다. 둘을 섞은 유효값을
+            // 보여 줘 프로 성장 뒤 숫자가 그대로인 것처럼 보이지 않게 한다.
+            movementRating: profile.map { (pitcher.movement + $0.movement) / 2 }
+                ?? pitcher.movement,
             staminaRating: pitcher.stamina,
             whiffRating: profile?.whiff ?? pitcher.stuff,
             weakContactRating: profile?.weakContact ?? 50,
@@ -66,8 +80,25 @@ public enum PitchAbilityRules {
                 intensity: call.intensity,
                 fatigue: context.fatigue
             ),
-            fatigueCost: fatigueCost(call.intensity, profile: profile)
+            fatigueCost: fatigueCost(call.intensity, profile: profile),
+            effectiveFatigue: fatigue,
+            rawFatigue: context.fatigue
         )
+    }
+
+    /// 결과 배지는 구종 이름이 아니라 그 공에서 가장 높은 유효 능력에 귀속한다.
+    public static func identity(for readout: PitchAbilityReadout) -> PitcherBuildIdentity {
+        let values: [(PitcherBuildIdentity, Int)] = [
+            (.power, readout.stuffRating),
+            (.command, readout.commandRating),
+            (.movement, readout.movementRating),
+            (.stamina, readout.staminaRating),
+        ]
+        var winner = values[0]
+        for candidate in values.dropFirst() where candidate.1 > winner.1 {
+            winner = candidate
+        }
+        return winner.0
     }
 
     /// 결과가 아니라 **능력이 실제 식에서 의미 있게 작동한 공**만 골라낸다.
@@ -82,24 +113,31 @@ public enum PitchAbilityRules {
         default: false
         }
         guard resolved else { return nil }
-
         if outcome == .calledStrike,
            readout.commandRating >= 55,
            execution.executionQuality >= 650 {
             return .command
         }
         if outcome == .swingingStrike {
+            // 프로필 헛스윙은 두 빌드가 함께 쓰는 구종 품질이다. 배지는 글로벌 구위·유효
+            // 움직임이 50에서 실제로 더한 난도를 비교해 더 큰 기여에만 붙인다.
+            let powerContribution = max(0, readout.stuffRating - 50) * 4
+            let movementContribution = max(0, readout.movementRating - 50) * 6
             if readout.pitchType != .fourSeam,
-               max(readout.movementRating, readout.whiffRating) >= 55 {
+               readout.movementRating >= 55,
+               movementContribution >= powerContribution {
                 return .movement
             }
-            if max(readout.stuffRating, readout.whiffRating) >= 55 {
+            if readout.stuffRating >= 55 {
                 return .power
             }
         }
         if outcome == .inPlayOut,
-           max(readout.movementRating, readout.weakContactRating) >= 55 {
+           readout.movementRating >= 55 {
             return .movement
+        }
+        if readout.staminaRating >= 55, readout.fatiguePrevented >= 5 {
+            return .stamina
         }
         return nil
     }
@@ -149,9 +187,30 @@ public enum PitchAbilityRules {
         fatigue: Int
     ) -> Int {
         let profile = pitcher.profile(for: pitchType)
-        let base = profile?.velocityTenthsKPH
-            ?? (baseVelocityTenthsKPH(pitchType) + (pitcher.stuff - 50) * 4)
-        return base + intensityEffect(intensity).velocityBonusTenthsKPH - fatigue
+        let base = (profile?.velocityTenthsKPH ?? baseVelocityTenthsKPH(pitchType))
+            + (pitcher.stuff - 50) * 2
+        let pressure = effectiveFatigue(rawFatigue: fatigue, stamina: pitcher.stamina)
+        return base + intensityEffect(intensity).velocityBonusTenthsKPH - pressure
+    }
+
+    /// 체력 50을 중립으로 두고 원피로를 75~125%로 조정한다. 피로가 0이면 어떤 체력도
+    /// 첫 공을 공짜로 강화하지 않으며, 체력의 가치는 긴 승부에서만 점점 드러난다.
+    public static func effectiveFatigue(rawFatigue: Int, stamina: Int) -> Int {
+        let boundedRaw = min(100, max(0, rawFatigue))
+        let boundedStamina = min(80, max(20, stamina))
+        let multiplierPermille = 1_250 - (boundedStamina - 20) * 500 / 60
+        return min(100, max(0, boundedRaw * multiplierPermille / 1_000))
+    }
+
+    /// 체력이 다른 세 능력보다 높은 선발은 투구 수 여유와 함께 1~3아웃을 더 맡는다.
+    /// 절대 수치가 아니라 특화 격차를 써서 균형형에게 공짜 이닝을 주지 않는다.
+    public static func starterExtensionOuts(pitcher: PitcherSnapshot) -> Int {
+        let staminaEdge = max(
+            0,
+            pitcher.stamina - max(pitcher.stuff, pitcher.command, pitcher.movement)
+        )
+        guard staminaEdge > 0 else { return 0 }
+        return min(3, max(1, (staminaEdge + 2) / 3))
     }
 
     static func baseVelocityTenthsKPH(_ pitchType: PitchType) -> Int {

@@ -76,7 +76,8 @@ public struct CatcherRecommendationEngine: Sendable {
                     ? "scouting.pitch_weakness"
                     : "arsenal.best_available",
                 "scouting.cold_zone",
-                situation.countCode
+                situation.countCode,
+                "build.\(PitcherBuildRules.identity(for: pitcher).rawValue)"
             ] + situation.extraReasonCodes
         )
 
@@ -138,7 +139,7 @@ public struct CatcherRecommendationEngine: Sendable {
         let repeatPenalty = 70
 
         func value(_ profile: PitchProfileSnapshot) -> Int {
-            var score = profileScore(profile)
+            var score = profileScore(profile, pitcher: pitcher)
             if profile.pitchType == desired { score += weaknessBonus }
             // 아직 만들고 있는 구종은 승부처에서 쓰지 않는다.
             if profile.role == .development { score -= 120 }
@@ -161,12 +162,27 @@ public struct CatcherRecommendationEngine: Sendable {
         guard let profiles = pitcher.pitchProfiles else { return legacyDesired }
         return profiles
             .filter { $0.pitchType != primary && $0.role != .development }
-            .max { profileScore($0) < profileScore($1) }?
+            .max { profileScore($0, pitcher: pitcher) < profileScore($1, pitcher: pitcher) }?
             .pitchType ?? legacyDesired
     }
 
-    private func profileScore(_ profile: PitchProfileSnapshot) -> Int {
-        profile.command + profile.whiff + profile.weakContact
+    private func profileScore(_ profile: PitchProfileSnapshot, pitcher: PitcherSnapshot) -> Int {
+        var score = profile.command + profile.whiff + profile.weakContact
+        switch PitcherBuildRules.identity(for: pitcher) {
+        case .power:
+            if profile.pitchType == .fourSeam { score += 35 + (pitcher.stuff - 50) * 2 }
+            score += (profile.velocityTenthsKPH - 1_300) / 12
+        case .command:
+            score += profile.control - 50
+            score += (profile.command - 50) * 2
+        case .movement:
+            if profile.pitchType != .fourSeam { score += 28 + (pitcher.movement - 50) * 2 }
+            score += (profile.movement - 50) * 2
+        case .stamina:
+            score += max(0, 4 - profile.fatigueCost) * 10
+            score += profile.control - 50
+        }
+        return score
     }
 
     private func clamp(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
@@ -1074,8 +1090,12 @@ public struct PitchKernelEngine: Sendable {
         let intensityEffect = PitchAbilityRules.intensityEffect(params.call.intensity)
         let profile = params.pitcher.profile(for: params.call.pitchType)
         let commandRating = PitchAbilityRules.commandRating(pitcher: params.pitcher, profile: profile)
+        let fatiguePressure = PitchAbilityRules.effectiveFatigue(
+            rawFatigue: params.context.fatigue,
+            stamina: params.pitcher.stamina
+        )
         let effectiveCommand = clamp(
-            commandRating * 10 - params.context.fatigue * 2 - intensityEffect.commandPenalty,
+            commandRating * 10 - fatiguePressure * 2 - intensityEffect.commandPenalty,
             100,
             900
         )
@@ -1083,7 +1103,7 @@ public struct PitchKernelEngine: Sendable {
         var offsetX = generator.nextInt(upperBound: spread * 2 + 1) - spread
         var offsetY = generator.nextInt(upperBound: spread * 2 + 1) - spread
         let wildChance = clamp(
-            8 + params.context.fatigue / 10 + (params.call.intensity == .maxEffort ? 2 : 0)
+            8 + fatiguePressure / 10 + (params.call.intensity == .maxEffort ? 2 : 0)
                 - (commandRating - 50) / 4,
             3,
             20
@@ -1319,6 +1339,22 @@ public struct PitchKernelEngine: Sendable {
         }
 
         let profile = params.pitcher.profile(for: params.call.pitchType)
+        // 강속구 원석은 낮은 제구·변화 프로필 때문에 기존 식에서 장점까지 상쇄됐다.
+        // 절대 구위 보너스가 아니라 **다른 자기 능력보다 얼마나 구위에 특화됐는지**만
+        // 보상한다. 그래서 균형형이 공짜 보너스를 받지 않고, 구위 몰입 회차는 실제로 포심
+        // 중심의 다른 야구를 한다. 변화구까지 보너스를 주면 구위가 삼진·피안타·실점을 모두
+        // 지배하므로, 포심을 선택했을 때만 강점을 얻는 명확한 전술적 대가를 둔다.
+        let powerEdge = max(
+            0,
+            params.pitcher.stuff
+                - max(params.pitcher.command, params.pitcher.movement, params.pitcher.stamina)
+        )
+        // 시작 강속구형의 4점 우위만으로도 포심 정체성이 드러나고, 이후 격차가 커져도
+        // 무한히 스케일하지 않도록 120에서 막는다.
+        let fullPowerSpecialization = min(120, powerEdge * 30)
+        let powerSpecialization = params.call.pitchType == .fourSeam
+            ? fullPowerSpecialization
+            : 0
         let ratingDifficulty: Int
         if let profile {
             // 키운 능력이 실제 판정에 들어간다.
@@ -1328,10 +1364,11 @@ public struct PitchKernelEngine: Sendable {
             // 바꾸지 않으면 그 훈련은 없는 것과 같다. 제구는 이미 `commandRating`에서
             // 투수 능력과 프로필을 섞고 있었으므로, 구위·변화도 같은 방식으로 섞는다.
             // 50이 영점이라 평균 투수에서는 값이 그대로다 — 실측 리그 기준 보정은 흔들리지 않는다.
-            ratingDifficulty = (params.pitcher.stuff - 50) * 3
-                + (profile.whiff - 50) * 3
-                + (params.pitcher.movement - 50) * 2
-                + (profile.movement - 50) * 2
+            ratingDifficulty = (params.pitcher.stuff - 50) * 4
+                + (profile.whiff - 50) * 4
+                + (params.pitcher.movement - 50) * 3
+                + (profile.movement - 50) * 3
+                + powerSpecialization
                 // 잘 던진 공이 배트를 헛돌게 한다.
                 //
                 // 이 항을 /6으로 줄여 "제구는 헛스윙을 만들지 않는다"를 시도한 적이 있다.
@@ -1339,11 +1376,12 @@ public struct PitchKernelEngine: Sendable {
                 // 줄이자 헛스윙이 11.5%에서 5.7%로 반토막 나고 저장소 밸런스 게이트의
                 // 헛스윙 하한(0.08)과 9이닝 실점 상한(4.6)이 함께 깨졌다. 힘 배분의
                 // 역전은 제구 이득 자체가 아니라 강도 상수(`PitchAbilityRules`)로 잡는다.
-                + max(0, execution.executionQuality - 500) / 2
+                + 30 + max(0, execution.executionQuality - 500) / 3
         } else {
-            ratingDifficulty = (params.pitcher.stuff - 50) * 6
-                + (params.pitcher.movement - 50) * 5
-                + max(0, execution.executionQuality - 500) / 2
+            ratingDifficulty = (params.pitcher.stuff - 50) * 7
+                + (params.pitcher.movement - 50) * 6
+                + powerSpecialization
+                + 30 + max(0, execution.executionQuality - 500) / 3
         }
         // 구속의 값어치. 예전에는 기울기가 얕고(1/4) 상한이 낮아(70), 전력투구가 얻는
         // +3.2km/h가 +8점밖에 되지 않았다 — 제구 페널티(−95점 상당)를 이길 수 없는 구조라
@@ -1411,14 +1449,17 @@ public struct PitchKernelEngine: Sendable {
         }
 
         let contactQuality = clamp(
-            455
+            429
                 + (params.batter.power - 50) * 3
                 + (params.batter.contact - 50) * 2
                 + (pitchMatched ? 90 : -70)
                 + (zoneMatched ? 45 : -35)
                 + (pitchMatched ? cappedAdaptation / 8 : 0)
                 - ((profile?.weakContact ?? 50) - 50) * 2
-                - max(0, execution.executionQuality - 500) / 3
+                - (params.pitcher.movement - 50)
+                - ((profile?.movement ?? params.pitcher.movement) - 50)
+                - powerSpecialization / 2
+                - max(0, execution.executionQuality - 500) / 5
                 + scoutingQuality
                 // 빠른 공은 늦게 맞는다. 전력투구가 제구를 잃는 대신 얻는 것이 이것이다.
                 - max(0, execution.velocityTenthsKPH - 1_400) / 5
@@ -1679,9 +1720,20 @@ public struct PitchKernelEngine: Sendable {
         } else {
             nil
         }
+        let buildReason: String? = if recommendation.reasonCodes.contains("build.power") {
+            "강속구형의 포심·구속 강점을 반영한 사인입니다."
+        } else if recommendation.reasonCodes.contains("build.command") {
+            "정밀 제구형의 코스 반복 정확도를 반영한 사인입니다."
+        } else if recommendation.reasonCodes.contains("build.movement") {
+            "변화구형의 결정구 움직임을 반영한 사인입니다."
+        } else if recommendation.reasonCodes.contains("build.stamina") {
+            "이닝 소화형의 효율 좋은 구종을 반영한 사인입니다."
+        } else {
+            nil
+        }
         // The situational note is derived only from the public base/out/leverage state, so it
         // reads the moment without leaking the batter's sealed pitch/zone guess.
-        let shortReason = [baseReason, situationReason, runnerReason, situationNote.isEmpty ? nil : situationNote]
+        let shortReason = [baseReason, buildReason, situationReason, runnerReason, situationNote.isEmpty ? nil : situationNote]
             .compactMap { $0 }
             .joined(separator: " ")
         return CatcherRecommendationSnapshot(

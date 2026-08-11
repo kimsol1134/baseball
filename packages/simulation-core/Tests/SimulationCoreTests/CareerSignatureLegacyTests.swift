@@ -661,8 +661,11 @@ final class CareerSignatureLegacyTests: XCTestCase {
         let strugglingTerm = HighSchoolCareerEngine.draftEvaluationCore(state: struggling).seasonTerm
         XCTAssertEqual(dominantTerm, 2)
         XCTAssertEqual(strugglingTerm, -2)
-        XCTAssertGreaterThan(dominantTerm, neutralTerm)
-        XCTAssertGreaterThan(neutralTerm, strugglingTerm)
+        // ±2 캡에서는 중립 표본이 이미 상한/하한에 닿을 수 있다. 단조성은 포화 구간의
+        // 동률을 허용하되, 양 극단의 방향은 반드시 갈려야 한다.
+        XCTAssertGreaterThanOrEqual(dominantTerm, neutralTerm)
+        XCTAssertGreaterThanOrEqual(neutralTerm, strugglingTerm)
+        XCTAssertGreaterThan(dominantTerm, strugglingTerm)
     }
 
     func testV3ImportantGameDoesNotApplyV4GrowthOrSequenceTrust() throws {

@@ -920,8 +920,21 @@ public struct CommitCareerTrainingParams: Codable, Equatable, Sendable {
     public let state: HighSchoolCareerSnapshot
     public let focus: TrainingFocus
     public let intensity: TrainingIntensity
-    public init(seed: String, state: HighSchoolCareerSnapshot, focus: TrainingFocus, intensity: TrainingIntensity) {
-        self.seed = seed; self.state = state; self.focus = focus; self.intensity = intensity
+    /// 변화구 훈련에서 집중할 구종. 이 키가 없는 구저장·RPC는 nil로 읽혀 전 변화구에
+    /// 분산 성장하므로 하위 호환된다.
+    public let targetPitch: PitchType?
+    public init(
+        seed: String,
+        state: HighSchoolCareerSnapshot,
+        focus: TrainingFocus,
+        intensity: TrainingIntensity,
+        targetPitch: PitchType? = nil
+    ) {
+        self.seed = seed
+        self.state = state
+        self.focus = focus
+        self.intensity = intensity
+        self.targetPitch = targetPitch
     }
 }
 
@@ -1434,7 +1447,7 @@ public struct HighSchoolCareerEngine: Sendable {
         return result(seed: seed, state: signed(next), event: "school_selected", reasons: ["school.\(school.id.rawValue)"])
     }
 
-    /// 훈련 판정의 결정론 부분. 무작위 폭(±45)을 제외한 신호 합.
+    /// 훈련 판정의 결정론 부분. 분야별 무작위 폭을 제외한 신호 합.
     ///
     /// `commitTraining`과 `trainingOutlook`이 같은 식을 써야 한다 — 화면이 판정식을
     /// 흉내 내다 어긋나면 전망이 거짓말이 된다.
@@ -1453,6 +1466,57 @@ public struct HighSchoolCareerEngine: Sendable {
 
     private static func trainingGrowth(signal: Int) -> Int {
         signal >= 430 ? 2 : signal >= 260 ? 1 : 0
+    }
+
+    /// 분야의 개성을 결과 분산·대성공·피로·팔 위험 네 축으로 분리한다.
+    /// 구위는 가장 폭발적이지만 위험하고, 제구는 예측 가능하고 안전하다.
+    private static func trainingVariance(for focus: TrainingFocus) -> Int {
+        switch focus {
+        case .velocity: 70
+        case .breakingBall: 50
+        case .stamina: 35
+        case .gamePlanning: 30
+        case .command: 25
+        case .recovery: 20
+        }
+    }
+
+    private static func jackpotModifier(for focus: TrainingFocus) -> Int {
+        switch focus {
+        case .velocity: 6
+        case .breakingBall: 2
+        case .stamina: 0
+        case .gamePlanning: -2
+        case .command: -6
+        case .recovery: -100
+        }
+    }
+
+    private static func trainingFatigueModifier(for focus: TrainingFocus) -> Int {
+        switch focus {
+        case .velocity: 1
+        case .breakingBall, .stamina: 0
+        case .command: -2
+        case .gamePlanning: -1
+        case .recovery: 0
+        }
+    }
+
+    private static func trainingArmRisk(focus: TrainingFocus, intensity: TrainingIntensity) -> Int {
+        let band: Int = switch intensity {
+        case .light: 0
+        case .standard: 1
+        case .intensive: 2
+        }
+        return switch focus {
+        // 표준 훈련을 고르게 돌리는 일반 플레이가 부상률 35%를 넘지 않도록, 팔 위험은
+        // 고강도 몰입에서 주로 생긴다. 변화·체력은 피로/성장 리듬으로 비용을
+        // 내고, 팔 위험까지 매번 겹치지 않는다.
+        case .velocity: [0, 0, 3][band]
+        case .breakingBall: [0, 0, 2][band]
+        case .stamina: [0, 0, 1][band]
+        case .command, .gamePlanning, .recovery: 0
+        }
     }
 
     /// 훈련 한 번의 성장 전망. 화면이 코어에 물어본다.
@@ -1483,8 +1547,11 @@ public struct HighSchoolCareerEngine: Sendable {
             opportunityHit: state.trainingOpportunity?.focus == focus
         )
         let windGrowth = state.careerWind.rules.trainingGrowthBonus(for: focus)
-        let lowest = Self.trainingGrowth(signal: max(60, deterministic - 45)) + windGrowth
-        let highest = Self.trainingGrowth(signal: max(60, deterministic + 45)) + windGrowth
+        let variance = (state.balanceVersion ?? 1) >= 4
+            ? Self.trainingVariance(for: focus)
+            : 45
+        let lowest = Self.trainingGrowth(signal: max(60, deterministic - variance)) + windGrowth
+        let highest = Self.trainingGrowth(signal: max(60, deterministic + variance)) + windGrowth
         if lowest >= 2 { return .two }
         if lowest == 1, highest >= 2 { return .oneOrTwo }
         switch (lowest, highest) {
@@ -1514,11 +1581,23 @@ public struct HighSchoolCareerEngine: Sendable {
             state: params.state, focus: params.focus, intensity: params.intensity,
             schedule: schedule, opportunityHit: opportunityHit
         )
-        let signal = max(60, deterministicSignal + generator.nextInt(upperBound: 91) - 45)
+        let differentiatedTraining = (params.state.balanceVersion ?? 1) >= 4
+        let variance = differentiatedTraining
+            ? Self.trainingVariance(for: effectiveFocus)
+            : 45
+        let signal = max(
+            60,
+            deterministicSignal + generator.nextInt(upperBound: variance * 2 + 1) - variance
+        )
         // 대성공(잭팟) — 16% 확률로 성장이 두 배가 된다. 가변 보상은 훈련 버튼을
         // 누르는 손에 긴장을 만든다: 이번엔 터질까. 재능 벽은 TalentRules.apply가
         // 뒤에서 그대로 자르므로 잭팟도 벽을 넘지 못하고, 초과분은 만개 게이지로 쌓인다.
-        let jackpotChance = params.state.soulBoosts?.contains(SoulBoostID.trainingRhythm.rawValue) == true ? 26 : 16
+        let baseJackpotChance = params.state.soulBoosts?.contains(SoulBoostID.trainingRhythm.rawValue) == true ? 26 : 16
+        let jackpotChance = clamp(
+            baseJackpotChance
+                + (differentiatedTraining ? Self.jackpotModifier(for: effectiveFocus) : 0),
+            0, 40
+        )
         let jackpot = !isRehab && effectiveFocus != .recovery && generator.nextInt(upperBound: 100) < jackpotChance
         // 회복은 회복만 한다. 예전에는 회복 훈련도 스태미나가 +1~2씩 올라서
         // '강한 회복'이 피로 -3에 무료 성장이었다 — 강도 선택의 긴장이 0이 되는 지점.
@@ -1550,10 +1629,13 @@ public struct HighSchoolCareerEngine: Sendable {
             : (0, talentBefore, nil)
         let pitcher = grow(
             params.state.pitcher, focus: params.focus, points: growthSignal,
-            balanceVersion: params.state.balanceVersion
+            balanceVersion: params.state.balanceVersion,
+            targetPitch: params.targetPitch
         )
         let baseFatigueCost = params.intensity == .light ? 3 : params.intensity == .standard ? 8 : 15
-        let fatigueCost = baseFatigueCost + windRules.trainingFatigueModifier(for: effectiveFocus)
+        let fatigueCost = baseFatigueCost
+            + (differentiatedTraining ? Self.trainingFatigueModifier(for: effectiveFocus) : 0)
+            + windRules.trainingFatigueModifier(for: effectiveFocus)
         let recovery = params.focus == .recovery ? windRules.adjustedRecovery(18) : 0
         // 재활은 훈련 강도와 무관하게 피로를 크게 덜고, 남은 위험도 조금씩 씻어 낸다.
         let fatigue = isRehab
@@ -1564,7 +1646,15 @@ public struct HighSchoolCareerEngine: Sendable {
             )
             : clamp(params.state.fatigue + fatigueCost - recovery, 0, 100)
         let nextInjuryRecovery = isRehab ? injuryRecovery - 1 : injuryRecovery
-        let nextArmRisk = isRehab ? max(0, (params.state.armRisk ?? 0) - 10) : (params.state.armRisk ?? 0)
+        let nextArmRisk = isRehab
+            ? max(0, (params.state.armRisk ?? 0) - 10)
+            : clamp(
+                (params.state.armRisk ?? 0)
+                    + (differentiatedTraining
+                        ? Self.trainingArmRisk(focus: effectiveFocus, intensity: params.intensity)
+                        : 0),
+                0, 100
+            )
         let metricBefore = rating(for: effectiveFocus, pitcher: params.state.pitcher)
         let metricAfter = rating(for: effectiveFocus, pitcher: pitcher)
         let growth = metricAfter - metricBefore
@@ -2906,37 +2996,42 @@ public struct HighSchoolCareerEngine: Sendable {
         _ pitcher: PitcherSnapshot,
         focus: TrainingFocus,
         points: Int,
-        balanceVersion: Int? = PitcherPresetCatalog.balanceVersion
+        balanceVersion: Int? = PitcherPresetCatalog.balanceVersion,
+        targetPitch: PitchType? = nil
     ) -> PitcherSnapshot {
-        guard points > 0 else { return pitcher }
-        let profiles = pitcher.pitchProfiles?.map { profile in
-            // 결정구 완성 — 육성 중 구종이 제구+헛스윙+범타 합 150을 넘으면 실전
-            // 구종(secondary)으로 승격한다. 승격 전에는 포수가 승부처에서 안 부르고
-            // 대체 후보에서도 빠진다(-120 감점·필터). 로그라이트인데 레퍼토리가
-            // 영원히 고정이면 "내 결정구를 만들었다"는 서사가 시스템에 없다.
-            let promoted: PitchUsageRole = profile.role == .development
-                && profile.command + profile.whiff + profile.weakContact >= 150
-                ? .secondary : profile.role
-            return PitchProfileSnapshot(pitchType: profile.pitchType, role: promoted,
-                velocityTenthsKPH: clamp(profile.velocityTenthsKPH + (focus == .velocity ? points * 5 : 0), 1_000, 1_700),
-                control: clamp(profile.control + (focus == .command ? points : 0), 20, 80),
-                command: clamp(profile.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
-                movement: clamp(profile.movement + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
-                whiff: clamp(profile.whiff + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
-                weakContact: profile.weakContact,
-                // 하한 1 — 피로라는 축 자체를 훈련으로 소거할 수 있으면 투구수 관리가
-                // 게임에서 사라진다. 100구를 던지면 팔은 무거워야 한다.
-                fatigueCost: focus == .stamina
-                    ? ((balanceVersion ?? 1) >= 4
-                        ? PitchAbilityRules.reducedFatigueCost(profile.fatigueCost, by: points / 2)
-                        : max(1, profile.fatigueCost - points / 2))
-                    : profile.fatigueCost)
+        // 이미 시작된 v1~v3 회차는 당시의 0→1 피로비용까지 그대로 재현한다. 저장 결정론을
+        // 지키는 격리 경로이며 새 회차(v4+)만 공용 규칙을 쓴다.
+        if (balanceVersion ?? 1) < 4 {
+            guard points > 0 else { return pitcher }
+            let profiles = pitcher.pitchProfiles?.map { profile in
+                PitchProfileSnapshot(
+                    pitchType: profile.pitchType,
+                    role: profile.role,
+                    velocityTenthsKPH: clamp(profile.velocityTenthsKPH + (focus == .velocity ? points * 5 : 0), 1_000, 1_700),
+                    control: clamp(profile.control + (focus == .command ? points : 0), 20, 80),
+                    command: clamp(profile.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
+                    movement: clamp(profile.movement + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
+                    whiff: clamp(profile.whiff + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
+                    weakContact: profile.weakContact,
+                    fatigueCost: focus == .stamina ? max(1, profile.fatigueCost - points / 2) : profile.fatigueCost
+                )
+            }
+            return PitcherSnapshot(
+                id: pitcher.id, name: pitcher.name,
+                stuff: clamp(pitcher.stuff + (focus == .velocity ? points : 0), 20, 80),
+                command: clamp(pitcher.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
+                movement: clamp(pitcher.movement + (focus == .breakingBall ? points : 0), 20, 80),
+                stamina: clamp(pitcher.stamina + (focus == .stamina || focus == .recovery ? points : 0), 20, 80),
+                pitchProfiles: profiles,
+                throwingHand: pitcher.throwingHand
+            )
         }
-        return PitcherSnapshot(id: pitcher.id, name: pitcher.name,
-            stuff: clamp(pitcher.stuff + (focus == .velocity ? points : 0), 20, 80),
-            command: clamp(pitcher.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
-            movement: clamp(pitcher.movement + (focus == .breakingBall ? points : 0), 20, 80),
-            stamina: clamp(pitcher.stamina + (focus == .stamina || focus == .recovery ? points : 0), 20, 80), pitchProfiles: profiles, throwingHand: pitcher.throwingHand)
+        return PitcherGrowthRules.grow(
+            pitcher,
+            focus: focus,
+            points: points,
+            targetPitch: targetPitch
+        )
     }
 
     private func rating(for focus: TrainingFocus, pitcher: PitcherSnapshot) -> Int {

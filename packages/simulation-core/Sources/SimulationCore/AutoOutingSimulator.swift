@@ -55,7 +55,14 @@ public struct AutoOutingSimulator: Sendable {
         var currentFatigue = clamp(startingFatigue, 0, 95)
         var benchMemory: RivalMemorySnapshot?
         var paIndex = 0
-        while line.outs < outsTarget && line.pitches < pitchCap && paIndex < 60 {
+        // 선발 목표(6이닝 이상)에서만 체력 특화의 '한 타자 더'를 실제 아웃과 투구 수로
+        // 보상한다. 불펜 역할은 원래 맡은 이닝이 짧으므로 같은 보너스를 적용하지 않는다.
+        let extensionOuts = outsTarget >= 18
+            ? PitchAbilityRules.starterExtensionOuts(pitcher: pitcher)
+            : 0
+        let effectiveOutsTarget = outsTarget + extensionOuts
+        let effectivePitchCap = pitchCap + extensionOuts * 4
+        while line.outs < effectiveOutsTarget && line.pitches < effectivePitchCap && paIndex < 60 {
             paIndex += 1
             let batter = BatterSnapshot(
                 id: "week-batter-\(paIndex)", name: "상대 타선",

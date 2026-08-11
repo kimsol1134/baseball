@@ -129,38 +129,7 @@ public struct CareerGameGrowth: Codable, Equatable, Sendable {
 
     /// `evaluating`이 산출한 실제 증가분을 투수에게 적용한다.
     public func applying(to pitcher: PitcherSnapshot) -> PitcherSnapshot {
-        guard points > 0 else { return pitcher }
-        let profiles = pitcher.pitchProfiles?.map { profile in
-            PitchProfileSnapshot(
-                pitchType: profile.pitchType,
-                role: profile.role,
-                velocityTenthsKPH: Self.bounded(
-                    profile.velocityTenthsKPH + (ability == .stuff ? points * 5 : 0), 1_000, 1_700
-                ),
-                control: Self.bounded(profile.control + (ability == .command ? points : 0), 20, 80),
-                command: Self.bounded(profile.command + (ability == .command ? points : 0), 20, 80),
-                movement: Self.bounded(
-                    profile.movement + (ability == .movement && profile.pitchType != .fourSeam ? points : 0), 20, 80
-                ),
-                whiff: Self.bounded(
-                    profile.whiff + (ability == .movement && profile.pitchType != .fourSeam ? points : 0), 20, 80
-                ),
-                weakContact: profile.weakContact,
-                fatigueCost: ability == .stamina
-                    ? PitchAbilityRules.reducedFatigueCost(profile.fatigueCost, by: points / 2)
-                    : profile.fatigueCost
-            )
-        }
-        return PitcherSnapshot(
-            id: pitcher.id,
-            name: pitcher.name,
-            stuff: Self.bounded(pitcher.stuff + (ability == .stuff ? points : 0), 20, 80),
-            command: Self.bounded(pitcher.command + (ability == .command ? points : 0), 20, 80),
-            movement: Self.bounded(pitcher.movement + (ability == .movement ? points : 0), 20, 80),
-            stamina: Self.bounded(pitcher.stamina + (ability == .stamina ? points : 0), 20, 80),
-            pitchProfiles: profiles,
-            throwingHand: pitcher.throwingHand
-        )
+        PitcherGrowthRules.grow(pitcher, ability: ability, points: points)
     }
 
     private static func rating(_ ability: TalentAbility, of pitcher: PitcherSnapshot) -> Int {
@@ -172,7 +141,4 @@ public struct CareerGameGrowth: Codable, Equatable, Sendable {
         }
     }
 
-    private static func bounded(_ value: Int, _ lower: Int, _ upper: Int) -> Int {
-        min(upper, max(lower, value))
-    }
 }

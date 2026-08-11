@@ -233,6 +233,8 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
     /// 맞은 안타 수. WHIP·피안타 같은 야구다운 지표를 카드와 기록에 적으려면 필요하다.
     /// 이 값이 없던 리포트는 nil이라 그 지표만 접힌다.
     public let hits: Int?
+    /// 맞은 홈런 수. 구저장본은 nil이며 시즌 합계에는 0으로 더한다.
+    public let homeRuns: Int?
 
     public init(
         scenarioNumber: Int,
@@ -247,7 +249,8 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         teamRuns: Int? = nil,
         scoreDifferentialAtEntry: Int? = nil,
         sequenceMasteryCount: Int? = nil,
-        hits: Int? = nil
+        hits: Int? = nil,
+        homeRuns: Int? = nil
     ) {
         self.scenarioNumber = scenarioNumber
         self.pitches = pitches
@@ -262,6 +265,7 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         self.scoreDifferentialAtEntry = scoreDifferentialAtEntry
         self.sequenceMasteryCount = sequenceMasteryCount
         self.hits = hits
+        self.homeRuns = homeRuns
     }
 }
 
@@ -356,7 +360,13 @@ public struct LegacySelectionSnapshot: Codable, Equatable, Sendable {
     }
 }
 
-public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
+/// 투수 연구소의 한 시점.
+///
+/// 저장 프로퍼티가 많은 값 타입은 Swift 6.3의 `outlined destroy` 코드젠 경로에서
+/// 문자열·배열을 과다 해제할 수 있다. RPC JSON 왕복 뒤 이벤트 문자열을 읽는 순간
+/// EXC_BAD_ACCESS가 발생했던 이유다. 모든 프로퍼티가 `let`이고 엔진은 항상 새 상태를
+/// 만들기 때문에 참조 타입으로 박싱해도 값 의미론과 Codable JSON 모양은 그대로다.
+public final class PitcherLabSnapshot: Codable, Equatable, Sendable {
     public let runID: String
     public let revision: UInt64
     public let lifeNumber: Int
@@ -433,6 +443,32 @@ public struct PitcherLabSnapshot: Codable, Equatable, Sendable {
         self.stateCommitment = stateCommitment
         self.balanceVersion = balanceVersion
         self.focusStreak = focusStreak
+    }
+
+    public static func == (lhs: PitcherLabSnapshot, rhs: PitcherLabSnapshot) -> Bool {
+        lhs.runID == rhs.runID
+            && lhs.revision == rhs.revision
+            && lhs.lifeNumber == rhs.lifeNumber
+            && lhs.presetID == rhs.presetID
+            && lhs.phase == rhs.phase
+            && lhs.pitcher == rhs.pitcher
+            && lhs.trainingSessionsCompleted == rhs.trainingSessionsCompleted
+            && lhs.relationshipEventsCompleted == rhs.relationshipEventsCompleted
+            && lhs.selectedAwakenings == rhs.selectedAwakenings
+            && lhs.awakeningOptions == rhs.awakeningOptions
+            && lhs.readiness == rhs.readiness
+            && lhs.fatigue == rhs.fatigue
+            && lhs.catcherTrust == rhs.catcherTrust
+            && lhs.developmentSignals == rhs.developmentSignals
+            && lhs.potentialRanges == rhs.potentialRanges
+            && lhs.performance == rhs.performance
+            && lhs.lastTraining == rhs.lastTraining
+            && lhs.scoutingEvaluation == rhs.scoutingEvaluation
+            && lhs.legacyOptions == rhs.legacyOptions
+            && lhs.legacySelection == rhs.legacySelection
+            && lhs.stateCommitment == rhs.stateCommitment
+            && lhs.balanceVersion == rhs.balanceVersion
+            && lhs.focusStreak == rhs.focusStreak
     }
 }
 
@@ -1152,29 +1188,7 @@ public struct PitcherLabEngine: Sendable {
     }
 
     private func applyGrowth(to pitcher: PitcherSnapshot, focus: TrainingFocus, points: Int) -> PitcherSnapshot {
-        guard points > 0 else { return pitcher }
-        let profiles = pitcher.pitchProfiles?.map { profile in
-            PitchProfileSnapshot(
-                pitchType: profile.pitchType,
-                role: profile.role,
-                velocityTenthsKPH: clamp(profile.velocityTenthsKPH + (focus == .velocity ? points * 5 : 0), 1_000, 1_700),
-                control: clamp(profile.control + (focus == .command ? points : 0), 20, 80),
-                command: clamp(profile.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
-                movement: clamp(profile.movement + (focus == .breakingBall && profile.pitchType != .fourSeam ? points * 2 : 0), 20, 80),
-                whiff: clamp(profile.whiff + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
-                weakContact: profile.weakContact,
-                fatigueCost: focus == .stamina && points > 1 ? max(0, profile.fatigueCost - 1) : profile.fatigueCost
-            )
-        }
-        return PitcherSnapshot(
-            id: pitcher.id,
-            name: pitcher.name,
-            stuff: clamp(pitcher.stuff + (focus == .velocity ? points : 0), 20, 80),
-            command: clamp(pitcher.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
-            movement: clamp(pitcher.movement + (focus == .breakingBall ? points : 0), 20, 80),
-            stamina: clamp(pitcher.stamina + (focus == .stamina || focus == .recovery ? points : 0), 20, 80),
-            pitchProfiles: profiles
-        )
+        PitcherGrowthRules.grow(pitcher, focus: focus, points: points)
     }
 
     private func rating(for pitcher: PitcherSnapshot, focus: TrainingFocus) -> Int {

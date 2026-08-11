@@ -15,11 +15,10 @@ function findCli() {
   return candidates.find((candidate) => existsSync(candidate));
 }
 
-let cli = findCli();
-if (!cli) {
-  execFileSync("swift", ["build", "--package-path", packagePath, "-c", "release"], { stdio: "inherit" });
-  cli = findCli();
-}
+// 소스가 바뀌었는데 예전 release 바이너리가 남아 있으면 검사가 낡은 커널을 통과시킨다.
+// SwiftPM 증분 빌드는 변경이 없을 때 빠르므로 매번 최신 바이너리를 보장한다.
+execFileSync("swift", ["build", "--package-path", packagePath, "-c", "release"], { stdio: "inherit" });
+const cli = findCli();
 if (!cli) {
   console.error("밸런스 검사 실패: release simulation-cli를 찾을 수 없습니다.");
   process.exit(1);
@@ -55,6 +54,7 @@ function batch(args) {
     foulRate: (po.foul ?? 0) / d.pitches,
     whiffRate: (po.swinging_strike ?? 0) / d.pitches,
     pitchesPerPa: d.averagePitchesPerPlateAppearance,
+    runsPerPa: d.runsAllowed / pa,
   };
 }
 
@@ -103,6 +103,37 @@ const highContact = batch(["--preset", "power_prospect", "--contact", "56", "--d
 const contactSpread = highContact.avg - lowContact.avg;
 expect("컨택 45→56 피안타율 스프레드", contactSpread, 0.005, 0.13);
 
+// ── 육성 축 분화 검사 ──────────────────────────────────────────────────────
+// 같은 투수·같은 슬라이더·같은 타자에서 글로벌 능력 하나만 50→70으로 바꾼다.
+// 구종 선택이나 프리셋 프로필 차이를 제거해야 어떤 능력이 어떤 결과를 샀는지 알 수 있다.
+const AXIS = ["--preset", "power_prospect", "--strategy", "fixed", "--pitch", "slider",
+  "--contact", "50", "--discipline", "50", "--power", "50", "--iterations", "6000"];
+const axisBase = batch([...AXIS, "--stuff", "50", "--command", "50", "--movement", "50", "--stamina", "50"]);
+const axisStuff = batch([...AXIS, "--stuff", "70", "--command", "50", "--movement", "50", "--stamina", "50"]);
+const axisCommand = batch([...AXIS, "--stuff", "50", "--command", "70", "--movement", "50", "--stamina", "50"]);
+const axisMovement = batch([...AXIS, "--stuff", "50", "--command", "50", "--movement", "70", "--stamina", "50"]);
+
+if (axisStuff.kRate < Math.max(axisCommand.kRate, axisMovement.kRate) + 0.015) {
+  failures.push(`구위 정체성 부족: K% ${axisStuff.kRate.toFixed(3)}가 제구/변화보다 1.5%p 이상 높지 않음`);
+} else {
+  console.log(`  통과: 구위 70은 탈삼진 1위 (${axisStuff.kRate.toFixed(3)})`);
+}
+if (axisCommand.bbRate > Math.min(axisStuff.bbRate, axisMovement.bbRate) - 0.012) {
+  failures.push(`제구 정체성 부족: BB% ${axisCommand.bbRate.toFixed(3)}가 구위/변화보다 1.2%p 이상 낮지 않음`);
+} else {
+  console.log(`  통과: 제구 70은 볼넷 억제 1위 (${axisCommand.bbRate.toFixed(3)})`);
+}
+if (axisMovement.avg > Math.min(axisStuff.avg, axisCommand.avg) - 0.004) {
+  failures.push(`변화 정체성 부족: 피안타율 ${axisMovement.avg.toFixed(3)}가 구위/제구보다 0.4%p 이상 낮지 않음`);
+} else {
+  console.log(`  통과: 변화 70은 피안타 억제 1위 (${axisMovement.avg.toFixed(3)})`);
+}
+for (const [label, result] of [["구위", axisStuff], ["제구", axisCommand], ["변화", axisMovement]]) {
+  if (result.runsPerPa >= axisBase.runsPerPa) {
+    failures.push(`${label} 70이 기준보다 실점을 줄이지 못함: ${result.runsPerPa.toFixed(3)} >= ${axisBase.runsPerPa.toFixed(3)}`);
+  }
+}
+
 
 // ── 등판 단위 검사 ───────────────────────────────────────────────────────────
 //
@@ -125,6 +156,8 @@ function outings(args) {
     ra9: (d.runsAllowed * 27) / outs,
     k9: (d.strikeouts * 27) / outs,
     bb9: (d.walks * 27) / outs,
+    h9: (d.hits * 27) / outs,
+    hr9: (d.homeRuns * 27) / outs,
     winRate: d.wins / d.games,
     noDecisionRate: d.noDecisions / d.games,
     saveRate: d.saves / d.games,
@@ -153,9 +186,43 @@ if (!(commander.bb9 < starter.bb9)) {
   console.log(`  통과: 제구형 < 파워형 볼넷 위계 (${commander.bb9.toFixed(2)} < ${starter.bb9.toFixed(2)})`);
 }
 
+// 체력은 첫 공을 강화하지 않고 긴 등판에서만 보상한다. 동일 프로필에 글로벌 체력만 바꿔
+// 목표 아웃·후반 성적이 달라지는지 확인한다.
+const staminaBase = outings(["--outings", "500", "--stuff", "50", "--command", "50", "--movement", "50", "--stamina", "50"]);
+const staminaHigh = outings(["--outings", "500", "--stuff", "50", "--command", "50", "--movement", "50", "--stamina", "80"]);
+if (staminaHigh.inningsPerGame < staminaBase.inningsPerGame + 0.25) {
+  failures.push(`체력 이닝 효과 부족: ${staminaBase.inningsPerGame.toFixed(2)}→${staminaHigh.inningsPerGame.toFixed(2)}`);
+} else {
+  console.log(`  통과: 체력 80은 더 긴 이닝 (${staminaBase.inningsPerGame.toFixed(2)}→${staminaHigh.inningsPerGame.toFixed(2)})`);
+}
+if (staminaHigh.ra9 >= staminaBase.ra9) {
+  failures.push(`체력 후반 안정성 부족: RA/9 ${staminaBase.ra9.toFixed(2)}→${staminaHigh.ra9.toFixed(2)}`);
+} else {
+  console.log(`  통과: 체력 80은 후반 실점 억제 (${staminaBase.ra9.toFixed(2)}→${staminaHigh.ra9.toFixed(2)})`);
+}
+
+// 시작 청사진도 동일 능력 예산(합 150) 안에서 대표 지표가 하나씩 달라야 한다.
+const presetPower = outings(["--outings", "500", "--preset", "power_prospect"]);
+const presetCommand = outings(["--outings", "500", "--preset", "precision_commander"]);
+const presetMovement = outings(["--outings", "500", "--preset", "breaking_ball_artist"]);
+const presetStamina = outings(["--outings", "500", "--preset", "innings_eater"]);
+const presetRuns = [presetPower, presetCommand, presetMovement, presetStamina];
+if (presetPower.k9 < Math.max(...presetRuns.slice(1).map((value) => value.k9))) {
+  failures.push(`시작 강속구형 K/9(${presetPower.k9.toFixed(2)})가 1위가 아님`);
+} else console.log(`  통과: 시작 강속구형 K/9 1위 (${presetPower.k9.toFixed(2)})`);
+if (presetCommand.bb9 > Math.min(presetPower.bb9, presetMovement.bb9, presetStamina.bb9)) {
+  failures.push(`시작 제구형 BB/9(${presetCommand.bb9.toFixed(2)})가 1위가 아님`);
+} else console.log(`  통과: 시작 제구형 BB/9 1위 (${presetCommand.bb9.toFixed(2)})`);
+if (presetMovement.h9 > Math.min(presetPower.h9, presetCommand.h9, presetStamina.h9)) {
+  failures.push(`시작 변화구형 H/9(${presetMovement.h9.toFixed(2)})가 1위가 아님`);
+} else console.log(`  통과: 시작 변화구형 H/9 1위 (${presetMovement.h9.toFixed(2)})`);
+if (presetStamina.inningsPerGame < Math.max(presetPower.inningsPerGame, presetCommand.inningsPerGame, presetMovement.inningsPerGame)) {
+  failures.push(`시작 체력형 이닝/경기(${presetStamina.inningsPerGame.toFixed(2)})가 1위가 아님`);
+} else console.log(`  통과: 시작 체력형 이닝/경기 1위 (${presetStamina.inningsPerGame.toFixed(2)})`);
+
 if (failures.length > 0) {
   console.error("\n밸런스 불변식 검사 실패:");
   for (const failure of failures) console.error(`  실패: ${failure}`);
   process.exit(1);
 }
-console.log("밸런스 불변식 검사 통과: 분포 밴드·적응 위계·파워 단조성·레이팅 민감도·등판 단위 확인");
+console.log("밸런스 불변식 검사 통과: 분포·적응·능력축·체력·시작 청사진·등판 단위 확인");
