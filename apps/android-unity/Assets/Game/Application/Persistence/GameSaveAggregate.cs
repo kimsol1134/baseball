@@ -112,7 +112,7 @@ namespace Baseball.Application.Persistence
     /// </summary>
     public sealed class GameSaveAggregate : IStoreSnapshot
     {
-        public const int CurrentAggregateVersion = 3;
+        public const int CurrentAggregateVersion = 4;
 
         public GameSaveAggregate(
             int aggregateVersion,
@@ -237,6 +237,8 @@ namespace Baseball.Application.Persistence
             if (string.IsNullOrWhiteSpace(value.InstallId))
                 return SaveValidationResult.Invalid("aggregate.install_id");
             if (value.Meta == null) return SaveValidationResult.Invalid("aggregate.meta");
+            if (value.Meta.CompletedGameCount < 0)
+                return SaveValidationResult.Invalid("aggregate.completed_game_count");
             if (!DailyInningRules.IsValid(value.Meta.Daily))
                 return SaveValidationResult.Invalid("aggregate.daily_inning");
             if (!ValidSignatureLegacy(value.HighSchool))

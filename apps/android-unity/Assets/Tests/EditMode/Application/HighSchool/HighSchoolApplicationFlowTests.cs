@@ -294,6 +294,8 @@ namespace Baseball.Application.Tests
                 Assert.That(first.Status, Is.EqualTo(DispatchStatus.Applied));
                 Assert.That(duplicate.Status, Is.EqualTo(DispatchStatus.AlreadyApplied));
                 Assert.That(highSchool.PitchApplyCount, Is.EqualTo(1));
+                Assert.That(store.Current.Meta.CompletedGameCount, Is.EqualTo(1));
+                Assert.That(repository.Saved.Meta.CompletedGameCount, Is.EqualTo(1));
                 Assert.That(store.Current.HighSchool.Performance.ImportantGames, Is.EqualTo(1));
                 Assert.That(store.Current.PitchResume, Is.Null);
                 Assert.That(store.Current.PendingPitchCompletion.CompletionId, Is.EqualTo("pitch-result:game-1"));
@@ -302,6 +304,44 @@ namespace Baseball.Application.Tests
                     Does.Contain(AchievementIds.CleanInning));
                 Assert.That(repository.Saved.PendingPitchCompletion, Is.Not.Null);
                 Assert.That(NextActionPlanner.Resolve(store.Current).Route, Is.EqualTo("pitch/result"));
+            }
+        }
+
+        [Test]
+        public async Task FirstOfficialGameCounter_IsNotPublishedWhenAtomicSaveFails()
+        {
+            var repository = new RecordingGameRepository();
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+            {
+                var instant = new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero);
+                await Applied(store, "counter-setup", new EnterSetupCommand());
+                await Applied(store, "counter-start", new StartHighSchoolCareerCommand(
+                    new StartHighSchoolCareerRequest(
+                        "seed", "power_prospect", "민서준", "서울", 1)));
+                await Applied(store, "counter-game-phase", new AdvanceHighSchoolCommand(
+                    new HighSchoolAction("important_game"), instant));
+                await Applied(store, "counter-begin", new BeginPitchSessionCommand(
+                    "counter-game", PitchCareerKind.HighSchool, "official", 4, instant));
+                var report = new PitchGameReport(
+                    "counter-game", 5, 1, 3, 1, 0, 0, 0);
+                await CommitTerminalReport(
+                    store, "counter-game", report, instant.AddMinutes(1));
+                var publications = 0;
+                store.StatePublished += _ => publications++;
+                repository.FailSave = true;
+
+                var failed = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
+                    "counter-complete",
+                    store.Current.Revision,
+                    new CompletePitchSessionCommand(report, instant.AddMinutes(2))));
+
+                Assert.That(failed.Status, Is.EqualTo(DispatchStatus.PersistenceFailed));
+                Assert.That(store.Current.Meta.CompletedGameCount, Is.Zero);
+                Assert.That(store.Current.PendingPitchCompletion, Is.Null);
+                Assert.That(store.Current.PitchResume.AwaitingCompletion, Is.True);
+                Assert.That(repository.Saved.Meta.CompletedGameCount, Is.Zero);
+                Assert.That(publications, Is.Zero);
             }
         }
 

@@ -6,6 +6,7 @@ using Baseball.Application.Commands;
 using Baseball.Application.HighSchool;
 using Baseball.Application.Meta;
 using Baseball.Application.Persistence;
+using Baseball.Application.Pro;
 using Baseball.Application.Stores;
 using NUnit.Framework;
 
@@ -351,7 +352,7 @@ namespace Baseball.Application.Tests
                 Assert.That(store.WasMigrated, Is.True);
                 Assert.That(store.Current.AggregateVersion,
                     Is.EqualTo(GameSaveAggregate.CurrentAggregateVersion));
-                Assert.That(store.Current.Revision, Is.EqualTo(10));
+                Assert.That(store.Current.Revision, Is.EqualTo(11));
                 Assert.That(store.Current.Meta.SoulLifetimeEarned, Is.EqualTo(23));
                 Assert.That(store.Current.Meta.AutomaticSoulEarned, Is.EqualTo(23));
                 Assert.That(store.Current.HasCommandReceipt(GameSaveMigration.VersionZeroReceipt), Is.True);
@@ -359,6 +360,9 @@ namespace Baseball.Application.Tests
                     GameSaveMigration.VersionOneSettingsReceipt), Is.True);
                 Assert.That(store.Current.HasCommandReceipt(
                     GameSaveMigration.VersionTwoAnalyticsReceipt), Is.True);
+                Assert.That(store.Current.HasCommandReceipt(
+                    GameSaveMigration.VersionThreeCompletedGameCountReceipt), Is.True);
+                Assert.That(store.Current.Meta.CompletedGameCount, Is.Zero);
                 Assert.That(store.Current.AnalyticsReceipts.Records, Is.Empty);
                 Assert.That(store.Current.Settings.SoundEnabled, Is.True);
                 Assert.That(repository.SaveCount, Is.EqualTo(1));
@@ -802,11 +806,13 @@ namespace Baseball.Application.Tests
                 Assert.That(store.WasMigrated, Is.True);
                 Assert.That(store.Current.AggregateVersion,
                     Is.EqualTo(GameSaveAggregate.CurrentAggregateVersion));
-                Assert.That(store.Current.Revision, Is.EqualTo(6));
+                Assert.That(store.Current.Revision, Is.EqualTo(7));
                 Assert.That(store.Current.HasCommandReceipt(
                     GameSaveMigration.VersionOneSettingsReceipt), Is.True);
                 Assert.That(store.Current.HasCommandReceipt(
                     GameSaveMigration.VersionTwoAnalyticsReceipt), Is.True);
+                Assert.That(store.Current.HasCommandReceipt(
+                    GameSaveMigration.VersionThreeCompletedGameCountReceipt), Is.True);
 
                 await store.DispatchAsync(new CommandEnvelope<GameCommand>(
                     "settings",
@@ -860,7 +866,7 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
-        public async Task VersionTwoAggregate_AddsAnalyticsStateAndPersistsV3BeforeOpen()
+        public async Task VersionTwoAggregate_AddsAnalyticsAndCompletedGamesBeforeOpen()
         {
             var repository = new RecordingGameRepository();
             var versionTwo = new GameSaveAggregate(
@@ -882,11 +888,148 @@ namespace Baseball.Application.Tests
                 Assert.That(store.WasMigrated, Is.True);
                 Assert.That(store.Current.AggregateVersion,
                     Is.EqualTo(GameSaveAggregate.CurrentAggregateVersion));
-                Assert.That(store.Current.Revision, Is.EqualTo(9));
+                Assert.That(store.Current.Revision, Is.EqualTo(10));
                 Assert.That(store.Current.AnalyticsReceipts.Records, Is.Empty);
                 Assert.That(store.Current.HasCommandReceipt(
                     GameSaveMigration.VersionTwoAnalyticsReceipt), Is.True);
+                Assert.That(store.Current.HasCommandReceipt(
+                    GameSaveMigration.VersionThreeCompletedGameCountReceipt), Is.True);
                 Assert.That(repository.SaveCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void VersionThreeCompletedGames_UsesConservativeUniqueLowerBoundAndJsonDefaults()
+        {
+            var performance = new CareerPerformanceReadModel(importantGames: 2);
+            var archive = new LifeArchiveRecord(
+                "life:1:hs-shared",
+                1,
+                "민서준",
+                "hs-shared",
+                null,
+                "school-a",
+                "새빛고",
+                false,
+                60,
+                new PitcherRatingsReadModel(50, 50, 50, 50),
+                performance,
+                0,
+                0,
+                0,
+                0,
+                10);
+            var priorSeason = new ProSeasonLineReadModel(
+                1, "team-a", 5, 30, 12, 4, 3);
+            var pro = FakeProPort.Copy(
+                FakeProPort.Pro(
+                    currentSeason: new CareerPerformanceReadModel(importantGames: 3),
+                    seasons: new[] { priorSeason }),
+                season: 2);
+            var legacy = new GameSaveAggregate(
+                3,
+                9,
+                "install-a",
+                ApplicationStage.Pro,
+                FakeHighSchoolPort.HighSchool(
+                    careerId: "hs-shared",
+                    performance: performance),
+                pro,
+                MetaProgressState.Initial.With(
+                    lifeArchive: new[] { archive },
+                    creditedRewardIds: new[] { "daily-inning:20260811" }),
+                null,
+                null,
+                Array.Empty<string>());
+
+            Assert.That(CompletedGameCountRules.ConservativeMigrationLowerBound(legacy),
+                Is.EqualTo(2),
+                "HS overlap is counted once; retired Daily and auto-simulated Pro totals are excluded");
+            var migration = GameSaveMigration.Upgrade(legacy);
+
+            Assert.That(migration.Aggregate.AggregateVersion,
+                Is.EqualTo(GameSaveAggregate.CurrentAggregateVersion));
+            Assert.That(migration.Aggregate.Revision, Is.EqualTo(10));
+            Assert.That(migration.Aggregate.Meta.CompletedGameCount, Is.EqualTo(2));
+            Assert.That(migration.Aggregate.HasCommandReceipt(
+                GameSaveMigration.VersionThreeCompletedGameCountReceipt), Is.True);
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(
+                new MetaProgressState(completedGameCount: 7));
+            var roundTrip = Newtonsoft.Json.JsonConvert.DeserializeObject<MetaProgressState>(json);
+            var oldJson = Newtonsoft.Json.JsonConvert.DeserializeObject<MetaProgressState>(
+                "{\"lifeNumber\":1}");
+            Assert.That(roundTrip.CompletedGameCount, Is.EqualTo(7));
+            Assert.That(oldJson.CompletedGameCount, Is.Zero);
+            var invalid = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                0,
+                "install-a",
+                ApplicationStage.Opening,
+                null,
+                null,
+                new MetaProgressState(completedGameCount: -1),
+                null,
+                null,
+                Array.Empty<string>());
+            Assert.That(new GameSaveValidator().Validate(invalid).IsValid, Is.False);
+        }
+
+        [Test]
+        public void VersionThreeCompletedGames_RecoversOnlyPersistedDirectProLines()
+        {
+            var direct = new CareerGameLineReadModel(
+                2, 8, 12, true, false,
+                3, 2, 0, 1, 0, 14, 3, 1, "hold");
+            var automatic = new CareerGameLineReadModel(
+                2, 9, 13, false, false,
+                3, 1, 1, 2, 1, 18, 2, 4, "loss");
+            var legacy = new GameSaveAggregate(
+                3,
+                2,
+                "install-a",
+                ApplicationStage.Pro,
+                null,
+                FakeProPort.Pro(
+                    currentSeason: new CareerPerformanceReadModel(importantGames: 99),
+                    seasons: new[] { new ProSeasonLineReadModel(1, "team-a", 90, 30, 12, 4, 3) },
+                    recentGameLines: new[] { automatic, direct, direct }),
+                MetaProgressState.Initial,
+                null,
+                null,
+                Array.Empty<string>());
+
+            var migration = GameSaveMigration.Upgrade(legacy).Aggregate;
+
+            Assert.That(migration.Meta.CompletedGameCount, Is.EqualTo(1),
+                "only one distinct Played=true line is authoritative direct-game evidence");
+        }
+
+        [Test]
+        public void VersionOneAndTwoCompletedGames_MigrateVisibleOfficialLowerBoundWithoutDaily()
+        {
+            foreach (var version in new[] { 1, 2 })
+            {
+                var legacy = new GameSaveAggregate(
+                    version,
+                    4,
+                    "install-a",
+                    ApplicationStage.HighSchool,
+                    FakeHighSchoolPort.HighSchool(
+                        careerId: "hs-visible",
+                        performance: new CareerPerformanceReadModel(importantGames: 2)),
+                    null,
+                    MetaProgressState.Initial.With(
+                        creditedRewardIds: new[] { "daily-inning:20260811" }),
+                    null,
+                    null,
+                    Array.Empty<string>());
+
+                var migrated = GameSaveMigration.Upgrade(legacy).Aggregate;
+
+                Assert.That(migrated.Meta.CompletedGameCount, Is.EqualTo(2));
+                Assert.That(migrated.HasCommandReceipt(
+                    GameSaveMigration.VersionThreeCompletedGameCountReceipt), Is.True);
             }
         }
 
@@ -990,7 +1133,8 @@ namespace Baseball.Application.Tests
                 "high-school-progress",
                 stage: ApplicationStage.HighSchool,
                 highSchool: FakeHighSchoolPort.HighSchool(
-                    performance: new CareerPerformanceReadModel(importantGames: 1)));
+                    performance: new CareerPerformanceReadModel(importantGames: 1)),
+                meta: MetaProgressState.Initial.With(completedGameCount: 1));
             repository.LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
                 SaveLoadStatus.LoadedCanonical,
                 new SaveEnvelope<GameSaveAggregate>(
@@ -1065,17 +1209,53 @@ namespace Baseball.Application.Tests
                 ApplicationStage.BetweenLives,
                 null,
                 null,
-                MetaProgressState.Initial.With(lifeNumber: 2, lifeArchive: new[] { archive }),
+                MetaProgressState.Initial.With(
+                    lifeNumber: 2,
+                    lifeArchive: new[] { archive },
+                    completedGameCount: 8),
                 null,
                 null,
                 Array.Empty<string>());
 
-            Assert.That(ReturnPlanRules.CompletedGameCount(aggregate), Is.GreaterThan(0));
+            Assert.That(ReturnPlanRules.CompletedGameCount(aggregate), Is.EqualTo(8));
             Assert.That(ReturnPlanRules.PrepareForNextReturn(
                 aggregate,
                 aggregate.InstallId,
                 4,
                 new DateTimeOffset(2026, 8, 11, 0, 0, 0, TimeSpan.Zero)), Is.Null);
+        }
+
+        [Test]
+        public void SessionEnd_UsesExactPersistedCompletedGameDelta()
+        {
+            var startedAt = new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero);
+            var plan = ReturnPlanState.Create(
+                "이번 선수 이어가기",
+                "다음 경기가 기다립니다.",
+                ReturnPlanDestination.HighSchool,
+                "high_school_phase");
+            var aggregate = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                5,
+                "install-a",
+                ApplicationStage.HighSchool,
+                FakeHighSchoolPort.HighSchool(),
+                null,
+                MetaProgressState.Initial.With(completedGameCount: 7),
+                null,
+                null,
+                Array.Empty<string>());
+
+            var session = ReturnPlanRules.SessionEnd(
+                aggregate,
+                plan,
+                startedAt,
+                5,
+                startedAt.AddMinutes(9));
+
+            Assert.That(session.Games, Is.EqualTo(2));
+            Assert.That(session.Minutes, Is.EqualTo(9));
+            Assert.That(session.ReturnEligible, Is.True);
         }
 
         [Test]
@@ -1260,6 +1440,17 @@ namespace Baseball.Application.Tests
                 Array.Empty<string>());
             Assert.That(NextActionPlanner.Resolve(proState).Route, Is.EqualTo("pro"));
             Assert.That(ReturnPlanRules.WelcomePlan(typed, typed, null, now), Is.Null);
+            var currentHighSchoolPlan = ReturnPlanRules.CurrentPlan(state);
+            var currentProPlan = ReturnPlanRules.CurrentPlan(proState);
+            Assert.That(currentHighSchoolPlan.Destination,
+                Is.EqualTo(ReturnPlanDestination.HighSchool));
+            Assert.That(currentProPlan.Destination, Is.EqualTo(ReturnPlanDestination.Pro));
+            Assert.That(ReturnPlanRules.WelcomePlan(
+                typed, currentHighSchoolPlan, null, now), Is.Null,
+                "A retired typed Daily experiment cannot personalize a live high-school route.");
+            Assert.That(ReturnPlanRules.WelcomePlan(
+                rawLegacy, currentProPlan, null, now), Is.Null,
+                "A retired raw Daily route cannot personalize a live Pro route.");
             Assert.That(ReturnPlanRules.Analytics(typed, now), Is.Null);
             Assert.That(ReturnPlanRules.NextDayOpen(typed, "cold", now), Is.Null);
             Assert.That(ReturnPlanRules.EligibleReceiptScope(typed), Is.Null);

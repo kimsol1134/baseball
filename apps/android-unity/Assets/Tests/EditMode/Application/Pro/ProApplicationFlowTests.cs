@@ -41,7 +41,8 @@ namespace Baseball.Application.Tests
         public async Task DirectPro_RetirementCreditsOnceWithoutCreatingAFakeLife()
         {
             using (var store = await GameApplicationStore.OpenAsync(
-                       UnlockedDirectRepository(), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+                       UnlockedDirectRepository(completedGameCount: 6),
+                       new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 await Applied(store, "direct", new StartDirectProCommand(
                     new StartDirectProRequest("seed", "power", "윤하람", "team-b")));
@@ -64,6 +65,8 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current.Meta.LifeNumber, Is.EqualTo(2));
                 Assert.That(store.Current.Meta.SoulBalance, Is.EqualTo(balance).And.GreaterThan(0));
                 Assert.That(store.Current.Meta.Achievements.Unlocked, Does.Contain("hall_of_fame"));
+                Assert.That(store.Current.Meta.CompletedGameCount, Is.EqualTo(6),
+                    "Direct-Pro retirement is settlement, not another completed game.");
             }
         }
 
@@ -115,6 +118,8 @@ namespace Baseball.Application.Tests
                 await Applied(store, "pro-pitch-plan", new AdvanceProCommand(
                     new ProCareerAction("advance_week"),
                     new DateTimeOffset(2026, 8, 11, 1, 59, 30, TimeSpan.Zero)));
+                Assert.That(store.Current.Meta.CompletedGameCount, Is.Zero,
+                    "weekly auto-simulation is not a user-completed important game");
                 await Applied(store, "game-phase", new AdvanceProCommand(
                     new ProCareerAction("important_game"),
                     new DateTimeOffset(2026, 8, 11, 2, 0, 0, TimeSpan.Zero)));
@@ -142,6 +147,8 @@ namespace Baseball.Application.Tests
                 Assert.That((await store.DispatchAsync(completion)).Status, Is.EqualTo(DispatchStatus.AlreadyApplied));
 
                 Assert.That(proPort.PitchApplyCount, Is.EqualTo(1));
+                Assert.That(store.Current.Meta.CompletedGameCount, Is.EqualTo(1));
+                Assert.That(repository.Saved.Meta.CompletedGameCount, Is.EqualTo(1));
                 Assert.That(store.Current.Pro.CurrentSeason.Strikeouts, Is.EqualTo(3));
                 Assert.That(store.Current.PendingPitchCompletion.CareerKind, Is.EqualTo(PitchCareerKind.Pro));
                 Assert.That(store.Current.Meta.Weekly.Program.Tasks.Single(value =>
@@ -167,6 +174,7 @@ namespace Baseball.Application.Tests
                     value.Kind == WeeklyTaskKinds.ProWeeksAdvanced).Progress, Is.EqualTo(1));
                 Assert.That(restarted.Current.Meta.Weekly.ProcessedReceiptIds,
                     Does.Not.Contain("complete:pro-week"));
+                Assert.That(restarted.Current.Meta.CompletedGameCount, Is.EqualTo(1));
             }
         }
 
@@ -424,6 +432,7 @@ namespace Baseball.Application.Tests
                 Assert.That((await store.DispatchAsync(envelope)).Status,
                     Is.EqualTo(DispatchStatus.PersistenceFailed));
                 Assert.That(store.Current.Pro.LastSegmentProgress, Is.Null);
+                Assert.That(store.Current.Meta.CompletedGameCount, Is.Zero);
                 Assert.That(publications, Is.Zero);
 
                 repository.FailSave = false;
@@ -434,6 +443,10 @@ namespace Baseball.Application.Tests
                     Is.GreaterThanOrEqualTo(1));
                 Assert.That(store.Current.Pro.LastSegmentProgress.TargetPitch,
                     Is.EqualTo(target));
+                Assert.That(store.Current.Pro.CurrentSeason.ImportantGames, Is.GreaterThan(0),
+                    "the Core projection includes auto-simulated outings");
+                Assert.That(store.Current.Meta.CompletedGameCount, Is.Zero,
+                    "auto-progressed outings are not interactive game completions");
                 saved = repository.Saved;
             }
 
@@ -459,6 +472,7 @@ namespace Baseball.Application.Tests
                     Is.EqualTo(1));
                 Assert.That(restarted.Current.Pro.CoreStateJson,
                     Does.Contain("DevelopmentProgress"));
+                Assert.That(restarted.Current.Meta.CompletedGameCount, Is.Zero);
             }
         }
 
@@ -511,7 +525,8 @@ namespace Baseball.Application.Tests
         }
 
         private static RecordingGameRepository UnlockedDirectRepository(
-            HighSchoolCareerReadModel activeHighSchool = null)
+            HighSchoolCareerReadModel activeHighSchool = null,
+            int completedGameCount = 0)
         {
             var instant = new DateTimeOffset(2026, 8, 10, 1, 0, 0, TimeSpan.Zero);
             var record = new LifeArchiveRecord(
@@ -533,7 +548,8 @@ namespace Baseball.Application.Tests
                 20);
             var meta = MetaProgressState.Initial.With(
                 lifeNumber: activeHighSchool?.LifeNumber ?? 2,
-                lifeArchive: new[] { record });
+                lifeArchive: new[] { record },
+                completedGameCount: completedGameCount);
             var stage = activeHighSchool == null
                 ? ApplicationStage.Setup
                 : ApplicationStage.HighSchool;

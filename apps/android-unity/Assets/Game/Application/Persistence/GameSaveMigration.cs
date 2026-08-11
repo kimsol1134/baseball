@@ -20,6 +20,8 @@ namespace Baseball.Application.Persistence
         public const string VersionZeroReceipt = "__migration:aggregate-v0-v1";
         public const string VersionOneSettingsReceipt = "__migration:aggregate-v1-v2-settings";
         public const string VersionTwoAnalyticsReceipt = "__migration:aggregate-v2-v3-analytics";
+        public const string VersionThreeCompletedGameCountReceipt =
+            "__migration:aggregate-v3-v4-completed-games";
 
         public static GameSaveMigrationResult Upgrade(GameSaveAggregate loaded)
         {
@@ -28,7 +30,7 @@ namespace Baseball.Application.Persistence
             {
                 return new GameSaveMigrationResult(loaded, false);
             }
-            if (loaded.AggregateVersion < 0 || loaded.AggregateVersion > 2)
+            if (loaded.AggregateVersion < 0 || loaded.AggregateVersion > 3)
             {
                 throw new InvalidOperationException("save.aggregate_version_unsupported");
             }
@@ -61,6 +63,18 @@ namespace Baseball.Application.Persistence
                 migrated = migrated.Commit(
                     VersionTwoAnalyticsReceipt,
                     analyticsReceipts: AnalyticsReceiptState.Empty,
+                    aggregateVersion: 3);
+            }
+
+            if (migrated.AggregateVersion == 3)
+            {
+                var meta = migrated.Meta ?? MetaProgressState.Initial;
+                meta = meta.With(completedGameCount: Math.Max(
+                    meta.CompletedGameCount,
+                    CompletedGameCountRules.ConservativeMigrationLowerBound(migrated)));
+                migrated = migrated.Commit(
+                    VersionThreeCompletedGameCountReceipt,
+                    meta: meta,
                     aggregateVersion: GameSaveAggregate.CurrentAggregateVersion);
             }
             return new GameSaveMigrationResult(migrated, true);

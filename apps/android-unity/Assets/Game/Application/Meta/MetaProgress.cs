@@ -328,7 +328,8 @@ namespace Baseball.Application.Meta
             HighSchoolLastSetupState lastHighSchoolSetup = null,
             IReadOnlyList<string> unlockedSignatureLegacyIds = null,
             string equippedSignatureLegacyId = null,
-            ReturnWelcomeHandledState returnWelcomeHandled = null)
+            ReturnWelcomeHandledState returnWelcomeHandled = null,
+            int completedGameCount = 0)
         {
             LifeNumber = lifeNumber;
             SoulBalance = soulBalance;
@@ -347,6 +348,7 @@ namespace Baseball.Application.Meta
             UnlockedSignatureLegacyIds = Normalize(unlockedSignatureLegacyIds);
             EquippedSignatureLegacyId = equippedSignatureLegacyId;
             ReturnWelcomeHandled = returnWelcomeHandled;
+            CompletedGameCount = completedGameCount;
         }
 
         public int LifeNumber { get; }
@@ -366,6 +368,12 @@ namespace Baseball.Application.Meta
         public IReadOnlyList<string> UnlockedSignatureLegacyIds { get; }
         public string EquippedSignatureLegacyId { get; }
         public ReturnWelcomeHandledState ReturnWelcomeHandled { get; }
+        /// <summary>
+        /// Monotonic number of official games durably completed on this installation. It is not
+        /// derived from current/archive snapshots, so settlement and rebirth cannot double-count
+        /// or decrease it.
+        /// </summary>
+        public int CompletedGameCount { get; }
 
         public static MetaProgressState Initial { get; } = new MetaProgressState();
 
@@ -391,7 +399,8 @@ namespace Baseball.Application.Meta
             string equippedSignatureLegacyId = null,
             bool clearEquippedSignatureLegacy = false,
             ReturnWelcomeHandledState returnWelcomeHandled = null,
-            bool clearReturnWelcomeHandled = false)
+            bool clearReturnWelcomeHandled = false,
+            int? completedGameCount = null)
         {
             return new MetaProgressState(
                 lifeNumber ?? LifeNumber,
@@ -414,7 +423,8 @@ namespace Baseball.Application.Meta
                     : equippedSignatureLegacyId ?? EquippedSignatureLegacyId,
                 clearReturnWelcomeHandled
                     ? null
-                    : returnWelcomeHandled ?? ReturnWelcomeHandled);
+                    : returnWelcomeHandled ?? ReturnWelcomeHandled,
+                completedGameCount ?? CompletedGameCount);
         }
 
         public static int ProSoulBonus(ProCareerReadModel state)

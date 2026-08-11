@@ -246,6 +246,22 @@ namespace Baseball.Bootstrap.Tests
             RuntimeGameCoordinator coordinator = null;
             try
             {
+                var seededHighSchool = new CoreHighSchoolCareerPort().Start(
+                    new StartHighSchoolCareerRequest(
+                        "seed", "power_prospect", "민서준", "서울", 1));
+                var seeded = GameSaveAggregate.Initial("install-return").Commit(
+                    "seed-official-game-count",
+                    stage: ApplicationStage.HighSchool,
+                    highSchool: seededHighSchool,
+                    meta: MetaProgressState.Initial.With(completedGameCount: 1));
+                using (var seedRepository = new AtomicSaveRepository<GameSaveAggregate>(
+                           new SaveFileLayout(saveDirectory),
+                           new SystemAtomicFileSystem(),
+                           new GameSaveValidator(),
+                           new GameSaveSemanticPriority()))
+                {
+                    await seedRepository.SaveAsync(seeded, seeded.Revision);
+                }
                 using (var mainThread = new DedicatedMainThread())
                 {
                     coordinator = new RuntimeGameCoordinator(
@@ -316,10 +332,7 @@ namespace Baseball.Bootstrap.Tests
                         mainThread);
                     await coordinator.InitializeAsync(CancellationToken.None);
                     var store = RuntimeGameServices.Store;
-                    var daily = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
-                        "daily", store.Current.Revision,
-                        new CompleteDailyInningCommand(pauseAt)));
-                    Assert.That(daily.Status, Is.EqualTo(DispatchStatus.Applied));
+                    Assert.That(store.Current.Meta.CompletedGameCount, Is.EqualTo(1));
                     store.StatePublished += _ =>
                         statePublishedThreads.Add(Thread.CurrentThread.ManagedThreadId);
                     store.BusyChanged += _ =>
@@ -338,11 +351,12 @@ namespace Baseball.Bootstrap.Tests
                     Assert.That(lastSessionEnd.ReturnEligible, Is.True);
                     Assert.That(lastSessionEnd.ShouldEmitReturnEligible, Is.True);
                     Assert.That(lastSessionEnd.Minutes, Is.EqualTo(7));
-                    Assert.That(lastSessionEnd.Games, Is.EqualTo(1));
+                    Assert.That(lastSessionEnd.Games, Is.Zero,
+                        "the persisted lifetime count is the session baseline, not a session game");
                     Assert.That(lastSessionEnd.LifeNumber, Is.EqualTo(1));
                     Assert.That(lastSessionEnd.ImportantGamesTotal, Is.Zero);
-                    Assert.That(lastSessionEnd.Phase, Is.EqualTo("none"));
-                    Assert.That(lastSessionEnd.ActNumber, Is.Zero);
+                    Assert.That(lastSessionEnd.Phase, Is.EqualTo("prologue"));
+                    Assert.That(lastSessionEnd.ActNumber, Is.EqualTo(1));
                     Assert.That(lastSessionEnd.LivesFinished, Is.Zero);
                     Assert.That(lastSessionEnd.SavedDayKey, Is.EqualTo("20260809"));
                     Assert.That(lastSessionEnd.ReturnDayKey, Is.EqualTo("20260809"));
@@ -467,6 +481,15 @@ namespace Baseball.Bootstrap.Tests
                         new GameSaveValidator(),
                         new GameSaveSemanticPriority(),
                         faultInjector: fault);
+                    var seededHighSchool = new CoreHighSchoolCareerPort().Start(
+                        new StartHighSchoolCareerRequest(
+                            "seed", "power_prospect", "민서준", "서울", 1));
+                    var seeded = GameSaveAggregate.Initial("install-stale").Commit(
+                        "seed-official-game-count",
+                        stage: ApplicationStage.HighSchool,
+                        highSchool: seededHighSchool,
+                        meta: MetaProgressState.Initial.With(completedGameCount: 1));
+                    await repository.SaveAsync(seeded, seeded.Revision);
                     var store = await GameApplicationStore.OpenAsync(
                         repository,
                         new UnusedHighSchoolPort(),
@@ -478,16 +501,7 @@ namespace Baseball.Bootstrap.Tests
                             () => new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero)),
                         mainThread);
                     await coordinator.InitializeAsync(CancellationToken.None);
-                    DispatchResult<GameSaveAggregate> daily = null;
-                    await mainThread.RunAsync(async () =>
-                    {
-                        daily = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
-                            "daily-stale",
-                            store.Current.Revision,
-                            new CompleteDailyInningCommand(
-                                new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero))));
-                    });
-                    Assert.That(daily.Status, Is.EqualTo(DispatchStatus.Applied));
+                    Assert.That(store.Current.Meta.CompletedGameCount, Is.EqualTo(1));
 
                     fault.BlockNextSave();
                     var concurrent = Task.Run(() => store.DispatchAsync(

@@ -386,7 +386,9 @@ namespace Baseball.Application.Tests
             IReadOnlyList<ProSeasonLineReadModel> seasons = null,
             int hallOfFameScore = 0,
             int awards = 0,
-            ProContractOfferReadModel contractOffer = null)
+            ProContractOfferReadModel contractOffer = null,
+            IReadOnlyList<CareerGameLineReadModel> recentGameLines = null,
+            ProRecordBookReadModel recordBook = null)
         {
             return new ProCareerReadModel(
                 proCareerId,
@@ -407,7 +409,9 @@ namespace Baseball.Application.Tests
                 "{\"fixture\":true}",
                 hallOfFameScore,
                 awards,
-                contractOffer: contractOffer);
+                recentGameLines: recentGameLines,
+                contractOffer: contractOffer,
+                recordBook: recordBook);
         }
 
         public static ProCareerReadModel Copy(

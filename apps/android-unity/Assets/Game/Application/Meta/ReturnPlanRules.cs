@@ -128,6 +128,76 @@ namespace Baseball.Application.Meta
         public int DayGap { get; }
     }
 
+    public static class CompletedGameCountRules
+    {
+        public static MetaProgressState Record(MetaProgressState current, int amount)
+        {
+            if (current == null) throw new ArgumentNullException(nameof(current));
+            if (current.CompletedGameCount < 0)
+                throw new InvalidOperationException("completed_game_count.invalid");
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount == 0) return current;
+            if (current.CompletedGameCount > int.MaxValue - amount)
+                throw new InvalidOperationException("completed_game_count.exhausted");
+            return current.With(completedGameCount: current.CompletedGameCount + amount);
+        }
+
+        /// <summary>
+        /// One-time lower bound for saves written before the monotonic counter existed. Retired
+        /// Daily receipts are deliberately ignored. Archived Pro records do not contain games, so
+        /// they also contribute zero rather than a synthetic estimate.
+        /// </summary>
+        public static int ConservativeMigrationLowerBound(GameSaveAggregate aggregate)
+        {
+            if (aggregate == null) return 0;
+            var archive = aggregate.Meta?.LifeArchive ?? Array.Empty<LifeArchiveRecord>();
+            var archivedHighSchoolGames = archive
+                .Select((record, index) => new
+                {
+                    Key = record?.HighSchoolCareerId ?? record?.LifeId ?? "archive:" + index,
+                    Games = Math.Max(0, record?.HighSchoolPerformance?.ImportantGames ?? 0)
+                })
+                .GroupBy(value => value.Key, StringComparer.Ordinal)
+                .Sum(group => group.Max(value => value.Games));
+
+            var activeHighSchoolGames = 0;
+            var highSchool = aggregate.HighSchool;
+            if (highSchool != null && !archive.Any(record => record != null &&
+                    !string.IsNullOrWhiteSpace(highSchool.CareerId) &&
+                    string.Equals(
+                        record.HighSchoolCareerId,
+                        highSchool.CareerId,
+                        StringComparison.Ordinal)))
+            {
+                activeHighSchoolGames = Math.Max(0, highSchool.Performance?.ImportantGames ?? 0);
+            }
+
+            // Pro season totals include every auto-simulated outing. They are not evidence that
+            // the player completed an interactive important game. Only persisted game lines with
+            // Played=true are safe to recover; older saves without those lines intentionally
+            // migrate with a lower (possibly zero) Pro contribution.
+            var activeProGames = 0;
+            var pro = aggregate.Pro;
+            if (pro != null)
+            {
+                var completeLines = pro.RecordBook != null &&
+                                    pro.RecordBook.SeasonGameLinesAvailable
+                    ? pro.RecordBook.SeasonGameLines
+                    : null;
+                var evidence = completeLines ?? pro.RecentGameLines ??
+                    Array.Empty<CareerGameLineReadModel>();
+                activeProGames = evidence
+                    .Where(value => value != null && value.Played)
+                    .GroupBy(value => value.Season + ":" + value.Week + ":" + value.OutingNumber,
+                        StringComparer.Ordinal)
+                    .Count();
+            }
+
+            var lowerBound = (long)archivedHighSchoolGames + activeHighSchoolGames + activeProGames;
+            return lowerBound >= int.MaxValue ? int.MaxValue : (int)lowerBound;
+        }
+    }
+
     public static class ReturnPlanRules
     {
         public const string LegacyReturnExperimentId = "next_action_v1";
@@ -138,21 +208,7 @@ namespace Baseball.Application.Meta
 
         public static int CompletedGameCount(GameSaveAggregate aggregate)
         {
-            if (aggregate == null) return 0;
-            var highSchool = aggregate.HighSchool?.Performance?.ImportantGames ?? 0;
-            var pro = aggregate.Pro == null
-                ? 0
-                : aggregate.Pro.CurrentSeason.ImportantGames +
-                  aggregate.Pro.CareerSeasons.Sum(value => value.Games);
-            var daily = aggregate.Meta?.CreditedRewardIds.Count(value =>
-                value.StartsWith("daily-inning:", StringComparison.Ordinal)) ?? 0;
-            var archived = aggregate.Meta?.LifeArchive.Sum(value => value == null
-                ? 0
-                : Math.Max(
-                    1,
-                    (value.HighSchoolPerformance?.ImportantGames ?? 0) + value.ProSeasons)) ?? 0;
-            return Math.Max(0, highSchool) + Math.Max(0, pro) +
-                Math.Max(0, daily) + Math.Max(0, archived);
+            return Math.Max(0, aggregate?.Meta?.CompletedGameCount ?? 0);
         }
 
         public static ReturnExperimentVariant ExperimentVariant(string stableId)
@@ -248,7 +304,7 @@ namespace Baseball.Application.Meta
             DateTimeOffset now)
         {
             if (previous == null || current == null || current.Dismissed ||
-                IsRetiredDailyPlan(current)) return null;
+                IsRetiredDailyPlan(previous) || IsRetiredDailyPlan(current)) return null;
             var candidate = CarryingExperiment(current, previous);
             if (!string.Equals(candidate.ExperimentVariant, "guided", StringComparison.Ordinal))
                 return null;

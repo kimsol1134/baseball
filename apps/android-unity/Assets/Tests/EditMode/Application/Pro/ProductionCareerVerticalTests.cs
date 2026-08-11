@@ -137,6 +137,8 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current.HighSchool.ChapterNumber, Is.EqualTo(8));
                 Assert.That(store.Current.HighSchool.SchoolYear, Is.EqualTo(3));
                 Assert.That(store.Current.HighSchool.Performance.ImportantGames, Is.GreaterThanOrEqualTo(4));
+                Assert.That(store.Current.Meta.CompletedGameCount,
+                    Is.EqualTo(store.Current.HighSchool.Performance.ImportantGames));
                 Assert.That(sawTournament, Is.True);
                 Assert.That(sawProspects, Is.True);
                 Assert.That(rejectedRetiredDaily, Is.True);
@@ -214,9 +216,14 @@ namespace Baseball.Application.Tests
                 Assert.That(sawSeasonDecision, Is.True);
                 Assert.That(sawOffseason, Is.True);
                 Assert.That(sawProImportantGame, Is.True);
+                var completedGamesBeforeSettlement = store.Current.Meta.CompletedGameCount;
+                Assert.That(completedGamesBeforeSettlement,
+                    Is.GreaterThan(store.Current.HighSchool.Performance.ImportantGames));
 
                 await Applied(store, Next("retire"),
                     new RetireProCareerCommand(now.AddHours(1)));
+                Assert.That(store.Current.Meta.CompletedGameCount,
+                    Is.EqualTo(completedGamesBeforeSettlement));
                 Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Legacy));
                 Assert.That(store.Current.Pro.Phase, Is.EqualTo(ProCareerPhase.Completed));
                 Assert.That(store.Current.Meta.LifeArchive, Is.Empty);
@@ -231,6 +238,8 @@ namespace Baseball.Application.Tests
                 await Applied(store, Next("finalize-legacy"),
                     new FinalizeHighSchoolLegacyCommand(
                         Array.Empty<string>(), signature.Id, now.AddHours(1).AddMinutes(1)));
+                Assert.That(store.Current.Meta.CompletedGameCount,
+                    Is.EqualTo(completedGamesBeforeSettlement));
                 Assert.That(store.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
                 var archived = store.Current.Meta.LifeArchive[0];
                 Assert.That(archived.ProSeasons, Is.EqualTo(12));
@@ -267,6 +276,8 @@ namespace Baseball.Application.Tests
 
                 await Applied(store, Next("rebirth"),
                     new BeginRebirthCommand(now.AddHours(2)));
+                Assert.That(store.Current.Meta.CompletedGameCount,
+                    Is.EqualTo(completedGamesBeforeSettlement));
                 Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.BetweenLives));
                 Assert.That(store.Current.Meta.LifeNumber, Is.EqualTo(2));
                 Assert.That(store.Current.Meta.LifeArchive[0].SignatureLegacy.EvidenceSummary,
@@ -294,8 +305,12 @@ namespace Baseball.Application.Tests
             string value,
             DateTimeOffset instant)
         {
+            var completedBefore = store.Current.Meta.CompletedGameCount;
             await Applied(store, Next("pro-" + kind),
                 new AdvanceProCommand(new ProCareerAction(kind, value), instant));
+            Assert.That(store.Current.Meta.CompletedGameCount,
+                Is.EqualTo(completedBefore),
+                "Only a completed interactive important-game pitch session may change the counter.");
         }
 
         private async Task CompletePitch(
@@ -304,6 +319,7 @@ namespace Baseball.Application.Tests
             string gameId,
             DateTimeOffset instant)
         {
+            var completedBefore = store.Current.Meta.CompletedGameCount;
             await Applied(store, Next("pitch-begin"),
                 new BeginPitchSessionCommand(gameId, kind, "production", 18, instant));
             var resume = store.Current.PitchResume;
@@ -351,6 +367,11 @@ namespace Baseball.Application.Tests
             Assert.That(store.Current.PitchResume.AwaitingCompletion, Is.True);
             await Applied(store, Next("pitch-complete"),
                 new CompletePitchSessionCommand(report, instant.AddMinutes(1)));
+            var expectedDelta = kind == PitchCareerKind.HighSchool || kind == PitchCareerKind.Pro
+                ? 1
+                : 0;
+            Assert.That(store.Current.Meta.CompletedGameCount,
+                Is.EqualTo(completedBefore + expectedDelta));
             var completionId = store.Current.PendingPitchCompletion.CompletionId;
             await Applied(store, Next("pitch-ack"),
                 new AcknowledgePitchResultCommand(completionId));

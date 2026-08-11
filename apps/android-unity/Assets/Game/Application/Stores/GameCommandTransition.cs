@@ -1936,7 +1936,13 @@ namespace Baseball.Application.Stores
             var achievements = AchievementRules.Unlock(
                 current.Achievements,
                 AchievementRules.FromPitch(report));
-            return current.With(daily: daily, weekly: weekly, achievements: achievements);
+            var updated = current.With(
+                daily: daily,
+                weekly: weekly,
+                achievements: achievements);
+            return kind == PitchCareerKind.HighSchool || kind == PitchCareerKind.Pro
+                ? CompletedGameCountRules.Record(updated, 1)
+                : updated;
         }
 
         private static LifeArchiveRecord MakeLifeRecord(
