@@ -84,8 +84,6 @@ namespace Baseball.Application.Stores
                         return ConfigureWeekly(current, value, commandId);
                     case RecordWeeklyProgressCommand value:
                         return RecordWeekly(current, value, commandId);
-                    case CompleteDailyInningCommand value:
-                        return CompleteDaily(current, value, commandId);
                     case ClaimWeeklyRewardCommand value:
                         return ClaimWeekly(current, value, commandId);
                     case UnlockAchievementsCommand value:
@@ -1414,14 +1412,6 @@ namespace Baseball.Application.Stores
                 meta: current.Meta.With(weekly: weekly, daily: daily)));
         }
 
-        private static TransitionResult<GameSaveAggregate> CompleteDaily(
-            GameSaveAggregate current,
-            CompleteDailyInningCommand command,
-            string commandId)
-        {
-            return Failure("daily.retired");
-        }
-
         private static TransitionResult<GameSaveAggregate> ClaimWeekly(
             GameSaveAggregate current,
             ClaimWeeklyRewardCommand command,
@@ -1903,7 +1893,8 @@ namespace Baseball.Application.Stores
             DateTimeOffset completedAt,
             string commandId)
         {
-            if (kind == PitchCareerKind.Daily) return current;
+            if (kind != PitchCareerKind.HighSchool && kind != PitchCareerKind.Pro)
+                return current;
             var daily = DailyStreakRules.RecordBaseball(current.Daily, completedAt);
             var playedReceipt = commandId + ":played-day";
             var weekly = WeeklyProgramRules.Record(
@@ -1940,9 +1931,7 @@ namespace Baseball.Application.Stores
                 daily: daily,
                 weekly: weekly,
                 achievements: achievements);
-            return kind == PitchCareerKind.HighSchool || kind == PitchCareerKind.Pro
-                ? CompletedGameCountRules.Record(updated, 1)
-                : updated;
+            return CompletedGameCountRules.Record(updated, 1);
         }
 
         private static LifeArchiveRecord MakeLifeRecord(

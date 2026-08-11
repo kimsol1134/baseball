@@ -431,7 +431,7 @@ namespace Baseball.Presentation.Tests
         }
 
         [Test]
-        public void PendingLegacyDailyResultReturnsToRecordsAndRequiresSavedAcknowledgement()
+        public void PendingLegacyDailyResultRedirectsToRecordsWithoutRenderingARetiredScreen()
         {
             GameSaveAggregate state = GameSaveAggregate.Initial("installation").Commit(
                 "pitch-complete",
@@ -450,6 +450,7 @@ namespace Baseball.Presentation.Tests
             BaseballScreenViewModel screen = model.Read(ShellRoute.Daily);
 
             Assert.That(model.PreferredRoute, Is.EqualTo(ShellRoute.Records));
+            Assert.That(screen.Route, Is.EqualTo(ShellRoute.Records));
             Assert.That(screen.Actions, Has.Count.EqualTo(1));
             Assert.That(screen.Actions[0].Id, Is.EqualTo("acknowledge_pitch_result"));
             Assert.That(screen.Actions[0].Target, Is.EqualTo(ShellRoute.Records));
@@ -993,11 +994,11 @@ namespace Baseball.Presentation.Tests
                 "2026-W33",
                 new[]
                 {
-                    new WeeklyTaskState("daily", WeeklyTaskKinds.DailyInningCompleted, 1, 1),
+                    new WeeklyTaskState("chapters", WeeklyTaskKinds.ChaptersAdvanced, 1, 1),
                     new WeeklyTaskState("games", WeeklyTaskKinds.ImportantGamesCompleted, 2, 1),
                     new WeeklyTaskState("days", WeeklyTaskKinds.PlayedOnTwoDays, 2, 1),
                 },
-                new[] { "daily" },
+                new[] { "chapters", "games" },
                 false);
             GameSaveAggregate state = GameSaveAggregate.Initial("install").Commit(
                 "weekly-only",
@@ -1008,8 +1009,19 @@ namespace Baseball.Presentation.Tests
 
             Assert.That(records.Sections.Select(section => section.Id),
                 Does.Not.Contain("records-empty"));
+            Assert.That(records.Sections.Select(section => section.Id),
+                Does.Contain("records-weekly-note"));
             Assert.That(records.Sections.SelectMany(section => section.Rows)
                 .Any(row => row.Value.Contains("1/1") || row.Value.Contains("1/2")), Is.True);
+            ScreenActionViewModel weekly = records.Actions.Single(action =>
+                action.Id == "navigate_weekly");
+            Assert.That(weekly.Target, Is.EqualTo(ShellRoute.Weekly));
+
+            BaseballScreenViewModel board = ReadyModel(() => state).Read(ShellRoute.Weekly);
+            Assert.That(board.Sections.Select(section => section.Id), Does.Contain("weekly-tasks"));
+            Assert.That(board.Actions.Single().Id, Is.EqualTo("claim_weekly"));
+            Assert.That(board.Actions.Single().IsEnabled, Is.True,
+                "과제 두 개를 완료한 저장 상태에서는 실제 보상 command를 실행할 수 있어야 합니다.");
         }
 
         [Test]
@@ -1082,7 +1094,7 @@ namespace Baseball.Presentation.Tests
         }
 
         [Test]
-        public void RetiredDailyRouteShowsSafeReturnWithoutAPlayableAction()
+        public void RetiredDailyRouteRedirectsHomeWithoutAnyDailySurface()
         {
             GameSaveAggregate state = GameSaveAggregate.Initial("install");
             var model = new StoreBaseballCareerReadModel(
@@ -1092,12 +1104,11 @@ namespace Baseball.Presentation.Tests
                 () => string.Empty);
 
             BaseballScreenViewModel retired = model.Read(ShellRoute.Daily);
-            Assert.That(retired.Title, Does.Contain("새 일일 도전"));
-            Assert.That(retired.Sections.Single().Id, Is.EqualTo("retired-daily-inning"));
-            Assert.That(retired.Actions, Has.Count.EqualTo(1));
-            Assert.That(retired.Actions.Single().Id, Is.EqualTo("retired_daily_return"));
-            Assert.That(retired.Actions.Single().Target, Is.EqualTo(ShellRoute.Records));
-            Assert.That(retired.Actions.Any(action => action.Id == "begin_daily_pitch"), Is.False);
+            Assert.That(model.Routes.Any(route => route == ShellRoute.Daily), Is.False);
+            Assert.That(retired.Route, Is.EqualTo(ShellRoute.Opening));
+            Assert.That(string.Join(" ", retired.Sections.SelectMany(section => section.Rows)
+                    .SelectMany(row => new[] { row.Label, row.Value, row.Detail })),
+                Does.Not.Contain("일일"));
         }
 
         [Test]

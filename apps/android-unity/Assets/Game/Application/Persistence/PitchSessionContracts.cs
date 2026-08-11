@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseball.Application.HighSchool;
-using Baseball.Application.Meta;
-using Baseball.Core.Catalogs;
 using Baseball.Core.Domain;
 using Baseball.Core.HighSchool;
 using Baseball.Core.Pitching;
@@ -382,53 +380,13 @@ namespace Baseball.Application.Persistence
                 developmentRulesVersion: state.BalanceVersion ?? 1);
         }
 
-        public static PitchScenarioReadModel Daily(string dayKey)
-        {
-            var rng = new SplitMix64(StableHash.Fnv1A64Value("daily-" + dayKey));
-            var names = new[] { "강태건", "서진혁", "차도윤", "임세준", "한결", "표지훈", "위성곤" };
-            var first = new BatterSnapshot(
-                "daily-slugger-" + dayKey,
-                names[rng.NextInt(names.Length)],
-                52 + rng.NextInt(9),
-                48 + rng.NextInt(9),
-                54 + rng.NextInt(9));
-            var lineup = new[] { first }.Concat(FollowUpBatters("daily-" + dayKey, 5, 0)).ToArray();
-            return new PitchScenarioReadModel(
-                PitchScenarioReadModel.CurrentSchemaVersion,
-                "daily-" + dayKey,
-                "종료된 일일 도전",
-                "이전 버전에서 저장한 일일 도전 세션입니다.",
-                DailyPitcher(),
-                lineup,
-                new BatterScoutingSnapshot(
-                    new PitchZone(rng.NextInt(2), rng.NextInt(3)),
-                    new PitchZone(2, rng.NextInt(3)),
-                    PitchType.FourSeam,
-                    new[] { PitchType.Slider, PitchType.Curveball, PitchType.Changeup }[rng.NextInt(3)],
-                    40 + rng.NextInt(21),
-                    60),
-                50,
-                new GameStateSnapshot(
-                    Defense("daily"),
-                    new ParkSnapshot("daily-park", "전국 공용 구장", 1000, 1000),
-                    BaserunnerStateSnapshot.Empty,
-                    0,
-                    new InningStateSnapshot(9, HalfInning.Top, 0)),
-                1,
-                900,
-                20,
-                6,
-                maximumPitches: 72,
-                developmentRulesVersion: PitcherPresetCatalog.BalanceVersion);
-        }
-
         public static PitchScenarioReadModel Fallback(
             string scenarioId,
             PitcherRatingsReadModel ratings,
             string playerName,
             int maximumBatters)
         {
-            var pitcher = DailyPitcher();
+            var pitcher = FallbackPitcher();
             if (ratings != null)
             {
                 pitcher = new PitcherSnapshot(
@@ -501,11 +459,11 @@ namespace Baseball.Application.Persistence
             return new DefenseSnapshot(45 + rng.NextInt(16), 45 + rng.NextInt(16), 45 + rng.NextInt(16));
         }
 
-        private static PitcherSnapshot DailyPitcher()
+        private static PitcherSnapshot FallbackPitcher()
         {
             return new PitcherSnapshot(
-                "daily-pitcher",
-                "오늘의 투수",
+                "fallback-pitcher",
+                "투수",
                 56,
                 56,
                 56,

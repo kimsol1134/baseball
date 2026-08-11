@@ -258,8 +258,6 @@ namespace Baseball.Presentation.Shell
                 "acknowledge",
                 new AcknowledgePitchResultCommand(completionId),
                 cancellationToken);
-            if (result.Succeeded && pending.CareerKind == PitchCareerKind.Daily)
-                _pitchReturnOverride = ShellRoute.Records;
             return result;
         }
 
@@ -325,7 +323,7 @@ namespace Baseball.Presentation.Shell
         {
             string mode = kind == PitchCareerKind.HighSchool
                 ? "high_school"
-                : kind == PitchCareerKind.Pro ? "pro" : kind == PitchCareerKind.Daily ? "daily" : "unknown";
+                : kind == PitchCareerKind.Pro ? "pro" : "unknown";
             PitchSessionMetricsState metrics = resume?.Metrics ?? PitchSessionMetricsState.Empty;
             var properties = new Dictionary<string, object>(StringComparer.Ordinal)
             {
@@ -360,12 +358,6 @@ namespace Baseball.Presentation.Shell
                 properties["strikeouts"] = report.Strikeouts;
                 properties["walks"] = report.Walks;
                 properties["runs"] = report.RunsAllowed;
-            }
-            if (kind == PitchCareerKind.Daily)
-            {
-                properties["result"] = "completed";
-                properties["score"] = DailyScore(report);
-                properties["streak"] = after?.Meta?.Daily?.CurrentStreak ?? 0;
             }
             return properties;
         }
@@ -426,11 +418,6 @@ namespace Baseball.Presentation.Shell
                 ["growth_points"] = Math.Max(0, points),
             };
         }
-
-        private static int DailyScore(PitchGameReport report) => Math.Max(
-            0,
-            report.Strikeouts * 300 + report.Outs * 100 - report.Walks * 50 -
-            report.RunsAllowed * 250 + (report.RunsAllowed == 0 && report.Outs >= 3 ? 300 : 0));
 
         private static string SequenceTagWire(Baseball.Core.Pitching.PitchSequenceTag value)
         {

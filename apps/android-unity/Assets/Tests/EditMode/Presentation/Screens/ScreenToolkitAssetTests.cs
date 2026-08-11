@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -349,14 +350,40 @@ namespace Baseball.Presentation.Tests.Screens
         }
 
         [Test]
+        public void RecordsWeeklyActionReachesBoardAndDispatchesClaimThroughRuntime()
+        {
+            var runtime = new RoutingRuntime();
+            runtime.EnableWeeklyBoardActions();
+            runtime.PublishReady(ShellRoute.Records, shouldHoldOpening: false);
+            using var controller = new BaseballShellController(
+                new VisualElement(),
+                runtime,
+                KoreanUiCopyCatalog.LoadDefault(),
+                ShellRoute.Records);
+
+            ScreenActionViewModel open = runtime.Read(ShellRoute.Records).Actions.Single();
+            controller.Execute(open);
+
+            Assert.That(runtime.LastExecutedActionId, Is.EqualTo("navigate_weekly"));
+            Assert.That(controller.CurrentRoute, Is.EqualTo(ShellRoute.Weekly));
+
+            ScreenActionViewModel claim = runtime.Read(ShellRoute.Weekly).Actions.Single();
+            controller.Execute(claim);
+
+            Assert.That(runtime.LastExecutedActionId, Is.EqualTo("claim_weekly"));
+            Assert.That(runtime.ExecutedActionCount, Is.EqualTo(2));
+            Assert.That(controller.CurrentRoute, Is.EqualTo(ShellRoute.Weekly));
+        }
+
+        [Test]
         public void ReminderPlanIsProjectedFromSaveAndConsumedByShellNavigation()
         {
             string runtime = File.ReadAllText("Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
             string shell = File.ReadAllText("Assets/Game/Presentation/Shell/BaseballShellController.cs");
             string reminder = File.ReadAllText("Assets/Game/Platform/Notifications/AndroidReminderService.cs");
             StringAssert.Contains("reminders.ConfigurePlan", runtime);
-            StringAssert.Contains("plan.CreatedDayKey", runtime);
-            StringAssert.Contains("LastDailyInningDayKey", runtime);
+            StringAssert.Contains("personalized.SavedDayKey", runtime);
+            StringAssert.DoesNotContain("LastDailyInningDayKey", runtime);
             StringAssert.Contains("ReminderOpenAvailable += OnReminderOpenAvailable", runtime);
             StringAssert.Contains("DrainPendingReminderOpen", runtime);
             StringAssert.Contains("ConfirmReminderNavigation", runtime);
@@ -375,14 +402,32 @@ namespace Baseball.Presentation.Tests.Screens
                 "Assets/Game/Presentation/Meta/MetaScreenController.cs");
             string shell = File.ReadAllText(
                 "Assets/Game/Presentation/Shell/BaseballShellController.cs");
+            string template = File.ReadAllText(
+                "Assets/Game/Presentation/Shell/BaseballScreenTemplateReadModel.cs");
+            string model = File.ReadAllText(
+                "Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
+            string factory = File.ReadAllText(
+                "Assets/Game/Presentation/Shell/BaseballScreenControllerFactory.cs");
+            string pitch = File.ReadAllText(
+                "Assets/Game/Presentation/Shell/ProductionPitchSessionPersistence.cs");
+            string copy = File.ReadAllText(
+                "Assets/Game/Content/ko-KR/Resources/ui-copy-ko-KR.json");
             StringAssert.DoesNotContain("screen-meta-daily", meta);
             StringAssert.DoesNotContain("ShellRoute.Daily", meta);
             StringAssert.Contains("NormalizeRetiredDailyRoute", shell);
+            StringAssert.DoesNotContain("screens.Add(ShellRoute.Daily", template);
+            StringAssert.DoesNotContain("case ShellRoute.Daily:", model);
+            StringAssert.DoesNotContain("case ShellRoute.Daily:", factory);
+            StringAssert.DoesNotContain("PitchCareerKind.Daily", pitch);
+            StringAssert.DoesNotContain("DailyScore", pitch);
+            StringAssert.DoesNotContain("Meta?.Daily", pitch);
+            StringAssert.DoesNotContain("\"daily.", copy);
+            StringAssert.DoesNotContain("일일 도전", copy);
             string runtime = File.ReadAllText(
                 "Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
             StringAssert.Contains("ClearRetiredDailyResume", runtime);
             StringAssert.Contains("new AbandonPitchSessionCommand(resume.GameId)", runtime);
-            StringAssert.Contains("case \"begin_daily_pitch\": return null;", runtime);
+            StringAssert.DoesNotContain("begin_daily_pitch", runtime);
         }
 
         [Test]
@@ -447,6 +492,7 @@ namespace Baseball.Presentation.Tests.Screens
             IBaseballExternalNavigation, IBaseballRetiredDailyRouteFallback
         {
             private ShellRoute? _externalRoute;
+            private bool _weeklyBoardActions;
             public event Action Changed;
             public ShellRuntimeStatus Status { get; private set; } = ShellRuntimeStatus.Loading;
             public ShellRoute PreferredRoute { get; private set; } = ShellRoute.Opening;
@@ -462,23 +508,53 @@ namespace Baseball.Presentation.Tests.Screens
             public ShellRoute? LastObservedRoute { get; private set; }
             public int ExternalRouteConsumptionCount { get; private set; }
             public int ExternalRouteAcknowledgementCount { get; private set; }
+            public int ExecutedActionCount { get; private set; }
+            public string LastExecutedActionId { get; private set; }
 
-            public BaseballScreenViewModel Read(ShellRoute route) => new BaseballScreenViewModel(
-                route,
-                "routing-test",
-                "테스트",
-                "복귀",
-                "저장된 화면",
-                "실제 노출 경로를 확인합니다.",
-                Array.Empty<ScreenSectionViewModel>(),
-                Array.Empty<ScreenActionViewModel>(),
-                showsBottomNavigation: false);
+            public BaseballScreenViewModel Read(ShellRoute route)
+            {
+                IReadOnlyList<ScreenActionViewModel> actions = Array.Empty<ScreenActionViewModel>();
+                if (_weeklyBoardActions && route == ShellRoute.Records)
+                    actions = new[]
+                    {
+                        new ScreenActionViewModel(
+                            "navigate_weekly",
+                            "주간 야구 노트",
+                            ShellRoute.Weekly,
+                            ScreenActionStyle.Secondary)
+                    };
+                else if (_weeklyBoardActions && route == ShellRoute.Weekly)
+                    actions = new[]
+                    {
+                        new ScreenActionViewModel(
+                            "claim_weekly",
+                            "주간 보상 받기",
+                            ShellRoute.Weekly,
+                            ScreenActionStyle.Secondary)
+                    };
+                return new BaseballScreenViewModel(
+                    route,
+                    "routing-test",
+                    "테스트",
+                    "복귀",
+                    "저장된 화면",
+                    "실제 노출 경로를 확인합니다.",
+                    Array.Empty<ScreenSectionViewModel>(),
+                    actions,
+                    showsBottomNavigation: false);
+            }
 
             public Task<ShellActionResult> ExecuteAsync(
                 ShellRoute route,
                 ScreenActionViewModel action,
-                CancellationToken cancellationToken) =>
-                Task.FromResult(ShellActionResult.Success());
+                CancellationToken cancellationToken)
+            {
+                ExecutedActionCount++;
+                LastExecutedActionId = action?.Id;
+                return Task.FromResult(ShellActionResult.Success(action?.Target));
+            }
+
+            public void EnableWeeklyBoardActions() => _weeklyBoardActions = true;
 
             public void PublishReady(ShellRoute preferred, bool shouldHoldOpening)
             {

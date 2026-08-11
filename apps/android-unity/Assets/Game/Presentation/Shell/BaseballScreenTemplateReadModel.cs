@@ -16,10 +16,12 @@ namespace Baseball.Presentation.Shell
         {
             _copy = copy ?? throw new ArgumentNullException(nameof(copy));
             _screens = BuildScreens();
-            _routes = new List<ShellRoute>((ShellRoute[])Enum.GetValues(typeof(ShellRoute)));
-            foreach (ShellRoute route in _routes)
+            _routes = new List<ShellRoute>();
+            foreach (ShellRoute route in (ShellRoute[])Enum.GetValues(typeof(ShellRoute)))
             {
+                if (route == ShellRoute.Daily) continue;
                 if (!_screens.ContainsKey(route)) throw new InvalidOperationException($"화면 계약이 없습니다: {route}");
+                _routes.Add(route);
             }
         }
 
@@ -129,11 +131,6 @@ namespace Baseball.Presentation.Shell
                     Section("summary", ScreenSectionTone.Milestone, Row("seasons"), Row("career_record"), Row("hall"))),
                 Actions(Destructive("retire", ShellRoute.Records, true), Secondary("continue", ShellRoute.ProWeek))));
 
-            screens.Add(ShellRoute.Daily, Screen(Activate(ShellRoute.Daily), "meta", true,
-                Sections(
-                    Section("retired", ScreenSectionTone.Information, Row("detail"))),
-                Actions(Primary("return", ShellRoute.Records))));
-
             screens.Add(ShellRoute.Weekly, Screen(Activate(ShellRoute.Weekly), "meta", true,
                 Sections(
                     Section("goals", ScreenSectionTone.Information, Row("goal_one"), Row("goal_two"), Row("goal_three")),
@@ -146,7 +143,11 @@ namespace Baseball.Presentation.Shell
                     Section("ability", ScreenSectionTone.Plain, Row("fastball"), Row("control"), Row("stamina")),
                     Section("scout", ScreenSectionTone.Information, Row("personality"), Row("forecast")),
                     Section("games", ScreenSectionTone.Plain, Row("record"), Row("awakenings"), Row("news"))),
-                Actions(Secondary("league", ShellRoute.League), Secondary("achievements", ShellRoute.Achievements), Secondary("archive", ShellRoute.LifeArchive))));
+                Actions(
+                    Secondary("weekly", ShellRoute.Weekly),
+                    Secondary("league", ShellRoute.League),
+                    Secondary("achievements", ShellRoute.Achievements),
+                    Secondary("archive", ShellRoute.LifeArchive))));
 
             screens.Add(ShellRoute.League, Screen(Activate(ShellRoute.League), "records", true,
                 Sections(

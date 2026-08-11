@@ -172,28 +172,11 @@ namespace Baseball.Application.Meta
                 activeHighSchoolGames = Math.Max(0, highSchool.Performance?.ImportantGames ?? 0);
             }
 
-            // Pro season totals include every auto-simulated outing. They are not evidence that
-            // the player completed an interactive important game. Only persisted game lines with
-            // Played=true are safe to recover; older saves without those lines intentionally
-            // migrate with a lower (possibly zero) Pro contribution.
-            var activeProGames = 0;
-            var pro = aggregate.Pro;
-            if (pro != null)
-            {
-                var completeLines = pro.RecordBook != null &&
-                                    pro.RecordBook.SeasonGameLinesAvailable
-                    ? pro.RecordBook.SeasonGameLines
-                    : null;
-                var evidence = completeLines ?? pro.RecentGameLines ??
-                    Array.Empty<CareerGameLineReadModel>();
-                activeProGames = evidence
-                    .Where(value => value != null && value.Played)
-                    .GroupBy(value => value.Season + ":" + value.Week + ":" + value.OutingNumber,
-                        StringComparer.Ordinal)
-                    .Count();
-            }
-
-            var lowerBound = (long)archivedHighSchoolGames + activeHighSchoolGames + activeProGames;
+            // Pro season totals contain auto-simulated outings, while old Application saves do
+            // not carry a complete lifetime ledger of interactive Pro game receipts. Even a
+            // current-season Played line would under-represent prior seasons, so v3 migration
+            // deliberately contributes zero rather than publishing a non-monotonic estimate.
+            var lowerBound = (long)archivedHighSchoolGames + activeHighSchoolGames;
             return lowerBound >= int.MaxValue ? int.MaxValue : (int)lowerBound;
         }
     }

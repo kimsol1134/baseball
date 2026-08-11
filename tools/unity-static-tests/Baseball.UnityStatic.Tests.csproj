@@ -33,6 +33,7 @@
     <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ProRetirementAnalyticsPolicy.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ReminderOpenReceiptPolicy.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ContentExposurePolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/LifeCardShareCopy.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsEvent.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsContracts.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsPrivacyGuard.cs" />
@@ -63,6 +64,7 @@
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ProRetirementAnalyticsPolicyTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ReminderOpenReceiptPolicyTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ContentExposurePolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/LifeCardShareCopyTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ProductionAnalyticsSourceContractTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Platform/AnalyticsContractTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Platform/AndroidPlatformContractTests.cs" />

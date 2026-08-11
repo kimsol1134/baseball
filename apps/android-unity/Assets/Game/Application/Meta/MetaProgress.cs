@@ -229,7 +229,7 @@ namespace Baseball.Application.Meta
             Drafted = drafted;
             DraftEvaluation = draftEvaluation;
             FinalRatings = finalRatings;
-            HighSchoolPerformance = highSchoolPerformance;
+            HighSchoolPerformance = highSchoolPerformance ?? new CareerPerformanceReadModel();
             ProSeasons = proSeasons;
             ProStrikeouts = proStrikeouts;
             ProAwards = proAwards;
@@ -271,6 +271,10 @@ namespace Baseball.Application.Meta
         public bool Drafted { get; }
         public int DraftEvaluation { get; }
         public PitcherRatingsReadModel FinalRatings { get; }
+        /// <summary>
+        /// Frozen high-school totals. Old JSON that omitted this object is normalized to an
+        /// immutable zero record so archive/share consumers never need to synthesize it.
+        /// </summary>
         public CareerPerformanceReadModel HighSchoolPerformance { get; }
         public int ProSeasons { get; }
         public int ProStrikeouts { get; }
@@ -369,9 +373,10 @@ namespace Baseball.Application.Meta
         public string EquippedSignatureLegacyId { get; }
         public ReturnWelcomeHandledState ReturnWelcomeHandled { get; }
         /// <summary>
-        /// Monotonic number of official games durably completed on this installation. It is not
-        /// derived from current/archive snapshots, so settlement and rebirth cannot double-count
-        /// or decrease it.
+        /// Monotonic number of interactive high-school or Pro important games durably completed
+        /// on this installation. Auto-simulated outings, tutorials, challenge runs, and retired
+        /// Daily data never contribute. It is not derived during normal runtime, so settlement
+        /// and rebirth cannot double-count or decrease it.
         /// </summary>
         public int CompletedGameCount { get; }
 

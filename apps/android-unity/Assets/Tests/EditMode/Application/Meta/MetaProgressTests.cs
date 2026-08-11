@@ -32,43 +32,43 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
-        public void DailyStreak_IsCappedAt366AndTracksDailyInningSeparately()
+        public void DailyStreak_IsCappedAt366AndPreservesRetiredDailyWireUnchanged()
         {
-            var current = new DailyStreakState("20260810", null, 366, 366);
-            var next = DailyStreakRules.RecordDailyInning(
+            var legacy = new LegacyDailyInningData(
+                "20260809", 2, 913, null, "legacy-scenario", "legacy-seed");
+            var current = new DailyStreakState("20260810", "20260809", 366, 366, legacy);
+            var next = DailyStreakRules.RecordBaseball(
                 current,
                 new DateTimeOffset(2026, 8, 11, 3, 0, 0, TimeSpan.Zero));
 
             Assert.That(next.CurrentStreak, Is.EqualTo(366));
             Assert.That(next.BestStreak, Is.EqualTo(366));
             Assert.That(next.LastBaseballDayKey, Is.EqualTo("20260811"));
-            Assert.That(next.LastDailyInningDayKey, Is.EqualTo("20260811"));
+            Assert.That(next.LastDailyInningDayKey, Is.EqualTo("20260809"));
+            Assert.That(next.DailyInning, Is.SameAs(legacy));
         }
 
         [Test]
-        public void DailyInningRules_UseExactScoreAndAdditivelyMigrateLegacyCompletion()
+        public void RetiredDailyWire_RoundTripsRawValuesWithoutExecutableRules()
         {
             var report = new PitchGameReport(
                 "daily", 12, 4, 3, 2, 1, 0, 1);
-            Assert.That(DailyInningRules.Score(report), Is.EqualTo(600));
-            Assert.That(DailyInningRules.SessionSeed("20260811"),
-                Is.EqualTo("11241842111613215390"));
-
             var legacy = new DailyStreakState(
-                "20260811", "20260811", 4, 7);
+                "20260811",
+                "20260811",
+                4,
+                7,
+                new LegacyDailyInningData(
+                    "20260811",
+                    2,
+                    913,
+                    report,
+                    "legacy-scenario-wire",
+                    "legacy-seed-wire"));
             var meta = MetaProgressState.Initial.With(
-                creditedRewardIds: new[] { DailyInningRules.RewardId("20260811") },
+                creditedRewardIds: new[] { "daily-inning:20260811" },
                 daily: legacy);
-            var projection = DailyInningRules.Project(
-                meta,
-                new DateTimeOffset(2026, 8, 11, 2, 0, 0, TimeSpan.Zero));
-
-            Assert.That(projection.AttemptCount, Is.EqualTo(1));
-            Assert.That(projection.RemainingAttempts, Is.EqualTo(2));
-            Assert.That(projection.BestReport, Is.Null,
-                "old saves never invent a historical score or report");
-            Assert.That(projection.RewardCredited, Is.True);
-            Assert.That(new GameSaveValidator().Validate(new GameSaveAggregate(
+            var aggregate = new GameSaveAggregate(
                 GameSaveAggregate.CurrentAggregateVersion,
                 1,
                 "install-a",
@@ -78,7 +78,25 @@ namespace Baseball.Application.Tests
                 meta,
                 null,
                 null,
-                Array.Empty<string>())).IsValid, Is.True);
+                Array.Empty<string>());
+            Assert.That(new GameSaveValidator().Validate(aggregate).IsValid, Is.True);
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(aggregate);
+            var restored = Newtonsoft.Json.JsonConvert.DeserializeObject<GameSaveAggregate>(json);
+
+            Assert.That(restored.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(2));
+            Assert.That(restored.Meta.Daily.DailyInning.BestScore, Is.EqualTo(913));
+            Assert.That(restored.Meta.Daily.DailyInning.BestReport.GameId, Is.EqualTo("daily"));
+            Assert.That(restored.Meta.Daily.DailyInning.ScenarioId,
+                Is.EqualTo("legacy-scenario-wire"));
+            Assert.That(restored.Meta.Daily.DailyInning.SessionSeed,
+                Is.EqualTo("legacy-seed-wire"));
+            Assert.That(restored.Meta.CreditedRewardIds,
+                Is.EqualTo(new[] { "daily-inning:20260811" }));
+            Assert.That(typeof(PitchScenarioFactory).GetMethod("Daily"), Is.Null);
+            Assert.That(typeof(DailyStreakRules).GetMethod("RecordDailyInning"), Is.Null);
+            Assert.That(typeof(GameCommand).Assembly.GetType(
+                "Baseball.Application.Commands.CompleteDailyInningCommand"), Is.Null);
         }
 
         [Test]
@@ -976,7 +994,7 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
-        public void VersionThreeCompletedGames_RecoversOnlyPersistedDirectProLines()
+        public void VersionThreeCompletedGames_DoesNotEstimateProLifetimeFromPartialLines()
         {
             var direct = new CareerGameLineReadModel(
                 2, 8, 12, true, false,
@@ -1001,8 +1019,8 @@ namespace Baseball.Application.Tests
 
             var migration = GameSaveMigration.Upgrade(legacy).Aggregate;
 
-            Assert.That(migration.Meta.CompletedGameCount, Is.EqualTo(1),
-                "only one distinct Played=true line is authoritative direct-game evidence");
+            Assert.That(migration.Meta.CompletedGameCount, Is.Zero,
+                "a current-season direct line is not a complete monotonic lifetime ledger");
         }
 
         [Test]
@@ -1073,6 +1091,55 @@ namespace Baseball.Application.Tests
             Assert.That(migrated.Aggregate.Meta.LifeArchive.Single().SignatureLegacy, Is.Null);
             Assert.That(migrated.Aggregate.Meta.LifeArchive.Single().SignatureLegacyCandidates, Is.Empty);
             Assert.That(new GameSaveValidator().Validate(migrated.Aggregate).IsValid, Is.True);
+        }
+
+        [Test]
+        public void LegacyArchiveNullHighSchoolPerformance_NormalizesToFrozenZeroRecord()
+        {
+            var source = new LifeArchiveRecord(
+                "life:1:hs-null",
+                1,
+                "민서준",
+                "hs-null",
+                null,
+                "school-a",
+                "새빛고",
+                false,
+                0,
+                new PitcherRatingsReadModel(48, 52, 44, 46),
+                new CareerPerformanceReadModel(1, 9, 3, 2, 1, 1, 0),
+                0,
+                0,
+                0,
+                0,
+                4);
+            var wire = Newtonsoft.Json.Linq.JObject.FromObject(source);
+            wire["HighSchoolPerformance"] = Newtonsoft.Json.Linq.JValue.CreateNull();
+
+            var restoredRecord = wire.ToObject<LifeArchiveRecord>();
+            var aggregate = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                5,
+                "install-a",
+                ApplicationStage.BetweenLives,
+                null,
+                null,
+                MetaProgressState.Initial.With(
+                    lifeNumber: 2,
+                    lifeArchive: new[] { restoredRecord }),
+                null,
+                null,
+                Array.Empty<string>());
+
+            Assert.That(restoredRecord.HighSchoolPerformance, Is.Not.Null);
+            Assert.That(restoredRecord.HighSchoolPerformance.ImportantGames, Is.Zero);
+            Assert.That(restoredRecord.HighSchoolPerformance.Pitches, Is.Zero);
+            Assert.That(new GameSaveValidator().Validate(aggregate).IsValid, Is.True);
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(aggregate);
+            var roundTrip = Newtonsoft.Json.JsonConvert.DeserializeObject<GameSaveAggregate>(json);
+            Assert.That(roundTrip.Meta.LifeArchive.Single().HighSchoolPerformance, Is.Not.Null);
+            Assert.That(roundTrip.Meta.LifeArchive.Single().HighSchoolPerformance.Strikeouts, Is.Zero);
         }
 
         [Test]

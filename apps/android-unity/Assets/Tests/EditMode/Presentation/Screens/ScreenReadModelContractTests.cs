@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Baseball.Application.Persistence;
 using Baseball.Presentation.Shell;
 using NUnit.Framework;
 using UnityEditor;
@@ -26,8 +27,9 @@ namespace Baseball.Presentation.Tests.Screens
         public void EveryRouteHasACompleteKoreanViewModel()
         {
             ShellRoute[] routes = (ShellRoute[])Enum.GetValues(typeof(ShellRoute));
-            Assert.That(_readModel.Routes, Has.Count.EqualTo(routes.Length));
-            foreach (ShellRoute route in routes)
+            Assert.That(_readModel.Routes, Has.Count.EqualTo(routes.Length - 1));
+            Assert.That(new List<ShellRoute>(_readModel.Routes).Contains(ShellRoute.Daily), Is.False);
+            foreach (ShellRoute route in _readModel.Routes)
             {
                 BaseballScreenViewModel screen = _readModel.Read(route);
                 Assert.That(screen.Route, Is.EqualTo(route));
@@ -45,6 +47,21 @@ namespace Baseball.Presentation.Tests.Screens
                     Assert.That(ContainsHangul(action.Label), Is.True, route + "/" + action.Id);
                 }
             }
+        }
+
+        [Test]
+        public void ProductionReadModelConstructsWithoutAProductScreenForLegacyDailyRoute()
+        {
+            GameSaveAggregate state = GameSaveAggregate.Initial("install");
+            StoreBaseballCareerReadModel model = null;
+
+            Assert.DoesNotThrow(() => model = new StoreBaseballCareerReadModel(
+                KoreanUiCopyCatalog.LoadDefault(),
+                () => state,
+                () => ShellRuntimeStatus.Ready,
+                () => string.Empty));
+            Assert.That(new List<ShellRoute>(model.Routes).Contains(ShellRoute.Daily), Is.False);
+            Assert.That(model.Read(ShellRoute.Daily).Route, Is.EqualTo(ShellRoute.Opening));
         }
 
         [Test]
@@ -105,7 +122,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void SecondarySurfacesAreReachableFromBottomDestinations()
         {
-            Assert.That(HasActionTo(_readModel.Read(ShellRoute.Daily), ShellRoute.Weekly), Is.False);
+            Assert.That(HasActionTo(_readModel.Read(ShellRoute.Records), ShellRoute.Weekly), Is.True);
             Assert.That(HasActionTo(_readModel.Read(ShellRoute.Records), ShellRoute.League), Is.True);
             Assert.That(HasActionTo(_readModel.Read(ShellRoute.Records), ShellRoute.Achievements), Is.True);
             Assert.That(HasActionTo(_readModel.Read(ShellRoute.Records), ShellRoute.LifeArchive), Is.True);

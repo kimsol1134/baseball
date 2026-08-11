@@ -133,9 +133,7 @@ namespace Baseball.Presentation.Shell
             if (route == ShellRoute.PitchHandoff)
             {
                 _pitchOrigin = CurrentRoute;
-                _pitchReturnRoute = CurrentRoute == ShellRoute.Daily
-                    ? NormalizeRetiredDailyRoute(CurrentRoute, _runtime)
-                    : ShellRoute.Awakening;
+                _pitchReturnRoute = ShellRoute.Awakening;
             }
             _history.Push(CurrentRoute);
             CurrentRoute = route;

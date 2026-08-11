@@ -36,7 +36,7 @@ namespace Baseball.Presentation.Shell
         public static ReturnPlanState PersonalizedNotification(ReturnPlanState plan)
         {
             return plan != null && !plan.Dismissed &&
-                plan.Destination != ReturnPlanDestination.DailyInning &&
+                !ReturnPlanRules.IsRetiredDailyPlan(plan) &&
                 string.Equals(plan.ExperimentVariant, "guided", StringComparison.Ordinal)
                 ? plan
                 : null;

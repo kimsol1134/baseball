@@ -64,7 +64,6 @@ namespace Baseball.Presentation.Shell
         private bool _reminderOpenInFlight;
         private bool _reminderNavigationReceiptInFlight;
         private bool _retiredDailyCleanupInFlight;
-        private ShellRoute? _pitchReturnOverride;
         private ShellRoute? _externalRoute;
         private string _externalRouteReminderToken;
         private ShellRoute? _consumedExternalRoute;
@@ -100,7 +99,7 @@ namespace Baseball.Presentation.Shell
 
         public event Action Changed;
         public ShellRuntimeStatus Status => _status;
-        public ShellRoute PreferredRoute => _pitchReturnOverride ??
+        public ShellRoute PreferredRoute =>
             (_store?.Current?.PitchResume?.CareerKind == PitchCareerKind.Daily
                 ? RetiredDailyFallbackRoute
                 : _readModel.PreferredRoute);
@@ -454,7 +453,6 @@ namespace Baseball.Presentation.Shell
                 route.ToString().ToLowerInvariant(),
                 pitchStageLoaded,
                 QualitySettings.names.Length == 0 ? "unknown" : QualitySettings.names[QualitySettings.GetQualityLevel()]));
-            if (!pitchStageLoaded && _pitchReturnOverride == route) _pitchReturnOverride = null;
             if (route == ShellRoute.Weekly)
             {
                 ObserveWeeklyProgram();
@@ -777,7 +775,6 @@ namespace Baseball.Presentation.Shell
                     return nextIntent == null ? null : new SetNextRunIntentCommand(nextIntent);
                 case "claim_weekly": return new ClaimWeeklyRewardCommand(now);
                 case "begin_pitch": return BeginPitch(state, now);
-                case "begin_daily_pitch": return null;
                 case "begin_tutorial_pitch": return BeginTutorialPitch(state, now);
                 case "acknowledge_pitch_result":
                     return string.IsNullOrWhiteSpace(state.PendingPitchCompletion?.CompletionId)
@@ -890,7 +887,7 @@ namespace Baseball.Presentation.Shell
         {
             cancellationToken.ThrowIfCancellationRequested();
             LifeArchiveRecord life = SelectedLifeRecordForUi(_store.Current);
-            string text = BuildLifeCardText(life);
+            string text = LifeCardShareCopy.Build(life);
             bool imageOpened = pngBytes != null && AndroidShareService.TrySharePng(
                 "라이프 카드 공유",
                 pngBytes,
@@ -927,14 +924,6 @@ namespace Baseball.Presentation.Shell
             return archive.Where(value => value != null)
                 .OrderByDescending(value => value.LifeNumber)
                 .FirstOrDefault();
-        }
-
-        private static string BuildLifeCardText(LifeArchiveRecord life)
-        {
-            if (life == null) return "야구 못하면 또 환생함 · 아직 완성한 야구 인생이 없습니다.";
-            return "야구 못하면 또 환생함\n" + life.LifeNumber + "번째 인생 · " + life.PlayerName +
-                "\n고교 탈삼진 " + life.HighSchoolPerformance.Strikeouts + " · 프로 탈삼진 " + life.ProStrikeouts +
-                "\n야구혼 +" + life.SoulEarned;
         }
 
         private static string StartupFailureMessage(Exception exception)
@@ -1020,7 +1009,7 @@ namespace Baseball.Presentation.Shell
                         personalized.SavedDayKey,
                         personalized.DevelopmentRulesVersion ?? 0)
                     : null;
-                reminders.ConfigurePlan(reminderPlan, Array.Empty<string>());
+                reminders.ConfigurePlan(reminderPlan);
                 reminders.ApplySavedEnabled(settings.NotificationsEnabled);
             }
         }
@@ -1053,17 +1042,17 @@ namespace Baseball.Presentation.Shell
             {
                 DispatchResult<GameSaveAggregate> result = await _store.DispatchAsync(
                     new CommandEnvelope<GameCommand>(
-                        "retired-daily:" + before.Revision + ":" + (++_commandSequence),
+                        "legacy-pitch-cleanup:" + before.Revision + ":" + (++_commandSequence),
                         before.Revision,
                         new AbandonPitchSessionCommand(resume.GameId)),
                     CancellationToken.None);
                 if (!result.IsSuccess)
-                    _statusMessage = "이전 일일 경기 기록은 보존했지만 진행 정리를 저장하지 못했습니다. 다음 실행에서 다시 확인합니다.";
+                    _statusMessage = "이전 버전의 경기 기록은 보존했지만 중단된 진행을 정리하지 못했습니다. 다음 실행에서 다시 확인합니다.";
             }
             catch (Exception exception)
             {
-                CrashReporting.RecordUnexpected(exception, "retired_daily_cleanup");
-                _statusMessage = "이전 일일 경기 진행을 정리하지 못했습니다. 현재 커리어는 안전하게 열었습니다.";
+                CrashReporting.RecordUnexpected(exception, "legacy_pitch_cleanup");
+                _statusMessage = "이전 버전의 중단된 경기 진행을 정리하지 못했습니다. 현재 커리어는 안전하게 열었습니다.";
             }
             finally
             {

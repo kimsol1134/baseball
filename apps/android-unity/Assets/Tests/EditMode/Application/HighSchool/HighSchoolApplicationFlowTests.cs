@@ -719,7 +719,7 @@ namespace Baseball.Application.Tests
                 "BaseballRetiredDaily",
                 Guid.NewGuid().ToString("N"));
             var instant = new DateTimeOffset(2026, 8, 11, 2, 0, 0, TimeSpan.Zero);
-            var rewardId = DailyInningRules.RewardId("20260811");
+            const string rewardId = "daily-inning:20260811";
             try
             {
                 var legacyBest = new PitchGameReport(
@@ -729,12 +729,13 @@ namespace Baseball.Application.Tests
                     "20260811",
                     1,
                     1,
-                    new DailyInningDayState(
+                    new LegacyDailyInningData(
                         "20260811",
                         2,
-                        DailyInningRules.Score(legacyBest),
-                        legacyBest));
-                var scenario = PitchScenarioFactory.Daily("20260811");
+                        913,
+                        legacyBest,
+                        "legacy-daily-scenario",
+                        "legacy-daily-seed"));
                 var initial = GameSaveAggregate.Initial("install-a").Commit(
                     "legacy-daily-fixture",
                     stage: ApplicationStage.HighSchool,
@@ -748,12 +749,12 @@ namespace Baseball.Application.Tests
                         legacyBest.GameId,
                         PitchCareerKind.Daily,
                         "daily:20260811",
-                        scenario.ScenarioId,
-                        DailyInningRules.SessionSeed("20260811"),
-                        scenario.MaximumBatters,
+                        "legacy-daily-scenario",
+                        "legacy-daily-seed",
+                        6,
                         1,
                         "{\"legacy\":true}",
-                        scenario,
+                        null,
                         legacyBest,
                         consumedPitchIds: new[] { "legacy-pitch" },
                         awaitingCompletion: true));
@@ -765,14 +766,13 @@ namespace Baseball.Application.Tests
                 using (var store = await GameApplicationStore.OpenAsync(
                            Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
                 {
-                    var projection = DailyInningRules.Project(store.Current.Meta, instant);
-                    Assert.That(projection.AttemptCount, Is.EqualTo(2));
-                    Assert.That(projection.RemainingAttempts, Is.EqualTo(1));
-                    Assert.That(projection.BestScore, Is.EqualTo(900));
-                    Assert.That(projection.BestReport.GameId, Is.EqualTo("legacy-daily"));
-                    Assert.That(projection.RewardCredited, Is.True);
-                    Assert.That(projection.IsRetired, Is.True);
-                    Assert.That(projection.CanStart, Is.False);
+                    Assert.That(store.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(2));
+                    Assert.That(store.Current.Meta.Daily.DailyInning.BestScore, Is.EqualTo(913));
+                    Assert.That(store.Current.Meta.Daily.DailyInning.BestReport.GameId,
+                        Is.EqualTo("legacy-daily"));
+                    Assert.That(store.Current.Meta.Daily.DailyInning.ScenarioId,
+                        Is.EqualTo("legacy-daily-scenario"));
+                    Assert.That(store.Current.Meta.CreditedRewardIds, Does.Contain(rewardId));
                     var revision = store.Current.Revision;
                     var completion = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
                         "retired-complete",
@@ -797,7 +797,6 @@ namespace Baseball.Application.Tests
                                  new BeginPitchSessionCommand(
                                      "new-daily", PitchCareerKind.Daily, "daily", 1,
                                      instant.AddMinutes(1)),
-                                 new CompleteDailyInningCommand(instant.AddMinutes(1)),
                                  new SetReturnPlanCommand(ReturnPlanState.Create(
                                      "옛 일일 계획",
                                      "호환을 위해 읽기만 합니다.",
@@ -829,7 +828,7 @@ namespace Baseball.Application.Tests
                 {
                     Assert.That(restarted.Current.PitchResume, Is.Null);
                     Assert.That(restarted.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(2));
-                    Assert.That(restarted.Current.Meta.Daily.DailyInning.BestScore, Is.EqualTo(900));
+                    Assert.That(restarted.Current.Meta.Daily.DailyInning.BestScore, Is.EqualTo(913));
                     Assert.That(restarted.Current.Meta.CreditedRewardIds,
                         Is.EqualTo(new[] { rewardId }));
                     Assert.That(restarted.Current.Meta.SoulBalance, Is.EqualTo(5));
@@ -1221,6 +1220,7 @@ namespace Baseball.Application.Tests
                     Assert.That(restarted.Current.HighSchool.Performance.ImportantGames, Is.Zero);
                     Assert.That(restarted.Current.HighSchool.Performance.Pitches, Is.Zero);
                     Assert.That(restarted.Current.Meta.Daily.CurrentStreak, Is.Zero);
+                    Assert.That(restarted.Current.Meta.CompletedGameCount, Is.Zero);
                     Assert.That(restarted.Current.Meta.Achievements.Unlocked, Is.Empty);
                 }
 
@@ -1243,6 +1243,7 @@ namespace Baseball.Application.Tests
                     Assert.That(NextActionPlanner.Resolve(recovered.Current).Route,
                         Is.EqualTo("high-school/school-selection"));
                     Assert.That(recovered.Current.HighSchool.TutorialAttemptCount, Is.EqualTo(2));
+                    Assert.That(recovered.Current.Meta.CompletedGameCount, Is.Zero);
                 }
             }
             finally

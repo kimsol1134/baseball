@@ -239,7 +239,7 @@ namespace Baseball.Application.Persistence
             if (value.Meta == null) return SaveValidationResult.Invalid("aggregate.meta");
             if (value.Meta.CompletedGameCount < 0)
                 return SaveValidationResult.Invalid("aggregate.completed_game_count");
-            if (!DailyInningRules.IsValid(value.Meta.Daily))
+            if (!LegacyDailyInningCompatibility.IsValid(value.Meta.Daily))
                 return SaveValidationResult.Invalid("aggregate.daily_inning");
             if (!ValidSignatureLegacy(value.HighSchool))
                 return SaveValidationResult.Invalid("aggregate.signature_legacy");
@@ -259,6 +259,7 @@ namespace Baseball.Application.Persistence
             }
             if (value.Meta.LifeArchive.Any(record =>
                     record == null ||
+                    record.HighSchoolPerformance == null ||
                     record.PlayerLegacy != null &&
                     !PlayerLegacyRules.IsValid(record.PlayerLegacy) ||
                     record != null && !ValidLifeArchiveDetail(record)))

@@ -393,18 +393,6 @@ namespace Baseball.Application.Commands
         public bool CountsAsBaseball { get; }
     }
 
-    public sealed class CompleteDailyInningCommand : GameCommand
-    {
-        public CompleteDailyInningCommand(DateTimeOffset completedAt, int soulReward = 5)
-        {
-            CompletedAt = completedAt;
-            SoulReward = soulReward;
-        }
-
-        public DateTimeOffset CompletedAt { get; }
-        public int SoulReward { get; }
-    }
-
     public sealed class ClaimWeeklyRewardCommand : GameCommand
     {
         public ClaimWeeklyRewardCommand(DateTimeOffset claimedAt)

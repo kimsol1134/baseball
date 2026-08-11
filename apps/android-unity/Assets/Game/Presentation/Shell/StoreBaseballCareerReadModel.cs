@@ -51,10 +51,11 @@ namespace Baseball.Presentation.Shell
 
         public BaseballScreenViewModel Read(ShellRoute route)
         {
-            if (_status() != ShellRuntimeStatus.Ready || _snapshot() == null)
+            GameSaveAggregate state = _snapshot();
+            if (route == ShellRoute.Daily) route = RetiredDailyFallbackFor(state);
+            if (_status() != ShellRuntimeStatus.Ready || state == null)
                 return RuntimeStatusScreen.Create(route, _status(), _statusMessage());
 
-            GameSaveAggregate state = _snapshot();
             BaseballScreenViewModel template = _template.Read(route);
             return new BaseballScreenViewModel(
                 route,
@@ -261,22 +262,6 @@ namespace Baseball.Presentation.Shell
                                     ReturnPlanRules.ContinueTitle(welcome.Destination))
                             }));
                     }
-                    break;
-                case ShellRoute.Daily:
-                    projected = new List<ScreenSectionViewModel>
-                    {
-                        new ScreenSectionViewModel(
-                            "retired-daily-inning",
-                            "일일 도전 재설계 중",
-                            ScreenSectionTone.Information,
-                            new[]
-                            {
-                                new ScreenRowViewModel(
-                                    "retired-daily-inning-copy",
-                                    "진행 중인 선수로 돌아갑니다",
-                                    "이전 링크는 현재 고교·프로 커리어의 안전한 화면으로 연결됩니다.")
-                            })
-                    };
                     break;
                 case ShellRoute.HighSchoolOverview:
                     AddHighSchoolCompetition(projected, state.HighSchool);
@@ -1160,7 +1145,46 @@ namespace Baseball.Presentation.Shell
                 result.AddRange(WeeklySections(state.Meta.Weekly));
             if (result.Count == 0)
                 result.Add(EmptySection("records-empty", "경기 기록", "아직 저장된 경기 기록이 없습니다."));
+            result.Insert(0, WeeklyRecordsEntrySection(state.Meta?.Weekly));
             return result;
+        }
+
+        private static ScreenSectionViewModel WeeklyRecordsEntrySection(WeeklyProgressState weekly)
+        {
+            WeeklyProgramState program = weekly?.Program;
+            if (program == null)
+            {
+                return new ScreenSectionViewModel(
+                    "records-weekly-note",
+                    "주간 야구 노트",
+                    ScreenSectionTone.Information,
+                    new[]
+                    {
+                        new ScreenRowViewModel(
+                            "records-weekly-note-open",
+                            "이번 주 목표",
+                            "노트를 열어 세 가지 과제를 확인하세요.",
+                            "처음 열 때 현재 선수 생활에 맞는 주간 보드를 안전하게 저장합니다.")
+                    });
+            }
+
+            string reward = program.Claimed
+                ? "이번 주 도장을 이미 받았습니다."
+                : program.RewardReady
+                    ? "과제 두 개를 마쳐 도장 보상을 받을 수 있습니다."
+                    : "과제 두 개를 마치면 도장 보상을 받을 수 있습니다.";
+            return new ScreenSectionViewModel(
+                "records-weekly-note",
+                "주간 야구 노트",
+                program.RewardReady ? ScreenSectionTone.Positive : ScreenSectionTone.Information,
+                new[]
+                {
+                    new ScreenRowViewModel(
+                        "records-weekly-note-progress",
+                        program.WeekKey,
+                        program.CompletedCount + "/" + program.Tasks.Count + "개 완료",
+                        reward)
+                });
         }
 
         private static string PerNineLine(int strikeouts, int walks, int runs, int outs)
@@ -1756,7 +1780,6 @@ namespace Baseball.Presentation.Shell
             switch (kind)
             {
                 case WeeklyTaskKinds.PlayedOnTwoDays: return "서로 다른 이틀에 플레이";
-                case WeeklyTaskKinds.DailyInningCompleted: return "종료된 일일 과제";
                 case WeeklyTaskKinds.ImportantGamesCompleted: return "중요 경기 완료";
                 case WeeklyTaskKinds.ChaptersAdvanced: return "고교 이야기 전진";
                 case WeeklyTaskKinds.NextRunStarted: return "다음 인생 시작";
@@ -1843,7 +1866,6 @@ namespace Baseball.Presentation.Shell
                 case "hall": value = state.Pro == null ? "0" : state.Pro.HallOfFameScore.ToString(); break;
                 case "players": value = state.Meta.LifeArchive.Count.ToString(); break;
                 case "legacies": value = state.Meta.InheritedMemories.Count.ToString(); break;
-                case "streak": value = state.Meta.Daily.CurrentStreak.ToString(); break;
                 case "unlocked": value = state.Meta.Achievements.Unlocked.Count.ToString(); break;
                 case "player_name": value = latestLife?.PlayerName ?? "기록 없음"; break;
                 case "soul": value = state.Meta.SoulBalance.ToString(); break;
@@ -1862,17 +1884,12 @@ namespace Baseball.Presentation.Shell
                 case "record": value = performance == null
                     ? "기록 없음"
                     : "탈삼진 " + performance.Strikeouts + " · 볼넷 " + performance.Walks + " · 실점 " + performance.RunsAllowed; break;
-                case "best": value = state.Meta.Daily.BestStreak.ToString(); break;
-                case "attempt": value = "재설계 중"; break;
                 case "stamp_status": value = state.Meta.Weekly.Program == null
                     ? "프로그램 준비 전"
                     : state.Meta.Weekly.Program.CompletedCount + "/" + state.Meta.Weekly.Program.Tasks.Count; break;
                 case "drafted": value = state.Meta.LifeArchive.Count(record => record.Drafted).ToString(); break;
                 case "awakenings": value = state.HighSchool?.Awakenings.Count.ToString() ?? "0"; break;
                 case "detail" when route == ShellRoute.Opening:
-                case "challenge_detail" when route == ShellRoute.Daily:
-                case "score_rule" when route == ShellRoute.Daily:
-                case "reward_detail" when route == ShellRoute.Daily:
                     return row;
                 default:
                     return null;
@@ -2218,11 +2235,16 @@ namespace Baseball.Presentation.Shell
                     if (state.Pro?.Phase == ProCareerPhase.Completed)
                         return Actions(Command("retire_pro", "은퇴 확정", ShellRoute.RunRecap, "프로 기록을 유산에 저장합니다.", ScreenActionStyle.Destructive, true));
                     break;
-                case ShellRoute.Daily:
-                    return Actions(Navigate(
-                        "retired_daily_return",
-                        "게임으로 돌아가기",
-                        PreferredRouteFor(state)));
+                case ShellRoute.Records:
+                    return Actions(
+                        Navigate(
+                            "navigate_weekly",
+                            "주간 야구 노트",
+                            ShellRoute.Weekly,
+                            "이번 주 세 가지 과제와 도장 보상을 확인합니다."),
+                        Navigate("navigate_league", "리그 순위", ShellRoute.League),
+                        Navigate("navigate_achievements", "업적", ShellRoute.Achievements),
+                        Navigate("navigate_archive", "인생 보관함", ShellRoute.LifeArchive));
                 case ShellRoute.Weekly:
                     bool rewardReady = state.Meta.Weekly.Program?.RewardReady == true;
                     return Actions(

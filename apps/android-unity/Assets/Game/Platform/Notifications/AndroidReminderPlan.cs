@@ -127,15 +127,6 @@ namespace Baseball.Platform.Notifications
         public string SavedDayKey { get; }
         public int DevelopmentRulesVersion { get; }
 
-        public static AndroidReminderPlan Daily { get; } = new AndroidReminderPlan(
-            "진행 중인 선수가 기다려요",
-            "현재 커리어의 다음 일정으로 돌아가세요.",
-            "daily_inning",
-            "daily_inning",
-            "none",
-            "none",
-            "legacy");
-
         public string IntentData(string dayKey)
         {
             return "baseball://reminder?source=return_reminder&destination=" +

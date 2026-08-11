@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Unity.Notifications.Android;
 using UnityEngine;
 
@@ -19,7 +18,6 @@ namespace Baseball.Platform.Notifications
         private bool _enabled;
         private readonly ReminderEnablementPolicy _enablementPolicy = new ReminderEnablementPolicy();
         private AndroidReminderPlan _plan;
-        private IReadOnlyCollection<string> _playedDayKeys = Array.Empty<string>();
 
         public static AndroidReminderService Instance => _instance;
         public bool IsEnabled => _enabled;
@@ -178,15 +176,13 @@ namespace Baseball.Platform.Notifications
             PlayerPrefs.Save();
             _pendingOpenRequest = null;
             _plan = null;
-            _playedDayKeys = Array.Empty<string>();
             _enablementPolicy.Reset();
             SetEffectiveEnabled(false);
         }
 
-        public void ConfigurePlan(AndroidReminderPlan plan, IReadOnlyCollection<string> playedDayKeys)
+        public void ConfigurePlan(AndroidReminderPlan plan)
         {
             _plan = plan;
-            _playedDayKeys = playedDayKeys ?? Array.Empty<string>();
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (_enabled && AndroidNotificationCenter.UserPermissionToPost == PermissionStatus.Allowed)
             {
@@ -240,7 +236,7 @@ namespace Baseball.Platform.Notifications
             if (_plan == null) return;
             foreach (SeoulReminderEntry entry in SeoulReminderSchedule.Upcoming(
                          DateTimeOffset.UtcNow,
-                         _plan.Destination == "daily_inning" ? _playedDayKeys : Array.Empty<string>()))
+                         Array.Empty<string>()))
             {
                 var notification = new AndroidNotification
                 {

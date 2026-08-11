@@ -78,7 +78,7 @@ namespace Baseball.Presentation.Tests.Screens
             Assert.That(complete, Does.Contain("AnalyticsEvent.FirstPitch"));
             Assert.That(pitch.Substring(retryStart), Does.Not.Contain("AnalyticsEvent.FirstPitch"));
             Assert.That(pitch, Does.Contain("[\"mode\"]"));
-            Assert.That(pitch, Does.Contain("[\"result\"] = \"completed\""));
+            Assert.That(pitch, Does.Not.Contain("[\"result\"] = \"completed\""));
             Assert.That(pitch, Does.Contain("[\"reason_id\"]"));
             Assert.That(pitch, Does.Contain("[\"ability_moment_count\"] = report.AbilityMomentCount"));
             Assert.That(pitch, Does.Contain("[\"ability_moment_types\"] = string.Join"));
@@ -90,7 +90,7 @@ namespace Baseball.Presentation.Tests.Screens
             Assert.That(runtime, Does.Contain("AndroidReminderService.Instance.RequestEnabled(enabled)"));
             Assert.That(runtime, Does.Contain("reminders.RequestEnabled(true, \"after_first_game\")"));
             Assert.That(runtime, Does.Contain("AnalyticsEvent.ReminderChanged"));
-            Assert.That(runtime, Does.Contain("case \"begin_daily_pitch\": return null;"));
+            Assert.That(runtime, Does.Not.Contain("begin_daily_pitch"));
             Assert.That(receipts, Does.Not.Contain("route == ShellRoute.Daily"));
             Assert.That(receipts, Does.Contain("_readModel.ShouldShowReminderNudge(route, state)"));
             Assert.That(receipts, Does.Not.Contain("route == ShellRoute.Settings &&\n                    !state.Settings.NotificationsEnabled"));
@@ -229,6 +229,73 @@ namespace Baseball.Presentation.Tests.Screens
             }
             Assert.That(projection, Does.Contain("navigate_next_high_school"));
             Assert.That(runtime, Does.Contain("StartsWith(\"navigate_\""));
+        }
+
+        [Test]
+        public void WeeklyBoardIsReachableFromRecordsAndClaimUsesSavedCommandBoundary()
+        {
+            string template = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/BaseballScreenTemplateReadModel.cs");
+            string projection = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
+            string runtime = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string meta = Read(
+                "apps/android-unity/Assets/Game/Presentation/Meta/MetaScreenController.cs");
+
+            Assert.That(template, Does.Contain("Secondary(\"weekly\", ShellRoute.Weekly)"));
+            Assert.That(projection, Does.Contain("\"records-weekly-note\""));
+            Assert.That(projection, Does.Contain("\"navigate_weekly\""));
+            Assert.That(projection, Does.Contain("\"claim_weekly\""));
+            Assert.That(runtime, Does.Contain(
+                "case \"claim_weekly\": return new ClaimWeeklyRewardCommand(now);"));
+            Assert.That(runtime, Does.Contain("if (route == ShellRoute.Weekly)"));
+            Assert.That(meta, Does.Not.Contain("ShellRoute.Daily"));
+        }
+
+        [Test]
+        public void RetiredDailyHasNoProductScreenCopyActionOrPitchScoringPath()
+        {
+            string template = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/BaseballScreenTemplateReadModel.cs");
+            string projection = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
+            string factory = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/BaseballScreenControllerFactory.cs");
+            string runtime = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string pitch = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionPitchSessionPersistence.cs");
+            string copy = Read(
+                "apps/android-unity/Assets/Game/Content/ko-KR/Resources/ui-copy-ko-KR.json");
+            string reminder = Read(
+                "apps/android-unity/Assets/Game/Platform/Notifications/AndroidReminderPlan.cs");
+
+            Assert.That(template, Does.Not.Contain("screens.Add(ShellRoute.Daily"));
+            Assert.That(template, Does.Contain("if (route == ShellRoute.Daily) continue;"));
+            Assert.That(projection, Does.Not.Contain("case ShellRoute.Daily:"));
+            Assert.That(projection, Does.Contain("if (route == ShellRoute.Daily) route = RetiredDailyFallbackFor(state);"));
+            Assert.That(factory, Does.Not.Contain("case ShellRoute.Daily:"));
+            Assert.That(runtime, Does.Not.Contain("begin_daily_pitch"));
+            Assert.That(pitch, Does.Not.Contain("PitchCareerKind.Daily"));
+            Assert.That(pitch, Does.Not.Contain("DailyScore"));
+            Assert.That(copy, Does.Not.Contain("\"daily."));
+            Assert.That(copy, Does.Not.Contain("일일 도전"));
+            Assert.That(reminder, Does.Not.Contain("AndroidReminderPlan Daily"));
+        }
+
+        [Test]
+        public void LifeCardShareUsesNullSafeFrozenArchiveProjection()
+        {
+            string runtime = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string copy = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/LifeCardShareCopy.cs");
+
+            Assert.That(runtime, Does.Contain("LifeCardShareCopy.Build(life)"));
+            Assert.That(runtime, Does.Not.Contain("HighSchoolPerformance.Strikeouts"));
+            Assert.That(copy, Does.Contain("life.HighSchoolPerformance?.Strikeouts"));
+            Assert.That(copy, Does.Contain("highSchoolStrikeouts ?? 0"));
         }
 
         private static string ProductionSource()

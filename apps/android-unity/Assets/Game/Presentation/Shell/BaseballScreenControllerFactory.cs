@@ -34,7 +34,6 @@ namespace Baseball.Presentation.Shell
                 case ShellRoute.ProSeason:
                 case ShellRoute.ProRetirement:
                     return new ProScreenController(route);
-                case ShellRoute.Daily:
                 case ShellRoute.Weekly:
                     return new MetaScreenController(route);
                 case ShellRoute.Records:
