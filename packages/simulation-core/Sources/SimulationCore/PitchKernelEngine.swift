@@ -1360,7 +1360,24 @@ public struct PitchKernelEngine: Sendable {
         } else {
             speedGapEdge = 0
         }
-        let pitchDifficulty = ratingDifficulty + velocityEdge + speedGapEdge
+        // 구종에는 **맞는 높이**가 있다.
+        //
+        // 지금까지 높낮이는 구종과 무관했다 — 높은 포심과 낮은 포심의 헛스윙이 같았고,
+        // 높은 슬라이더가 낮은 슬라이더보다 홈런이 적었다(행잉이 안 맞는다는 뜻이라
+        // 야구와 반대다). 그래서 코스는 "존을 벗어나느냐" 하나로 납작했다.
+        //
+        // 속구는 높을수록 배트 밑을 지나고, 변화구는 낮을수록 떨어지며 헛스윙과 땅볼을
+        // 만든다. 반대로 놓인 공은 벌을 받는다: 가라앉지 않는 낮은 속구, 그리고 무엇보다
+        // **행잉 브레이킹볼**. 이걸로 "구종을 고르면 코스가 따라온다"가 성립한다.
+        let isFastball = params.call.pitchType == .fourSeam
+        let heightMatch: Int = switch (isFastball, landedZone.row) {
+        case (true, 0): 55      // 높은 속구 — 헛스윙
+        case (true, 2): -30     // 낮은 속구 — 가라앉지 않는다
+        case (false, 2): 50     // 낮은 변화구 — 떨어진다
+        case (false, 0): -55    // 행잉 — 가장 맞기 좋은 공
+        default: 0
+        }
+        let pitchDifficulty = ratingDifficulty + velocityEdge + speedGapEdge + heightMatch
         let platoonContact = platoonContactBonus(
             pitcherHand: params.pitcher.throwingHand,
             batSide: params.batter.batSide,
@@ -1405,6 +1422,9 @@ public struct PitchKernelEngine: Sendable {
                 + scoutingQuality
                 // 빠른 공은 늦게 맞는다. 전력투구가 제구를 잃는 대신 얻는 것이 이것이다.
                 - max(0, execution.velocityTenthsKPH - 1_400) / 5
+                // 행잉은 헛스윙만 줄이는 게 아니라 **세게 맞는다.** 반대로 제 높이에 간
+                // 공은 배트 중심을 비껴간다.
+                - heightMatch / 2
                 + generator.nextInt(upperBound: 301) - 150,
             0,
             1_000
