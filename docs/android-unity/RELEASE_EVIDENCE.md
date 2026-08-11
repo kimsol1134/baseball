@@ -23,13 +23,13 @@
   - 2026-08-12, Unity `6000.3.19f1` 설치 참조로 production player, internal-QA player, Core, Platform, `Baseball.Platform.Tests`, Presentation EditMode tests, Android Editor source closure를 각각 `TreatWarningsAsErrors=true`로 컴파일
   - 결과: 경고 0개, 오류 0개
   - `tools/unity-reference-compile.sh`는 Unity 실행 파일, 관리 참조, Input System, URP 및 Unity NUnit 참조가 하나라도 없으면 종료 코드 2로 실패한다. `bin`/`obj`는 `mktemp`로 만든 저장소 밖 디렉터리에만 쓴 뒤 종료 시 삭제한다.
-- static/EditMode 순수 계약: `npm run test:unity:static` — 319/319 통과
+- static/EditMode 순수 계약: `npm run test:unity:static` — 332/332 통과
 - EditMode: 2026-08-12 `npm run test:unity` 실행은 설치된 Editor의 유효 라이선스 부재(exit 198)로 테스트 실행 전 차단. 라이선스가 있는 Unity batchmode 결과 필요
 - PlayMode: 위와 동일하게 유효 라이선스 부재로 테스트 실행 전 차단. Addressable 구장/portrait framing/missing-asset fail-closed PlayMode 소스는 참조 컴파일 0경고/0오류
 - copy/IP: `npm run check:copy:android:unity` — 내부 용어 38종·실존 야구 IP 42종 미노출
 - design: `npm run check:design-system` — 위반 0, 고대비 토큰/WCAG AA/공통 컴포넌트 계약 통과
 - asset manifest: `npm run check:unity-assets` — 150 files (118 images, 7 icon sources, 24 audio) 통과
-- Android 소스 계약: `npm run check:android:unity` — 통과. 이 결과 자체는 RC 증거가 아니다.
+- Android 소스 계약: `npm run check:android:unity` — 통과. Unity 첫 import가 생성할 `.meta` 398개가 아직 없으며, 이 결과 자체는 RC 증거가 아니다.
 - save fault injection:
 - Swift/C# fixture:
 - Monte Carlo:
