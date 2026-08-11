@@ -45,6 +45,26 @@ final class DeliveryControlTests: XCTestCase {
         }
     }
 
+    func testFasterPitchHasFasterReleaseMeter() {
+        let fourSeam = DeliveryControl.sweepSeconds(
+            velocityTenthsKPH: 1_470, fatigue: 20
+        )
+        let curveball = DeliveryControl.sweepSeconds(
+            velocityTenthsKPH: 1_180, fatigue: 20
+        )
+        XCTAssertLessThan(fourSeam, curveball)
+    }
+
+    func testFatigueSpeedsUpReleaseMeter() {
+        let fresh = DeliveryControl.sweepSeconds(
+            velocityTenthsKPH: 1_350, fatigue: 0
+        )
+        let tired = DeliveryControl.sweepSeconds(
+            velocityTenthsKPH: 1_350, fatigue: 100
+        )
+        XCTAssertLessThan(tired, fresh)
+    }
+
     // MARK: - 조준
 
     func testAimOnTargetIsPerfect() {

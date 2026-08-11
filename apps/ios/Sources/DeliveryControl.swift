@@ -21,6 +21,9 @@ import SimulationCore
 struct DeliveryControl: View {
     /// 피로 0~100. 높을수록 미터가 빨라져 릴리스가 어려워진다.
     let fatigue: Int
+    /// 지금 고른 구종과 실제 기준 구속. 구속이 빠를수록 릴리스 미터도 빠르게 지난다.
+    let pitchType: PitchType
+    let velocityTenthsKPH: Int
     let autoRelease: Bool
     let onDeliver: (PitchDelivery) -> Void
     /// 미터가 방향을 바꿀 때(끝에 닿을 때) 알린다. 화면이 가벼운 햅틱을 준다.
@@ -48,10 +51,36 @@ struct DeliveryControl: View {
     @State private var perfectFlash: Double = 0
     private static let minimumHoldSeconds: CFTimeInterval = 0.14
 
-    /// 미터가 한 번 왕복하는 데 걸리는 시간(초). 피로하면 짧아져 조준 창이 좁아진다.
+    /// 미터가 한쪽 끝까지 가는 시간(초). 실제 구속과 피로가 높을수록 짧아진다.
     private var sweepSeconds: Double {
-        let base = 1.35 - Double(min(100, max(0, fatigue))) / 100 * 0.55
-        return reduceMotion ? base * 1.6 : base
+        Self.sweepSeconds(
+            velocityTenthsKPH: velocityTenthsKPH,
+            fatigue: fatigue,
+            reduceMotion: reduceMotion
+        )
+    }
+
+    /// 선택 구종의 실제 기준 구속을 릴리스 템포로 옮긴다.
+    ///
+    /// 110km/h 이하는 느린 변화구 템포, 150km/h 이상은 빠른 포심 템포에 수렴한다.
+    /// 구종 이름을 하드코딩하지 않아 훈련으로 구속이 오른 공도 손맛이 함께 빨라진다.
+    static func sweepSeconds(
+        velocityTenthsKPH: Int,
+        fatigue: Int,
+        reduceMotion: Bool = false
+    ) -> Double {
+        let velocity = Double(min(1_500, max(1_100, velocityTenthsKPH)) - 1_100) / 400
+        let fatigueRatio = Double(min(100, max(0, fatigue))) / 100
+        let seconds = 1.18 - velocity * 0.38 - fatigueRatio * 0.24
+        return reduceMotion ? seconds * 1.5 : seconds
+    }
+
+    private var tempoLabel: String {
+        switch velocityTenthsKPH {
+        case 1_400...: "빠름"
+        case ..<1_230: "느림"
+        default: "보통"
+        }
     }
 
     /// 조준을 최대로 흔들 수 있는 반경(pt). 이 거리에서 aimAccuracy가 0이 된다.
@@ -72,7 +101,7 @@ struct DeliveryControl: View {
     }
 
     /// 미터가 스위트 스폿 안에 있는가. 촉감으로 경계를 알려 줄 때 쓴다.
-    private var inSweetSpot: Bool { abs(meter - 0.5) <= 0.11 }
+    private var inSweetSpot: Bool { abs(meter - 0.5) <= 0.09 }
 
     /// 스위트 스폿 중심에 얼마나 가까운가(0~1). 진동 세기가 이 값을 따른다.
     private var meterCloseness: Double { 1 - min(1, abs(meter - 0.5) * 2) }
@@ -88,6 +117,17 @@ struct DeliveryControl: View {
 
     private var manual: some View {
         VStack(spacing: 10) {
+            HStack {
+                Text("\(PitchCopy.pitch(pitchType)) 릴리스")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                Spacer(minLength: 0)
+                Text("\(tempoLabel) · \(String(format: "%.1f", Double(velocityTenthsKPH) / 10)) km/h")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(BaseballTheme.milestone)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("pitch.releaseTempo")
             meterBar
             gesturePad
         }
@@ -103,11 +143,11 @@ struct DeliveryControl: View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 Capsule().fill(BaseballTheme.surfaceRaised)
-                // 스위트 스폿. 가운데 22%.
+                // 스위트 스폿. 가운데 18%. 좋은 릴리스도 이전보다 조금 더 집중해야 한다.
                 Capsule()
                     .fill(BaseballTheme.action.opacity(0.42))
-                    .frame(width: proxy.size.width * 0.22)
-                    .offset(x: proxy.size.width * 0.39)
+                    .frame(width: proxy.size.width * 0.18)
+                    .offset(x: proxy.size.width * 0.41)
                 // 퍼펙트 구간. **보이지 않으면 노릴 수 없다.** 스위트 스폿 안의 얇은 심지
                 // 하나가 "적당히 초록"과 "정확히 가운데"를 다른 목표로 만든다.
                 Capsule()
@@ -129,7 +169,7 @@ struct DeliveryControl: View {
     }
 
     /// 미터 전체 폭 대비 퍼펙트 구간의 너비. `delivery(meter:…)`의 선형 환산에서
-    /// `releaseAccuracy >= 950`이 되는 구간과 정확히 같아야 화면이 거짓말을 하지 않는다.
+    /// `releaseAccuracy >= perfectReleaseThreshold`인 구간과 정확히 같아야 화면이 거짓말을 하지 않는다.
     private static let perfectBandWidth = Double(1_000 - PitchDelivery.perfectReleaseThreshold) / 1_000
 
     /// 지금 손을 떼면 퍼펙트인가.

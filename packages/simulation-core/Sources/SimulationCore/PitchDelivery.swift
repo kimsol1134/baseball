@@ -40,8 +40,9 @@ public struct PitchDelivery: Codable, Equatable, Sendable {
     /// 맞히려는 이유가 없었다 — "적당히 초록 구간"이 최적 전략이었다. 이 문턱 위에서만
     /// 붙는 별도의 가산이 그 한 뼘을 노릴 이유를 만든다.
     ///
-    /// 950은 미터 반폭의 5% — 스위트 스폿(22%)의 4분의 1이라, 노려야 나오고 운으로는 안 나온다.
-    public static let perfectReleaseThreshold = 950
+    /// 975는 미터 전체 폭의 2.5%만 허용한다. 빠른 포심 기준으로는 한두 프레임 안에
+    /// 손을 떼야 하므로, 초록 구간에 들어온 것과 완벽히 가운데를 맞힌 것이 분명히 갈린다.
+    public static let perfectReleaseThreshold = 975
 
     /// 정중앙 릴리스인가. 중립(500)은 절대 여기 닿지 않으므로, 이 값을 보는 규칙은
     /// 델리버리를 넘기지 않던 모든 호출자에게 항등이다.

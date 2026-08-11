@@ -801,6 +801,8 @@ struct PitchView: View {
                 if canFastForwardCurrentBatter {
                     Button {
                         wasClutch = false
+                    pitchType: session.selectedPitchType,
+                    velocityTenthsKPH: session.selectedAbilityReadout.nominalVelocityTenthsKPH,
                         _ = session.fastForwardCurrentBatter()
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
