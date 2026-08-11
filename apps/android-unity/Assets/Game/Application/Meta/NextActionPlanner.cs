@@ -59,7 +59,8 @@ namespace Baseball.Application.Meta
             }
             if (includeReturnPlan &&
                 state.Meta.ReturnPlan != null &&
-                !state.Meta.ReturnPlan.Dismissed)
+                !state.Meta.ReturnPlan.Dismissed &&
+                !ReturnPlanRules.IsRetiredDailyPlan(state.Meta.ReturnPlan))
             {
                 return new NextActionReadModel(
                     state.Meta.ReturnPlan.Route,

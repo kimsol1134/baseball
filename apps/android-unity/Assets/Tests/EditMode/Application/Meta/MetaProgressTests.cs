@@ -181,6 +181,65 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
+        public void WeeklyReconcile_ExemptsUnreplaceableRetiredDailyGoalExactlyOnce()
+        {
+            var instant = new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero);
+            var program = new WeeklyProgramState(
+                "2026-W33",
+                new[]
+                {
+                    new WeeklyTaskState(
+                        "2026-W33-daily",
+                        WeeklyTaskKinds.DailyInningCompleted,
+                        1,
+                        0)
+                },
+                Array.Empty<string>(),
+                false);
+            var current = new WeeklyProgressState(program, null, "20260810");
+            var noPlayableGoals = new WeeklyEligibility(
+                false, 0, 0, false, false, false, false, false);
+
+            var reconciled = WeeklyProgramRules.Configure(
+                current, noPlayableGoals, "user-a", instant);
+            var repeated = WeeklyProgramRules.Configure(
+                reconciled, noPlayableGoals, "user-a", instant.AddHours(1));
+            var alreadyCompleted = new WeeklyProgressState(
+                new WeeklyProgramState(
+                    "2026-W33",
+                    new[]
+                    {
+                        new WeeklyTaskState(
+                            "2026-W33-daily-complete",
+                            WeeklyTaskKinds.DailyInningCompleted,
+                            1,
+                            1)
+                    },
+                    new[] { "2026-W33-daily-complete" },
+                    false),
+                null,
+                "20260810");
+            var preserved = WeeklyProgramRules.Configure(
+                alreadyCompleted, noPlayableGoals, "user-a", instant);
+
+            Assert.That(reconciled.Program.Tasks, Has.Count.EqualTo(1));
+            Assert.That(reconciled.Program.Tasks[0].Kind,
+                Is.EqualTo(WeeklyTaskKinds.DailyInningCompleted));
+            Assert.That(reconciled.Program.Tasks[0].IsCompleted, Is.True);
+            Assert.That(reconciled.Program.CompletedTaskIds,
+                Is.EqualTo(new[] { "2026-W33-daily" }));
+            Assert.That(reconciled.Program.RewardReady, Is.False,
+                "A single retired exemption cannot create a weekly reward by itself.");
+            Assert.That(repeated.Program.Tasks[0].Progress,
+                Is.EqualTo(reconciled.Program.Tasks[0].Progress));
+            Assert.That(repeated.Program.CompletedTaskIds,
+                Is.EqualTo(reconciled.Program.CompletedTaskIds));
+            Assert.That(preserved.Program.Tasks[0].Progress, Is.EqualTo(1));
+            Assert.That(preserved.Program.CompletedTaskIds,
+                Is.EqualTo(new[] { "2026-W33-daily-complete" }));
+        }
+
+        [Test]
         public async Task WeeklyObservation_ConfiguresOnceRejectsClockRollbackAndReconcilesEligibility()
         {
             var instant = new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero);
@@ -1150,6 +1209,63 @@ namespace Baseball.Application.Tests
                     "result", PitchCareerKind.HighSchool, "hs-1", report, 1));
             Assert.That(NextActionPlanner.ResolveCoreProgress(interrupted).Route,
                 Is.EqualTo("pitch/result"));
+        }
+
+        [Test]
+        public void RetiredDailyReturnPlan_IsReadableButFallsBackWithoutWelcomeOrAnalytics()
+        {
+            var now = new DateTimeOffset(2026, 8, 12, 2, 0, 0, TimeSpan.Zero);
+            var typed = ReturnPlanState.Create(
+                "옛 일일 계획",
+                "호환을 위해 읽기만 합니다.",
+                ReturnPlanDestination.DailyInning,
+                "legacy_daily",
+                ReturnPlanRules.ReturnExperimentId,
+                "abc123",
+                "20260811",
+                "guided",
+                4);
+            var rawLegacy = new ReturnPlanState(
+                "daily-inning",
+                "옛 링크",
+                "계속",
+                "20260811");
+            var state = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                4,
+                "install-a",
+                ApplicationStage.HighSchool,
+                FakeHighSchoolPort.HighSchool(),
+                null,
+                MetaProgressState.Initial.With(returnPlan: typed),
+                null,
+                null,
+                Array.Empty<string>());
+
+            Assert.That(ReturnPlanRules.IsValid(typed), Is.True,
+                "Persisted typed values remain load-compatible.");
+            Assert.That(ReturnPlanRules.IsRetiredDailyPlan(typed), Is.True);
+            Assert.That(ReturnPlanRules.IsRetiredDailyPlan(rawLegacy), Is.True);
+            Assert.That(NextActionPlanner.Resolve(state).Route, Is.EqualTo("high-school"));
+            var proState = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                4,
+                "install-a",
+                ApplicationStage.Pro,
+                null,
+                FakeProPort.Pro(),
+                MetaProgressState.Initial.With(returnPlan: rawLegacy),
+                null,
+                null,
+                Array.Empty<string>());
+            Assert.That(NextActionPlanner.Resolve(proState).Route, Is.EqualTo("pro"));
+            Assert.That(ReturnPlanRules.WelcomePlan(typed, typed, null, now), Is.Null);
+            Assert.That(ReturnPlanRules.Analytics(typed, now), Is.Null);
+            Assert.That(ReturnPlanRules.NextDayOpen(typed, "cold", now), Is.Null);
+            Assert.That(ReturnPlanRules.EligibleReceiptScope(typed), Is.Null);
+            Assert.That(() => ReturnPlanRules.PrepareForNextReturn(
+                    typed, "install-a", 4, now),
+                Throws.ArgumentException.With.Message.Contains("daily.retired"));
         }
 
         [Test]

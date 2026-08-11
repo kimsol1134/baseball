@@ -1529,6 +1529,10 @@ namespace Baseball.Application.Stores
             SetReturnPlanCommand command,
             string commandId)
         {
+            if (ReturnPlanRules.IsRetiredDailyPlan(command.Plan))
+            {
+                return Failure("daily.retired");
+            }
             if (!ReturnPlanRules.IsValid(command.Plan))
             {
                 return Failure("return_plan.invalid");

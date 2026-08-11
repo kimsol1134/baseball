@@ -758,6 +758,11 @@ namespace Baseball.Application.Tests
                                      "new-daily", PitchCareerKind.Daily, "daily", 1,
                                      instant.AddMinutes(1)),
                                  new CompleteDailyInningCommand(instant.AddMinutes(1)),
+                                 new SetReturnPlanCommand(ReturnPlanState.Create(
+                                     "옛 일일 계획",
+                                     "호환을 위해 읽기만 합니다.",
+                                     ReturnPlanDestination.DailyInning,
+                                     "legacy_daily")),
                                  new RecordWeeklyProgressCommand(
                                      WeeklyTaskKinds.DailyInningCompleted,
                                      1,

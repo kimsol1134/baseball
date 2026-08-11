@@ -185,6 +185,8 @@ namespace Baseball.Application.Meta
         {
             if (!IsValidPromise(plan))
                 throw new ArgumentException("return_plan.invalid", nameof(plan));
+            if (IsRetiredDailyPlan(plan))
+                throw new ArgumentException("daily.retired", nameof(plan));
             if (developmentRulesVersion <= 0)
                 throw new ArgumentOutOfRangeException(nameof(developmentRulesVersion));
             var dayKey = SeoulGameCalendar.DayKey(now);
@@ -245,7 +247,8 @@ namespace Baseball.Application.Meta
             ReturnWelcomeHandledState handled,
             DateTimeOffset now)
         {
-            if (previous == null || current == null || current.Dismissed) return null;
+            if (previous == null || current == null || current.Dismissed ||
+                IsRetiredDailyPlan(current)) return null;
             var candidate = CarryingExperiment(current, previous);
             if (!string.Equals(candidate.ExperimentVariant, "guided", StringComparison.Ordinal))
                 return null;
@@ -276,7 +279,7 @@ namespace Baseball.Application.Meta
             DateTimeOffset now,
             string launchType = null)
         {
-            if (plan == null) return null;
+            if (plan == null || IsRetiredDailyPlan(plan)) return null;
             var gap = DayGap(plan.SavedDayKey, SeoulGameCalendar.DayKey(now));
             return new ReturnPlanAnalyticsReadModel(
                 Wire(plan.Destination),
@@ -302,6 +305,7 @@ namespace Baseball.Application.Meta
                 return null;
             }
             if (plan == null || string.IsNullOrWhiteSpace(plan.ReceiptId) ||
+                IsRetiredDailyPlan(plan) ||
                 !(string.Equals(plan.ExperimentVariant, "holdout", StringComparison.Ordinal) ||
                   string.Equals(plan.ExperimentVariant, "guided", StringComparison.Ordinal)))
             {
@@ -327,7 +331,8 @@ namespace Baseball.Application.Meta
 
         public static string EligibleReceiptScope(ReturnPlanState plan)
         {
-            return plan == null || string.IsNullOrWhiteSpace(plan.ReceiptId)
+            return plan == null || IsRetiredDailyPlan(plan) ||
+                string.IsNullOrWhiteSpace(plan.ReceiptId)
                 ? null
                 : AnalyticsReceiptRules.Scope(
                     "return_plan_eligible",
@@ -357,7 +362,8 @@ namespace Baseball.Application.Meta
             var importantGames = highSchool?.Performance?.ImportantGames ?? 0;
             var livesFinished = aggregate.Meta?.LifeArchive?.Count ?? 0;
             var returnDayKey = SeoulGameCalendar.DayKey(endedAt);
-            if (!IsEligible(completedGameCount) || plan == null)
+            if (!IsEligible(completedGameCount) || plan == null ||
+                IsRetiredDailyPlan(plan))
             {
                 return new SessionEndReturnReadModel(
                     false, false, "none", "ineligible", "none", "none", "ineligible", 0,
@@ -496,6 +502,19 @@ namespace Baseball.Application.Meta
                 return ReturnPlanDestination.HighSchool;
             }
             return ReturnPlanDestination.HighSchool;
+        }
+
+        /// <summary>
+        /// Recognizes both the typed prototype destination and older raw route spellings without
+        /// rejecting their persisted payloads. Product navigation and analytics must fall back to
+        /// the current career instead of reviving the retired mode.
+        /// </summary>
+        public static bool IsRetiredDailyPlan(ReturnPlanState plan)
+        {
+            return plan != null &&
+                (plan.Destination == ReturnPlanDestination.DailyInning ||
+                 string.Equals(plan.Route, "daily-inning", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(plan.Route, "daily_inning", StringComparison.OrdinalIgnoreCase));
         }
 
         public static string Route(ReturnPlanDestination destination)
