@@ -10,7 +10,6 @@ struct RecordView: View {
     let highSchool: HighSchoolCareerStore
     let career: MobileCareerStore
     var weekly: WeeklyProgramStore = .shared
-    var onOpenDailyInning: (() -> Void)? = nil
 
     var body: some View {
         Group {
@@ -19,8 +18,7 @@ struct RecordView: View {
                     state: state,
                     archive: highSchool.archive,
                     weekly: weekly,
-                    highSchool: highSchool,
-                    onOpenDailyInning: onOpenDailyInning
+                    highSchool: highSchool
                 )
             } else if let hs = highSchool.state {
                 HighSchoolRecordBoard(
@@ -28,8 +26,7 @@ struct RecordView: View {
                     archive: highSchool.archive,
                     highSchoolPersonality: highSchool.personality,
                     weekly: weekly,
-                    highSchool: highSchool,
-                    onOpenDailyInning: onOpenDailyInning
+                    highSchool: highSchool
                 )
             } else if !highSchool.archive.isEmpty {
                 // 회차를 끝내고 아직 새로 시작하지 않은 상태 — 로그라이트의 재시작 동력은
@@ -39,8 +36,7 @@ struct RecordView: View {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                         WeeklyProgramView(
                             store: weekly,
-                            highSchool: highSchool,
-                            onOpenDailyInning: onOpenDailyInning
+                            highSchool: highSchool
                         )
                         if let last = highSchool.archive.first {
                             BaseballCard(title: "\(last.lifeNumber)번째 선수가 남긴 것", tone: .milestone) {
@@ -61,8 +57,7 @@ struct RecordView: View {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                         WeeklyProgramView(
                             store: weekly,
-                            highSchool: highSchool,
-                            onOpenDailyInning: onOpenDailyInning
+                            highSchool: highSchool
                         )
                     }
                     .padding(BaseballMetrics.gutter)
@@ -87,7 +82,6 @@ private struct HighSchoolRecordBoard: View {
     var highSchoolPersonality: Personality?
     let weekly: WeeklyProgramStore
     let highSchool: HighSchoolCareerStore
-    let onOpenDailyInning: (() -> Void)?
 
     private var lines: [ProGameLine] { state.seasonLog ?? [] }
 
@@ -103,8 +97,7 @@ private struct HighSchoolRecordBoard: View {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                 WeeklyProgramView(
                     store: weekly,
-                    highSchool: highSchool,
-                    onOpenDailyInning: onOpenDailyInning
+                    highSchool: highSchool
                 )
                 Text("\(state.chapter.title) · \(state.school?.name ?? "학교 미정")")
                     .eyebrowStyle(BaseballTheme.action)
@@ -227,7 +220,6 @@ private struct RecordBoard: View {
     let archive: [HighSchoolCareerStore.LifeRecord]
     let weekly: WeeklyProgramStore
     let highSchool: HighSchoolCareerStore
-    let onOpenDailyInning: (() -> Void)?
 
     /// 아웃 카운트를 "이닝.아웃" 표기로 바꾼다. 야구 기록지와 같은 읽기 방식이다.
     private static func innings(_ outs: Int) -> String {
@@ -272,8 +264,7 @@ private struct RecordBoard: View {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                 WeeklyProgramView(
                     store: weekly,
-                    highSchool: highSchool,
-                    onOpenDailyInning: onOpenDailyInning
+                    highSchool: highSchool
                 )
                 if let decisions = state.decisionHistory, !decisions.isEmpty {
                     ProDecisionHistoryCard(decisions: decisions)

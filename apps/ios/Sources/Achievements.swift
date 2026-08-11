@@ -140,8 +140,6 @@ enum Leaderboard: String, CaseIterable {
     case hallOfFame = "hall_of_fame_score"
     case careerStrikeouts = "career_strikeouts"
     case highestLife = "highest_life"
-    /// 오늘의 이닝 — 매일 리셋되는 판(ASC에서 일간 반복 리더보드로 구성).
-    case dailyInning = "daily_inning"
 
     var gameCenterID: String { "com.solkim.baseball.leaderboard.\(rawValue)" }
 
@@ -150,7 +148,6 @@ enum Leaderboard: String, CaseIterable {
         case .hallOfFame: "명예의 전당 점수"
         case .careerStrikeouts: "통산 탈삼진"
         case .highestLife: "키운 선수 수"
-        case .dailyInning: "오늘의 이닝"
         }
     }
 }

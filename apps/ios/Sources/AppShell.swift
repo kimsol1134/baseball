@@ -29,30 +29,30 @@ struct AppShell: View {
     var returnWelcomePlan: DailyReminder.Plan?
     var onDismissReturnWelcome: () -> Void = {}
     @State private var selection: AppTab = .highSchool
-    @State private var showsDailyFromDeepLink = false
     @State private var returnPlanHighSchoolRevision: UInt64?
     @State private var returnPlanProRevision: UInt64?
-    /// 오늘의 이닝을 무엇이 열었는가. 알림이 실제로 사람을 데려오는지 재는 값이다.
-    @State private var deepLinkSource = "url"
 
-    /// App Store 이벤트에서 바로 오늘의 이닝으로 들어오는 링크만 허용한다.
-    /// 다른 URL은 앱 상태를 바꾸지 않는다.
-    static func isDailyInningDeepLink(_ url: URL) -> Bool {
-        DailyReminder.Destination.resolve(url) == .dailyInning
+    /// 제거 전 배포가 남긴 링크도 빈 화면으로 보내지 않는다.
+    static func retiredDailyInningFallbackTab(
+        hasActiveProCareer: Bool,
+        showsHighSchool: Bool
+    ) -> AppTab {
+        if hasActiveProCareer { return .pro }
+        return showsHighSchool ? .highSchool : .pro
     }
 
-    private func openReminderLink(_ url: URL, source: String) {
+    private func openReminderLink(_ url: URL) {
         guard let destination = DailyReminder.Destination.resolve(url) else { return }
         onDismissReturnWelcome()
         switch destination {
         case .dailyInning:
-            deepLinkSource = source
-            showsDailyFromDeepLink = true
+            selection = Self.retiredDailyInningFallbackTab(
+                hasActiveProCareer: pro.loadState == .ready && pro.state?.phase != .completed,
+                showsHighSchool: showsHighSchool
+            )
         case .highSchool:
-            showsDailyFromDeepLink = false
             selection = showsHighSchool ? .highSchool : .pro
         case .pro:
-            showsDailyFromDeepLink = false
             selection = .pro
         }
     }
@@ -142,12 +142,10 @@ struct AppShell: View {
         } ?? false
         if hasPlayableProWeeks {
             // 프로가 고교 탭을 숨긴 동안에는 고교 경기·챕터·환생 목표를 내지 않는다.
-            // 오늘의 이닝과 수싸움 적중은 독립 모드라 계속 플레이할 수 있다.
             return WeeklyProgramEligibility(
                 hasHighSchoolCareer: false,
                 remainingImportantGames: 0,
                 remainingChapterAdvances: 0,
-                dailyInningUnlocked: true,
                 canStartNextRun: false,
                 canSelectPledge: false,
                 canChooseDifferentSchool: false,
@@ -176,7 +174,6 @@ struct AppShell: View {
             hasHighSchoolCareer: highSchoolIsActive,
             remainingImportantGames: highSchoolIsActive ? max(0, remainingImportantGames) : 0,
             remainingChapterAdvances: highSchoolIsActive ? max(0, remainingChapterAdvances) : 0,
-            dailyInningUnlocked: importantGamesCompleted >= 1 || hasArchive,
             canStartNextRun: canStartNextRun,
             canSelectPledge: highSchoolIsActive && beforeSchoolChoice && !pledgeDecided,
             canChooseDifferentSchool: highSchoolIsActive && beforeSchoolChoice && hasPreviousSchool,
@@ -188,7 +185,6 @@ struct AppShell: View {
     /// **보고 있는 자리**를 첫 실행과 같게 되돌린다: 열려 있는 전면 화면을 닫고,
     /// 탭을 고교로 옮기고, 오프닝을 다시 보여 준다.
     private func resetToFirstLaunch() {
-        showsDailyFromDeepLink = false
         onDismissReturnWelcome()
         selection = .highSchool
         // 고교 뷰의 오프닝 표시 상태는 그 뷰의 @State다. 정체성을 갈아 끼워 새로 만든다.
@@ -266,11 +262,7 @@ struct AppShell: View {
                 RecordView(
                     highSchool: highSchool,
                     career: pro,
-                    weekly: weekly,
-                    onOpenDailyInning: {
-                        deepLinkSource = "records"
-                        showsDailyFromDeepLink = true
-                    }
+                    weekly: weekly
                 )
             }
                 .tabItem { Label(AppTab.records.title, systemImage: AppTab.records.icon) }
@@ -296,7 +288,7 @@ struct AppShell: View {
                     onDismissReturnWelcome()
                     return
                 }
-                openReminderLink(url, source: "return_plan")
+                openReminderLink(url)
             },
             onDismiss: onDismissReturnWelcome
         ))
@@ -319,16 +311,8 @@ struct AppShell: View {
                 onDismissReturnWelcome()
             }
         }
-        .fullScreenCover(isPresented: $showsDailyFromDeepLink) {
-            DailyInningView(
-                onClose: { showsDailyFromDeepLink = false },
-                source: deepLinkSource,
-                weekly: weekly,
-                highSchool: highSchool
-            )
-        }
         .onOpenURL { url in
-            openReminderLink(url, source: "url")
+            openReminderLink(url)
         }
         // 복귀 알림을 눌러 들어온 경로. `onOpenURL`은 알림 탭에서 불리지 않으므로
         // 이 다리가 없으면 알림이 홈 화면만 띄운다 — D1 훅의 마지막 한 걸음이 없는 셈이다.
@@ -337,11 +321,11 @@ struct AppShell: View {
                 _ = highSchool.retryPendingGameCompletion()
             }
             NotificationRouter.shared.onDeepLink = { url in
-                openReminderLink(url, source: "notification")
+                openReminderLink(url)
             }
             if let pending = NotificationRouter.shared.pendingDeepLink {
                 NotificationRouter.shared.pendingDeepLink = nil
-                openReminderLink(pending, source: "notification")
+                openReminderLink(pending)
             }
         }
         .onChange(of: weeklyEligibility) { _, eligibility in

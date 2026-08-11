@@ -10,6 +10,7 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
     /// 이미 3/3이 떴다. 그러면 주간 노트는 복귀 장치가 아니라 첫 세션 체크리스트다.
     /// 서로 다른 두 날에 한 경기씩이면 되고, 어느 모드로 던지든 인정한다.
     case playedOnTwoDays = "played_on_two_days"
+    /// 제거된 목표의 저장 호환용 값. 새 보드에는 절대 넣지 않는다.
     case dailyInningCompleted = "daily_inning_completed"
     case importantGamesCompleted = "important_games_completed"
     case chaptersAdvanced = "chapters_advanced"
@@ -22,7 +23,7 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
     var title: String {
         switch self {
         case .playedOnTwoDays: "서로 다른 두 날에 던지기"
-        case .dailyInningCompleted: "오늘의 이닝 1회 완료"
+        case .dailyInningCompleted: "종료된 이전 목표"
         case .importantGamesCompleted: "고교 공식 경기 2번 마치기"
         case .chaptersAdvanced: "고교 이야기 2장 마치기"
         case .nextRunStarted: "새 선수로 다시 시작하기"
@@ -35,8 +36,8 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
 
     var nextAction: String {
         switch self {
-        case .playedOnTwoDays: "오늘 한 경기, 다른 날 한 경기. 고교·프로·오늘의 이닝 어느 쪽이든 됩니다."
-        case .dailyInningCompleted: "오늘의 이닝을 한 번 마치면 됩니다."
+        case .playedOnTwoDays: "오늘 한 경기, 다른 날 한 경기. 고교·프로 어느 쪽이든 됩니다."
+        case .dailyInningCompleted: "기능 종료로 완료 처리된 목표입니다."
         case .importantGamesCompleted: "고교 공식 경기를 마치면 됩니다."
         case .chaptersAdvanced: "지금 이야기를 마치고 다음 장으로 가면 됩니다."
         case .nextRunStarted: "고교 3년을 마치고 새 선수로 다시 시작하면 됩니다."
@@ -170,18 +171,36 @@ struct WeeklyProgramEligibility: Codable, Equatable, Sendable {
     let remainingImportantGames: Int
     /// 8장 완결 전까지 실제로 넘길 수 있는 이야기 장 수.
     let remainingChapterAdvances: Int
-    let dailyInningUnlocked: Bool
     let canStartNextRun: Bool
     let canSelectPledge: Bool
     let canChooseDifferentSchool: Bool
     let hasProCareer: Bool
 
     var signature: String {
-        let flags = [hasHighSchoolCareer, dailyInningUnlocked, canStartNextRun, canSelectPledge,
+        let flags = [hasHighSchoolCareer, canStartNextRun, canSelectPledge,
                      canChooseDifferentSchool, hasProCareer]
             .map { $0 ? "1" : "0" }.joined()
         return "\(flags)|g\(max(0, remainingImportantGames))|c\(max(0, remainingChapterAdvances))"
     }
+
+    init(
+        hasHighSchoolCareer: Bool,
+        remainingImportantGames: Int,
+        remainingChapterAdvances: Int,
+        canStartNextRun: Bool,
+        canSelectPledge: Bool,
+        canChooseDifferentSchool: Bool,
+        hasProCareer: Bool
+    ) {
+        self.hasHighSchoolCareer = hasHighSchoolCareer
+        self.remainingImportantGames = remainingImportantGames
+        self.remainingChapterAdvances = remainingChapterAdvances
+        self.canStartNextRun = canStartNextRun
+        self.canSelectPledge = canSelectPledge
+        self.canChooseDifferentSchool = canChooseDifferentSchool
+        self.hasProCareer = hasProCareer
+    }
+
 }
 
 struct WeeklyProgramStamp: Codable, Equatable, Identifiable, Sendable {
@@ -246,8 +265,8 @@ enum WeeklyProgramRules {
     /// Reconcile a board when the player changes modes during the same week. A completed goal is
     /// a historical fact, so it stays even if that mode is no longer open. Only unfinished goals
     /// that became impossible are replaced, using the same stable ranking as initial generation.
-    /// If the new mode cannot supply enough distinct goals, keep the board untouched rather than
-    /// silently shrinking a three-goal contract or discarding progress.
+    /// Retired unfinished goals are replaced first. If no replacement exists, they are excused so
+    /// an update cannot leave the player with an impossible contract.
     static func reconciling(
         _ existing: WeeklyProgram,
         stableUserID: String,
@@ -270,12 +289,34 @@ enum WeeklyProgramRules {
         let retainedKinds = Set(existing.tasks.indices.compactMap { index in
             replacementIndexSet.contains(index) ? nil : existing.tasks[index].kind
         })
-        let replacements = eligible.filter { !retainedKinds.contains($0) }
-        guard replacements.count >= replacementIndices.count else { return existing }
-
+        var replacements = eligible.filter { !retainedKinds.contains($0) }
+        let ordinaryIndices = replacementIndices.filter {
+            existing.tasks[$0].kind != .dailyInningCompleted
+        }
         var updated = existing
-        for (index, kind) in zip(replacementIndices, replacements) {
+        guard replacements.count >= ordinaryIndices.count else {
+            // 일반 목표를 안전하게 재구성할 후보가 부족해도, 종료된 목표까지 불가능한 채로
+            // 남기지는 않는다. 다른 진행은 그대로 두고 종료 목표만 면제 완료한다.
+            for index in replacementIndices
+            where existing.tasks[index].kind == .dailyInningCompleted {
+                updated.tasks[index].progress = updated.tasks[index].target
+                updated.completedTaskIDs.insert(updated.tasks[index].id)
+            }
+            return updated
+        }
+
+        for index in ordinaryIndices {
+            let kind = replacements.removeFirst()
             updated.tasks[index] = task(weekKey: existing.weekKey, kind: kind)
+        }
+        for index in replacementIndices where existing.tasks[index].kind == .dailyInningCompleted {
+            if let kind = replacements.first {
+                replacements.removeFirst()
+                updated.tasks[index] = task(weekKey: existing.weekKey, kind: kind)
+            } else {
+                updated.tasks[index].progress = updated.tasks[index].target
+                updated.completedTaskIDs.insert(updated.tasks[index].id)
+            }
         }
         return updated
     }
@@ -301,7 +342,6 @@ enum WeeklyProgramRules {
 
     static func eligibleKinds(_ eligibility: WeeklyProgramEligibility) -> [WeeklyTaskKind] {
         var result: [WeeklyTaskKind] = []
-        if eligibility.dailyInningUnlocked { result.append(.dailyInningCompleted) }
         if eligibility.hasHighSchoolCareer {
             if eligibility.remainingImportantGames >= WeeklyTaskKind.importantGamesCompleted.defaultTarget {
                 result.append(.importantGamesCompleted)
@@ -313,7 +353,7 @@ enum WeeklyProgramRules {
         if eligibility.canStartNextRun { result.append(.nextRunStarted) }
         if eligibility.canSelectPledge { result.append(.pledgeSelected) }
         if eligibility.canChooseDifferentSchool { result.append(.differentSchoolSelected) }
-        if eligibility.hasHighSchoolCareer || eligibility.dailyInningUnlocked || eligibility.hasProCareer {
+        if eligibility.hasHighSchoolCareer || eligibility.hasProCareer {
             result.append(.sequenceMasteryTriggered)
             result.append(.playedOnTwoDays)
         }

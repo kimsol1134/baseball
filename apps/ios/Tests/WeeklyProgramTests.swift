@@ -9,7 +9,6 @@ final class WeeklyProgramTests: XCTestCase {
         hasHighSchoolCareer: true,
         remainingImportantGames: 6,
         remainingChapterAdvances: 7,
-        dailyInningUnlocked: true,
         canStartNextRun: true,
         canSelectPledge: true,
         canChooseDifferentSchool: true,
@@ -35,6 +34,7 @@ final class WeeklyProgramTests: XCTestCase {
         XCTAssertEqual(first.tasks.count, 3)
         XCTAssertEqual(Set(first.tasks.map(\.kind)).count, 3)
         XCTAssertTrue(first.tasks.allSatisfy { $0.id.hasPrefix("2026-W32-") })
+        XCTAssertFalse(first.tasks.contains { $0.kind == .dailyInningCompleted })
     }
 
     func testLockedAndRebirthTasksAreExcludedForFirstCareerUser() throws {
@@ -42,7 +42,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: true,
             remainingImportantGames: 5,
             remainingChapterAdvances: 7,
-            dailyInningUnlocked: true,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,
@@ -54,7 +53,6 @@ final class WeeklyProgramTests: XCTestCase {
             eligibility: firstCareer
         ))
         let allowed: Set<WeeklyTaskKind> = [
-            .dailyInningCompleted,
             .importantGamesCompleted,
             .chaptersAdvanced,
             .sequenceMasteryTriggered,
@@ -123,7 +121,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: true,
             remainingImportantGames: 5,
             remainingChapterAdvances: 7,
-            dailyInningUnlocked: true,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,
@@ -133,7 +130,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: false,
             remainingImportantGames: 0,
             remainingChapterAdvances: 0,
-            dailyInningUnlocked: true,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,
@@ -464,7 +460,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: true,
             remainingImportantGames: 5,
             remainingChapterAdvances: 7,
-            dailyInningUnlocked: true,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,
@@ -474,7 +469,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: false,
             remainingImportantGames: 0,
             remainingChapterAdvances: 0,
-            dailyInningUnlocked: true,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,
@@ -648,7 +642,7 @@ final class WeeklyProgramTests: XCTestCase {
         ).canSelectPledge)
     }
 
-    func testActiveProOffersOnlyCurrentlyPlayableDailySequenceAndProTasks() throws {
+    func testActiveProOffersOnlyCurrentlyPlayableSequenceAndProTasks() throws {
         let eligibility = AppShell.weeklyEligibility(
             highSchoolPhase: .completed,
             importantGamesCompleted: 6,
@@ -662,7 +656,7 @@ final class WeeklyProgramTests: XCTestCase {
         )
         XCTAssertEqual(
             Set(WeeklyProgramRules.eligibleKinds(eligibility)),
-            [.dailyInningCompleted, .sequenceMasteryTriggered, .proWeeksAdvanced, .playedOnTwoDays]
+            [.sequenceMasteryTriggered, .proWeeksAdvanced, .playedOnTwoDays]
         )
 
         let first = WeeklyProgramRules.make(
@@ -672,18 +666,11 @@ final class WeeklyProgramTests: XCTestCase {
             weekKey: "2026-W32", stableUserID: "active-pro", eligibility: eligibility
         )
         XCTAssertEqual(first, second)
-        // 후보가 넷이고 칸은 셋이다 — 이틀 목표는 반드시 들어가고 나머지 둘만 해시 순서다.
+        // 후보가 셋이고 칸도 셋이다 — 이틀 목표를 포함해 모두 현재 프로에서 수행 가능하다.
         XCTAssertTrue(first?.tasks.contains { $0.kind == .playedOnTwoDays } == true)
         XCTAssertTrue(Set(first?.tasks.map(\.kind) ?? [])
             .isSubset(of: Set(WeeklyProgramRules.eligibleKinds(eligibility))))
-        // 오늘의 이닝 목표가 보드에 오른 사람에게는 그 자리에서 바로 열 수 있어야 한다.
-        let dailyUser = try XCTUnwrap((0..<100).lazy.map { "active-pro-\($0)" }.first { id in
-            WeeklyProgramRules.make(weekKey: "2026-W32", stableUserID: id, eligibility: eligibility)?
-                .tasks.contains { $0.kind == .dailyInningCompleted } == true
-        })
-        XCTAssertTrue(WeeklyProgramView.showsDailyLaunch(program: try XCTUnwrap(
-            WeeklyProgramRules.make(weekKey: "2026-W32", stableUserID: dailyUser, eligibility: eligibility)
-        )))
+        XCTAssertFalse(first?.tasks.contains { $0.kind == .dailyInningCompleted } == true)
     }
 
     func testCompletedAndRetirementProNeverOfferProOrHiddenHighSchoolProgress() {
@@ -725,11 +712,10 @@ final class WeeklyProgramTests: XCTestCase {
         XCTAssertFalse(kinds.contains(.importantGamesCompleted))
         XCTAssertFalse(kinds.contains(.chaptersAdvanced))
         XCTAssertTrue(kinds.contains(.nextRunStarted))
-        XCTAssertTrue(kinds.contains(.dailyInningCompleted))
-        XCTAssertTrue(kinds.contains(.sequenceMasteryTriggered))
+        XCTAssertFalse(kinds.contains(.dailyInningCompleted))
     }
 
-    func testChallengeNeverOffersCanonicalHighSchoolGoalsButKeepsDailyUnlock() {
+    func testChallengeNeverOffersCanonicalOrRetiredGoals() {
         let eligibility = AppShell.weeklyEligibility(
             highSchoolPhase: .schoolSelection,
             importantGamesCompleted: 1,
@@ -747,8 +733,7 @@ final class WeeklyProgramTests: XCTestCase {
         XCTAssertFalse(eligibility.canSelectPledge)
         XCTAssertFalse(eligibility.canChooseDifferentSchool)
         XCTAssertFalse(eligibility.canStartNextRun)
-        XCTAssertTrue(eligibility.dailyInningUnlocked)
-        XCTAssertEqual(kinds, [.dailyInningCompleted, .sequenceMasteryTriggered, .playedOnTwoDays])
+        XCTAssertTrue(kinds.isEmpty)
     }
 
     func testLateHighSchoolOnlyOffersTwoStepGoalsWhenEnoughScheduleRemains() {
@@ -778,7 +763,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: true,
             remainingImportantGames: 1,
             remainingChapterAdvances: 1,
-            dailyInningUnlocked: false,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,
@@ -825,7 +809,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: true,
             remainingImportantGames: 1,
             remainingChapterAdvances: 2,
-            dailyInningUnlocked: true,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,
@@ -844,7 +827,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: true,
             remainingImportantGames: 0,
             remainingChapterAdvances: 2,
-            dailyInningUnlocked: true,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,
@@ -854,7 +836,69 @@ final class WeeklyProgramTests: XCTestCase {
             existing, stableUserID: "late-progress", eligibility: noGamesLeft
         )
         XCTAssertFalse(replaced.tasks.contains { $0.kind == .importantGamesCompleted })
+        XCTAssertFalse(replaced.tasks.contains { $0.kind == .dailyInningCompleted })
         XCTAssertEqual(replaced.tasks.count, 3)
+    }
+
+    func testRetiredGoalIsExcusedWhenNoReplacementExists() {
+        let weekKey = "2026-W32"
+        let retired = WeeklyTask(
+            id: "\(weekKey)-\(WeeklyTaskKind.dailyInningCompleted.rawValue)",
+            kind: .dailyInningCompleted, target: 1, progress: 0
+        )
+        let existing = WeeklyProgram(
+            weekKey: weekKey, tasks: [retired], completedTaskIDs: [], claimed: false
+        )
+        let noPlayableMode = WeeklyProgramEligibility(
+            hasHighSchoolCareer: false,
+            remainingImportantGames: 0,
+            remainingChapterAdvances: 0,
+            canStartNextRun: false,
+            canSelectPledge: false,
+            canChooseDifferentSchool: false,
+            hasProCareer: false
+        )
+
+        let migrated = WeeklyProgramRules.reconciling(
+            existing, stableUserID: "retired-goal", eligibility: noPlayableMode
+        )
+        XCTAssertEqual(migrated.tasks.first?.boundedProgress, 1)
+        XCTAssertEqual(migrated.completedCount, 1)
+        XCTAssertTrue(migrated.isPerfect)
+    }
+
+    func testRetiredGoalIsExcusedEvenWhenAnotherGoalCannotBeReplaced() {
+        let weekKey = "2026-W32"
+        let retired = WeeklyTask(
+            id: "\(weekKey)-\(WeeklyTaskKind.dailyInningCompleted.rawValue)",
+            kind: .dailyInningCompleted, target: 1, progress: 0
+        )
+        let unavailablePro = WeeklyTask(
+            id: "\(weekKey)-\(WeeklyTaskKind.proWeeksAdvanced.rawValue)",
+            kind: .proWeeksAdvanced, target: 2, progress: 1
+        )
+        let existing = WeeklyProgram(
+            weekKey: weekKey,
+            tasks: [retired, unavailablePro],
+            completedTaskIDs: [],
+            claimed: false
+        )
+        let noPlayableMode = WeeklyProgramEligibility(
+            hasHighSchoolCareer: false,
+            remainingImportantGames: 0,
+            remainingChapterAdvances: 0,
+            canStartNextRun: false,
+            canSelectPledge: false,
+            canChooseDifferentSchool: false,
+            hasProCareer: false
+        )
+
+        let migrated = WeeklyProgramRules.reconciling(
+            existing, stableUserID: "retired-and-unavailable", eligibility: noPlayableMode
+        )
+        XCTAssertTrue(migrated.completedTaskIDs.contains(retired.id))
+        XCTAssertEqual(migrated.tasks[0].boundedProgress, 1)
+        XCTAssertEqual(migrated.tasks[1], unavailablePro)
     }
 
     func testFailedHighSchoolActionDoesNotAdvanceInjectedWeeklyProgram() throws {
@@ -865,7 +909,6 @@ final class WeeklyProgramTests: XCTestCase {
             hasHighSchoolCareer: true,
             remainingImportantGames: 5,
             remainingChapterAdvances: 7,
-            dailyInningUnlocked: false,
             canStartNextRun: false,
             canSelectPledge: false,
             canChooseDifferentSchool: false,

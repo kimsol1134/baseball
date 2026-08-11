@@ -1,12 +1,11 @@
 import Foundation
 @preconcurrency import UserNotifications
 
-/// 오늘의 이닝 복귀 알림.
+/// 현재 커리어의 다음 행동을 이어 주는 복귀 알림.
 ///
-/// 왜 이 파일이 따로 생겼는가: 예전에는 이 로직이 `DailyInningView` 안에 있었고, 켜는
-/// 스위치도 **오늘의 이닝 화면 안에만** 있었다. 2026-08 정식 코호트는 첫날 평균 11.6경기를
-/// 자발적으로 소화했지만, 첫 경기 뒤 D1 의미 세션은 5/36이었다. 따라서 플레이를 막는 대신
-/// 사람이 지나가는 길목에서 지금 남긴 목표를 다음날 정확한 화면으로 이어 준다.
+/// 2026-08 정식 코호트는 첫날 평균 11.6경기를 자발적으로 소화했지만, 첫 경기 뒤 D1 의미
+/// 세션은 5/36이었다. 따라서 플레이를 막는 대신 사람이 지나가는 길목에서 지금 남긴 목표를
+/// 다음날 정확한 화면으로 이어 준다.
 ///
 /// 설계 규칙 셋:
 /// - **반복 트리거를 쓰지 않는다.** `repeats: true`는 떠난 사람에게 영원히 울린다.
@@ -22,7 +21,7 @@ enum DailyReminder {
     static let horizonDays = 3
     static let hour = 19
     static let minute = 30
-    /// `AppShell.isDailyInningDeepLink`가 받는 그 링크.
+    /// 제거 전 배포가 예약한 알림과 외부 링크를 해석하기 위한 호환 주소.
     static let deepLink = "com.solkim.baseball.ios://daily-inning"
     static let linkUserInfoKey = "link"
     static let destinationUserInfoKey = "destination"
@@ -63,7 +62,7 @@ enum DailyReminder {
         /// 알림과 앱 안의 복귀 카드가 같은 화면을 약속하도록 목적지에서 버튼 문구도 만든다.
         var continueTitle: String {
             switch self {
-            case .dailyInning: "오늘의 이닝 열기"
+            case .dailyInning: "게임으로 돌아가기"
             case .highSchool: "이 선수 이어서 키우기"
             case .pro: "프로 시즌 이어가기"
             }
@@ -414,32 +413,19 @@ enum DailyReminder {
         return candidate
     }
 
-    /// 계획이 없으면 기존 오늘의 이닝 알림으로 돌아간다. 구버전 알림도 같은 fallback을 쓴다.
-    static func notificationCopy(plan: Plan?, streak: Int) -> NotificationCopy {
-        if let plan,
-           plan.experimentVariant == ReturnExperimentVariant.guided.rawValue {
-            return NotificationCopy(
-                title: plan.title,
-                body: plan.body,
-                link: plan.destination.deepLink,
-                destination: plan.destination.rawValue,
-                reason: plan.reason
-            )
-        }
+    /// 실제 이어 갈 커리어가 있는 guided 사용자에게만 알림을 만든다. 제거된 목적지나
+    /// 계획 없는 상태는 알림을 만들지 않아 과거 fallback이 되살아나지 않게 한다.
+    static func notificationCopy(plan: Plan?) -> NotificationCopy? {
+        guard let plan,
+              plan.destination != .dailyInning,
+              plan.experimentVariant == ReturnExperimentVariant.guided.rawValue else { return nil }
         return NotificationCopy(
-            title: "오늘의 이닝이 열려 있습니다",
-            body: streak > 0
-                ? "\(streak)일 연속 — 자정 전에 한 이닝이면 이어집니다."
-                : "전국이 같은 타순을 상대합니다 — 자정 전에 한 이닝.",
-            link: deepLink,
-            destination: Destination.dailyInning.rawValue,
-            reason: "daily_inning"
+            title: plan.title,
+            body: plan.body,
+            link: plan.destination.deepLink,
+            destination: plan.destination.rawValue,
+            reason: plan.reason
         )
-    }
-
-    static func playedKeysToSkip(plan: Plan?, playedDailyKeys: Set<String>) -> Set<String> {
-        let guided = plan?.experimentVariant == ReturnExperimentVariant.guided.rawValue
-        return !guided || plan?.destination == .dailyInning ? playedDailyKeys : []
     }
 
     private static func stableHash(_ value: String) -> UInt64 {
@@ -485,21 +471,10 @@ enum DailyReminder {
         guard UserDefaults.standard.bool(forKey: enabledKey) else { return }
         let now = Date()
         let plan = storedPlan()
-        let playedDailyKeys = Set(
-            (0..<horizonDays).compactMap { offset -> String? in
-                var calendar = Calendar(identifier: .gregorian)
-                calendar.timeZone = TimeZone(identifier: "Asia/Seoul") ?? .current
-                guard let day = calendar.date(byAdding: .day, value: offset, to: now) else { return nil }
-                let key = DailyStreak.key(for: day)
-                return UserDefaults.standard.bool(forKey: DailyStreak.playedKeyPrefix + key) ? key : nil
-            }
-        )
-        // 커리어를 이어 하라는 알림은 오늘의 이닝을 이미 던졌다고 사라지면 안 된다.
-        let skippedKeys = playedKeysToSkip(plan: plan, playedDailyKeys: playedDailyKeys)
-        let copy = notificationCopy(plan: plan, streak: DailyStreak.current())
+        guard let copy = notificationCopy(plan: plan) else { return }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Asia/Seoul") ?? .current
-        for entry in schedule(from: now, playedKeys: skippedKeys) {
+        for entry in schedule(from: now) {
             let content = UNMutableNotificationContent()
             content.title = copy.title
             content.body = copy.body
@@ -532,9 +507,7 @@ enum DailyReminder {
     }
 }
 
-/// 알림을 눌렀을 때 오늘의 이닝을 연다.
-///
-/// `onOpenURL`만 있으면 알림 탭은 홈 화면만 띄운다 — D1 훅의 마지막 한 걸음이 없는 셈이다.
+/// 알림을 눌렀을 때 약속한 커리어 화면을 연다.
 @MainActor
 final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationRouter()

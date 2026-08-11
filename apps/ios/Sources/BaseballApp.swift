@@ -46,8 +46,7 @@ struct BaseballApp: App {
             completedGameCount: currentGames
         )
         let returnPlan: DailyReminder.Plan?
-        if isReturnEligible {
-            let returnContext = resolvedReturnContext()
+        if isReturnEligible, let returnContext = resolvedReturnContext() {
             let prepared = DailyReminder.preparedForNextReturn(
                 returnContext.plan,
                 rulesVersion: returnContext.developmentRulesVersion
@@ -84,13 +83,8 @@ struct BaseballApp: App {
         DailyReminder.refresh(plan: returnPlan)
     }
 
-    private func resolvedReturnContext() -> (plan: DailyReminder.Plan, developmentRulesVersion: Int) {
-        let plan = currentReturnPlan() ?? DailyReminder.Plan(
-            title: "오늘의 이닝이 열려 있습니다",
-            body: "전국이 같은 타순을 상대합니다. 짧은 한 이닝으로 감각을 이어 보세요.",
-            destination: .dailyInning,
-            reason: "daily_inning"
-        )
+    private func resolvedReturnContext() -> (plan: DailyReminder.Plan, developmentRulesVersion: Int)? {
+        guard let plan = currentReturnPlan() else { return nil }
         return (
             plan,
             Self.developmentRulesVersion(
@@ -101,13 +95,13 @@ struct BaseballApp: App {
         )
     }
 
-    private func resolvedReturnPlan() -> DailyReminder.Plan {
-        resolvedReturnContext().plan
+    private func resolvedReturnPlan() -> DailyReminder.Plan? {
+        resolvedReturnContext()?.plan
     }
 
     /// 복귀 목적지와 같은 커리어의 규칙 버전을 써야 eligibility → cold start →
     /// game_finished가 한 코호트로 이어진다. 남아 있는 고교 저장보다 활성 프로가 우선인
-    /// 사용자도 있고, 기록 없는 도전은 일일 이닝으로 돌아가므로 목적지를 먼저 확정한다.
+    /// 사용자도 있으므로 목적지를 먼저 확정한다. 제거 전 목적지는 호환용 현재 규칙을 쓴다.
     static func developmentRulesVersion(
         for destination: DailyReminder.Destination,
         proRulesVersion: Int?,
@@ -144,7 +138,7 @@ struct BaseballApp: App {
         }
 
         // 기록에 남지 않는 도전은 재실행 때 보존되지 않는다. 다음날 이어진다고 약속하면
-        // 알림 문구와 실제 도착 상태가 달라지므로 일일 이닝 fallback만 사용한다.
+        // 알림 문구와 실제 도착 상태가 달라지므로 복귀 계획을 만들지 않는다.
         if highSchool.isChallengeRun { return nil }
 
         if let state = highSchool.state {
@@ -274,7 +268,7 @@ struct BaseballApp: App {
                             current: currentPlan,
                             handled: DailyReminder.storedWelcomeHandled()
                         )
-                        previousReturnPlan = currentPlan.carryingReceipt(from: previousReturnPlan)
+                        previousReturnPlan = currentPlan?.carryingReceipt(from: previousReturnPlan)
                         DailyReminder.refresh(plan: currentPlan)
                     } else {
                         // A first launch must not manufacture a return plan or show a stale one
@@ -316,8 +310,7 @@ struct BaseballApp: App {
                                     current: currentPlan,
                                     handled: DailyReminder.storedWelcomeHandled()
                                 )
-                                previousReturnPlan = currentPlan.carryingReceipt(from: storedPlan)
-                                // 오늘 던졌으면 오늘 저녁 알림을 지우고, 지난 날짜분을 새로 채운다.
+                                previousReturnPlan = currentPlan?.carryingReceipt(from: storedPlan)
                                 DailyReminder.refresh(plan: currentPlan)
                             } else {
                                 returnWelcomePlan = nil

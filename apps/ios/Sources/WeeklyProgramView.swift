@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// 본편의 오늘의 이닝 입구 바로 아래에 붙는 한 줄. 새 탭을 만들지 않고 이번 주의
-/// 방향만 보여 주며, 자세한 기록과 보상은 기록 탭에서 다룬다.
+/// 본편에 붙는 한 줄 요약. 자세한 기록과 보상은 기록 탭에서 다룬다.
 struct WeeklyProgramSummaryRow: View {
     let store: WeeklyProgramStore
 
@@ -31,7 +30,6 @@ struct WeeklyProgramSummaryRow: View {
 struct WeeklyProgramView: View {
     let store: WeeklyProgramStore
     let highSchool: HighSchoolCareerStore
-    var onOpenDailyInning: (() -> Void)? = nil
 
     static func openedProperties(program: WeeklyProgram, source: String = "records") -> [String: Any] {
         [
@@ -39,10 +37,6 @@ struct WeeklyProgramView: View {
             "source": source,
             "completed_tasks": program.completedCount,
         ]
-    }
-
-    static func showsDailyLaunch(program: WeeklyProgram) -> Bool {
-        program.tasks.contains { $0.kind == .dailyInningCompleted && !$0.isCompleted }
     }
 
     var body: some View {
@@ -84,17 +78,6 @@ struct WeeklyProgramView: View {
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(BaseballTheme.milestone)
                                 .fixedSize(horizontal: false, vertical: true)
-                        }
-
-                        if Self.showsDailyLaunch(program: program), let onOpenDailyInning {
-                            Button(action: onOpenDailyInning) {
-                                Label("오늘의 이닝 던지기", systemImage: "figure.baseball")
-                                    .font(.subheadline.weight(.semibold))
-                                    .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                            }
-                            .buttonStyle(.bordered)
-                            .accessibilityHint("오늘의 이닝을 열어 주간 목표에 도전합니다.")
-                            .accessibilityIdentifier("weekly.openDailyInning")
                         }
 
                         if let reward = store.claimableReward {

@@ -1960,36 +1960,6 @@ final class HighSchoolCareerStore {
         return true
     }
 
-    /// 오늘의 이닝 하루 몫을 야구혼으로 얹는다.
-    ///
-    /// 이 모드는 완료해도 야구혼이 0이라, 커리어를 키우는 사람에게 3분을 쓸 이유가
-    /// 순위표뿐이었다 — DAU의 7%만 열었고, 입구는 이미 거의 모든 국면에 있으니
-    /// **입구 문제가 아니라 보상 문제였다.** 하루 한 번만 지급하고(영수증에 날짜를
-    /// 박는다) 액수는 작게 둔다: 스며듦 곡선에서 +1점 남짓이라 계승 상한 구조를
-    /// 흔들지 않는다.
-    @discardableResult
-    func creditDailyInning(dayKey: String, soulPoints: Int = 5) -> Bool {
-        guard soulPoints > 0 else { return false }
-        let receipt = "daily-inning:\(dayKey)"
-        if creditedExternalRewardIDs.contains(receipt) { return true }
-
-        let previousInheritance = inheritance
-        let previousReceipts = creditedExternalRewardIDs
-        creditedExternalRewardIDs.insert(receipt)
-        inheritance.soulTotalEarned = inheritance.soulTotal + soulPoints
-        inheritance.soulPoints += soulPoints
-        guard save() else {
-            inheritance = previousInheritance
-            creditedExternalRewardIDs = previousReceipts
-            return false
-        }
-        GameAnalytics.log(.dailyInningRewarded, [
-            "soul_points": soulPoints,
-            "life_number": inheritance.lifeNumber,
-        ])
-        return true
-    }
-
     /// 고교를 건너뛰고 시작한 프로 커리어는 특정 고교 선수의 대표 유산으로 꾸미지 않는다.
     /// 대신 통산 무게만 야구혼으로 안전하게 남기고 현재 고교 진행은 그대로 보존한다.
     @discardableResult

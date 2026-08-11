@@ -23,8 +23,6 @@ enum ReviewPrompt {
         case goodRecap
         /// 3회차 진입. 반복이 확정된 순간 = 이 게임을 좋아한다는 가장 강한 신호.
         case thirdLife
-        /// 오늘의 이닝 개인 최고 기록 경신.
-        case dailyBest
         /// 드래프트 지명 확정. 감정 최고점이지만 도달자가 적다.
         case drafted
 

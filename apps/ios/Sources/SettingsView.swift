@@ -39,10 +39,7 @@ struct SettingsView: View {
                     .foregroundStyle(BaseballTheme.textSecondary)
             }
 
-            // 복귀 알림은 설정에 있어야 한다.
-            //
-            // 예전에는 이 스위치가 오늘의 이닝 화면 안에만 있었다 — DAU의 7%만 여는
-            // 화면이다. 켠 사람을 찾을 수 없으니 끄려는 사람도 찾을 수 없었다.
+            // 복귀 알림은 언제든 끌 수 있도록 설정에 둔다.
             Section {
                 Toggle("이어하기 알림", isOn: Binding(
                     get: { reminderOn },
@@ -55,7 +52,7 @@ struct SettingsView: View {
             } header: {
                 Text("알림")
             } footer: {
-                Text("매일 저녁 7시 30분, 현재 선수의 다음 목표나 그날의 이닝 중 이어 할 한 가지를 알려 드립니다. 며칠 동안 열지 않으면 저절로 멈춥니다.")
+                Text("매일 저녁 7시 30분, 현재 선수의 다음 목표를 알려 드립니다. 며칠 동안 열지 않으면 저절로 멈춥니다.")
             }
 
             Section {
@@ -114,7 +111,7 @@ struct SettingsView: View {
                 // "모든 진행"에는 UserDefaults의 진행 흔적도 포함된다 — 남기면
                 // 새 회차의 첫 신기록·첫 별점 순간이 이미 소모돼 있다.
                 UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
-                UserDefaults.standard.removeObject(forKey: DailyInningView.bestEverKey)
+                LegacyDailyInningData.clear()
                 ReviewPrompt.reset()
                 // 연속 기록도 진행이다. 남기면 새 시작이 "12일 연속"에서 출발한다.
                 for key in UserDefaults.standard.dictionaryRepresentation().keys

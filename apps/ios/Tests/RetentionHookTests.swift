@@ -2,17 +2,12 @@ import XCTest
 import SimulationCore
 @testable import BaseballIOS
 
-/// 리텐션 훅(연속 기록·복귀 알림·오늘의 이닝 노출)의 순수 판정.
+/// 리텐션 훅(연속 기록·복귀 알림)의 순수 판정.
 ///
 /// 배경: 2026-08 정식 신규 코호트는 첫날 평균 11.6경기를 했지만 D1 의미 세션은 5/36이었다.
 /// 첫날 플레이를 제한하는 대신, 사용자가 직접 남긴 목표를 3일 비반복 알림과 정확한 화면으로
 /// 이어 준다. 여기 있는 판정들은 그 복귀 약속과 기존 일일 연속 기록을 함께 고정한다.
 final class RetentionHookTests: XCTestCase {
-    func testDailyInningCompletionGateRejectsRepeatedFinish() {
-        XCTAssertTrue(DailyInningView.canClaimFinish(alreadyFinished: false))
-        XCTAssertFalse(DailyInningView.canClaimFinish(alreadyFinished: true))
-    }
-
     private var defaults: UserDefaults!
     private var suiteName: String!
 
@@ -106,7 +101,7 @@ final class RetentionHookTests: XCTestCase {
 
     /// 첫날 실제 유저는 평균 2회차 이상을 끝냈다. 다음날 알림은 막연한 출석 요구가
     /// 아니라 사용자가 직접 남긴 목표와 그 화면으로 이어져야 한다.
-    func testCareerReturnPlanPersistsAndBuildsMatchingDeepLinkCopy() {
+    func testCareerReturnPlanPersistsAndBuildsMatchingDeepLinkCopy() throws {
         let plan = DailyReminder.Plan(
             title: "이번 선수의 목표가 남아 있습니다",
             body: "시즌 5탈삼진 · 탈삼진 3/5 — 이어서 완성해 보세요.",
@@ -118,7 +113,7 @@ final class RetentionHookTests: XCTestCase {
         DailyReminder.savePlan(plan, defaults: defaults)
         XCTAssertEqual(DailyReminder.storedPlan(defaults: defaults), plan)
 
-        let copy = DailyReminder.notificationCopy(plan: plan, streak: 7)
+        let copy = try XCTUnwrap(DailyReminder.notificationCopy(plan: plan))
         XCTAssertEqual(copy.title, plan.title)
         XCTAssertEqual(copy.body, plan.body)
         XCTAssertEqual(copy.link, "com.solkim.baseball.ios://high-school")
@@ -191,7 +186,7 @@ final class RetentionHookTests: XCTestCase {
     func testReturnPlanButtonsNameTheActualDestination() {
         XCTAssertEqual(DailyReminder.Destination.highSchool.continueTitle, "이 선수 이어서 키우기")
         XCTAssertEqual(DailyReminder.Destination.pro.continueTitle, "프로 시즌 이어가기")
-        XCTAssertEqual(DailyReminder.Destination.dailyInning.continueTitle, "오늘의 이닝 열기")
+        XCTAssertEqual(DailyReminder.Destination.dailyInning.continueTitle, "게임으로 돌아가기")
     }
 
     @MainActor
@@ -236,31 +231,14 @@ final class RetentionHookTests: XCTestCase {
         )
     }
 
-    func testDailyFallbackKeepsExistingStreakMessageAndRoute() {
-        let copy = DailyReminder.notificationCopy(plan: nil, streak: 3)
-        XCTAssertEqual(copy.title, "오늘의 이닝이 열려 있습니다")
-        XCTAssertTrue(copy.body.contains("3일 연속"))
-        XCTAssertEqual(copy.link, DailyReminder.deepLink)
-        XCTAssertEqual(copy.destination, "daily_inning")
-        XCTAssertEqual(copy.reason, "daily_inning")
-    }
-
-    func testCompletedDailyDoesNotSuppressACareerReturnPlan() {
-        let played = Set(["20260809", "20260810"])
-        let career = DailyReminder.Plan(
-            title: "프로 시즌의 다음 선택",
-            body: "이번 시즌의 중요한 선택을 직접 결정할 차례입니다.",
-            destination: .pro,
-            reason: "pro_phase",
+    func testRetiredDestinationAndMissingPlanNeverCreateANotification() {
+        XCTAssertNil(DailyReminder.notificationCopy(plan: nil))
+        let retired = DailyReminder.Plan(
+            title: "이전 알림", body: "이전 목적지",
+            destination: .dailyInning, reason: "legacy",
             experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue
         )
-        XCTAssertTrue(DailyReminder.playedKeysToSkip(
-            plan: career, playedDailyKeys: played
-        ).isEmpty)
-        XCTAssertEqual(
-            DailyReminder.playedKeysToSkip(plan: nil, playedDailyKeys: played),
-            played
-        )
+        XCTAssertNil(DailyReminder.notificationCopy(plan: retired))
     }
 
     func testReminderOpenedPropertiesSupportNewAndLegacyRequests() {
@@ -363,12 +341,10 @@ final class RetentionHookTests: XCTestCase {
         let card = DailyReminder.welcomePlan(previous: guided, current: current)
         XCTAssertEqual(card?.receiptID, "guided-r")
 
-        let holdoutCopy = DailyReminder.notificationCopy(plan: holdout, streak: 2)
-        XCTAssertEqual(holdoutCopy.destination, "daily_inning")
-        XCTAssertEqual(holdoutCopy.reason, "daily_inning")
-        let guidedCopy = DailyReminder.notificationCopy(plan: guided, streak: 2)
-        XCTAssertEqual(guidedCopy.destination, "pro")
-        XCTAssertEqual(guidedCopy.reason, "pro_phase")
+        XCTAssertNil(DailyReminder.notificationCopy(plan: holdout))
+        let guidedCopy = DailyReminder.notificationCopy(plan: guided)
+        XCTAssertEqual(guidedCopy?.destination, "pro")
+        XCTAssertEqual(guidedCopy?.reason, "pro_phase")
     }
 
     func testColdStartUsesNextKSTDateAndCarriesComparableProperties() {
@@ -600,36 +576,27 @@ final class RetentionHookTests: XCTestCase {
         XCTAssertFalse(DailyReminder.shouldOfferOptIn(defaults: defaults))
     }
 
-    // MARK: - 오늘의 이닝 입구 노출
+    // MARK: - 제거된 링크 호환
 
-    /// 첫 중요 경기를 끝내기 전에는 곁가지 모드를 보여 주지 않는다 — 본편의 손맛을
-    /// 보기도 전에 다른 모드가 보이면 무엇이 이 게임인지 흐려진다.
-    func testDailyEntryHiddenBeforeTheFirstImportantGame() {
-        XCTAssertFalse(HighSchoolCareerView.showsDailyEntry(phase: .training, gamesCompleted: 0))
-    }
-
-    /// 회차가 **끝나는** 화면들이야말로 내일 켤 이유가 필요한 자리다. 예전에는 훈련
-    /// 국면에서만 보여서, 첫 세션에 1회차를 통째로 끝낸 사람은 마지막까지 이 입구를
-    /// 한 번도 보지 못하고 떠났다.
-    func testDailyEntryShowsOnTheScreensWhereRunsEnd() {
-        for phase in [HighSchoolCareerPhase.draft, .legacy, .completed, .chapterReview,
-                      .training, .relationship, .schoolSelection] {
-            XCTAssertTrue(
-                HighSchoolCareerView.showsDailyEntry(phase: phase, gamesCompleted: 1),
-                "\(phase.rawValue)에서 오늘의 이닝 입구가 보여야 합니다"
-            )
-        }
-    }
-
-    /// 승부와 각성은 집중이 필요한 국면이다. 투구 화면 위에 곁가지 배너가 있으면 소음이고,
-    /// 되돌릴 수 없는 선택 옆의 다른 버튼은 오조작이다.
-    func testDailyEntryHiddenDuringFocusedPhases() {
-        for phase in [HighSchoolCareerPhase.importantGame, .awakening, .prologue] {
-            XCTAssertFalse(
-                HighSchoolCareerView.showsDailyEntry(phase: phase, gamesCompleted: 3),
-                "\(phase.rawValue)에서는 곁가지 입구가 숨어야 합니다"
-            )
-        }
+    func testRetiredDailyLinkFallsBackToAPlayableTab() {
+        XCTAssertEqual(
+            AppShell.retiredDailyInningFallbackTab(
+                hasActiveProCareer: true, showsHighSchool: true
+            ),
+            .pro
+        )
+        XCTAssertEqual(
+            AppShell.retiredDailyInningFallbackTab(
+                hasActiveProCareer: false, showsHighSchool: true
+            ),
+            .highSchool
+        )
+        XCTAssertEqual(
+            AppShell.retiredDailyInningFallbackTab(
+                hasActiveProCareer: false, showsHighSchool: false
+            ),
+            .pro
+        )
     }
 
     // MARK: - 안정 식별자

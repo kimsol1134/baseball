@@ -41,9 +41,9 @@ final class ReviewPromptTests: XCTestCase {
     /// 간격에 막힌 이유는 **소진되지 않아야** 한다. 소진되면 그 순간은 영영 사라진다.
     func testBlockedReasonSurvivesForLater() {
         _ = ReviewPrompt.shouldAsk(.cleanInning, now: now, defaults: defaults)
-        _ = ReviewPrompt.shouldAsk(.dailyBest, now: now, defaults: defaults)
+        _ = ReviewPrompt.shouldAsk(.drafted, now: now, defaults: defaults)
         let nextDay = now.addingTimeInterval(ReviewPrompt.minimumInterval + 60)
-        XCTAssertTrue(ReviewPrompt.shouldAsk(.dailyBest, now: nextDay, defaults: defaults))
+        XCTAssertTrue(ReviewPrompt.shouldAsk(.drafted, now: nextDay, defaults: defaults))
     }
 
     /// "모든 진행 삭제"는 별점 흔적까지 지운다.

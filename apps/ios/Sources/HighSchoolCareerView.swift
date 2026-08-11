@@ -19,26 +19,11 @@ struct HighSchoolCareerView: View {
     @State private var draftReveal: DraftReveal?
     /// 환생 스탬프를 띄울 회차. 기억을 확정하고 다음 회차로 넘어가는 순간에만 켠다.
     @State private var rebirthStamp: RebirthStamp?
-    /// 오늘의 이닝(일일 도전) 표시 여부.
-    @State private var showsDaily = false
     /// 현재 선수의 스킬 진행을 어느 국면에서든 확인하는 시트.
     @State private var skillTreePreview: SkillTreePreview?
     /// 복귀 알림 권유 카드를 지금 띄우는가. 한 번 답하면 이 세션에서는 다시 묻지 않는다.
     @State private var showsReminderNudge = DailyReminder.shouldOfferOptIn()
     @Environment(\.requestReview) private var requestReview
-
-    /// 오늘의 이닝 입구를 지금 화면에 두어도 되는가. 순수 함수라 테스트할 수 있다.
-    ///
-    /// 첫 중요 경기를 끝내기 전에는 보여 주지 않는다 — 본편의 손맛을 보기도 전에 곁가지
-    /// 모드가 보이면 무엇이 이 게임인지 흐려진다. 그 뒤로는 승부(투구 화면)와 각성
-    /// (되돌릴 수 없는 선택) 두 국면만 뺀다.
-    static func showsDailyEntry(phase: HighSchoolCareerPhase, gamesCompleted: Int) -> Bool {
-        guard gamesCompleted >= 1 else { return false }
-        switch phase {
-        case .importantGame, .awakening, .prologue: return false
-        default: return true
-        }
-    }
 
     /// A chapter goal is only honest when the chapter gives the player an official game in
     /// which strikeouts can be earned. This mirrors the existing view condition as a pure policy.
@@ -160,10 +145,6 @@ struct HighSchoolCareerView: View {
         //
         // 반대로(회차를 먼저 넘기고 스탬프를 띄우면) 화면이 갈아 끼워지는 순간에 전면
         // 화면을 올리는 셈이라 표시가 들쭉날쭉했다. 연출이 곧 전환이면 그런 경합이 없다.
-        .fullScreenCover(isPresented: $showsDaily) {
-            DailyInningView(onClose: { showsDaily = false }, source: "career_entry",
-                            weekly: weekly, highSchool: career)
-        }
         .sheet(item: $skillTreePreview) { preview in
             SkillTreeSheet(
                 selected: preview.selected,
@@ -300,22 +281,12 @@ struct HighSchoolCareerView: View {
                                 CommunityBuzzCard(title: "전국의 소식", footnote: "라이벌들도 저마다의 3년을 살고 있습니다.", lines: career.worldNews)
                             }
                         }
-                        // 오늘의 이닝 — 하루 한 판, 전국 같은 타순. 회차 진행과 무관한
-                        // "오늘 3분"의 이유.
-                        //
-                        // 예전에는 **훈련 국면에서만** 보였다. 2026-08 데이터에서 DAU 43명 중
-                        // 이 화면을 연 사람은 3명(7%)이었고 D2 리텐션은 0%였다 — 사람들은 첫
-                        // 세션에 1회차를 통째로 끝내고(1인당 10.6경기) 떠나는데, 그 마지막
-                        // 화면들(드래프트·기억 선택·완료)에는 내일 켤 이유가 하나도 없었다.
-                        // 이제 승부·각성처럼 집중이 필요한 국면만 빼고 늘 보인다.
-                        if Self.showsDailyEntry(phase: state.phase,
-                                                gamesCompleted: state.performance.importantGamesCompleted) {
-                            DailyInningEntryRow { showsDaily = true }
+                        if state.performance.importantGamesCompleted >= 1,
+                           state.phase != .importantGame, state.phase != .awakening,
+                           state.phase != .prologue {
                             WeeklyProgramSummaryRow(store: weekly)
                         }
                         // 복귀 알림 권유 — 첫 중요 경기를 끝낸 직후(감정이 양)에 딱 한 번.
-                        // 예전에는 이 스위치가 오늘의 이닝 화면 **안에만** 있었다. 즉 7%만
-                        // 여는 화면 안에 리텐션 장치가 갇혀 있었다.
                         if state.performance.importantGamesCompleted >= 1,
                            state.phase != .importantGame, state.phase != .awakening,
                            showsReminderNudge {
@@ -618,57 +589,6 @@ private struct TrainingResultPanel: View {
         .onAppear {
             if receipt.bloom != nil || receipt.jackpot { GameAudio.shared.play(.milestone) }
         }
-    }
-}
-
-// MARK: - 내일 켤 이유
-
-/// 오늘의 이닝 입구 한 줄. 연속 기록이 있으면 그것이 문구가 된다 — 숫자가 쌓여 있으면
-/// 하루 건너뛰는 데 비용이 생기고, 그 비용이 내일 켜는 이유다.
-private struct DailyInningEntryRow: View {
-    let onOpen: () -> Void
-
-    private var todayBest: Int {
-        UserDefaults.standard.integer(forKey: "baseball.daily.best.\(PitchScenario.todayKey())")
-    }
-
-    var body: some View {
-        let streakCaption = DailyStreak.caption()
-        // "오늘 아직" 배지는 **오늘의 이닝**을 던졌는지만 묻는다. 연속 일수(캡션)는
-        // 커리어 경기까지 세지만, 이 배지까지 그러면 오늘의 이닝을 안 던진 사람에게
-        // "다 했다"고 말하게 된다.
-        let played = DailyStreak.playedDailyInningToday()
-        Button(action: onOpen) {
-            HStack(spacing: 8) {
-                Image(systemName: played ? "flame.fill" : "calendar.badge.clock")
-                    .foregroundStyle(BaseballTheme.milestone)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("오늘의 이닝").font(.footnote.weight(.bold))
-                    Text(streakCaption
-                         ?? (todayBest > 0 ? "오늘 최고 \(todayBest)점 · 재도전"
-                             : "전국이 같은 타순 · Game Center 순위"))
-                        .font(.caption2).foregroundStyle(BaseballTheme.textSecondary)
-                }
-                Spacer(minLength: 0)
-                // 오늘 아직 안 던졌다는 사실이 한눈에 보여야 배지가 일을 한다.
-                if !played {
-                    Text("오늘 아직")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(BaseballTheme.canvas)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(BaseballTheme.milestone, in: Capsule())
-                }
-                Image(systemName: "chevron.right").font(.caption2)
-                    .foregroundStyle(BaseballTheme.textTertiary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(BaseballTheme.milestone.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(BaseballTheme.milestone.opacity(0.5), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("hs.daily.entry")
     }
 }
 
