@@ -18,12 +18,12 @@ export const HiveScene: React.FC = () => {
         <div style={{ minHeight: 350, padding: "34px", border: "2px solid rgba(200,242,74,0.6)", backgroundColor: "rgba(5,8,7,0.92)" }}>
           <small style={{ color: "#C8F24A", fontFamily: fontStack, fontSize: 21, fontWeight: 900 }}>CURRENT PUBLIC BUILD</small>
           <strong style={{ display: "block", marginTop: 22, color: "#EEF0DF", fontFamily: fontStack, fontSize: 42 }}>서버 재검증 + D1 익명 보드</strong>
-          <p style={{ margin: "20px 0 0", color: "#A8B1A4", fontFamily: fontStack, fontSize: 27, fontWeight: 700, lineHeight: 1.45 }}>15회 훈련과 3관문 투구를 서버에서 다시 계산해 조작된 기록을 거절합니다.</p>
+          <p style={{ margin: "20px 0 0", color: "#A8B1A4", fontFamily: fontStack, fontSize: 31, fontWeight: 800, lineHeight: 1.35 }}>15회 훈련 + 3관문 투구 전체 재계산</p>
         </div>
         <div style={{ minHeight: 350, padding: "34px", border: "1px solid rgba(121,201,207,0.44)", backgroundColor: "rgba(5,8,7,0.88)" }}>
           <small style={{ color: "#79C9CF", fontFamily: fontStack, fontSize: 21, fontWeight: 900 }}>POST-LAUNCH HIVE INTEGRATION PLAN</small>
           <strong style={{ display: "block", marginTop: 22, color: "#EEF0DF", fontFamily: fontStack, fontSize: 42 }}>인증 · 클라우드 계보 · LiveOps</strong>
-          <p style={{ margin: "20px 0 0", color: "#A8B1A4", fontFamily: fontStack, fontSize: 27, fontWeight: 700, lineHeight: 1.45 }}>동일 시드 시즌, 친구 계보, 바람·타자·보상 순환을 모바일과 PC에 연결합니다.</p>
+          <p style={{ margin: "20px 0 0", color: "#A8B1A4", fontFamily: fontStack, fontSize: 31, fontWeight: 800, lineHeight: 1.35 }}>인증 · 계보 · 시즌 운영을 모바일·PC에 연결</p>
         </div>
       </Interactive.Div>
       <Sequence from={6} durationInFrames={50} layout="none"><Audio src={staticFile("sfx/umpire-strike.wav")} volume={0.34} /></Sequence>

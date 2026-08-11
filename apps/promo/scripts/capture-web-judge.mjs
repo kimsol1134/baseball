@@ -59,6 +59,9 @@ await record("fast-route", async (page) => {
   await startMatch.click();
   await page.waitForTimeout(750);
 
+  await page.locator(".pitch-options").getByRole("button", { name: /슬라이더/ }).click();
+  await page.getByRole("button", { name: "바깥쪽 낮게" }).click();
+
   const release = page.getByRole("button", { name: /누르고 와인드업/ });
   const box = await release.boundingBox();
   if (!box) throw new Error("Release button was not visible during capture.");
