@@ -10,6 +10,10 @@
     "render:web-judge": "remotion render WebContestJudgeCut out/web-contest-judge-cut.mp4 --codec=h264 --crf=24",
     "render:web-judge-poster": "remotion still JudgePoster out/web-contest-judge-poster.png --frame=0",
     "render:web-poster": "remotion still WebContestTrailer out/web-contest-poster.png --frame=840",
+    "render:asc-preview": "remotion render ASCPreviewKR out/asc/preview-kr-886x1920.mp4 --codec=h264 --crf=18 --audio-codec=aac",
+    "render:asc-screenshots:67": "node scripts/render-asc-screenshots.mjs ASCScreenshots67KR out/asc/screenshots-6.7 7",
+    "render:asc-screenshots:65": "node scripts/render-asc-screenshots.mjs ASCScreenshots65KR out/asc/screenshots-6.5 7",
+    "render:asc": "npm run render:asc-preview && npm run render:asc-screenshots:67 && npm run render:asc-screenshots:65",
     "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=20",
     "render:loop": "remotion render HeroLoop out/hero-loop.mp4 --codec=h264 --crf=23",
     "render:poster": "remotion still Trailer out/poster.png --frame=300"

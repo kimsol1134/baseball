@@ -18,11 +18,43 @@ import { JUDGE_CUT_FRAMES, WebContestJudgeCut } from "./judge-cut/WebContestJudg
 import { RebirthCaptureScene } from "./judge-cut/RebirthCaptureScene";
 import { PayoffHookScene } from "./judge-cut/PayoffHookScene";
 import { JudgePoster } from "./judge-cut/JudgePoster";
+import {
+  ASC_PREVIEW_FRAMES,
+  ASC_SHOTS,
+  ASCPreviewKR,
+  ASCScreenshotsKR,
+} from "./asc/StoreCreative";
 
 const TRAILER_FRAMES = Object.values(BEATS).reduce((sum, length) => sum + length, 0);
 
 export const RemotionRoot: React.FC = () => (
   <>
+    <Folder name="App-Store-2026-08">
+      <Composition
+        id="ASCPreviewKR"
+        component={ASCPreviewKR}
+        durationInFrames={ASC_PREVIEW_FRAMES}
+        fps={30}
+        width={886}
+        height={1920}
+      />
+      <Composition
+        id="ASCScreenshots67KR"
+        component={ASCScreenshotsKR}
+        durationInFrames={ASC_SHOTS.length}
+        fps={1}
+        width={1320}
+        height={2868}
+      />
+      <Composition
+        id="ASCScreenshots65KR"
+        component={ASCScreenshotsKR}
+        durationInFrames={ASC_SHOTS.length}
+        fps={1}
+        width={1284}
+        height={2778}
+      />
+    </Folder>
     <Folder name="Web-Contest-Trailer-Scenes">
       <Composition id="WebOpeningScene" component={OpeningScene} durationInFrames={105} fps={30} width={1920} height={1080} />
       <Composition id="WebCareerScene" component={CareerScene} durationInFrames={165} fps={30} width={1920} height={1080} />
