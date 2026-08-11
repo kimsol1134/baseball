@@ -2606,6 +2606,12 @@ final class HighSchoolCareerStore {
             GameAnalytics.log(.gameAbandoned, [
                 "pitches": pitchSession?.pitches ?? 0,
                 "chapter": result.snapshot.chapter.number,
+                "life_number": result.snapshot.lifeNumber,
+                "act_number": HighSchoolPresentation.actNumber(
+                    chapter: result.snapshot.chapter.number
+                ),
+                "phase": result.snapshot.phase.rawValue,
+                "development_rules_version": result.snapshot.balanceVersion ?? 1,
                 "games_completed": result.snapshot.performance.importantGamesCompleted,
             ])
         }

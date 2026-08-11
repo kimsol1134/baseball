@@ -76,6 +76,14 @@ struct AnalyticsContext: Equatable {
     }
 }
 
+/// The two SDK destinations intentionally receive different payloads. Firebase keeps the
+/// existing shared context, while Amplitude direct events carry an origin marker for source
+/// auditing.
+struct AnalyticsPayloads {
+    let firebase: [String: Any]
+    let amplitude: [String: Any]
+}
+
 /// 게임 분석 — activation 퍼널(설치 → 온보딩 → 첫 경기 → 반복)을 눈으로 보기 위한 최소 계측.
 ///
 /// 원칙:
@@ -184,6 +192,8 @@ enum GameAnalytics {
         case returnPlanEligible = "return_plan_eligible"
         /// 저장된 계획 다음 서울 날짜에 앱 프로세스가 새로 시작된 시점.
         case returnPlanColdStart = "return_plan_cold_start"
+        /// 저장된 계획 다음 서울 날짜에 cold 또는 warm으로 앱이 활성화된 시점.
+        case returnPlanNextDayOpen = "return_plan_next_day_open"
         /// 세션 종료(백그라운드 전환). `games`로 세션 깊이를 잰다.
         case sessionEnded = "session_ended"
     }
@@ -194,6 +204,10 @@ enum GameAnalytics {
     /// Unit-test observation point. Analytics SDK configuration remains unnecessary in tests.
     static var eventSinkForTesting: ((Event, [String: Any]) -> Void)?
     private static let onceKeyPrefix = "baseball.analytics.once."
+    private static let amplitudeOnlyProperties: [String: Any] = [
+        "ingestion_origin": "ios_sdk_direct",
+        "event_schema_version": 2,
+    ]
     /// 기기를 가로지르는 안정 식별자 키. iCloud 키-값 저장소에도 거울을 둔다.
     private static let stableIDKey = "baseball.analytics.stableID"
     private static let completedGameCountKey = "baseball.analytics.completedGameCount"
@@ -254,16 +268,28 @@ enum GameAnalytics {
         defaults.set(completedGameCount(defaults: defaults) + 1, forKey: completedGameCountKey)
     }
 
+    /// Builds the destination-specific payloads without configuring either SDK.
+    ///
+    /// Keeping this pure makes the ingestion contract testable and prevents the source marker
+    /// from leaking into Firebase, whose existing payload must remain unchanged.
+    static func payloads(
+        for properties: [String: Any],
+        context: AnalyticsContext
+    ) -> AnalyticsPayloads {
+        let firebase = properties.merging(context.properties) { _, common in common }
+        let amplitude = firebase.merging(amplitudeOnlyProperties) { _, direct in direct }
+        return AnalyticsPayloads(firebase: firebase, amplitude: amplitude)
+    }
+
     static func log(_ event: Event, _ properties: [String: Any] = [:]) {
         eventSinkForTesting?(event, properties)
         guard enabled else { return }
-        let reserved = Set(context.properties.keys)
+        let reserved = Set(context.properties.keys).union(amplitudeOnlyProperties.keys)
         let collisions = reserved.intersection(properties.keys)
         assert(collisions.isEmpty, "Analytics context keys are reserved: \(collisions.sorted())")
-        // Common context wins in Release too, so a caller can never forge production traffic.
-        let merged = properties.merging(context.properties) { _, common in common }
-        Analytics.logEvent(event.rawValue, parameters: merged)
-        amplitude?.track(eventType: event.rawValue, eventProperties: merged)
+        let payloads = Self.payloads(for: properties, context: context)
+        Analytics.logEvent(event.rawValue, parameters: payloads.firebase)
+        amplitude?.track(eventType: event.rawValue, eventProperties: payloads.amplitude)
     }
 
     nonisolated static func isUITest(arguments: [String]) -> Bool {

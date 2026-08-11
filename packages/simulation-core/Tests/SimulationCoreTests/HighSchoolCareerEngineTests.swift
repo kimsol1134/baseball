@@ -365,6 +365,89 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertNotNil(result.snapshot.draftResult?.firstSeasonGoal)
     }
 
+    /// 첫 선수의 첫 정상 훈련은 분산 때문에 0이 되지 않아야 한다. 이후의 보상 폭은
+    /// 그대로 두어, 첫 버튼에서만 게임의 성장 약속을 보장한다.
+    func testFirstLifeFirstNonRehabTrainingAlwaysGrows() throws {
+        let engine = HighSchoolCareerEngine()
+        for seed in ["1", "17", "20260723", "44771", "8675309"] {
+            var result = try engine.start(.init(seed: seed, presetID: "power_prospect"))
+            result = try engine.completePrologue(.init(seed: result.nextSeed, state: result.snapshot))
+            result = try engine.chooseSchool(.init(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                schoolID: try XCTUnwrap(result.snapshot.schoolOptions.first?.id)
+            ))
+            let focus = result.snapshot.school?.strength ?? .command
+            let trained = try engine.commitTraining(.init(
+                seed: result.nextSeed, state: result.snapshot,
+                focus: focus, intensity: .light
+            ))
+
+            XCTAssertEqual(trained.snapshot.lastTraining?.number, 1, seed)
+            XCTAssertNotEqual(trained.snapshot.lastTraining?.focus, .recovery, seed)
+            XCTAssertGreaterThanOrEqual(
+                trained.snapshot.lastTraining?.growth ?? 0, 1,
+                "첫 회차 첫 정상 훈련은 최소 1 성장이어야 합니다: seed=\(seed)"
+            )
+        }
+    }
+
+    /// 첫 훈련의 보장은 첫 선수의 첫 버튼에만 적용된다. 두 번째 훈련과 다음 회차에는
+    /// 0 성장도 남아 있어야 훈련 강도·재능·시드가 실제 선택으로 느껴진다.
+    func testSecondTrainingAndNextLifeMayHaveZeroGrowth() throws {
+        let engine = HighSchoolCareerEngine()
+        var sawSecondTrainingZero = false
+        var sawNextLifeZero = false
+
+        for seedNumber in 1...500 where !sawSecondTrainingZero || !sawNextLifeZero {
+            let seed = String(seedNumber)
+            var first = try engine.start(.init(seed: seed, presetID: "power_prospect"))
+            first = try engine.completePrologue(.init(seed: first.nextSeed, state: first.snapshot))
+            first = try engine.chooseSchool(.init(
+                seed: first.nextSeed,
+                state: first.snapshot,
+                schoolID: try XCTUnwrap(first.snapshot.schoolOptions.first?.id)
+            ))
+            let focus = first.snapshot.school?.strength ?? .command
+
+            if first.snapshot.schedule?.trainingsByChapter.first ?? 0 >= 2 {
+                let firstTraining = try engine.commitTraining(.init(
+                    seed: first.nextSeed, state: first.snapshot,
+                    focus: focus, intensity: .light
+                ))
+                if firstTraining.snapshot.phase == .training {
+                    let secondTraining = try engine.commitTraining(.init(
+                        seed: firstTraining.nextSeed, state: firstTraining.snapshot,
+                        focus: focus, intensity: .light
+                    ))
+                    sawSecondTrainingZero = sawSecondTrainingZero
+                        || secondTraining.snapshot.lastTraining?.growth == 0
+                }
+            }
+
+            var nextLife = try engine.start(.init(
+                seed: seed, presetID: "power_prospect", lifeNumber: 2
+            ))
+            nextLife = try engine.completePrologue(.init(
+                seed: nextLife.nextSeed, state: nextLife.snapshot
+            ))
+            nextLife = try engine.chooseSchool(.init(
+                seed: nextLife.nextSeed,
+                state: nextLife.snapshot,
+                schoolID: try XCTUnwrap(nextLife.snapshot.schoolOptions.first?.id)
+            ))
+            let nextTraining = try engine.commitTraining(.init(
+                seed: nextLife.nextSeed, state: nextLife.snapshot,
+                focus: nextLife.snapshot.school?.strength ?? .command,
+                intensity: .light
+            ))
+            sawNextLifeZero = sawNextLifeZero || nextTraining.snapshot.lastTraining?.growth == 0
+        }
+
+        XCTAssertTrue(sawSecondTrainingZero, "두 번째 훈련에도 0 성장이 가능한 시드가 있어야 합니다")
+        XCTAssertTrue(sawNextLifeZero, "다음 회차 첫 훈련에는 0 성장이 가능한 시드가 있어야 합니다")
+    }
+
     func testPoorResultsReachUndraftedLegacyAndSelectThreeMemories() throws {
         let engine = HighSchoolCareerEngine()
         var result = try engine.start(

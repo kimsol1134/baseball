@@ -38,6 +38,18 @@ struct HighSchoolCareerView: View {
         }
     }
 
+    /// A chapter goal is only honest when the chapter gives the player an official game in
+    /// which strikeouts can be earned. This mirrors the existing view condition as a pure policy.
+    static func showsChapterGoal(
+        phase: HighSchoolCareerPhase,
+        draftResult: DraftResultSnapshot?,
+        chapterNumber: Int,
+        schedule: CareerScheduleSnapshot?
+    ) -> Bool {
+        guard draftResult == nil, phase != .awakening else { return false }
+        return (schedule ?? .fixedDefault).hasImportantGame(inChapter: chapterNumber)
+    }
+
     /// `fullScreenCover(item:)`가 요구하는 식별 가능한 값.
     struct RebirthStamp: Identifiable {
         let lifeNumber: Int
@@ -330,8 +342,12 @@ struct HighSchoolCareerView: View {
                             // 공식 경기가 없는 장에서는 탈삼진 숙제를 내지 않는다 —
                             // 던질 기회를 안 주고 "삼진 5개"를 네 화면에서 반복하면,
                             // 게임이 지키지 못할 약속을 하는 것이 된다.
-                            if (state.schedule ?? .fixedDefault)
-                                .hasImportantGame(inChapter: state.chapter.number) {
+                            if Self.showsChapterGoal(
+                                phase: state.phase,
+                                draftResult: state.draftResult,
+                                chapterNumber: state.chapter.number,
+                                schedule: state.schedule
+                            ) {
                                 ChapterGoalCard(state: state, career: career)
                             }
                         }

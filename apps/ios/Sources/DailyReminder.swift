@@ -77,6 +77,9 @@ enum DailyReminder {
         let body: String
         let destination: Destination
         let reason: String
+        /// The experiment assignment is frozen with the plan. A missing value is a v1 plan
+        /// written before experiment IDs were persisted.
+        var experimentID: String? = nil
         /// 세션 종료 적격 시점과 다음 실행을 잇는 익명 영수증. 자유 문구·선수 ID는 넣지 않는다.
         var receiptID: String? = nil
         var savedDayKey: String? = nil
@@ -88,6 +91,7 @@ enum DailyReminder {
             body: String,
             destination: Destination,
             reason: String,
+            experimentID: String? = nil,
             receiptID: String? = nil,
             savedDayKey: String? = nil,
             experimentVariant: String? = nil,
@@ -97,6 +101,7 @@ enum DailyReminder {
             self.body = body
             self.destination = destination
             self.reason = reason
+            self.experimentID = experimentID
             self.receiptID = receiptID
             self.savedDayKey = savedDayKey
             self.experimentVariant = experimentVariant
@@ -116,6 +121,7 @@ enum DailyReminder {
             guard let previous, previous == self else { return self }
             return Plan(
                 title: title, body: body, destination: destination, reason: reason,
+                experimentID: experimentID ?? previous.experimentID,
                 receiptID: receiptID ?? previous.receiptID,
                 savedDayKey: savedDayKey ?? previous.savedDayKey,
                 experimentVariant: experimentVariant ?? previous.experimentVariant,
@@ -130,6 +136,7 @@ enum DailyReminder {
             guard let previous else { return self }
             return Plan(
                 title: title, body: body, destination: destination, reason: reason,
+                experimentID: experimentID ?? previous.experimentID,
                 receiptID: receiptID ?? previous.receiptID,
                 savedDayKey: savedDayKey ?? previous.savedDayKey,
                 experimentVariant: experimentVariant ?? previous.experimentVariant,
@@ -143,7 +150,15 @@ enum DailyReminder {
         case guided
     }
 
-    static let returnExperimentID = "next_action_v1"
+    /// New eligible plans use v2. Plans from before this field existed remain v1.
+    static let legacyReturnExperimentID = "next_action_v1"
+    static let returnExperimentID = "next_action_v2"
+
+    enum ReturnPlanEligibility {
+        static func isEligible(completedGameCount: Int) -> Bool {
+            completedGameCount > 0
+        }
+    }
 
     /// 같은 목표를 닫거나 눌렀는데 앱 전환 때마다 다시 띄우면 복귀 훅이 방해물이 된다.
     /// 목표와 서울 날짜를 함께 저장해 같은 날 같은 제안만 조용히 숨긴다.
@@ -247,8 +262,16 @@ enum DailyReminder {
         return try? JSONDecoder().decode(Plan.self, from: data)
     }
 
+    static func experimentID(for plan: Plan) -> String {
+        plan.experimentID ?? legacyReturnExperimentID
+    }
+
     static func experimentVariant(stableID: String) -> ReturnExperimentVariant {
-        stableHash("\(returnExperimentID)|\(stableID)").isMultiple(of: 2)
+        experimentVariant(experimentID: returnExperimentID, stableID: stableID)
+    }
+
+    static func experimentVariant(experimentID: String, stableID: String) -> ReturnExperimentVariant {
+        stableHash("\(experimentID)|\(stableID)").isMultiple(of: 2)
             ? .holdout : .guided
     }
 
@@ -270,9 +293,12 @@ enum DailyReminder {
             body: plan.body,
             destination: plan.destination,
             reason: plan.reason,
+            experimentID: returnExperimentID,
             receiptID: String(stableHash(scope), radix: 16),
             savedDayKey: dayKey,
-            experimentVariant: experimentVariant(stableID: stableID).rawValue,
+            experimentVariant: experimentVariant(
+                experimentID: returnExperimentID, stableID: stableID
+            ).rawValue,
             developmentRulesVersion: rulesVersion
         )
     }
@@ -282,7 +308,7 @@ enum DailyReminder {
             "destination": plan.destination.rawValue,
             "reason": plan.reason,
             "plan_receipt": plan.receiptID ?? "legacy",
-            "experiment_id": returnExperimentID,
+            "experiment_id": experimentID(for: plan),
             "variant": plan.experimentVariant ?? "legacy",
             "saved_day_key": plan.savedDayKey ?? "legacy",
             "return_day_key": DailyStreak.key(for: now),
@@ -291,11 +317,65 @@ enum DailyReminder {
         ]
     }
 
-    static func coldStartProperties(_ plan: Plan?, now: Date = Date()) -> [String: Any]? {
-        guard let plan, let gap = dayGap(from: plan.savedDayKey, to: now), gap >= 1 else {
+    static func sessionEndReturnProperties(
+        plan: Plan?,
+        completedGameCount: Int
+    ) -> [String: Any] {
+        guard ReturnPlanEligibility.isEligible(completedGameCount: completedGameCount),
+              let plan else {
+            return [
+                "return_eligible": false,
+                "return_destination": "none",
+                "return_reason": "ineligible",
+                "plan_receipt": "none",
+                "experiment_id": "none",
+                "variant": "ineligible",
+                "development_rules_version": 0,
+            ]
+        }
+        return [
+            "return_eligible": true,
+            "return_destination": plan.destination.rawValue,
+            "return_reason": plan.reason,
+            "plan_receipt": plan.receiptID ?? "legacy",
+            "experiment_id": experimentID(for: plan),
+            "variant": plan.experimentVariant ?? "legacy",
+            "development_rules_version": plan.developmentRulesVersion ?? 0,
+        ]
+    }
+
+    static func nextDayOpenProperties(
+        _ plan: Plan?,
+        launchType: String,
+        now: Date = Date()
+    ) -> [String: Any]? {
+        guard launchType == "cold" || launchType == "warm" else { return nil }
+        guard let plan,
+              plan.receiptID?.isEmpty == false,
+              (plan.experimentVariant == ReturnExperimentVariant.holdout.rawValue
+                  || plan.experimentVariant == ReturnExperimentVariant.guided.rawValue),
+              let gap = dayGap(from: plan.savedDayKey, to: now), gap >= 1 else {
             return nil
         }
-        return analyticsProperties(plan, now: now)
+        var properties = analyticsProperties(plan, now: now)
+        properties["launch_type"] = launchType
+        return properties
+    }
+
+    /// Compatibility wrapper for the old cold-start event.
+    static func coldStartProperties(_ plan: Plan?, now: Date = Date()) -> [String: Any]? {
+        nextDayOpenProperties(plan, launchType: "cold", now: now)
+    }
+
+    /// The idempotency key is deliberately not sent as an additional analytics property.
+    /// `GameAnalytics.logOnce` hashes this scope locally before storing it.
+    static func nextDayOpenScope(properties: [String: Any]) -> String? {
+        guard let experimentID = properties["experiment_id"] as? String,
+              let receipt = properties["plan_receipt"] as? String,
+              let returnDay = properties["return_day_key"] as? String else {
+            return nil
+        }
+        return "\(experimentID)|\(receipt)|\(returnDay)"
     }
 
     static func markWelcomeHandled(
@@ -429,7 +509,7 @@ enum DailyReminder {
                 destinationUserInfoKey: copy.destination,
                 reasonUserInfoKey: copy.reason,
                 receiptUserInfoKey: plan?.receiptID ?? "legacy",
-                experimentUserInfoKey: returnExperimentID,
+                experimentUserInfoKey: plan.map { Self.experimentID(for: $0) } ?? "legacy",
                 variantUserInfoKey: plan?.experimentVariant ?? "legacy",
                 savedDayUserInfoKey: plan?.savedDayKey ?? "legacy",
                 rulesVersionUserInfoKey: plan?.developmentRulesVersion ?? 0,

@@ -311,6 +311,7 @@ final class RetentionHookTests: XCTestCase {
         )
 
         XCTAssertEqual(first.receiptID, replay.receiptID)
+        XCTAssertEqual(first.experimentID, DailyReminder.returnExperimentID)
         XCTAssertEqual(first.experimentVariant, replay.experimentVariant)
         XCTAssertEqual(first.savedDayKey, "20260809")
         XCTAssertEqual(first.developmentRulesVersion, 4)
@@ -374,6 +375,7 @@ final class RetentionHookTests: XCTestCase {
         let plan = DailyReminder.Plan(
             title: "이번 선수 이어가기", body: "다음 훈련이 기다립니다.",
             destination: .highSchool, reason: "high_school_phase",
+            experimentID: DailyReminder.returnExperimentID,
             receiptID: "receipt-a", savedDayKey: "20260809",
             experimentVariant: "guided", developmentRulesVersion: 4
         )
@@ -386,7 +388,108 @@ final class RetentionHookTests: XCTestCase {
         XCTAssertEqual(properties?["day_gap"] as? Int, 1)
         XCTAssertEqual(properties?["return_day_key"] as? String, "20260810")
         XCTAssertEqual(properties?["plan_receipt"] as? String, "receipt-a")
+        XCTAssertEqual(properties?["experiment_id"] as? String, DailyReminder.returnExperimentID)
+        XCTAssertEqual(properties?["launch_type"] as? String, "cold")
         XCTAssertEqual(properties?["development_rules_version"] as? Int, 4)
+
+        let warm = DailyReminder.nextDayOpenProperties(
+            plan, launchType: "warm", now: date("2026-08-10 00:01")
+        )
+        XCTAssertEqual(warm?["launch_type"] as? String, "warm")
+        XCTAssertEqual(
+            DailyReminder.nextDayOpenScope(properties: properties!),
+            DailyReminder.nextDayOpenScope(properties: warm!)
+        )
+        XCTAssertEqual(
+            DailyReminder.nextDayOpenScope(properties: properties!),
+            "\(DailyReminder.returnExperimentID)|receipt-a|20260810"
+        )
+        XCTAssertNil(DailyReminder.nextDayOpenProperties(
+            plan, launchType: "cold", now: date("2026-08-09 23:59")
+        ))
+        XCTAssertNil(DailyReminder.nextDayOpenProperties(
+            plan, launchType: "unknown", now: date("2026-08-10 00:01")
+        ))
+        let noReceipt = DailyReminder.Plan(
+            title: plan.title, body: plan.body, destination: plan.destination,
+            reason: plan.reason, experimentID: DailyReminder.returnExperimentID,
+            savedDayKey: plan.savedDayKey, experimentVariant: plan.experimentVariant,
+            developmentRulesVersion: plan.developmentRulesVersion
+        )
+        XCTAssertNil(DailyReminder.nextDayOpenProperties(
+            noReceipt, launchType: "cold", now: date("2026-08-10 00:01")
+        ))
+    }
+
+    func testNextDayOpenPropertiesCarryBothReturnExperimentVariants() {
+        for variant in DailyReminder.ReturnExperimentVariant.allCases {
+            let plan = DailyReminder.Plan(
+                title: "이어가기", body: "다음 목표", destination: .highSchool,
+                reason: "high_school_phase", experimentID: DailyReminder.returnExperimentID,
+                receiptID: "receipt-\(variant.rawValue)", savedDayKey: "20260809",
+                experimentVariant: variant.rawValue, developmentRulesVersion: 4
+            )
+            let properties = DailyReminder.nextDayOpenProperties(
+                plan, launchType: "warm", now: date("2026-08-10 12:00")
+            )
+            XCTAssertEqual(properties?["variant"] as? String, variant.rawValue)
+            XCTAssertEqual(properties?["day_gap"] as? Int, 1)
+        }
+    }
+
+    @MainActor
+    func testColdThenWarmNextDayOpenIsRecordedOnlyOnceForTheSameReceiptAndDay() {
+        let plan = DailyReminder.Plan(
+            title: "이어가기", body: "다음 목표", destination: .highSchool,
+            reason: "high_school_phase", experimentID: DailyReminder.returnExperimentID,
+            receiptID: "receipt-a", savedDayKey: "20260809",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue,
+            developmentRulesVersion: 4
+        )
+        let cold = DailyReminder.nextDayOpenProperties(
+            plan, launchType: "cold", now: date("2026-08-10 00:01")
+        )!
+        let warm = DailyReminder.nextDayOpenProperties(
+            plan, launchType: "warm", now: date("2026-08-10 12:00")
+        )!
+        let coldScope = DailyReminder.nextDayOpenScope(properties: cold)!
+        let warmScope = DailyReminder.nextDayOpenScope(properties: warm)!
+
+        XCTAssertEqual(coldScope, warmScope)
+        XCTAssertTrue(GameAnalytics.logOnce(
+            .returnPlanNextDayOpen, scope: coldScope, properties: cold, defaults: defaults
+        ))
+        XCTAssertFalse(GameAnalytics.logOnce(
+            .returnPlanNextDayOpen, scope: warmScope, properties: warm, defaults: defaults
+        ))
+    }
+
+    func testReturnEligibilityStartsOnlyAfterACompletedGame() {
+        XCTAssertFalse(DailyReminder.ReturnPlanEligibility.isEligible(completedGameCount: 0))
+        XCTAssertTrue(DailyReminder.ReturnPlanEligibility.isEligible(completedGameCount: 1))
+
+        let ineligible = DailyReminder.sessionEndReturnProperties(
+            plan: nil, completedGameCount: 0
+        )
+        XCTAssertEqual(ineligible["return_eligible"] as? Bool, false)
+        XCTAssertEqual(ineligible["experiment_id"] as? String, "none")
+        XCTAssertEqual(ineligible["variant"] as? String, "ineligible")
+        XCTAssertEqual(ineligible["plan_receipt"] as? String, "none")
+
+        let plan = DailyReminder.Plan(
+            title: "이어가기", body: "다음 목표", destination: .highSchool,
+            reason: "high_school_phase", experimentID: DailyReminder.returnExperimentID,
+            receiptID: "receipt-a", savedDayKey: "20260809",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue,
+            developmentRulesVersion: 4
+        )
+        let eligible = DailyReminder.sessionEndReturnProperties(
+            plan: plan, completedGameCount: 1
+        )
+        XCTAssertEqual(eligible["return_eligible"] as? Bool, true)
+        XCTAssertEqual(eligible["experiment_id"] as? String, DailyReminder.returnExperimentID)
+        XCTAssertEqual(eligible["variant"] as? String, "guided")
+        XCTAssertEqual(eligible["plan_receipt"] as? String, "receipt-a")
     }
 
     func testLegacyPlanDecodesAndSavingCurrentCopyPreservesFrozenExperiment() throws {
@@ -395,7 +498,12 @@ final class RetentionHookTests: XCTestCase {
             from: Data(#"{"title":"이어가기","body":"다음 훈련","destination":"high_school","reason":"high_school_phase"}"#.utf8)
         )
         XCTAssertNil(legacy.receiptID)
+        XCTAssertNil(legacy.experimentID)
         XCTAssertNil(legacy.experimentVariant)
+        XCTAssertEqual(
+            DailyReminder.analyticsProperties(legacy)["experiment_id"] as? String,
+            DailyReminder.legacyReturnExperimentID
+        )
 
         let prepared = DailyReminder.Plan(
             title: legacy.title, body: legacy.body,
@@ -409,6 +517,57 @@ final class RetentionHookTests: XCTestCase {
         XCTAssertEqual(restored?.receiptID, "receipt-a")
         XCTAssertEqual(restored?.experimentVariant, "guided")
         XCTAssertEqual(restored?.developmentRulesVersion, 4)
+        XCTAssertEqual(
+            DailyReminder.nextDayOpenProperties(
+                restored, launchType: "warm", now: date("2026-08-10 12:00")
+            )?["experiment_id"] as? String,
+            DailyReminder.legacyReturnExperimentID,
+            "experimentID가 없던 v1 영수증을 앱 업데이트 뒤 v2로 다시 쓰면 안 됩니다"
+        )
+    }
+
+    @MainActor
+    func testV2PlanExperimentIDAndVariantRoundTripThroughStorage() {
+        let base = DailyReminder.Plan(
+            title: "이어가기", body: "다음 목표", destination: .highSchool,
+            reason: "high_school_phase"
+        )
+        let prepared = DailyReminder.preparedForNextReturn(
+            base, stableID: "stable-player", rulesVersion: 4,
+            now: date("2026-08-09 21:00")
+        )
+        DailyReminder.savePlan(prepared, defaults: defaults)
+        let restored = DailyReminder.storedPlan(defaults: defaults)
+
+        XCTAssertEqual(restored?.experimentID, DailyReminder.returnExperimentID)
+        XCTAssertEqual(restored?.experimentVariant, prepared.experimentVariant)
+        XCTAssertEqual(restored?.receiptID, prepared.receiptID)
+        XCTAssertEqual(restored?.savedDayKey, prepared.savedDayKey)
+        XCTAssertEqual(
+            prepared.carryingExperiment(from: restored).experimentID,
+            DailyReminder.returnExperimentID
+        )
+    }
+
+    @MainActor
+    func testChapterGoalAndNameFieldRemainHiddenUntilTheirExplicitlyValidState() {
+        let noGameSchedule = CareerScheduleSnapshot(
+            trainingsByChapter: [1], milestonesByChapter: [[.relationship]]
+        )
+        let gameSchedule = CareerScheduleSnapshot(
+            trainingsByChapter: [1], milestonesByChapter: [[.importantGame]]
+        )
+        XCTAssertFalse(HighSchoolCareerView.showsChapterGoal(
+            phase: .training, draftResult: nil, chapterNumber: 1, schedule: noGameSchedule
+        ))
+        XCTAssertTrue(HighSchoolCareerView.showsChapterGoal(
+            phase: .training, draftResult: nil, chapterNumber: 1, schedule: gameSchedule
+        ))
+        XCTAssertFalse(HighSchoolCareerView.showsChapterGoal(
+            phase: .awakening, draftResult: nil, chapterNumber: 1, schedule: gameSchedule
+        ))
+        XCTAssertFalse(HighSchoolSetupView.shouldAutoFocusName(isRebirth: false))
+        XCTAssertFalse(HighSchoolSetupView.shouldAutoFocusName(isRebirth: true))
     }
 
     func testReminderDeepLinksResolveOnlyKnownAppRoutes() {

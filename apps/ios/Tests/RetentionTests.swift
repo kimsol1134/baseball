@@ -869,7 +869,13 @@ final class RetentionTests: XCTestCase {
         let session = try XCTUnwrap(store.pitchSession)
         let resultBefore = store.result
         var events: [GameAnalytics.Event] = []
-        GameAnalytics.eventSinkForTesting = { event, _ in events.append(event) }
+        var abandonedProperties: [String: Any]?
+        GameAnalytics.eventSinkForTesting = { event, properties in
+            events.append(event)
+            if event == .gameAbandoned {
+                abandonedProperties = properties
+            }
+        }
 
         writeFails = true
         XCTAssertFalse(store.abandonImportantGame())
@@ -881,6 +887,21 @@ final class RetentionTests: XCTestCase {
         XCTAssertTrue(store.abandonImportantGame())
         XCTAssertNil(store.pitchSession)
         XCTAssertEqual(events.filter { $0 == .gameAbandoned }.count, 1)
+        XCTAssertEqual(abandonedProperties?["pitches"] as? Int, session.pitches)
+        XCTAssertEqual(abandonedProperties?["chapter"] as? Int, initial.snapshot.chapter.number)
+        XCTAssertEqual(abandonedProperties?["life_number"] as? Int, initial.snapshot.lifeNumber)
+        XCTAssertEqual(
+            abandonedProperties?["act_number"] as? Int,
+            HighSchoolPresentation.actNumber(chapter: initial.snapshot.chapter.number)
+        )
+        XCTAssertEqual(
+            abandonedProperties?["phase"] as? String,
+            initial.snapshot.phase.rawValue
+        )
+        XCTAssertEqual(
+            abandonedProperties?["development_rules_version"] as? Int,
+            initial.snapshot.balanceVersion ?? 1
+        )
         XCTAssertFalse(store.abandonImportantGame())
         XCTAssertEqual(events.filter { $0 == .gameAbandoned }.count, 1)
     }

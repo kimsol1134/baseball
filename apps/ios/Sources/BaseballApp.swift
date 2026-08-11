@@ -42,18 +42,27 @@ struct BaseballApp: App {
     private func logSessionEnd() {
         let minutes = Int(Date().timeIntervalSince(sessionStartedAt) / 60)
         let currentGames = GameAnalytics.completedGameCount()
-        let returnContext = resolvedReturnContext()
-        let returnPlan = DailyReminder.preparedForNextReturn(
-            returnContext.plan,
-            rulesVersion: returnContext.developmentRulesVersion
+        let isReturnEligible = DailyReminder.ReturnPlanEligibility.isEligible(
+            completedGameCount: currentGames
         )
-        let returnProperties = DailyReminder.analyticsProperties(returnPlan)
-        GameAnalytics.logOnce(
-            .returnPlanEligible,
-            scope: returnPlan.receiptID ?? "legacy",
-            properties: returnProperties
-        )
-        GameAnalytics.log(.sessionEnded, [
+        let returnPlan: DailyReminder.Plan?
+        if isReturnEligible {
+            let returnContext = resolvedReturnContext()
+            let prepared = DailyReminder.preparedForNextReturn(
+                returnContext.plan,
+                rulesVersion: returnContext.developmentRulesVersion
+            )
+            returnPlan = prepared
+            let returnProperties = DailyReminder.analyticsProperties(prepared)
+            GameAnalytics.logOnce(
+                .returnPlanEligible,
+                scope: prepared.receiptID ?? "legacy",
+                properties: returnProperties
+            )
+        } else {
+            returnPlan = nil
+        }
+        var sessionProperties: [String: Any] = [
             "minutes": minutes,
             "life_number": highSchool.state?.lifeNumber ?? highSchool.inheritance.lifeNumber,
             "games": max(0, currentGames - sessionStartedGames),
@@ -63,13 +72,13 @@ struct BaseballApp: App {
                 HighSchoolPresentation.actNumber(chapter: $0.chapter.number)
             } ?? 0,
             "lives_finished": highSchool.archive.count,
-            "return_destination": returnPlan.destination.rawValue,
-            "return_reason": returnPlan.reason,
-            "plan_receipt": returnPlan.receiptID ?? "legacy",
-            "experiment_id": DailyReminder.returnExperimentID,
-            "variant": returnPlan.experimentVariant ?? "legacy",
-            "development_rules_version": returnPlan.developmentRulesVersion ?? 0,
-        ])
+        ]
+        sessionProperties.merge(
+            DailyReminder.sessionEndReturnProperties(
+                plan: returnPlan, completedGameCount: currentGames
+            )
+        ) { _, current in current }
+        GameAnalytics.log(.sessionEnded, sessionProperties)
         // 사용자가 떠나는 바로 그 상태가 내일의 문장이어야 한다. 앱을 다시 열 때까지
         // 바뀌지 않는 로컬 계획이라 서버·개인정보 없이도 구체적인 이어하기가 된다.
         DailyReminder.refresh(plan: returnPlan)
@@ -245,20 +254,35 @@ struct BaseballApp: App {
                     // 알림 응답을 받으려면 첫 화면이 뜨기 전에 델리게이트가 붙어 있어야
                     // 한다 — 늦게 붙으면 앱을 깨운 그 알림의 응답이 사라진다.
                     NotificationRouter.shared.register()
-                    if let coldStart = DailyReminder.coldStartProperties(previousReturnPlan) {
-                        let scope = "\(coldStart["plan_receipt"] ?? "legacy")|\(coldStart["return_day_key"] ?? "legacy")"
+                    let hasCompletedGame = DailyReminder.ReturnPlanEligibility.isEligible(
+                        completedGameCount: GameAnalytics.completedGameCount()
+                    )
+                    if hasCompletedGame, let coldStart = DailyReminder.nextDayOpenProperties(
+                        previousReturnPlan, launchType: "cold"
+                    ), let scope = DailyReminder.nextDayOpenScope(properties: coldStart) {
+                        GameAnalytics.logOnce(
+                            .returnPlanNextDayOpen, scope: scope, properties: coldStart
+                        )
                         GameAnalytics.logOnce(
                             .returnPlanColdStart, scope: scope, properties: coldStart
                         )
                     }
-                    let currentPlan = resolvedReturnPlan()
-                    returnWelcomePlan = DailyReminder.welcomePlan(
-                        previous: previousReturnPlan,
-                        current: currentPlan,
-                        handled: DailyReminder.storedWelcomeHandled()
-                    )
-                    previousReturnPlan = currentPlan.carryingReceipt(from: previousReturnPlan)
-                    DailyReminder.refresh(plan: currentPlan)
+                    if hasCompletedGame {
+                        let currentPlan = resolvedReturnPlan()
+                        returnWelcomePlan = DailyReminder.welcomePlan(
+                            previous: previousReturnPlan,
+                            current: currentPlan,
+                            handled: DailyReminder.storedWelcomeHandled()
+                        )
+                        previousReturnPlan = currentPlan.carryingReceipt(from: previousReturnPlan)
+                        DailyReminder.refresh(plan: currentPlan)
+                    } else {
+                        // A first launch must not manufacture a return plan or show a stale one
+                        // left by an older install whose local completion counter is empty.
+                        returnWelcomePlan = nil
+                        previousReturnPlan = nil
+                        DailyReminder.refresh(plan: nil)
+                    }
                 }
                 .task {
                     // 다른 기기에서 올라온 진행을 받아 화면을 갱신한다.
@@ -275,15 +299,31 @@ struct BaseballApp: App {
                         // 시계가 초기화되면 긴 세션이 짧게 잡힌다.
                         if previous == .background {
                             let storedPlan = DailyReminder.storedPlan()
-                            let currentPlan = resolvedReturnPlan()
-                            returnWelcomePlan = DailyReminder.welcomePlan(
-                                previous: storedPlan,
-                                current: currentPlan,
-                                handled: DailyReminder.storedWelcomeHandled()
+                            let hasCompletedGame = DailyReminder.ReturnPlanEligibility.isEligible(
+                                completedGameCount: GameAnalytics.completedGameCount()
                             )
-                            previousReturnPlan = currentPlan.carryingReceipt(from: storedPlan)
-                            // 오늘 던졌으면 오늘 저녁 알림을 지우고, 지난 날짜분을 새로 채운다.
-                            DailyReminder.refresh(plan: currentPlan)
+                            if hasCompletedGame, let warmOpen = DailyReminder.nextDayOpenProperties(
+                                storedPlan, launchType: "warm"
+                            ), let scope = DailyReminder.nextDayOpenScope(properties: warmOpen) {
+                                GameAnalytics.logOnce(
+                                    .returnPlanNextDayOpen, scope: scope, properties: warmOpen
+                                )
+                            }
+                            if hasCompletedGame {
+                                let currentPlan = resolvedReturnPlan()
+                                returnWelcomePlan = DailyReminder.welcomePlan(
+                                    previous: storedPlan,
+                                    current: currentPlan,
+                                    handled: DailyReminder.storedWelcomeHandled()
+                                )
+                                previousReturnPlan = currentPlan.carryingReceipt(from: storedPlan)
+                                // 오늘 던졌으면 오늘 저녁 알림을 지우고, 지난 날짜분을 새로 채운다.
+                                DailyReminder.refresh(plan: currentPlan)
+                            } else {
+                                returnWelcomePlan = nil
+                                previousReturnPlan = nil
+                                DailyReminder.refresh(plan: nil)
+                            }
                             sessionStartedAt = Date()
                             sessionStartedGames = GameAnalytics.completedGameCount()
                         }

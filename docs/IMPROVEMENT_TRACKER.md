@@ -108,11 +108,24 @@ UX: 슬로모 스크롤 템포 연동 · K 현수막 콜 이후 · reduceMotion 
 - [x] `reminder_offer_shown`을 허용률 분모로 추가하고 `session_ended.return_destination/return_reason`, `reminder_opened.destination/reason`으로 복귀 사슬을 측정한다.
 - [x] 앱을 다시 열었을 때 알림보다 먼저 **현재 선수에게 남은 한 가지**를 상단 카드로 보여 준다. 첫 실행에는 띄우지 않고, 이전 세션이 있을 때만 현재 저장 상태로 문구를 다시 계산한다. 고교 프롤로그·훈련·관계·공식 경기·각성·지명·유산과 프로 선택/경기의 실제 다음 행동을 그대로 말하며 CTA는 해당 화면으로 바로 이어진다.
 - [x] 복귀 카드는 원래 플레이를 막지 않는 상단 보조 카드, 명시적 닫기, 진행 발생 시 자동 닫기로 구현했다. 누르거나 닫은 같은 목표는 서울 날짜 기준 하루 동안 다시 띄우지 않는다. `return_plan_shown` → `return_plan_tapped` 또는 `return_plan_dismissed`를 기록하되 선수명·자유 문구는 보내지 않는다.
-- [x] 세션 종료에서 안정적인 50:50 `holdout/guided` 배정과 익명 `plan_receipt`, KST 저장 날짜, `development_rules_version`을 동결한다. 개인화 알림·카드는 guided에만 노출하고, 두 군 모두 `return_plan_eligible`과 다음 날짜 `return_plan_cold_start`로 같은 분모에서 비교한다.
+- [x] 세션 종료에서 안정적인 50:50 `holdout/guided` 배정과 익명 `plan_receipt`, KST 저장 날짜, `development_rules_version`을 동결한다. 개인화 알림·카드는 guided에만 노출하고, 두 군 모두 `return_plan_eligible`과 다음 날짜 `return_plan_next_day_open`으로 같은 분모에서 비교한다.
 - [x] `session_ended.games`를 고교 회차 누적값에서 실제 세션 완료 경기 델타로 교정하고, 회차 누적은 `important_games_total`로 분리했다. 고교·프로·일일 `game_finished`에도 고정 규칙 버전을 싣는다.
+- [x] Wave 0에서 복귀 실험 적격자를 실제 완료 경기 1회 이상 사용자로 제한했다. 첫 경기 전 `session_ended`는 `return_eligible=false`, `experiment_id=none`, `variant=ineligible`로 남고 계획·분모·변형을 만들지 않는다.
+- [x] `DailyReminder.Plan`에 저장형 `experimentID`를 추가했다. 새 저장은 `next_action_v2`, ID가 없는 옛 JSON과 알림 요청은 `next_action_v1` 호환으로 읽으며, 문구가 갱신돼도 영수증·실험 ID·변형이 이어진다.
+- [x] 다음 KST 날짜 복귀를 `return_plan_next_day_open`으로 통합했다. cold 시작과 background→active warm 재활성화를 같은 계획·날짜·영수증 scope로 한 번만 기록하고, 기존 `return_plan_cold_start`는 cold-only 호환 이벤트로 남겼다.
+- [x] Amplitude 직행 payload에만 `ingestion_origin=ios_sdk_direct`, `event_schema_version=2`를 붙였다. Firebase에는 두 속성을 보내지 않고 기존 공통 payload를 보존한다.
+- [x] `game_abandoned`에 `life_number`, `act_number`, `phase`, `development_rules_version`을 추가하고, 튜토리얼 8구 상한·첫 정상 훈련 보장·공식 경기 없는 장 목표 비노출·이름 입력 자동 포커스 금지 회귀 테스트를 보강했다.
+- [x] Wave 0 copy preflight의 기존 주석-only 차단 용어를 허구 세계관을 보존하는 중립 표현으로 정리했다. 밸런스 상수와 동작은 이 preflight에서 변경하지 않는다.
 - [x] 정산 화면에서 곧장 다음 회차(`hs.recap.continue` → 원탭 환생). 예전 경로는 정산→완료→다시 태어나기→스탬프→설정 4단계였다.
 - [x] 완료 화면의 "다시 태어나기"를 주 버튼으로 승격 + 회차 카드 공유 버튼 추가(지명 회차는 정산 화면을 거치지 않아 공유 경로가 통째로 없었다).
-- [ ] **검증 대기**: 1차 판정은 `return_plan_eligible` 기준 guided 대 holdout의 다음 KST `return_plan_cold_start`와 그 세션의 공식 `game_finished`다. 적격 안정 식별자 200명 전에는 인과·유의성을 주장하지 않는다. `return_plan_tapped` 뒤 같은 세션 경기 완료율 **≥35%**, 닫기율 **≤35%**는 이미 돌아온 사람의 탐색 보조지표로만 본다.
+- [ ] **검증 대기**: 1차 판정은 `return_plan_eligible` 기준 guided 대 holdout의 다음 KST `return_plan_next_day_open`과 그 세션의 공식 `game_finished`다. `return_plan_cold_start`는 호환용 cold-only 이벤트로 보조 확인만 한다. 적격 안정 식별자 200명 전에는 인과·유의성을 주장하지 않는다. `return_plan_tapped` 뒤 같은 세션 경기 완료율 **≥35%**, 닫기율 **≤35%**는 이미 돌아온 사람의 탐색 보조지표로만 본다.
+
+**Wave 0 운영 메모 (2026-08-11)**
+
+- 정식 코호트 필터는 `distribution=app_store`, `environment=production`, `ingestion_origin=ios_sdk_direct`, `event_schema_version=2`다. Firebase 대시보드에는 마지막 두 필터를 적용하지 않는다.
+- Amplitude에서 `return_plan_eligible`를 분모로 만들고 `experiment_id=next_action_v2`의 `variant=holdout/guided`를 비교한다. 복귀 KPI는 `return_plan_next_day_open`의 `launch_type=cold/warm`과 같은 세션의 첫 `game_finished`이며, `return_plan_cold_start`는 호환 검사용이다.
+- 이벤트 속성 사전과 구현 계약은 [`ANALYTICS_TRACKING_PLAN.md`](ANALYTICS_TRACKING_PLAN.md)에 고정했다. Amplitude 차트·코호트·알림 설정은 수동으로 적용해야 하며 Wave 0 코드가 외부 대시보드 설정을 자동 변경하지 않는다.
+- Wave 0에는 노출 비율·알림 문구·게임 밸런스 변경이 없다. 다음 웨이브의 제품 실험은 이 계측이 배포되고 데이터 품질이 확인된 뒤 별도 승인한다.
 
 **최선 여부 판정.** 복귀 카드는 전체 해법이 아니라 검증 순서상 첫 레버다. 첫날 경기 깊이와 반복은 이미 강하므로, 현재 우선순위는 (1) 정확한 이어하기와 계측, (2) 직접 키운 능력·대표 유산이 다음 경기의 손맛을 바꾸는 체감, (3) 선수별 관계·결말의 반복 노출 축소와 분기 다양화, (4) 마지막에 선택형 알림이다. 카드가 경기 완료를 올리지 못하면 알림 강도를 높이지 않고, 카드 문구보다 **경기 직전 목표와 경기 후 성장 피드백**을 먼저 다시 설계한다.
 

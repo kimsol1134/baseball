@@ -59,6 +59,12 @@ struct HighSchoolSetupView: View {
     @State private var harshness: DifficultyLevel = .standard
     @FocusState private var nameFocused: Bool
 
+    /// The first screen must remain readable before the player explicitly taps the field.
+    static func shouldAutoFocusName(isRebirth: Bool) -> Bool {
+        _ = isRebirth
+        return false
+    }
+
     /// 원버튼 환생 — 지난 회차와 같은 설정(이름·지역·유형·난이도·카르마)으로 즉시 시작.
     /// 부스트는 회차마다 다시 고르는 소비라 싣지 않는다.
     @ViewBuilder private var quickRebirthCard: some View {
@@ -187,6 +193,7 @@ struct HighSchoolSetupView: View {
         .scrollDismissesKeyboard(.interactively)
         .onAppear { GameAnalytics.logOnce(.onboardingStarted) }
         .onAppear {
+            nameFocused = Self.shouldAutoFocusName(isRebirth: isRebirth)
             if selectedSignatureLegacyID == nil {
                 selectedSignatureLegacyID = career.inheritance.equippedSignatureLegacyID
             }

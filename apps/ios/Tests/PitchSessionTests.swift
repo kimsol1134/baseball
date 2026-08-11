@@ -58,6 +58,37 @@ final class PitchSessionTests: XCTestCase {
         )
     }
 
+    /// 첫 불펜은 학습을 위한 연습이므로 어떤 합법적인 투구 결과도 8구를 넘기지 않는다.
+    func testTutorialPitchCapStopsEveryRepresentativeSeedAtEightPitches() throws {
+        let engine = HighSchoolCareerEngine()
+        for seed in ["1", "17", "20260723", "44771", "8675309"] {
+            let started = try engine.start(.init(seed: seed, presetID: "power_prospect"))
+            let session = PitchSession(
+                scenario: .tutorial(state: started.snapshot), seed: started.nextSeed
+            )
+            XCTAssertEqual(session.scenario.maximumPitches, 8)
+            session.start()
+
+            var steps = 0
+            while steps < 100 {
+                steps += 1
+                switch session.stage {
+                case .ready:
+                    session.throwPitch(delivery: .neutral)
+                case .betweenBatters:
+                    session.advanceToNextBatter()
+                case .finished:
+                    steps = 100
+                case .failed(let message):
+                    XCTFail("튜토리얼 합법 투구가 실패했습니다: \(message)")
+                    steps = 100
+                }
+            }
+            XCTAssertEqual(session.stage, .finished)
+            XCTAssertLessThanOrEqual(session.pitches, 8)
+        }
+    }
+
     /// 세션은 매 투구마다 준비 토큰을 받아야 하며, 던지면 결과가 나와야 한다.
     func testSessionProducesRealPitchResults() {
         let session = PitchSession(state: snapshot(), seed: "20260725")

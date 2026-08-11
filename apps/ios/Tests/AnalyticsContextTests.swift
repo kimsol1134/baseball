@@ -101,6 +101,26 @@ final class AnalyticsContextTests: XCTestCase {
         XCTAssertEqual(GameAnalytics.Event.returnPlanDismissed.rawValue, "return_plan_dismissed")
         XCTAssertEqual(GameAnalytics.Event.returnPlanEligible.rawValue, "return_plan_eligible")
         XCTAssertEqual(GameAnalytics.Event.returnPlanColdStart.rawValue, "return_plan_cold_start")
+        XCTAssertEqual(GameAnalytics.Event.returnPlanNextDayOpen.rawValue, "return_plan_next_day_open")
+    }
+
+    @MainActor
+    func testAmplitudeDirectPayloadAddsOnlyAmplitudeIngestionMarkers() {
+        let context = AnalyticsContext.resolve(
+            appVersion: "1.0.2", build: "42", isDebug: false,
+            receiptURL: URL(fileURLWithPath: "/StoreKit/receipt")
+        )
+        let payloads = GameAnalytics.payloads(
+            for: ["screen": "career"], context: context
+        )
+
+        XCTAssertEqual(payloads.firebase["screen"] as? String, "career")
+        XCTAssertNil(payloads.firebase["ingestion_origin"])
+        XCTAssertNil(payloads.firebase["event_schema_version"])
+        XCTAssertEqual(payloads.amplitude["ingestion_origin"] as? String, "ios_sdk_direct")
+        XCTAssertEqual(payloads.amplitude["event_schema_version"] as? Int, 2)
+        XCTAssertEqual(payloads.amplitude["distribution"] as? String, "app_store")
+        XCTAssertEqual(payloads.amplitude["environment"] as? String, "production")
     }
 
     @MainActor
