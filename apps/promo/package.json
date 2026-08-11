@@ -5,7 +5,10 @@
   "description": "홍보 영상. 앱 화면은 시뮬레이터 @3x 캡처, 승부 장면은 PitchDramaView를 프레임으로 렌더한 실물이다.",
   "scripts": {
     "studio": "remotion studio",
+    "capture:web-judge": "node scripts/capture-web-judge.mjs",
     "render:web-contest": "remotion render WebContestTrailer out/web-contest-final.mp4 --codec=h264 --crf=18",
+    "render:web-judge": "remotion render WebContestJudgeCut out/web-contest-judge-cut.mp4 --codec=h264 --crf=24",
+    "render:web-judge-poster": "remotion still WebContestJudgeCut out/web-contest-judge-poster.png --frame=2010",
     "render:web-poster": "remotion still WebContestTrailer out/web-contest-poster.png --frame=840",
     "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=20",
     "render:loop": "remotion render HeroLoop out/hero-loop.mp4 --codec=h264 --crf=23",
@@ -13,6 +16,7 @@
   },
   "dependencies": {
     "@remotion/cli": "4.0.499",
+    "@remotion/media": "4.0.499",
     "@remotion/sfx": "4.0.499",
     "@remotion/transitions": "4.0.499",
     "react": "19.2.8",
