@@ -376,9 +376,11 @@ struct HighSchoolCareerView: View {
                         }
                     }
                     .padding(BaseballMetrics.gutter)
-                    // 완료·유산처럼 긴 화면의 마지막 CTA가 시스템 탭 바와 맞닿지 않게
-                    // 실제 안전 영역 안에 한 번 더 숨을 준다.
-                    .safeAreaPadding(.bottom, 12)
+                    // 완료·유산처럼 긴 화면의 마지막 CTA가 떠 있는 탭 바 뒤로 숨지 않게
+                    // 그만큼을 비워 둔다. 12pt로는 모자랐다 — 지명받은 완료 화면에서
+                    // 마지막 버튼과 선수의 속마음이 탭 바에 깔려, 스크롤을 끝까지 내려도
+                    // 누를 수 없었다.
+                    .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
                 }
                 // 빠른 환생은 같은 화면 안에서 새 careerID로 즉시 갈아탄다. ScrollView를
                 // 재사용하면 직전 결산의 깊은 스크롤 위치가 남아 새 프롤로그·지난 선수의

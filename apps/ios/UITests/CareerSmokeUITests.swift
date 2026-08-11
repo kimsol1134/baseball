@@ -236,6 +236,16 @@ final class CareerSmokeUITests: XCTestCase {
             }
             if app.buttons["hs.enterPro"].exists {
                 XCTAssertTrue(usedFastForwardDuringRun)
+                // 지명받은 완료 화면은 이 앱에서 가장 긴 화면이다 — 프로 진입 아래로 공유,
+                // 다시 시작, 선수의 속마음이 이어진다. 떠 있는 탭 바가 그 끝을 덮으면
+                // **스크롤을 끝까지 내려도 마지막 버튼을 누를 수 없다**(실기기 제보).
+                // 마지막 조작이 실제로 손에 닿는지 여기서 지킨다.
+                let restart = app.buttons["hs.rebirth"]
+                XCTAssertTrue(restart.exists, "완료 화면에 다시 시작 버튼이 없습니다.")
+                XCTAssertTrue(
+                    bringIntoView(restart),
+                    "완료 화면의 마지막 버튼이 탭 바에 가려 닿지 않습니다."
+                )
                 tapIfPresent(app.buttons["hs.enterPro"])
                 XCTAssertTrue(
                     app.staticTexts["다음 행동"].waitForExistence(timeout: timeout)

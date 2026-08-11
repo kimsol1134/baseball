@@ -146,6 +146,14 @@ enum BaseballMetrics {
     static let minimumTapTarget: CGFloat = 44
     /// 화면당 하나뿐인 큰 키아트의 높이.
     static let keyArtHeight: CGFloat = 190
+    /// 떠 있는 탭 바 아래로 스크롤 콘텐츠가 숨지 않게 비워 두는 높이.
+    ///
+    /// iOS 26의 탭 바는 화면 위에 떠 있고, 이 앱은 국면에 따라 탭 바를 숨겼다 보였다 하므로
+    /// (`AppShell.hidesHighSchoolTabBar`) 스크롤뷰가 자동 하단 인셋을 항상 받지는 못한다.
+    /// 실제로 드래프트를 통과한 완료 화면에서 마지막 버튼("N번째 선수로 다시 시작")과
+    /// 선수의 속마음이 탭 바 뒤에 깔려 **스크롤 끝까지 내려도 닿을 수 없었다.**
+    /// 탭 바 높이(49) + 떠 있는 여백 + 손가락이 닿을 여유를 합친 값이다.
+    static let floatingTabBarClearance: CGFloat = 96
 }
 
 enum BaseballCardTone {

@@ -79,7 +79,8 @@ struct CareerFlowView: View {
                         }
                     }
                     .padding(BaseballMetrics.gutter)
-                    .safeAreaPadding(.bottom, 12)
+                    // 고교 화면과 같은 이유 — 떠 있는 탭 바가 마지막 행동을 덮는다.
+                    .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
                 }
                 .background(BaseballTheme.canvas)
                 .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
