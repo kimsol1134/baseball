@@ -158,6 +158,14 @@ final class ProCareerEngineTests: XCTestCase {
         for key in ["seasonSegment", "seasonTrigger", "currentRival", "seasonTensions", "seasonImportantGames", "pendingDecision", "decisionHistory"] {
             object.removeValue(forKey: key)
         }
+        // 실제 구버전 저장의 서명에는 당시 존재하지 않던 필드가 들어가지 않았다.
+        // 현재 스냅숏의 서명을 그대로 둔 채 키만 제거하면 존재할 수 없는 위조 데이터를 만든다.
+        object["commitment"] = ""
+        let unsignedLegacy = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        object["commitment"] = engine.commitment(unsignedLegacy)
         let stripped = try JSONSerialization.data(withJSONObject: object)
         let legacy = try JSONDecoder().decode(ProCareerSnapshot.self, from: stripped)
 
@@ -654,7 +662,9 @@ final class ProCareerEngineTests: XCTestCase {
     // 단일 시드는 커널 항 하나만 바뀌어도 RNG 경로가 밀려 뒤집힌다 — 시드 묶음의
     // 집계로 판정해야 "피로가 커널에 있는가"라는 원래 질문에 답한다.
     func testHigherFatigueWorsensOutingsInAggregate() throws {
-        let seeds: [UInt64] = [991, 7, 42, 123, 500, 1001, 2026, 31337, 555, 808, 4444, 90210]
+        // 소수의 시드는 커널 튜닝에 따라 우연히 동률이 날 수 있다. 방향성 검증은 충분한
+        // 결정론 표본을 집계해 단일 타석 RNG 변화에 흔들리지 않게 한다.
+        let seeds = (1...64).map(UInt64.init)
         var freshBurden = 0, gassedBurden = 0
         for seed in seeds {
             let fresh = engine.simulateWeeklyOuting(pitcher: PitcherPresetCatalog.all[0].pitcher, startingFatigue: 5, outsTarget: 18, pitchCap: 96, baseSeed: seed)
