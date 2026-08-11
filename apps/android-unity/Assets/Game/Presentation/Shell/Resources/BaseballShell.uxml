@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/Game/Presentation/Common/theme.uss" />
+    <Style src="project://database/Assets/Game/Presentation/Shell/Resources/BaseballShell.uss" />
+    <ui:VisualElement name="shell-root" class="baseball-theme shell-root">
+        <ui:VisualElement name="shell-topbar" class="shell-topbar" />
+        <ui:VisualElement name="shell-screen" class="shell-screen" />
+        <ui:VisualElement name="shell-bottom" class="shell-bottom" />
+        <ui:VisualElement name="shell-overlay" class="shell-overlay" />
+    </ui:VisualElement>
+</ui:UXML>

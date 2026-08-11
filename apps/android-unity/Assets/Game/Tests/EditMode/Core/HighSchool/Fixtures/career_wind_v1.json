@@ -1,0 +1,7 @@
+[
+  {"career_id":"career-1-life-1","id":"monster_generation","rival_bonus":5,"fans":5,"reward_permille":150},
+  {"career_id":"career-2-life-1","id":"scout_frenzy","rival_bonus":0,"fans":20,"reward_permille":0},
+  {"career_id":"career-3-life-1","id":"calm","rival_bonus":0,"fans":5,"reward_permille":0},
+  {"career_id":"career-100-life-2","id":"quiet_season","rival_bonus":-3,"fans":0,"reward_permille":80},
+  {"career_id":"legacy-fixed-seed","id":"monster_generation","rival_bonus":5,"fans":5,"reward_permille":150}
+]

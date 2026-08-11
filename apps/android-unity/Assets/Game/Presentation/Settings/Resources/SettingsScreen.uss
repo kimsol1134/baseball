@@ -1,0 +1,11 @@
+.settings-hero {
+    border-color: var(--baseball-border-strong);
+    background-color: var(--baseball-surface-soft);
+}
+
+.settings-screen .baseball-toggle,
+.settings-screen .baseball-slider {
+    padding: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--baseball-border);
+}

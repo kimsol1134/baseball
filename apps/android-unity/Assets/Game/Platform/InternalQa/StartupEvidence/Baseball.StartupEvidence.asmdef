@@ -1,0 +1,17 @@
+{
+  "name": "Baseball.StartupEvidence",
+  "rootNamespace": "Baseball.Platform.StartupEvidence",
+  "references": [
+    "Baseball.Bootstrap",
+    "Baseball.Presentation"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

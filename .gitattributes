@@ -1,0 +1,10 @@
+# Unity-generated YAML/meta and vendored SDK sources preserve upstream formatting and checksums.
+# Keep whitespace validation enabled for first-party Game C#, JSON, UXML, USS, and documentation.
+apps/android-unity/**/*.meta whitespace=-blank-at-eol,-blank-at-eof
+apps/android-unity/ProjectSettings/** whitespace=-blank-at-eol,-blank-at-eof
+apps/android-unity/Packages/** whitespace=-blank-at-eol,-blank-at-eof
+apps/android-unity/Assets/Amplitude/** whitespace=-blank-at-eol,-blank-at-eof
+apps/android-unity/Assets/Editor/** whitespace=-blank-at-eol,-blank-at-eof
+apps/android-unity/Assets/ExternalDependencyManager/** whitespace=-blank-at-eol,-blank-at-eof
+apps/android-unity/Assets/Firebase/** whitespace=-blank-at-eol,-blank-at-eof
+apps/android-unity/Assets/Game/Presentation/Common/Resources/Fonts/LICENSE.txt whitespace=-blank-at-eol,-blank-at-eof

@@ -1,0 +1,23 @@
+{
+  "name": "Baseball.Persistence.Tests",
+  "rootNamespace": "Baseball.Persistence.Tests",
+  "references": [
+    "Baseball.Application",
+    "Unity.Newtonsoft.Json",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

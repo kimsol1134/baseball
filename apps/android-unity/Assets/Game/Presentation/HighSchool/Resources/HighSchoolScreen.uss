@@ -1,0 +1,8 @@
+.highschool-hero {
+    border-color: var(--baseball-milestone);
+    background-color: var(--baseball-milestone-soft);
+}
+
+.highschool-screen .screen-data-row__value {
+    color: var(--baseball-milestone);
+}

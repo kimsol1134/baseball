@@ -1,0 +1,19 @@
+{
+  "name": "Baseball.Platform",
+  "rootNamespace": "Baseball.Platform",
+  "references": [
+    "Baseball.Core",
+    "AmplitudeSDKCore",
+    "Google.Play.Review",
+    "Unity.Notifications.Android"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

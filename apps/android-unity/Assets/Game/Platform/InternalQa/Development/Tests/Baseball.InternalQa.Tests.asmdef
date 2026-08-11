@@ -1,0 +1,23 @@
+{
+  "name": "Baseball.InternalQa.Tests",
+  "rootNamespace": "Baseball.Platform.InternalQa.Tests",
+  "references": [
+    "Baseball.InternalQa",
+    "Baseball.Presentation",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

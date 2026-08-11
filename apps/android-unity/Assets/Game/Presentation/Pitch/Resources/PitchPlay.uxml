@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/Game/Presentation/Common/theme.uss" />
+    <Style src="project://database/Assets/Game/Presentation/Pitch/Resources/PitchPlay.uss" />
+    <ui:VisualElement name="pitch-play-root" class="baseball-theme pitch-play-root">
+        <ui:ScrollView name="pitch-scroll" class="pitch-scroll">
+            <ui:VisualElement class="pitch-top-card">
+                <ui:VisualElement name="pitch-back-slot" class="pitch-back-slot" />
+                <ui:VisualElement class="pitch-score-copy">
+                    <ui:Label name="pitch-inning" class="baseball-eyebrow" />
+                    <ui:Label name="pitch-count" class="pitch-count" />
+                </ui:VisualElement>
+                <ui:Label name="pitch-batter" class="pitch-batter" />
+            </ui:VisualElement>
+            <ui:Label name="pitch-tutorial-coach" class="pitch-tutorial-coach" />
+            <ui:Label name="pitch-recommendation" class="pitch-recommendation" />
+            <ui:VisualElement name="pitch-catcher-sign-slot" class="pitch-catcher-sign-slot" />
+            <ui:VisualElement name="pitch-input-panel" class="pitch-panel pitch-input-panel">
+                <ui:Label text="구종" class="baseball-section-title" />
+                <ui:VisualElement name="pitch-type-options" class="pitch-type-options" />
+                <ui:Label text="코스" class="baseball-section-title pitch-subheading" />
+                <ui:Label text="아홉 칸을 누르거나 아래 미트를 끌어 코스를 고르세요." class="pitch-help" />
+                <ui:VisualElement name="pitch-zone-grid" class="pitch-zone-grid" />
+                <ui:VisualElement name="pitch-aim-surface" class="pitch-aim-surface">
+                    <ui:VisualElement class="pitch-aim-line pitch-aim-line--vertical" />
+                    <ui:VisualElement class="pitch-aim-line pitch-aim-line--horizontal" />
+                    <ui:VisualElement name="pitch-aim-marker" class="pitch-aim-marker" />
+                </ui:VisualElement>
+                <ui:Label text="투구 의도" class="baseball-section-title pitch-subheading" />
+                <ui:VisualElement name="pitch-intent-slot" />
+                <ui:Label text="힘 조절" class="baseball-section-title pitch-subheading" />
+                <ui:VisualElement name="pitch-intensity-slot" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="pitch-timing-panel" class="pitch-panel pitch-timing-panel">
+                <ui:Label text="릴리스 타이밍" class="baseball-section-title" />
+                <ui:Label name="pitch-release-label" class="pitch-release-label" />
+                <ui:VisualElement class="pitch-release-meter">
+                    <ui:VisualElement class="pitch-release-perfect" />
+                    <ui:VisualElement name="pitch-release-meter-fill" class="pitch-release-meter-fill" />
+                </ui:VisualElement>
+                <ui:Label text="손을 놓는 순간의 위치가 투구 정확도로 이어집니다." class="pitch-help" />
+            </ui:VisualElement>
+            <ui:VisualElement name="pitch-release-slot" class="pitch-release-slot" />
+
+            <ui:VisualElement name="pitch-presenting-panel" class="pitch-panel pitch-presenting-panel">
+                <ui:Label name="pitch-presenting-label" class="baseball-section-title" />
+                <ui:Label text="결과는 공을 놓는 순간 확정됩니다." class="pitch-help" />
+                <ui:VisualElement name="pitch-skip-slot" class="pitch-skip-slot" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="pitch-result-panel" class="pitch-panel pitch-result-panel">
+                <ui:Label name="pitch-result-title" class="baseball-display pitch-result-title" />
+                <ui:Label name="pitch-result-detail" class="pitch-result-detail" />
+                <ui:Label name="pitch-result-stats" class="pitch-result-stats" />
+                <ui:VisualElement name="pitch-result-skip-slot" class="pitch-skip-slot" />
+                <ui:VisualElement name="pitch-result-action" class="pitch-result-action" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/Game/Presentation/Common/theme.uss" />
+    <Style src="project://database/Assets/Game/Presentation/Shell/Resources/ScreenLayout.uss" />
+    <Style src="project://database/Assets/Game/Presentation/Settings/Resources/SettingsScreen.uss" />
+    <ui:VisualElement name="screen-root" class="screen-root settings-screen">
+        <ui:ScrollView class="screen-scroll">
+            <ui:VisualElement class="screen-hero settings-hero">
+                <ui:Label name="screen-eyebrow" class="baseball-eyebrow" />
+                <ui:Label name="screen-title" class="baseball-display" />
+                <ui:Label name="screen-lead" class="screen-lead" />
+            </ui:VisualElement>
+            <ui:VisualElement name="screen-custom" class="screen-custom" />
+            <ui:VisualElement name="screen-sections" class="screen-sections" />
+            <ui:VisualElement name="screen-actions" class="screen-actions" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

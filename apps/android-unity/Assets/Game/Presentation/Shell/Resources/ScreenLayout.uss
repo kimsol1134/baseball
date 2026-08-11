@@ -1,0 +1,125 @@
+.screen-root {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.screen-scroll {
+    flex-grow: 1;
+}
+
+.screen-scroll .unity-scroll-view__content-container {
+    width: 100%;
+    max-width: 480px;
+    align-self: center;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 12px;
+    padding-bottom: 32px;
+}
+
+.screen-hero {
+    width: 100%;
+    min-height: 128px;
+    justify-content: flex-end;
+    padding: 18px;
+    margin-bottom: 16px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 14px;
+    background-color: var(--baseball-surface-raised);
+}
+
+.screen-key-art {
+    width: 100%;
+    height: 184px;
+    margin-bottom: 12px;
+    border-radius: 14px;
+    background-color: var(--baseball-surface-raised);
+}
+
+.baseball-font-scale-200 .screen-key-art {
+    height: 136px;
+}
+
+.screen-lead {
+    margin-top: 10px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-body);
+    white-space: normal;
+}
+
+.screen-custom,
+.screen-sections,
+.screen-actions {
+    width: 100%;
+}
+
+.screen-custom {
+    margin-bottom: 14px;
+}
+
+.screen-actions > .baseball-button {
+    margin-top: 8px;
+}
+
+.screen-data-row {
+    min-height: 52px;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--baseball-border);
+}
+
+.screen-data-row__copy {
+    min-width: 0;
+    flex-grow: 1;
+}
+
+.screen-data-row__label {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-body);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.screen-data-row__detail {
+    margin-top: 3px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.screen-data-row__value {
+    max-width: 42%;
+    margin-left: 12px;
+    color: var(--baseball-action);
+    font-size: var(--baseball-font-body);
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+    white-space: normal;
+}
+
+.baseball-font-scale-160 .screen-data-row,
+.baseball-font-scale-200 .screen-data-row {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.baseball-font-scale-160 .screen-data-row__value,
+.baseball-font-scale-200 .screen-data-row__value {
+    max-width: 100%;
+    margin-left: 0;
+    margin-top: 5px;
+    -unity-text-align: middle-left;
+}
+
+.screen-control-stack > * {
+    margin-bottom: 8px;
+}
+
+.screen-choice-stack > .baseball-choice-card {
+    margin-bottom: 8px;
+}

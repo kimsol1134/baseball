@@ -1,0 +1,15 @@
+.opening-art {
+    height: 156px;
+    margin-top: 12px;
+    margin-bottom: -24px;
+    border-radius: 14px;
+    background-color: var(--baseball-field-night);
+}
+
+.opening-hero {
+    background-color: var(--baseball-surface);
+}
+
+.baseball-high-contrast .opening-art {
+    display: none;
+}

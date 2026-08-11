@@ -1,0 +1,8 @@
+.meta-hero {
+    border-color: var(--baseball-warning);
+    background-color: var(--baseball-warning-soft);
+}
+
+.meta-screen .screen-data-row__value {
+    color: var(--baseball-warning);
+}

@@ -1,0 +1,645 @@
+/* Midnight Dugout. Raw UI colors and role sizes are intentionally confined to this theme. */
+.baseball-theme {
+    --baseball-canvas: #080d0b;
+    --baseball-surface: #101815;
+    --baseball-surface-raised: #17231e;
+    --baseball-surface-soft: #1e2b25;
+    --baseball-border: #3f554b;
+    --baseball-border-strong: #5f736a;
+    --baseball-text-primary: #f1f4ee;
+    --baseball-text-secondary: #b4c1bb;
+    --baseball-text-tertiary: #84968e;
+    --baseball-action: #b7f36b;
+    --baseball-action-strong: #96dc4e;
+    --baseball-action-soft: #243a20;
+    --baseball-action-ink: #10200d;
+    --baseball-selection: #86c96a;
+    --baseball-selection-soft: #1b2f20;
+    --baseball-milestone: #d8b565;
+    --baseball-milestone-soft: #211d14;
+    --baseball-positive: #55c58a;
+    --baseball-positive-soft: #14271d;
+    --baseball-warning: #f0a94a;
+    --baseball-warning-soft: #251d12;
+    --baseball-negative: #ef746a;
+    --baseball-negative-soft: #261816;
+    --baseball-information: #67b6c1;
+    --baseball-information-soft: #163036;
+    --baseball-field-night: #050a15;
+    --baseball-field-dirt: #6b5236;
+    --baseball-field-chalk: #dce5de;
+
+    --baseball-team-blue: #5d8fd7;
+    --baseball-team-navy: #7189a2;
+    --baseball-team-gold: #d3a64c;
+    --baseball-team-red: #d76c68;
+    --baseball-team-teal: #52aa9e;
+    --baseball-team-orange: #d8894e;
+    --baseball-team-violet: #9a82d2;
+    --baseball-team-silver: #aab5b0;
+
+    --baseball-avatar-skin-1: #f2cfa5;
+    --baseball-avatar-skin-2: #e8bd8f;
+    --baseball-avatar-skin-3: #d9a878;
+    --baseball-avatar-skin-4: #c98e5f;
+    --baseball-avatar-skin-5: #b97a4e;
+    --baseball-avatar-hair-1: #20242b;
+    --baseball-avatar-hair-2: #3a2d22;
+    --baseball-avatar-hair-3: #54402c;
+    --baseball-avatar-hair-gray: #6d6f76;
+    --baseball-avatar-jersey-1: #3d5a44;
+    --baseball-avatar-jersey-2: #2f4858;
+    --baseball-avatar-jersey-3: #5a4632;
+    --baseball-avatar-jersey-4: #44415a;
+    --baseball-avatar-jersey-5: #5c3a3a;
+    --baseball-avatar-cap: #274232;
+    --baseball-avatar-cap-brim: #1c3125;
+    --baseball-avatar-helmet: #32405c;
+    --baseball-avatar-mask: #8b93a1;
+    --baseball-avatar-line: #1a1d22;
+    --baseball-avatar-highlight: #ffffff;
+
+    --baseball-font-eyebrow: 12px;
+    --baseball-font-caption: 13px;
+    --baseball-font-body: 16px;
+    --baseball-font-section: 18px;
+    --baseball-font-display: 32px;
+    --baseball-font-hero: 32px;
+    --baseball-font-stat: 24px;
+    --baseball-font-scoreboard: 15px;
+    --baseball-font-scoreboard-label: 12px;
+    --baseball-space-1: 4px;
+    --baseball-space-2: 8px;
+    --baseball-space-3: 12px;
+    --baseball-space-4: 16px;
+    --baseball-space-5: 20px;
+    --baseball-space-6: 24px;
+    --baseball-border-thin: 1px;
+    --baseball-border-thick: 2px;
+    --baseball-radius-medium: 10px;
+    --baseball-radius-large: 14px;
+    --baseball-size-hero: 360px;
+    --baseball-size-archive-row: 112px;
+    --baseball-size-archive-list-large: 720px;
+
+    flex-grow: 1;
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-canvas);
+    font-size: var(--baseball-font-body);
+    -unity-font-definition: resource("Fonts/Pretendard-Regular");
+}
+
+.baseball-theme.baseball-high-contrast {
+    --baseball-canvas: #020503;
+    --baseball-surface: #070b09;
+    --baseball-surface-raised: #0b120e;
+    --baseball-surface-soft: #111a15;
+    --baseball-border: #c1cec7;
+    --baseball-border-strong: #e2e8e4;
+    --baseball-text-primary: #ffffff;
+    --baseball-text-secondary: #e2e8e4;
+    --baseball-text-tertiary: #c8d2cc;
+    --baseball-action: #d3ff82;
+    --baseball-action-strong: #b7f36b;
+    --baseball-action-soft: #16240f;
+    --baseball-action-ink: #000000;
+    --baseball-selection: #b9ed8d;
+    --baseball-selection-soft: #0e1c11;
+    --baseball-milestone: #ffe08a;
+    --baseball-milestone-soft: #14110a;
+    --baseball-positive: #78e6ab;
+    --baseball-positive-soft: #0a1710;
+    --baseball-warning: #ffc66d;
+    --baseball-warning-soft: #17110a;
+    --baseball-negative: #ff9a91;
+    --baseball-negative-soft: #180d0c;
+    --baseball-information: #8ed9e2;
+    --baseball-information-soft: #0b1e22;
+    --baseball-field-night: #000000;
+    --baseball-field-dirt: #c7a87e;
+    --baseball-field-chalk: #ffffff;
+    --baseball-team-blue: #8fbaff;
+    --baseball-team-navy: #a8bdd2;
+    --baseball-team-gold: #ffd36d;
+    --baseball-team-red: #ff9691;
+    --baseball-team-teal: #7ee0d0;
+    --baseball-team-orange: #ffb477;
+    --baseball-team-violet: #c4a9ff;
+    --baseball-team-silver: #d7e0dc;
+}
+
+.baseball-theme.baseball-font-scale-130 {
+    --baseball-font-eyebrow: 16px;
+    --baseball-font-caption: 17px;
+    --baseball-font-body: 21px;
+    --baseball-font-section: 23px;
+    --baseball-font-display: 42px;
+    --baseball-font-hero: 42px;
+    --baseball-font-stat: 31px;
+    --baseball-font-scoreboard: 20px;
+    --baseball-font-scoreboard-label: 16px;
+}
+
+.baseball-theme.baseball-font-scale-160 {
+    --baseball-font-eyebrow: 19px;
+    --baseball-font-caption: 21px;
+    --baseball-font-body: 26px;
+    --baseball-font-section: 29px;
+    --baseball-font-display: 51px;
+    --baseball-font-hero: 51px;
+    --baseball-font-stat: 38px;
+    --baseball-font-scoreboard: 24px;
+    --baseball-font-scoreboard-label: 19px;
+}
+
+.baseball-theme.baseball-font-scale-200 {
+    --baseball-font-eyebrow: 24px;
+    --baseball-font-caption: 26px;
+    --baseball-font-body: 32px;
+    --baseball-font-section: 36px;
+    --baseball-font-display: 64px;
+    --baseball-font-hero: 64px;
+    --baseball-font-stat: 48px;
+    --baseball-font-scoreboard: 30px;
+    --baseball-font-scoreboard-label: 24px;
+}
+
+.baseball-theme.baseball-bold-text Label,
+.baseball-theme.baseball-bold-text Button,
+.baseball-theme.baseball-bold-text Toggle {
+    -unity-font-style: bold;
+}
+
+.baseball-content-column {
+    width: 100%;
+    max-width: 480px;
+    align-self: center;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.baseball-scroll-content {
+    padding-bottom: 96px;
+}
+
+.baseball-eyebrow {
+    color: var(--baseball-action);
+    font-size: var(--baseball-font-eyebrow);
+    -unity-font-style: bold;
+    letter-spacing: 1.4px;
+    margin-bottom: 8px;
+}
+
+.baseball-section-title {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-section);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.baseball-display {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-display);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.baseball-button {
+    min-height: 48px;
+    border-width: 1px;
+    border-radius: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-surface-raised);
+    border-color: var(--baseball-border-strong);
+    -unity-font-style: bold;
+    font-size: var(--baseball-font-body);
+    white-space: normal;
+}
+
+.baseball-button:focus {
+    border-width: 2px;
+    border-color: var(--baseball-action);
+}
+
+.baseball-button:disabled {
+    color: var(--baseball-text-tertiary);
+    background-color: var(--baseball-surface-soft);
+    border-color: var(--baseball-border);
+    opacity: 0.72;
+}
+
+.baseball-primary-pill {
+    min-height: 52px;
+    border-radius: 999px;
+    color: var(--baseball-action-ink);
+    background-color: var(--baseball-action);
+    border-color: var(--baseball-action);
+}
+
+.baseball-primary-pill:hover,
+.baseball-primary-pill:active {
+    background-color: var(--baseball-action-strong);
+    border-color: var(--baseball-action-strong);
+}
+
+.baseball-primary-pill:disabled {
+    color: var(--baseball-text-tertiary);
+    background-color: var(--baseball-action-soft);
+}
+
+.baseball-secondary-button {
+    background-color: var(--baseball-surface-raised);
+}
+
+.baseball-destructive-button {
+    color: var(--baseball-negative);
+    background-color: var(--baseball-negative-soft);
+    border-color: var(--baseball-negative);
+}
+
+.baseball-icon-button,
+.baseball-back-button {
+    width: 48px;
+    min-width: 48px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.baseball-back-button {
+    font-size: var(--baseball-font-stat);
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.baseball-section {
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+.baseball-section--information > .baseball-eyebrow {
+    color: var(--baseball-information);
+}
+
+.baseball-section__content,
+.baseball-callout__content {
+    width: 100%;
+}
+
+.baseball-section__hairline {
+    height: 1px;
+    margin-top: 12px;
+    background-color: var(--baseball-border);
+    opacity: 0.45;
+}
+
+.baseball-callout {
+    width: 100%;
+    padding: 16px;
+    margin-bottom: 14px;
+    border-radius: 14px;
+}
+
+.baseball-callout--milestone { background-color: var(--baseball-milestone-soft); }
+.baseball-callout--milestone > .baseball-eyebrow { color: var(--baseball-milestone); }
+.baseball-callout--positive { background-color: var(--baseball-positive-soft); }
+.baseball-callout--positive > .baseball-eyebrow { color: var(--baseball-positive); }
+.baseball-callout--warning { background-color: var(--baseball-warning-soft); }
+.baseball-callout--warning > .baseball-eyebrow { color: var(--baseball-warning); }
+.baseball-callout--negative { background-color: var(--baseball-negative-soft); }
+.baseball-callout--negative > .baseball-eyebrow { color: var(--baseball-negative); }
+.baseball-callout--information { background-color: var(--baseball-information-soft); }
+.baseball-callout--information > .baseball-eyebrow { color: var(--baseball-information); }
+
+.baseball-stat-tile {
+    min-width: 0;
+    flex-grow: 1;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.baseball-stat-tile__value {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-stat);
+    -unity-font-style: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.baseball-stat-tile__caption {
+    margin-top: 4px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.baseball-ability-gauge {
+    width: 100%;
+    min-height: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.baseball-ability-gauge__track {
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: var(--baseball-surface-soft);
+}
+
+.baseball-ability-gauge__fill {
+    height: 100%;
+    border-radius: 999px;
+    background-color: var(--baseball-information);
+    transition-property: width;
+    transition-duration: 240ms;
+    transition-timing-function: ease-out;
+}
+
+.baseball-ability-gauge--gain .baseball-ability-gauge__fill {
+    background-color: var(--baseball-positive);
+    transition-duration: 820ms;
+}
+
+.baseball-reduced-motion .baseball-ability-gauge__fill {
+    transition-duration: 0s;
+}
+
+.baseball-scoreboard-row {
+    min-height: 48px;
+    flex-direction: row;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--baseball-border);
+}
+
+.baseball-scoreboard-row__label {
+    flex-grow: 1;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-scoreboard-label);
+    -unity-font-style: bold;
+}
+
+.baseball-scoreboard-row__value {
+    min-width: 36px;
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-scoreboard);
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+.baseball-choice-card {
+    min-height: 72px;
+    width: 100%;
+    padding: 14px 16px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 14px;
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-surface);
+    font-size: var(--baseball-font-body);
+    -unity-text-align: middle-left;
+    white-space: normal;
+}
+
+.baseball-choice-card--selected {
+    border-width: 2px;
+    border-color: var(--baseball-selection);
+    background-color: var(--baseball-selection-soft);
+}
+
+.baseball-character-profile {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+}
+
+.baseball-character-profile__portrait {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    margin-right: 14px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.baseball-character-profile__name {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-section);
+    -unity-font-style: bold;
+}
+
+.baseball-character-profile__detail {
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.baseball-key-art-header {
+    position: relative;
+    width: 100%;
+    height: 190px;
+    overflow: hidden;
+}
+
+.baseball-key-art-header__image {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-background-scale-mode: scale-and-crop;
+    opacity: 0.78;
+}
+
+.baseball-high-contrast .baseball-key-art-header__image {
+    display: none;
+}
+
+.baseball-high-contrast .baseball-key-art-header {
+    background-color: var(--baseball-surface-raised);
+}
+
+.baseball-key-art-header__copy {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    background-color: var(--baseball-canvas);
+}
+
+.baseball-modal {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: flex-end;
+}
+
+.baseball-modal__scrim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: #000000b8;
+}
+
+.baseball-modal__sheet {
+    width: 100%;
+    max-height: 88%;
+    padding: 16px;
+    padding-bottom: 24px;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    background-color: var(--baseball-surface-raised);
+}
+
+.baseball-modal__content,
+.baseball-modal__message {
+    margin-top: 14px;
+    color: var(--baseball-text-secondary);
+    white-space: normal;
+}
+
+.baseball-modal__actions {
+    margin-top: 16px;
+}
+
+.baseball-modal__actions > .baseball-button {
+    margin-top: 8px;
+}
+
+.baseball-toast {
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-information-soft);
+}
+
+.baseball-toast--positive { background-color: var(--baseball-positive-soft); }
+.baseball-toast--warning { background-color: var(--baseball-warning-soft); }
+.baseball-toast--negative { background-color: var(--baseball-negative-soft); }
+.baseball-toast--milestone { background-color: var(--baseball-milestone-soft); }
+
+.baseball-inline-error {
+    min-height: 48px;
+    justify-content: center;
+    color: var(--baseball-negative);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.baseball-loading-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-canvas);
+}
+
+.baseball-loading-overlay__spinner {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 8px;
+    border-width: 4px;
+    border-color: var(--baseball-border);
+    border-top-color: var(--baseball-action);
+    border-radius: 999px;
+}
+
+.baseball-top-app-bar {
+    width: 100%;
+    min-height: 56px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    background-color: var(--baseball-canvas);
+}
+
+.baseball-top-app-bar__title {
+    flex-grow: 1;
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-section);
+    -unity-font-style: bold;
+}
+
+.baseball-top-app-bar__actions {
+    flex-direction: row;
+}
+
+.baseball-bottom-navigation {
+    min-height: 72px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 8px;
+    flex-direction: row;
+    align-items: center;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 14px;
+    background-color: var(--baseball-surface-raised);
+}
+
+.baseball-bottom-navigation__item {
+    flex-grow: 1;
+    min-height: 48px;
+    border-width: 0;
+    color: var(--baseball-text-secondary);
+    background-color: transparent;
+}
+
+.baseball-bottom-navigation__item--selected {
+    color: var(--baseball-action);
+    background-color: var(--baseball-action-soft);
+    border-radius: 10px;
+    -unity-font-style: bold;
+}
+
+.baseball-toggle {
+    min-height: 48px;
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-body);
+}
+
+.baseball-slider {
+    min-height: 48px;
+    color: var(--baseball-text-primary);
+}
+
+.baseball-segmented-choice {
+    min-height: 48px;
+    flex-direction: row;
+    padding: 3px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 10px;
+    background-color: var(--baseball-surface);
+}
+
+.baseball-segmented-choice__item {
+    min-height: 48px;
+    flex-grow: 1;
+    border-width: 0;
+    color: var(--baseball-text-secondary);
+    background-color: transparent;
+}
+
+.baseball-segmented-choice__item--selected {
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-selection-soft);
+    border-radius: 8px;
+    -unity-font-style: bold;
+}

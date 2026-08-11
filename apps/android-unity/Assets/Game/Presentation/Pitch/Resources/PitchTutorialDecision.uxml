@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="project://database/Assets/Game/Presentation/Common/theme.uss" />
+    <Style src="project://database/Assets/Game/Presentation/Pitch/Resources/PitchTutorialDecision.uss" />
+    <ui:VisualElement name="pitch-tutorial-decision-root" class="baseball-theme pitch-tutorial-decision-root">
+        <ui:ScrollView class="pitch-tutorial-decision-scroll">
+            <ui:VisualElement class="pitch-tutorial-decision-card">
+                <ui:Label text="첫 불펜을 마쳤습니다" class="baseball-eyebrow" />
+                <ui:Label text="이 결과로 학교 후보를 만나거나, 새 시드로 다시 던질 수 있습니다." class="baseball-display pitch-tutorial-decision-title" />
+                <ui:Label name="pitch-tutorial-summary" class="pitch-tutorial-decision-summary" />
+                <ui:Label name="pitch-tutorial-detail" class="pitch-tutorial-decision-detail" />
+                <ui:Label name="pitch-tutorial-status" text="연습 결과는 커리어 성장 기록에 반영되지 않습니다." class="pitch-tutorial-decision-status" />
+                <ui:VisualElement name="pitch-tutorial-actions" class="pitch-tutorial-decision-actions" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,29 @@
+.shell-root {
+    flex-grow: 1;
+    width: 100%;
+    min-width: 280px;
+}
+
+.shell-topbar {
+    flex-shrink: 0;
+}
+
+.shell-screen {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.shell-bottom {
+    flex-shrink: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 4px;
+}
+
+.shell-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}

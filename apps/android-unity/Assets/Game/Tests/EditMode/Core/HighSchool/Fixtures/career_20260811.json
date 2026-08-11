@@ -1,0 +1,54 @@
+{
+  "source": "Swift SimulationCore fixture probe + C# NUnit",
+  "seed": "20260811",
+  "career_id": "career-20260811-life-1",
+  "schedule": "2,2,2,2,1,3,1,2|awakening,important_game;relationship,awakening;important_game,relationship;important_game,relationship;important_game;relationship;relationship,relationship;awakening,important_game",
+  "goal_chapter_4": {
+    "title": "나와의 약속",
+    "strikeouts": 8,
+    "detail": "소등 전에 적어 둔 한 줄 — 이번 이야기, 삼진 8개."
+  },
+  "bracket_chapter_4": ["서령고", "북부상고", "서울배성고", "삼도고", "백파고", "청암고", "금강고", "동성공고"],
+  "prospect_rank": 9,
+  "prospect_names": ["정예준", "이영웅", "이은찬", "서성민", "정은찬", "안석현", "이준서", "김서준", "민서준", "배동주", "안동주", "신은찬", "안성민", "유성민", "정성민", "박지호", "최현빈", "고우진", "차도현", "김태윤"],
+  "community_buzz": [
+    "오늘 경기 직관했는데 상대 타자들이 공을 아예 못 봄",
+    "저 선수 몇 학년임? 체격 좋아 보이던데",
+    "다음 경기 언제임? 직관 가고 싶은데"
+  ],
+  "swift_start_reference": {
+    "next_seed": "17440580331433762222",
+    "event_hash": "82a005036875b27d",
+    "state_commitment": "90cddd4ec353d34e",
+    "rival_id": "rival-home-run",
+    "wind_id": "command_year"
+  },
+  "swift_transition_reference": [
+    {
+      "phase": "school_selection",
+      "next_seed": "1169930280521511745",
+      "event_hash": "9d526191d3380801",
+      "state_commitment": "55aa0ccc931c92ab",
+      "ratings": [36, 44, 36, 39],
+      "fatigue": 5
+    },
+    {
+      "phase": "training",
+      "action": "choose_mirae_analytics",
+      "next_seed": "13694056169205714311",
+      "event_hash": "6fc646f77c7cb69d",
+      "state_commitment": "4a1dd6a0c8326c88",
+      "ratings": [36, 44, 36, 39],
+      "fatigue": 5
+    },
+    {
+      "phase": "training",
+      "action": "command_standard",
+      "next_seed": "14727619764395285174",
+      "event_hash": "d4a44330e3099c94",
+      "state_commitment": "fa1c5a90797e4922",
+      "ratings": [36, 46, 36, 39],
+      "fatigue": 13
+    }
+  ]
+}

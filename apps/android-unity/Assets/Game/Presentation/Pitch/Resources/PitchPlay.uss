@@ -1,0 +1,272 @@
+.pitch-play-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: transparent;
+}
+
+.baseball-high-contrast.pitch-play-root {
+    background-color: var(--baseball-canvas);
+}
+
+.pitch-scroll {
+    flex-grow: 1;
+}
+
+.pitch-scroll .unity-scroll-view__content-container {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100%;
+    align-self: center;
+    justify-content: flex-end;
+    padding: 12px 12px 28px 12px;
+}
+
+.pitch-top-card,
+.pitch-panel,
+.pitch-recommendation,
+.pitch-tutorial-coach {
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 14px;
+    background-color: var(--baseball-surface-raised);
+}
+
+.pitch-top-card {
+    min-height: 64px;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px;
+}
+
+.pitch-back-slot {
+    flex-shrink: 0;
+}
+
+.pitch-score-copy {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.pitch-count,
+.pitch-batter {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-section);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.pitch-batter {
+    max-width: 38%;
+    -unity-text-align: middle-right;
+}
+
+.pitch-recommendation {
+    margin-top: 8px;
+    padding: 10px 12px;
+    color: var(--baseball-information);
+    font-size: var(--baseball-font-caption);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.pitch-tutorial-coach {
+    margin-top: 8px;
+    padding: 12px;
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-positive-soft);
+    font-size: var(--baseball-font-body);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.pitch-panel {
+    margin-top: 8px;
+    padding: 12px;
+}
+
+.pitch-type-options {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.pitch-option-button {
+    min-height: 48px;
+    flex-grow: 1;
+    min-width: 46%;
+    margin: 3px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 10px;
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-surface);
+    font-size: var(--baseball-font-body);
+}
+
+.pitch-option-button--selected,
+.pitch-zone-cell--selected {
+    border-width: 2px;
+    border-color: var(--baseball-selection);
+    color: var(--baseball-action);
+    background-color: var(--baseball-selection-soft);
+    -unity-font-style: bold;
+}
+
+.pitch-subheading {
+    margin-top: 12px;
+}
+
+.pitch-help,
+.pitch-result-stats {
+    margin-top: 4px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.pitch-zone-grid {
+    width: 100%;
+    max-width: 330px;
+    align-self: center;
+    margin-top: 8px;
+}
+
+.pitch-zone-row {
+    height: 52px;
+    flex-direction: row;
+}
+
+.pitch-zone-cell {
+    min-width: 0;
+    flex-grow: 1;
+    margin: 2px;
+    padding: 2px;
+    border-width: 1px;
+    border-color: var(--baseball-field-chalk);
+    color: var(--baseball-text-secondary);
+    background-color: var(--baseball-field-night);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.pitch-aim-surface {
+    position: relative;
+    width: 100%;
+    max-width: 330px;
+    height: 124px;
+    align-self: center;
+    margin-top: 8px;
+    overflow: hidden;
+    border-width: 2px;
+    border-color: var(--baseball-field-chalk);
+    background-color: var(--baseball-field-night);
+}
+
+.pitch-aim-line {
+    position: absolute;
+    background-color: var(--baseball-border);
+}
+
+.pitch-aim-line--vertical {
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+}
+
+.pitch-aim-line--horizontal {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+}
+
+.pitch-aim-marker {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    margin-left: -14px;
+    margin-top: -14px;
+    border-width: 4px;
+    border-color: var(--baseball-action);
+    border-radius: 999px;
+    background-color: var(--baseball-action-soft);
+}
+
+.pitch-release-slot,
+.pitch-skip-slot,
+.pitch-result-action {
+    margin-top: 12px;
+}
+
+.pitch-release-control {
+    width: 100%;
+}
+
+.pitch-timing-panel,
+.pitch-presenting-panel,
+.pitch-result-panel {
+    min-height: 190px;
+    justify-content: center;
+}
+
+.pitch-release-label,
+.pitch-presenting-label,
+.pitch-result-detail {
+    margin-top: 8px;
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-body);
+    white-space: normal;
+}
+
+.pitch-release-meter {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    margin-top: 16px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: var(--baseball-surface-soft);
+}
+
+.pitch-release-perfect {
+    position: absolute;
+    left: 57%;
+    width: 10%;
+    top: 0;
+    bottom: 0;
+    background-color: var(--baseball-positive-soft);
+}
+
+.pitch-release-meter-fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--baseball-action);
+}
+
+.pitch-result-title {
+    color: var(--baseball-positive);
+}
+
+.baseball-high-contrast .pitch-panel,
+.baseball-high-contrast .pitch-top-card,
+.baseball-high-contrast .pitch-recommendation,
+.baseball-high-contrast .pitch-tutorial-coach {
+    border-width: 2px;
+}
+
+.baseball-font-scale-160 .pitch-top-card,
+.baseball-font-scale-200 .pitch-top-card {
+    align-items: flex-start;
+}
+
+.baseball-font-scale-160 .pitch-zone-row,
+.baseball-font-scale-200 .pitch-zone-row {
+    height: 82px;
+}
+
+.baseball-reduced-motion .pitch-release-meter-fill {
+    transition-duration: 0s;
+}

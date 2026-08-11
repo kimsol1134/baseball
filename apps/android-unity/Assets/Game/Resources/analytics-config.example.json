@@ -1,0 +1,7 @@
+{
+  "distribution": "development",
+  "firebaseEnabled": false,
+  "crashlyticsEnabled": false,
+  "amplitudeEnabled": false,
+  "amplitudeApiKey": ""
+}

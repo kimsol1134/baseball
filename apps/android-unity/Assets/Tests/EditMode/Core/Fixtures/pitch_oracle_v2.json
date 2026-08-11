@@ -1,0 +1,26 @@
+{
+  "schema": "baseball-pitch-swift-oracle-v2",
+  "sourceCommit": "23acbb8ec233836e802009c8852c430e08075d3c",
+  "sourceSetSha256": "bdf4288abbc6dc81e96f8c725202af4e764bb293640e3fb0e3571abef182c76b",
+  "input": "PitchKernelEngineTests.makePrepareParams defaults; primary recommendation; seeds 1...N",
+  "exact": {
+    "runs": 128,
+    "canonicalRow": "seed|outcomeWire|actualX|actualY|velocityTenthsKph|eventHash\\n",
+    "fnv1a64": "56b7c99922f1d66d"
+  },
+  "distribution": {
+    "runs": 10000,
+    "outcomes": {
+      "ball": 2552,
+      "called_strike": 2458,
+      "swinging_strike": 2755,
+      "foul": 1060,
+      "in_play_out": 871,
+      "single": 226,
+      "double": 59,
+      "triple": 4,
+      "home_run": 14,
+      "hit_by_pitch": 1
+    }
+  }
+}

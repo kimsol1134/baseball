@@ -1,0 +1,64 @@
+.pitch-tutorial-decision-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--baseball-canvas);
+}
+
+.pitch-tutorial-decision-scroll {
+    flex-grow: 1;
+}
+
+.pitch-tutorial-decision-scroll .unity-scroll-view__content-container {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100%;
+    align-self: center;
+    justify-content: center;
+    padding: 20px 16px 32px 16px;
+}
+
+.pitch-tutorial-decision-card {
+    padding: 20px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 18px;
+    background-color: var(--baseball-surface-raised);
+}
+
+.pitch-tutorial-decision-title,
+.pitch-tutorial-decision-summary,
+.pitch-tutorial-decision-detail,
+.pitch-tutorial-decision-status {
+    margin-top: 12px;
+    color: var(--baseball-text-primary);
+    white-space: normal;
+}
+
+.pitch-tutorial-decision-summary {
+    font-size: var(--baseball-font-section);
+    -unity-font-style: bold;
+}
+
+.pitch-tutorial-decision-detail,
+.pitch-tutorial-decision-status {
+    font-size: var(--baseball-font-body);
+}
+
+.pitch-tutorial-decision-status {
+    color: var(--baseball-text-secondary);
+}
+
+.pitch-tutorial-decision-actions {
+    margin-top: 18px;
+}
+
+.pitch-tutorial-decision-actions > .baseball-button {
+    margin-top: 8px;
+}
+
+.baseball-high-contrast .pitch-tutorial-decision-card {
+    border-width: 2px;
+}

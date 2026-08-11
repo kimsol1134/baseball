@@ -1,0 +1,465 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using NUnit.Framework;
+
+namespace Baseball.Core.HighSchool.Tests
+{
+    [TestFixture]
+    public sealed class RunPledgeCatalogTests
+    {
+        [Test]
+        public void CurrentCatalogMatchesEverySwiftV2ContentRow()
+        {
+            // Captured verbatim from apps/ios/Sources/RunPledge.swift on 2026-08-11.
+            var expected = new[]
+            {
+                "get_drafted|safe|이름이 불린다|드래프트에서 이름이 불린다.|100",
+                "strikeout_master|bold|시즌 5탈삼진|직접 등판 통산 5탈삼진을 만든다.|200",
+                "clean_games|bold|무실점 등판 4회|직접 던진 경기에서 무실점을 네 번 만든다.|200",
+                "iron_control|bold|무볼넷 4탈삼진|직접 등판 4경기 이상, 볼넷 없이 통산 4탈삼진을 만든다.|200",
+                "healthy_finish|safe|팔을 지켜 완주|고교 공식 경기 네 번을 치르고 피로를 78 이하로 남긴 채 팔 경고 없이 완주한다.|100",
+                "awakening_three|bold|세 번의 각성|각성 세 번을 고르고 서로 다른 전략 계열 세 가지를 모은다.|200",
+                "fan_sixty|bold|관중의 이름이 된다|팬 관심을 25 이상으로 올린다.|200",
+                "evaluation_sixty_five|bold|평가 64점|드래프트 평가 64점 이상을 받는다.|200",
+                "evaluation_seventy_five|legendary|평가 67점|드래프트 평가 67점 이상을 받는다.|350",
+                "iron_control_five|legendary|무볼넷 6탈삼진|직접 등판 4경기 이상, 볼넷 없이 통산 6탈삼진을 만든다.|350",
+                "rival_three_strikeouts|bold|숙적에게 세 번 앞선다|고교 3년 동안 숙적을 세 번 삼진으로 잡는다.|200",
+                "relationship_sixty_five|safe|한 사람의 전적인 믿음|감독·포수·숙적 중 한 관계를 69 이상으로 만든다.|100"
+            };
+
+            var actual = RunPledgeCatalog.All.Select(value => string.Join("|", new[]
+            {
+                value.Id,
+                value.TierId,
+                value.Title,
+                value.Detail,
+                value.RewardPermille.ToString()
+            }));
+            Assert.That(actual, Is.EqualTo(expected));
+            Assert.That(RunPledgeCatalog.All.Select(value => value.Id).Distinct().Count(), Is.EqualTo(12));
+        }
+
+        [Test]
+        public void LegacyCatalogKeepsEveryShippedSwiftV1Contract()
+        {
+            var expected = new[]
+            {
+                "strikeout_master|bold|시즌 40탈삼진|3년 동안 직접 잡는 탈삼진 40개.|150",
+                "clean_games|safe|무실점 등판 2회|직접 던진 경기에서 무실점을 두 번 만든다.|150",
+                "get_drafted|safe|지명받는다|드래프트에서 이름이 불린다.|150",
+                "iron_control|safe|볼넷 8개 이하|시즌을 볼넷 8개 이하로 완주한다(4경기 이상).|150"
+            };
+
+            var actual = RunPledgeCatalog.LegacyV1.Select(value => string.Join("|", new[]
+            {
+                value.Id,
+                value.TierId,
+                value.Title,
+                value.Detail,
+                value.RewardPermille.ToString()
+            }));
+            Assert.That(actual, Is.EqualTo(expected));
+            Assert.That(RunPledgeCatalog.LegacyRulesVersion, Is.EqualTo(1));
+            Assert.That(RunPledgeCatalog.CurrentRulesVersion, Is.EqualTo(2));
+            Assert.That(RunPledgeCatalog.RetryIntentReason,
+                Is.EqualTo("지난 고교 3년에서 아쉽게 놓친 목표입니다."));
+            Assert.That(RunPledgeCatalog.RetryIntentReason, Does.Not.Contain("40"));
+        }
+
+        [Test]
+        public void TierAndAwakeningReadOnlyLabelsMatchSwift()
+        {
+            Assert.That(RunPledgeTier.Safe.Value(), Is.EqualTo("safe"));
+            Assert.That(RunPledgeTier.Bold.Value(), Is.EqualTo("bold"));
+            Assert.That(RunPledgeTier.Legendary.Value(), Is.EqualTo("legendary"));
+            Assert.That(RunPledgeTier.Safe.Title(), Is.EqualTo("안전"));
+            Assert.That(RunPledgeTier.Bold.Title(), Is.EqualTo("도전"));
+            Assert.That(RunPledgeTier.Legendary.Title(), Is.EqualTo("전설"));
+            Assert.That(RunPledgeTier.Safe.RewardPermille(), Is.EqualTo(100));
+            Assert.That(RunPledgeTier.Bold.RewardPermille(), Is.EqualTo(200));
+            Assert.That(RunPledgeTier.Legendary.RewardPermille(), Is.EqualTo(350));
+
+            var grouped = Enum.GetValues(typeof(AwakeningId))
+                .Cast<AwakeningId>()
+                .GroupBy(RunPledgeCatalog.AwakeningFamily)
+                .ToDictionary(value => value.Key, value => value.Count());
+            Assert.That(grouped[RunPledgeAwakeningFamily.Body], Is.EqualTo(4));
+            Assert.That(grouped[RunPledgeAwakeningFamily.Command], Is.EqualTo(5));
+            Assert.That(grouped[RunPledgeAwakeningFamily.Breaking], Is.EqualTo(5));
+            Assert.That(grouped[RunPledgeAwakeningFamily.Game], Is.EqualTo(4));
+            Assert.That(grouped.Values.Sum(), Is.EqualTo(18));
+            Assert.That(RunPledgeAwakeningFamily.Body.Title(), Is.EqualTo("힘·체력"));
+            Assert.That(RunPledgeAwakeningFamily.Command.Title(), Is.EqualTo("제구"));
+            Assert.That(RunPledgeAwakeningFamily.Breaking.Title(), Is.EqualTo("변화구"));
+            Assert.That(RunPledgeAwakeningFamily.Game.Title(), Is.EqualTo("경기 운영"));
+        }
+
+        [Test]
+        public void SwiftOptionOrderFixturesMatchForV2AndLegacy()
+        {
+            // Generated by the Swift FNV/coverage implementation, not by the C# implementation.
+            AssertOptions(
+                "pledge-fixture-0",
+                Context(lifeNumber: 1, stuff: 70, command: 50, movement: 60),
+                null,
+                "get_drafted", "strikeout_master", "fan_sixty");
+            AssertOptions(
+                "pledge-fixture-1",
+                Context(lifeNumber: 1, stuff: 70, command: 50, movement: 60),
+                null,
+                "healthy_finish", "clean_games", "evaluation_sixty_five");
+            AssertOptions(
+                "career-1-life-1",
+                Context(lifeNumber: 2, stuff: 50, command: 70, movement: 50),
+                null,
+                "relationship_sixty_five", "iron_control", "rival_three_strikeouts");
+            AssertOptions(
+                "career-100-life-2",
+                Context(lifeNumber: 2, stuff: 50, command: 50, movement: 50,
+                    managerTrust: 80, catcherTrust: 60, rivalTrust: 60),
+                new NextRunIntent(
+                    "evaluation_seventy_five",
+                    1,
+                    "평가 67점까지 다섯 점이 남았습니다."),
+                "evaluation_seventy_five", "get_drafted", "rival_three_strikeouts");
+
+            Assert.That(
+                RunPledgeCatalog.Options("pledge-fixture-0").Select(value => value.Id),
+                Is.EqualTo(new[] { "get_drafted", "iron_control", "strikeout_master" }));
+            Assert.That(
+                RunPledgeCatalog.Options("pledge-fixture-1").Select(value => value.Id),
+                Is.EqualTo(new[] { "get_drafted", "strikeout_master", "iron_control" }));
+            Assert.That(
+                RunPledgeCatalog.Options("career-1-life-1").Select(value => value.Id),
+                Is.EqualTo(new[] { "clean_games", "get_drafted", "strikeout_master" }));
+        }
+
+        [Test]
+        public void OneThousandCareerIdsKeepDeterministicCoverageAndIntentOnlyReorders()
+        {
+            var state = Context(lifeNumber: 1, stuff: 70, command: 50, movement: 60);
+            var aligned = RunPledgeCatalog.BuildAlignedIds(state);
+            for (var index = 0; index < 1000; index++)
+            {
+                var careerId = "pledge-fixture-" + index;
+                var first = RunPledgeCatalog.Options(careerId, state);
+                var second = RunPledgeCatalog.Options(careerId, state);
+                Assert.That(second.Select(value => value.Id), Is.EqualTo(first.Select(value => value.Id)), careerId);
+                Assert.That(first.Count, Is.EqualTo(3), careerId);
+                Assert.That(first.Select(value => value.Id).Distinct().Count(), Is.EqualTo(3), careerId);
+                Assert.That(first, Has.None.Matches<RunPledge>(value => value.Tier == RunPledgeTier.Legendary), careerId);
+                Assert.That(first.Any(value => value.Tier == RunPledgeTier.Safe), Is.True, careerId);
+                Assert.That(first.Any(value => aligned.Contains(value.Id)), Is.True, careerId);
+                Assert.That(first.Any(value => value.Tier == RunPledgeTier.Bold), Is.True, careerId);
+            }
+
+            var laterState = Context(lifeNumber: 2, stuff: 70, command: 50, movement: 60);
+            var intent = new NextRunIntent("evaluation_seventy_five", 1, "다음 선수에게 전한 목표");
+            var choices = RunPledgeCatalog.Options("intent-fixture", laterState, intent);
+            Assert.That(choices[0].Id, Is.EqualTo(intent.PledgeId));
+            Assert.That(choices.Select(value => value.Id).Distinct().Count(), Is.EqualTo(3));
+            Assert.That(RunPledgeCatalog.Resolve("missing"), Is.Null);
+        }
+
+        [Test]
+        public void AllTwelveCurrentPredicatesHonorSwiftBoundaries()
+        {
+            AssertBoundary(
+                "get_drafted",
+                new[] { Context(draftOutcome: DraftOutcome.Undrafted) },
+                Context(draftOutcome: DraftOutcome.Drafted));
+            AssertBoundary(
+                "strikeout_master",
+                new[] { Context(strikeouts: 4) },
+                Context(strikeouts: 5));
+            AssertBoundary(
+                "clean_games",
+                new[] { Context(cleanGames: 3) },
+                Context(cleanGames: 4));
+            AssertBoundary(
+                "iron_control",
+                new[]
+                {
+                    Context(games: 3, strikeouts: 4),
+                    Context(games: 4, strikeouts: 4, walks: 1),
+                    Context(games: 4, strikeouts: 3)
+                },
+                Context(games: 4, strikeouts: 4));
+            AssertBoundary(
+                "healthy_finish",
+                new[]
+                {
+                    Context(games: 3, fatigue: 78, armRisk: 54),
+                    Context(games: 4, fatigue: 79, armRisk: 54),
+                    Context(games: 4, fatigue: 78, armRisk: 55),
+                    Context(games: 4, fatigue: 78, armRisk: 54, recovery: 1)
+                },
+                Context(games: 4, fatigue: 78, armRisk: 54));
+            AssertBoundary(
+                "awakening_three",
+                new[]
+                {
+                    Context(awakenings: new[] { AwakeningId.ExplosiveFastball, AwakeningId.PinpointEdge }),
+                    Context(awakenings: new[]
+                    {
+                        AwakeningId.ExplosiveFastball,
+                        AwakeningId.RisingFourSeam,
+                        AwakeningId.IronArm
+                    })
+                },
+                Context(awakenings: new[]
+                {
+                    AwakeningId.ExplosiveFastball,
+                    AwakeningId.PinpointEdge,
+                    AwakeningId.DisappearingBreaker
+                }));
+            AssertBoundary(
+                "fan_sixty",
+                new[] { Context(fanInterest: 24) },
+                Context(fanInterest: 25));
+            AssertBoundary(
+                "evaluation_sixty_five",
+                new[] { Context(evaluation: 63) },
+                Context(evaluation: 64));
+            AssertBoundary(
+                "evaluation_seventy_five",
+                new[] { Context(evaluation: 66) },
+                Context(evaluation: 67));
+            AssertBoundary(
+                "iron_control_five",
+                new[]
+                {
+                    Context(games: 3, strikeouts: 6),
+                    Context(games: 4, strikeouts: 6, walks: 1),
+                    Context(games: 4, strikeouts: 5)
+                },
+                Context(games: 4, strikeouts: 6));
+            AssertBoundary(
+                "rival_three_strikeouts",
+                new[] { Context(rivalStrikeouts: 2) },
+                Context(rivalStrikeouts: 3));
+            AssertBoundary(
+                "relationship_sixty_five",
+                new[] { Context(managerTrust: 68, catcherTrust: 68, rivalTrust: 68) },
+                Context(managerTrust: 69, catcherTrust: 68, rivalTrust: 68));
+        }
+
+        [Test]
+        public void CompoundProgressUsesTheLeastCompleteCondition()
+        {
+            var control = Required("iron_control");
+            var largeMiss = control.Progress(Context(games: 4, strikeouts: 32, walks: 9));
+            Assert.That(largeMiss.Current, Is.GreaterThanOrEqualTo(largeMiss.Target));
+            Assert.That(largeMiss.Achieved, Is.False);
+            Assert.That(largeMiss.RatioPermille, Is.EqualTo(100));
+            Assert.That(largeMiss.Ratio, Is.EqualTo(0.1).Within(0.000001));
+
+            var partial = control.Progress(Context(games: 4, strikeouts: 4, walks: 3));
+            Assert.That(partial.RatioPermille, Is.EqualTo(250));
+            Assert.That(partial.Line, Is.EqualTo("직접 등판 4/4 · 볼넷 3/0 · 탈삼진 4/4"));
+            Assert.That(
+                control.AccessibilityLabel(partial, carried: true, status: "진행 중"),
+                Is.EqualTo("지난 고교 3년에서 이어진 도전 목표, 무볼넷 4탈삼진, 직접 등판 4/4 · 볼넷 3/0 · 탈삼진 4/4, 진행 중, 보상 야구혼 20퍼센트 추가"));
+
+            var unhealthy = Required("healthy_finish").Progress(
+                Context(games: 4, fatigue: 99, armRisk: 100));
+            Assert.That(unhealthy.RatioPermille, Is.Zero);
+
+            var sameFamily = Required("awakening_three").Progress(Context(awakenings: new[]
+            {
+                AwakeningId.ExplosiveFastball,
+                AwakeningId.RisingFourSeam,
+                AwakeningId.IronArm
+            }));
+            Assert.That(sameFamily.RatioPermille, Is.EqualTo(333));
+            Assert.That(sameFamily.Line, Is.EqualTo("각성 3/3 · 전략 계열 1/3"));
+        }
+
+        [Test]
+        public void LegacyPredicatesAndRewardsRemainFrozen()
+        {
+            Assert.That(
+                Required("strikeout_master", RunPledgeCatalog.LegacyRulesVersion)
+                    .Progress(Context(strikeouts: 39)).Achieved,
+                Is.False);
+            Assert.That(
+                Required("strikeout_master", RunPledgeCatalog.LegacyRulesVersion)
+                    .Progress(Context(strikeouts: 40)).Achieved,
+                Is.True);
+            Assert.That(
+                Required("clean_games", RunPledgeCatalog.LegacyRulesVersion)
+                    .Progress(Context(cleanGames: 2)).Achieved,
+                Is.True);
+
+            var control = Required("iron_control", RunPledgeCatalog.LegacyRulesVersion);
+            Assert.That(control.Progress(Context(games: 3, walks: 8)).Achieved, Is.False);
+            Assert.That(control.Progress(Context(games: 4, walks: 9)).Achieved, Is.False);
+            Assert.That(control.Progress(Context(games: 4, walks: 8)).Achieved, Is.True);
+            Assert.That(RunPledgeCatalog.LegacyV1.All(value => value.RewardPermille == 150), Is.True);
+        }
+
+        [Test]
+        public void AlignmentUsesSwiftFirstMaximumTieRuleAndAddsRiskSignals()
+        {
+            var tied = Context(
+                stuff: 60,
+                command: 60,
+                movement: 60,
+                managerTrust: 60,
+                catcherTrust: 60,
+                rivalTrust: 60);
+            Assert.That(
+                RunPledgeCatalog.BuildAlignedIds(tied),
+                Is.EquivalentTo(new[]
+                {
+                    "iron_control", "iron_control_five", "evaluation_sixty_five"
+                }));
+            Assert.That(
+                Required("iron_control").AlignmentReason(tied),
+                Is.EqualTo("제구가 가장 높은 능력이라 볼넷 억제에 잘 맞습니다."));
+            Assert.That(
+                Required("strikeout_master").AlignmentReason(tied),
+                Is.EqualTo("현재 강점과 다른 방향까지 넓혀 보는 도전 목표입니다."));
+
+            var risk = Context(
+                stuff: 70,
+                command: 50,
+                movement: 60,
+                armRisk: 35,
+                fanInterest: 35);
+            Assert.That(RunPledgeCatalog.BuildAlignedIds(risk), Does.Contain("healthy_finish"));
+            Assert.That(RunPledgeCatalog.BuildAlignedIds(risk), Does.Contain("fan_sixty"));
+        }
+
+        [Test]
+        public void SnapshotProjectionUsesCoreForecastAndPlayedCleanGames()
+        {
+            var state = new HighSchoolCareerEngine().Start(
+                new StartHighSchoolCareerParams("20260809", "power_prospect", lifeNumber: 2)).Snapshot;
+            var context = RunPledgeContext.FromSnapshot(state, rivalStrikeouts: 2);
+
+            Assert.That(context.LifeNumber, Is.EqualTo(2));
+            Assert.That(context.Stuff, Is.EqualTo(state.Pitcher.Stuff));
+            Assert.That(context.DraftForecastScore,
+                Is.EqualTo(HighSchoolCareerEngine.DraftForecast(state).Score));
+            Assert.That(context.DraftEvaluationScore, Is.Null);
+            Assert.That(context.RivalStrikeouts, Is.EqualTo(2));
+            Assert.That(context.CleanGames, Is.EqualTo(
+                (state.SeasonLog ?? Array.Empty<ProGameLine>())
+                    .Count(value => value.Played && value.RunsAllowed == 0)));
+        }
+
+        [Test]
+        public void PlayerFacingCatalogContainsNoRealLeagueOrClubIdentity()
+        {
+            var content = string.Join("\n", RunPledgeCatalog.All
+                .Concat(RunPledgeCatalog.LegacyV1)
+                .Select(value => value.Id + " " + value.Title + " " + value.Detail));
+            var prohibited = new[]
+            {
+                Text(75, 66, 79),
+                Text(65, 66, 83),
+                Text(54620, 44397, 50556, 44396, 50948, 50896, 54924),
+                Text(76, 71, 32, 53944, 50952, 49828),
+                Text(54620, 54868, 32, 51060, 44544, 49828),
+                Text(83, 83, 71, 32, 47004, 45908, 49828),
+                Text(49340, 49457, 32, 46972, 51060, 50728, 51592),
+                Text(47215, 45936, 32, 51088, 51060, 50616, 52768),
+                Text(75, 73, 65, 32, 53440, 51060, 44144, 51592),
+                Text(46160, 49328, 32, 48288, 50612, 49828),
+                Text(75, 84, 32, 50948, 51592),
+                Text(78, 67, 32, 45796, 51060, 45432, 49828),
+                Text(53412, 50880, 32, 55176, 50612, 47196, 51592)
+            };
+
+            foreach (var value in prohibited)
+                Assert.That(content, Does.Not.Contain(value));
+        }
+
+        private static void AssertOptions(
+            string careerId,
+            RunPledgeContext context,
+            NextRunIntent intent,
+            params string[] expected)
+        {
+            Assert.That(
+                RunPledgeCatalog.Options(careerId, context, intent).Select(value => value.Id),
+                Is.EqualTo(expected));
+        }
+
+        private static void AssertBoundary(
+            string id,
+            IEnumerable<RunPledgeContext> below,
+            RunPledgeContext at)
+        {
+            var pledge = Required(id);
+            foreach (var context in below)
+                Assert.That(pledge.Progress(context).Achieved, Is.False, id);
+            var progress = pledge.Progress(at);
+            Assert.That(progress.Achieved, Is.True, id);
+            Assert.That(progress.RatioPermille, Is.EqualTo(1000), id);
+        }
+
+        private static RunPledge Required(
+            string id,
+            int rulesVersion = RunPledgeCatalog.CurrentRulesVersion)
+        {
+            var result = RunPledgeCatalog.Resolve(id, rulesVersion);
+            Assert.That(result, Is.Not.Null, id);
+            return result;
+        }
+
+        private static RunPledgeContext Context(
+            int lifeNumber = 2,
+            int stuff = 50,
+            int command = 50,
+            int movement = 50,
+            int games = 0,
+            int strikeouts = 0,
+            int walks = 0,
+            int cleanGames = 0,
+            IReadOnlyList<AwakeningId> awakenings = null,
+            int fatigue = 0,
+            int armRisk = 0,
+            int recovery = 0,
+            int fanInterest = 0,
+            int relationshipTrust = 0,
+            int? managerTrust = null,
+            int? catcherTrust = null,
+            int? rivalTrust = null,
+            DraftOutcome? draftOutcome = null,
+            int? evaluation = null,
+            int forecast = 0,
+            int rivalStrikeouts = 0)
+        {
+            return new RunPledgeContext(
+                lifeNumber,
+                stuff,
+                command,
+                movement,
+                games,
+                strikeouts,
+                walks,
+                cleanGames,
+                awakenings,
+                fatigue,
+                armRisk,
+                recovery,
+                fanInterest,
+                relationshipTrust,
+                managerTrust,
+                catcherTrust,
+                rivalTrust,
+                draftOutcome,
+                evaluation,
+                forecast,
+                rivalStrikeouts);
+        }
+
+        private static string Text(params int[] characters)
+        {
+            return new string(characters.Select(value => (char)value).ToArray());
+        }
+    }
+}

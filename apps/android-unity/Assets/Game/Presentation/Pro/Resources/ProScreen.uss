@@ -1,0 +1,8 @@
+.pro-hero {
+    border-color: var(--baseball-information);
+    background-color: var(--baseball-information-soft);
+}
+
+.pro-screen .screen-data-row__value {
+    color: var(--baseball-information);
+}

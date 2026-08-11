@@ -1,0 +1,17 @@
+{
+  "name": "Baseball.Application",
+  "rootNamespace": "Baseball.Application",
+  "references": [
+    "Baseball.Core",
+    "Unity.Newtonsoft.Json"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

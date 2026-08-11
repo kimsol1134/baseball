@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "com.google.play.common": "file:com.google.play.common",
+    "com.google.play.core": "file:com.google.play.core",
+    "com.google.play.review": "file:com.google.play.review",
+    "com.unity.addressables": "2.9.1",
+    "com.unity.inputsystem": "1.19.0",
+    "com.unity.mobile.notifications": "2.4.3",
+    "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.render-pipelines.universal": "17.3.0",
+    "com.unity.test-framework": "1.6.0"
+  }
+}

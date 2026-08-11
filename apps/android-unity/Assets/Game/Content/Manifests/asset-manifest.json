@@ -1,0 +1,3447 @@
+{
+  "schema": "baseball-unity-asset-manifest-v1",
+  "sources": {
+    "imageCatalogRoot": "apps/ios/Sources/Assets.xcassets",
+    "audioRoot": "apps/ios/Audio",
+    "androidGeneratedIconRoot": "apps/android-unity/Assets/Game/Art/PlatformIcons"
+  },
+  "destinations": {
+    "artRoot": "apps/android-unity/Assets/Game/Art",
+    "audioRoot": "apps/android-unity/Assets/Game/Audio",
+    "androidNotificationIconRoot": "apps/android-unity/Assets/Plugins/Android/BaseballManifest.androidlib/res/drawable"
+  },
+  "policy": {
+    "addressables": "local-only",
+    "checksum": "sha256",
+    "imagesetSelection": "highest-scale-standard-appearance",
+    "appIconHandling": "separate-android-icon-source"
+  },
+  "summary": {
+    "catalogCount": 121,
+    "entryCount": 149,
+    "imageCount": 118,
+    "platformIconSourceCount": 7,
+    "audioCount": 24
+  },
+  "catalogs": [
+    {
+      "logicalName": "AppIcon",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "catalogKind": "appiconset",
+      "status": "imported",
+      "referencedFileCount": 3
+    },
+    {
+      "logicalName": "BatterStance",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/BatterStance.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "BloomArt",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/BloomArt.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "CatcherStance",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/CatcherStance.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "Assets",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/Contents.json",
+      "catalogKind": "root",
+      "status": "metadata-only"
+    },
+    {
+      "logicalName": "KeyArtAwakening",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtAwakening.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "KeyArtCareerIntro",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtCareerIntro.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "KeyArtDraftDay",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtDraftDay.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "KeyArtMajorDebut",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtMajorDebut.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "KeyArtProStadiumTunnel",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtProStadiumTunnel.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "KeyArtReincarnation",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtReincarnation.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "KeyArtRetirement",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtRetirement.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "KeyArtSchoolCrossroads",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtSchoolCrossroads.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "KeyArtStadiumNight",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtStadiumNight.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "LaunchBackground",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/LaunchBackground.colorset/Contents.json",
+      "catalogKind": "colorset",
+      "status": "theme-token-only",
+      "note": "No bitmap is copied; the launch color is owned by BaseballTheme/theme.uss."
+    },
+    {
+      "logicalName": "LaunchLogo",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/LaunchLogo.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 3
+    },
+    {
+      "logicalName": "LifeCardBackdrop",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/LifeCardBackdrop.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-bullpen_compass",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-bullpen_compass.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-catcher_notebook",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-catcher_notebook.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-coach_letter",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-coach_letter.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-draft_report",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-draft_report.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-failure_scorebook",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-failure_scorebook.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-fatigue_diary",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-fatigue_diary.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-fingertip_memory",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-fingertip_memory.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-first_pitch_map",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-first_pitch_map.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-mechanics_video",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-mechanics_video.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-pressure_rehearsal",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-pressure_rehearsal.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-recovery_routine",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-recovery_routine.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-rival_notebook",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-rival_notebook.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-school_playbook",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-school_playbook.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-stadium_echo",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-stadium_echo.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-team_first_promise",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-team_first_promise.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-two_strike_sequence",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-two_strike_sequence.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-velocity_blueprint",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-velocity_blueprint.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "MemoryArt-winter_program",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-winter_program.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitCatcher1",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher1.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitCatcher2",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher2.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitCatcher3",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher3.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitCatcher4",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher4.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitCoach1",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCoach1.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitCoach2",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCoach2.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitCoach3",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCoach3.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitCoach4",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCoach4.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer1",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer1.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer10",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer10.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer11",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer11.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer12",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer12.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer13",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer13.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer14",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer14.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer15",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer15.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer16",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer16.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer17",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer17.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer18",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer18.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer19",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer19.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer2",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer2.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer20",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer20.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer3",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer3.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer4",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer4.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer5",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer5.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer6",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer6.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer7",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer7.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer8",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer8.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayer9",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer9.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro1",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro1.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro10",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro10.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro11",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro11.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro12",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro12.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro13",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro13.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro14",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro14.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro15",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro15.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro16",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro16.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro17",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro17.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro18",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro18.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro19",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro19.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro2",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro2.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro20",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro20.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro3",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro3.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro4",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro4.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro5",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro5.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro6",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro6.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro7",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro7.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro8",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro8.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerPro9",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro9.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung1",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung1.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung10",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung10.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung11",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung11.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung12",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung12.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung13",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung13.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung14",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung14.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung15",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung15.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung16",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung16.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung17",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung17.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung18",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung18.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung19",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung19.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung2",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung2.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung20",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung20.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung3",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung3.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung4",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung4.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung5",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung5.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung6",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung6.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung7",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung7.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung8",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung8.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitPlayerYoung9",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung9.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitRival1",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitRival1.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitRival2",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitRival2.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PortraitRival3",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PortraitRival3.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PresetArt-breaking_ball_artist",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PresetArt-breaking_ball_artist.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PresetArt-power_prospect",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PresetArt-power_prospect.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "PresetArt-precision_commander",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/PresetArt-precision_commander.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "SceneArt-draft",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-draft.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "SceneArt-fan",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-fan.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "SceneArt-game",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-game.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "SceneArt-growth",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-growth.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "SceneArt-health",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-health.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "SceneArt-life",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-life.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "SceneArt-media",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-media.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "SceneArt-team",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-team.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "TournamentBanner2",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/TournamentBanner2.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "TournamentBanner4",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/TournamentBanner4.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "TournamentBanner6",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/TournamentBanner6.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    },
+    {
+      "logicalName": "TournamentBanner8",
+      "catalogPath": "apps/ios/Sources/Assets.xcassets/TournamentBanner8.imageset/Contents.json",
+      "catalogKind": "imageset",
+      "status": "imported",
+      "referencedFileCount": 1
+    }
+  ],
+  "credits": {
+    "sourcePath": "apps/ios/Audio/CREDITS.md",
+    "targetPath": "apps/android-unity/Assets/Game/Audio/CREDITS.md",
+    "sha256": "81af829a5a43091724d07b40df4b0d38e3550bb62252aecb448773b793792cae"
+  },
+  "entries": [
+    {
+      "logicalName": "LaunchLogo",
+      "kind": "image",
+      "category": "Bootstrap",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/LaunchLogo.imageset/LaunchLogo@3x.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/LaunchLogo.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/LaunchLogo.imageset/LaunchLogo.png",
+        "apps/ios/Sources/Assets.xcassets/LaunchLogo.imageset/LaunchLogo@2x.png",
+        "apps/ios/Sources/Assets.xcassets/LaunchLogo.imageset/LaunchLogo@3x.png"
+      ],
+      "selectedScale": "3x",
+      "targetPath": "apps/android-unity/Assets/Game/Art/Bootstrap/LaunchLogo.png",
+      "sourceSha256": "06fbda8a57b292bdfcbd6ae98f4a08ebb3f1a34edaebe0cee0fbf3371e47b6a9",
+      "targetSha256": "06fbda8a57b292bdfcbd6ae98f4a08ebb3f1a34edaebe0cee0fbf3371e47b6a9",
+      "purpose": "launch-logo",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "bootstrap"
+    },
+    {
+      "logicalName": "KeyArtAwakening",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtAwakening.imageset/KeyArtAwakening.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtAwakening.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtAwakening.imageset/KeyArtAwakening.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtAwakening.png",
+      "sourceSha256": "9cf525bc6f63631595d53b87e77a4020b97d0f94efbc1a5f61319b3d46c6f8f3",
+      "targetSha256": "9cf525bc6f63631595d53b87e77a4020b97d0f94efbc1a5f61319b3d46c6f8f3",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "KeyArtCareerIntro",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtCareerIntro.imageset/KeyArtCareerIntro.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtCareerIntro.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtCareerIntro.imageset/KeyArtCareerIntro.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtCareerIntro.png",
+      "sourceSha256": "48a14aa75135c77e1848015d878f53ddbe7f1591f8ed352cbe2bd75d81dd56cc",
+      "targetSha256": "48a14aa75135c77e1848015d878f53ddbe7f1591f8ed352cbe2bd75d81dd56cc",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "KeyArtDraftDay",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtDraftDay.imageset/KeyArtDraftDay.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtDraftDay.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtDraftDay.imageset/KeyArtDraftDay.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtDraftDay.png",
+      "sourceSha256": "998af124b8bd15beb582196293fe0e1fbb3fa10c58e3eb76939d9de3befb6cd5",
+      "targetSha256": "998af124b8bd15beb582196293fe0e1fbb3fa10c58e3eb76939d9de3befb6cd5",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "KeyArtMajorDebut",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtMajorDebut.imageset/KeyArtMajorDebut.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtMajorDebut.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtMajorDebut.imageset/KeyArtMajorDebut.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtMajorDebut.png",
+      "sourceSha256": "0fc3329dbe7c47845ce0b192f568488f7d358abedf20330abc5c4a0064488088",
+      "targetSha256": "0fc3329dbe7c47845ce0b192f568488f7d358abedf20330abc5c4a0064488088",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "KeyArtProStadiumTunnel",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtProStadiumTunnel.imageset/KeyArtProStadiumTunnel.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtProStadiumTunnel.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtProStadiumTunnel.imageset/KeyArtProStadiumTunnel.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtProStadiumTunnel.png",
+      "sourceSha256": "20f4228a258fec6d03141604aa989f3e5f405179380772d4c3eb12e5ae934cfd",
+      "targetSha256": "20f4228a258fec6d03141604aa989f3e5f405179380772d4c3eb12e5ae934cfd",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "KeyArtReincarnation",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtReincarnation.imageset/KeyArtReincarnation.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtReincarnation.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtReincarnation.imageset/KeyArtReincarnation.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtReincarnation.png",
+      "sourceSha256": "8e4f2cb3a2ad5a871c6716f7987627139e66823d8d89e6d41d57bcd503c48dc6",
+      "targetSha256": "8e4f2cb3a2ad5a871c6716f7987627139e66823d8d89e6d41d57bcd503c48dc6",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "KeyArtRetirement",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtRetirement.imageset/KeyArtRetirement.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtRetirement.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtRetirement.imageset/KeyArtRetirement.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtRetirement.png",
+      "sourceSha256": "ce31fbca01bef1e3a414d01a27c07341765f77099803e6adff77d84abaf59a55",
+      "targetSha256": "ce31fbca01bef1e3a414d01a27c07341765f77099803e6adff77d84abaf59a55",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "KeyArtSchoolCrossroads",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtSchoolCrossroads.imageset/KeyArtSchoolCrossroads.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtSchoolCrossroads.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtSchoolCrossroads.imageset/KeyArtSchoolCrossroads.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtSchoolCrossroads.png",
+      "sourceSha256": "bcfad926a4d183f3ec171a44dff5daa55a4403c7de57f8f9818084ccdfe28b37",
+      "targetSha256": "bcfad926a4d183f3ec171a44dff5daa55a4403c7de57f8f9818084ccdfe28b37",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "KeyArtStadiumNight",
+      "kind": "image",
+      "category": "KeyArt",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/KeyArtStadiumNight.imageset/KeyArtStadiumNight.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/KeyArtStadiumNight.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/KeyArtStadiumNight.imageset/KeyArtStadiumNight.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtStadiumNight.png",
+      "sourceSha256": "4571bef7d76671b516c1e60787f992f4634659fd8fb9bb567dab72d17adca270",
+      "targetSha256": "4571bef7d76671b516c1e60787f992f4634659fd8fb9bb567dab72d17adca270",
+      "purpose": "key-art",
+      "importPreset": "key-art-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "MemoryArt-bullpen_compass",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-bullpen_compass.imageset/MemoryArt-bullpen_compass.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-bullpen_compass.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-bullpen_compass.imageset/MemoryArt-bullpen_compass.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-bullpen_compass.jpg",
+      "sourceSha256": "a15435d8181ce7900f7cb9d13d9642b73908a9094754f08f50793f117febeb43",
+      "targetSha256": "a15435d8181ce7900f7cb9d13d9642b73908a9094754f08f50793f117febeb43",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-catcher_notebook",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-catcher_notebook.imageset/MemoryArt-catcher_notebook.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-catcher_notebook.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-catcher_notebook.imageset/MemoryArt-catcher_notebook.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-catcher_notebook.jpg",
+      "sourceSha256": "cdc55206efa3e25c5868a6492d8c4add4e1662a0697c5ee6335b6313dd9a6a1c",
+      "targetSha256": "cdc55206efa3e25c5868a6492d8c4add4e1662a0697c5ee6335b6313dd9a6a1c",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-coach_letter",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-coach_letter.imageset/MemoryArt-coach_letter.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-coach_letter.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-coach_letter.imageset/MemoryArt-coach_letter.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-coach_letter.jpg",
+      "sourceSha256": "c5737a1576aee9fce06457f3b66204e37663e7e1b22932be37be5201138e8e2a",
+      "targetSha256": "c5737a1576aee9fce06457f3b66204e37663e7e1b22932be37be5201138e8e2a",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-draft_report",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-draft_report.imageset/MemoryArt-draft_report.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-draft_report.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-draft_report.imageset/MemoryArt-draft_report.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-draft_report.jpg",
+      "sourceSha256": "a4795155605f32f4e55add3858d830f28bf2629fb7c5f204213ff871acb4cc40",
+      "targetSha256": "a4795155605f32f4e55add3858d830f28bf2629fb7c5f204213ff871acb4cc40",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-failure_scorebook",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-failure_scorebook.imageset/MemoryArt-failure_scorebook.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-failure_scorebook.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-failure_scorebook.imageset/MemoryArt-failure_scorebook.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-failure_scorebook.jpg",
+      "sourceSha256": "9f02197510500ca5559e82a572846975ac5b9c8778081fca534750d2862b4d04",
+      "targetSha256": "9f02197510500ca5559e82a572846975ac5b9c8778081fca534750d2862b4d04",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-fatigue_diary",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-fatigue_diary.imageset/MemoryArt-fatigue_diary.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-fatigue_diary.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-fatigue_diary.imageset/MemoryArt-fatigue_diary.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-fatigue_diary.jpg",
+      "sourceSha256": "c835d65525660818cd6557af37b7f73ed401cb26e0f9ae7fa91d9c6ae07ba01d",
+      "targetSha256": "c835d65525660818cd6557af37b7f73ed401cb26e0f9ae7fa91d9c6ae07ba01d",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-fingertip_memory",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-fingertip_memory.imageset/MemoryArt-fingertip_memory.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-fingertip_memory.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-fingertip_memory.imageset/MemoryArt-fingertip_memory.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-fingertip_memory.jpg",
+      "sourceSha256": "6e5715fc920d5f404ed709619c4cf9e0c89ace4732b32ee3eef34c284c2c49b6",
+      "targetSha256": "6e5715fc920d5f404ed709619c4cf9e0c89ace4732b32ee3eef34c284c2c49b6",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-first_pitch_map",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-first_pitch_map.imageset/MemoryArt-first_pitch_map.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-first_pitch_map.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-first_pitch_map.imageset/MemoryArt-first_pitch_map.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-first_pitch_map.jpg",
+      "sourceSha256": "d6f3c47a8b2bf30bd2aecd033f74e182dc55811c82f6e99f7dc00060237ba177",
+      "targetSha256": "d6f3c47a8b2bf30bd2aecd033f74e182dc55811c82f6e99f7dc00060237ba177",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-mechanics_video",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-mechanics_video.imageset/MemoryArt-mechanics_video.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-mechanics_video.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-mechanics_video.imageset/MemoryArt-mechanics_video.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-mechanics_video.jpg",
+      "sourceSha256": "fea248ada71b81980229de705b8c5f2eb96fdd30fc03c789508b1ce2e20100c9",
+      "targetSha256": "fea248ada71b81980229de705b8c5f2eb96fdd30fc03c789508b1ce2e20100c9",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-pressure_rehearsal",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-pressure_rehearsal.imageset/MemoryArt-pressure_rehearsal.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-pressure_rehearsal.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-pressure_rehearsal.imageset/MemoryArt-pressure_rehearsal.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-pressure_rehearsal.jpg",
+      "sourceSha256": "2a739348a558ac4f8e2ce4f5dbfb54cd0cd0f545299cce16519b60a5234582df",
+      "targetSha256": "2a739348a558ac4f8e2ce4f5dbfb54cd0cd0f545299cce16519b60a5234582df",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-recovery_routine",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-recovery_routine.imageset/MemoryArt-recovery_routine.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-recovery_routine.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-recovery_routine.imageset/MemoryArt-recovery_routine.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-recovery_routine.jpg",
+      "sourceSha256": "3def3923ebf37919ff6a20202af1b51214a3885610208304e6f2ec1855ca12ba",
+      "targetSha256": "3def3923ebf37919ff6a20202af1b51214a3885610208304e6f2ec1855ca12ba",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-rival_notebook",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-rival_notebook.imageset/MemoryArt-rival_notebook.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-rival_notebook.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-rival_notebook.imageset/MemoryArt-rival_notebook.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-rival_notebook.jpg",
+      "sourceSha256": "6ed0ae13441700338fa7ffeb30322b0c08326b03f7b64631285f227048abc0c7",
+      "targetSha256": "6ed0ae13441700338fa7ffeb30322b0c08326b03f7b64631285f227048abc0c7",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-school_playbook",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-school_playbook.imageset/MemoryArt-school_playbook.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-school_playbook.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-school_playbook.imageset/MemoryArt-school_playbook.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-school_playbook.jpg",
+      "sourceSha256": "da5cc113772a8c7be6c0973ebb407dc4c438627142191b18a56e884bfe0e49d6",
+      "targetSha256": "da5cc113772a8c7be6c0973ebb407dc4c438627142191b18a56e884bfe0e49d6",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-stadium_echo",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-stadium_echo.imageset/MemoryArt-stadium_echo.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-stadium_echo.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-stadium_echo.imageset/MemoryArt-stadium_echo.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-stadium_echo.jpg",
+      "sourceSha256": "ba551363c2b7aee82cd5b4f54b021dba6bae29bb4859c5dbf865a3b7d76b5ae5",
+      "targetSha256": "ba551363c2b7aee82cd5b4f54b021dba6bae29bb4859c5dbf865a3b7d76b5ae5",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-team_first_promise",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-team_first_promise.imageset/MemoryArt-team_first_promise.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-team_first_promise.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-team_first_promise.imageset/MemoryArt-team_first_promise.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-team_first_promise.jpg",
+      "sourceSha256": "1c561bfac969f1d37a938907b907140a5b5c1713daab0d6d93fa2cf441e31172",
+      "targetSha256": "1c561bfac969f1d37a938907b907140a5b5c1713daab0d6d93fa2cf441e31172",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-two_strike_sequence",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-two_strike_sequence.imageset/MemoryArt-two_strike_sequence.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-two_strike_sequence.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-two_strike_sequence.imageset/MemoryArt-two_strike_sequence.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-two_strike_sequence.jpg",
+      "sourceSha256": "f1bfbb068c5cb84e275a6cec5cd5cd6fc12cff7619cf61102f87bad0da2913c1",
+      "targetSha256": "f1bfbb068c5cb84e275a6cec5cd5cd6fc12cff7619cf61102f87bad0da2913c1",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-velocity_blueprint",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-velocity_blueprint.imageset/MemoryArt-velocity_blueprint.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-velocity_blueprint.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-velocity_blueprint.imageset/MemoryArt-velocity_blueprint.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-velocity_blueprint.jpg",
+      "sourceSha256": "2216bc323d546040dec8573d1d48cdb3a9c4493e61c1528a8696e0f1e4c74ae8",
+      "targetSha256": "2216bc323d546040dec8573d1d48cdb3a9c4493e61c1528a8696e0f1e4c74ae8",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "MemoryArt-winter_program",
+      "kind": "image",
+      "category": "Memories",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/MemoryArt-winter_program.imageset/MemoryArt-winter_program.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/MemoryArt-winter_program.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/MemoryArt-winter_program.imageset/MemoryArt-winter_program.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Memories/MemoryArt-winter_program.jpg",
+      "sourceSha256": "ab315a71db23f2cf88aef3231f3ce83db7835d052365815b14fd1826afefd35a",
+      "targetSha256": "ab315a71db23f2cf88aef3231f3ce83db7835d052365815b14fd1826afefd35a",
+      "purpose": "memory-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "BloomArt",
+      "kind": "image",
+      "category": "Meta",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/BloomArt.imageset/BloomArt.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/BloomArt.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/BloomArt.imageset/BloomArt.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Meta/BloomArt.jpg",
+      "sourceSha256": "73ea2c67ddc155eb3d42f096a167d79276fe1e49cded9778ee32b67f889ef7ad",
+      "targetSha256": "73ea2c67ddc155eb3d42f096a167d79276fe1e49cded9778ee32b67f889ef7ad",
+      "purpose": "meta-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "LifeCardBackdrop",
+      "kind": "image",
+      "category": "Meta",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/LifeCardBackdrop.imageset/LifeCardBackdrop.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/LifeCardBackdrop.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/LifeCardBackdrop.imageset/LifeCardBackdrop.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Meta/LifeCardBackdrop.jpg",
+      "sourceSha256": "67118bfe6da33498bb87fa8d79f4b5d185e5f2fd5f8ce0b6e56a13139bad37b7",
+      "targetSha256": "67118bfe6da33498bb87fa8d79f4b5d185e5f2fd5f8ce0b6e56a13139bad37b7",
+      "purpose": "meta-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "BatterStance",
+      "kind": "image",
+      "category": "Pitch",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/BatterStance.imageset/BatterStance.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/BatterStance.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/BatterStance.imageset/BatterStance.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Pitch/BatterStance.png",
+      "sourceSha256": "7f9ddd448ffc3d23b7f4de4e948d1d5fd0b1283911474b0d0cedf1ddf5c0aae0",
+      "targetSha256": "7f9ddd448ffc3d23b7f4de4e948d1d5fd0b1283911474b0d0cedf1ddf5c0aae0",
+      "purpose": "pitch-stage-billboard",
+      "importPreset": "billboard-sprite",
+      "addressableLabel": "pitch"
+    },
+    {
+      "logicalName": "CatcherStance",
+      "kind": "image",
+      "category": "Pitch",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/CatcherStance.imageset/CatcherStance.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/CatcherStance.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/CatcherStance.imageset/CatcherStance.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Pitch/CatcherStance.png",
+      "sourceSha256": "cfa24c195cbd09df16bbf5512f700d918cd1a7185471f800851d8502dd681b69",
+      "targetSha256": "cfa24c195cbd09df16bbf5512f700d918cd1a7185471f800851d8502dd681b69",
+      "purpose": "pitch-stage-billboard",
+      "importPreset": "billboard-sprite",
+      "addressableLabel": "pitch"
+    },
+    {
+      "logicalName": "AndroidAdaptiveBackground",
+      "sourceLogicalName": "AppIcon",
+      "kind": "platform-icon-source",
+      "category": "PlatformIcons",
+      "sourcePath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AndroidAdaptiveBackground.png",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AndroidAdaptiveBackground.png",
+      "sourceSha256": "272d4d0293e22a993b351c7cc63b907167072d06def9294032b56c20546cebba",
+      "targetSha256": "272d4d0293e22a993b351c7cc63b907167072d06def9294032b56c20546cebba",
+      "purpose": "android-adaptive-background",
+      "importPreset": "platform-icon",
+      "addressableLabel": null
+    },
+    {
+      "logicalName": "AndroidAdaptiveForeground",
+      "sourceLogicalName": "AppIcon",
+      "kind": "platform-icon-source",
+      "category": "PlatformIcons",
+      "sourcePath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AndroidAdaptiveForeground.png",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AndroidAdaptiveForeground.png",
+      "sourceSha256": "bba67fb2977cf72e96e404933f7893bf2b58111ae9c852bf1f07339788db2f3b",
+      "targetSha256": "bba67fb2977cf72e96e404933f7893bf2b58111ae9c852bf1f07339788db2f3b",
+      "purpose": "android-adaptive-foreground",
+      "importPreset": "platform-icon",
+      "addressableLabel": null
+    },
+    {
+      "logicalName": "AndroidMonochrome",
+      "sourceLogicalName": "AppIcon",
+      "kind": "platform-icon-source",
+      "category": "PlatformIcons",
+      "sourcePath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AndroidMonochrome.png",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AndroidMonochrome.png",
+      "sourceSha256": "29f88dd09e3d1c7e1a772108b0c7679936f89a8e0ac02c1bf015114380a941e1",
+      "targetSha256": "29f88dd09e3d1c7e1a772108b0c7679936f89a8e0ac02c1bf015114380a941e1",
+      "purpose": "android-themed-monochrome",
+      "importPreset": "platform-icon",
+      "addressableLabel": null
+    },
+    {
+      "logicalName": "AppIcon-Dark",
+      "sourceLogicalName": "AppIcon",
+      "kind": "platform-icon-source",
+      "category": "PlatformIcons",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-Dark.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-Dark.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AppIcon-Dark.png",
+      "sourceSha256": "79938774dc6c3fc87447543fb0138442bfaff0a1b31adb38d6ff3a652db96487",
+      "targetSha256": "79938774dc6c3fc87447543fb0138442bfaff0a1b31adb38d6ff3a652db96487",
+      "purpose": "android-icon-source",
+      "importPreset": "platform-icon",
+      "addressableLabel": null
+    },
+    {
+      "logicalName": "AppIcon-Tinted",
+      "sourceLogicalName": "AppIcon",
+      "kind": "platform-icon-source",
+      "category": "PlatformIcons",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-Tinted.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon-Tinted.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AppIcon-Tinted.png",
+      "sourceSha256": "b0a074d67b9846088ab814fcc8e551c9622a09aca9609a969ee89c161fe7fbe1",
+      "targetSha256": "b0a074d67b9846088ab814fcc8e551c9622a09aca9609a969ee89c161fe7fbe1",
+      "purpose": "android-icon-source",
+      "importPreset": "platform-icon",
+      "addressableLabel": null
+    },
+    {
+      "logicalName": "AppIcon",
+      "sourceLogicalName": "AppIcon",
+      "kind": "platform-icon-source",
+      "category": "PlatformIcons",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AppIcon.png",
+      "sourceSha256": "b342d3082d0018a8e426df46bb8be7bfbe68cb9be024a9d62ba507067b4f0618",
+      "targetSha256": "b342d3082d0018a8e426df46bb8be7bfbe68cb9be024a9d62ba507067b4f0618",
+      "purpose": "android-icon-source",
+      "importPreset": "platform-icon",
+      "addressableLabel": null
+    },
+    {
+      "logicalName": "PortraitCatcher1",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher1.imageset/PortraitCatcher1.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher1.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitCatcher1.imageset/PortraitCatcher1.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitCatcher1.jpg",
+      "sourceSha256": "c37d6c9b8fadbfc113139e12428fb8a93c3c741f96aa56a1b107523b493120ba",
+      "targetSha256": "c37d6c9b8fadbfc113139e12428fb8a93c3c741f96aa56a1b107523b493120ba",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitCatcher2",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher2.imageset/PortraitCatcher2.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher2.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitCatcher2.imageset/PortraitCatcher2.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitCatcher2.jpg",
+      "sourceSha256": "4343f618fa890f2dd4ff769f9c52cf33c886da42c017c4cbd5f472034816f8e8",
+      "targetSha256": "4343f618fa890f2dd4ff769f9c52cf33c886da42c017c4cbd5f472034816f8e8",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitCatcher3",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher3.imageset/PortraitCatcher3.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher3.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitCatcher3.imageset/PortraitCatcher3.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitCatcher3.jpg",
+      "sourceSha256": "37adf5ad2e7015db1f5fe5fe97ebd7be5bb026fd4034c98efceb3fa2f251e38c",
+      "targetSha256": "37adf5ad2e7015db1f5fe5fe97ebd7be5bb026fd4034c98efceb3fa2f251e38c",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitCatcher4",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher4.imageset/PortraitCatcher4.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCatcher4.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitCatcher4.imageset/PortraitCatcher4.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitCatcher4.jpg",
+      "sourceSha256": "2fdb99df604f817e8500fd36a20a60031edf17b6740b39929244cdb5f5f160d0",
+      "targetSha256": "2fdb99df604f817e8500fd36a20a60031edf17b6740b39929244cdb5f5f160d0",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitCoach1",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitCoach1.imageset/PortraitCoach1.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCoach1.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitCoach1.imageset/PortraitCoach1.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitCoach1.jpg",
+      "sourceSha256": "5aea36f2268f8ec215abf61541741ea72ac9215099faff9cf90dfdbe0a0f0d6e",
+      "targetSha256": "5aea36f2268f8ec215abf61541741ea72ac9215099faff9cf90dfdbe0a0f0d6e",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitCoach2",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitCoach2.imageset/PortraitCoach2.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCoach2.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitCoach2.imageset/PortraitCoach2.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitCoach2.jpg",
+      "sourceSha256": "64f7c018b08eb9cb8ae272fbf1b7be633a1141b8da10ee25650d9bd37a1226c4",
+      "targetSha256": "64f7c018b08eb9cb8ae272fbf1b7be633a1141b8da10ee25650d9bd37a1226c4",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitCoach3",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitCoach3.imageset/PortraitCoach3.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCoach3.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitCoach3.imageset/PortraitCoach3.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitCoach3.jpg",
+      "sourceSha256": "9d88bf3ec2535dd86bf3cee3a31293af053710373074c1642af7916871ee6de8",
+      "targetSha256": "9d88bf3ec2535dd86bf3cee3a31293af053710373074c1642af7916871ee6de8",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitCoach4",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitCoach4.imageset/PortraitCoach4.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitCoach4.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitCoach4.imageset/PortraitCoach4.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitCoach4.jpg",
+      "sourceSha256": "1027f00ff536bf9732094a446c5c7c48c1746aaf9b2c11f1f2f0b76811e414a4",
+      "targetSha256": "1027f00ff536bf9732094a446c5c7c48c1746aaf9b2c11f1f2f0b76811e414a4",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer1",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer1.imageset/PortraitPlayer1.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer1.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer1.imageset/PortraitPlayer1.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer1.jpg",
+      "sourceSha256": "607d1d6827efc9f9edf92c4755fd0591b11b787971720dda5c2c4ffa3978c0e4",
+      "targetSha256": "607d1d6827efc9f9edf92c4755fd0591b11b787971720dda5c2c4ffa3978c0e4",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer10",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer10.imageset/PortraitPlayer10.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer10.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer10.imageset/PortraitPlayer10.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer10.jpg",
+      "sourceSha256": "321972055eca0e331e9825bbac7d8d8b6b7386a815ee37a77d0636a4292000c5",
+      "targetSha256": "321972055eca0e331e9825bbac7d8d8b6b7386a815ee37a77d0636a4292000c5",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer11",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer11.imageset/PortraitPlayer11.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer11.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer11.imageset/PortraitPlayer11.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer11.jpg",
+      "sourceSha256": "8fcae3e0af937b159daf8276f7031a3f28b2141d2fa5d334b8db1cab27b391ad",
+      "targetSha256": "8fcae3e0af937b159daf8276f7031a3f28b2141d2fa5d334b8db1cab27b391ad",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer12",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer12.imageset/PortraitPlayer12.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer12.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer12.imageset/PortraitPlayer12.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer12.jpg",
+      "sourceSha256": "2f49c5c22511861ab2bd1b696ba2c54908f7514b1657a0a2789c9f7e9e3343c2",
+      "targetSha256": "2f49c5c22511861ab2bd1b696ba2c54908f7514b1657a0a2789c9f7e9e3343c2",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer13",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer13.imageset/PortraitPlayer13.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer13.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer13.imageset/PortraitPlayer13.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer13.jpg",
+      "sourceSha256": "7d290492c29bf24199a39da3cf24b5342439c5293a5e6a00d9a9ef3c4a054a71",
+      "targetSha256": "7d290492c29bf24199a39da3cf24b5342439c5293a5e6a00d9a9ef3c4a054a71",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer14",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer14.imageset/PortraitPlayer14.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer14.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer14.imageset/PortraitPlayer14.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer14.jpg",
+      "sourceSha256": "91d3d68c75edb212f00aeea5f8830cb6c0a7816307b7abcff013293422456d63",
+      "targetSha256": "91d3d68c75edb212f00aeea5f8830cb6c0a7816307b7abcff013293422456d63",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer15",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer15.imageset/PortraitPlayer15.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer15.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer15.imageset/PortraitPlayer15.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer15.jpg",
+      "sourceSha256": "4660fc4ea639d77774da05573e88dc399ea40b71cb24f5499bd081f52347b472",
+      "targetSha256": "4660fc4ea639d77774da05573e88dc399ea40b71cb24f5499bd081f52347b472",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer16",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer16.imageset/PortraitPlayer16.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer16.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer16.imageset/PortraitPlayer16.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer16.jpg",
+      "sourceSha256": "0a436bbb5cd3de227e5cb133015909af31cc5c7f17a0b7ce7a65958a576364de",
+      "targetSha256": "0a436bbb5cd3de227e5cb133015909af31cc5c7f17a0b7ce7a65958a576364de",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer17",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer17.imageset/PortraitPlayer17.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer17.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer17.imageset/PortraitPlayer17.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer17.jpg",
+      "sourceSha256": "87522d08968a15d0fb86e13ee09f5e5acd9c9b7f53fc96d176d1863d11eb7319",
+      "targetSha256": "87522d08968a15d0fb86e13ee09f5e5acd9c9b7f53fc96d176d1863d11eb7319",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer18",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer18.imageset/PortraitPlayer18.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer18.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer18.imageset/PortraitPlayer18.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer18.jpg",
+      "sourceSha256": "40772ad64030cb51471165f937d5e1a7afea95c92bbb5f4de6eaa0e78d9c50b0",
+      "targetSha256": "40772ad64030cb51471165f937d5e1a7afea95c92bbb5f4de6eaa0e78d9c50b0",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer19",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer19.imageset/PortraitPlayer19.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer19.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer19.imageset/PortraitPlayer19.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer19.jpg",
+      "sourceSha256": "34fe021878f6ec97016b06c7b7911cce2c91a9e917b25d441154de291cd5838c",
+      "targetSha256": "34fe021878f6ec97016b06c7b7911cce2c91a9e917b25d441154de291cd5838c",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer2",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer2.imageset/PortraitPlayer2.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer2.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer2.imageset/PortraitPlayer2.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer2.jpg",
+      "sourceSha256": "a04b700b8dfea83a6260a1ed9c11f202d0c0db8630dd89842cce0f456a676ae5",
+      "targetSha256": "a04b700b8dfea83a6260a1ed9c11f202d0c0db8630dd89842cce0f456a676ae5",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer20",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer20.imageset/PortraitPlayer20.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer20.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer20.imageset/PortraitPlayer20.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer20.jpg",
+      "sourceSha256": "2c137d7fb2150f08d54bd25c754a66a8c4c2b33fe889485dfcd38f75a6c921da",
+      "targetSha256": "2c137d7fb2150f08d54bd25c754a66a8c4c2b33fe889485dfcd38f75a6c921da",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer3",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer3.imageset/PortraitPlayer3.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer3.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer3.imageset/PortraitPlayer3.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer3.jpg",
+      "sourceSha256": "f5fac3efe84b47ca6d6ceff0ad04bb094b56693de5962b79d06c15e017c52e09",
+      "targetSha256": "f5fac3efe84b47ca6d6ceff0ad04bb094b56693de5962b79d06c15e017c52e09",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer4",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer4.imageset/PortraitPlayer4.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer4.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer4.imageset/PortraitPlayer4.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer4.jpg",
+      "sourceSha256": "81ebce95bca70deab3ccd26b8b4fb46a52c57f992609c93553d85e555377e59b",
+      "targetSha256": "81ebce95bca70deab3ccd26b8b4fb46a52c57f992609c93553d85e555377e59b",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer5",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer5.imageset/PortraitPlayer5.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer5.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer5.imageset/PortraitPlayer5.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer5.jpg",
+      "sourceSha256": "3b7d214069fe02c68d3a2f884780c8a1ae9055a3d64288297e7f44696c627a30",
+      "targetSha256": "3b7d214069fe02c68d3a2f884780c8a1ae9055a3d64288297e7f44696c627a30",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer6",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer6.imageset/PortraitPlayer6.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer6.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer6.imageset/PortraitPlayer6.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer6.jpg",
+      "sourceSha256": "e2fe3c993351dacf07d06fe3951850a5a8d350fc35559582c9d18596765364a9",
+      "targetSha256": "e2fe3c993351dacf07d06fe3951850a5a8d350fc35559582c9d18596765364a9",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer7",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer7.imageset/PortraitPlayer7.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer7.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer7.imageset/PortraitPlayer7.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer7.jpg",
+      "sourceSha256": "1ef8e266638707873cf9ec9ee78783bf3e659d8cd709a6ad2ce53cf1aa6e46ae",
+      "targetSha256": "1ef8e266638707873cf9ec9ee78783bf3e659d8cd709a6ad2ce53cf1aa6e46ae",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer8",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer8.imageset/PortraitPlayer8.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer8.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer8.imageset/PortraitPlayer8.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer8.jpg",
+      "sourceSha256": "c2beea81faf069f578aac656a018378dfa8c7230633bceca0221a4c910e4dfa1",
+      "targetSha256": "c2beea81faf069f578aac656a018378dfa8c7230633bceca0221a4c910e4dfa1",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayer9",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer9.imageset/PortraitPlayer9.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayer9.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayer9.imageset/PortraitPlayer9.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayer9.jpg",
+      "sourceSha256": "c6312bcccc0441e49878e230790d5b58348b6c145564c18ff12aea968e896a5d",
+      "targetSha256": "c6312bcccc0441e49878e230790d5b58348b6c145564c18ff12aea968e896a5d",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerPro1",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro1.imageset/PortraitPlayerPro1.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro1.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro1.imageset/PortraitPlayerPro1.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro1.jpg",
+      "sourceSha256": "bbde53ac9ef10e880cf0564ae7aa7f669d6fff17b00abc55143fbc2301916f2c",
+      "targetSha256": "bbde53ac9ef10e880cf0564ae7aa7f669d6fff17b00abc55143fbc2301916f2c",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro10",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro10.imageset/PortraitPlayerPro10.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro10.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro10.imageset/PortraitPlayerPro10.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro10.jpg",
+      "sourceSha256": "362f2fa27339545ae52159cc61b6e95d8aa2fcc3ebec4ef5779bd50881824b72",
+      "targetSha256": "362f2fa27339545ae52159cc61b6e95d8aa2fcc3ebec4ef5779bd50881824b72",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro11",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro11.imageset/PortraitPlayerPro11.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro11.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro11.imageset/PortraitPlayerPro11.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro11.jpg",
+      "sourceSha256": "fc80e30bda49a89cc8f6d62390ed2d3f80b34fbf1878784b8bbc2b01544af75c",
+      "targetSha256": "fc80e30bda49a89cc8f6d62390ed2d3f80b34fbf1878784b8bbc2b01544af75c",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro12",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro12.imageset/PortraitPlayerPro12.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro12.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro12.imageset/PortraitPlayerPro12.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro12.jpg",
+      "sourceSha256": "a7399965add6216a2cf9ca794a2aa8b97141d2f332a50a4abc8710f4695d2104",
+      "targetSha256": "a7399965add6216a2cf9ca794a2aa8b97141d2f332a50a4abc8710f4695d2104",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro13",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro13.imageset/PortraitPlayerPro13.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro13.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro13.imageset/PortraitPlayerPro13.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro13.jpg",
+      "sourceSha256": "18353e2a80031d923ccc1df97ccc68f095b9a2a448ee0e659dd871557c6f4ce9",
+      "targetSha256": "18353e2a80031d923ccc1df97ccc68f095b9a2a448ee0e659dd871557c6f4ce9",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro14",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro14.imageset/PortraitPlayerPro14.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro14.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro14.imageset/PortraitPlayerPro14.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro14.jpg",
+      "sourceSha256": "5f869d9120ada10e9078a83e5f1fbdc9b7335b7a6df58ea1a2b1a87ded08b7c5",
+      "targetSha256": "5f869d9120ada10e9078a83e5f1fbdc9b7335b7a6df58ea1a2b1a87ded08b7c5",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro15",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro15.imageset/PortraitPlayerPro15.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro15.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro15.imageset/PortraitPlayerPro15.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro15.jpg",
+      "sourceSha256": "d94bd4f9625f019f429459c0f1cfaaff01cd1b213da85d845363710d917f323e",
+      "targetSha256": "d94bd4f9625f019f429459c0f1cfaaff01cd1b213da85d845363710d917f323e",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro16",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro16.imageset/PortraitPlayerPro16.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro16.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro16.imageset/PortraitPlayerPro16.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro16.jpg",
+      "sourceSha256": "9709e0eb6fd381ed2f0379df4209520488408b21cd58848a1eb840f0cdc97422",
+      "targetSha256": "9709e0eb6fd381ed2f0379df4209520488408b21cd58848a1eb840f0cdc97422",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro17",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro17.imageset/PortraitPlayerPro17.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro17.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro17.imageset/PortraitPlayerPro17.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro17.jpg",
+      "sourceSha256": "a1c7ce3a064052eec65886fdbbb6840876b16668e20f7b1e88216e8a3847e469",
+      "targetSha256": "a1c7ce3a064052eec65886fdbbb6840876b16668e20f7b1e88216e8a3847e469",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro18",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro18.imageset/PortraitPlayerPro18.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro18.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro18.imageset/PortraitPlayerPro18.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro18.jpg",
+      "sourceSha256": "843b6074364feae0c567985937a9793050f22a80653162b62543781fc8203c52",
+      "targetSha256": "843b6074364feae0c567985937a9793050f22a80653162b62543781fc8203c52",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro19",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro19.imageset/PortraitPlayerPro19.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro19.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro19.imageset/PortraitPlayerPro19.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro19.jpg",
+      "sourceSha256": "6be67c341bb02da6cf69314c9bd29473ff94ff94ec2e4f61ed4f86e1c7f9ef4a",
+      "targetSha256": "6be67c341bb02da6cf69314c9bd29473ff94ff94ec2e4f61ed4f86e1c7f9ef4a",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro2",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro2.imageset/PortraitPlayerPro2.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro2.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro2.imageset/PortraitPlayerPro2.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro2.jpg",
+      "sourceSha256": "4e57105d1e1c576a468d8d72cfc0bd9fe4e566b16695f1f5d22258fa2b10e25d",
+      "targetSha256": "4e57105d1e1c576a468d8d72cfc0bd9fe4e566b16695f1f5d22258fa2b10e25d",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro20",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro20.imageset/PortraitPlayerPro20.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro20.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro20.imageset/PortraitPlayerPro20.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro20.jpg",
+      "sourceSha256": "6a0a2989762b987087ea6de632c1b8f114670a0640ee3d4b86a7bbee31904d87",
+      "targetSha256": "6a0a2989762b987087ea6de632c1b8f114670a0640ee3d4b86a7bbee31904d87",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro3",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro3.imageset/PortraitPlayerPro3.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro3.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro3.imageset/PortraitPlayerPro3.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro3.jpg",
+      "sourceSha256": "88e76c79bf3b282fbcfdeb09457ba27185c2f2f3007571da14a411e54e7ce81a",
+      "targetSha256": "88e76c79bf3b282fbcfdeb09457ba27185c2f2f3007571da14a411e54e7ce81a",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro4",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro4.imageset/PortraitPlayerPro4.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro4.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro4.imageset/PortraitPlayerPro4.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro4.jpg",
+      "sourceSha256": "d09f82cf9eb43371cc178e2319917418636f8c22bbd94b63f4a2b4a32dfc5346",
+      "targetSha256": "d09f82cf9eb43371cc178e2319917418636f8c22bbd94b63f4a2b4a32dfc5346",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro5",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro5.imageset/PortraitPlayerPro5.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro5.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro5.imageset/PortraitPlayerPro5.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro5.jpg",
+      "sourceSha256": "39bd9a5093480038b9be939cb86430995ec281b3d7ac2d554f4d425274ec2ee7",
+      "targetSha256": "39bd9a5093480038b9be939cb86430995ec281b3d7ac2d554f4d425274ec2ee7",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro6",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro6.imageset/PortraitPlayerPro6.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro6.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro6.imageset/PortraitPlayerPro6.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro6.jpg",
+      "sourceSha256": "07df5dcaaaa716c87b34e8ba13d22558b643508f491b854e3b7be15249fa40f1",
+      "targetSha256": "07df5dcaaaa716c87b34e8ba13d22558b643508f491b854e3b7be15249fa40f1",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro7",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro7.imageset/PortraitPlayerPro7.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro7.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro7.imageset/PortraitPlayerPro7.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro7.jpg",
+      "sourceSha256": "6e0238069507b48c636404233c8701377772f4ad6a9f2f295d5cb5642fb894b1",
+      "targetSha256": "6e0238069507b48c636404233c8701377772f4ad6a9f2f295d5cb5642fb894b1",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro8",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro8.imageset/PortraitPlayerPro8.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro8.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro8.imageset/PortraitPlayerPro8.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro8.jpg",
+      "sourceSha256": "f5826944b44a50268201d4f3919e1d39334ca527e1f80fab1d19a4d25c2dd524",
+      "targetSha256": "f5826944b44a50268201d4f3919e1d39334ca527e1f80fab1d19a4d25c2dd524",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerPro9",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro9.imageset/PortraitPlayerPro9.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro9.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerPro9.imageset/PortraitPlayerPro9.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerPro9.jpg",
+      "sourceSha256": "d63e6cd24453af490608e9a26e05c67b3a374e77eadca993de612e94b566a4d9",
+      "targetSha256": "d63e6cd24453af490608e9a26e05c67b3a374e77eadca993de612e94b566a4d9",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "pro"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung1",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung1.imageset/PortraitPlayerYoung1.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung1.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung1.imageset/PortraitPlayerYoung1.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung1.jpg",
+      "sourceSha256": "c8132820b7a52afe4b33e95a539bce222c0c74a6ce5aa6a7a1554476facff2ce",
+      "targetSha256": "c8132820b7a52afe4b33e95a539bce222c0c74a6ce5aa6a7a1554476facff2ce",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung10",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung10.imageset/PortraitPlayerYoung10.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung10.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung10.imageset/PortraitPlayerYoung10.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung10.jpg",
+      "sourceSha256": "749b33b7c34baf6a612e8c65ec3362d603c8cdfa891ab72a95d8ed3e3388ad86",
+      "targetSha256": "749b33b7c34baf6a612e8c65ec3362d603c8cdfa891ab72a95d8ed3e3388ad86",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung11",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung11.imageset/PortraitPlayerYoung11.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung11.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung11.imageset/PortraitPlayerYoung11.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung11.jpg",
+      "sourceSha256": "52b353bc9dbc7b09a0dbb0633ac608626b7add43a68ebbe9ee9e7566e5b464ee",
+      "targetSha256": "52b353bc9dbc7b09a0dbb0633ac608626b7add43a68ebbe9ee9e7566e5b464ee",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung12",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung12.imageset/PortraitPlayerYoung12.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung12.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung12.imageset/PortraitPlayerYoung12.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung12.jpg",
+      "sourceSha256": "ef4c69cfae607e0e33a23fd984a553b7147fa37f47c31d7e20272523391bc5c4",
+      "targetSha256": "ef4c69cfae607e0e33a23fd984a553b7147fa37f47c31d7e20272523391bc5c4",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung13",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung13.imageset/PortraitPlayerYoung13.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung13.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung13.imageset/PortraitPlayerYoung13.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung13.jpg",
+      "sourceSha256": "83071586d100ceff06d8273a53310ceb8b087cf98c27417bac354331a1d6217c",
+      "targetSha256": "83071586d100ceff06d8273a53310ceb8b087cf98c27417bac354331a1d6217c",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung14",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung14.imageset/PortraitPlayerYoung14.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung14.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung14.imageset/PortraitPlayerYoung14.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung14.jpg",
+      "sourceSha256": "a53cd104758e6e562ab87719dd83a3b4170871abd094aa7d5583c2d8c6bd82f8",
+      "targetSha256": "a53cd104758e6e562ab87719dd83a3b4170871abd094aa7d5583c2d8c6bd82f8",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung15",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung15.imageset/PortraitPlayerYoung15.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung15.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung15.imageset/PortraitPlayerYoung15.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung15.jpg",
+      "sourceSha256": "6510f09eb4ac1f7facb0d275f8d12b7cc528833115d0b38622303b0586df13e7",
+      "targetSha256": "6510f09eb4ac1f7facb0d275f8d12b7cc528833115d0b38622303b0586df13e7",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung16",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung16.imageset/PortraitPlayerYoung16.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung16.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung16.imageset/PortraitPlayerYoung16.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung16.jpg",
+      "sourceSha256": "b4a1a92c922abe286375ee59c7511a17abc445d75dd7b58428b3d4bbaa0b2a1d",
+      "targetSha256": "b4a1a92c922abe286375ee59c7511a17abc445d75dd7b58428b3d4bbaa0b2a1d",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung17",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung17.imageset/PortraitPlayerYoung17.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung17.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung17.imageset/PortraitPlayerYoung17.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung17.jpg",
+      "sourceSha256": "bcde95800e4b7b1325769a0941bf15164a2ff936b5b75bfd251a1b1fa9661b96",
+      "targetSha256": "bcde95800e4b7b1325769a0941bf15164a2ff936b5b75bfd251a1b1fa9661b96",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung18",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung18.imageset/PortraitPlayerYoung18.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung18.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung18.imageset/PortraitPlayerYoung18.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung18.jpg",
+      "sourceSha256": "9ffe34a3b463119990beb8ecb7d562e61db06bc7418c40f61916538d29200538",
+      "targetSha256": "9ffe34a3b463119990beb8ecb7d562e61db06bc7418c40f61916538d29200538",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung19",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung19.imageset/PortraitPlayerYoung19.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung19.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung19.imageset/PortraitPlayerYoung19.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung19.jpg",
+      "sourceSha256": "03d9e050708afefb2a26a4ea89f34001f250727c8502cc9cf236d4188dfc6b46",
+      "targetSha256": "03d9e050708afefb2a26a4ea89f34001f250727c8502cc9cf236d4188dfc6b46",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung2",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung2.imageset/PortraitPlayerYoung2.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung2.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung2.imageset/PortraitPlayerYoung2.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung2.jpg",
+      "sourceSha256": "a287ebdaff1e3d595ea866984c7e68901303a99c20a1d53e7a25c894f53e9c9d",
+      "targetSha256": "a287ebdaff1e3d595ea866984c7e68901303a99c20a1d53e7a25c894f53e9c9d",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung20",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung20.imageset/PortraitPlayerYoung20.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung20.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung20.imageset/PortraitPlayerYoung20.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung20.jpg",
+      "sourceSha256": "f972dce37ae5ec1e8b05dabdae76e96aec83231af6a8106aef6503a5061f5ddc",
+      "targetSha256": "f972dce37ae5ec1e8b05dabdae76e96aec83231af6a8106aef6503a5061f5ddc",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung3",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung3.imageset/PortraitPlayerYoung3.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung3.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung3.imageset/PortraitPlayerYoung3.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung3.jpg",
+      "sourceSha256": "926feffa930e3b17eb1feb17c69f6ea536f9740489ae9e4bd39abf7d9ba730c3",
+      "targetSha256": "926feffa930e3b17eb1feb17c69f6ea536f9740489ae9e4bd39abf7d9ba730c3",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung4",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung4.imageset/PortraitPlayerYoung4.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung4.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung4.imageset/PortraitPlayerYoung4.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung4.jpg",
+      "sourceSha256": "0fb0d601603d2a8f37e66fa999c443e9aad8c674f6583386e36831effce6c961",
+      "targetSha256": "0fb0d601603d2a8f37e66fa999c443e9aad8c674f6583386e36831effce6c961",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung5",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung5.imageset/PortraitPlayerYoung5.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung5.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung5.imageset/PortraitPlayerYoung5.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung5.jpg",
+      "sourceSha256": "b252763032e71024b459db661223d150c864deca04b9c1426261faa3d9fabb64",
+      "targetSha256": "b252763032e71024b459db661223d150c864deca04b9c1426261faa3d9fabb64",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung6",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung6.imageset/PortraitPlayerYoung6.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung6.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung6.imageset/PortraitPlayerYoung6.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung6.jpg",
+      "sourceSha256": "93b2ed8bfbfe2c19be0092835fadaa3df30e2eb46074574f424e2683a6bfdee8",
+      "targetSha256": "93b2ed8bfbfe2c19be0092835fadaa3df30e2eb46074574f424e2683a6bfdee8",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung7",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung7.imageset/PortraitPlayerYoung7.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung7.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung7.imageset/PortraitPlayerYoung7.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung7.jpg",
+      "sourceSha256": "70c98ec735a09bc1fb5c0c774d82be7f0f83566af89f5032746beb0f3f540ae1",
+      "targetSha256": "70c98ec735a09bc1fb5c0c774d82be7f0f83566af89f5032746beb0f3f540ae1",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung8",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung8.imageset/PortraitPlayerYoung8.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung8.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung8.imageset/PortraitPlayerYoung8.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung8.jpg",
+      "sourceSha256": "73f8b61114400aab75e0bfd1173c16b54977bdcde95881993c1aecf6dcaca3fd",
+      "targetSha256": "73f8b61114400aab75e0bfd1173c16b54977bdcde95881993c1aecf6dcaca3fd",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitPlayerYoung9",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung9.imageset/PortraitPlayerYoung9.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung9.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitPlayerYoung9.imageset/PortraitPlayerYoung9.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitPlayerYoung9.jpg",
+      "sourceSha256": "325237a24feffb7e6b28e72990815d7af08696903607e0f9562e67f9a80d3c24",
+      "targetSha256": "325237a24feffb7e6b28e72990815d7af08696903607e0f9562e67f9a80d3c24",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitRival1",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitRival1.imageset/PortraitRival1.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitRival1.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitRival1.imageset/PortraitRival1.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitRival1.jpg",
+      "sourceSha256": "37f29e7727a014e9f32e43f27922263ce73e28774b775cd98175189dc555525d",
+      "targetSha256": "37f29e7727a014e9f32e43f27922263ce73e28774b775cd98175189dc555525d",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitRival2",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitRival2.imageset/PortraitRival2.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitRival2.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitRival2.imageset/PortraitRival2.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitRival2.jpg",
+      "sourceSha256": "7bf4e6e85e919be9855fdf030deb02cb93add431e92afebaba064650cd6e3bd9",
+      "targetSha256": "7bf4e6e85e919be9855fdf030deb02cb93add431e92afebaba064650cd6e3bd9",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PortraitRival3",
+      "kind": "image",
+      "category": "Portraits",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PortraitRival3.imageset/PortraitRival3.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PortraitRival3.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PortraitRival3.imageset/PortraitRival3.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Portraits/PortraitRival3.jpg",
+      "sourceSha256": "4fedfd17d62e147c5d0fb1f6b7acec131972f1d177f4518879a1f04c18e6daf2",
+      "targetSha256": "4fedfd17d62e147c5d0fb1f6b7acec131972f1d177f4518879a1f04c18e6daf2",
+      "purpose": "character-portrait",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "PresetArt-breaking_ball_artist",
+      "kind": "image",
+      "category": "Presets",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PresetArt-breaking_ball_artist.imageset/PresetArt-breaking_ball_artist.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PresetArt-breaking_ball_artist.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PresetArt-breaking_ball_artist.imageset/PresetArt-breaking_ball_artist.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Presets/PresetArt-breaking_ball_artist.jpg",
+      "sourceSha256": "74b4f26a84ef3d5637a454ac2fd61ef03976fa4225392cf1ed8f0883a72dadbc",
+      "targetSha256": "74b4f26a84ef3d5637a454ac2fd61ef03976fa4225392cf1ed8f0883a72dadbc",
+      "purpose": "pitcher-preset-art",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "setup"
+    },
+    {
+      "logicalName": "PresetArt-power_prospect",
+      "kind": "image",
+      "category": "Presets",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PresetArt-power_prospect.imageset/PresetArt-power_prospect.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PresetArt-power_prospect.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PresetArt-power_prospect.imageset/PresetArt-power_prospect.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Presets/PresetArt-power_prospect.jpg",
+      "sourceSha256": "5f5a9ce860dbc3dc34b89f2a5a10d708304d997f36b0a4c5c364aaef9e1b3344",
+      "targetSha256": "5f5a9ce860dbc3dc34b89f2a5a10d708304d997f36b0a4c5c364aaef9e1b3344",
+      "purpose": "pitcher-preset-art",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "setup"
+    },
+    {
+      "logicalName": "PresetArt-precision_commander",
+      "kind": "image",
+      "category": "Presets",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/PresetArt-precision_commander.imageset/PresetArt-precision_commander.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/PresetArt-precision_commander.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/PresetArt-precision_commander.imageset/PresetArt-precision_commander.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Presets/PresetArt-precision_commander.jpg",
+      "sourceSha256": "7b3b1c813a03347a1f74b0a51b8bdf4ae66cbe6a72c0874b8c8667c99f7061f2",
+      "targetSha256": "7b3b1c813a03347a1f74b0a51b8bdf4ae66cbe6a72c0874b8c8667c99f7061f2",
+      "purpose": "pitcher-preset-art",
+      "importPreset": "portrait-sprite",
+      "addressableLabel": "setup"
+    },
+    {
+      "logicalName": "SceneArt-draft",
+      "kind": "image",
+      "category": "Scenes",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/SceneArt-draft.imageset/SceneArt-draft.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-draft.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/SceneArt-draft.imageset/SceneArt-draft.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Scenes/SceneArt-draft.jpg",
+      "sourceSha256": "25ef610c28ad1b41cfeab9690e4d08ace519eb14d4cdb444b78be97d0cf66107",
+      "targetSha256": "25ef610c28ad1b41cfeab9690e4d08ace519eb14d4cdb444b78be97d0cf66107",
+      "purpose": "scene-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "SceneArt-fan",
+      "kind": "image",
+      "category": "Scenes",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/SceneArt-fan.imageset/SceneArt-fan.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-fan.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/SceneArt-fan.imageset/SceneArt-fan.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Scenes/SceneArt-fan.jpg",
+      "sourceSha256": "4c774b4b769906d47e6c362e971dcf2f551c6f26322433512c6fa1b734c1113e",
+      "targetSha256": "4c774b4b769906d47e6c362e971dcf2f551c6f26322433512c6fa1b734c1113e",
+      "purpose": "scene-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "SceneArt-game",
+      "kind": "image",
+      "category": "Scenes",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/SceneArt-game.imageset/SceneArt-game.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-game.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/SceneArt-game.imageset/SceneArt-game.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Scenes/SceneArt-game.jpg",
+      "sourceSha256": "6e42888b0fb01a1e6f9f31b084c56b7fd4640e13dc20e75b7f726d687d6c16de",
+      "targetSha256": "6e42888b0fb01a1e6f9f31b084c56b7fd4640e13dc20e75b7f726d687d6c16de",
+      "purpose": "scene-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "SceneArt-growth",
+      "kind": "image",
+      "category": "Scenes",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/SceneArt-growth.imageset/SceneArt-growth.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-growth.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/SceneArt-growth.imageset/SceneArt-growth.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Scenes/SceneArt-growth.jpg",
+      "sourceSha256": "d4e521689f74773bd894b6d68b6c51767c69ccde66879834727257ccd7b212bf",
+      "targetSha256": "d4e521689f74773bd894b6d68b6c51767c69ccde66879834727257ccd7b212bf",
+      "purpose": "scene-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "SceneArt-health",
+      "kind": "image",
+      "category": "Scenes",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/SceneArt-health.imageset/SceneArt-health.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-health.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/SceneArt-health.imageset/SceneArt-health.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Scenes/SceneArt-health.jpg",
+      "sourceSha256": "962c831ea7b2638940c6fc852af569932b9600ff6d88e4bd0b1e7daf6407751f",
+      "targetSha256": "962c831ea7b2638940c6fc852af569932b9600ff6d88e4bd0b1e7daf6407751f",
+      "purpose": "scene-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "SceneArt-life",
+      "kind": "image",
+      "category": "Scenes",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/SceneArt-life.imageset/SceneArt-life.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-life.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/SceneArt-life.imageset/SceneArt-life.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Scenes/SceneArt-life.jpg",
+      "sourceSha256": "c8084ab459c3be145f6db2b2568236d030d632cead1cc2742c077be4c1885a75",
+      "targetSha256": "c8084ab459c3be145f6db2b2568236d030d632cead1cc2742c077be4c1885a75",
+      "purpose": "scene-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "SceneArt-media",
+      "kind": "image",
+      "category": "Scenes",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/SceneArt-media.imageset/SceneArt-media.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-media.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/SceneArt-media.imageset/SceneArt-media.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Scenes/SceneArt-media.jpg",
+      "sourceSha256": "e3eba9be50674291c6288c5148ba1b83aa7d46eb927d8057086e5792caf9f109",
+      "targetSha256": "e3eba9be50674291c6288c5148ba1b83aa7d46eb927d8057086e5792caf9f109",
+      "purpose": "scene-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "SceneArt-team",
+      "kind": "image",
+      "category": "Scenes",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/SceneArt-team.imageset/SceneArt-team.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/SceneArt-team.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/SceneArt-team.imageset/SceneArt-team.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Scenes/SceneArt-team.jpg",
+      "sourceSha256": "9fa71d7e9581fcb21a9746bf972358b5d87178e315fe5346b8008dbbebe7e967",
+      "targetSha256": "9fa71d7e9581fcb21a9746bf972358b5d87178e315fe5346b8008dbbebe7e967",
+      "purpose": "scene-art",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "meta"
+    },
+    {
+      "logicalName": "TournamentBanner2",
+      "kind": "image",
+      "category": "Tournaments",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/TournamentBanner2.imageset/TournamentBanner2.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/TournamentBanner2.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/TournamentBanner2.imageset/TournamentBanner2.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Tournaments/TournamentBanner2.jpg",
+      "sourceSha256": "a3a7d6bd9b276ae08799309a0c331625f71980a6b2a7a52e410c0cc43321a70c",
+      "targetSha256": "a3a7d6bd9b276ae08799309a0c331625f71980a6b2a7a52e410c0cc43321a70c",
+      "purpose": "tournament-banner",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "TournamentBanner4",
+      "kind": "image",
+      "category": "Tournaments",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/TournamentBanner4.imageset/TournamentBanner4.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/TournamentBanner4.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/TournamentBanner4.imageset/TournamentBanner4.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Tournaments/TournamentBanner4.jpg",
+      "sourceSha256": "119d5cb54b008938450f74d1b754c825dc9193e9330487508f7b8a3fc2a1c28c",
+      "targetSha256": "119d5cb54b008938450f74d1b754c825dc9193e9330487508f7b8a3fc2a1c28c",
+      "purpose": "tournament-banner",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "TournamentBanner6",
+      "kind": "image",
+      "category": "Tournaments",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/TournamentBanner6.imageset/TournamentBanner6.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/TournamentBanner6.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/TournamentBanner6.imageset/TournamentBanner6.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Tournaments/TournamentBanner6.jpg",
+      "sourceSha256": "eb799db062471867714fcd06f6f6449342af254219253638dd115c6f473ac877",
+      "targetSha256": "eb799db062471867714fcd06f6f6449342af254219253638dd115c6f473ac877",
+      "purpose": "tournament-banner",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "TournamentBanner8",
+      "kind": "image",
+      "category": "Tournaments",
+      "sourcePath": "apps/ios/Sources/Assets.xcassets/TournamentBanner8.imageset/TournamentBanner8.jpg",
+      "sourceCatalogPath": "apps/ios/Sources/Assets.xcassets/TournamentBanner8.imageset/Contents.json",
+      "sourceCandidates": [
+        "apps/ios/Sources/Assets.xcassets/TournamentBanner8.imageset/TournamentBanner8.jpg"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Art/Tournaments/TournamentBanner8.jpg",
+      "sourceSha256": "7f678865dd72453ad874ee545aead29a9a4830b95cb23cb010d7eff515394043",
+      "targetSha256": "7f678865dd72453ad874ee545aead29a9a4830b95cb23cb010d7eff515394043",
+      "purpose": "tournament-banner",
+      "importPreset": "ui-sprite",
+      "addressableLabel": "highschool"
+    },
+    {
+      "logicalName": "crowd-loop",
+      "kind": "audio",
+      "category": "Ambience",
+      "sourcePath": "apps/ios/Audio/crowd-loop.m4a",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/crowd-loop.m4a"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Ambience/crowd-loop.wav",
+      "sourceSha256": "9c70cea7ce03d0c46cca5b7315cf6690fdda7df670c5f0f0dce43b2f3ee184c4",
+      "targetSha256": "ecc7a9143df6e0ede59bc54db4b44578386bf1a8664f3c5c1aff6aa06d99389f",
+      "transformation": "ffmpeg-pcm-s16le-44100-stereo-bitexact-v1",
+      "purpose": "crowd-ambience-loop",
+      "importPreset": "audio-stream-loop",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-contact-hard-2",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-contact-hard-2.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-contact-hard-2.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-contact-hard-2.wav",
+      "sourceSha256": "3b9b74e88fc1a299100d6454a3be9598bdd3e17ed739e73086344ce1f0d491da",
+      "targetSha256": "3b9b74e88fc1a299100d6454a3be9598bdd3e17ed739e73086344ce1f0d491da",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-contact-hard-3",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-contact-hard-3.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-contact-hard-3.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-contact-hard-3.wav",
+      "sourceSha256": "b99d0f9e77809d831cbcb830fedf6618354e67124926a584b17ed8cb8183be00",
+      "targetSha256": "b99d0f9e77809d831cbcb830fedf6618354e67124926a584b17ed8cb8183be00",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-contact-hard",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-contact-hard.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-contact-hard.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-contact-hard.wav",
+      "sourceSha256": "f9c421f8fb42bb072d0b6038ed9820d115f8ac7bfeda75e13aa5c666ecab093c",
+      "targetSha256": "f9c421f8fb42bb072d0b6038ed9820d115f8ac7bfeda75e13aa5c666ecab093c",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-contact-weak-2",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-contact-weak-2.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-contact-weak-2.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-contact-weak-2.wav",
+      "sourceSha256": "fbcd16131be93ea8d0cbae37f925f95d728b6c72e1cb8267c1b1f5f39d76728a",
+      "targetSha256": "fbcd16131be93ea8d0cbae37f925f95d728b6c72e1cb8267c1b1f5f39d76728a",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-contact-weak-3",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-contact-weak-3.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-contact-weak-3.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-contact-weak-3.wav",
+      "sourceSha256": "46efefcc3de635c69c892c5ec7d41975d94cc0f251bd966579299b0ab9f9f49c",
+      "targetSha256": "46efefcc3de635c69c892c5ec7d41975d94cc0f251bd966579299b0ab9f9f49c",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-contact-weak",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-contact-weak.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-contact-weak.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-contact-weak.wav",
+      "sourceSha256": "755616203ab586646b912d307287d9acdcca07526692bca7980e19269e384dc3",
+      "targetSha256": "755616203ab586646b912d307287d9acdcca07526692bca7980e19269e384dc3",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-foul-2",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-foul-2.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-foul-2.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-foul-2.wav",
+      "sourceSha256": "3d64718ea9666c621c9efca47485e0fd33e241e83a48e3eec9902254861db215",
+      "targetSha256": "3d64718ea9666c621c9efca47485e0fd33e241e83a48e3eec9902254861db215",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-foul-3",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-foul-3.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-foul-3.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-foul-3.wav",
+      "sourceSha256": "8b55205ba43202ddb900eaffebba21264a773cb74a7d1c735c9986c34117f46f",
+      "targetSha256": "8b55205ba43202ddb900eaffebba21264a773cb74a7d1c735c9986c34117f46f",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "bat-foul",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/bat-foul.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/bat-foul.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/bat-foul.wav",
+      "sourceSha256": "2e4772e6f5a579098e126dcc847d6b09eedf2103093deda92c77f3240ae94399",
+      "targetSha256": "2e4772e6f5a579098e126dcc847d6b09eedf2103093deda92c77f3240ae94399",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "crowd-cheer-2",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/crowd-cheer-2.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/crowd-cheer-2.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/crowd-cheer-2.wav",
+      "sourceSha256": "06090d2871a06b8153d874cc75b80e099dd23e36992093bc757f208fb82aaec9",
+      "targetSha256": "06090d2871a06b8153d874cc75b80e099dd23e36992093bc757f208fb82aaec9",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "crowd-cheer-3",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/crowd-cheer-3.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/crowd-cheer-3.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/crowd-cheer-3.wav",
+      "sourceSha256": "a942d4af7c564e131583d7b20b9f6cb203df155aaec1681ff115b7c379b044ef",
+      "targetSha256": "a942d4af7c564e131583d7b20b9f6cb203df155aaec1681ff115b7c379b044ef",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "crowd-cheer",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/crowd-cheer.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/crowd-cheer.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/crowd-cheer.wav",
+      "sourceSha256": "579f2613de7bde546d16b941d04ce956d34cceefd0e588dd8f4460c332ae729e",
+      "targetSha256": "579f2613de7bde546d16b941d04ce956d34cceefd0e588dd8f4460c332ae729e",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "crowd-groan-2",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/crowd-groan-2.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/crowd-groan-2.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/crowd-groan-2.wav",
+      "sourceSha256": "a5fa39875fa51e916b7f7a0dcc3ef43bcb7284f37136ded4374b67e4eb47e174",
+      "targetSha256": "a5fa39875fa51e916b7f7a0dcc3ef43bcb7284f37136ded4374b67e4eb47e174",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "crowd-groan-3",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/crowd-groan-3.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/crowd-groan-3.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/crowd-groan-3.wav",
+      "sourceSha256": "6e3f276b7c378a9f1a533d364c91ac26b5f507034d81b45b5e8c83406f8ea192",
+      "targetSha256": "6e3f276b7c378a9f1a533d364c91ac26b5f507034d81b45b5e8c83406f8ea192",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "crowd-groan",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/crowd-groan.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/crowd-groan.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/crowd-groan.wav",
+      "sourceSha256": "b600252fb9096c3c36fb7e50b8f861390859c16208a1c6c033f1194f7176fcaf",
+      "targetSha256": "b600252fb9096c3c36fb7e50b8f861390859c16208a1c6c033f1194f7176fcaf",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "glove-catch-2",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/glove-catch-2.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/glove-catch-2.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/glove-catch-2.wav",
+      "sourceSha256": "a674f84c060b04fce80d54577c8f7b12a3bea0473d5fcee57e360705eee9fbb4",
+      "targetSha256": "a674f84c060b04fce80d54577c8f7b12a3bea0473d5fcee57e360705eee9fbb4",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "glove-catch-3",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/glove-catch-3.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/glove-catch-3.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/glove-catch-3.wav",
+      "sourceSha256": "ad8e8052c8c2cb5e9f82f38676bdec3302f93733e6544f095a40f272ade4a405",
+      "targetSha256": "ad8e8052c8c2cb5e9f82f38676bdec3302f93733e6544f095a40f272ade4a405",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "glove-catch",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/glove-catch.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/glove-catch.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/glove-catch.wav",
+      "sourceSha256": "2cc45ed001074173d6526989e1cf37388a404dd90bbdfd21b96a68eafb1bdc31",
+      "targetSha256": "2cc45ed001074173d6526989e1cf37388a404dd90bbdfd21b96a68eafb1bdc31",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "swing-miss",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/swing-miss.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/swing-miss.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/swing-miss.wav",
+      "sourceSha256": "117e02d0a8dbd14eb846e4b49ddb65835659690dae7bef7e0eba4446e3510c33",
+      "targetSha256": "117e02d0a8dbd14eb846e4b49ddb65835659690dae7bef7e0eba4446e3510c33",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "umpire-strike-2",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/umpire-strike-2.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/umpire-strike-2.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/umpire-strike-2.wav",
+      "sourceSha256": "e5f8d5d045c0d1d1119954daa3e04b29117308409e1ea4f493592ae79ddcfc86",
+      "targetSha256": "e5f8d5d045c0d1d1119954daa3e04b29117308409e1ea4f493592ae79ddcfc86",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "umpire-strike-3",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/umpire-strike-3.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/umpire-strike-3.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/umpire-strike-3.wav",
+      "sourceSha256": "d5dd3e1b6c591aee7f4e6929b26ef072d9513d0fc5edb9f986d6545a96e186da",
+      "targetSha256": "d5dd3e1b6c591aee7f4e6929b26ef072d9513d0fc5edb9f986d6545a96e186da",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "umpire-strike",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/umpire-strike.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/umpire-strike.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/umpire-strike.wav",
+      "sourceSha256": "183f0eab62ba695b460439fe29262ba73b5942c6cf1906547cb58f88ab206a37",
+      "targetSha256": "183f0eab62ba695b460439fe29262ba73b5942c6cf1906547cb58f88ab206a37",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "umpire-strikeout",
+      "kind": "audio",
+      "category": "Effects",
+      "sourcePath": "apps/ios/Audio/umpire-strikeout.wav",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/ios/Audio/umpire-strikeout.wav"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Game/Audio/Effects/umpire-strikeout.wav",
+      "sourceSha256": "25ac3d03678e9399772c2b5e25c6ced517ebdfa6f1ddc16dc1bbaf8b69b66828",
+      "targetSha256": "25ac3d03678e9399772c2b5e25c6ced517ebdfa6f1ddc16dc1bbaf8b69b66828",
+      "transformation": null,
+      "purpose": "gameplay-audio-cue",
+      "importPreset": "audio-effect",
+      "addressableLabel": "audio"
+    },
+    {
+      "logicalName": "AndroidNotificationSmall",
+      "sourceLogicalName": "AndroidMonochrome",
+      "kind": "platform-icon-source",
+      "category": "PlatformIcons",
+      "sourcePath": "apps/android-unity/Assets/Game/Art/PlatformIcons/AndroidMonochrome.png",
+      "sourceCatalogPath": null,
+      "sourceCandidates": [
+        "apps/android-unity/Assets/Game/Art/PlatformIcons/AndroidMonochrome.png"
+      ],
+      "selectedScale": null,
+      "targetPath": "apps/android-unity/Assets/Plugins/Android/BaseballManifest.androidlib/res/drawable/baseball_notification_small.png",
+      "sourceSha256": "29f88dd09e3d1c7e1a772108b0c7679936f89a8e0ac02c1bf015114380a941e1",
+      "targetSha256": "29f88dd09e3d1c7e1a772108b0c7679936f89a8e0ac02c1bf015114380a941e1",
+      "purpose": "android-notification-small-icon",
+      "importPreset": "platform-icon",
+      "addressableLabel": null
+    }
+  ]
+}

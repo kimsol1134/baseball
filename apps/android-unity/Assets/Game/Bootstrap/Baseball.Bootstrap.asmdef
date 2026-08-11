@@ -1,0 +1,17 @@
+{
+  "name": "Baseball.Bootstrap",
+  "rootNamespace": "Baseball.Bootstrap",
+  "references": [
+    "Baseball.Application",
+    "Baseball.Platform"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

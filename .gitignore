@@ -24,3 +24,31 @@ apps/promo/audio/
 
 # Xcode 아카이브·익스포트 산출물. 빌드마다 수백 MB씩 쌓이고 소스에서 그대로 재생된다.
 apps/ios/build/
+
+# Unity Android 포트. 프로젝트 소스/ProjectSettings/Packages는 커밋하지만 에디터 캐시와
+# 로컬 빌드·서명 재료는 어떤 경우에도 저장소에 넣지 않는다.
+apps/android-unity/[Ll]ibrary/
+apps/android-unity/[Tt]emp/
+apps/android-unity/[Oo]bj/
+apps/android-unity/[Ll]ogs/
+apps/android-unity/[Uu]ser[Ss]ettings/
+apps/android-unity/[Mm]emoryCaptures/
+apps/android-unity/[Rr]ecordings/
+apps/android-unity/[Bb]uilds/
+apps/android-unity/*.csproj
+apps/android-unity/*.sln
+apps/android-unity/*.slnx
+apps/android-unity/.idea/
+apps/android-unity/.vs/
+apps/android-unity/.vscode/
+*.keystore
+*.jks
+*.keystore.properties
+apps/android-unity/Assets/google-services.json
+apps/android-unity/Assets/google-services.json.meta
+apps/android-unity/Assets/Game/Resources/analytics-config.generated.json
+apps/android-unity/Assets/Game/Resources/analytics-config.generated.json.meta
+
+# Android Unity의 .NET 참조/정적 테스트는 로컬 빌드 산출물만 제외한다.
+tools/unity-static-tests/bin/
+tools/unity-static-tests/obj/

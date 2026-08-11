@@ -1,0 +1,20 @@
+{
+  "name": "Baseball.InternalQa",
+  "rootNamespace": "Baseball.Platform.InternalQa",
+  "references": [
+    "Baseball.Core",
+    "Baseball.Application",
+    "Baseball.Bootstrap",
+    "Baseball.Platform",
+    "Baseball.Presentation"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

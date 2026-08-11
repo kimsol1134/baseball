@@ -1,0 +1,15 @@
+.setup-hero {
+    background-color: var(--baseball-information-soft);
+}
+
+.setup-name-field {
+    min-height: 52px;
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-body);
+}
+
+.setup-name-field .unity-text-input {
+    color: var(--baseball-text-primary);
+    background-color: var(--baseball-surface-raised);
+    border-color: var(--baseball-border-strong);
+}

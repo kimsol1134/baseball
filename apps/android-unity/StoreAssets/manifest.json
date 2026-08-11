@@ -1,0 +1,45 @@
+{
+  "schema": "baseball-android-store-assets-v1",
+  "locale": "ko-KR",
+  "entries": [
+    {
+      "kind": "feature-graphic",
+      "path": "apps/android-unity/StoreAssets/FeatureGraphic-1024x500.png",
+      "width": 1024,
+      "height": 500,
+      "pngColorType": 2,
+      "sha256": "c8b6eed53b4d7d08f2519580f5e73735deb326e6377fbff53166f97686116fbf",
+      "provenance": "OpenAI imagegen-assisted original composition, then deterministic resize to the Play feature-graphic canvas",
+      "sourceReferences": [
+        {
+          "path": "apps/android-unity/Assets/Game/Art/KeyArt/KeyArtReincarnation.png",
+          "sha256": "8e4f2cb3a2ad5a871c6716f7987627139e66823d8d89e6d41d57bcd503c48dc6"
+        },
+        {
+          "path": "apps/android-unity/Assets/Game/Art/Bootstrap/LaunchLogo.png",
+          "sha256": "06fbda8a57b292bdfcbd6ae98f4a08ebb3f1a34edaebe0cee0fbf3371e47b6a9"
+        }
+      ]
+    },
+    {
+      "kind": "store-icon",
+      "path": "apps/android-unity/StoreAssets/StoreIcon-512x512.png",
+      "width": 512,
+      "height": 512,
+      "pngColorType": 2,
+      "sha256": "24d53746f75aca6cf4b4aad2a40726eb8f043071e908f1c7d487eba4d568c451",
+      "provenance": "Deterministic 512x512 resize of the approved RGB app icon",
+      "sourceReferences": [
+        {
+          "path": "apps/android-unity/Assets/Game/Art/PlatformIcons/AppIcon.png",
+          "sha256": "b342d3082d0018a8e426df46bb8be7bfbe68cb9be024a9d62ba507067b4f0618"
+        }
+      ]
+    }
+  ],
+  "releaseScreenshots": {
+    "status": "requires-signed-build-and-physical-device-evidence",
+    "orientation": "portrait",
+    "formFactor": "phone"
+  }
+}

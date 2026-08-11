@@ -1,0 +1,28 @@
+{
+  "source": "Swift SimulationCore ProCareer fixture probe",
+  "seed": "7",
+  "start": {
+    "next_seed": "7191089600892374487",
+    "pro_career_id": "pro-b0f5bce9acca4d1c",
+    "commitment": "4890b72919a1864a",
+    "events": ["pro_career_started"]
+  },
+  "rookie_contract": {
+    "next_seed": "13309476754707697221",
+    "commitment": "78457c92f6ea5e61",
+    "annual_salary": 58000000,
+    "tensions": ["차윤호와의 자리 싸움", "시즌 84탈삼진", "백건우 맞대결"]
+  },
+  "week_1_earn_trust": {
+    "next_seed": "9553384876045577950",
+    "commitment": "f1f1c63a6da1d343",
+    "phase": "weekly_plan",
+    "level": "minor",
+    "role": "long_relief",
+    "manager_trust": 47,
+    "fatigue": 10,
+    "stats": [1, 1, 17, 12, 0, 0, 1, 0, 0],
+    "game_line": [17, 12, 0, 0, 99, 11, 1, "win", 1, 0],
+    "events": ["pro_week_resolved", "weekly_progress"]
+  }
+}

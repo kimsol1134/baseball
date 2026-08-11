@@ -1,0 +1,23 @@
+{
+  "name": "Baseball.Platform.Tests",
+  "rootNamespace": "Baseball.Platform.Tests",
+  "references": [
+    "Baseball.Platform",
+    "Baseball.Core",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
