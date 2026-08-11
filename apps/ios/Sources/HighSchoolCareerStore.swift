@@ -2035,7 +2035,7 @@ final class HighSchoolCareerStore {
     }
 
     /// 프로 커리어가 남기는 야구혼. 스펙(메타 계승)의 프로 스케일을 따른다:
-    /// 짧은 2군 커리어 ~30, 평범한 1군 커리어 ~80~120, 전설(12시즌·수상 다수·명전) ~220+.
+    /// 짧은 2군 커리어 ~30, 평범한 1군 커리어 ~80~120, 20시즌 전설은 300+까지 오른다.
     nonisolated static func proSoulBonus(for state: ProCareerSnapshot) -> Int {
         proSoulBonus(
             seasons: state.careerStats.count,

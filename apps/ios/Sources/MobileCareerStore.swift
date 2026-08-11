@@ -255,7 +255,7 @@ final class MobileCareerStore {
     /// 다음 구간 어귀까지 자동으로 진행한다.
     ///
     /// 24주를 한 주씩 넘기는 것이 프로 후반의 실제 경험이었다. 같은 카드 다섯 장에서 하나를
-    /// 고르는 일이 시즌마다 24번, 12시즌이면 288번이다. 구간(스프링캠프·개막·전반기·올스타
+    /// 고르는 일이 시즌마다 24번, 20시즌이면 480번이다. 구간(스프링캠프·개막·전반기·올스타
     /// 브레이크·페넌트레이스·시즌 막바지)은 이미 코어가 알고 있으니, **결정이 필요한 자리에서만
     /// 멈추게** 한다 — 구간이 바뀌거나, 중요 경기가 잡히거나, 역할·소속이 움직이거나, 다치거나.
     func advanceSegment() {
@@ -454,7 +454,7 @@ final class MobileCareerStore {
 
     /// 오프시즌 네 갈래. 코어는 네 가지를 전부 받는데 화면이 잔류 하나만 냈다.
     ///
-    /// 그래서 군 복무와 FA 서사가 게임에 존재하지 않았고, 12시즌·37세에 도달해
+    /// 그래서 군 복무와 FA 서사가 게임에 존재하지 않았고, 커리어 상한에 도달해
     /// `retirementDecision`으로 넘어가면 화면이 아예 없어 **커리어가 그 자리에서 막혔다.**
     func chooseOffseason(_ decision: OffseasonDecision) {
         guard let result else { return }
@@ -480,7 +480,7 @@ final class MobileCareerStore {
         pendingGains = []
     }
 
-    /// 진행 중 등판의 타석 경계 스냅샷. 고교와 같은 문법 — 프로 12시즌의
+    /// 진행 중 등판의 타석 경계 스냅샷. 고교와 같은 문법 — 프로 20시즌의
     /// 몰입 최고점에서 전화 한 통에 이닝을 잃으면 안 된다.
     private var gameResume: PitchSession.ResumeState?
 

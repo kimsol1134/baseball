@@ -762,7 +762,8 @@ public struct ProCareerEngine: Sendable {
         if state.currentStats.strikeouts >= 120 { awards = addingUnique("시즌 \(state.season) 탈삼진상", to: awards) }
         if runsPer9Permille < 3_000 && state.currentStats.games >= 20 { awards = addingUnique("시즌 \(state.season) 최소 실점상", to: awards) }
         milestones = addingUnique("\(state.season)시즌 완주", to: milestones)
-        let phase: ProCareerPhase = state.season >= 12 || state.age >= 37 ? .retirementDecision : .offseasonDecision
+        let phase: ProCareerPhase = state.season >= Self.maximumCareerSeasons
+            ? .retirementDecision : .offseasonDecision
         let news = ["시즌 \(state.season) 종료 · \(state.currentStats.games)경기 · \(state.currentStats.strikeouts)K · 9이닝당 실점 \(String(format: "%.2f", Double(runsPer9Permille) / 1000))"] + state.news
         let updated = replacing(state, revision: state.revision + 1, phase: phase, careerStats: state.careerStats + [state.currentStats], awards: awards, milestones: milestones, news: Array(news.prefix(30)))
         return result(updated, nextSeed: String(rng.next()), events: ["pro_season_reviewed"])
@@ -810,6 +811,10 @@ public struct ProCareerEngine: Sendable {
         let updated = replacing(baseAdvanced, news: Array(([tensionHeadline(tensions)] + baseAdvanced.news).prefix(30)), seasonSegment: .springCamp, seasonTrigger: clearedTrigger, currentRival: clearedRival, seasonTensions: tensions, seasonImportantGames: 0)
         return result(updated, nextSeed: String(rng.next()), events: ["pro_offseason_resolved"])
     }
+
+    /// 모든 진입 경로가 같은 상한을 쓰게 공개한다. 나이는 강제 은퇴 조건이 아니다 — 군 복무나
+    /// 늦은 전성기를 선택해도 플레이어가 원하면 정확히 20시즌을 완주할 수 있다.
+    public static let maximumCareerSeasons = 20
 
     /// 결정 후보 주차와 시즌 상한은 UI·테스트에서도 같은 원본을 쓸 수 있게 공개한다.
     public static let seasonDecisionWeeks = [3, 6, 9, 12, 15, 18, 21]

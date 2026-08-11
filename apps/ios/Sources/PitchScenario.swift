@@ -81,7 +81,7 @@ struct PitchScenario {
     /// 일이 생긴다. 유료앱의 주력 장면이 그렇게 짧아지면 안 된다.
     ///
     /// 점수 국면은 트리거마다 다르고, 기록·순위 승부는 시즌·주차에 따라 리드와 열세를
-    /// 오간다. 예전에는 6종 전부 "리드 중"으로 고정이라 12시즌 60여 번의 승부에 지고 있는
+    /// 오간다. 예전에는 6종 전부 "리드 중"으로 고정이라 20시즌의 수많은 승부에 지고 있는
     /// 마운드가 한 번도 없었다.
     private static func proSituation(for trigger: ProSeasonTrigger?, season: Int, week: Int) -> ProSituation {
         let onSecond = BaserunnerStateSnapshot(firstOccupied: false, secondOccupied: true, thirdOccupied: false, leadRunnerSpeed: 52)

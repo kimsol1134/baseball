@@ -36,22 +36,20 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertFalse(result.snapshot.news.isEmpty)
     }
 
-    func testTwentyCompletedSeedsReachRetirementWithoutNegativeResourcesOrDecisionOverflow() throws {
-        var firstReplay: ProCareerResult?
-        for seedValue in 100..<120 {
-            let completed = try completeCareer(seed: String(seedValue))
-            if seedValue == 100 { firstReplay = completed }
-            XCTAssertEqual(completed.snapshot.phase, .completed)
-            XCTAssertNotNil(completed.snapshot.hallOfFameScore)
-            XCTAssertGreaterThanOrEqual(completed.snapshot.fatigue, 0)
-            XCTAssertTrue(completed.snapshot.careerStats.allSatisfy { $0.games >= 0 && $0.runsAllowed >= 0 })
-            let decisionsBySeason = Dictionary(grouping: completed.snapshot.decisionHistory ?? [], by: \.season)
-            XCTAssertTrue(decisionsBySeason.values.allSatisfy { $0.count <= ProCareerEngine.maximumSeasonDecisions })
-            XCTAssertTrue((completed.snapshot.decisionHistory ?? []).allSatisfy {
-                ProCareerEngine.seasonDecisionWeeks.contains($0.week)
-            })
-        }
-        XCTAssertEqual(firstReplay, try completeCareer(seed: "100"), "완주 전체도 같은 시드와 선택이면 결정론적이어야 한다")
+    func testTwentySeasonCareersCompleteForSeeds100Through104() throws {
+        try assertCompletedCareers(in: 100..<105, replaySeed: 100)
+    }
+
+    func testTwentySeasonCareersCompleteForSeeds105Through109() throws {
+        try assertCompletedCareers(in: 105..<110)
+    }
+
+    func testTwentySeasonCareersCompleteForSeeds110Through114() throws {
+        try assertCompletedCareers(in: 110..<115)
+    }
+
+    func testTwentySeasonCareersCompleteForSeeds115Through119() throws {
+        try assertCompletedCareers(in: 115..<120)
     }
 
     // Phase 3-2: 중요 경기는 더 이상 고정 주차 [3,7,12,18,23]가 아니라 상황 트리거로 발동한다.
@@ -667,10 +665,56 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertGreaterThan(gassedBurden, freshBurden, "지친 등판 묶음(실점×2+볼넷 \(gassedBurden))이 싱싱한 묶음(\(freshBurden))보다 좋으면 피로가 커널에 반영되지 않는 것")
     }
 
+    private func assertCompletedCareers(
+        in seedValues: Range<Int>,
+        replaySeed: Int? = nil
+    ) throws {
+        var replayResult: ProCareerResult?
+        for seedValue in seedValues {
+            let completed = try completeCareer(seed: String(seedValue))
+            if seedValue == replaySeed { replayResult = completed }
+            XCTAssertEqual(completed.snapshot.phase, .completed, "시드 \(seedValue)")
+            XCTAssertEqual(
+                completed.snapshot.careerStats.count,
+                ProCareerEngine.maximumCareerSeasons,
+                "시드 \(seedValue)"
+            )
+            XCTAssertNotNil(completed.snapshot.hallOfFameScore, "시드 \(seedValue)")
+            XCTAssertGreaterThanOrEqual(completed.snapshot.fatigue, 0, "시드 \(seedValue)")
+            XCTAssertTrue(
+                completed.snapshot.careerStats.allSatisfy { $0.games >= 0 && $0.runsAllowed >= 0 },
+                "시드 \(seedValue)"
+            )
+            let decisionsBySeason = Dictionary(
+                grouping: completed.snapshot.decisionHistory ?? [],
+                by: \.season
+            )
+            XCTAssertTrue(
+                decisionsBySeason.values.allSatisfy {
+                    $0.count <= ProCareerEngine.maximumSeasonDecisions
+                },
+                "시드 \(seedValue)"
+            )
+            XCTAssertTrue(
+                (completed.snapshot.decisionHistory ?? []).allSatisfy {
+                    ProCareerEngine.seasonDecisionWeeks.contains($0.week)
+                },
+                "시드 \(seedValue)"
+            )
+        }
+        if let replaySeed {
+            XCTAssertEqual(
+                replayResult,
+                try completeCareer(seed: String(replaySeed)),
+                "완주 전체도 같은 시드와 선택이면 결정론적이어야 한다"
+            )
+        }
+    }
+
     private func completeCareer(seed: String) throws -> ProCareerResult {
         var result = try engine.start(startParams(seed: seed))
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
-        for _ in 1...12 {
+        for _ in 1...ProCareerEngine.maximumCareerSeasons {
             result = try playSeason(result)
             if result.snapshot.phase == .retirementDecision { break }
             result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer))
