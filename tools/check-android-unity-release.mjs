@@ -666,6 +666,11 @@ for (const contract of [
   "PreparedResetFailureSuppressesPauseRewriteAndCandidateRestartsCleanly",
   "persistence_tests=(",
   "OneHundredSaveReloadCycles_PreserveStateHashInputs",
+  "BASEBALL_UNITY_TEST_PROCESS_TIMEOUT_SECONDS",
+  "BASEBALL_UNITY_COMPLETED_SHUTDOWN_GRACE_SECONDS",
+  "Test run completed. Exiting with code 0 (Ok). Run completed.",
+  'kill -TERM "$unity_pid"',
+  'kill -KILL "$unity_pid"',
   'run_tests EditMode "$evidence_name"',
   "run_tests PlayMode playmode Baseball.PlayMode.Tests",
 ]) {

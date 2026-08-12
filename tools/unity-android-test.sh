@@ -5,11 +5,21 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 project_path="$repo_root/apps/android-unity"
 artifact_root="$repo_root/artifacts/unity"
 unity_bin="${BASEBALL_UNITY_BIN:-/Applications/Unity/Hub/Editor/6000.3.19f1/Unity.app/Contents/MacOS/Unity}"
+test_process_timeout_seconds="${BASEBALL_UNITY_TEST_PROCESS_TIMEOUT_SECONDS:-600}"
+completed_shutdown_grace_seconds="${BASEBALL_UNITY_COMPLETED_SHUTDOWN_GRACE_SECONDS:-20}"
 
 if [[ ! -x "$unity_bin" ]]; then
   echo "Unity executable not found: $unity_bin" >&2
   exit 2
 fi
+[[ "$test_process_timeout_seconds" =~ ^[1-9][0-9]*$ ]] || {
+  echo "BASEBALL_UNITY_TEST_PROCESS_TIMEOUT_SECONDS must be a positive integer." >&2
+  exit 2
+}
+[[ "$completed_shutdown_grace_seconds" =~ ^[1-9][0-9]*$ ]] || {
+  echo "BASEBALL_UNITY_COMPLETED_SHUTDOWN_GRACE_SECONDS must be a positive integer." >&2
+  exit 2
+}
 
 mkdir -p "$artifact_root"
 
@@ -81,6 +91,11 @@ run_tests() {
   local log_file="$artifact_root/${evidence_name}.log"
   local -a command
   local unity_status
+  local unity_pid
+  local elapsed=0
+  local completed_shutdown_elapsed=0
+  local completed_shutdown_forced=0
+  local process_timed_out=0
   rm -f "$result_file" "$log_file"
 
   command=(
@@ -98,10 +113,52 @@ run_tests() {
   fi
   command+=(-testResults "$result_file" -logFile "$log_file")
 
+  "${command[@]}" &
+  unity_pid=$!
+  while kill -0 "$unity_pid" 2>/dev/null; do
+    if [[ -s "$result_file" && -s "$log_file" ]] &&
+      grep -Fq 'Test run completed. Exiting with code 0 (Ok). Run completed.' "$log_file"; then
+      completed_shutdown_elapsed=$((completed_shutdown_elapsed + 1))
+      if (( completed_shutdown_elapsed >= completed_shutdown_grace_seconds )); then
+        echo "$platform/$evidence_name produced complete passing evidence but Unity did not exit; terminating the completed Editor after ${completed_shutdown_grace_seconds}s." >&2
+        kill -TERM "$unity_pid" 2>/dev/null || true
+        completed_shutdown_forced=1
+        break
+      fi
+    else
+      completed_shutdown_elapsed=0
+    fi
+
+    if (( elapsed >= test_process_timeout_seconds )); then
+      echo "$platform/$evidence_name Unity process exceeded ${test_process_timeout_seconds}s before completing evidence." >&2
+      kill -TERM "$unity_pid" 2>/dev/null || true
+      process_timed_out=1
+      break
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+
+  if (( completed_shutdown_forced == 1 || process_timed_out == 1 )); then
+    local terminate_elapsed=0
+    while kill -0 "$unity_pid" 2>/dev/null && (( terminate_elapsed < 10 )); do
+      sleep 1
+      terminate_elapsed=$((terminate_elapsed + 1))
+    done
+    if kill -0 "$unity_pid" 2>/dev/null; then
+      kill -KILL "$unity_pid" 2>/dev/null || true
+    fi
+  fi
+
   set +e
-  "${command[@]}"
+  wait "$unity_pid"
   unity_status=$?
   set -e
+  if (( completed_shutdown_forced == 1 )); then
+    unity_status=0
+  elif (( process_timed_out == 1 )); then
+    unity_status=124
+  fi
 
   if [[ "$unity_status" -ne 0 ]]; then
     echo "$platform/$evidence_name Unity process failed with exit code $unity_status." >&2
