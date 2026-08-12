@@ -233,7 +233,11 @@ final class CareerSmokeUITests: XCTestCase {
         // 갈아타는 경계까지 가능한 한 함께 밟는다.
         var completed = 0
         while completed < 4, commit.exists {
-            XCTAssertTrue(tapIfPresent(commit), "훈련 버튼을 화면 안으로 가져와 누를 수 없습니다.")
+            // 첫 동작은 결과가 가장 길고 내부 상태 변경도 여러 번인 묶음 훈련으로 한다.
+            // 단일 훈련만 확인하면 묶음 요약 피드백이 스크롤을 취소하는 회귀를 놓친다.
+            let block = app.buttons["hs.training.commitBlock"]
+            let action = completed == 0 && block.exists ? block : commit
+            XCTAssertTrue(tapIfPresent(action), "훈련 버튼을 화면 안으로 가져와 누를 수 없습니다.")
             completed += 1
             assertTrainingResultIsImmediatelyUsable(app)
 

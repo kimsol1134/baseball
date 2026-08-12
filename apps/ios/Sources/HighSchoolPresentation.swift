@@ -914,7 +914,7 @@ enum HighSchoolPresentation {
                 GameCopyKey.gameContent("content.training-result.detail.recovery"),
                 arguments: [.integer(-receipt.fatigueChange)]
             )
-        } else if receipt.detail == "이번 훈련에서는 능력치가 오르지 않았습니다. 피로와 훈련 강도를 조절해 다시 시도할 수 있습니다." {
+        } else if knownNoGrowthFeedback.contains(receipt.detail) {
             base = resolver.resolve(GameCopyKey.gameContent("content.training-result.detail.no-growth"))
         } else if receipt.detail.isEmpty || receipt.detail == "훈련을 마쳤습니다." {
             base = resolver.resolve(GameCopyKey.gameContent("content.training-result.detail.unknown"))
@@ -930,6 +930,18 @@ enum HighSchoolPresentation {
             arguments: [.userText(base)]
         )
     }
+
+    /// The engine still stores Korean feedback in legacy-compatible snapshots. Keep the
+    /// English boundary strict: only the six current authored no-growth sentences may select
+    /// the semantic no-growth token; arbitrary legacy text remains the neutral fallback.
+    private static let knownNoGrowthFeedback: Set<String> = [
+        "오늘은 공 끝의 힘이 달라지지 않았습니다. 다음에는 투구 수나 강도를 조절해 볼 수 있습니다.",
+        "미트에서 벗어나는 폭이 그대로입니다. 낮은 강도로 릴리스 지점을 먼저 맞춰 볼 수 있습니다.",
+        "회전축이 손에 붙지 않았습니다. 그립과 손목 각도를 다시 잡아 볼 수 있습니다.",
+        "후반 동작이 버티는 시간은 그대로입니다. 훈련 강도와 휴식 간격을 바꿔 볼 수 있습니다.",
+        "몸의 무거움이 충분히 가시지 않았습니다. 다음 일정도 회복 간격을 남겨 두는 편이 좋습니다.",
+        "타자 반응을 읽는 속도가 아직 공 배합으로 이어지지 않았습니다. 영상 범위를 좁혀 다시 볼 수 있습니다.",
+    ]
 
     static func localizedTrainingFatigue(
         _ receipt: HighSchoolCareerStore.TrainingReceipt,

@@ -432,17 +432,25 @@ struct HighSchoolCareerView: View {
                     Task { @MainActor in
                         await Task.yield()
                         guard let latest = career.state,
-                              latest.careerID == current.careerID,
-                              latest.totalTrainingsCompleted == current.trainingsCompleted,
-                              career.feedbackTrigger == current.feedbackTrigger else { return }
+                              latest.careerID == current.careerID else { return }
 
-                        if completedTraining, career.trainingReceipt != nil {
+                        if completedTraining {
+                            // 묶음 훈련은 마지막 훈련을 저장한 뒤 묶음 요약용
+                            // feedbackTrigger를 한 번 더 올린다. 그 값까지 같아야 한다고
+                            // 요구하면 정상적인 훈련 스크롤도 오래된 요청으로 오판해
+                            // 취소된다. 대신 정확한 훈련 번호를 확인해 앞선 반복에서 만든
+                            // Task가 묶음의 최종 결과를 다시 밀어내지 못하게 한다.
+                            guard latest.totalTrainingsCompleted == current.trainingsCompleted,
+                                  career.trainingReceipt != nil else { return }
                             // 애니메이션 도중 높이가 다시 바뀌는 여지를 없애고 결과를 즉시
                             // 화면 상단에 둔다. 결과와 다음 행동이 이어져 게임을 계속할 수 있다.
                             proxy.scrollTo(Self.trainingResultAnchor, anchor: .top)
                         } else if changedPhase {
+                            guard latest.phase.rawValue == current.phase else { return }
                             proxy.scrollTo(Self.phaseAnchor, anchor: .top)
                         } else if receivedFeedback,
+                                  latest.totalTrainingsCompleted == current.trainingsCompleted,
+                                  career.feedbackTrigger == current.feedbackTrigger,
                                   career.trainingReceipt == nil,
                                   career.pendingBloom != nil || !career.pendingGains.isEmpty {
                             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) {

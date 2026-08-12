@@ -1669,7 +1669,7 @@ public struct HighSchoolCareerEngine: Sendable {
                 )
         let training = CareerTrainingSnapshot(number: number, focus: effectiveFocus, intensity: params.intensity,
             growth: growth, fatigueChange: fatigue - params.state.fatigue,
-            feedback: jackpot && baseGrowth > 0 && growth > 0 ? "대성공! 오늘은 몸이 완전히 열렸습니다. \(feedback)" : feedback,
+            feedback: jackpot && baseGrowth > 0 && growth > 0 ? "대성공! 같은 동작에서 공의 힘이 한 번 더 붙었습니다. \(feedback)" : feedback,
             metricBefore: metricBefore, metricAfter: metricAfter,
             fatigueBefore: params.state.fatigue, fatigueAfter: fatigue,
             opportunityHit: opportunityHit,
@@ -3085,22 +3085,29 @@ public struct HighSchoolCareerEngine: Sendable {
     }
 
     private func trainingFeedback(focus: TrainingFocus, growth: Int, fatigueChange: Int) -> String {
-        let metric: String
-        switch focus {
-        case .velocity: metric = "구위"
-        case .command: metric = "제구"
-        case .breakingBall: metric = "변화구"
-        case .stamina, .recovery: metric = "체력"
-        case .gamePlanning: metric = "타자 상대법과 제구"
-        }
         if growth > 0 {
-            let recovery = fatigueChange < 0 ? " 피로도 \(-fatigueChange) 줄었습니다." : ""
-            return "\(metric) 능력치가 \(growth) 올랐습니다.\(recovery)"
+            let recovery = fatigueChange < 0 ? " 피로가 \(-fatigueChange) 줄었습니다." : ""
+            let result: String = switch focus {
+            case .velocity: "공이 미트에 꽂히는 힘이 붙었습니다. 구위 +\(growth)."
+            case .command: "노린 선에서 공이 덜 벗어납니다. 제구 +\(growth)."
+            case .breakingBall: "손끝 회전이 또렷해져 공의 꺾임이 커졌습니다. 변화구 +\(growth)."
+            case .stamina: "하체가 무너지기 전까지 같은 투구를 더 오래 잇습니다. 체력 +\(growth)."
+            case .recovery: "팔의 묵직함이 가시고 다음 투구를 버틸 힘이 돌아왔습니다. 체력 +\(growth)."
+            case .gamePlanning: "타자의 기다림을 읽고 미트 반대편을 쓰는 판단이 빨라졌습니다. 제구 +\(growth)."
+            }
+            return "\(result)\(recovery)"
         }
         if focus == .recovery && fatigueChange < 0 {
-            return "능력치는 그대로지만 피로가 \(-fatigueChange) 줄었습니다."
+            return "팔과 하체의 무거움이 가셨습니다. 피로가 \(-fatigueChange) 줄었습니다."
         }
-        return "이번 훈련에서는 능력치가 오르지 않았습니다. 피로와 훈련 강도를 조절해 다시 시도할 수 있습니다."
+        return switch focus {
+        case .velocity: "오늘은 공 끝의 힘이 달라지지 않았습니다. 다음에는 투구 수나 강도를 조절해 볼 수 있습니다."
+        case .command: "미트에서 벗어나는 폭이 그대로입니다. 낮은 강도로 릴리스 지점을 먼저 맞춰 볼 수 있습니다."
+        case .breakingBall: "회전축이 손에 붙지 않았습니다. 그립과 손목 각도를 다시 잡아 볼 수 있습니다."
+        case .stamina: "후반 동작이 버티는 시간은 그대로입니다. 훈련 강도와 휴식 간격을 바꿔 볼 수 있습니다."
+        case .recovery: "몸의 무거움이 충분히 가시지 않았습니다. 다음 일정도 회복 간격을 남겨 두는 편이 좋습니다."
+        case .gamePlanning: "타자 반응을 읽는 속도가 아직 공 배합으로 이어지지 않았습니다. 영상 범위를 좁혀 다시 볼 수 있습니다."
+        }
     }
 
     private func replacing(_ state: HighSchoolCareerSnapshot, revision: UInt64? = nil,

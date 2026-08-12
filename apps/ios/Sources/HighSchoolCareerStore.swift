@@ -2893,32 +2893,32 @@ final class HighSchoolCareerStore {
             // 화자·이름은 **원본 카테고리**에서 뽑는다. relationship.category는 신뢰
             // 회계 채널이라 rival 장면이 coach로 접히기도 한다(5차 패널 P2).
             // 원본을 모르는 경로(nil)에는 반응을 붙이지 않는다 — 지어낸 화자보다 침묵.
-            guard let originalCategory = before.currentRelationshipEvent?.category,
-                  ["coach", "catcher", "rival"].contains(originalCategory) else {
+            guard let event = before.currentRelationshipEvent,
+                  let scene = RelationshipVoiceCatalog.scene(
+                    eventID: event.id,
+                    category: event.category
+                  ) else {
                 return relationship.feedback
             }
             // 코어의 결과 문구 앞에 "그 사람이 어떻게 반응했는지"를 한 줄 붙인다.
             //
             // 예전에는 응답을 누르면 결과 요약 한 줄로 끝났다. 포수가 어떻게 반응했는지가
             // 없으니 관계가 숫자(팀의 믿음 60)로만 존재했다(품질 평가 §4.3).
-            let speaker: RelationshipVoiceCatalog.Speaker
-            switch originalCategory {
-            case "coach": speaker = .coach
-            case "catcher": speaker = .catcher
-            default: speaker = .rival
-            }
-            let speakerName: String? = switch originalCategory {
-            case "coach": after.school?.coachName
-            case "catcher": after.school?.catcherName
-            default: after.rival.name
+            let speaker = scene.speaker
+            let speakerName: String? = switch speaker {
+            case .coach: after.school?.coachName
+            case .catcher: after.school?.catcherName
+            case .rival: after.rival.name
+            case .named: nil
             }
             let aftermath = RelationshipVoiceCatalog.aftermath(
+                eventID: event.id,
                 speaker: speaker,
                 name: speakerName,
                 response: relationship.response,
                 trustChange: relationship.trustAfter - relationship.trustBefore
             )
-            return "\(aftermath) \(relationship.feedback)"
+            return aftermath
         }
         if after.chapter.number != before.chapter.number {
             return "\(after.chapter.title) · \(after.chapter.season)"

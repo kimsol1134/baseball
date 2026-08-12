@@ -259,6 +259,31 @@ final class PresentationTests: XCTestCase {
         )
     }
 
+    func testRelationshipCardRendersPolicyOutputInsteadOfDuplicateRawCopy() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf: repositoryRoot.appendingPathComponent(
+                "apps/ios/Sources/HighSchoolCareerView.swift"
+            ),
+            encoding: .utf8
+        )
+        let start = try XCTUnwrap(source.range(of: "private struct RelationshipCard"))
+        let end = try XCTUnwrap(
+            source.range(of: "private struct ImportantGameCard", range: start.upperBound..<source.endIndex)
+        )
+        let relationshipCard = String(source[start.lowerBound..<end.lowerBound])
+
+        XCTAssertTrue(relationshipCard.contains("Text(verbatim: scene.visibleLine)"))
+        XCTAssertFalse(relationshipCard.contains("Text(verbatim: summary)"))
+        XCTAssertTrue(relationshipCard.contains("Text(verbatim: choice.visibleLine)"))
+        XCTAssertFalse(relationshipCard.contains("Text(verbatim: choiceDetail)"))
+        XCTAssertTrue(relationshipCard.contains("detail: choice.accessibilityDetail"))
+    }
+
     /// `f74bff6`에서 제거한 전면 암전 커튼을 실수로 다시 붙이지 않는다.
     /// 실제 프레임은 UI 테스트가 별도로 검증하고, 이 테스트는 원인이었던
     /// 수식어가 다시 들어오는 순간 빠르게 막는다.

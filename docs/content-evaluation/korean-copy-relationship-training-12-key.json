@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "seed": "baseball-korean-copy-v1",
+  "sourceName": "관계·훈련 문구 현행 개작 블라인드 평가 12쌍",
+  "items": [
+    {
+      "id": "evt-rain-delay-listen",
+      "original": "A",
+      "rewrite": "B"
+    },
+    {
+      "id": "training-velocity-growth",
+      "original": "A",
+      "rewrite": "B"
+    },
+    {
+      "id": "training-recovery",
+      "original": "A",
+      "rewrite": "B"
+    },
+    {
+      "id": "training-command-no-growth",
+      "original": "A",
+      "rewrite": "B"
+    },
+    {
+      "id": "evt-scout-stand-listen",
+      "original": "B",
+      "rewrite": "A"
+    },
+    {
+      "id": "evt-first-awakening-listen",
+      "original": "B",
+      "rewrite": "A"
+    },
+    {
+      "id": "evt-team-slump-explain",
+      "original": "A",
+      "rewrite": "B"
+    },
+    {
+      "id": "evt-command-wall-listen",
+      "original": "B",
+      "rewrite": "A"
+    },
+    {
+      "id": "evt-recovery-day-listen",
+      "original": "B",
+      "rewrite": "A"
+    },
+    {
+      "id": "evt-injury-rumor-explain",
+      "original": "B",
+      "rewrite": "A"
+    },
+    {
+      "id": "evt-bullpen-first-listen",
+      "original": "B",
+      "rewrite": "A"
+    },
+    {
+      "id": "training-breaking-growth",
+      "original": "B",
+      "rewrite": "A"
+    }
+  ]
+}

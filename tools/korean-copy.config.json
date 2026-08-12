@@ -1,0 +1,24 @@
+{
+  "thresholds": {
+    "longStringWarning": 88,
+    "longStringError": 180,
+    "translationeseMinimum": 3,
+    "translationesePerHundredStrings": 2.5,
+    "boilerplateMinimum": 8,
+    "boilerplateStringRatio": 0.12,
+    "uniformEndingMinimumSentences": 12,
+    "uniformEndingRatio": 0.72,
+    "repeatedNgramMinimum": 4,
+    "repeatedNgramStringRatio": 0.1,
+    "repeatedTemplateMinimum": 6,
+    "repeatedTemplateStringRatio": 0.12
+  },
+  "allowlist": [
+    {
+      "ruleId": "long-line",
+      "path": "packages/simulation-core/Sources/SimulationCore/HighSchoolContentCatalog.swift",
+      "contains": "이번 삶에는 아직 없는 이름입니다.",
+      "rationale": "환생 사건의 상황과 반전을 한 카드에서 이해시키는 단일 서사 문장이다."
+    }
+  ]
+}

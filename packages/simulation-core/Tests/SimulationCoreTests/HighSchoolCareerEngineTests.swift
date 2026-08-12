@@ -702,7 +702,8 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertEqual(training.fatigueBefore, fatigueBefore)
         XCTAssertEqual(training.fatigueAfter, result.snapshot.fatigue)
         XCTAssertEqual(training.fatigueAfter! - training.fatigueBefore!, training.fatigueChange)
-        XCTAssertTrue(training.feedback.contains(training.growth > 0 ? "올랐습니다" : "오르지 않았습니다"))
+        XCTAssertTrue(training.feedback.contains("\(training.growth)"))
+        XCTAssertFalse(training.feedback.contains("능력치가"))
     }
 
     func testRelationshipResponseDependsOnPersonnelInsteadOfAlwaysRewardingListening() throws {

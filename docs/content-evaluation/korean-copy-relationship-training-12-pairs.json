@@ -1,0 +1,82 @@
+{
+  "name": "관계·훈련 문구 현행 개작 블라인드 평가 12쌍",
+  "provenance": {
+    "original": "cdcfad2의 packages/simulation-core/Sources/SimulationCore/RelationshipVoiceCatalog.swift 카테고리 폴백 선택지와 HighSchoolCareer.swift trainingFeedback를 확인",
+    "rewrite": "5868c63의 RelationshipVoiceCatalog.swift 사건별 관계 선택지와 현재 작업 트리의 HighSchoolCareer.swift 포커스별 trainingFeedback를 확인",
+    "note": "게임에 등장하는 가상 인물·사건 문구만 사용했으며 실제 평가 응답은 포함하지 않는다."
+  },
+  "items": [
+    {
+      "id": "evt-bullpen-first-listen",
+      "context": "첫 불펜에서 포수가 받기 어려운 구종을 말하는 선택지",
+      "original": "무엇을 바꾸면 좋을지 듣는다 — 상대의 제안을 먼저 듣는다",
+      "rewrite": "포수 미트가 늦은 구종을 짚어 달라 한다 — 받는 쪽의 불안을 알면 첫 공식전의 폭투 위험을 줄일 수 있다"
+    },
+    {
+      "id": "training-velocity-growth",
+      "context": "구위 훈련에서 성장 2가 나온 결과 피드백",
+      "original": "구위 능력치가 2 올랐습니다.",
+      "rewrite": "공이 미트에 꽂히는 힘이 붙었습니다. 구위 +2."
+    },
+    {
+      "id": "evt-command-wall-listen",
+      "context": "타자가 서면 제구가 흔들리는 문제를 다루는 선택지",
+      "original": "무엇을 바꾸면 좋을지 듣는다 — 상대의 제안을 먼저 듣는다",
+      "rewrite": "타자 모형을 세우고 낮은 바깥쪽만 노린다 — 빈 타석의 편안함을 버리고 경기와 같은 시야를 만든다"
+    },
+    {
+      "id": "training-breaking-growth",
+      "context": "변화구 훈련에서 성장 1이 나온 결과 피드백",
+      "original": "변화구 능력치가 1 올랐습니다.",
+      "rewrite": "손끝 회전이 또렷해져 공의 꺾임이 커졌습니다. 변화구 +1."
+    },
+    {
+      "id": "evt-recovery-day-listen",
+      "context": "경쟁자가 던지는 날 회복을 택하는 선택지",
+      "original": "오늘은 쉬라는 말을 따른다 — 회복을 우선한다",
+      "rewrite": "글러브를 두고 회복실로 간다 — 오늘의 불안을 견디는 대신 다음 등판의 팔 힘을 지킨다"
+    },
+    {
+      "id": "evt-scout-stand-listen",
+      "context": "불펜 뒤 스카우트 앞에서 무엇을 보여 줄지 고르는 선택지",
+      "original": "무엇을 평가하는지 듣는다 — 스카우트가 보는 것을 듣는다",
+      "rewrite": "전광판을 보지 않고 같은 코스를 반복한다 — 한 번의 최고 구속보다 재현성을 평가표에 남긴다"
+    },
+    {
+      "id": "training-command-no-growth",
+      "context": "제구 훈련에서 성장이 없었던 결과 피드백",
+      "original": "이번 훈련에서는 능력치가 오르지 않았습니다. 피로와 훈련 강도를 조절해 다시 시도할 수 있습니다.",
+      "rewrite": "미트에서 벗어나는 폭이 그대로입니다. 낮은 강도로 릴리스 지점을 먼저 맞춰 볼 수 있습니다."
+    },
+    {
+      "id": "evt-rain-delay-listen",
+      "context": "우천 중단 뒤 첫 공을 정하는 선택지",
+      "original": "지난 상황을 포수와 되짚는다 — 무엇이 문제였는지 듣는다",
+      "rewrite": "초구는 낮은 직구로 미트를 맞춘다 — 재개 직후 장타보다 볼넷을 먼저 막는다"
+    },
+    {
+      "id": "training-recovery",
+      "context": "회복 훈련으로 피로 5가 줄어든 결과 피드백",
+      "original": "능력치는 그대로지만 피로가 5 줄었습니다.",
+      "rewrite": "팔과 하체의 무거움이 가셨습니다. 피로가 5 줄었습니다."
+    },
+    {
+      "id": "evt-first-awakening-listen",
+      "context": "반복 훈련이 경기에서 몸의 감각으로 나온 선택지",
+      "original": "익은 동작을 다시 확인한다 — 몸의 감각을 점검한다",
+      "rewrite": "다음 공도 같은 호흡으로 이어 간다 — 좋은 감각을 붙잡으려 힘주지 않고 몸의 순서를 지킨다"
+    },
+    {
+      "id": "evt-team-slump-explain",
+      "context": "연패 중 팀 훈련 시간을 조율하는 선택지",
+      "original": "맡을 역할을 분명히 말한다 — 내 생각을 팀에 전한다",
+      "rewrite": "투수조는 짧고 집중된 불펜을 제안한다 — 연패 속 과훈련을 막되 준비 부족의 책임은 투수조가 진다"
+    },
+    {
+      "id": "evt-injury-rumor-explain",
+      "context": "동료가 알아챈 어깨 불편을 알리는 선택지",
+      "original": "몸 상태를 기록으로 보여준다 — 지금 느낌을 설명한다",
+      "rewrite": "언제부터 뻐근했는지 날짜를 말한다 — 소문 대신 기록으로 몸 상태를 판단하게 한다"
+    }
+  ]
+}

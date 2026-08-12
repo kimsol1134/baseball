@@ -85,6 +85,8 @@ jobs:
       - run: npm run check:design-system
       - run: npm run check:copy
       - run: npm run check:dialogue-parity
+      - run: npm run test:korean-copy
+      - run: npm run check:korean-copy:ci
       - run: npm run test:web
       - run: npm run build:web
       - run: npm run check:web-assets

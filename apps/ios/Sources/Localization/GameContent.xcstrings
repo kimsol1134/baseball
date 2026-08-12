@@ -4056,14 +4056,14 @@
     },
     "content.relationship.evt-body-remembers.choice.explain.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Call it déjà vu" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수에게 새 그립이라고 말한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Place the new grip in the catcher’s hand" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 그립을 포수 손에 직접 쥐여 준다" } }
       }
     },
     "content.relationship.evt-body-remembers.choice.explain.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Set the feeling aside and focus on today." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "함께 확인해 본다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn it into a breaking ball only the two of you know." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "둘만 아는 변화구로 만들 수 있다" } }
       }
     },
     "content.relationship.evt-body-remembers.choice.challenge.title" : {
@@ -4080,14 +4080,14 @@
     },
     "content.relationship.evt-bullpen-rival.choice.listen.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask why he wants the grip" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "왜 그 그립이 궁금한지 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask which movement he wants to learn" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "어느 움직임을 배우고 싶은지 묻는다" } }
       }
     },
     "content.relationship.evt-bullpen-rival.choice.listen.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hear what your teammate hopes to learn." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "동료의 생각을 먼저 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "See the strength a direct rival covets in your pitch." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경쟁자가 탐내는 공의 장점을 새로 알 수 있다" } }
       }
     },
     "content.relationship.evt-bullpen-rival.choice.explain.title" : {
@@ -4116,14 +4116,14 @@
     },
     "content.relationship.evt-captain-talk.choice.listen.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask what the team needs" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팀이 필요한 이닝부터 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask which inning you need to take over" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "몇 회부터 맡아야 하는지 묻는다" } }
       }
     },
     "content.relationship.evt-captain-talk.choice.listen.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Find out how the captain sees the game unfolding." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주장이 그린 그림을 확인한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Know your exact part in the team’s relief order." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팀의 계투 순서에서 내 몫을 분명히 안다" } }
       }
     },
     "content.relationship.evt-captain-talk.choice.explain.title" : {
@@ -4164,14 +4164,14 @@
     },
     "content.relationship.evt-catcher-doubt.choice.explain.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Explain the three shake-offs" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "거절했던 세 타석의 이유를 설명한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Point out the plan behind the three shake-offs" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "거절한 세 타석의 노림수를 짚는다" } }
       }
     },
     "content.relationship.evt-catcher-doubt.choice.explain.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share what you saw from the hitter each time." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내가 본 타자 반응을 말한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Match what you saw in the hitter with your catcher’s read." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내가 본 타자 반응을 포수와 맞춘다" } }
       }
     },
     "content.relationship.evt-catcher-doubt.choice.challenge.title" : {
@@ -4200,14 +4200,14 @@
     },
     "content.relationship.evt-catcher-sign.choice.explain.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Explain each sign change" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사인을 바꾼 이유를 설명한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Say the hitter was waiting for the high pitch" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타자가 높은 공을 기다렸다고 말한다" } }
       }
     },
     "content.relationship.evt-catcher-sign.choice.explain.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tell him why you changed the plan." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타자가 높은 공을 기다렸다고 말한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show the catcher the three changes were not made alone." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "세 번의 변경이 독단이 아니었음을 포수와 맞춘다" } }
       }
     },
     "content.relationship.evt-catcher-sign.choice.challenge.title" : {
@@ -4344,14 +4344,14 @@
     },
     "content.relationship.evt-deja-vu-mound.choice.explain.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Call it déjà vu" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "긴장 탓이라고 정리한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Step on the mound dirt again and count each breath" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마운드 흙을 다시 밟으며 호흡을 센다" } }
       }
     },
     "content.relationship.evt-deja-vu-mound.choice.explain.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Set the feeling aside and focus on today." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금 할 일에 집중한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Put the first hitter in this life ahead of the déjà vu." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기시감보다 지금의 첫 타자에 집중한다" } }
       }
     },
     "content.relationship.evt-deja-vu-mound.choice.challenge.title" : {
@@ -4368,14 +4368,14 @@
     },
     "content.relationship.evt-exam-week.choice.listen.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Take the teacher’s advice" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선생님 말을 먼저 새겨듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy the next few days of exam material into a notebook" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "며칠치 시험 범위를 수첩에 옮긴다" } }
       }
     },
     "content.relationship.evt-exam-week.choice.listen.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Give the books a few days before the road trip." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "며칠은 책상 앞에 앉는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reserve time at the desk before the road trip." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "원정 전까지 책상 앞에 앉을 시간을 확보한다" } }
       }
     },
     "content.relationship.evt-exam-week.choice.explain.title" : {
@@ -4548,14 +4548,14 @@
     },
     "content.relationship.evt-national-stage.choice.listen.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask where the cameras will be" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "카메라 동선을 확인한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask the crew to mark the camera path on the floor" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "카메라가 지날 선을 바닥에 짚어 달라 한다" } }
       }
     },
     "content.relationship.evt-national-stage.choice.listen.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Know the broadcast path before you warm up." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "어디를 비추는지 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Secure enough space to keep the routine uninterrupted." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "루틴을 끊지 않을 공간을 미리 확보한다" } }
       }
     },
     "content.relationship.evt-national-stage.choice.explain.title" : {
@@ -4620,14 +4620,14 @@
     },
     "content.relationship.evt-parent-call.choice.listen.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Let them talk first" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "먼저 부모님 이야기를 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask what happened at home today" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘 집에서 있었던 일부터 묻는다" } }
       }
     },
     "content.relationship.evt-parent-call.choice.listen.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hear the worry behind the question about your future." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "집의 걱정을 끝까지 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bring back the family’s day hidden behind draft worries." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "드래프트 걱정에 가렸던 가족의 하루를 되찾는다" } }
       }
     },
     "content.relationship.evt-parent-call.choice.explain.title" : {
@@ -4836,14 +4836,14 @@
     },
     "content.relationship.evt-scout-question.choice.listen.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask what he noticed" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "무엇을 눈여겨보는지 먼저 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask the scout to point to the frame that stopped him" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "보고서에서 멈춘 장면을 가리켜 달라 한다" } }
       }
     },
     "content.relationship.evt-scout-question.choice.listen.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Find out what the scout saw in the collapse." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스카우트가 보는 지점을 확인한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave with one evaluation line to change next start." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 등판에서 바꿀 평가 항목을 하나 얻는다" } }
       }
     },
     "content.relationship.evt-scout-question.choice.explain.title" : {
@@ -4908,14 +4908,14 @@
     },
     "content.relationship.evt-velocity-drop.choice.listen.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Admit the arm feels heavy" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "무엇을 점검해야 하는지 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask the trainer to point out where the arm falls behind" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팔이 늦어지는 동작을 짚어 달라 한다" } }
       }
     },
     "content.relationship.evt-velocity-drop.choice.listen.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Take the warning seriously before it becomes a bigger problem." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "트레이너의 판단을 먼저 듣는다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Catch the body signal that began with the velocity drop." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구속 저하가 시작된 몸의 신호를 놓치지 않는다" } }
       }
     },
     "content.relationship.evt-velocity-drop.choice.explain.title" : {
@@ -7071,6 +7071,1194 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "A comeback story stronger after rehab" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "부상 복귀 후 더 강해져 돌아온 재활의 표본" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“I still cannot pick up the breaking ball after your fastball. I only see it once it has left your hand.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“직구 다음 변화구는 아직 못 받겠어. 손에서 떠난 뒤에야 보여.”" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“What do you most want to throw after the fastball? I will learn that sequence first.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“직구 뒤엔 어떤 공을 가장 던지고 싶어? 그 순서부터 외워 둘게.”" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, when your fastball plays, the next pitch plays too. Let us build one battery sequence today.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 네 직구가 살면 다음 공도 같이 살아. 오늘 배터리 순서 하나 만들자.”" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Point out which pitch reaches the mitt late" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수 미트가 늦은 구종을 짚어 달라 한다" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The catcher’s uncertainty can reveal a wild-pitch risk before the first official game." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "받는 쪽의 불안을 알면 첫 공식전의 폭투 위험을 줄일 수 있다" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Say you want the dropping pitch after the fastball" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "직구 뒤에 떨어지는 공을 원한다고 말한다" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share the two-pitch sequence you see with your catcher." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내가 그리는 두 공의 순서를 포수와 공유한다" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Throw the last ten pitches from the catcher’s signs" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 열 공은 포수 사인대로 던진다" } }
+      }
+    },
+    "content.relationship.evt-bullpen-first.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Test the new battery’s rhythm at game speed." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 배터리의 호흡을 실전 속도로 검증한다" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“If you chase weight alone, your shoulder rotation will close first. Are you still going to watch only the numbers?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“무게만 좇으면 네 어깨 회전이 먼저 닫힌다. 그래도 숫자만 볼 거냐?”" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“We can add lower-body strength or protect your current mobility. Doing both at once will be difficult.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“하체 힘을 더 붙일 수도 있고, 지금 가동 범위를 지킬 수도 있어. 둘 다 한꺼번에는 어렵다.”" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, your body is ready to add strength. But this easy arm path is an asset too. You choose.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 네 몸은 힘을 받을 준비가 됐다. 다만 지금의 부드러운 팔의 길도 자산이야. 네가 골라.”" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Protect the shoulder angle over the squat number" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스쿼트 무게보다 어깨 각도를 지킨다" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep the same arm path all winter so the delivery does not stiffen." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "겨울 내내 같은 팔의 길을 보존해 투구 동작이 굳는 일을 막는다" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Propose adding lower-body weight in stages" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "하체 중량을 단계별로 올리자고 제안한다" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Track the point where strength starts costing mobility." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록표를 남겨 힘과 가동 범위가 무너지는 지점을 찾는다" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Commit the winter to building strength" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 겨울은 힘을 붙이는 데 건다" } }
+      }
+    },
+    "content.relationship.evt-winter-weight.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Chase more velocity while accepting the work needed to loosen up again." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구속 상승을 노리지만 뻣뻣해진 몸을 다시 풀 부담도 떠안는다" } }
+      }
+    },
+    "content.relationship.evt-command-wall.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“What good is hitting the bullpen mitt if every pitch misses by a handspan once a hitter steps in?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“불펜 포수 미트만 맞히면 뭐 하나. 타자가 서면 또 한 뼘 빠지는데.”" } }
+      }
+    },
+    "content.relationship.evt-command-wall.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“Your front foot opens as soon as a hitter stands there. Let us fix your eyes before the ball.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“타자가 서는 순간 앞발이 빨리 열린다. 공이 아니라 시선을 먼저 고쳐 보자.”" } }
+      }
+    },
+    "content.relationship.evt-command-wall.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, the bullpen pitch is already good enough. Now keep that line with a hitter standing in.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 불펜의 공은 충분해. 이제 타자를 세워 놓고도 그 선을 지키는 연습만 남았다.”" } }
+      }
+    },
+    "content.relationship.evt-command-wall.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Set up a hitter dummy and aim only low and away" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타자 모형을 세우고 낮은 바깥쪽만 노린다" } }
+      }
+    },
+    "content.relationship.evt-command-wall.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Give up the comfort of an empty box and recreate the game view." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "빈 타석의 편안함을 버리고 경기와 같은 시야를 만든다" } }
+      }
+    },
+    "content.relationship.evt-command-wall.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mark the frame where the front foot opens" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앞발이 열리는 순간을 영상에 표시한다" } }
+      }
+    },
+    "content.relationship.evt-command-wall.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave a visible checkpoint for the next command session." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구가 흐트러지는 원인을 다음 훈련의 기준점으로 남긴다" } }
+      }
+    },
+    "content.relationship.evt-command-wall.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Change the target with every count" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "볼카운트마다 목표 코스를 바꿔 던진다" } }
+      }
+    },
+    "content.relationship.evt-command-wall.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recreate game pressure and see whether bullpen command survives it." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "실전 압박을 재현해 불펜 제구가 경기에서도 남는지 본다" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“It breaks a lot, but it lands by your feet instead of my mitt. I cannot call that in a game.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“많이 휘긴 하는데 미트가 아니라 네 발 앞으로 떨어져. 경기에서 요구하긴 어렵겠어.”" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“This grip breaks more; the old one reaches your target. Which one do we save first?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“이 그립은 크게 휘고, 원래 건 네가 원하는 데 와. 어느 쪽을 먼저 살릴까?”" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, a hitter could know that pitch is coming and still miss it. We only need a path into the zone.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 방금 건 타자가 알아도 못 닿겠다. 스트라이크로 시작하는 길만 찾으면 돼.”" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Get a strike with the old grip first" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "원래 그립으로 스트라이크를 먼저 잡는다" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep one game-ready pitch while postponing the bigger shape." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "큰 궤적을 미루는 대신 경기에서 꺼낼 공 하나를 지킨다" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Match the new grip’s miss with the catcher" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 그립의 빠지는 지점을 포수와 맞춘다" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Define the area the catcher can block and share the wild-pitch risk." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 막아 줄 범위를 정해 폭투 부담을 나눈다" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Land five straight new-grip pitches in the zone" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 그립으로 연속 다섯 개를 존에 넣어 본다" } }
+      }
+    },
+    "content.relationship.evt-breaker-grip.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A clean run makes it game-ready; a miss sends the grip back to the start." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "성공하면 곧 실전 카드가 되지만 흔들리면 처음부터 다시 잡는다" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“Whoever is throwing next door does not change whose arm this is. Pick up a ball today and it will feel heavier tomorrow.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“옆에서 누가 던지든 네 팔은 네 팔이야. 오늘 또 잡으면 내일부터 공이 더 무거워져.”" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“A day without a ball is training too. Watch your recovery, not your rival’s bullpen.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“공을 놓는 날도 훈련이다. 경쟁자 불펜보다 네 회복 속도를 보자.”" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, resting today saves twenty good pitches tomorrow. I trust you to know the difference.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 오늘 쉬면 다음 불펜의 스무 공이 산다. 네가 그 차이를 아는 선수라고 믿는다.”" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave the glove and go to the recovery room" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "글러브를 두고 회복실로 간다" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sit with today’s anxiety to protect tomorrow’s arm strength." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘의 불안을 견디는 대신 다음 등판의 팔 힘을 지킨다" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Promise to do only light band work" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가벼운 밴드 운동만 하겠다고 약속한다" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Record the arm’s response between complete rest and keeping feel." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "완전 휴식과 감각 유지 사이에서 팔 상태를 기록한다" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Watch only the rival’s last ten pitches" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경쟁자의 마지막 열 공만 곁에서 본다" } }
+      }
+    },
+    "content.relationship.evt-recovery-day.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep track of the rotation race without picking up a ball." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공은 잡지 않되 선발 경쟁의 흐름은 놓치지 않는다" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“There is more to write than the radar reading. I watch whether you can repeat the delivery.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“전광판 숫자 말고도 적을 건 많아. 같은 동작으로 다시 던질 수 있는지 보지.”" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“I have already seen the velocity. Today’s question is whether you still hit the catcher’s knee when tired.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“구속은 이미 봤다. 힘 빠진 뒤에도 포수 무릎으로 가는지가 오늘 질문이야.”" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, the first pitch was fast enough. Show me the final pitch still belongs to you.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 첫 공은 충분히 빨랐다. 이제 마지막 공까지 네 투구인지 보여 줘.”" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Repeat the same location without looking at the board" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전광판을 보지 않고 같은 코스를 반복한다" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Put repeatability, not a single top speed, on the report." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 번의 최고 구속보다 재현성을 평가표에 남긴다" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "State the pitch sequence you are evaluating today" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘 점검할 구종 순서를 먼저 밝힌다" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show the report that you are following a plan, not merely showing off." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "힘자랑이 아니라 계획대로 던진다는 점을 평가표에 남긴다" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drive through the final pitch at full effort" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 공까지 전력으로 밀어붙인다" } }
+      }
+    },
+    "content.relationship.evt-scout-stand.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Chase the top reading while exposing late-session command too." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최고 수치를 노리지만 힘이 빠진 뒤의 제구도 함께 드러난다" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“You can say you feel fine, but the camera shows an early release. The high misses will keep coming.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“네가 괜찮다 해도 화면엔 손이 먼저 나가. 이대로면 높은 공이 계속 빠진다.”" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“The ball leaves two frames early. Let us keep the front shoulder closed a little longer.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“공이 손에서 두 프레임 일찍 떨어진다. 앞쪽 어깨가 버티는 시간을 늘려 보자.”" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, it is only two frames. Your body can find them again today.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 차이는 딱 두 프레임이다. 네 몸이면 오늘 안에 되찾을 수 있어.”" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Repeat the closed-shoulder move without a ball" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공 없이 앞어깨를 닫는 동작부터 반복한다" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Set velocity aside and recover the release checkpoint." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구속을 잠시 내려놓고 릴리스의 기준점을 되찾는다" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Overlay the clip with a good delivery" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "좋았던 영상과 나란히 겹쳐 본다" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep a visual record of the two-frame change for self-correction." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "달라진 두 프레임을 눈으로 남겨 혼자서도 교정할 수 있게 한다" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Try the adjustment from the mound immediately" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "바로 마운드에서 수정 동작을 던져 본다" } }
+      }
+    },
+    "content.relationship.evt-mechanics-camera.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A quick fix is possible, but a missed feel adds pitches to the session." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 교정을 노리지만 감각이 어긋나면 투구 수가 늘어난다" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“Your arm is cold and you want to open at full effort? Decide now and do not shake me off again.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“팔 식었는데 초구부터 세게 갈 거야? 또 사인 바꾸지 말고 지금 정해.”" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“We only get five warm-up pitches. Let us open with the pitch that returns to your hand fastest.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“불펜 다섯 개밖에 못 던져. 초구는 손에 가장 빨리 붙는 공으로 가자.”" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, your hand is still cold, right? I will set low. We will catch the first pitch together.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 네 손 아직 차갑지? 내가 낮게 붙여 줄게. 첫 공부터 같이 잡자.”" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hit the mitt with a low fastball first" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "초구는 낮은 직구로 미트를 맞춘다" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Prevent the walk before worrying about damage after the restart." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재개 직후 장타보다 볼넷을 먼저 막는다" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hold breaking balls until the fingers wake up" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "손가락 감각이 돌아올 때까지 변화구를 미룬다" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Let the catcher simplify the early sequence." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 초반 배합을 단순하게 가져갈 수 있다" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open with the primary breaking ball" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 타자부터 주무기 변화구를 꺼낸다" } }
+      }
+    },
+    "content.relationship.evt-rain-delay.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Steal the hitter’s timing while accounting for the slick ball." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타이밍을 빼앗는 만큼 젖은 공의 미끄러짐도 계산해야 한다" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“You shook me off then too. If the bases load again, will you look at my sign this time?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“그때도 네가 고개 저었지. 또 만루가 오면 이번엔 내 사인 볼 거야?”" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“With the bases loaded, I wanted a grounder and you wanted a swing-and-miss. Next time we choose one.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“만루 초구, 나는 땅볼을 원했고 넌 헛스윙을 노렸어. 다음엔 하나로 맞추자.”" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, that first-pitch choice was not wrong. I just want to know why before we throw it next time.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 그 초구 선택은 틀리지 않았어. 다만 다음엔 내가 왜 그 공인지 먼저 알고 싶어.”" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mark the low target the catcher wanted" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 원했던 낮은 코스를 화면에 찍는다" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bring the battery’s first decision together for the next bases-loaded spot." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 만루에는 배터리의 첫 판단을 한곳에 모은다" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show the hitter tendency behind the whiff call" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "헛스윙을 노린 타자 습관을 영상으로 보여준다" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share that the pitch was a reasoned choice, not a solo decision." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "독단이 아니라 근거 있는 선택이었다는 점을 공유한다" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Test both sequences against the same hitter" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "같은 타자를 세워 두 배합을 모두 시험한다" } }
+      }
+    },
+    "content.relationship.evt-loaded-bases.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settle the debate in practice instead of carrying it into the next game." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "논쟁을 다음 경기까지 끌지 않고 훈련장에서 결론낸다" } }
+      }
+    },
+    "content.relationship.evt-first-awakening.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The motion that vanished whenever I chased it appeared first in the game. The finish on the ball was too different to dismiss." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련 때 붙잡으려 할수록 달아났던 동작이 경기에서 먼저 나왔다. 우연이라고 넘기기엔 공 끝이 달랐다." } }
+      }
+    },
+    "content.relationship.evt-first-awakening.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "My arm was not late when the front foot landed. My body retrieved the recent repetitions before I could think." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앞발이 닿는 순간 팔이 늦지 않았다. 생각하기 전에 몸이 최근의 반복을 꺼냈다." } }
+      }
+    },
+    "content.relationship.evt-first-awakening.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The mitt looked close before release. This motion was no longer borrowed; it belonged to me." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공을 놓기 전부터 미트가 가까워 보였다. 이제 이 동작은 빌린 감각이 아니라 내 것이었다." } }
+      }
+    },
+    "content.relationship.evt-first-awakening.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Carry the same breath into the next pitch" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 공도 같은 호흡으로 이어 간다" } }
+      }
+    },
+    "content.relationship.evt-first-awakening.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep the body’s order without tightening up to hold the feeling." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "좋은 감각을 붙잡으려 힘주지 않고 몸의 순서를 지킨다" } }
+      }
+    },
+    "content.relationship.evt-first-awakening.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mark the landing spot in the dugout" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "더그아웃에서 발 디딤 위치를 표시한다" } }
+      }
+    },
+    "content.relationship.evt-first-awakening.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave a clue that can make the motion repeatable." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "우연이 아니도록 재현할 단서를 남긴다" } }
+      }
+    },
+    "content.relationship.evt-first-awakening.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the new motion on the hardest target" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가장 어려운 코스에 새 동작을 건다" } }
+      }
+    },
+    "content.relationship.evt-first-awakening.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Earn conviction, or lose the game’s momentum if it breaks down." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "확신을 얻을 수 있지만 흔들리면 경기 흐름까지 내준다" } }
+      }
+    },
+    "content.relationship.evt-team-slump.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“Three losses and everyone wants to work alone? Match your bullpen time first.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“세 번 졌다고 각자 하겠다는 게 팀이냐. 네 불펜부터 시간 맞춰.”" } }
+      }
+    },
+    "content.relationship.evt-team-slump.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“We need to choose: more individual work or everyone leaving early. Silence does not remove responsibility.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“자율 훈련을 늘릴지, 다 같이 일찍 끝낼지 정해야 해. 말 없는 사람도 책임은 같아.”" } }
+      }
+    },
+    "content.relationship.evt-team-slump.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, give the pitching group a direction first. Everyone is waiting for your word.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 투수조가 먼저 방향을 잡아 줘. 지금은 네 한마디를 다들 기다린다.”" } }
+      }
+    },
+    "content.relationship.evt-team-slump.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask each position group how much time it needs" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "각 포지션이 필요한 시간을 차례로 받는다" } }
+      }
+    },
+    "content.relationship.evt-team-slump.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Collect the different complaints before the training plan splits apart." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "서로 다른 불만을 먼저 모아 훈련 파행을 막는다" } }
+      }
+    },
+    "content.relationship.evt-team-slump.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Propose a short, focused bullpen for the pitchers" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "투수조는 짧고 집중된 불펜을 제안한다" } }
+      }
+    },
+    "content.relationship.evt-team-slump.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Avoid overtraining while the pitching group owns the preparation risk." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연패 속 과훈련을 막되 준비 부족의 책임은 투수조가 진다" } }
+      }
+    },
+    "content.relationship.evt-team-slump.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Call everyone in at the same time tomorrow" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내일부터 전원이 같은 시간에 나오자고 한다" } }
+      }
+    },
+    "content.relationship.evt-team-slump.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unite the team and take responsibility for persuading tired teammates." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팀을 한데 묶는 만큼 지친 동료를 설득할 책임도 진다" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“You keep touching that shoulder. If you will not tell the coach, I will.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“어깨 계속 만지잖아. 네가 말 안 하면 내가 코치한테 말할 거야.”" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“I saw it twice. If it is fine, why press the same spot? Come to the trainer with me.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“두 번 봤어. 괜찮다면 왜 자꾸 같은 데를 눌러? 같이 트레이너한테 가자.”" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, I know the face you make when you hide something. We are going now.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 네가 숨길 때 어떤 표정인지 알아. 오늘은 나랑 바로 가자.”" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Go to the trainer’s room together" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "동료와 함께 트레이너실로 향한다" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Risk a delayed outing to catch a small pain before it becomes an injury." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "등판 기회가 미뤄져도 작은 통증을 부상 전에 잡는다" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Name the date the stiffness began" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "언제부터 뻐근했는지 날짜를 말한다" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Replace rumor with a record the staff can evaluate." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "소문 대신 기록으로 몸 상태를 판단하게 한다" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask to reassess after ten bullpen pitches" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "불펜 열 공 뒤 다시 보자고 한다" } }
+      }
+    },
+    "content.relationship.evt-injury-rumor.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You may prove nothing is wrong, but you may also deepen the pain." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "문제가 없음을 보일 수 있지만 통증을 키울 위험도 남는다" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“Our report is lower than the round in the article. Right now you need to accept that gap.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“기사의 라운드보다 우리 기록표가 낮다. 지금은 그 차이를 인정해야 해.”" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“The projection had you two rounds higher. We weigh the command in your last three games more heavily.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“예상 순위는 두 라운드 높더군. 우리는 최근 세 경기의 제구를 더 무겁게 본다.”" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, sometimes the field moves later than the articles. One more start could give us reason to change the board.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@, 기사보다 현장이 늦게 움직일 때도 있다. 다음 등판이면 표를 바꿀 근거가 생겨.”" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask which evaluation line is holding you down" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "평가표에서 낮게 잡힌 항목을 묻는다" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Trade vague draft anxiety for one target you can change next start." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "막연한 순위 불안 대신 다음 등판에서 바꿀 한 가지를 얻는다" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Briefly describe the recent command adjustment" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 제구 수정 과정을 짧게 전한다" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add the work after the poor results to the evaluation." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮은 기록 뒤에 이어진 변화를 평가 자료에 보탠다" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tell the scout to stay through your final inning" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 등판의 마지막 이닝까지 보라고 한다" } }
+      }
+    },
+    "content.relationship.evt-draft-projection.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Put your confidence—and the report—on what happens after fatigue arrives." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "말의 자신감만큼 경기 후 평가가 크게 움직인다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The final name passed. Only the glowing broadcast and three years of numbers remained in the room." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 이름까지 지나갔다. 방 안에는 꺼지지 않은 중계 화면과 세 해의 숫자만 남았다." } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No call came. When I opened the scorebook, the days I returned stood out before the days I dominated." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전화는 오지 않았다. 스코어북을 펴자 잘 던진 날보다 다시 던진 날이 먼저 보였다." } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "My name was not called, but three years of pitches had not vanished. It was time to choose the next mound." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이름은 불리지 않았다. 그래도 세 해 동안 쌓은 공이 사라진 것은 아니었다. 다음 마운드를 고를 차례다." } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open the page from the game you endured best" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가장 버텨 낸 경기 페이지를 펼친다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Refuse to reduce the night to a single line of failure." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "탈락의 밤을 실패 한 줄로만 남기지 않는다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Write down the teams and schools to call tomorrow" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내일 연락할 팀과 학교를 적는다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open the next door in baseball before the loss settles in." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "상실감이 가라앉기 전 다음 야구의 문을 만든다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave the dawn workout alarm on" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새벽 훈련 알람을 그대로 둔다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-room.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep the player’s day moving even before the next path is certain." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "진로가 정해지지 않아도 선수의 하루는 멈추지 않는다" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“After you sign, the competition starts over. We stop looking at high-school results today.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“입단 뒤엔 처음부터 다시 경쟁입니다. 고교 성적은 오늘까지만 봅니다.”" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“The first-season plan builds your body first and starts with short outings. We want your view too.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“첫 시즌은 몸부터 만들고 짧은 이닝으로 시작할 계획입니다. 본인 생각도 듣고 싶습니다.”" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“%@, we designed year one without erasing what you do best. Let us fit it together.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“%@ 선수, 지금 장점을 지우지 않는 선에서 첫 시즌을 설계했습니다. 함께 맞춰 봅시다.”" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Write down the first-season outing plan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 시즌의 등판 계획을 메모한다" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Prepare for the new competition before celebrating the call." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "입단의 흥분보다 새 경쟁에서 필요한 준비를 먼저 챙긴다" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share the routine you protected in high school" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교에서 지켜 온 루틴을 전한다" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Give the new plan a boundary that preserves your strength." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 훈련표가 내 강점을 지우지 않도록 기준을 공유한다" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Say you will earn a place in short outings first" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "짧은 이닝부터 자리를 따내겠다고 한다" } }
+      }
+    },
+    "content.relationship.evt-drafted-call.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask for an early chance and accept the competition attached to it." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 기회를 원한다는 뜻과 그에 따른 경쟁을 받아들인다" } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "There were too many blank spaces between the best game and the collapse. Choosing the final mark was not easy." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "잘 던진 날과 무너진 날 사이에 빈칸이 많다. 마지막 표시를 어디에 둘지 쉽게 정해지지 않는다." } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turning three years of scorebook pages brought back mitt sounds before numbers." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "세 해의 스코어북을 넘기자 숫자보다 그날의 미트 소리가 먼저 돌아온다." } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Before closing the last page, I marked both the best game and the game where I got back up." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 장을 덮기 전, 가장 좋았던 경기와 다시 일어선 경기에 같은 표시를 남겼다." } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mark the hardest game with a star too" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가장 힘들었던 경기에도 별표를 친다" } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Carry the endurance, not only the good numbers, into the next life." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "좋은 기록만이 아니라 버틴 과정까지 다음 삶의 기억으로 남긴다" } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Write one lesson inside the cover" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "배운 한 문장을 표지 안쪽에 적는다" } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave a checkpoint to return to when the next team gets difficult." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 팀에서도 흔들릴 때 돌아올 기준을 만든다" } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close it with the last page still blank" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "빈 마지막 장은 남겨 둔 채 덮는다" } }
+      }
+    },
+    "content.relationship.evt-scorebook-close.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Treat the high-school record as space for the next mound, not an ending." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 기록을 끝으로 보지 않고 다음 마운드의 여백으로 둔다" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The catcher called for the exact location that became a home run in my last life. Knowing nothing, he set the mitt. “Here. How about it?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 지난 삶에서 홈런을 맞았던 바로 그 코스에 사인을 냈다. 그는 아무것도 모른 채 미트를 댄다. “여기, 어때?”" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The catcher called for the exact location that became a home run in my last life. Knowing nothing, he set the mitt. “Here. How about it?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 지난 삶에서 홈런을 맞았던 바로 그 코스에 사인을 냈다. 그는 아무것도 모른 채 미트를 댄다. “여기, 어때?”" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The catcher called for the exact location that became a home run in my last life. Knowing nothing, he set the mitt. “Here. How about it?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 지난 삶에서 홈런을 맞았던 바로 그 코스에 사인을 냈다. 그는 아무것도 모른 채 미트를 댄다. “여기, 어때?”" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Nod and trust this life’s catcher" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고개를 끄덕이고 이번 삶의 포수를 믿는다" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Give the same location a chance to produce a different result with a different battery." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "같은 코스라도 다른 배터리와 다른 결과를 만들 기회를 연다" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Say that is the one location you want to avoid" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "그 코스만은 피하고 싶다고 말한다" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share the risk with the catcher even if you cannot explain all of it." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이유를 다 밝힐 수 없어도 포수와 위험을 나눈다" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Challenge one ball higher than last time" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난번보다 공 하나 높게 승부한다" } }
+      }
+    },
+    "content.relationship.evt-remembered-pitch.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the memory to change the ending, knowing another hit would cut deeper." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기억을 이용해 결말을 바꾸지만 또 맞으면 상처도 깊어진다" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The teammate who pitched beside me to the end in my last life has taken off the uniform this time. “This is it for me. You keep pitching.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에서 끝까지 함께 던졌던 동료가 이번에는 유니폼을 벗었다. “이번엔 여기까지 할래. 너는 계속 던져.”" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The teammate who pitched beside me to the end in my last life has taken off the uniform this time. “This is it for me. You keep pitching.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에서 끝까지 함께 던졌던 동료가 이번에는 유니폼을 벗었다. “이번엔 여기까지 할래. 너는 계속 던져.”" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The teammate who pitched beside me to the end in my last life has taken off the uniform this time. “This is it for me. You keep pitching.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에서 끝까지 함께 던졌던 동료가 이번에는 유니폼을 벗었다. “이번엔 여기까지 할래. 너는 계속 던져.”" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask what happened, one step at a time" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "그만두게 된 날부터 차근차근 묻는다" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Respect the life your friend chose before reaching for words that pull him back." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "붙잡는 말보다 친구가 고른 삶을 존중한다" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Say you will remember the time you pitched together" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "함께 던졌던 시간을 잊지 않겠다고 한다" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Let the relationship continue even when the paths split." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다른 길로 가도 관계가 끝나는 것은 아님을 전한다" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask for one final game of catch" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 캐치볼 한 번을 청한다" } }
+      }
+    },
+    "content.relationship.evt-lost-teammate.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave the farewell in the feel of the ball, even if regret returns with it." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "작별을 공의 감촉으로 남기되 미련까지 함께 돌아올 수 있다" } }
+      }
+    },
+    "content.relationship.evt-future-news.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The radio lists the title favorites in the exact order from my last life. A book whose ending I know has opened again." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "라디오는 올해 우승 후보를 지난 삶과 같은 순서로 읊는다. 결말을 아는 책이 다시 첫 장을 펼쳤다." } }
+      }
+    },
+    "content.relationship.evt-future-news.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The radio lists the title favorites in the exact order from my last life. A book whose ending I know has opened again." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "라디오는 올해 우승 후보를 지난 삶과 같은 순서로 읊는다. 결말을 아는 책이 다시 첫 장을 펼쳤다." } }
+      }
+    },
+    "content.relationship.evt-future-news.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The radio lists the title favorites in the exact order from my last life. A book whose ending I know has opened again." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "라디오는 올해 우승 후보를 지난 삶과 같은 순서로 읊는다. 결말을 아는 책이 다시 첫 장을 펼쳤다." } }
+      }
+    },
+    "content.relationship.evt-future-news.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Listen through and count any changed names" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "끝까지 들어 달라지는 이름이 있는지 센다" } }
+      }
+    },
+    "content.relationship.evt-future-news.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Test the memory before using it as a map for the season." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기억이 정확한지 확인해 이번 시즌의 지도로 삼는다" } }
+      }
+    },
+    "content.relationship.evt-future-news.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn off the radio and open today’s plan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "라디오를 끄고 오늘 훈련표를 펼친다" } }
+      }
+    },
+    "content.relationship.evt-future-news.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Focus on the one square you can change now instead of the fixed ending." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정해진 결말보다 지금 바꿀 수 있는 한 칸에 집중한다" } }
+      }
+    },
+    "content.relationship.evt-future-news.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Find a game from the team omitted from the forecast" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "예상에서 빠진 팀의 경기를 찾아본다" } }
+      }
+    },
+    "content.relationship.evt-future-news.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Search for a variable outside the old life and disturb the familiar ending." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에 없던 변수를 찾아 익숙한 결말을 흔든다" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "An opposing catcher I have never met calls me by the nickname from my last life. “Why are you staring? I thought everyone called you that.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "처음 만난 상대 포수가 지난 삶의 별명을 불렀다. “왜 그렇게 봐? 다들 그렇게 부르는 줄 알았는데.”" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "An opposing catcher I have never met calls me by the nickname from my last life. “Why are you staring? I thought everyone called you that.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "처음 만난 상대 포수가 지난 삶의 별명을 불렀다. “왜 그렇게 봐? 다들 그렇게 부르는 줄 알았는데.”" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "An opposing catcher I have never met calls me by the nickname from my last life. “Why are you staring? I thought everyone called you that.”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "처음 만난 상대 포수가 지난 삶의 별명을 불렀다. “왜 그렇게 봐? 다들 그렇게 부르는 줄 알았는데.”" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Press him on where he heard the nickname" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "그 별명을 어디서 들었는지 캐묻는다" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Find a clue to whether the memory belongs to someone besides you." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기억이 나만의 것인지 알아낼 실마리를 얻는다" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Admit that the name does not exist in this life yet" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번에는 아직 없는 이름이라고 털어놓는다" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share half the truth even if it sounds impossible." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이상하게 보이더라도 기억의 단서를 상대와 나눈다" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Promise a pitch worthy of that name" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "그 이름에 어울리는 공을 보여 주겠다고 한다" } }
+      }
+    },
+    "content.relationship.evt-old-nickname.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn the shock into a wager on the next plate appearance." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "당혹감을 승부욕으로 바꿔 다음 타석에 건다" } }
+      }
+    },
+    "content.relationship.evt-glove-worn.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A new glove folds softly toward the palm from the start—the exact angle I closed hundreds of times in my last life." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 글러브가 처음부터 손바닥 안쪽으로 부드럽게 접힌다. 지난 삶에서 수백 번 닫았던 바로 그 각도다." } }
+      }
+    },
+    "content.relationship.evt-glove-worn.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A new glove folds softly toward the palm from the start—the exact angle I closed hundreds of times in my last life." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 글러브가 처음부터 손바닥 안쪽으로 부드럽게 접힌다. 지난 삶에서 수백 번 닫았던 바로 그 각도다." } }
+      }
+    },
+    "content.relationship.evt-glove-worn.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A new glove folds softly toward the palm from the start—the exact angle I closed hundreds of times in my last life." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 글러브가 처음부터 손바닥 안쪽으로 부드럽게 접힌다. 지난 삶에서 수백 번 닫았던 바로 그 각도다." } }
+      }
+    },
+    "content.relationship.evt-glove-worn.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Follow the path the glove already takes" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "글러브가 접히는 길을 그대로 따른다" } }
+      }
+    },
+    "content.relationship.evt-glove-worn.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Let body memory shorten the time needed to break in new leather." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "몸의 기억을 받아들여 새 장비에 적응할 시간을 줄인다" } }
+      }
+    },
+    "content.relationship.evt-glove-worn.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Write today’s date inside the glove" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가죽 안쪽에 오늘 날짜를 적는다" } }
+      }
+    },
+    "content.relationship.evt-glove-worn.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mark a boundary between an object from the old life and this beginning." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶의 물건과 이번 삶의 시작을 구분할 표식을 남긴다" } }
+      }
+    },
+    "content.relationship.evt-glove-worn.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Break it in deliberately the other way" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "일부러 반대 방향으로 다시 길들인다" } }
+      }
+    },
+    "content.relationship.evt-glove-worn.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave the fixed feeling behind, along with its familiar catch." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정해진 감각을 벗어나지만 익숙한 포구감도 포기한다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.quote.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The moment the broadcast turns on, the air from the room where my name was never called returns. The first selection has not begun." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "중계 화면이 켜지자 이름이 끝내 불리지 않았던 방의 공기가 먼저 돌아왔다. 아직 첫 순서도 시작하지 않았다." } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.quote.mid" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The moment the broadcast turns on, the air from the room where my name was never called returns. The first selection has not begun." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "중계 화면이 켜지자 이름이 끝내 불리지 않았던 방의 공기가 먼저 돌아왔다. 아직 첫 순서도 시작하지 않았다." } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.quote.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The moment the broadcast turns on, the air from the room where my name was never called returns. The first selection has not begun." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "중계 화면이 켜지자 이름이 끝내 불리지 않았던 방의 공기가 먼저 돌아왔다. 아직 첫 순서도 시작하지 않았다." } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.choice.listen.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Take three breaths and watch the first selection" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "숨을 세 번 고르고 첫 순서를 지켜본다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.choice.listen.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep the old ending from swallowing every name in the present." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "과거의 결말이 현재의 모든 이름을 삼키지 않게 한다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.choice.explain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask the family to open the window" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가족에게 잠시 창문을 열어 달라고 한다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.choice.explain.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share the room’s tension instead of carrying it alone as before." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "혼자 버티던 지난 삶과 달리 방 안의 긴장을 함께 나눈다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.choice.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hold the phone and stay until the end" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전화기를 손에 쥔 채 끝까지 자리를 지킨다" } }
+      }
+    },
+    "content.relationship.evt-undrafted-deja.choice.challenge.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Refuse to run, knowing the same silence may have to be faced directly." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "도망치지 않지만 같은 침묵이 오면 정면으로 견뎌야 한다" } }
       }
     }
   },
