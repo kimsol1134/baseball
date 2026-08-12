@@ -31,7 +31,7 @@
 - Play Console: 2026-08-12 `com.solkim.baseball.android` 유료 게임 생성, 대한민국 4,400원,
   internal versionCode 1 제공 및 closed Alpha 대한민국 전체 출시 구성 완료. 2026-08-13 등록정보와
   정책 선언을 포함한 13개 v1 변경을 검토로 전송했다. 공개 전화 SMS 인증과 유료 앱
-  사업자·통신판매 정보, v2 AAB+symbols 원자 업로드는 프로덕션 게시 전에 남아 있다.
+  사업자·통신판매 정보, v5 AAB+symbols 원자 업로드는 프로덕션 게시 전에 남아 있다.
 - Firebase: project `baseball-reincarnation-android`(project number `951359066339`), Android App ID
   `1:951359066339:android:ea391d85ed2bac524cf5d6`, package `com.solkim.baseball.android` 등록 완료.
   GA4 전용 property `549574769`/Android stream `15421807578`를 기존 blog property와 분리해 연결했다.
@@ -146,10 +146,14 @@
 - clean commit `a65b9da366408b6026c96feff6ee6d8b45761da1`에서 C# 정적 suite,
   Unity reference compile, 실제 Unity 6000.3.19f1 EditMode/PlayMode, production upload-key AAB와
   Firebase symbol upload가 통과했다.
-- 같은 versionCode 2 AAB의 API 29, API 35 16KB, API 36 production smoke가 통과했다. 16KB lane은 실제 저장형
+- clean commit `0602e7f6453e3a46e7d6950979adc14c1e0a7352`의 versionCode 5 AAB와 Crashlytics
+  native symbol upload가 통과했고, 같은 AAB의 API 29, API 35 16KB, API 36 production smoke가
+  통과했다. 16KB lane은 실제 저장형
   투구 presentation marker와 shader ready, crash/ANR 0을 확인했다.
 - Play에는 versionCode 2 AAB와 nativeCode symbols를 같은 edit로 업로드하고 internal/closed Alpha
   track update까지 검증했다. 한국 개발자 계정 추가 정보 403이 edit commit을 막아 edit 전체를
   폐기했으며, versionCode 1 활성 상태는 변경되지 않았다.
+- closed Alpha opt-in URL에서 본인 Google 계정의 tester 상태를 확인했다. v5는 새 Alpha draft
+  화면까지 열었지만 로컬 파일 선택 권한이 없어 AAB 전송 전에 중단했으며 업로드 완료로 간주하지 않는다.
 - 물리 Low/Mid/High 스마트폰, TalkBack·실제 저용량·성능, Play 12명/14일, 한국 개발자 계정 정보,
   무료 체험·사전 출시 보고서·지원 기기 CSV, 실제 분석 수신과 Crashlytics symbolication은 외부 차단이다.

@@ -2,12 +2,12 @@
 
 | 역할 | 최소 조건 | 실제 기기 | 상태 | 증거 |
 |---|---|---|---|---|
-| Low | API 26–29, 4GB RAM, Samsung | API 29 ARM64 emulator (2GB) | v2 emulator production smoke 통과 / 물리 대기 | `/private/tmp/baseball-v2-api29-smoke-a65b9da/20260812T160137Z` |
+| Low | API 26–29, 4GB RAM, Samsung | API 29 ARM64 emulator (2GB) | v5 emulator production smoke 통과 / 물리 대기 | `/private/tmp/baseball-v5-api29-smoke/20260812T212604Z` |
 | Mid | Galaxy A34급, Android 13–15 | 미확보 | 대기 | |
 | High | Galaxy S20 FE 이상, 120Hz 포함 | 미확보 | 대기 | |
-| API edge | Android 16/API 36 | API 36 ARM64 emulator | v2 production smoke 통과 / 물리 대기 | `/private/tmp/baseball-v2-api36-smoke-a65b9da/20260812T160713Z` |
-| 16KB page | `getconf PAGE_SIZE=16384`, ARM64, API 35+ | `sdk_gphone16k_arm64`, API 35 emulator | v2 production AAB 수직 루프 통과 / 물리 대기 | `/private/tmp/baseball-v2-16k-smoke-a65b9da/20260812T155332Z`; 실제 투구·shader·crash/ANR 0 |
-| Play farm | 사전 출시 보고서 | v2 AAB+symbols edit upload 검증, commit 대기 | 계정 정보 해결 뒤 대기 | Play versionCode 1 활성; v2 edit는 partial publish 없이 폐기 |
+| API edge | Android 16/API 36 | API 36 ARM64 emulator | v5 production smoke 통과 / 물리 대기 | `/private/tmp/baseball-v5-api36-smoke/20260812T212855Z` |
+| 16KB page | `getconf PAGE_SIZE=16384`, ARM64, API 35+ | `sdk_gphone16k_arm64`, API 35 emulator | v5 production AAB 수직 루프 통과 / 물리 대기 | `/private/tmp/baseball-v5-smoke/20260812T211007Z`; 실제 투구·shader·crash/ANR 0 |
+| Play farm | 사전 출시 보고서 | v5 업로드 대기 | 계정 정보·업로드 뒤 대기 | Play versionCode 1 활성; 본인 tester opt-in 완료 |
 
 각 기기에서 clean install, update, airplane mode, background/force-stop, gesture/3-button navigation, 글자 200%, TalkBack, pitch frame time, peak memory를 기록한다.
 

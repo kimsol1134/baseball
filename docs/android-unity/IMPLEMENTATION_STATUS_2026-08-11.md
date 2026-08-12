@@ -3,8 +3,8 @@
 기준 문서: [`../ANDROID_UNITY_IMPLEMENTATION_PLAN_2026-08-11.md`](../ANDROID_UNITY_IMPLEMENTATION_PLAN_2026-08-11.md)
 
 이 문서는 구현 소스와 출시 증거를 구분한다. clean commit의 Unity 테스트, production upload-key
-서명 v2 AAB, Firebase symbols, API 29/35(16KB)/36 smoke, Play 내부·비공개 트랙은 준비됐다. v2
-AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으로 commit 전 폐기했다.
+서명 v5 AAB, Firebase symbols, API 29/35(16KB)/36 smoke, Play 내부·비공개 트랙은 준비됐다. v5
+AAB는 아직 Play에 업로드하지 않았고 활성 closed Alpha는 versionCode 1이다.
 사업자등록번호는 실제 증빙으로 저장했고 공개전화는 SMS 인증, 통신판매업은 신규 신고를 기다린다. 다만
 **한국 개발자 정보, 12명/14일 비공개 테스트와 물리 스마트폰 증거가 없으므로 Google Play RC로
 승인된 상태가 아니다.**
@@ -16,7 +16,7 @@ AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으
 | 순수 C# Core | 구현·정적 검증 완료 | Pitch/HighSchool/Pro 결정론 엔진과 NUnit 계약 |
 | Application/저장 | 구현·정적 검증 완료 | 단일 aggregate, 원자 저장, 복구, 명령 영수증, 투구 중단 재개 |
 | Unity Presentation/Platform 소스 | 구현·Unity 검증 완료 | UI Toolkit, 3D 투구, Android SDK 경계, 실제 EditMode/PlayMode |
-| Unity EditMode/PlayMode | 통과 | Unity 6000.3.19f1: 주요 EditMode 533건+격리 fault tests, PlayMode 14/14 |
+| Unity EditMode/PlayMode | 통과 | Unity 6000.3.19f1: 주요 EditMode 535건+격리 39건, PlayMode 14/14; XML 합계 588/588 |
 | Android IL2CPP AAB | production 후보 통과 | clean SHA의 upload-key AAB/public symbols, 16KB 정렬·병합 manifest·권한 검증 |
 | 실제 Android 기기 | emulator 통과 / 물리 대기 | API 29, API 35 16KB, API 36 production smoke 통과 |
 | Google Play/Firebase/Amplitude | 부분 통과 | Play internal/closed 및 Firebase symbol upload 완료; 계정 정보·시간 조건·실제 수신 대기 |
@@ -60,11 +60,11 @@ AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으
 
 ## 자동 검증 기록
 
-2026-08-12 현재 마지막 로컬 결과:
+2026-08-13 현재 마지막 검증 결과:
 
 | 명령/게이트 | 결과 | 비고 |
 |---|---|---|
-| `npm run test:unity:static` | 통과, 433/433 | 순수 C#과 Unity 비의존 계약; Unity Test Runner 대체물이 아님 |
+| `npm run test:unity:static` | 통과, 435/435 | 순수 C#과 Unity 비의존 계약; Unity Test Runner 대체물이 아님 |
 | `npm run test:unity:references` | 통과 | production, internal QA, Core, Platform, Platform tests, Presentation tests, Android Editor가 경고·오류 0 |
 | Swift/C# Pitch oracle | 통과 | seed 1…128 결과·위치·구속·event hash exact |
 | Pitch 분포 oracle | 통과 | seed 1…10,000 outcome 집계 exact |
@@ -73,11 +73,12 @@ AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으
 | `npm run check:android:unity` | 소스 계약 통과 | missing `.meta` 0, missing reviewed Addressables/URP asset 0 |
 | `npm run check:copy` / `check:copy:android:unity` | 통과 | 내부 용어 38종·실존 야구 IP 42종 미노출 |
 | shell syntax/YAML/JSON/`git diff --check` | 통과 | 소스 계약과 최종 diff 형식 확인 |
-| `npm run test:unity` | 통과 | 실제 Unity EditMode 주요 533건+격리 tests, PlayMode 14/14 |
+| `npm run test:unity` | 통과 | 실제 Unity EditMode 주요 535건+격리 39건, PlayMode 14/14; XML 합계 588/588 |
 | `npm run build:android:verify` | 통과 | 내부 검증 AAB SHA `03fe9b…091a`, symbols SHA `89a52b…91d8` |
-| production API 29 smoke | 통과 | v2 `/private/tmp/baseball-v2-api29-smoke-a65b9da/20260812T160137Z` |
-| production 16KB smoke | 통과 | v2 `/private/tmp/baseball-v2-16k-smoke-a65b9da/20260812T155332Z`; 실제 투구 marker 포함 |
-| production API 36 smoke | 통과 | v2 `/private/tmp/baseball-v2-api36-smoke-a65b9da/20260812T160713Z` |
+| production API 29 smoke | 통과 | v5 `/private/tmp/baseball-v5-api29-smoke/20260812T212604Z` |
+| production 16KB smoke | 통과 | v5 `/private/tmp/baseball-v5-smoke/20260812T211007Z`; 실제 투구 marker 포함 |
+| production API 36 smoke | 통과 | v5 `/private/tmp/baseball-v5-api36-smoke/20260812T212855Z` |
+| v5 CI | 통과 | run `31637857817` attempt 2: Static, Licensed Unity, Signed production candidate 모두 성공 |
 | PR P0 CI | 통과 | run `31616614826`: React/iOS/Swift macOS·Windows/Desktop macOS·Windows 전부 성공 |
 | Unity PR gate | 통과 | run `31616614936`: Static contracts, Licensed Unity tests 성공 |
 
@@ -95,7 +96,7 @@ AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으
 1. 요청된 공개 전화번호 SMS 코드를 확인하고, 정부24 통신판매업 신고 완료 뒤 발급 번호·기관을 제출한다.
 2. closed Alpha의 opt-in 테스터를 12명 이상 확보하고 14일 이상 유지한다.
 3. Low/Mid/High 실제 세로 스마트폰에서 성능, TalkBack, 실제 저용량, Back/재개를 기록한다.
-4. v2 AAB+native symbols를 같은 Play edit로 commit하고, 변경을 검토 제출한 뒤 사전 출시 보고서,
+4. v5 AAB+native symbols를 같은 Play edit로 commit하고, 변경을 검토 제출한 뒤 사전 출시 보고서,
    지원 기기 CSV, 폼 팩터 제외와 60분 체험을 확인한다.
 5. 내부/비공개 설치에서 Firebase/Amplitude 수신과 Crashlytics symbolication을 확인한다.
 6. `DEVICE_MATRIX.md`, `PARITY_MATRIX.md`, `RELEASE_EVIDENCE.md`의 빈 칸이 모두 증거로 채워진 뒤 RC를 승인한다.
