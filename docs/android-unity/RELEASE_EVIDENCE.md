@@ -4,7 +4,8 @@
 현재 상태: clean commit의 Unity 6000.3.19f1 테스트, production upload-key 서명 v2 AAB,
 Firebase Crashlytics symbol upload, API 29/35(16KB)/36 production smoke, Play 내부·비공개
 트랙 구성이 완료됐다. v2 AAB와 Play native symbols를 같은 edit에 올리는 데도 성공했지만 한국
-개발자 계정 정보 오류로 원자 commit 전에 edit를 폐기했다. **프로덕션 RC 승인은 아직 아니다.** 아래 사람·시간·물리기기 조건은
+개발자 계정 정보 오류로 원자 commit 전에 edit를 폐기했다. 사업자등록번호는 실제 증빙과 대조해
+계정에 저장했으며 공개 전화번호는 SMS 인증 대기 중이다. **프로덕션 RC 승인은 아직 아니다.** 아래 사람·시간·물리기기 조건은
 자동화 증거로 대체하지 않는다.
 
 ## 빌드
@@ -13,6 +14,10 @@ Firebase Crashlytics symbol upload, API 29/35(16KB)/36 production smoke, Play �
 - build 입력: clean (`gitDirty=false`)
 - GitHub Actions: [run 31609581076](https://github.com/kimsol1134/baseball/actions/runs/31609581076) —
   Static contracts, Licensed Unity tests, Signed production candidate 모두 성공
+- PR P0 CI: [run 31616614826](https://github.com/kimsol1134/baseball/actions/runs/31616614826) —
+  React, iOS, Swift macOS/Windows, Desktop macOS/Windows 모두 성공
+- Unity PR gate: [run 31616614936](https://github.com/kimsol1134/baseball/actions/runs/31616614936) —
+  Static contracts와 Licensed Unity tests 성공
 - Unity: `6000.3.19f1`
 - application ID: `com.solkim.baseball.android`
 - version/versionCode: `1.0.0` / `2`
@@ -95,13 +100,20 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
   edit commit은 아래 한국 개발자 계정 정보 403 오류로 거부됐고, partial publish를 막기 위해 edit
   전체를 삭제했다. 따라서 현재 Play 활성 버전은 안전하게 versionCode 1이며, 계정 정보 해결 후
   동일 v2 쌍을 새 edit에서 다시 올린다.
+- 사업자등록번호는 국세청 발급 증빙과 대조한 실제 값으로 계정에 저장했다. 공개 개발자 전화번호는
+  기존 확인 연락처와 같은 번호로 입력하고 SMS 6자리 인증을 요청했다.
+- 공정거래위원회 통신판매사업자 공식 조회에서 현재 등록 정보가 없음을 확인했다. 따라서
+  전자상거래 라이선스 번호와 신고기관은 추측해 입력하지 않았다. 정부24 통신판매업 신고 완료 뒤
+  관할 지자체가 발급한 값으로 마감한다.
+- v2 내부 앱 공유 API도 시도했으나 앱이 아직 게시된 것으로 인정되지 않아 `NOT_PUBLISHED`로
+  거부됐다. 트랙 또는 edit 변경은 발생하지 않았다.
 
 ## 남은 출시 차단
 
-1. **한국 개발자 계정 정보**: Play 게시 개요의 유일한 제출 오류다. 개인 계정의 공개 개발자
-   전화번호 입력·SMS/전화 인증, 유료 앱 배포에 필요한 사업자등록번호·통신판매업 신고번호·
-   신고기관을 계정 소유자가 실제 정보로 제공해야 한다. 민감정보와 인증번호를 자동 생성하거나
-   추측하지 않는다.
+1. **한국 개발자 계정 정보**: Play 게시 개요의 유일한 제출 오류다. 사업자등록번호 저장은
+   완료했다. 남은 일은 요청된 공개 개발자 전화번호 SMS 코드를 계정 소유자가 확인하는 것과,
+   정부24에서 통신판매업을 신고해 발급받은 번호·신고기관을 입력하는 것이다. 현재 공정위 공식
+   조회에는 등록 정보가 없으므로 민감정보와 인증번호를 자동 생성하거나 추측하지 않는다.
 2. **비공개 테스트 시간 조건**: Play 대시보드 기준 현재 참여 선택 0명이다. 실제 Google 계정
    테스터 12명 이상이 opt-in하고 14일 이상 계속 참여해야 프로덕션 액세스를 신청할 수 있다.
 3. **물리 기기**: Low/Mid/High 실제 스마트폰에서 성능(p95 frame/peak memory), TalkBack 전체

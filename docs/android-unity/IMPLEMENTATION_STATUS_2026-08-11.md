@@ -4,7 +4,8 @@
 
 이 문서는 구현 소스와 출시 증거를 구분한다. clean commit의 Unity 테스트, production upload-key
 서명 v2 AAB, Firebase symbols, API 29/35(16KB)/36 smoke, Play 내부·비공개 트랙은 준비됐다. v2
-AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으로 commit 전 폐기했다. 다만
+AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으로 commit 전 폐기했다.
+사업자등록번호는 실제 증빙으로 저장했고 공개전화는 SMS 인증, 통신판매업은 신규 신고를 기다린다. 다만
 **한국 개발자 정보, 12명/14일 비공개 테스트와 물리 스마트폰 증거가 없으므로 Google Play RC로
 승인된 상태가 아니다.**
 
@@ -77,6 +78,8 @@ AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으
 | production API 29 smoke | 통과 | v2 `/private/tmp/baseball-v2-api29-smoke-a65b9da/20260812T160137Z` |
 | production 16KB smoke | 통과 | v2 `/private/tmp/baseball-v2-16k-smoke-a65b9da/20260812T155332Z`; 실제 투구 marker 포함 |
 | production API 36 smoke | 통과 | v2 `/private/tmp/baseball-v2-api36-smoke-a65b9da/20260812T160713Z` |
+| PR P0 CI | 통과 | run `31616614826`: React/iOS/Swift macOS·Windows/Desktop macOS·Windows 전부 성공 |
+| Unity PR gate | 통과 | run `31616614936`: Static contracts, Licensed Unity tests 성공 |
 
 ## 반드시 남기는 패리티 경계
 
@@ -89,7 +92,7 @@ AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으
 
 ## 출시 차단 해제 순서
 
-1. 한국 개인 개발자의 공개 전화번호를 인증하고 유료 앱 사업자·통신판매 정보를 실제 값으로 제출한다.
+1. 요청된 공개 전화번호 SMS 코드를 확인하고, 정부24 통신판매업 신고 완료 뒤 발급 번호·기관을 제출한다.
 2. closed Alpha의 opt-in 테스터를 12명 이상 확보하고 14일 이상 유지한다.
 3. Low/Mid/High 실제 세로 스마트폰에서 성능, TalkBack, 실제 저용량, Back/재개를 기록한다.
 4. v2 AAB+native symbols를 같은 Play edit로 commit하고, 변경을 검토 제출한 뒤 사전 출시 보고서,
