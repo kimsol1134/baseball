@@ -1400,8 +1400,8 @@
       ],
       "selectedScale": null,
       "targetPath": "apps/android-unity/Assets/Game/Art/Pitch/BatterStance.png",
-      "sourceSha256": "7f9ddd448ffc3d23b7f4de4e948d1d5fd0b1283911474b0d0cedf1ddf5c0aae0",
-      "targetSha256": "7f9ddd448ffc3d23b7f4de4e948d1d5fd0b1283911474b0d0cedf1ddf5c0aae0",
+      "sourceSha256": "8deac037a231d0e5c6199562634ddaa53bde854d897524ccf4df7b68c4a61176",
+      "targetSha256": "8deac037a231d0e5c6199562634ddaa53bde854d897524ccf4df7b68c4a61176",
       "purpose": "pitch-stage-billboard",
       "importPreset": "billboard-sprite",
       "addressableLabel": "pitch"
@@ -1417,8 +1417,8 @@
       ],
       "selectedScale": null,
       "targetPath": "apps/android-unity/Assets/Game/Art/Pitch/CatcherStance.png",
-      "sourceSha256": "cfa24c195cbd09df16bbf5512f700d918cd1a7185471f800851d8502dd681b69",
-      "targetSha256": "cfa24c195cbd09df16bbf5512f700d918cd1a7185471f800851d8502dd681b69",
+      "sourceSha256": "a1f2173eb08d2811a7dae858c854b59f8ee038d5d7a5c9a3ca5e0c99f4c9aee5",
+      "targetSha256": "a1f2173eb08d2811a7dae858c854b59f8ee038d5d7a5c9a3ca5e0c99f4c9aee5",
       "purpose": "pitch-stage-billboard",
       "importPreset": "billboard-sprite",
       "addressableLabel": "pitch"
