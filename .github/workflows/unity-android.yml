@@ -120,13 +120,19 @@ jobs:
     env:
       BASEBALL_VERSION_NAME: ${{ inputs.version_name }}
       BASEBALL_VERSION_CODE: ${{ inputs.version_code }}
-      BASEBALL_UPLOAD_KEYSTORE_PATH: ${{ runner.temp }}/baseball-upload.keystore
-      BASEBALL_FIREBASE_CLI_DIR: ${{ runner.temp }}/baseball-firebase-cli
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/baseball-firebase-service-account.json
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           clean: true
+      - name: Bind runner-local credential paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "BASEBALL_UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/baseball-upload.keystore"
+            echo "BASEBALL_FIREBASE_CLI_DIR=$RUNNER_TEMP/baseball-firebase-cli"
+            echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/baseball-firebase-service-account.json"
+          } >> "$GITHUB_ENV"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
