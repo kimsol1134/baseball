@@ -201,6 +201,10 @@ final class HighSchoolCareerStore {
         /// 코어가 만든 설명 문장.
         var detail: String
         var gains: [MobileCareerStore.AbilityGain]
+        /// Transient structured result data used to re-author the receipt in the active language.
+        /// It is not persisted and does not participate in the simulation commitment.
+        var growth: Int = 0
+        var repeatCount: Int? = nil
         var jackpot: Bool
         var bloom: Bloom?
         var fatigueAfter: Int
@@ -282,9 +286,11 @@ final class HighSchoolCareerStore {
     private(set) var chronicle: [ChronicleEntry] = []
     /// 방금 경기에 대한 커뮤니티 반응. 저장하지 않는다 — careerID·경기 번호로
     /// 결정론이라 필요하면 언제든 다시 만들 수 있고, 반응은 "방금"의 것일 때만 살아 있다.
-    private(set) var buzz: [String] = []
+    /// Ephemeral presentation values. These stable IDs are intentionally outside every save
+    /// record and are rebuilt from the same post-game selection path.
+    private(set) var buzz: [CommunityBuzzReactionLine] = []
     /// 챕터가 넘어갈 때 세계가 만든 사건들. 저장하지 않는다 — 결정론 재파생 가능.
-    private(set) var worldNews: [String] = []
+    private(set) var worldNews: [CommunityBuzzRivalNewsLine] = []
     /// 이번 챕터의 훈련 누적(능력별 증가·횟수). 저장하지 않는 표시용 —
     /// 100번의 +1이 낱장으로 흩어지면 훈련 구간 전체가 "같은 화면의 반복"으로
     /// 기억된다(QA P1-15). 누적 한 줄이 "한 단위"의 체감을 만든다.
@@ -994,6 +1000,8 @@ final class HighSchoolCareerStore {
             headline: Self.gainHeadline(pendingGains),
             detail: "\(HighSchoolPresentation.focus(focus)) 훈련 \(completed)회를 이어서 마쳤습니다.",
             gains: pendingGains,
+            growth: growth,
+            repeatCount: completed,
             jackpot: result?.snapshot.lastTraining?.jackpot ?? false,
             bloom: pendingBloom,
             fatigueAfter: result?.snapshot.fatigue ?? 0,
@@ -1015,6 +1023,7 @@ final class HighSchoolCareerStore {
             headline: gainHeadline(gains),
             detail: training?.feedback ?? "훈련을 마쳤습니다.",
             gains: gains,
+            growth: training?.growth ?? gains.reduce(0) { $0 + max(0, $1.after - $1.before) },
             jackpot: training?.jackpot ?? false,
             bloom: bloom,
             fatigueAfter: fatigueAfter,
@@ -1088,7 +1097,10 @@ final class HighSchoolCareerStore {
         chapterGains = [:]
         chapterTrainingCount = 0
         if let snapshot = result?.snapshot {
-            worldNews = CommunityBuzz.rivalNews(careerID: snapshot.careerID, chapterNumber: snapshot.chapter.number)
+            worldNews = CommunityBuzz.rivalNewsLines(
+                careerID: snapshot.careerID,
+                chapterNumber: snapshot.chapter.number
+            )
         }
         buzz = []
         save()
@@ -1292,13 +1304,13 @@ final class HighSchoolCareerStore {
             loadState = .ready
 
             _ = retryPendingGameCompletion()
-            buzz = CommunityBuzz.reactions(
+            buzz = CommunityBuzz.reactionLines(
                 careerID: updated.snapshot.careerID,
                 gameNumber: updated.snapshot.performance.importantGamesCompleted,
                 strikeouts: report.strikeouts,
                 walks: report.walks,
                 runsAllowed: report.runsAllowed,
-                newNickname: freshNicknames.first?.title
+                newNickname: freshNicknames.first
             )
         } catch {
             loadState = .failed(error.localizedDescription)

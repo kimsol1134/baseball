@@ -107,6 +107,19 @@ public enum HighSchoolContentCatalog {
               summary: "드래프트 중계를 트는 순간, 이름이 불리지 않은 채 끝났던 그 방의 공기가 먼저 돌아옵니다.")
     ]
 
+    /// Presentation-only union of every event ID that can reach the relationship card. The
+    /// synthetic arm-care event is included so its localized title and summary have the same
+    /// registry coverage as authored events; gameplay selection continues to use `events` and
+    /// `rebirthEvents` exactly as before.
+    public static let relationshipEvents: [CareerEventContent] = events + rebirthEvents + [
+        .init(
+            id: "evt-arm-care",
+            title: "팔 상태 경고",
+            category: "health",
+            summary: "최근 등판 뒤 팔이 평소보다 무겁습니다. 트레이너가 오늘 어떻게 할지 묻습니다."
+        ),
+    ]
+
     private static func runners(_ first: Bool, _ second: Bool, _ third: Bool, speed: Int) -> BaserunnerStateSnapshot {
         BaserunnerStateSnapshot(firstOccupied: first, secondOccupied: second, thirdOccupied: third, leadRunnerSpeed: speed)
     }

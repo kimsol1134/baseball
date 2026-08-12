@@ -177,13 +177,21 @@ struct ProSeasonDecisionView: View {
     let career: MobileCareerStore
     let decision: ProSeasonDecision
     @State private var pendingChoice: ProSeasonDecisionChoice?
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var decisionTitle: String {
+        if copyResolver.language == .korean {
+            return decision.title
+        }
+        return copyResolver.resolve(decision.type.displayCopyToken)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: .stadiumNight,
                 eyebrow: "\(decision.season)시즌 · \(decision.week)주차 결정",
-                title: decision.title,
+                title: decisionTitle,
                 accent: BaseballTheme.milestone
             )
 
@@ -262,6 +270,7 @@ struct ProSeasonDecisionView: View {
 private struct WeeklyPlanView: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     private struct PlanCopy {
         let plan: ProWeekPlan
@@ -280,6 +289,16 @@ private struct WeeklyPlanView: View {
         case .pennantRace: "페넌트레이스"
         case .seasonFinale, .none: "시즌 막바지"
         }
+    }
+
+    static func localizedSegmentName(
+        _ segment: ProSeasonSegment?,
+        resolver: GameCopyResolver
+    ) -> String {
+        if resolver.language == .korean {
+            return segmentName(segment)
+        }
+        return resolver.resolve((segment ?? .seasonFinale).displayCopyToken)
     }
 
     private static func careerArcName(_ season: Int) -> String {
@@ -407,7 +426,7 @@ private struct WeeklyPlanView: View {
                         set: { career.selectedDevelopmentPitch = $0 }
                     )) {
                         ForEach(breakingBalls, id: \.self) { pitch in
-                            Text(PitchCopy.pitch(pitch)).tag(pitch)
+                            Text(PitchCopy.localized(pitch, resolver: copyResolver)).tag(pitch)
                         }
                     }
                     .pickerStyle(.menu)
@@ -419,7 +438,12 @@ private struct WeeklyPlanView: View {
 
             Button(action: career.advanceSegment) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(Self.segmentName(state.seasonSegment)) 끝까지 진행")
+                    Text(copyResolver.resolve(
+                        AppCopyKey.proWeeklyPlanUntil,
+                        arguments: [
+                            .userText(Self.localizedSegmentName(state.seasonSegment, resolver: copyResolver)),
+                        ]
+                    ))
                         .font(.subheadline.weight(.semibold))
                     Text("승부처 경기·역할 변화·부상이 생기면 그 자리에서 멈춥니다.")
                         .font(.caption)
@@ -543,11 +567,16 @@ private struct ImportantGameIntro: View {
 private struct OffseasonView: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     @State private var pending: OffseasonDecision?
 
     private var service: Int { MobileCareerStore.freeAgencyService(state) }
     private var freeAgencyReady: Bool { service >= 6 }
+
+    private func decisionLabel(_ decision: OffseasonDecision) -> String {
+        copyResolver.resolve(decision.displayCopyToken)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -564,7 +593,7 @@ private struct OffseasonView: View {
             }
 
             OffseasonChoice(
-                title: "현재 구단에 남는다",
+                title: decisionLabel(.continueCareer),
                 detail: "\(state.team.name)에서 선발·불펜 자리 경쟁을 이어 갑니다.",
                 symbol: "arrow.forward.circle",
                 enabled: true,
@@ -572,7 +601,7 @@ private struct OffseasonView: View {
             ) { pending = .continueCareer }
 
             OffseasonChoice(
-                title: "군 복무를 다녀온다",
+                title: decisionLabel(.militaryService),
                 detail: "두 시즌을 비우고 돌아옵니다. 나이가 두 살 늘지만 이후 시즌이 온전해집니다.",
                 symbol: "shield",
                 enabled: !state.militaryCompleted,
@@ -580,7 +609,7 @@ private struct OffseasonView: View {
             ) { pending = .militaryService }
 
             OffseasonChoice(
-                title: "FA를 신청한다",
+                title: decisionLabel(.freeAgency),
                 detail: "다른 구단과 계약해 새 팀에서 다시 시작합니다.",
                 symbol: "arrow.triangle.branch",
                 enabled: freeAgencyReady,
@@ -588,7 +617,7 @@ private struct OffseasonView: View {
             ) { pending = .freeAgency }
 
             OffseasonChoice(
-                title: "은퇴한다",
+                title: decisionLabel(.retire),
                 detail: "여기서 커리어를 마칩니다. 통산 기록과 명예의 전당 점수가 확정됩니다.",
                 symbol: "flag.checkered",
                 enabled: true,

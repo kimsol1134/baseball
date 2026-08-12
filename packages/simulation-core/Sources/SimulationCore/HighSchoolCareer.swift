@@ -2296,6 +2296,23 @@ public struct HighSchoolCareerEngine: Sendable {
         public let band: String
         /// 지금 성적 기준으로 가장 주목하는 구단.
         public let interestedTeam: String
+        /// Ephemeral display identity captured from the same selected team and band. It is not
+        /// Codable and is intentionally outside the simulation commitment.
+        public let presentation: DraftForecastPresentationIdentity?
+
+        public init(
+            score: Int,
+            threshold: Int,
+            band: String,
+            interestedTeam: String,
+            presentation: DraftForecastPresentationIdentity? = nil
+        ) {
+            self.score = score
+            self.threshold = threshold
+            self.band = band
+            self.interestedTeam = interestedTeam
+            self.presentation = presentation
+        }
     }
 
     public static func draftForecast(state: HighSchoolCareerSnapshot) -> DraftForecastSnapshot {
@@ -2303,14 +2320,16 @@ public struct HighSchoolCareerEngine: Sendable {
         let threshold = draftThreshold(state: state)
         // 밴드 경계는 resolveDraft의 라운드 경계와 같다. 경계 ±분산 구간은
         // 정직하게 "당락 경계"라고 말한다 — 예측이 확신을 팔면 안 된다.
-        let band = score >= 78 ? "1라운드 예상"
-            : score >= 70 ? "2~3라운드 예상"
-            : score >= threshold + 5 ? "4~6라운드 예상"
-            : score >= threshold - 5 ? "당락 경계 — 남은 경기가 정한다"
-            : "미지명권 — 아직 명단 밖"
+        let bandID = DraftForecastPresentationCatalog.bandID(score: score, threshold: threshold)
+        let band = DraftForecastPresentationCatalog.descriptor(for: bandID).koreanValue
+        let interestedTeam = bestTeam(for: state.pitcher, seed: 0)
         return DraftForecastSnapshot(
             score: score, threshold: threshold, band: band,
-            interestedTeam: bestTeam(for: state.pitcher, seed: 0).name
+            interestedTeam: interestedTeam.name,
+            presentation: DraftForecastPresentationIdentity(
+                bandID: bandID,
+                interestedTeamID: interestedTeam.id
+            )
         )
     }
 

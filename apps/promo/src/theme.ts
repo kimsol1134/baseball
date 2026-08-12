@@ -17,6 +17,11 @@ export const palette = {
 export const fontStack =
   '"Apple SD Gothic Neo", "Pretendard", -apple-system, system-ui, sans-serif';
 
+/// 일본어 스토어 자산은 macOS에 기본 포함된 히라기노를 우선한다. 한국어용 폰트로
+/// 렌더하면 가나와 한자의 굵기·자간이 흔들려 작은 검색 결과 카드에서 더 거칠게 보인다.
+export const japaneseFontStack =
+  '"Hiragino Sans", "Hiragino Kaku Gothic ProN", -apple-system, system-ui, sans-serif';
+
 /// 영상은 멀리서 본다. 랜딩페이지 스케일을 그대로 쓰면 아무것도 안 읽힌다.
 export const type = {
   display: 108,

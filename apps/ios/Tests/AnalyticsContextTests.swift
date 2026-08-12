@@ -10,6 +10,8 @@ final class AnalyticsContextTests: XCTestCase {
         XCTAssertEqual(context.distribution, .debug)
         XCTAssertEqual(context.environment, .development)
         XCTAssertEqual(context.properties["platform"] as? String, "ios")
+        XCTAssertEqual(context.properties["app_language"] as? String, "ko")
+        XCTAssertEqual(context.properties["copy_schema_version"] as? Int, GameCopySchema.currentVersion)
     }
 
     func testSandboxReceiptIsTestFlightDevelopment() {
@@ -30,6 +32,28 @@ final class AnalyticsContextTests: XCTestCase {
         XCTAssertEqual(context.environment, .production)
         XCTAssertEqual(context.properties["app_version"] as? String, "1.0.2")
         XCTAssertEqual(context.properties["build"] as? String, "42")
+    }
+
+    @MainActor
+    func testLanguageAndCopySchemaAreCommonContextOnly() {
+        let context = AnalyticsContext.resolve(
+            appVersion: "1.0.2", build: "42", isDebug: false,
+            receiptURL: URL(fileURLWithPath: "/StoreKit/receipt"),
+            appLanguage: .english,
+            copySchemaVersion: 7
+        )
+        let payloads = GameAnalytics.payloads(
+            for: ["screen": "career"], context: context
+        )
+
+        XCTAssertEqual(payloads.firebase["app_language"] as? String, "en")
+        XCTAssertEqual(payloads.firebase["copy_schema_version"] as? Int, 7)
+        XCTAssertEqual(payloads.amplitude["app_language"] as? String, "en")
+        XCTAssertEqual(payloads.amplitude["copy_schema_version"] as? Int, 7)
+        XCTAssertNil(payloads.firebase["player_name"])
+        XCTAssertNil(payloads.firebase["copy"])
+        XCTAssertNil(payloads.amplitude["player_name"])
+        XCTAssertNil(payloads.amplitude["copy"])
     }
 
     func testReleaseBuildWithoutReceiptNeverEntersProductionCohort() {
@@ -134,6 +158,10 @@ final class AnalyticsContextTests: XCTestCase {
         XCTAssertEqual(payloads.amplitude["event_schema_version"] as? Int, 2)
         XCTAssertEqual(payloads.amplitude["distribution"] as? String, "app_store")
         XCTAssertEqual(payloads.amplitude["environment"] as? String, "production")
+        XCTAssertEqual(payloads.firebase["app_language"] as? String, "ko")
+        XCTAssertEqual(payloads.firebase["copy_schema_version"] as? Int, GameCopySchema.currentVersion)
+        XCTAssertEqual(payloads.amplitude["app_language"] as? String, "ko")
+        XCTAssertEqual(payloads.amplitude["copy_schema_version"] as? Int, GameCopySchema.currentVersion)
     }
 
     @MainActor

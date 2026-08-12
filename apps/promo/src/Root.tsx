@@ -21,7 +21,10 @@ import { JudgePoster } from "./judge-cut/JudgePoster";
 import {
   ASC_PREVIEW_FRAMES,
   ASC_SHOTS,
+  ASC_SHOTS_JP,
+  ASCPreviewJP,
   ASCPreviewKR,
+  ASCScreenshotsJP,
   ASCScreenshotsKR,
 } from "./asc/StoreCreative";
 
@@ -50,6 +53,30 @@ export const RemotionRoot: React.FC = () => (
         id="ASCScreenshots65KR"
         component={ASCScreenshotsKR}
         durationInFrames={ASC_SHOTS.length}
+        fps={1}
+        width={1284}
+        height={2778}
+      />
+      <Composition
+        id="ASCPreviewJP"
+        component={ASCPreviewJP}
+        durationInFrames={ASC_PREVIEW_FRAMES}
+        fps={30}
+        width={886}
+        height={1920}
+      />
+      <Composition
+        id="ASCScreenshots69JP"
+        component={ASCScreenshotsJP}
+        durationInFrames={ASC_SHOTS_JP.length}
+        fps={1}
+        width={1320}
+        height={2868}
+      />
+      <Composition
+        id="ASCScreenshots65JP"
+        component={ASCScreenshotsJP}
+        durationInFrames={ASC_SHOTS_JP.length}
         fps={1}
         width={1284}
         height={2778}

@@ -14,6 +14,10 @@
     "render:asc-screenshots:67": "node scripts/render-asc-screenshots.mjs ASCScreenshots67KR out/asc/screenshots-6.7 7",
     "render:asc-screenshots:65": "node scripts/render-asc-screenshots.mjs ASCScreenshots65KR out/asc/screenshots-6.5 7",
     "render:asc": "npm run render:asc-preview && npm run render:asc-screenshots:67 && npm run render:asc-screenshots:65",
+    "render:asc-preview:jp": "remotion render ASCPreviewJP out/asc/ja-JP/preview/preview-ja-886x1920.mp4 --codec=h264 --video-bitrate=10M --audio-codec=aac --audio-bitrate=256k --sample-rate=48000",
+    "render:asc-screenshots:69:jp": "node scripts/render-asc-screenshots.mjs ASCScreenshots69JP out/asc/ja-JP/screenshots-6.9 7",
+    "render:asc-screenshots:65:jp": "node scripts/render-asc-screenshots.mjs ASCScreenshots65JP out/asc/ja-JP/screenshots-6.5 7",
+    "render:asc:jp": "npm run render:asc-preview:jp && npm run render:asc-screenshots:69:jp && npm run render:asc-screenshots:65:jp",
     "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=20",
     "render:loop": "remotion render HeroLoop out/hero-loop.mp4 --codec=h264 --crf=23",
     "render:poster": "remotion still Trailer out/poster.png --frame=300"

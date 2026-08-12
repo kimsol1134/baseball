@@ -14,6 +14,7 @@ import SwiftUI
 /// (`beginNextLife`, 계승분이 남아 있다) 나오지 않는다. 상태가 곧 조건이라 어긋날 자리가 없다.
 struct OpeningView: View {
     let onStart: () -> Void
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         GeometryReader { proxy in
@@ -42,25 +43,29 @@ struct OpeningView: View {
                     .ignoresSafeArea(edges: .top)
 
                 VStack(alignment: .leading, spacing: 16) {
-                Text("고교 3년, 한 번의 드래프트").eyebrowStyle(BaseballTheme.action)
+                    GameCopyText(AppCopyKey.openingEyebrow).eyebrowStyle(BaseballTheme.action)
 
-                Text("야구 못하면 또 환생함")
-                    .font(BaseballType.display)
-                    .foregroundStyle(BaseballTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    GameCopyText(.appTitle)
+                        .font(BaseballType.display)
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                Text("당신은 고교 투수입니다.\n3년 안에 프로 지명을 받아야 합니다.")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    GameCopyText(AppCopyKey.openingSummary)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                Text("모든 경기를 던지지 않습니다. 결과를 바꿀 수 있는 순간에만 마운드에 오릅니다.")
-                    .font(.subheadline)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    GameCopyText(AppCopyKey.openingDescription)
+                        .font(.subheadline)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                PrimaryPill(title: "시작하기", identifier: "hs.opening.start", action: onStart)
-            }
+                    PrimaryPill(
+                        title: copyResolver.resolve(AppCopyKey.openingStart),
+                        identifier: "hs.opening.start",
+                        action: onStart
+                    )
+                }
                 .padding(BaseballMetrics.gutter)
                 .padding(.bottom, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)

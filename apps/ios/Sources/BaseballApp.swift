@@ -126,16 +126,16 @@ struct BaseballApp: App {
     /// 국면과 프로 시즌을 사용한다.
     private func currentReturnPlan() -> DailyReminder.Plan? {
         if pro.loadState == .ready, let state = pro.state, state.phase != .completed {
-            let detail: String
+            let bodyKey: GameCopyKey
             switch state.phase {
-            case .seasonDecision: detail = "이번 시즌의 중요한 선택을 직접 결정할 차례입니다."
-            case .importantGame: detail = "중요한 경기의 다음 타자를 이어서 상대하세요."
-            case .retirementDecision: detail = "이 선수의 마지막 결정을 직접 내려 주세요."
-            default: detail = "프로 시즌의 다음 주를 이어서 보내세요."
+            case .seasonDecision: bodyKey = AppCopyKey.returnPlanBodyProSeasonDecision
+            case .importantGame: bodyKey = AppCopyKey.returnPlanBodyProImportantGame
+            case .retirementDecision: bodyKey = AppCopyKey.returnPlanBodyProRetirement
+            default: bodyKey = AppCopyKey.returnPlanBodyProDefault
             }
-            return DailyReminder.Plan(
-                title: "프로 시즌의 다음 선택",
-                body: detail,
+            return Self.makeReturnPlan(
+                titleKey: AppCopyKey.returnPlanTitlePro,
+                bodyKey: bodyKey,
                 destination: .pro,
                 reason: "pro_phase"
             )
@@ -150,9 +150,10 @@ struct BaseballApp: App {
                 let progress = pledge.progress(in: .init(
                     state: state, rivalLedger: highSchool.rivalLedger
                 ))
-                return DailyReminder.Plan(
-                    title: "이번 선수의 목표가 남아 있습니다",
-                    body: "\(pledge.title) · \(progress.line) — 이어서 완성해 보세요.",
+                return Self.makeReturnPlan(
+                    titleKey: AppCopyKey.returnPlanTitlePledge,
+                    bodyKey: AppCopyKey.returnPlanBodyPledge,
+                    bodyArguments: [.userText(pledge.title), .userText(progress.line)],
                     destination: .highSchool,
                     reason: "run_pledge"
                 )
@@ -161,17 +162,18 @@ struct BaseballApp: App {
             if (state.phase == .legacy || state.phase == .completed),
                let intent = highSchool.nextRunIntent,
                let pledge = RunPledge.pledge(id: intent.pledgeID) {
-                return DailyReminder.Plan(
-                    title: "다음 선수의 목표가 기다립니다",
-                    body: "\(pledge.title) — 지난 3년의 아쉬움을 새 선수로 이어 보세요.",
+                return Self.makeReturnPlan(
+                    titleKey: AppCopyKey.returnPlanTitleNextPlayer,
+                    bodyKey: AppCopyKey.returnPlanBodyNextPlayer,
+                    bodyArguments: [.userText(pledge.title)],
                     destination: .highSchool,
                     reason: "next_run_intent"
                 )
             }
 
-            return DailyReminder.Plan(
-                title: "이번 선수의 3년을 이어가세요",
-                body: Self.highSchoolReturnDetail(for: state.phase),
+            return Self.makeReturnPlan(
+                titleKey: AppCopyKey.returnPlanTitleHighSchoolPhase,
+                bodyKey: Self.returnPlanBodyKey(for: state.phase),
                 destination: .highSchool,
                 reason: "high_school_phase"
             )
@@ -179,9 +181,10 @@ struct BaseballApp: App {
 
         if let intent = highSchool.nextRunIntent,
            let pledge = RunPledge.pledge(id: intent.pledgeID) {
-            return DailyReminder.Plan(
-                title: "다음 선수의 목표가 기다립니다",
-                body: "\(pledge.title) — 지난 3년의 아쉬움을 새 선수로 이어 보세요.",
+            return Self.makeReturnPlan(
+                titleKey: AppCopyKey.returnPlanTitleNextPlayer,
+                bodyKey: AppCopyKey.returnPlanBodyNextPlayer,
+                bodyArguments: [.userText(pledge.title)],
                 destination: .highSchool,
                 reason: "next_run_intent"
             )
@@ -191,28 +194,62 @@ struct BaseballApp: App {
 
     /// 복귀 카드가 약속하는 문장은 현재 화면의 실제 주 행동과 같아야 한다.
     static func highSchoolReturnDetail(for phase: HighSchoolCareerPhase) -> String {
+        GameCopyResolver(language: .korean, policy: .releaseSafe)
+            .resolve(returnPlanBodyKey(for: phase))
+    }
+
+    private static func returnPlanBodyKey(for phase: HighSchoolCareerPhase) -> GameCopyKey {
         switch phase {
-        case .prologue:
-            "감독이 기다립니다. 불펜에서 첫 공을 던질 차례입니다."
-        case .schoolSelection:
-            "새 선수의 학교와 성장 방향을 정할 차례입니다."
-        case .training:
-            "다음 훈련으로 직접 키운 능력을 한 단계 더 올려 보세요."
-        case .relationship:
-            "다음 선택이 선수의 관계와 성장 방향을 바꿉니다."
-        case .importantGame:
-            "고교 공식 경기의 다음 타자를 이어서 상대하세요."
-        case .awakening:
-            "새 능력을 직접 고를 중요한 순간이 기다립니다."
-        case .chapterReview:
-            "이번 학기의 성장 결과와 다음 목표를 확인하세요."
-        case .draft:
-            "직접 키운 선수의 드래프트 결과를 확인할 차례입니다."
-        case .legacy:
-            "지난 선수가 남긴 대표 능력을 다음 선수에게 이어 주세요."
-        case .completed:
-            "지난 선수의 유산을 안고 새 선수를 시작해 보세요."
+        case .prologue: AppCopyKey.returnPlanBodyPrologue
+        case .schoolSelection: AppCopyKey.returnPlanBodySchoolSelection
+        case .training: AppCopyKey.returnPlanBodyTraining
+        case .relationship: AppCopyKey.returnPlanBodyRelationship
+        case .importantGame: AppCopyKey.returnPlanBodyImportantGame
+        case .awakening: AppCopyKey.returnPlanBodyAwakening
+        case .chapterReview: AppCopyKey.returnPlanBodyChapterReview
+        case .draft: AppCopyKey.returnPlanBodyDraft
+        case .legacy: AppCopyKey.returnPlanBodyLegacy
+        case .completed: AppCopyKey.returnPlanBodyCompleted
         }
+    }
+
+    private static func makeReturnPlan(
+        titleKey: GameCopyKey,
+        titleArguments: [LocalizedCopyArgument] = [],
+        bodyKey: GameCopyKey,
+        bodyArguments: [LocalizedCopyArgument] = [],
+        destination: DailyReminder.Destination,
+        reason: String
+    ) -> DailyReminder.Plan {
+        let titleToken = LocalizedCopyToken(key: titleKey, arguments: titleArguments)
+        let bodyToken = LocalizedCopyToken(key: bodyKey, arguments: bodyArguments)
+        let koreanResolver = GameCopyResolver(language: .korean, policy: .releaseSafe)
+        return DailyReminder.Plan(
+            title: koreanResolver.resolve(titleToken),
+            body: koreanResolver.resolve(bodyToken),
+            destination: destination,
+            reason: reason,
+            copyReferences: DailyReminder.NotificationCopyReferences(
+                title: semanticReference(for: titleToken),
+                body: semanticReference(for: bodyToken)
+            )
+        )
+    }
+
+    private static func semanticReference(
+        for token: LocalizedCopyToken
+    ) -> DailyReminder.SemanticCopyReference {
+        DailyReminder.SemanticCopyReference(
+            key: token.key.rawValue,
+            arguments: token.arguments.map { argument in
+                switch argument {
+                case .userText(let value): .userText(value)
+                case .contentID(let value): .contentID(value)
+                case .integer(let value): .integer(value)
+                case .decimal(let value): .decimal(value)
+                }
+            }
+        )
     }
 
     var body: some Scene {
@@ -226,6 +263,7 @@ struct BaseballApp: App {
                 // 디자인 시스템은 다크 전용이다(design-system.css의 `color-scheme: dark`).
                 // 기기 설정을 따라가면 라이트 모드에서 "Midnight Dugout" 방향이 통째로 사라진다.
                 .preferredColorScheme(.dark)
+                .environment(\.gameCopyResolver, GameCopyResolver())
                 .task {
                     let arguments = ProcessInfo.processInfo.arguments
                     if arguments.contains(Self.promoLaunchArgument) {

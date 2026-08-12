@@ -39,6 +39,7 @@ struct DeliveryControl: View {
     var onMeterEdge: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.gameCopyResolver) private var copyResolver
     /// 접근성 글자 크기에서 안내 문구가 커지면 92pt 고정 패드 안에서 겹친다 —
     /// 패드가 글자를 따라 자란다(3차 패널 P1, Dynamic Type).
     @ScaledMetric(relativeTo: .body) private var padHeight: CGFloat = 92
@@ -130,7 +131,7 @@ struct DeliveryControl: View {
     private var manual: some View {
         VStack(spacing: 10) {
             HStack {
-                Text("\(PitchCopy.pitch(pitchType)) 릴리스")
+                Text("\(PitchCopy.localized(pitchType, resolver: copyResolver)) 릴리스")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(BaseballTheme.textSecondary)
                 Spacer(minLength: 0)

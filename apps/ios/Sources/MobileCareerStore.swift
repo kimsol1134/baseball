@@ -31,10 +31,34 @@ final class MobileCareerStore {
 
     /// 능력이 오른 항목. 성장 연출이 이 목록을 그대로 보여 준다.
     struct AbilityGain: Identifiable, Equatable {
-        var id: String { label }
-        let label: String
+        var id: String { ability.rawValue }
+        /// Stable semantic identity. `label` remains as a Korean compatibility view for existing
+        /// Korean-only surfaces; localized UI must resolve `ability.displayCopyToken` instead.
+        let ability: TalentAbility
         let before: Int
         let after: Int
+
+        init(ability: TalentAbility, before: Int, after: Int) {
+            self.ability = ability
+            self.before = before
+            self.after = after
+        }
+
+        /// Source compatibility for the existing Korean-only test/helpers. New UI code must
+        /// construct gains from the closed enum identity above, never from rendered text.
+        init(label: String, before: Int, after: Int) {
+            self.ability = switch label {
+            case "구위": .stuff
+            case "제구": .command
+            case "변화구": .movement
+            case "체력": .stamina
+            default: .command
+            }
+            self.before = before
+            self.after = after
+        }
+
+        var label: String { ability.label }
     }
 
     var loadState: LoadState = .loading
@@ -752,13 +776,13 @@ final class MobileCareerStore {
     nonisolated static func gains(before: PitcherSnapshot?, after: PitcherSnapshot) -> [AbilityGain] {
         guard let before else { return [] }
         let pairs = [
-            ("구위", before.stuff, after.stuff),
-            ("제구", before.command, after.command),
-            ("변화구", before.movement, after.movement),
-            ("체력", before.stamina, after.stamina)
+            (TalentAbility.stuff, before.stuff, after.stuff),
+            (TalentAbility.command, before.command, after.command),
+            (TalentAbility.movement, before.movement, after.movement),
+            (TalentAbility.stamina, before.stamina, after.stamina)
         ]
-        return pairs.compactMap { label, from, to in
-            to > from ? AbilityGain(label: label, before: from, after: to) : nil
+        return pairs.compactMap { ability, from, to in
+            to > from ? AbilityGain(ability: ability, before: from, after: to) : nil
         }
     }
 
@@ -773,12 +797,7 @@ final class MobileCareerStore {
     }
 
     nonisolated static func roleName(_ role: ProRole) -> String {
-        switch role {
-        case .starter: "선발"
-        case .longRelief: "긴 이닝 구원"
-        case .setup: "필승조"
-        case .closer: "마무리"
-        }
+        GameCopyResolver(language: .korean, policy: .releaseSafe).resolve(role.displayCopyToken)
     }
 
 }

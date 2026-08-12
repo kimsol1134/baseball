@@ -19,4 +19,35 @@ final class TournamentBracketTests: XCTestCase {
         XCTAssertTrue([2, 4, 6, 8].allSatisfy(TournamentBracket.isTournamentChapter))
         XCTAssertFalse(TournamentBracket.isTournamentChapter(3))
     }
+
+    func testRelevantChapterFieldsStayRawAndPresentationInventoryCoversEveryEmittedOpponent() {
+        var emittedOpponents = Set<String>()
+        for careerID in (0..<128).map(String.init) {
+            for chapter in [2, 4, 6, 8] {
+                let field = TournamentBracket.field(
+                    careerID: careerID,
+                    chapterNumber: chapter,
+                    playerSchool: "서울덕성고"
+                )
+                XCTAssertEqual(field.schools.count, 8)
+                XCTAssertEqual(Set(field.schools).count, 8)
+                XCTAssertTrue(field.schools.contains("서울덕성고"))
+                XCTAssertEqual(
+                    field.playerRound,
+                    chapter >= 8 ? "결승" : chapter >= 6 ? "준결승" : "8강"
+                )
+                emittedOpponents.formUnion(field.schools.filter { $0 != "서울덕성고" })
+                XCTAssertNotNil(TournamentPresentationCatalog.tournamentNameDescriptor(for: chapter))
+                XCTAssertNotNil(TournamentPresentationCatalog.roundDescriptor(for: field.playerRound))
+            }
+        }
+
+        XCTAssertEqual(
+            emittedOpponents,
+            Set(TournamentPresentationCatalog.opponentSchoolDescriptors.map(\.rawSchoolName))
+        )
+        for rawSchool in emittedOpponents {
+            XCTAssertNotNil(TournamentPresentationCatalog.opponentSchoolDescriptor(for: rawSchool))
+        }
+    }
 }

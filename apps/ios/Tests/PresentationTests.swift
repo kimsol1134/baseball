@@ -221,4 +221,61 @@ final class PresentationTests: XCTestCase {
             "기준 구속 132.7킬로미터, 코스 57, 움직임 66, 체력 58, 피로 0에서 체감 0, 한 구 팔 부담 1. 변화구형 시너지 · 움직임과 범타를 살립니다."
         )
     }
+
+    func testRelationshipScenePrefersAuthoredQuoteWithoutVisibleSummaryDuplication() {
+        let presentation = RelationshipCardPresentationPolicy.scene(
+            quote: "네 공을 먼저 믿어 보겠다.",
+            summary: "감독이 다음 등판 역할을 설명합니다."
+        )
+
+        XCTAssertEqual(presentation.visibleLine, "네 공을 먼저 믿어 보겠다.")
+        XCTAssertEqual(
+            presentation.accessibilitySummary,
+            "감독이 다음 등판 역할을 설명합니다.",
+            "보이지 않는 요약은 보조 기술에는 장면 맥락으로 남아야 합니다."
+        )
+    }
+
+    func testRelationshipSceneFallsBackToSummaryWhenQuoteIsMissing() {
+        let presentation = RelationshipCardPresentationPolicy.scene(
+            quote: "  \n",
+            summary: "포수가 사인이 엇갈린 이유를 묻습니다."
+        )
+
+        XCTAssertEqual(presentation.visibleLine, "포수가 사인이 엇갈린 이유를 묻습니다.")
+        XCTAssertEqual(presentation.accessibilitySummary, "")
+    }
+
+    func testRelationshipChoiceShowsOnlyTitleAndKeepsDetailAccessible() {
+        let presentation = RelationshipCardPresentationPolicy.choice(
+            title: "먼저 듣는다",
+            detail: "포수의 설명을 끝까지 듣고 믿음을 쌓습니다."
+        )
+
+        XCTAssertEqual(presentation.visibleLine, "먼저 듣는다")
+        XCTAssertEqual(
+            presentation.accessibilityDetail,
+            "포수의 설명을 끝까지 듣고 믿음을 쌓습니다."
+        )
+    }
+
+    /// `f74bff6`에서 제거한 전면 암전 커튼을 실수로 다시 붙이지 않는다.
+    /// 실제 프레임은 UI 테스트가 별도로 검증하고, 이 테스트는 원인이었던
+    /// 수식어가 다시 들어오는 순간 빠르게 막는다.
+    func testCareerPhaseFlowDoesNotInstallOpaquePhaseCurtain() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf: repositoryRoot.appendingPathComponent(
+                "apps/ios/Sources/HighSchoolCareerView.swift"
+            ),
+            encoding: .utf8
+        )
+
+        XCTAssertFalse(source.contains(".phaseCurtain("))
+        XCTAssertFalse(source.contains("struct PhaseCurtain"))
+    }
 }

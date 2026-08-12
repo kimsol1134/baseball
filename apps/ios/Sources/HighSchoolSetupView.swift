@@ -12,30 +12,38 @@ import SimulationCore
 /// 그래서 단계로 쪼갠다. 한 단계에는 질문 하나와 그 질문에 답하는 것만 있다.
 /// 첫 회차는 세 단계(이름 → 지역 → 투수 유형), 2회차부터 네 단계(+ 난이도·핸디캡)다.
 struct HighSchoolSetupView: View {
-    /// 지역의 한 줄 성격. 실제 지역 야구 문화의 인상을 빌린 가상 묘사다.
-    static let regionFlavor: [String: String] = [
-        "서울": "스카우트가 가장 자주 오는 무대",
-        "인천": "바닷바람 속 끈질긴 야구",
-        "수원": "신흥 명문들의 각축전",
-        "대전": "뚝심의 원포인트 승부",
-        "광주": "타격의 고장, 투수엔 시련",
-        "대구": "더위를 이기는 근성",
-        "부산": "함성이 가장 큰 관중석",
-        "창원": "짜임새 있는 수비 야구",
-        "울산": "묵묵히 던지는 공업 도시",
-        "세종": "역사가 짧아 기회가 많다",
-        "경기": "팀 수가 가장 많은 격전지",
-        "강원": "산바람에 단련된 어깨",
-        "충북": "조용히 강한 다크호스",
-        "충남": "전통 강호의 자존심",
-        "전북": "거친 바람의 홈그라운드",
-        "전남": "느리게, 그러나 확실하게",
-        "경북": "전통과 자부심의 명문가",
-        "경남": "남쪽 끝의 탄탄한 전력",
-        "제주": "가장 먼 곳에서 온 유망주",
+    let career: HighSchoolCareerStore
+
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    /// These arrays follow the engine's stable region order. The stored region IDs remain the
+    /// Korean-world identifiers used by simulation and persistence; only their display copy is
+    /// localized here.
+    private static let regionNameKeys: [GameCopyKey] = [
+        AppCopyKey.setupRegionSeoulName, AppCopyKey.setupRegionIncheonName,
+        AppCopyKey.setupRegionSuwonName, AppCopyKey.setupRegionDaejeonName,
+        AppCopyKey.setupRegionGwangjuName, AppCopyKey.setupRegionDaeguName,
+        AppCopyKey.setupRegionBusanName, AppCopyKey.setupRegionChangwonName,
+        AppCopyKey.setupRegionUlsanName, AppCopyKey.setupRegionSejongName,
+        AppCopyKey.setupRegionGyeonggiName, AppCopyKey.setupRegionGangwonName,
+        AppCopyKey.setupRegionChungbukName, AppCopyKey.setupRegionChungnamName,
+        AppCopyKey.setupRegionJeonbukName, AppCopyKey.setupRegionJeonnamName,
+        AppCopyKey.setupRegionGyeongbukName, AppCopyKey.setupRegionGyeongnamName,
+        AppCopyKey.setupRegionJejuName,
     ]
 
-    let career: HighSchoolCareerStore
+    private static let regionFlavorKeys: [GameCopyKey] = [
+        AppCopyKey.setupRegionSeoulFlavor, AppCopyKey.setupRegionIncheonFlavor,
+        AppCopyKey.setupRegionSuwonFlavor, AppCopyKey.setupRegionDaejeonFlavor,
+        AppCopyKey.setupRegionGwangjuFlavor, AppCopyKey.setupRegionDaeguFlavor,
+        AppCopyKey.setupRegionBusanFlavor, AppCopyKey.setupRegionChangwonFlavor,
+        AppCopyKey.setupRegionUlsanFlavor, AppCopyKey.setupRegionSejongFlavor,
+        AppCopyKey.setupRegionGyeonggiFlavor, AppCopyKey.setupRegionGangwonFlavor,
+        AppCopyKey.setupRegionChungbukFlavor, AppCopyKey.setupRegionChungnamFlavor,
+        AppCopyKey.setupRegionJeonbukFlavor, AppCopyKey.setupRegionJeonnamFlavor,
+        AppCopyKey.setupRegionGyeongbukFlavor, AppCopyKey.setupRegionGyeongnamFlavor,
+        AppCopyKey.setupRegionJejuFlavor,
+    ]
 
     /// 설정 단계. 순서가 곧 화면 순서다.
     private enum Step: Int, CaseIterable {
@@ -44,7 +52,11 @@ struct HighSchoolSetupView: View {
 
     @State private var step: Step = .name
     @State private var playerName = ""
-    @State private var selectedRegion = "서울"
+    /// A localized system suggestion is display-only. Keep it separate from user text so the
+    /// save/presentation boundary can still submit an empty name and let the engine choose the
+    /// preset's language-neutral default.
+    @State private var isSystemSuggestedName = false
+    @State private var selectedRegion = HighSchoolCareerEngine.regions.first ?? ""
     @State private var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
     @State private var selectedKarmas: Set<KarmaID> = []
     /// 계승한 야구혼을 어디에 붓는가. 2회차부터만 고른다.
@@ -70,15 +82,28 @@ struct HighSchoolSetupView: View {
     @ViewBuilder private var quickRebirthCard: some View {
         if isRebirth, seedInput.isEmpty, let last = career.lastSetup,
            let preset = presets.first(where: { $0.id == last.presetID }) {
-            BaseballCard(title: "바로 환생", tone: .raised) {
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.setupQuickRebirthTitle), tone: .raised) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("\(last.playerName.isEmpty ? preset.pitcher.name : last.playerName) · \(last.region) · 지난 선수와 같은 설정")
+                    GameCopyText(
+                        AppCopyKey.setupQuickRebirthSummary,
+                        arguments: [
+                            .userText(Self.localizedQuickRebirthPlayerName(
+                                last.playerName,
+                                preset: preset,
+                                resolver: copyResolver
+                            )),
+                            .userText(Self.localizedRegionName(last.region, resolver: copyResolver)),
+                        ]
+                    )
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
-                    PrimaryPill(title: "같은 설정으로 다시 태어나기", identifier: "hs.setup.quickRebirth") {
+                    PrimaryPill(
+                        title: copyResolver.resolve(AppCopyKey.setupQuickRebirthAction),
+                        identifier: "hs.setup.quickRebirth"
+                    ) {
                         career.startQuickRebirth(entryPoint: "quick_rebirth")
                     }
-                    Text("계승 상점을 쓰려면 아래에서 단계대로 진행하세요.")
+                    GameCopyText(AppCopyKey.setupQuickRebirthHint)
                         .font(.caption2)
                         .foregroundStyle(BaseballTheme.textTertiary)
                 }
@@ -135,7 +160,22 @@ struct HighSchoolSetupView: View {
     }
 
     /// 이름을 비워 둔 채로 넘어가면 이 이름으로 시작한다.
-    private var suggestedName: String { selectedPreset?.pitcher.name ?? "이름" }
+    private var suggestedName: String {
+        guard let selectedPreset else { return copyResolver.resolve(AppCopyKey.setupNameDefault) }
+        return copyResolver.resolve(selectedPreset.defaultPlayerNameCopyToken)
+    }
+
+    /// The field shows the localized system suggestion after the suggestion action, but that
+    /// value must never cross into the stored player identity as user text.
+    private var nameFieldBinding: Binding<String> {
+        Binding(
+            get: { isSystemSuggestedName ? suggestedName : playerName },
+            set: { newValue in
+                isSystemSuggestedName = false
+                playerName = newValue
+            }
+        )
+    }
 
     /// 입력에서 숫자와 하이픈만 남긴다. 카드 각인("도전 12345-4")을 스크린샷에서
     /// 그대로 옮겨 적어도 열려야 한다 — 접두어·공백에 파서가 까다로우면
@@ -157,7 +197,7 @@ struct HighSchoolSetupView: View {
     private var seedFieldError: String? {
         guard !seedInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
         if UInt64(normalizedSeedInput) != nil || parsedChallenge != nil { return nil }
-        return "숫자 시드나 카드에 적힌 공유 코드를 그대로 입력해 주세요."
+        return copyResolver.resolve(AppCopyKey.setupSeedError)
     }
 
     var body: some View {
@@ -206,8 +246,12 @@ struct HighSchoolSetupView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Text(isRebirth ? "\(career.inheritance.lifeNumber)번째 선수 · \(stepIndex + 1) / \(steps.count)"
-                     : "선수 만들기 · \(stepIndex + 1) / \(steps.count)")
+                GameCopyText(
+                    isRebirth ? AppCopyKey.setupProgressRebirth : AppCopyKey.setupProgressFirst,
+                    arguments: isRebirth
+                        ? [.integer(career.inheritance.lifeNumber), .integer(stepIndex + 1), .integer(steps.count)]
+                        : [.integer(stepIndex + 1), .integer(steps.count)]
+                )
                     .eyebrowStyle(BaseballTheme.action)
                 Spacer()
             }
@@ -231,18 +275,22 @@ struct HighSchoolSetupView: View {
 
     private var nameStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            Text(isRebirth ? "다시 태어날 이름을 정하세요" : "선수의 이름을 정하세요")
+            GameCopyText(isRebirth ? AppCopyKey.setupNameTitleRebirth : AppCopyKey.setupNameTitleFirst)
                 .font(.title.bold())
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("고교 3년 동안 이 이름으로 불립니다.")
+            GameCopyText(AppCopyKey.setupNameDescription)
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)
 
             // 입력칸이 화면에서 가장 큰 요소다. 여기가 지금 할 일이라는 뜻이다.
             VStack(alignment: .leading, spacing: 8) {
-                TextField(suggestedName, text: $playerName)
+                TextField(
+                    copyResolver.resolve(AppCopyKey.setupNameDefault),
+                    text: nameFieldBinding,
+                    prompt: Text(verbatim: suggestedName)
+                )
                     .font(.system(.title, design: .default, weight: .bold))
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -260,10 +308,15 @@ struct HighSchoolSetupView: View {
             .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
 
             Button {
-                playerName = suggestedName
+                playerName = ""
+                isSystemSuggestedName = true
                 nameFocused = false
             } label: {
-                Label("\(suggestedName) 쓰기", systemImage: "wand.and.stars")
+                Label {
+                    GameCopyText(AppCopyKey.setupNameSuggestionAction, arguments: [.userText(suggestedName)])
+                } icon: {
+                    Image(systemName: "wand.and.stars")
+                }
                     .font(.footnote.weight(.semibold))
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
             }
@@ -273,23 +326,29 @@ struct HighSchoolSetupView: View {
 
             // 시드로 시작 — 커뮤니티 도전("이 시드로 5회차 안에 지명?")의 입구.
             // 대부분은 안 쓰므로 눈에 띄지 않게 한 줄만.
-            TextField("시드 또는 카드 공유 코드 (선택)", text: $seedInput)
+            TextField(copyResolver.resolve(AppCopyKey.setupSeedPlaceholder), text: $seedInput)
                 .font(.footnote.monospaced())
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.numbersAndPunctuation)
                 .accessibilityIdentifier("hs.setup.seed")
             if let error = seedFieldError {
-                Text(error)
+                GameCopyText(verbatim: error)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
             } else if let challenge = parsedChallenge {
-                Text("기록 없는 도전 — \(challenge.lifeNumber)번째 선수와 같은 조건을 계승 도움 없이 엽니다. 결과는 선수 기록·계승 포인트에 남지 않습니다.")
+                GameCopyText(
+                    AppCopyKey.setupSeedChallengeSummary,
+                    arguments: [.integer(challenge.lifeNumber)]
+                )
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.milestone)
                     .fixedSize(horizontal: false, vertical: true)
             } else if !seedInput.isEmpty {
-                Text("숫자만 입력하면 지금 만들 \(career.inheritance.lifeNumber)번째 선수의 조건입니다. 카드와 똑같이 도전하려면 카드의 공유 코드를 입력하세요.")
+                GameCopyText(
+                    AppCopyKey.setupSeedSummary,
+                    arguments: [.integer(career.inheritance.lifeNumber)]
+                )
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -306,7 +365,7 @@ struct HighSchoolSetupView: View {
                     .frame(height: 170)
                     .clipShape(RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
                     .overlay(alignment: .bottomLeading) {
-                        Text("이 이름이 3년 동안 이 구장에서 불립니다.")
+                        GameCopyText(AppCopyKey.setupStadiumCaption)
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .padding(10)
@@ -333,18 +392,31 @@ struct HighSchoolSetupView: View {
                 .frame(height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
                 .overlay(alignment: .bottomLeading) {
-                    Text("전생의 기억이 새 이름을 기다립니다.")
+                    GameCopyText(AppCopyKey.setupRebirthCaption)
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textSecondary)
                         .padding(10)
                 }
                 .accessibilityHidden(true)
-            BaseballCard(title: "가져온 것", tone: .milestone) {
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.setupInheritanceTitle), tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("계승 포인트 \(career.inheritance.soulPoints)").font(.subheadline.bold().monospacedDigit())
+                    GameCopyText(
+                        AppCopyKey.setupInheritancePoints,
+                        arguments: [.integer(career.inheritance.soulPoints)]
+                    )
+                        .font(.subheadline.bold().monospacedDigit())
                     // 정직한 계승 안내 — 고교·주간에서 모은 자동 누적과 프로 보너스를
                     // 포함한 지갑은 다르다. 화면에서도 한 숫자로 섞지 않는다.
-                    Text("지난 선수들이 남긴 누적 포인트 중 이번 선수 능력에 자동 성장 +\(HighSchoolCareerEngine.appliedInheritance(for: career.inheritance.automaticSoulTotal, storedRulesVersion: career.inheritance.inheritanceRulesVersion)) · 계승 상점에서 쓸 수 있는 포인트 \(remainingSoul)")
+                    GameCopyText(
+                        AppCopyKey.setupInheritanceAutomaticGrowth,
+                        arguments: [
+                            .integer(HighSchoolCareerEngine.appliedInheritance(
+                                for: career.inheritance.automaticSoulTotal,
+                                storedRulesVersion: career.inheritance.inheritanceRulesVersion
+                            )),
+                            .integer(remainingSoul),
+                        ]
+                    )
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                     // 다음 계단을 함께 적는다. "24혼 모았는데 +1"만 있으면 정직해도
@@ -353,33 +425,43 @@ struct HighSchoolSetupView: View {
                         for: career.inheritance.automaticSoulTotal,
                         storedRulesVersion: career.inheritance.inheritanceRulesVersion
                     ) {
-                        Text("계승 포인트 \(step.soulPoints)P를 모으면 +\(step.applied) · 최대 +20")
+                        GameCopyText(
+                            AppCopyKey.setupInheritanceNextStep,
+                            arguments: [.integer(step.soulPoints), .integer(step.applied)]
+                        )
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.action)
                             .accessibilityIdentifier("hs.inheritance.next")
                     } else {
-                        Text("자동 성장은 최대치(+20)에 닿았습니다.")
+                        GameCopyText(AppCopyKey.setupInheritanceMaxed)
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.action)
                             .accessibilityIdentifier("hs.inheritance.next")
                     }
                     if career.inheritance.memories.isEmpty, selectedSignatureLegacy == nil {
-                        Text("가져온 기억이 없습니다.").font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                        GameCopyText(AppCopyKey.setupInheritanceEmptyMemories)
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
                     } else if !career.inheritance.memories.isEmpty {
                         ForEach(career.inheritance.memories, id: \.self) { memory in
                             let copy = HighSchoolPresentation.memory(memory)
                             HStack(spacing: 8) {
                                 ArtThumb(assetName: "MemoryArt-\(memory.rawValue)", size: 34, cornerRadius: 7)
-                                Text(copy.title).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                                GameCopyText(verbatim: copy.title)
+                                    .font(.footnote)
+                                    .foregroundStyle(BaseballTheme.textSecondary)
                             }
                         }
                     }
                     if let legacy = selectedSignatureLegacy {
                         Divider()
-                        Text("대표 유산 · \(legacy.title)")
+                        GameCopyText(
+                            AppCopyKey.setupInheritanceLegacy,
+                            arguments: [.userText(legacy.title)]
+                        )
                             .font(.footnote.weight(.bold))
                             .foregroundStyle(BaseballTheme.milestone)
-                        Text(Self.signatureLegacyEffectLine(legacy.effect))
+                        GameCopyText(verbatim: Self.localizedSignatureLegacyEffectLine(legacy.effect, resolver: copyResolver))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textSecondary)
                     }
@@ -401,9 +483,9 @@ struct HighSchoolSetupView: View {
     /// 영혼 상점 — 상한 너머의 야구혼이 처음으로 흘러갈 배수구.
     /// 스탯이 아니라 규칙을 판다: 재능 돌파·기억 확장·조기 성장·성장 리듬.
     private var soulShopCard: some View {
-        BaseballCard(title: "계승 상점", tone: .raised) {
+        BaseballCard(title: copyResolver.resolve(AppCopyKey.setupInheritanceShopTitle), tone: .raised) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("계승 포인트는 이전 선수의 커리어가 다음 선수에게 남긴 보상입니다. 여기서 이번 고교 3년에 적용할 규칙을 사고, 이미 쌓인 자동 성장 보너스는 줄지 않습니다.")
+                GameCopyText(AppCopyKey.setupInheritanceShopDescription)
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -418,12 +500,22 @@ struct HighSchoolSetupView: View {
                             Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(selected ? BaseballTheme.milestone : affordable ? BaseballTheme.textSecondary : BaseballTheme.border)
                             VStack(alignment: .leading, spacing: 1) {
-                                let copy = Self.boostCopy(boost, baseSlots: selectedKarmas.contains(.erasedMemory) ? 2 : 3)
-                                Text(copy.title).font(.subheadline.weight(.semibold))
-                                Text(copy.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                                let copy = Self.localizedBoostCopy(
+                                    boost,
+                                    baseSlots: selectedKarmas.contains(.erasedMemory) ? 2 : 3,
+                                    resolver: copyResolver
+                                )
+                                GameCopyText(verbatim: copy.title)
+                                    .font(.subheadline.weight(.semibold))
+                                GameCopyText(verbatim: copy.detail)
+                                    .font(.caption)
+                                    .foregroundStyle(BaseballTheme.textSecondary)
                             }
                             Spacer()
-                            Text("\(boost.cost)P")
+                            GameCopyText(
+                                AppCopyKey.setupBoostCost,
+                                arguments: [.integer(boost.cost)]
+                            )
                                 .font(.footnote.weight(.bold).monospacedDigit())
                                 .foregroundStyle(affordable ? BaseballTheme.milestone : BaseballTheme.textTertiary)
                         }
@@ -448,11 +540,38 @@ struct HighSchoolSetupView: View {
     /// baseSlots: 카르마(기억 소거)로 기본 슬롯이 2장인 회차도 있다 — 고정 "3장에서
     /// 4장" 문구는 그 회차에 거짓말이 된다(2차 패널 P1).
     static func boostCopy(_ boost: SoulBoostID, baseSlots: Int = 3) -> (title: String, detail: String) {
+        localizedBoostCopy(boost, baseSlots: baseSlots, resolver: koreanResolver)
+    }
+
+    static func localizedBoostCopy(
+        _ boost: SoulBoostID,
+        baseSlots: Int = 3,
+        resolver: GameCopyResolver
+    ) -> (title: String, detail: String) {
         switch boost {
-        case .talentBreak: ("재능 돌파", "가장 낮은 재능 등급이 한 단계 열린 채 시작합니다.")
-        case .extraMemory: ("기억 확장", "이번에 가져갈 기억이 \(baseSlots)장에서 \(baseSlots + 1)장으로 늘어납니다.")
-        case .headStart: ("조기 성장", "자동 스며듦 상한 너머로 +5가 추가로 스며듭니다.")
-        case .trainingRhythm: ("성장 리듬", "이번 고교 3년의 훈련 대성공 확률이 16% → 26%가 됩니다.")
+        case .talentBreak:
+            (
+                resolver.resolve(AppCopyKey.setupBoostTalentBreakTitle),
+                resolver.resolve(AppCopyKey.setupBoostTalentBreakDetail)
+            )
+        case .extraMemory:
+            (
+                resolver.resolve(AppCopyKey.setupBoostExtraMemoryTitle),
+                resolver.resolve(
+                    AppCopyKey.setupBoostExtraMemoryDetail,
+                    arguments: [.integer(baseSlots), .integer(baseSlots + 1)]
+                )
+            )
+        case .headStart:
+            (
+                resolver.resolve(AppCopyKey.setupBoostHeadStartTitle),
+                resolver.resolve(AppCopyKey.setupBoostHeadStartDetail)
+            )
+        case .trainingRhythm:
+            (
+                resolver.resolve(AppCopyKey.setupBoostTrainingRhythmTitle),
+                resolver.resolve(AppCopyKey.setupBoostTrainingRhythmDetail)
+            )
         }
     }
 
@@ -464,12 +583,12 @@ struct HighSchoolSetupView: View {
     /// 이름들이 아카이브에 쌓인다.
     private var regionStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            Text("어느 지역에서 시작할까요?")
+            GameCopyText(AppCopyKey.setupRegionTitle)
                 .font(.title.bold())
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("중학교 마지막 대회를 치른 지역입니다. 이 지역의 네 고교가 손을 내밉니다.")
+            GameCopyText(AppCopyKey.setupRegionDescription)
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -483,9 +602,9 @@ struct HighSchoolSetupView: View {
                         selectedRegion = region
                     } label: {
                         VStack(spacing: 2) {
-                            Text(region)
+                            GameCopyText(Self.regionNameKey(for: region))
                                 .font(.subheadline.weight(.semibold))
-                            Text(Self.regionFlavor[region] ?? "야구 열기가 뜨거운 동네")
+                            GameCopyText(Self.regionFlavorKey(for: region))
                                 .font(.caption2)
                                 .foregroundStyle(BaseballTheme.textTertiary)
                                 .lineLimit(1)
@@ -513,12 +632,12 @@ struct HighSchoolSetupView: View {
 
     private var styleStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            Text("어떤 공을 던지는 투수인가요?")
+            GameCopyText(AppCopyKey.setupStyleTitle)
                 .font(.title.bold())
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("시작 능력치만 다릅니다. 3년 동안의 훈련으로 얼마든지 바뀝니다.")
+            GameCopyText(AppCopyKey.setupStyleDescription)
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -535,16 +654,16 @@ struct HighSchoolSetupView: View {
 
     private var handicapStep: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            Text("이번 고교 3년을 얼마나 어렵게 갈까요?")
+            GameCopyText(AppCopyKey.setupHandicapTitle)
                 .font(.title.bold())
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            BaseballCard(title: "난이도") {
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.setupDifficultyTitle)) {
                 HStack(spacing: 6) {
                     ForEach(DifficultyLevel.allCases, id: \.self) { level in
                         Button { harshness = level } label: {
-                            Text(Self.difficultyLabel(level))
+                            GameCopyText(Self.difficultyKey(level))
                                 .font(.footnote.weight(.semibold))
                                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                         }
@@ -565,8 +684,8 @@ struct HighSchoolSetupView: View {
             }
 
             if parsedChallenge != nil {
-                BaseballCard(title: "같은 조건으로 겨루는 도전", tone: .milestone) {
-                    Text("지난 선수의 기억·대표 유산·계승 포인트·핸디캡은 쓰지 않습니다. 고른 난이도와 직접 투구만 이 판에 반영됩니다.")
+                BaseballCard(title: copyResolver.resolve(AppCopyKey.setupChallengeTitle), tone: .milestone) {
+                    GameCopyText(AppCopyKey.setupChallengeDescription)
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -574,9 +693,9 @@ struct HighSchoolSetupView: View {
             }
 
             if parsedChallenge == nil, !unlockedSignatureLegacies.isEmpty {
-                BaseballCard(title: "이번 선수에게 이어 줄 대표 유산", tone: .milestone) {
+                BaseballCard(title: copyResolver.resolve(AppCopyKey.setupLegacyTitle), tone: .milestone) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("지난 선수들이 남긴 강점 중 하나만 직접 이어집니다. 다른 유산은 사라지지 않고 다음에도 다시 고를 수 있습니다.")
+                        GameCopyText(AppCopyKey.setupLegacyDescription)
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -588,14 +707,14 @@ struct HighSchoolSetupView: View {
                                     Image(systemName: selected ? "checkmark.seal.fill" : "seal")
                                         .foregroundStyle(selected ? BaseballTheme.milestone : BaseballTheme.textTertiary)
                                     VStack(alignment: .leading, spacing: 3) {
-                                        Text(legacy.title)
+                                        GameCopyText(verbatim: legacy.title)
                                             .font(.subheadline.weight(.bold))
                                             .foregroundStyle(BaseballTheme.textPrimary)
-                                        Text(legacy.detail)
+                                        GameCopyText(verbatim: legacy.detail)
                                             .font(.caption)
                                             .foregroundStyle(BaseballTheme.textSecondary)
                                             .fixedSize(horizontal: false, vertical: true)
-                                        Text(Self.signatureLegacyEffectLine(legacy.effect))
+                                        GameCopyText(verbatim: Self.localizedSignatureLegacyEffectLine(legacy.effect, resolver: copyResolver))
                                             .font(.caption2.weight(.semibold).monospacedDigit())
                                             .foregroundStyle(BaseballTheme.milestone)
                                     }
@@ -625,12 +744,17 @@ struct HighSchoolSetupView: View {
                 automaticSoulTotal: career.inheritance.automaticSoulTotal,
                 isChallenge: parsedChallenge != nil
             ) {
-                BaseballCard(title: "자동 성장 포인트 \(career.inheritance.automaticSoulTotal)P를 어디에") {
+                BaseballCard(
+                    title: copyResolver.resolve(
+                        AppCopyKey.setupSoulDomainTitle,
+                        arguments: [.integer(career.inheritance.automaticSoulTotal)]
+                    )
+                ) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 6) {
                             ForEach(SoulDomain.allCases, id: \.self) { domain in
                                 Button { soulDomain = domain } label: {
-                                    Text(Self.domainLabel(domain))
+                                    GameCopyText(Self.domainKey(domain))
                                         .font(.footnote.weight(.semibold))
                                         .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                                 }
@@ -647,11 +771,11 @@ struct HighSchoolSetupView: View {
                                 .accessibilityAddTraits(soulDomain == domain ? .isSelected : [])
                             }
                         }
-                        Text(Self.domainDetail(soulDomain))
+                        GameCopyText(Self.domainDetailKey(soulDomain))
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("고른 쪽에 절반이 먼저 가고, 나머지는 가장 낮은 능력부터 채웁니다. 재능의 한계는 넘지 않습니다.")
+                        GameCopyText(AppCopyKey.setupSoulDomainRule)
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textTertiary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -660,8 +784,12 @@ struct HighSchoolSetupView: View {
             }
 
             if parsedChallenge == nil {
-                Text("핸디캡").font(.headline)
-                Text("최대 2개. 고르면 이번 고교 3년이 어려워집니다. 대신 새 선수가 이어받는 힘이 커집니다. 지금 +\(rewardPermille / 10)%")
+                GameCopyText(AppCopyKey.setupHandicapLabel)
+                    .font(.headline)
+                GameCopyText(
+                    AppCopyKey.setupHandicapDescription,
+                    arguments: [.integer(rewardPermille / 10)]
+                )
                     .font(.footnote)
                     .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -687,20 +815,25 @@ struct HighSchoolSetupView: View {
     private var footer: some View {
         VStack(spacing: 8) {
             if isLastStep, let error = seedFieldError {
-                Text("시드 입력을 확인해 주세요 — \(error)")
+                GameCopyText(
+                    AppCopyKey.setupSeedValidation,
+                    arguments: [.userText(error)]
+                )
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if isLastStep {
-                PrimaryButton(title: parsedChallenge != nil ? "기록 없는 도전 시작"
-                              : isRebirth ? "다시 태어나기" : "고교 1학년 시작", identifier: "hs.start") {
+                PrimaryButton(title: copyResolver.resolve(startCopyKey), identifier: "hs.start") {
                     nameFocused = false
                     guard let selectedPreset, seedFieldError == nil else { return }
                     let isChallenge = parsedChallenge != nil
                     career.startCareer(
                         preset: selectedPreset,
-                        playerName: playerName,
+                        playerName: Self.submittedPlayerName(
+                            playerName,
+                            isSystemSuggestion: isSystemSuggestedName
+                        ),
                         region: selectedRegion,
                         difficulty: CareerDifficultySnapshot(careerHarshness: harshness),
                         karmas: isChallenge ? [] : Array(selectedKarmas).sorted { $0.rawValue < $1.rawValue },
@@ -718,11 +851,11 @@ struct HighSchoolSetupView: View {
                 .disabled(seedFieldError != nil)
                 .opacity(seedFieldError != nil ? 0.5 : 1)
             } else {
-                PrimaryButton(title: "다음", identifier: "hs.setup.next") { advance() }
+                PrimaryButton(title: copyResolver.resolve(AppCopyKey.setupActionNext), identifier: "hs.setup.next") { advance() }
             }
 
             if stepIndex > 0 {
-                Button("뒤로") { back() }
+                Button(copyResolver.resolve(AppCopyKey.setupActionBack)) { back() }
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
@@ -732,6 +865,12 @@ struct HighSchoolSetupView: View {
         .padding(BaseballMetrics.gutter)
         .safeAreaPadding(.bottom, 4)
         .background(BaseballTheme.surface)
+    }
+
+    private var startCopyKey: GameCopyKey {
+        if parsedChallenge != nil { return AppCopyKey.setupStartChallenge }
+        if isRebirth { return AppCopyKey.setupStartRebirth }
+        return AppCopyKey.setupStartFirst
     }
 
     private func advance() {
@@ -746,37 +885,184 @@ struct HighSchoolSetupView: View {
         step = steps[stepIndex - 1]
     }
 
-    static func domainLabel(_ domain: SoulDomain) -> String {
-        switch domain {
-        case .body: "몸"
-        case .technique: "기술"
-        case .game: "경기 운영"
+    private static let koreanResolver = GameCopyResolver(language: .korean, policy: .releaseSafe)
+
+    private static func regionKey(
+        for region: String,
+        keys: [GameCopyKey]
+    ) -> GameCopyKey {
+        guard let index = HighSchoolCareerEngine.regions.firstIndex(of: region), keys.indices.contains(index) else {
+            return .errorTextUnavailable
         }
+        return keys[index]
+    }
+
+    private static func regionNameKey(for region: String) -> GameCopyKey {
+        regionKey(for: region, keys: regionNameKeys)
+    }
+
+    private static func regionFlavorKey(for region: String) -> GameCopyKey {
+        regionKey(for: region, keys: regionFlavorKeys)
+    }
+
+    static func localizedRegionName(_ region: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(regionNameKey(for: region))
+    }
+
+    /// A blank LastSetup name means the engine's preset-provided default, not user text. Resolve
+    /// that default through the preset's semantic token; every nonempty value remains verbatim.
+    nonisolated static func localizedQuickRebirthPlayerName(
+        _ storedPlayerName: String,
+        preset: PitcherPresetSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        storedPlayerName.isEmpty
+            ? resolver.resolve(preset.defaultPlayerNameCopyToken)
+            : storedPlayerName
+    }
+
+    /// Convert UI-only name mode into the exact value accepted by the career engine. A system
+    /// suggestion is only a localized presentation; user text, including an empty string or a
+    /// string equal to the suggestion, remains byte-for-byte unchanged.
+    nonisolated static func submittedPlayerName(
+        _ playerName: String,
+        isSystemSuggestion: Bool
+    ) -> String {
+        isSystemSuggestion ? "" : playerName
+    }
+
+    static func localizedDomainLabel(_ domain: SoulDomain, resolver: GameCopyResolver) -> String {
+        resolver.resolve(domainKey(domain))
+    }
+
+    static func localizedDomainDetail(_ domain: SoulDomain, resolver: GameCopyResolver) -> String {
+        resolver.resolve(domainDetailKey(domain))
+    }
+
+    static func domainLabel(_ domain: SoulDomain) -> String {
+        localizedDomainLabel(domain, resolver: koreanResolver)
     }
 
     static func domainDetail(_ domain: SoulDomain) -> String {
-        switch domain {
-        case .body: "구위와 체력에 먼저 들어갑니다. 긴 이닝을 버티는 쪽입니다."
-        case .technique: "제구와 변화구에 먼저 들어갑니다. 원하는 곳에 꽂는 쪽입니다."
-        case .game: "제구와 타자 상대법에 먼저 들어갑니다. 수 싸움으로 버티는 쪽입니다."
-        }
+        localizedDomainDetail(domain, resolver: koreanResolver)
     }
 
     static func signatureLegacyEffectLine(_ effect: CareerSignatureLegacyEffect) -> String {
-        var parts: [String] = []
-        if effect.stuff != 0 { parts.append("구위 +\(effect.stuff)") }
-        if effect.command != 0 { parts.append("제구 +\(effect.command)") }
-        if effect.movement != 0 { parts.append("변화구 +\(effect.movement)") }
-        if effect.stamina != 0 { parts.append("체력 +\(effect.stamina)") }
-        return parts.isEmpty ? "시작 능력 변화 없음" : parts.joined(separator: " · ")
+        localizedSignatureLegacyEffectLine(effect, resolver: koreanResolver)
+    }
+
+    static func localizedSignatureLegacyEffectLine(
+        _ effect: CareerSignatureLegacyEffect,
+        resolver: GameCopyResolver
+    ) -> String {
+        let copy = signatureLegacyEffectCopy(effect)
+        return resolver.resolve(copy.key, arguments: copy.arguments)
+    }
+
+    private static func signatureLegacyEffectCopy(
+        _ effect: CareerSignatureLegacyEffect
+    ) -> (key: GameCopyKey, arguments: [LocalizedCopyArgument]) {
+        let hasStuff = effect.stuff != 0
+        let hasCommand = effect.command != 0
+        let hasMovement = effect.movement != 0
+        let hasStamina = effect.stamina != 0
+
+        return switch (hasStuff, hasCommand, hasMovement, hasStamina) {
+        case (false, false, false, false):
+            (AppCopyKey.setupSignatureEffectNone, [])
+        case (true, false, false, false):
+            (AppCopyKey.setupSignatureEffectStuff, [.integer(effect.stuff)])
+        case (false, true, false, false):
+            (AppCopyKey.setupSignatureEffectCommand, [.integer(effect.command)])
+        case (false, false, true, false):
+            (AppCopyKey.setupSignatureEffectMovement, [.integer(effect.movement)])
+        case (false, false, false, true):
+            (AppCopyKey.setupSignatureEffectStamina, [.integer(effect.stamina)])
+        case (true, true, false, false):
+            (AppCopyKey.setupSignatureEffectStuffCommand, [.integer(effect.stuff), .integer(effect.command)])
+        case (true, false, true, false):
+            (AppCopyKey.setupSignatureEffectStuffMovement, [.integer(effect.stuff), .integer(effect.movement)])
+        case (true, false, false, true):
+            (AppCopyKey.setupSignatureEffectStuffStamina, [.integer(effect.stuff), .integer(effect.stamina)])
+        case (false, true, true, false):
+            (AppCopyKey.setupSignatureEffectCommandMovement, [.integer(effect.command), .integer(effect.movement)])
+        case (false, true, false, true):
+            (AppCopyKey.setupSignatureEffectCommandStamina, [.integer(effect.command), .integer(effect.stamina)])
+        case (false, false, true, true):
+            (AppCopyKey.setupSignatureEffectMovementStamina, [.integer(effect.movement), .integer(effect.stamina)])
+        case (true, true, true, false):
+            (
+                AppCopyKey.setupSignatureEffectStuffCommandMovement,
+                [.integer(effect.stuff), .integer(effect.command), .integer(effect.movement)]
+            )
+        case (true, true, false, true):
+            (
+                AppCopyKey.setupSignatureEffectStuffCommandStamina,
+                [.integer(effect.stuff), .integer(effect.command), .integer(effect.stamina)]
+            )
+        case (true, false, true, true):
+            (
+                AppCopyKey.setupSignatureEffectStuffMovementStamina,
+                [.integer(effect.stuff), .integer(effect.movement), .integer(effect.stamina)]
+            )
+        case (false, true, true, true):
+            (
+                AppCopyKey.setupSignatureEffectCommandMovementStamina,
+                [.integer(effect.command), .integer(effect.movement), .integer(effect.stamina)]
+            )
+        case (true, true, true, true):
+            (
+                AppCopyKey.setupSignatureEffectAll,
+                [.integer(effect.stuff), .integer(effect.command), .integer(effect.movement), .integer(effect.stamina)]
+            )
+        }
+    }
+
+    static func localizedDifficultyLabel(_ level: DifficultyLevel, resolver: GameCopyResolver) -> String {
+        resolver.resolve(difficultyKey(level))
     }
 
     static func difficultyLabel(_ level: DifficultyLevel) -> String {
-        switch level {
-        case .relaxed: "여유롭게"
-        case .standard: "보통"
-        case .challenging: "혹독하게"
+        localizedDifficultyLabel(level, resolver: koreanResolver)
+    }
+
+    private static func domainKey(_ domain: SoulDomain) -> GameCopyKey {
+        switch domain {
+        case .body: AppCopyKey.setupSoulDomainBody
+        case .technique: AppCopyKey.setupSoulDomainTechnique
+        case .game: AppCopyKey.setupSoulDomainGame
         }
+    }
+
+    private static func domainDetailKey(_ domain: SoulDomain) -> GameCopyKey {
+        switch domain {
+        case .body: AppCopyKey.setupSoulDomainBodyDetail
+        case .technique: AppCopyKey.setupSoulDomainTechniqueDetail
+        case .game: AppCopyKey.setupSoulDomainGameDetail
+        }
+    }
+
+    private static func difficultyKey(_ level: DifficultyLevel) -> GameCopyKey {
+        switch level {
+        case .relaxed: AppCopyKey.setupDifficultyRelaxed
+        case .standard: AppCopyKey.setupDifficultyStandard
+        case .challenging: AppCopyKey.setupDifficultyChallenging
+        }
+    }
+
+    static func localizedKarmaCopy(
+        _ karma: KarmaID,
+        resolver: GameCopyResolver
+    ) -> (title: String, detail: String) {
+        let keys: (title: GameCopyKey, detail: GameCopyKey) = switch karma {
+        case .unknownLand: (AppCopyKey.setupKarmaUnknownLandTitle, AppCopyKey.setupKarmaUnknownLandDetail)
+        case .stubbornCoach: (AppCopyKey.setupKarmaStubbornCoachTitle, AppCopyKey.setupKarmaStubbornCoachDetail)
+        case .singleWeapon: (AppCopyKey.setupKarmaSingleWeaponTitle, AppCopyKey.setupKarmaSingleWeaponDetail)
+        case .geniusGeneration: (AppCopyKey.setupKarmaGeniusGenerationTitle, AppCopyKey.setupKarmaGeniusGenerationDetail)
+        case .erasedMemory: (AppCopyKey.setupKarmaErasedMemoryTitle, AppCopyKey.setupKarmaErasedMemoryDetail)
+        case .noLastChance: (AppCopyKey.setupKarmaNoLastChanceTitle, AppCopyKey.setupKarmaNoLastChanceDetail)
+        }
+        return (resolver.resolve(keys.title), resolver.resolve(keys.detail))
     }
 }
 
@@ -784,6 +1070,8 @@ private struct PresetRow: View {
     let preset: PitcherPresetSnapshot
     let selected: Bool
     let onSelect: () -> Void
+
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         Button(action: onSelect) {
@@ -803,20 +1091,54 @@ private struct PresetRow: View {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(preset.name).font(.headline)
-                        Text(preset.tagline).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                        GameCopyText(coreToken: preset.nameCopyToken).font(.headline)
+                        GameCopyText(coreToken: preset.taglineCopyToken)
+                            .font(.subheadline)
+                            .foregroundStyle(BaseballTheme.textSecondary)
                     }
                     Spacer()
                 }
-                AbilityGaugeView(label: "구위", value: preset.pitcher.stuff, showsMeaning: false)
-                AbilityGaugeView(label: "제구", value: preset.pitcher.command, showsMeaning: false)
-                AbilityGaugeView(label: "변화구", value: preset.pitcher.movement, showsMeaning: false)
-                AbilityGaugeView(label: "체력", value: preset.pitcher.stamina, showsMeaning: false)
-                Label(preset.strengths.joined(separator: " · "), systemImage: "sparkles")
+                AbilityGaugeView(
+                    label: copyResolver.resolve(AppCopyKey.setupStatStuff),
+                    value: preset.pitcher.stuff,
+                    showsMeaning: false
+                )
+                AbilityGaugeView(
+                    label: copyResolver.resolve(AppCopyKey.setupStatCommand),
+                    value: preset.pitcher.command,
+                    showsMeaning: false
+                )
+                AbilityGaugeView(
+                    label: copyResolver.resolve(AppCopyKey.setupStatMovement),
+                    value: preset.pitcher.movement,
+                    showsMeaning: false
+                )
+                AbilityGaugeView(
+                    label: copyResolver.resolve(AppCopyKey.setupStatStamina),
+                    value: preset.pitcher.stamina,
+                    showsMeaning: false
+                )
+                Label {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        ForEach(Array(preset.strengthCopyTokens.enumerated()), id: \.offset) { index, token in
+                            if index > 0 {
+                                Text(verbatim: "·")
+                                    .foregroundStyle(BaseballTheme.textTertiary)
+                            }
+                            GameCopyText(coreToken: token)
+                        }
+                    }
+                } icon: {
+                    Image(systemName: "sparkles")
+                }
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.positive)
                     .fixedSize(horizontal: false, vertical: true)
-                Label(preset.tradeoff, systemImage: "exclamationmark.triangle")
+                Label {
+                    GameCopyText(coreToken: preset.tradeoffCopyToken)
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle")
+                }
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
@@ -845,6 +1167,8 @@ private struct KarmaRow: View {
     var atCapacity: Bool = false
     let onToggle: () -> Void
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     private var locked: Bool { atCapacity && !selected }
 
     var body: some View {
@@ -853,13 +1177,18 @@ private struct KarmaRow: View {
                 Image(systemName: selected ? "checkmark.square.fill" : "square")
                     .foregroundStyle(selected ? BaseballTheme.warning : BaseballTheme.border.opacity(locked ? 0.4 : 1))
                 VStack(alignment: .leading, spacing: 2) {
-                    let copy = HighSchoolPresentation.karma(karma)
-                    Text(copy.title).font(.subheadline.weight(.bold))
-                    Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                    let copy = HighSchoolSetupView.localizedKarmaCopy(karma, resolver: copyResolver)
+                    GameCopyText(verbatim: copy.title).font(.subheadline.weight(.bold))
+                    GameCopyText(verbatim: copy.detail)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                Text("+\(karma.rewardPermille / 10)%")
+                GameCopyText(
+                    AppCopyKey.setupKarmaReward,
+                    arguments: [.integer(karma.rewardPermille / 10)]
+                )
                     .font(.caption.bold().monospacedDigit())
                     .foregroundStyle(BaseballTheme.milestone)
             }
@@ -877,6 +1206,6 @@ private struct KarmaRow: View {
         .buttonStyle(.plain)
         .opacity(locked ? 0.45 : 1)
         .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityHint(locked ? "핸디캡은 두 개까지 고를 수 있습니다. 다른 것을 빼면 고를 수 있습니다." : "")
+        .accessibilityHint(locked ? copyResolver.resolve(AppCopyKey.setupKarmaCapacityHint) : "")
     }
 }

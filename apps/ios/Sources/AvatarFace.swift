@@ -453,9 +453,9 @@ struct AvatarRow<Trailing: View>: View {
         HStack(alignment: .center, spacing: 10) {
             PortraitView(seed: seed, role: role, size: size, usesPhoto: usesPhoto)
             VStack(alignment: .leading, spacing: 1) {
-                Text(name).font(.subheadline.weight(.bold))
+                Text(verbatim: name).font(.subheadline.weight(.bold))
                 if let caption {
-                    Text(caption).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                    Text(verbatim: caption).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -463,7 +463,7 @@ struct AvatarRow<Trailing: View>: View {
             trailing()
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(caption.map { "\(name), \($0)" } ?? name)
+        .accessibilityLabel(Text(verbatim: caption.map { "\(name), \($0)" } ?? name))
     }
 }
 

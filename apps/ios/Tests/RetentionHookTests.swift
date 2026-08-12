@@ -524,6 +524,159 @@ final class RetentionHookTests: XCTestCase {
         )
     }
 
+    func testLegacyPlanDefaultsNewPresentationFieldsAndVersionedReferencesRoundTrip() throws {
+        let legacy = try JSONDecoder().decode(
+            DailyReminder.Plan.self,
+            from: Data(#"{"title":"이어가기","body":"다음 훈련","destination":"high_school","reason":"high_school_phase"}"#.utf8)
+        )
+        XCTAssertNil(legacy.copyReferences)
+        XCTAssertNil(legacy.scheduledLanguage)
+        XCTAssertNil(legacy.scheduledCopySchemaVersion)
+
+        let title = DailyReminder.SemanticCopyReference(
+            key: "content.notification.return.title",
+            arguments: [.contentID("high_school")]
+        )
+        let body = DailyReminder.SemanticCopyReference(
+            schemaVersion: 3,
+            key: "content.notification.return.body",
+            arguments: [.integer(2), .decimal(1.5)]
+        )
+        let plan = DailyReminder.Plan(
+            title: "legacy title",
+            body: "legacy body",
+            destination: .highSchool,
+            reason: "high_school_phase",
+            copyReferences: .init(title: title, body: body),
+            scheduledLanguage: .english,
+            scheduledCopySchemaVersion: 3
+        )
+
+        let restored = try JSONDecoder().decode(
+            DailyReminder.Plan.self,
+            from: JSONEncoder().encode(plan)
+        )
+        XCTAssertEqual(restored.copyReferences, plan.copyReferences)
+        XCTAssertEqual(restored.scheduledLanguage, .english)
+        XCTAssertEqual(restored.scheduledCopySchemaVersion, 3)
+        XCTAssertEqual(restored.copyReferences?.title?.coreToken.key, title.key)
+        XCTAssertEqual(
+            restored.copyReferences?.body?.coreToken.arguments,
+            [.integer(2), .decimal(1.5)]
+        )
+        XCTAssertEqual(restored.destination, plan.destination)
+        XCTAssertEqual(restored.reason, plan.reason)
+
+        DailyReminder.savePlan(plan, defaults: defaults)
+        let defaultsRestored = DailyReminder.storedPlan(defaults: defaults)
+        XCTAssertEqual(defaultsRestored?.copyReferences, plan.copyReferences)
+        XCTAssertEqual(defaultsRestored?.scheduledLanguage, .english)
+        XCTAssertEqual(defaultsRestored?.scheduledCopySchemaVersion, 3)
+    }
+
+    func testSemanticNotificationReferencesResolveWithoutLegacyKoreanLookup() throws {
+        let title = DailyReminder.SemanticCopyReference(
+            key: "content.notification.return.title",
+            arguments: []
+        )
+        let body = DailyReminder.SemanticCopyReference(
+            key: "content.notification.return.body",
+            arguments: [.contentID("high_school")]
+        )
+        let plan = DailyReminder.Plan(
+            title: "옛 한국어 제목",
+            body: "옛 한국어 본문",
+            destination: .highSchool,
+            reason: "high_school_phase",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue,
+            copyReferences: .init(title: title, body: body)
+        )
+        let resolver = GameCopyResolver(
+            language: .english,
+            catalog: [
+                .english: [
+                    title.key: "Return to the mound",
+                    body.key: "Your next move at %@ is waiting.",
+                ],
+                .korean: [
+                    title.key: "마운드로 돌아오세요",
+                    body.key: "%@에서 다음 행동이 기다립니다.",
+                ],
+            ]
+        )
+
+        let copy = try XCTUnwrap(DailyReminder.notificationCopy(plan: plan, resolver: resolver))
+        XCTAssertEqual(copy.title, "Return to the mound")
+        XCTAssertEqual(copy.body, "Your next move at high_school is waiting.")
+        XCTAssertFalse(copy.title.contains("옛 한국어"))
+        XCTAssertFalse(copy.body.contains("옛 한국어"))
+    }
+
+    func testLegacyNotificationPlanUsesReviewedGenericCopyInEnglish() throws {
+        let plan = DailyReminder.Plan(
+            title: "옛 한국어 제목",
+            body: "옛 한국어 본문",
+            destination: .highSchool,
+            reason: "high_school_phase",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue
+        )
+        let resolver = GameCopyResolver(
+            language: .english,
+            catalog: [
+                .english: [
+                    GameCopyKey.notificationReturnTitle.rawValue: "Return to the mound",
+                    GameCopyKey.notificationReturnBody.rawValue: "Your next baseball decision is waiting.",
+                ],
+            ]
+        )
+
+        let copy = try XCTUnwrap(DailyReminder.notificationCopy(plan: plan, resolver: resolver))
+        XCTAssertEqual(copy.title, "Return to the mound")
+        XCTAssertEqual(copy.body, "Your next baseball decision is waiting.")
+        XCTAssertFalse(copy.title.contains("한국어"))
+        XCTAssertFalse(copy.body.contains("한국어"))
+    }
+
+    func testLanguageOrCopySchemaChangeReschedulesWithoutChangingPlanIdentity() {
+        let plan = DailyReminder.Plan(
+            title: "title",
+            body: "body",
+            destination: .pro,
+            reason: "pro_phase",
+            experimentID: DailyReminder.returnExperimentID,
+            receiptID: "receipt-a",
+            savedDayKey: "20260809",
+            experimentVariant: DailyReminder.ReturnExperimentVariant.guided.rawValue,
+            developmentRulesVersion: 4,
+            scheduledLanguage: .korean,
+            scheduledCopySchemaVersion: GameCopySchema.currentVersion
+        )
+
+        XCTAssertFalse(DailyReminder.needsPresentationReschedule(
+            plan: plan, language: .korean, copySchemaVersion: GameCopySchema.currentVersion
+        ))
+        XCTAssertTrue(DailyReminder.needsPresentationReschedule(
+            plan: plan, language: .english, copySchemaVersion: GameCopySchema.currentVersion
+        ))
+        XCTAssertTrue(DailyReminder.needsPresentationReschedule(
+            plan: plan, language: .korean, copySchemaVersion: GameCopySchema.currentVersion + 1
+        ))
+
+        let rescheduled = DailyReminder.planScheduledForPresentation(
+            plan, language: .english, copySchemaVersion: GameCopySchema.currentVersion + 1
+        )
+        XCTAssertEqual(rescheduled.destination, plan.destination)
+        XCTAssertEqual(rescheduled.reason, plan.reason)
+        XCTAssertEqual(rescheduled.receiptID, plan.receiptID)
+        XCTAssertEqual(rescheduled.experimentID, plan.experimentID)
+        XCTAssertEqual(rescheduled.experimentVariant, plan.experimentVariant)
+        XCTAssertEqual(rescheduled.scheduledLanguage, .english)
+        XCTAssertEqual(
+            rescheduled.scheduledCopySchemaVersion,
+            GameCopySchema.currentVersion + 1
+        )
+    }
+
     @MainActor
     func testV2PlanExperimentIDAndVariantRoundTripThroughStorage() {
         let base = DailyReminder.Plan(

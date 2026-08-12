@@ -223,7 +223,7 @@ struct BaseballCard<Content: View>: View {
     /// 중립 정보. 상자 없이 눈썹과 괘선만.
     private var section: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).eyebrowStyle(tone == .raised ? BaseballTheme.information : BaseballTheme.textTertiary)
+            Text(verbatim: title).eyebrowStyle(tone == .raised ? BaseballTheme.information : BaseballTheme.textTertiary)
             content
             Rectangle()
                 .fill(BaseballTheme.border.opacity(0.45))
@@ -236,7 +236,7 @@ struct BaseballCard<Content: View>: View {
     /// 상태가 바뀐 순간. 테두리도 레일도 없이 의미색 면으로만 구분한다.
     private var callout: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).eyebrowStyle(tone.accent)
+            Text(verbatim: title).eyebrowStyle(tone.accent)
             content
         }
         .padding(BaseballMetrics.gutter)
@@ -299,7 +299,7 @@ struct PrimaryPill: View {
 
     var body: some View {
         Button(action: action) {
-            Text(title)
+            Text(verbatim: title)
                 .font(.headline)
                 .foregroundStyle(BaseballTheme.actionInk)
                 .frame(maxWidth: .infinity, minHeight: 52)

@@ -1,5 +1,6 @@
 import Foundation
 @preconcurrency import UserNotifications
+import SimulationCore
 
 /// 현재 커리어의 다음 행동을 이어 주는 복귀 알림.
 ///
@@ -33,6 +34,128 @@ enum DailyReminder {
     static let rulesVersionUserInfoKey = "development_rules_version"
     static let planKey = "baseball.daily.reminder.plan"
     static let welcomeHandledKey = "baseball.daily.reminder.welcome-handled"
+    static let copySchemaVersion = GameCopySchema.currentVersion
+
+    /// A Codable, versioned storage form for a semantic presentation token. This is intentionally
+    /// separate from `SimulationCore.CopyToken`, which remains ephemeral and non-Codable.
+    struct SemanticCopyReference: Codable, Equatable, Sendable {
+        enum Argument: Codable, Equatable, Sendable {
+            case userText(String)
+            case contentID(String)
+            case integer(Int)
+            case decimal(Double)
+
+            private enum CodingKeys: String, CodingKey {
+                case kind
+                case stringValue
+                case integerValue
+                case decimalValue
+            }
+
+            private enum Kind: String, Codable {
+                case userText
+                case contentID
+                case integer
+                case decimal
+            }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                let kind = try container.decode(Kind.self, forKey: .kind)
+                switch kind {
+                case .userText:
+                    self = .userText(try container.decode(String.self, forKey: .stringValue))
+                case .contentID:
+                    self = .contentID(try container.decode(String.self, forKey: .stringValue))
+                case .integer:
+                    self = .integer(try container.decode(Int.self, forKey: .integerValue))
+                case .decimal:
+                    self = .decimal(try container.decode(Double.self, forKey: .decimalValue))
+                }
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                switch self {
+                case .userText(let value):
+                    try container.encode(Kind.userText, forKey: .kind)
+                    try container.encode(value, forKey: .stringValue)
+                case .contentID(let value):
+                    try container.encode(Kind.contentID, forKey: .kind)
+                    try container.encode(value, forKey: .stringValue)
+                case .integer(let value):
+                    try container.encode(Kind.integer, forKey: .kind)
+                    try container.encode(value, forKey: .integerValue)
+                case .decimal(let value):
+                    try container.encode(Kind.decimal, forKey: .kind)
+                    try container.encode(value, forKey: .decimalValue)
+                }
+            }
+
+            var coreArgument: SimulationCore.CopyArgument {
+                switch self {
+                case .userText(let value): .userText(value)
+                case .contentID(let value): .contentID(value)
+                case .integer(let value): .integer(value)
+                case .decimal(let value): .decimal(value)
+                }
+            }
+
+            init(coreArgument: SimulationCore.CopyArgument) {
+                switch coreArgument {
+                case .userText(let value): self = .userText(value)
+                case .contentID(let value): self = .contentID(value)
+                case .integer(let value): self = .integer(value)
+                case .decimal(let value): self = .decimal(value)
+                }
+            }
+        }
+
+        let schemaVersion: Int
+        let key: String
+        let arguments: [Argument]
+
+        init(
+            schemaVersion: Int = DailyReminder.copySchemaVersion,
+            key: String,
+            arguments: [Argument] = []
+        ) {
+            self.schemaVersion = schemaVersion
+            self.key = key
+            self.arguments = arguments
+        }
+
+        init(token: SimulationCore.CopyToken, schemaVersion: Int = DailyReminder.copySchemaVersion) {
+            self.init(
+                schemaVersion: schemaVersion,
+                key: token.key,
+                arguments: token.arguments.map(Argument.init(coreArgument:))
+            )
+        }
+
+        var coreToken: SimulationCore.CopyToken {
+            SimulationCore.CopyToken(
+                key: key,
+                arguments: arguments.map(\.coreArgument)
+            )
+        }
+    }
+
+    /// Title and body references are optional so a legacy plan can continue to decode. When the
+    /// app runs in English, missing or stale references resolve to reviewed generic English copy
+    /// instead of exposing the legacy Korean payload.
+    struct NotificationCopyReferences: Codable, Equatable, Sendable {
+        let title: SemanticCopyReference?
+        let body: SemanticCopyReference?
+
+        init(
+            title: SemanticCopyReference? = nil,
+            body: SemanticCopyReference? = nil
+        ) {
+            self.title = title
+            self.body = body
+        }
+    }
 
     /// 알림을 누른 뒤 도착할 실제 화면. 알림 문구와 목적지가 다르면 한 번의 복귀도
     /// 배신으로 느껴지므로 둘을 같은 값에서 만든다.
@@ -84,6 +207,23 @@ enum DailyReminder {
         var savedDayKey: String? = nil
         var experimentVariant: String? = nil
         var developmentRulesVersion: Int? = nil
+        /// Optional semantic references are added without replacing legacy title/body fields.
+        var copyReferences: NotificationCopyReferences? = nil
+        /// The language used when pending requests were last scheduled. This is metadata, not
+        /// a language-specific save namespace.
+        var scheduledLanguage: AppLanguage? = nil
+        var scheduledCopySchemaVersion: Int? = nil
+
+        /// Convenience for a title-only migration step. Full notification migration uses
+        /// `copyReferences` so title and body can be resolved independently.
+        var copyReference: SemanticCopyReference? {
+            get { copyReferences?.title }
+            set {
+                copyReferences = newValue.map {
+                    NotificationCopyReferences(title: $0, body: copyReferences?.body)
+                }
+            }
+        }
 
         init(
             title: String,
@@ -94,7 +234,11 @@ enum DailyReminder {
             receiptID: String? = nil,
             savedDayKey: String? = nil,
             experimentVariant: String? = nil,
-            developmentRulesVersion: Int? = nil
+            developmentRulesVersion: Int? = nil,
+            copyReferences: NotificationCopyReferences? = nil,
+            copyReference: SemanticCopyReference? = nil,
+            scheduledLanguage: AppLanguage? = nil,
+            scheduledCopySchemaVersion: Int? = nil
         ) {
             self.title = title
             self.body = body
@@ -105,6 +249,11 @@ enum DailyReminder {
             self.savedDayKey = savedDayKey
             self.experimentVariant = experimentVariant
             self.developmentRulesVersion = developmentRulesVersion
+            self.copyReferences = copyReferences ?? copyReference.map {
+                NotificationCopyReferences(title: $0)
+            }
+            self.scheduledLanguage = scheduledLanguage
+            self.scheduledCopySchemaVersion = scheduledCopySchemaVersion
         }
 
         /// 영수증 시각이 달라도 같은 사용자 약속이면 같은 카드다. 이 비교가 달라지면
@@ -124,7 +273,10 @@ enum DailyReminder {
                 receiptID: receiptID ?? previous.receiptID,
                 savedDayKey: savedDayKey ?? previous.savedDayKey,
                 experimentVariant: experimentVariant ?? previous.experimentVariant,
-                developmentRulesVersion: developmentRulesVersion ?? previous.developmentRulesVersion
+                developmentRulesVersion: developmentRulesVersion ?? previous.developmentRulesVersion,
+                copyReferences: copyReferences ?? previous.copyReferences,
+                scheduledLanguage: scheduledLanguage ?? previous.scheduledLanguage,
+                scheduledCopySchemaVersion: scheduledCopySchemaVersion ?? previous.scheduledCopySchemaVersion
             )
         }
 
@@ -139,7 +291,10 @@ enum DailyReminder {
                 receiptID: receiptID ?? previous.receiptID,
                 savedDayKey: savedDayKey ?? previous.savedDayKey,
                 experimentVariant: experimentVariant ?? previous.experimentVariant,
-                developmentRulesVersion: developmentRulesVersion ?? previous.developmentRulesVersion
+                developmentRulesVersion: developmentRulesVersion ?? previous.developmentRulesVersion,
+                copyReferences: copyReferences ?? previous.copyReferences,
+                scheduledLanguage: scheduledLanguage ?? previous.scheduledLanguage,
+                scheduledCopySchemaVersion: scheduledCopySchemaVersion ?? previous.scheduledCopySchemaVersion
             )
         }
     }
@@ -261,6 +416,40 @@ enum DailyReminder {
         return try? JSONDecoder().decode(Plan.self, from: data)
     }
 
+    /// A pending request is stale when it was scheduled for another app language or copy
+    /// schema. Missing metadata is treated as stale so a legacy plan is refreshed once and then
+    /// receives the new metadata without changing its destination, receipt, or experiment.
+    static func needsPresentationReschedule(
+        plan: Plan?,
+        language: AppLanguage,
+        copySchemaVersion: Int = GameCopySchema.currentVersion
+    ) -> Bool {
+        guard let plan else { return false }
+        return plan.scheduledLanguage != language
+            || plan.scheduledCopySchemaVersion != copySchemaVersion
+    }
+
+    static func planScheduledForPresentation(
+        _ plan: Plan,
+        language: AppLanguage,
+        copySchemaVersion: Int = GameCopySchema.currentVersion
+    ) -> Plan {
+        Plan(
+            title: plan.title,
+            body: plan.body,
+            destination: plan.destination,
+            reason: plan.reason,
+            experimentID: plan.experimentID,
+            receiptID: plan.receiptID,
+            savedDayKey: plan.savedDayKey,
+            experimentVariant: plan.experimentVariant,
+            developmentRulesVersion: plan.developmentRulesVersion,
+            copyReferences: plan.copyReferences,
+            scheduledLanguage: language,
+            scheduledCopySchemaVersion: copySchemaVersion
+        )
+    }
+
     static func experimentID(for plan: Plan) -> String {
         plan.experimentID ?? legacyReturnExperimentID
     }
@@ -298,7 +487,10 @@ enum DailyReminder {
             experimentVariant: experimentVariant(
                 experimentID: returnExperimentID, stableID: stableID
             ).rawValue,
-            developmentRulesVersion: rulesVersion
+            developmentRulesVersion: rulesVersion,
+            copyReferences: plan.copyReferences,
+            scheduledLanguage: nil,
+            scheduledCopySchemaVersion: nil
         )
     }
 
@@ -422,17 +614,58 @@ enum DailyReminder {
 
     /// 실제 이어 갈 커리어가 있는 guided 사용자에게만 알림을 만든다. 제거된 목적지나
     /// 계획 없는 상태는 알림을 만들지 않아 과거 fallback이 되살아나지 않게 한다.
-    static func notificationCopy(plan: Plan?) -> NotificationCopy? {
+    static func notificationCopy(
+        plan: Plan?,
+        resolver: GameCopyResolver? = nil,
+        copySchemaVersion: Int = GameCopySchema.currentVersion
+    ) -> NotificationCopy? {
         guard let plan,
               plan.destination != .dailyInning,
               plan.experimentVariant == ReturnExperimentVariant.guided.rawValue else { return nil }
+
+        let title = resolvedNotificationValue(
+            reference: plan.copyReferences?.title,
+            genericKey: .notificationReturnTitle,
+            legacyValue: plan.title,
+            resolver: resolver,
+            copySchemaVersion: copySchemaVersion
+        )
+        let body = resolvedNotificationValue(
+            reference: plan.copyReferences?.body,
+            genericKey: .notificationReturnBody,
+            legacyValue: plan.body,
+            resolver: resolver,
+            copySchemaVersion: copySchemaVersion
+        )
         return NotificationCopy(
-            title: plan.title,
-            body: plan.body,
+            title: title,
+            body: body,
             link: plan.destination.deepLink,
             destination: plan.destination.rawValue,
             reason: plan.reason
         )
+    }
+
+    private static func resolvedNotificationValue(
+        reference: SemanticCopyReference?,
+        genericKey: GameCopyKey,
+        legacyValue: String,
+        resolver: GameCopyResolver?,
+        copySchemaVersion: Int
+    ) -> String {
+        guard let resolver else { return legacyValue }
+
+        if let reference, reference.schemaVersion == copySchemaVersion {
+            let resolved = resolver.resolve(reference.coreToken)
+            if resolved != GameCopyResolver.unavailableText {
+                return resolved
+            }
+        }
+
+        // Korean remains the development language, so old personalized payloads are valid there.
+        // English must never fall back to a Korean sentence stored by an older build.
+        guard resolver.language == .english else { return legacyValue }
+        return resolver.resolve(genericKey)
     }
 
     private static func stableHash(_ value: String) -> UInt64 {
@@ -472,13 +705,32 @@ enum DailyReminder {
         ]
     }
 
-    @MainActor private static func reschedule() async {
+    @MainActor private static func reschedule(
+        language: AppLanguage = AppLanguage.current(),
+        copySchemaVersion: Int = GameCopySchema.currentVersion
+    ) async {
         let center = UNUserNotificationCenter.current()
         clearPending()
         guard UserDefaults.standard.bool(forKey: enabledKey) else { return }
         let now = Date()
         let plan = storedPlan()
-        guard let copy = notificationCopy(plan: plan) else { return }
+        let resolver = plan.map { _ in
+            GameCopyResolver(language: language, policy: .automatic)
+        }
+        guard let copy = notificationCopy(
+            plan: plan,
+            resolver: resolver,
+            copySchemaVersion: copySchemaVersion
+        ) else { return }
+        if let plan, needsPresentationReschedule(
+            plan: plan, language: language, copySchemaVersion: copySchemaVersion
+        ) {
+            savePlan(
+                planScheduledForPresentation(
+                    plan, language: language, copySchemaVersion: copySchemaVersion
+                )
+            )
+        }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Asia/Seoul") ?? .current
         for entry in schedule(from: now) {

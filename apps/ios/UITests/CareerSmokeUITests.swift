@@ -1,4 +1,6 @@
+import CoreGraphics
 import XCTest
+import UIKit
 
 /// 고교 3년 → 드래프트 → 기억 계승 → 프로 입단까지 한 번에 걸어 본다.
 /// 유닛 테스트는 엔진 연결을, 이 테스트는 "화면으로 실제로 끝까지 갈 수 있는지"를 지킨다.
@@ -157,9 +159,10 @@ final class CareerSmokeUITests: XCTestCase {
                     capturedTraining = true
                     capture(app, name: "04-training")
                 }
-                if !tapIfPresent(app.buttons["hs.training.commitBlock"]) {
-                    tapIfPresent(app.buttons["hs.training.commit"])
-                }
+                let committed = tapIfPresent(app.buttons["hs.training.commitBlock"])
+                    || tapIfPresent(app.buttons["hs.training.commit"])
+                XCTAssertTrue(committed, "훈련 버튼을 화면 안으로 가져와 누를 수 없습니다.")
+                assertTrainingResultIsImmediatelyUsable(app)
                 continue
             }
             if tapFirst(app, prefix: "hs.response.") { continue }
@@ -207,6 +210,52 @@ final class CareerSmokeUITests: XCTestCase {
             return
         }
         XCTFail("고교 회차가 \(maximumSteps)단계 안에 끝나지 않았습니다.")
+    }
+
+    /// 훈련 카드는 화면 아래에서 눌리고, 다음 국면 카드는 훨씬 짧을 수 있다. 그 높이
+    /// 변화 뒤에도 결과가 빈 캔버스 밖이 아니라 현재 화면 안에 놓이는지 짧게 회귀 검증한다.
+    func testTrainingCompletionKeepsResultOnScreen() {
+        let app = launch()
+
+        dismissOpening(app)
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
+        XCTAssertTrue(
+            tapIfPresent(app.buttons["hs.prologue.continue"]),
+            "프롤로그를 지나 학교 선택으로 갈 수 없습니다."
+        )
+        XCTAssertTrue(tapFirst(app, prefix: "hs.school."), "학교를 선택할 수 없습니다.")
+        confirmSchool(app)
+
+        let commit = app.buttons["hs.training.commit"]
+        XCTAssertTrue(commit.waitForExistence(timeout: timeout), "첫 훈련 화면이 열리지 않았습니다.")
+
+        // 첫 훈련이 같은 국면에 머물더라도 반복해, 관계·경기처럼 더 짧은 국면으로
+        // 갈아타는 경계까지 가능한 한 함께 밟는다.
+        var completed = 0
+        while completed < 4, commit.exists {
+            XCTAssertTrue(tapIfPresent(commit), "훈련 버튼을 화면 안으로 가져와 누를 수 없습니다.")
+            completed += 1
+            assertTrainingResultIsImmediatelyUsable(app)
+
+            // 닫기도 실제로 눌러 본다. 결과가 보이기만 하고 조작 불가능한 회귀도 막는다.
+            app.buttons["hs.training.result.dismiss"].tap()
+        }
+
+        XCTAssertGreaterThan(completed, 0, "훈련을 한 번도 완료하지 못했습니다.")
+        let response = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "hs.response.")
+        ).firstMatch
+        let awakening = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "hs.awakening.")
+        ).firstMatch
+        XCTAssertTrue(
+            commit.exists
+                || response.exists
+                || awakening.exists
+                || app.buttons["hs.game.start"].exists
+                || app.buttons["hs.chapter.continue"].exists,
+            "훈련 결과 뒤 이어서 진행할 행동이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
     }
 
     /// 드래프트를 통과했다면 프로 커리어가 그 결과로 열려야 한다.
@@ -408,6 +457,70 @@ final class CareerSmokeUITests: XCTestCase {
         )
     }
 
+    /// 관계 선택 직후 연속으로 국면이 바뀌어도 암전 커튼이 남지 않아야 한다.
+    ///
+    /// 예전 회귀는 `allowsHitTesting(false)` 커튼 아래의 버튼이 XCUITest에 계속
+    /// 잡혀 조작 검사만으로는 통과했다. 이 테스트는 반응 선택 직후의 실제
+    /// 스크린샷 픽셀을 연속으로 읽어 시각 콘텐츠가 남아 있는지 검증한다.
+    func testRapidRelationshipChoicesNeverLeaveOpaqueBlankFrame() {
+        executionTimeAllowance = 600
+        let app = launch()
+
+        dismissOpening(app)
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
+
+        if tapIfPresent(app.buttons["hs.prologue.throw"]) {
+            _ = playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true)
+        }
+
+        var relationshipChoices = 0
+        var steps = 0
+        while relationshipChoices < 2, steps < 160 {
+            steps += 1
+
+            let responses = app.buttons.matching(
+                NSPredicate(format: "identifier BEGINSWITH %@", "hs.response.")
+            )
+            if responses.count > 0 {
+                let response = responses.element(boundBy: 0)
+                XCTAssertTrue(bringIntoView(response), "관계 선택지를 화면에 올리지 못했습니다.")
+                response.tap()
+                relationshipChoices += 1
+
+                // 취소된 지연 애니메이션이 사라지지 않는 문제를 잡으려면 한 시점만
+                // 지나가서는 안 된다. 선택 직후의 연속 프레임을 검사한다.
+                for frame in 0..<4 {
+                    assertScreenContainsVisibleContent(
+                        XCUIScreen.main.screenshot(),
+                        context: "관계 선택 \(relationshipChoices) 후 프레임 \(frame)"
+                    )
+                    RunLoop.current.run(until: Date().addingTimeInterval(0.03))
+                }
+                continue
+            }
+
+            if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
+            if tapFirst(app, prefix: "hs.school.") { confirmSchool(app); continue }
+            if tapIfPresent(app.buttons["hs.training.commitBlock"]) { continue }
+            if tapIfPresent(app.buttons["hs.training.commit"]) { continue }
+            if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
+            if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
+            if tapIfPresent(app.buttons["hs.game.start"]) {
+                _ = playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true)
+                continue
+            }
+
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
+
+        XCTAssertEqual(
+            relationshipChoices,
+            2,
+            "결정적 초기화 흐름에서 관계 선택을 두 번 통과하지 못했습니다. "
+                + "보이는 버튼: \(visibleIdentifiers(app))"
+        )
+    }
+
     /// 자동 릴리스를 끄고 실제 제스처(누르고 → 끌고 → 뗀다)로 한 구를 던진다.
     /// 유닛 테스트는 미터 값 → 정확도 변환을, 이 테스트는 제스처가 실제로 투구를 만드는지 본다.
     func testManualDeliveryGestureThrowsAPitch() {
@@ -598,6 +711,25 @@ final class CareerSmokeUITests: XCTestCase {
         return element.isHittable
     }
 
+    /// 스크롤 제스처로 구조를 구해 주기 전에 결과 패널이 스스로 화면 안에 들어와야 한다.
+    /// 패널의 닫기 버튼은 상단에 있으므로 `hittable`이면 검은 빈 영역이 아니라 결과를
+    /// 보고 있으며 곧바로 다음 조작도 할 수 있다는 강한 신호다.
+    private func assertTrainingResultIsImmediatelyUsable(
+        _ app: XCUIApplication,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let dismiss = app.buttons["hs.training.result.dismiss"]
+        let visible = NSPredicate(format: "exists == true AND hittable == true")
+        let expectation = XCTNSPredicateExpectation(predicate: visible, object: dismiss)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        XCTAssertEqual(
+            result, .completed,
+            "훈련 직후 결과가 화면 안에 나타나지 않았습니다. 보이는 버튼: \(visibleIdentifiers(app))",
+            file: file, line: line
+        )
+    }
+
     /// 학교는 되돌릴 수 없어 확인 창이 뜬다. 카드만 누르고 넘어가면 그 자리에서 막힌다.
     private func confirmSchool(_ app: XCUIApplication) {
         let confirm = app.buttons.matching(identifier: "hs.school.confirm").firstMatch
@@ -630,6 +762,66 @@ final class CareerSmokeUITests: XCTestCase {
             return identifier.isEmpty ? "<\(element.label)>" : identifier
         }
         return buttons.joined(separator: ", ")
+    }
+
+    /// 스크린 중앙(상태 바·하단 탭 제외)의 픽셀 중 RGB 최댓값이 40/255를
+    /// 넘는 픽셀이 0.5% 이상이어야 한다. 정상 카드의 글자·테두리·액션 색은
+    /// 충분히 이 기준을 넘지만, 전면 `BaseballTheme.canvas`(#080D0B) 커튼은 0%다.
+    private func assertScreenContainsVisibleContent(
+        _ screenshot: XCUIScreenshot,
+        context: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard let image = UIImage(data: screenshot.pngRepresentation)?.cgImage else {
+            XCTFail("스크린샷 픽셀을 읽지 못했습니다: \(context)", file: file, line: line)
+            return
+        }
+
+        let width = image.width
+        let height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let rendered = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let context = CGContext(
+                data: buffer.baseAddress,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: width * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard rendered else {
+            XCTFail("스크린샷 픽셀 버퍼를 만들지 못했습니다: \(context)", file: file, line: line)
+            return
+        }
+
+        let xRange = Int(Double(width) * 0.08)..<Int(Double(width) * 0.92)
+        let yRange = Int(Double(height) * 0.10)..<Int(Double(height) * 0.78)
+        let stride = max(1, min(width, height) / 120)
+        var samples = 0
+        var visibleSamples = 0
+        for y in Swift.stride(from: yRange.lowerBound, to: yRange.upperBound, by: stride) {
+            for x in Swift.stride(from: xRange.lowerBound, to: xRange.upperBound, by: stride) {
+                let offset = (y * width + x) * 4
+                let brightestChannel = max(pixels[offset], pixels[offset + 1], pixels[offset + 2])
+                samples += 1
+                if brightestChannel > 40 { visibleSamples += 1 }
+            }
+        }
+
+        let visibleRatio = samples == 0 ? 0 : Double(visibleSamples) / Double(samples)
+        XCTAssertGreaterThanOrEqual(
+            visibleRatio,
+            0.005,
+            "\(context): 중앙 화면의 밝은 픽셀이 \(visibleRatio * 100)%로, "
+                + "전면 불투명 암전 프레임으로 보입니다.",
+            file: file,
+            line: line
+        )
     }
 
     /// 테스트 리포트에 붙인다. 스토어 스크린샷 초안으로 뽑아 쓸 수 있다.

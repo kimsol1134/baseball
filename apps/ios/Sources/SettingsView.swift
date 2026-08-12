@@ -1,7 +1,13 @@
 import SwiftUI
 
 enum SettingsCopy {
-    static let hapticsFooter = "진동을 끄면 승부 긴장에 따른 릴리스 미터 흔들림도 사라집니다. 기본 미터 이동과 피로에 따른 조준 흔들림은 그대로입니다."
+    static let hapticsFooterKey = AppCopyKey.settingsHapticsFooter
+
+    /// Compatibility surface for the existing unit test and non-SwiftUI callers. The view uses
+    /// `hapticsFooterKey`; this accessor resolves the same semantic key for the legacy Korean API.
+    static var hapticsFooter: String {
+        GameCopyResolver(language: .korean, policy: .releaseSafe).resolve(hapticsFooterKey)
+    }
 }
 
 /// 소리·손맛·접근성 설정. 자동 릴리스는 접근성 항목이라 맨 위에 둔다.
@@ -18,37 +24,40 @@ struct SettingsView: View {
     @State private var audio = GameAudio.shared
     @State private var achievements = AchievementStore.shared
     @State private var confirmingReset = false
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         List {
             Section {
-                Toggle("자동 릴리스", isOn: $autoRelease)
-                Text("켜면 와인드업 타이밍 없이 탭 한 번으로 던집니다. 결과는 릴리스가 딱 중간일 때와 같습니다.")
+                Toggle(copyResolver.resolve(AppCopyKey.settingsAutoRelease), isOn: $autoRelease)
+                GameCopyText(AppCopyKey.settingsAutoReleaseDescription)
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
             } header: {
-                Text("조작")
+                GameCopyText(AppCopyKey.settingsControlTitle)
             } footer: {
                 // "손해가 없습니다"는 실측과 다르다 — 숙련된 제스처는 중립 릴리스보다 확실히
                 // 낫다(피출루 −0.048). 접근성 안내가 사실과 다르면 그게 더 나쁘다.
-                Text("타이밍 제스처가 어려우면 켜세요. 항상 안정된 중간 릴리스로 던지므로 진행이 막히는 일은 없습니다. 다만 완벽한 타이밍의 이점도 사라집니다.")
+                GameCopyText(AppCopyKey.settingsAutoReleaseFooter)
             }
 
-            Section("소리와 진동") {
-                Toggle("소리", isOn: Binding(get: { audio.soundEnabled }, set: { audio.soundEnabled = $0 }))
-                Toggle("음악", isOn: Binding(get: { audio.musicEnabled }, set: { audio.musicEnabled = $0 }))
-                Toggle("진동", isOn: Binding(get: { audio.hapticsEnabled }, set: { audio.hapticsEnabled = $0 }))
-                Text(SettingsCopy.hapticsFooter)
+            Section {
+                Toggle(copyResolver.resolve(.settingsAudioSound), isOn: Binding(get: { audio.soundEnabled }, set: { audio.soundEnabled = $0 }))
+                Toggle(copyResolver.resolve(AppCopyKey.settingsMusic), isOn: Binding(get: { audio.musicEnabled }, set: { audio.musicEnabled = $0 }))
+                Toggle(copyResolver.resolve(AppCopyKey.settingsHaptics), isOn: Binding(get: { audio.hapticsEnabled }, set: { audio.hapticsEnabled = $0 }))
+                GameCopyText(SettingsCopy.hapticsFooterKey)
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
-                Text("소리는 다른 앱의 음악을 멈추지 않고, 무음 스위치를 따릅니다.")
+                GameCopyText(AppCopyKey.settingsAudioFooter)
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
+            } header: {
+                GameCopyText(AppCopyKey.settingsAudioSectionTitle)
             }
 
             // 복귀 알림은 언제든 끌 수 있도록 설정에 둔다.
             Section {
-                Toggle("이어하기 알림", isOn: Binding(
+                Toggle(copyResolver.resolve(AppCopyKey.settingsNotificationToggle), isOn: Binding(
                     get: { reminderOn },
                     set: { on in
                         if on { DailyReminder.enable(source: "settings") { granted in reminderOn = granted } }
@@ -57,9 +66,9 @@ struct SettingsView: View {
                 ))
                 .accessibilityIdentifier("settings.reminder")
             } header: {
-                Text("알림")
+                GameCopyText(AppCopyKey.settingsNotificationsSectionTitle)
             } footer: {
-                Text("매일 저녁 7시 30분, 현재 선수의 다음 목표를 알려 드립니다. 며칠 동안 열지 않으면 저절로 멈춥니다.")
+                GameCopyText(AppCopyKey.settingsNotificationFooter)
             }
 
             Section {
@@ -67,12 +76,36 @@ struct SettingsView: View {
                     .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
             }
 
-            Section("진행") {
-                LabeledContent("다음 선수", value: "\(highSchool.inheritance.lifeNumber)번째")
-                LabeledContent("가져온 기억", value: "\(highSchool.inheritance.memories.count)장")
-                LabeledContent("영혼", value: "\(highSchool.inheritance.soulPoints)")
+            Section {
+                LabeledContent(
+                    copyResolver.resolve(AppCopyKey.settingsNextPlayerLabel),
+                    value: copyResolver.resolve(
+                        AppCopyKey.settingsNextPlayerValue,
+                        arguments: [.integer(highSchool.inheritance.lifeNumber)]
+                    )
+                )
+                LabeledContent(
+                    copyResolver.resolve(AppCopyKey.settingsMemoriesLabel),
+                    value: copyResolver.resolve(
+                        AppCopyKey.settingsMemoriesValue,
+                        arguments: [.integer(highSchool.inheritance.memories.count)]
+                    )
+                )
+                LabeledContent(
+                    copyResolver.resolve(AppCopyKey.settingsSoulLabel),
+                    value: copyResolver.resolve(
+                        AppCopyKey.settingsSoulValue,
+                        arguments: [.integer(highSchool.inheritance.soulPoints)]
+                    )
+                )
                 if let state = pro.state {
-                    LabeledContent("프로", value: "\(state.team.name) \(state.season)시즌")
+                    LabeledContent(
+                        copyResolver.resolve(AppCopyKey.settingsProLabel),
+                        value: copyResolver.resolve(
+                            AppCopyKey.settingsProValue,
+                            arguments: [.userText(state.team.name), .integer(state.season)]
+                        )
+                    )
                 }
                 // **시드를 보여 준다.**
                 //
@@ -80,9 +113,9 @@ struct SettingsView: View {
                 // 볼 방법이 없어서 "이 시드 해 봐라"가 성립하지 않았다 — 커뮤니티에서
                 // 검증된 바이럴 경로 하나가 통째로 막혀 있었던 셈이다. UI 한 줄이면 된다.
                 if let seed = highSchool.state?.careerID {
-                    LabeledContent("이번 선수 공유 코드") {
+                    LabeledContent {
                         HStack(spacing: 8) {
-                            Text(seed)
+                            Text(verbatim: seed)
                                 .font(.caption.monospaced())
                                 .foregroundStyle(BaseballTheme.textSecondary)
                                 .lineLimit(1)
@@ -90,26 +123,34 @@ struct SettingsView: View {
                             ShareLink(item: seed) {
                                 Image(systemName: "square.and.arrow.up")
                             }
-                            .accessibilityLabel("시드 공유")
+                            .accessibilityLabel(copyResolver.resolve(AppCopyKey.settingsShareCodeAccessibility))
                             .accessibilityIdentifier("settings.shareSeed")
                         }
+                    } label: {
+                        GameCopyText(AppCopyKey.settingsShareCodeLabel)
                     }
                 }
+            } header: {
+                GameCopyText(AppCopyKey.settingsProgressSectionTitle)
             }
 
             Section {
-                Button("모든 진행 삭제", role: .destructive) { confirmingReset = true }
+                Button(copyResolver.resolve(AppCopyKey.settingsDeleteAction), role: .destructive) { confirmingReset = true }
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
             } footer: {
-                Text("고교·프로 커리어와 계승 기록이 모두 지워집니다. 되돌릴 수 없습니다.")
+                GameCopyText(AppCopyKey.settingsDeleteFooter)
             }
         }
         .scrollContentBackground(.hidden)
         .background(BaseballTheme.canvas)
-        .navigationTitle("설정")
+        .navigationTitle(copyResolver.resolve(AppCopyKey.settingsNavigationTitle))
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("모든 진행을 삭제할까요?", isPresented: $confirmingReset, titleVisibility: .visible) {
-            Button("삭제", role: .destructive) {
+        .confirmationDialog(
+            copyResolver.resolve(AppCopyKey.settingsDeleteConfirmationTitle),
+            isPresented: $confirmingReset,
+            titleVisibility: .visible
+        ) {
+            Button(copyResolver.resolve(AppCopyKey.settingsDeleteConfirmationAction), role: .destructive) {
                 // 삭제가 실제로 성공했을 때만 첫 화면으로 되돌린다. 저장 쓰기가 실패하면
                 // 진행은 그대로 남아 있는데 화면만 오프닝으로 가서, 되돌릴 수 없는 것을
                 // 되돌린 것처럼 보이게 된다.
@@ -131,9 +172,9 @@ struct SettingsView: View {
                 // 오프닝 표시 상태까지 초기화한다.
                 if clearedHighSchool && clearedPro { onResetAll() }
             }
-            Button("취소") {}
+            Button(copyResolver.resolve(AppCopyKey.settingsDeleteConfirmationCancel)) {}
         } message: {
-            Text("선수 기록과 계승 유산까지 전부 사라집니다.")
+            GameCopyText(AppCopyKey.settingsDeleteConfirmationMessage)
         }
     }
 }

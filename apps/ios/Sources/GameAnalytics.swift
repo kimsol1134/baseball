@@ -26,6 +26,8 @@ struct AnalyticsContext: Equatable {
     let build: String
     let distribution: Distribution
     let environment: Environment
+    let appLanguage: AppLanguage
+    let copySchemaVersion: Int
 
     var properties: [String: Any] {
         [
@@ -34,6 +36,8 @@ struct AnalyticsContext: Equatable {
             "distribution": distribution.rawValue,
             "environment": environment.rawValue,
             "platform": "ios",
+            "app_language": appLanguage.rawValue,
+            "copy_schema_version": copySchemaVersion,
         ]
     }
 
@@ -41,7 +45,9 @@ struct AnalyticsContext: Equatable {
         appVersion: String,
         build: String,
         isDebug: Bool,
-        receiptURL: URL?
+        receiptURL: URL?,
+        appLanguage: AppLanguage = .korean,
+        copySchemaVersion: Int = GameCopySchema.currentVersion
     ) -> AnalyticsContext {
         let distribution: Distribution
         if isDebug {
@@ -57,7 +63,9 @@ struct AnalyticsContext: Equatable {
             appVersion: appVersion,
             build: build,
             distribution: distribution,
-            environment: distribution == .appStore ? .production : .development
+            environment: distribution == .appStore ? .production : .development,
+            appLanguage: appLanguage,
+            copySchemaVersion: copySchemaVersion
         )
     }
 
@@ -71,7 +79,9 @@ struct AnalyticsContext: Equatable {
             appVersion: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
             build: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown",
             isDebug: isDebug,
-            receiptURL: bundle.appStoreReceiptURL
+            receiptURL: bundle.appStoreReceiptURL,
+            appLanguage: AppLanguage.current(bundle: bundle),
+            copySchemaVersion: GameCopySchema.currentVersion
         )
     }
 }

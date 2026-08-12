@@ -4,6 +4,13 @@ import SimulationCore
 /// 고교 커리어 화면이 쓰는 표시 문구와 파생값. 데스크톱 `HighSchoolCareerView.tsx`의 라벨 표와
 /// 같은 값을 쓰므로 두 플랫폼의 각성·기억 카드 설명이 갈리지 않는다.
 enum HighSchoolPresentation {
+    struct ChapterReviewGainRow: Identifiable, Equatable {
+        /// Raw/stable identity used by SwiftUI diffing. The localized label is display-only.
+        let id: String
+        let label: String
+        let delta: Int
+    }
+
     // MARK: - 라벨
 
     /// 저장 규칙의 8개 진행 구간은 그대로 두고, 사용자가 한 번에 이해할 수 있는 네 장으로
@@ -36,6 +43,10 @@ enum HighSchoolPresentation {
         }
     }
 
+    static func localized(_ phase: HighSchoolCareerPhase, resolver: GameCopyResolver) -> String {
+        resolver.resolve(phase.displayCopyToken)
+    }
+
     static func focus(_ focus: TrainingFocus) -> String {
         switch focus {
         case .velocity: "구위"
@@ -47,6 +58,561 @@ enum HighSchoolPresentation {
         }
     }
 
+    static func localized(_ focus: TrainingFocus, resolver: GameCopyResolver) -> String {
+        resolver.resolve(focus.displayCopyToken)
+    }
+
+    static func localizedSchoolName(
+        _ school: SchoolSnapshot,
+        rawRegion: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        if let region = SchoolRegionID.strictLookup(rawRegion: rawRegion) {
+            let copy = CopyToken.schoolSelectionDescriptor(region: region, schoolID: school.id)
+            return resolver.resolve(copy.schoolNameToken)
+        }
+        // A legacy Korean region is intentionally left untouched so opening an old career does
+        // not rewrite its visible school identity. English uses a non-regional SchoolID fallback
+        // rather than the Seoul-specific generic catalog entry.
+        if resolver.language == .korean { return school.name }
+        return resolver.resolve(school.id.fallbackNameCopyToken)
+    }
+
+    static func localizedSchoolCastName(
+        _ school: SchoolSnapshot,
+        rawRegion: String,
+        role: SchoolCastRole,
+        resolver: GameCopyResolver
+    ) -> String {
+        let baseName: String
+        if let region = SchoolRegionID.strictLookup(rawRegion: rawRegion) {
+            let copy = CopyToken.schoolSelectionDescriptor(region: region, schoolID: school.id)
+            let token = role == .coach ? copy.coachNameToken : copy.catcherNameToken
+            baseName = resolver.resolve(token)
+        } else if resolver.language == .korean {
+            // This is the only visible legacy-name path. It preserves the exact Korean payload
+            // from an old save; the RelationshipCard itself only calls this semantic resolver.
+            baseName = role == .coach ? school.coachName : school.catcherName
+        } else {
+            baseName = resolver.resolve(
+                CopyToken.schoolFallbackCastName(schoolID: school.id, role: role)
+            )
+        }
+
+        let suffixKey = role == .coach ? AppCopyKey.schoolSelectionCoach : AppCopyKey.schoolSelectionCatcher
+        return resolver.resolve(suffixKey, arguments: [.userText(baseName)])
+    }
+
+    static func localizedRelationshipSpeaker(
+        event: CareerEventContent,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RelationshipPresentationCatalog.eventDescriptor(for: event)
+        return resolver.resolve(descriptor.speakerLabelToken)
+    }
+
+    static func localizedRelationshipCategory(
+        event: CareerEventContent,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RelationshipPresentationCatalog.eventDescriptor(for: event)
+        return resolver.resolve(descriptor.categoryLabelToken)
+    }
+
+    /// Portrait seeds are visual-only and are never copied into a visible label. Keeping this
+    /// legacy-data read here leaves the relationship card's visible source boundary semantic.
+    static func relationshipPortraitSeed(
+        category: String,
+        state: HighSchoolCareerSnapshot
+    ) -> (seed: String, role: AvatarFace.Role)? {
+        switch category {
+        case "coach":
+            guard let school = state.school else { return nil }
+            return (school.coachName, .coach)
+        case "catcher":
+            guard let school = state.school else { return nil }
+            return (school.catcherName, .catcher)
+        case "rival":
+            return (state.rival.name, .rival)
+        default:
+            return nil
+        }
+    }
+
+    static func localizedRelationshipEventTitle(
+        _ event: CareerEventContent,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RelationshipPresentationCatalog.eventDescriptor(for: event)
+        if descriptor.isKnownEvent { return resolver.resolve(descriptor.titleToken) }
+        return resolver.language == .korean
+            ? event.title
+            : resolver.resolve(descriptor.titleToken)
+    }
+
+    static func localizedRelationshipEventSummary(
+        _ event: CareerEventContent,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RelationshipPresentationCatalog.eventDescriptor(for: event)
+        if descriptor.isKnownEvent { return resolver.resolve(descriptor.summaryToken) }
+        return resolver.language == .korean
+            ? event.summary
+            : resolver.resolve(descriptor.summaryToken)
+    }
+
+    static func relationshipTrustBand(
+        for event: CareerEventContent,
+        manager: Int,
+        catcher: Int,
+        rival: Int,
+        resolver: GameCopyResolver
+    ) -> RelationshipVoiceCatalog.TrustBand {
+        let descriptor = RelationshipPresentationCatalog.cardDescriptor(for: event)
+        if descriptor.event.isKnownEvent {
+            return RelationshipVoiceCatalog.trustBand(
+                for: descriptor.sceneSpeaker,
+                manager: manager,
+                catcher: catcher,
+                rival: rival
+            )
+        }
+        guard resolver.language == .korean,
+              let scene = RelationshipVoiceCatalog.scene(eventID: event.id, category: event.category) else {
+            return .mid
+        }
+        return RelationshipVoiceCatalog.trustBand(
+            for: scene.speaker,
+            manager: manager,
+            catcher: catcher,
+            rival: rival
+        )
+    }
+
+    static func localizedRelationshipQuote(
+        event: CareerEventContent,
+        band: RelationshipVoiceCatalog.TrustBand,
+        playerName: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RelationshipPresentationCatalog.cardDescriptor(for: event)
+        if descriptor.event.isKnownEvent {
+            guard descriptor.quoteDescriptors.contains(where: { $0.trustBand == band }) else {
+                return ""
+            }
+            return resolver.resolve(
+                RelationshipVoiceCatalog.quoteCopyToken(
+                    eventID: event.id,
+                    trustBand: band,
+                    playerName: playerName
+                )
+            )
+        }
+        if resolver.language == .korean,
+           let scene = RelationshipVoiceCatalog.scene(eventID: event.id, category: event.category) {
+            return scene.quote(band).replacingOccurrences(of: "{player}", with: playerName)
+        }
+        return resolver.resolve(.relationshipFallbackQuote())
+    }
+
+    static func localizedRelationshipChoiceTitle(
+        event: CareerEventContent,
+        response: RelationshipResponse,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RelationshipPresentationCatalog.cardDescriptor(for: event)
+        if descriptor.event.isKnownEvent,
+           let choice = descriptor.choiceDescriptors.first(where: { $0.response == response }) {
+            return resolver.resolve(choice.titleToken)
+        }
+        if resolver.language == .korean,
+           let choice = RelationshipVoiceCatalog.scene(eventID: event.id, category: event.category)?
+               .choices.first(where: { $0.response == response }) {
+            return choice.title
+        }
+        return resolver.resolve(.relationshipFallbackChoiceTitle(response: response))
+    }
+
+    static func localizedRelationshipChoiceDetail(
+        event: CareerEventContent,
+        response: RelationshipResponse,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RelationshipPresentationCatalog.cardDescriptor(for: event)
+        if descriptor.event.isKnownEvent,
+           let choice = descriptor.choiceDescriptors.first(where: { $0.response == response }) {
+            return resolver.resolve(choice.detailToken)
+        }
+        if resolver.language == .korean,
+           let choice = RelationshipVoiceCatalog.scene(eventID: event.id, category: event.category)?
+               .choices.first(where: { $0.response == response }) {
+            return choice.detail
+        }
+        return resolver.resolve(.relationshipFallbackChoiceDetail(response: response))
+    }
+
+    static func localizedRivalName(
+        _ rival: RivalSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RivalPresentationCatalog.descriptor(for: rival.id)
+        if descriptor.isKnownRival { return resolver.resolve(descriptor.nameToken) }
+        return resolver.language == .korean ? rival.name : resolver.resolve(descriptor.nameToken)
+    }
+
+    static func localizedRivalArchetype(
+        _ rival: RivalSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = RivalPresentationCatalog.descriptor(for: rival.id)
+        if descriptor.isKnownRival { return resolver.resolve(descriptor.archetypeToken) }
+        return resolver.language == .korean
+            ? rival.archetype
+            : resolver.resolve(descriptor.archetypeToken)
+    }
+
+    static func localizedRivalSignature(
+        _ rival: RivalSnapshot,
+        resolver: GameCopyResolver
+    ) -> String? {
+        guard rival.signatureRecord != nil || descriptorForRival(rival).isKnownRival else { return nil }
+        let descriptor = descriptorForRival(rival)
+        if descriptor.isKnownRival { return resolver.resolve(descriptor.signatureToken) }
+        return resolver.language == .korean
+            ? rival.signatureRecord
+            : resolver.resolve(descriptor.signatureToken)
+    }
+
+    // MARK: - Chapter review
+
+    static func localizedChapterReviewTitle(
+        _ chapter: CareerChapterSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        let chapterCopy = CareerChapterPresentationCatalog.descriptor(for: chapter)
+        return resolver.resolve(
+            AppCopyKey.chapterReviewCardTitle,
+            arguments: [.userText(resolver.resolve(chapterCopy.titleToken))]
+        )
+    }
+
+    static func localizedChapterReviewVerdict(
+        _ performance: CareerPerformanceSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(ChapterReviewPresentationCatalog.descriptor(for: performance).token)
+    }
+
+    static func localizedChapterReviewStatLine(
+        _ performance: CareerPerformanceSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.chapterReviewStatLine,
+            arguments: [
+                .integer(performance.importantGamesCompleted),
+                .integer(performance.strikeouts),
+                .integer(performance.walks),
+            ]
+        )
+    }
+
+    static func localizedChapterReviewGrowthEmpty(
+        trainingCount: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        if trainingCount == 0 {
+            return resolver.resolve(AppCopyKey.chapterReviewGrowthEmptyNoTraining)
+        }
+        return resolver.resolve(
+            AppCopyKey.chapterReviewGrowthEmptyWithTraining,
+            arguments: [.integer(trainingCount)]
+        )
+    }
+
+    static func localizedChapterReviewGrowthSummary(
+        trainingCount: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.chapterReviewGrowthSummary,
+            arguments: [.integer(trainingCount)]
+        )
+    }
+
+    /// Sorts the persisted raw gain map exactly as the pre-migration card did, then localizes
+    /// each stable ability identity. In particular, localized labels never participate in sort.
+    static func localizedChapterReviewGainRows(
+        _ gains: [String: Int],
+        resolver: GameCopyResolver
+    ) -> [ChapterReviewGainRow] {
+        gains.sorted { $0.value > $1.value }.map { rawLabel, delta in
+            let ability: TalentAbility? = switch rawLabel {
+            case "구위": .stuff
+            case "제구": .command
+            case "변화구": .movement
+            case "체력": .stamina
+            default: nil
+            }
+            return ChapterReviewGainRow(
+                id: ability?.rawValue ?? "legacy.\(rawLabel)",
+                label: ability.map { resolver.resolve($0.displayCopyToken) }
+                    ?? (resolver.language == .korean ? rawLabel : GameCopyResolver.unavailableText),
+                delta: delta
+            )
+        }
+    }
+
+    static func localizedChapterReviewRivalLine(
+        _ rival: RivalSnapshot,
+        resolver: GameCopyResolver
+    ) -> String? {
+        let descriptor = RivalPresentationCatalog.descriptor(for: rival.id)
+        guard descriptor.isKnownRival || !rival.name.isEmpty else { return nil }
+        return resolver.resolve(
+            AppCopyKey.chapterReviewNextStoryRival,
+            arguments: [.userText(localizedRivalName(rival, resolver: resolver))]
+        )
+    }
+
+    // MARK: - Tournament card
+
+    static func localizedTournamentName(
+        chapterNumber: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard let descriptor = TournamentPresentationCatalog.tournamentNameDescriptor(for: chapterNumber) else {
+            return GameCopyResolver.unavailableText
+        }
+        return resolver.resolve(descriptor.token)
+    }
+
+    static func localizedTournamentRound(
+        rawRound: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard let descriptor = TournamentPresentationCatalog.roundDescriptor(for: rawRound) else {
+            return GameCopyResolver.unavailableText
+        }
+        return resolver.resolve(descriptor.token)
+    }
+
+    static func localizedTournamentOpponentSchool(
+        rawSchoolName: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard let descriptor = TournamentPresentationCatalog.opponentSchoolDescriptor(for: rawSchoolName) else {
+            return GameCopyResolver.unavailableText
+        }
+        return resolver.resolve(descriptor.token)
+    }
+
+    static func localizedTournamentAceStart(
+        round: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.tournamentAceStart,
+            arguments: [.userText(localizedTournamentRound(rawRound: round, resolver: resolver))]
+        )
+    }
+
+    // MARK: - Chapter goal card
+
+    static func localizedChapterGoalTitle(
+        _ goal: ChapterGoal.Goal,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(ChapterGoalPresentationCatalog.descriptor(for: goal).titleToken)
+    }
+
+    static func localizedChapterGoalDetail(
+        _ goal: ChapterGoal.Goal,
+        resolver: GameCopyResolver
+    ) -> String {
+        let descriptor = ChapterGoalPresentationCatalog.descriptor(for: goal)
+        return resolver.resolve(
+            .chapterGoalDetail(descriptor.frame, targetStrikeouts: goal.targetStrikeouts)
+        )
+    }
+
+    static func localizedChapterGoalProgress(
+        progress: Int,
+        targetStrikeouts: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.chapterGoalProgress,
+            arguments: [.integer(progress), .integer(targetStrikeouts)]
+        )
+    }
+
+    // MARK: - Important game
+
+    /// The scenario's title and narrative are resolved by ID. Legacy title/narrative fields are
+    /// deliberately never used as visible fallback text.
+    static func localizedImportantGameScenarioTitle(
+        _ scenario: ImportantGameScenarioContent,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(ImportantGamePresentationCatalog.descriptor(for: scenario.id).titleToken)
+    }
+
+    static func localizedImportantGameScenarioNarrative(
+        _ scenario: ImportantGameScenarioContent,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(ImportantGamePresentationCatalog.descriptor(for: scenario.id).narrativeToken)
+    }
+
+    static func localizedImportantGameSituation(
+        _ scenario: ImportantGameScenarioContent,
+        resolver: GameCopyResolver
+    ) -> String {
+        let safeOuts = max(0, scenario.outs)
+        let inning = GameFormatters.inningLabel(inning: scenario.inning, language: resolver.language)
+        let key: GameCopyKey
+        var arguments: [LocalizedCopyArgument] = [.userText(inning)]
+        switch safeOuts {
+        case 0:
+            key = AppCopyKey.importantGameSituationZero
+        case 1:
+            key = AppCopyKey.importantGameSituationOne
+        default:
+            key = AppCopyKey.importantGameSituationMany
+            arguments.append(.integer(safeOuts))
+        }
+        return resolver.resolve(key, arguments: arguments)
+    }
+
+    static func localizedImportantGameScenarioAccessibility(
+        title: String,
+        situation: String,
+        narrative: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.importantGameScenarioAccessibility,
+            arguments: [.userText(title), .userText(situation), .userText(narrative)]
+        )
+    }
+
+    static func localizedImportantGameOpponentTitle(
+        isFinalShowdown: Bool,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            isFinalShowdown
+                ? AppCopyKey.importantGameFinalShowdownTitle
+                : AppCopyKey.importantGameOpponentTitle
+        )
+    }
+
+    static func localizedImportantGameFinalShowdownBody(
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(AppCopyKey.importantGameFinalShowdownBody)
+    }
+
+    static func localizedImportantGameCareerMatchup(
+        _ ledger: HighSchoolCareerStore.RivalLedger,
+        resolver: GameCopyResolver
+    ) -> String? {
+        guard ledger.plateAppearances > 0 else { return nil }
+        return resolver.resolve(
+            AppCopyKey.importantGameCareerMatchup,
+            arguments: [
+                .integer(ledger.plateAppearances),
+                .integer(ledger.strikeouts),
+                .integer(ledger.hits),
+            ]
+        )
+    }
+
+    static func localizedImportantGameRivalAccessibility(
+        name: String,
+        archetype: String,
+        signature: String?,
+        resolver: GameCopyResolver
+    ) -> String {
+        let key = signature == nil
+            ? AppCopyKey.importantGameRivalAccessibility
+            : AppCopyKey.importantGameRivalAccessibilitySignature
+        var arguments: [LocalizedCopyArgument] = [.userText(name), .userText(archetype)]
+        if let signature {
+            arguments.append(.userText(signature))
+        }
+        return resolver.resolve(
+            key,
+            arguments: arguments
+        )
+    }
+
+    static func localizedImportantGameStartAction(resolver: GameCopyResolver) -> String {
+        resolver.resolve(AppCopyKey.importantGameStartAction)
+    }
+
+    /// The raw legacy name is retained only as a deterministic portrait seed. It is never passed
+    /// to a visible label or accessibility value.
+    static func importantGameRivalPortraitSeed(_ rival: RivalSnapshot) -> String {
+        rival.name
+    }
+
+    static func localizedChallengeOutcome(
+        _ outcome: DraftOutcome?,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            outcome == .drafted
+                ? AppCopyKey.challengeEndOutcomeDrafted
+                : AppCopyKey.challengeEndOutcomeUndrafted
+        )
+    }
+
+    static func localizedRelationshipWindLine(
+        category: String,
+        wind: CareerWind,
+        resolver: GameCopyResolver
+    ) -> String? {
+        let target = HighSchoolCareerEngine.relationshipTarget(forEventCategory: category)
+        let descriptor = RelationshipPresentationCatalog.windDescriptor(for: wind, target: target)
+        guard !descriptor.effectTokens.isEmpty else { return nil }
+        let title = resolver.resolve(descriptor.careerWind.titleToken)
+        let effects = descriptor.effectTokens.map(resolver.resolve).joined(separator: " · ")
+        return resolver.resolve(.relationshipWindLine(title: title, effects: effects))
+    }
+
+    static func localizedRelationshipEventAccessibility(
+        speaker: String,
+        name: String,
+        title: String,
+        primaryText: String,
+        summary: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .relationshipAccessibilityEvent(
+                speaker: speaker,
+                name: name,
+                title: title,
+                primaryText: primaryText,
+                summary: summary
+            )
+        )
+    }
+
+    static func localizedRelationshipChoiceAccessibility(
+        title: String,
+        detail: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(.relationshipAccessibilityChoice(title: title, detail: detail))
+    }
+
+    private static func descriptorForRival(_ rival: RivalSnapshot) -> RivalPresentationCopyDescriptor {
+        RivalPresentationCatalog.descriptor(for: rival.id)
+    }
+
     static func focusDetail(_ focus: TrainingFocus) -> String {
         switch focus {
         case .velocity: "구위가 오릅니다. 직구가 빨라지고 헛스윙이 늘어납니다. 피로가 큽니다."
@@ -56,6 +622,18 @@ enum HighSchoolPresentation {
         case .recovery: "피로가 줄고 팔 상태가 회복됩니다."
         case .gamePlanning: "포수와의 호흡과 승부 판단이 좋아집니다."
         }
+    }
+
+    static func localizedFocusDetail(_ focus: TrainingFocus, resolver: GameCopyResolver) -> String {
+        resolver.resolve(focus.detailCopyToken)
+    }
+
+    static func localizedFocusTradeoff(_ focus: TrainingFocus, resolver: GameCopyResolver) -> String {
+        resolver.resolve(focus.tradeoffCopyToken)
+    }
+
+    static func localizedFocusMetric(_ focus: TrainingFocus, resolver: GameCopyResolver) -> String {
+        resolver.resolve(focus.metricCopyToken)
     }
 
     static func focusSymbol(_ focus: TrainingFocus) -> String {
@@ -89,6 +667,23 @@ enum HighSchoolPresentation {
         case .standard: "보통"
         case .intensive: "몰아붙이기"
         }
+    }
+
+    static func localized(
+        _ intensity: TrainingIntensity,
+        focus: TrainingFocus,
+        resolver: GameCopyResolver
+    ) -> String {
+        focus == .recovery
+            ? resolver.resolve(intensity.recoveryCopyToken)
+            : resolver.resolve(intensity.displayCopyToken)
+    }
+
+    static func localizedOutlook(
+        _ outlook: HighSchoolCareerEngine.TrainingGrowthOutlook,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(outlook.detailCopyToken)
     }
 
     /// 대화 응답 문구. **상황에 따라 달라진다.**
@@ -164,6 +759,17 @@ enum HighSchoolPresentation {
         }
     }
 
+    static func localized(
+        _ response: RelationshipResponse,
+        category: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        if resolver.language == .korean {
+            return Self.response(response, category: category)
+        }
+        return resolver.resolve(response.displayCopyToken)
+    }
+
     static func armHealth(_ state: ArmHealthState) -> (label: String, tone: BaseballCardTone) {
         switch state {
         case .normal: ("팔 상태 정상", .positive)
@@ -171,6 +777,174 @@ enum HighSchoolPresentation {
         case .warning: ("팔 상태 경고", .negative)
         case .recovering: ("회복 중", .raised)
         }
+    }
+
+    static func localizedArmHealth(
+        _ state: ArmHealthState,
+        resolver: GameCopyResolver
+    ) -> (label: String, tone: BaseballCardTone) {
+        let tone: BaseballCardTone = switch state {
+        case .normal: .positive
+        case .caution: .warning
+        case .warning: .negative
+        case .recovering: .raised
+        }
+        return (resolver.resolve(state.displayCopyToken), tone)
+    }
+
+    static func localizedOpportunityReason(
+        _ opportunity: TrainingOpportunitySnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(opportunity.copyDescriptor.token)
+    }
+
+    static func localizedTrainingResultTitle(
+        _ receipt: HighSchoolCareerStore.TrainingReceipt,
+        resolver: GameCopyResolver
+    ) -> String {
+        if receipt.bloom != nil {
+            return resolver.resolve(AppCopyKey.trainingResultTitleBloom)
+        }
+        if receipt.jackpot {
+            return resolver.resolve(AppCopyKey.trainingResultTitleJackpot)
+        }
+        return receipt.gains.contains { $0.after > $0.before }
+            ? resolver.resolve(AppCopyKey.trainingResultTitleGrowth)
+            : resolver.resolve(AppCopyKey.trainingResultTitleNoGrowth)
+    }
+
+    static func localizedTrainingResultHeadline(
+        _ receipt: HighSchoolCareerStore.TrainingReceipt,
+        resolver: GameCopyResolver
+    ) -> String {
+        let gains = receipt.gains.filter { $0.after > $0.before }
+        guard !gains.isEmpty else {
+            return resolver.resolve(AppCopyKey.trainingResultHeadlineNoGain)
+        }
+        return gains.map { gain in
+            resolver.resolve(
+                AppCopyKey.trainingResultGainValue,
+                arguments: [
+                    .userText(resolver.resolve(gain.ability.displayCopyToken)),
+                    .integer(gain.after - gain.before),
+                ]
+            )
+        }.joined(separator: " · ")
+    }
+
+    static func localizedTrainingGainRow(
+        _ gain: MobileCareerStore.AbilityGain,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.trainingResultGainRow,
+            arguments: [
+                .userText(resolver.resolve(gain.ability.displayCopyToken)),
+                .integer(gain.before),
+                .integer(gain.after),
+            ]
+        )
+    }
+
+    static func localizedTrainingResultBloom(
+        _ bloom: HighSchoolCareerStore.Bloom,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            GameCopyKey.gameContent("content.training-result.bloom-headline"),
+            arguments: [
+                .userText(resolver.resolve(bloom.ability.displayCopyToken)),
+                .userText(resolver.resolve(bloom.grade.displayCopyToken)),
+                .integer(bloom.grade.ceiling),
+            ]
+        )
+    }
+
+    static func localizedTrainingResultDetail(
+        _ receipt: HighSchoolCareerStore.TrainingReceipt,
+        resolver: GameCopyResolver
+    ) -> String {
+        // Korean receipts are already the shipped Korean copy, including dynamic rehab and
+        // talent-wall wording. Preserve that behavior verbatim; the English branch below is
+        // the strict semantic reauthoring boundary and never interpolates the raw sentence.
+        if resolver.language == .korean {
+            return receipt.detail
+        }
+
+        let base: String
+        if let repeatCount = receipt.repeatCount {
+            base = resolver.resolve(
+                GameCopyKey.gameContent("content.training-result.detail.repeat"),
+                arguments: [
+                    .userText(resolver.resolve(receipt.focus.displayCopyToken)),
+                    .integer(repeatCount),
+                ]
+            )
+        } else if let bloom = receipt.bloom {
+            base = localizedTrainingResultBloom(bloom, resolver: resolver)
+        } else if receipt.detail.contains("재능의 한계") {
+            base = resolver.resolve(
+                GameCopyKey.gameContent("content.training-result.detail.blocked"),
+                arguments: [
+                    .userText(resolver.resolve(TalentAbility.from(receipt.focus).displayCopyToken)),
+                ]
+            )
+        } else if receipt.detail.hasPrefix("재활 훈련으로 팔 상태를 회복합니다.") {
+            base = resolver.resolve(GameCopyKey.gameContent("content.training-result.detail.rehab"))
+        } else if receipt.growth > 0 {
+            let metric = resolver.resolve(receipt.focus.metricCopyToken)
+            if receipt.fatigueChange < 0 {
+                base = resolver.resolve(
+                    GameCopyKey.gameContent("content.training-result.detail.growth-recovery"),
+                    arguments: [
+                        .userText(metric),
+                        .integer(receipt.growth),
+                        .integer(-receipt.fatigueChange),
+                    ]
+                )
+            } else {
+                base = resolver.resolve(
+                    GameCopyKey.gameContent("content.training-result.detail.growth"),
+                    arguments: [.userText(metric), .integer(receipt.growth)]
+                )
+            }
+        } else if receipt.focus == .recovery, receipt.fatigueChange < 0 {
+            base = resolver.resolve(
+                GameCopyKey.gameContent("content.training-result.detail.recovery"),
+                arguments: [.integer(-receipt.fatigueChange)]
+            )
+        } else if receipt.detail == "이번 훈련에서는 능력치가 오르지 않았습니다. 피로와 훈련 강도를 조절해 다시 시도할 수 있습니다." {
+            base = resolver.resolve(GameCopyKey.gameContent("content.training-result.detail.no-growth"))
+        } else if receipt.detail.isEmpty || receipt.detail == "훈련을 마쳤습니다." {
+            base = resolver.resolve(GameCopyKey.gameContent("content.training-result.detail.unknown"))
+        } else {
+            // A future or corrupted legacy sentence is deliberately not interpolated. The
+            // structured result above is the only source allowed into English rendering.
+            base = resolver.resolve(GameCopyKey.gameContent("content.training-result.detail.unknown"))
+        }
+
+        guard receipt.jackpot else { return base }
+        return resolver.resolve(
+            GameCopyKey.gameContent("content.training-result.detail.jackpot"),
+            arguments: [.userText(base)]
+        )
+    }
+
+    static func localizedTrainingFatigue(
+        _ receipt: HighSchoolCareerStore.TrainingReceipt,
+        resolver: GameCopyResolver
+    ) -> String {
+        if receipt.fatigueChange == 0 {
+            return resolver.resolve(
+                AppCopyKey.trainingResultFatigueSteady,
+                arguments: [.integer(receipt.fatigueAfter)]
+            )
+        }
+        return resolver.resolve(
+            AppCopyKey.trainingResultFatigueChanged,
+            arguments: [.integer(receipt.fatigueAfter), .integer(receipt.fatigueChange)]
+        )
     }
 
     static func karma(_ karma: KarmaID) -> (title: String, detail: String) {
@@ -205,6 +979,240 @@ enum HighSchoolPresentation {
         case .lateInningReserve: ("후반에도 남는 힘", "체력 +4 · 공마다 쌓이는 피로 감소")
         case .scoutComposure: ("압박 속 침착함", "구위·제구 +2 · 체력 -1")
         }
+    }
+
+    // MARK: - Awakening skill tree localization boundary
+
+    /// The legacy Korean tuple above remains available to non-migrated clients. The scoped iOS
+    /// skill-tree surface resolves the same stable IDs through GameContent instead.
+    static func localizedAwakeningTitle(
+        _ id: AwakeningID,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(id.titleCopyToken)
+    }
+
+    static func localizedAwakeningDetail(
+        _ id: AwakeningID,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(id.detailCopyToken)
+    }
+
+    static func localizedAwakeningBranchTitle(
+        _ branch: AwakeningTree.Branch,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(branch.titleCopyToken)
+    }
+
+    static func localizedAwakeningBranchDetail(
+        _ branch: AwakeningTree.Branch,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(branch.detailCopyToken)
+    }
+
+    static func localizedAwakeningReadOnlySummary(
+        selectedCount: Int,
+        total: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard selectedCount > 0 else {
+            return resolver.resolve(AppCopyKey.awakeningReadOnlyEmpty)
+        }
+        return resolver.resolve(
+            AppCopyKey.awakeningReadOnlyProgress,
+            arguments: [
+                .integer(selectedCount),
+                .integer(total),
+                .integer(max(0, total - selectedCount)),
+            ]
+        )
+    }
+
+    static func localizedAwakeningCounter(
+        total: Int,
+        current: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.awakeningCounter,
+            arguments: [.integer(total), .integer(current)]
+        )
+    }
+
+    static func localizedAwakeningSelectionGuidance(
+        total: Int,
+        selectedCount: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.awakeningSelectionGuidance,
+            arguments: [.integer(max(0, total - selectedCount - 1))]
+        )
+    }
+
+    static func localizedAwakeningSpark(
+        sparks: Int?,
+        beforeFirstGame: Bool,
+        resolver: GameCopyResolver
+    ) -> (text: String, tone: BaseballCardTone) {
+        if (sparks ?? AwakeningTree.leapSparks) >= AwakeningTree.leapSparks {
+            return (
+                resolver.resolve(AppCopyKey.awakeningSparkLeaps),
+                .milestone
+            )
+        }
+        if beforeFirstGame {
+            return (
+                resolver.resolve(AppCopyKey.awakeningSparkBeforeFirstGame),
+                .standard
+            )
+        }
+        return (
+            resolver.resolve(AppCopyKey.awakeningSparkNeedsProof),
+            .standard
+        )
+    }
+
+    static func localizedAwakeningConfirmationTitle(
+        _ id: AwakeningID,
+        resolver: GameCopyResolver
+    ) -> String {
+        let title = localizedAwakeningTitle(id, resolver: resolver)
+        let subject = resolver.language == .korean
+            ? "'\(title)'\(KoreanCopy.ro(title))"
+            : "'\(title)'"
+        return resolver.resolve(
+            AppCopyKey.awakeningConfirmationTitle,
+            arguments: [.userText(subject)]
+        )
+    }
+
+    static func localizedAwakeningConfirmationMessage(
+        _ id: AwakeningID,
+        resolver: GameCopyResolver
+    ) -> String {
+        let node = AwakeningTree.node(id)
+        return resolver.resolve(
+            AppCopyKey.awakeningConfirmationMessage,
+            arguments: [
+                .userText(localizedAwakeningBranchTitle(node.branch, resolver: resolver)),
+                .integer(node.tier),
+                .userText(localizedAwakeningDetail(id, resolver: resolver)),
+            ]
+        )
+    }
+
+    static func localizedAwakeningBranchCardTitle(
+        _ branch: AwakeningTree.Branch,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.awakeningBranchTitle,
+            arguments: [.userText(localizedAwakeningBranchTitle(branch, resolver: resolver))]
+        )
+    }
+
+    static func localizedAwakeningSelectedCount(
+        _ count: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.awakeningBranchSelectedCount,
+            arguments: [.integer(count)]
+        )
+    }
+
+    static func localizedAwakeningTierLabel(
+        _ tier: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(AppCopyKey.awakeningTierLabel, arguments: [.integer(tier)])
+    }
+
+    static func localizedAwakeningActionLabel(
+        readOnly: Bool,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(readOnly ? AppCopyKey.awakeningNextLabel : AppCopyKey.awakeningSelectLabel)
+    }
+
+    static func localizedAwakeningLeapLabel(resolver: GameCopyResolver) -> String {
+        resolver.resolve(AppCopyKey.awakeningLeapLabel)
+    }
+
+    static func localizedAwakeningLockReason(
+        _ node: AwakeningTree.Node,
+        selected: [AwakeningID],
+        resolver: GameCopyResolver
+    ) -> String? {
+        let taken = Set(selected)
+        let missing = node.parents.filter { !taken.contains($0) }
+        guard !missing.isEmpty else { return nil }
+        let names = missing
+            .map { localizedAwakeningTitle($0, resolver: resolver) }
+            .joined(separator: " · ")
+        return resolver.resolve(
+            AppCopyKey.awakeningLockReason,
+            arguments: [.userText(names)]
+        )
+    }
+
+    static func localizedAwakeningNodeVoiceLabel(
+        _ node: AwakeningTree.Node,
+        owned: Bool,
+        open: Bool,
+        readOnly: Bool,
+        selected: [AwakeningID],
+        resolver: GameCopyResolver
+    ) -> String {
+        let argumentsBase: [LocalizedCopyArgument] = [
+            .userText(localizedAwakeningBranchTitle(node.branch, resolver: resolver)),
+            .integer(node.tier),
+            .userText(localizedAwakeningTitle(node.id, resolver: resolver)),
+        ]
+        if owned {
+            return resolver.resolve(
+                AppCopyKey.awakeningNodeVoiceOwned,
+                arguments: argumentsBase
+            )
+        }
+        if open {
+            let key = readOnly
+                ? AppCopyKey.awakeningNodeVoiceAvailableNext
+                : AppCopyKey.awakeningNodeVoiceAvailableNow
+            return resolver.resolve(
+                key,
+                arguments: argumentsBase + [
+                    .userText(localizedAwakeningDetail(node.id, resolver: resolver)),
+                ]
+            )
+        }
+        return resolver.resolve(
+            AppCopyKey.awakeningNodeVoiceLocked,
+            arguments: argumentsBase + [
+                .userText(
+                    localizedAwakeningLockReason(node, selected: selected, resolver: resolver) ?? ""
+                ),
+            ]
+        )
+    }
+
+    static func localizedAwakeningSummaryTitle(
+        selectedCount: Int,
+        total: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.awakeningSummaryTitle,
+            arguments: [.integer(selectedCount), .integer(total)]
+        )
+    }
+
+    static func localizedAwakeningSummaryEmpty(resolver: GameCopyResolver) -> String {
+        resolver.resolve(AppCopyKey.awakeningSummaryEmpty)
     }
 
     static func memory(_ id: MemoryCardID) -> (title: String, detail: String) {

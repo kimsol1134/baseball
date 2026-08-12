@@ -65,7 +65,7 @@ struct AbilityGaugeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
-                Text(label).eyebrowStyle(BaseballTheme.textTertiary)
+                Text(verbatim: label).eyebrowStyle(BaseballTheme.textTertiary)
                 // **"재능"을 붙여 읽는다.**
                 //
                 // 알파벳만 있으면 그 글자를 현재 실력의 등급으로 읽는다. 그래서 구위 45(S)와

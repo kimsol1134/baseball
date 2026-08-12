@@ -1,0 +1,56 @@
+{
+  "createdAt": "2026-08-12T21:36:11+09:00",
+  "locale": "ja-JP",
+  "sourceComposition": "apps/promo/src/asc/StoreCreative.tsx",
+  "localizedAppUi": "apps/promo/src/asc/JapaneseAppScreens.tsx",
+  "preview": {
+    "path": "preview/preview-ja-886x1920.mp4",
+    "width": 886,
+    "height": 1920,
+    "fps": 30,
+    "durationSeconds": 27.6,
+    "videoCodec": "h264",
+    "videoProfile": "High",
+    "videoBitrate": 10537080,
+    "audioCodec": "aac",
+    "audioBitrate": 253375,
+    "audioSampleRate": 48000,
+    "sizeBytes": 37096235,
+    "sha256": "53f1ee96257102ccec0a3f5c8b457bfc82d74c87537f7a66b7794cefe5aa7b73",
+    "recommendedPosterFrame": 15
+  },
+  "poster": {
+    "path": "preview/poster-ja.png",
+    "frame": 15,
+    "sizeBytes": 506774,
+    "sha256": "5f354fb3f6fa05eb7e1c87c4a25b8d5fd0833122a4f3dd9a4f7754146fa8f062"
+  },
+  "screenshots": {
+    "6.9": {
+      "width": 1320,
+      "height": 2868,
+      "files": [
+        {"path": "screenshots-6.9/01.png", "sha256": "0cbf97a701a0a3bed6cf0c0bc2def90babddba44c8a4eebbbd83351b7ff4188d"},
+        {"path": "screenshots-6.9/02.png", "sha256": "4e880ab07251b133d9e92e125499e34aba1f30dd5340c3b03f11c00251b88f2c"},
+        {"path": "screenshots-6.9/03.png", "sha256": "348b7caae087067183a8c6aa4feeb153f987dc61e7157e0ddad3e566fc4f5353"},
+        {"path": "screenshots-6.9/04.png", "sha256": "0faf1a0ba263e38f19829c06c27a63dce44d7f501edf8b95f19a60b4a25cf7e8"},
+        {"path": "screenshots-6.9/05.png", "sha256": "867e0f00377f02e4e330d04dc304c33d58466a223000a6fb1aa30e3b094be4c9"},
+        {"path": "screenshots-6.9/06.png", "sha256": "762c3ff6ee73d53a14cc0ee2f7ca745d6d7a86da6c51bfcbe158e818eb29d1cf"},
+        {"path": "screenshots-6.9/07.png", "sha256": "a0fe82691fab79cb38d446db8d3830e9baf9c34be368f9a47731ef51982d0501"}
+      ]
+    },
+    "6.5": {
+      "width": 1284,
+      "height": 2778,
+      "files": [
+        {"path": "screenshots-6.5/01.png", "sha256": "777e7e7bdd0d25008e7c440402e860d8377fde90bc4dd8b3d5080e923adffe05"},
+        {"path": "screenshots-6.5/02.png", "sha256": "9fa187d46335bdf88e4963507b22457114ef89dc2d3a2cf6798b85a7b4838074"},
+        {"path": "screenshots-6.5/03.png", "sha256": "ea98dc5015e57bd0c27ddca1d6b4c8a788e28b8a7dee8ba023507b19ffb52c3e"},
+        {"path": "screenshots-6.5/04.png", "sha256": "eeef4cfae25dac7c89d9ab007199f2efcac129fbfaada2119a4b77b46b89cc38"},
+        {"path": "screenshots-6.5/05.png", "sha256": "db7be6ec3fa5a6da4d6f85f1a39735ed85bc737c10a1302575e9afa1a5b54560"},
+        {"path": "screenshots-6.5/06.png", "sha256": "e2062a8207ce7ecb82483e58958394aae8169505de594f4a51bf943f68a10a44"},
+        {"path": "screenshots-6.5/07.png", "sha256": "19b86a67f43b300d0353d1769556b94d3b7a595cb9b08279bcfb71257ddaf031"}
+      ]
+    }
+  }
+}

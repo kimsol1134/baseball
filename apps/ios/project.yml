@@ -25,6 +25,11 @@ targets:
       # 중첩 번들로 보고 서명이 깨진다.
       - path: Audio
         type: folder
+    resources:
+      - path: Sources/Localization/Localizable.xcstrings
+      - path: Sources/Localization/GameContent.xcstrings
+      - path: Sources/Localization/ko.lproj/InfoPlist.strings
+      - path: Sources/Localization/en.lproj/InfoPlist.strings
     # 명시 LaunchScreen.storyboard가 LaunchLogo만 그린다. UILaunchScreen의 자동 이미지
     # 참조는 에셋 카탈로그 갱신 뒤 iOS 캐시에 다른 이미지가 남을 수 있어 사용하지 않는다.
     info:

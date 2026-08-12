@@ -1,0 +1,2598 @@
+{
+  "sourceLanguage" : "ko",
+  "strings" : {
+    "awakening.branch.selected-count" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld selected" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld개 찍음" } }
+      }
+    },
+    "awakening.branch.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ Branch" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 갈래" } }
+      }
+    },
+    "awakening.confirmation.action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose this awakening" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이걸로 각성한다" } }
+      }
+    },
+    "awakening.confirmation.cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose again" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 고른다" } }
+      }
+    },
+    "awakening.confirmation.message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ branch, Tier %lld\n%@\n\nOnce chosen, this awakening cannot be changed during your three-year high school career." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 갈래 %lld단\n%@\n\n한 번 고르면 고교 3년 동안 바꿀 수 없습니다." } }
+      }
+    },
+    "awakening.confirmation.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose %@ as your awakening?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 각성할까요?" } }
+      }
+    },
+    "awakening.counter" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You get %lld awakenings across high school — this is awakening %lld." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년 동안 %lld번 각성합니다 — 지금은 %lld번째입니다." } }
+      }
+    },
+    "awakening.guide" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A checkmark means owned. “Next” means available at the next awakening. Locked nodes show the skill you need first." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "체크는 현재 보유, ‘다음’은 다음 각성에서 고를 수 있는 스킬입니다. 잠긴 가지에는 먼저 필요한 스킬이 표시됩니다." } }
+      }
+    },
+    "awakening.key-art.eyebrow" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Awakening" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "각성" } }
+      }
+    },
+    "awakening.key-art.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your Body Remembers One Thing" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "몸이 하나를 기억합니다" } }
+      }
+    },
+    "awakening.node.leap" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "One-Tier Skip" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "건너뛰기" } }
+      }
+    },
+    "awakening.node.lock-reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Take '%@' first to unlock this node." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "먼저 '%@'을(를) 찍어야 열립니다." } }
+      }
+    },
+    "awakening.node.next" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음" } }
+      }
+    },
+    "awakening.node.select" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "찍기" } }
+      }
+    },
+    "awakening.node.voice.available-now" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ branch, Tier %lld, %@, %@, available now." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 갈래 %lld단, %@, %@, 지금 찍을 수 있음" } }
+      }
+    },
+    "awakening.node.voice.available-next" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ branch, Tier %lld, %@, %@, available at the next awakening." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 갈래 %lld단, %@, %@, 다음 각성에서 선택 가능" } }
+      }
+    },
+    "awakening.node.voice.locked" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ branch, Tier %lld, %@, locked. %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 갈래 %lld단, %@, 잠김. %@" } }
+      }
+    },
+    "awakening.node.voice.owned" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ branch, Tier %lld, %@, owned." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 갈래 %lld단, %@, 이미 찍음" } }
+      }
+    },
+    "awakening.read-only.empty" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No skills selected yet. At the next awakening, choose one Tier 1 skill from any of the four branches." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "아직 찍은 스킬이 없습니다. 다음 각성에서 네 갈래의 1단 스킬 중 하나를 고릅니다." } }
+      }
+    },
+    "awakening.read-only.progress" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld/%lld skills chosen · %lld choices left" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "찍은 스킬 %lld/%lld · 남은 선택 %lld회" } }
+      }
+    },
+    "awakening.selection.guidance" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Take one skill to unlock the next node in that branch. %lld awakenings remain after this pick — finish one branch or spread your picks across several." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "하나를 찍으면 그 갈래의 다음 가지가 열립니다. 남은 각성 %lld번 — 한 갈래를 끝까지 팔지, 여러 갈래를 나눠 가질지 고르세요." } }
+      }
+    },
+    "awakening.sheet.done" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Done" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "완료" } }
+      }
+    },
+    "awakening.sheet.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "My Skill Tree" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 스킬트리" } }
+      }
+    },
+    "awakening.spark.before-first-game" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You have not had a game to prove yourself yet — nodes unlock in order. A strong outing can unlock a one-tier skip at the next awakening." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "아직 증명할 무대가 없었습니다 — 순서대로만 열립니다. 마운드의 호투가 다음 각성에서 건너뛰기를 엽니다." } }
+      }
+    },
+    "awakening.spark.leaps" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A strong season has unlocked a one-tier skip — you can take a node one tier ahead." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌의 호투가 몸을 완전히 깨웠습니다 — 한 단계를 건너뛰고 찍을 수 있습니다." } }
+      }
+    },
+    "awakening.spark.needs-proof" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You have not earned a skip yet — nodes unlock in order for now. Strong outings (scoreless frames and strikeout shows) and talent breakthroughs can unlock a one-tier skip at the next awakening." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전조가 부족합니다 — 이번에는 순서대로만 열립니다. 호투(무실점·삼진쇼)와 만개가 다음 각성에서 건너뛰기를 엽니다." } }
+      }
+    },
+    "awakening.summary.empty" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No skills chosen yet · See your next path" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "아직 찍은 스킬 없음 · 다음 경로 확인" } }
+      }
+    },
+    "awakening.summary.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Skill Tree · %lld/%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스킬트리 · %lld/%lld" } }
+      }
+    },
+    "awakening.tier.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tier %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld단" } }
+      }
+    },
+    "accessibility.stat.line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Week %lld, %@, %@, %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld주차, %@, %@, %@" } }
+      }
+    },
+    "action.cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "취소" } }
+      }
+    },
+    "action.close" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "닫기" } }
+      }
+    },
+    "action.next" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음" } }
+      }
+    },
+    "app.tab.high-school" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "High School" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교" } }
+      }
+    },
+    "app.tab.pro" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pro" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로" } }
+      }
+    },
+    "app.tab.records" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Records" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록" } }
+      }
+    },
+    "app.tab.settings" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정" } }
+      }
+    },
+    "app.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mound Reborn" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "야구 못하면 또 환생함" } }
+      }
+    },
+    "career.unavailable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No career" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "커리어 없음" } }
+      }
+    },
+    "error.cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Go back" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "돌아간다" } }
+      }
+    },
+    "error.career.delete.action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete the pro save and backup" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 저장과 백업을 모두 지운다" } }
+      }
+    },
+    "error.career.delete.message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your current save and recovery backup will be deleted. This cannot be undone." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 저장본과 복구용 백업이 함께 삭제됩니다. 되돌릴 수 없습니다." } }
+      }
+    },
+    "error.career.delete.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Permanently delete this pro career?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 커리어를 완전히 지울까요?" } }
+      }
+    },
+    "error.career.open.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't open career" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "커리어를 열 수 없습니다" } }
+      }
+    },
+    "error.reset" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete saved data and start over" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장 데이터를 지우고 새로 시작" } }
+      }
+    },
+    "error.retry" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Try loading again" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 불러오기" } }
+      }
+    },
+    "error.text-unavailable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Text unavailable" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "문구를 불러올 수 없습니다" } }
+      }
+    },
+    "notification.return.body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your next baseball decision is waiting." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 야구 선택이 기다립니다." } }
+      }
+    },
+    "notification.return.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Return to the mound" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마운드로 돌아오세요" } }
+      }
+    },
+    "opening.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You won't pitch every game. You take the mound only when your choices can change the outcome." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "모든 경기를 던지지 않습니다. 결과를 바꿀 수 있는 순간에만 마운드에 오릅니다." } }
+      }
+    },
+    "opening.eyebrow" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Three years of high school. One draft." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년, 한 번의 드래프트" } }
+      }
+    },
+    "opening.start" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시작하기" } }
+      }
+    },
+    "opening.summary" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You are a high school pitcher.\nGet drafted into the pros within three years." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "당신은 고교 투수입니다.\n3년 안에 프로 지명을 받아야 합니다." } }
+      }
+    },
+    "prologue.ability.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@, current rating %lld, %@, %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@, 현재 능력치 %lld, %@, %@." } }
+      }
+    },
+    "prologue.ability.ceiling-reached" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You've reached this talent ceiling. Keep training to break through." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재능의 한계에 닿았습니다. 계속 훈련하면 열립니다." } }
+      }
+    },
+    "prologue.ability.ceiling" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Up to %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld까지" } }
+      }
+    },
+    "prologue.ability.explanation" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The big number is your current rating; the letter is the ceiling training can reach. A high talent grade does not mean the current rating starts high." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "큰 숫자가 지금 실력이고, 알파벳은 훈련으로 닿을 수 있는 한계입니다. 재능이 높아도 지금 수치가 낮을 수 있습니다." } }
+      }
+    },
+    "prologue.ability.no-ceiling" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No ceiling" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한계 없음" } }
+      }
+    },
+    "prologue.ability.talent" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Talent %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재능 %@" } }
+      }
+    },
+    "prologue.ability.meaning.above-pro" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Above-average pro level" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 평균 이상" } }
+      }
+    },
+    "prologue.ability.meaning.best" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Best in the class" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "세대 최고 수준" } }
+      }
+    },
+    "prologue.ability.meaning.developing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fundamentals taking shape" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "성장 중인 기본기" } }
+      }
+    },
+    "prologue.ability.meaning.foundations" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Building the fundamentals" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본기 다지는 단계" } }
+      }
+    },
+    "prologue.ability.meaning.high-school" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Challenging the high-school elite" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 상위권 도전" } }
+      }
+    },
+    "prologue.ability.meaning.pro-average" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Average pro level" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 평균" } }
+      }
+    },
+    "prologue.ability.meaning.pro-top" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Top-tier pro level" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 최상급" } }
+      }
+    },
+    "prologue.ability.meaning.regional" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "One of the region's best" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지역에서 손꼽는 재능" } }
+      }
+    },
+    "prologue.ability.meaning.starter" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Competing for a high-school starting role" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 주전 경쟁" } }
+      }
+    },
+    "prologue.action.skip" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a school now" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "바로 학교 고르기" } }
+      }
+    },
+    "prologue.action.throw" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Throw your first pitch" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 공을 던진다" } }
+      }
+    },
+    "prologue.coach.quote.first-life" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "“Start by loosening up. Give me one pitch in the bullpen.” — Coach" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "“몸부터 풀자. 불펜에서 한 구 던져 봐.” — 감독" } }
+      }
+    },
+    "prologue.current-player.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Current player" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금의 나" } }
+      }
+    },
+    "prologue.handicap.heading" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Handicaps" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "핸디캡" } }
+      }
+    },
+    "prologue.title.first-life" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "First day" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 등교" } }
+      }
+    },
+    "prologue.title.rebirth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reborn" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 태어났습니다" } }
+      }
+    },
+    "prologue.wind.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Three-year season conditions: %@. %@. Effects: %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 3년의 바람, %@. %@. 효과: %@." } }
+      }
+    },
+    "prologue.wind.heading" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This three-year season · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 3년의 바람 · %@" } }
+      }
+    },
+    "prologue.wind.neutral-explanation" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No rating or reward modifiers—this year is decided by your pitching." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "능력과 보상 보정 없이 실력만으로 승부합니다." } }
+      }
+    },
+    "pro.action.default" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check the next schedule under 'This Week'." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "위의 '이번 주'에서 다음 일정을 확인하세요." } }
+      }
+    },
+    "pro.weekly-plan.until" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue through %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 끝까지 진행" } }
+      }
+    },
+    "pro.action.important-game" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your outing is set. Start the showdown under 'This Week'." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "등판이 잡혔습니다. 위의 '이번 주'에서 승부를 시작하세요." } }
+      }
+    },
+    "pro.action.offseason-decision" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Decide whether to stay with your current club." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 구단에 남을지 결정하세요." } }
+      }
+    },
+    "pro.action.season-review" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Review this year's game record and awards." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "올해 경기 기록과 수상 결과를 확인하세요." } }
+      }
+    },
+    "pro.action.weekly-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose the training that matters most this week." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 주에 가장 신경 쓸 훈련을 고르세요." } }
+      }
+    },
+    "pro.dashboard.direct-outing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "DIRECT OUTING" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 등판" } }
+      }
+    },
+    "pro.dashboard.fatigue" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fatigue" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "피로" } }
+      }
+    },
+    "pro.dashboard.injury" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Injury" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "부상" } }
+      }
+    },
+    "pro.dashboard.injury-normal" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Healthy" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정상" } }
+      }
+    },
+    "pro.dashboard.injury-weeks" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld weeks" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld주" } }
+      }
+    },
+    "pro.dashboard.latest-news" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Latest news" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 소식" } }
+      }
+    },
+    "pro.dashboard.latest-outing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Latest outing" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 등판" } }
+      }
+    },
+    "pro.dashboard.manager-trust" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Manager's trust" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "감독의 믿음" } }
+      }
+    },
+    "pro.dashboard.milestone" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Latest milestone" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 주요 기록" } }
+      }
+    },
+    "pro.dashboard.next-action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next action" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 행동" } }
+      }
+    },
+    "pro.dashboard.outing-line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@" } }
+      }
+    },
+    "pro.dashboard.outing-accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Week %lld, %@ %@, %@, %lld to %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld주차 %@ %@, %@, %lld 대 %lld" } }
+      }
+    },
+    "pro.dashboard.outing-accessibility.decision" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Week %lld, %@ %@, %@, %lld to %lld, %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld주차 %@ %@, %@, %lld 대 %lld %@" } }
+      }
+    },
+    "pro.dashboard.outing-accessibility.decision-played" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Week %lld, %@ %@, %@, %lld to %lld, %@, direct outing" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld주차 %@ %@, %@, %lld 대 %lld %@, 직접 등판" } }
+      }
+    },
+    "pro.dashboard.outing-accessibility.played" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Week %lld, %@ %@, %@, %lld to %lld, direct outing" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld주차 %@ %@, %@, %lld 대 %lld, 직접 등판" } }
+      }
+    },
+    "pro.dashboard.outing-summary" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ %@, %lld K, %lld BB, %lld R" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ %@, %lldK %lldBB %lld실점" } }
+      }
+    },
+    "pro.dashboard.outing-summary.hits" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ %@, %lld H, %lld K, %lld BB, %lld R" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ %@, %lld피안타 %lldK %lldBB %lld실점" } }
+      }
+    },
+    "pro.dashboard.outing-week" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Week %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld주차" } }
+      }
+    },
+    "pro.dashboard.rival" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's rival" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 승부 상대" } }
+      }
+    },
+    "pro.dashboard.season-header" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %lld · Week %lld · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld시즌 %lld주차 · %@" } }
+      }
+    },
+    "pro.dashboard.season-progress" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Season progress" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 진행" } }
+      }
+    },
+    "pro.dashboard.season-progress-value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld / 24 weeks" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld / 24주" } }
+      }
+    },
+    "pro.dashboard.season-progress.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Season progress: week %lld of 24" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 진행 %lld주차, 24주 중" } }
+      }
+    },
+    "pro.dashboard.tensions" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Three battles shaping this season" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "올해의 세 가지 승부처" } }
+      }
+    },
+    "pro.dashboard.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@ %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@ %@" } }
+      }
+    },
+    "pro.level.majors" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Majors" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "1군" } }
+      }
+    },
+    "pro.level.minors" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Minors" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "2군" } }
+      }
+    },
+    "pro.decision.loss" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "L" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "패" } }
+      }
+    },
+    "pro.decision.save" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "SV" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "세이브" } }
+      }
+    },
+    "pro.decision.win" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "W" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "승" } }
+      }
+    },
+    "pro.locked.distance.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Distance to this door" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 문까지의 거리" } }
+      }
+    },
+    "pro.locked.eyebrow" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pro career" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 커리어" } }
+      }
+    },
+    "pro.locked.forecast.base" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Evaluation %lld · Draft cutoff %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 평가 %lld점 · 당락선 %lld점" } }
+      }
+    },
+    "pro.locked.forecast.chapters" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Evaluation %lld · Draft cutoff %lld · %lld story chapters left" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 평가 %lld점 · 당락선 %lld점 · 남은 이야기 %lld장" } }
+      }
+    },
+    "pro.locked.forecast.imminent" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Evaluation %lld · Draft cutoff %lld · The draft is close" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 평가 %lld점 · 당락선 %lld점 · 드래프트 임박" } }
+      }
+    },
+    "pro.locked.interested" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ is watching your current results." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 지금 성적을 지켜보고 있습니다." } }
+      }
+    },
+    "pro.locked.path.body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Spend three years in High School, clear the draft, and enter the pros with the abilities you built." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 탭에서 3년을 보내고 드래프트를 통과하면, 그때의 능력을 그대로 안고 프로에 들어갑니다." } }
+      }
+    },
+    "pro.locked.path.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Main path" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정규 경로" } }
+      }
+    },
+    "pro.locked.skip.button" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start pro now, skipping high school" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교를 건너뛰고 바로 프로 시작" } }
+      }
+    },
+    "pro.locked.skip.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "If you skip ahead, the draft result is generated from your seed. You won't carry growth or memories from high school." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "건너뛰면 지명 결과가 시드에서 만들어집니다. 고교 3년의 성장과 기억은 없습니다." } }
+      }
+    },
+    "pro.locked.skip.locked" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish one three-year high school career to unlock the option to skip ahead." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년을 한 번 마치면 고교를 건너뛰는 길도 열립니다." } }
+      }
+    },
+    "pro.locked.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unlocks when you are drafted from high school" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 드래프트에서 지명을 받으면 열립니다" } }
+      }
+    },
+    "pro.navigation.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pro" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로" } }
+      }
+    },
+    "pro.role.closer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Closer" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마무리" } }
+      }
+    },
+    "pro.role.long-relief" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Long Reliever" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "긴 이닝 구원" } }
+      }
+    },
+    "pro.role.reliever" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reliever" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구원" } }
+      }
+    },
+    "pro.role.setup" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Setup" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "필승조" } }
+      }
+    },
+    "pro.role.starter" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Starter" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선발" } }
+      }
+    },
+    "pro.segment.all-star-break" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "All-Star break" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "올스타 휴식기" } }
+      }
+    },
+    "pro.segment.first-half" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "First half" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전반기" } }
+      }
+    },
+    "pro.segment.opening" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Opening" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "개막" } }
+      }
+    },
+    "pro.segment.pennant-race" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pennant race" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "순위 싸움" } }
+      }
+    },
+    "pro.segment.preparation" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Season prep" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 준비" } }
+      }
+    },
+    "pro.segment.season-finale" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Season finale" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 막바지" } }
+      }
+    },
+    "pro.segment.spring-camp" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Spring training" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스프링캠프" } }
+      }
+    },
+    "pro.start.sheet-title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start in the pros" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로부터 시작" } }
+      }
+    },
+    "pro.view.picker" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pro view" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 화면" } }
+      }
+    },
+    "pro.view.this-week" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This Week" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 주" } }
+      }
+    },
+    "pro.view.today" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘" } }
+      }
+    },
+    "return.plan.body.high-school.awakening" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "An important choice is waiting: pick a new ability." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 능력을 직접 고를 중요한 순간이 기다립니다." } }
+      }
+    },
+    "return.plan.body.high-school.chapter-review" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Review this term's growth and choose the next goal." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 학기의 성장 결과와 다음 목표를 확인하세요." } }
+      }
+    },
+    "return.plan.body.high-school.completed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start a new player with the last player's legacy." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 선수의 유산을 안고 새 선수를 시작해 보세요." } }
+      }
+    },
+    "return.plan.body.high-school.draft" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check the draft result for the player you built." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 키운 선수의 드래프트 결과를 확인할 차례입니다." } }
+      }
+    },
+    "return.plan.body.high-school.important-game" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Face the next batter in the high school game." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 공식 경기의 다음 타자를 이어서 상대하세요." } }
+      }
+    },
+    "return.plan.body.high-school.legacy" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Carry the last player's signature ability into the next player." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 선수가 남긴 대표 능력을 다음 선수에게 이어 주세요." } }
+      }
+    },
+    "return.plan.body.high-school.prologue" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The coach is waiting. It's time to throw your first bullpen pitch." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "감독이 기다립니다. 불펜에서 첫 공을 던질 차례입니다." } }
+      }
+    },
+    "return.plan.body.high-school.relationship" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your next choice will shape this player's relationships and development." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 선택이 선수의 관계와 성장 방향을 바꿉니다." } }
+      }
+    },
+    "return.plan.body.high-school.school-selection" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose the new player's school and development path." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 선수의 학교와 성장 방향을 정할 차례입니다." } }
+      }
+    },
+    "return.plan.body.high-school.training" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the next training session to raise an ability you built yourself." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 훈련으로 직접 키운 능력을 한 단계 더 올려 보세요." } }
+      }
+    },
+    "return.plan.body.next-player" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ — carry the unfinished parts of the last three years into a new player." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ — 지난 3년의 아쉬움을 새 선수로 이어 보세요." } }
+      }
+    },
+    "return.plan.body.pledge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@ — come back and finish it." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@ — 이어서 완성해 보세요." } }
+      }
+    },
+    "return.plan.body.pro.default" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue with next week of the pro season." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 시즌의 다음 주를 이어서 보내세요." } }
+      }
+    },
+    "return.plan.body.pro.important-game" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The next batter is waiting in an important game." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "중요한 경기의 다음 타자를 이어서 상대하세요." } }
+      }
+    },
+    "return.plan.body.pro.retirement" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "It's time to make this player's final decision." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 선수의 마지막 결정을 직접 내려 주세요." } }
+      }
+    },
+    "return.plan.body.pro.season-decision" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "It's time to make this season's key decision." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 시즌의 중요한 선택을 직접 결정할 차례입니다." } }
+      }
+    },
+    "return.plan.card.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pick up where you left off" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음에 이어 할 한 가지" } }
+      }
+    },
+    "return.plan.continue.game" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Return to game" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "게임으로 돌아가기" } }
+      }
+    },
+    "return.plan.continue.high-school" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue this player" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 선수 이어서 키우기" } }
+      }
+    },
+    "return.plan.continue.pro" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue pro season" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 시즌 이어가기" } }
+      }
+    },
+    "return.plan.dismiss.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dismiss return card" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이어하기 카드 닫기" } }
+      }
+    },
+    "return.plan.title.high-school-phase" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue this player's three-year career" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 선수의 3년을 이어가세요" } }
+      }
+    },
+    "return.plan.title.next-player" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The next player's goal is waiting" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 선수의 목표가 기다립니다" } }
+      }
+    },
+    "return.plan.title.pledge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This player's goal is still within reach" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 선수의 목표가 남아 있습니다" } }
+      }
+    },
+    "return.plan.title.pro" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your next pro-season choice" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 시즌의 다음 선택" } }
+      }
+    },
+    "settings.audio.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sound won't stop music from other apps and follows the Ring/Silent switch." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "소리는 다른 앱의 음악을 멈추지 않고, 무음 스위치를 따릅니다." } }
+      }
+    },
+    "settings.audio.haptics" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Haptics" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "진동" } }
+      }
+    },
+    "settings.audio.haptics.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "If you turn off haptics, the release meter will no longer wobble with game pressure. The meter's normal movement and fatigue-based aim shake remain." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "진동을 끄면 승부 긴장에 따른 릴리스 미터 흔들림도 사라집니다. 기본 미터 이동과 피로에 따른 조준 흔들림은 그대로입니다." } }
+      }
+    },
+    "settings.audio.music" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Music" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "음악" } }
+      }
+    },
+    "settings.audio.section-title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sound & Haptics" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "소리와 진동" } }
+      }
+    },
+    "settings.auto-release.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn it on to pitch with one tap, without timing the windup. The result matches a perfectly centered release." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "켜면 와인드업 타이밍 없이 탭 한 번으로 던집니다. 결과는 릴리스가 딱 중간일 때와 같습니다." } }
+      }
+    },
+    "settings.auto-release.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn this on if timing gestures are difficult. Every pitch uses a steady mid-release, so you won't get stuck—but you give up the edge of perfect timing." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타이밍 제스처가 어려우면 켜세요. 항상 안정된 중간 릴리스로 던지므로 진행이 막히는 일은 없습니다. 다만 완벽한 타이밍의 이점도 사라집니다." } }
+      }
+    },
+    "settings.auto-release.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Auto Release" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동 릴리스" } }
+      }
+    },
+    "settings.audio.sound" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sound" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "소리" } }
+      }
+    },
+    "settings.control.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Controls" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "조작" } }
+      }
+    },
+    "settings.delete.action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete all progress" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "모든 진행 삭제" } }
+      }
+    },
+    "settings.delete.confirm.action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "삭제" } }
+      }
+    },
+    "settings.delete.confirm.cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "취소" } }
+      }
+    },
+    "settings.delete.confirm.message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your player records and inherited legacies will be erased too." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선수 기록과 계승 유산까지 전부 사라집니다." } }
+      }
+    },
+    "settings.delete.confirm.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete all progress?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "모든 진행을 삭제할까요?" } }
+      }
+    },
+    "settings.delete.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your high school and pro careers, along with your legacy record, will be deleted. This cannot be undone." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교·프로 커리어와 계승 기록이 모두 지워집니다. 되돌릴 수 없습니다." } }
+      }
+    },
+    "settings.memories.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Carried memories" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가져온 기억" } }
+      }
+    },
+    "settings.memories.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld cards" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld장" } }
+      }
+    },
+    "settings.next-player.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next player" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 선수" } }
+      }
+    },
+    "settings.next-player.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Player %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld번째" } }
+      }
+    },
+    "settings.notifications.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "At 7:30 PM each evening, we'll remind you of this player's next goal. Reminders stop automatically if you don't return for a few days." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "매일 저녁 7시 30분, 현재 선수의 다음 목표를 알려 드립니다. 며칠 동안 열지 않으면 저절로 멈춥니다." } }
+      }
+    },
+    "settings.notifications.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Notifications" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알림" } }
+      }
+    },
+    "settings.notifications.toggle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue reminders" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이어하기 알림" } }
+      }
+    },
+    "settings.navigation.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정" } }
+      }
+    },
+    "settings.pro.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pro" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로" } }
+      }
+    },
+    "settings.pro.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@, Season %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ %lld시즌" } }
+      }
+    },
+    "settings.progress.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Progress" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "진행" } }
+      }
+    },
+    "settings.share-code.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Share seed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시드 공유" } }
+      }
+    },
+    "settings.share-code.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Current player's share code" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 선수 공유 코드" } }
+      }
+    },
+    "settings.soul.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Spirit" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "영혼" } }
+      }
+    },
+    "settings.soul.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld" } }
+      }
+    },
+    "settings.audio.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오디오" } }
+      }
+    },
+    "share.career.summary" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Career %lld: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld번째 선수: %@" } }
+      }
+    },
+    "setup.action.back" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Back" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "뒤로" } }
+      }
+    },
+    "setup.action.next" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음" } }
+      }
+    },
+    "setup.boost.extra-memory.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Carry %lld Memory Cards instead of %lld this time." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번에 가져갈 기억이 %lld장에서 %lld장으로 늘어납니다." } }
+      }
+    },
+    "setup.boost.extra-memory.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More memories" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기억 확장" } }
+      }
+    },
+    "setup.boost.head-start.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adds +5 beyond the automatic-growth cap." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동 스며듦 상한 너머로 +5가 추가로 스며듭니다." } }
+      }
+    },
+    "setup.boost.head-start.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Head start" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "조기 성장" } }
+      }
+    },
+    "setup.boost.talent-break.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start with one step opened on your lowest talent grade." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가장 낮은 재능 등급이 한 단계 열린 채 시작합니다." } }
+      }
+    },
+    "setup.boost.talent-break.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Talent breakthrough" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재능 돌파" } }
+      }
+    },
+    "setup.boost.training-rhythm.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Raises this three-year career's great-training chance from 16% to 26%." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 고교 3년의 훈련 대성공 확률이 16% → 26%가 됩니다." } }
+      }
+    },
+    "setup.boost.training-rhythm.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Training rhythm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "성장 리듬" } }
+      }
+    },
+    "setup.boost.cost" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lldP" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lldP" } }
+      }
+    },
+    "setup.challenge.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Past memories, Signature Legacies, inheritance points, and handicaps are disabled. Only your chosen difficulty and direct pitching affect this challenge." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 선수의 기억·대표 유산·계승 포인트·핸디캡은 쓰지 않습니다. 고른 난이도와 직접 투구만 이 판에 반영됩니다." } }
+      }
+    },
+    "setup.challenge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Challenge: same conditions" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "같은 조건으로 겨루는 도전" } }
+      }
+    },
+    "setup.difficulty.challenging" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Brutal" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "혹독하게" } }
+      }
+    },
+    "setup.difficulty.relaxed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Relaxed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "여유롭게" } }
+      }
+    },
+    "setup.difficulty.standard" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Standard" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "보통" } }
+      }
+    },
+    "setup.difficulty.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Difficulty" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "난이도" } }
+      }
+    },
+    "setup.handicap.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Up to two. Each makes this three-year career harder, but gives the next player more to inherit. Current bonus: +%lld%%" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최대 2개. 고르면 이번 고교 3년이 어려워집니다. 대신 새 선수가 이어받는 힘이 커집니다. 지금 +%lld%%" } }
+      }
+    },
+    "setup.handicap.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Handicaps" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "핸디캡" } }
+      }
+    },
+    "setup.handicap.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "How hard should this three-year high school career be?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 고교 3년을 얼마나 어렵게 갈까요?" } }
+      }
+    },
+    "setup.inheritance.automatic-growth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "From past players' accumulated points: +%lld automatic growth for this player · %lld points available in the Inheritance Shop" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 선수들이 남긴 누적 포인트 중 이번 선수 능력에 자동 성장 +%lld · 계승 상점에서 쓸 수 있는 포인트 %lld" } }
+      }
+    },
+    "setup.inheritance.empty-memories" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No memories carried forward." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가져온 기억이 없습니다." } }
+      }
+    },
+    "setup.inheritance.legacy" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Signature Legacy · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대표 유산 · %@" } }
+      }
+    },
+    "setup.inheritance.maxed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Automatic growth has reached its maximum (+20)." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동 성장은 최대치(+20)에 닿았습니다." } }
+      }
+    },
+    "setup.inheritance.next-step" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reach %lld inheritance points for +%lld automatic growth · max +20" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "계승 포인트 %lldP를 모으면 +%lld · 최대 +20" } }
+      }
+    },
+    "setup.inheritance.points" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Inheritance points: %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "계승 포인트 %lld" } }
+      }
+    },
+    "setup.inheritance.shop.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Inheritance points are the reward one player's career leaves for the next. Spend them here on rules that apply to this three-year high school career; your accumulated automatic-growth bonus stays intact." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "계승 포인트는 이전 선수의 커리어가 다음 선수에게 남긴 보상입니다. 여기서 이번 고교 3년에 적용할 규칙을 사고, 이미 쌓인 자동 성장 보너스는 줄지 않습니다." } }
+      }
+    },
+    "setup.inheritance.shop.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Inheritance Shop" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "계승 상점" } }
+      }
+    },
+    "setup.inheritance.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Carried forward" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가져온 것" } }
+      }
+    },
+    "setup.legacy.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "One strength from past players carries over directly. Other Legacies remain unlocked and can be chosen again later." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 선수들이 남긴 강점 중 하나만 직접 이어집니다. 다른 유산은 사라지지 않고 다음에도 다시 고를 수 있습니다." } }
+      }
+    },
+    "setup.legacy.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a Signature Legacy for this player" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 선수에게 이어 줄 대표 유산" } }
+      }
+    },
+    "setup.name.default" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Name" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이름" } }
+      }
+    },
+    "setup.name.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You'll be called this name throughout your three-year high school career." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년 동안 이 이름으로 불립니다." } }
+      }
+    },
+    "setup.name.rebirth-caption" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your past-life memories are waiting for a new name." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전생의 기억이 새 이름을 기다립니다." } }
+      }
+    },
+    "setup.name.stadium-caption" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This name will echo through this ballpark for three years." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 이름이 3년 동안 이 구장에서 불립니다." } }
+      }
+    },
+    "setup.name.suggestion-action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 쓰기" } }
+      }
+    },
+    "setup.name.title.first" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose your player's name" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선수의 이름을 정하세요" } }
+      }
+    },
+    "setup.name.title.rebirth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a name for your rebirth" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 태어날 이름을 정하세요" } }
+      }
+    },
+    "setup.progress.first" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Create a player · %lld / %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선수 만들기 · %lld / %lld" } }
+      }
+    },
+    "setup.progress.rebirth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Player %lld · %lld / %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld번째 선수 · %lld / %lld" } }
+      }
+    },
+    "setup.quick-rebirth.action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start with the same setup" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "같은 설정으로 다시 태어나기" } }
+      }
+    },
+    "setup.quick-rebirth.hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue through setup below to use the Inheritance Shop." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "계승 상점을 쓰려면 아래에서 단계대로 진행하세요." } }
+      }
+    },
+    "setup.quick-rebirth.summary" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@ · Same setup as your last player" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@ · 지난 선수와 같은 설정" } }
+      }
+    },
+    "setup.quick-rebirth.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rebirth shortcut" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "바로 환생" } }
+      }
+    },
+    "setup.region.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This is where you played your final middle-school tournament. Four high schools from the region are reaching out." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "중학교 마지막 대회를 치른 지역입니다. 이 지역의 네 고교가 손을 내밉니다." } }
+      }
+    },
+    "setup.region.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Where will you start?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "어느 지역에서 시작할까요?" } }
+      }
+    },
+    "setup.seed.challenge-summary" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Play with the same conditions as player %lld, without inherited help. The result won't count toward player records or inheritance points." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록 없는 도전 — %lld번째 선수와 같은 조건을 계승 도움 없이 엽니다. 결과는 선수 기록·계승 포인트에 남지 않습니다." } }
+      }
+    },
+    "setup.seed.error" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enter a number seed or the share code exactly as it appears on the card." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "숫자 시드나 카드에 적힌 공유 코드를 그대로 입력해 주세요." } }
+      }
+    },
+    "setup.seed.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Seed or card share code (optional)" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시드 또는 카드 공유 코드 (선택)" } }
+      }
+    },
+    "setup.seed.summary" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A number seeds player %lld. To recreate a card challenge, enter the card's share code." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "숫자만 입력하면 지금 만들 %lld번째 선수의 조건입니다. 카드와 똑같이 도전하려면 카드의 공유 코드를 입력하세요." } }
+      }
+    },
+    "setup.seed.validation" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Check the seed input — %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시드 입력을 확인해 주세요 — %@" } }
+      }
+    },
+    "setup.soul-domain.body.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff and stamina come first. Build the arm to last deep into games." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위와 체력에 먼저 들어갑니다. 긴 이닝을 버티는 쪽입니다." } }
+      }
+    },
+    "setup.soul-domain.body.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Body" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "몸" } }
+      }
+    },
+    "setup.soul-domain.game.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command and batter plans come first. Survive with better pitch-by-pitch decisions." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구와 타자 상대법에 먼저 들어갑니다. 수 싸움으로 버티는 쪽입니다." } }
+      }
+    },
+    "setup.soul-domain.game.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Game plan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기 운영" } }
+      }
+    },
+    "setup.soul-domain.rule" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Half goes to your chosen area first; the rest fills your lowest abilities. Talent limits still apply." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고른 쪽에 절반이 먼저 가고, 나머지는 가장 낮은 능력부터 채웁니다. 재능의 한계는 넘지 않습니다." } }
+      }
+    },
+    "setup.soul-domain.technique.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command and breaking balls come first. Put the pitch where you want it." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구와 변화구에 먼저 들어갑니다. 원하는 곳에 꽂는 쪽입니다." } }
+      }
+    },
+    "setup.soul-domain.technique.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Technique" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기술" } }
+      }
+    },
+    "setup.soul-domain.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Where should the %lldP of automatic growth go?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동 성장 포인트 %lldP를 어디에" } }
+      }
+    },
+    "setup.start.challenge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start challenge" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록 없는 도전 시작" } }
+      }
+    },
+    "setup.start.first" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start freshman year" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 1학년 시작" } }
+      }
+    },
+    "setup.start.rebirth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Begin rebirth" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 태어나기" } }
+      }
+    },
+    "setup.stat.command" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구" } }
+      }
+    },
+    "setup.stat.movement" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Movement" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구" } }
+      }
+    },
+    "setup.stat.stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stamina" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "체력" } }
+      }
+    },
+    "setup.stat.stuff" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위" } }
+      }
+    },
+    "setup.karma.capacity-hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You can choose up to two handicaps. Remove one before choosing another." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "핸디캡은 두 개까지 고를 수 있습니다. 다른 것을 빼면 고를 수 있습니다." } }
+      }
+    },
+    "setup.karma.reward" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "+%lld%%" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "+%lld%%" } }
+      }
+    },
+    "setup.style.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Only your starting ratings differ. Training over three years can change everything." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시작 능력치만 다릅니다. 3년 동안의 훈련으로 얼마든지 바뀝니다." } }
+      }
+    },
+    "setup.style.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "What kind of pitcher are you?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "어떤 공을 던지는 투수인가요?" } }
+      }
+    },
+    "setup.karma.erased-memory.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You carry fewer Memory Cards." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가져갈 기억 카드가 줄어듭니다." } }
+      }
+    },
+    "setup.karma.erased-memory.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Erased memories" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지워진 기억" } }
+      }
+    },
+    "setup.karma.genius-generation.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your class is crowded with talented pitchers." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "같은 학년에 뛰어난 투수가 많습니다." } }
+      }
+    },
+    "setup.karma.genius-generation.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Generation of aces" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "천재들의 세대" } }
+      }
+    },
+    "setup.karma.no-last-chance.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "One injury can end the career." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "부상 한 번이 커리어를 끝낼 수 있습니다." } }
+      }
+    },
+    "setup.karma.no-last-chance.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No last chance" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 기회는 없다" } }
+      }
+    },
+    "setup.karma.single-weapon.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You can rely on only one pitch." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구종 하나에만 기댈 수 있습니다." } }
+      }
+    },
+    "setup.karma.single-weapon.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "One-trick arsenal" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "단 하나의 무기" } }
+      }
+    },
+    "setup.karma.stubborn-coach.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Winning the coach's trust is harder." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "감독의 믿음을 얻기가 어렵습니다." } }
+      }
+    },
+    "setup.karma.stubborn-coach.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hard-headed coach" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고집 센 감독" } }
+      }
+    },
+    "setup.karma.unknown-land.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You start in a region with no home ties." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연고가 없는 지역에서 시작합니다." } }
+      }
+    },
+    "setup.karma.unknown-land.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unfamiliar ground" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "낯선 땅" } }
+      }
+    },
+    "setup.signature-effect.all" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld · Command +%lld · Movement +%lld · Stamina +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위 +%lld · 제구 +%lld · 변화구 +%lld · 체력 +%lld" } }
+      }
+    },
+    "setup.signature-effect.command-movement-stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command +%lld · Movement +%lld · Stamina +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구 +%lld · 변화구 +%lld · 체력 +%lld" } }
+      }
+    },
+    "setup.signature-effect.command-movement" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command +%lld · Movement +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구 +%lld · 변화구 +%lld" } }
+      }
+    },
+    "setup.signature-effect.command-stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command +%lld · Stamina +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구 +%lld · 체력 +%lld" } }
+      }
+    },
+    "setup.signature-effect.command" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구 +%lld" } }
+      }
+    },
+    "setup.signature-effect.movement-stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Movement +%lld · Stamina +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 +%lld · 체력 +%lld" } }
+      }
+    },
+    "setup.signature-effect.movement" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Movement +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 +%lld" } }
+      }
+    },
+    "setup.signature-effect.none" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No change to starting abilities" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시작 능력 변화 없음" } }
+      }
+    },
+    "setup.signature-effect.stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stamina +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "체력 +%lld" } }
+      }
+    },
+    "setup.signature-effect.stuff-command-movement" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld · Command +%lld · Movement +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위 +%lld · 제구 +%lld · 변화구 +%lld" } }
+      }
+    },
+    "setup.signature-effect.stuff-command-stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld · Command +%lld · Stamina +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위 +%lld · 제구 +%lld · 체력 +%lld" } }
+      }
+    },
+    "setup.signature-effect.stuff-command" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld · Command +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위 +%lld · 제구 +%lld" } }
+      }
+    },
+    "setup.signature-effect.stuff-movement-stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld · Movement +%lld · Stamina +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위 +%lld · 변화구 +%lld · 체력 +%lld" } }
+      }
+    },
+    "setup.signature-effect.stuff-movement" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld · Movement +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위 +%lld · 변화구 +%lld" } }
+      }
+    },
+    "setup.signature-effect.stuff-stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld · Stamina +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위 +%lld · 체력 +%lld" } }
+      }
+    },
+    "setup.signature-effect.stuff" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위 +%lld" } }
+      }
+    },
+    "setup.region.busan.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The loudest seats in the house" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "함성이 가장 큰 관중석" } }
+      }
+    },
+    "setup.region.busan.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Busan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "부산" } }
+      }
+    },
+    "setup.region.changwon.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tight, team-first defense" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "짜임새 있는 수비 야구" } }
+      }
+    },
+    "setup.region.changwon.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Changwon" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "창원" } }
+      }
+    },
+    "setup.region.chungbuk.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A quiet dark horse" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "조용히 강한 다크호스" } }
+      }
+    },
+    "setup.region.chungbuk.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "North Chungcheong" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "충북" } }
+      }
+    },
+    "setup.region.chungnam.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pride of a traditional powerhouse" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전통 강호의 자존심" } }
+      }
+    },
+    "setup.region.chungnam.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "South Chungcheong" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "충남" } }
+      }
+    },
+    "setup.region.daegu.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Grit that beats the heat" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "더위를 이기는 근성" } }
+      }
+    },
+    "setup.region.daegu.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Daegu" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대구" } }
+      }
+    },
+    "setup.region.daejeon.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "One-pitch grit, no matter the situation" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "뚝심의 원포인트 승부" } }
+      }
+    },
+    "setup.region.daejeon.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Daejeon" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대전" } }
+      }
+    },
+    "setup.region.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This is where you played your final middle-school tournament. Four high schools from the region are reaching out." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "중학교 마지막 대회를 치른 지역입니다. 이 지역의 네 고교가 손을 내밉니다." } }
+      }
+    },
+    "setup.region.gangwon.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Arms tempered by mountain wind" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "산바람에 단련된 어깨" } }
+      }
+    },
+    "setup.region.gangwon.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Gangwon" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "강원" } }
+      }
+    },
+    "setup.region.gyeongbuk.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A home of tradition and pride" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전통과 자부심의 명문가" } }
+      }
+    },
+    "setup.region.gyeongbuk.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "North Gyeongsang" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경북" } }
+      }
+    },
+    "setup.region.gyeonggi.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The most crowded field of teams" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팀 수가 가장 많은 격전지" } }
+      }
+    },
+    "setup.region.gyeonggi.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Gyeonggi" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기" } }
+      }
+    },
+    "setup.region.gyeongnam.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Solid talent from the southern edge" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "남쪽 끝의 탄탄한 전력" } }
+      }
+    },
+    "setup.region.gyeongnam.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "South Gyeongsang" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경남" } }
+      }
+    },
+    "setup.region.gwangju.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A hitter's town, a trial for pitchers" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타격의 고장, 투수엔 시련" } }
+      }
+    },
+    "setup.region.gwangju.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Gwangju" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "광주" } }
+      }
+    },
+    "setup.region.incheon.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tenacious baseball by the sea" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "바닷바람 속 끈질긴 야구" } }
+      }
+    },
+    "setup.region.incheon.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Incheon" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "인천" } }
+      }
+    },
+    "setup.region.jeju.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A prospect from the farthest shore" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가장 먼 곳에서 온 유망주" } }
+      }
+    },
+    "setup.region.jeju.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Jeju" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제주" } }
+      }
+    },
+    "setup.region.jeonbuk.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A rough-wind home ground" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "거친 바람의 홈그라운드" } }
+      }
+    },
+    "setup.region.jeonbuk.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "North Jeolla" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전북" } }
+      }
+    },
+    "setup.region.jeonnam.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Slowly, but surely" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "느리게, 그러나 확실하게" } }
+      }
+    },
+    "setup.region.jeonnam.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "South Jeolla" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전남" } }
+      }
+    },
+    "setup.region.sejong.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A young baseball history means room to break through" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "역사가 짧아 기회가 많다" } }
+      }
+    },
+    "setup.region.sejong.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Sejong" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "세종" } }
+      }
+    },
+    "setup.region.seoul.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The stage scouts visit most often" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스카우트가 가장 자주 오는 무대" } }
+      }
+    },
+    "setup.region.seoul.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Seoul" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "서울" } }
+      }
+    },
+    "setup.region.suwon.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A showdown among rising powers" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "신흥 명문들의 각축전" } }
+      }
+    },
+    "setup.region.suwon.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Suwon" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "수원" } }
+      }
+    },
+    "setup.region.ulsan.flavor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "An industrial city that keeps throwing" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "묵묵히 던지는 공업 도시" } }
+      }
+    },
+    "setup.region.ulsan.name" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ulsan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "울산" } }
+      }
+    },
+    "school.selection.card.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@. %@. Best at %@. Trade-off: %@ %@: %@. %@: %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@. %@. 강점 · %@. %@ %@, %@. %@, %@." } }
+      }
+    },
+    "school.selection.catcher" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@, catcher" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 포수" } }
+      }
+    },
+    "school.selection.coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@, head coach" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 감독" } }
+      }
+    },
+    "school.selection.confirm.action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose this school" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 학교로 간다" } }
+      }
+    },
+    "school.selection.confirm.cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose again" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 고른다" } }
+      }
+    },
+    "school.selection.confirm.message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Strength: %@\n%@\n\nOnce you choose, you cannot change schools during your three-year high school career." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "강점 · %@\n%@\n\n한 번 정하면 3년 동안 바꿀 수 없습니다." } }
+      }
+    },
+    "school.selection.confirm.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose %@ for your three-year high school career?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@로 가시겠습니까?" } }
+      }
+    },
+    "school.selection.strength" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Strength: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "강점 · %@" } }
+      }
+    },
+    "school.selection.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose your high school" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "어느 학교로 갈지 고르세요" } }
+      }
+    },
+    "chapter.header.eyebrow.first" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · Grade %lld · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %lld학년 %@" } }
+      }
+    },
+    "chapter.header.eyebrow.repeat" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Player %lld · %@ · Grade %lld · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld번째 선수 · %@ · %lld학년 %@" } }
+      }
+    },
+    "chapter.header.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@" } }
+      }
+    },
+    "chapter.metric.fatigue" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fatigue" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "피로" } }
+      }
+    },
+    "chapter.metric.team-trust" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Team trust" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팀의 믿음" } }
+      }
+    },
+    "chapter.metric.training" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Training" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련" } }
+      }
+    },
+    "chapter.wind.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Career wind: %@. %@ effects." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 3년의 바람, %@, 효과 설명 %@" } }
+      }
+    },
+    "chapter.wind.collapse" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Collapse" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "접기" } }
+      }
+    },
+    "chapter.wind.effect" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "• %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "· %@" } }
+      }
+    },
+    "chapter.wind.expand" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Expand" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "펼치기" } }
+      }
+    },
+    "training.arm-health.guidance.recovering" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your arm is recovering. Only recovery work will help right now." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "부상 회복 중입니다. 회복 훈련만 효과가 있습니다." } }
+      }
+    },
+    "training.arm-health.guidance.risk" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "If recovery work does not bring your arm back, the injury risk will rise." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "회복 훈련으로 팔 상태를 되돌리지 않으면 부상 위험이 커집니다." } }
+      }
+    },
+    "training.badge.opportunity" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Opening" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기회" } }
+      }
+    },
+    "training.badge.school-strength" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "School strength" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "특기" } }
+      }
+    },
+    "training.commit" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Train" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련하기" } }
+      }
+    },
+    "training.double-bonus" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your school strength and today's opening line up. This is the moment to push." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 학교 특기와 기회가 겹칩니다. 몰아붙일 자리입니다." } }
+      }
+    },
+    "training.intensity.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Intensity" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "강도" } }
+      }
+    },
+    "training.opportunity.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's opening: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘의 기회 · %@" } }
+      }
+    },
+    "training.pitch-picker.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a putaway pitch" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "집중할 결정구" } }
+      }
+    },
+    "training.prompt" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "What will you work on?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "무엇을 훈련할까요" } }
+      }
+    },
+    "training.repeat.stop-explanation" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "It stops automatically before dialogue, awakenings, official games, or high fatigue." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대화·각성·공식 경기 또는 높은 피로 앞에서 자동으로 멈춥니다." } }
+      }
+    },
+    "training.repeat.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Repeat this workout up to 3 times" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "같은 훈련 최대 3회" } }
+      }
+    },
+    "training.result.badge.opportunity" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Opening hit" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기회 적중" } }
+      }
+    },
+    "training.result.dismiss" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dismiss" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "닫기" } }
+      }
+    },
+    "training.result.fatigue.changed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fatigue %lld (%+lld)" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "피로 %lld (%+lld)" } }
+      }
+    },
+    "training.result.fatigue.steady" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fatigue %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "피로 %lld" } }
+      }
+    },
+    "training.result.gain.row" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ %lld → %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ %lld → %lld" } }
+      }
+    },
+    "training.result.gain.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ +%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ +%lld" } }
+      }
+    },
+    "training.result.headline.no-gain" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No rating change" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "능력 변화 없음" } }
+      }
+    },
+    "training.result.title.bloom" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Talent breakthrough" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재능이 만개했습니다" } }
+      }
+    },
+    "training.result.title.growth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Training complete" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련 결과" } }
+      }
+    },
+    "training.result.title.jackpot" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Huge breakthrough!" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대성공!" } }
+      }
+    },
+    "training.result.title.no-growth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No rating gain this time" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련 결과 · 이번엔 오르지 않았습니다" } }
+      }
+    },
+    "reminder.nudge.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep your arm warm tomorrow" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내일도 이어 던지기" } }
+      }
+    },
+    "reminder.nudge.body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "At 7:30 PM each day, we’ll remind you of the next goal for your current player or one inning to pick up where you left off. Reminders stop automatically if you don’t open the game for a few days." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "매일 저녁 7시 30분, 지금 키우는 선수의 다음 목표나 그날의 이닝 중 이어 할 한 가지를 알려 드립니다. 며칠 안 열면 저절로 멈춥니다." } }
+      }
+    },
+    "reminder.nudge.enable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn on reminders" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "알림 켜기" } }
+      }
+    },
+    "reminder.nudge.decline" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not now" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "괜찮습니다" } }
+      }
+    },
+    "reminder.nudge.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@. %@. %@. %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@. %@. %@. %@." } }
+      }
+    },
+    "challenge.end.eyebrow" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Challenge result — not part of your record" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록 없는 도전 결과" } }
+      }
+    },
+    "challenge.end.score" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Scout grade: %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스카우트 평가 %lld점" } }
+      }
+    },
+    "challenge.end.stats" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Games %lld · %lld K · %lld BB · %lld R" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기 %lld · %lld탈삼진 · %lld볼넷 · %lld실점" } }
+      }
+    },
+    "challenge.end.disclaimer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This challenge will not be added to your player record or carry rewards into the next career. Your original progress is unchanged." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 도전은 선수 기록이나 다음 회차 보상에 남지 않습니다. 원래 진행은 그대로입니다." } }
+      }
+    },
+    "challenge.end.cta" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Close challenge" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "도전을 닫는다" } }
+      }
+    },
+    "challenge.end.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@. %@. %@. %@. %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@. %@. %@. %@. %@." } }
+      }
+    },
+    "challenge.end.close.hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Closes this challenge result and returns to your original career." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "도전 결과를 닫고 원래 진행으로 돌아갑니다." } }
+      }
+    },
+    "challenge.end.outcome.drafted" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drafted" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지명 성공" } }
+      }
+    },
+    "challenge.end.outcome.undrafted" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Not drafted" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지명 실패" } }
+      }
+    },
+    "content.important-game.accessibility.rival" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@, %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@, %@." } }
+      }
+    },
+    "content.important-game.accessibility.rival.signature" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@, %@. %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@, %@. %@." } }
+      }
+    },
+    "content.important-game.accessibility.scenario" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@. %@. %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@. %@. %@." } }
+      }
+    },
+    "content.important-game.action.start" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Take the mound" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마운드에 오르기" } }
+      }
+    },
+    "content.important-game.career-matchup.line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "High school career matchup — %lld PA · %lld K · %lld H" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년 상대 전적 — %lld타석 %lld삼진 %lld피안타" } }
+      }
+    },
+    "content.important-game.display.situation.many" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %lld outs" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ %lld아웃" } }
+      }
+    },
+    "content.important-game.display.situation.one" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · 1 out" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 1아웃" } }
+      }
+    },
+    "content.important-game.display.situation.zero" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · No outs" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 0아웃" } }
+      }
+    },
+    "content.important-game.final-showdown.body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your final high school matchup. This is how you'll remember each other." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "3년의 마지막 마운드. 이 승부가 서로의 마지막 기억이 됩니다." } }
+      }
+    },
+    "content.important-game.final-showdown.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rival — Final Showdown" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "숙적 — 마지막 승부" } }
+      }
+    },
+    "content.important-game.opponent.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Opponent" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "상대" } }
+      }
+    },
+    "chapter.goal.completed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Complete — the assignment is done. Anything more is ambition." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "완수 — 숙제는 끝났고, 다음은 욕심의 영역입니다." } }
+      }
+    },
+    "chapter.goal.progress" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld/%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld/%lld" } }
+      }
+    },
+    "chapter.review.abilities.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Abilities" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "능력" } }
+      }
+    },
+    "chapter.review.ability.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ %lld. Talent %@, ceiling %lld. %@." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ %lld. 재능 %@, 한계 %lld. %@" } }
+      }
+    },
+    "chapter.review.card.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ Review" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 마무리" } }
+      }
+    },
+    "chapter.review.continue" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue to the next story" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 이야기로" } }
+      }
+    },
+    "chapter.review.growth.empty.no-training" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You moved through this stretch without training." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련 없이 지나간 시기입니다." } }
+      }
+    },
+    "chapter.review.growth.empty.with-training" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You trained %lld times, but the growth has not shown up in the numbers yet." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련 %lld회 — 아직 숫자로 드러나지 않은 성장입니다." } }
+      }
+    },
+    "chapter.review.growth.summary" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This reflects %lld training sessions." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련 %lld회의 결과입니다." } }
+      }
+    },
+    "chapter.review.growth.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Growth in This Story" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 이야기의 성장" } }
+      }
+    },
+    "chapter.review.next-story.rival" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next story — the competition gets tougher. %@ was watching this stretch too." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 이야기 — 상대는 더 강해집니다. %@도 이 시기를 지켜봤습니다." } }
+      }
+    },
+    "chapter.review.stat-line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Official high-school games: %lld · %lld strikeouts · %lld walks" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 공식 경기 %lld회 · %lld탈삼진 · %lld볼넷" } }
+      }
+    },
+    "tournament.ace-start" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ace start — %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "에이스 등판 — %@" } }
+      }
+    },
+    "tournament.dash" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "—" } }
+      }
+    },
+    "tournament.national-note" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Eight teams from across the country. Scouts remember a single pitch on a stage like this." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전국 8팀. 스카우트들은 이런 무대의 공 하나를 오래 기억합니다." } }
+      }
+    },
+    "community-buzz.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Voices beyond the field" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "그라운드 밖의 목소리" } }
+      }
+    },
+    "community-buzz.footnote" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Anonymous message-board reactions." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "익명 야구 게시판의 반응입니다." } }
+      }
+    },
+    "community-buzz.world.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "News from around the country" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전국의 소식" } }
+      }
+    },
+    "community-buzz.world.footnote" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Every rival is living through a three-year high school career of their own." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "라이벌들도 저마다의 3년을 살고 있습니다." } }
+      }
+    },
+    "prospect-ranking.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "National Prospect Rankings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "전국 유망주 랭킹" } }
+      }
+    },
+    "prospect-ranking.no-games" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No one knows this name yet. The first outing is where it starts." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "아직 세상이 이 이름을 모릅니다. 첫 등판이 시작입니다." } }
+      }
+    },
+    "prospect-ranking.forecast.label" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Draft outlook: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "가상 지명 명단: %@" } }
+      }
+    },
+    "prospect-ranking.forecast.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Evaluation %lld · Draft cutoff %lld · %@ is on the scouting radar" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "평가 %lld점 · 당락선 %lld점 · %@ 주목" } }
+      }
+    },
+    "prospect-ranking.row.identity" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@" } }
+      }
+    },
+    "prospect-ranking.outside.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Currently around No. %lld — the board stops at 20." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 %lld위권 — 랭킹 발표는 20위까지입니다." } }
+      }
+    },
+    "prospect-ranking.outside.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Scouts are already watching. Climb %lld spots to put your name on the national board." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스카우트들은 이미 지켜보고 있습니다. %lld계단을 오르면 전국에 이름이 실립니다." } }
+      }
+    },
+    "prospect-ranking.player-tag" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The only player here you are developing." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 명단에서 유일하게 당신이 키우는 선수" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -508,31 +508,41 @@ private struct GameLogRow: View {
 /// 감정이 된다. 20위 밖이면 몇 계단 남았는지를 보여 준다 — 진입 자체가 사건이다.
 private struct ProspectRankingCard: View {
     let state: HighSchoolCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
-        BaseballCard(title: "전국 유망주 랭킹", tone: .milestone) {
+        BaseballCard(title: copyResolver.resolve(AppCopyKey.prospectRankingTitle), tone: .milestone) {
             if let rank = ProspectRanking.playerRank(performance: state.performance) {
                 VStack(alignment: .leading, spacing: 8) {
                     // 가상 지명 명단 — 실제 드래프트와 같은 공식(분산만 제외)이라
                     // 예측이 결과를 배신하지 않는다. 경계 구간은 경계라고 말한다.
                     let forecast = HighSchoolCareerEngine.draftForecast(state: state)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("가상 지명 명단: \(forecast.band)")
+                        Text(verbatim: copyResolver.resolve(
+                            AppCopyKey.prospectRankingForecastLabel,
+                            arguments: [
+                                .userText(ProspectRankingPresentation.localizedForecastBand(
+                                    forecast,
+                                    resolver: copyResolver
+                                )),
+                            ]
+                        ))
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(forecast.score >= forecast.threshold ? BaseballTheme.action : BaseballTheme.textPrimary)
-                        Text("평가 \(forecast.score)점 · 당락선 \(forecast.threshold)점 · \(forecast.interestedTeam)\(KoreanCopy.particle(forecast.interestedTeam, final: "이", open: "가")) 주목")
+                        Text(verbatim: copyResolver.resolve(
+                            AppCopyKey.prospectRankingForecastDetail,
+                            arguments: ProspectRankingPresentation.forecastDetailArguments(
+                                forecast,
+                                resolver: copyResolver
+                            )
+                        ))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }
                     .accessibilityIdentifier("record.draftForecast")
                     Rectangle().fill(BaseballTheme.border.opacity(0.3)).frame(height: 1)
                     if rank <= ProspectRanking.boardSize {
-                        let board = ProspectRanking.board(
-                            careerID: state.careerID,
-                            playerName: state.identity.name,
-                            playerSchool: state.school?.name ?? "학교 미정",
-                            performance: state.performance
-                        )
+                        let board = ProspectRankingPresentation.board(state: state, resolver: copyResolver)
                         // 내 순위 주변만 보여 준다 — 위로 두 칸(목표), 아래로 한 칸(추격자).
                         let window = board.filter { abs($0.rank - rank) <= 2 || $0.rank <= 3 }
                         ForEach(window) { entry in
@@ -548,10 +558,10 @@ private struct ProspectRankingCard: View {
                                                  playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
                                 }
                                 VStack(alignment: .leading, spacing: 0) {
-                                    Text("\(entry.name) · \(entry.school)")
+                                    Text(verbatim: entry.identityLine)
                                         .font(.footnote.weight(entry.isPlayer ? .bold : .regular))
                                         .foregroundStyle(entry.isPlayer ? BaseballTheme.action : BaseballTheme.textPrimary)
-                                    Text(entry.tag)
+                                    Text(verbatim: entry.tag)
                                         .font(.caption2)
                                         .foregroundStyle(BaseballTheme.textTertiary)
                                         .lineLimit(1)
@@ -559,10 +569,16 @@ private struct ProspectRankingCard: View {
                             }
                         }
                     } else {
-                        Text("현재 \(rank)위권 — 랭킹 발표는 20위까지입니다.")
+                        Text(verbatim: copyResolver.resolve(
+                            AppCopyKey.prospectRankingOutsideTitle,
+                            arguments: [.integer(rank)]
+                        ))
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(BaseballTheme.textPrimary)
-                        Text("스카우트들은 이미 지켜보고 있습니다. \(rank - ProspectRanking.boardSize)계단을 오르면 전국에 이름이 실립니다.")
+                        Text(verbatim: copyResolver.resolve(
+                            AppCopyKey.prospectRankingOutsideDetail,
+                            arguments: [.integer(rank - ProspectRanking.boardSize)]
+                        ))
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -570,7 +586,7 @@ private struct ProspectRankingCard: View {
                 }
                 .accessibilityIdentifier("record.prospectRanking")
             } else {
-                Text("아직 세상이 이 이름을 모릅니다. 첫 등판이 시작입니다.")
+                Text(verbatim: copyResolver.resolve(AppCopyKey.prospectRankingNoGames))
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
             }

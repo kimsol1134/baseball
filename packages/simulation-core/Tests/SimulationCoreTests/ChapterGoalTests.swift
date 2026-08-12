@@ -23,4 +23,25 @@ final class ChapterGoalTests: XCTestCase {
         let late = ChapterGoal.goal(careerID: "s2", chapterNumber: 6).targetStrikeouts
         XCTAssertLessThanOrEqual(early, late + 2)
     }
+
+    func testAllFourFramesRemainDeterministicAndExposeTypedPresentationIdentity() {
+        var seen = Set<ChapterGoal.Frame>()
+        for careerIndex in 0..<64 {
+            for chapter in 1...8 {
+                let careerID = "goal-frame-\(careerIndex)"
+                let goal = ChapterGoal.goal(careerID: careerID, chapterNumber: chapter)
+                XCTAssertEqual(
+                    goal,
+                    ChapterGoal.goal(careerID: careerID, chapterNumber: chapter),
+                    "goal parity \(careerID):\(chapter)"
+                )
+                XCTAssertEqual(
+                    ChapterGoalPresentationCatalog.descriptor(for: goal).frame,
+                    goal.frame
+                )
+                seen.insert(goal.frame)
+            }
+        }
+        XCTAssertEqual(seen, Set(ChapterGoal.Frame.allCases))
+    }
 }
