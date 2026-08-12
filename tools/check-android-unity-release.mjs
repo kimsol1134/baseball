@@ -853,9 +853,10 @@ for (const artifact of [
   );
 }
 requireCondition(
-  androidGradleTemplate.includes("configurations.configureEach") &&
+  androidGradleTemplate.includes("rootProject.allprojects") &&
+    androidGradleTemplate.includes("configurations.configureEach") &&
     androidGradleTemplate.includes("resolutionStrategy.force"),
-  "Android runtime must fail closed on legacy transitive AndroidX versions",
+  "Android runtime must fail closed on legacy transitive AndroidX versions across launcher and library projects",
 );
 requireCondition(
   !text("apps/android-unity/Assets/Editor/AmplitudeDependencies.xml").includes("2.40.+"),

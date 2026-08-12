@@ -23,10 +23,15 @@ dependencies {
 // Google Play flags the legacy Fragment/Activity versions pulled transitively by
 // play-services-base. Keep the resolved runtime graph on production-safe AndroidX
 // releases even when an upstream SDK keeps a conservative lower bound.
-configurations.configureEach {
-    resolutionStrategy.force \
-        'androidx.fragment:fragment:1.7.1', \
-        'androidx.activity:activity:1.8.1'
+// The launcher resolves the final runtime graph separately from unityLibrary, so
+// a module-local strategy can still package the legacy transitive AARs. Apply the
+// exact constraint to every generated Gradle project, including launcher.
+rootProject.allprojects {
+    configurations.configureEach {
+        resolutionStrategy.force \
+            'androidx.fragment:fragment:1.7.1', \
+            'androidx.activity:activity:1.8.1'
+    }
 }
 
 // Android Resolver Exclusions Start
