@@ -243,13 +243,12 @@ if [[ "$smoke_mode" == "production" ]]; then
     missing 'production smoke의 현재 Git commit을 확인할 수 없습니다.'
   [[ -z "$(git -C "$repo_root" status --porcelain --untracked-files=all)" ]] ||
     fail 'production smoke는 build manifest와 같은 clean worktree에서만 실행할 수 있습니다.'
-  AAB_PATH="$BASEBALL_AAB" \
+  if ! AAB_PATH="$BASEBALL_AAB" \
     BUILD_MANIFEST="$build_manifest" \
     BUILD_CHECKSUMS="$build_checksums" \
     EVIDENCE_DIR="$evidence_dir" \
     EXPECTED_PACKAGE_ID="$package_id" \
-    EXPECTED_GIT_COMMIT="$current_git_commit" node <<'NODE' ||
-    fail 'production AAB와 RC build evidence가 일치하지 않습니다.'
+    EXPECTED_GIT_COMMIT="$current_git_commit" node <<'NODE'
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -325,6 +324,9 @@ fs.writeFileSync(
   ].join("\n"),
 );
 NODE
+  then
+    fail 'production AAB와 RC build evidence가 일치하지 않습니다.'
+  fi
 
   expected_certificate="$(printf '%s' "$BASEBALL_UPLOAD_CERT_SHA256" |
     tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"

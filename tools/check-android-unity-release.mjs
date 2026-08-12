@@ -788,6 +788,15 @@ requireCondition(
   smokeRunner.includes(".filter((line) => /^(?:android|com)\\.[A-Za-z0-9_.]+$/.test(line))"),
   "Android smoke APK permission parser must preserve app-defined permission identifiers",
 );
+requireCondition(
+  smokeRunner.includes("if ! AAB_PATH=\"$BASEBALL_AAB\"") &&
+    smokeRunner.includes("EXPECTED_GIT_COMMIT=\"$current_git_commit\" node <<'NODE'"),
+  "Android smoke RC evidence validator must propagate its heredoc command failure",
+);
+requireCondition(
+  !smokeRunner.includes("node <<'NODE' ||"),
+  "Android smoke must not place a shell failure branch inside Node heredoc input",
+);
 const smokeReadme = text("tools/android-unity-smoke/README.md");
 for (const contract of [
   "`production`이 기본 모드",
