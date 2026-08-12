@@ -138,10 +138,13 @@
 
 ## 현재 검증 경계
 
-- clean commit `0797760a5dab711e42f723a5dfdf8b21a75dd29e`에서 C# 정적 suite,
+- clean commit `a65b9da366408b6026c96feff6ee6d8b45761da1`에서 C# 정적 suite,
   Unity reference compile, 실제 Unity 6000.3.19f1 EditMode/PlayMode, production upload-key AAB와
   Firebase symbol upload가 통과했다.
-- 같은 AAB의 API 29, API 35 16KB, API 36 production smoke가 통과했다. 16KB lane은 실제 저장형
+- 같은 versionCode 2 AAB의 API 29, API 35 16KB, API 36 production smoke가 통과했다. 16KB lane은 실제 저장형
   투구 presentation marker와 shader ready, crash/ANR 0을 확인했다.
+- Play에는 versionCode 2 AAB와 nativeCode symbols를 같은 edit로 업로드하고 internal/closed Alpha
+  track update까지 검증했다. 한국 개발자 계정 추가 정보 403이 edit commit을 막아 edit 전체를
+  폐기했으며, versionCode 1 활성 상태는 변경되지 않았다.
 - 물리 Low/Mid/High 스마트폰, TalkBack·실제 저용량·성능, Play 12명/14일, 한국 개발자 계정 정보,
   무료 체험·사전 출시 보고서·지원 기기 CSV, 실제 분석 수신과 Crashlytics symbolication은 외부 차단이다.

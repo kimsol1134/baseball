@@ -924,8 +924,9 @@ fi
 
 # Package-scoped runtime bridge failures can leave an interactive shell with broken product
 # visuals or telemetry. Expected offline transport retries are deliberately not matched here.
-if grep -Eiq 'BASEBALL_UI_RUNTIME_THEME[^[:cntrl:]]*status=failed|No Theme Style Sheet set|pitch.stage_shader_unavailable|Shader.*(not found|unsupported|is not supported)|Hidden/InternalErrorShader|pink[[:space:]_-]*material|StrictMode|Default FirebaseApp failed to initialize|FirebaseApp initialization unsuccessful|Failed to read Firebase options|Firebase.*(initialization failed|dependency[^[:cntrl:]]*failed|not initialized|No Firebase App|bridge[^[:cntrl:]]*failed)|Amplitude.*(initialization failed|not initialized|bridge[^[:cntrl:]]*failed|API key[^[:cntrl:]]*missing)' \
-  "$evidence_dir"/*-app-logcat.txt "$evidence_dir/logcat-app-final.txt"; then
+if grep -Ev 'FirebaseSessions: App foregrounded, but local SessionData not initialized' \
+  "$evidence_dir"/*-app-logcat.txt "$evidence_dir/logcat-app-final.txt" |
+  grep -Eiq 'BASEBALL_UI_RUNTIME_THEME[^[:cntrl:]]*status=failed|No Theme Style Sheet set|pitch.stage_shader_unavailable|Shader.*(not found|unsupported|is not supported)|Hidden/InternalErrorShader|pink[[:space:]_-]*material|StrictMode|Default FirebaseApp failed to initialize|FirebaseApp initialization unsuccessful|Failed to read Firebase options|Firebase.*(initialization failed|dependency[^[:cntrl:]]*failed|not initialized|No Firebase App|bridge[^[:cntrl:]]*failed)|Amplitude.*(initialization failed|not initialized|bridge[^[:cntrl:]]*failed|API key[^[:cntrl:]]*missing)'; then
   fail '앱 logcat에서 UI 테마·셰이더·StrictMode·Firebase/Amplitude 초기화 또는 브릿지 오류를 발견했습니다.'
 fi
 

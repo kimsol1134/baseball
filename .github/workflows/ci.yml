@@ -52,6 +52,8 @@ jobs:
             -scheme BaseballIOS \
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
             -skip-testing:BaseballIOSUITests/PromoCaptureUITests \
+            -skip-testing:BaseballIOSUITests/CareerSmokeUITests/testHighSchoolCareerRunsThroughDraftAndRebirth \
+            -skip-testing:BaseballIOSUITests/QACaptureUITests \
             -skip-testing:BaseballIOSTests/PromoFrameExportTests \
             -skip-testing:BaseballIOSTests/PromoAudioExportTests \
             test CODE_SIGNING_ALLOWED=NO

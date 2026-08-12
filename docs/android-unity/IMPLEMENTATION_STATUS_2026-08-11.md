@@ -3,7 +3,8 @@
 기준 문서: [`../ANDROID_UNITY_IMPLEMENTATION_PLAN_2026-08-11.md`](../ANDROID_UNITY_IMPLEMENTATION_PLAN_2026-08-11.md)
 
 이 문서는 구현 소스와 출시 증거를 구분한다. clean commit의 Unity 테스트, production upload-key
-서명 AAB, Firebase symbols, API 29/35(16KB)/36 smoke, Play 내부·비공개 트랙은 준비됐다. 다만
+서명 v2 AAB, Firebase symbols, API 29/35(16KB)/36 smoke, Play 내부·비공개 트랙은 준비됐다. v2
+AAB+native symbols 동일-edit 업로드도 검증했지만 계정 정보 403으로 commit 전 폐기했다. 다만
 **한국 개발자 정보, 12명/14일 비공개 테스트와 물리 스마트폰 증거가 없으므로 Google Play RC로
 승인된 상태가 아니다.**
 
@@ -73,9 +74,9 @@
 | shell syntax/YAML/JSON/`git diff --check` | 통과 | 소스 계약과 최종 diff 형식 확인 |
 | `npm run test:unity` | 통과 | 실제 Unity EditMode 주요 533건+격리 tests, PlayMode 14/14 |
 | `npm run build:android:verify` | 통과 | 내부 검증 AAB SHA `03fe9b…091a`, symbols SHA `89a52b…91d8` |
-| production API 29 smoke | 통과 | `/tmp/baseball-api29-smoke-0797760/20260812T143247Z` |
-| production 16KB smoke | 통과 | `/tmp/baseball-final-smoke-0797760/20260812T134607Z`; 실제 투구 marker 포함 |
-| production API 36 smoke | 통과 | `/tmp/baseball-api36-smoke-0797760/20260812T143452Z` |
+| production API 29 smoke | 통과 | v2 `/private/tmp/baseball-v2-api29-smoke-a65b9da/20260812T160137Z` |
+| production 16KB smoke | 통과 | v2 `/private/tmp/baseball-v2-16k-smoke-a65b9da/20260812T155332Z`; 실제 투구 marker 포함 |
+| production API 36 smoke | 통과 | v2 `/private/tmp/baseball-v2-api36-smoke-a65b9da/20260812T160713Z` |
 
 ## 반드시 남기는 패리티 경계
 
@@ -91,7 +92,8 @@
 1. 한국 개인 개발자의 공개 전화번호를 인증하고 유료 앱 사업자·통신판매 정보를 실제 값으로 제출한다.
 2. closed Alpha의 opt-in 테스터를 12명 이상 확보하고 14일 이상 유지한다.
 3. Low/Mid/High 실제 세로 스마트폰에서 성능, TalkBack, 실제 저용량, Back/재개를 기록한다.
-4. Play 변경 13개를 검토 제출하고 사전 출시 보고서, 지원 기기 CSV, 폼 팩터 제외와 60분 체험을 확인한다.
+4. v2 AAB+native symbols를 같은 Play edit로 commit하고, 변경을 검토 제출한 뒤 사전 출시 보고서,
+   지원 기기 CSV, 폼 팩터 제외와 60분 체험을 확인한다.
 5. 내부/비공개 설치에서 Firebase/Amplitude 수신과 Crashlytics symbolication을 확인한다.
 6. `DEVICE_MATRIX.md`, `PARITY_MATRIX.md`, `RELEASE_EVIDENCE.md`의 빈 칸이 모두 증거로 채워진 뒤 RC를 승인한다.
 
