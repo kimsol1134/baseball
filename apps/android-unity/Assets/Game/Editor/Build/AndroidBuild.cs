@@ -73,6 +73,15 @@ namespace Baseball.Editor
             ValidateServiceConfiguration(projectRoot, kind);
 
             bool customSigningConfigured = false;
+            string addressablesContentStatePath = Path.Combine(
+                projectRoot,
+                "Assets",
+                "AddressableAssetsData",
+                "Android",
+                "addressables_content_state.bin");
+            byte[] originalAddressablesContentState = File.Exists(addressablesContentStatePath)
+                ? File.ReadAllBytes(addressablesContentStatePath)
+                : null;
             string originalVersion = PlayerSettings.bundleVersion;
             int originalVersionCode = PlayerSettings.Android.bundleVersionCode;
             bool buildVersionApplied = false;
@@ -196,6 +205,7 @@ namespace Baseball.Editor
                     ApplyBuildVersion(originalVersion, originalVersionCode);
                     AssetDatabase.SaveAssets();
                 }
+                RestoreGeneratedFile(addressablesContentStatePath, originalAddressablesContentState);
             }
 
             if (kind == BuildKind.ReleaseCandidate && ReadGitState(repositoryRoot).IsDirty)
@@ -204,6 +214,23 @@ namespace Baseball.Editor
                     "Release candidate build changed tracked or untracked source after restoring its build-time version.");
             }
             UnityEngine.Debug.Log(successMessage);
+        }
+
+        private static void RestoreGeneratedFile(string path, byte[] originalBytes)
+        {
+            if (originalBytes == null)
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+                return;
+            }
+
+            if (!File.Exists(path) || !File.ReadAllBytes(path).SequenceEqual(originalBytes))
+            {
+                File.WriteAllBytes(path, originalBytes);
+            }
         }
 
         private static void ValidateNoPersistentQaDefines()

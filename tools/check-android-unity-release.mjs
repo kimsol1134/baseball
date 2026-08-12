@@ -522,6 +522,7 @@ requireCondition(
 );
 requireCondition(
   buildSource.includes("ApplyBuildVersion(originalVersion, originalVersionCode)")
+    && buildSource.includes("RestoreGeneratedFile(addressablesContentStatePath, originalAddressablesContentState)")
     && buildSource.includes("Release candidate build changed tracked or untracked source after restoring its build-time version."),
   "Android builds must restore the project version and recheck RC source cleanliness",
 );
