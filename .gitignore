@@ -49,6 +49,13 @@ apps/android-unity/Assets/google-services.json
 apps/android-unity/Assets/google-services.json.meta
 apps/android-unity/Assets/Game/Resources/analytics-config.generated.json
 apps/android-unity/Assets/Game/Resources/analytics-config.generated.json.meta
+# Firebase Unity regenerates these platform resources from the injected
+# google-services.json during an RC import. They are build inputs/outputs, not
+# repository source, and may contain environment-specific project metadata.
+apps/android-unity/Assets/Plugins/Android/FirebaseApp.androidlib.meta
+apps/android-unity/Assets/Plugins/Android/FirebaseApp.androidlib/
+apps/android-unity/Assets/StreamingAssets.meta
+apps/android-unity/Assets/StreamingAssets/
 
 # Android Unity의 .NET 참조/정적 테스트는 로컬 빌드 산출물만 제외한다.
 tools/unity-static-tests/bin/
