@@ -191,8 +191,14 @@ if [[ "$failed" -eq 0 && "$build_mode" == "rc" ]]; then
   if ! unzip -tqq "$aab_path" >"$artifact_directory/aab-zip-test.txt" 2>&1; then
     echo "Release-candidate AAB ZIP integrity verification failed" >&2
     failed=1
-  elif ! jarsigner -verify -strict -certs "$aab_path" >"$artifact_directory/aab-signature.txt" 2>&1; then
+  # Android upload keys are deliberately self-signed. `-strict` treats the lack of a
+  # public PKIX root as a signer error even when every bundle entry verifies, so trust
+  # is established by normal JAR verification plus the pinned SHA-256 certificate below.
+  elif ! jarsigner -verify -certs "$aab_path" >"$artifact_directory/aab-signature.txt" 2>&1; then
     echo "Release-candidate AAB signature verification failed" >&2
+    failed=1
+  elif ! grep -Fq 'jar verified.' "$artifact_directory/aab-signature.txt"; then
+    echo "Release-candidate AAB did not report a verified JAR signature" >&2
     failed=1
   else
     actual_certificate="$(keytool -J-Duser.language=en -printcert -jarfile "$aab_path" |

@@ -680,7 +680,8 @@ for (const contract of [
   "Android build evidence invalid",
   "AAB SHA-256 mismatch",
   "IL2CPP symbol SHA-256 mismatch",
-  "jarsigner -verify -strict -certs",
+  "jarsigner -verify -certs",
+  "jar verified.",
   "BASEBALL_UPLOAD_CERT_SHA256",
   "aab-signing-cert.sha256",
   "PAGE_ALIGNMENT_16K",
@@ -710,7 +711,8 @@ requireCondition(
 const smokeRunner = text("tools/android-unity-smoke/run.sh");
 for (const contract of [
   "bundletool",
-  "jarsigner -verify -strict",
+  "jarsigner -verify -certs",
+  "jar verified.",
   "airplane-mode enable",
   "POST_NOTIFICATIONS",
   "screenshot-dimensions.txt",

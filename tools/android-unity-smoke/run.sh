@@ -340,14 +340,20 @@ NODE
 fi
 
 if [[ "$smoke_mode" == "production" ]]; then
-  jarsigner -verify -strict -certs "$BASEBALL_AAB" >"$evidence_dir/aab-signature.txt" 2>&1 ||
-    fail '프로덕션 AAB strict 서명 검증에 실패했습니다.'
+  # The upload certificate is self-signed by design. Verify all JAR entries, then rely
+  # on the production-only SHA-256 certificate pin above instead of a public PKIX chain.
+  jarsigner -verify -certs "$BASEBALL_AAB" >"$evidence_dir/aab-signature.txt" 2>&1 ||
+    fail '프로덕션 AAB 서명 무결성 검사에 실패했습니다.'
+  grep -Fq 'jar verified.' "$evidence_dir/aab-signature.txt" ||
+    fail '프로덕션 AAB가 verified JAR 서명 결과를 남기지 않았습니다.'
 else
   # Unity Local Verification uses the standard self-signed Android debug
   # certificate. Verify every signed entry, but reserve PKIX/strict trust and
   # the upload-certificate pin for production candidates.
   jarsigner -verify -certs "$BASEBALL_AAB" >"$evidence_dir/aab-signature.txt" 2>&1 ||
     fail '내부 검증 AAB 서명 무결성 검사에 실패했습니다.'
+  grep -Fq 'jar verified.' "$evidence_dir/aab-signature.txt" ||
+    fail '내부 검증 AAB가 verified JAR 서명 결과를 남기지 않았습니다.'
 fi
 java -jar "$bundletool_jar" dump config --bundle="$BASEBALL_AAB" \
   >"$evidence_dir/bundle-config.txt" 2>"$evidence_dir/bundle-config.stderr.txt" ||
