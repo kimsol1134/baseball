@@ -298,7 +298,11 @@ const playerActivity = [...xml.matchAll(/<activity\b[^>]*>/g)]
   .map((match) => attributes(match[0]))
   .find((value) => /UnityPlayer(?:Game)?Activity$/.test(value.name ?? ""));
 if (!playerActivity) fail("Unity player activity is missing");
-if (playerActivity.screenOrientation !== "portrait") {
+function normalizedScreenOrientation(value) {
+  // bundletool encodes ActivityInfo.SCREEN_ORIENTATION_PORTRAIT as its exact enum value.
+  return value === "1" ? "portrait" : value;
+}
+if (normalizedScreenOrientation(playerActivity.screenOrientation) !== "portrait") {
   fail(`Unity player orientation is ${playerActivity.screenOrientation ?? "missing"}`);
 }
 if (playerActivity.resizeableActivity !== "false") {
@@ -322,7 +326,9 @@ if (!touchscreen || touchscreen.required !== "true") {
 
 const screens = [...xml.matchAll(/<screen\b[^>]*>/g)].map((match) => attributes(match[0]));
 function normalizedScreenSize(value) {
-  return ({ "1": "small", "2": "normal" })[value] ?? value ?? "missing";
+  // bundletool may emit either ordinal labels or Android's screen-layout constants.
+  return ({ "1": "small", "2": "normal", "200": "small", "300": "normal" })[value]
+    ?? value ?? "missing";
 }
 function normalizedScreenDensity(value) {
   return ({
