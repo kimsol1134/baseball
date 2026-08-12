@@ -8,5 +8,6 @@ apps/android-unity/Assets/Editor/** whitespace=-blank-at-eol,-blank-at-eof
 apps/android-unity/Assets/ExternalDependencyManager/** whitespace=-blank-at-eol,-blank-at-eof
 apps/android-unity/Assets/Firebase/** whitespace=-blank-at-eol,-blank-at-eof
 apps/android-unity/Assets/AddressableAssetsData/** whitespace=-blank-at-eol,-blank-at-eof
+apps/android-unity/Assets/UniversalRenderPipelineGlobalSettings.asset whitespace=-blank-at-eol,-blank-at-eof
 apps/android-unity/Assets/Game/Rendering/BaseballMobileURP.asset whitespace=-blank-at-eol,-blank-at-eof
 apps/android-unity/Assets/Game/Presentation/Common/Resources/Fonts/LICENSE.txt whitespace=-blank-at-eol,-blank-at-eof

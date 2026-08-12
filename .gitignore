@@ -54,6 +54,7 @@ apps/android-unity/Assets/Game/Resources/analytics-config.generated.json.meta
 # repository source, and may contain environment-specific project metadata.
 apps/android-unity/Assets/Plugins/Android/FirebaseApp.androidlib.meta
 apps/android-unity/Assets/Plugins/Android/FirebaseApp.androidlib/
+apps/android-unity/Assets/Plugins/Android/FirebaseCrashlytics.androidlib/res/values/crashlytics_build_id.xml
 apps/android-unity/Assets/StreamingAssets.meta
 apps/android-unity/Assets/StreamingAssets/
 
