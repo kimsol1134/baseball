@@ -1,115 +1,119 @@
 # Android Unity 릴리스 증거
 
-현재 상태: production-candidate 소스와 로컬 Unity/16KB 내부 검증, production upload key,
-Firebase/Amplitude 프로젝트·CI secret 연결 완료. clean commit 서명 RC·실기기·Play 검증 대기.
-**승인된 RC가 아니며** production 칸의 빈 항목은 출시 차단 항목이다.
+기준 시각: 2026-08-12 KST
+현재 상태: clean commit의 Unity 6000.3.19f1 테스트, production upload-key 서명 AAB,
+Firebase Crashlytics symbol upload, API 29/35(16KB)/36 production smoke, Play 내부·비공개
+트랙 구성이 완료됐다. **프로덕션 RC 승인은 아직 아니다.** 아래 사람·시간·물리기기 조건은
+자동화 증거로 대체하지 않는다.
 
 ## 빌드
 
-- Git commit:
-- Dirty 여부:
-- Unity: 6000.3.19f1
+- Git commit: `0797760a5dab711e42f723a5dfdf8b21a75dd29e`
+- build 입력: clean (`gitDirty=false`)
+- GitHub Actions: [run 31600392569](https://github.com/kimsol1134/baseball/actions/runs/31600392569) —
+  Static contracts, Licensed Unity tests, Signed production candidate 모두 성공
+- Unity: `6000.3.19f1`
 - application ID: `com.solkim.baseball.android`
-- version/versionCode:
-- AAB SHA-256:
-- IL2CPP symbol SHA-256:
-- Crashlytics symbol upload receipt:
-- AAB signing certificate SHA-256 pin:
-- bundletool `PAGE_ALIGNMENT_16K` config:
-- signed universal/device-targeted APK `zipalign -P 16` report (`apk-zipalign.txt`):
-- ARM64 `.so` `llvm-readelf -lW` LOAD alignment report (`elf-alignment.txt`):
-
-### 내부 검증 산출물 — production RC 아님
-
-- source baseline commit: `358a706a9cf50d669928aa7d79164e9bb2860955` + dirty working tree
 - version/versionCode: `1.0.0` / `1`
-- distribution/build: `internal-verification`, Development + `BASEBALL_INTERNAL_QA`, debug signing
-- AAB: `artifacts/android/1.0.0-1/baseball-android-1.0.0-1-debug-signed-verification.aab`
-- AAB SHA-256: `03fe9b59c64728fa972c34cf9bb989a59334cb9003d97db88545ebfcb251091a`
-- IL2CPP symbols SHA-256: `89a52b969153f697163fbcf8451a543bbeec9b6862fb6e3e0f4d42e380b291d8`
-- build manifest/checksums: `artifacts/android/1.0.0-1/`
-- 16KB internal smoke: `artifacts/android-unity-smoke/20260812T004753Z/`
+- distribution/build: `production`, Development=false, Internal QA=false
+- Android: min API 26, target API 36, ARM64, OpenGLES3, IL2CPP Release
+- AAB: `baseball-android-1.0.0-1.aab` (92,235,405 bytes)
+- AAB SHA-256: `29375581fc284501fa840ac59429bf373c57a03baee02c04a8c09338d21c2307`
+- IL2CPP symbols: `baseball-android-1.0.0-1-1.0.0-v1-IL2CPP.symbols.zip`
+- IL2CPP symbol SHA-256: `d050ee8582baa6651d7e37dd8d42fbaf0c6736bb3f1e36da536481daa6bee4c7`
+- Firebase symbol receipt: `uploaded`, Firebase CLI `15.26.0`,
+  `2026-08-12T13:42:55.379Z`
+- upload certificate SHA-256 pin:
+  `D0A8EC4FDCEC6F7F74BBEBCE747CB3D2FA308DB72CCA106D30AA2A782DAA445F`
+- bundletool: `1.18.3`, native library alignment `PAGE_ALIGNMENT_16K`
+- device APKS `zipalign -P 16`: `passed` (APK 2개)
+- ARM64 ELF LOAD alignment: `passed` (native library 14개, minimum `0x4000`)
+- merged manifest/package/permission/screen-set 검증: `passed`
+- CI artifact retention: 30일. 검증용 로컬 사본은
+  `/tmp/baseball-final-evidence-0797760`에 있다.
 
 ## 자동 검증
 
-- Unity 참조 소스 컴파일: `npm run test:unity:references`
-  - 2026-08-12, Unity `6000.3.19f1` 설치 참조로 production player, internal-QA player, Core, Platform, `Baseball.Platform.Tests`, Presentation EditMode tests, Android Editor source closure를 각각 `TreatWarningsAsErrors=true`로 컴파일
-  - 결과: 경고 0개, 오류 0개
-  - `tools/unity-reference-compile.sh`는 Unity 실행 파일, 관리 참조, Input System, URP 및 Unity NUnit 참조가 하나라도 없으면 종료 코드 2로 실패한다. `bin`/`obj`는 `mktemp`로 만든 저장소 밖 디렉터리에만 쓴 뒤 종료 시 삭제한다.
-- static/EditMode 순수 계약: `npm run test:unity:static` — 433/433 통과
-- Unity Test Runner: `npm run test:unity` — 2026-08-12 실제 Unity 6000.3.19f1 batchmode 통과
+- `npm run test:unity:static`: 433/433 통과
+- `npm run test:unity:references`: production player, internal-QA player, Core, Platform,
+  Platform tests, Presentation tests, Android Editor 모두 warning/error 0
+- Unity Test Runner:
   - EditMode 주요 어셈블리: Core 46/46, Application 119/119, Platform 60/60,
     Presentation 240/240, HighSchool 39/39, Pro 25/25, InternalQa 4/4
   - bootstrap/persistence 격리 lifecycle·fault·100회 round-trip 전 항목 통과
-  - PlayMode: 14/14 통과
-  - XML/log: `artifacts/unity/editmode-*.xml`, `artifacts/unity/playmode.xml`
-- Android verification build: `BASEBALL_BUILD_MODE=verification bash tools/unity-android-build.sh` —
-  ARM64 IL2CPP Release compiler configuration AAB/public symbols 생성과 wrapper 증거 검증 통과
-- strict Unity import gate: `BASEBALL_REQUIRE_UNITY_META=1 node tools/check-android-unity-release.mjs` —
-  전체 `Assets` 파일·디렉터리 missing `.meta` 0, reviewed Addressables/URP generated asset 0
-- internal device smoke: 16KB API 35 ARM64 전용 emulator에서 clean install, cold/resume,
-  portrait/rotation block, offline, notification denial, font 200%, low-memory, high/low pitch,
-  save corruption/fault/failure proxy, analytics fixture, tutorial checkpoint restart, crash probe 통과.
-  Firebase/Amplitude·shader·StrictMode, crash/ANR, PII scan 0건
-- copy/IP: `npm run check:copy:android:unity` — 내부 용어 38종·실존 야구 IP 42종 미노출
-- design: `npm run check:design-system` — 위반 0, 고대비 토큰/WCAG AA/공통 컴포넌트 계약 통과
-- asset manifest: `npm run check:unity-assets` — 150 files (118 images, 7 icon sources, 24 audio) 통과
-- Android 소스 계약: `npm run check:android:unity` — 통과. missing Unity-generated `.meta` 0,
-  missing reviewed Addressables/URP asset 0. 이 결과 자체는 production RC 증거가 아니다.
-- save fault injection: 정적 suite에서 canonical/backup 실패, stale revision, 투구 suspend/consume/complete, 분석 receipt 저장 실패의 no-publish·retry 계약 통과. 실제 Android 저장장치 fault lane은 기기 증거 대기
-- reset crash points: journal fsync 이후 repository 삭제를 1회만 수행하고 install ID·분석·리뷰·알림·
-  stale epoch·공유 PNG 정리를 receipt로 재개한다. 초기화 뒤 새 진행을 저장하고 종료해도 다음 부팅에서
-  repository를 다시 지우지 않는다. repository 삭제 뒤 ID 발행이 실패하면 이전 in-memory store를
-  write-poison하여 pause·resume·명령이 이전 install save를 다시 만들지 못하게 하고 candidate startup으로
-  수렴한다. ID 저장 오류는 임시 ID를 만들지 않고 startup retry 경계로 전달하며, 알림 서비스도 별도
-  ID를 만들지 않고 Ready aggregate의 ID가 바인딩될 때까지 권유·예약·intent 소비를 닫는다.
-- Swift/C# fixture: Pitch seed 1…128 exact 및 훈련-v4 seed `20260811` exact 통과
-- Monte Carlo: Pitch seed 1…10,000 outcome 집계 exact 통과
-- RC 기기 smoke 연결: production 모드는 현재 clean Git commit과 일치하는 `build-manifest.json`,
-  `checksums.sha256`, AAB/symbol SHA-256, production distribution, IL2CPP Release 및
-  `BASEBALL_UPLOAD_CERT_SHA256` pin을 모두 검증한다. 16KB 기기에서는 실제 저장형 투구의
-  `BASEBALL_PITCH_PRESENTATION_COMPLETED` marker까지 확인해야만
-  `native_16k_execution=passed`를 기록한다. 내부 검증 AAB의 16KB high/low pitch는 통과했지만,
-  production 서명 AAB·물리 스마트폰 증거가 아니므로 해당 production 값은 아직 비어 있다.
+  - PlayMode 14/14 통과
+  - CI test artifact digest:
+    `3053dfc3173c1ecaf5be35102bd95e4617654c7b905351ab2219153adf855545`
+- strict Unity import gate: 전체 `Assets` 파일·디렉터리 missing `.meta` 0,
+  missing reviewed Addressables/URP asset 0
+- copy/IP: 내부 용어 38종·실존 야구 IP 42종 미노출
+- design: 원시 색상·레거시 토큰 위반 0, 고대비/WCAG AA/공통 컴포넌트 계약 통과
+- asset manifest: 150 files (118 images, 7 icon sources, 24 audio) 통과
+- Android source/build contract: 통과
+- Swift/C# fixture: Pitch seed 1…128 exact, 훈련-v4 seed `20260811` exact
+- Monte Carlo: Pitch seed 1…10,000 outcome 집계 exact
 
-## Android 검증
+## Android production smoke
 
-- 기기 매트릭스: `DEVICE_MATRIX.md`; 16KB API 35 ARM64 emulator 내부 lane 통과
-- cold start: internal `passed`
-- pitch p95 frame:
-- peak memory:
-- offline full loop: internal relaunch `passed`; production 물리기기 대기
-- process-kill recovery: internal tutorial checkpoint relaunch `passed`
-- TalkBack/font 200%: font 200% internal `passed`; TalkBack 물리기기 대기
-- crash/ANR: internal scan `passed`
-- 16KB page-size 기기(`getconf PAGE_SIZE=16384`, `native_16k_execution=passed`) install/launch/full pitch:
+세 실행은 같은 AAB와 build manifest/checksum/Git commit/certificate pin을 검증하고 clean install했다.
+각각 cold start, first-interactive, same-process resume, portrait/rotation block, offline relaunch,
+font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan을 통과했다.
 
-## Play
+| 기기 | API/page | 결과 | 추가 증거 |
+|---|---|---|---|
+| `Android_SDK_built_for_arm64` low-memory emulator | API 29 / 4KB | passed | 알림 권한은 API<33 비대상; `/tmp/baseball-api29-smoke-0797760/20260812T143247Z` |
+| `sdk_gphone16k_arm64` | API 35 / 16KB | passed | 실제 production 투구, shader ready, 16KB native 실행·정렬 모두 passed; `/tmp/baseball-final-smoke-0797760/20260812T134607Z` |
+| `sdk_gphone64_arm64` target-edge emulator | API 36 / 4KB | passed | 알림 거부 포함; `/tmp/baseball-api36-smoke-0797760/20260812T143452Z` |
 
-- 콘솔 사전 확인: 2026-08-12 로그인 성공, 앱 미생성, package 사용 가능 확인. 법적 선언 직전까지 생성 양식 준비
-- 개인정보처리방침: `https://baseball-reincarnation.vercel.app/privacy` — HTTPS 200, Android
-  Firebase/Amplitude/Crashlytics 처리 범위와 문의·삭제 절차 공개
-- 고객지원: `https://baseball-reincarnation.vercel.app/support` — HTTPS 200, iOS/Android 저장·복구·
-  구매·문제 제보 안내 및 지원 이메일 공개
-- 내부 트랙: 앱 생성·production AAB 업로드 전
-- 무료 체험 시작/만료/구매 후 save:
-- 지원 기기 CSV:
-- 태블릿/ChromeOS/TV/XR 제외:
-- 사전 출시 보고서:
-- Data Safety/content rating/listing:
+16KB 실행은 `getconf PAGE_SIZE=16384`, `BASEBALL_PITCH_STAGE_SHADER_READY`, 실제 저장형 투구의
+`BASEBALL_PITCH_PRESENTATION_COMPLETED`, crash/ANR 0을 모두 확인한 뒤에만
+`native_16k_execution=passed`로 기록했다. 스토어용 실제 화면 9장은
+`/tmp/baseball-store-screens-0797760`에 있고 그중 6장을 Play에 등록했다.
 
-## 현재 외부 차단
+실제 저용량 저장장치 조작은 모든 lane에서 `not_tested`다. 내부 QA의 ENOSPC proxy는 통과했지만
+물리 저장장치 증거로 해석하지 않는다.
 
-- Play 앱 최종 생성은 개발자 프로그램 정책·미국 수출법을 계정 소유자가 명시 확인해야 한다.
-- Firebase project/Android app/전용 GA4 property·stream과 별도 Amplitude Android production project를
-  생성했다. config/API key/최소권한 Crashlytics service account는 저장소 밖과 GitHub Actions secret에
-  연결했고 GA4 세부 위치·기기 수집 및 광고 개인 최적화를 전 지역에서 껐다.
-- production upload keystore·alias·암호·certificate SHA-256 pin을 생성해 저장소 밖 Keychain/Application
-  Support와 GitHub Actions secret에 연결했다. 별도 오프라인 복구본은 아직 필요하다.
-- production Firebase/Amplitude 수신과 Crashlytics symbolication receipt가 없다.
-- 연결된 Android는 16KB API 35 emulator뿐이며 Low/Mid/High 물리 스마트폰과 Play farm 증거가 없다.
-- worktree는 Unity import 산출물과 구현 변경으로 dirty이므로 통합 검증 뒤 clean commit·push하고 CI RC를 실행해야 한다.
+## Play Console
 
-## 알려진 문제와 rollback
+- 앱/package 생성 완료: `야구 못하면 또 환생함` / `com.solkim.baseball.android`
+- 유료 상태, 대한민국 가격 `KRW 4,400`, 제품 세금 카테고리 `디지털 앱 판매`
+- Play가 App Bundle의 `16KB 지원`, min API 26, target SDK 36, ARM64, OpenGL ES 3.0을 확인
+- 자동 보호: 설치 프로그램 선택 활성, 보호 수준 `양호`
+- internal track: versionCode 1 `내부 테스터에게 제공됨`
+- internal opt-in: `https://play.google.com/apps/internaltest/4701687514240048485`
+- closed Alpha: versionCode 1, 대한민국 1개 국가, 테스터 이메일 목록 1개, 전체 출시 구성 완료
+- 스토어 등록정보: ko-KR 이름/필수 문구/그래픽과 production screenshots 6장 등록
+- 개인정보처리방침: `https://baseball-reincarnation.vercel.app/privacy`
+- 고객지원: `https://baseball-reincarnation.vercel.app/support`
+- 콘텐츠 등급, 타겟 연령(13+), 광고 없음, 광고 ID 없음, Data Safety, 정부·금융·건강 앱 선언 완료
+- 무료 체험: Google의 신규 유료 게임 정책상 60분 체험은 기본 활성 대상이며 별도 앱 코드가
+  필요 없다. 현재 Console에는 별도 토글이 보이지 않았으므로 실제 테스터 계정에서 설치→60분
+  만료→구매→동일 save 유지까지 확인하기 전 완료로 판정하지 않는다.
+- Play native debug symbols: versionCode 1은 AAB가 먼저 commit되어 같은 version의 Play symbol
+  파일을 뒤늦게 추가할 수 없다. Firebase symbols는 업로드됐다. 다음 versionCode는 AAB와 native
+  symbols를 같은 Play edit에서 올린다.
 
-- 없음으로 승인하기 전까지 미기록 상태는 “검증되지 않음”으로 취급한다.
+## 남은 출시 차단
+
+1. **한국 개발자 계정 정보**: Play 게시 개요의 유일한 제출 오류다. 개인 계정의 공개 개발자
+   전화번호 입력·SMS/전화 인증, 유료 앱 배포에 필요한 사업자등록번호·통신판매업 신고번호·
+   신고기관을 계정 소유자가 실제 정보로 제공해야 한다. 민감정보와 인증번호를 자동 생성하거나
+   추측하지 않는다.
+2. **비공개 테스트 시간 조건**: Play 대시보드 기준 현재 참여 선택 0명이다. 실제 Google 계정
+   테스터 12명 이상이 opt-in하고 14일 이상 계속 참여해야 프로덕션 액세스를 신청할 수 있다.
+3. **물리 기기**: Low/Mid/High 실제 스마트폰에서 성능(p95 frame/peak memory), TalkBack 전체
+   탐색, gesture/3-button Back, 실제 low-storage, background/force-stop, 구매 체험 경계를 확인한다.
+   에뮬레이터 3종 결과는 이 증거를 대체하지 않는다.
+4. **Play 검토 산출물**: 계정 정보 해결 뒤 현재 pending 변경 13개를 검토 제출하고,
+   사전 출시 보고서·지원 기기 CSV·태블릿/ChromeOS/TV/XR 제외·무료 체험을 확인한다.
+5. **운영 수신**: 내부/비공개 설치에서 Firebase Analytics·Amplitude 수신과 실제 Crashlytics
+   symbolication을 확인한다.
+6. **키 복구**: production upload keystore는 저장소 밖과 CI secret에 있으나 계정 소유자의
+   별도 오프라인 복구본을 만들어야 한다.
+
+## 알려진 비차단 경고
+
+- Play는 Unity IL2CPP 번들에 R8 metadata가 없고 앱 최적화 점수가 낮다고 표시한다. R8/ProGuard가
+  Unity IL2CPP symbol pipeline의 대체물은 아니므로 v1 차단으로 분류하지 않되, 실제 성능 증거와
+  이후 최적화 작업으로 추적한다.
+- 미기록 상태는 “검증되지 않음”으로 취급하며, 위 차단이 닫히기 전 production 출시를 주장하지 않는다.

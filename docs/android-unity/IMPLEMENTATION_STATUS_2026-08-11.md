@@ -2,9 +2,10 @@
 
 기준 문서: [`../ANDROID_UNITY_IMPLEMENTATION_PLAN_2026-08-11.md`](../ANDROID_UNITY_IMPLEMENTATION_PLAN_2026-08-11.md)
 
-이 문서는 구현 소스와 출시 증거를 구분한다. 현재 저장소에는 Android 프로덕션 후보를
-만들기 위한 소스와 내부 검증 AAB 증거가 들어 있지만, **production upload key로 서명된 AAB와
-물리 스마트폰·Play 증거가 없으므로 Google Play RC로 승인된 상태가 아니다.**
+이 문서는 구현 소스와 출시 증거를 구분한다. clean commit의 Unity 테스트, production upload-key
+서명 AAB, Firebase symbols, API 29/35(16KB)/36 smoke, Play 내부·비공개 트랙은 준비됐다. 다만
+**한국 개발자 정보, 12명/14일 비공개 테스트와 물리 스마트폰 증거가 없으므로 Google Play RC로
+승인된 상태가 아니다.**
 
 ## 현재 판정
 
@@ -14,9 +15,9 @@
 | Application/저장 | 구현·정적 검증 완료 | 단일 aggregate, 원자 저장, 복구, 명령 영수증, 투구 중단 재개 |
 | Unity Presentation/Platform 소스 | 구현·Unity 검증 완료 | UI Toolkit, 3D 투구, Android SDK 경계, 실제 EditMode/PlayMode |
 | Unity EditMode/PlayMode | 통과 | Unity 6000.3.19f1: 주요 EditMode 533건+격리 fault tests, PlayMode 14/14 |
-| Android IL2CPP AAB | 내부 검증 통과 | ARM64 verification AAB/public symbols, 16KB 정렬·병합 manifest·권한 검증 |
-| 실제 Android 기기 | 부분 통과 | 16KB API 35 ARM64 emulator 내부 QA 통과; 물리 스마트폰 production lane 대기 |
-| Google Play/Firebase/Amplitude | 차단 | 외부 앱 등록, 자격 증명, 콘솔 설정과 수신 증거가 없음 |
+| Android IL2CPP AAB | production 후보 통과 | clean SHA의 upload-key AAB/public symbols, 16KB 정렬·병합 manifest·권한 검증 |
+| 실제 Android 기기 | emulator 통과 / 물리 대기 | API 29, API 35 16KB, API 36 production smoke 통과 |
+| Google Play/Firebase/Amplitude | 부분 통과 | Play internal/closed 및 Firebase symbol upload 완료; 계정 정보·시간 조건·실제 수신 대기 |
 
 ## 소스 지도
 
@@ -72,7 +73,9 @@
 | shell syntax/YAML/JSON/`git diff --check` | 통과 | 소스 계약과 최종 diff 형식 확인 |
 | `npm run test:unity` | 통과 | 실제 Unity EditMode 주요 533건+격리 tests, PlayMode 14/14 |
 | `npm run build:android:verify` | 통과 | 내부 검증 AAB SHA `03fe9b…091a`, symbols SHA `89a52b…91d8` |
-| internal 16KB smoke | 통과 | `artifacts/android-unity-smoke/20260812T004753Z/result.txt`; production RC 증거는 아님 |
+| production API 29 smoke | 통과 | `/tmp/baseball-api29-smoke-0797760/20260812T143247Z` |
+| production 16KB smoke | 통과 | `/tmp/baseball-final-smoke-0797760/20260812T134607Z`; 실제 투구 marker 포함 |
+| production API 36 smoke | 통과 | `/tmp/baseball-api36-smoke-0797760/20260812T143452Z` |
 
 ## 반드시 남기는 패리티 경계
 
@@ -85,14 +88,12 @@
 
 ## 출시 차단 해제 순서
 
-1. 현재 Unity import 산출물과 소스 변경을 검토하고 하나의 clean commit으로 고정한다.
-2. production Firebase/Amplitude 설정과 upload keystore를 비밀 저장소에서 주입한다.
-3. `npm run build:android:rc`로 ARM64 IL2CPP AAB와 public symbols를 만든다.
-4. Crashlytics symbol upload 영수증, AAB 인증서·merged manifest·dependencies를 보관한다.
-5. `npm run smoke:android:unity`를 실제 세로 스마트폰에서 실행하고 스크린샷·logcat을 보관한다.
-6. Play 내부 트랙에서 지원 기기 CSV, 사전 출시 보고서, Data Safety, 콘텐츠 등급,
-   대한민국 4,400원/60분 무료 체험을 확인한다.
-7. `DEVICE_MATRIX.md`, `PARITY_MATRIX.md`, `RELEASE_EVIDENCE.md`의 빈 칸이 모두 증거로 채워진 뒤 RC를 승인한다.
+1. 한국 개인 개발자의 공개 전화번호를 인증하고 유료 앱 사업자·통신판매 정보를 실제 값으로 제출한다.
+2. closed Alpha의 opt-in 테스터를 12명 이상 확보하고 14일 이상 유지한다.
+3. Low/Mid/High 실제 세로 스마트폰에서 성능, TalkBack, 실제 저용량, Back/재개를 기록한다.
+4. Play 변경 13개를 검토 제출하고 사전 출시 보고서, 지원 기기 CSV, 폼 팩터 제외와 60분 체험을 확인한다.
+5. 내부/비공개 설치에서 Firebase/Amplitude 수신과 Crashlytics symbolication을 확인한다.
+6. `DEVICE_MATRIX.md`, `PARITY_MATRIX.md`, `RELEASE_EVIDENCE.md`의 빈 칸이 모두 증거로 채워진 뒤 RC를 승인한다.
 
 ## 저장소 위생
 

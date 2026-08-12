@@ -11,10 +11,11 @@
 - `DEVICE`: 서명 Release IL2CPP 빌드를 지원 스마트폰에서 확인한 상태
 - `ACCEPTED`: `DEVICE` 증거와 승인자 기록까지 갖춘 상태
 
-이 머신의 Unity 6000.3.19f1 EditMode/PlayMode와 내부 검증 AAB/16KB emulator lane은 통과했다.
-다만 현재 변경분은 clean commit으로 고정되지 않았고 production upload key 서명 AAB와 물리
-스마트폰도 없다. 따라서 행 상태는 아직 `SOURCE`로 유지하며, clean commit의 test XML을 묶은 뒤
-`UNITY`, production 기기 증거 뒤 `DEVICE`, 승인자 기록 뒤 `ACCEPTED`로 올린다.
+clean commit `0797760a5dab711e42f723a5dfdf8b21a75dd29e`의 Unity 6000.3.19f1
+EditMode/PlayMode와 production upload-key AAB, API 29/35(16KB)/36 emulator smoke가 통과했다.
+다만 행별 물리 스마트폰·접근성·성능 증거와 승인자 기록이 아직 없으므로 상태는 보수적으로
+`SOURCE`를 유지한다. 행별 동일 commit XML을 연결하면 `UNITY`, 물리기기 증거 뒤 `DEVICE`,
+승인자 기록 뒤 `ACCEPTED`로 올린다.
 
 | ID | 흐름 | iOS 기준 | 상태 | Android 소스/정적 증거 | Unity·기기 증거 |
 |---|---|---|---|---|---|

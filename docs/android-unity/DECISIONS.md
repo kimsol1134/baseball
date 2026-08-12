@@ -6,7 +6,7 @@
 |---|---|---|
 | Unity | 6000.3.19f1 ARM64 editor | 고정 |
 | 프로젝트 | `apps/android-unity` | 고정 |
-| application ID | `com.solkim.baseball.android` | Firebase Android app 등록 완료; Play 법적 선언·생성 대기 |
+| application ID | `com.solkim.baseball.android` | Firebase·Play 앱 등록 완료 |
 | 제품명 | 야구 못하면 또 환생함 | 고정 |
 | 버전 | 1.0.0 (`versionCode` 1부터 단조 증가) | 고정 |
 | Android | min API 26, target API 36 | 고정 |
@@ -15,21 +15,22 @@
 | 그래픽 | URP 17.3.0 mobile pipeline, OpenGLES3, 세로 | Editor import·내부 AAB 검증 완료 |
 | UI | UI Toolkit | 고정 |
 | C# API 호환 | Unity UI의 `.NET Standard 2.1` 프로필. Editor API enum 이름은 legacy `NET_Standard_2_0` | 고정 |
-| 에셋 | Local Addressables, 원격 catalog 없음 | Editor 생성 산출물 검토 완료; clean commit 고정 필요 |
+| 에셋 | Local Addressables, 원격 catalog 없음 | Editor 생성 산출물 검토·clean commit 고정 완료 |
 | 저장 | 로컬 JSON envelope + SHA-256 + temp + 백업 3개 | 구현·fault-injection 정적 테스트 완료 |
 | 계정/클라우드 | 없음 | 고정 |
-| 분석 | Firebase Analytics + Amplitude, install UUID, 광고 ID 없음 | 외부 production 프로젝트·CI secret 연결 완료; 실제 수신 검증 필요 |
-| 크래시 | Firebase Crashlytics + IL2CPP symbols | 외부 Android app·최소권한 symbol uploader·CI secret 연결 완료; symbol 수신 검증 필요 |
-| 판매 | 대한민국, 4,400원, 유료 게임 60분 무료 체험 | Play Console 설정 필요 |
-| 폼 팩터 | small/normal 스마트폰, 세로, 태블릿/ChromeOS/TV/XR 제외 | AAB 업로드 후 CSV 검증 필요 |
-| Native page size | AAB `PAGE_ALIGNMENT_16K` + 실제 16KB ARM64 기기 실행 | 내부 AAB/emulator 통과; production 서명·물리기기 출시 차단 |
+| 분석 | Firebase Analytics + Amplitude, install UUID, 광고 ID 없음 | production 프로젝트·CI secret 연결 완료; 실제 수신 검증 필요 |
+| 크래시 | Firebase Crashlytics + IL2CPP symbols | CI symbol upload 영수증 완료; 실제 symbolication 검증 필요 |
+| 판매 | 대한민국, 4,400원, 유료 게임 60분 무료 체험 | 가격 완료; 실제 Play 체험 경계 검증 필요 |
+| 폼 팩터 | small/normal 스마트폰, 세로, 태블릿/ChromeOS/TV/XR 제외 | AAB 업로드 완료; 지원 기기 CSV 검증 필요 |
+| Native page size | AAB `PAGE_ALIGNMENT_16K` + 실제 16KB ARM64 기기 실행 | production AAB의 API 35 16KB emulator 수직 루프 통과; 물리기기 대기 |
 
 ## 외부 값
 
 비밀값은 이 문서에 기록하지 않는다.
 
-- Play Console app 생성: 2026-08-12 로그인 계정에서 앱 미생성 확인. `com.solkim.baseball.android` 사용 가능;
-  ko-KR·게임·유료 생성 양식은 준비했으나 정책/미국 수출법 법적 선언과 최종 생성은 소유자 승인 대기
+- Play Console: 2026-08-12 `com.solkim.baseball.android` 유료 게임 생성, 대한민국 4,400원,
+  internal versionCode 1 제공 및 closed Alpha 대한민국 전체 출시 구성 완료. 게시 제출은 한국 개인
+  개발자 공개 전화 인증과 유료 앱 사업자·통신판매 정보가 없어 차단됐다.
 - Firebase: project `baseball-reincarnation-android`(project number `951359066339`), Android App ID
   `1:951359066339:android:ea391d85ed2bac524cf5d6`, package `com.solkim.baseball.android` 등록 완료.
   GA4 전용 property `549574769`/Android stream `15421807578`를 기존 blog property와 분리해 연결했다.
@@ -137,10 +138,10 @@
 
 ## 현재 검증 경계
 
-- C# Core/Application/Persistence 및 Unity reference assembly 정적 컴파일은 통과했다.
-- 실제 Unity 6000.3.19f1 EditMode/PlayMode, Android IL2CPP internal verification AAB와
-  16KB API 35 ARM64 emulator 내부 QA를 실행해 통과했다.
-- Unity import가 만든 `.meta`, Addressables settings, URP asset/renderer는 현재 worktree에 있으며
-  source 변경과 함께 검토 후 clean commit으로 고정해야 한다.
-- production upload-key AAB/CI symbol upload와 물리 스마트폰 smoke, Play 앱·무료 체험·지원 기기 CSV,
-  Firebase/Amplitude 실제 수신, Crashlytics symbolication은 외부 출시 차단 항목이다.
+- clean commit `0797760a5dab711e42f723a5dfdf8b21a75dd29e`에서 C# 정적 suite,
+  Unity reference compile, 실제 Unity 6000.3.19f1 EditMode/PlayMode, production upload-key AAB와
+  Firebase symbol upload가 통과했다.
+- 같은 AAB의 API 29, API 35 16KB, API 36 production smoke가 통과했다. 16KB lane은 실제 저장형
+  투구 presentation marker와 shader ready, crash/ANR 0을 확인했다.
+- 물리 Low/Mid/High 스마트폰, TalkBack·실제 저용량·성능, Play 12명/14일, 한국 개발자 계정 정보,
+  무료 체험·사전 출시 보고서·지원 기기 CSV, 실제 분석 수신과 Crashlytics symbolication은 외부 차단이다.
