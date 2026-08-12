@@ -83,6 +83,10 @@ namespace Baseball.Presentation.Tests.Screens
             StringAssert.Contains(".baseball-font-scale-200 .screen-data-row", style);
             StringAssert.Contains("flex-direction: column", style);
             StringAssert.Contains("max-width: 100%", style);
+            StringAssert.Contains(".screen-scroll .unity-scroll-view__content-container > *", style);
+            StringAssert.Contains(".screen-hero > *", style);
+            StringAssert.Contains(".screen-control-stack > *", style);
+            Assert.That(Regex.Matches(style, "flex-shrink: 0").Count, Is.GreaterThanOrEqualTo(3));
         }
 
         [Test]

@@ -17,6 +17,10 @@
     padding-bottom: 32px;
 }
 
+.screen-scroll .unity-scroll-view__content-container > * {
+    flex-shrink: 0;
+}
+
 .screen-hero {
     width: 100%;
     min-height: 128px;
@@ -27,6 +31,10 @@
     border-color: var(--baseball-border);
     border-radius: 14px;
     background-color: var(--baseball-surface-raised);
+}
+
+.screen-hero > * {
+    flex-shrink: 0;
 }
 
 .screen-key-art {
@@ -226,6 +234,7 @@
 }
 
 .screen-control-stack > * {
+    flex-shrink: 0;
     margin-bottom: 8px;
 }
 
