@@ -94,6 +94,8 @@ namespace Baseball.PlayMode.Tests
             Assert.That(host, Is.Not.Null);
             PanelSettings panel = host.GetComponent<UIDocument>().panelSettings;
             Assert.That(panel, Is.Not.Null);
+            Assert.That(panel.themeStyleSheet, Is.Not.Null,
+                "production runtime PanelSettings must carry Unity's default control theme");
             Assert.That(panel.referenceResolution, Is.EqualTo(new Vector2Int(390, 844)));
             Assert.That(panel.referenceResolution.x, Is.LessThan(panel.referenceResolution.y));
 

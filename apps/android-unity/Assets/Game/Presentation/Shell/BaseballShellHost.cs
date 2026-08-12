@@ -82,6 +82,15 @@ namespace Baseball.Presentation.Shell
             panelSettings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
             panelSettings.referenceResolution = new Vector2Int(390, 844);
             panelSettings.textSettings = KoreanFontTextSettings.Create();
+            ThemeStyleSheet runtimeTheme = Resources.Load<ThemeStyleSheet>("UnityDefaultRuntimeTheme");
+            if (runtimeTheme == null)
+            {
+                Debug.LogError("BASEBALL_UI_RUNTIME_THEME schema=1 status=failed reason=missing_resource");
+                Object.Destroy(root);
+                return;
+            }
+            panelSettings.themeStyleSheet = runtimeTheme;
+            Debug.Log("BASEBALL_UI_RUNTIME_THEME schema=1 status=passed");
             document.panelSettings = panelSettings;
             root.AddComponent<BaseballShellHost>();
         }
