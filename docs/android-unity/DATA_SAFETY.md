@@ -2,7 +2,7 @@
 
 기준일: 2026-08-11
 범위: `com.solkim.baseball.android` production RC
-상태: SDK/런타임/정적 계약, 공개 개인정보처리방침, production Firebase/Amplitude 프로젝트·CI secret 연결 완료. 실제 수신 및 Play Data Safety 제출 증거는 미완료
+상태: SDK/런타임/정적 계약, 공개 개인정보처리방침, production Firebase/Amplitude 프로젝트·CI secret 연결과 실제 Android 수신, Play Data Safety 제출 완료. 의도적 Crashlytics test crash의 IL2CPP symbolication은 대기
 
 ## 제품 원칙
 
@@ -16,9 +16,9 @@
 
 | SDK | 잠금 버전 | 런타임 설정 | 현재 검증 |
 |---|---:|---|---|
-| Firebase Analytics | Unity 13.14.0 / Android 23.2.0 | 광고 ID 권한 제거, 광고 ID 수집·광고 개인화 신호 false, production config에서만 활성 | 전용 GA4 property/Android stream·CI config 연결 완료; production 수신 대기 |
+| Firebase Analytics | Unity 13.14.0 / Android 23.2.0 | 광고 ID 권한 제거, 광고 ID 수집·광고 개인화 신호 false, production config에서만 활성 | 전용 GA4 property/Android stream·CI config 연결 및 Android `1.0.0` production 수신 확인 |
 | Firebase Crashlytics | Unity 13.14.0 / NDK 20.1.0 | 비식별 custom key만 허용, IL2CPP public symbols 생성·CI 업로드 | 최소권한 symbol uploader·CI secret 연결 완료; test crash·symbolication 대기 |
-| Amplitude Unity | v2.8 / Android 2.40.1 | AD ID, App Set ID, carrier, city, country, DMA, IP, lat/lng, region 수집 bridge option 비활성 | 별도 Android production project·CI API key 연결 완료; production 수신 대기 |
+| Amplitude Unity | v2.8 / Android 2.40.1 | AD ID, App Set ID, carrier, city, country, DMA, IP, lat/lng, region 수집 bridge option 비활성 | 별도 Android production project·CI API key 연결; production 이벤트 28개 수신 확인 |
 
 production RC는 `google-services.json`, Amplitude API key, Firebase symbol-upload 서비스 계정을 CI에서 주입해야 하며 저장소에는 넣지 않는다. 기본 리소스 설정은 세 SDK 전송을 모두 끈다.
 
@@ -64,7 +64,8 @@ Unity Quality Settings 이름은 보내지 않는다. SDK 준비 전 문맥은 �
 
 ## RC 필수 증거
 
-- [ ] production Firebase Analytics와 Amplitude에 같은 테스트 action이 들어오고 production/development가 분리됨
+- [x] production Firebase Analytics와 Amplitude의 Android 전용 프로젝트에 이벤트가 수신되고 production/default 프로젝트가 분리됨
+- [ ] 동일 테스트 action의 event name·schema·privacy-safe payload가 두 destination에서 일치함
 - [ ] 실제 event payload에 선수 이름, seed, save, 자유 입력, 광고 ID가 없음
 - [x] GA4 granular location/device data가 모든 지역에서 off이고, 광고 개인 최적화가 307개 전 지역 off이며 Google Signals는 미활성
 - [ ] Firebase test crash가 symbolicated IL2CPP stack으로 표시됨

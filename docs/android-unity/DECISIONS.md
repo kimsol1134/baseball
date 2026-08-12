@@ -38,6 +38,10 @@
   세부 위치·기기 수집은 off, 광고 개인 최적화는 307개 전 지역 off, Google Signals는 미활성이다.
 - Amplitude: 별도 `Baseball Reincarnation Android Production` 프로젝트 생성 완료. API key는 macOS
   Keychain과 GitHub Actions secret에만 보관하고 저장소·문서·로그에는 기록하지 않는다.
+  2026-08-13 Firebase Android stream에는 앱 `1.0.0`의 사용자·화면·세션·제품 이벤트가,
+  Amplitude Android production 프로젝트에는 28개 production 이벤트가 수신되어 두 분석
+  destination의 실제 전송과 iOS/default 프로젝트 분리를 확인했다. Crashlytics 실제 오류의
+  IL2CPP symbolication은 별도 외부 증거로 남긴다.
 - Firebase Crashlytics symbol uploader:
   `baseball-crash-symbol-uploader@baseball-reincarnation-android.iam.gserviceaccount.com`에
   `roles/firebasecrash.symbolMappingsAdmin`만 부여했다. service-account JSON은 저장소 밖과 GitHub

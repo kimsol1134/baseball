@@ -95,6 +95,14 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
 - 2026-08-13 게시 개요의 13개 변경사항을 Google 검토로 전송했다. closed Alpha
   `1.0.0 내부 QA`, 대한민국, 테스터 목록, ko-KR 등록정보, 콘텐츠 등급, 13+ 타겟층,
   개인정보처리방침, 광고/Data Safety/건강 선언이 현재 **검토 중**이다.
+- Firebase Android 전용 GA4 앱 `1.0.0`의 production 수신을 Console에서 확인했다. 최근 28일
+  Android 활성 사용자 15명, `UnityPlayerActivity` 화면 15회, `first_open` 9회,
+  `session_start` 8회, `session_ended` 6회, `onboarding_started` 3회가 보였고 앱 안정성은
+  crash-free users 100%였다. 이는 전용 stream 수신 증거이며 의도적 test crash의
+  IL2CPP symbolication 증거는 아니다.
+- Amplitude의 별도 `Baseball Reincarnation Android Production` 프로젝트는 총 28개 실시간
+  이벤트, 이벤트 유형 4개, 이벤트 속성 23개, 사용자 속성 7개를 수신했다. 기존 iOS/default
+  프로젝트와 분리된 production API key 경계가 실제로 동작한다.
 - 무료 체험: Google의 신규 유료 게임 정책상 60분 체험은 기본 활성 대상이며 별도 앱 코드가
   필요 없다. 현재 Console에는 별도 토글이 보이지 않았으므로 실제 테스터 계정에서 설치→60분
   만료→구매→동일 save 유지까지 확인하기 전 완료로 판정하지 않는다.
@@ -126,8 +134,9 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
 4. **Play 검토 산출물**: 13개 v1 변경은 2026-08-13 검토 전송 완료다. 계정 정보 해결 뒤
    v2 AAB+native symbols를 같은 edit로 원자 commit하고, 검토 결과·사전 출시 보고서·지원 기기
    CSV·태블릿/ChromeOS/TV/XR 제외·무료 체험을 확인한다.
-5. **운영 수신**: 내부/비공개 설치에서 Firebase Analytics·Amplitude 수신과 실제 Crashlytics
-   symbolication을 확인한다.
+5. **Crashlytics 실오류 복원**: Firebase Analytics와 Amplitude Android production 수신은
+   Console에서 확인했다. 남은 운영 증거는 내부/비공개 설치의 의도적 test crash가 업로드한
+   IL2CPP symbol과 결합되어 사람이 읽을 수 있는 stack으로 복원되는지 확인하는 것이다.
 6. **키 복구**: production upload keystore는 저장소 밖과 CI secret에 있으나 계정 소유자의
    별도 오프라인 복구본을 만들어야 한다.
 
