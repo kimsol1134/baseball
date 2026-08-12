@@ -696,6 +696,10 @@ launch_and_capture() {
     "$evidence_dir/$label-first-interactive.txt" \
     'BASEBALL_FIRST_INTERACTIVE schema=1 status=passed' ||
     fail "$label 뒤 실제 shell의 first-interactive 마커가 ${launch_timeout_seconds}초 안에 나타나지 않았습니다."
+  wait_for_app_marker \
+    "$evidence_dir/$label-runtime-theme.txt" \
+    'BASEBALL_UI_RUNTIME_THEME schema=1 status=passed' ||
+    fail "$label 뒤 production UI runtime theme 마커가 ${launch_timeout_seconds}초 안에 나타나지 않았습니다."
   capture_foreground "$label"
 }
 
@@ -920,9 +924,9 @@ fi
 
 # Package-scoped runtime bridge failures can leave an interactive shell with broken product
 # visuals or telemetry. Expected offline transport retries are deliberately not matched here.
-if grep -Eiq 'pitch.stage_shader_unavailable|Shader.*(not found|unsupported|is not supported)|Hidden/InternalErrorShader|pink[[:space:]_-]*material|StrictMode|Default FirebaseApp failed to initialize|FirebaseApp initialization unsuccessful|Failed to read Firebase options|Firebase.*(initialization failed|dependency[^[:cntrl:]]*failed|not initialized|No Firebase App|bridge[^[:cntrl:]]*failed)|Amplitude.*(initialization failed|not initialized|bridge[^[:cntrl:]]*failed|API key[^[:cntrl:]]*missing)' \
+if grep -Eiq 'BASEBALL_UI_RUNTIME_THEME[^[:cntrl:]]*status=failed|No Theme Style Sheet set|pitch.stage_shader_unavailable|Shader.*(not found|unsupported|is not supported)|Hidden/InternalErrorShader|pink[[:space:]_-]*material|StrictMode|Default FirebaseApp failed to initialize|FirebaseApp initialization unsuccessful|Failed to read Firebase options|Firebase.*(initialization failed|dependency[^[:cntrl:]]*failed|not initialized|No Firebase App|bridge[^[:cntrl:]]*failed)|Amplitude.*(initialization failed|not initialized|bridge[^[:cntrl:]]*failed|API key[^[:cntrl:]]*missing)' \
   "$evidence_dir"/*-app-logcat.txt "$evidence_dir/logcat-app-final.txt"; then
-  fail '앱 logcat에서 셰이더·StrictMode·Firebase/Amplitude 초기화 또는 브릿지 오류를 발견했습니다.'
+  fail '앱 logcat에서 UI 테마·셰이더·StrictMode·Firebase/Amplitude 초기화 또는 브릿지 오류를 발견했습니다.'
 fi
 
 printf '%s\n' \
