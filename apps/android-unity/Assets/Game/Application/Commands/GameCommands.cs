@@ -260,18 +260,22 @@ namespace Baseball.Application.Commands
             PitchCall call,
             PlateAppearanceContext preResultContext,
             PitchOutcome outcome,
-            PitchExecution execution)
+            PitchExecution execution,
+            bool recommendationAccepted = false)
         {
             Call = call;
             PreResultContext = preResultContext;
             Outcome = outcome;
             Execution = execution;
+            RecommendationAccepted = recommendationAccepted;
         }
 
         public PitchCall Call { get; }
         public PlateAppearanceContext PreResultContext { get; }
         public PitchOutcome Outcome { get; }
         public PitchExecution Execution { get; }
+        /// <summary>Authoritative Core snapshot flag; frozen as SignAccepted in the pitch log.</summary>
+        public bool RecommendationAccepted { get; }
     }
 
     public sealed class ConsumeCommittedPitchResultCommand : GameCommand
@@ -349,6 +353,20 @@ namespace Baseball.Application.Commands
     public sealed class AbandonPitchSessionCommand : GameCommand
     {
         public AbandonPitchSessionCommand(string gameId)
+        {
+            GameId = gameId;
+        }
+
+        public string GameId { get; }
+    }
+
+    /// <summary>
+    /// Leaves the pitch presentation without forfeiting its durable reservation. The current
+    /// batter is resumed from the already saved checkpoint; only an explicit abandon clears it.
+    /// </summary>
+    public sealed class SuspendPitchSessionCommand : GameCommand
+    {
+        public SuspendPitchSessionCommand(string gameId)
         {
             GameId = gameId;
         }

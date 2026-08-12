@@ -22,9 +22,12 @@ namespace Baseball.Presentation.Pitch
         private readonly IPitchKernelGateway _kernel;
         private readonly IPitchFeedbackBoundary _feedback;
         private readonly IPitchSessionPersistence _persistence;
+        private readonly PitchPresentationCompletionMarker _completionMarker =
+            new PitchPresentationCompletionMarker();
         private CancellationTokenSource _sessionLifetime;
         private GameObject _stageObject;
         private PitchStageController _stage;
+        private string _stagePreparationFailure;
         private PitchPlayPresenter _presenter;
         private PitchHudController _hud;
         private PitchTutorialDecisionController _tutorialDecision;
@@ -70,8 +73,7 @@ namespace Baseball.Presentation.Pitch
         {
             if (_recoveredCompletionActive)
             {
-                CloseActive();
-                _shell.Announce("경기 결과 마무리를 닫았습니다. 저장된 결과는 다시 완료할 수 있습니다.");
+                _shell.Announce("저장된 경기 결과를 먼저 완료해 주세요. 저장 다시 시도 버튼으로 이어갈 수 있습니다.");
                 return true;
             }
             return _tutorialDecision?.TryHandleBack() == true || _hud?.TryHandleBack() == true;
@@ -137,8 +139,8 @@ namespace Baseball.Presentation.Pitch
 
                 if (!await CreateStageAsync(_sessionLifetime.Token))
                 {
-                    _shell.Announce(
-                        "투구 구장 이미지를 불러오지 못했습니다. 저장된 경기 상태는 그대로 보존됩니다.");
+                    _shell.Announce(StagePreparationFailureMessage(
+                        "저장된 경기 상태는 그대로 보존됩니다."));
                     CloseActive();
                     _shell.TryGoBack();
                     return;
@@ -162,6 +164,8 @@ namespace Baseball.Presentation.Pitch
 
         private async Task<bool> CreateStageAsync(CancellationToken cancellationToken)
         {
+            Baseball.Platform.Crash.CrashRuntimeDiagnostics.PublishPitchStageLoaded(false);
+            _stagePreparationFailure = string.Empty;
             _stageObject = new GameObject("Pitch Presentation Stage");
             _stage = _stageObject.AddComponent<PitchStageController>();
             _stage.ReducedMotion = _shell.ReducedMotion;
@@ -170,11 +174,13 @@ namespace Baseball.Presentation.Pitch
                 cancellationToken);
             if (!ready)
             {
+                _stagePreparationFailure = _stage.VisualPreparationError;
                 DestroyStage();
                 return false;
             }
             _stage.ResultReadable += OnResultReadable;
             _stage.PresentationCompleted += OnPresentationCompleted;
+            Baseball.Platform.Crash.CrashRuntimeDiagnostics.PublishPitchStageLoaded(true);
             return true;
         }
 
@@ -194,6 +200,7 @@ namespace Baseball.Presentation.Pitch
             _presenter.PitchCommitted += OnPitchCommitted;
             _hud.SkipRequested += _stage.RequestSkip;
             _hud.ExitRequested += Complete;
+            _hud.SuspendRequested += Suspend;
             _hud.AbortRequested += Abort;
 
             _activeResult = null;
@@ -287,7 +294,7 @@ namespace Baseball.Presentation.Pitch
         private void OnResultReadable(PitchPresentationSnapshot presentation)
         {
             _presenter?.MarkResultReadable(presentation);
-            _feedback.OnResult(presentation.AudioCue, presentation.HapticCue);
+            _feedback.OnResult(presentation);
         }
 
         private void OnPresentationCompleted(PitchPresentationSnapshot presentation)
@@ -295,6 +302,15 @@ namespace Baseball.Presentation.Pitch
             if (_activePresentation == null ||
                 !string.Equals(_activePresentation.PitchId, presentation.PitchId, StringComparison.Ordinal)) return;
             _presentationFinished = true;
+            if (_completionMarker.TryMark(
+                    presentation.PitchId,
+                    _commitDurable,
+                    _presentationFinished))
+            {
+#if !BASEBALL_INTERNAL_QA
+                Debug.Log(PitchPresentationCompletionMarker.LogLine);
+#endif
+            }
             ConsumeActivePresentation();
         }
 
@@ -413,7 +429,10 @@ namespace Baseball.Presentation.Pitch
                 ShowTutorialDecision();
                 return;
             }
-            PersistSessionCompletion();
+            PitchSessionPostgameSnapshot postgame = _persistence?.ReadPostgame(_gameId) ??
+                new PitchSessionPostgameSnapshot(_accumulatedReport, Array.Empty<PitchLogEntryState>());
+            _hud?.ShowPostgameSummary(postgame);
+            _shell.Announce("이닝 정산과 전체 투구 기록을 확인한 뒤 결과를 저장해 주세요.");
         }
 
         private void ShowTutorialDecision()
@@ -443,7 +462,8 @@ namespace Baseball.Presentation.Pitch
                 {
                     _tutorialDecision?.SetBusy(
                         false,
-                        "투구 구장 이미지를 불러오지 못했습니다. 저장된 첫 불펜 결과는 그대로입니다.",
+                        StagePreparationFailureMessage(
+                            "저장된 첫 불펜 결과는 그대로입니다."),
                         true);
                     return;
                 }
@@ -481,6 +501,17 @@ namespace Baseball.Presentation.Pitch
             {
                 _persistenceBusy = false;
             }
+        }
+
+        private string StagePreparationFailureMessage(string preservedStateMessage)
+        {
+            string lead = string.Equals(
+                _stagePreparationFailure,
+                PitchStageVisualPolicy.ShaderUnavailableError,
+                StringComparison.Ordinal)
+                ? "투구 렌더링 재료를 이 기기에서 준비하지 못했습니다."
+                : "투구 구장 이미지를 불러오지 못했습니다.";
+            return lead + " " + preservedStateMessage;
         }
 
         private async void AcceptTutorialResult()
@@ -675,7 +706,6 @@ namespace Baseball.Presentation.Pitch
                 else _stage?.RequestSkip();
                 return;
             }
-            _presenter?.Abort();
             if (_persistence != null && !string.IsNullOrWhiteSpace(_gameId) && _sessionLifetime != null)
             {
                 _persistenceBusy = true;
@@ -704,8 +734,55 @@ namespace Baseball.Presentation.Pitch
                     return;
                 }
             }
+            _presenter?.Abort();
             CloseActive();
             _shell.TryGoBack();
+        }
+
+        private async void Suspend()
+        {
+            if (_persistenceBusy || _sessionLifetime == null) return;
+            if (_activeResult != null && _commitDurable)
+            {
+                _shell.Announce("저장된 투구 결과를 먼저 확인해 주세요.");
+                if (_presentationFinished) ConsumeActivePresentation();
+                else _stage?.RequestSkip();
+                return;
+            }
+            if (_persistence == null || string.IsNullOrWhiteSpace(_gameId))
+            {
+                _hud?.SetExitStatus(false, "경기 진행을 보존할 저장 서비스가 준비되지 않았습니다.");
+                return;
+            }
+
+            _persistenceBusy = true;
+            _hud?.SetExitStatus(true, "현재 타자 시작 지점을 저장하고 있습니다.");
+            CancellationToken token = _sessionLifetime.Token;
+            try
+            {
+                ShellActionResult suspended = await _persistence.SuspendAsync(_gameId, token);
+                if (!suspended.Succeeded)
+                {
+                    _hud?.SetExitStatus(false, string.IsNullOrWhiteSpace(suspended.Message)
+                        ? "경기 진행을 저장하지 못했습니다. 다시 시도해 주세요."
+                        : suspended.Message);
+                    return;
+                }
+                CloseActive();
+                if (!_shell.TryGoBack()) _shell.CompletePitchHandoff();
+            }
+            catch (OperationCanceledException) when (_sessionLifetime == null || _sessionLifetime.IsCancellationRequested)
+            {
+            }
+            catch (Exception exception)
+            {
+                Baseball.Platform.Crash.CrashReporting.RecordUnexpected(exception, "pitch_suspend");
+                _hud?.SetExitStatus(false, "경기 진행을 저장하지 못했습니다. 다시 시도해 주세요.");
+            }
+            finally
+            {
+                _persistenceBusy = false;
+            }
         }
 
         private void DetachPresenter()
@@ -714,6 +791,7 @@ namespace Baseball.Presentation.Pitch
             {
                 if (_stage != null) _hud.SkipRequested -= _stage.RequestSkip;
                 _hud.ExitRequested -= Complete;
+                _hud.SuspendRequested -= Suspend;
                 _hud.AbortRequested -= Abort;
                 _hud.Dispose();
                 _hud = null;
@@ -736,6 +814,7 @@ namespace Baseball.Presentation.Pitch
 
         private void DestroyStage()
         {
+            Baseball.Platform.Crash.CrashRuntimeDiagnostics.PublishPitchStageLoaded(false);
             if (_stage != null)
             {
                 _stage.ResultReadable -= OnResultReadable;

@@ -32,6 +32,11 @@ namespace UnityEngine.TestTools
     public sealed class UnitySetUpAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.Method)]
     public sealed class UnityTearDownAttribute : Attribute { }
+
+    public static class LogAssert
+    {
+        public static void Expect(UnityEngine.LogType type, System.Text.RegularExpressions.Regex message) { }
+    }
 }
 
 namespace Unity.Notifications.Android

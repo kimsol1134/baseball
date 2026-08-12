@@ -11,8 +11,8 @@ using Baseball.Application.Pro;
 using Baseball.Application.Stores;
 using Baseball.Bootstrap;
 using Baseball.Core.Catalogs;
-using Baseball.Core.Pro;
 using Baseball.Platform.Analytics;
+using Baseball.Platform.Configuration;
 using Baseball.Platform.Crash;
 using Baseball.Platform.Haptics;
 using Baseball.Platform.Identity;
@@ -31,12 +31,14 @@ namespace Baseball.Presentation.Shell
         IBaseballPitchNavigation, IBaseballLifeCardShareRuntime, IBaseballExternalNavigation,
         IBaseballShellLifecycleObserver, IBaseballLifeArchiveInteraction, IPitchFeedbackBoundary,
         IBaseballOpeningPresentationGate, IBaseballContentExposure,
-        IBaseballRetiredDailyRouteFallback
+        IBaseballRetiredDailyRouteFallback, IBaseballTransientDraftDiscard,
+        IBaseballTrainingCelebrationSource
     {
         private readonly StoreBaseballCareerReadModel _readModel;
         private readonly AndroidHapticsService _haptics = new AndroidHapticsService();
         private readonly IBaseballVisualAssetLoader _visualAssets = new AddressableVisualAssetLoader();
         private readonly AddressablePitchFeedbackBoundary _pitchFeedback;
+        private readonly string _crashDistribution;
         private GameApplicationStore _store;
         private ShellRuntimeStatus _status = ShellRuntimeStatus.Loading;
         private string _statusMessage = "안전하게 저장된 진행 상황을 확인하는 중입니다.";
@@ -46,11 +48,14 @@ namespace Baseball.Presentation.Shell
         private string _seedInput = string.Empty;
         private string _seedValidationMessage = string.Empty;
         private string _setupDifficulty = "standard";
-        private string _setupSoulDomain = string.Empty;
+        private string _setupSoulDomain = "technique";
         private string _setupSignatureLegacy = string.Empty;
         private readonly HashSet<string> _setupKarmas = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _setupSoulBoosts = new HashSet<string>(StringComparer.Ordinal);
-        private readonly HashSet<string> _setupMemories = new HashSet<string>(StringComparer.Ordinal);
+        private readonly SetupDraftLifecyclePolicy _setupDraftLifecycle =
+            new SetupDraftLifecyclePolicy();
+        private readonly CareerChoiceDraftLifecyclePolicy _careerChoiceDraftLifecycle =
+            new CareerChoiceDraftLifecyclePolicy();
         private readonly Dictionary<string, string> _careerChoices =
             new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<string, HashSet<string>> _careerMultiChoices =
@@ -69,9 +74,12 @@ namespace Baseball.Presentation.Shell
         private ShellRoute? _consumedExternalRoute;
         private string _consumedExternalRouteReminderToken;
         private bool _disposed;
+        private TrainingCelebrationViewModel _pendingTrainingCelebration;
 
         public ProductionBaseballShellRuntime(IKoreanUiCopyCatalog copy)
         {
+            _crashDistribution = AnalyticsRuntimeConfiguration.Load().ResolveDistributionValue();
+            CrashRuntimeDiagnostics.InitializeQualityTier(InitialPitchQualityTier());
             _pitchFeedback = new AddressablePitchFeedbackBoundary(_haptics);
             _pitchFeedback.SoundEnabled = SoundEnabled;
             _pitchFeedback.MusicEnabled = MusicEnabled;
@@ -83,7 +91,8 @@ namespace Baseball.Presentation.Shell
                 () => _presetId,
                 GetChoice,
                 GetChoices,
-                () => AndroidReminderService.Instance?.ShouldOfferOptIn == true);
+                () => AndroidReminderService.Instance?.ShouldOfferOptIn == true,
+                setupSeedInputValid: () => SetupSeedInputPolicy.IsValid(_seedInput));
             RuntimeGameServices.Ready += OnReady;
             RuntimeGameServices.StoreChanged += OnStoreChanged;
             RuntimeGameServices.BecameUnavailable += OnUnavailable;
@@ -125,14 +134,16 @@ namespace Baseball.Presentation.Shell
         public string SetupSignatureLegacy => _setupSignatureLegacy;
         public IReadOnlyList<string> SetupKarmas => _setupKarmas.OrderBy(value => value, StringComparer.Ordinal).ToArray();
         public IReadOnlyList<string> SetupSoulBoosts => _setupSoulBoosts.OrderBy(value => value, StringComparer.Ordinal).ToArray();
-        public IReadOnlyList<string> SetupMemories => _setupMemories.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+        public IReadOnlyList<string> SetupMemories =>
+            SetupOptions?.CarriedMemories?.ToArray() ?? Array.Empty<string>();
         private GameSettingsState Settings => _store?.Current?.Settings ?? GameSettingsState.Default;
         public bool AutoRelease => Settings.AutoReleaseEnabled;
         public bool SoundEnabled => Settings.SoundEnabled;
         public bool MusicEnabled => Settings.MusicEnabled;
         public bool HapticsEnabled => Settings.HapticsEnabled;
         public bool NotificationsEnabled => Settings.NotificationsEnabled;
-        public bool CanUseNotifications => AndroidReminderService.Instance != null;
+        public bool CanUseNotifications =>
+            AndroidReminderService.Instance?.IsInstallBound == true;
         public bool NotificationSettingsRequired => AndroidReminderService.Instance?.RequiresSystemSettings == true;
         public string NotificationsUnavailableReason => CanUseNotifications
             ? string.Empty
@@ -196,12 +207,16 @@ namespace Baseball.Presentation.Shell
             CancellationToken cancellationToken)
         {
             if (action == null) throw new ArgumentNullException(nameof(action));
+            if (!action.IsEnabled)
+            {
+                return ShellActionResult.Failure(
+                    string.IsNullOrWhiteSpace(action.DisabledReason)
+                        ? action.Hint
+                        : action.DisabledReason);
+            }
             if (action.Id == "runtime_retry")
             {
-                RetryStartup();
-                return _status == ShellRuntimeStatus.Ready
-                    ? ShellActionResult.Success(PreferredRoute, "저장 상태를 다시 불러왔습니다.")
-                    : ShellActionResult.Failure(_statusMessage);
+                return await RetryStartupAsync(cancellationToken);
             }
             if (action.Id.StartsWith("navigate_", StringComparison.Ordinal))
             {
@@ -212,18 +227,21 @@ namespace Baseball.Presentation.Shell
             if (_store.IsBusy) return ShellActionResult.Failure("다른 저장 작업을 처리하고 있습니다.");
 
             if (action.Id == "share_life_card") return await ShareLifeCardAsync(null, cancellationToken);
+            if (action.Id == "share_career_code") return ShareCareerCode(cancellationToken);
             if (action.Id == "reset_save") return await ResetAsync(cancellationToken);
             if (action.Id == "enable_reminder_nudge")
             {
                 AndroidReminderService reminders = AndroidReminderService.Instance;
-                if (reminders == null) return ShellActionResult.Failure(NotificationsUnavailableReason);
+                if (reminders?.IsInstallBound != true)
+                    return ShellActionResult.Failure(NotificationsUnavailableReason);
                 reminders.RequestEnabled(true, "after_first_game");
                 return ShellActionResult.Success(null, "Android 알림 권한 결과를 확인하고 있습니다.");
             }
             if (action.Id == "dismiss_reminder_nudge")
             {
                 AndroidReminderService reminders = AndroidReminderService.Instance;
-                if (reminders == null) return ShellActionResult.Failure(NotificationsUnavailableReason);
+                if (reminders?.IsInstallBound != true)
+                    return ShellActionResult.Failure(NotificationsUnavailableReason);
                 reminders.DeclineOptIn();
                 return ShellActionResult.Success(null, "복귀 알림 권유를 닫았습니다.");
             }
@@ -231,7 +249,12 @@ namespace Baseball.Presentation.Shell
             GameSaveAggregate before = _store.Current;
             GameCommand command = CreateCommand(action.Id, before);
             if (command == null)
+            {
+                if (action.Id == "start_high_school" &&
+                    !SetupSeedInputPolicy.IsValid(_seedInput))
+                    return ShellActionResult.Failure(SetupSeedInputPolicy.InvalidMessage);
                 return ShellActionResult.Failure("아직 실제 게임 명령과 연결되지 않은 기능입니다.");
+            }
             string commandId = "ui:" + action.Id + ":" + before.Revision + ":" + (++_commandSequence);
             var envelope = new CommandEnvelope<GameCommand>(commandId, before.Revision, command);
             DispatchResult<GameSaveAggregate> result = await _store.DispatchAsync(envelope, cancellationToken);
@@ -240,20 +263,79 @@ namespace Baseball.Presentation.Shell
                 return ShellActionResult.Failure(KoreanFailure(result));
             }
 
-            await LogSuccessfulActionAsync(action.Id, before, result.State, cancellationToken);
+            QueueTrainingCelebration(action.Id, before, result.State);
+            TryRequestReviewForAction(action.Id, before, result.State);
+            await LogSuccessfulActionAsync(
+                action.Id,
+                command,
+                before,
+                result.State,
+                cancellationToken);
             return ShellActionResult.Success(DestinationAfterCommand(action), "저장했습니다.");
+        }
+
+        private static void TryRequestReviewForAction(
+            string actionId,
+            GameSaveAggregate before,
+            GameSaveAggregate after)
+        {
+            try
+            {
+                ReviewPromptReason? reason = ReviewMomentPolicy.ReasonAfter(actionId, before, after);
+                if (reason.HasValue) TryRequestReview(reason.Value);
+            }
+            catch (Exception exception)
+            {
+                CrashReporting.RecordUnexpected(exception, "review_prompt");
+            }
+        }
+
+        private static void TryRequestReview(ReviewPromptReason reason)
+        {
+            try
+            {
+                PlayReviewPrompt.TryRequest(reason, DateTimeOffset.UtcNow);
+            }
+            catch (Exception exception)
+            {
+                CrashReporting.RecordUnexpected(exception, "review_prompt");
+            }
         }
 
         public void RetryStartup()
         {
+            _ = RetryStartupAsync(CancellationToken.None);
+        }
+
+        private async Task<ShellActionResult> RetryStartupAsync(
+            CancellationToken cancellationToken)
+        {
             if (RuntimeGameServices.TryGetStore(out GameApplicationStore ready))
             {
                 OnReady(ready);
-                return;
+                return ShellActionResult.Success(PreferredRoute, "저장 상태를 다시 불러왔습니다.");
             }
             _status = ShellRuntimeStatus.Loading;
-            _statusMessage = "저장 상태를 다시 확인하고 있습니다. 잠시 후 한 번 더 눌러 주세요.";
+            _statusMessage = "저장 상태를 다시 확인하고 있습니다.";
             Changed?.Invoke();
+            try
+            {
+                await AppRoot.RetryInitializationAsync(cancellationToken);
+                if (!RuntimeGameServices.TryGetStore(out ready))
+                    throw new InvalidOperationException("runtime.retry_completed_without_store");
+                OnReady(ready);
+                return ShellActionResult.Success(PreferredRoute, "저장 상태를 다시 불러왔습니다.");
+            }
+            catch (OperationCanceledException)
+            {
+                return ShellActionResult.Failure("재시도를 취소했습니다. 준비가 되면 다시 눌러 주세요.");
+            }
+            catch (Exception exception)
+            {
+                if (_status != ShellRuntimeStatus.StartupFailed)
+                    OnStartupFailed(exception);
+                return ShellActionResult.Failure(_statusMessage);
+            }
         }
 
         public void SetPlayerName(string value)
@@ -263,6 +345,38 @@ namespace Baseball.Presentation.Shell
                 _playerName = next;
                 Changed?.Invoke();
             }
+        }
+
+        public void DiscardTransientDraft(ShellRoute route)
+        {
+            GameSaveAggregate state = _store?.Current;
+            if (state == null) return;
+            if (route == ShellRoute.Setup)
+                UpdateSetupDraftProjection(state, true);
+            else
+                UpdateCareerChoiceDraftProjection(state, true);
+        }
+
+        public bool TryTakeTrainingCelebration(out TrainingCelebrationViewModel celebration)
+        {
+            celebration = _pendingTrainingCelebration;
+            _pendingTrainingCelebration = null;
+            return celebration != null;
+        }
+
+        private void QueueTrainingCelebration(
+            string actionId,
+            GameSaveAggregate before,
+            GameSaveAggregate after)
+        {
+            TrainingCelebrationViewModel celebration =
+                TrainingCelebrationPolicy.Project(actionId, before, after);
+            if (celebration == null) return;
+            _pendingTrainingCelebration = celebration;
+            _pitchFeedback.PlayMilestone();
+            _haptics.Pulse(celebration.Jackpot
+                ? HapticCue.CriticalMoment
+                : HapticCue.Selection);
         }
 
         public void SetRegion(string value)
@@ -288,12 +402,7 @@ namespace Baseball.Presentation.Shell
         public void SetSeedInput(string value)
         {
             _seedInput = (value ?? string.Empty).Trim();
-            _seedValidationMessage = HighSchoolSetupCatalog.TryParseSeedInput(
-                _seedInput,
-                out _,
-                out _)
-                ? string.Empty
-                : "시드는 숫자, 도전 코드는 숫자-회차 형식으로 입력해 주세요.";
+            _seedValidationMessage = SetupSeedInputPolicy.ValidationMessage(_seedInput);
             Changed?.Invoke();
         }
 
@@ -306,11 +415,12 @@ namespace Baseball.Presentation.Shell
                     if (SetupOptions.Difficulties.Any(option => option.Payload == value)) _setupDifficulty = value;
                     break;
                 case "soul_domain":
-                    if (string.IsNullOrEmpty(value) || SetupOptions.SoulDomains.Any(option => option.Payload == value))
+                    if (SetupOptions.AutomaticSoul > 0 &&
+                        SetupOptions.SoulDomains.Any(option => option.Payload == value))
                         _setupSoulDomain = value;
                     break;
                 case "signature":
-                    if (string.IsNullOrEmpty(value) || SetupOptions.SignatureLegacies.Any(option => option.Payload == value))
+                    if (SetupOptions.SignatureLegacies.Any(option => option.Payload == value))
                         _setupSignatureLegacy = value;
                     break;
             }
@@ -324,9 +434,6 @@ namespace Baseball.Presentation.Shell
             {
                 case "karma":
                     ToggleBounded(_setupKarmas, payload, SetupOptions.Karmas, 2);
-                    break;
-                case "memory":
-                    if (SetupOptions.CarriedMemories.Contains(payload)) ToggleBounded(_setupMemories, payload, null, 4);
                     break;
                 case "soul_boost":
                     if (_setupSoulBoosts.Contains(payload)) _setupSoulBoosts.Remove(payload);
@@ -351,7 +458,7 @@ namespace Baseball.Presentation.Shell
                 case "soul_domain": return string.Equals(_setupSoulDomain, payload, StringComparison.Ordinal);
                 case "signature": return string.Equals(_setupSignatureLegacy, payload, StringComparison.Ordinal);
                 case "karma": return _setupKarmas.Contains(payload);
-                case "memory": return _setupMemories.Contains(payload);
+                case "memory": return SetupMemories.Contains(payload, StringComparer.Ordinal);
                 case "soul_boost": return _setupSoulBoosts.Contains(payload);
                 default: return false;
             }
@@ -420,7 +527,7 @@ namespace Baseball.Presentation.Shell
 
         public void SetNotificationsEnabled(bool enabled)
         {
-            if (AndroidReminderService.Instance == null)
+            if (AndroidReminderService.Instance?.IsInstallBound != true)
             {
                 _statusMessage = NotificationsUnavailableReason;
                 Changed?.Invoke();
@@ -443,16 +550,16 @@ namespace Baseball.Presentation.Shell
         public void SetReducedMotion(bool enabled) =>
             UpdateSettings(new UpdateGameSettingsCommand(reducedMotionEnabled: enabled), "동작 줄이기");
 
-        public void OnRouteChanged(ShellRoute route, bool pitchStageLoaded)
+        public void OnRouteChanged(ShellRoute route)
         {
             GameSaveAggregate state = _store?.Current;
             CrashReporting.SetContext(new CrashContext(
-                "runtime",
+                _crashDistribution,
                 state?.AggregateVersion ?? 0,
                 state?.Revision ?? 0,
                 route.ToString().ToLowerInvariant(),
-                pitchStageLoaded,
-                QualitySettings.names.Length == 0 ? "unknown" : QualitySettings.names[QualitySettings.GetQualityLevel()]));
+                CrashRuntimeDiagnostics.PitchStageLoaded,
+                CurrentPitchQualityTier()));
             if (route == ShellRoute.Weekly)
             {
                 ObserveWeeklyProgram();
@@ -466,12 +573,17 @@ namespace Baseball.Presentation.Shell
             }
             else _weeklyObservedRevision = null;
             ObserveRouteAnalytics(route, state);
+            if (route == ShellRoute.ProContract &&
+                ReviewMomentPolicy.ShouldRequestDraftedAtContract(state))
+            {
+                TryRequestReview(ReviewPromptReason.Drafted);
+            }
         }
 
         public void OnApplicationPause(bool paused)
         {
             if (paused) return;
-            AndroidReminderService.Instance?.ApplySavedEnabled(NotificationsEnabled);
+            if (_store?.Current != null) ApplyPersistedSettings(_store.Current);
             DrainPendingReminderSetting();
             ObserveReturnPlanOpen("warm");
         }
@@ -494,20 +606,35 @@ namespace Baseball.Presentation.Shell
             _disposed = true;
         }
 
+        private static string InitialPitchQualityTier() => PitchQualityPolicy.Select(
+            new PitchQualitySignals(SystemInfo.systemMemorySize, 0d, 0, false)).Value();
+
+        private static string CurrentPitchQualityTier()
+        {
+            string current = CrashRuntimeDiagnostics.CurrentQualityTier;
+            if (!string.Equals(current, "unknown", StringComparison.Ordinal)) return current;
+            string initial = InitialPitchQualityTier();
+            CrashRuntimeDiagnostics.InitializeQualityTier(initial);
+            return initial;
+        }
+
         void IPitchFeedbackBoundary.OnRelease(PitchHapticCue cue) => _pitchFeedback.OnRelease(cue);
         void IPitchFeedbackBoundary.OnSessionStarted() => _pitchFeedback.OnSessionStarted();
         void IPitchFeedbackBoundary.OnSessionEnded() => _pitchFeedback.OnSessionEnded();
-        void IPitchFeedbackBoundary.OnResult(PitchAudioCue audioCue, PitchHapticCue hapticCue) =>
-            _pitchFeedback.OnResult(audioCue, hapticCue);
+        void IPitchFeedbackBoundary.OnResult(PitchPresentationSnapshot presentation) =>
+            _pitchFeedback.OnResult(presentation);
 
         private void OnReady(GameApplicationStore store)
         {
             if (store == null) return;
+            bool storeChanged = !ReferenceEquals(_store, store);
             AttachStore(store);
             _status = ShellRuntimeStatus.Ready;
             _statusMessage = store.RequiresRecoveryNotice
                 ? "백업 저장에서 안전하게 복구했습니다."
                 : string.Empty;
+            UpdateSetupDraftProjection(store.Current, storeChanged);
+            UpdateCareerChoiceDraftProjection(store.Current, storeChanged);
             ApplyPersistedSettings(store.Current);
             ClearRetiredDailyResume();
             DrainPendingReminderSetting();
@@ -566,6 +693,8 @@ namespace Baseball.Presentation.Shell
 
         private void OnStatePublished(GameSaveAggregate state)
         {
+            UpdateSetupDraftProjection(state, false);
+            UpdateCareerChoiceDraftProjection(state, false);
             ApplyPersistedSettings(state);
             ClearRetiredDailyResume();
             Changed?.Invoke();
@@ -669,13 +798,15 @@ namespace Baseball.Presentation.Shell
             {
                 case "enter_setup": return new EnterSetupCommand();
                 case "start_high_school":
-                    HighSchoolSetupCatalog.TryParseSeedInput(
+                    if (!SetupSeedInputPolicy.TryResolve(
                         _seedInput,
+                        state.InstallId + ":life:" + state.Meta.LifeNumber,
                         out HighSchoolSeedSelection seedSelection,
-                        out _);
+                        out string resolvedSeed))
+                        return null;
                     bool challenge = seedSelection?.IsChallenge == true;
                     return new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
-                        seedSelection?.Seed ?? state.InstallId + ":life:" + state.Meta.LifeNumber,
+                        resolvedSeed,
                         _presetId,
                         EffectivePlayerName(),
                         _region,
@@ -685,18 +816,17 @@ namespace Baseball.Presentation.Shell
                         challenge ? Array.Empty<string>() : SetupKarmas,
                         challenge ? null : EmptyToNull(_setupSoulDomain),
                         challenge ? Array.Empty<string>() : SetupSoulBoosts,
-                        challenge ? "standard" : _setupDifficulty,
-                        challenge ? null : EmptyToNull(_setupSignatureLegacy),
+                        _setupDifficulty,
+                        challenge ? null : EmptyToNull(SetupSignatureLegacy),
                         seedSelection?.ChallengeLifeNumber));
                 case "quick_rebirth": return new StartQuickRebirthCommand("quick_rebirth", now);
                 case "quick_rebirth_from_recap": return new StartQuickRebirthCommand("recap", now);
                 case "end_challenge": return new EndChallengeRunCommand();
                 case "start_direct_pro":
-                    return new StartDirectProCommand(new StartDirectProRequest(
-                        state.InstallId + ":direct:" + state.Revision,
+                    return new StartDirectProCommand(DirectProStartRequestFactory.Create(
+                        state,
                         _presetId,
-                        EffectivePlayerName(),
-                        ProCareerEngine.ProTeams[0].Id));
+                        EffectivePlayerName()));
                 case "skip_tutorial": return new SkipTutorialCommand();
                 case "choose_pledge":
                     string pledge = GetChoice("run_pledge");
@@ -843,42 +973,71 @@ namespace Baseball.Presentation.Shell
 
         private async Task<ShellActionResult> ResetAsync(CancellationToken cancellationToken)
         {
+            string previousInstallId = _store.Current.InstallId;
             string newInstallId = AnonymousInstallIdentity.CreateCandidate();
+            AndroidReminderService reminders = AndroidReminderService.Instance;
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                await _store.ResetAsync(
+                AnonymousInstallIdentity.PrepareReset(previousInstallId, newInstallId);
+                reminders?.PrepareLocalReset();
+                await _store.ResetWithPreparedIdentityAsync(
                     newInstallId,
                     (installId, token) =>
                     {
                         token.ThrowIfCancellationRequested();
-                        AnonymousInstallIdentity.Replace(installId);
+                        if (!AnonymousInstallIdentity.MarkPreparedResetStep(
+                                InstallResetStep.RepositoryReset))
+                            throw new InvalidOperationException("reset.repository_receipt_failed");
+                        AnonymousInstallIdentity.PublishPreparedReset(installId);
                         return Task.CompletedTask;
                     },
                     cancellationToken);
             }
-            catch (GameResetException exception) when (exception.RollbackError != null)
+            catch (GameResetException exception)
             {
-                CrashReporting.RecordUnexpected(exception, "save_reset_rollback_failed");
-                return ShellActionResult.Failure(
-                    "초기화와 복구를 모두 마치지 못했습니다. 앱을 완전히 닫고 다시 열어 저장 복구 안내를 확인해 주세요.");
+                CrashReporting.RecordUnexpected(exception, exception.ResetCommitted
+                    ? "save_reset_committed_pending"
+                    : "save_reset_reconcile_pending");
+                return ResetRequiresRestart();
             }
-            catch (Exception exception) when (!(exception is OperationCanceledException))
+            catch (OperationCanceledException)
             {
-                CrashReporting.RecordUnexpected(exception, "save_reset");
-                return ShellActionResult.Failure("저장 데이터를 지우지 못했습니다. 기존 진행과 익명 식별자는 그대로 유지됩니다.");
+                return ResetRequiresRestart();
+            }
+            catch (Exception exception)
+            {
+                CrashReporting.RecordUnexpected(exception, "save_reset_reconcile_pending");
+                return ResetRequiresRestart();
             }
 
             try { AnalyticsBootstrap.ResetIdentityAndOnceFlags(newInstallId); }
             catch { /* Analytics identity reset must not invalidate the atomic save/identity reset. */ }
+            _analyticsReceiptsInFlight.Clear();
+            _analyticsReceiptsAwaitingEnqueue.Clear();
             _externalRoute = null;
             _externalRouteReminderToken = null;
             _consumedExternalRoute = null;
             _consumedExternalRouteReminderToken = null;
-            AndroidReminderService.Instance?.ResetLocalState();
+            reminders?.ResetLocalState();
             PlayReviewPrompt.ResetLocalAttempt();
-            AndroidShareService.ClearShareCache();
+            if (AndroidShareService.TryClearShareCache())
+            {
+                AnonymousInstallIdentity.MarkPreparedResetStep(
+                    InstallResetStep.ShareCacheCleaned);
+            }
             ApplyPersistedSettings(_store.Current);
+            AnonymousInstallIdentity.TryCompletePreparedReset();
             return ShellActionResult.Success(ShellRoute.Opening, "저장 데이터와 익명 식별자를 함께 초기화했습니다.");
+        }
+
+        private ShellActionResult ResetRequiresRestart()
+        {
+            _status = ShellRuntimeStatus.StartupFailed;
+            _statusMessage =
+                "초기화 요청을 안전하게 기록했습니다. 앱을 완전히 닫고 다시 열면 초기화를 마무리합니다.";
+            Changed?.Invoke();
+            return ShellActionResult.Failure(_statusMessage);
         }
 
         public Task<ShellActionResult> ShareLifeCardAsync(
@@ -908,6 +1067,18 @@ namespace Baseball.Presentation.Shell
                     ? "선수 카드 이미지 공유 화면을 열었습니다."
                     : "이미지를 만들지 못해 텍스트 공유 화면을 열었습니다.")
                 : ShellActionResult.Failure("이 기기에서 공유 화면을 열지 못했습니다."));
+        }
+
+        private ShellActionResult ShareCareerCode(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            CareerShareCode code = CareerShareCodePolicy.Project(_store?.Current);
+            string text = CareerShareCodePolicy.ShareText(code);
+            if (string.IsNullOrWhiteSpace(text))
+                return ShellActionResult.Failure("공유할 현재 커리어 코드가 없습니다.");
+            return AndroidShareService.TryShareText("현재 판 코드 공유", text)
+                ? ShellActionResult.Success(null, "현재 판 코드 공유 화면을 열었습니다.")
+                : ShellActionResult.Failure("이 기기에서 공유 화면을 열지 못했습니다.");
         }
 
         private LifeArchiveRecord SelectedLifeRecordForUi(GameSaveAggregate state)
@@ -991,10 +1162,16 @@ namespace Baseball.Presentation.Shell
             GameSettingsState settings = state?.Settings ?? GameSettingsState.Default;
             _pitchFeedback.SoundEnabled = settings.SoundEnabled;
             _pitchFeedback.MusicEnabled = settings.MusicEnabled;
-            _haptics.IsEnabled = settings.HapticsEnabled;
+            _haptics.IsEnabled = settings.HapticsEnabled && !settings.ReducedMotionEnabled;
             AndroidReminderService reminders = AndroidReminderService.Instance;
             if (reminders != null)
             {
+                if (!reminders.BindInstall(state?.InstallId))
+                {
+                    reminders.ConfigurePlan(null);
+                    reminders.ApplySavedEnabled(false);
+                    return;
+                }
                 ReturnPlanState plan = state?.Meta?.ReturnPlan;
                 ReturnPlanState personalized = ReturnPlanPresentationPolicy.PersonalizedNotification(plan);
                 AndroidReminderPlan reminderPlan = personalized != null
@@ -1012,6 +1189,106 @@ namespace Baseball.Presentation.Shell
                 reminders.ConfigurePlan(reminderPlan);
                 reminders.ApplySavedEnabled(settings.NotificationsEnabled);
             }
+        }
+
+        private void UpdateSetupDraftProjection(GameSaveAggregate state, bool force)
+        {
+            if (state == null) return;
+            int lifeNumber = state.Meta?.LifeNumber ?? 1;
+            bool enteringSetup = _setupDraftLifecycle.Observe(
+                state.Stage == ApplicationStage.Setup,
+                state.InstallId,
+                lifeNumber,
+                force);
+            if (enteringSetup)
+            {
+                HighSchoolSetupReadModel options = HighSchoolSetupCatalog.For(state.Meta);
+                _playerName = string.Empty;
+                _region = HighSchoolSetupCatalog.Regions.FirstOrDefault()?.Payload ?? "서울";
+                _presetId = HighSchoolSetupCatalog.Presets.FirstOrDefault()?.Payload ?? "power_prospect";
+                _seedInput = string.Empty;
+                _seedValidationMessage = string.Empty;
+                _setupDifficulty = "standard";
+                _setupKarmas.Clear();
+                _setupSoulBoosts.Clear();
+                _setupSoulDomain = options.AutomaticSoul > 0 ? "technique" : string.Empty;
+                string equipped = state.Meta?.EquippedSignatureLegacyId;
+                _setupSignatureLegacy = options.SignatureLegacies.Any(option =>
+                    string.Equals(option.Payload, equipped, StringComparison.Ordinal))
+                    ? equipped
+                    : string.Empty;
+            }
+        }
+
+        private void UpdateCareerChoiceDraftProjection(GameSaveAggregate state, bool force)
+        {
+            if (state == null) return;
+            if (_careerChoiceDraftLifecycle.Observe(state, force))
+            {
+                _careerChoices.Clear();
+                _careerMultiChoices.Clear();
+            }
+
+            HighSchoolCareerReadModel highSchool = state.HighSchool;
+            if (state.Stage == ApplicationStage.HighSchool &&
+                highSchool?.Phase == HighSchoolPhase.Training)
+            {
+                ReconcileChoice(
+                    "training_focus",
+                    highSchool.TrainingFocusChoices,
+                    highSchool.LastTraining?.Focus,
+                    "command");
+                ReconcileChoice(
+                    "training_intensity",
+                    highSchool.TrainingIntensityChoices,
+                    highSchool.LastTraining?.Intensity,
+                    "standard");
+                ReconcileChoice(
+                    "training_pitch",
+                    highSchool.TrainingPitchChoices,
+                    highSchool.LastTraining?.TargetPitch);
+            }
+
+            ProCareerReadModel pro = state.Pro;
+            if (state.Stage == ApplicationStage.Pro &&
+                pro?.Phase == ProCareerPhase.WeeklyPlan)
+            {
+                ReconcileChoice("pro_week_plan", pro.WeekPlanChoices, "earn_trust");
+                ReconcileChoice(
+                    "pro_development_pitch",
+                    pro.DevelopmentPitchChoices,
+                    pro.LastSegmentProgress?.TargetPitch);
+            }
+        }
+
+        private void ReconcileChoice(
+            string group,
+            IReadOnlyList<CareerChoiceReadModel> choices,
+            params string[] preferred)
+        {
+            CareerChoiceReadModel[] enabled = (choices ?? Array.Empty<CareerChoiceReadModel>())
+                .Where(option => option.Enabled && !string.IsNullOrWhiteSpace(option.Payload))
+                .ToArray();
+            if (enabled.Length == 0)
+            {
+                _careerChoices.Remove(group);
+                return;
+            }
+
+            if (_careerChoices.TryGetValue(group, out string selected) &&
+                enabled.Any(option => string.Equals(
+                    option.Payload,
+                    selected,
+                    StringComparison.Ordinal)))
+                return;
+
+            string fallback = (preferred ?? Array.Empty<string>())
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value) &&
+                    enabled.Any(option => string.Equals(
+                        option.Payload,
+                        value,
+                        StringComparison.Ordinal)));
+            _careerChoices[group] = fallback ?? enabled[0].Payload;
         }
 
         private ShellRoute ReminderDestinationRoute(string destination)
@@ -1100,10 +1377,12 @@ namespace Baseball.Presentation.Shell
             }
         }
 
-        private static void SafeLog(AnalyticsEvent analyticsEvent, IReadOnlyDictionary<string, object> properties)
+        private static bool SafeLog(
+            AnalyticsEvent analyticsEvent,
+            IReadOnlyDictionary<string, object> properties)
         {
-            try { AnalyticsBootstrap.Log(analyticsEvent, properties); }
-            catch { /* Analytics never blocks durable game progress. */ }
+            try { return AnalyticsBootstrap.Log(analyticsEvent, properties); }
+            catch { return false; /* Analytics never blocks durable game progress. */ }
         }
     }
 

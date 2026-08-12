@@ -16,8 +16,8 @@ namespace Baseball.Application.Tests
             var setup = HighSchoolSetupCatalog.For(MetaProgressState.Initial);
 
             Assert.That(setup.AdvancedOptionsVisible, Is.False);
-            Assert.That(setup.Regions, Has.Count.EqualTo(19));
-            Assert.That(setup.Presets, Has.Count.EqualTo(4));
+            Assert.That(setup.Regions.Count, Is.EqualTo(19));
+            Assert.That(setup.Presets.Count, Is.EqualTo(4));
             Assert.That(setup.Difficulties, Is.Empty);
             Assert.That(setup.Karmas, Is.Empty);
             Assert.That(setup.SoulBoosts, Is.Empty);
@@ -45,8 +45,8 @@ namespace Baseball.Application.Tests
             Assert.That(setup.AdvancedOptionsVisible, Is.True);
             Assert.That(setup.SoulBalance, Is.EqualTo(240));
             Assert.That(setup.AutomaticSoul, Is.EqualTo(37));
-            Assert.That(setup.Difficulties, Has.Count.EqualTo(3));
-            Assert.That(setup.SignatureLegacies, Has.Count.EqualTo(1));
+            Assert.That(setup.Difficulties.Count, Is.EqualTo(3));
+            Assert.That(setup.SignatureLegacies.Count, Is.EqualTo(1));
             Assert.That(setup.SignatureLegacies[0].Payload, Is.EqualTo("command_map"));
             Assert.That(setup.CanQuickRebirth, Is.True);
             Assert.That(setup.LastSetup, Is.SameAs(last));
@@ -79,6 +79,283 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
+        public void FirstLife_NullSignatureAndMemoriesRemainEmpty()
+        {
+            var aggregate = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                0,
+                "install-a",
+                ApplicationStage.Setup,
+                null,
+                null,
+                MetaProgressState.Initial,
+                null,
+                null,
+                Array.Empty<string>());
+            var highSchool = new FakeHighSchoolPort();
+            var result = new GameCommandTransition(highSchool, new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "7", "power_prospect", "민서준", "서울", 1)),
+                "first-life");
+
+            Assert.That(result.IsSuccess, Is.True, result.ErrorCode);
+            Assert.That(highSchool.LastStartRequest.InheritedMemories, Is.Empty);
+            Assert.That(highSchool.LastStartRequest.SignatureLegacyId, Is.Null);
+            Assert.That(result.NextState.HighSchool.EquippedSignatureLegacyId, Is.Null);
+            Assert.That(result.NextState.Meta.EquippedSignatureLegacyId, Is.Null);
+            Assert.That(highSchool.LastStartRequest.InheritedSoulDomain, Is.Null);
+        }
+
+        [Test]
+        public void CustomRebirth_EmptyInheritanceFallsBackAndExplicitSelectionOverrides()
+        {
+            var meta = new MetaProgressState(
+                lifeNumber: 2,
+                inheritedMemories: new[] { "catcher_notebook", "rival_notebook" },
+                unlockedSignatureLegacyIds: new[] { "command_map", "power_imprint" },
+                equippedSignatureLegacyId: "command_map");
+            var aggregate = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                3,
+                "install-a",
+                ApplicationStage.Setup,
+                null,
+                null,
+                meta,
+                null,
+                null,
+                Array.Empty<string>());
+            var inheritedPort = new FakeHighSchoolPort();
+            var inherited = new GameCommandTransition(inheritedPort, new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "8", "power_prospect", "민서준", "서울", 2)),
+                "custom-inherited");
+
+            Assert.That(inherited.IsSuccess, Is.True, inherited.ErrorCode);
+            Assert.That(inheritedPort.LastStartRequest.InheritedMemories,
+                Is.EqualTo(new[] { "catcher_notebook", "rival_notebook" }));
+            Assert.That(inheritedPort.LastStartRequest.SignatureLegacyId,
+                Is.EqualTo("command_map"));
+            Assert.That(inherited.NextState.HighSchool.EquippedSignatureLegacyId,
+                Is.EqualTo("command_map"));
+            Assert.That(inherited.NextState.Meta.EquippedSignatureLegacyId,
+                Is.EqualTo("command_map"));
+
+            var production = new GameCommandTransition(
+                new CoreHighSchoolCareerPort(), new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "8", "power_prospect", "민서준", "서울", 2)),
+                "custom-production");
+            Assert.That(production.IsSuccess, Is.True, production.ErrorCode);
+            Assert.That(production.NextState.HighSchool.EquippedSignatureLegacyId,
+                Is.EqualTo("command_map"));
+            Assert.That(production.NextState.Meta.EquippedSignatureLegacyId,
+                Is.EqualTo("command_map"));
+
+            var overridePort = new FakeHighSchoolPort();
+            var selected = new GameCommandTransition(overridePort, new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "9",
+                    "power_prospect",
+                    "민서준",
+                    "서울",
+                    2,
+                    inheritedMemories: new[] { "rival_notebook" },
+                    signatureLegacyId: "power_imprint")),
+                "custom-override");
+
+            Assert.That(selected.IsSuccess, Is.True, selected.ErrorCode);
+            Assert.That(overridePort.LastStartRequest.InheritedMemories,
+                Is.EqualTo(new[] { "rival_notebook" }));
+            Assert.That(overridePort.LastStartRequest.SignatureLegacyId,
+                Is.EqualTo("power_imprint"));
+            Assert.That(selected.NextState.HighSchool.EquippedSignatureLegacyId,
+                Is.EqualTo("power_imprint"));
+            Assert.That(selected.NextState.Meta.EquippedSignatureLegacyId,
+                Is.EqualTo("power_imprint"));
+        }
+
+        [Test]
+        public void PersistedInvalidSignatureFallback_FailsClosedBeforePortStarts()
+        {
+            var meta = new MetaProgressState(
+                lifeNumber: 2,
+                unlockedSignatureLegacyIds: new[] { "command_map" },
+                equippedSignatureLegacyId: "unknown_legacy");
+            var aggregate = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                3,
+                "install-a",
+                ApplicationStage.Setup,
+                null,
+                null,
+                meta,
+                null,
+                null,
+                Array.Empty<string>());
+            var highSchool = new FakeHighSchoolPort();
+            var result = new GameCommandTransition(highSchool, new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "8", "power_prospect", "민서준", "서울", 2)),
+                "invalid-equipped");
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.ErrorCode, Is.EqualTo("high_school.signature_legacy_locked"));
+            Assert.That(highSchool.LastStartRequest, Is.Null);
+            Assert.That(result.NextState, Is.Null);
+        }
+
+        [Test]
+        public void CustomRebirth_ExplicitMemoryOutsidePersistedSetFailsClosed()
+        {
+            var meta = new MetaProgressState(
+                lifeNumber: 2,
+                inheritedMemories: new[] { "catcher_notebook" });
+            var aggregate = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                3,
+                "install-a",
+                ApplicationStage.Setup,
+                null,
+                null,
+                meta,
+                null,
+                null,
+                Array.Empty<string>());
+            var highSchool = new FakeHighSchoolPort();
+            var result = new GameCommandTransition(highSchool, new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "8",
+                    "power_prospect",
+                    "민서준",
+                    "서울",
+                    2,
+                    inheritedMemories: new[] { "rival_notebook" })),
+                "invalid-memory");
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.ErrorCode, Is.EqualTo("high_school.memories_invalid"));
+            Assert.That(highSchool.LastStartRequest, Is.Null);
+        }
+
+        [Test]
+        public void BlankSoulDomain_WithInheritanceDefaultsToTechniqueForTransitionAndCore()
+        {
+            var meta = new MetaProgressState(lifeNumber: 2, automaticSoulEarned: 12);
+            var aggregate = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                3,
+                "install-a",
+                ApplicationStage.Setup,
+                null,
+                null,
+                meta,
+                null,
+                null,
+                Array.Empty<string>());
+            var request = new StartHighSchoolCareerRequest(
+                "10",
+                "power_prospect",
+                "민서준",
+                "서울",
+                2,
+                inheritedSoul: 12);
+            var fake = new FakeHighSchoolPort();
+            var resolved = new GameCommandTransition(fake, new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(request),
+                "domain-default");
+
+            Assert.That(resolved.IsSuccess, Is.True, resolved.ErrorCode);
+            Assert.That(fake.LastStartRequest.InheritedSoulDomain, Is.EqualTo("technique"));
+            Assert.That(resolved.NextState.Meta.LastHighSchoolSetup.SoulDomain,
+                Is.EqualTo("technique"));
+
+            var productionDefault = new GameCommandTransition(
+                new CoreHighSchoolCareerPort(), new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(request),
+                "domain-production-default");
+            var productionExplicit = new GameCommandTransition(
+                new CoreHighSchoolCareerPort(), new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "10",
+                    "power_prospect",
+                    "민서준",
+                    "서울",
+                    2,
+                    inheritedSoul: 12,
+                    inheritedSoulDomain: "technique")),
+                "domain-production-explicit");
+
+            Assert.That(productionDefault.IsSuccess, Is.True, productionDefault.ErrorCode);
+            Assert.That(productionExplicit.IsSuccess, Is.True, productionExplicit.ErrorCode);
+            Assert.That(productionDefault.NextState.HighSchool.Ratings.Stuff,
+                Is.EqualTo(productionExplicit.NextState.HighSchool.Ratings.Stuff));
+            Assert.That(productionDefault.NextState.HighSchool.Ratings.Command,
+                Is.EqualTo(productionExplicit.NextState.HighSchool.Ratings.Command));
+            Assert.That(productionDefault.NextState.HighSchool.Ratings.Movement,
+                Is.EqualTo(productionExplicit.NextState.HighSchool.Ratings.Movement));
+            Assert.That(productionDefault.NextState.HighSchool.Ratings.Stamina,
+                Is.EqualTo(productionExplicit.NextState.HighSchool.Ratings.Stamina));
+        }
+
+        [Test]
+        public void ZeroSoul_IgnoresValidDomainButRejectsUnknownWire()
+        {
+            var meta = new MetaProgressState(lifeNumber: 2);
+            var aggregate = new GameSaveAggregate(
+                GameSaveAggregate.CurrentAggregateVersion,
+                3,
+                "install-a",
+                ApplicationStage.Setup,
+                null,
+                null,
+                meta,
+                null,
+                null,
+                Array.Empty<string>());
+            var validPort = new FakeHighSchoolPort();
+            var ignored = new GameCommandTransition(validPort, new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "11",
+                    "power_prospect",
+                    "민서준",
+                    "서울",
+                    2,
+                    inheritedSoulDomain: "body")),
+                "domain-zero");
+
+            Assert.That(ignored.IsSuccess, Is.True, ignored.ErrorCode);
+            Assert.That(validPort.LastStartRequest.InheritedSoulDomain, Is.Null);
+            Assert.That(ignored.NextState.Meta.LastHighSchoolSetup.SoulDomain, Is.Null);
+
+            var invalidPort = new FakeHighSchoolPort();
+            var invalid = new GameCommandTransition(invalidPort, new FakeProPort()).Apply(
+                aggregate,
+                new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
+                    "12",
+                    "power_prospect",
+                    "민서준",
+                    "서울",
+                    2,
+                    inheritedSoulDomain: "unknown_domain")),
+                "domain-invalid");
+
+            Assert.That(invalid.IsSuccess, Is.False);
+            Assert.That(invalid.ErrorCode, Is.EqualTo("high_school.soul_domain_invalid"));
+            Assert.That(invalidPort.LastStartRequest, Is.Null);
+        }
+
+        [Test]
         public void SeedParser_DistinguishesNumericSeedChallengeCodeAndTypo()
         {
             Assert.That(HighSchoolSetupCatalog.TryParseSeedInput(
@@ -107,11 +384,14 @@ namespace Baseball.Application.Tests
                 inheritedMemories: new[] { "catcher_notebook" },
                 lastHighSchoolSetup: new HighSchoolLastSetupState(
                     "precision_commander", "고태윤", "대전", "challenging",
-                    new[] { "unknown_land" }, "technique"));
+                    new[] { "unknown_land" }),
+                unlockedSignatureLegacyIds: new[] { "command_map" },
+                equippedSignatureLegacyId: "command_map");
             var aggregate = new GameSaveAggregate(
                 1, 4, "install-a", ApplicationStage.Setup,
                 null, null, meta, null, null, Array.Empty<string>());
-            var transition = new GameCommandTransition(new FakeHighSchoolPort(), new FakeProPort());
+            var highSchool = new FakeHighSchoolPort();
+            var transition = new GameCommandTransition(highSchool, new FakeProPort());
 
             var result = transition.Apply(
                 aggregate,
@@ -123,6 +403,14 @@ namespace Baseball.Application.Tests
             Assert.That(result.NextState.HighSchool.PlayerName, Is.EqualTo("고태윤"));
             Assert.That(result.NextState.HighSchool.Difficulty, Is.EqualTo("challenging"));
             Assert.That(result.NextState.Meta.SoulBalance, Is.EqualTo(500));
+            Assert.That(highSchool.LastStartRequest.InheritedMemories,
+                Is.EqualTo(new[] { "catcher_notebook" }));
+            Assert.That(highSchool.LastStartRequest.SignatureLegacyId,
+                Is.EqualTo("command_map"));
+            Assert.That(highSchool.LastStartRequest.InheritedSoulDomain,
+                Is.EqualTo("technique"));
+            Assert.That(result.NextState.HighSchool.EquippedSignatureLegacyId,
+                Is.EqualTo("command_map"));
         }
 
         [Test]
@@ -181,28 +469,38 @@ namespace Baseball.Application.Tests
             Assert.That(result.NextState.HighSchool.LifeNumber, Is.EqualTo(2));
             Assert.That(result.NextState.HighSchool.PresetId, Is.EqualTo("precision_commander"));
             Assert.That(result.NextState.Pro, Is.Null);
-            Assert.That(result.NextState.Meta.LifeArchive, Has.Count.EqualTo(1));
+            Assert.That(result.NextState.Meta.LifeArchive.Count, Is.EqualTo(1));
             Assert.That(result.NextState.HasCommandReceipt("quick-recap"), Is.True);
         }
 
         [Test]
         public void ChallengeRun_UsesSharedLifeButCannotMutateArchiveOrMeta()
         {
+            var meta = new MetaProgressState(
+                inheritedMemories: new[] { "catcher_notebook" },
+                unlockedSignatureLegacyIds: new[] { "command_map" },
+                equippedSignatureLegacyId: "command_map");
             var aggregate = new GameSaveAggregate(
                 1, 2, "install-a", ApplicationStage.Setup,
-                null, null, MetaProgressState.Initial, null, null, Array.Empty<string>());
-            var transition = new GameCommandTransition(new FakeHighSchoolPort(), new FakeProPort());
+                null, null, meta, null, null, Array.Empty<string>());
+            var highSchool = new FakeHighSchoolPort();
+            var transition = new GameCommandTransition(highSchool, new FakeProPort());
             var start = transition.Apply(
                 aggregate,
                 new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
                     "12345", "power_prospect", "민서준", "서울", 1,
+                    difficulty: "challenging",
                     challengeLifeNumber: 7)),
                 "challenge-start");
 
             Assert.That(start.IsSuccess, Is.True, start.ErrorCode);
             Assert.That(start.NextState.HighSchool.IsChallengeRun, Is.True);
             Assert.That(start.NextState.HighSchool.LifeNumber, Is.EqualTo(7));
+            Assert.That(start.NextState.HighSchool.Difficulty, Is.EqualTo("challenging"));
+            Assert.That(highSchool.LastStartRequest.Difficulty, Is.EqualTo("challenging"));
             Assert.That(start.NextState.Meta, Is.SameAs(aggregate.Meta));
+            Assert.That(highSchool.LastStartRequest.InheritedMemories, Is.Empty);
+            Assert.That(highSchool.LastStartRequest.SignatureLegacyId, Is.Null);
 
             var drafted = transition.Apply(
                 start.NextState,
@@ -239,6 +537,7 @@ namespace Baseball.Application.Tests
                 aggregate,
                 new StartHighSchoolCareerCommand(new StartHighSchoolCareerRequest(
                     "12345", "power_prospect", "민서준", "서울", 1,
+                    difficulty: "standard",
                     challengeLifeNumber: 7)),
                 "challenge-start").NextState;
             var ratings = started.HighSchool.Ratings.Total;
@@ -251,6 +550,7 @@ namespace Baseball.Application.Tests
 
             Assert.That(skipped.IsSuccess, Is.True, skipped.ErrorCode);
             Assert.That(skipped.NextState.HighSchool.IsChallengeRun, Is.True);
+            Assert.That(skipped.NextState.HighSchool.Difficulty, Is.EqualTo("standard"));
             Assert.That(skipped.NextState.HighSchool.Phase,
                 Is.EqualTo(HighSchoolPhase.SchoolSelection));
             Assert.That(skipped.NextState.HighSchool.TutorialCompleted, Is.False);

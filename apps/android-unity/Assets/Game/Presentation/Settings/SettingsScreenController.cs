@@ -63,15 +63,13 @@ namespace Baseball.Presentation.Settings
                 "screen-settings-reduced-motion",
                 preferences != null && preferences.ReducedMotion,
                 enabled => preferences?.SetReducedMotion(enabled)));
-            host.Add(new AccessibleSlider(
-                "글자 크기 미리보기",
-                "screen-settings-font-scale",
-                1f,
-                2f,
-                1f,
-                0.3f,
-                scale => (navigator as BaseballShellController)?.ApplySystemFontScaleForTesting(scale),
-                scale => ((int)(scale * 100f)) + "%"));
+            var fontScale = new BaseballCallout(
+                "글자 크기",
+                BaseballCalloutTone.Information,
+                "screen-settings-system-font-scale");
+            fontScale.Content.Add(new Label(
+                "게임 글자는 Android 시스템의 글자 크기 설정을 자동으로 따릅니다."));
+            host.Add(fontScale);
         }
     }
 }

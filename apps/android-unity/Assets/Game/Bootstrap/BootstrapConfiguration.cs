@@ -1,6 +1,5 @@
 using System;
 using Baseball.Application.Commands;
-using Baseball.Platform.Identity;
 
 namespace Baseball.Bootstrap
 {
@@ -20,10 +19,7 @@ namespace Baseball.Bootstrap
             IRuntimeGameMainThread mainThread)
         {
             return _coordinatorFactory?.Invoke(saveDirectory) ??
-                   RuntimeGameComposition.Create(
-                       saveDirectory,
-                       AnonymousInstallIdentity.GetOrCreate(),
-                       mainThread);
+                   RuntimeGameComposition.Create(saveDirectory, mainThread);
         }
 
         internal static void ResetForDomainReload()

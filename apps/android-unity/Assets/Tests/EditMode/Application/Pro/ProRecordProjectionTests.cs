@@ -129,13 +129,13 @@ namespace Baseball.Application.Tests
             Assert.That(book.DecisionHistory[0].EffectSummary, Is.Not.Empty);
             Assert.That(book.HallOfFameScore, Is.Not.Null);
             Assert.That(book.SeasonGameLinesAvailable, Is.True);
-            Assert.That(book.CareerSeasons, Has.Count.EqualTo(1));
+            Assert.That(book.CareerSeasons.Count, Is.EqualTo(1));
             Assert.That(book.CareerSeasons[0].Hits, Is.EqualTo(book.CurrentSeason.Hits));
             Assert.That(book.CareerSeasons[0].HomeRuns, Is.EqualTo(book.CurrentSeason.HomeRuns));
             Assert.That(book.CareerSeasons[0].Pitches, Is.EqualTo(book.CurrentSeason.Pitches));
             Assert.That(book.CareerSeasons[0].QualityStarts,
                 Is.EqualTo(book.CurrentSeason.QualityStarts));
-            Assert.That(book.SeasonGameLines, Has.Count.EqualTo(book.CurrentSeason.Games));
+            Assert.That(book.SeasonGameLines.Count, Is.EqualTo(book.CurrentSeason.Games));
             Assert.That(book.SeasonGameLines.All(value => value.RecordedHits.HasValue), Is.True);
             Assert.That(book.SeasonGameLines.All(value => value.HomeRuns.HasValue), Is.True);
             Assert.That(book.CurrentSeason.Pitches,
@@ -176,7 +176,7 @@ namespace Baseball.Application.Tests
                            repository,
                            new CoreHighSchoolCareerPort(),
                            new CoreProCareerPort(),
-                           "ignored"))
+                           "record-install"))
                 {
                     var loaded = restarted.Current.Pro.RecordBook;
                     Assert.That(loaded, Is.Not.Null);

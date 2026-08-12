@@ -101,7 +101,7 @@ namespace Baseball.Presentation.Shell
 
             screens.Add(ShellRoute.RunRecap, Screen(Activate(ShellRoute.RunRecap), "highschool", false,
                 Sections(
-                    Section("growth", ScreenSectionTone.Positive, Row("fastball"), Row("control"), Row("stamina")),
+                    Section("growth", ScreenSectionTone.Positive, Row("fastball"), Row("control"), Row("movement"), Row("stamina")),
                     Section("legacy", ScreenSectionTone.Milestone, Row("legacy_value"), Row("legacy_detail")),
                     Section("memory", ScreenSectionTone.Information, Row("memory_detail"))),
                 Actions(Primary("pro", ShellRoute.ProContract), Secondary("card", ShellRoute.LifeCard), Secondary("archive", ShellRoute.LifeArchive))));
@@ -172,7 +172,7 @@ namespace Baseball.Presentation.Shell
             screens.Add(ShellRoute.LifeCard, Screen(Activate(ShellRoute.LifeCard), "records", false,
                 Sections(
                     Section("identity", ScreenSectionTone.Milestone, Row("player"), Row("scout")),
-                    Section("growth", ScreenSectionTone.Positive, Row("fastball"), Row("control"), Row("stamina")),
+                    Section("growth", ScreenSectionTone.Positive, Row("fastball"), Row("control"), Row("movement"), Row("stamina")),
                     Section("record", ScreenSectionTone.Plain, Row("games"), Row("strikeouts"), Row("runs")),
                     Section("legacy", ScreenSectionTone.Information, Row("legacy_value"))),
                 Actions(Secondary("share", ShellRoute.LifeCard), Primary("archive", ShellRoute.LifeArchive))));

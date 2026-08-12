@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Baseball.Core.Domain;
 using Baseball.Core.Pitching;
 using Baseball.Application.HighSchool;
 using Baseball.Application.Persistence;
+using Baseball.Platform.Crash;
 using Baseball.Presentation.Pitch;
 using NUnit.Framework;
 
@@ -11,6 +13,48 @@ namespace Baseball.Presentation.Tests
 {
     public sealed class PitchPresentationTests
     {
+        [Test]
+        public void PitchBackRequiresConfirmationOnlyAtASafeInteractiveBoundary()
+        {
+            Assert.That(PitchBackPolicy.Resolve(
+                PitchPlayPhase.Selecting, false, false), Is.EqualTo(PitchBackAction.ShowExitConfirmation));
+            Assert.That(PitchBackPolicy.Resolve(
+                PitchPlayPhase.Selecting, false, true), Is.EqualTo(PitchBackAction.CloseConfirmation));
+            Assert.That(PitchBackPolicy.Resolve(
+                PitchPlayPhase.Timing, false, false), Is.EqualTo(PitchBackAction.CancelRelease));
+            Assert.That(PitchBackPolicy.Resolve(
+                PitchPlayPhase.Presenting, false, false), Is.EqualTo(PitchBackAction.SkipPresentation));
+            Assert.That(PitchBackPolicy.Resolve(
+                PitchPlayPhase.Result, false, false), Is.EqualTo(PitchBackAction.SkipPresentation));
+            Assert.That(PitchBackPolicy.Resolve(
+                PitchPlayPhase.Completed, false, false), Is.EqualTo(PitchBackAction.CompleteResult));
+            Assert.That(PitchBackPolicy.Resolve(
+                PitchPlayPhase.Selecting, true, false), Is.EqualTo(PitchBackAction.BlockTutorial));
+        }
+
+        [Test]
+        public void HudProjectsAuthoritativeSituationBatterScoutingRivalAndPitcherReadout()
+        {
+            var presenter = new PitchPlayPresenter(PitchDemoRequestFactory.Create(false));
+            presenter.Start();
+
+            PitchHudContent content = PitchHudProjection.Project(presenter.State);
+            Assert.That(content.Situation, Is.EqualTo(
+                "8회 · 1아웃 · 우리 팀 1점 리드 · 주자 없음 · 피로 42 · 중요도 매우 높음"));
+            Assert.That(content.Batter, Is.EqualTo(
+                "도윤 · 우타 · 컨택 57 · 선구 54 · 장타 61"));
+            Assert.That(content.Scouting, Does.Contain("강점 직구 · 약점 슬라이더"));
+            Assert.That(content.Scouting, Does.Contain("차가운 곳 낮은 왼쪽"));
+            Assert.That(content.Pitcher, Is.EqualTo("구위 62 · 제구 56 · 변화 58 · 체력 60"));
+            Assert.That(content.Recommendation, Does.Contain("포수 사인"));
+            Assert.That(content.Recommendation, Does.Contain("포수 사인 사용 중"));
+            Assert.That(content.Rival, Does.StartWith("라이벌 대응"));
+
+            presenter.SelectPitchType(PitchType.Slider);
+            Assert.That(PitchHudProjection.Project(presenter.State).Recommendation,
+                Does.Contain("내 선택 유지 중"));
+        }
+
         [Test]
         public void BuilderPreservesAuthoritativeTrajectoryAndPlateCrossing()
         {
@@ -334,6 +378,41 @@ namespace Baseball.Presentation.Tests
         }
 
         [Test]
+        public void AudioSelectionUsesPresentationSeedVariantsAndAuthoritativeCrowdOutcome()
+        {
+            PitchPresentationSnapshot homeRun = AudioSnapshot(
+                PitchOutcome.HomeRun,
+                PitchAudioCue.HardContact,
+                1,
+                77UL);
+            PitchAudioSelection first = PitchAudioSelectionPolicy.Select(homeRun);
+            PitchAudioSelection replay = PitchAudioSelectionPolicy.Select(homeRun);
+            Assert.That(replay.PrimaryAddress, Is.EqualTo(first.PrimaryAddress));
+            Assert.That(replay.CrowdAddress, Is.EqualTo(first.CrowdAddress));
+            Assert.That(first.PrimaryAddress, Does.StartWith("baseball/audio/bat-contact-hard"));
+            Assert.That(first.CrowdAddress, Does.StartWith("baseball/audio/crowd-groan"));
+
+            PitchAudioSelection strikeout = PitchAudioSelectionPolicy.Select(AudioSnapshot(
+                PitchOutcome.SwingingStrike,
+                PitchAudioCue.UmpireStrikeout,
+                0,
+                91UL));
+            Assert.That(strikeout.PrimaryAddress, Is.EqualTo("baseball/audio/umpire-strikeout"));
+            Assert.That(strikeout.CrowdAddress, Does.StartWith("baseball/audio/crowd-cheer"));
+
+            string[] variants = { "", "-2", "-3" };
+            foreach (ulong seed in new[] { 0UL, 1UL, 2UL, 3UL, 4UL, 5UL })
+            {
+                string address = PitchAudioSelectionPolicy.Select(AudioSnapshot(
+                    PitchOutcome.CalledStrike,
+                    PitchAudioCue.GloveCatch,
+                    0,
+                    seed)).PrimaryAddress;
+                Assert.That(variants.Any(suffix => address == "baseball/audio/glove-catch" + suffix), Is.True);
+            }
+        }
+
+        [Test]
         public void PitchGameReportUsesOnlyCompletedAuthoritativeCoreSnapshot()
         {
             var presenter = new PitchPlayPresenter(PitchDemoRequestFactory.Create(false));
@@ -362,6 +441,49 @@ namespace Baseball.Presentation.Tests
         }
 
         [Test]
+        public void PostgameProjectsFullDurableReportAndTargetVersusActualPitchLog()
+        {
+            var report = new PitchGameReport(
+                "postgame",
+                pitches: 2,
+                batters: 1,
+                outs: 1,
+                strikeouts: 1,
+                walks: 0,
+                hits: 0,
+                runsAllowed: 0,
+                sequenceMasteryCount: 1,
+                expectedDamage: 120,
+                actualDamage: 40,
+                recommendationAccepted: 1,
+                directDeliveryCount: 2,
+                deliveryScoreTotal: 1700,
+                bestDeliveryScore: 900,
+                perfectDeliveryCount: 1,
+                abilityMomentCount: 1,
+                abilityMomentTypes: new[] { "command" });
+            var log = new[]
+            {
+                new PitchLogEntryState(
+                    "pitch-1", 0, 1, "four_seam", 0, 1, "edge", "normal",
+                    0, 500, 25, 460, 1450, 18, -92, 880, "called_strike", true, 1),
+                new PitchLogEntryState(
+                    "pitch-2", 0, 2, "slider", 2, 0, "chase", "max_effort",
+                    -500, -500, -430, -610, 1320, -124, -48, 820, "swinging_strike", false, 2),
+            };
+
+            PitchPostgameContent content = PitchPostgameProjection.Project(report, log);
+            Assert.That(content.Summary, Does.Contain("1타자 · 2구 · 1아웃"));
+            Assert.That(content.Analysis, Is.EqualTo("기대 피해 120 · 실제 피해 40 · 포수 사인 수락 1/2"));
+            Assert.That(content.Growth, Does.Contain("수싸움 성장 1 · 능력 발현 1(제구)"));
+            Assert.That(content.Pitches.Count, Is.EqualTo(2));
+            Assert.That(content.Pitches[0].Title, Does.Contain("직구 · 높은 가운데 · 스트라이크"));
+            Assert.That(content.Pitches[0].Detail, Does.Contain("목표 (0,500) → 실제 (25,460)"));
+            Assert.That(content.Pitches[1].Title, Does.Contain("슬라이더 · 낮은 왼쪽 · 헛스윙"));
+            Assert.That(content.Pitches[1].Detail, Does.Contain("직접 배합"));
+        }
+
+        [Test]
         public void PitchGameReportRejectsPresentationBeforeCoreEndsPlateAppearance()
         {
             PitchKernelResult incomplete = Result(PitchOutcome.CalledStrike, Execution(), null, null);
@@ -382,6 +504,56 @@ namespace Baseball.Presentation.Tests
             Assert.That(PitchQualityTier.High.Value(), Is.EqualTo("high"));
             Assert.That(PitchQualityTier.Low.Value(), Is.EqualTo("low"));
         }
+
+        [Test]
+        public void FrameBudgetDowngradePublishesLowCrashDiagnosticTier()
+        {
+            CrashReporting.Reset();
+            PitchQualityTier selected = PitchQualityPolicy.Select(
+                new PitchQualitySignals(8192, 28.1d, 60, false));
+
+            Assert.That(CrashRuntimeDiagnostics.PublishQualityTier(selected.Value()), Is.True);
+            Assert.That(CrashRuntimeDiagnostics.CurrentQualityTier, Is.EqualTo("low"));
+            CrashReporting.Reset();
+        }
+
+        [Test]
+        public void ProductionCompletionMarkerRequiresDurablePresentationAndDeduplicatesPitch()
+        {
+            var marker = new PitchPresentationCompletionMarker();
+
+            Assert.That(marker.TryMark("pitch-1", false, true), Is.False);
+            Assert.That(marker.TryMark("pitch-1", true, false), Is.False);
+            Assert.That(marker.TryMark("pitch-1", true, true), Is.True);
+            Assert.That(marker.TryMark("pitch-1", true, true), Is.False);
+            Assert.That(marker.TryMark("pitch-2", true, true), Is.True);
+            Assert.That(PitchPresentationCompletionMarker.LogLine, Is.EqualTo(
+                "BASEBALL_PITCH_PRESENTATION_COMPLETED schema=1 status=passed"));
+            Assert.That(PitchPresentationCompletionMarker.LogLine, Does.Not.Contain("pitch-1"));
+        }
+
+        private static PitchPresentationSnapshot AudioSnapshot(
+            PitchOutcome outcome,
+            PitchAudioCue cue,
+            int runs,
+            ulong seed) =>
+            new PitchPresentationSnapshot(
+                "audio-" + seed,
+                PitchType.FourSeam,
+                0d,
+                0d,
+                145d,
+                0.4d,
+                Array.Empty<TrajectoryPoint>(),
+                outcome,
+                outcome == PitchOutcome.SwingingStrike ? SwingPresentation.Miss : SwingPresentation.Contact,
+                null,
+                null,
+                new ScoreDelta(runs),
+                cue,
+                PitchHapticCue.Contact,
+                seed,
+                "오디오 선택 테스트");
 
         private static PitchCommit CommitIdenticalPitch()
         {

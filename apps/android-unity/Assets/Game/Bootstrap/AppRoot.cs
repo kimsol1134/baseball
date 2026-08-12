@@ -19,6 +19,26 @@ namespace Baseball.Bootstrap
 
         public static event Action<Exception> LifecycleFailed;
 
+        /// <summary>
+        /// Production presentation retry bridge. It uses the same gate as pause/resume so a retry
+        /// can never race lifecycle work, and RuntimeGameCoordinator keeps concurrent retries
+        /// idempotent after the first successful open.
+        /// </summary>
+        public static async Task RetryInitializationAsync(CancellationToken cancellationToken)
+        {
+            AppRoot instance = _instance;
+            if (instance == null || instance._coordinator == null || instance._lifetime == null)
+                throw new InvalidOperationException("runtime.app_root_unavailable");
+            using (var linked = CancellationTokenSource.CreateLinkedTokenSource(
+                       cancellationToken,
+                       instance._lifetime.Token))
+            {
+                await instance.RunLifecycleAsync(
+                    coordinator => coordinator.InitializeAsync(linked.Token),
+                    linked.Token);
+            }
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
@@ -108,15 +128,7 @@ namespace Baseball.Bootstrap
         {
             try
             {
-                await _lifecycleGate.WaitAsync(_lifetime.Token);
-                try
-                {
-                    await operation(_coordinator);
-                }
-                finally
-                {
-                    _lifecycleGate.Release();
-                }
+                await RunLifecycleAsync(operation, _lifetime.Token);
             }
             catch (OperationCanceledException) when (_lifetime == null || _lifetime.IsCancellationRequested)
             {
@@ -125,6 +137,29 @@ namespace Baseball.Bootstrap
             {
                 Debug.LogException(exception);
                 NotifyLifecycleFailed(exception);
+            }
+        }
+
+        private async Task RunLifecycleAsync(
+            Func<IApplicationLifecycleCoordinator, Task> operation,
+            CancellationToken cancellationToken)
+        {
+            if (operation == null) throw new ArgumentNullException(nameof(operation));
+            CancellationToken lifetimeToken = _lifetime?.Token ?? CancellationToken.None;
+            using (var linked = CancellationTokenSource.CreateLinkedTokenSource(
+                       cancellationToken,
+                       lifetimeToken))
+            {
+                await _lifecycleGate.WaitAsync(linked.Token);
+                try
+                {
+                    linked.Token.ThrowIfCancellationRequested();
+                    await operation(_coordinator);
+                }
+                finally
+                {
+                    _lifecycleGate.Release();
+                }
             }
         }
 

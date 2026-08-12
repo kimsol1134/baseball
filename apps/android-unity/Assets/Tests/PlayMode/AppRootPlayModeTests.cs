@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Baseball.Application.Commands;
@@ -167,6 +168,43 @@ namespace Baseball.PlayMode.Tests
             Assert.That(lifecycleFailure, Is.Null);
         }
 
+        [UnityTest]
+        public IEnumerator FailedStartupCtaBridgeRetriesCoordinatorAndSerializesConcurrentTaps()
+        {
+            var factory = new FailFirstStoreFactory();
+            var mainThread = new SynchronizationContextRuntimeGameMainThread(
+                SynchronizationContext.Current,
+                Thread.CurrentThread.ManagedThreadId);
+            BootstrapConfiguration.Configure(_ => new RuntimeGameCoordinator(
+                factory,
+                new DurableRuntimeGameLifecycleHooks(),
+                mainThread));
+            var startupFailures = 0;
+            Action<Exception> failed = _ => startupFailures++;
+            RuntimeGameServices.StartupFailed += failed;
+
+            LogAssert.Expect(LogType.Exception, new Regex("test\\.startup_failed_once"));
+            var rootObject = new GameObject("Retry AppRoot");
+            rootObject.AddComponent<AppRoot>();
+            yield return PlayModeDeadline.Until(
+                () => startupFailures == 1,
+                "첫 저장 open 실패가 startup failure로 게시되지 않았습니다.");
+
+            Task first = AppRoot.RetryInitializationAsync(CancellationToken.None);
+            Task second = AppRoot.RetryInitializationAsync(CancellationToken.None);
+            Task both = Task.WhenAll(first, second);
+            yield return PlayModeDeadline.Until(
+                () => both.IsCompleted,
+                "동시 재시도가 AppRoot lifecycle gate에서 완료되지 않았습니다.");
+
+            Assert.That(both.IsFaulted, Is.False, both.Exception?.ToString());
+            Assert.That(factory.OpenCount, Is.EqualTo(2),
+                "the failed open and one successful retry are the only repository opens");
+            Assert.That(factory.MaximumConcurrentOpens, Is.EqualTo(1));
+            Assert.That(RuntimeGameServices.IsReady, Is.True);
+            RuntimeGameServices.StartupFailed -= failed;
+        }
+
         private sealed class RecordingLifecycleCoordinator : IApplicationLifecycleCoordinator
         {
             private readonly object _gate = new object();
@@ -231,6 +269,45 @@ namespace Baseball.PlayMode.Tests
                     new CoreProCareerPort(),
                     "playmode-install",
                     cancellationToken);
+            }
+        }
+
+        private sealed class FailFirstStoreFactory : IRuntimeGameStoreFactory
+        {
+            private int _openCount;
+            private int _activeOpens;
+            private int _maximumConcurrentOpens;
+
+            public int OpenCount => Volatile.Read(ref _openCount);
+            public int MaximumConcurrentOpens => Volatile.Read(ref _maximumConcurrentOpens);
+
+            public async Task<GameApplicationStore> OpenAsync(CancellationToken cancellationToken)
+            {
+                int active = Interlocked.Increment(ref _activeOpens);
+                while (true)
+                {
+                    int maximum = Volatile.Read(ref _maximumConcurrentOpens);
+                    if (active <= maximum ||
+                        Interlocked.CompareExchange(ref _maximumConcurrentOpens, active, maximum) == maximum)
+                        break;
+                }
+                try
+                {
+                    int attempt = Interlocked.Increment(ref _openCount);
+                    await Task.Yield();
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (attempt == 1) throw new InvalidOperationException("test.startup_failed_once");
+                    return await GameApplicationStore.OpenAsync(
+                        new NoSaveRepository(),
+                        new CoreHighSchoolCareerPort(),
+                        new CoreProCareerPort(),
+                        "playmode-retry-install",
+                        cancellationToken);
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref _activeOpens);
+                }
             }
         }
 

@@ -10,6 +10,22 @@ using Baseball.Core.Random;
 
 namespace Baseball.Core.Pro
 {
+    /// <summary>
+    /// Authoritative direct-Pro draft selection. This is the same first SplitMix64 draw used by
+    /// iOS CareerBootstrap, so callers never choose a team with platform-local randomness.
+    /// </summary>
+    public static class DirectProCareerFactory
+    {
+        public static DraftTeamSnapshot TeamForSeed(ulong seed)
+        {
+            var teams = ProCareerEngine.ProTeams;
+            if (teams == null || teams.Count == 0)
+                throw new InvalidOperationException("The pro team catalog is empty.");
+            var generator = new SplitMix64(seed);
+            return teams[generator.NextInt(teams.Count)];
+        }
+    }
+
     public sealed class ProCareerEngine
     {
         public static readonly IReadOnlyList<int> SeasonDecisionWeeks = new[] { 3, 6, 9, 12, 15, 18, 21 };

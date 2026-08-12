@@ -35,6 +35,7 @@ apps/android-unity/[Uu]ser[Ss]ettings/
 apps/android-unity/[Mm]emoryCaptures/
 apps/android-unity/[Rr]ecordings/
 apps/android-unity/[Bb]uilds/
+apps/android-unity/.utmp/
 apps/android-unity/*.csproj
 apps/android-unity/*.sln
 apps/android-unity/*.slnx

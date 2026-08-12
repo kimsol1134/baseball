@@ -25,21 +25,22 @@ namespace Baseball.Platform.Notifications
         public static ReminderPermissionAvailability Resolve(
             bool allowed,
             bool requestPending,
-            bool blockedBySystem,
-            bool permissionAsked)
+            bool blockedBySystem)
         {
             if (allowed) return ReminderPermissionAvailability.Allowed;
             if (requestPending) return ReminderPermissionAvailability.Pending;
-            if (blockedBySystem || permissionAsked) return ReminderPermissionAvailability.Denied;
+            if (blockedBySystem) return ReminderPermissionAvailability.Denied;
             return ReminderPermissionAvailability.Requestable;
         }
 
         public static ReminderPermissionUiState Project(
             bool effectiveEnabled,
-            ReminderPermissionAvailability permission)
+            ReminderPermissionAvailability permission,
+            bool offerAlreadyHandled = false)
         {
             return new ReminderPermissionUiState(
-                !effectiveEnabled && permission == ReminderPermissionAvailability.Requestable,
+                !effectiveEnabled && !offerAlreadyHandled &&
+                    permission == ReminderPermissionAvailability.Requestable,
                 permission == ReminderPermissionAvailability.Denied);
         }
     }

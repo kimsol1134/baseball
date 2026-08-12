@@ -19,11 +19,21 @@ namespace Baseball.Presentation.Shell
     {
         private readonly HashSet<string> _analyticsReceiptsInFlight =
             new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _analyticsReceiptsAwaitingEnqueue =
+            new HashSet<string>(StringComparer.Ordinal);
         private bool _coldStartAnalyticsObserved;
         private ShellRoute? _lastAnalyticsRoute;
 
+        private enum DurableAnalyticsEmission
+        {
+            Failed,
+            AlreadyRecorded,
+            Enqueued,
+        }
+
         private async Task LogSuccessfulActionAsync(
             string actionId,
+            GameCommand committedCommand,
             GameSaveAggregate before,
             GameSaveAggregate after,
             CancellationToken cancellationToken)
@@ -132,7 +142,7 @@ namespace Baseball.Presentation.Shell
                         "next-intent");
                     break;
                 case "resolve_pro_decision":
-                    string[] decision = (GetChoice("pro_season_decision") ?? string.Empty)
+                    string[] decision = (CommandPayload(committedCommand) ?? string.Empty)
                         .Split(new[] { '|' }, 2);
                     string decisionId = decision.Length > 0 && !string.IsNullOrWhiteSpace(decision[0])
                         ? decision[0]
@@ -275,6 +285,17 @@ namespace Baseball.Presentation.Shell
             }
 
             await EmitPhaseTransitionAnalyticsAsync(before, after, cancellationToken);
+        }
+
+        /// <summary>
+        /// Dispatch can publish the next phase synchronously and clear the transient choice draft.
+        /// The already-created command is the immutable evidence for selection analytics.
+        /// </summary>
+        private static string CommandPayload(GameCommand command)
+        {
+            if (command is AdvanceHighSchoolCommand highSchool) return highSchool.Action?.Value;
+            if (command is AdvanceProCommand pro) return pro.Action?.Value;
+            return null;
         }
 
         private async Task EmitTrainingAnalyticsAsync(
@@ -572,9 +593,24 @@ namespace Baseball.Presentation.Shell
             CancellationToken cancellationToken,
             params string[] stableScopeParts)
         {
+            return await EmitDurableOnceDetailedAsync(
+                analyticsEvent,
+                properties,
+                retention,
+                cancellationToken,
+                stableScopeParts) == DurableAnalyticsEmission.Enqueued;
+        }
+
+        private async Task<DurableAnalyticsEmission> EmitDurableOnceDetailedAsync(
+            AnalyticsEvent analyticsEvent,
+            IReadOnlyDictionary<string, object> properties,
+            AnalyticsReceiptRetention retention,
+            CancellationToken cancellationToken,
+            params string[] stableScopeParts)
+        {
             GameApplicationStore store = _store;
             if (store == null || stableScopeParts == null || stableScopeParts.Length == 0)
-                return false;
+                return DurableAnalyticsEmission.Failed;
             string scope;
             try
             {
@@ -583,16 +619,24 @@ namespace Baseball.Presentation.Shell
             catch (Exception exception)
             {
                 CrashReporting.RecordUnexpected(exception, "analytics_scope");
-                return false;
+                return DurableAnalyticsEmission.Failed;
             }
-            if (!_analyticsReceiptsInFlight.Add(scope)) return false;
+            if (!_analyticsReceiptsInFlight.Add(scope)) return DurableAnalyticsEmission.Failed;
             try
             {
                 for (var attempt = 0; attempt < 2; attempt++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     GameSaveAggregate current = store.Current;
-                    if (current.AnalyticsReceipts.Contains(scope)) return false;
+                    if (current.AnalyticsReceipts.Contains(scope))
+                    {
+                        if (!_analyticsReceiptsAwaitingEnqueue.Contains(scope))
+                            return DurableAnalyticsEmission.AlreadyRecorded;
+                        if (!SafeLog(analyticsEvent, properties))
+                            return DurableAnalyticsEmission.Failed;
+                        _analyticsReceiptsAwaitingEnqueue.Remove(scope);
+                        return DurableAnalyticsEmission.Enqueued;
+                    }
                     DispatchResult<GameSaveAggregate> result = await store.DispatchAsync(
                         new CommandEnvelope<GameCommand>(
                             "analytics:" + scope,
@@ -601,21 +645,27 @@ namespace Baseball.Presentation.Shell
                         cancellationToken);
                     if (result.Status == DispatchStatus.Applied)
                     {
-                        SafeLog(analyticsEvent, properties);
-                        return true;
+                        if (SafeLog(analyticsEvent, properties))
+                        {
+                            _analyticsReceiptsAwaitingEnqueue.Remove(scope);
+                            return DurableAnalyticsEmission.Enqueued;
+                        }
+                        _analyticsReceiptsAwaitingEnqueue.Add(scope);
+                        return DurableAnalyticsEmission.Failed;
                     }
                     if (result.Status == DispatchStatus.AlreadyApplied ||
                         result.Status == DispatchStatus.DomainRejected &&
                         string.Equals(result.ErrorCode, "analytics.already_marked", StringComparison.Ordinal))
                     {
-                        return false;
+                        return DurableAnalyticsEmission.AlreadyRecorded;
                     }
-                    if (result.Status != DispatchStatus.StaleRevision) return false;
+                    if (result.Status != DispatchStatus.StaleRevision)
+                        return DurableAnalyticsEmission.Failed;
                 }
             }
             catch (OperationCanceledException)
             {
-                return false;
+                return DurableAnalyticsEmission.Failed;
             }
             catch (Exception exception)
             {
@@ -625,7 +675,7 @@ namespace Baseball.Presentation.Shell
             {
                 _analyticsReceiptsInFlight.Remove(scope);
             }
-            return false;
+            return DurableAnalyticsEmission.Failed;
         }
 
         private async void DrainPendingReminderOpen()
@@ -878,11 +928,15 @@ namespace Baseball.Presentation.Shell
             }
         }
 
-        public async void OnContentVisible(ShellRoute route, string contentId, string instanceId)
+        public async Task<bool> OnContentVisibleAsync(
+            ShellRoute route,
+            string contentId,
+            string instanceId,
+            CancellationToken cancellationToken)
         {
             GameSaveAggregate state = _store?.Current;
             if (state == null || _disposed || string.IsNullOrWhiteSpace(contentId) ||
-                string.IsNullOrWhiteSpace(instanceId)) return;
+                string.IsNullOrWhiteSpace(instanceId)) return false;
             try
             {
                 string careerScope = CareerScope(state);
@@ -893,7 +947,7 @@ namespace Baseball.Presentation.Shell
                     Baseball.Core.HighSchool.CareerWind wind = Baseball.Core.HighSchool.CareerWind.For(
                         state.HighSchool.CareerId,
                         Baseball.Core.HighSchool.CareerRulesVersion.V2);
-                    await EmitDurableOnceAsync(
+                    return await EmitExposureOnceAsync(
                         AnalyticsEvent.CareerWindSeen,
                         new Dictionary<string, object>(StringComparer.Ordinal)
                         {
@@ -901,17 +955,16 @@ namespace Baseball.Presentation.Shell
                             ["rules_version"] = (int)wind.RulesVersion,
                         },
                         AnalyticsReceiptRetention.Scoped,
-                        CancellationToken.None,
+                        cancellationToken,
                         careerScope);
-                    return;
                 }
 
                 if (string.Equals(contentId, "hs-player-heartline", StringComparison.Ordinal))
                 {
                     PlayerHeartlineViewModel heartline =
                         PlayerHeartlinePresentationPolicy.Project(route, state.HighSchool);
-                    if (heartline == null) return;
-                    await EmitDurableOnceAsync(
+                    if (heartline == null) return true;
+                    return await EmitExposureOnceAsync(
                         AnalyticsEvent.PlayerHeartlineSeen,
                         new Dictionary<string, object>(StringComparer.Ordinal)
                         {
@@ -920,19 +973,19 @@ namespace Baseball.Presentation.Shell
                             ["phase"] = ReturnPlanRules.PhaseWire(state.HighSchool.Phase),
                         },
                         AnalyticsReceiptRetention.Scoped,
-                        CancellationToken.None,
+                        cancellationToken,
                         careerScope,
                         heartline.BranchId);
-                    return;
                 }
 
                 if (string.Equals(contentId, "player-legacy-letter", StringComparison.Ordinal))
                 {
                     if (route == ShellRoute.RunRecap)
                     {
-                        LifeArchiveRecord recapRecord = LatestLifeRecord(state);
-                        if (recapRecord == null) return;
-                        await EmitDurableOnceAsync(
+                        LifeArchiveRecord recapRecord =
+                            StoreBaseballCareerReadModel.CurrentLifeArchiveFor(state);
+                        if (recapRecord == null) return true;
+                        return await EmitExposureOnceAsync(
                             AnalyticsEvent.PlayerLegacySeen,
                             new Dictionary<string, object>(StringComparer.Ordinal)
                             {
@@ -942,15 +995,14 @@ namespace Baseball.Presentation.Shell
                                 ["has_frozen_legacy"] = recapRecord.PlayerLegacy != null,
                             },
                             AnalyticsReceiptRetention.Scoped,
-                            CancellationToken.None,
+                            cancellationToken,
                             recapRecord.LifeId ?? "life-" + recapRecord.LifeNumber,
                             "recap");
-                        return;
                     }
                     LifeArchiveRecord record =
                         StoreBaseballCareerReadModel.PreviousPlayerLegacyFor(route, state);
-                    if (record == null) return;
-                    await EmitDurableOnceAsync(
+                    if (record == null) return true;
+                    return await EmitExposureOnceAsync(
                         AnalyticsEvent.PlayerLegacySeen,
                         new Dictionary<string, object>(StringComparer.Ordinal)
                         {
@@ -960,11 +1012,10 @@ namespace Baseball.Presentation.Shell
                             ["has_frozen_legacy"] = record.PlayerLegacy != null,
                         },
                         AnalyticsReceiptRetention.Scoped,
-                        CancellationToken.None,
+                        cancellationToken,
                         "next_life",
                         state.HighSchool?.CareerId ?? "career",
                         record.LifeId ?? "life-" + record.LifeNumber);
-                    return;
                 }
 
                 if (string.Equals(contentId, "choice:legacy_signature", StringComparison.Ordinal) &&
@@ -972,41 +1023,47 @@ namespace Baseball.Presentation.Shell
                     state.HighSchool?.LegacySelectionMode == LegacySelectionMode.SignatureLegacy &&
                     state.HighSchool.SignatureLegacyChoices.Count > 0)
                 {
-                    await EmitDurableOnceAsync(
+                    return await EmitExposureOnceAsync(
                         AnalyticsEvent.SignatureLegacyOptionsSeen,
                         SignatureOptionsProperties(state),
                         AnalyticsReceiptRetention.Scoped,
-                        CancellationToken.None,
+                        cancellationToken,
                         careerScope,
                         "signature-options");
-                    return;
                 }
 
                 if (string.Equals(contentId, "reminder-opt-in", StringComparison.Ordinal) &&
                     _readModel.ShouldShowReminderNudge(route, state))
                 {
-                    await EmitDurableOnceAsync(
+                    return await EmitExposureOnceAsync(
                         AnalyticsEvent.ReminderOfferShown,
                         new Dictionary<string, object>(StringComparer.Ordinal)
                         {
                             ["source"] = "after_first_game",
                         },
                         AnalyticsReceiptRetention.Lifetime,
-                        CancellationToken.None,
+                        cancellationToken,
                         "install");
-                    return;
                 }
 
                 const string archivePrefix = "archive-life-";
                 if (route == ShellRoute.LifeArchive &&
                     contentId.StartsWith(archivePrefix, StringComparison.Ordinal))
                 {
-                    await EmitLifeArchiveVisibleAsync(contentId.Substring(archivePrefix.Length));
+                    return await EmitLifeArchiveVisibleAsync(
+                        contentId.Substring(archivePrefix.Length),
+                        cancellationToken);
                 }
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
             }
             catch (Exception exception)
             {
                 CrashReporting.RecordUnexpected(exception, "content_visible_analytics");
+                return false;
             }
         }
 
@@ -1014,7 +1071,7 @@ namespace Baseball.Presentation.Shell
         {
             try
             {
-                await EmitLifeArchiveVisibleAsync(lifeNumber);
+                await EmitLifeArchiveVisibleAsync(lifeNumber, CancellationToken.None);
             }
             catch (Exception exception)
             {
@@ -1022,14 +1079,16 @@ namespace Baseball.Presentation.Shell
             }
         }
 
-        private async Task EmitLifeArchiveVisibleAsync(string lifeNumber)
+        private async Task<bool> EmitLifeArchiveVisibleAsync(
+            string lifeNumber,
+            CancellationToken cancellationToken)
         {
             if (_store == null || _disposed ||
-                !int.TryParse(lifeNumber, out int parsedLifeNumber)) return;
+                !int.TryParse(lifeNumber, out int parsedLifeNumber)) return _store != null && !_disposed;
             LifeArchiveRecord record = _store.Current.Meta.LifeArchive.FirstOrDefault(value =>
                 value != null && value.LifeNumber == parsedLifeNumber);
-            if (record == null) return;
-            await EmitDurableOnceAsync(
+            if (record == null) return true;
+            return await EmitExposureOnceAsync(
                 AnalyticsEvent.PlayerLegacySeen,
                 new Dictionary<string, object>(StringComparer.Ordinal)
                 {
@@ -1039,9 +1098,25 @@ namespace Baseball.Presentation.Shell
                     ["has_frozen_legacy"] = record.PlayerLegacy != null,
                 },
                 AnalyticsReceiptRetention.Scoped,
-                CancellationToken.None,
+                cancellationToken,
                 record.LifeId ?? "life-" + record.LifeNumber,
                 "archive");
+        }
+
+        private async Task<bool> EmitExposureOnceAsync(
+            AnalyticsEvent analyticsEvent,
+            IReadOnlyDictionary<string, object> properties,
+            AnalyticsReceiptRetention retention,
+            CancellationToken cancellationToken,
+            params string[] stableScopeParts)
+        {
+            DurableAnalyticsEmission result = await EmitDurableOnceDetailedAsync(
+                analyticsEvent,
+                properties,
+                retention,
+                cancellationToken,
+                stableScopeParts);
+            return result != DurableAnalyticsEmission.Failed;
         }
 
         private void OnSessionEndPrepared(SessionEndReturnReadModel value)

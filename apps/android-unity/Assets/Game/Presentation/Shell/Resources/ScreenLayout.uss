@@ -116,6 +116,115 @@
     -unity-text-align: middle-left;
 }
 
+.baseball-visual-choice {
+    width: 100%;
+    min-width: 0;
+    flex-direction: row;
+    align-items: stretch;
+    margin-bottom: 8px;
+}
+
+.baseball-visual-choice > .baseball-choice-card {
+    flex-grow: 1;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.baseball-visual-choice__gallery {
+    width: 218px;
+    min-width: 218px;
+    flex-direction: row;
+    margin-right: 10px;
+}
+
+.baseball-visual-choice__gallery > .baseball-content-image--compact {
+    width: 104px;
+    min-width: 104px;
+    margin-right: 5px;
+}
+
+.baseball-content-image,
+.baseball-content-image--compact {
+    overflow: hidden;
+    border-radius: 12px;
+    background-color: var(--baseball-surface-raised);
+    border-width: 1px;
+    border-color: var(--baseball-border);
+}
+
+.baseball-content-image {
+    width: 100%;
+    height: 184px;
+    margin-bottom: 12px;
+}
+
+.baseball-content-image--compact {
+    width: 104px;
+    min-width: 104px;
+    height: 136px;
+    margin-right: 10px;
+}
+
+.screen-player-portrait {
+    width: 116px;
+    min-width: 116px;
+    height: 152px;
+    margin-top: 10px;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
+.baseball-content-image__image {
+    width: 100%;
+    height: 100%;
+}
+
+.baseball-content-image__fallback {
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.baseball-font-scale-160 .baseball-visual-choice,
+.baseball-font-scale-200 .baseball-visual-choice {
+    flex-direction: column;
+}
+
+.baseball-font-scale-160 .baseball-visual-choice__gallery,
+.baseball-font-scale-200 .baseball-visual-choice__gallery {
+    width: 100%;
+    min-width: 0;
+    margin-right: 0;
+    margin-bottom: 8px;
+}
+
+.baseball-font-scale-160 .baseball-visual-choice__gallery > .baseball-content-image--compact,
+.baseball-font-scale-200 .baseball-visual-choice__gallery > .baseball-content-image--compact {
+    width: 50%;
+    min-width: 0;
+    height: 168px;
+    margin-right: 5px;
+    margin-bottom: 0;
+}
+
+.baseball-font-scale-160 .baseball-content-image--compact,
+.baseball-font-scale-200 .baseball-content-image--compact {
+    width: 100%;
+    height: 168px;
+    margin-right: 0;
+    margin-bottom: 8px;
+}
+
+.baseball-font-scale-200 .screen-player-portrait {
+    width: 144px;
+    min-width: 144px;
+    height: 189px;
+}
+
 .screen-control-stack > * {
     margin-bottom: 8px;
 }

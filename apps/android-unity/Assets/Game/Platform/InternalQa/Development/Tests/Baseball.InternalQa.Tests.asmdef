@@ -3,6 +3,7 @@
   "rootNamespace": "Baseball.Platform.InternalQa.Tests",
   "references": [
     "Baseball.InternalQa",
+    "Baseball.Core",
     "Baseball.Presentation",
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner"

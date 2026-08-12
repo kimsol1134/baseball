@@ -45,7 +45,8 @@ namespace Baseball.Application.Persistence
             CommittedPitchResultState committedPitch = null,
             IReadOnlyList<string> consumedPitchIds = null,
             bool awaitingCompletion = false,
-            PitchSessionMetricsState metrics = null)
+            PitchSessionMetricsState metrics = null,
+            IReadOnlyList<PitchLogEntryState> pitchLog = null)
         {
             GameId = gameId;
             CareerKind = careerKind;
@@ -64,6 +65,7 @@ namespace Baseball.Application.Persistence
                 .ToArray();
             AwaitingCompletion = awaitingCompletion;
             Metrics = metrics ?? PitchSessionMetricsState.Empty;
+            PitchLog = (pitchLog ?? Array.Empty<PitchLogEntryState>()).ToArray();
         }
 
         public string GameId { get; }
@@ -81,6 +83,8 @@ namespace Baseball.Application.Persistence
         /// <summary>True after a terminal pitch is consumed but before career/meta completion commits.</summary>
         public bool AwaitingCompletion { get; }
         public PitchSessionMetricsState Metrics { get; }
+        /// <summary>Consumed authoritative pitches, in session order; bounded by scenario limits.</summary>
+        public IReadOnlyList<PitchLogEntryState> PitchLog { get; }
     }
 
     public sealed class PendingPitchCompletion
@@ -90,13 +94,15 @@ namespace Baseball.Application.Persistence
             PitchCareerKind careerKind,
             string careerId,
             PitchGameReport report,
-            long completedAtUnixSeconds)
+            long completedAtUnixSeconds,
+            IReadOnlyList<PitchLogEntryState> pitchLog = null)
         {
             CompletionId = completionId;
             CareerKind = careerKind;
             CareerId = careerId;
             Report = report;
             CompletedAtUnixSeconds = completedAtUnixSeconds;
+            PitchLog = (pitchLog ?? Array.Empty<PitchLogEntryState>()).ToArray();
         }
 
         public string CompletionId { get; }
@@ -104,6 +110,8 @@ namespace Baseball.Application.Persistence
         public string CareerId { get; }
         public PitchGameReport Report { get; }
         public long CompletedAtUnixSeconds { get; }
+        /// <summary>Frozen final postgame log; survives clearing PitchResume until acknowledgement.</summary>
+        public IReadOnlyList<PitchLogEntryState> PitchLog { get; }
     }
 
     /// <summary>
@@ -245,6 +253,12 @@ namespace Baseball.Application.Persistence
                 return SaveValidationResult.Invalid("aggregate.signature_legacy");
             if (!ValidHighSchoolLifeDetail(value.HighSchool?.LifeDetail))
                 return SaveValidationResult.Invalid("aggregate.high_school_life_detail");
+            if (!ValidTrainingResult(value.HighSchool?.LastTraining))
+                return SaveValidationResult.Invalid("aggregate.training_result");
+            if (!ValidTrainingBlock(value.HighSchool?.LastTrainingBlock))
+                return SaveValidationResult.Invalid("aggregate.training_block");
+            if (!ValidTrainingOutlooks(value.HighSchool?.TrainingOutlooks))
+                return SaveValidationResult.Invalid("aggregate.training_outlooks");
             if (!ValidCareerGameLines(value.HighSchool?.GameLines) ||
                 !ValidProRecordBook(value.Pro))
             {
@@ -328,6 +342,16 @@ namespace Baseball.Application.Persistence
                      !string.IsNullOrWhiteSpace(resume.CommittedPitch.AbilityMomentType) &&
                          !Baseball.Core.Pitching.PitchAbilityWire.IsValid(
                              resume.CommittedPitch.AbilityMomentType) ||
+                     resume.CommittedPitch.PitchLogEntry != null &&
+                         (!ValidPitchLogEntry(resume.CommittedPitch.PitchLogEntry) ||
+                          !string.Equals(
+                              resume.CommittedPitch.PitchId,
+                              resume.CommittedPitch.PitchLogEntry.PitchId,
+                              StringComparison.Ordinal) ||
+                          resume.CommittedPitch.BatterIndex !=
+                              resume.CommittedPitch.PitchLogEntry.BatterIndex ||
+                          resume.CommittedPitch.PitchLogEntry.PitchNumber !=
+                              resume.ConsumedPitchIds.Count + 1) ||
                      resume.ConsumedPitchIds.Contains(
                          resume.CommittedPitch.PitchId, StringComparer.Ordinal)))
                 {
@@ -335,11 +359,20 @@ namespace Baseball.Application.Persistence
                 }
                 if (resume.ConsumedPitchIds.Any(string.IsNullOrWhiteSpace) ||
                     resume.ConsumedPitchIds.Distinct(StringComparer.Ordinal).Count() !=
-                    resume.ConsumedPitchIds.Count ||
+                        resume.ConsumedPitchIds.Count ||
+                    resume.ConsumedPitchIds.Count > PitchLogEntryState.MaximumEntries ||
                     resume.Scenario?.MaximumPitches is int maximumPitches &&
                     resume.ConsumedPitchIds.Count > maximumPitches)
                 {
                     return SaveValidationResult.Invalid("aggregate.pitch_consumed_ids");
+                }
+                if (!ValidPitchLog(
+                        resume.PitchLog,
+                        resume.ConsumedPitchIds,
+                        resume.Scenario?.MaximumPitches,
+                        resume.MaximumBatters))
+                {
+                    return SaveValidationResult.Invalid("aggregate.pitch_log");
                 }
                 if (resume.AwaitingCompletion &&
                     (resume.CommittedPitch != null || resume.AccumulatedReport == null ||
@@ -352,6 +385,13 @@ namespace Baseball.Application.Persistence
                 if (resume.AccumulatedReport != null &&
                     !ReportMatchesMetrics(resume.AccumulatedReport, resume.Metrics))
                     return SaveValidationResult.Invalid("aggregate.pitch_report_metrics");
+            }
+            if (value.PendingPitchCompletion != null &&
+                !ValidCompletedPitchLog(
+                    value.PendingPitchCompletion.PitchLog,
+                    value.PendingPitchCompletion.Report))
+            {
+                return SaveValidationResult.Invalid("aggregate.pitch_completion_log");
             }
             if (value.Stage == ApplicationStage.HighSchool && value.HighSchool == null)
                 return SaveValidationResult.Invalid("aggregate.high_school_missing");
@@ -439,6 +479,101 @@ namespace Baseball.Application.Persistence
                     string.IsNullOrWhiteSpace(value.GradeTitle)) &&
                 detail.Talents.Select(value => value.AbilityId)
                     .Distinct(StringComparer.Ordinal).Count() == detail.Talents.Count;
+        }
+
+        private static bool ValidTrainingResult(TrainingResultReadModel value)
+        {
+            if (value == null) return true;
+            var hasAbility = !string.IsNullOrWhiteSpace(value.BloomedAbility);
+            var hasGrade = !string.IsNullOrWhiteSpace(value.BloomedGrade);
+            return value.Number > 0 && value.Growth >= 0 &&
+                IsTrainingFocus(value.Focus) && IsTrainingIntensity(value.Intensity) &&
+                (string.IsNullOrWhiteSpace(value.TargetPitch) || IsPitchType(value.TargetPitch)) &&
+                !string.IsNullOrWhiteSpace(value.Feedback) &&
+                hasAbility == hasGrade &&
+                (!hasAbility || IsTrainingAbility(value.BloomedAbility) &&
+                    IsBloomGrade(value.BloomedGrade));
+        }
+
+        private static bool ValidTrainingBlock(TrainingBlockResultReadModel value)
+        {
+            if (value == null) return true;
+            if (value.Sessions == null || value.MaximumSessions < 1 ||
+                value.MaximumSessions > HighSchoolTrainingActionPayload.MaximumBlockSessions ||
+                value.CompletedSessions < 1 || value.CompletedSessions > value.MaximumSessions ||
+                value.Sessions.Count != 0 && value.Sessions.Count != value.CompletedSessions ||
+                value.Sessions.Any(item => !ValidTrainingResult(item)) ||
+                value.Sessions.Any(item =>
+                    !string.Equals(item.Focus, value.Focus, StringComparison.Ordinal) ||
+                    !string.Equals(item.Intensity, value.Intensity, StringComparison.Ordinal) ||
+                    !string.Equals(item.TargetPitch, value.TargetPitch, StringComparison.Ordinal)) ||
+                value.Growth < 0 || !IsTrainingFocus(value.Focus) ||
+                !IsTrainingIntensity(value.Intensity) ||
+                (!string.IsNullOrWhiteSpace(value.TargetPitch) && !IsPitchType(value.TargetPitch)) ||
+                !IsTrainingBlockStopReason(value.StopReason))
+            {
+                return false;
+            }
+            var hasAbility = !string.IsNullOrWhiteSpace(value.BloomedAbility);
+            var hasGrade = !string.IsNullOrWhiteSpace(value.BloomedGrade);
+            return hasAbility == hasGrade &&
+                (!hasAbility || IsTrainingAbility(value.BloomedAbility) &&
+                    IsBloomGrade(value.BloomedGrade) &&
+                    value.Sessions.Any(item =>
+                        string.Equals(item.BloomedAbility, value.BloomedAbility, StringComparison.Ordinal) &&
+                        string.Equals(item.BloomedGrade, value.BloomedGrade, StringComparison.Ordinal)));
+        }
+
+        private static bool ValidTrainingOutlooks(IReadOnlyList<TrainingOutlookReadModel> values)
+        {
+            if (values == null || values.Count == 0) return true;
+            if (values.Count != 18 || values.Any(value => value == null ||
+                    !IsTrainingFocus(value.FocusId) || !IsTrainingIntensity(value.IntensityId) ||
+                    !IsTrainingOutlook(value.OutlookId) ||
+                    string.IsNullOrWhiteSpace(value.Title) ||
+                    string.IsNullOrWhiteSpace(value.Summary)))
+            {
+                return false;
+            }
+            return values.Select(value => value.FocusId + ":" + value.IntensityId)
+                .Distinct(StringComparer.Ordinal).Count() == values.Count;
+        }
+
+        private static bool IsTrainingAbility(string value)
+        {
+            return value == "stuff" || value == "command" ||
+                value == "movement" || value == "stamina";
+        }
+
+        private static bool IsBloomGrade(string value)
+        {
+            return value == "c" || value == "b" || value == "a" || value == "s";
+        }
+
+        private static bool IsTrainingFocus(string value)
+        {
+            return value == "velocity" || value == "command" ||
+                value == "breaking_ball" || value == "stamina" ||
+                value == "recovery" || value == "game_planning";
+        }
+
+        private static bool IsTrainingIntensity(string value)
+        {
+            return value == "light" || value == "standard" || value == "intensive";
+        }
+
+        private static bool IsTrainingOutlook(string value)
+        {
+            return value == "wall" || value == "none" || value == "zero_or_one" ||
+                value == "one" || value == "one_or_two" || value == "two";
+        }
+
+        private static bool IsTrainingBlockStopReason(string value)
+        {
+            return value == "maximum_sessions" || value == "relationship" ||
+                value == "awakening" || value == "important_game" ||
+                value == "talent_bloom" || value == "fatigue" ||
+                value == "arm_health" || value == "phase_changed";
         }
 
         private static bool ValidProRecordBook(ProCareerReadModel pro)
@@ -546,6 +681,96 @@ namespace Baseball.Application.Persistence
                 metrics.SequenceMasteryCount <= maximumPitches.Value &&
                 metrics.DirectDeliveryCount <= maximumPitches.Value &&
                 metrics.AbilityMomentCount <= maximumPitches.Value;
+        }
+
+        private static bool ValidPitchLog(
+            IReadOnlyList<PitchLogEntryState> entries,
+            IReadOnlyList<string> consumedPitchIds,
+            int? maximumPitches,
+            int maximumBatters)
+        {
+            if (entries == null || consumedPitchIds == null ||
+                entries.Count > consumedPitchIds.Count ||
+                entries.Count > PitchLogEntryState.MaximumEntries ||
+                maximumPitches.HasValue && entries.Count > maximumPitches.Value ||
+                entries.Any(value => !ValidPitchLogEntry(value)) ||
+                entries.Any(value => value.BatterIndex >= maximumBatters ||
+                    value.PitchNumber > consumedPitchIds.Count ||
+                    !string.Equals(
+                        consumedPitchIds[value.PitchNumber - 1],
+                        value.PitchId,
+                        StringComparison.Ordinal)) ||
+                entries.Select(value => value.PitchId).Distinct(StringComparer.Ordinal).Count() !=
+                    entries.Count ||
+                entries.Any(value => !consumedPitchIds.Contains(value.PitchId, StringComparer.Ordinal)))
+            {
+                return false;
+            }
+            return StrictlyIncreasing(entries.Select(value => value.PitchNumber));
+        }
+
+        private static bool ValidCompletedPitchLog(
+            IReadOnlyList<PitchLogEntryState> entries,
+            PitchGameReport report)
+        {
+            if (report == null || entries == null ||
+                entries.Count > report.Pitches ||
+                entries.Count > PitchLogEntryState.MaximumEntries ||
+                entries.Any(value => !ValidPitchLogEntry(value) ||
+                    value.PitchNumber > report.Pitches) ||
+                entries.Select(value => value.PitchId).Distinct(StringComparer.Ordinal).Count() !=
+                    entries.Count)
+            {
+                return false;
+            }
+            return StrictlyIncreasing(entries.Select(value => value.PitchNumber));
+        }
+
+        private static bool StrictlyIncreasing(IEnumerable<int> values)
+        {
+            var prior = 0;
+            foreach (var value in values)
+            {
+                if (value <= prior) return false;
+                prior = value;
+            }
+            return true;
+        }
+
+        private static bool ValidPitchLogEntry(PitchLogEntryState value)
+        {
+            return value != null && !string.IsNullOrWhiteSpace(value.PitchId) &&
+                value.BatterIndex >= 0 && value.PitchNumber > 0 &&
+                IsPitchType(value.PitchType) && value.ZoneRow >= 0 && value.ZoneRow <= 2 &&
+                value.ZoneColumn >= 0 && value.ZoneColumn <= 2 &&
+                IsZoneIntent(value.ZoneIntent) && IsPitchIntensity(value.Intensity) &&
+                value.VelocityTenthsKph > 0 && value.VelocityTenthsKph <= 2500 &&
+                value.ExecutionQuality >= 0 && value.ExecutionQuality <= 1000 &&
+                IsPitchOutcome(value.Outcome) && value.CommittedAtUnixMilliseconds >= 0;
+        }
+
+        private static bool IsPitchType(string value)
+        {
+            return value == "four_seam" || value == "slider" ||
+                value == "curveball" || value == "changeup";
+        }
+
+        private static bool IsZoneIntent(string value)
+        {
+            return value == "strike" || value == "edge" || value == "chase";
+        }
+
+        private static bool IsPitchIntensity(string value)
+        {
+            return value == "controlled" || value == "normal" || value == "max_effort";
+        }
+
+        private static bool IsPitchOutcome(string value)
+        {
+            return value == "ball" || value == "called_strike" ||
+                value == "swinging_strike" || value == "foul" ||
+                value == "in_play_out" || value == "single" || value == "double" ||
+                value == "triple" || value == "home_run" || value == "hit_by_pitch";
         }
 
         private static bool ValidSequencePitch(Baseball.Core.Pitching.PitchSequencePitch value)

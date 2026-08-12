@@ -25,9 +25,20 @@ namespace Baseball.Core.HighSchool.Tests
             var all = Enum.GetValues(typeof(AwakeningId)).Cast<AwakeningId>().ToArray();
             Assert.That(AwakeningTree.Nodes.Select(x => x.Id).Distinct().Count(), Is.EqualTo(all.Length));
             Assert.That(AwakeningTree.Available(new AwakeningId[0], 0), Is.EquivalentTo(new[] { AwakeningId.ExplosiveFastball, AwakeningId.PinpointEdge, AwakeningId.DisappearingBreaker, AwakeningId.BatterySync }));
-            Assert.That(AwakeningTree.Available(new[] { AwakeningId.ExplosiveFastball }, 0), Does.Contain(AwakeningId.IronArm));
-            Assert.That(AwakeningTree.Available(new[] { AwakeningId.ExplosiveFastball }, 0), Does.Not.Contain(AwakeningId.LateInningReserve));
-            Assert.That(AwakeningTree.Available(new[] { AwakeningId.ExplosiveFastball }, AwakeningTree.LeapSparks), Does.Contain(AwakeningId.LateInningReserve));
+            Assert.That(
+                AwakeningTree.Available(new[] { AwakeningId.ExplosiveFastball }, 0)
+                    .Contains(AwakeningId.IronArm),
+                Is.True);
+            Assert.That(
+                AwakeningTree.Available(new[] { AwakeningId.ExplosiveFastball }, 0)
+                    .Contains(AwakeningId.LateInningReserve),
+                Is.False);
+            Assert.That(
+                AwakeningTree.Available(
+                        new[] { AwakeningId.ExplosiveFastball },
+                        AwakeningTree.LeapSparks)
+                    .Contains(AwakeningId.LateInningReserve),
+                Is.True);
         }
 
         [TestCase("career-1-life-1", "monster_generation", 5, 5, 150)]

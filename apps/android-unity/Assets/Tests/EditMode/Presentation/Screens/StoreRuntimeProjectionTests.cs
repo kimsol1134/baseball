@@ -3,14 +3,18 @@ using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Baseball.Application.Commands;
 using Baseball.Application.Persistence;
 using Baseball.Application.HighSchool;
 using Baseball.Application.Meta;
 using Baseball.Application.Pro;
+using Baseball.Application.Stores;
+using Baseball.Presentation.Common;
 using Baseball.Presentation.Shell;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Baseball.Presentation.Tests
 {
@@ -51,6 +55,276 @@ namespace Baseball.Presentation.Tests
             Assert.That(screen.KeyArtAddress, Is.EqualTo("baseball/bootstrap/LaunchLogo"));
             Assert.That(screen.Actions[0].Id, Is.EqualTo("enter_setup"));
             Assert.That(screen.Actions[0].IsEnabled, Is.True);
+        }
+
+        [Test]
+        public void SetupProjectionAndControllerDisableStartWhileSeedDraftIsInvalid()
+        {
+            GameSaveAggregate state = SetupState("setup-projection-install");
+            var valid = true;
+            var model = new StoreBaseballCareerReadModel(
+                KoreanUiCopyCatalog.LoadDefault(),
+                () => state,
+                () => ShellRuntimeStatus.Ready,
+                () => string.Empty,
+                setupSeedInputValid: () => valid);
+
+            Assert.That(model.Read(ShellRoute.Setup).Actions.Single(action =>
+                action.Id == "start_high_school").IsEnabled, Is.True);
+
+            valid = false;
+            BaseballScreenViewModel invalid = model.Read(ShellRoute.Setup);
+            ScreenActionViewModel action = invalid.Actions.Single(value =>
+                value.Id == "start_high_school");
+            Assert.That(action.IsEnabled, Is.False);
+            Assert.That(action.DisabledReason, Is.EqualTo(SetupSeedInputPolicy.InvalidMessage));
+
+            var root = new VisualElement();
+            using (var controller = new BaseballShellController(
+                       root,
+                       model,
+                       KoreanUiCopyCatalog.LoadDefault(),
+                       ShellRoute.Setup))
+            {
+                VisualElement button = root.Q<VisualElement>(
+                    "screen-setup-action-start_high_school");
+                Assert.That(button, Is.Not.Null);
+                Assert.That(button.enabledInHierarchy, Is.False,
+                    "the mounted Setup controller must mirror the validation state");
+            }
+        }
+
+        [Test]
+        public async Task ProductionRuntimeRejectsStaleValidActionAfterSeedBecomesInvalid()
+        {
+            using (GameApplicationStore store = await OpenSetupStore("stale-seed-install"))
+            using (var runtime = ReadyProductionRuntime(store))
+            {
+                runtime.SetSeedInput("12345-2");
+                ScreenActionViewModel staleEnabled = runtime.Read(ShellRoute.Setup).Actions
+                    .Single(action => action.Id == "start_high_school");
+                Assert.That(staleEnabled.IsEnabled, Is.True);
+
+                runtime.SetSeedInput("12345--2");
+                ScreenActionViewModel current = runtime.Read(ShellRoute.Setup).Actions
+                    .Single(action => action.Id == "start_high_school");
+                Assert.That(current.IsEnabled, Is.False);
+                Assert.That(runtime.SeedValidationMessage,
+                    Is.EqualTo(SetupSeedInputPolicy.InvalidMessage));
+
+                ulong revision = store.Current.Revision;
+                ShellActionResult rejected = await runtime.ExecuteAsync(
+                    ShellRoute.Setup,
+                    staleEnabled,
+                    CancellationToken.None);
+
+                Assert.That(rejected.Succeeded, Is.False);
+                Assert.That(rejected.Message, Is.EqualTo(SetupSeedInputPolicy.InvalidMessage));
+                Assert.That(store.Current.Revision, Is.EqualTo(revision));
+                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Setup));
+            }
+        }
+
+        [TestCase("18446744073709551616")]
+        [TestCase("12--2")]
+        public async Task ProductionRuntimeInvalidSeedNeverDispatchesDefaultSeed(string input)
+        {
+            using (GameApplicationStore store = await OpenSetupStore("invalid-seed-install"))
+            using (var runtime = ReadyProductionRuntime(store))
+            {
+                runtime.SetSeedInput(input);
+                ScreenActionViewModel action = runtime.Read(ShellRoute.Setup).Actions
+                    .Single(value => value.Id == "start_high_school");
+                ulong revision = store.Current.Revision;
+
+                ShellActionResult rejected = await runtime.ExecuteAsync(
+                    ShellRoute.Setup,
+                    action,
+                    CancellationToken.None);
+
+                Assert.That(action.IsEnabled, Is.False);
+                Assert.That(rejected.Succeeded, Is.False);
+                Assert.That(rejected.Message, Is.EqualTo(SetupSeedInputPolicy.InvalidMessage));
+                Assert.That(store.Current.Revision, Is.EqualTo(revision));
+                Assert.That(store.Current.HighSchool, Is.Null);
+            }
+        }
+
+        [Test]
+        public async Task ProductionRuntimeDispatchesValidChallengeAndEmptyDefaultSeed()
+        {
+            using (GameApplicationStore challengeStore = await OpenSetupStore("challenge-install"))
+            using (var challengeRuntime = ReadyProductionRuntime(challengeStore))
+            {
+                challengeRuntime.SetSeedInput("도전 67890-4");
+                ScreenActionViewModel action = challengeRuntime.Read(ShellRoute.Setup).Actions
+                    .Single(value => value.Id == "start_high_school");
+                ShellActionResult result = await challengeRuntime.ExecuteAsync(
+                    ShellRoute.Setup,
+                    action,
+                    CancellationToken.None);
+
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(challengeStore.Current.HighSchool.IsChallengeRun, Is.True);
+                Assert.That(challengeStore.Current.HighSchool.LifeNumber, Is.EqualTo(4));
+            }
+
+            using (GameApplicationStore emptyStore = await OpenSetupStore("empty-seed-install"))
+            using (var emptyRuntime = ReadyProductionRuntime(emptyStore))
+            {
+                emptyRuntime.SetSeedInput(string.Empty);
+                ScreenActionViewModel action = emptyRuntime.Read(ShellRoute.Setup).Actions
+                    .Single(value => value.Id == "start_high_school");
+                ShellActionResult result = await emptyRuntime.ExecuteAsync(
+                    ShellRoute.Setup,
+                    action,
+                    CancellationToken.None);
+
+                Assert.That(action.IsEnabled, Is.True);
+                Assert.That(result.Succeeded, Is.True);
+                Assert.That(emptyStore.Current.HighSchool.IsChallengeRun, Is.False);
+                Assert.That(emptyStore.Current.HighSchool.LifeNumber, Is.EqualTo(2));
+            }
+        }
+
+        [Test]
+        public async Task ProductionTrainingDraftSeedsLastChoiceAndReplacesStalePitchTarget()
+        {
+            var focusChoices = new[]
+            {
+                Choice("command", "제구"),
+                Choice("breaking_ball", "변화구"),
+            };
+            var intensityChoices = new[]
+            {
+                Choice("standard", "보통"),
+                Choice("intensive", "강하게"),
+            };
+            var pitchChoices = new[]
+            {
+                Choice("slider", "슬라이더"),
+                Choice("changeup", "체인지업"),
+            };
+            var career = new HighSchoolCareerReadModel(
+                "training-career",
+                2,
+                HighSchoolPhase.Training,
+                "seed",
+                1,
+                "player",
+                "해온",
+                "power_prospect",
+                new PitcherRatingsReadModel(55, 53, 51, 54),
+                new CareerPerformanceReadModel(),
+                trainingFocusChoices: focusChoices,
+                trainingIntensityChoices: intensityChoices,
+                trainingPitchChoices: pitchChoices,
+                lastTraining: new TrainingResultReadModel(
+                    3, "breaking_ball", "intensive", 1, 4, "완료", 50, 51,
+                    false, false, "removed_curve"));
+            GameSaveAggregate state = GameSaveAggregate.Initial("training-install").Commit(
+                "training",
+                stage: ApplicationStage.HighSchool,
+                highSchool: career,
+                meta: new MetaProgressState(lifeNumber: 2));
+
+            using (GameApplicationStore store = await OpenStore(state))
+            using (var runtime = ReadyProductionRuntime(store))
+            {
+                Assert.That(runtime.GetChoice("training_focus"), Is.EqualTo("breaking_ball"));
+                Assert.That(runtime.GetChoice("training_intensity"), Is.EqualTo("intensive"));
+                Assert.That(runtime.GetChoice("training_pitch"), Is.EqualTo("slider"),
+                    "a removed saved target must be replaced by a currently enabled pitch");
+
+                ScreenActionViewModel action = runtime.Read(ShellRoute.Training).Actions
+                    .Single(value => value.Id == "train");
+                Assert.That(action.IsEnabled, Is.True);
+                var command = (AdvanceHighSchoolCommand)ProductionCommand(
+                    runtime,
+                    "train",
+                    state);
+                Assert.That(command.Action.Value,
+                    Is.EqualTo("breaking_ball:intensive:slider"));
+
+                runtime.SetChoice("training_pitch", "removed_curve");
+                Assert.That(runtime.Read(ShellRoute.Training).Actions.Single(value =>
+                    value.Id == "train").IsEnabled, Is.False);
+                Assert.That(ProductionCommand(runtime, "train", state), Is.Null,
+                    "an injected stale target must fail closed instead of leaking into a command");
+            }
+        }
+
+        [Test]
+        public async Task ProductionProDraftDefaultsToEarnTrustAndPreservesSamePhaseSelectionOnly()
+        {
+            var plans = new[]
+            {
+                Choice("develop_movement", "결정구 완성"),
+                Choice("earn_trust", "신뢰 쌓기"),
+            };
+            var pitches = new[]
+            {
+                Choice("slider", "슬라이더"),
+                Choice("changeup", "체인지업"),
+            };
+            var pro = new ProCareerReadModel(
+                "pro-choice-career",
+                ProCareerOrigin.Direct,
+                ProCareerPhase.WeeklyPlan,
+                "seed",
+                1,
+                "player",
+                "해온",
+                "fictional-club",
+                "해오름",
+                1,
+                1,
+                new PitcherRatingsReadModel(65, 63, 61, 64),
+                new CareerPerformanceReadModel(),
+                weekPlanChoices: plans,
+                developmentPitchChoices: pitches,
+                lastSegmentProgress: new ProSegmentProgressReadModel(
+                    2, "spring", "spring", "user_stop", "develop_movement", "changeup"));
+            GameSaveAggregate state = GameSaveAggregate.Initial("pro-choice-install").Commit(
+                "pro-week",
+                stage: ApplicationStage.Pro,
+                pro: pro,
+                meta: new MetaProgressState(lifeNumber: 2));
+
+            using (GameApplicationStore store = await OpenStore(state))
+            using (var runtime = ReadyProductionRuntime(store))
+            {
+                Assert.That(runtime.GetChoice("pro_week_plan"), Is.EqualTo("earn_trust"));
+                Assert.That(runtime.GetChoice("pro_development_pitch"), Is.EqualTo("changeup"));
+                ScreenActionViewModel defaultAction = runtime.Read(ShellRoute.ProWeek).Actions
+                    .Single(value => value.Id == "advance_pro_week");
+                Assert.That(defaultAction.IsEnabled, Is.True);
+                Assert.That(((AdvanceProCommand)ProductionCommand(
+                    runtime, "advance_pro_week", state)).Action.Value,
+                    Is.EqualTo("earn_trust"));
+
+                runtime.SetChoice("pro_week_plan", "develop_movement");
+                Assert.That(((AdvanceProCommand)ProductionCommand(
+                    runtime, "advance_pro_week", state)).Action.Value,
+                    Is.EqualTo("develop_movement|changeup"));
+
+                InvokeOnReady(runtime, store);
+                Assert.That(runtime.GetChoice("pro_week_plan"), Is.EqualTo("develop_movement"),
+                    "same-phase publications and route round-trips preserve the draft");
+
+                runtime.SetChoice("pro_development_pitch", "removed_curve");
+                Assert.That(runtime.Read(ShellRoute.ProWeek).Actions.Single(value =>
+                    value.Id == "advance_pro_week").IsEnabled, Is.False);
+                Assert.That(ProductionCommand(runtime, "advance_pro_week", state), Is.Null);
+            }
+
+            using (GameApplicationStore restartedStore = await OpenStore(state))
+            using (var restarted = ReadyProductionRuntime(restartedStore))
+            {
+                Assert.That(restarted.GetChoice("pro_week_plan"), Is.EqualTo("earn_trust"),
+                    "restart re-seeds from the frozen Pro default rather than process memory");
+                Assert.That(restarted.GetChoice("pro_development_pitch"), Is.EqualTo("changeup"));
+            }
         }
 
         [Test]
@@ -317,7 +591,7 @@ namespace Baseball.Presentation.Tests
                 Is.EqualTo("선두 · 내 구단"));
             Assert.That(records.Sections.Single(section =>
                     section.Id == "records-current-pro-leaders").Rows[0].Value,
-                Is.EqualTo("해오름 · 21이닝 · 탈삼진 51"));
+                Is.EqualTo("해오름 · 21.0이닝 · 탈삼진 51"));
             Assert.That(records.Sections.Single(section =>
                     section.Id == "records-current-pro-leaders").Rows[0].Detail,
                 Does.Contain("내 선수"));
@@ -336,8 +610,7 @@ namespace Baseball.Presentation.Tests
             Assert.That(records.Sections.SelectMany(section => section.Rows)
                 .Single(row => row.Id == "records-current-pro-decision-0").Detail,
                 Does.Contain("지도자 믿음 +4"));
-            Assert.That(records.Sections.Single(section => section.Id == "records-pro-games").Rows,
-                Has.Count.EqualTo(1));
+            Assert.That(records.Sections.Single(section => section.Id == "records-pro-games").Rows.Count, Is.EqualTo(1));
         }
 
         [Test]
@@ -431,6 +704,188 @@ namespace Baseball.Presentation.Tests
         }
 
         [Test]
+        public void AuthoritativeCareerPhaseProjectsExactKeyArtPortraitsAndSchoolStaffArtwork()
+        {
+            HighSchoolCareerReadModel HighSchool(
+                HighSchoolPhase phase,
+                int chapter = 1,
+                IReadOnlyList<CareerChoiceReadModel> schools = null) =>
+                new HighSchoolCareerReadModel(
+                    "art-career",
+                    1,
+                    phase,
+                    "seed",
+                    1,
+                    "player",
+                    "해온",
+                    "power_prospect",
+                    new PitcherRatingsReadModel(55, 53, 51, 54),
+                    new CareerPerformanceReadModel(),
+                    chapterNumber: chapter,
+                    schoolChoices: schools);
+
+            GameSaveAggregate state = GameSaveAggregate.Initial("art-install").Commit(
+                "art-prologue",
+                stage: ApplicationStage.HighSchool,
+                highSchool: HighSchool(HighSchoolPhase.Prologue));
+            StoreBaseballCareerReadModel model = ReadyModel(() => state);
+
+            Assert.That(model.Read(ShellRoute.Prologue).KeyArtAddress,
+                Is.EqualTo("baseball/highschool/KeyArtCareerIntro"));
+            Assert.That(model.Read(ShellRoute.Prologue).PlayerPortraitAddress,
+                Does.StartWith("baseball/highschool/PortraitPlayerYoung"));
+
+            var schools = new[]
+            {
+                new CareerChoiceReadModel(
+                    "school-starlight",
+                    "별빛고",
+                    "점유율을 높이는 야구 · 감독 조범석 · 포수 정우빈",
+                    "강점 제구 · 체력 성장 완만",
+                    payload: "starlight_control")
+            };
+            state = GameSaveAggregate.Initial("art-install").Commit(
+                "art-school",
+                stage: ApplicationStage.HighSchool,
+                highSchool: HighSchool(HighSchoolPhase.SchoolSelection, schools: schools));
+            BaseballScreenViewModel selection = model.Read(ShellRoute.Prologue);
+            ScreenChoiceOptionViewModel school = selection.ChoiceGroups
+                .Single(group => group.Id == "school").Choices.Single();
+            Assert.That(selection.KeyArtAddress,
+                Is.EqualTo("baseball/highschool/KeyArtSchoolCrossroads"));
+            Assert.That(school.ArtworkAddress,
+                Is.EqualTo("baseball/highschool/PortraitCoach1"));
+            Assert.That(school.SecondaryArtworkAddress,
+                Is.EqualTo("baseball/highschool/PortraitCatcher1"));
+
+            state = GameSaveAggregate.Initial("art-install").Commit(
+                "art-awakening",
+                stage: ApplicationStage.HighSchool,
+                highSchool: HighSchool(HighSchoolPhase.Awakening, chapter: 6));
+            BaseballScreenViewModel awakening = model.Read(ShellRoute.Awakening);
+            Assert.That(awakening.KeyArtAddress,
+                Is.EqualTo("baseball/highschool/KeyArtAwakening"));
+            Assert.That(awakening.PlayerPortraitAddress,
+                Does.StartWith("baseball/highschool/PortraitPlayer"));
+            Assert.That(awakening.PlayerPortraitAddress,
+                Does.Not.StartWith("baseball/highschool/PortraitPlayerYoung"));
+
+            state = GameSaveAggregate.Initial("art-install").Commit(
+                "art-draft",
+                stage: ApplicationStage.Draft,
+                highSchool: HighSchool(HighSchoolPhase.Draft, chapter: 8));
+            Assert.That(model.Read(ShellRoute.Draft).KeyArtAddress,
+                Is.EqualTo("baseball/highschool/KeyArtDraftDay"));
+
+            state = GameSaveAggregate.Initial("art-install").Commit(
+                "art-legacy",
+                stage: ApplicationStage.Legacy,
+                highSchool: HighSchool(HighSchoolPhase.Legacy, chapter: 8));
+            Assert.That(model.Read(ShellRoute.RunRecap).KeyArtAddress,
+                Is.EqualTo("baseball/highschool/KeyArtReincarnation"));
+        }
+
+        [Test]
+        public void RelationshipAndTournamentArtworkUseAuthoritativeCategoryAndChapterEvidence()
+        {
+            var relationship = new RelationshipEventReadModel(
+                "evt-loss-interview",
+                "패배 뒤 인터뷰",
+                "media",
+                "기자가 마지막 승부를 묻습니다.",
+                "기자",
+                "mid",
+                "왜 그 공을 골랐나요?");
+            var tournament = new TournamentBracketReadModel(
+                "전국 청춘 대회",
+                new[] { "별빛고", "푸른솔고" },
+                "8강");
+            var highSchool = new HighSchoolCareerReadModel(
+                "context-art-career",
+                1,
+                HighSchoolPhase.Relationship,
+                "seed",
+                1,
+                "player",
+                "해온",
+                "power_prospect",
+                new PitcherRatingsReadModel(55, 53, 51, 54),
+                new CareerPerformanceReadModel(),
+                chapterNumber: 2,
+                tournament: tournament,
+                currentRelationshipEvent: relationship);
+            GameSaveAggregate state = GameSaveAggregate.Initial("context-art-install").Commit(
+                "context-art",
+                stage: ApplicationStage.HighSchool,
+                highSchool: highSchool);
+            StoreBaseballCareerReadModel model = ReadyModel(() => state);
+
+            ScreenSectionViewModel scene = model.Read(ShellRoute.Relationship).Sections
+                .Single(section => section.Id == "hs-relationship-scene");
+            Assert.That(scene.Rows.Single(row => row.Id == "hs-relationship-category").Value,
+                Is.EqualTo("media"));
+            Assert.That(BaseballVisualContentCatalog.RelationshipArtwork(
+                    scene.Rows.Single(row => row.Id == "hs-relationship-category").Value,
+                    scene.Rows.Single(row => row.Id == "hs-relationship-speaker").Label),
+                Is.EqualTo("baseball/meta/SceneArt-media"));
+
+            ScreenSectionViewModel bracket = model.Read(ShellRoute.HighSchoolOverview).Sections
+                .Single(section => section.Id == "hs-tournament");
+            Assert.That(bracket.Rows.Single(row => row.Id == "hs-tournament-chapter").Value,
+                Is.EqualTo("2"));
+            Assert.That(BaseballVisualContentCatalog.TournamentBanner(2),
+                Is.EqualTo("baseball/highschool/TournamentBanner2"));
+        }
+
+        [Test]
+        public void ProLevelProjectsItsOwnHeaderAndPlayerPortraitCatalog()
+        {
+            ProCareerReadModel Career(ProCareerPhase phase, string level) => new ProCareerReadModel(
+                "pro-art-career",
+                ProCareerOrigin.Direct,
+                phase,
+                "seed",
+                1,
+                "player",
+                "해온",
+                "fictional-club",
+                "해오름",
+                1,
+                1,
+                new PitcherRatingsReadModel(65, 63, 61, 64),
+                new CareerPerformanceReadModel(),
+                level: level);
+
+            GameSaveAggregate state = GameSaveAggregate.Initial("pro-art-install").Commit(
+                "pro-art-major",
+                stage: ApplicationStage.Pro,
+                pro: Career(ProCareerPhase.WeeklyPlan, "major"));
+            StoreBaseballCareerReadModel model = ReadyModel(() => state);
+            Assert.That(model.Read(ShellRoute.ProWeek).KeyArtAddress,
+                Is.EqualTo("baseball/pro/KeyArtMajorDebut"));
+            Assert.That(model.Read(ShellRoute.ImportantGame).KeyArtAddress,
+                Is.EqualTo("baseball/pro/KeyArtProStadiumTunnel"));
+            Assert.That(model.Read(ShellRoute.ProWeek).PlayerPortraitAddress,
+                Does.StartWith("baseball/pro/PortraitPlayerPro"));
+
+            state = GameSaveAggregate.Initial("pro-art-install").Commit(
+                "pro-art-minor",
+                stage: ApplicationStage.Pro,
+                pro: Career(ProCareerPhase.WeeklyPlan, "minor"));
+            Assert.That(model.Read(ShellRoute.ProWeek).KeyArtAddress,
+                Is.EqualTo("baseball/highschool/KeyArtStadiumNight"));
+            Assert.That(model.Read(ShellRoute.ImportantGame).KeyArtAddress,
+                Is.EqualTo("baseball/highschool/KeyArtStadiumNight"));
+
+            state = GameSaveAggregate.Initial("pro-art-install").Commit(
+                "pro-art-retirement",
+                stage: ApplicationStage.Retirement,
+                pro: Career(ProCareerPhase.Completed, "major"));
+            Assert.That(model.Read(ShellRoute.ProRetirement).KeyArtAddress,
+                Is.EqualTo("baseball/pro/KeyArtRetirement"));
+        }
+
+        [Test]
         public void PendingLegacyDailyResultRedirectsToRecordsWithoutRenderingARetiredScreen()
         {
             GameSaveAggregate state = GameSaveAggregate.Initial("installation").Commit(
@@ -451,7 +906,7 @@ namespace Baseball.Presentation.Tests
 
             Assert.That(model.PreferredRoute, Is.EqualTo(ShellRoute.Records));
             Assert.That(screen.Route, Is.EqualTo(ShellRoute.Records));
-            Assert.That(screen.Actions, Has.Count.EqualTo(1));
+            Assert.That(screen.Actions.Count, Is.EqualTo(1));
             Assert.That(screen.Actions[0].Id, Is.EqualTo("acknowledge_pitch_result"));
             Assert.That(screen.Actions[0].Target, Is.EqualTo(ShellRoute.Records));
         }
@@ -689,7 +1144,16 @@ namespace Baseball.Presentation.Tests
                 {
                     new CareerChoiceReadModel("slider", "슬라이더", "슬라이더 집중")
                 },
-                maximumTrainingBlockSessions: 3);
+                maximumTrainingBlockSessions: 3,
+                trainingOutlooks: new[]
+                {
+                    new TrainingOutlookReadModel(
+                        "breaking_ball",
+                        "standard",
+                        "steady_growth",
+                        "안정적인 성장",
+                        "변화 성장 1 예상 · 피로 +8")
+                });
             GameSaveAggregate state = GameSaveAggregate.Initial("install").Commit(
                 "training",
                 stage: ApplicationStage.HighSchool,
@@ -707,6 +1171,10 @@ namespace Baseball.Presentation.Tests
                 Is.EquivalentTo(new[] { "train", "train_block" }));
             Assert.That(missingTarget.Actions.All(action => !action.IsEnabled), Is.True);
             Assert.That(missingTarget.Actions[0].DisabledReason, Does.Contain("변화구"));
+            ScreenRowViewModel outlook = missingTarget.Sections
+                .Single(section => section.Id == "hs-training-outlook").Rows.Single();
+            Assert.That(outlook.Label, Is.EqualTo("안정적인 성장"));
+            Assert.That(outlook.Value, Is.EqualTo("변화 성장 1 예상 · 피로 +8"));
 
             selected["training_pitch"] = "slider";
             BaseballScreenViewModel ready = model.Read(ShellRoute.Training);
@@ -775,6 +1243,157 @@ namespace Baseball.Presentation.Tests
         }
 
         [Test]
+        public void ProSeasonProjectsPersonalTeamGrowthAndPhaseSpecificNextChoice()
+        {
+            var recordBook = new ProRecordBookReadModel(
+                new PitchingRecordReadModel(
+                    18, 15, 321, 127, 29, 31, 11, 5, 0, 83, 9, 1540, 12),
+                Array.Empty<CareerGameLineReadModel>(),
+                Array.Empty<ProSeasonLineReadModel>(),
+                new[] { "4월 월간 투수상" },
+                new[] { "프로 통산 500탈삼진" },
+                new[]
+                {
+                    new ProDecisionHistoryReadModel(
+                        "season-4-week-9",
+                        "role_meeting",
+                        4,
+                        9,
+                        "challenge_starter",
+                        "선발에 도전한다",
+                        "긴 이닝 준비와 경쟁 부담을 받아들였습니다.",
+                        staminaDelta: 1,
+                        managerTrustDelta: -3,
+                        fatigueDelta: 10,
+                        roleTarget: "starter")
+                },
+                hallOfFameScore: 480,
+                seasonGameLinesAvailable: false);
+            var standings = new[]
+            {
+                new LeagueStandingReadModel(1, "club-a", "해오름", 72, 48, 2, 0, true),
+                new LeagueStandingReadModel(2, "club-b", "푸른물결", 69, 51, 2, 3.0, false),
+            };
+            ProCareerReadModel Career(
+                ProCareerPhase phase,
+                ProSeasonDecisionReadModel decision = null) => new ProCareerReadModel(
+                "pro-season-career",
+                ProCareerOrigin.HighSchool,
+                phase,
+                "next-seed",
+                44,
+                "player",
+                "해온",
+                "club-a",
+                "해오름",
+                4,
+                24,
+                new PitcherRatingsReadModel(78, 75, 73, 80),
+                new CareerPerformanceReadModel(18, 1540, 321, 127, 29, 83, 31),
+                level: "major",
+                role: "starter",
+                managerTrust: 76,
+                catcherTrust: 81,
+                fatigue: 34,
+                seasonDecision: decision,
+                leagueStandings: standings,
+                seasonSegment: "season_finale",
+                seasonSegmentTitle: "시즌 막바지",
+                developmentProgress: new ProDevelopmentProgressReadModel(1, 0, 1, 0),
+                lastSegmentProgress: new ProSegmentProgressReadModel(
+                    4, "pennant_race", "season_finale", "phase_changed", "develop_stuff"),
+                recordBook: recordBook);
+
+            GameSaveAggregate state = GameSaveAggregate.Initial("pro-season-install").Commit(
+                "season-review",
+                stage: ApplicationStage.Pro,
+                pro: Career(ProCareerPhase.SeasonReview));
+            string selected = string.Empty;
+            var model = new StoreBaseballCareerReadModel(
+                KoreanUiCopyCatalog.LoadDefault(),
+                () => state,
+                () => ShellRuntimeStatus.Ready,
+                () => string.Empty,
+                selectedChoice: group => group == "pro_season_decision" ? selected : string.Empty);
+
+            BaseballScreenViewModel review = model.Read(ShellRoute.ProSeason);
+            Assert.That(review.Sections.Select(section => section.Id), Is.EqualTo(new[]
+            {
+                "pro-season-personal",
+                "pro-season-team",
+                "pro-season-growth",
+                "pro-season-decisions",
+                "pro-season-achievements",
+                "pro-season-next",
+            }));
+            Assert.That(review.Sections.Single(section => section.Id == "pro-season-personal")
+                .Rows.Single(row => row.Id == "pro-season-personal-performance").Value,
+                Is.EqualTo("18경기 · 선발 15 · 107이닝 · 투구 1540"));
+            Assert.That(review.Sections.Single(section => section.Id == "pro-season-team")
+                .Rows[0].Detail, Is.EqualTo("현재 선두 · 내 구단"));
+            Assert.That(review.Sections.Single(section => section.Id == "pro-season-growth")
+                .Rows.Single(row => row.Id == "pro-season-ratings").Value,
+                Is.EqualTo("구위 78 · 제구 75 · 변화 73 · 체력 80"));
+            Assert.That(review.Sections.Single(section => section.Id == "pro-season-growth")
+                .Rows.Single(row => row.Id == "pro-season-development").Value,
+                Is.EqualTo("구위 1/2 · 제구 0/2 · 변화 1/2 · 체력 0/2"));
+            Assert.That(review.Sections.Single(section => section.Id == "pro-season-decisions")
+                .Rows.Single().Detail, Does.Contain("체력 +1"));
+            Assert.That(review.Sections.Single(section => section.Id == "pro-season-next")
+                .Rows.Single().Detail, Does.Contain("오프시즌 선택 또는 은퇴 결정"));
+
+            var choices = new[]
+            {
+                new CareerChoiceReadModel(
+                    "run_prevention",
+                    "실점 억제를 택한다",
+                    "제구와 배터리 운영을 다듬습니다.",
+                    "제구 +1 · 포수 호흡 +4 · 피로 +7",
+                    payload: "season-4-week-12|run_prevention",
+                    recommended: true,
+                    recommendationReason: "현재 포수 호흡과 팀 순위에 맞습니다."),
+                new CareerChoiceReadModel(
+                    "body_management",
+                    "몸을 관리한다",
+                    "긴 시즌을 버틸 체력과 회복을 택합니다.",
+                    "체력 +1 · 피로 -12",
+                    payload: "season-4-week-12|body_management")
+            };
+            state = state.Commit(
+                "season-decision",
+                stage: ApplicationStage.Pro,
+                pro: Career(
+                    ProCareerPhase.SeasonDecision,
+                    new ProSeasonDecisionReadModel(
+                        "season-4-week-12",
+                        "기록 추격",
+                        "개인 기록과 팀에 필요한 투구 사이에서 방향을 고릅니다.",
+                        choices)));
+
+            BaseballScreenViewModel waiting = model.Read(ShellRoute.ProSeason);
+            Assert.That(waiting.Sections.Single(section => section.Id == "pro-season-next")
+                .Rows.Single(row => row.Id == "pro-season-next-selection").Value,
+                Is.EqualTo("선택 대기"));
+            Assert.That(waiting.Actions.Single(action => action.Id == "resolve_pro_decision").IsEnabled,
+                Is.False);
+
+            selected = "season-4-week-12|run_prevention";
+            BaseballScreenViewModel decided = model.Read(ShellRoute.ProSeason);
+            ScreenRowViewModel rationale = decided.Sections
+                .Single(section => section.Id == "pro-season-next")
+                .Rows.Single(row => row.Id == "pro-season-next-selection");
+            Assert.That(rationale.Label, Is.EqualTo("선택 근거 · 실점 억제를 택한다"));
+            Assert.That(rationale.Value, Is.EqualTo("제구 +1 · 포수 호흡 +4 · 피로 +7"));
+            Assert.That(rationale.Detail, Does.Contain("추천 근거"));
+            Assert.That(decided.Actions.Single(action => action.Id == "resolve_pro_decision").IsEnabled,
+                Is.True);
+            Assert.That(decided.Sections.SelectMany(section => section.Rows)
+                .All(row => row.Value != "—" && !row.Detail.Contains("현재 저장 상태에 기록되지 않는 항목")),
+                Is.True,
+                "the scroll-backed generic rows stay meaningful when the 200% font reflow stacks value text");
+        }
+
+        [Test]
         public void FrozenPlayerLegacyIsRenderedVerbatimAcrossRecapArchiveAndNextLifePrologue()
         {
             var frozen = new PlayerLegacyState(
@@ -793,34 +1412,47 @@ namespace Baseball.Presentation.Tests
                 "power_prospect",
                 new PitcherRatingsReadModel(55, 53, 51, 54),
                 new CareerPerformanceReadModel());
-            GameSaveAggregate state = GameSaveAggregate.Initial("install").Commit(
+            GameSaveAggregate nextLifeState = GameSaveAggregate.Initial("install").Commit(
                 "archived-life",
                 stage: ApplicationStage.HighSchool,
                 highSchool: highSchool,
                 meta: new MetaProgressState(lifeNumber: 2, lifeArchive: new[] { record }));
-            var model = new StoreBaseballCareerReadModel(
+            var nextLifeModel = new StoreBaseballCareerReadModel(
                 KoreanUiCopyCatalog.LoadDefault(),
-                () => state,
+                () => nextLifeState,
                 () => ShellRuntimeStatus.Ready,
                 () => string.Empty);
 
-            foreach (ShellRoute route in new[] { ShellRoute.Prologue, ShellRoute.RunRecap })
-            {
-                ScreenRowViewModel row = model.Read(route).Sections
-                    .SelectMany(section => section.Rows)
-                    .Single(value => value.Id == "player-legacy-letter-copy");
-                Assert.That(row.Label, Is.EqualTo(frozen.Title), route.ToString());
-                Assert.That(row.Value, Is.EqualTo(frozen.DefiningMoment), route.ToString());
-                Assert.That(row.Detail, Is.EqualTo("“" + frozen.Farewell + "”"), route.ToString());
-            }
+            ScreenRowViewModel previousPlayer = nextLifeModel.Read(ShellRoute.Prologue).Sections
+                .SelectMany(section => section.Rows)
+                .Single(value => value.Id == "player-legacy-letter-copy");
+            Assert.That(previousPlayer.Label, Is.EqualTo(frozen.Title));
+            Assert.That(previousPlayer.Value, Is.EqualTo(frozen.DefiningMoment));
+            Assert.That(previousPlayer.Detail, Is.EqualTo("“" + frozen.Farewell + "”"));
 
-            ScreenRowViewModel archived = model.Read(ShellRoute.LifeArchive).Sections
+            GameSaveAggregate recapState = GameSaveAggregate.Initial("recap-install").Commit(
+                "finalized-life",
+                stage: ApplicationStage.Legacy,
+                meta: new MetaProgressState(lifeNumber: 1, lifeArchive: new[] { record }));
+            var recapModel = new StoreBaseballCareerReadModel(
+                KoreanUiCopyCatalog.LoadDefault(),
+                () => recapState,
+                () => ShellRuntimeStatus.Ready,
+                () => string.Empty);
+            ScreenRowViewModel recap = recapModel.Read(ShellRoute.RunRecap).Sections
+                .SelectMany(section => section.Rows)
+                .Single(value => value.Id == "player-legacy-letter-copy");
+            Assert.That(recap.Label, Is.EqualTo(frozen.Title));
+            Assert.That(recap.Value, Is.EqualTo(frozen.DefiningMoment));
+            Assert.That(recap.Detail, Is.EqualTo("“" + frozen.Farewell + "”"));
+
+            ScreenRowViewModel archived = recapModel.Read(ShellRoute.LifeArchive).Sections
                 .SelectMany(section => section.Rows)
                 .Single(value => value.Id == "archive-player-legacy-1");
             Assert.That(archived.Label, Is.EqualTo(frozen.Title));
             Assert.That(archived.Value, Is.EqualTo(frozen.DefiningMoment));
             Assert.That(archived.Detail, Is.EqualTo("“" + frozen.Farewell + "”"));
-            Assert.That(model.Read(ShellRoute.Opening).Sections.Select(section => section.Id),
+            Assert.That(nextLifeModel.Read(ShellRoute.Opening).Sections.Select(section => section.Id),
                 Does.Not.Contain("player-legacy-letter"));
         }
 
@@ -984,7 +1616,157 @@ namespace Baseball.Presentation.Tests
             Assert.That(card.Title, Does.Contain("해온"));
             Assert.That(card.Title, Does.Not.Contain("새봄"));
             Assert.That(card.Sections.SelectMany(section => section.Rows)
-                .Single(row => row.Id == "player").Value, Is.EqualTo("해온"));
+                .Single(row => row.Id == "life-card-player").Label, Is.EqualTo("해온"));
+        }
+
+        [Test]
+        public void LifeCardUsesSelectedFrozenRecordForEveryFieldWhileAnotherCareerIsActive()
+        {
+            var detail = new HighSchoolLifeDetailReadModel(
+                new PitcherRatingsReadModel(42, 43, 44, 45),
+                new[] { "끝내주는 투수" },
+                new[] { "별빛고에 입학했다.", "마지막 타자를 삼진으로 돌려세웠다." },
+                "도윤",
+                "서준",
+                "지후",
+                "차분한 승부사",
+                windTitle: "흔들리지 않는 바람");
+            var selected = new LifeArchiveRecord(
+                "life-1",
+                1,
+                "해온",
+                "career-4242-life-1",
+                "pro-1",
+                "school-1",
+                "별빛고",
+                true,
+                88,
+                new PitcherRatingsReadModel(70, 66, 64, 68),
+                new CareerPerformanceReadModel(4, 80, 18, 13, 4, 5, 2),
+                3,
+                117,
+                1,
+                76,
+                14,
+                highSchoolDetail: detail,
+                signatureLegacy: new SignatureLegacyReadModel(
+                    "legacy-command", "흔들리지 않는 손끝", "제구 성장", "볼넷 억제"),
+                pitches: 80,
+                outs: 18,
+                hits: 5,
+                draftTeamName: "해오름");
+            var active = new HighSchoolCareerReadModel(
+                "career-new-life-2",
+                2,
+                HighSchoolPhase.Training,
+                "seed",
+                1,
+                "player-new",
+                "새봄",
+                "innings_eater",
+                new PitcherRatingsReadModel(99, 98, 97, 96),
+                new CareerPerformanceReadModel(9, 999, 27, 25, 0, 0, 0));
+            GameSaveAggregate state = GameSaveAggregate.Initial("install").Commit(
+                "active-next-life",
+                stage: ApplicationStage.HighSchool,
+                highSchool: active,
+                meta: new MetaProgressState(lifeNumber: 2, lifeArchive: new[] { selected }));
+            var model = new StoreBaseballCareerReadModel(
+                KoreanUiCopyCatalog.LoadDefault(),
+                () => state,
+                () => ShellRuntimeStatus.Ready,
+                () => string.Empty,
+                selectedChoice: group => group == "archive_life" ? "1" : string.Empty);
+
+            BaseballScreenViewModel card = model.Read(ShellRoute.LifeCard);
+            ScreenRowViewModel[] rows = card.Sections.SelectMany(section => section.Rows).ToArray();
+
+            Assert.That(card.Title, Is.EqualTo("1번째 선수의 기록 · 해온"));
+            Assert.That(rows.Single(row => row.Id == "life-card-rating-stuff").Value,
+                Is.EqualTo("42 → 70"));
+            Assert.That(rows.Single(row => row.Id == "life-card-rating-movement").Value,
+                Is.EqualTo("44 → 64"));
+            Assert.That(rows.Single(row => row.Id == "life-card-record-counts").Value,
+                Does.Contain("탈삼진 13"));
+            Assert.That(rows.Single(row => row.Id == "life-card-draft").Label,
+                Is.EqualTo("해오름 지명"));
+            Assert.That(rows.Single(row => row.Id == "life-card-challenge").Value,
+                Is.EqualTo("4242-1"));
+            Assert.That(string.Join(" ", rows.SelectMany(row => new[] { row.Value, row.Detail })),
+                Does.Not.Contain("99"));
+            Assert.That(string.Join(" ", rows.SelectMany(row => new[] { row.Value, row.Detail })),
+                Does.Not.Contain("999"));
+        }
+
+        [Test]
+        public void RunRecapNeverUsesPriorLifeBeforeCurrentSettlementAndCardAppearsAfterFinalize()
+        {
+            LifeArchiveRecord prior = ArchivedLife(new PlayerLegacyState("이전 제목", "이전 순간", "이전 작별"));
+            var currentCareer = new HighSchoolCareerReadModel(
+                "career-20260811-life-2",
+                2,
+                HighSchoolPhase.Legacy,
+                "seed",
+                12,
+                "player-2",
+                "새봄",
+                "precision_commander",
+                new PitcherRatingsReadModel(68, 72, 65, 64),
+                new CareerPerformanceReadModel(5, 60, 15, 10, 3, 4, 1),
+                legacySelectionMode: LegacySelectionMode.SignatureLegacy,
+                signatureLegacyChoices: new[]
+                {
+                    new CareerChoiceReadModel("legacy-command", "흔들리지 않는 손끝", "제구", "근거")
+                });
+            GameSaveAggregate before = GameSaveAggregate.Initial("install").Commit(
+                "before-finalize",
+                stage: ApplicationStage.Legacy,
+                highSchool: currentCareer,
+                meta: new MetaProgressState(lifeNumber: 2, lifeArchive: new[] { prior }));
+            var selected = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["legacy_signature"] = "legacy-command"
+            };
+            StoreBaseballCareerReadModel beforeModel = new StoreBaseballCareerReadModel(
+                KoreanUiCopyCatalog.LoadDefault(),
+                () => before,
+                () => ShellRuntimeStatus.Ready,
+                () => string.Empty,
+                selectedChoice: group => selected.TryGetValue(group, out string value) ? value : string.Empty);
+
+            BaseballScreenViewModel preFinalize = beforeModel.Read(ShellRoute.RunRecap);
+            Assert.That(preFinalize.Sections.Select(section => section.Id),
+                Does.Not.Contain("player-legacy-letter"));
+            Assert.That(preFinalize.Actions.Select(action => action.Id), Does.Not.Contain("navigate_life_card"));
+            Assert.That(StoreBaseballCareerReadModel.CurrentLifeArchiveFor(before), Is.Null);
+
+            var current = new LifeArchiveRecord(
+                "life-2",
+                2,
+                "새봄",
+                currentCareer.CareerId,
+                null,
+                "school-2",
+                "푸른솔고",
+                false,
+                73,
+                currentCareer.Ratings,
+                currentCareer.Performance,
+                0,
+                0,
+                0,
+                0,
+                9,
+                playerLegacy: new PlayerLegacyState("자기 공을 남긴 투수", "마지막 승부", "다음 공도 믿어."));
+            GameSaveAggregate after = before.Commit(
+                "after-finalize",
+                meta: new MetaProgressState(lifeNumber: 2, lifeArchive: new[] { current, prior }));
+            BaseballScreenViewModel finalized = ReadyModel(() => after).Read(ShellRoute.RunRecap);
+
+            Assert.That(StoreBaseballCareerReadModel.CurrentLifeArchiveFor(after), Is.SameAs(current));
+            Assert.That(finalized.Sections.Select(section => section.Id), Does.Contain("recap-stamps"));
+            Assert.That(finalized.Sections.Select(section => section.Id), Does.Contain("player-legacy-letter"));
+            Assert.That(finalized.Actions.Select(action => action.Id), Does.Contain("navigate_life_card"));
         }
 
         [Test]
@@ -1076,8 +1858,8 @@ namespace Baseball.Presentation.Tests
             LifeArchiveRecord record = ArchivedLife(null);
             GameSaveAggregate state = GameSaveAggregate.Initial("install").Commit(
                 "legacy-save",
-                stage: ApplicationStage.BetweenLives,
-                meta: new MetaProgressState(lifeNumber: 2, lifeArchive: new[] { record }));
+                stage: ApplicationStage.Legacy,
+                meta: new MetaProgressState(lifeNumber: 1, lifeArchive: new[] { record }));
             var model = new StoreBaseballCareerReadModel(
                 KoreanUiCopyCatalog.LoadDefault(),
                 () => state,
@@ -1165,6 +1947,91 @@ namespace Baseball.Presentation.Tests
                 () => ShellRuntimeStatus.Ready,
                 () => string.Empty);
 
+        private static GameSaveAggregate SetupState(string installId) =>
+            GameSaveAggregate.Initial(installId).Commit(
+                "setup-life-two",
+                stage: ApplicationStage.Setup,
+                meta: new MetaProgressState(lifeNumber: 2));
+
+        private static async Task<GameApplicationStore> OpenSetupStore(string installId)
+        {
+            GameSaveAggregate state = SetupState(installId);
+            var repository = new InMemoryGameRepository
+            {
+                LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                    SaveLoadStatus.LoadedCanonical,
+                    new SaveEnvelope<GameSaveAggregate>(
+                        SaveSchema.Name,
+                        SaveSchema.Version,
+                        state.Revision,
+                        new DateTimeOffset(2026, 8, 11, 0, 0, 0, TimeSpan.Zero),
+                        new string('a', 64),
+                        state))
+            };
+            return await GameApplicationStore.OpenAsync(
+                repository,
+                new CoreHighSchoolCareerPort(),
+                new CoreProCareerPort(),
+                installId,
+                CancellationToken.None);
+        }
+
+        private static Task<GameApplicationStore> OpenStore(GameSaveAggregate state)
+        {
+            var repository = new InMemoryGameRepository
+            {
+                LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                    SaveLoadStatus.LoadedCanonical,
+                    new SaveEnvelope<GameSaveAggregate>(
+                        SaveSchema.Name,
+                        SaveSchema.Version,
+                        state.Revision,
+                        new DateTimeOffset(2026, 8, 11, 0, 0, 0, TimeSpan.Zero),
+                        new string('c', 64),
+                        state))
+            };
+            return GameApplicationStore.OpenAsync(
+                repository,
+                new CoreHighSchoolCareerPort(),
+                new CoreProCareerPort(),
+                state.InstallId,
+                CancellationToken.None);
+        }
+
+        private static ProductionBaseballShellRuntime ReadyProductionRuntime(
+            GameApplicationStore store)
+        {
+            var runtime = new ProductionBaseballShellRuntime(KoreanUiCopyCatalog.LoadDefault());
+            InvokeOnReady(runtime, store);
+            return runtime;
+        }
+
+        private static void InvokeOnReady(
+            ProductionBaseballShellRuntime runtime,
+            GameApplicationStore store)
+        {
+            MethodInfo onReady = typeof(ProductionBaseballShellRuntime).GetMethod(
+                "OnReady",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(onReady, Is.Not.Null);
+            onReady.Invoke(runtime, new object[] { store });
+        }
+
+        private static GameCommand ProductionCommand(
+            ProductionBaseballShellRuntime runtime,
+            string actionId,
+            GameSaveAggregate state)
+        {
+            MethodInfo create = typeof(ProductionBaseballShellRuntime).GetMethod(
+                "CreateCommand",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(create, Is.Not.Null);
+            return (GameCommand)create.Invoke(runtime, new object[] { actionId, state });
+        }
+
+        private static CareerChoiceReadModel Choice(string payload, string title) =>
+            new CareerChoiceReadModel(payload, title, title, payload: payload);
+
         private sealed class FakeVisualLoader : IBaseballVisualAssetLoader
         {
             public string LastAddress { get; private set; }
@@ -1181,6 +2048,39 @@ namespace Baseball.Presentation.Tests
         {
             public Sprite Sprite => null;
             public void Dispose() { }
+        }
+
+        private sealed class InMemoryGameRepository : ISaveRepository<GameSaveAggregate>
+        {
+            public SaveLoadResult<GameSaveAggregate> LoadResult { get; set; } =
+                SaveLoadResult<GameSaveAggregate>.Create(SaveLoadStatus.NoSave);
+
+            public Task<SaveWriteResult<GameSaveAggregate>> SaveAsync(
+                GameSaveAggregate payload,
+                ulong revision,
+                CancellationToken cancellationToken = default)
+            {
+                LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                    SaveLoadStatus.LoadedCanonical,
+                    new SaveEnvelope<GameSaveAggregate>(
+                        SaveSchema.Name,
+                        SaveSchema.Version,
+                        revision,
+                        DateTimeOffset.UtcNow,
+                        new string('b', 64),
+                        payload));
+                return Task.FromResult<SaveWriteResult<GameSaveAggregate>>(null);
+            }
+
+            public Task<SaveLoadResult<GameSaveAggregate>> LoadAsync(
+                CancellationToken cancellationToken = default) =>
+                Task.FromResult(LoadResult);
+
+            public Task ResetAsync(CancellationToken cancellationToken = default)
+            {
+                LoadResult = SaveLoadResult<GameSaveAggregate>.Create(SaveLoadStatus.NoSave);
+                return Task.CompletedTask;
+            }
         }
     }
 }

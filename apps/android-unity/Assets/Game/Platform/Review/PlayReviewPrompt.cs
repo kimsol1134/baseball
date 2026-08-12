@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.IO;
 using Baseball.Platform.Identity;
 using UnityEngine;
 
@@ -23,6 +22,7 @@ namespace Baseball.Platform.Review
     {
         private static PlayReviewPrompt _instance;
         private IReviewAttemptGate _attemptGate;
+        private string _installEpoch;
         private bool _running;
 
         public static event Action<ReviewPromptOutcome> Finished;
@@ -40,22 +40,27 @@ namespace Baseball.Platform.Review
             if (_instance == null) new GameObject("Play Review Prompt").AddComponent<PlayReviewPrompt>();
         }
 
-        public static bool TryRequest(ReviewEligibilityContext context)
+        public static bool TryRequest(
+            ReviewPromptReason reason,
+            DateTimeOffset? requestedAt = null)
         {
-            if (_instance == null || !ReviewPromptPolicy.IsEligible(context)) return false;
-            return _instance.TryStart();
+            if (_instance == null) return false;
+            return _instance.TryStart(reason, requestedAt ?? DateTimeOffset.UtcNow);
         }
 
         public static void ResetLocalAttempt()
         {
-            string markerPath = MarkerPath();
-            try
+            string installId = AnonymousInstallIdentity.GetOrCreate();
+            string installEpoch = InstallScopedLocalStatePolicy.Epoch(installId);
+            var replacement = new FileReviewAttemptGate(MarkerPath(installId));
+            replacement.Reset();
+            if (_instance != null)
             {
-                if (File.Exists(markerPath)) File.Delete(markerPath);
+                _instance._attemptGate?.Reset();
+                _instance._attemptGate = replacement;
+                _instance._installEpoch = installEpoch;
             }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
-            if (_instance != null) _instance._attemptGate = new FileReviewAttemptGate(markerPath);
+            AcknowledgePreparedResetCleanup();
         }
 
         private void Awake()
@@ -68,12 +73,16 @@ namespace Baseball.Platform.Review
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
-            _attemptGate = new FileReviewAttemptGate(MarkerPath());
+            string installId = AnonymousInstallIdentity.GetOrCreate();
+            _installEpoch = InstallScopedLocalStatePolicy.Epoch(installId);
+            _attemptGate = new FileReviewAttemptGate(MarkerPath(installId));
+            AcknowledgePreparedResetCleanup();
         }
 
-        private bool TryStart()
+        private bool TryStart(ReviewPromptReason reason, DateTimeOffset now)
         {
-            if (_running || _attemptGate == null || !_attemptGate.TryClaim()) return false;
+            BindCurrentInstallNamespace();
+            if (_running || _attemptGate == null || !_attemptGate.TryClaim(reason, now)) return false;
             _running = true;
             StartCoroutine(RunPrompt());
             return true;
@@ -115,8 +124,26 @@ namespace Baseball.Platform.Review
             }
         }
 
-        private static string MarkerPath() => Path.Combine(
-            AnonymousInstallIdentity.ResolveNoBackupDirectory(),
-            "play-review-attempted-v1.marker");
+        private static string MarkerPath(string installId) =>
+            InstallScopedLocalStatePolicy.ReviewReceiptPath(
+                AnonymousInstallIdentity.ResolveNoBackupDirectory(),
+                installId);
+
+        private void BindCurrentInstallNamespace()
+        {
+            string installId = AnonymousInstallIdentity.GetOrCreate();
+            string installEpoch = InstallScopedLocalStatePolicy.Epoch(installId);
+            if (string.Equals(_installEpoch, installEpoch, StringComparison.Ordinal)) return;
+            _installEpoch = installEpoch;
+            _attemptGate = new FileReviewAttemptGate(MarkerPath(installId));
+        }
+
+        private static void AcknowledgePreparedResetCleanup()
+        {
+            if (!AnonymousInstallIdentity.TryReconcilePreparedLocalState()) return;
+            if (!AnonymousInstallIdentity.MarkPreparedResetStep(
+                    InstallResetStep.ReviewCleaned)) return;
+            AnonymousInstallIdentity.TryCompletePreparedReset();
+        }
     }
 }

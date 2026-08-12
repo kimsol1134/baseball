@@ -10,6 +10,28 @@ using UnityEngine.UIElements;
 
 namespace Baseball.Presentation.Shell
 {
+    public sealed class UnityBaseballApplicationExit : IBaseballApplicationExit
+    {
+        public void ExitApplication()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                {
+                    activity?.Call("finish");
+                }
+            }
+            catch
+            {
+                // Application.Quit remains the deterministic fallback when the Activity changed.
+            }
+            UnityEngine.Application.Quit();
+#endif
+        }
+    }
+
     public interface IBaseballShellPreferences
     {
         bool HighContrast { get; }
@@ -30,6 +52,8 @@ namespace Baseball.Presentation.Shell
         private readonly Stack<ShellRoute> _history = new Stack<ShellRoute>();
         private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
         private readonly IBaseballLifeCardPngCapture _lifeCardPngCapture;
+        private readonly IBaseballApplicationExit _applicationExit;
+        private readonly Func<DateTimeOffset> _now;
         private readonly ContentExposureDeduplicator _contentExposure =
             new ContentExposureDeduplicator();
         private VisualElement _shellRoot;
@@ -47,6 +71,10 @@ namespace Baseball.Presentation.Shell
         private ShellRoute _pitchReturnRoute = ShellRoute.Awakening;
         private bool _disposed;
         private bool _actionInFlight;
+        private bool _draftDirty;
+        private DateTimeOffset? _rootBackPromptedAt;
+
+        private static readonly TimeSpan RootBackExitWindow = TimeSpan.FromSeconds(2);
 
         public ShellRoute CurrentRoute { get; private set; }
         public bool CanGoBack => _activeModal != null || _history.Count > 0;
@@ -93,13 +121,17 @@ namespace Baseball.Presentation.Shell
             IBaseballCareerReadModel readModel,
             IKoreanUiCopyCatalog copy,
             ShellRoute initialRoute = ShellRoute.Opening,
-            IBaseballLifeCardPngCapture lifeCardPngCapture = null)
+            IBaseballLifeCardPngCapture lifeCardPngCapture = null,
+            IBaseballApplicationExit applicationExit = null,
+            Func<DateTimeOffset> now = null)
         {
             _documentRoot = documentRoot ?? throw new ArgumentNullException(nameof(documentRoot));
             _readModel = readModel ?? throw new ArgumentNullException(nameof(readModel));
             _copy = copy ?? throw new ArgumentNullException(nameof(copy));
             _runtime = readModel as IBaseballShellRuntime;
             _lifeCardPngCapture = lifeCardPngCapture ?? new ScreenLifeCardPngCapture();
+            _applicationExit = applicationExit ?? new UnityBaseballApplicationExit();
+            _now = now ?? (() => DateTimeOffset.UtcNow);
             if (_runtime != null) _runtime.Changed += OnRuntimeChanged;
             IBaseballShellSettings settings = _runtime as IBaseballShellSettings;
             HighContrast = settings?.HighContrast ?? false;
@@ -114,12 +146,22 @@ namespace Baseball.Presentation.Shell
 
         public void Navigate(ShellRoute route)
         {
-            CloseModal();
+            Navigate(route, false);
+        }
+
+        private void Navigate(ShellRoute route, bool draftDiscardConfirmed)
+        {
             route = NormalizeRetiredDailyRoute(route, _runtime);
             if (CurrentRoute == ShellRoute.PitchHandoff && route == ShellRoute.Awakening)
             {
                 route = _pitchReturnRoute;
             }
+            if (!draftDiscardConfirmed && _draftDirty && route != CurrentRoute)
+            {
+                ShowDraftDiscardConfirmation(() => Navigate(route, true));
+                return;
+            }
+            CloseModal();
             if (route == CurrentRoute)
             {
                 if (route == ShellRoute.PitchHandoff)
@@ -130,6 +172,7 @@ namespace Baseball.Presentation.Shell
                 Announce(_copy.Get("shell.already_here"));
                 return;
             }
+            _rootBackPromptedAt = null;
             if (route == ShellRoute.PitchHandoff)
             {
                 _pitchOrigin = CurrentRoute;
@@ -217,10 +260,22 @@ namespace Baseball.Presentation.Shell
                 return true;
             }
             if (_history.Count == 0) return false;
+            if (_draftDirty)
+            {
+                ShowDraftDiscardConfirmation(GoBackAfterDraftDiscard);
+                return true;
+            }
+            GoBackAfterDraftDiscard();
+            return true;
+        }
+
+        private void GoBackAfterDraftDiscard()
+        {
+            if (_history.Count == 0) return;
+            _rootBackPromptedAt = null;
             CurrentRoute = _history.Pop();
             RememberCareerRoute(CurrentRoute);
             Render();
-            return true;
         }
 
         public void ShowConfirmation(ScreenActionViewModel action)
@@ -246,6 +301,133 @@ namespace Baseball.Presentation.Shell
             _overlayHost.Add(dialog);
             RebuildAccessibility();
             dialog.schedule.Execute(dialog.FocusFirstControl);
+        }
+
+        private void ShowDraftDiscardConfirmation(Action continueNavigation)
+        {
+            if (continueNavigation == null) throw new ArgumentNullException(nameof(continueNavigation));
+            CloseModal();
+            const string stableId = "shell-discard-draft";
+            var dialog = new ConfirmationDialog(
+                "선택을 취소할까요?",
+                "저장하지 않은 선택이 있습니다. 이동하면 이번 선택을 버립니다.",
+                "선택 버리고 이동",
+                "계속 고르기",
+                stableId,
+                () =>
+                {
+                    CloseModal();
+                    (_runtime as IBaseballTransientDraftDiscard)?.DiscardTransientDraft(CurrentRoute);
+                    _draftDirty = false;
+                    continueNavigation();
+                },
+                CloseModal,
+                true);
+            _activeModal = dialog;
+            _overlayHost.style.display = DisplayStyle.Flex;
+            _overlayHost.Add(dialog);
+            RebuildAccessibility();
+            dialog.schedule.Execute(dialog.FocusFirstControl);
+        }
+
+        private void NavigateAfterSavedAction(ScreenActionViewModel action, ShellRoute route)
+        {
+            ShellRoute normalized = NormalizeRetiredDailyRoute(route, _runtime);
+            bool replaceHistory = _runtime?.Status == ShellRuntimeStatus.Ready &&
+                normalized != ShellRoute.PitchHandoff &&
+                !action.Id.StartsWith("navigate_", StringComparison.Ordinal) &&
+                action.Id != "claim_weekly" &&
+                NormalizeRetiredDailyRoute(_runtime.PreferredRoute, _runtime) == normalized;
+            if (!replaceHistory)
+            {
+                Navigate(normalized, true);
+                return;
+            }
+
+            CloseModal();
+            _history.Clear();
+            _rootBackPromptedAt = null;
+            CurrentRoute = normalized;
+            RememberCareerRoute(normalized);
+            Render();
+        }
+
+        private void ShowTrainingCelebrationIfPending()
+        {
+            IBaseballTrainingCelebrationSource source = _runtime as IBaseballTrainingCelebrationSource;
+            if (source == null || !source.TryTakeTrainingCelebration(out TrainingCelebrationViewModel value))
+                return;
+            CloseModal();
+            string stableId = "training-growth-" + value.ReceiptId.Replace(':', '-');
+            var dialog = new ModalSheet(value.Title, stableId);
+            dialog.AddToClassList("baseball-training-celebration");
+            if (value.Jackpot) dialog.AddToClassList("baseball-training-celebration--jackpot");
+            dialog.Content.Add(new StatTile(
+                value.AbilityTitle,
+                value.After.ToString(),
+                stableId + "-ability",
+                value.Before.ToString(),
+                value.NextStep));
+            var growth = new Label(
+                "상승 +" + value.Growth +
+                (value.Sessions > 1 ? " · 연속 훈련 " + value.Sessions + "회" : string.Empty));
+            growth.AddToClassList("baseball-training-celebration__growth");
+            dialog.Content.Add(growth);
+            var summary = new Label(value.Summary);
+            summary.AddToClassList("baseball-modal__message");
+            dialog.Content.Add(summary);
+            if (value.Jackpot)
+            {
+                var jackpot = new Label("몸이 완전히 열린 날 — 성장이 두 배로 붙었습니다.");
+                jackpot.AddToClassList("baseball-training-celebration__jackpot");
+                dialog.Content.Add(jackpot);
+            }
+            if (value.HasBloom)
+            {
+                var bloomArt = new AddressableContentImage(
+                    BaseballVisualContentCatalog.TalentBloom(),
+                    "재능 만개 기념 삽화",
+                    stableId + "-bloom-art",
+                    (_runtime as IBaseballVisualAssets)?.VisualAssetLoader);
+                bloomArt.AddToClassList("baseball-training-celebration__bloom-art");
+                dialog.Content.Add(bloomArt);
+                var bloom = new Label(
+                    "재능이 만개했습니다 · " + value.BloomedAbilityTitle +
+                    " " + value.BloomedGrade + "등급");
+                bloom.AddToClassList("baseball-training-celebration__bloom");
+                dialog.Content.Add(bloom);
+            }
+            dialog.Content.Add(new PrimaryPill(
+                ReducedMotion ? "결과 확인" : "좋아, 계속하자",
+                stableId + "-acknowledge",
+                CloseModal));
+            if (!ReducedMotion)
+            {
+                dialog.AddToClassList("baseball-training-celebration--enter");
+                dialog.schedule.Execute(() =>
+                {
+                    dialog.RemoveFromClassList("baseball-training-celebration--enter");
+                    dialog.AddToClassList("baseball-training-celebration--ready");
+                });
+            }
+            else
+            {
+                dialog.AddToClassList("baseball-training-celebration--reduced-motion");
+            }
+            _activeModal = dialog;
+            _overlayHost.style.display = DisplayStyle.Flex;
+            _overlayHost.Add(dialog);
+            RebuildAccessibility();
+            dialog.schedule.Execute(dialog.FocusFirstControl);
+            Announce(value.Title + ". " + value.AbilityTitle + " " +
+                value.Before + "에서 " + value.After + "로 상승했습니다.");
+        }
+
+        private void SetDraftValue(Action setter)
+        {
+            setter?.Invoke();
+            _draftDirty = true;
+            _rootBackPromptedAt = null;
         }
 
         public async void Execute(ScreenActionViewModel action)
@@ -276,7 +458,7 @@ namespace Baseball.Presentation.Shell
                 if (action.Id == "share_life_card" && _runtime is IBaseballLifeCardShareRuntime shareRuntime)
                 {
                     byte[] pngBytes = null;
-                    VisualElement card = _screenHost.Q<VisualElement>("life-card-capture");
+                    VisualElement card = _screenHost.Q<VisualElement>(className: "life-card-capture");
                     if (card != null)
                     {
                         try { pngBytes = await _lifeCardPngCapture.CaptureAsync(card, _lifetime.Token); }
@@ -296,8 +478,10 @@ namespace Baseball.Presentation.Shell
                     return;
                 }
                 if (!string.IsNullOrWhiteSpace(result.Message)) Announce(result.Message);
-                if (result.Destination.HasValue) Navigate(result.Destination.Value);
+                _draftDirty = false;
+                if (result.Destination.HasValue) NavigateAfterSavedAction(action, result.Destination.Value);
                 else Render();
+                ShowTrainingCelebrationIfPending();
             }
             catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
             {
@@ -334,11 +518,6 @@ namespace Baseball.Presentation.Shell
             Announce(enabled ? _copy.Get("settings.enabled") : _copy.Get("settings.disabled"));
         }
 
-        public void ApplySystemFontScaleForTesting(float scale)
-        {
-            _theme.ApplyFontScale(scale);
-        }
-
         public void SetAutoRelease(bool enabled) =>
             (_runtime as IBaseballShellSettings)?.SetAutoRelease(enabled);
 
@@ -358,22 +537,22 @@ namespace Baseball.Presentation.Shell
             (_runtime as IBaseballShellSettings)?.OpenNotificationSettings();
 
         public void SetPlayerName(string value) =>
-            (_runtime as IBaseballSetupDraft)?.SetPlayerName(value);
+            SetDraftValue(() => (_runtime as IBaseballSetupDraft)?.SetPlayerName(value));
 
         public void SetRegion(string value) =>
-            (_runtime as IBaseballSetupDraft)?.SetRegion(value);
+            SetDraftValue(() => (_runtime as IBaseballSetupDraft)?.SetRegion(value));
 
         public void SetPresetId(string value) =>
-            (_runtime as IBaseballSetupDraft)?.SetPresetId(value);
+            SetDraftValue(() => (_runtime as IBaseballSetupDraft)?.SetPresetId(value));
 
         public void SetSeedInput(string value) =>
-            (_runtime as IBaseballAdvancedSetupDraft)?.SetSeedInput(value);
+            SetDraftValue(() => (_runtime as IBaseballAdvancedSetupDraft)?.SetSeedInput(value));
 
         public void SetSetupSingle(string group, string payload) =>
-            (_runtime as IBaseballAdvancedSetupDraft)?.SetSetupSingle(group, payload);
+            SetDraftValue(() => (_runtime as IBaseballAdvancedSetupDraft)?.SetSetupSingle(group, payload));
 
         public void ToggleSetupMulti(string group, string payload) =>
-            (_runtime as IBaseballAdvancedSetupDraft)?.ToggleSetupMulti(group, payload);
+            SetDraftValue(() => (_runtime as IBaseballAdvancedSetupDraft)?.ToggleSetupMulti(group, payload));
 
         public bool IsSetupSelected(string group, string payload) =>
             (_runtime as IBaseballAdvancedSetupDraft)?.IsSetupSelected(group, payload) == true;
@@ -381,14 +560,22 @@ namespace Baseball.Presentation.Shell
         public string GetChoice(string group) =>
             (_runtime as IBaseballCareerChoiceDraft)?.GetChoice(group) ?? string.Empty;
 
-        public void SetChoice(string group, string payload) =>
-            (_runtime as IBaseballCareerChoiceDraft)?.SetChoice(group, payload);
+        public void SetChoice(string group, string payload)
+        {
+            if (string.Equals(group, "archive_life", StringComparison.Ordinal))
+            {
+                (_runtime as IBaseballCareerChoiceDraft)?.SetChoice(group, payload);
+                _rootBackPromptedAt = null;
+                return;
+            }
+            SetDraftValue(() => (_runtime as IBaseballCareerChoiceDraft)?.SetChoice(group, payload));
+        }
 
         public IReadOnlyList<string> GetChoices(string group) =>
             (_runtime as IBaseballCareerChoiceDraft)?.GetChoices(group) ?? Array.Empty<string>();
 
         public void ToggleChoice(string group, string payload, int maximumSelections) =>
-            (_runtime as IBaseballCareerChoiceDraft)?.ToggleChoice(group, payload, maximumSelections);
+            SetDraftValue(() => (_runtime as IBaseballCareerChoiceDraft)?.ToggleChoice(group, payload, maximumSelections));
 
         public bool IsChoiceSelected(string group, string payload) =>
             (_runtime as IBaseballCareerChoiceDraft)?.IsChoiceSelected(group, payload) == true;
@@ -396,15 +583,52 @@ namespace Baseball.Presentation.Shell
         public void OnLifeArchiveVisible(string lifeNumber) =>
             (_runtime as IBaseballLifeArchiveInteraction)?.OnLifeArchiveVisible(lifeNumber);
 
-        public void OnContentVisible(ShellRoute route, string contentId, string instanceId)
+        public async Task<bool> OnContentVisibleAsync(
+            ShellRoute route,
+            string contentId,
+            string instanceId,
+            CancellationToken cancellationToken)
         {
-            if (!_contentExposure.TryMark(route.ToString(), contentId, instanceId)) return;
-            (_runtime as IBaseballContentExposure)?.OnContentVisible(route, contentId, instanceId);
+            string routeKey = route.ToString();
+            if (!_contentExposure.TryBegin(routeKey, contentId, instanceId)) return false;
+            try
+            {
+                IBaseballContentExposure exposure = _runtime as IBaseballContentExposure;
+                bool completed = exposure != null && await exposure.OnContentVisibleAsync(
+                    route,
+                    contentId,
+                    instanceId,
+                    cancellationToken);
+                if (completed) _contentExposure.Complete(routeKey, contentId, instanceId);
+                else _contentExposure.Release(routeKey, contentId, instanceId);
+                return completed;
+            }
+            catch (OperationCanceledException)
+            {
+                _contentExposure.Release(routeKey, contentId, instanceId);
+                return false;
+            }
+            catch (Exception)
+            {
+                _contentExposure.Release(routeKey, contentId, instanceId);
+                return false;
+            }
         }
 
         public void HandleHardwareBack()
         {
-            TryGoBack();
+            if (TryGoBack()) return;
+            DateTimeOffset now = _now();
+            if (_rootBackPromptedAt.HasValue &&
+                now >= _rootBackPromptedAt.Value &&
+                now - _rootBackPromptedAt.Value <= RootBackExitWindow)
+            {
+                _rootBackPromptedAt = null;
+                _applicationExit.ExitApplication();
+                return;
+            }
+            _rootBackPromptedAt = now;
+            Announce("한 번 더 누르면 앱을 종료합니다.");
         }
 
         public void Dispose()
@@ -468,9 +692,7 @@ namespace Baseball.Presentation.Shell
             }
             RebuildAccessibility();
             _accessibility.FocusScreen(_screenHost.Q<Label>("screen-title"));
-            (_runtime as IBaseballShellRouteObserver)?.OnRouteChanged(
-                CurrentRoute,
-                CurrentRoute == ShellRoute.PitchHandoff);
+            (_runtime as IBaseballShellRouteObserver)?.OnRouteChanged(CurrentRoute);
         }
 
         private void OnRuntimeChanged()
@@ -575,7 +797,8 @@ namespace Baseball.Presentation.Shell
 
         private void OnNavigationCancel(NavigationCancelEvent evt)
         {
-            if (TryGoBack()) evt.StopPropagation();
+            HandleHardwareBack();
+            evt.StopPropagation();
         }
 
         private static T Require<T>(VisualElement root, string name) where T : VisualElement

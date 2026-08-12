@@ -65,6 +65,11 @@ const exactPackages = {
   "com.unity.addressables": "2.9.1",
   "com.unity.inputsystem": "1.19.0",
   "com.unity.mobile.notifications": "2.4.3",
+  "com.unity.modules.accessibility": "1.0.0",
+  "com.unity.modules.audio": "1.0.0",
+  "com.unity.modules.particlesystem": "1.0.0",
+  "com.unity.modules.physics": "1.0.0",
+  "com.unity.modules.screencapture": "1.0.0",
   "com.unity.nuget.newtonsoft-json": "3.2.2",
   "com.unity.render-pipelines.universal": "17.3.0",
   "com.unity.test-framework": "1.6.0",
@@ -77,6 +82,18 @@ for (const [name, version] of Object.entries(exactPackages)) {
   const locked = packageLock.dependencies[name];
   requireCondition(locked, `${name} is absent from packages-lock.json`);
   requireCondition(locked.version === version, `${name} lock is ${locked.version}, expected ${version}`);
+}
+const managedLinkerContract = text(
+  "apps/android-unity/Assets/Game/Application/Persistence/link.xml",
+);
+for (const contract of [
+  '<assembly fullname="UnityEngine.PhysicsModule">',
+  '<type fullname="UnityEngine.SphereCollider" preserve="all" />',
+]) {
+  requireCondition(
+    managedLinkerContract.includes(contract),
+    `pitch primitive IL2CPP preservation contract missing '${contract}'`,
+  );
 }
 for (const prohibited of ["ads", "analytics", "iap", "authentication", "gameservices"]) {
   requireCondition(
@@ -176,6 +193,80 @@ for (const contract of [
   '\\"internalQaCompiled\\"',
 ]) {
   requireCondition(buildSource.includes(contract), `build contract missing '${contract}'`);
+}
+const shellHostSource = text(
+  "apps/android-unity/Assets/Game/Presentation/Shell/BaseballShellHost.cs",
+);
+const pitchFlowSource = text(
+  "apps/android-unity/Assets/Game/Presentation/Pitch/Runtime/PitchShellFlowCoordinator.cs",
+);
+const pitchStageSource = text(
+  "apps/android-unity/Assets/Game/Presentation/Pitch/Runtime/PitchStageController.cs",
+);
+const pitchStageShaderPath =
+  "apps/android-unity/Assets/Game/Presentation/Pitch/Resources/PitchStageUnlit.shader";
+const pitchStageShaderMetaPath = `${pitchStageShaderPath}.meta`;
+const graphicsSettingsPath = "apps/android-unity/ProjectSettings/GraphicsSettings.asset";
+requireCondition(
+  existsSync(path.join(repoRoot, pitchStageShaderPath)),
+  `missing checked-in pitch stage shader ${pitchStageShaderPath}`,
+);
+requireCondition(
+  existsSync(path.join(repoRoot, pitchStageShaderMetaPath)),
+  `missing checked-in pitch stage shader metadata ${pitchStageShaderMetaPath}`,
+);
+const pitchStageShader = text(pitchStageShaderPath);
+const pitchStageShaderMeta = text(pitchStageShaderMetaPath);
+const graphicsSettings = text(graphicsSettingsPath);
+for (const contract of [
+  'Shader "Baseball/PitchStageUnlit"',
+  '"RenderPipeline" = "UniversalPipeline"',
+]) {
+  requireCondition(pitchStageShader.includes(contract), `pitch stage shader contract missing '${contract}'`);
+}
+for (const contract of [
+  "Resources.Load<Shader>",
+  "PitchStageVisualPolicy.ShaderUnavailableError",
+  "BASEBALL_PITCH_STAGE_SHADER_READY schema=1 status=passed",
+]) {
+  requireCondition(pitchStageSource.includes(contract), `pitch shader runtime contract missing '${contract}'`);
+}
+requireCondition(
+  !pitchStageSource.includes("Shader.Find("),
+  "pitch stage must not depend on a strip-prone runtime Shader.Find lookup",
+);
+for (const contract of [
+  "EnsurePitchStageShaderAlwaysIncluded();",
+  "ValidatePitchStageShaderResource();",
+  "m_AlwaysIncludedShaders",
+  "SerializedObject",
+  "PitchStageUnlit.shader",
+  "vulnerable to shader stripping",
+]) {
+  requireCondition(buildSource.includes(contract), `pitch shader build contract missing '${contract}'`);
+}
+const pitchStageShaderGuid = "79f07846e39b46c986657c06a0d5cc1a";
+requireCondition(
+  pitchStageShaderMeta.includes(`guid: ${pitchStageShaderGuid}`),
+  "pitch stage shader metadata GUID is missing or stale",
+);
+requireCondition(
+  graphicsSettings.includes(`{fileID: 4800000, guid: ${pitchStageShaderGuid}, type: 3}`),
+  "pitch stage shader must be checked into GraphicsSettings Always Included Shaders",
+);
+for (const contract of [
+  "Object.DontDestroyOnLoad(root)",
+  'new GameObject("Pitch Presentation Stage")',
+  "await _stage.PrepareVisualsAsync",
+  "DestroyStage();",
+  "_stadiumLease?.Dispose()",
+  "_batterLease?.Dispose()",
+  "_catcherLease?.Dispose()",
+]) {
+  requireCondition(
+    shellHostSource.includes(contract) || pitchFlowSource.includes(contract) || pitchStageSource.includes(contract),
+    `single-scene presentation lifecycle contract missing '${contract}'`,
+  );
 }
 
 const iconConfiguration = text(
@@ -397,6 +488,8 @@ for (const contract of [
   "BeginPitchSessionCommand",
   "PitchCareerKind.Tutorial",
   "PitchStageController",
+  "AddressableVisualAssetLoader",
+  "PrepareVisualsAsync",
   'SendMessage("ApplyQuality"',
   "CrashReporting.RecordUnexpected",
   "ForcedCrashCategory.Abort",
@@ -406,9 +499,14 @@ for (const contract of [
   'Path.Combine(UnityEngine.Application.persistentDataPath, "internal-qa")',
   "AnalyticsDestinationKind.Test",
   "tutorial_checkpoint_restored",
+  'intent.Call("removeExtra", key)',
 ]) {
   requireCondition(internalQaBridge.includes(contract), `internal QA bridge contract missing '${contract}'`);
 }
+requireCondition(
+  !internalQaBridge.includes('Call<AndroidJavaObject>("removeExtra"'),
+  "internal QA intent cleanup must use Android Intent.removeExtra(String)'s void JNI signature",
+);
 requireCondition(
   buildSource.includes(
     "Release candidate builds must exclude BuildOptions.Development and BASEBALL_INTERNAL_QA.",
@@ -482,9 +580,16 @@ for (const contract of [
   "Production RC requires injected analytics-config.generated.json and google-services.json",
   "google-services.json does not contain the Android package",
   "Local verification cannot use a production analytics configuration",
+  "IsLocalVerificationPostprocessActive",
 ]) {
   requireCondition(buildSource.includes(contract), `service build contract missing '${contract}'`);
 }
+requireCondition(
+  text("apps/android-unity/Assets/Game/Editor/Build/AndroidIconConfiguration.cs").includes(
+    "com.google.firebase.provider.FirebaseInitProvider",
+  ),
+  "local verification manifest must remove FirebaseInitProvider",
+);
 
 for (const relativePath of [
   "apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsSdkDestinations.cs",
@@ -554,11 +659,22 @@ for (const contract of [
   "did not execute any tests",
   "failures !== 0",
   "No valid Unity Editor license",
-  "run_tests EditMode || overall_status=1",
-  "run_tests PlayMode || overall_status=1",
+  '-assemblyNames "$assembly_names"',
+  "editmode_assemblies=(",
+  "Baseball.Core.Tests",
+  "bootstrap_tests=(",
+  "PreparedResetFailureSuppressesPauseRewriteAndCandidateRestartsCleanly",
+  "persistence_tests=(",
+  "OneHundredSaveReloadCycles_PreserveStateHashInputs",
+  'run_tests EditMode "$evidence_name"',
+  "run_tests PlayMode playmode Baseball.PlayMode.Tests",
 ]) {
   requireCondition(unityTestRunner.includes(contract), `Unity test fail-closed contract missing '${contract}'`);
 }
+requireCondition(
+  !unityTestRunner.includes("    -quit \\\n"),
+  "Unity test runner must let -runTests own shutdown so result XML is written",
+);
 const unityBuildRunner = text("tools/unity-android-build.sh");
 for (const contract of [
   "Android build evidence invalid",
@@ -619,7 +735,17 @@ for (const contract of [
   '"$height" -gt "$width"',
   "BASEBALL_SMOKE_MODE",
   'smoke_mode="${BASEBALL_SMOKE_MODE:-production}"',
+  "BASEBALL_BUILD_MANIFEST",
+  "BASEBALL_BUILD_CHECKSUMS",
+  "BASEBALL_UPLOAD_CERT_SHA256",
+  "build-evidence-link.txt",
+  "AAB SHA-256 mismatch",
+  "Git commit/dirty state mismatch",
+  "aab-signing-cert.sha256",
   "BASEBALL_FIRST_INTERACTIVE schema=1 status=passed",
+  "BASEBALL_PITCH_PRESENTATION_COMPLETED schema=1 status=passed",
+  "production_pitch_on_16k=",
+  "rc_build_evidence=",
   "wait_for_app_marker",
   "expected_marker=",
   "baseball.qa.command",
@@ -631,6 +757,13 @@ for (const contract of [
   "storage-diskstats.txt",
   "crash_anr_scan=passed",
   "pii_scan=passed",
+  "runtime_bridge_scan=passed",
+  "pitch.stage_shader_unavailable",
+  "StrictMode",
+  "Firebase.*(initialization failed",
+  "Default FirebaseApp failed to initialize",
+  "Failed to read Firebase options",
+  "Amplitude.*(initialization failed",
 ]) {
   requireCondition(smokeRunner.includes(contract), `Android device smoke contract missing '${contract}'`);
 }
@@ -639,6 +772,9 @@ for (const contract of [
   "`production`이 기본 모드",
   "BuildOptions.Development",
   "BASEBALL_INTERNAL_QA",
+  "production_pitch_on_16k=passed",
+  "build-manifest.json",
+  "BASEBALL_UPLOAD_CERT_SHA256",
   "onboarding→tutorial pitch checkpoint",
   "low_storage_real=not_tested",
   "실기기 통과 증거가 아닙니다",
@@ -687,6 +823,7 @@ for (const forbiddenPath of [
   "apps/android-unity/Assets/Firebase/Plugins/x86_64",
   "apps/android-unity/Assets/Plugins/iOS/Firebase",
   "apps/android-unity/Assets/Plugins/tvOS/Firebase",
+  "apps/android-unity/Assets/Plugins/Android/res",
 ]) {
   requireCondition(!existsSync(path.join(repoRoot, forbiddenPath)), `${forbiddenPath} must be injected or omitted`);
 }
@@ -698,21 +835,36 @@ for (const absolutePath of assets) {
   requireCondition(!/\.(csproj|sln)$/i.test(relativePath), `generated project file under Assets: ${relativePath}`);
 }
 
-const ownedRoots = [
-  path.join(projectRoot, "Assets", "Game"),
-  path.join(projectRoot, "Assets", "Plugins", "Android", "BaseballManifest.androidlib"),
-];
-const missingMeta = ownedRoots
-  .flatMap(walk)
-  .filter((absolutePath) => statSync(absolutePath).isFile())
+const missingMeta = assets
   .filter((absolutePath) => !absolutePath.endsWith(".meta"))
+  // Unity imports an .androidlib as one opaque Gradle plug-in. Its root needs a
+  // .meta file, while adding Unity sidecars inside its Android resource/source
+  // tree is neither required nor desirable.
+  .filter((absolutePath) => !path.relative(projectRoot, absolutePath)
+    .split(path.sep).join("/").includes(".androidlib/"))
   .filter((absolutePath) => !existsSync(`${absolutePath}.meta`));
+const requiredGeneratedUnityArtifacts = [
+  path.join(projectRoot, "Assets", "AddressableAssetsData", "AddressableAssetSettings.asset"),
+  path.join(projectRoot, "Assets", "Game", "Rendering", "BaseballMobileURP.asset"),
+];
+const missingGeneratedUnityArtifacts = requiredGeneratedUnityArtifacts
+  .filter((absolutePath) => !existsSync(absolutePath));
 if (process.env.BASEBALL_REQUIRE_UNITY_META === "1") {
-  requireCondition(missingMeta.length === 0, `${missingMeta.length} owned Unity files still need .meta import`);
+  requireCondition(
+    missingMeta.length === 0,
+    `${missingMeta.length} Unity Assets files/directories still need .meta import`,
+  );
+  requireCondition(
+    missingGeneratedUnityArtifacts.length === 0,
+    `Unity import/build configuration still needs ${missingGeneratedUnityArtifacts.length} generated assets`,
+  );
 }
 
 console.log(
-  `Android Unity source contract passed; NOT production RC evidence. Missing Unity-generated .meta files: ${missingMeta.length}.`,
+  `Android Unity source contract passed; NOT production RC evidence. Missing Unity-generated .meta entries: ${missingMeta.length}.`,
+);
+console.log(
+  `Missing reviewed Unity-generated Addressables/URP assets: ${missingGeneratedUnityArtifacts.length}.`,
 );
 console.log(
   "A signed AAB, verified certificate, 16KB BundleConfig/device execution, merged manifest/dependency evidence, symbol-upload receipt, Play targeted-device export, and physical-device smoke remain separately required.",

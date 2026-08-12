@@ -3,6 +3,7 @@
   "rootNamespace": "Baseball.Application.Tests",
   "references": [
     "Baseball.Application",
+    "Baseball.Core",
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner"
   ],

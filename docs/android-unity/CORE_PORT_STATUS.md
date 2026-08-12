@@ -1,9 +1,9 @@
 # Android Unity Core port status
 
-Updated: 2026-08-11 (Asia/Seoul)
+Updated: 2026-08-12 (Asia/Seoul)
 Source baseline: `fe7b585c32f5819dc4cd61dd16b92af46ee22b87`
 
-## Completed in the first bounded workstream
+## Completed source implementation
 
 - Pure C# domain primitives, wire-value helpers, talent/personality rules, pitching metrics.
 - Exact SplitMix64 and UTF-8 FNV-1a 64-bit implementations.
@@ -26,13 +26,16 @@ Source baseline: `fe7b585c32f5819dc4cd61dd16b92af46ee22b87`
 - A 128-seed grid matches Swift outcome, actual location, velocity, and event hash exactly. A
   10,000-seed first-pitch corpus also matches Swift's exact outcome counts; provenance and the
   canonical digest are recorded in `pitch_oracle_v2.json`.
-- Standalone Core NUnit/.NET run: 46 tests passed. The integrated static suite passes 205 tests,
-  including the 128-vector pitch oracle and exact 10,000-seed distribution gate. Unity batchmode
-  was attempted but blocked before compilation because this machine has no valid Unity Editor
-  license (`exit 198`).
+- The integrated static suite passes 433 tests, including the 128-vector pitch oracle and exact
+  10,000-seed distribution gate. The High School training-v4 Swift oracle for seed `20260811`
+  also matches next seed `14727619764395285174`, commitment `48fc6da377e52bdc`, event hash
+  `33ad17500b1a30fd`, ratings `36/46/36/39`, and fatigue `11`. Unity 6000.3.19f1
+  batchmode now passes Core 46/46, the remaining product EditMode assemblies, isolated persistence
+  fault/round-trip tests, and PlayMode 14/14.
 - Persistence now uses invariant string encoding for envelope `ulong` revisions, camel-case string
   enum conversion, strict deserialization, checksum validation, and tested JSON round trips. Actual
-  IL2CPP-device round-trip evidence remains blocked with the Unity/device gates.
+  IL2CPP internal verification AAB and 16KB ARM64 emulator restart/fault lanes pass; production-
+  signed physical-device round-trip evidence remains a release gate.
 
 ## Deliberately deferred or scoped gaps
 
@@ -47,6 +50,5 @@ distribution gate:
 - Legacy pitcher balance-v1/v2/v3 migration helpers are out of Android v1 scope: Android has a new
   save schema and does not import an iOS save. They become required if cross-platform save import is
   approved later.
-- Re-run the EditMode suite in Unity once a valid editor license is available.
-- Run the persistence round-trip suite on an IL2CPP Android device once a signed candidate and
-  physical-device lane are available.
+- Re-run the same Unity XML suite on the clean production-candidate commit.
+- Run the persistence round-trip suite on the production-signed AAB and physical-device lane.

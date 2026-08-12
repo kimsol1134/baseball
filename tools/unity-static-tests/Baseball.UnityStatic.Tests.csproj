@@ -34,18 +34,27 @@
     <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ReminderOpenReceiptPolicy.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ContentExposurePolicy.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/LifeCardShareCopy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/ReviewMomentPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/TrainingCelebrationPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Shell/CareerShareCodePolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Common/BaseballVisualContentCatalog.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Presentation/Records/LifeCardCaptureGeometry.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsEvent.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsContracts.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsPrivacyGuard.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/FirebaseAnalyticsValueAdapter.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsService.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsStartupBuffer.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Crash/CrashReportingContracts.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Crash/CrashReporting.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Review/ReviewPromptPolicy.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Notifications/SeoulReminderSchedule.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Notifications/AndroidReminderPlan.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Notifications/ReminderEnablementPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Notifications/ReminderResetIntentGuard.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Share/SharePayloadPolicy.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/Identity/AnonymousInstallIdentityPolicy.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Game/Platform/Haptics/HapticEnablementPolicy.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/InternalQa/Development/InternalQaContracts.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Core/**/*.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Tests/EditMode/Core/**/*.cs" />
@@ -65,9 +74,15 @@
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ReminderOpenReceiptPolicyTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ContentExposurePolicyTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/LifeCardShareCopyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ReviewMomentPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/TrainingCelebrationPolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/CareerShareCodePolicyTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/BaseballVisualContentCatalogTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/LifeCardCaptureGeometryTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Presentation/Screens/ProductionAnalyticsSourceContractTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Platform/AnalyticsContractTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Platform/AndroidPlatformContractTests.cs" />
+    <Compile Include="../../apps/android-unity/Assets/Tests/EditMode/Platform/CrashReportingContractTests.cs" />
     <Compile Include="../../apps/android-unity/Assets/Game/Platform/InternalQa/Development/Tests/InternalQaContractTests.cs" />
   </ItemGroup>
 </Project>

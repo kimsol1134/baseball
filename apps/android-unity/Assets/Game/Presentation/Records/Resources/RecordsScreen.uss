@@ -58,26 +58,56 @@
     white-space: normal;
 }
 
-.life-card-capture__stats {
-    flex-direction: row;
-    flex-wrap: wrap;
+.life-card-capture__sections {
     margin-top: var(--baseball-space-4);
 }
 
-.life-card-capture__stat {
+.life-card-capture__section {
+    margin-top: var(--baseball-space-3);
+    padding-top: var(--baseball-space-2);
+    border-top-width: var(--baseball-border-thin);
+    border-top-color: var(--baseball-border-subtle);
+}
+
+.life-card-capture__section-title {
+    color: var(--baseball-milestone);
+    font-size: var(--baseball-font-eyebrow);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.life-card-capture__rows {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: var(--baseball-space-1);
+}
+
+.life-card-capture__row {
     width: 50%;
     padding: var(--baseball-space-2);
 }
 
-.life-card-capture__stat-label {
-    color: var(--baseball-text-secondary);
-    font-size: var(--baseball-font-caption);
+.life-card-capture__row--narrative {
+    width: 100%;
 }
 
-.life-card-capture__stat-value {
+.life-card-capture__row-label {
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.life-card-capture__row-value {
     color: var(--baseball-text-primary);
     font-size: var(--baseball-font-body);
     -unity-font-style: bold;
+    white-space: normal;
+}
+
+.life-card-capture__row-detail {
+    margin-top: var(--baseball-space-1);
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
     white-space: normal;
 }
 
@@ -88,7 +118,15 @@
     -unity-font-style: bold;
 }
 
-.baseball-font-scale-200 .life-card-capture__stat {
+.life-card-capture__portrait {
+    width: 116px;
+    min-width: 116px;
+    height: 152px;
+    margin-right: 0;
+    margin-bottom: var(--baseball-space-3);
+}
+
+.baseball-font-scale-200 .life-card-capture__row {
     width: 100%;
 }
 

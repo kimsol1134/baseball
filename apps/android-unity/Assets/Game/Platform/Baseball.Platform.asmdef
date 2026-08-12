@@ -4,6 +4,7 @@
   "references": [
     "Baseball.Core",
     "AmplitudeSDKCore",
+    "Google.Play.Common",
     "Google.Play.Review",
     "Unity.Notifications.Android"
   ],

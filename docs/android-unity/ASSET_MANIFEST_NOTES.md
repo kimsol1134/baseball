@@ -105,13 +105,13 @@ default/fallback에 지정한다. 현대 한글 줄바꿈 규칙도 켠다. USS�
 
 ## 남은 통합 확인
 
-- Addressables group/profile 생성은 패키지/프로젝트 통합 작업이다. 이 매니페스트의 label을 Local group에 실제로 연결하고
-  airplane-mode 첫 실행을 PlayMode/Android에서 확인해야 한다.
+- Addressables group/profile과 Local LZ4 bundle 연결은 Unity import로 생성·검토했고,
+  PlayMode 및 16KB Android 내부 smoke의 airplane-mode 재실행에서 통과했다.
 - `crowd-loop.wav`의 시작/끝 경계가 실제 Android 기기에서 매끄럽고 audio-focus 복귀 뒤 정상 재개되는지는 RC 기기에서
   청감 확인해야 한다. ALAC 컨테이너 지원 여부는 더 이상 빌드 경로의 조건이 아니다.
-- adaptive foreground/background와 monochrome icon 소스와 Editor 적용 코드는 완료됐다. 최종 launcher
-  리소스가 mask/safe-zone을 지키는지는 첫 Unity import와 실제 Android launcher에서 확인해야 한다.
+- adaptive foreground/background와 monochrome icon 소스와 Editor 적용 코드는 완료됐고 내부 검증
+  launcher에서 생성·설치됐다. production 물리 launcher의 mask/safe-zone 육안 확인은 남는다.
 - 알림 small icon은 매니페스트와 source contract로 고정됐지만, Android 8~15 실제 기기에서 상태 표시줄/알림 서랍의
   tint와 축소 가독성은 RC 빌드로 확인해야 한다.
-- Unity batchmode 검증은 이 머신의 Editor license 부재로 실행되지 않았다. C#은 Unity 6000.3.19f1 reference assembly에 대해
-  별도 컴파일했으며, 유효한 license가 있는 runner에서 실제 import log와 `.meta` 설정을 다시 확인해야 한다.
+- Unity 6000.3.19f1 batchmode import, EditMode/PlayMode, 내부 IL2CPP AAB가 통과했고 missing `.meta`는 0이다.
+  같은 산출물을 clean production-candidate commit으로 고정한 뒤 물리기기에서 최종 확인한다.

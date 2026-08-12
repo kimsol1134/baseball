@@ -5,10 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baseball.Core.Domain;
 using Baseball.Core.Pitching;
+using Baseball.Platform.Crash;
 using Baseball.Presentation.Pitch;
 using Baseball.Presentation.Shell;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.TestTools;
 
 namespace Baseball.PlayMode.Tests
@@ -104,6 +106,7 @@ namespace Baseball.PlayMode.Tests
         [UnityTest]
         public IEnumerator LowMemoryForcesLowQualityWithoutChangingAuthoritativeResult()
         {
+            CrashReporting.Reset();
             var stageObject = new GameObject("Low Memory Pitch Stage");
             var stage = stageObject.AddComponent<PitchStageController>();
             yield return PrepareStage(stage);
@@ -117,6 +120,7 @@ namespace Baseball.PlayMode.Tests
 
             stageObject.SendMessage("ApplyQuality", PitchQualityTier.High, SendMessageOptions.RequireReceiver);
             Assert.That(stage.QualityTier, Is.EqualTo(PitchQualityTier.High));
+            Assert.That(CrashRuntimeDiagnostics.CurrentQualityTier, Is.EqualTo("high"));
             Assert.That(trail.minVertexDistance, Is.EqualTo(0.035f).Within(0.001f));
             Assert.That(particles.main.maxParticles, Is.EqualTo(24));
 
@@ -124,11 +128,13 @@ namespace Baseball.PlayMode.Tests
             yield return null;
             stageObject.SendMessage("HandleLowMemory", SendMessageOptions.RequireReceiver);
             Assert.That(stage.QualityTier, Is.EqualTo(PitchQualityTier.Low));
+            Assert.That(CrashRuntimeDiagnostics.CurrentQualityTier, Is.EqualTo("low"));
             Assert.That(trail.minVertexDistance, Is.EqualTo(0.07f).Within(0.001f));
             Assert.That(particles.main.maxParticles, Is.EqualTo(8));
             Assert.That(QualitySettings.antiAliasing, Is.Zero);
             Assert.That(UnityEngine.Application.targetFrameRate, Is.EqualTo(30));
-            Assert.That(ScalableBufferManager.widthScaleFactor, Is.EqualTo(0.85f).Within(0.001f));
+            Assert.That(UniversalRenderPipeline.asset, Is.Not.Null);
+            Assert.That(UniversalRenderPipeline.asset.renderScale, Is.EqualTo(0.85f).Within(0.001f));
 
             yield return PlayModeDeadline.Until(
                 () => completed != null,
@@ -140,6 +146,7 @@ namespace Baseball.PlayMode.Tests
             UnityEngine.Object.Destroy(stageObject);
             yield return null;
             Assert.That(UnityEngine.Application.targetFrameRate, Is.EqualTo(60));
+            CrashReporting.Reset();
         }
 
         [UnityTest]
@@ -203,7 +210,7 @@ namespace Baseball.PlayMode.Tests
 
         private static IEnumerator ExerciseStage(bool reducedMotion, bool requestSkip)
         {
-            var presenter = new PitchPlayPresenter(PitchDemoRequestFactory.Create(daily: false));
+            var presenter = new PitchPlayPresenter(CreatePitchRequest());
             presenter.Start();
             presenter.BeginRelease();
             presenter.AdvanceRelease(0.23d);
@@ -252,6 +259,51 @@ namespace Baseball.PlayMode.Tests
 
             UnityEngine.Object.Destroy(stageObject);
             yield return null;
+        }
+
+        private static PitchPlayRequest CreatePitchRequest()
+        {
+            var pitcher = new PitcherSnapshot(
+                "pitcher-hangyeol",
+                "한결",
+                62,
+                56,
+                58,
+                60,
+                new[]
+                {
+                    new PitchProfileSnapshot(PitchType.FourSeam, PitchUsageRole.Primary, 1450, 59, 58, 55, 62, 55, 1),
+                    new PitchProfileSnapshot(PitchType.Slider, PitchUsageRole.Secondary, 1320, 57, 56, 63, 64, 61, 1),
+                    new PitchProfileSnapshot(PitchType.Curveball, PitchUsageRole.Secondary, 1210, 55, 54, 65, 57, 62, 1),
+                    new PitchProfileSnapshot(PitchType.Changeup, PitchUsageRole.Development, 1280, 52, 51, 57, 55, 60, 1),
+                });
+            return new PitchPlayRequest(
+                "2026081108",
+                pitcher,
+                new BatterSnapshot("batter-doyun", "도윤", 57, 54, 61, BatSide.Right),
+                new BatterScoutingSnapshot(
+                    new PitchZone(1, 1),
+                    new PitchZone(2, 0),
+                    PitchType.FourSeam,
+                    PitchType.Slider,
+                    48),
+                new PlateAppearanceContext(
+                    "highschool-pa-1",
+                    0,
+                    8,
+                    1,
+                    0,
+                    0,
+                    1,
+                    1,
+                    810,
+                    42),
+                gameState: GameStateSnapshot.Standard,
+                gameLog: new GameLogSnapshot(
+                    "highschool-game",
+                    0,
+                    0,
+                    Array.Empty<PitchAnalysisEntry>()));
         }
 
         private static IEnumerator PrepareStage(PitchStageController stage)

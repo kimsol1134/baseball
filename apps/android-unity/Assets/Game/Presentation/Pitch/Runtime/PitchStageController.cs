@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Baseball.Platform.Crash;
 using Baseball.Presentation.Shell;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -18,6 +19,9 @@ namespace Baseball.Presentation.Pitch
         public const float RecoveredSummaryMaximumSeconds = 0.50f;
         private const float RecoveredSummaryHoldSeconds = 0.35f;
         private const int FrameSampleCapacity = 90;
+        private const string ShaderReadyMarker =
+            "BASEBALL_PITCH_STAGE_SHADER_READY schema=1 status=passed";
+        private static bool _shaderReadyMarkerLogged;
         private static readonly Vector3 DefaultCameraPosition = new Vector3(0f, 1.20f, -2.35f);
         private static readonly Vector3 DefaultCameraTarget = new Vector3(0f, 1.15f, 7.2f);
         private static readonly Vector3 BatterRestPosition = new Vector3(0.27f, 0.88f, 0.30f);
@@ -56,6 +60,8 @@ namespace Baseball.Presentation.Pitch
         private int _originalUrpMsaa;
         private bool _visualsReady;
         private float _lastBackdropAspect = -1f;
+        private Shader _stageShader;
+        private bool _shaderFailureLogged;
 
         public event Action<PitchPresentationSnapshot> ResultReadable;
         public event Action<PitchPresentationSnapshot> PresentationCompleted;
@@ -68,9 +74,17 @@ namespace Baseball.Presentation.Pitch
 
         public PitchQualityTier QualityTier => _qualityTier;
         public bool VisualsReady => _visualsReady;
+        public string VisualPreparationError { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetShaderMarker()
+        {
+            _shaderReadyMarkerLogged = false;
+        }
 
         private void Awake()
         {
+            if (!EnsureStageShader()) return;
             EnsureStage();
             CaptureQualityGlobals();
             ApplyQuality(PitchQualityPolicy.Select(new PitchQualitySignals(
@@ -180,6 +194,8 @@ namespace Baseball.Presentation.Pitch
             CancellationToken cancellationToken)
         {
             if (_visualsReady) return true;
+            if (!EnsureStageShader()) return false;
+            EnsureStage();
             if (loader == null) return false;
             IBaseballVisualAssetLease stadium = null;
             IBaseballVisualAssetLease batter = null;
@@ -201,6 +217,7 @@ namespace Baseball.Presentation.Pitch
                         batter?.Sprite != null,
                         catcher?.Sprite != null))
                 {
+                    VisualPreparationError = "pitch.stage_visual_assets_not_ready";
                     return false;
                 }
 
@@ -212,6 +229,7 @@ namespace Baseball.Presentation.Pitch
                 batter = null;
                 catcher = null;
                 _visualsReady = true;
+                VisualPreparationError = string.Empty;
                 stageCamera.enabled = true;
                 ApplyQuality(_qualityTier);
                 UpdateBackdropFraming();
@@ -223,6 +241,7 @@ namespace Baseball.Presentation.Pitch
             }
             catch
             {
+                VisualPreparationError = "pitch.stage_visual_assets_not_ready";
                 return false;
             }
             finally
@@ -435,6 +454,7 @@ namespace Baseball.Presentation.Pitch
         private void ApplyQuality(PitchQualityTier tier)
         {
             _qualityTier = tier;
+            CrashRuntimeDiagnostics.PublishQualityTier(tier.Value());
             bool high = tier == PitchQualityTier.High;
             UnityEngine.Application.targetFrameRate = high ? 60 : 30;
             QualitySettings.antiAliasing = high ? 2 : 0;
@@ -484,6 +504,8 @@ namespace Baseball.Presentation.Pitch
 
         private void EnsureStage()
         {
+            if (!EnsureStageShader())
+                throw new InvalidOperationException(PitchStageVisualPolicy.ShaderUnavailableError);
             if (stageCamera == null)
             {
                 var cameraObject = new GameObject("Pitch Camera");
@@ -521,6 +543,7 @@ namespace Baseball.Presentation.Pitch
                 var particleObject = new GameObject("Contact Particles");
                 particleObject.transform.SetParent(transform, false);
                 _contactParticles = particleObject.AddComponent<ParticleSystem>();
+                _contactParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                 ParticleSystem.MainModule main = _contactParticles.main;
                 main.loop = false;
                 main.playOnAwake = false;
@@ -699,10 +722,40 @@ namespace Baseball.Presentation.Pitch
 
         private Material CreateMaterial(Color color)
         {
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
-            var material = new Material(shader) { color = color };
+            if (_stageShader == null)
+                throw new InvalidOperationException(PitchStageVisualPolicy.ShaderUnavailableError);
+            var material = new Material(_stageShader) { color = color };
             _runtimeMaterials.Add(material);
             return material;
+        }
+
+        private bool EnsureStageShader()
+        {
+            if (_stageShader != null && _stageShader.isSupported) return true;
+            _stageShader = UnityEngine.Resources.Load<Shader>(
+                PitchStageVisualPolicy.ShaderResourcePath);
+            if (_stageShader == null || !_stageShader.isSupported ||
+                !string.Equals(
+                    _stageShader.name,
+                    PitchStageVisualPolicy.ShaderName,
+                    StringComparison.Ordinal))
+            {
+                VisualPreparationError = PitchStageVisualPolicy.ShaderUnavailableError;
+                if (!_shaderFailureLogged)
+                {
+                    _shaderFailureLogged = true;
+                    Debug.LogError(PitchStageVisualPolicy.ShaderUnavailableError);
+                }
+                return false;
+            }
+
+            VisualPreparationError = string.Empty;
+            if (!_shaderReadyMarkerLogged)
+            {
+                _shaderReadyMarkerLogged = true;
+                Debug.Log(ShaderReadyMarker + " shader=" + PitchStageVisualPolicy.ShaderName);
+            }
+            return true;
         }
     }
 }

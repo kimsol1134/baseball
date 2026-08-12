@@ -13,6 +13,7 @@ using Baseball.Core.Domain;
 using Baseball.Platform.Analytics;
 using Baseball.Platform.Crash;
 using Baseball.Presentation.Pitch;
+using Baseball.Presentation.Shell;
 using UnityEngine;
 
 namespace Baseball.Platform.InternalQa
@@ -252,6 +253,22 @@ namespace Baseball.Platform.InternalQa
         {
             var stageObject = new GameObject("Baseball Internal QA Pitch Sample");
             var stage = stageObject.AddComponent<PitchStageController>();
+            Task<bool> preparation = stage.PrepareVisualsAsync(
+                new AddressableVisualAssetLoader(),
+                System.Threading.CancellationToken.None);
+            while (!preparation.IsCompleted) yield return null;
+            if (preparation.IsFaulted || preparation.IsCanceled || !preparation.Result)
+            {
+                string reason = preparation.IsFaulted
+                    ? SafeReason(preparation.Exception?.GetBaseException())
+                    : preparation.IsCanceled
+                        ? "visual_preparation_canceled"
+                        : SafeToken(stage.VisualPreparationError);
+                Mark("pitch_presentation_completed", "failed", "reason=" + reason);
+                Destroy(stageObject);
+                _running = false;
+                yield break;
+            }
             PitchPresentationSnapshot expected = InternalQaPitchFixture.Create(request.Seed);
             bool readable = false;
             bool completed = false;
@@ -517,10 +534,9 @@ namespace Baseball.Platform.InternalQa
 
         private static void RemoveIntentExtra(AndroidJavaObject intent, string key)
         {
-            using (AndroidJavaObject ignored = intent.Call<AndroidJavaObject>("removeExtra", key))
-            {
-                // Intent.removeExtra returns the same Intent; dispose only the returned JNI wrapper.
-            }
+            // android.content.Intent.removeExtra(String) returns void. Asking Unity's JNI bridge
+            // for an AndroidJavaObject changes the expected method signature and fails at runtime.
+            intent.Call("removeExtra", key);
         }
 
         private static void Mark(string name, string status, string detail)

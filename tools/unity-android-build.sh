@@ -166,16 +166,19 @@ const bundle = path.join(directory, bundleName);
 if (!fs.existsSync(bundle)) fail("AAB is missing");
 requireZip(bundle, "AAB");
 if (sha256(bundle) !== manifest.bundleSha256) fail("AAB SHA-256 mismatch");
+if (manifest.bundleBytes !== fs.statSync(bundle).size) fail("AAB byte count mismatch");
 
 const expectedLines = [`${manifest.bundleSha256}  ${bundleName}`];
-if (process.env.BUILD_MODE === "rc") {
-  const symbolName = path.basename(manifest.symbolFile || "");
-  if (!symbolName || symbolName !== manifest.symbolFile || !symbolName.toLowerCase().includes("symbol")) fail("unsafe or missing symbolFile");
+const symbolName = path.basename(manifest.symbolFile || "");
+if (symbolName) {
+  if (symbolName !== manifest.symbolFile || !symbolName.toLowerCase().includes("symbol")) fail("unsafe symbolFile");
   const symbol = path.join(directory, symbolName);
   if (!fs.existsSync(symbol)) fail("IL2CPP symbol archive is missing");
   requireZip(symbol, "IL2CPP symbol archive");
   if (sha256(symbol) !== manifest.symbolSha256) fail("IL2CPP symbol SHA-256 mismatch");
   expectedLines.push(`${manifest.symbolSha256}  ${symbolName}`);
+} else if (process.env.BUILD_MODE === "rc") {
+  fail("release candidate is missing symbolFile");
 }
 const checksumLines = fs.readFileSync(checksumsPath, "utf8").trim().split(/\r?\n/);
 if (JSON.stringify(checksumLines) !== JSON.stringify(expectedLines)) fail("checksums.sha256 does not exactly match the manifest");

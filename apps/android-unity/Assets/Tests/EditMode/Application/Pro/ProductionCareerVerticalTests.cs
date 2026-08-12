@@ -72,7 +72,7 @@ namespace Baseball.Application.Tests
                             }
                             break;
                         case HighSchoolPhase.SchoolSelection:
-                            Assert.That(highSchool.SchoolChoices, Has.Count.EqualTo(4));
+                            Assert.That(highSchool.SchoolChoices.Count, Is.EqualTo(4));
                             await AdvanceHighSchool(store, "choose_school",
                                 highSchool.SchoolChoices[0].Payload, now);
                             break;
@@ -168,7 +168,7 @@ namespace Baseball.Application.Tests
                     store.Current.Pro.Phase != ProCareerPhase.RetirementDecision; guard++)
                 {
                     var pro = store.Current.Pro;
-                    Assert.That(pro.LeagueStandings, Has.Count.EqualTo(10));
+                    Assert.That(pro.LeagueStandings.Count, Is.EqualTo(10));
                     Assert.That(pro.LeaguePitchers, Is.Not.Empty);
                     switch (pro.Phase)
                     {
@@ -210,7 +210,7 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current.Pro.Phase, Is.EqualTo(ProCareerPhase.RetirementDecision));
                 Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Retirement));
                 Assert.That(store.Current.Pro.Season, Is.EqualTo(12));
-                Assert.That(store.Current.Pro.CareerSeasons, Has.Count.EqualTo(12));
+                Assert.That(store.Current.Pro.CareerSeasons.Count, Is.EqualTo(12));
                 Assert.That(store.Current.Pro.OffseasonChoices.Single(value =>
                     string.Equals(value.Id, "continue_career", StringComparison.Ordinal)).Enabled, Is.False);
                 Assert.That(sawSeasonDecision, Is.True);
@@ -227,8 +227,7 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Legacy));
                 Assert.That(store.Current.Pro.Phase, Is.EqualTo(ProCareerPhase.Completed));
                 Assert.That(store.Current.Meta.LifeArchive, Is.Empty);
-                Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates,
-                    Has.Count.EqualTo(3));
+                Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates.Count, Is.EqualTo(3));
                 Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates
                     .Select(value => value.Id).Distinct().Count(), Is.EqualTo(3));
                 Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates,
@@ -240,13 +239,13 @@ namespace Baseball.Application.Tests
                         Array.Empty<string>(), signature.Id, now.AddHours(1).AddMinutes(1)));
                 Assert.That(store.Current.Meta.CompletedGameCount,
                     Is.EqualTo(completedGamesBeforeSettlement));
-                Assert.That(store.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
+                Assert.That(store.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
                 var archived = store.Current.Meta.LifeArchive[0];
                 Assert.That(archived.ProSeasons, Is.EqualTo(12));
                 Assert.That(archived.SignatureLegacy.Id, Is.EqualTo(signature.Id));
                 Assert.That(archived.SignatureLegacy.EvidenceSummary,
                     Is.EqualTo(signature.EvidenceSummary));
-                Assert.That(archived.SignatureLegacyCandidates, Has.Count.EqualTo(3));
+                Assert.That(archived.SignatureLegacyCandidates.Count, Is.EqualTo(3));
                 Assert.That(archived.PlayerLegacy.DefiningMoment,
                     Is.EqualTo(signature.EvidenceSummary));
                 Assert.That(archived.HighSchoolDetail, Is.Not.Null);
@@ -261,7 +260,7 @@ namespace Baseball.Application.Tests
                 Assert.That(archived.HighSchoolDetail.PresetTitle, Is.EqualTo("강속구 원석"));
                 Assert.That(archived.HighSchoolDetail.DifficultyId, Is.EqualTo("standard"));
                 Assert.That(archived.HighSchoolDetail.DifficultyTitle, Is.EqualTo("표준"));
-                Assert.That(archived.HighSchoolDetail.Talents, Has.Count.EqualTo(4));
+                Assert.That(archived.HighSchoolDetail.Talents.Count, Is.EqualTo(4));
                 Assert.That(archived.HighSchoolDetail.Talents.Select(value => value.AbilityId),
                     Is.EquivalentTo(new[] { "stuff", "command", "movement", "stamina" }));
                 Assert.That(archived.FinalRatings.Stuff, Is.EqualTo(highSchoolFinalRatings.Stuff));
@@ -278,7 +277,7 @@ namespace Baseball.Application.Tests
                     new BeginRebirthCommand(now.AddHours(2)));
                 Assert.That(store.Current.Meta.CompletedGameCount,
                     Is.EqualTo(completedGamesBeforeSettlement));
-                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.BetweenLives));
+                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Setup));
                 Assert.That(store.Current.Meta.LifeNumber, Is.EqualTo(2));
                 Assert.That(store.Current.Meta.LifeArchive[0].SignatureLegacy.EvidenceSummary,
                     Is.EqualTo(signature.EvidenceSummary));

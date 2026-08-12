@@ -13,9 +13,11 @@ namespace Baseball.Application.Tests
     internal sealed class FakeHighSchoolPort : IHighSchoolCareerPort
     {
         public int PitchApplyCount { get; private set; }
+        public StartHighSchoolCareerRequest LastStartRequest { get; private set; }
 
         public HighSchoolCareerReadModel Start(StartHighSchoolCareerRequest request)
         {
+            LastStartRequest = request;
             return HighSchool(
                 phase: HighSchoolPhase.Prologue,
                 playerName: request.PlayerName,
@@ -277,7 +279,8 @@ namespace Baseball.Application.Tests
                             choice.Detail,
                             choice.EffectSummary ?? choice.Detail))
                         .FirstOrDefault(),
-                lifeDetail: value.LifeDetail);
+                lifeDetail: value.LifeDetail,
+                trainingOutlooks: value.TrainingOutlooks);
         }
     }
 

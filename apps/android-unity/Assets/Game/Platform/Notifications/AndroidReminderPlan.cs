@@ -14,7 +14,8 @@ namespace Baseball.Platform.Notifications
             string variant,
             string savedDayKey,
             string notificationDayKey,
-            int developmentRulesVersion)
+            int developmentRulesVersion,
+            string installEpoch = null)
         {
             Destination = destination;
             Reason = reason;
@@ -24,6 +25,7 @@ namespace Baseball.Platform.Notifications
             SavedDayKey = savedDayKey;
             NotificationDayKey = notificationDayKey;
             DevelopmentRulesVersion = developmentRulesVersion;
+            InstallEpoch = EpochOrNone(installEpoch);
         }
 
         public string Destination { get; }
@@ -34,6 +36,19 @@ namespace Baseball.Platform.Notifications
         public string SavedDayKey { get; }
         public string NotificationDayKey { get; }
         public int DevelopmentRulesVersion { get; }
+        public string InstallEpoch { get; }
+
+        private static string EpochOrNone(string value)
+        {
+            if (value?.Length != 16) return "none";
+            foreach (char character in value)
+            {
+                bool digit = character >= '0' && character <= '9';
+                bool lowerHex = character >= 'a' && character <= 'f';
+                if (!digit && !lowerHex) return "none";
+            }
+            return value;
+        }
     }
 
     /// <summary>
@@ -70,6 +85,7 @@ namespace Baseball.Platform.Notifications
                 intent.SavedDayKey,
                 intent.NotificationDayKey,
                 intent.DevelopmentRulesVersion.ToString(CultureInfo.InvariantCulture),
+                intent.InstallEpoch,
             });
             request = new ReminderOpenRequest(intent, Fnv1A64(canonical).ToString("x16"));
             return true;
@@ -127,7 +143,7 @@ namespace Baseball.Platform.Notifications
         public string SavedDayKey { get; }
         public int DevelopmentRulesVersion { get; }
 
-        public string IntentData(string dayKey)
+        public string IntentData(string dayKey, string installEpoch = null)
         {
             return "baseball://reminder?source=return_reminder&destination=" +
                 Uri.EscapeDataString(Destination) + "&reason=" + Uri.EscapeDataString(Reason) +
@@ -136,6 +152,7 @@ namespace Baseball.Platform.Notifications
                 "&variant=" + Uri.EscapeDataString(Variant) +
                 "&saved_day_key=" + Uri.EscapeDataString(SavedDayKey) +
                 "&development_rules_version=" + DevelopmentRulesVersion.ToString(CultureInfo.InvariantCulture) +
+                "&install_epoch=" + Uri.EscapeDataString(EpochOrNone(installEpoch)) +
                 "&day=" + Uri.EscapeDataString(DayKeyOrNone(dayKey));
         }
 
@@ -181,7 +198,8 @@ namespace Baseball.Platform.Notifications
                 NormalizeVariant(Value(values, "variant")),
                 DayKeyOrNone(Value(values, "saved_day_key")),
                 DayKeyOrNone(Value(values, "day")),
-                Math.Max(0, rulesVersion));
+                Math.Max(0, rulesVersion),
+                EpochOrNone(Value(values, "install_epoch")));
             return true;
         }
 
@@ -230,6 +248,18 @@ namespace Baseball.Platform.Notifications
             if (value?.Length != 8) return "none";
             foreach (char character in value)
                 if (!char.IsDigit(character)) return "none";
+            return value;
+        }
+
+        private static string EpochOrNone(string value)
+        {
+            if (value?.Length != 16) return "none";
+            foreach (char character in value)
+            {
+                bool digit = character >= '0' && character <= '9';
+                bool lowerHex = character >= 'a' && character <= 'f';
+                if (!digit && !lowerHex) return "none";
+            }
             return value;
         }
 

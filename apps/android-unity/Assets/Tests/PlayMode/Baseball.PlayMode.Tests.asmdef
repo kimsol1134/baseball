@@ -5,13 +5,12 @@
     "Baseball.Core",
     "Baseball.Application",
     "Baseball.Bootstrap",
+    "Baseball.Platform",
     "Baseball.Presentation",
-    "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner"
+    "Unity.RenderPipelines.Universal.Runtime",
+    "UnityEngine.TestRunner"
   ],
-  "includePlatforms": [
-    "Editor"
-  ],
+  "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": false,

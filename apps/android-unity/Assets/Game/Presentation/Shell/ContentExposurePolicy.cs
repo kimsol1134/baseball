@@ -36,13 +36,39 @@ namespace Baseball.Presentation.Shell
 
     public sealed class ContentExposureDeduplicator
     {
-        private readonly HashSet<string> _keys = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _pending = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _completed = new HashSet<string>(StringComparer.Ordinal);
 
-        public bool TryMark(string route, string contentId, string instanceId)
+        /// <summary>
+        /// Reserves one exposure attempt. A caller must Complete only after its durable receipt and
+        /// analytics enqueue succeed, or Release on any save/cancellation failure so re-entry can
+        /// retry in the same process.
+        /// </summary>
+        public bool TryBegin(string route, string contentId, string instanceId)
+        {
+            string key = Key(route, contentId, instanceId);
+            if (key == null || _pending.Contains(key) || _completed.Contains(key)) return false;
+            return _pending.Add(key);
+        }
+
+        public void Complete(string route, string contentId, string instanceId)
+        {
+            string key = Key(route, contentId, instanceId);
+            if (key == null || !_pending.Remove(key)) return;
+            _completed.Add(key);
+        }
+
+        public void Release(string route, string contentId, string instanceId)
+        {
+            string key = Key(route, contentId, instanceId);
+            if (key != null) _pending.Remove(key);
+        }
+
+        private static string Key(string route, string contentId, string instanceId)
         {
             if (string.IsNullOrWhiteSpace(route) || string.IsNullOrWhiteSpace(contentId) ||
-                string.IsNullOrWhiteSpace(instanceId)) return false;
-            return _keys.Add(route + "|" + contentId + "|" + instanceId);
+                string.IsNullOrWhiteSpace(instanceId)) return null;
+            return route + "|" + contentId + "|" + instanceId;
         }
     }
 }

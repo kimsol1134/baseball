@@ -15,6 +15,13 @@
             <ui:Label name="pitch-tutorial-coach" class="pitch-tutorial-coach" />
             <ui:Label name="pitch-recommendation" class="pitch-recommendation" />
             <ui:VisualElement name="pitch-catcher-sign-slot" class="pitch-catcher-sign-slot" />
+            <ui:VisualElement name="pitch-context-panel" class="pitch-panel pitch-context-panel">
+                <ui:Label name="pitch-situation-detail" class="pitch-context-item" />
+                <ui:Label name="pitch-batter-detail" class="pitch-context-item" />
+                <ui:Label name="pitch-scouting-detail" class="pitch-context-item" />
+                <ui:Label name="pitch-rival-detail" class="pitch-context-item" />
+                <ui:Label name="pitch-pitcher-detail" class="pitch-context-item" />
+            </ui:VisualElement>
             <ui:VisualElement name="pitch-input-panel" class="pitch-panel pitch-input-panel">
                 <ui:Label text="구종" class="baseball-section-title" />
                 <ui:VisualElement name="pitch-type-options" class="pitch-type-options" />
@@ -42,6 +49,7 @@
                 <ui:Label text="손을 놓는 순간의 위치가 투구 정확도로 이어집니다." class="pitch-help" />
             </ui:VisualElement>
             <ui:VisualElement name="pitch-release-slot" class="pitch-release-slot" />
+            <ui:VisualElement name="pitch-abandon-slot" class="pitch-abandon-slot" />
 
             <ui:VisualElement name="pitch-presenting-panel" class="pitch-panel pitch-presenting-panel">
                 <ui:Label name="pitch-presenting-label" class="baseball-section-title" />
@@ -53,6 +61,12 @@
                 <ui:Label name="pitch-result-title" class="baseball-display pitch-result-title" />
                 <ui:Label name="pitch-result-detail" class="pitch-result-detail" />
                 <ui:Label name="pitch-result-stats" class="pitch-result-stats" />
+                <ui:VisualElement name="pitch-postgame-summary" class="pitch-postgame-summary">
+                    <ui:Label name="pitch-postgame-analysis" class="pitch-postgame-copy" />
+                    <ui:Label name="pitch-postgame-growth" class="pitch-postgame-copy" />
+                    <ui:VisualElement name="pitch-postgame-log" class="pitch-postgame-log" />
+                    <ui:Label name="pitch-postgame-status" class="pitch-postgame-status" />
+                </ui:VisualElement>
                 <ui:VisualElement name="pitch-result-skip-slot" class="pitch-skip-slot" />
                 <ui:VisualElement name="pitch-result-action" class="pitch-result-action" />
             </ui:VisualElement>

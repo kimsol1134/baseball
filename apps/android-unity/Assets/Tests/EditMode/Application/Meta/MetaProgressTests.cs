@@ -110,7 +110,7 @@ namespace Baseball.Application.Tests
             var second = WeeklyProgramRules.Make("2026-W33", "user-a", eligible);
 
             Assert.That(missing, Is.Null);
-            Assert.That(first.Tasks, Has.Count.EqualTo(3));
+            Assert.That(first.Tasks.Count, Is.EqualTo(3));
             Assert.That(first.Tasks[0].Kind, Is.EqualTo(WeeklyTaskKinds.PlayedOnTwoDays));
             Assert.That(second.Tasks.Select(value => value.Kind),
                 Is.EqualTo(first.Tasks.Select(value => value.Kind)));
@@ -131,8 +131,8 @@ namespace Baseball.Application.Tests
                 duplicate, WeeklyTaskKinds.PlayedOnTwoDays, 1, "receipt-b", instant.AddDays(1));
 
             Assert.That(duplicate, Is.SameAs(current));
-            Assert.That(current.PlayedDayKeys, Has.Count.EqualTo(1));
-            Assert.That(nextDay.PlayedDayKeys, Has.Count.EqualTo(2));
+            Assert.That(current.PlayedDayKeys.Count, Is.EqualTo(1));
+            Assert.That(nextDay.PlayedDayKeys.Count, Is.EqualTo(2));
             Assert.That(nextDay.Program.Tasks.Single(value =>
                 value.Kind == WeeklyTaskKinds.PlayedOnTwoDays).IsCompleted, Is.True);
         }
@@ -158,7 +158,7 @@ namespace Baseball.Application.Tests
                 new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero));
 
             Assert.That(claimed.Program.Claimed, Is.True);
-            Assert.That(claimed.Stamps, Has.Count.EqualTo(1));
+            Assert.That(claimed.Stamps.Count, Is.EqualTo(1));
             Assert.That(claimed.Stamps[0].CompletedTaskCount, Is.EqualTo(2));
             Assert.That(rollback, Is.SameAs(claimed));
         }
@@ -241,7 +241,7 @@ namespace Baseball.Application.Tests
             var preserved = WeeklyProgramRules.Configure(
                 alreadyCompleted, noPlayableGoals, "user-a", instant);
 
-            Assert.That(reconciled.Program.Tasks, Has.Count.EqualTo(1));
+            Assert.That(reconciled.Program.Tasks.Count, Is.EqualTo(1));
             Assert.That(reconciled.Program.Tasks[0].Kind,
                 Is.EqualTo(WeeklyTaskKinds.DailyInningCompleted));
             Assert.That(reconciled.Program.Tasks[0].IsCompleted, Is.True);
@@ -292,7 +292,7 @@ namespace Baseball.Application.Tests
                     "weekly-active", store.Current.Revision, reconcile));
                 Assert.That(applied.Status, Is.EqualTo(DispatchStatus.Applied));
                 Assert.That(store.Current.Meta.Weekly.Program, Is.Not.Null);
-                Assert.That(store.Current.Meta.Weekly.Program.Tasks, Has.Count.EqualTo(3));
+                Assert.That(store.Current.Meta.Weekly.Program.Tasks.Count, Is.EqualTo(3));
                 Assert.That(WeeklyProgramCommandFactory.Observe(
                     store.Current, instant.AddHours(4)), Is.Null);
             }
@@ -309,7 +309,7 @@ namespace Baseball.Application.Tests
 
             Assert.That(first.Unlocked, Does.Contain("future_achievement"));
             Assert.That(duplicate, Is.SameAs(first));
-            Assert.That(acknowledged.Unlocked, Has.Count.EqualTo(2));
+            Assert.That(acknowledged.Unlocked.Count, Is.EqualTo(2));
             Assert.That(acknowledged.Unacknowledged, Is.EquivalentTo(new[] { "future_achievement" }));
         }
 
@@ -365,7 +365,7 @@ namespace Baseball.Application.Tests
                     legacy));
 
             using (var store = await GameApplicationStore.OpenAsync(
-                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 Assert.That(store.WasMigrated, Is.True);
                 Assert.That(store.Current.AggregateVersion,
@@ -424,7 +424,7 @@ namespace Baseball.Application.Tests
                 var publications = 0;
                 store.StatePublished += _ => publications++;
 
-                Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                GameResetException error = Assert.ThrowsAsync<GameResetException>(async () =>
                     await store.ResetAsync(
                         "install-b",
                         (candidate, _) =>
@@ -433,11 +433,63 @@ namespace Baseball.Application.Tests
                             return Task.CompletedTask;
                         }));
 
+                Assert.That(error.ErrorCode, Is.EqualTo("reset.repository_failed"));
+                Assert.That(error.RollbackError, Is.Null);
                 Assert.That(identity, Is.EqualTo("install-a"));
+                Assert.That(repository.Saved, Is.SameAs(before),
+                    "a reset I/O failure must restore a canonical snapshot before cancellation");
                 Assert.That(store.Current, Is.SameAs(before));
                 Assert.That(store.Current.InstallId, Is.EqualTo("install-a"));
                 Assert.That(publications, Is.Zero);
             }
+        }
+
+        [Test]
+        public async Task ResetAndCanonicalRollbackFailureKeepsRecoveryBoundaryVisible()
+        {
+            var repository = new RecordingGameRepository { FailReset = true };
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+            {
+                await store.DispatchAsync(new CommandEnvelope<GameCommand>(
+                    "setup", 0, new EnterSetupCommand()));
+                var before = store.Current;
+                repository.FailSave = true;
+
+                GameResetException error = Assert.ThrowsAsync<GameResetException>(async () =>
+                    await store.ResetAsync("install-b"));
+
+                Assert.That(error.ErrorCode,
+                    Is.EqualTo("reset.repository_and_rollback_failed"));
+                Assert.That(error.RollbackError, Is.Not.Null);
+                Assert.That(store.Current, Is.SameAs(before));
+            }
+        }
+
+        [Test]
+        public void OpenRejectsLoadedAggregateFromDifferentInstallIdentity()
+        {
+            var repository = new RecordingGameRepository();
+            var aggregate = GameSaveAggregate.Initial("install-a").Commit("progress");
+            repository.LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                SaveLoadStatus.LoadedCanonical,
+                new SaveEnvelope<GameSaveAggregate>(
+                    SaveSchema.Name,
+                    SaveSchema.Version,
+                    aggregate.Revision,
+                    new DateTimeOffset(2026, 8, 12, 0, 0, 0, TimeSpan.Zero),
+                    new string('a', 64),
+                    aggregate));
+
+            GameSaveLoadException error = Assert.ThrowsAsync<GameSaveLoadException>(async () =>
+                await GameApplicationStore.OpenAsync(
+                    repository,
+                    new FakeHighSchoolPort(),
+                    new FakeProPort(),
+                    "install-b"));
+
+            Assert.That(error.ErrorCode, Is.EqualTo("save.install_id_mismatch"));
+            Assert.That(error.Status, Is.EqualTo(SaveLoadStatus.LoadedCanonical));
         }
 
         [Test]
@@ -464,6 +516,84 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current, Is.SameAs(before));
                 Assert.That(store.Current.InstallId, Is.EqualTo("install-a"));
                 Assert.That(publications, Is.Zero);
+            }
+        }
+
+        [Test]
+        public async Task PreparedIdentityFailure_LeavesDeletedRepositoryForStartupReconciliation()
+        {
+            var repository = new RecordingGameRepository();
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+            {
+                await store.DispatchAsync(new CommandEnvelope<GameCommand>(
+                    "setup", 0, new EnterSetupCommand()));
+                var before = store.Current;
+                var publications = 0;
+                store.StatePublished += _ => publications++;
+
+                var error = Assert.ThrowsAsync<GameResetException>(async () =>
+                    await store.ResetWithPreparedIdentityAsync(
+                        "install-b",
+                        (_, __) => Task.FromException(
+                            new InvalidOperationException("identity receipt disk full"))));
+
+                Assert.That(error.ErrorCode, Is.EqualTo("reset.identity_commit_pending"));
+                Assert.That(error.ResetCommitted, Is.True);
+                Assert.That(error.RollbackError, Is.Null);
+                Assert.That(repository.ResetCount, Is.EqualTo(1));
+                Assert.That(repository.Saved, Is.Null,
+                    "a journaled reset must not restore an old-install aggregate after deletion");
+                Assert.That(store.Current, Is.SameAs(before),
+                    "the fresh candidate must not publish before its identity receipt is durable");
+                Assert.That(publications, Is.Zero);
+                Assert.That(store.IsPersistencePoisoned, Is.True);
+                int saveCountAfterDeletion = repository.SaveCount;
+                var blocked = Assert.ThrowsAsync<GamePersistencePoisonedException>(async () =>
+                    await store.DispatchAsync(new CommandEnvelope<GameCommand>(
+                        "pause-would-rewrite-old-install",
+                        store.Current.Revision,
+                        new PrepareReturnPlanCommand(
+                            new DateTimeOffset(2026, 8, 12, 1, 0, 0, TimeSpan.Zero),
+                            ReturnPlanRules.CurrentDevelopmentRulesVersion))));
+                Assert.That(blocked.ErrorCode,
+                    Is.EqualTo(GamePersistencePoisonedException.PersistenceErrorCode));
+                Assert.That(repository.SaveCount, Is.EqualTo(saveCountAfterDeletion));
+                Assert.That(repository.Saved, Is.Null,
+                    "pause/close must not recreate an old-install canonical after reset deletion");
+
+                using (var restarted = await GameApplicationStore.OpenAsync(
+                           repository,
+                           new FakeHighSchoolPort(),
+                           new FakeProPort(),
+                           "install-b"))
+                {
+                    Assert.That(restarted.Current.InstallId, Is.EqualTo("install-b"));
+                    Assert.That(restarted.Current.Revision, Is.Zero);
+                    Assert.That(restarted.Current.Stage, Is.EqualTo(ApplicationStage.Opening));
+                }
+            }
+        }
+
+        [Test]
+        public async Task PreparedIdentitySuccessPublishesFreshWritableCandidateStore()
+        {
+            var repository = new RecordingGameRepository();
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+            {
+                await store.ResetWithPreparedIdentityAsync(
+                    "install-b",
+                    (_, __) => Task.CompletedTask);
+
+                Assert.That(store.IsPersistencePoisoned, Is.False);
+                Assert.That(store.Current.InstallId, Is.EqualTo("install-b"));
+                DispatchResult<GameSaveAggregate> setup = await store.DispatchAsync(
+                    new CommandEnvelope<GameCommand>(
+                        "setup-after-reset",
+                        store.Current.Revision,
+                        new EnterSetupCommand()));
+                Assert.That(setup.Status, Is.EqualTo(DispatchStatus.Applied));
             }
         }
 
@@ -651,14 +781,14 @@ namespace Baseball.Application.Tests
                     var loadedArchive = loaded.Envelope.Payload.Meta.LifeArchive.Single();
                     Assert.That(loadedArchive.SignatureLegacy.EvidenceSummary,
                         Is.EqualTo(signatureCandidates[0].EvidenceSummary));
-                    Assert.That(loadedArchive.SignatureLegacyCandidates, Has.Count.EqualTo(3));
+                    Assert.That(loadedArchive.SignatureLegacyCandidates.Count, Is.EqualTo(3));
                     Assert.That(loadedArchive.HighSchoolDetail.StartingRatings.Command, Is.EqualTo(38));
                     Assert.That(loadedArchive.HighSchoolDetail.Nicknames,
                         Is.EquivalentTo(new[] { "탈삼진 머신" }));
-                    Assert.That(loadedArchive.HighSchoolDetail.Chronicle, Has.Count.EqualTo(2));
+                    Assert.That(loadedArchive.HighSchoolDetail.Chronicle.Count, Is.EqualTo(2));
                     Assert.That(loadedArchive.HighSchoolDetail.CoachName, Is.EqualTo("한도윤"));
                     Assert.That(loadedArchive.HighSchoolDetail.Personality, Is.EqualTo("차가운 분석가"));
-                    Assert.That(loadedArchive.HighSchoolDetail.Talents, Has.Count.EqualTo(4));
+                    Assert.That(loadedArchive.HighSchoolDetail.Talents.Count, Is.EqualTo(4));
                     Assert.That(loadedArchive.HighSchoolDetail.PresetTitle, Is.EqualTo("정교한 제구형"));
                     Assert.That(loadedArchive.HighSchoolDetail.DifficultyTitle, Is.EqualTo("혹독하게"));
                     Assert.That(loadedArchive.Pitches, Is.EqualTo(128));
@@ -669,7 +799,7 @@ namespace Baseball.Application.Tests
                     Assert.That(loaded.Envelope.Payload.Settings.SoundEnabled, Is.False);
                     Assert.That(loaded.Envelope.Payload.Settings.NotificationsEnabled, Is.True);
                     Assert.That(loaded.Envelope.Payload.Settings.HighContrastEnabled, Is.True);
-                    Assert.That(loaded.Envelope.Payload.AnalyticsReceipts.Records, Has.Count.EqualTo(1));
+                    Assert.That(loaded.Envelope.Payload.AnalyticsReceipts.Records.Count, Is.EqualTo(1));
                     Assert.That(loaded.Envelope.Payload.HasCommandReceipt("setup"), Is.True);
                 }
             }
@@ -790,7 +920,7 @@ namespace Baseball.Application.Tests
                     AnalyticsReceiptRetention.Scoped);
             }
 
-            Assert.That(current.Records, Has.Count.EqualTo(
+            Assert.That(current.Records.Count, Is.EqualTo(
                 AnalyticsReceiptState.MaximumScopedReceipts + 1));
             Assert.That(current.Contains(lifetimeScope), Is.True,
                 "lifetime receipts must never be displaced by scoped event churn");
@@ -819,7 +949,7 @@ namespace Baseball.Application.Tests
                     versionOne));
 
             using (var store = await GameApplicationStore.OpenAsync(
-                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 Assert.That(store.WasMigrated, Is.True);
                 Assert.That(store.Current.AggregateVersion,
@@ -901,7 +1031,7 @@ namespace Baseball.Application.Tests
                     versionTwo));
 
             using (var store = await GameApplicationStore.OpenAsync(
-                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 Assert.That(store.WasMigrated, Is.True);
                 Assert.That(store.Current.AggregateVersion,
@@ -1212,7 +1342,7 @@ namespace Baseball.Application.Tests
                     new string('f', 64),
                     progressed));
             using (var store = await GameApplicationStore.OpenAsync(
-                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 var publications = 0;
                 store.StatePublished += _ => publications++;
@@ -1385,7 +1515,7 @@ namespace Baseball.Application.Tests
                     new DateTimeOffset(2026, 8, 9, 0, 0, 0, TimeSpan.Zero),
                     new string('e', 64), aggregate));
             using (var store = await GameApplicationStore.OpenAsync(
-                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 var today = new DateTimeOffset(2026, 8, 10, 2, 0, 0, TimeSpan.Zero);
                 await store.DispatchAsync(new CommandEnvelope<GameCommand>(

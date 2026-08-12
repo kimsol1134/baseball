@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using System.Reflection;
 using Baseball.Core.Domain;
 using NUnit.Framework;
 
@@ -120,6 +122,76 @@ namespace Baseball.Core.HighSchool.Tests
             Assert.That(block.Career.Snapshot.Revision,
                 Is.EqualTo(result.Snapshot.Revision + (ulong)available));
             Assert.That(block.Career.Snapshot.Phase, Is.Not.EqualTo(HighSchoolCareerPhase.Training));
+            Assert.That(block.Block.StopReason, Is.EqualTo(StopReasonFor(
+                block.Career.Snapshot.Phase)));
+        }
+
+        [Test]
+        public void TrainingOutlookMatchesCurrentSwiftFocusVarianceFixture()
+        {
+            var engine = new HighSchoolCareerEngine();
+            var result = engine.Start(new StartHighSchoolCareerParams(
+                "20260811", "precision_commander"));
+            result = engine.CompletePrologue(new AdvanceCareerChapterParams(
+                result.NextSeed, result.Snapshot));
+            result = engine.ChooseSchool(new ChooseSchoolParams(
+                result.NextSeed, result.Snapshot, SchoolId.MiraeAnalytics));
+
+            Assert.That(engine.TrainingOutlook(
+                result.Snapshot, TrainingFocus.BreakingBall, TrainingIntensity.Light),
+                Is.EqualTo(TrainingGrowthOutlook.None));
+            Assert.That(engine.TrainingOutlook(
+                result.Snapshot, TrainingFocus.BreakingBall, TrainingIntensity.Standard),
+                Is.EqualTo(TrainingGrowthOutlook.ZeroOrOne));
+            Assert.That(engine.TrainingOutlook(
+                result.Snapshot, TrainingFocus.BreakingBall, TrainingIntensity.Intensive),
+                Is.EqualTo(TrainingGrowthOutlook.ZeroOrOne));
+        }
+
+        [Test]
+        public void TrainingBlockStopsAfterTwoWhenAThirdSessionRemains()
+        {
+            var engine = new HighSchoolCareerEngine();
+            var result = FirstChapterWithTrainings(engine, 3);
+            var block = engine.CommitTrainingBlock(new CommitCareerTrainingBlockParams(
+                result.NextSeed,
+                result.Snapshot,
+                TrainingFocus.Command,
+                TrainingIntensity.Standard,
+                maximumSessions: 2));
+
+            Assert.That(block.Block.CompletedSessions, Is.EqualTo(2));
+            Assert.That(block.Block.StopReason,
+                Is.EqualTo(TrainingBlockStopReason.MaximumSessions));
+            Assert.That(block.Career.Snapshot.Phase,
+                Is.EqualTo(HighSchoolCareerPhase.Training));
+        }
+
+        [Test]
+        public void TrainingBlockStopsImmediatelyAtFatigueAndArmThresholds()
+        {
+            var engine = new HighSchoolCareerEngine();
+            var fatigue = FirstChapterWithTrainings(engine, 3);
+            SetAndResign(fatigue.Snapshot, "Fatigue", 74);
+            var fatigueBlock = engine.CommitTrainingBlock(new CommitCareerTrainingBlockParams(
+                fatigue.NextSeed,
+                fatigue.Snapshot,
+                TrainingFocus.Command,
+                TrainingIntensity.Standard));
+            Assert.That(fatigueBlock.Block.CompletedSessions, Is.EqualTo(1));
+            Assert.That(fatigueBlock.Block.StopReason,
+                Is.EqualTo(TrainingBlockStopReason.Fatigue));
+
+            var arm = FirstChapterWithTrainings(engine, 3);
+            SetAndResign(arm.Snapshot, "ArmRisk", (int?)34);
+            var armBlock = engine.CommitTrainingBlock(new CommitCareerTrainingBlockParams(
+                arm.NextSeed,
+                arm.Snapshot,
+                TrainingFocus.Velocity,
+                TrainingIntensity.Intensive));
+            Assert.That(armBlock.Block.CompletedSessions, Is.EqualTo(1));
+            Assert.That(armBlock.Block.StopReason,
+                Is.EqualTo(TrainingBlockStopReason.ArmHealth));
         }
 
         [Test]
@@ -143,6 +215,49 @@ namespace Baseball.Core.HighSchool.Tests
             var result = engine.Start(new StartHighSchoolCareerParams(seed, preset));
             result = engine.CompletePrologue(new AdvanceCareerChapterParams(result.NextSeed, result.Snapshot));
             return engine.ChooseSchool(new ChooseSchoolParams(result.NextSeed, result.Snapshot, SchoolId.CheongamDevelopment));
+        }
+
+        private static HighSchoolCareerResult FirstChapterWithTrainings(
+            HighSchoolCareerEngine engine,
+            int trainings)
+        {
+            for (var seed = 1; seed < 10000; seed++)
+            {
+                var result = StartTraining(engine, seed.ToString(), "precision_commander");
+                if (result.Snapshot.Schedule.TrainingsByChapter[0] == trainings)
+                    return result;
+            }
+            Assert.Fail("No deterministic training-count fixture was found.");
+            return null;
+        }
+
+        private static TrainingBlockStopReason StopReasonFor(HighSchoolCareerPhase phase)
+        {
+            switch (phase)
+            {
+                case HighSchoolCareerPhase.Relationship:
+                    return TrainingBlockStopReason.Relationship;
+                case HighSchoolCareerPhase.Awakening:
+                    return TrainingBlockStopReason.Awakening;
+                case HighSchoolCareerPhase.ImportantGame:
+                    return TrainingBlockStopReason.ImportantGame;
+                default:
+                    return TrainingBlockStopReason.PhaseChanged;
+            }
+        }
+
+        private static void SetAndResign(
+            HighSchoolCareerSnapshot state,
+            string propertyName,
+            object value)
+        {
+            typeof(HighSchoolCareerSnapshot).GetProperty(propertyName)
+                .GetSetMethod(true)
+                .Invoke(state, new[] { value });
+            typeof(HighSchoolCareerEngine).GetMethod(
+                    "Sign",
+                    BindingFlags.NonPublic | BindingFlags.Static)
+                .Invoke(null, new object[] { state });
         }
     }
 }

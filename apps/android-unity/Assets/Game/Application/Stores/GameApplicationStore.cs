@@ -16,6 +16,7 @@ namespace Baseball.Application.Stores
         private readonly SemaphoreSlim _lifecycleGate = new SemaphoreSlim(1, 1);
         private PersistentStore<GameSaveAggregate, GameCommand> _store;
         private bool _disposed;
+        private volatile bool _persistencePoisoned;
 
         private GameApplicationStore(
             ISaveRepository<GameSaveAggregate> repository,
@@ -31,6 +32,13 @@ namespace Baseball.Application.Stores
 
         public GameSaveAggregate Current => _store.Current;
         public bool IsBusy => _store.IsBusy;
+        /// <summary>
+        /// True after an irrevocable reset has started but could not publish its candidate state.
+        /// Reads remain available for recovery UI; every operation that could touch the old
+        /// repository is rejected until this store is disposed and startup reconciliation opens
+        /// a fresh candidate-install store.
+        /// </summary>
+        public bool IsPersistencePoisoned => _persistencePoisoned;
         public SaveLoadStatus InitialLoadStatus { get; private set; }
         public bool WasMigrated { get; private set; }
         public bool RequiresRecoveryNotice => InitialLoadStatus == SaveLoadStatus.RecoveredBackup;
@@ -65,6 +73,11 @@ namespace Baseball.Application.Stores
                         throw new GameSaveLoadException("save.payload_missing", load.Status);
                     if (load.Envelope.Revision != load.Envelope.Payload.Revision)
                         throw new GameSaveLoadException("save.revision_mismatch", load.Status);
+                    if (!string.Equals(
+                        load.Envelope.Payload.InstallId,
+                        installId,
+                        StringComparison.Ordinal))
+                        throw new GameSaveLoadException("save.install_id_mismatch", load.Status);
                     var migration = GameSaveMigration.Upgrade(load.Envelope.Payload);
                     initial = migration.Aggregate;
                     migrated = migration.Migrated;
@@ -94,10 +107,11 @@ namespace Baseball.Application.Stores
             CommandEnvelope<GameCommand> command,
             CancellationToken cancellationToken = default)
         {
-            ThrowIfDisposed();
+            ThrowIfPersistenceUnavailable();
             await _lifecycleGate.WaitAsync(cancellationToken);
             try
             {
+                ThrowIfPersistenceUnavailable();
                 return await _store.DispatchAsync(command, cancellationToken);
             }
             finally
@@ -114,10 +128,11 @@ namespace Baseball.Application.Stores
         public async Task<bool> ReconcilePersistedRevisionAsync(
             CancellationToken cancellationToken = default)
         {
-            ThrowIfDisposed();
+            ThrowIfPersistenceUnavailable();
             await _lifecycleGate.WaitAsync(cancellationToken);
             try
             {
+                ThrowIfPersistenceUnavailable();
                 var before = Current;
                 // Lifecycle reconciliation is entered through Bootstrap's captured Unity context.
                 // Preserve it so replacing/publishing a newer snapshot remains main-thread safe.
@@ -169,7 +184,11 @@ namespace Baseball.Application.Stores
         /// </summary>
         public async Task ResetAsync(string installId, CancellationToken cancellationToken = default)
         {
-            await ResetAsync(installId, null, cancellationToken);
+            await ResetCoreAsync(
+                installId,
+                null,
+                rollbackOnIdentityCommitFailure: true,
+                cancellationToken);
         }
 
         /// <summary>
@@ -177,19 +196,67 @@ namespace Baseball.Application.Stores
         /// mutate the identity before entering this boundary. If identity commit fails, the prior
         /// aggregate is restored before the error is surfaced and nothing is published.
         /// </summary>
-        public async Task ResetAsync(
+        public Task ResetAsync(
             string installId,
             Func<string, CancellationToken, Task> commitInstallIdentity,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default) =>
+            ResetCoreAsync(
+                installId,
+                commitInstallIdentity,
+                rollbackOnIdentityCommitFailure: true,
+                cancellationToken);
+
+        /// <summary>
+        /// Reset boundary for an identity transition whose intent was durably journaled before
+        /// entry. Once repository deletion succeeds, a later identity/receipt error must not
+        /// restore the old save; startup reconciliation owns completion under the candidate ID.
+        /// </summary>
+        public Task ResetWithPreparedIdentityAsync(
+            string installId,
+            Func<string, CancellationToken, Task> commitInstallIdentity,
+            CancellationToken cancellationToken = default) =>
+            ResetCoreAsync(
+                installId,
+                commitInstallIdentity,
+                rollbackOnIdentityCommitFailure: false,
+                cancellationToken);
+
+        private async Task ResetCoreAsync(
+            string installId,
+            Func<string, CancellationToken, Task> commitInstallIdentity,
+            bool rollbackOnIdentityCommitFailure,
+            CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(installId))
                 throw new ArgumentException("An install ID is required.", nameof(installId));
-            ThrowIfDisposed();
+            ThrowIfPersistenceUnavailable();
+            if (!rollbackOnIdentityCommitFailure) _persistencePoisoned = true;
             await _lifecycleGate.WaitAsync(cancellationToken);
             try
             {
+                if (rollbackOnIdentityCommitFailure) ThrowIfPersistenceUnavailable();
+                else ThrowIfDisposed();
                 var prior = Current;
-                await _repository.ResetAsync(cancellationToken);
+                try
+                {
+                    await _repository.ResetAsync(cancellationToken);
+                }
+                catch (Exception resetError)
+                {
+                    try
+                    {
+                        await _repository.SaveAsync(prior, prior.Revision, CancellationToken.None);
+                    }
+                    catch (Exception rollbackError)
+                    {
+                        throw new GameResetException(
+                            "reset.repository_and_rollback_failed",
+                            resetError,
+                            rollbackError);
+                    }
+                    if (resetError is OperationCanceledException) throw;
+                    throw new GameResetException("reset.repository_failed", resetError);
+                }
                 if (commitInstallIdentity != null)
                 {
                     try
@@ -198,6 +265,13 @@ namespace Baseball.Application.Stores
                     }
                     catch (Exception identityError)
                     {
+                        if (!rollbackOnIdentityCommitFailure)
+                        {
+                            throw new GameResetException(
+                                "reset.identity_commit_pending",
+                                identityError,
+                                resetCommitted: true);
+                        }
                         try
                         {
                             await _repository.SaveAsync(prior, prior.Revision, CancellationToken.None);
@@ -216,6 +290,7 @@ namespace Baseball.Application.Stores
                 }
                 var initial = GameSaveAggregate.Initial(installId);
                 ReplaceInner(initial);
+                _persistencePoisoned = false;
                 StatePublished?.Invoke(initial);
             }
             finally
@@ -256,19 +331,43 @@ namespace Baseball.Application.Stores
         {
             if (_disposed) throw new ObjectDisposedException(nameof(GameApplicationStore));
         }
+
+        private void ThrowIfPersistenceUnavailable()
+        {
+            ThrowIfDisposed();
+            if (_persistencePoisoned)
+                throw new GamePersistencePoisonedException();
+        }
     }
 
     public sealed class GameResetException : Exception
     {
-        public GameResetException(string errorCode, Exception innerException, Exception rollbackError = null)
+        public GameResetException(
+            string errorCode,
+            Exception innerException,
+            Exception rollbackError = null,
+            bool resetCommitted = false)
             : base(errorCode, innerException)
         {
             ErrorCode = errorCode;
             RollbackError = rollbackError;
+            ResetCommitted = resetCommitted;
         }
 
         public string ErrorCode { get; }
         public Exception RollbackError { get; }
+        public bool ResetCommitted { get; }
+    }
+
+    public sealed class GamePersistencePoisonedException : InvalidOperationException
+    {
+        public const string PersistenceErrorCode = "store.persistence_poisoned";
+
+        public GamePersistencePoisonedException() : base(PersistenceErrorCode)
+        {
+        }
+
+        public string ErrorCode => PersistenceErrorCode;
     }
 
     public sealed class GameSaveLoadException : Exception

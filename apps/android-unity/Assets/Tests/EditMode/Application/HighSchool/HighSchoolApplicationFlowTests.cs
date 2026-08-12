@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Baseball.Application.Commands;
 using Baseball.Application.HighSchool;
@@ -8,8 +9,11 @@ using Baseball.Application.Meta;
 using Baseball.Application.Persistence;
 using Baseball.Application.Stores;
 using Baseball.Core.Domain;
+using Baseball.Core.HighSchool;
 using Baseball.Core.Pitching;
 using CoreRunPledgeCatalog = Baseball.Core.HighSchool.RunPledgeCatalog;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
 namespace Baseball.Application.Tests
@@ -63,7 +67,7 @@ namespace Baseball.Application.Tests
                     new string('b', 64),
                     saved));
             using (var restarted = await GameApplicationStore.OpenAsync(
-                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 Assert.That(restarted.Current.HighSchool.Phase,
                     Is.EqualTo(HighSchoolPhase.SchoolSelection));
@@ -104,8 +108,7 @@ namespace Baseball.Application.Tests
                     Is.EqualTo(DispatchStatus.AlreadyApplied));
                 Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Legacy));
                 Assert.That(store.Current.Pro, Is.Null);
-                Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates,
-                    Has.Count.EqualTo(3));
+                Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates.Count, Is.EqualTo(3));
                 Assert.That(store.Current.HighSchool.SignatureLegacyChoices.Select(x => x.Id),
                     Is.EquivalentTo(store.Current.HighSchool.FrozenSignatureLegacyCandidates.Select(x => x.Id)));
             }
@@ -165,7 +168,7 @@ namespace Baseball.Application.Tests
                 await Applied(store, "sign-contract", new SignProContractCommand());
                 await Applied(store, "retire", new RetireProCareerCommand(instant.AddMinutes(30)));
                 Assert.That(store.Current.Meta.LifeArchive, Is.Empty);
-                Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates, Has.Count.EqualTo(3));
+                Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates.Count, Is.EqualTo(3));
                 var signature = store.Current.HighSchool.FrozenSignatureLegacyCandidates[0];
                 await Applied(store, "finalize-legacy", new FinalizeHighSchoolLegacyCommand(
                     Array.Empty<string>(), signature.Id, instant.AddMinutes(31)));
@@ -176,9 +179,9 @@ namespace Baseball.Application.Tests
                 Assert.That(frozenLegacy.Farewell, Is.Not.Empty);
                 await Applied(store, "rebirth", new BeginRebirthCommand(instant.AddMinutes(32)));
 
-                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.BetweenLives));
+                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Setup));
                 Assert.That(store.Current.Meta.LifeNumber, Is.EqualTo(2));
-                Assert.That(store.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
+                Assert.That(store.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
                 Assert.That(store.Current.Meta.LifeArchive[0].HighSchoolCareerId, Is.EqualTo("hs-1"));
                 Assert.That(store.Current.Meta.LifeArchive[0].ProCareerId, Is.EqualTo("pro-1"));
                 Assert.That(store.Current.Meta.LifeArchive[0].PlayerLegacy.Title,
@@ -189,6 +192,23 @@ namespace Baseball.Application.Tests
                     Is.EqualTo(frozenLegacy.Farewell));
                 Assert.That(store.Current.HighSchool, Is.Null);
                 Assert.That(store.Current.Pro, Is.Null);
+
+                await Applied(store, "custom-rebirth", new StartHighSchoolCareerCommand(
+                    new StartHighSchoolCareerRequest(
+                        "second-seed",
+                        "precision_commander",
+                        "고태윤",
+                        "대전",
+                        2,
+                        difficulty: "challenging")));
+                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.HighSchool));
+                Assert.That(store.Current.HighSchool.LifeNumber, Is.EqualTo(2));
+                Assert.That(store.Current.HighSchool.PresetId, Is.EqualTo("precision_commander"));
+                Assert.That(store.Current.HighSchool.PlayerName, Is.EqualTo("고태윤"));
+                Assert.That(store.Current.HighSchool.Difficulty, Is.EqualTo("challenging"));
+                Assert.That(store.Current.HighSchool.EquippedSignatureLegacyId,
+                    Is.EqualTo(signature.Id));
+                Assert.That(store.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
             }
         }
 
@@ -225,7 +245,7 @@ namespace Baseball.Application.Tests
                 }
 
                 using (var restarted = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored-new-id"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(restarted.Current.PitchResume.GameId, Is.EqualTo("game-1"));
                     Assert.That(restarted.Current.PitchResume.CompletedBatters, Is.EqualTo(2));
@@ -372,6 +392,110 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
+        public async Task SuspendedPitch_SaveFailureThenRestartPreservesExactBatterAndSeed()
+        {
+            var repository = new RecordingGameRepository();
+            var instant = new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero);
+            GameSaveAggregate saved;
+            PitchResumeState suspended;
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+            {
+                await Applied(store, "suspend-setup", new EnterSetupCommand());
+                await Applied(store, "suspend-start", new StartHighSchoolCareerCommand(
+                    new StartHighSchoolCareerRequest(
+                        "seed", "power_prospect", "민서준", "서울", 1)));
+                await Applied(store, "suspend-game", new AdvanceHighSchoolCommand(
+                    new HighSchoolAction("important_game"), instant));
+                await Applied(store, "suspend-begin", new BeginPitchSessionCommand(
+                    "suspend-game", PitchCareerKind.HighSchool, "regional-final", 6,
+                    instant.AddMinutes(1)));
+                await Applied(store, "suspend-commit", new CommitPitchResultCommand(
+                    "suspend-game", "suspend-pitch-1", 0, "suspend-hash-1",
+                    "{\"result\":\"out\"}", "{\"cue\":\"glove\"}",
+                    instant.AddMinutes(2),
+                    delivery: new PitchDeliveryMetricState(940, 920, true),
+                    abilityMomentEvidence: AbilityEvidence(null)));
+                var report = new PitchGameReport(
+                    "suspend-game", 1, 1, 1, 1, 0, 0, 0,
+                    directDeliveryCount: 1,
+                    deliveryScoreTotal: 930,
+                    bestDeliveryScore: 930,
+                    perfectDeliveryCount: 1);
+                await Applied(store, "suspend-consume", new ConsumeCommittedPitchResultCommand(
+                    "suspend-game", "suspend-pitch-1", 1,
+                    "{\"batter\":1,\"outs\":1}", report));
+
+                suspended = store.Current.PitchResume;
+                var revision = store.Current.Revision;
+                var publications = 0;
+                store.StatePublished += _ => publications++;
+                var command = new CommandEnvelope<GameCommand>(
+                    "suspend",
+                    revision,
+                    new SuspendPitchSessionCommand("suspend-game"));
+
+                repository.FailSave = true;
+                Assert.That((await store.DispatchAsync(command)).Status,
+                    Is.EqualTo(DispatchStatus.PersistenceFailed));
+                Assert.That(store.Current.Revision, Is.EqualTo(revision));
+                Assert.That(store.Current.PitchResume, Is.SameAs(suspended));
+                Assert.That(publications, Is.Zero);
+
+                repository.FailSave = false;
+                Assert.That((await store.DispatchAsync(command)).Status,
+                    Is.EqualTo(DispatchStatus.Applied));
+                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.HighSchool));
+                Assert.That(store.Current.PitchResume, Is.SameAs(suspended));
+                Assert.That(store.Current.PitchResume.SessionSeed,
+                    Is.EqualTo(suspended.SessionSeed));
+                Assert.That(store.Current.PitchResume.CompletedBatters, Is.EqualTo(1));
+                Assert.That(store.Current.PitchResume.AccumulatedReport, Is.SameAs(report));
+                Assert.That(store.Current.PitchResume.Metrics.DirectDeliveryCount, Is.EqualTo(1));
+                Assert.That(store.Current.PitchResume.Metrics.PerfectDeliveryCount, Is.EqualTo(1));
+                Assert.That(store.Current.PitchResume.CheckpointJson,
+                    Is.EqualTo("{\"batter\":1,\"outs\":1}"));
+                Assert.That(publications, Is.EqualTo(1));
+                saved = repository.Saved;
+            }
+
+            repository.LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                SaveLoadStatus.LoadedCanonical,
+                Envelope(saved));
+            using (var restarted = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+            {
+                var resume = restarted.Current.PitchResume;
+                Assert.That(restarted.Current.Stage, Is.EqualTo(ApplicationStage.HighSchool));
+                Assert.That(resume.GameId, Is.EqualTo(suspended.GameId));
+                Assert.That(resume.SessionSeed, Is.EqualTo(suspended.SessionSeed));
+                Assert.That(resume.CompletedBatters, Is.EqualTo(suspended.CompletedBatters));
+                Assert.That(resume.MaximumBatters, Is.EqualTo(suspended.MaximumBatters));
+                Assert.That(resume.Scenario.ScenarioId, Is.EqualTo(suspended.Scenario.ScenarioId));
+                Assert.That(resume.AccumulatedReport.Pitches,
+                    Is.EqualTo(suspended.AccumulatedReport.Pitches));
+                Assert.That(resume.ConsumedPitchIds,
+                    Is.EqualTo(suspended.ConsumedPitchIds));
+                Assert.That(resume.Metrics.DirectDeliveryCount, Is.EqualTo(1));
+                Assert.That(resume.Metrics.PerfectDeliveryCount, Is.EqualTo(1));
+                Assert.That(NextActionPlanner.Resolve(restarted.Current).Route,
+                    Is.EqualTo("pitch/resume"));
+
+                await Applied(restarted, "suspend-next-commit", new CommitPitchResultCommand(
+                    resume.GameId, "suspend-pitch-2", resume.CompletedBatters,
+                    "suspend-hash-2", "{\"result\":\"ball\"}",
+                    "{\"cue\":\"take\"}", instant.AddMinutes(3),
+                    abilityMomentEvidence: AbilityEvidence(null)));
+                var blocked = await restarted.DispatchAsync(new CommandEnvelope<GameCommand>(
+                    "suspend-with-commit",
+                    restarted.Current.Revision,
+                    new SuspendPitchSessionCommand(resume.GameId)));
+                Assert.That(blocked.Status, Is.EqualTo(DispatchStatus.DomainRejected));
+                Assert.That(blocked.ErrorCode, Is.EqualTo("pitch.committed_result_pending"));
+            }
+        }
+
+        [Test]
         public async Task CommittedPitch_SurvivesRestartAndMustBeConsumedBeforeNextBatter()
         {
             var root = Path.Combine(Path.GetTempPath(), "BaseballCommittedPitch", Guid.NewGuid().ToString("N"));
@@ -391,7 +515,7 @@ namespace Baseball.Application.Tests
                         new DateTimeOffset(2026, 8, 11, 1, 1, 0, TimeSpan.Zero)));
 
                     Assert.That(store.Current.PitchResume.MaximumBatters, Is.EqualTo(6));
-                    Assert.That(store.Current.PitchResume.Scenario.Lineup, Has.Count.GreaterThanOrEqualTo(6));
+                    Assert.That(store.Current.PitchResume.Scenario.Lineup.Count, Is.GreaterThanOrEqualTo(6));
                     await Applied(store, "commit-1", new CommitPitchResultCommand(
                         "multi-game", "pitch-1", 0, "hash-1",
                         "{\"result\":\"strike\"}", "{\"cue\":\"glove\"}",
@@ -407,7 +531,7 @@ namespace Baseball.Application.Tests
                 }
 
                 using (var restarted = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     var committed = restarted.Current.PitchResume.CommittedPitch;
                     Assert.That(committed.PitchId, Is.EqualTo("pitch-1"));
@@ -421,7 +545,7 @@ namespace Baseball.Application.Tests
                 }
 
                 using (var resumedAgain = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(resumedAgain.Current.PitchResume.CommittedPitch, Is.Null);
                     Assert.That(resumedAgain.Current.PitchResume.CompletedBatters, Is.EqualTo(1));
@@ -499,14 +623,31 @@ namespace Baseball.Application.Tests
                     await Applied(store, "ability-commit", new CommitPitchResultCommand(
                         "daily-ability", "ability-pitch", 0, "hash",
                         "{\"outcome\":\"in_play_out\"}", "{\"cue\":1}", instant,
-                        abilityMomentEvidence: AbilityEvidence(PitchAbilityKind.Movement)));
+                        abilityMomentEvidence: AbilityEvidence(
+                            PitchAbilityKind.Movement,
+                            recommendationAccepted: true)));
+                    Assert.That(store.Current.PitchResume.PitchLog, Is.Empty,
+                        "a committed-but-unconsumed pitch is replay evidence, not a log entry");
                 }
 
                 using (var restarted = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(restarted.Current.PitchResume.CommittedPitch.AbilityMomentType,
                         Is.EqualTo("movement"));
+                    var pendingLog = restarted.Current.PitchResume.CommittedPitch.PitchLogEntry;
+                    Assert.That(pendingLog, Is.Not.Null);
+                    Assert.That(pendingLog.PitchId, Is.EqualTo("ability-pitch"));
+                    Assert.That(pendingLog.PitchNumber, Is.EqualTo(1));
+                    Assert.That(pendingLog.PitchType, Is.EqualTo("slider"));
+                    Assert.That(pendingLog.ZoneRow, Is.EqualTo(1));
+                    Assert.That(pendingLog.ZoneColumn, Is.EqualTo(1));
+                    Assert.That(pendingLog.ZoneIntent, Is.EqualTo("strike"));
+                    Assert.That(pendingLog.Intensity, Is.EqualTo("normal"));
+                    Assert.That(pendingLog.Outcome, Is.EqualTo("in_play_out"));
+                    Assert.That(pendingLog.VelocityTenthsKph, Is.EqualTo(1450));
+                    Assert.That(pendingLog.ExecutionQuality, Is.EqualTo(900));
+                    Assert.That(pendingLog.SignAccepted, Is.True);
                     var report = new PitchGameReport(
                         "daily-ability", 1, 0, 0, 0, 0, 0, 0,
                         abilityMomentCount: 1,
@@ -523,12 +664,16 @@ namespace Baseball.Application.Tests
                 }
 
                 using (var replay = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(replay.Current.PitchResume.Metrics.AbilityMomentCount, Is.EqualTo(1));
                     Assert.That(replay.Current.PitchResume.Metrics.AbilityMomentTypes,
                         Is.EqualTo(new[] { "movement" }));
                     Assert.That(replay.Current.PitchResume.CommittedPitch, Is.Null);
+                    Assert.That(replay.Current.PitchResume.PitchLog.Count, Is.EqualTo(1));
+                    Assert.That(replay.Current.PitchResume.PitchLog[0].PitchId,
+                        Is.EqualTo("ability-pitch"));
+                    Assert.That(replay.Current.PitchResume.PitchLog[0].SignAccepted, Is.True);
                 }
             }
             finally
@@ -566,6 +711,61 @@ namespace Baseball.Application.Tests
                 Assert.That(result.Status, Is.EqualTo(DispatchStatus.PersistenceFailed));
                 Assert.That(store.Current.PitchResume.CommittedPitch, Is.Null);
                 Assert.That(publications, Is.Zero);
+            }
+        }
+
+        [Test]
+        public async Task ConsumePitchPersistenceFailure_DoesNotAppendDurableLogOrPublish()
+        {
+            var repository = new RecordingGameRepository();
+            var instant = new DateTimeOffset(2026, 8, 11, 4, 30, 0, TimeSpan.Zero);
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+            {
+                await Applied(store, "log-setup", new EnterSetupCommand());
+                await Applied(store, "log-start", new StartHighSchoolCareerCommand(
+                    new StartHighSchoolCareerRequest(
+                        "seed", "power_prospect", "민서준", "서울", 1)));
+                await Applied(store, "log-game", new AdvanceHighSchoolCommand(
+                    new HighSchoolAction("important_game"), instant));
+                await Applied(store, "log-begin", new BeginPitchSessionCommand(
+                    "log-fault-game", PitchCareerKind.HighSchool, "important", 1, instant));
+                await Applied(store, "log-commit", new CommitPitchResultCommand(
+                    "log-fault-game", "log-pitch", 0, "log-hash",
+                    "{\"outcome\":\"ball\"}", "{\"cue\":\"ball\"}", instant,
+                    abilityMomentEvidence: AbilityEvidence(
+                        null,
+                        recommendationAccepted: true)));
+                var committed = store.Current;
+                Assert.That(committed.PitchResume.PitchLog, Is.Empty);
+                var publications = 0;
+                store.StatePublished += _ => publications++;
+                var command = new CommandEnvelope<GameCommand>(
+                    "log-consume",
+                    store.Current.Revision,
+                    new ConsumeCommittedPitchResultCommand(
+                        "log-fault-game",
+                        "log-pitch",
+                        0,
+                        "{\"pitch\":1}",
+                        new PitchGameReport(
+                            "log-fault-game", 1, 0, 0, 0, 0, 0, 0)));
+
+                repository.FailSave = true;
+                Assert.That((await store.DispatchAsync(command)).Status,
+                    Is.EqualTo(DispatchStatus.PersistenceFailed));
+                Assert.That(store.Current, Is.SameAs(committed));
+                Assert.That(store.Current.PitchResume.CommittedPitch, Is.Not.Null);
+                Assert.That(store.Current.PitchResume.PitchLog, Is.Empty);
+                Assert.That(publications, Is.Zero);
+
+                repository.FailSave = false;
+                Assert.That((await store.DispatchAsync(command)).Status,
+                    Is.EqualTo(DispatchStatus.Applied));
+                Assert.That(store.Current.PitchResume.CommittedPitch, Is.Null);
+                Assert.That(store.Current.PitchResume.PitchLog.Count, Is.EqualTo(1));
+                Assert.That(store.Current.PitchResume.PitchLog[0].SignAccepted, Is.True);
+                Assert.That(publications, Is.EqualTo(1));
             }
         }
 
@@ -670,7 +870,7 @@ namespace Baseball.Application.Tests
                 }
 
                 using (var restarted = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(restarted.Current.PitchResume.AwaitingCompletion, Is.True);
                     Assert.That(restarted.Current.PitchResume.Metrics.SequenceMasteryTags,
@@ -686,6 +886,11 @@ namespace Baseball.Application.Tests
                         new AbandonPitchSessionCommand("daily-terminal")));
                     Assert.That(abandon.Status, Is.EqualTo(DispatchStatus.DomainRejected));
                     Assert.That(abandon.ErrorCode, Is.EqualTo("pitch.completion_required"));
+                    var suspend = await restarted.DispatchAsync(new CommandEnvelope<GameCommand>(
+                        "terminal-suspend", restarted.Current.Revision,
+                        new SuspendPitchSessionCommand("daily-terminal")));
+                    Assert.That(suspend.Status, Is.EqualTo(DispatchStatus.DomainRejected));
+                    Assert.That(suspend.ErrorCode, Is.EqualTo("pitch.completion_required"));
 
                     var report = restarted.Current.PitchResume.AccumulatedReport;
                     var envelope = new CommandEnvelope<GameCommand>(
@@ -764,7 +969,7 @@ namespace Baseball.Application.Tests
                 }
 
                 using (var store = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(store.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(2));
                     Assert.That(store.Current.Meta.Daily.DailyInning.BestScore, Is.EqualTo(913));
@@ -824,7 +1029,7 @@ namespace Baseball.Application.Tests
                 }
 
                 using (var restarted = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(restarted.Current.PitchResume, Is.Null);
                     Assert.That(restarted.Current.Meta.Daily.DailyInning.AttemptCount, Is.EqualTo(2));
@@ -880,7 +1085,7 @@ namespace Baseball.Application.Tests
                 }
 
                 using (var store = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(store.Current.PitchResume.Scenario.MaximumPitches, Is.EqualTo(12));
                     for (var pitch = 1; pitch <= 12; pitch++)
@@ -903,13 +1108,16 @@ namespace Baseball.Application.Tests
                     }
                     Assert.That(store.Current.PitchResume.AwaitingCompletion, Is.True);
                     Assert.That(store.Current.PitchResume.CompletedBatters, Is.Zero);
+                    Assert.That(store.Current.PitchResume.PitchLog.Count, Is.EqualTo(12));
+                    Assert.That(store.Current.PitchResume.PitchLog.Select(value => value.PitchNumber),
+                        Is.EqualTo(Enumerable.Range(1, 12)));
                 }
 
                 using (var restarted = await GameApplicationStore.OpenAsync(
-                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                           Repository(root), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
                 {
                     Assert.That(restarted.Current.PitchResume.AwaitingCompletion, Is.True);
-                    Assert.That(restarted.Current.PitchResume.ConsumedPitchIds, Has.Count.EqualTo(12));
+                    Assert.That(restarted.Current.PitchResume.ConsumedPitchIds.Count, Is.EqualTo(12));
                     var report = restarted.Current.PitchResume.AccumulatedReport;
                     var envelope = new CommandEnvelope<GameCommand>(
                         "cap-complete",
@@ -921,12 +1129,59 @@ namespace Baseball.Application.Tests
                         Is.EqualTo(DispatchStatus.AlreadyApplied));
                     Assert.That(restarted.Current.PitchResume, Is.Null);
                     Assert.That(restarted.Current.PendingPitchCompletion.Report.Pitches, Is.EqualTo(12));
+                    Assert.That(restarted.Current.PendingPitchCompletion.PitchLog.Count, Is.EqualTo(12));
+                    Assert.That(restarted.Current.PendingPitchCompletion.PitchLog.Last().PitchId,
+                        Is.EqualTo("cap-pitch-12"));
                 }
             }
             finally
             {
                 if (Directory.Exists(root)) Directory.Delete(root, true);
             }
+        }
+
+        [Test]
+        public void PitchLogValidator_RejectsMalformedWireEvidence()
+        {
+            var highSchool = FakeHighSchoolPort.HighSchool(
+                phase: HighSchoolPhase.ImportantGame,
+                careerId: "hs-log-validator");
+            var scenario = PitchScenarioFactory.Fallback(
+                "log-validator",
+                highSchool.Ratings,
+                highSchool.PlayerName,
+                1);
+            PitchLogEntryState Entry(string outcome) => new PitchLogEntryState(
+                "pitch-1", 0, 1, "four_seam", 1, 1, "strike", "normal",
+                0, 0, 4, -3, 1450, 20, 80, 900, outcome, true, 1);
+            GameSaveAggregate Aggregate(PitchLogEntryState entry) =>
+                GameSaveAggregate.Initial("install-a").Commit(
+                    "log-fixture",
+                    stage: ApplicationStage.HighSchool,
+                    highSchool: highSchool,
+                    pitchResume: new PitchResumeState(
+                        "log-game",
+                        PitchCareerKind.HighSchool,
+                        highSchool.CareerId,
+                        scenario.ScenarioId,
+                        "1",
+                        scenario.MaximumBatters,
+                        scenario: scenario,
+                        consumedPitchIds: new[] { "pitch-1" },
+                        pitchLog: new[] { entry }));
+
+            var valid = Aggregate(Entry("called_strike"));
+            Assert.That(new GameSaveValidator().Validate(valid).IsValid, Is.True);
+            var invalid = new GameSaveValidator().Validate(Aggregate(Entry("invented_outcome")));
+            Assert.That(invalid.IsValid, Is.False);
+            Assert.That(invalid.Errors, Does.Contain("aggregate.pitch_log"));
+
+            var legacyJson = JObject.Parse(JsonConvert.SerializeObject(valid));
+            ((JObject)legacyJson["PitchResume"]).Remove("PitchLog");
+            var legacy = legacyJson.ToObject<GameSaveAggregate>();
+            Assert.That(legacy.PitchResume.PitchLog, Is.Empty);
+            Assert.That(legacy.PitchResume.ConsumedPitchIds.Count, Is.EqualTo(1));
+            Assert.That(new GameSaveValidator().Validate(legacy).IsValid, Is.True);
         }
 
         [Test]
@@ -950,33 +1205,95 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
-        public async Task UndraftedLife_ArchivesThenRebirthKeepsMetaWithoutLiveCareer()
+        public async Task CustomRebirth_SaveFailureThenRestartKeepsSetupAndStartsEditedCareer()
         {
+            var repository = new RecordingGameRepository();
+            var instant = new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero);
+            GameSaveAggregate saved;
             using (var store = await GameApplicationStore.OpenAsync(
-                       new RecordingGameRepository(), new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 await Applied(store, "setup", new EnterSetupCommand());
                 await Applied(store, "start", new StartHighSchoolCareerCommand(
                     new StartHighSchoolCareerRequest("seed", "power_prospect", "민서준", "서울", 1)));
                 await Applied(store, "draft", new AdvanceHighSchoolCommand(
                     new HighSchoolAction("resolve_draft", "undrafted"),
-                    new DateTimeOffset(2026, 8, 11, 1, 0, 0, TimeSpan.Zero)));
+                    instant));
                 var signature = store.Current.HighSchool.FrozenSignatureLegacyCandidates[0];
                 await Applied(store, "archive", new FinalizeHighSchoolLegacyCommand(
                     Array.Empty<string>(), signature.Id,
-                    new DateTimeOffset(2026, 8, 11, 1, 5, 0, TimeSpan.Zero)));
+                    instant.AddMinutes(5)));
                 var earned = store.Current.Meta.SoulBalance;
-                await Applied(store, "rebirth", new BeginRebirthCommand(
-                    new DateTimeOffset(2026, 8, 11, 1, 6, 0, TimeSpan.Zero)));
+                var beforeRebirth = store.Current;
+                var published = 0;
+                store.StatePublished += _ => published++;
+                var rebirth = new CommandEnvelope<GameCommand>(
+                    "rebirth",
+                    beforeRebirth.Revision,
+                    new BeginRebirthCommand(instant.AddMinutes(6)));
 
-                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.BetweenLives));
+                repository.FailSave = true;
+                var failed = await store.DispatchAsync(rebirth);
+                Assert.That(failed.Status, Is.EqualTo(DispatchStatus.PersistenceFailed));
+                Assert.That(store.Current, Is.SameAs(beforeRebirth));
+                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Legacy));
+                Assert.That(store.Current.HighSchool, Is.Not.Null);
+                Assert.That(store.Current.Meta.LifeNumber, Is.EqualTo(1));
+                Assert.That(published, Is.Zero);
+
+                repository.FailSave = false;
+                Assert.That((await store.DispatchAsync(rebirth)).Status,
+                    Is.EqualTo(DispatchStatus.Applied));
+
+                Assert.That(store.Current.Stage, Is.EqualTo(ApplicationStage.Setup));
                 Assert.That(store.Current.HighSchool, Is.Null);
                 Assert.That(store.Current.Pro, Is.Null);
                 Assert.That(store.Current.Meta.LifeNumber, Is.EqualTo(2));
-                Assert.That(store.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
+                Assert.That(store.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
                 Assert.That(store.Current.Meta.SoulBalance, Is.EqualTo(earned).And.GreaterThan(0));
                 Assert.That(store.Current.Meta.InheritedMemories, Is.Empty);
                 Assert.That(store.Current.Meta.EquippedSignatureLegacyId, Is.EqualTo(signature.Id));
+                Assert.That(NextActionPlanner.ResolveCoreProgress(store.Current).Route,
+                    Is.EqualTo("setup"));
+                saved = repository.Saved;
+            }
+
+            repository.LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                SaveLoadStatus.LoadedCanonical,
+                new SaveEnvelope<GameSaveAggregate>(
+                    SaveSchema.Name,
+                    SaveSchema.Version,
+                    saved.Revision,
+                    instant.AddMinutes(6),
+                    new string('d', 64),
+                    saved));
+            var highSchool = new FakeHighSchoolPort();
+            using (var restarted = await GameApplicationStore.OpenAsync(
+                       repository, highSchool, new FakeProPort(), "install-a"))
+            {
+                Assert.That(restarted.Current.Stage, Is.EqualTo(ApplicationStage.Setup));
+                Assert.That(restarted.Current.HighSchool, Is.Null);
+                Assert.That(restarted.Current.Meta.LifeNumber, Is.EqualTo(2));
+                Assert.That(restarted.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
+
+                await Applied(restarted, "custom-start", new StartHighSchoolCareerCommand(
+                    new StartHighSchoolCareerRequest(
+                        "custom-seed",
+                        "precision_commander",
+                        "고태윤",
+                        "대전",
+                        2,
+                        difficulty: "challenging")));
+
+                Assert.That(restarted.Current.Stage, Is.EqualTo(ApplicationStage.HighSchool));
+                Assert.That(restarted.Current.HighSchool.LifeNumber, Is.EqualTo(2));
+                Assert.That(restarted.Current.HighSchool.PresetId,
+                    Is.EqualTo("precision_commander"));
+                Assert.That(restarted.Current.HighSchool.PlayerName, Is.EqualTo("고태윤"));
+                Assert.That(restarted.Current.HighSchool.Difficulty, Is.EqualTo("challenging"));
+                Assert.That(highSchool.LastStartRequest.SignatureLegacyId,
+                    Is.EqualTo(restarted.Current.Meta.EquippedSignatureLegacyId));
+                Assert.That(restarted.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
             }
         }
 
@@ -1017,7 +1334,7 @@ namespace Baseball.Application.Tests
             };
 
             using (var store = await GameApplicationStore.OpenAsync(
-                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 var mixed = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
                     "legacy-mixed",
@@ -1049,7 +1366,7 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current.HighSchool.Phase, Is.EqualTo(HighSchoolPhase.Completed));
                 Assert.That(store.Current.HighSchool.SelectedSignatureLegacyId,
                     Is.EqualTo("command_map"));
-                Assert.That(store.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
+                Assert.That(store.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
                 Assert.That(store.Current.Meta.LifeArchive[0].PlayerLegacy.Title,
                     Is.EqualTo("자기 공을 남긴 투수"));
                 Assert.That(store.Current.Meta.LifeArchive[0].PlayerLegacy.DefiningMoment,
@@ -1116,7 +1433,7 @@ namespace Baseball.Application.Tests
                         Is.EqualTo("기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요."));
                     Assert.That(resume.MaximumBatters, Is.EqualTo(2));
                     Assert.That(resume.Scenario.MaximumPitches, Is.EqualTo(8));
-                    Assert.That(resume.Scenario.Lineup, Has.Count.EqualTo(2));
+                    Assert.That(resume.Scenario.Lineup.Count, Is.EqualTo(2));
                     Assert.That(resume.Scenario.Lineup[0].Name, Is.EqualTo("연습 타자"));
                     Assert.That(resume.Scenario.Lineup[1].Name, Is.EqualTo("연습 타자 B"));
                     Assert.That(resume.Scenario.Scouting.ChaseTendency, Is.EqualTo(45));
@@ -1131,6 +1448,14 @@ namespace Baseball.Application.Tests
                     Assert.That(cannotAbandon.ErrorCode,
                         Is.EqualTo("pitch.tutorial_cannot_abandon"));
 
+                    var cannotSuspend = await store.DispatchAsync(new CommandEnvelope<GameCommand>(
+                        "tutorial-suspend",
+                        store.Current.Revision,
+                        new SuspendPitchSessionCommand("tutorial-game")));
+                    Assert.That(cannotSuspend.Status, Is.EqualTo(DispatchStatus.DomainRejected));
+                    Assert.That(cannotSuspend.ErrorCode,
+                        Is.EqualTo("pitch.tutorial_cannot_suspend"));
+
                     await Applied(store, "tutorial-commit-0", new CommitPitchResultCommand(
                         "tutorial-game", "tutorial-pitch-0", 0, "tutorial-hash-0",
                         "{\"outcome\":\"strikeout\"}", "{\"cue\":\"strikeout\"}", instant,
@@ -1141,7 +1466,7 @@ namespace Baseball.Application.Tests
                            Repository(root),
                            new CoreHighSchoolCareerPort(),
                            new FakeProPort(),
-                           "ignored"))
+                           "tutorial-install"))
                 {
                     Assert.That(restarted.Current.PitchResume.CommittedPitch.PitchId,
                         Is.EqualTo("tutorial-pitch-0"));
@@ -1228,13 +1553,12 @@ namespace Baseball.Application.Tests
                            Repository(root),
                            new CoreHighSchoolCareerPort(),
                            new FakeProPort(),
-                           "ignored"))
+                           "tutorial-install"))
                 {
                     Assert.That(recovered.Current.HighSchool.TutorialCompleted, Is.True);
                     Assert.That(recovered.Current.HighSchool.Phase,
                         Is.EqualTo(HighSchoolPhase.SchoolSelection));
-                    Assert.That(recovered.Current.HighSchool.SchoolChoices,
-                        Has.Count.EqualTo(4));
+                    Assert.That(recovered.Current.HighSchool.SchoolChoices.Count, Is.EqualTo(4));
                     Assert.That(recovered.Current.PendingPitchCompletion, Is.Not.Null);
                     Assert.That(NextActionPlanner.Resolve(recovered.Current).Route,
                         Is.EqualTo("pitch/result"));
@@ -1341,6 +1665,159 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
+        public void CoreAdapter_ProjectsAuthoritativeFocusByIntensityOutlookMatrix()
+        {
+            var adapter = new CoreHighSchoolCareerPort();
+            var current = adapter.Start(new StartHighSchoolCareerRequest(
+                "12345", "breaking_ball_artist", "민서준", "서울", 1));
+            current = adapter.Apply(current, new HighSchoolAction("complete_prologue"));
+            current = adapter.Apply(current, new HighSchoolAction(
+                "choose_school", current.SchoolChoices[0].Id));
+
+            Assert.That(current.Phase, Is.EqualTo(HighSchoolPhase.Training));
+            Assert.That(current.TrainingOutlooks.Count, Is.EqualTo(18));
+            Assert.That(current.TrainingOutlooks.Select(value =>
+                value.FocusId + ":" + value.IntensityId), Is.Unique);
+
+            var light = HighSchoolTrainingOutlookProjection.Resolve(
+                current, "breaking_ball", "light");
+            var standard = HighSchoolTrainingOutlookProjection.Resolve(
+                current, "breaking_ball", "standard");
+            var intensive = HighSchoolTrainingOutlookProjection.Resolve(
+                current, "breaking_ball", "intensive");
+            Assert.That(light, Is.Not.Null);
+            Assert.That(standard, Is.Not.Null);
+            Assert.That(intensive, Is.Not.Null);
+            Assert.That(light.OutlookId, Is.EqualTo("none"));
+            Assert.That(light.Summary,
+                Is.EqualTo("이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다."));
+            Assert.That(standard.OutlookId, Is.EqualTo("zero_or_one"));
+            Assert.That(standard.Summary,
+                Is.EqualTo("+1이 나올 수도, 성장 없이 지날 수도 있습니다."));
+            Assert.That(intensive.OutlookId, Is.EqualTo("one"));
+            Assert.That(intensive.Summary, Is.EqualTo("+1이 확실한 훈련입니다."));
+            Assert.That(HighSchoolTrainingOutlookProjection.Resolve(
+                current, "invented_focus", "standard"), Is.Null);
+            Assert.That(HighSchoolTrainingOutlookProjection.Resolve(
+                current, "breaking_ball", "invented_intensity"), Is.Null);
+
+            var aggregate = GameSaveAggregate.Initial("outlook-install").Commit(
+                "outlook-fixture",
+                ApplicationStage.HighSchool,
+                highSchool: current);
+            Assert.That(new GameSaveValidator().Validate(aggregate).IsValid, Is.True);
+            var legacyJson = JObject.Parse(JsonConvert.SerializeObject(aggregate));
+            ((JObject)legacyJson["HighSchool"]).Remove("TrainingOutlooks");
+            var legacy = legacyJson.ToObject<GameSaveAggregate>();
+            Assert.That(legacy.HighSchool.TrainingOutlooks, Is.Empty);
+            Assert.That(new GameSaveValidator().Validate(legacy).IsValid, Is.True);
+        }
+
+        [Test]
+        public void CoreTrainingBloom_ProjectsAndRoundTripsWithoutRecalculation()
+        {
+            var first = new CareerTrainingSnapshot(
+                7,
+                TrainingFocus.BreakingBall,
+                TrainingIntensity.Intensive,
+                2,
+                15,
+                "변화구 끝이 한 단계 열렸습니다.",
+                59,
+                61,
+                44,
+                59,
+                true,
+                TalentAbility.Movement,
+                TalentGrade.A,
+                true,
+                PitchType.Slider);
+            var second = new CareerTrainingSnapshot(
+                8,
+                TrainingFocus.BreakingBall,
+                TrainingIntensity.Intensive,
+                1,
+                15,
+                "슬라이더 궤적을 다시 고정했습니다.",
+                61,
+                62,
+                59,
+                74,
+                true,
+                targetPitch: PitchType.Slider);
+            var block = new CareerTrainingBlockSnapshot(
+                3,
+                2,
+                TrainingFocus.BreakingBall,
+                TrainingIntensity.Intensive,
+                PitchType.Slider,
+                TrainingBlockStopReason.TalentBloom,
+                3,
+                30,
+                new[] { first, second });
+
+            var flags = BindingFlags.NonPublic | BindingFlags.Static;
+            var resultMapper = typeof(CoreHighSchoolCareerPort).GetMethod(
+                "TrainingResult", flags);
+            var blockMapper = typeof(CoreHighSchoolCareerPort).GetMethod(
+                "TrainingBlock", flags);
+            Assert.That(resultMapper, Is.Not.Null);
+            Assert.That(blockMapper, Is.Not.Null);
+            var result = (TrainingResultReadModel)resultMapper.Invoke(null, new object[] { first });
+            var projected = (TrainingBlockResultReadModel)blockMapper.Invoke(
+                null, new object[] { block });
+
+            Assert.That(result.BloomedAbility, Is.EqualTo("movement"));
+            Assert.That(result.BloomedGrade, Is.EqualTo("a"));
+            Assert.That(projected.StopReason, Is.EqualTo("talent_bloom"));
+            Assert.That(projected.BloomedAbility, Is.EqualTo("movement"));
+            Assert.That(projected.BloomedGrade, Is.EqualTo("a"));
+            Assert.That(projected.Sessions.Count, Is.EqualTo(2));
+            Assert.That(projected.Sessions[0].BloomedAbility, Is.EqualTo("movement"));
+
+            var highSchool = new HighSchoolCareerReadModel(
+                "hs-training-bloom",
+                1,
+                HighSchoolPhase.Training,
+                "1",
+                1,
+                "pitcher",
+                "민서준",
+                "breaking_ball_artist",
+                new PitcherRatingsReadModel(50, 50, 50, 50),
+                new CareerPerformanceReadModel(),
+                lastTraining: result,
+                lastTrainingBlock: projected);
+            var aggregate = GameSaveAggregate.Initial("install-a").Commit(
+                "training-bloom",
+                ApplicationStage.HighSchool,
+                highSchool: highSchool);
+            var roundTrip = JsonConvert.DeserializeObject<GameSaveAggregate>(
+                JsonConvert.SerializeObject(aggregate));
+            Assert.That(new GameSaveValidator().Validate(roundTrip).IsValid, Is.True);
+            Assert.That(roundTrip.HighSchool.LastTraining.BloomedAbility,
+                Is.EqualTo("movement"));
+            Assert.That(roundTrip.HighSchool.LastTrainingBlock.BloomedGrade,
+                Is.EqualTo("a"));
+
+            var oldJson = JsonConvert.SerializeObject(aggregate)
+                .Replace(",\"BloomedAbility\":\"movement\"", string.Empty)
+                .Replace(",\"BloomedGrade\":\"a\"", string.Empty);
+            var old = JsonConvert.DeserializeObject<GameSaveAggregate>(oldJson);
+            Assert.That(new GameSaveValidator().Validate(old).IsValid, Is.True);
+            Assert.That(old.HighSchool.LastTraining.BloomedAbility, Is.Null);
+
+            var receiptlessJson = JObject.Parse(JsonConvert.SerializeObject(aggregate));
+            var legacyBlock = (JObject)receiptlessJson["HighSchool"]["LastTrainingBlock"];
+            legacyBlock.Remove("Sessions");
+            legacyBlock.Remove("BloomedAbility");
+            legacyBlock.Remove("BloomedGrade");
+            var receiptless = receiptlessJson.ToObject<GameSaveAggregate>();
+            Assert.That(receiptless.HighSchool.LastTrainingBlock.Sessions, Is.Empty);
+            Assert.That(new GameSaveValidator().Validate(receiptless).IsValid, Is.True);
+        }
+
+        [Test]
         public async Task TargetedTrainingBlock_SavesBeforePublishAndRestartsWithPerSessionReceipts()
         {
             var adapter = new CoreHighSchoolCareerPort();
@@ -1367,7 +1844,7 @@ namespace Baseball.Application.Tests
             };
 
             using (var store = await GameApplicationStore.OpenAsync(
-                       repository, new CoreHighSchoolCareerPort(), new FakeProPort(), "ignored"))
+                       repository, new CoreHighSchoolCareerPort(), new FakeProPort(), "training-install"))
             {
                 var published = 0;
                 store.StatePublished += _ => published++;
@@ -1392,7 +1869,7 @@ namespace Baseball.Application.Tests
                 Assert.That(applied.Status, Is.EqualTo(DispatchStatus.Applied), applied.ErrorCode);
                 Assert.That(published, Is.EqualTo(1));
                 Assert.That(store.Current.HighSchool.LastTrainingBlock.CompletedSessions, Is.EqualTo(3));
-                Assert.That(store.Current.HighSchool.LastTrainingBlock.Sessions, Has.Count.EqualTo(3));
+                Assert.That(store.Current.HighSchool.LastTrainingBlock.Sessions.Count, Is.EqualTo(3));
                 Assert.That(store.Current.HighSchool.LastTrainingBlock.Sessions.Select(value => value.Number),
                     Is.Ordered.And.Unique);
                 Assert.That(store.Current.HighSchool.LastTrainingBlock.Sessions.All(value =>
@@ -1404,10 +1881,10 @@ namespace Baseball.Application.Tests
                 SaveLoadStatus.LoadedCanonical,
                 Envelope(repository.Saved));
             using (var restarted = await GameApplicationStore.OpenAsync(
-                       repository, new CoreHighSchoolCareerPort(), new FakeProPort(), "ignored-again"))
+                       repository, new CoreHighSchoolCareerPort(), new FakeProPort(), "training-install"))
             {
                 Assert.That(restarted.Current.HighSchool.LastTrainingBlock, Is.Not.Null);
-                Assert.That(restarted.Current.HighSchool.LastTrainingBlock.Sessions, Has.Count.EqualTo(3));
+                Assert.That(restarted.Current.HighSchool.LastTrainingBlock.Sessions.Count, Is.EqualTo(3));
                 Assert.That(restarted.Current.HighSchool.LastTrainingBlock.TargetPitch, Is.EqualTo(target));
             }
         }
@@ -1445,7 +1922,7 @@ namespace Baseball.Application.Tests
                 await Applied(store, "start", new StartHighSchoolCareerCommand(
                     new StartHighSchoolCareerRequest("seed", "power_prospect", "민서준", "서울", 1)));
                 var projected = RunPledgeRules.Project(store.Current);
-                Assert.That(projected.Choices, Has.Count.EqualTo(3));
+                Assert.That(projected.Choices.Count, Is.EqualTo(3));
                 Assert.That(projected.Choices.Select(value => value.Id),
                     Is.EqualTo(CoreRunPledgeCatalog.Options(
                         store.Current.HighSchool.CareerId,
@@ -1500,8 +1977,7 @@ namespace Baseball.Application.Tests
                     Is.EqualTo(DispatchStatus.AlreadyApplied));
                 Assert.That(store.Current.Meta.LifeArchive, Is.Empty);
                 Assert.That(store.Current.Meta.SoulBalance, Is.EqualTo(73));
-                Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates,
-                    Has.Count.EqualTo(3));
+                Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates.Count, Is.EqualTo(3));
                 Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates,
                     Has.All.Matches<SignatureLegacyReadModel>(value =>
                         value.EvidenceSummary.StartsWith("프로 통산", StringComparison.Ordinal)));
@@ -1610,7 +2086,9 @@ namespace Baseball.Application.Tests
                 value);
         }
 
-        private static PitchAbilityMomentEvidence AbilityEvidence(PitchAbilityKind? kind)
+        private static PitchAbilityMomentEvidence AbilityEvidence(
+            PitchAbilityKind? kind,
+            bool recommendationAccepted = false)
         {
             var pitchType = kind == PitchAbilityKind.Movement
                 ? PitchType.Slider
@@ -1631,7 +2109,8 @@ namespace Baseball.Application.Tests
                 new PlateAppearanceContext(
                     "ability-pa", 0, 1, 0, 0, 0, 1, 0, 500, 0),
                 outcome,
-                new PitchExecution(0, 0, 0, 0, 1450, 0, 0, 900));
+                new PitchExecution(0, 0, 0, 0, 1450, 0, 0, 900),
+                recommendationAccepted);
         }
 
         private static PitchAbilityMomentEvidence AbilityEvidence(

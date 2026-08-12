@@ -7,6 +7,8 @@ using Baseball.Application.Meta;
 using Baseball.Application.Persistence;
 using Baseball.Application.Pro;
 using Baseball.Core.HighSchool;
+using Baseball.Presentation.Common;
+using Baseball.Presentation.Pitch;
 
 namespace Baseball.Presentation.Shell
 {
@@ -22,6 +24,7 @@ namespace Baseball.Presentation.Shell
         private readonly Func<string, IReadOnlyList<string>> _selectedChoices;
         private readonly Func<bool> _reminderOptInAvailable;
         private readonly Func<DateTimeOffset> _now;
+        private readonly Func<bool> _setupSeedInputValid;
 
         public StoreBaseballCareerReadModel(
             IKoreanUiCopyCatalog copy,
@@ -32,7 +35,8 @@ namespace Baseball.Presentation.Shell
             Func<string, string> selectedChoice = null,
             Func<string, IReadOnlyList<string>> selectedChoices = null,
             Func<bool> reminderOptInAvailable = null,
-            Func<DateTimeOffset> now = null)
+            Func<DateTimeOffset> now = null,
+            Func<bool> setupSeedInputValid = null)
         {
             _template = new BaseballScreenTemplateReadModel(copy ?? throw new ArgumentNullException(nameof(copy)));
             _snapshot = snapshot ?? throw new ArgumentNullException(nameof(snapshot));
@@ -43,6 +47,7 @@ namespace Baseball.Presentation.Shell
             _selectedChoices = selectedChoices ?? (_ => Array.Empty<string>());
             _reminderOptInAvailable = reminderOptInAvailable ?? (() => false);
             _now = now ?? (() => DateTimeOffset.UtcNow);
+            _setupSeedInputValid = setupSeedInputValid ?? (() => true);
         }
 
         public IReadOnlyList<ShellRoute> Routes => _template.Routes;
@@ -68,7 +73,9 @@ namespace Baseball.Presentation.Shell
                 ProjectActions(route, template.Actions, state),
                 template.ShowsBottomNavigation,
                 KeyArtAddress(route, state, _setupPresetId()),
-                ProjectChoiceGroups(route, state));
+                ProjectChoiceGroups(route, state),
+                PlayerPortraitAddress(route, state),
+                PlayerPortraitLabel(route, state));
         }
 
         public static ShellRoute PreferredRouteFor(GameSaveAggregate state)
@@ -93,6 +100,8 @@ namespace Baseball.Presentation.Shell
 
         public static ShellRoute RetiredDailyFallbackFor(GameSaveAggregate state)
         {
+            if (state?.PendingPitchCompletion != null)
+                return CareerRouteWithoutInterruption(state);
             if (state?.Pro != null) return ProRoute(state.Pro);
             if (state?.HighSchool != null) return HighSchoolRoute(state.HighSchool);
             return ShellRoute.Opening;
@@ -145,8 +154,17 @@ namespace Baseball.Presentation.Shell
             BaseballScreenViewModel template,
             GameSaveAggregate state)
         {
+            LifeArchiveRecord selectedLife = route == ShellRoute.LifeCard
+                ? SelectedLifeRecord(state)
+                : route == ShellRoute.RunRecap
+                    ? CurrentLifeArchiveFor(state)
+                    : null;
+            if (route == ShellRoute.LifeCard && selectedLife != null)
+                return selectedLife.LifeNumber + "번째 선수의 기록 · " + selectedLife.PlayerName;
+            if (route == ShellRoute.RunRecap && selectedLife != null)
+                return selectedLife.LifeNumber + "번째 선수 · 3년 돌아보기";
             string player = route == ShellRoute.LifeCard
-                ? SelectedLifeRecord(state)?.PlayerName
+                ? selectedLife?.PlayerName
                 : state.Pro?.PlayerName ?? state.HighSchool?.PlayerName;
             return string.IsNullOrWhiteSpace(player) ? template.Title : template.Title + " · " + player;
         }
@@ -177,29 +195,49 @@ namespace Baseball.Presentation.Shell
             if (state.PendingPitchCompletion?.Report != null)
             {
                 PitchGameReport report = state.PendingPitchCompletion.Report;
+                PitchPostgameContent postgame = PitchPostgameProjection.Project(
+                    report,
+                    state.PendingPitchCompletion.PitchLog);
+                var postgameRows = new List<ScreenRowViewModel>
+                {
+                    new ScreenRowViewModel(
+                        "pending-pitch-line",
+                        "승부 기록",
+                        postgame.Summary,
+                        postgame.Analysis),
+                    new ScreenRowViewModel(
+                        "pending-pitch-growth",
+                        "성장과 릴리스",
+                        postgame.Growth,
+                        "저장된 Core 경기 보고서와 공별 증거를 사용합니다.")
+                };
+                if (postgame.Pitches.Count == 0)
+                {
+                    postgameRows.Add(new ScreenRowViewModel(
+                        "pending-pitch-log-unavailable",
+                        "전체 투구 로그",
+                        "공별 기록 없음",
+                        "이전 저장 형식의 경기에는 공별 위치·구속 기록이 없을 수 있습니다."));
+                }
+                else
+                {
+                    for (int index = 0; index < postgame.Pitches.Count; index++)
+                    {
+                        PitchPostgameLine pitch = postgame.Pitches[index];
+                        postgameRows.Add(new ScreenRowViewModel(
+                            "pending-pitch-log-" + (index + 1),
+                            "투구 " + (index + 1),
+                            pitch.Title,
+                            pitch.Detail));
+                    }
+                }
                 projected.Insert(0, new ScreenSectionViewModel(
                     "pending-pitch-result",
                     state.PendingPitchCompletion.CareerKind == PitchCareerKind.Tutorial
                         ? "첫 불펜 결과"
                         : "저장된 경기 결과",
                     ScreenSectionTone.Milestone,
-                    new[]
-                    {
-                        new ScreenRowViewModel(
-                            "pending-pitch-line",
-                            "승부 기록",
-                            report.Batters + "타자 · " + report.Pitches + "구 · " + report.Outs + "아웃",
-                            "탈삼진 " + report.Strikeouts + " · 볼넷 " + report.Walks +
-                            " · 피안타 " + report.Hits + " · 실점 " + report.RunsAllowed),
-                        new ScreenRowViewModel(
-                            "pending-pitch-growth",
-                            "직접 투구",
-                            report.DirectDeliveryCount == 0
-                                ? "직접 릴리스 기록 없음"
-                                : "평균 " + report.AverageDeliveryScore + " · 최고 " + report.BestDeliveryScore,
-                            "완벽 릴리스 " + report.PerfectDeliveryCount +
-                            " · 수싸움 성장 " + report.SequenceMasteryCount)
-                    }));
+                    postgameRows));
             }
 
             if (route == ShellRoute.PitchHandoff && state.PitchResume != null)
@@ -284,6 +322,13 @@ namespace Baseball.Presentation.Shell
                 case ShellRoute.ProContract:
                     projected = ProContractSections(state).ToList();
                     break;
+                case ShellRoute.ProSeason:
+                    projected = ProSeasonSections(state.Pro).ToList();
+                    break;
+                case ShellRoute.RunRecap:
+                    LifeArchiveRecord recap = CurrentLifeArchiveFor(state);
+                    if (recap != null) projected = RunRecapSections(state, recap).ToList();
+                    break;
                 case ShellRoute.Records:
                     projected = RecordSections(state).ToList();
                     break;
@@ -296,8 +341,14 @@ namespace Baseball.Presentation.Shell
                 case ShellRoute.LifeArchive:
                     projected = ArchiveSections(state.Meta.LifeArchive).ToList();
                     break;
+                case ShellRoute.LifeCard:
+                    projected = LifeCardSections(SelectedLifeRecord(state)).ToList();
+                    break;
                 case ShellRoute.Weekly:
                     projected = WeeklySections(state.Meta.Weekly).ToList();
+                    break;
+                case ShellRoute.Settings:
+                    projected = SettingsSections(state).ToList();
                     break;
             }
             AddLatestPlayerLegacy(projected, route, state);
@@ -341,7 +392,7 @@ namespace Baseball.Presentation.Shell
             IReadOnlyList<LifeArchiveRecord> archive = state?.Meta?.LifeArchive;
             if (archive == null || archive.Count == 0) return;
             LifeArchiveRecord record = route == ShellRoute.RunRecap
-                ? archive.OrderByDescending(value => value.LifeNumber).First()
+                ? CurrentLifeArchiveFor(state)
                 : PreviousPlayerLegacyFor(route, state);
             if (record == null) return;
             sections.Insert(0, new ScreenSectionViewModel(
@@ -381,7 +432,7 @@ namespace Baseball.Presentation.Shell
                 "“" + legacy.Farewell + "”");
         }
 
-        private static void AddHighSchoolNarrative(
+        private void AddHighSchoolNarrative(
             IList<ScreenSectionViewModel> sections,
             ShellRoute route,
             HighSchoolCareerReadModel career)
@@ -438,6 +489,10 @@ namespace Baseball.Presentation.Shell
                     new[]
                     {
                         new ScreenRowViewModel(
+                            "hs-relationship-category",
+                            "장면 유형",
+                            scene.Category),
+                        new ScreenRowViewModel(
                             "hs-relationship-speaker",
                             string.IsNullOrWhiteSpace(scene.Speaker) ? "상대" : scene.Speaker,
                             string.IsNullOrWhiteSpace(scene.Quote) ? scene.Summary : "“" + scene.Quote + "”",
@@ -470,6 +525,29 @@ namespace Baseball.Presentation.Shell
                     }));
             }
 
+            if (route == ShellRoute.Training)
+            {
+                TrainingOutlookReadModel outlook = HighSchoolTrainingOutlookProjection.Resolve(
+                    career,
+                    _selectedChoice("training_focus"),
+                    _selectedChoice("training_intensity"));
+                if (outlook != null)
+                {
+                    sections.Insert(0, new ScreenSectionViewModel(
+                        "hs-training-outlook",
+                        "선택한 훈련 전망",
+                        ScreenSectionTone.Information,
+                        new[]
+                        {
+                            new ScreenRowViewModel(
+                                "hs-training-outlook-value",
+                                outlook.Title,
+                                outlook.Summary,
+                                "선택한 초점과 강도를 현재 능력·피로·재능에 적용한 전망입니다.")
+                        }));
+                }
+            }
+
             if ((route == ShellRoute.Training || route == ShellRoute.HighSchoolOverview) &&
                 career.LastTraining != null && career.LastTrainingBlock == null)
             {
@@ -492,7 +570,10 @@ namespace Baseball.Presentation.Shell
                                 ? training.MetricBefore + " → " + training.MetricAfter
                                 : "수치 변화 없음",
                             training.OpportunityHit ? "오늘의 성장 기회를 살렸습니다." : "기본 훈련 결과입니다.")
-                    }));
+                    }.Concat(TrainingBloomRows(
+                        "hs-last-training-bloom",
+                        training.BloomedAbility,
+                        training.BloomedGrade)).ToArray()));
             }
 
             if ((route == ShellRoute.Training || route == ShellRoute.HighSchoolOverview) &&
@@ -514,6 +595,10 @@ namespace Baseball.Presentation.Shell
                     block.CompletedSessions + "/" + block.MaximumSessions + "회 완료",
                     TrainingBlockStopTitle(block.StopReason) + " · 총 성장 +" + Math.Max(0, block.Growth) +
                     " · 총 피로 " + Signed(block.FatigueChange)));
+                rows.AddRange(TrainingBloomRows(
+                    "hs-training-block-bloom",
+                    block.BloomedAbility,
+                    block.BloomedGrade));
                 sections.Add(new ScreenSectionViewModel(
                     "hs-last-training-block",
                     "연속 훈련 결과",
@@ -678,6 +763,234 @@ namespace Baseball.Presentation.Shell
             }
         }
 
+        private IReadOnlyList<ScreenSectionViewModel> ProSeasonSections(
+            ProCareerReadModel career)
+        {
+            if (career == null)
+            {
+                return new[]
+                {
+                    new ScreenSectionViewModel(
+                        "pro-season-unavailable",
+                        "프로 시즌",
+                        ScreenSectionTone.Warning,
+                        new[]
+                        {
+                            new ScreenRowViewModel(
+                                "pro-season-unavailable-copy",
+                                "시즌 기록을 불러올 수 없음",
+                                "저장된 프로 커리어가 없습니다.",
+                                "현재 저장 상태를 다시 확인해 주세요.")
+                        })
+                };
+            }
+
+            var sections = new List<ScreenSectionViewModel>();
+            var personalRows = new List<ScreenRowViewModel>();
+            AddPitchingRecordRows(
+                personalRows,
+                "pro-season-personal",
+                career.Season + "시즌 개인 기록",
+                career.RecordBook?.CurrentSeason,
+                career.RecordBook?.CurrentSeason != null,
+                career.TeamName + " · " + RoleTitle(career.Role));
+            sections.Add(new ScreenSectionViewModel(
+                "pro-season-personal",
+                career.Season + "시즌 · 개인 기록",
+                ScreenSectionTone.Milestone,
+                personalRows));
+
+            IReadOnlyList<LeagueStandingReadModel> standings = career.LeagueStandings ??
+                Array.Empty<LeagueStandingReadModel>();
+            ScreenRowViewModel[] teamRows = standings.Count == 0
+                ? new[]
+                {
+                    new ScreenRowViewModel(
+                        "pro-season-team-unavailable",
+                        career.TeamName,
+                        "팀 순위를 불러올 수 없음",
+                        "이전 저장에는 현재 시즌 순위표가 보관되지 않았습니다.")
+                }
+                : standings.OrderBy(value => value.Rank).Select(value => new ScreenRowViewModel(
+                    "pro-season-team-" + value.Rank,
+                    value.Rank + "위 · " + value.TeamName,
+                    value.Wins + "승 " + value.Losses + "패 " + value.Draws + "무",
+                    (value.Rank == 1
+                        ? "현재 선두"
+                        : "선두와 " + value.GamesBehind.ToString("0.0", CultureInfo.InvariantCulture) +
+                          "경기 차") +
+                    (value.IsPlayerTeam ? " · 내 구단" : string.Empty))).ToArray();
+            sections.Add(new ScreenSectionViewModel(
+                "pro-season-team",
+                "팀 결과",
+                ScreenSectionTone.Information,
+                teamRows));
+
+            ProDevelopmentProgressReadModel progress = career.DevelopmentProgress ??
+                new ProDevelopmentProgressReadModel();
+            var growthRows = new List<ScreenRowViewModel>
+            {
+                new ScreenRowViewModel(
+                    "pro-season-ratings",
+                    "현재 네 능력",
+                    RatingLine(career.Ratings),
+                    "지도자의 믿음 " + career.ManagerTrust + " · 포수와의 호흡 " +
+                    career.CatcherTrust + " · 피로 " + career.Fatigue),
+                new ScreenRowViewModel(
+                    "pro-season-development",
+                    "다음 성장까지",
+                    "구위 " + progress.Stuff + "/2 · 제구 " + progress.Command +
+                    "/2 · 변화 " + progress.Movement + "/2 · 체력 " +
+                    progress.Stamina + "/2",
+                    "같은 성장 계획을 두 번 채우면 해당 능력이 오릅니다.")
+            };
+            if (career.LastSegmentProgress != null)
+            {
+                ProSegmentProgressReadModel segment = career.LastSegmentProgress;
+                growthRows.Add(new ScreenRowViewModel(
+                    "pro-season-last-segment",
+                    "최근 성장 일정",
+                    ProPlanTitle(segment.Plan) + " · " + segment.AdvancedWeeks + "주",
+                    ProSegmentTitle(segment.StartingSegment) + " → " +
+                    ProSegmentTitle(segment.EndingSegment) + " · " +
+                    ProSegmentStopTitle(segment.StopReason)));
+            }
+            sections.Add(new ScreenSectionViewModel(
+                "pro-season-growth",
+                "시즌 성장",
+                ScreenSectionTone.Positive,
+                growthRows));
+
+            IReadOnlyList<ProDecisionHistoryReadModel> history = career.RecordBook?.DecisionHistory ??
+                Array.Empty<ProDecisionHistoryReadModel>();
+            ProDecisionHistoryReadModel[] seasonHistory = history
+                .Where(value => value.Season == career.Season)
+                .OrderBy(value => value.Week)
+                .ToArray();
+            if (seasonHistory.Length > 0)
+            {
+                sections.Add(new ScreenSectionViewModel(
+                    "pro-season-decisions",
+                    "이번 시즌 선택과 변화",
+                    ScreenSectionTone.Plain,
+                    seasonHistory.Select((decision, index) => new ScreenRowViewModel(
+                        "pro-season-decision-" + index,
+                        decision.Week + "주 · " + decision.ChoiceTitle,
+                        decision.EffectSummary,
+                        ProDecisionDeltaLine(decision))).ToArray()));
+            }
+
+            ProRecordBookReadModel recordBook = career.RecordBook;
+            if (recordBook != null &&
+                (recordBook.AwardNames.Count > 0 || recordBook.Milestones.Count > 0))
+            {
+                var achievementRows = new List<ScreenRowViewModel>();
+                if (recordBook.AwardNames.Count > 0)
+                    achievementRows.Add(new ScreenRowViewModel(
+                        "pro-season-awards",
+                        "수상",
+                        string.Join(" · ", recordBook.AwardNames)));
+                if (recordBook.Milestones.Count > 0)
+                    achievementRows.Add(new ScreenRowViewModel(
+                        "pro-season-milestones",
+                        "이정표",
+                        string.Join(" · ", recordBook.Milestones)));
+                sections.Add(new ScreenSectionViewModel(
+                    "pro-season-achievements",
+                    "시즌 성취",
+                    ScreenSectionTone.Milestone,
+                    achievementRows));
+            }
+
+            sections.Add(ProSeasonNextSection(career));
+            return sections;
+        }
+
+        private ScreenSectionViewModel ProSeasonNextSection(ProCareerReadModel career)
+        {
+            if (career.Phase == ProCareerPhase.SeasonDecision && career.SeasonDecision != null)
+            {
+                ProSeasonDecisionReadModel decision = career.SeasonDecision;
+                string selectedPayload = _selectedChoice("pro_season_decision");
+                Baseball.Application.Commands.CareerChoiceReadModel selected = decision.Choices
+                    .FirstOrDefault(value => value.Enabled && string.Equals(
+                        value.Payload,
+                        selectedPayload,
+                        StringComparison.Ordinal));
+                var rows = new List<ScreenRowViewModel>
+                {
+                    new ScreenRowViewModel(
+                        "pro-season-next-context",
+                        decision.Title,
+                        decision.Detail,
+                        "선택 효과와 현재 팀·개인 기록을 함께 확인하세요.")
+                };
+                rows.Add(selected == null
+                    ? new ScreenRowViewModel(
+                        "pro-season-next-selection",
+                        "다음 선택",
+                        "선택 대기",
+                        "아래 선택지에서 한 가지를 고르면 확정 버튼이 열립니다.")
+                    : new ScreenRowViewModel(
+                        "pro-season-next-selection",
+                        "선택 근거 · " + selected.Title,
+                        string.IsNullOrWhiteSpace(selected.EffectSummary)
+                            ? selected.Detail
+                            : selected.EffectSummary,
+                        DecisionChoiceDetail(selected)));
+                return new ScreenSectionViewModel(
+                    "pro-season-next",
+                    "다음 선택",
+                    selected == null ? ScreenSectionTone.Warning : ScreenSectionTone.Information,
+                    rows);
+            }
+
+            return new ScreenSectionViewModel(
+                "pro-season-next",
+                "다음 선택",
+                ScreenSectionTone.Information,
+                new[]
+                {
+                    new ScreenRowViewModel(
+                        "pro-season-next-review",
+                        career.Phase == ProCareerPhase.SeasonReview
+                            ? "시즌 결산 저장"
+                            : "다음 프로 일정 확인",
+                        career.Phase == ProCareerPhase.SeasonReview
+                            ? "개인 기록과 팀 결과를 확인했습니다."
+                            : "현재 시즌 상태를 저장했습니다.",
+                        career.Phase == ProCareerPhase.SeasonReview
+                            ? "결산을 저장하면 수상·이정표가 확정되고 오프시즌 선택 또는 은퇴 결정으로 이어집니다."
+                            : "저장된 프로 단계에 맞는 다음 화면으로 이동합니다.")
+                });
+        }
+
+        private static string DecisionChoiceDetail(
+            Baseball.Application.Commands.CareerChoiceReadModel choice)
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(choice.Detail)) parts.Add(choice.Detail);
+            if (!string.IsNullOrWhiteSpace(choice.EffectSummary) &&
+                !string.Equals(choice.EffectSummary, choice.Detail, StringComparison.Ordinal))
+                parts.Add(choice.EffectSummary);
+            if (choice.Recommended && !string.IsNullOrWhiteSpace(choice.RecommendationReason))
+                parts.Add("추천 근거 · " + choice.RecommendationReason);
+            return parts.Count == 0 ? "선택 효과는 저장 후 적용됩니다." : string.Join(" · ", parts);
+        }
+
+        private static string RoleTitle(string value)
+        {
+            switch ((value ?? string.Empty).ToLowerInvariant())
+            {
+                case "ace": return "에이스";
+                case "starter": return "선발";
+                case "long_relief": return "롱 릴리프";
+                case "setup": return "셋업";
+                case "closer": return "마무리";
+                default: return "현재 역할";
+            }
+        }
+
         private static string PledgeTierTitle(Baseball.Application.HighSchool.RunPledgeTier tier)
         {
             switch (tier)
@@ -732,6 +1045,35 @@ namespace Baseball.Presentation.Shell
                 case "recovery": return "회복";
                 case "game_planning": return "경기 운영";
                 default: return "훈련";
+            }
+        }
+
+        private static IEnumerable<ScreenRowViewModel> TrainingBloomRows(
+            string id,
+            string ability,
+            string grade)
+        {
+            if (string.IsNullOrWhiteSpace(ability) || string.IsNullOrWhiteSpace(grade))
+                return Array.Empty<ScreenRowViewModel>();
+            return new[]
+            {
+                new ScreenRowViewModel(
+                    id,
+                    "재능이 만개했습니다",
+                    TalentAbilityTitle(ability) + " · " + grade.ToUpperInvariant() + "등급",
+                    "훈련 결과에 저장된 재능 상한 성장입니다.")
+            };
+        }
+
+        private static string TalentAbilityTitle(string value)
+        {
+            switch ((value ?? string.Empty).ToLowerInvariant())
+            {
+                case "stuff": return "구위";
+                case "command": return "제구";
+                case "movement": return "변화";
+                case "stamina": return "체력";
+                default: return "투수 재능";
             }
         }
 
@@ -820,6 +1162,10 @@ namespace Baseball.Presentation.Shell
                     ScreenSectionTone.Information,
                     new[]
                     {
+                        new ScreenRowViewModel(
+                            "hs-tournament-chapter",
+                            "대회 장",
+                            career.ChapterNumber.ToString()),
                         new ScreenRowViewModel("hs-tournament-round", "현재 라운드", career.Tournament.PlayerRound),
                         new ScreenRowViewModel(
                             "hs-tournament-schools",
@@ -1467,6 +1813,345 @@ namespace Baseball.Presentation.Shell
             return sections;
         }
 
+        private static IReadOnlyList<ScreenSectionViewModel> LifeCardSections(LifeArchiveRecord record)
+        {
+            if (record == null)
+            {
+                return new[]
+                {
+                    EmptySection(
+                        "life-card-empty",
+                        "선수 카드",
+                        "완주한 회차를 인생 보관함에서 고르면 공유 카드를 만들 수 있습니다.")
+                };
+            }
+
+            HighSchoolLifeDetailReadModel detail = record.HighSchoolDetail;
+            CareerPerformanceReadModel performance = record.HighSchoolPerformance;
+            var sections = new List<ScreenSectionViewModel>
+            {
+                new ScreenSectionViewModel(
+                    "life-card-identity",
+                    record.LifeNumber + "번째 선수",
+                    ScreenSectionTone.Milestone,
+                    new[]
+                    {
+                        new ScreenRowViewModel(
+                            "life-card-player",
+                            record.PlayerName,
+                            (string.IsNullOrWhiteSpace(record.SchoolName) ? "학교 기록 없음" : record.SchoolName) +
+                            (string.IsNullOrWhiteSpace(detail?.Personality)
+                                ? string.Empty
+                                : " · 성향 " + detail.Personality),
+                            string.IsNullOrWhiteSpace(detail?.WindTitle)
+                                ? "3년의 바람 기록 없음"
+                                : "바람 · " + detail.WindTitle),
+                        new ScreenRowViewModel(
+                            "life-card-draft",
+                            record.Drafted
+                                ? (string.IsNullOrWhiteSpace(record.DraftTeamName)
+                                    ? "지명 구단 기록 없음"
+                                    : record.DraftTeamName + " 지명")
+                                : "드래프트 미지명",
+                            "스카우트 평가 " + record.DraftEvaluation + "점",
+                            record.ProSeasons > 0
+                                ? "프로 " + record.ProSeasons + "시즌 · 탈삼진 " + record.ProStrikeouts +
+                                  " · 수상 " + record.ProAwards
+                                : "고교 커리어 기록")
+                    })
+            };
+
+            PitcherRatingsReadModel start = detail?.StartingRatings;
+            PitcherRatingsReadModel final = record.FinalRatings;
+            if (start != null && final != null)
+            {
+                sections.Add(new ScreenSectionViewModel(
+                    "life-card-growth",
+                    "3년 동안 키운 것",
+                    ScreenSectionTone.Positive,
+                    new[]
+                    {
+                        GrowthRow("life-card-rating-stuff", "구위", start.Stuff, final.Stuff),
+                        GrowthRow("life-card-rating-command", "제구", start.Command, final.Command),
+                        GrowthRow("life-card-rating-movement", "변화", start.Movement, final.Movement),
+                        GrowthRow("life-card-rating-stamina", "체력", start.Stamina, final.Stamina),
+                        new ScreenRowViewModel(
+                            "life-card-rating-total",
+                            "능력 총합",
+                            start.Total + " → " + final.Total,
+                            GrowthDelta(final.Total - start.Total))
+                    }));
+            }
+            else
+            {
+                sections.Add(EmptySection(
+                    "life-card-growth-unavailable",
+                    "3년 동안 키운 것",
+                    "이전 버전의 회차라 시작·최종 능력 기록이 없습니다."));
+            }
+
+            var pitchingRows = new List<ScreenRowViewModel>
+            {
+                new ScreenRowViewModel(
+                    "life-card-record-counts",
+                    "직접 등판 기록",
+                    performance.ImportantGames + "경기 · 탈삼진 " + performance.Strikeouts +
+                    " · 볼넷 " + performance.Walks + " · 실점 " + performance.RunsAllowed,
+                    record.Hits.HasValue
+                        ? "피안타 " + record.Hits.Value
+                        : "이전 버전의 회차라 피안타 기록이 없습니다."),
+                new ScreenRowViewModel(
+                    "life-card-record-workload",
+                    "이닝과 투구 수",
+                    record.Outs.HasValue ? Innings(record.Outs.Value) + "이닝" : "이닝 기록 없음",
+                    record.Pitches.HasValue ? record.Pitches.Value + "구" : "투구 수 기록 없음")
+            };
+            if (record.Outs.HasValue && record.Outs.Value > 0)
+            {
+                double innings = record.Outs.Value / 3d;
+                string whip = record.Hits.HasValue
+                    ? ((record.Hits.Value + performance.Walks) / innings)
+                        .ToString("0.00", CultureInfo.InvariantCulture)
+                    : "기록 없음";
+                pitchingRows.Add(new ScreenRowViewModel(
+                    "life-card-record-rates",
+                    "세부 지표",
+                    "방어율 " + (performance.RunsAllowed * 9d / innings)
+                        .ToString("0.00", CultureInfo.InvariantCulture) +
+                    " · WHIP " + whip,
+                    "K/9 " + (performance.Strikeouts * 9d / innings)
+                        .ToString("0.0", CultureInfo.InvariantCulture)));
+            }
+            else
+            {
+                pitchingRows.Add(new ScreenRowViewModel(
+                    "life-card-record-rates-unavailable",
+                    "세부 지표",
+                    "기록 없음",
+                    "이전 버전의 회차는 이닝 기록이 없어 방어율·WHIP·K/9을 계산하지 않습니다."));
+            }
+            sections.Add(new ScreenSectionViewModel(
+                "life-card-record",
+                "3년 성적",
+                ScreenSectionTone.Plain,
+                pitchingRows));
+
+            var storyRows = new List<ScreenRowViewModel>();
+            if (detail?.Nicknames?.Count > 0)
+                storyRows.Add(new ScreenRowViewModel(
+                    "life-card-nicknames",
+                    "세상이 부른 이름",
+                    string.Join(" · ", detail.Nicknames.Select(value => "'" + value + "'"))));
+            if (record.SignatureLegacy != null)
+                storyRows.Add(new ScreenRowViewModel(
+                    "life-card-signature",
+                    "대표 유산 · " + record.SignatureLegacy.Title,
+                    record.SignatureLegacy.Detail,
+                    record.SignatureLegacy.EvidenceSummary));
+            string[] people = LifeCardPeople(detail);
+            if (people.Length > 0)
+                storyRows.Add(new ScreenRowViewModel(
+                    "life-card-people",
+                    "함께한 사람들",
+                    string.Join(" · ", people)));
+            string[] chronicle = LifeCardChronicle(detail?.Chronicle);
+            if (chronicle.Length > 0)
+                storyRows.Add(new ScreenRowViewModel(
+                    "life-card-chronicle",
+                    "선수의 연대기",
+                    string.Join("\n", chronicle)));
+            string challengeCode = LifeCardShareCopy.ChallengeCode(record);
+            if (!string.IsNullOrWhiteSpace(challengeCode))
+                storyRows.Add(new ScreenRowViewModel(
+                    "life-card-challenge",
+                    "같은 판에 도전",
+                    challengeCode,
+                    "설정 화면에서 이 코드를 입력하면 같은 시드와 회차로 기록 없는 도전을 시작합니다."));
+            if (storyRows.Count == 0)
+                storyRows.Add(new ScreenRowViewModel(
+                    "life-card-story-unavailable",
+                    "선수 이야기",
+                    "기록 없음",
+                    "이전 버전에서 완주한 회차라 이야기 기록이 보관되지 않았습니다."));
+            sections.Add(new ScreenSectionViewModel(
+                "life-card-story",
+                "이 선수가 남긴 것",
+                ScreenSectionTone.Information,
+                storyRows));
+            return sections;
+        }
+
+        private static IReadOnlyList<ScreenSectionViewModel> RunRecapSections(
+            GameSaveAggregate state,
+            LifeArchiveRecord record)
+        {
+            CareerPerformanceReadModel performance = record.HighSchoolPerformance;
+            HighSchoolLifeDetailReadModel detail = record.HighSchoolDetail;
+            var stamps = new List<ScreenRowViewModel>
+            {
+                new ScreenRowViewModel(
+                    "recap-draft-stamp",
+                    record.Drafted
+                        ? (string.IsNullOrWhiteSpace(record.DraftTeamName)
+                            ? "지명 구단 기록 없음"
+                            : record.DraftTeamName + " 지명")
+                        : "드래프트 미지명",
+                    "스카우트 평가 " + record.DraftEvaluation + "점"),
+                new ScreenRowViewModel(
+                    "recap-game-stamp",
+                    performance.ImportantGames + "등판 · 탈삼진 " + performance.Strikeouts,
+                    "볼넷 " + performance.Walks + " · 실점 " + performance.RunsAllowed)
+            };
+            if (detail?.Nicknames?.Count > 0)
+                stamps.Add(new ScreenRowViewModel(
+                    "recap-nickname-stamp",
+                    "세상이 부른 이름",
+                    "'" + detail.Nicknames.Last() + "'"));
+            if (!string.IsNullOrWhiteSpace(record.PledgeTitle))
+                stamps.Add(new ScreenRowViewModel(
+                    "recap-pledge-stamp",
+                    record.PledgeAchieved == true ? "목표 달성" : "목표 미완",
+                    record.PledgeTitle,
+                    (record.PledgeProgressLine ?? "저장된 진행 기록") +
+                    " · 보상 야구혼 +" + (record.PledgeRewardPermille ?? 0) / 10 + "%"));
+            if (!string.IsNullOrWhiteSpace(detail?.RivalName))
+                stamps.Add(new ScreenRowViewModel(
+                    "recap-rival-stamp",
+                    "숙적과 남긴 기록",
+                    detail.RivalName,
+                    "이 회차의 관계와 승부 기록에 함께 남았습니다."));
+
+            var result = new List<ScreenSectionViewModel>
+            {
+                new ScreenSectionViewModel(
+                    "recap-stamps",
+                    record.PlayerName + "의 3년",
+                    ScreenSectionTone.Milestone,
+                    stamps)
+            };
+
+            PitcherRatingsReadModel start = detail?.StartingRatings;
+            PitcherRatingsReadModel final = record.FinalRatings;
+            if (start != null && final != null)
+            {
+                result.Add(new ScreenSectionViewModel(
+                    "recap-growth",
+                    "3년 동안 키운 것",
+                    ScreenSectionTone.Positive,
+                    new[]
+                    {
+                        GrowthRow("recap-rating-stuff", "구위", start.Stuff, final.Stuff),
+                        GrowthRow("recap-rating-command", "제구", start.Command, final.Command),
+                        GrowthRow("recap-rating-movement", "변화", start.Movement, final.Movement),
+                        GrowthRow("recap-rating-stamina", "체력", start.Stamina, final.Stamina),
+                    }));
+            }
+            else
+            {
+                result.Add(EmptySection(
+                    "recap-growth-unavailable",
+                    "3년 동안 키운 것",
+                    "이전 버전의 회차라 시작·최종 능력 기록이 없습니다."));
+            }
+
+            if (record.SignatureLegacy != null)
+            {
+                result.Add(new ScreenSectionViewModel(
+                    "recap-signature",
+                    "새 선수에게 이어진 대표 유산",
+                    ScreenSectionTone.Milestone,
+                    new[]
+                    {
+                        new ScreenRowViewModel(
+                            "recap-signature-selected",
+                            record.SignatureLegacy.Title,
+                            record.SignatureLegacy.Detail,
+                            record.SignatureLegacy.EvidenceSummary),
+                        new ScreenRowViewModel(
+                            "recap-signature-candidates",
+                            "함께 발견한 후보",
+                            record.SignatureLegacyCandidates.Count == 0
+                                ? "후보 기록 없음"
+                                : string.Join(" · ", record.SignatureLegacyCandidates.Select(value => value.Title)),
+                            "결산 당시 제시된 후보를 그대로 보관했습니다.")
+                    }));
+            }
+
+            result.Add(new ScreenSectionViewModel(
+                "recap-soul",
+                "계승 포인트",
+                ScreenSectionTone.Milestone,
+                new[]
+                {
+                    new ScreenRowViewModel(
+                        "recap-soul-earned",
+                        "이번 선수 적립",
+                        "+" + record.SoulEarned + "P",
+                        "현재 잔액 " + state.Meta.SoulBalance + "P"),
+                    new ScreenRowViewModel(
+                        "recap-soul-automatic",
+                        "자동 계승 총량",
+                        state.Meta.AutomaticSoulEarned + "P",
+                        state.Meta.AutomaticSoulEarned > 0
+                            ? "새 선수 설정에서 계승 영역과 보너스를 고를 수 있습니다."
+                            : "이번 저장에는 자동 계승 포인트가 없습니다.")
+                }));
+
+            NextRunIntentState intent = record.SuggestedNextRunIntent ?? state.Meta.NextRunIntent;
+            if (intent != null)
+            {
+                result.Add(new ScreenSectionViewModel(
+                    "recap-next-intent",
+                    "새 선수로 다시 도전",
+                    ScreenSectionTone.Information,
+                    new[]
+                    {
+                        new ScreenRowViewModel(
+                            "recap-next-intent-value",
+                            string.IsNullOrWhiteSpace(intent.PledgeTitle) ? "추천 목표" : intent.PledgeTitle,
+                            intent.Reason,
+                            intent.PledgeRewardPermille.HasValue
+                                ? "달성 보너스 야구혼 +" + intent.PledgeRewardPermille.Value / 10 + "%"
+                                : "저장된 다음 회차 목표")
+                    }));
+            }
+            return result;
+        }
+
+        private static ScreenRowViewModel GrowthRow(string id, string title, int start, int final)
+        {
+            return new ScreenRowViewModel(
+                id,
+                title,
+                start + " → " + final,
+                GrowthDelta(final - start));
+        }
+
+        private static string GrowthDelta(int delta) =>
+            delta > 0 ? "+" + delta : delta == 0 ? "변화 없음" : delta.ToString();
+
+        private static string[] LifeCardPeople(HighSchoolLifeDetailReadModel detail)
+        {
+            if (detail == null) return Array.Empty<string>();
+            return new[]
+                {
+                    string.IsNullOrWhiteSpace(detail.CoachName) ? null : detail.CoachName + " 감독",
+                    string.IsNullOrWhiteSpace(detail.CatcherName) ? null : detail.CatcherName + " 포수",
+                    string.IsNullOrWhiteSpace(detail.RivalName) ? null : "숙적 " + detail.RivalName,
+                }
+                .Where(value => value != null)
+                .ToArray();
+        }
+
+        private static string[] LifeCardChronicle(IReadOnlyList<string> chronicle)
+        {
+            if (chronicle == null || chronicle.Count == 0) return Array.Empty<string>();
+            if (chronicle.Count <= 5) return chronicle.ToArray();
+            return new[] { chronicle[0] }
+                .Concat(chronicle.Skip(Math.Max(1, chronicle.Count - 4)))
+                .ToArray();
+        }
+
         private static ScreenSectionViewModel ArchiveLifeSection(LifeArchiveRecord record)
         {
             var rows = new List<ScreenRowViewModel>
@@ -1711,6 +2396,133 @@ namespace Baseball.Presentation.Shell
             return result;
         }
 
+        private static IReadOnlyList<ScreenSectionViewModel> SettingsSections(GameSaveAggregate state)
+        {
+            var result = new List<ScreenSectionViewModel>();
+            int archivedLife = state.Meta.LifeArchive.Count == 0
+                ? 0
+                : state.Meta.LifeArchive.Max(value => value?.LifeNumber ?? 0);
+            int currentLife = state.HighSchool?.LifeNumber ?? state.Meta.LifeNumber;
+            int nextLife = Math.Max(Math.Max(currentLife, archivedLife), state.Meta.LifeNumber) + 1;
+            string memories = state.Meta.InheritedMemories.Count == 0
+                ? "상속된 기억 없음"
+                : string.Join(" · ", state.Meta.InheritedMemories.Select(MemoryArchiveTitle));
+            string signature = string.IsNullOrWhiteSpace(state.Meta.EquippedSignatureLegacyId)
+                ? "장착한 대표 유산 없음"
+                : state.Meta.LifeArchive
+                    .Select(value => value?.SignatureLegacy)
+                    .FirstOrDefault(value => value != null && string.Equals(
+                        value.Id,
+                        state.Meta.EquippedSignatureLegacyId,
+                        StringComparison.Ordinal))?.Title ?? "보관된 대표 유산 장착 중";
+            result.Add(new ScreenSectionViewModel(
+                "settings-inheritance",
+                "다음 선수와 계승",
+                ScreenSectionTone.Information,
+                new[]
+                {
+                    new ScreenRowViewModel(
+                        "settings-next-player",
+                        "다음 선수",
+                        nextLife + "번째 야구 인생",
+                        state.Meta.NextRunIntent == null
+                            ? "다음 회차 목표는 결산 화면에서 정할 수 있습니다."
+                            : (state.Meta.NextRunIntent.PledgeTitle ?? "저장된 다음 회차 목표") +
+                              " · " + state.Meta.NextRunIntent.Reason),
+                    new ScreenRowViewModel(
+                        "settings-inherited-memories",
+                        "상속 기억",
+                        memories,
+                        "저장된 기억은 새 선수 만들기에서 자동으로 적용됩니다."),
+                    new ScreenRowViewModel(
+                        "settings-signature-legacy",
+                        "대표 유산",
+                        signature,
+                        "잠금 해제하고 장착한 대표 유산만 다음 선수에게 이어집니다."),
+                    new ScreenRowViewModel(
+                        "settings-soul",
+                        "야구혼",
+                        "보유 " + state.Meta.SoulBalance + " · 누적 " + state.Meta.SoulLifetimeEarned,
+                        "다음 시작 자동 계승 " + state.Meta.AutomaticSoulEarned)
+                }));
+
+            var progress = new List<ScreenRowViewModel>();
+            if (state.HighSchool != null)
+            {
+                progress.Add(new ScreenRowViewModel(
+                    "settings-high-school-progress",
+                    "고교 커리어",
+                    state.HighSchool.SchoolYear + "학년 · " + HighSchoolPhaseName(state.HighSchool.Phase),
+                    state.HighSchool.SchoolName ?? "학교 선택 전"));
+            }
+            if (state.Pro != null)
+            {
+                progress.Add(new ScreenRowViewModel(
+                    "settings-pro-progress",
+                    "프로 커리어",
+                    state.Pro.Season + "시즌 " + state.Pro.Week + "주 · " + ProRoleName(state.Pro.Role),
+                    (state.Pro.TeamName ?? "가상 구단") + " · " + (state.Pro.SeasonSegmentTitle ?? "현재 일정")));
+            }
+            if (progress.Count == 0)
+                progress.Add(new ScreenRowViewModel(
+                    "settings-career-empty",
+                    "현재 커리어",
+                    "새 선수 시작 전",
+                    "선수 만들기에서 첫 야구 인생을 시작할 수 있습니다."));
+            result.Add(new ScreenSectionViewModel(
+                "settings-progress",
+                "현재 진행",
+                ScreenSectionTone.Plain,
+                progress));
+
+            CareerShareCode code = CareerShareCodePolicy.Project(state);
+            result.Add(new ScreenSectionViewModel(
+                "settings-share-code",
+                "현재 판 공유 코드",
+                ScreenSectionTone.Milestone,
+                new[]
+                {
+                    new ScreenRowViewModel(
+                        "settings-share-code-value",
+                        code == null ? "공유할 판 없음" : code.Mode,
+                        code?.Code ?? "커리어를 시작하면 코드가 만들어집니다.",
+                        code == null
+                            ? "선수 이름이나 익명 설치 식별자는 공유하지 않습니다."
+                            : "이 코드에는 선수 이름이나 익명 설치 식별자가 들어가지 않습니다.")
+                }));
+            result.Add(new ScreenSectionViewModel(
+                "settings-reset",
+                "저장 데이터 초기화",
+                ScreenSectionTone.Warning,
+                new[]
+                {
+                    new ScreenRowViewModel(
+                        "settings-reset-detail",
+                        "모든 야구 인생과 설정 삭제",
+                        "초기화는 되돌릴 수 없습니다.",
+                        "저장 삭제와 새 익명 식별자 교체가 함께 성공할 때만 적용됩니다.")
+                }));
+            return result;
+        }
+
+        private static string HighSchoolPhaseName(HighSchoolPhase phase)
+        {
+            switch (phase)
+            {
+                case HighSchoolPhase.Prologue: return "프롤로그";
+                case HighSchoolPhase.SchoolSelection: return "학교 선택";
+                case HighSchoolPhase.Training: return "훈련";
+                case HighSchoolPhase.Relationship: return "관계 이야기";
+                case HighSchoolPhase.ImportantGame: return "중요 경기";
+                case HighSchoolPhase.Awakening: return "각성";
+                case HighSchoolPhase.ChapterReview: return "장 결산";
+                case HighSchoolPhase.Draft: return "드래프트";
+                case HighSchoolPhase.Completed: return "고교 3년 완료";
+                case HighSchoolPhase.Legacy: return "대표 유산 선택";
+                default: return "현재 일정";
+            }
+        }
+
         private static ScreenRowViewModel GameLineRow(string prefix, CareerGameLineReadModel line, int index) =>
             new ScreenRowViewModel(
                 prefix + "-game-" + index,
@@ -1815,6 +2627,7 @@ namespace Baseball.Presentation.Shell
             {
                 case "fastball": value = ratings == null ? "능력 기록 없음" : ratings.Stuff.ToString(); break;
                 case "control": value = ratings == null ? "능력 기록 없음" : ratings.Command.ToString(); break;
+                case "movement": value = ratings == null ? "능력 기록 없음" : ratings.Movement.ToString(); break;
                 case "stamina": value = ratings == null ? "능력 기록 없음" : ratings.Stamina.ToString(); break;
                 case "games": value = performance == null ? "0" : performance.ImportantGames.ToString(); break;
                 case "strikeouts": value = performance == null ? "0" : performance.Strikeouts.ToString(); break;
@@ -1948,12 +2761,17 @@ namespace Baseball.Presentation.Shell
                         : Actions(Navigate("continue", "이어하기", PreferredRouteFor(state)));
                 case ShellRoute.Setup:
                     HighSchoolSetupReadModel setup = HighSchoolSetupCatalog.For(state.Meta);
+                    bool validSeedInput = _setupSeedInputValid();
+                    string startHint = validSeedInput
+                        ? "선수 정보와 계승 선택을 저장하고 시작합니다."
+                        : SetupSeedInputPolicy.InvalidMessage;
                     if (setup.CanQuickRebirth)
                     {
                         var setupActions = new List<ScreenActionViewModel>
                         {
                             Command("quick_rebirth", "지난 설정으로 빠른 환생", ShellRoute.Prologue, "마지막 이름·지역·유형·난이도·카르마로 즉시 시작합니다."),
-                            Command("start_high_school", "선택한 설정으로 시작", ShellRoute.Prologue, "선수 정보와 계승 선택을 저장하고 시작합니다."),
+                            Command("start_high_school", "선택한 설정으로 시작", ShellRoute.Prologue, startHint,
+                                enabled: validSeedInput),
                         };
                         if (HasCompletedLife(state))
                             setupActions.Add(Navigate(
@@ -1963,11 +2781,24 @@ namespace Baseball.Presentation.Shell
                                 "프로 화면에서 건너뛰기 조건과 선수 설정을 확인합니다."));
                         return setupActions;
                     }
-                    return Actions(Command(
-                        "start_high_school",
-                        "고교 커리어 시작",
-                        ShellRoute.Prologue,
-                        "선수 정보를 저장하고 시작합니다."));
+                    var firstSetupActions = new List<ScreenActionViewModel>
+                    {
+                        Command(
+                            "start_high_school",
+                            "고교 커리어 시작",
+                            ShellRoute.Prologue,
+                            validSeedInput
+                                ? "선수 정보를 저장하고 시작합니다."
+                                : SetupSeedInputPolicy.InvalidMessage,
+                            enabled: validSeedInput)
+                    };
+                    if (HasCompletedLife(state))
+                        firstSetupActions.Add(Navigate(
+                            "navigate_direct_pro_entry",
+                            "프로부터 시작하는 길",
+                            ShellRoute.ProContract,
+                            "프로 화면에서 건너뛰기 조건과 선수 설정을 확인합니다."));
+                    return firstSetupActions;
                 case ShellRoute.Prologue:
                     if (state.HighSchool?.Phase == HighSchoolPhase.Prologue)
                     {
@@ -2094,7 +2925,7 @@ namespace Baseball.Presentation.Shell
                     if (state.HighSchool?.Draft?.Resolved != true)
                         return Actions(Command("resolve_draft", "드래프트 결과 확인", ShellRoute.Draft));
                     if (state.HighSchool.Draft.Drafted)
-                        return Actions(Command("enter_pro", "프로 계약으로", ShellRoute.ProContract));
+                        return Actions(Command("enter_pro", "계속 · 프로 계약으로", ShellRoute.ProContract));
                     return Actions(Command("open_legacy", "이번 삶 정리", ShellRoute.RunRecap));
                 case ShellRoute.RunRecap:
                     if (state.HighSchool?.IsChallengeRun == true)
@@ -2165,16 +2996,14 @@ namespace Baseball.Presentation.Shell
                     if (state.HighSchool?.Phase == HighSchoolPhase.Legacy)
                     {
                         bool legacyReady = LegacySelectionReady(state.HighSchool);
-                        return Actions(
-                            Command(
-                                "finalize_high_school_legacy",
-                                "선택한 유산으로 이번 삶 기록",
-                                ShellRoute.RunRecap,
-                                legacyReady
-                                    ? "선택한 유산과 인생 기록을 한 번에 저장합니다."
-                                    : "제시된 유산을 필요한 수만큼 선택해야 합니다.",
-                                enabled: legacyReady),
-                            Navigate("life_card", "라이프 카드", ShellRoute.LifeCard));
+                        return Actions(Command(
+                            "finalize_high_school_legacy",
+                            "선택한 유산으로 이번 삶 기록",
+                            ShellRoute.RunRecap,
+                            legacyReady
+                                ? "선택한 유산과 인생 기록을 한 번에 저장합니다."
+                                : "제시된 유산을 필요한 수만큼 선택해야 합니다.",
+                            enabled: legacyReady));
                     }
                     break;
                 case ShellRoute.ProContract:
@@ -2264,7 +3093,22 @@ namespace Baseball.Presentation.Shell
                         ? acknowledgement
                         : Actions(Navigate("records", "기록으로 돌아가기", ShellRoute.Records));
                 case ShellRoute.Settings:
-                    return Actions(Command("reset_save", "저장 데이터 초기화", ShellRoute.Opening, "모든 진행을 삭제합니다.", ScreenActionStyle.Destructive, true));
+                    var settingsActions = new List<ScreenActionViewModel>();
+                    if (CareerShareCodePolicy.Project(state) != null)
+                        settingsActions.Add(Command(
+                            "share_career_code",
+                            "현재 판 코드 공유",
+                            ShellRoute.Settings,
+                            "선수 이름이 없는 도전 코드를 Android 공유 화면으로 보냅니다.",
+                            ScreenActionStyle.Secondary));
+                    settingsActions.Add(Command(
+                        "reset_save",
+                        "저장 데이터 초기화",
+                        ShellRoute.Opening,
+                        "모든 진행을 삭제합니다.",
+                        ScreenActionStyle.Destructive,
+                        true));
+                    return settingsActions;
             }
 
             return template.Select(action => Navigate("navigate_" + action.Id, action.Label, action.Target, action.Hint)).ToArray();
@@ -2340,14 +3184,25 @@ namespace Baseball.Presentation.Shell
                 heading,
                 detail,
                 (choices ?? Array.Empty<Baseball.Application.Commands.CareerChoiceReadModel>())
-                    .Select(value => new ScreenChoiceOptionViewModel(
-                        value.Id,
-                        value.Title,
-                        value.Payload,
-                        value.Detail,
-                        value.EffectSummary,
-                        value.Enabled,
-                        value.DisabledReason))
+                    .Select(value =>
+                    {
+                        string primaryArtwork = string.Equals(id, "school", StringComparison.Ordinal)
+                            ? BaseballVisualContentCatalog.SchoolCoachPortrait(value.Detail)
+                            : BaseballVisualContentCatalog.Choice(id, value.Payload);
+                        string secondaryArtwork = string.Equals(id, "school", StringComparison.Ordinal)
+                            ? BaseballVisualContentCatalog.SchoolCatcherPortrait(value.Detail)
+                            : string.Empty;
+                        return new ScreenChoiceOptionViewModel(
+                            value.Id,
+                            value.Title,
+                            value.Payload,
+                            value.Detail,
+                            value.EffectSummary,
+                            value.Enabled,
+                            value.DisabledReason,
+                            primaryArtwork,
+                            secondaryArtwork);
+                    })
                     .ToArray(),
                 maximumSelections);
         }
@@ -2372,11 +3227,16 @@ namespace Baseball.Presentation.Shell
             params ScreenChoiceGroupViewModel[] values) =>
             values.Where(value => value != null && value.Choices.Count > 0).ToArray();
 
-        private static bool HasCurrentLifeArchive(GameSaveAggregate state)
+        public static LifeArchiveRecord CurrentLifeArchiveFor(GameSaveAggregate state)
         {
+            if (state?.Meta?.LifeArchive == null) return null;
             int lifeNumber = state.HighSchool?.LifeNumber ?? state.Meta.LifeNumber;
-            return state.Meta.LifeArchive.Any(record => record.LifeNumber == lifeNumber);
+            return state.Meta.LifeArchive.FirstOrDefault(record =>
+                record != null && record.LifeNumber == lifeNumber);
         }
+
+        private static bool HasCurrentLifeArchive(GameSaveAggregate state) =>
+            CurrentLifeArchiveFor(state) != null;
 
         private bool HasSelected(
             string group,
@@ -2471,25 +3331,114 @@ namespace Baseball.Presentation.Shell
 
         private static string KeyArtAddress(ShellRoute route, GameSaveAggregate state, string setupPresetId)
         {
+            HighSchoolCareerReadModel highSchool = state?.HighSchool;
+            ProCareerReadModel pro = state?.Pro;
+            if (route == ShellRoute.ProContract && pro == null)
+                return "baseball/pro/KeyArtMajorDebut";
+            if (pro != null && (state.Stage == ApplicationStage.Pro ||
+                                route == ShellRoute.ProContract ||
+                                route == ShellRoute.ProWeek || route == ShellRoute.ProSeason ||
+                                route == ShellRoute.ProRetirement))
+            {
+                if (pro.Phase == ProCareerPhase.Completed)
+                    return "baseball/pro/KeyArtRetirement";
+                bool major = string.Equals(pro.Level, "major", StringComparison.Ordinal);
+                if (route == ShellRoute.ImportantGame && major)
+                    return "baseball/pro/KeyArtProStadiumTunnel";
+                return major
+                    ? "baseball/pro/KeyArtMajorDebut"
+                    : "baseball/highschool/KeyArtStadiumNight";
+            }
+
+            if (highSchool != null)
+            {
+                switch (highSchool.Phase)
+                {
+                    case HighSchoolPhase.Prologue:
+                        return "baseball/highschool/KeyArtCareerIntro";
+                    case HighSchoolPhase.SchoolSelection:
+                        return "baseball/highschool/KeyArtSchoolCrossroads";
+                    case HighSchoolPhase.Awakening:
+                        return "baseball/highschool/KeyArtAwakening";
+                    case HighSchoolPhase.Draft:
+                        return "baseball/highschool/KeyArtDraftDay";
+                    case HighSchoolPhase.Legacy:
+                    case HighSchoolPhase.Completed:
+                        return "baseball/highschool/KeyArtReincarnation";
+                    default:
+                        return "baseball/highschool/KeyArtStadiumNight";
+                }
+            }
+
             switch (route)
             {
                 case ShellRoute.Opening: return "baseball/bootstrap/LaunchLogo";
-                case ShellRoute.Setup: return "baseball/setup/PresetArt-" +
-                    (string.IsNullOrWhiteSpace(setupPresetId) ? "power_prospect" : setupPresetId);
+                case ShellRoute.Setup: return BaseballVisualContentCatalog.SetupPreset(
+                    string.IsNullOrWhiteSpace(setupPresetId) ? "power_prospect" : setupPresetId);
                 case ShellRoute.Prologue: return "baseball/highschool/KeyArtCareerIntro";
-                case ShellRoute.HighSchoolOverview: return "baseball/highschool/KeyArtSchoolCrossroads";
-                case ShellRoute.Relationship: return "baseball/highschool/PortraitCatcher1";
+                case ShellRoute.HighSchoolOverview:
+                case ShellRoute.Training:
+                case ShellRoute.Relationship:
                 case ShellRoute.ImportantGame: return "baseball/highschool/KeyArtStadiumNight";
                 case ShellRoute.Awakening: return "baseball/highschool/KeyArtAwakening";
                 case ShellRoute.Draft: return "baseball/highschool/KeyArtDraftDay";
                 case ShellRoute.ProContract: return "baseball/pro/KeyArtMajorDebut";
                 case ShellRoute.ProWeek:
-                case ShellRoute.ProSeason: return "baseball/pro/KeyArtProStadiumTunnel";
+                case ShellRoute.ProSeason: return "baseball/highschool/KeyArtStadiumNight";
                 case ShellRoute.ProRetirement: return "baseball/pro/KeyArtRetirement";
                 case ShellRoute.RunRecap: return "baseball/highschool/KeyArtReincarnation";
                 case ShellRoute.LifeCard: return "baseball/meta/LifeCardBackdrop";
                 default: return string.Empty;
             }
+        }
+
+        private string PlayerPortraitAddress(ShellRoute route, GameSaveAggregate state)
+        {
+            LifeArchiveRecord archived = route == ShellRoute.LifeCard || route == ShellRoute.LifeArchive
+                ? SelectedLifeRecord(state)
+                : route == ShellRoute.RunRecap
+                    ? CurrentLifeArchiveFor(state)
+                    : null;
+            if (archived != null)
+            {
+                return BaseballVisualContentCatalog.PlayerPortrait(
+                    archived.PlayerName,
+                    archived.Drafted ? PlayerPortraitStage.Pro : PlayerPortraitStage.Ace);
+            }
+
+            bool proSurface = state?.Pro != null &&
+                (route == ShellRoute.ProContract || route == ShellRoute.ProWeek ||
+                 route == ShellRoute.ProSeason || route == ShellRoute.ProRetirement ||
+                 route == ShellRoute.ImportantGame || route == ShellRoute.Records);
+            if (proSurface)
+                return BaseballVisualContentCatalog.PlayerPortrait(
+                    state.Pro.PlayerName,
+                    PlayerPortraitStage.Pro);
+
+            HighSchoolCareerReadModel highSchool = state?.HighSchool;
+            if (highSchool == null) return string.Empty;
+            bool highSchoolSurface = route == ShellRoute.Prologue ||
+                route == ShellRoute.HighSchoolOverview || route == ShellRoute.Training ||
+                route == ShellRoute.Relationship || route == ShellRoute.ImportantGame ||
+                route == ShellRoute.Awakening || route == ShellRoute.Draft ||
+                route == ShellRoute.RunRecap || route == ShellRoute.Records;
+            if (!highSchoolSurface) return string.Empty;
+            return BaseballVisualContentCatalog.PlayerPortrait(
+                highSchool.PlayerName,
+                highSchool.ChapterNumber <= 3
+                    ? PlayerPortraitStage.Young
+                    : PlayerPortraitStage.Ace);
+        }
+
+        private string PlayerPortraitLabel(ShellRoute route, GameSaveAggregate state)
+        {
+            LifeArchiveRecord archived = route == ShellRoute.LifeCard || route == ShellRoute.LifeArchive
+                ? SelectedLifeRecord(state)
+                : route == ShellRoute.RunRecap
+                    ? CurrentLifeArchiveFor(state)
+                    : null;
+            string name = archived?.PlayerName ?? state?.Pro?.PlayerName ?? state?.HighSchool?.PlayerName;
+            return string.IsNullOrWhiteSpace(name) ? string.Empty : name + " 선수 초상";
         }
 
         private static ScreenActionViewModel Command(

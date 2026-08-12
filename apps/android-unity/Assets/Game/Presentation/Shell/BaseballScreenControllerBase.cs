@@ -63,6 +63,7 @@ namespace Baseball.Presentation.Shell
 
             VisualElement customHost = Require<VisualElement>(host, "screen-custom");
             AddCustomContent(customHost, viewModel, navigator);
+            AddPlayerPortrait(host, viewModel, navigator);
             LoadKeyArt(host, viewModel, navigator);
 
             VisualElement sectionHost = Require<VisualElement>(host, "screen-sections");
@@ -135,7 +136,15 @@ namespace Baseball.Presentation.Shell
             _exposureObservers.Add(new ViewportExposureObserver(
                 element,
                 scroll,
-                () => exposure.OnContentVisible(Route, contentId, instanceId)));
+                () => _ = exposure.OnContentVisibleAsync(
+                    Route,
+                    contentId,
+                    instanceId,
+                    // Once the real viewport has exposed content, its durable receipt must survive
+                    // the receipt's own StatePublished re-render. The observer is already disposed
+                    // before this callback, so the per-screen Addressables token would only cancel
+                    // the accepted exposure and cause a render/retry loop.
+                    CancellationToken.None)));
         }
 
         protected static string SectionExposureInstance(ScreenSectionViewModel section)
@@ -192,6 +201,25 @@ namespace Baseball.Presentation.Shell
             {
                 // Imported art is enhancement-only. Text UI remains fully usable if loading fails.
             }
+        }
+
+        private static void AddPlayerPortrait(
+            VisualElement host,
+            BaseballScreenViewModel viewModel,
+            IShellNavigator navigator)
+        {
+            if (string.IsNullOrWhiteSpace(viewModel.PlayerPortraitAddress)) return;
+            if (viewModel.Route == ShellRoute.LifeCard ||
+                viewModel.Route == ShellRoute.LifeArchive) return;
+            var portrait = new AddressableContentImage(
+                viewModel.PlayerPortraitAddress,
+                viewModel.PlayerPortraitLabel,
+                StableId(viewModel.Route, "player-portrait"),
+                (navigator as IBaseballVisualAssets)?.VisualAssetLoader,
+                compact: true);
+            portrait.AddToClassList("screen-player-portrait");
+            VisualElement hero = host.Q<VisualElement>(className: "screen-hero");
+            (hero ?? host).Add(portrait);
         }
 
         protected static string StableId(ShellRoute route, string suffix)

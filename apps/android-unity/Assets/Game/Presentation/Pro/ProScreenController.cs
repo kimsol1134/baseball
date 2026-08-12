@@ -27,14 +27,6 @@ namespace Baseball.Presentation.Pro
                 return;
             }
             host.style.display = DisplayStyle.Flex;
-            if (viewModel.Route == ShellRoute.ProWeek)
-            {
-                var choice = new SegmentedChoice("프로 화면", "screen-pro-week-segment", _ => { });
-                choice.AddOption("screen-pro-week-now", "이번 주");
-                choice.AddOption("screen-pro-week-career", "커리어");
-                choice.Select("screen-pro-week-now");
-                host.Add(choice);
-            }
             if (directSetup) AddDirectProSetup(host, navigator);
             CareerChoiceGroupView.AddTo(
                 host,
@@ -51,6 +43,8 @@ namespace Baseball.Presentation.Pro
         {
             IBaseballSetupDraft draft = navigator as IBaseballSetupDraft;
             if (draft == null) return;
+            IBaseballVisualAssetLoader artworkLoader =
+                (navigator as IBaseballVisualAssets)?.VisualAssetLoader;
 
             var section = new BaseballSection("프로 선수 설정", "screen-direct-pro-setup");
             var name = new TextField("선수 이름") { value = draft.PlayerName ?? string.Empty };
@@ -73,15 +67,25 @@ namespace Baseball.Presentation.Pro
             });
             section.Content.Add(name);
 
-            var hint = new Label();
+            var hint = new Label(NameHint(draft.SuggestedPlayerName));
             hint.AddToClassList("screen-data-row__detail");
             section.Content.Add(hint);
             BaseballAccessibilityMetadata hintAccessibility = BaseballAccessibility.Configure(
                 hint,
                 "screen-direct-pro-name-suggestion",
-                string.Empty,
+                hint.text,
                 AccessibilityRole.StaticText);
             UpdateNameHint(hint, hintAccessibility, draft.SuggestedPlayerName);
+
+            var presetPreview = new Label(PresetPreviewText(draft.PresetId));
+            presetPreview.AddToClassList("screen-data-row__detail");
+            section.Content.Add(presetPreview);
+            BaseballAccessibilityMetadata previewAccessibility = BaseballAccessibility.Configure(
+                presetPreview,
+                "screen-direct-pro-preset-result-preview",
+                presetPreview.text,
+                AccessibilityRole.StaticText);
+            UpdatePresetPreview(presetPreview, previewAccessibility, draft.PresetId);
 
             var cards = new List<ChoiceCard>();
             foreach (CareerChoiceReadModel option in HighSchoolSetupCatalog.Presets)
@@ -89,7 +93,8 @@ namespace Baseball.Presentation.Pro
                 ChoiceCard card = null;
                 card = new ChoiceCard(
                     option.Title,
-                    Join(option.Detail, option.EffectSummary),
+                    Join(Join(option.Detail, option.EffectSummary),
+                        BaseballVisualContentCatalog.PresetResultPreview(option.Payload)),
                     "screen-direct-pro-preset-" + option.Id,
                     () =>
                     {
@@ -97,15 +102,38 @@ namespace Baseball.Presentation.Pro
                         foreach (ChoiceCard value in cards)
                             value.SetSelected(ReferenceEquals(value, card));
                         UpdateNameHint(hint, hintAccessibility, draft.SuggestedPlayerName);
+                        UpdatePresetPreview(presetPreview, previewAccessibility, option.Payload);
                         navigator.Announce(option.Title + " 유형을 골랐습니다.");
                     });
                 card.SetSelected(string.Equals(draft.PresetId, option.Payload, StringComparison.Ordinal));
                 card.SetEnabled(option.Enabled);
                 if (!option.Enabled) card.tooltip = option.DisabledReason;
                 cards.Add(card);
-                section.Content.Add(card);
+                section.Content.Add(AddressableContentImage.WrapChoice(
+                    card,
+                    BaseballVisualContentCatalog.SetupPreset(option.Payload),
+                    option.Title + " 프로 투수 유형 삽화",
+                    "screen-direct-pro-preset-art-" + option.Id,
+                    artworkLoader));
             }
             host.Add(section);
+        }
+
+        private static void UpdatePresetPreview(
+            Label label,
+            BaseballAccessibilityMetadata accessibility,
+            string presetId)
+        {
+            label.text = PresetPreviewText(presetId);
+            accessibility.Label = label.text;
+        }
+
+        private static string PresetPreviewText(string presetId)
+        {
+            string preview = BaseballVisualContentCatalog.PresetResultPreview(presetId);
+            return string.IsNullOrWhiteSpace(preview)
+                ? "선택한 투수 유형의 능력 미리보기를 확인할 수 없습니다."
+                : "선택 결과 미리보기 · " + preview;
         }
 
         private static void UpdateNameHint(
@@ -113,11 +141,14 @@ namespace Baseball.Presentation.Pro
             BaseballAccessibilityMetadata accessibility,
             string suggestedName)
         {
-            label.text = "비워두면 추천 이름 ‘" +
-                (string.IsNullOrWhiteSpace(suggestedName) ? "민서준" : suggestedName) +
-                "’으로 시작합니다.";
+            label.text = NameHint(suggestedName);
             accessibility.Label = label.text;
         }
+
+        private static string NameHint(string suggestedName) =>
+            "비워두면 추천 이름 ‘" +
+            (string.IsNullOrWhiteSpace(suggestedName) ? "민서준" : suggestedName) +
+            "’으로 시작합니다.";
 
         private static string Join(string detail, string effect)
         {

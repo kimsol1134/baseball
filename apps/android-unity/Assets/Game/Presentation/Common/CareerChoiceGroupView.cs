@@ -15,6 +15,8 @@ namespace Baseball.Presentation.Common
         {
             IBaseballCareerChoiceDraft draft = navigator as IBaseballCareerChoiceDraft;
             if (draft == null || viewModel?.ChoiceGroups == null) return;
+            IBaseballVisualAssetLoader loader =
+                (navigator as IBaseballVisualAssets)?.VisualAssetLoader;
             foreach (ScreenChoiceGroupViewModel group in viewModel.ChoiceGroups)
             {
                 var section = new BaseballSection(group.Heading, "screen-choice-group-" + group.Id);
@@ -55,7 +57,23 @@ namespace Baseball.Presentation.Common
                     card.SetEnabled(option.IsEnabled);
                     if (!option.IsEnabled) card.tooltip = option.DisabledReason;
                     cards.Add(card);
-                    section.Content.Add(card);
+                    section.Content.Add(!string.IsNullOrWhiteSpace(option.SecondaryArtworkAddress)
+                        ? AddressableContentImage.WrapChoiceGallery(
+                            card,
+                            option.ArtworkAddress,
+                            option.Title + " 감독 초상",
+                            option.SecondaryArtworkAddress,
+                            option.Title + " 포수 초상",
+                            "screen-choice-art-" + group.Id + "-" + option.Id,
+                            loader)
+                        : string.IsNullOrWhiteSpace(option.ArtworkAddress)
+                            ? (VisualElement)card
+                            : AddressableContentImage.WrapChoice(
+                            card,
+                            option.ArtworkAddress,
+                            option.Title + " 선택지 삽화",
+                            "screen-choice-art-" + group.Id + "-" + option.Id,
+                            loader));
                 }
                 if (group.AllowsMultiple)
                 {

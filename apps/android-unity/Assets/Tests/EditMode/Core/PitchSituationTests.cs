@@ -22,7 +22,7 @@ namespace Baseball.Tests.EditMode.Core
                         new PitchZone(1, 1), ZoneIntent.Edge, PitchIntensity.Normal),
                     PitchOutcome.Foul, false);
             }
-            Assert.That(memory.RecentObservations, Has.Count.EqualTo(RivalMemoryEngine.MaximumObservations));
+            Assert.That(memory.RecentObservations.Count, Is.EqualTo(RivalMemoryEngine.MaximumObservations));
             Assert.That(memory.TotalPitchesSeen, Is.EqualTo(30));
             var read = engine.Analyze(memory, new PlateAppearanceContext("pa", 30, 1, 0, 0, 0, 31, 0, 500, 0));
             Assert.That(read.PitchReadStrength, Is.InRange(0, 300));
@@ -84,7 +84,7 @@ namespace Baseball.Tests.EditMode.Core
 
             Assert.That(restored.MasteryCount, Is.EqualTo(uninterrupted.MasteryCount));
             Assert.That(restored.Tags, Is.EqualTo(uninterrupted.Tags));
-            Assert.That(restored.Recent, Has.Count.EqualTo(3));
+            Assert.That(restored.Recent.Count, Is.EqualTo(3));
             for (var index = 0; index < restored.Recent.Count; index++)
             {
                 Assert.That(restored.Recent[index].PitchType,

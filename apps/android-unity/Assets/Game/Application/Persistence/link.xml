@@ -5,4 +5,9 @@
   <!-- Pitch request/result/presentation/checkpoint DTOs are also Newtonsoft reflection targets. -->
   <assembly fullname="Baseball.Presentation" preserve="all" />
   <assembly fullname="Unity.Newtonsoft.Json" preserve="all" />
+  <!-- GameObject.CreatePrimitive(Sphere) creates this type through native code, so IL2CPP's
+       managed reference analysis cannot infer it from the pitch-stage call site. -->
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.SphereCollider" preserve="all" />
+  </assembly>
 </linker>

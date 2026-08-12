@@ -545,6 +545,43 @@ namespace Baseball.Application.Pro
         public string TeamId { get; }
     }
 
+    /// <summary>
+    /// Single authority for the direct-Pro seed and virtual-team draw. Presentation supplies only
+    /// the setup choices; the persisted aggregate determines the run seed.
+    /// </summary>
+    public static class DirectProStartRequestFactory
+    {
+        public static StartDirectProRequest Create(
+            GameSaveAggregate state,
+            string presetId,
+            string playerName)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            return Create(
+                state.InstallId + ":direct:" + state.Revision,
+                presetId,
+                playerName);
+        }
+
+        public static StartDirectProRequest Create(
+            string seed,
+            string presetId,
+            string playerName)
+        {
+            var normalizedSeed = DeterministicSeed.Normalize(seed);
+            var numericSeed = ulong.Parse(
+                normalizedSeed,
+                System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture);
+            var team = Baseball.Core.Pro.DirectProCareerFactory.TeamForSeed(numericSeed);
+            return new StartDirectProRequest(
+                normalizedSeed,
+                presetId,
+                playerName,
+                team.Id);
+        }
+    }
+
     public sealed class ProCareerAction
     {
         public ProCareerAction(string kind, string value = null)

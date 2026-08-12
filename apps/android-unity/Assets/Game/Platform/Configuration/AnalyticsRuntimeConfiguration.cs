@@ -1,4 +1,5 @@
 using System;
+using Baseball.Platform.Analytics;
 using UnityEngine;
 
 namespace Baseball.Platform.Configuration
@@ -19,5 +20,19 @@ namespace Baseball.Platform.Configuration
             AnalyticsRuntimeConfiguration parsed = JsonUtility.FromJson<AnalyticsRuntimeConfiguration>(asset.text);
             return parsed ?? new AnalyticsRuntimeConfiguration();
         }
+
+        public AnalyticsDistribution ResolveDistribution()
+        {
+#if UNITY_EDITOR
+            return AnalyticsDistribution.Editor;
+#elif BASEBALL_INTERNAL_QA
+            return AnalyticsDistribution.Internal;
+#else
+            return AnalyticsContext.ParseDistribution(distribution);
+#endif
+        }
+
+        public string ResolveDistributionValue() =>
+            AnalyticsContext.DistributionValue(ResolveDistribution());
     }
 }

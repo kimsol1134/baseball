@@ -51,10 +51,14 @@ namespace Baseball.Platform.Haptics
 
         public bool Pulse(HapticCue cue)
         {
-            if (!IsEnabled) return false;
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
+                if (!HapticEnablementPolicy.Allows(
+                        IsEnabled,
+                        false,
+                        SystemHapticFeedbackEnabled(),
+                        true)) return false;
                 using AndroidJavaObject vibrator = GetVibrator();
                 if (vibrator == null || !vibrator.Call<bool>("hasVibrator")) return false;
                 HapticPattern pattern = PatternFor(cue);
@@ -97,6 +101,27 @@ namespace Baseball.Platform.Haptics
         }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
+        private static bool SystemHapticFeedbackEnabled()
+        {
+            try
+            {
+                using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using AndroidJavaObject activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+                using AndroidJavaObject resolver = activity?.Call<AndroidJavaObject>("getContentResolver");
+                if (resolver == null) return false;
+                using var settings = new AndroidJavaClass("android.provider.Settings$System");
+                return settings.CallStatic<int>(
+                    "getInt",
+                    resolver,
+                    "haptic_feedback_enabled",
+                    0) == 1;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static AndroidJavaObject GetVibrator()
         {
             using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");

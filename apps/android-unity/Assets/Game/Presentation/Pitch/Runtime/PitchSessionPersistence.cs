@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Baseball.Application.HighSchool;
 using Baseball.Application.Persistence;
 using Baseball.Core.Pitching;
@@ -8,6 +9,20 @@ using Baseball.Presentation.Shell;
 
 namespace Baseball.Presentation.Pitch
 {
+    public sealed class PitchSessionPostgameSnapshot
+    {
+        public PitchSessionPostgameSnapshot(
+            PitchGameReport report,
+            IReadOnlyList<PitchLogEntryState> pitchLog)
+        {
+            Report = report ?? throw new ArgumentNullException(nameof(report));
+            PitchLog = pitchLog ?? Array.Empty<PitchLogEntryState>();
+        }
+
+        public PitchGameReport Report { get; }
+        public IReadOnlyList<PitchLogEntryState> PitchLog { get; }
+    }
+
     public readonly struct PitchSessionLoadResult
     {
         public PitchSessionLoadResult(
@@ -102,6 +117,8 @@ namespace Baseball.Presentation.Pitch
             string currentGameId,
             CancellationToken cancellationToken);
         Task<ShellActionResult> AcknowledgeAsync(CancellationToken cancellationToken);
+        PitchSessionPostgameSnapshot ReadPostgame(string gameId);
+        Task<ShellActionResult> SuspendAsync(string gameId, CancellationToken cancellationToken);
         Task<ShellActionResult> AbandonAsync(string gameId, CancellationToken cancellationToken);
     }
 }

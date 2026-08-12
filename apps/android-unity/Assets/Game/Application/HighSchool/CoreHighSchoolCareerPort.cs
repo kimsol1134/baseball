@@ -48,9 +48,12 @@ namespace Baseball.Application.HighSchool
             var memories = ParseMany<MemoryCardId>(request.InheritedMemories);
             var karmas = ParseMany<KarmaId>(request.Karmas);
             var boosts = ParseMany<SoulBoostId>(request.SoulBoosts);
-            var soulDomain = string.IsNullOrWhiteSpace(request.InheritedSoulDomain)
+            var resolvedSoulDomain = HighSchoolSetupCatalog.ResolveInheritedSoulDomain(
+                request.InheritedSoulDomain,
+                request.InheritedSoul);
+            var soulDomain = string.IsNullOrWhiteSpace(resolvedSoulDomain)
                 ? (SoulDomain?)null
-                : Parse<SoulDomain>(request.InheritedSoulDomain);
+                : Parse<SoulDomain>(resolvedSoulDomain);
             var difficulty = Parse<DifficultyLevel>(request.Difficulty);
             var signatureLegacy = string.IsNullOrWhiteSpace(request.SignatureLegacyId)
                 ? (CareerSignatureLegacyId?)null
@@ -395,7 +398,8 @@ namespace Baseball.Application.HighSchool
                 HighSchoolTrainingActionPayload.MaximumBlockSessions,
                 frozenCandidates,
                 selectedSignatureLegacy,
-                LifeDetail(state, priorLifeDetail, startingRatings));
+                LifeDetail(state, priorLifeDetail, startingRatings),
+                TrainingOutlooks(state));
         }
 
         private HighSchoolCareerSnapshot Restore(HighSchoolCareerReadModel current)
@@ -435,11 +439,31 @@ namespace Baseball.Application.HighSchool
                     state.TrainingOpportunity?.Focus == value
                         ? "오늘의 성장 기회 · " + state.TrainingOpportunity.Reason
                         : "현재 능력과 피로를 기준으로 훈련합니다.",
-                    "표준 강도 전망 " + OutlookTitle(_engine.TrainingOutlook(
-                        state,
-                        value,
-                        TrainingIntensity.Standard))))
+                    "강도를 고르면 성장 전망을 확인할 수 있습니다."))
                 .ToArray();
+        }
+
+        private IReadOnlyList<TrainingOutlookReadModel> TrainingOutlooks(
+            HighSchoolCareerSnapshot state)
+        {
+            if (state.Phase != HighSchoolCareerPhase.Training)
+                return Array.Empty<TrainingOutlookReadModel>();
+            var values = new List<TrainingOutlookReadModel>();
+            foreach (TrainingFocus focus in Enum.GetValues(typeof(TrainingFocus)))
+            {
+                foreach (TrainingIntensity intensity in Enum.GetValues(typeof(TrainingIntensity)))
+                {
+                    var outlook = _engine.TrainingOutlook(state, focus, intensity);
+                    var title = OutlookTitle(outlook);
+                    values.Add(new TrainingOutlookReadModel(
+                        focus.Value(),
+                        IntensityWire(intensity),
+                        OutlookWire(outlook),
+                        title,
+                        OutlookSummary(outlook)));
+                }
+            }
+            return values;
         }
 
         private static IReadOnlyList<CareerChoiceReadModel> TrainingIntensityChoices(HighSchoolCareerSnapshot state)
@@ -753,25 +777,33 @@ namespace Baseball.Application.HighSchool
                     value.MetricAfter,
                     value.OpportunityHit == true,
                     value.Jackpot == true,
-                    value.TargetPitch.HasValue ? value.TargetPitch.Value.Value() : null);
+                    value.TargetPitch.HasValue ? value.TargetPitch.Value.Value() : null,
+                    value.BloomedAbility.HasValue
+                        ? TalentAbilityWire(value.BloomedAbility.Value)
+                        : null,
+                    value.BloomedGrade.HasValue
+                        ? TalentGradeWire(value.BloomedGrade.Value)
+                        : null);
         }
 
         private static TrainingBlockResultReadModel TrainingBlock(CareerTrainingBlockSnapshot value)
         {
-            return value == null
-                ? null
-                : new TrainingBlockResultReadModel(
-                    value.MaximumSessions,
-                    value.CompletedSessions,
-                    value.Focus.Value(),
-                    value.Intensity == TrainingIntensity.Light
-                        ? "light"
-                        : value.Intensity == TrainingIntensity.Intensive ? "intensive" : "standard",
-                    value.TargetPitch.HasValue ? value.TargetPitch.Value.Value() : null,
-                    value.StopReason.Value(),
-                    value.Growth,
-                    value.FatigueChange,
-                    value.Sessions.Select(TrainingResult).ToArray());
+            if (value == null) return null;
+            var sessions = value.Sessions.Select(TrainingResult).ToArray();
+            var bloom = sessions.FirstOrDefault(result =>
+                !string.IsNullOrWhiteSpace(result?.BloomedAbility));
+            return new TrainingBlockResultReadModel(
+                value.MaximumSessions,
+                value.CompletedSessions,
+                value.Focus.Value(),
+                IntensityWire(value.Intensity),
+                value.TargetPitch.HasValue ? value.TargetPitch.Value.Value() : null,
+                value.StopReason.Value(),
+                value.Growth,
+                value.FatigueChange,
+                sessions,
+                bloom?.BloomedAbility,
+                bloom?.BloomedGrade);
         }
 
         private static RelationshipResultReadModel RelationshipResult(
@@ -963,7 +995,8 @@ namespace Baseball.Application.HighSchool
                 value.MaximumTrainingBlockSessions,
                 value.FrozenSignatureLegacyCandidates,
                 value.SelectedSignatureLegacy,
-                value.LifeDetail);
+                value.LifeDetail,
+                value.TrainingOutlooks);
         }
 
         private static string AdvanceSeed(string value)
@@ -1041,6 +1074,68 @@ namespace Baseball.Application.HighSchool
                 case TrainingGrowthOutlook.One: return "+1";
                 case TrainingGrowthOutlook.OneOrTwo: return "+1~2";
                 default: return "+2";
+            }
+        }
+
+        private static string OutlookWire(TrainingGrowthOutlook value)
+        {
+            switch (value)
+            {
+                case TrainingGrowthOutlook.Wall: return "wall";
+                case TrainingGrowthOutlook.None: return "none";
+                case TrainingGrowthOutlook.ZeroOrOne: return "zero_or_one";
+                case TrainingGrowthOutlook.One: return "one";
+                case TrainingGrowthOutlook.OneOrTwo: return "one_or_two";
+                default: return "two";
+            }
+        }
+
+        private static string IntensityWire(TrainingIntensity value)
+        {
+            return value == TrainingIntensity.Light
+                ? "light"
+                : value == TrainingIntensity.Intensive ? "intensive" : "standard";
+        }
+
+        private static string OutlookSummary(TrainingGrowthOutlook value)
+        {
+            switch (value)
+            {
+                case TrainingGrowthOutlook.Wall:
+                    return "지금은 재능의 벽에 막혀 수치가 오르지 않습니다. 대신 계속 두드리면 벽이 열립니다.";
+                case TrainingGrowthOutlook.Two:
+                    return "크게 오를 훈련입니다. +2가 유력합니다.";
+                case TrainingGrowthOutlook.OneOrTwo:
+                    return "+1은 확실하고, 잘 풀리면 +2까지 오릅니다.";
+                case TrainingGrowthOutlook.One:
+                    return "+1이 확실한 훈련입니다.";
+                case TrainingGrowthOutlook.ZeroOrOne:
+                    return "+1이 나올 수도, 성장 없이 지날 수도 있습니다.";
+                default:
+                    return "이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다.";
+            }
+        }
+
+        private static string TalentAbilityWire(TalentAbility value)
+        {
+            switch (value)
+            {
+                case TalentAbility.Stuff: return "stuff";
+                case TalentAbility.Command: return "command";
+                case TalentAbility.Movement: return "movement";
+                default: return "stamina";
+            }
+        }
+
+        private static string TalentGradeWire(Baseball.Core.Domain.TalentGrade value)
+        {
+            switch (value)
+            {
+                case Baseball.Core.Domain.TalentGrade.D: return "d";
+                case Baseball.Core.Domain.TalentGrade.C: return "c";
+                case Baseball.Core.Domain.TalentGrade.B: return "b";
+                case Baseball.Core.Domain.TalentGrade.A: return "a";
+                default: return "s";
             }
         }
 

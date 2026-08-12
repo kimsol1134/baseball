@@ -390,7 +390,11 @@ namespace Baseball.Presentation.Pitch
                 _lastResult,
                 _context,
                 _batter,
-                _holdCall);
+                _holdCall,
+                _pitcher,
+                _scouting,
+                _rivalMemory,
+                _gameState);
         }
 
         private void Publish()

@@ -331,6 +331,7 @@ namespace Baseball.Bootstrap
         {
             if (store == null) throw new ArgumentNullException(nameof(store));
             cancellationToken.ThrowIfCancellationRequested();
+            if (store.IsPersistencePoisoned) return;
             for (var attempt = 0; attempt < 2; attempt++)
             {
                 var current = store.Current;
@@ -449,6 +450,7 @@ namespace Baseball.Bootstrap
         {
             if (store == null) throw new ArgumentNullException(nameof(store));
             cancellationToken.ThrowIfCancellationRequested();
+            if (store.IsPersistencePoisoned) return;
             await store.ReconcilePersistedRevisionAsync(cancellationToken);
             BeginSession(store);
         }
@@ -457,6 +459,7 @@ namespace Baseball.Bootstrap
         {
             if (store == null) throw new ArgumentNullException(nameof(store));
             cancellationToken.ThrowIfCancellationRequested();
+            if (store.IsPersistencePoisoned) return Task.CompletedTask;
             return Task.CompletedTask;
         }
 

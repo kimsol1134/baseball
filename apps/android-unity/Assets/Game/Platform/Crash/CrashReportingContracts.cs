@@ -19,12 +19,12 @@ namespace Baseball.Platform.Crash
             bool pitchStageLoaded,
             string qualityTier)
         {
-            Distribution = distribution ?? "unknown";
+            Distribution = NormalizeDistribution(distribution);
             SaveSchema = saveSchema;
             SaveRevision = saveRevision;
-            AppPhase = appPhase ?? "unknown";
+            AppPhase = NormalizeToken(appPhase);
             PitchStageLoaded = pitchStageLoaded;
-            QualityTier = qualityTier ?? "unknown";
+            QualityTier = NormalizeQualityTier(qualityTier);
         }
 
         public string Distribution { get; }
@@ -33,6 +33,61 @@ namespace Baseball.Platform.Crash
         public string AppPhase { get; }
         public bool PitchStageLoaded { get; }
         public string QualityTier { get; }
+
+        public CrashContext WithQualityTier(string qualityTier) => new CrashContext(
+            Distribution,
+            SaveSchema,
+            SaveRevision,
+            AppPhase,
+            PitchStageLoaded,
+            qualityTier);
+
+        public CrashContext WithPitchStageLoaded(bool pitchStageLoaded) => new CrashContext(
+            Distribution,
+            SaveSchema,
+            SaveRevision,
+            AppPhase,
+            pitchStageLoaded,
+            QualityTier);
+
+        private static string NormalizeDistribution(string value)
+        {
+            switch ((value ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "editor":
+                case "development":
+                case "internal":
+                case "closed":
+                case "production":
+                    return value.Trim().ToLowerInvariant();
+                default:
+                    return "unknown";
+            }
+        }
+
+        private static string NormalizeQualityTier(string value)
+        {
+            string normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
+            return normalized == "high" || normalized == "low" ? normalized : "unknown";
+        }
+
+        private static string NormalizeToken(string value)
+        {
+            string normalized = (value ?? string.Empty).Trim().ToLowerInvariant();
+            if (normalized.Length == 0 || normalized.Length > 32) return "unknown";
+            for (int index = 0; index < normalized.Length; index++)
+            {
+                char character = normalized[index];
+                if ((character >= 'a' && character <= 'z') ||
+                    (character >= '0' && character <= '9') ||
+                    character == '_' || character == '-')
+                {
+                    continue;
+                }
+                return "unknown";
+            }
+            return normalized;
+        }
     }
 
     public sealed class NoOpCrashReporter : ICrashReporter

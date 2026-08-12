@@ -729,8 +729,8 @@ export default function HomePage() {
             <a href="#rebirth">환생</a>
             <a href="#screens">화면</a>
             <a href="#faq">FAQ</a>
+            <a href="/support">고객지원</a>
             <a href="/privacy">개인정보 처리방침</a>
-            <a href="mailto:kimsol1134@gmail.com">문의</a>
           </div>
         </div>
       </footer>

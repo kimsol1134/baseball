@@ -5,6 +5,7 @@ IFS=$'\n\t'
 readonly prerequisite_exit=2
 readonly package_id="${BASEBALL_ANDROID_PACKAGE_ID:-com.solkim.baseball.android}"
 readonly launch_timeout_seconds="${BASEBALL_SMOKE_LAUNCH_TIMEOUT_SECONDS:-20}"
+readonly pitch_timeout_seconds="${BASEBALL_SMOKE_PITCH_TIMEOUT_SECONDS:-300}"
 readonly settle_seconds="${BASEBALL_SMOKE_SETTLE_SECONDS:-1}"
 readonly smoke_mode="${BASEBALL_SMOKE_MODE:-production}"
 readonly qa_seed="${BASEBALL_SMOKE_QA_SEED:-20260811}"
@@ -112,7 +113,7 @@ resolve_llvm_readelf() {
   printf '%s\n' "$bundled_readelf"
 }
 
-for command_name in java jarsigner grep sed date od unzip node; do
+for command_name in java jarsigner keytool git grep sed date od unzip node; do
   require_command "$command_name"
 done
 readonly adb_bin="$(resolve_adb)"
@@ -131,6 +132,7 @@ require_file "$BASEBALL_ANDROID_KEYSTORE"
 require_secret_file "$BASEBALL_ANDROID_STORE_PASSWORD_FILE"
 require_secret_file "$BASEBALL_ANDROID_KEY_PASSWORD_FILE"
 [[ "$launch_timeout_seconds" =~ ^[1-9][0-9]*$ ]] || missing 'BASEBALL_SMOKE_LAUNCH_TIMEOUT_SECONDS는 양의 정수여야 합니다.'
+[[ "$pitch_timeout_seconds" =~ ^[1-9][0-9]*$ ]] || missing 'BASEBALL_SMOKE_PITCH_TIMEOUT_SECONDS는 양의 정수여야 합니다.'
 [[ "$settle_seconds" =~ ^[0-9]+([.][0-9]+)?$ ]] || missing 'BASEBALL_SMOKE_SETTLE_SECONDS는 0 이상의 숫자여야 합니다.'
 [[ "$smoke_mode" == "production" || "$smoke_mode" == "internal" ]] ||
   missing 'BASEBALL_SMOKE_MODE는 production 또는 internal이어야 합니다.'
@@ -139,6 +141,15 @@ require_secret_file "$BASEBALL_ANDROID_KEY_PASSWORD_FILE"
   missing 'BASEBALL_SMOKE_QA_CRASH_PROBE는 0 또는 1이어야 합니다.'
 if [[ "$smoke_mode" == "production" && "$qa_crash_probe" == "1" ]]; then
   missing 'crash probe는 internal smoke에서만 실행할 수 있습니다.'
+fi
+
+build_manifest="${BASEBALL_BUILD_MANIFEST:-$(dirname "$BASEBALL_AAB")/build-manifest.json}"
+build_checksums="${BASEBALL_BUILD_CHECKSUMS:-$(dirname "$BASEBALL_AAB")/checksums.sha256}"
+if [[ "$smoke_mode" == "production" ]]; then
+  require_file "$build_manifest"
+  require_file "$build_checksums"
+  [[ -n "${BASEBALL_UPLOAD_CERT_SHA256:-}" ]] ||
+    missing 'production smoke에는 BASEBALL_UPLOAD_CERT_SHA256이 필요합니다.'
 fi
 
 device_serial="${BASEBALL_ADB_SERIAL:-}"
@@ -161,9 +172,7 @@ sdk_level="$("${adb_command[@]}" shell getprop ro.build.version.sdk | tr -d '\r'
 device_page_size="$("${adb_command[@]}" shell getconf PAGE_SIZE 2>/dev/null | tr -d '\r')"
 [[ "$device_page_size" =~ ^[1-9][0-9]*$ ]] || missing '기기의 native page size를 확인할 수 없습니다.'
 native_16k_execution="not_tested"
-if [[ "$device_page_size" == "16384" ]]; then
-  native_16k_execution="passed"
-fi
+rc_build_evidence_result="not_applicable_internal_build"
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -186,6 +195,21 @@ set_airplane() {
   else
     "${adb_command[@]}" shell cmd connectivity airplane-mode disable >/dev/null
   fi
+}
+
+notification_permission_state() {
+  local permission_line
+  permission_line="$(
+    "${adb_command[@]}" shell dumpsys package "$package_id" 2>/dev/null |
+      tr -d '\r' |
+      sed -n '/android[.]permission[.]POST_NOTIFICATIONS: granted=/p' |
+      tail -n 1
+  )"
+  case "$permission_line" in
+    *"granted=true"*) printf 'granted\n' ;;
+    *"granted=false"*) printf 'denied\n' ;;
+    *) return 1 ;;
+  esac
 }
 
 restore_device() {
@@ -214,8 +238,117 @@ trap restore_device EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-jarsigner -verify -strict -certs "$BASEBALL_AAB" >"$evidence_dir/aab-signature.txt" 2>&1 ||
-  fail 'AAB 서명 검증에 실패했습니다.'
+if [[ "$smoke_mode" == "production" ]]; then
+  current_git_commit="$(git -C "$repo_root" rev-parse HEAD 2>/dev/null)" ||
+    missing 'production smoke의 현재 Git commit을 확인할 수 없습니다.'
+  [[ -z "$(git -C "$repo_root" status --porcelain --untracked-files=all)" ]] ||
+    fail 'production smoke는 build manifest와 같은 clean worktree에서만 실행할 수 있습니다.'
+  AAB_PATH="$BASEBALL_AAB" \
+    BUILD_MANIFEST="$build_manifest" \
+    BUILD_CHECKSUMS="$build_checksums" \
+    EVIDENCE_DIR="$evidence_dir" \
+    EXPECTED_PACKAGE_ID="$package_id" \
+    EXPECTED_GIT_COMMIT="$current_git_commit" node <<'NODE' ||
+    fail 'production AAB와 RC build evidence가 일치하지 않습니다.'
+const crypto = require("node:crypto");
+const fs = require("node:fs");
+const path = require("node:path");
+
+function fail(message) {
+  console.error(`production build evidence invalid: ${message}`);
+  process.exit(1);
+}
+function sha256(file) {
+  return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+}
+function safeFileName(value, label) {
+  const name = path.basename(value ?? "");
+  if (!name || name !== value) fail(`${label} is missing or unsafe`);
+  return name;
+}
+
+const aabPath = path.resolve(process.env.AAB_PATH);
+const manifestPath = path.resolve(process.env.BUILD_MANIFEST);
+const checksumsPath = path.resolve(process.env.BUILD_CHECKSUMS);
+const manifestDirectory = path.dirname(manifestPath);
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+if (manifest.schema !== "baseball-android-build-manifest-v1") fail("manifest schema mismatch");
+if (manifest.gitCommit !== process.env.EXPECTED_GIT_COMMIT || manifest.gitDirty !== false) {
+  fail("Git commit/dirty state mismatch");
+}
+if (manifest.applicationId !== process.env.EXPECTED_PACKAGE_ID) fail("application ID mismatch");
+if (manifest.distribution !== "production" || manifest.environment !== "production") {
+  fail("distribution/environment mismatch");
+}
+if (manifest.developmentBuild !== false || manifest.internalQaCompiled !== false) {
+  fail("production build flags mismatch");
+}
+if (manifest.il2cppCompilerConfiguration !== "Release" || manifest.architecture !== "ARM64" ||
+    manifest.graphicsApi !== "OpenGLES3" || manifest.minimumApi !== 26 || manifest.targetApi !== 36) {
+  fail("Android player configuration mismatch");
+}
+if (!manifest.versionName || !Number.isInteger(manifest.versionCode) || manifest.versionCode <= 0) {
+  fail("version is missing or invalid");
+}
+
+const bundleName = safeFileName(manifest.bundleFile, "bundleFile");
+if (path.basename(aabPath) !== bundleName) fail("BASEBALL_AAB filename does not match manifest");
+const actualBundleSha = sha256(aabPath);
+if (actualBundleSha !== manifest.bundleSha256) fail("AAB SHA-256 mismatch");
+
+const symbolName = safeFileName(manifest.symbolFile, "symbolFile");
+const symbolPath = path.join(manifestDirectory, symbolName);
+if (!fs.existsSync(symbolPath)) fail("IL2CPP symbol archive is missing beside build manifest");
+if (sha256(symbolPath) !== manifest.symbolSha256) fail("IL2CPP symbol SHA-256 mismatch");
+const expectedChecksums = [
+  `${manifest.bundleSha256}  ${bundleName}`,
+  `${manifest.symbolSha256}  ${symbolName}`,
+];
+const actualChecksums = fs.readFileSync(checksumsPath, "utf8").trim().split(/\r?\n/);
+if (JSON.stringify(actualChecksums) !== JSON.stringify(expectedChecksums)) {
+  fail("checksums.sha256 does not exactly match the manifest");
+}
+
+fs.copyFileSync(manifestPath, path.join(process.env.EVIDENCE_DIR, "build-manifest.json"));
+fs.copyFileSync(checksumsPath, path.join(process.env.EVIDENCE_DIR, "checksums.sha256"));
+fs.writeFileSync(
+  path.join(process.env.EVIDENCE_DIR, "build-evidence-link.txt"),
+  [
+    "result=passed",
+    `git_commit=${manifest.gitCommit}`,
+    `version_name=${manifest.versionName}`,
+    `version_code=${manifest.versionCode}`,
+    `distribution=${manifest.distribution}`,
+    `aab_sha256=${actualBundleSha}`,
+    `symbol_sha256=${manifest.symbolSha256}`,
+    "",
+  ].join("\n"),
+);
+NODE
+
+  expected_certificate="$(printf '%s' "$BASEBALL_UPLOAD_CERT_SHA256" |
+    tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+  [[ "$expected_certificate" =~ ^[0-9A-F]{64}$ ]] ||
+    missing 'BASEBALL_UPLOAD_CERT_SHA256는 SHA-256 인증서 지문이어야 합니다.'
+  actual_certificate="$(keytool -J-Duser.language=en -printcert -jarfile "$BASEBALL_AAB" |
+    sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -n 1 |
+    tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')"
+  [[ "$actual_certificate" == "$expected_certificate" ]] ||
+    fail 'AAB 서명 인증서가 BASEBALL_UPLOAD_CERT_SHA256 pin과 다릅니다.'
+  printf '%s\n' "$actual_certificate" >"$evidence_dir/aab-signing-cert.sha256"
+  rc_build_evidence_result="passed"
+fi
+
+if [[ "$smoke_mode" == "production" ]]; then
+  jarsigner -verify -strict -certs "$BASEBALL_AAB" >"$evidence_dir/aab-signature.txt" 2>&1 ||
+    fail '프로덕션 AAB strict 서명 검증에 실패했습니다.'
+else
+  # Unity Local Verification uses the standard self-signed Android debug
+  # certificate. Verify every signed entry, but reserve PKIX/strict trust and
+  # the upload-certificate pin for production candidates.
+  jarsigner -verify -certs "$BASEBALL_AAB" >"$evidence_dir/aab-signature.txt" 2>&1 ||
+    fail '내부 검증 AAB 서명 무결성 검사에 실패했습니다.'
+fi
 java -jar "$bundletool_jar" dump config --bundle="$BASEBALL_AAB" \
   >"$evidence_dir/bundle-config.txt" 2>"$evidence_dir/bundle-config.stderr.txt" ||
   fail 'AAB BundleConfig를 읽지 못했습니다.'
@@ -226,6 +359,7 @@ apks_path="$evidence_dir/baseball-device.apks"
 java -jar "$bundletool_jar" build-apks \
   --bundle="$BASEBALL_AAB" \
   --output="$apks_path" \
+  --adb="$adb_bin" \
   --connected-device \
   --device-id="$device_serial" \
   --ks="$BASEBALL_ANDROID_KEYSTORE" \
@@ -260,12 +394,6 @@ while IFS= read -r apk_entry; do
     "$zipalign_bin" -c -P 16 -v 4 "$apk_file"
   } >>"$evidence_dir/apk-zipalign.txt" 2>&1 ||
     fail "생성 APK가 16KB ZIP alignment를 충족하지 않습니다: $apk_entry"
-  {
-    printf 'apk=%s\n' "$apk_entry"
-    "$apkanalyzer_bin" manifest permissions "$apk_file"
-  } >>"$evidence_dir/apk-permissions.txt" 2>&1 ||
-    fail "생성 APK의 merged permission을 읽지 못했습니다: $apk_entry"
-
   if [[ "$apk_entry" == "base-master.apk" || "$apk_entry" == */base-master.apk ]]; then
     base_manifest_apk_count=$((base_manifest_apk_count + 1))
     apk_application_id="$("$apkanalyzer_bin" manifest application-id "$apk_file" | tr -d '\r')" ||
@@ -288,6 +416,11 @@ while IFS= read -r apk_entry; do
     base_manifest_xml="$evidence_dir/base-master-manifest.xml"
     "$apkanalyzer_bin" manifest print "$apk_file" >"$base_manifest_xml" 2>&1 ||
       fail 'base-master APK merged manifest를 읽지 못했습니다.'
+    {
+      printf 'apk=%s\n' "$apk_entry"
+      "$apkanalyzer_bin" manifest permissions "$apk_file"
+    } >>"$evidence_dir/apk-permissions.txt" 2>&1 ||
+      fail 'base-master APK merged permission을 읽지 못했습니다.'
     if ! BASE_MANIFEST_XML="$base_manifest_xml" \
       BASE_SCREEN_EVIDENCE="$evidence_dir/apk-compatible-screens.txt" node <<'NODE'
 const fs = require("node:fs");
@@ -297,7 +430,10 @@ const expected = ["small", "normal"].flatMap((size) =>
     .map((density) => `${size}:${density}`)
 ).sort();
 function normalizedScreenSize(value) {
-  return ({ "1": "small", "2": "normal" })[value] ?? value ?? "missing";
+  // apkanalyzer may print either the enum ordinal (1/2) or Android's
+  // Configuration.SCREENLAYOUT_SIZE_* constants (200/300).
+  return ({ "1": "small", "2": "normal", "200": "small", "300": "normal" })[value]
+    ?? value ?? "missing";
 }
 function normalizedScreenDensity(value) {
   return ({
@@ -368,8 +504,7 @@ printf 'result=passed apks=%s alignment=16384\n' "$apk_count" >>"$evidence_dir/a
 printf 'result=passed mode=%s\n' "$smoke_mode" >>"$evidence_dir/apk-build-mode.txt"
 printf 'result=passed libraries=%s minimum_load_alignment=16384\n' "$native_count" \
   >>"$evidence_dir/elf-alignment.txt"
-APK_PERMISSIONS="$evidence_dir/apk-permissions.txt" node <<'NODE' ||
-  fail '생성 APK의 merged permission이 허용 목록과 다릅니다.'
+if ! APK_PERMISSIONS="$evidence_dir/apk-permissions.txt" node <<'NODE'
 const fs = require("node:fs");
 const path = process.env.APK_PERMISSIONS;
 const raw = fs.readFileSync(path, "utf8");
@@ -389,8 +524,13 @@ if (JSON.stringify(permissions) !== JSON.stringify(expected)) {
 }
 fs.appendFileSync(path, `result=passed permissions=${permissions.join(",")}\n`);
 NODE
+then
+  fail '생성 APK의 merged permission이 허용 목록과 다릅니다.'
+fi
 
-prior_package_paths="$("${adb_command[@]}" shell pm path "$package_id" 2>/dev/null | tr -d '\r')"
+prior_package_paths="$(
+  "${adb_command[@]}" shell pm path "$package_id" 2>/dev/null | tr -d '\r' || true
+)"
 if [[ -n "$prior_package_paths" ]]; then
   {
     printf 'prior_installation=present\n'
@@ -411,6 +551,7 @@ fi
 
 java -jar "$bundletool_jar" install-apks \
   --apks="$apks_path" \
+  --adb="$adb_bin" \
   --device-id="$device_serial" >"$evidence_dir/bundletool-install.txt" 2>&1 || fail 'APKS 설치에 실패했습니다.'
 [[ -n "$("${adb_command[@]}" shell pm path "$package_id" 2>/dev/null | tr -d '\r')" ]] ||
   fail "bundletool 설치 뒤 $package_id 패키지를 찾지 못했습니다."
@@ -426,7 +567,7 @@ original_accelerometer_rotation="$("${adb_command[@]}" shell settings get system
 original_user_rotation="$("${adb_command[@]}" shell settings get system user_rotation | tr -d '\r')"
 original_font_scale="$("${adb_command[@]}" shell settings get system font_scale | tr -d '\r')"
 if [[ "$sdk_level" -ge 33 ]]; then
-  original_notification_permission="$("${adb_command[@]}" shell cmd package check-permission android.permission.POST_NOTIFICATIONS "$package_id" | tr -d '\r')"
+  original_notification_permission="$(notification_permission_state)"
 else
   original_notification_permission="not_applicable"
 fi
@@ -477,7 +618,8 @@ wait_for_foreground() {
 wait_for_app_marker() {
   local evidence_file="$1"
   local marker="$2"
-  local deadline=$((SECONDS + launch_timeout_seconds))
+  local timeout_seconds="${3:-$launch_timeout_seconds}"
+  local deadline=$((SECONDS + timeout_seconds))
   local pid=""
   : >"$evidence_file"
   while [[ "$SECONDS" -lt "$deadline" ]]; do
@@ -491,7 +633,7 @@ wait_for_app_marker() {
     fi
     sleep 0.25
   done
-  printf 'timeout_seconds=%s expected_marker=%s\n' "$launch_timeout_seconds" "$marker" \
+  printf 'timeout_seconds=%s expected_marker=%s\n' "$timeout_seconds" "$marker" \
     >>"$evidence_file"
   return 1
 }
@@ -499,7 +641,8 @@ wait_for_app_marker() {
 wait_for_global_marker() {
   local evidence_file="$1"
   local marker="$2"
-  local deadline=$((SECONDS + launch_timeout_seconds))
+  local timeout_seconds="${3:-$launch_timeout_seconds}"
+  local deadline=$((SECONDS + timeout_seconds))
   : >"$evidence_file"
   while [[ "$SECONDS" -lt "$deadline" ]]; do
     "${adb_command[@]}" logcat -d -v threadtime >"$evidence_file" 2>&1 || true
@@ -509,7 +652,7 @@ wait_for_global_marker() {
     fi
     sleep 0.25
   done
-  printf 'timeout_seconds=%s expected_marker=%s\n' "$launch_timeout_seconds" "$marker" \
+  printf 'timeout_seconds=%s expected_marker=%s\n' "$timeout_seconds" "$marker" \
     >>"$evidence_file"
   return 1
 }
@@ -610,7 +753,7 @@ notification_denial_result="not_applicable_api_lt_33"
 if [[ "$sdk_level" -ge 33 ]]; then
   "${adb_command[@]}" shell pm revoke "$package_id" android.permission.POST_NOTIFICATIONS >/dev/null ||
     fail '알림 권한 거부 상태를 만들지 못했습니다.'
-  [[ "$("${adb_command[@]}" shell cmd package check-permission android.permission.POST_NOTIFICATIONS "$package_id" | tr -d '\r')" == "denied" ]] ||
+  [[ "$(notification_permission_state)" == "denied" ]] ||
     fail '알림 권한이 denied로 확인되지 않았습니다.'
   notification_denial_result="passed"
 fi
@@ -630,6 +773,22 @@ after_trim_pid="$("${adb_command[@]}" shell pidof "$package_id" | tr -d '\r')"
 wait_for_foreground "$evidence_dir/07-low-memory-activity.txt" ||
   fail 'low-memory callback 뒤 앱이 foreground 상태를 유지하지 못했습니다.'
 capture_foreground '07-low-memory'
+
+production_pitch_16k_result="not_applicable_page_size_${device_page_size}"
+if [[ "$smoke_mode" == "internal" ]]; then
+  production_pitch_16k_result="not_applicable_internal_build"
+elif [[ "$device_page_size" == "16384" ]]; then
+  printf '%s\n' \
+    "16KB production 증거: 기기에서 실제 커리어 투구 한 공을 완료하세요. 제한 ${pitch_timeout_seconds}초." >&2
+  wait_for_app_marker \
+    "$evidence_dir/08-production-pitch-16k.txt" \
+    'BASEBALL_PITCH_PRESENTATION_COMPLETED schema=1 status=passed' \
+    "$pitch_timeout_seconds" ||
+    fail '16KB production AAB에서 실제 투구 presentation 완료 marker를 확인하지 못했습니다.'
+  capture_foreground '08-production-pitch-16k-completed'
+  production_pitch_16k_result="passed"
+  native_16k_execution="passed"
+fi
 
 qa_fixture_result="not_requested"
 qa_pitch_high_result="not_requested"
@@ -749,6 +908,13 @@ if grep -Eiq '([[:alnum:]._%+-]+@[[:alnum:].-]+\.[[:alpha:]]{2,})|Bearer[[:space
   fail '앱 logcat에서 이메일·인증 토큰·광고 식별자·전화번호로 보이는 PII 표식을 발견했습니다.'
 fi
 
+# Package-scoped runtime bridge failures can leave an interactive shell with broken product
+# visuals or telemetry. Expected offline transport retries are deliberately not matched here.
+if grep -Eiq 'pitch.stage_shader_unavailable|Shader.*(not found|unsupported|is not supported)|Hidden/InternalErrorShader|pink[[:space:]_-]*material|StrictMode|Default FirebaseApp failed to initialize|FirebaseApp initialization unsuccessful|Failed to read Firebase options|Firebase.*(initialization failed|dependency[^[:cntrl:]]*failed|not initialized|No Firebase App|bridge[^[:cntrl:]]*failed)|Amplitude.*(initialization failed|not initialized|bridge[^[:cntrl:]]*failed|API key[^[:cntrl:]]*missing)' \
+  "$evidence_dir"/*-app-logcat.txt "$evidence_dir/logcat-app-final.txt"; then
+  fail '앱 logcat에서 셰이더·StrictMode·Firebase/Amplitude 초기화 또는 브릿지 오류를 발견했습니다.'
+fi
+
 printf '%s\n' \
   "schema=baseball.android-unity-smoke.v1" \
   "package=$package_id" \
@@ -757,6 +923,8 @@ printf '%s\n' \
   "android_api=$sdk_level" \
   "native_page_size=$device_page_size" \
   "native_16k_execution=$native_16k_execution" \
+  "production_pitch_on_16k=$production_pitch_16k_result" \
+  "rc_build_evidence=$rc_build_evidence_result" \
   "aab_16k_alignment=passed" \
   "apk_16k_zipalign=passed" \
   "arm64_elf_alignment=passed" \
@@ -783,6 +951,7 @@ printf '%s\n' \
   "qa_crash_probe=$qa_crash_result" \
   "foreground_resumed=passed" \
   "crash_anr_scan=passed" \
-  "pii_scan=passed" >"$evidence_dir/result.txt"
+  "pii_scan=passed" \
+  "runtime_bridge_scan=passed" >"$evidence_dir/result.txt"
 
 printf 'Android Unity smoke 통과. 증거 경로: %s\n' "$evidence_dir"

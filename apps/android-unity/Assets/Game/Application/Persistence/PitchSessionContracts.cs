@@ -85,7 +85,8 @@ namespace Baseball.Application.Persistence
             PitchSequencePitch sequencePitch = null,
             PitchSequenceTag? sequenceTag = null,
             PitchDeliveryMetricState delivery = null,
-            string abilityMomentType = null)
+            string abilityMomentType = null,
+            PitchLogEntryState pitchLogEntry = null)
         {
             PitchId = pitchId;
             BatterIndex = batterIndex;
@@ -97,6 +98,7 @@ namespace Baseball.Application.Persistence
             SequenceTag = sequenceTag;
             Delivery = delivery;
             AbilityMomentType = abilityMomentType;
+            PitchLogEntry = pitchLogEntry;
         }
 
         public string PitchId { get; }
@@ -110,6 +112,79 @@ namespace Baseball.Application.Persistence
         public PitchDeliveryMetricState Delivery { get; }
         /// <summary>Stable Core PitchAbilityKind wire value, or null when this pitch has no moment.</summary>
         public string AbilityMomentType { get; }
+        /// <summary>Frozen authoritative display/log evidence, appended only after consume.</summary>
+        public PitchLogEntryState PitchLogEntry { get; }
+    }
+
+    /// <summary>
+    /// Bounded, non-PII postgame evidence for one authoritative consumed pitch. All enum-like
+    /// values are stable Core wire strings; Presentation must not decode opaque kernel JSON.
+    /// </summary>
+    public sealed class PitchLogEntryState
+    {
+        public const int MaximumEntries = 128;
+
+        public PitchLogEntryState(
+            string pitchId,
+            int batterIndex,
+            int pitchNumber,
+            string pitchType,
+            int zoneRow,
+            int zoneColumn,
+            string zoneIntent,
+            string intensity,
+            int targetX,
+            int targetY,
+            int actualX,
+            int actualY,
+            int velocityTenthsKph,
+            int horizontalBreakTenthsCm,
+            int verticalBreakTenthsCm,
+            int executionQuality,
+            string outcome,
+            bool signAccepted,
+            long committedAtUnixMilliseconds)
+        {
+            PitchId = pitchId;
+            BatterIndex = batterIndex;
+            PitchNumber = pitchNumber;
+            PitchType = pitchType;
+            ZoneRow = zoneRow;
+            ZoneColumn = zoneColumn;
+            ZoneIntent = zoneIntent;
+            Intensity = intensity;
+            TargetX = targetX;
+            TargetY = targetY;
+            ActualX = actualX;
+            ActualY = actualY;
+            VelocityTenthsKph = velocityTenthsKph;
+            HorizontalBreakTenthsCm = horizontalBreakTenthsCm;
+            VerticalBreakTenthsCm = verticalBreakTenthsCm;
+            ExecutionQuality = executionQuality;
+            Outcome = outcome;
+            SignAccepted = signAccepted;
+            CommittedAtUnixMilliseconds = committedAtUnixMilliseconds;
+        }
+
+        public string PitchId { get; }
+        public int BatterIndex { get; }
+        public int PitchNumber { get; }
+        public string PitchType { get; }
+        public int ZoneRow { get; }
+        public int ZoneColumn { get; }
+        public string ZoneIntent { get; }
+        public string Intensity { get; }
+        public int TargetX { get; }
+        public int TargetY { get; }
+        public int ActualX { get; }
+        public int ActualY { get; }
+        public int VelocityTenthsKph { get; }
+        public int HorizontalBreakTenthsCm { get; }
+        public int VerticalBreakTenthsCm { get; }
+        public int ExecutionQuality { get; }
+        public string Outcome { get; }
+        public bool SignAccepted { get; }
+        public long CommittedAtUnixMilliseconds { get; }
     }
 
     /// <summary>Delivery evidence for one committed pitch; automatic release sets WasDirect false.</summary>

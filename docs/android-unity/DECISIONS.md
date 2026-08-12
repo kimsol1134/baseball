@@ -6,33 +6,45 @@
 |---|---|---|
 | Unity | 6000.3.19f1 ARM64 editor | 고정 |
 | 프로젝트 | `apps/android-unity` | 고정 |
-| application ID | `com.solkim.baseball.android` | Play Console 생성 전 최종 재확인 필요 |
+| application ID | `com.solkim.baseball.android` | Firebase Android app 등록 완료; Play 법적 선언·생성 대기 |
 | 제품명 | 야구 못하면 또 환생함 | 고정 |
 | 버전 | 1.0.0 (`versionCode` 1부터 단조 증가) | 고정 |
 | Android | min API 26, target API 36 | 고정 |
 | Unity Android toolchain | SDK platform 36, build-tools 36.0.0, NDK r27c (27.2.12479018), OpenJDK 17.0.18 | 설치 확인 |
 | 아키텍처 | IL2CPP ARM64 | 고정 |
-| 그래픽 | URP 17.3.0 mobile pipeline, OpenGLES3, 세로 | 소스 구성 완료; 라이선스 보유 Editor import 필요 |
+| 그래픽 | URP 17.3.0 mobile pipeline, OpenGLES3, 세로 | Editor import·내부 AAB 검증 완료 |
 | UI | UI Toolkit | 고정 |
 | C# API 호환 | Unity UI의 `.NET Standard 2.1` 프로필. Editor API enum 이름은 legacy `NET_Standard_2_0` | 고정 |
-| 에셋 | Local Addressables, 원격 catalog 없음 | 구성 코드·manifest 완료; 첫 Editor import 산출물 커밋 필요 |
+| 에셋 | Local Addressables, 원격 catalog 없음 | Editor 생성 산출물 검토 완료; clean commit 고정 필요 |
 | 저장 | 로컬 JSON envelope + SHA-256 + temp + 백업 3개 | 구현·fault-injection 정적 테스트 완료 |
 | 계정/클라우드 | 없음 | 고정 |
-| 분석 | Firebase Analytics + Amplitude, install UUID, 광고 ID 없음 | SDK/privacy gate 구현 완료; 외부 앱 등록·수신 검증 필요 |
-| 크래시 | Firebase Crashlytics + IL2CPP symbols | SDK/CI upload 구현 완료; 외부 앱 등록·symbol 수신 검증 필요 |
+| 분석 | Firebase Analytics + Amplitude, install UUID, 광고 ID 없음 | 외부 production 프로젝트·CI secret 연결 완료; 실제 수신 검증 필요 |
+| 크래시 | Firebase Crashlytics + IL2CPP symbols | 외부 Android app·최소권한 symbol uploader·CI secret 연결 완료; symbol 수신 검증 필요 |
 | 판매 | 대한민국, 4,400원, 유료 게임 60분 무료 체험 | Play Console 설정 필요 |
 | 폼 팩터 | small/normal 스마트폰, 세로, 태블릿/ChromeOS/TV/XR 제외 | AAB 업로드 후 CSV 검증 필요 |
-| Native page size | AAB `PAGE_ALIGNMENT_16K` + 실제 16KB ARM64 기기 실행 | 둘 다 출시 차단; 미검증 |
+| Native page size | AAB `PAGE_ALIGNMENT_16K` + 실제 16KB ARM64 기기 실행 | 내부 AAB/emulator 통과; production 서명·물리기기 출시 차단 |
 
 ## 외부 값
 
 비밀값은 이 문서에 기록하지 않는다.
 
-- Play Console app 생성: 미확인
-- Firebase Android App ID: 미등록
-- Amplitude 환경: 기존 iOS 프로젝트와 분리 가능한 Android production source로 등록 필요
-- upload key alias/보관 책임자: 미확인
-- 개인정보처리방침 HTTPS URL: 미확인
+- Play Console app 생성: 2026-08-12 로그인 계정에서 앱 미생성 확인. `com.solkim.baseball.android` 사용 가능;
+  ko-KR·게임·유료 생성 양식은 준비했으나 정책/미국 수출법 법적 선언과 최종 생성은 소유자 승인 대기
+- Firebase: project `baseball-reincarnation-android`(project number `951359066339`), Android App ID
+  `1:951359066339:android:ea391d85ed2bac524cf5d6`, package `com.solkim.baseball.android` 등록 완료.
+  GA4 전용 property `549574769`/Android stream `15421807578`를 기존 blog property와 분리해 연결했다.
+  세부 위치·기기 수집은 off, 광고 개인 최적화는 307개 전 지역 off, Google Signals는 미활성이다.
+- Amplitude: 별도 `Baseball Reincarnation Android Production` 프로젝트 생성 완료. API key는 macOS
+  Keychain과 GitHub Actions secret에만 보관하고 저장소·문서·로그에는 기록하지 않는다.
+- Firebase Crashlytics symbol uploader:
+  `baseball-crash-symbol-uploader@baseball-reincarnation-android.iam.gserviceaccount.com`에
+  `roles/firebasecrash.symbolMappingsAdmin`만 부여했다. service-account JSON은 저장소 밖과 GitHub
+  Actions secret에만 보관한다.
+- upload key alias/보관: `baseball-upload`; 인증서 SHA-256은 CI pin과 Firebase Android app에 등록했다.
+  keystore와 암호는 저장소 밖 Application Support/macOS Keychain에, 동일 값은 GitHub Actions secret에
+  보관한다. 계정 소유자의 별도 오프라인 복구본은 출시 전 추가한다.
+- 개인정보처리방침 HTTPS URL: `https://baseball-reincarnation.vercel.app/privacy` (2026-08-12 배포·HTTPS 200 확인)
+- 고객지원 HTTPS URL: `https://baseball-reincarnation.vercel.app/support` (2026-08-12 배포·HTTPS 200 확인)
 
 ## 구현 중 결정
 
@@ -40,6 +52,14 @@
 - C# Core는 `UnityEngine`을 참조하지 않는다.
 - iOS와 개별 난수 결과가 달라도 C# 내 결정론·규칙·분포 게이트를 지킨다.
 - 시뮬레이션 결과를 저장한 뒤 3D 연출을 시작한다.
+- 계획 §3.2의 `10_Shell`/additive `20_PitchStage`/`90_PresentationSandbox` 장면 분리는
+  명시적 수명 경계로 대체한다. Player build에는 빈 `00_Bootstrap`만 넣고, `AppRoot`가 Store를,
+  `DontDestroyOnLoad` UI shell이 View stack을 소유한다. 투구 시작 때 저장 상태와 Addressables
+  2D 자산이 준비된 뒤 전용 `Pitch Presentation Stage` 오브젝트를 만들고, 실패·중단·완료 때
+  오브젝트를 파괴하면서 모든 lease와 URP 품질 override를 복원한다. 따라서 Core/Application
+  상태는 scene object에 들어가지 않고 additive unload와 같은 메모리·실패 불변식을 지킨다.
+  Editor-only sandbox는 고정 request의 EditMode/PlayMode presentation tests와 production/internal
+  reference compile로 대체하며 Player scene list에 QA surface를 넣지 않는다.
 - Unity Ads, Unity Analytics, IAP, Authentication, Play Games Services를 포함하지 않는다.
 - Android-only SDK import에서는 Firebase/Amplitude의 iOS, tvOS, desktop native binary를 제외한다. 관리 DLL과 Android Maven payload는 유지한다.
 - 서드파티 버전, archive checksum, Maven 직접 의존성은 `THIRD_PARTY_LOCK.md`를 권위로 삼는다.
@@ -48,6 +68,14 @@
   lifetime receipt는 최대 128개를 절대 제거하지 않고, scoped receipt만 최근 512개를 유지한다.
   Firebase 의존성 확인 중 발생한 이벤트는 개인정보 검사를 거친 128개 startup FIFO에 보관한 뒤
   SDK 준비 직후 순서대로 비차단 전송한다. reset-all은 이전 익명 ID의 FIFO와 once 상태를 함께 지운다.
+- reset-all 확인 뒤에는 파괴 작업 전에 no-backup journal에 previous/candidate install ID를 fsync하며
+  이 intent는 취소하지 않는다. repository reset receipt가 없는 부팅만 save 후보를 삭제하고, 이후
+  install ID publication·analytics/review/reminder·stale epoch 파일·share PNG cache를 각 receipt로
+  재개한다. repository 삭제 뒤 identity 발행이 실패한 이전 in-memory store는 write-poison하여
+  lifecycle과 명령 저장이 이전 install canonical을 다시 만들지 못하게 한다. journal cleanup이 늦어도
+  초기화 뒤 새 진행은 다시 삭제하지 않는다. 익명 ID 읽기/쓰기 실패는 임시 메모리 ID로 숨기지 않고
+  store `OpenAsync`의 startup-failure/retry 경계로 전달한다. 알림은 `Awake`에서 ID를 별도 획득하지
+  않고 Ready aggregate의 ID를 바인딩하며, 바인딩 실패 동안 권유·예약·intent 소비를 fail-closed한다.
 - 복귀 실험은 안정 install ID로 `guided`/`holdout`을 고정한다. 개인화 복귀 카드와 개인화 알림은
   guided에만 노출하며 holdout은 일반 다음 행동만 받는다. 종료된 일일 모드를 복귀 계획이나
   알림의 fallback으로 합성하지 않는다. pause는 계획과
@@ -57,7 +85,10 @@
   내비게이션 완료 영수증을 aggregate에 따로 저장한다. 분석 저장 뒤 프로세스가 종료되면 SDK를
   중복 호출하지 않고 목적지만 복구하고, 완료 영수증까지 있으면 재시작·반복 intent 모두 무시한다.
   실제 route 소비 뒤 완료 저장 전 종료되는 경우 같은 허용 목적지의 재적용만 허용한다. reset-all은
-  대기 intent를 지운다. API 33 미만은 런타임 알림 권한 거부 단계가 적용되지 않으며 smoke 증거에
+  대기 intent를 지우고 현재 Activity의 reminder intent를 비운다. Activity가 즉시 비워지지 않는
+  기기에서는 이전 안정 token hash를 process-local tombstone으로 막으며, 새 token은 허용한다.
+  tombstone은 새 프로세스/새 install ID로 넘기지 않고 비워진 Activity intent가 수동 재개 시의
+  재소비를 막는다. API 33 미만은 런타임 알림 권한 거부 단계가 적용되지 않으며 smoke 증거에
   명시한다.
 - 앱 밖 시스템 설정에서 알림 권한이 철회되면 재개 시 OS 상태를 다시 읽는다. 저장소가 busy이면
   correction을 idle까지 보류하고, aggregate의 `NotificationsEnabled=false` 저장 성공 뒤에만 UI와
@@ -69,6 +100,13 @@
   `Baseball.Core`, `Baseball.Application`, `Baseball.Presentation`, `Unity.Newtonsoft.Json`을 명시한다.
 - `MobileRenderPipelineConfiguration`이 저사양 스마트폰 기준 URP asset/renderer를 생성하고 Graphics/Quality 양쪽에 지정한다. HDR, depth/opaque texture, 추가 광원, 실시간 그림자는 v1에서 끈다.
 - `LocalAddressablesConfiguration`이 142개 runtime entry를 로컬 LZ4 bundle로 구성한다. remote catalog와 remote load path는 빌드 실패 조건이다.
+- Setup/직접 Pro preset, 학교 coach/catcher, 관계 category, tournament chapter, HS/Pro/LifeCard 선수
+  초상, BloomArt와 phase/level KeyArt는 local Addressables address를 실제 화면에서 lease하고 detach 때
+  해제한다. 누락/실패는 의미가 같은 한국어 text를 유지하며 원격 fallback은 없다.
+- PitchStage 재질은 `Baseball/PitchStageUnlit` 체크인 shader만 사용한다. exact GUID를
+  `GraphicsSettings.alwaysIncludedShaders`에 보존하고 Editor build가 SerializedObject와 실제 asset/name을
+  함께 검증한다. Player는 지원 여부/ready marker를 기록하고 smoke는 missing/unsupported/pink shader를
+  비롯한 StrictMode·Firebase/Amplitude bridge 오류를 fail-closed로 검색한다.
 - Android launcher는 legacy 512 아이콘, adaptive background/foreground, Android 13 monochrome themed icon을 함께 사용한다.
 - Play feature graphic과 store icon은 OpenAI imagegen으로 만든 가상 새벽 야구장/공 모티프를
   사용한다. 실존 구단 IP를 넣지 않고 원본 참조 hash, PNG 치수·색상형식, 생성 provenance를
@@ -82,6 +120,10 @@
   `zipalign -c -P 16 -v 4`와 같은 ELF 검사를 추가 적용한다. bundle
   config 하나만으로 native binary 호환성을 통과 처리하지 않는다. 별도로
   `getconf PAGE_SIZE=16384` 기기에서 install/launch/투구/crash·ANR 0 증거가 필요하다.
+- production 기기 smoke는 임의의 package-compatible AAB를 받지 않는다. 현재 clean Git commit과
+  같은 RC의 `build-manifest.json`·`checksums.sha256`, AAB/symbol SHA-256, production
+  distribution, IL2CPP Release, upload certificate pin을 먼저 검증한다. 16KB 기기에서는 실제
+  저장형 투구 presentation 완료 marker를 확인한 뒤에만 native 실행을 통과 처리한다.
 - RC wrapper는 source manifest만 믿지 않는다. AAB base merged manifest를 dump해 package, 네 개
   permission, portrait/non-resizable activity, non-exported share provider, touchscreen, small/normal
   12개 screen을 검사하고, universal/device APKS도 `apkanalyzer` permission union을 다시 확인한다.
@@ -96,6 +138,9 @@
 ## 현재 검증 경계
 
 - C# Core/Application/Persistence 및 Unity reference assembly 정적 컴파일은 통과했다.
-- 실제 Unity EditMode/PlayMode import와 Android IL2CPP AAB는 이 머신의 만료된 Unity Personal entitlement 때문에 실행되지 않았다.
-- 라이선스를 갱신한 첫 Unity import는 `.meta`, Addressables settings, URP asset/renderer를 생성한다. 이 산출물을 검토·커밋한 뒤 같은 commit으로 tests와 RC build를 다시 실행한다.
-- AAB 기기 smoke, Play 무료 체험, 지원 기기 CSV, Firebase/Amplitude 수신, Crashlytics symbolication은 외부 출시 차단 항목이다.
+- 실제 Unity 6000.3.19f1 EditMode/PlayMode, Android IL2CPP internal verification AAB와
+  16KB API 35 ARM64 emulator 내부 QA를 실행해 통과했다.
+- Unity import가 만든 `.meta`, Addressables settings, URP asset/renderer는 현재 worktree에 있으며
+  source 변경과 함께 검토 후 clean commit으로 고정해야 한다.
+- production upload-key AAB/CI symbol upload와 물리 스마트폰 smoke, Play 앱·무료 체험·지원 기기 CSV,
+  Firebase/Amplitude 실제 수신, Crashlytics symbolication은 외부 출시 차단 항목이다.

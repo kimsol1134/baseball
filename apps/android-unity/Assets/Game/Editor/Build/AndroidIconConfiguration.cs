@@ -76,7 +76,17 @@ namespace Baseball.Editor
     public sealed class AndroidThemedIconPostprocessor : IPostGenerateGradleAndroidProject
     {
         private const string AndroidNamespace = "http://schemas.android.com/apk/res/android";
+        private const string ToolsNamespace = "http://schemas.android.com/tools";
+        private const string FirebaseInitProvider = "com.google.firebase.provider.FirebaseInitProvider";
         private const string MonochromeResourceName = "baseball_android_monochrome";
+        private static readonly string[] RemovedPermissions =
+        {
+            "android.permission.WAKE_LOCK",
+            "com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE",
+            "com.google.android.gms.permission.AD_ID",
+            "android.permission.ACCESS_ADSERVICES_ATTRIBUTION",
+            "android.permission.ACCESS_ADSERVICES_AD_ID"
+        };
 
         public int callbackOrder => 1000;
 
@@ -87,6 +97,8 @@ namespace Baseball.Editor
                 throw new BuildFailedException("Generated Android Gradle project path is unavailable.");
             }
 
+            PatchLauncherPermissionRemovals(path);
+
             string source = Path.Combine(
                 Application.dataPath,
                 AndroidIconConfiguration.MonochromeIconPath.Substring("Assets/".Length));
@@ -96,45 +108,51 @@ namespace Baseball.Editor
             }
 
             var patchedResources = new HashSet<string>(StringComparer.Ordinal);
-            foreach (string xmlPath in Directory.EnumerateFiles(path, "*.xml", SearchOption.AllDirectories))
+            foreach (string resourceRoot in GeneratedResourceRoots(path))
             {
-                if (!IsAdaptiveIconResource(xmlPath))
+                foreach (string xmlPath in Directory.EnumerateFiles(
+                             resourceRoot,
+                             "*.xml",
+                             SearchOption.AllDirectories))
                 {
-                    continue;
-                }
+                    if (!IsAdaptiveIconResource(xmlPath))
+                    {
+                        continue;
+                    }
 
-                XmlDocument document = new XmlDocument { PreserveWhitespace = true };
-                document.Load(xmlPath);
-                XmlElement root = document.DocumentElement;
-                if (root == null || !string.Equals(root.LocalName, "adaptive-icon", StringComparison.Ordinal))
-                {
-                    continue;
-                }
+                    XmlDocument document = new XmlDocument { PreserveWhitespace = true };
+                    document.Load(xmlPath);
+                    XmlElement root = document.DocumentElement;
+                    if (root == null || !string.Equals(root.LocalName, "adaptive-icon", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
 
-                if (root.SelectSingleNode("*[local-name()='background']") == null
-                    || root.SelectSingleNode("*[local-name()='foreground']") == null)
-                {
-                    continue;
-                }
+                    if (root.SelectSingleNode("*[local-name()='background']") == null
+                        || root.SelectSingleNode("*[local-name()='foreground']") == null)
+                    {
+                        continue;
+                    }
 
-                if (root.SelectSingleNode("*[local-name()='monochrome']") == null)
-                {
-                    XmlElement monochrome = document.CreateElement("monochrome");
-                    monochrome.SetAttribute(
-                        "drawable",
-                        AndroidNamespace,
-                        $"@drawable/{MonochromeResourceName}");
-                    root.AppendChild(monochrome);
-                    document.Save(xmlPath);
-                }
+                    if (root.SelectSingleNode("*[local-name()='monochrome']") == null)
+                    {
+                        XmlElement monochrome = document.CreateElement("monochrome");
+                        monochrome.SetAttribute(
+                            "drawable",
+                            AndroidNamespace,
+                            $"@drawable/{MonochromeResourceName}");
+                        root.AppendChild(monochrome);
+                        document.Save(xmlPath);
+                    }
 
-                string densityDirectory = Path.GetDirectoryName(xmlPath)
-                                          ?? throw new BuildFailedException(
-                                              $"Could not resolve icon resource directory: {xmlPath}");
-                string resourceDirectory = Directory.GetParent(densityDirectory)?.FullName
-                                           ?? throw new BuildFailedException(
-                                               $"Could not resolve Android res directory: {xmlPath}");
-                patchedResources.Add(resourceDirectory);
+                    string densityDirectory = Path.GetDirectoryName(xmlPath)
+                                              ?? throw new BuildFailedException(
+                                                  $"Could not resolve icon resource directory: {xmlPath}");
+                    string resourceDirectory = Directory.GetParent(densityDirectory)?.FullName
+                                               ?? throw new BuildFailedException(
+                                                   $"Could not resolve Android res directory: {xmlPath}");
+                    patchedResources.Add(resourceDirectory);
+                }
             }
 
             if (patchedResources.Count == 0)
@@ -151,6 +169,107 @@ namespace Baseball.Editor
                     source,
                     Path.Combine(drawableDirectory, MonochromeResourceName + ".png"),
                     true);
+            }
+        }
+
+        private static void PatchLauncherPermissionRemovals(string unityLibraryPath)
+        {
+            string gradleRoot = Directory.GetParent(unityLibraryPath)?.FullName;
+            var candidates = new[]
+            {
+                Path.Combine(unityLibraryPath, "launcher", "src", "main", "AndroidManifest.xml"),
+                string.IsNullOrEmpty(gradleRoot)
+                    ? null
+                    : Path.Combine(gradleRoot, "launcher", "src", "main", "AndroidManifest.xml")
+            };
+            string manifestPath = null;
+            foreach (string candidate in candidates)
+            {
+                if (!string.IsNullOrEmpty(candidate) && File.Exists(candidate))
+                {
+                    manifestPath = candidate;
+                    break;
+                }
+            }
+            if (string.IsNullOrEmpty(manifestPath))
+            {
+                throw new BuildFailedException(
+                    "Generated launcher AndroidManifest.xml was not found; privacy permission removals cannot be verified.");
+            }
+
+            var document = new XmlDocument { PreserveWhitespace = true };
+            document.Load(manifestPath);
+            XmlElement root = document.DocumentElement;
+            if (root == null || !string.Equals(root.LocalName, "manifest", StringComparison.Ordinal))
+            {
+                throw new BuildFailedException("Generated launcher manifest root is invalid.");
+            }
+            root.SetAttribute("tools", "http://www.w3.org/2000/xmlns/", ToolsNamespace);
+
+            XmlElement application = root.SelectSingleNode("*[local-name()='application']") as XmlElement;
+            if (application == null)
+            {
+                throw new BuildFailedException(
+                    "Generated launcher manifest has no application element.");
+            }
+
+            if (AndroidBuild.IsLocalVerificationPostprocessActive)
+            {
+                XmlElement provider = document.CreateElement("provider");
+                provider.SetAttribute("name", AndroidNamespace, FirebaseInitProvider);
+                provider.SetAttribute("node", ToolsNamespace, "remove");
+                application.AppendChild(provider);
+            }
+
+            foreach (string permission in RemovedPermissions)
+            {
+                XmlElement declaration = null;
+                foreach (XmlNode child in root.ChildNodes)
+                {
+                    if (child is XmlElement element
+                        && string.Equals(element.LocalName, "uses-permission", StringComparison.Ordinal)
+                        && string.Equals(
+                            element.GetAttribute("name", AndroidNamespace),
+                            permission,
+                            StringComparison.Ordinal))
+                    {
+                        declaration = element;
+                        break;
+                    }
+                }
+
+                if (declaration == null)
+                {
+                    declaration = document.CreateElement("uses-permission");
+                    declaration.SetAttribute("name", AndroidNamespace, permission);
+                    root.InsertBefore(declaration, root.FirstChild);
+                }
+                declaration.SetAttribute("node", ToolsNamespace, "remove");
+            }
+
+            document.Save(manifestPath);
+        }
+
+        private static IEnumerable<string> GeneratedResourceRoots(string unityLibraryPath)
+        {
+            string gradleRoot = Directory.GetParent(unityLibraryPath)?.FullName;
+            var candidates = new[]
+            {
+                Path.Combine(unityLibraryPath, "src", "main", "res"),
+                Path.Combine(unityLibraryPath, "launcher", "src", "main", "res"),
+                string.IsNullOrEmpty(gradleRoot)
+                    ? null
+                    : Path.Combine(gradleRoot, "launcher", "src", "main", "res")
+            };
+            var emitted = new HashSet<string>(StringComparer.Ordinal);
+            foreach (string candidate in candidates)
+            {
+                if (!string.IsNullOrEmpty(candidate)
+                    && Directory.Exists(candidate)
+                    && emitted.Add(candidate))
+                {
+                    yield return candidate;
+                }
             }
         }
 

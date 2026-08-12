@@ -335,6 +335,65 @@
     white-space: normal;
 }
 
+.baseball-training-celebration .baseball-modal__sheet {
+    border-width: 2px;
+    border-color: var(--baseball-positive);
+    transition-property: opacity;
+    transition-duration: 320ms;
+    transition-timing-function: ease-out;
+}
+
+.baseball-training-celebration--jackpot .baseball-modal__sheet {
+    border-color: var(--baseball-milestone);
+}
+
+.baseball-training-celebration--enter .baseball-modal__sheet {
+    opacity: 0;
+}
+
+.baseball-training-celebration--ready .baseball-modal__sheet,
+.baseball-training-celebration--reduced-motion .baseball-modal__sheet {
+    opacity: 1;
+}
+
+.baseball-training-celebration--reduced-motion .baseball-modal__sheet,
+.baseball-reduced-motion .baseball-training-celebration .baseball-modal__sheet {
+    transition-duration: 0s;
+}
+
+.baseball-training-celebration__growth {
+    color: var(--baseball-positive);
+    font-size: var(--baseball-font-section-title);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.baseball-training-celebration__jackpot {
+    color: var(--baseball-milestone);
+    font-size: var(--baseball-font-body);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.baseball-training-celebration__bloom {
+    margin-top: var(--baseball-space-2);
+    padding: var(--baseball-space-3);
+    border-width: var(--baseball-border-thin);
+    border-color: var(--baseball-milestone);
+    border-radius: var(--baseball-radius-medium);
+    color: var(--baseball-milestone);
+    background-color: var(--baseball-milestone-soft);
+    font-size: var(--baseball-font-body);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.baseball-training-celebration__bloom-art {
+    width: 100%;
+    height: 184px;
+    margin-bottom: var(--baseball-space-3);
+}
+
 .baseball-ability-gauge {
     width: 100%;
     min-height: 8px;

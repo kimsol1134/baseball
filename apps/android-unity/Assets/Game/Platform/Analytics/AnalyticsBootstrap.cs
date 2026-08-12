@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Baseball.Platform.Configuration;
 using Baseball.Platform.Identity;
 using UnityEngine;
@@ -20,13 +19,13 @@ namespace Baseball.Platform.Analytics
         /// Fail-open logging boundary that preserves privacy-validated events while SDK setup is
         /// awaiting Firebase dependency resolution.
         /// </summary>
-        public static void Log(
+        public static bool Log(
             AnalyticsEvent analyticsEvent,
             IReadOnlyDictionary<string, object> properties = null)
         {
             IReadOnlyDictionary<string, object> validated;
             try { validated = AnalyticsPrivacyGuard.ValidateAndCopy(properties); }
-            catch (Exception) { return; }
+            catch (Exception) { return false; }
 
             AnalyticsService service;
             lock (ServiceGate)
@@ -35,11 +34,20 @@ namespace Baseball.Platform.Analytics
                 if (service == null)
                 {
                     StartupBuffer.Enqueue(analyticsEvent, validated);
-                    return;
+                    return true;
                 }
             }
-            try { service.Log(analyticsEvent, validated); }
-            catch (Exception) { /* Analytics never blocks game progress. */ }
+            try
+            {
+                service.Log(analyticsEvent, validated);
+                return true;
+            }
+            catch (Exception)
+            {
+                // Analytics never blocks game progress, but callers coordinating a process-local
+                // exposure guard may release it and retry the SDK handoff on a later appearance.
+                return false;
+            }
         }
 
         public static void ResetIdentityAndOnceFlags(string anonymousInstallId)
@@ -54,6 +62,7 @@ namespace Baseball.Platform.Analytics
             }
             try { service?.ResetIdentityAndOnceFlags(anonymousInstallId); }
             catch (Exception) { /* Analytics reset remains fail-open after durable save reset. */ }
+            finally { AcknowledgePreparedResetCleanup(); }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -83,46 +92,54 @@ namespace Baseball.Platform.Analytics
             }
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            try
+            {
+                AnalyticsRuntimeConfiguration config = AnalyticsRuntimeConfiguration.Load();
+                var destinations = new List<IAnalyticsDestination>();
+                if (config.firebaseEnabled)
+                {
+                    var firebase = new FirebaseAnalyticsDestination();
+                    await firebase.InitializeAsync();
+                    if (firebase.IsReady) destinations.Add(firebase);
+                }
+                if (config.amplitudeEnabled && !string.IsNullOrWhiteSpace(config.amplitudeApiKey))
+                {
+                    destinations.Add(new AmplitudeAnalyticsDestination(config.amplitudeApiKey));
+                }
+                if (destinations.Count == 0) destinations.Add(new NoOpAnalyticsDestination());
 
-            AnalyticsRuntimeConfiguration config = AnalyticsRuntimeConfiguration.Load();
-            var destinations = new List<IAnalyticsDestination>();
-            if (config.firebaseEnabled)
-            {
-                var firebase = new FirebaseAnalyticsDestination();
-                await firebase.InitializeAsync();
-                if (firebase.IsReady) destinations.Add(firebase);
+                AnalyticsDistribution distribution = config.ResolveDistribution();
+                string installId = AnonymousInstallIdentity.GetOrCreate();
+                string noBackupDirectory = AnonymousInstallIdentity.ResolveNoBackupDirectory();
+                Func<string, IAnalyticsOnceStore> onceStoreForInstall = value =>
+                    new FileAnalyticsOnceStore(
+                        InstallScopedLocalStatePolicy.AnalyticsOncePath(noBackupDirectory, value));
+                var service = new AnalyticsService(
+                    new AnalyticsContext(UnityEngine.Application.version, GetBuildVersion(), distribution),
+                    destinations,
+                    onceStoreForInstall(installId),
+                    installId,
+                    onceStoreForInstall);
+                AnalyticsStartupEvent[] pending;
+                lock (ServiceGate)
+                {
+                    Service = service;
+                    pending = StartupBuffer.Drain();
+                }
+                foreach (AnalyticsStartupEvent item in pending)
+                {
+                    try { service.Log(item.Event, item.Properties); }
+                    catch (Exception) { /* One SDK failure must not stop draining later events. */ }
+                }
             }
-            else
+            catch (Exception)
             {
-                try { Firebase.Analytics.FirebaseAnalytics.SetAnalyticsCollectionEnabled(false); }
-                catch (Exception) { /* The disabled SDK must not affect offline startup. */ }
+                // Analytics initialization is fail-open. The candidate install namespace was
+                // already selected by the reset journal, so no previous receipt can leak through.
             }
-            if (config.amplitudeEnabled && !string.IsNullOrWhiteSpace(config.amplitudeApiKey))
+            finally
             {
-                destinations.Add(new AmplitudeAnalyticsDestination(config.amplitudeApiKey));
-            }
-            if (destinations.Count == 0) destinations.Add(new NoOpAnalyticsDestination());
-
-            AnalyticsDistribution distribution = ParseDistribution(config.distribution);
-#if UNITY_EDITOR
-            distribution = AnalyticsDistribution.Editor;
-#endif
-            string oncePath = Path.Combine(AnonymousInstallIdentity.ResolveNoBackupDirectory(), "analytics-once-v1.txt");
-            var service = new AnalyticsService(
-                new AnalyticsContext(UnityEngine.Application.version, GetBuildVersion(), distribution),
-                destinations,
-                new FileAnalyticsOnceStore(oncePath),
-                AnonymousInstallIdentity.GetOrCreate());
-            AnalyticsStartupEvent[] pending;
-            lock (ServiceGate)
-            {
-                Service = service;
-                pending = StartupBuffer.Drain();
-            }
-            foreach (AnalyticsStartupEvent item in pending)
-            {
-                try { service.Log(item.Event, item.Properties); }
-                catch (Exception) { /* One SDK failure must not stop draining later events. */ }
+                AcknowledgePreparedResetCleanup();
             }
         }
 
@@ -154,16 +171,13 @@ namespace Baseball.Platform.Analytics
 #endif
         }
 
-        private static AnalyticsDistribution ParseDistribution(string value)
+        private static void AcknowledgePreparedResetCleanup()
         {
-            switch ((value ?? string.Empty).Trim().ToLowerInvariant())
-            {
-                case "production": return AnalyticsDistribution.Production;
-                case "closed": return AnalyticsDistribution.Closed;
-                case "internal": return AnalyticsDistribution.Internal;
-                case "editor": return AnalyticsDistribution.Editor;
-                default: return AnalyticsDistribution.Development;
-            }
+            if (!AnonymousInstallIdentity.TryReconcilePreparedLocalState()) return;
+            if (!AnonymousInstallIdentity.MarkPreparedResetStep(
+                    InstallResetStep.AnalyticsCleaned)) return;
+            AnonymousInstallIdentity.TryCompletePreparedReset();
         }
+
     }
 }

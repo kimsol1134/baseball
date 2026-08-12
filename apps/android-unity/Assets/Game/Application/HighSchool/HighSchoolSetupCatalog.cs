@@ -202,6 +202,27 @@ namespace Baseball.Application.HighSchool
                 .Sum(value => value.Cost());
         }
 
+        /// <summary>
+        /// Mirrors the setup screen's Technique default without letting a blank payload ask Core
+        /// to distribute inherited points across the current lowest ratings. A valid selection is
+        /// irrelevant when no automatic inheritance is applied; an unknown wire is deliberately
+        /// preserved so Validate can reject it fail-closed.
+        /// </summary>
+        public static string ResolveInheritedSoulDomain(
+            string requestedDomain,
+            int inheritedSoul)
+        {
+            if (!string.IsNullOrWhiteSpace(requestedDomain) &&
+                !Contains(SoulDomains, requestedDomain))
+            {
+                return requestedDomain;
+            }
+            if (inheritedSoul <= 0) return null;
+            return string.IsNullOrWhiteSpace(requestedDomain)
+                ? "technique"
+                : requestedDomain;
+        }
+
         /// <summary>Returns null when valid, otherwise a stable Application error code.</summary>
         public static string Validate(
             StartHighSchoolCareerRequest request,

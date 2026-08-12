@@ -58,6 +58,19 @@ namespace Baseball.Platform.Analytics
                 default: throw new ArgumentOutOfRangeException(nameof(value), value, null);
             }
         }
+
+        public static AnalyticsDistribution ParseDistribution(string value)
+        {
+            switch ((value ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "editor": return AnalyticsDistribution.Editor;
+                case "development": return AnalyticsDistribution.Development;
+                case "internal": return AnalyticsDistribution.Internal;
+                case "closed": return AnalyticsDistribution.Closed;
+                case "production": return AnalyticsDistribution.Production;
+                default: return AnalyticsDistribution.Development;
+            }
+        }
     }
 
     public interface IAnalyticsDestination

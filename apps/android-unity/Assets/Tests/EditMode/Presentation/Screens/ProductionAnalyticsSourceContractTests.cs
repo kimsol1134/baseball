@@ -56,6 +56,9 @@ namespace Baseball.Presentation.Tests.Screens
             Assert.That(receipts, Does.Contain("[\"trainings\"]"));
             Assert.That(receipts, Does.Contain("\"season-\" + Math.Max"));
             Assert.That(receipts, Does.Contain("decisionId);"));
+            Assert.That(receipts, Does.Contain("CommandPayload(committedCommand)"));
+            Assert.That(receipts, Does.Not.Contain("GetChoice(\"pro_season_decision\")"));
+            Assert.That(runtime, Does.Contain("action.Id,\n                command,"));
             Assert.That(receipts, Does.Contain("ProRetirementAnalyticsPolicy.TryProject"));
             Assert.That(receipts, Does.Not.Contain("goto case \"finalize_high_school_legacy\""));
             Assert.That(receipts, Does.Contain("after?.Pro?.ProCareerId"));
@@ -140,12 +143,16 @@ namespace Baseball.Presentation.Tests.Screens
                 "apps/android-unity/Assets/Game/Presentation/Shell/ProductionAnalyticsReceipts.cs");
             string controller = Read(
                 "apps/android-unity/Assets/Game/Presentation/Shell/BaseballScreenControllerBase.cs");
+            string shellController = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/BaseballShellController.cs");
+            string analyticsBootstrap = Read(
+                "apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsBootstrap.cs");
             string archive = Read(
                 "apps/android-unity/Assets/Game/Presentation/Records/RecordsScreenController.cs");
             int routeStart = receipts.IndexOf(
                 "private async void ObserveRouteAnalytics", StringComparison.Ordinal);
             int exposureStart = receipts.IndexOf(
-                "public async void OnContentVisible", routeStart, StringComparison.Ordinal);
+                "public async Task<bool> OnContentVisibleAsync", routeStart, StringComparison.Ordinal);
             string routeObserver = receipts.Substring(routeStart, exposureStart - routeStart);
             string exposureObserver = receipts.Substring(exposureStart);
 
@@ -159,7 +166,17 @@ namespace Baseball.Presentation.Tests.Screens
                 Assert.That(exposureObserver, Does.Contain("AnalyticsEvent." + analyticsEvent), analyticsEvent);
             }
             Assert.That(controller, Does.Contain("ViewportExposureObserver"));
-            Assert.That(controller, Does.Contain("OnContentVisible(Route, contentId, instanceId)"));
+            Assert.That(controller, Does.Contain("OnContentVisibleAsync("));
+            Assert.That(shellController, Does.Contain("_contentExposure.TryBegin("));
+            Assert.That(shellController, Does.Contain("_contentExposure.Complete("));
+            Assert.That(shellController, Does.Contain("_contentExposure.Release("));
+            Assert.That(exposureObserver, Does.Contain("EmitExposureOnceAsync("));
+            Assert.That(exposureObserver, Does.Contain("EmitDurableOnceDetailedAsync("));
+            Assert.That(receipts, Does.Contain("_analyticsReceiptsAwaitingEnqueue"));
+            Assert.That(receipts, Does.Contain("if (SafeLog(analyticsEvent, properties))"));
+            Assert.That(analyticsBootstrap, Does.Contain("public static bool Log("));
+            Assert.That(analyticsBootstrap, Does.Contain("StartupBuffer.Enqueue(analyticsEvent, validated);"));
+            Assert.That(analyticsBootstrap, Does.Contain("return true;"));
             Assert.That(archive, Does.Contain("TrackContentExposure("));
             Assert.That(archive, Does.Not.Contain("?.OnLifeArchiveVisible(visibleLife)"));
         }
@@ -282,6 +299,57 @@ namespace Baseball.Presentation.Tests.Screens
             Assert.That(copy, Does.Not.Contain("\"daily."));
             Assert.That(copy, Does.Not.Contain("일일 도전"));
             Assert.That(reminder, Does.Not.Contain("AndroidReminderPlan Daily"));
+        }
+
+        [Test]
+        public void RebirthSetupUsesPersistedInheritanceAndChallengeDifficultyWithoutNoneChoices()
+        {
+            string setup = Read(
+                "apps/android-unity/Assets/Game/Presentation/Setup/SetupScreenController.cs");
+            string runtime = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+
+            Assert.That(setup, Does.Contain("AddReadOnlyMemories(host, memories, artworkLoader)"));
+            Assert.That(setup, Does.Contain("자동으로 이어집니다"));
+            Assert.That(setup, Does.Not.Contain("장착하지 않음"));
+            Assert.That(setup, Does.Not.Contain("WithNone(options.SignatureLegacies"));
+            Assert.That(setup, Does.Not.Contain("WithNone(options.SoulDomains"));
+            Assert.That(setup, Does.Contain("if (options.AutomaticSoul > 0)"));
+            int difficulty = setup.IndexOf(
+                "AddSingleChoice(host, navigator, \"난이도\"", StringComparison.Ordinal);
+            int challengeReturn = setup.IndexOf("if (challenge)", difficulty, StringComparison.Ordinal);
+            Assert.That(difficulty, Is.GreaterThanOrEqualTo(0));
+            Assert.That(challengeReturn, Is.GreaterThan(difficulty),
+                "challenge setup must render difficulty before hiding inheritance controls");
+
+            Assert.That(runtime, Does.Contain("_setupSoulDomain = \"technique\""));
+            Assert.That(runtime, Does.Contain("options.AutomaticSoul > 0 ? \"technique\" : string.Empty"));
+            Assert.That(runtime, Does.Contain("state.Meta?.EquippedSignatureLegacyId"));
+            Assert.That(runtime, Does.Contain("SetupOptions?.CarriedMemories?.ToArray()"));
+            Assert.That(runtime, Does.Not.Contain("_setupMemories"));
+            Assert.That(runtime, Does.Contain("challenge ? Array.Empty<string>() : SetupMemories"));
+            Assert.That(runtime, Does.Contain("challenge ? null : EmptyToNull(SetupSignatureLegacy)"));
+            Assert.That(runtime, Does.Not.Contain("challenge ? \"standard\" : _setupDifficulty"));
+            Assert.That(runtime, Does.Contain("_setupDraftLifecycle.Observe("));
+            Assert.That(runtime, Does.Contain("_seedInput = string.Empty;"));
+            Assert.That(runtime, Does.Contain("_seedValidationMessage = string.Empty;"));
+            Assert.That(runtime, Does.Contain("_setupDifficulty = \"standard\";"));
+            Assert.That(runtime, Does.Contain("_setupKarmas.Clear();"));
+            Assert.That(runtime, Does.Contain("_setupSoulBoosts.Clear();"));
+            Assert.That(runtime, Does.Contain("HighSchoolSetupCatalog.Regions.FirstOrDefault()?.Payload"));
+            Assert.That(runtime, Does.Contain("HighSchoolSetupCatalog.Presets.FirstOrDefault()?.Payload"));
+        }
+
+        [Test]
+        public void DirectProStartUsesAuthoritativeSeededTeamFactory()
+        {
+            string runtime = Read(
+                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            Assert.That(runtime, Does.Contain(
+                "new StartDirectProCommand(DirectProStartRequestFactory.Create("));
+            Assert.That(runtime, Does.Contain("state,\n                        _presetId,\n                        EffectivePlayerName()"));
+            Assert.That(runtime, Does.Not.Contain("ProCareerEngine.ProTeams[0]"));
+            Assert.That(runtime, Does.Not.Contain("new StartDirectProRequest("));
         }
 
         [Test]

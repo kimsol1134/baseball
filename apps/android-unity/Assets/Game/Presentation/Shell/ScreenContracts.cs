@@ -133,7 +133,9 @@ namespace Baseball.Presentation.Shell
             string detail = null,
             string effectSummary = null,
             bool isEnabled = true,
-            string disabledReason = null)
+            string disabledReason = null,
+            string artworkAddress = null,
+            string secondaryArtworkAddress = null)
         {
             Id = string.IsNullOrWhiteSpace(id) ? throw new ArgumentException("A choice ID is required.", nameof(id)) : id;
             Title = string.IsNullOrWhiteSpace(title) ? throw new ArgumentException("A choice title is required.", nameof(title)) : title;
@@ -142,6 +144,8 @@ namespace Baseball.Presentation.Shell
             EffectSummary = effectSummary ?? string.Empty;
             IsEnabled = isEnabled;
             DisabledReason = disabledReason ?? string.Empty;
+            ArtworkAddress = artworkAddress ?? string.Empty;
+            SecondaryArtworkAddress = secondaryArtworkAddress ?? string.Empty;
         }
 
         public string Id { get; }
@@ -151,6 +155,8 @@ namespace Baseball.Presentation.Shell
         public string EffectSummary { get; }
         public bool IsEnabled { get; }
         public string DisabledReason { get; }
+        public string ArtworkAddress { get; }
+        public string SecondaryArtworkAddress { get; }
     }
 
     public sealed class ScreenChoiceGroupViewModel
@@ -191,6 +197,8 @@ namespace Baseball.Presentation.Shell
         public bool ShowsBottomNavigation { get; }
         public string KeyArtAddress { get; }
         public IReadOnlyList<ScreenChoiceGroupViewModel> ChoiceGroups { get; }
+        public string PlayerPortraitAddress { get; }
+        public string PlayerPortraitLabel { get; }
 
         public BaseballScreenViewModel(
             ShellRoute route,
@@ -203,7 +211,9 @@ namespace Baseball.Presentation.Shell
             IReadOnlyList<ScreenActionViewModel> actions,
             bool showsBottomNavigation = true,
             string keyArtAddress = null,
-            IReadOnlyList<ScreenChoiceGroupViewModel> choiceGroups = null)
+            IReadOnlyList<ScreenChoiceGroupViewModel> choiceGroups = null,
+            string playerPortraitAddress = null,
+            string playerPortraitLabel = null)
         {
             Route = route;
             Feature = feature ?? string.Empty;
@@ -216,6 +226,8 @@ namespace Baseball.Presentation.Shell
             ShowsBottomNavigation = showsBottomNavigation;
             KeyArtAddress = keyArtAddress ?? string.Empty;
             ChoiceGroups = choiceGroups ?? Array.Empty<ScreenChoiceGroupViewModel>();
+            PlayerPortraitAddress = playerPortraitAddress ?? string.Empty;
+            PlayerPortraitLabel = playerPortraitLabel ?? string.Empty;
         }
     }
 
@@ -315,6 +327,23 @@ namespace Baseball.Presentation.Shell
         bool IsChoiceSelected(string group, string payload);
     }
 
+    /// <summary>Clears UI-only selections before leaving a screen without submitting them.</summary>
+    public interface IBaseballTransientDraftDiscard
+    {
+        void DiscardTransientDraft(ShellRoute route);
+    }
+
+    public interface IBaseballTrainingCelebrationSource
+    {
+        bool TryTakeTrainingCelebration(out TrainingCelebrationViewModel celebration);
+    }
+
+    /// <summary>Platform boundary for Android's explicit root double-back exit contract.</summary>
+    public interface IBaseballApplicationExit
+    {
+        void ExitApplication();
+    }
+
     public interface IBaseballShellSettings
     {
         bool AutoRelease { get; }
@@ -374,12 +403,16 @@ namespace Baseball.Presentation.Shell
     /// <summary>Reports a content card only after it enters the rendered screen viewport.</summary>
     public interface IBaseballContentExposure
     {
-        void OnContentVisible(ShellRoute route, string contentId, string instanceId);
+        Task<bool> OnContentVisibleAsync(
+            ShellRoute route,
+            string contentId,
+            string instanceId,
+            CancellationToken cancellationToken);
     }
 
     public interface IBaseballShellRouteObserver
     {
-        void OnRouteChanged(ShellRoute route, bool pitchStageLoaded);
+        void OnRouteChanged(ShellRoute route);
     }
 
     /// <summary>

@@ -16,18 +16,23 @@ namespace Baseball.Presentation.Pitch
             new Dictionary<string, AsyncOperationHandle<AudioClip>>(StringComparer.Ordinal);
         private readonly AudioSource _effectsSource;
         private readonly AudioSource _ambienceSource;
+        private readonly AudioSource _musicSource;
         private readonly AndroidAudioFocusService _audioFocus = new AndroidAudioFocusService();
         private readonly PitchAudioLifecycleRelay _lifecycle;
         private bool _sessionActive;
         private bool _appPaused;
         private bool _focusAllowsAudio;
         private bool _disposed;
+        private AudioClip _menuPadClip;
+        private AudioClip _milestoneClip;
+        private double _temporaryUiFocusReleaseAt;
 
         public AddressablePitchFeedbackBoundary(AndroidHapticsService haptics)
         {
             _haptics = haptics ?? throw new ArgumentNullException(nameof(haptics));
             var audioObject = new GameObject("Pitch Feedback Audio");
-            UnityEngine.Object.DontDestroyOnLoad(audioObject);
+            if (UnityEngine.Application.isPlaying)
+                UnityEngine.Object.DontDestroyOnLoad(audioObject);
             _effectsSource = audioObject.AddComponent<AudioSource>();
             _effectsSource.playOnAwake = false;
             _effectsSource.loop = false;
@@ -37,20 +42,48 @@ namespace Baseball.Presentation.Pitch
             _ambienceSource.loop = true;
             _ambienceSource.spatialBlend = 0f;
             _ambienceSource.volume = 0.28f;
+            _musicSource = audioObject.AddComponent<AudioSource>();
+            _musicSource.playOnAwake = false;
+            _musicSource.loop = true;
+            _musicSource.spatialBlend = 0f;
+            _musicSource.volume = 0.14f;
             _lifecycle = audioObject.AddComponent<PitchAudioLifecycleRelay>();
             _lifecycle.PauseChanged = OnApplicationPause;
             _lifecycle.TickRequested = TickAudioFocus;
         }
 
-        public bool SoundEnabled { get; set; } = true;
+        public bool SoundEnabled
+        {
+            get => _soundEnabled;
+            set
+            {
+                _soundEnabled = value;
+                if (!value)
+                {
+                    _effectsSource.Stop();
+                    _ambienceSource.Stop();
+                    ReleaseAudioFocusIfUnused();
+                }
+                else if (_sessionActive && !_appPaused && EnsureAudioFocus())
+                {
+                    PlayAmbience();
+                }
+            }
+        }
+        private bool _soundEnabled = true;
+
         public bool MusicEnabled
         {
             get => _musicEnabled;
             set
             {
                 _musicEnabled = value;
-                if (!value) _ambienceSource.Stop();
-                else if (_sessionActive && !_appPaused && _focusAllowsAudio) PlayAmbience();
+                if (!value)
+                {
+                    _musicSource.Stop();
+                    ReleaseAudioFocusIfUnused();
+                }
+                else if (!_appPaused && EnsureAudioFocus()) PlayMenuMusic();
             }
         }
         private bool _musicEnabled = true;
@@ -58,8 +91,9 @@ namespace Baseball.Presentation.Pitch
         public void OnSessionStarted()
         {
             _sessionActive = true;
-            _focusAllowsAudio = _audioFocus.Request();
-            if (_focusAllowsAudio && MusicEnabled) PlayAmbience();
+            _focusAllowsAudio = EnsureAudioFocus();
+            if (_focusAllowsAudio && SoundEnabled) PlayAmbience();
+            if (_focusAllowsAudio && MusicEnabled) PlayMenuMusic();
         }
 
         public void OnSessionEnded()
@@ -67,7 +101,11 @@ namespace Baseball.Presentation.Pitch
             _sessionActive = false;
             _effectsSource.Stop();
             _ambienceSource.Stop();
-            _audioFocus.Abandon();
+            if (!MusicEnabled)
+            {
+                _audioFocus.Abandon();
+                _focusAllowsAudio = false;
+            }
         }
 
         public void OnRelease(PitchHapticCue cue)
@@ -75,10 +113,23 @@ namespace Baseball.Presentation.Pitch
             if (cue != PitchHapticCue.None) _haptics.Pulse(HapticCue.PitchRelease);
         }
 
-        public void OnResult(PitchAudioCue audioCue, PitchHapticCue hapticCue)
+        public void OnResult(PitchPresentationSnapshot presentation)
         {
-            Pulse(hapticCue);
-            if (SoundEnabled && !_appPaused && _focusAllowsAudio) PlayEffect(Address(audioCue));
+            if (presentation == null) return;
+            Pulse(presentation.HapticCue);
+            if (!SoundEnabled || _appPaused || !_focusAllowsAudio) return;
+            PitchAudioSelection selection = PitchAudioSelectionPolicy.Select(presentation);
+            PlayEffect(selection.PrimaryAddress);
+            PlayEffect(selection.CrowdAddress);
+        }
+
+        public void PlayMilestone()
+        {
+            if (_disposed || !SoundEnabled || _appPaused || !EnsureAudioFocus()) return;
+            if (_milestoneClip == null) _milestoneClip = CreateMilestoneClip();
+            _effectsSource.PlayOneShot(_milestoneClip);
+            if (!MusicEnabled && !_sessionActive)
+                _temporaryUiFocusReleaseAt = AudioSettings.dspTime + 0.75d;
         }
 
         public void Dispose()
@@ -88,6 +139,18 @@ namespace Baseball.Presentation.Pitch
                 if (handle.IsValid()) Addressables.Release(handle);
             _clips.Clear();
             _audioFocus.Dispose();
+            if (_menuPadClip != null)
+            {
+                if (UnityEngine.Application.isPlaying) UnityEngine.Object.Destroy(_menuPadClip);
+                else UnityEngine.Object.DestroyImmediate(_menuPadClip);
+                _menuPadClip = null;
+            }
+            if (_milestoneClip != null)
+            {
+                if (UnityEngine.Application.isPlaying) UnityEngine.Object.Destroy(_milestoneClip);
+                else UnityEngine.Object.DestroyImmediate(_milestoneClip);
+                _milestoneClip = null;
+            }
             if (_effectsSource != null)
             {
                 if (UnityEngine.Application.isPlaying) UnityEngine.Object.Destroy(_effectsSource.gameObject);
@@ -120,7 +183,7 @@ namespace Baseball.Presentation.Pitch
         private async void PlayAmbience()
         {
             const string address = "baseball/audio/crowd-loop";
-            if (_disposed || !_sessionActive || !MusicEnabled) return;
+            if (_disposed || !_sessionActive || !SoundEnabled) return;
             try
             {
                 if (!_clips.TryGetValue(address, out AsyncOperationHandle<AudioClip> handle))
@@ -129,7 +192,7 @@ namespace Baseball.Presentation.Pitch
                     _clips.Add(address, handle);
                 }
                 AudioClip clip = await handle.Task;
-                if (_disposed || !_sessionActive || !MusicEnabled || _appPaused || !_focusAllowsAudio ||
+                if (_disposed || !_sessionActive || !SoundEnabled || _appPaused || !_focusAllowsAudio ||
                     handle.Status != AsyncOperationStatus.Succeeded || clip == null) return;
                 _ambienceSource.clip = clip;
                 if (!_ambienceSource.isPlaying) _ambienceSource.Play();
@@ -138,6 +201,28 @@ namespace Baseball.Presentation.Pitch
             {
                 // Ambience is optional and must fail open to the pitch UI.
             }
+        }
+
+        private void PlayMenuMusic()
+        {
+            if (_disposed || !MusicEnabled || _appPaused || !_focusAllowsAudio) return;
+            if (_menuPadClip == null) _menuPadClip = CreateMenuPadClip();
+            _musicSource.clip = _menuPadClip;
+            if (!_musicSource.isPlaying) _musicSource.Play();
+        }
+
+        private bool EnsureAudioFocus()
+        {
+            if (_focusAllowsAudio) return true;
+            _focusAllowsAudio = _audioFocus.Request();
+            return _focusAllowsAudio;
+        }
+
+        private void ReleaseAudioFocusIfUnused()
+        {
+            if (MusicEnabled || _sessionActive && SoundEnabled) return;
+            _audioFocus.Abandon();
+            _focusAllowsAudio = false;
         }
 
         private void Pulse(PitchHapticCue cue)
@@ -158,16 +243,26 @@ namespace Baseball.Presentation.Pitch
             {
                 _effectsSource.Stop();
                 _ambienceSource.Stop();
+                _musicSource.Stop();
                 _audioFocus.Abandon();
                 _focusAllowsAudio = false;
                 return;
             }
-            _focusAllowsAudio = !_sessionActive || _audioFocus.Request();
-            if (_sessionActive && _focusAllowsAudio && MusicEnabled) PlayAmbience();
+            _focusAllowsAudio = (MusicEnabled || _sessionActive && SoundEnabled) && _audioFocus.Request();
+            if (_sessionActive && _focusAllowsAudio && SoundEnabled) PlayAmbience();
+            if (_focusAllowsAudio && MusicEnabled) PlayMenuMusic();
         }
 
         private void TickAudioFocus()
         {
+            if (_temporaryUiFocusReleaseAt > 0d &&
+                AudioSettings.dspTime >= _temporaryUiFocusReleaseAt &&
+                !MusicEnabled && !_sessionActive)
+            {
+                _temporaryUiFocusReleaseAt = 0d;
+                _audioFocus.Abandon();
+                _focusAllowsAudio = false;
+            }
             if (!_audioFocus.TryConsume(out BaseballAudioFocusChange change)) return;
             switch (change)
             {
@@ -175,35 +270,70 @@ namespace Baseball.Presentation.Pitch
                     _focusAllowsAudio = true;
                     _effectsSource.volume = 1f;
                     _ambienceSource.volume = 0.28f;
-                    if (_sessionActive && !_appPaused && MusicEnabled) PlayAmbience();
+                    _musicSource.volume = 0.14f;
+                    if (_sessionActive && !_appPaused && SoundEnabled) PlayAmbience();
+                    if (!_appPaused && MusicEnabled) PlayMenuMusic();
                     break;
                 case BaseballAudioFocusChange.Duck:
                     _focusAllowsAudio = true;
                     _effectsSource.volume = 0.25f;
                     _ambienceSource.volume = 0.08f;
+                    _musicSource.volume = 0.04f;
                     break;
                 case BaseballAudioFocusChange.Loss:
                 case BaseballAudioFocusChange.LossTransient:
                     _focusAllowsAudio = false;
                     _effectsSource.Stop();
                     _ambienceSource.Stop();
+                    _musicSource.Stop();
                     break;
             }
         }
 
-        private static string Address(PitchAudioCue cue)
+        private static AudioClip CreateMenuPadClip()
         {
-            switch (cue)
+            const int sampleRate = 22050;
+            const int seconds = 4;
+            const int channels = 2;
+            int frames = sampleRate * seconds;
+            var samples = new float[frames * channels];
+            for (var frame = 0; frame < frames; frame++)
             {
-                case PitchAudioCue.GloveCatch: return "baseball/audio/glove-catch";
-                case PitchAudioCue.SwingMiss: return "baseball/audio/swing-miss";
-                case PitchAudioCue.UmpireStrike: return "baseball/audio/umpire-strike";
-                case PitchAudioCue.UmpireStrikeout: return "baseball/audio/umpire-strikeout";
-                case PitchAudioCue.Foul: return "baseball/audio/bat-foul";
-                case PitchAudioCue.WeakContact: return "baseball/audio/bat-contact-weak";
-                case PitchAudioCue.HardContact: return "baseball/audio/bat-contact-hard";
-                default: return string.Empty;
+                double t = frame / (double)sampleRate;
+                double breathe = 0.78 + 0.12 * Math.Sin(2d * Math.PI * 0.25d * t);
+                double left = Math.Sin(2d * Math.PI * 110d * t) * 0.55 +
+                    Math.Sin(2d * Math.PI * 165d * t) * 0.28 +
+                    Math.Sin(2d * Math.PI * 220d * t) * 0.12;
+                double right = Math.Sin(2d * Math.PI * 110d * t) * 0.52 +
+                    Math.Sin(2d * Math.PI * 165d * t + 0.08) * 0.30 +
+                    Math.Sin(2d * Math.PI * 220d * t + 0.04) * 0.13;
+                samples[frame * channels] = (float)(left * breathe * 0.12);
+                samples[frame * channels + 1] = (float)(right * breathe * 0.12);
             }
+            AudioClip clip = AudioClip.Create("Baseball Menu Pad", frames, channels, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        private static AudioClip CreateMilestoneClip()
+        {
+            const int sampleRate = 22050;
+            const int channels = 2;
+            int frames = sampleRate / 2;
+            var samples = new float[frames * channels];
+            for (var frame = 0; frame < frames; frame++)
+            {
+                double t = frame / (double)sampleRate;
+                double envelope = Math.Exp(-5.5d * t);
+                double voice = Math.Sin(2d * Math.PI * 660d * t) * 0.65d +
+                    Math.Sin(2d * Math.PI * 990d * t) * 0.24d;
+                float value = (float)(voice * envelope * 0.16d);
+                samples[frame * channels] = value;
+                samples[frame * channels + 1] = value;
+            }
+            AudioClip clip = AudioClip.Create("Baseball Milestone", frames, channels, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
         }
     }
 

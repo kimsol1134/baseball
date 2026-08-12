@@ -576,7 +576,9 @@ namespace Baseball.Application.HighSchool
             int? metricAfter,
             bool opportunityHit,
             bool jackpot,
-            string targetPitch = null)
+            string targetPitch = null,
+            string bloomedAbility = null,
+            string bloomedGrade = null)
         {
             Number = number;
             Focus = focus;
@@ -589,6 +591,8 @@ namespace Baseball.Application.HighSchool
             OpportunityHit = opportunityHit;
             Jackpot = jackpot;
             TargetPitch = targetPitch;
+            BloomedAbility = bloomedAbility;
+            BloomedGrade = bloomedGrade;
         }
 
         public int Number { get; }
@@ -602,6 +606,10 @@ namespace Baseball.Application.HighSchool
         public bool OpportunityHit { get; }
         public bool Jackpot { get; }
         public string TargetPitch { get; }
+        /// <summary>Stable TalentAbility wire captured by Core when a ceiling blooms.</summary>
+        public string BloomedAbility { get; }
+        /// <summary>Stable TalentGrade wire captured with BloomedAbility.</summary>
+        public string BloomedGrade { get; }
     }
 
     public sealed class TrainingBlockResultReadModel
@@ -615,7 +623,9 @@ namespace Baseball.Application.HighSchool
             string stopReason,
             int growth,
             int fatigueChange,
-            IReadOnlyList<TrainingResultReadModel> sessions = null)
+            IReadOnlyList<TrainingResultReadModel> sessions = null,
+            string bloomedAbility = null,
+            string bloomedGrade = null)
         {
             MaximumSessions = maximumSessions;
             CompletedSessions = completedSessions;
@@ -626,6 +636,8 @@ namespace Baseball.Application.HighSchool
             Growth = growth;
             FatigueChange = fatigueChange;
             Sessions = (sessions ?? Array.Empty<TrainingResultReadModel>()).ToArray();
+            BloomedAbility = bloomedAbility;
+            BloomedGrade = bloomedGrade;
         }
 
         public int MaximumSessions { get; }
@@ -637,6 +649,67 @@ namespace Baseball.Application.HighSchool
         public int Growth { get; }
         public int FatigueChange { get; }
         public IReadOnlyList<TrainingResultReadModel> Sessions { get; }
+        /// <summary>The first Core-reported bloom in this bounded block, if any.</summary>
+        public string BloomedAbility { get; }
+        public string BloomedGrade { get; }
+    }
+
+    /// <summary>
+    /// Core-calculated growth outlook for one exact focus/intensity payload pair. Presentation
+    /// selects a row; it does not reproduce fatigue, opportunity, talent, or career-wind rules.
+    /// </summary>
+    public sealed class TrainingOutlookReadModel
+    {
+        public TrainingOutlookReadModel(
+            string focusId,
+            string intensityId,
+            string outlookId,
+            string title,
+            string summary)
+        {
+            FocusId = focusId;
+            IntensityId = intensityId;
+            OutlookId = outlookId;
+            Title = title;
+            Summary = summary;
+        }
+
+        public string FocusId { get; }
+        public string IntensityId { get; }
+        public string OutlookId { get; }
+        public string Title { get; }
+        public string Summary { get; }
+    }
+
+    public static class HighSchoolTrainingOutlookProjection
+    {
+        /// <summary>
+        /// Returns the saved Core projection only when both supplied payloads are currently
+        /// enabled choices. Null is the fail-closed result for stale, blank, or illegal payloads.
+        /// </summary>
+        public static TrainingOutlookReadModel Resolve(
+            HighSchoolCareerReadModel career,
+            string focusPayload,
+            string intensityPayload)
+        {
+            if (career == null || career.Phase != HighSchoolPhase.Training ||
+                string.IsNullOrWhiteSpace(focusPayload) ||
+                string.IsNullOrWhiteSpace(intensityPayload))
+            {
+                return null;
+            }
+            var focusAllowed = career.TrainingFocusChoices.Any(value =>
+                value != null && value.Enabled &&
+                string.Equals(value.Payload, focusPayload, StringComparison.Ordinal));
+            var intensityAllowed = career.TrainingIntensityChoices.Any(value =>
+                value != null && value.Enabled &&
+                string.Equals(value.Payload, intensityPayload, StringComparison.Ordinal));
+            if (!focusAllowed || !intensityAllowed) return null;
+            return career.TrainingOutlooks.FirstOrDefault(value =>
+                value != null &&
+                string.Equals(value.FocusId, focusPayload, StringComparison.Ordinal) &&
+                string.Equals(value.IntensityId, intensityPayload, StringComparison.Ordinal));
+        }
     }
 
     public static class HighSchoolTrainingActionPayload
@@ -762,7 +835,8 @@ namespace Baseball.Application.HighSchool
             int maximumTrainingBlockSessions = HighSchoolTrainingActionPayload.MaximumBlockSessions,
             IReadOnlyList<SignatureLegacyReadModel> frozenSignatureLegacyCandidates = null,
             SignatureLegacyReadModel selectedSignatureLegacy = null,
-            HighSchoolLifeDetailReadModel lifeDetail = null)
+            HighSchoolLifeDetailReadModel lifeDetail = null,
+            IReadOnlyList<TrainingOutlookReadModel> trainingOutlooks = null)
         {
             CareerId = careerId;
             LifeNumber = lifeNumber;
@@ -829,6 +903,7 @@ namespace Baseball.Application.HighSchool
                 (frozenSignatureLegacyCandidates ?? Array.Empty<SignatureLegacyReadModel>()).ToArray();
             SelectedSignatureLegacy = selectedSignatureLegacy;
             LifeDetail = lifeDetail;
+            TrainingOutlooks = (trainingOutlooks ?? Array.Empty<TrainingOutlookReadModel>()).ToArray();
         }
 
         public string CareerId { get; }
@@ -905,6 +980,7 @@ namespace Baseball.Application.HighSchool
         public IReadOnlyList<SignatureLegacyReadModel> FrozenSignatureLegacyCandidates { get; }
         public SignatureLegacyReadModel SelectedSignatureLegacy { get; }
         public HighSchoolLifeDetailReadModel LifeDetail { get; }
+        public IReadOnlyList<TrainingOutlookReadModel> TrainingOutlooks { get; }
     }
 
     public sealed class StartHighSchoolCareerRequest

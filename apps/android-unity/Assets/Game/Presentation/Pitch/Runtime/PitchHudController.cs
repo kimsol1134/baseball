@@ -30,17 +30,28 @@ namespace Baseball.Presentation.Pitch
         private VisualElement _aimMarker;
         private VisualElement _meterFill;
         private VisualElement _releaseSlot;
+        private VisualElement _abandonSlot;
         private VisualElement _resultSkipSlot;
         private Label _inningLabel;
         private Label _countLabel;
         private Label _batterLabel;
         private Label _recommendationLabel;
+        private Label _situationDetailLabel;
+        private Label _batterDetailLabel;
+        private Label _scoutingDetailLabel;
+        private Label _rivalDetailLabel;
+        private Label _pitcherDetailLabel;
         private Label _tutorialCoachLabel;
         private Label _releaseLabel;
         private Label _presentingLabel;
         private Label _resultTitle;
         private Label _resultDetail;
         private Label _resultStats;
+        private VisualElement _postgameSummary;
+        private Label _postgameAnalysis;
+        private Label _postgameGrowth;
+        private VisualElement _postgameLog;
+        private Label _postgameStatus;
         private SegmentedChoice _intentChoice;
         private SegmentedChoice _intensityChoice;
         private BaseballThemeController _theme;
@@ -51,12 +62,24 @@ namespace Baseball.Presentation.Pitch
         private BaseballAccessibilityMetadata _batterAccessibility;
         private BaseballAccessibilityMetadata _aimAccessibility;
         private BaseballAccessibilityMetadata _recommendationAccessibility;
+        private BaseballAccessibilityMetadata _situationDetailAccessibility;
+        private BaseballAccessibilityMetadata _batterDetailAccessibility;
+        private BaseballAccessibilityMetadata _scoutingDetailAccessibility;
+        private BaseballAccessibilityMetadata _rivalDetailAccessibility;
+        private BaseballAccessibilityMetadata _pitcherDetailAccessibility;
         private BaseballAccessibilityMetadata _resultAccessibility;
         private Button _finishButton;
         private Button _releaseButton;
         private Button _catcherSignButton;
+        private Button _backButton;
+        private Button _abandonButton;
+        private Label _exitStatusLabel;
+        private ConfirmationDialog _exitConfirmation;
+        private ConfirmationDialog _abandonConfirmation;
         private string _committedMetricFeedback = string.Empty;
         private bool _synchronizingChoices;
+        private bool _exitBusy;
+        private bool _postgameVisible;
         private bool _disposed;
 
         public PitchHudController(
@@ -78,21 +101,87 @@ namespace Baseball.Presentation.Pitch
 
         public event Action SkipRequested;
         public event Action ExitRequested;
+        public event Action SuspendRequested;
         public event Action AbortRequested;
+
+        public void SetExitStatus(bool busy, string message)
+        {
+            _exitBusy = busy;
+            _backButton?.SetEnabled(!busy);
+            _abandonButton?.SetEnabled(!busy);
+            if (_exitStatusLabel != null)
+            {
+                _exitStatusLabel.text = message ?? string.Empty;
+                _exitStatusLabel.style.display = string.IsNullOrWhiteSpace(message)
+                    ? DisplayStyle.None
+                    : DisplayStyle.Flex;
+            }
+            if (!string.IsNullOrWhiteSpace(message)) _accessibility?.Announce(message);
+        }
 
         public void SetPersistenceStatus(bool busy, bool succeeded, string message)
         {
             if (_finishButton == null) return;
             _finishButton.SetEnabled(!busy);
-            _finishButton.text = busy ? "경기 결과 저장 중…" : succeeded ? "승부 마무리" : "저장 다시 시도";
+            _finishButton.text = busy ? "경기 결과 저장 중…" : _postgameVisible
+                ? succeeded ? "결과 확인하고 계속" : "결과 저장 다시 시도"
+                : succeeded ? "승부 마무리" : "저장 다시 시도";
             if (!busy && !succeeded)
                 Require<VisualElement>("pitch-result-action").style.display = DisplayStyle.Flex;
             if (!string.IsNullOrWhiteSpace(message))
             {
-                _resultDetail.text = message;
-                _resultAccessibility.Value = message;
+                if (_postgameVisible)
+                    _postgameStatus.text = message;
+                else
+                    _resultDetail.text = message;
+                _resultAccessibility.Value = _postgameVisible
+                    ? _resultDetail.text + ". " + message
+                    : message;
                 _accessibility?.Announce(message);
             }
+        }
+
+        public void ShowPostgameSummary(PitchSessionPostgameSnapshot snapshot)
+        {
+            if (snapshot?.Report == null) return;
+            PitchPostgameContent content = PitchPostgameProjection.Project(
+                snapshot.Report,
+                snapshot.PitchLog);
+            _postgameVisible = true;
+            _resultTitle.text = "이닝 정산";
+            _resultDetail.text = content.Summary;
+            _resultStats.text = string.Empty;
+            _postgameAnalysis.text = content.Analysis;
+            _postgameGrowth.text = content.Growth;
+            _postgameStatus.text = "결과를 확인한 뒤 저장하고 계속해 주세요.";
+            _postgameLog.Clear();
+            foreach (PitchPostgameLine line in content.Pitches)
+            {
+                var row = new VisualElement();
+                row.AddToClassList("pitch-postgame-log__row");
+                var title = new Label(line.Title);
+                title.AddToClassList("pitch-postgame-log__title");
+                row.Add(title);
+                var detail = new Label(line.Detail);
+                detail.AddToClassList("pitch-postgame-log__detail");
+                row.Add(detail);
+                BaseballAccessibility.Configure(
+                    row,
+                    "pitch-postgame-log-" + _postgameLog.childCount,
+                    line.Title,
+                    AccessibilityRole.StaticText,
+                    hint: line.Detail,
+                    focusable: true);
+                _postgameLog.Add(row);
+            }
+            _postgameSummary.style.display = DisplayStyle.Flex;
+            _resultSkipSlot.style.display = DisplayStyle.None;
+            Require<VisualElement>("pitch-result-action").style.display = DisplayStyle.Flex;
+            _finishButton.text = "결과 저장/계속";
+            _resultAccessibility.Label = "이닝 정산";
+            _resultAccessibility.Value = content.Summary + ". " + content.Analysis + ". " + content.Growth;
+            RebuildAccessibility();
+            _accessibility.FocusScreen(_resultTitle);
         }
 
         public void SetCommittedMetricFeedback(PitchCommitMetricEvidence evidence)
@@ -125,33 +214,116 @@ namespace Baseball.Presentation.Pitch
 
         public bool TryHandleBack()
         {
-            if (_tutorial)
+            if (_exitBusy)
             {
-                _accessibility?.Announce("첫 불펜은 승부를 마친 뒤 학교 선택으로 이어집니다.");
+                _accessibility?.Announce("경기 진행을 저장하고 있습니다.");
                 return true;
             }
-            switch (_presenter.Phase)
+            switch (PitchBackPolicy.Resolve(
+                _presenter.Phase,
+                _tutorial,
+                _exitConfirmation != null || _abandonConfirmation != null))
             {
-                case PitchPlayPhase.Timing:
+                case PitchBackAction.BlockTutorial:
+                    _accessibility?.Announce("첫 불펜은 승부를 마친 뒤 학교 선택으로 이어집니다.");
+                    break;
+                case PitchBackAction.CloseConfirmation:
+                    CloseActiveConfirmation();
+                    _accessibility?.Announce("경기를 계속합니다.");
+                    break;
+                case PitchBackAction.CancelRelease:
                     _presenter.CancelRelease();
-                    return true;
-                case PitchPlayPhase.Presenting:
-                case PitchPlayPhase.Result:
+                    break;
+                case PitchBackAction.SkipPresentation:
                     SkipRequested?.Invoke();
-                    return true;
-                case PitchPlayPhase.Completed:
+                    break;
+                case PitchBackAction.CompleteResult:
                     ExitRequested?.Invoke();
-                    return true;
-                default:
-                    AbortRequested?.Invoke();
-                    return true;
+                    break;
+                case PitchBackAction.ShowExitConfirmation:
+                    ShowExitConfirmation();
+                    break;
             }
+            return true;
+        }
+
+        private void ShowExitConfirmation()
+        {
+            if (_exitConfirmation != null) return;
+            const string stableId = "pitch-exit-confirmation";
+            _exitConfirmation = new ConfirmationDialog(
+                "진행 중인 경기에서 나갈까요?",
+                "경기를 나가면 현재 타자 시작 지점에서 이어집니다.",
+                "경기 나가기",
+                "계속 던지기",
+                stableId,
+                () =>
+                {
+                    CloseExitConfirmation();
+                    SuspendRequested?.Invoke();
+                },
+                CloseExitConfirmation,
+                false);
+            _root.Add(_exitConfirmation);
+            _exitConfirmation.BringToFront();
+            RebuildAccessibility();
+            _exitConfirmation.schedule.Execute(_exitConfirmation.FocusFirstControl);
+            _accessibility?.Announce("진행 중인 경기에서 나갈까요? 경기를 나가면 현재 타자 시작 지점에서 이어집니다.");
+        }
+
+        private void CloseExitConfirmation()
+        {
+            if (_exitConfirmation == null) return;
+            _exitConfirmation.RemoveFromHierarchy();
+            _exitConfirmation = null;
+            RebuildAccessibility();
+        }
+
+        private void ShowAbandonConfirmation()
+        {
+            if (_tutorial || _exitBusy || _abandonConfirmation != null) return;
+            CloseExitConfirmation();
+            const string stableId = "pitch-abandon-confirmation";
+            _abandonConfirmation = new ConfirmationDialog(
+                "이 이닝을 포기할까요?",
+                "저장된 경기 진행과 이번 이닝 기록이 삭제됩니다. 이어 던질 수 없습니다.",
+                "이닝 포기",
+                "계속 던지기",
+                stableId,
+                () =>
+                {
+                    CloseAbandonConfirmation();
+                    AbortRequested?.Invoke();
+                },
+                CloseAbandonConfirmation,
+                true);
+            _root.Add(_abandonConfirmation);
+            _abandonConfirmation.BringToFront();
+            RebuildAccessibility();
+            _abandonConfirmation.schedule.Execute(_abandonConfirmation.FocusFirstControl);
+            _accessibility?.Announce("이 이닝을 포기할까요? 저장된 경기 진행과 이번 이닝 기록이 삭제됩니다.");
+        }
+
+        private void CloseAbandonConfirmation()
+        {
+            if (_abandonConfirmation == null) return;
+            _abandonConfirmation.RemoveFromHierarchy();
+            _abandonConfirmation = null;
+            RebuildAccessibility();
+        }
+
+        private void CloseActiveConfirmation()
+        {
+            if (_exitConfirmation != null) CloseExitConfirmation();
+            else CloseAbandonConfirmation();
         }
 
         public void Dispose()
         {
             if (_disposed) return;
             _presenter.ViewChanged -= Render;
+            CloseExitConfirmation();
+            CloseAbandonConfirmation();
             _root.UnregisterCallback<NavigationCancelEvent>(OnNavigationCancel);
             _root.UnregisterCallback<BlurEvent>(OnRootBlur);
             _root.UnregisterCallback<DetachFromPanelEvent>(OnDetachFromPanel);
@@ -181,28 +353,43 @@ namespace Baseball.Presentation.Pitch
             _aimMarker = Require<VisualElement>("pitch-aim-marker");
             _meterFill = Require<VisualElement>("pitch-release-meter-fill");
             _releaseSlot = Require<VisualElement>("pitch-release-slot");
+            _abandonSlot = Require<VisualElement>("pitch-abandon-slot");
             _resultSkipSlot = Require<VisualElement>("pitch-result-skip-slot");
             _inningLabel = Require<Label>("pitch-inning");
             _countLabel = Require<Label>("pitch-count");
             _batterLabel = Require<Label>("pitch-batter");
             _recommendationLabel = Require<Label>("pitch-recommendation");
+            _situationDetailLabel = Require<Label>("pitch-situation-detail");
+            _batterDetailLabel = Require<Label>("pitch-batter-detail");
+            _scoutingDetailLabel = Require<Label>("pitch-scouting-detail");
+            _rivalDetailLabel = Require<Label>("pitch-rival-detail");
+            _pitcherDetailLabel = Require<Label>("pitch-pitcher-detail");
             _tutorialCoachLabel = Require<Label>("pitch-tutorial-coach");
             _releaseLabel = Require<Label>("pitch-release-label");
             _presentingLabel = Require<Label>("pitch-presenting-label");
             _resultTitle = Require<Label>("pitch-result-title");
             _resultDetail = Require<Label>("pitch-result-detail");
             _resultStats = Require<Label>("pitch-result-stats");
+            _postgameSummary = Require<VisualElement>("pitch-postgame-summary");
+            _postgameAnalysis = Require<Label>("pitch-postgame-analysis");
+            _postgameGrowth = Require<Label>("pitch-postgame-growth");
+            _postgameLog = Require<VisualElement>("pitch-postgame-log");
+            _postgameStatus = Require<Label>("pitch-postgame-status");
 
             VisualElement backSlot = Require<VisualElement>("pitch-back-slot");
             if (_tutorial)
                 backSlot.style.display = DisplayStyle.None;
             else
-                backSlot.Add(new BackButton("pitch-back", () => TryHandleBack(), "투구 화면 닫기"));
+            {
+                _backButton = new BackButton("pitch-back", () => TryHandleBack(), "투구 화면 닫기");
+                backSlot.Add(_backButton);
+            }
             BuildPitchTypeButtons();
             BuildZoneGrid();
             BuildChoices();
             BuildCatcherSignControl();
             BuildReleaseControl();
+            BuildAbandonControl();
             BuildPresentationControls();
             ConfigureAimSurface();
             ConfigureStaticAccessibility();
@@ -354,6 +541,24 @@ namespace Baseball.Presentation.Pitch
             Require<VisualElement>("pitch-catcher-sign-slot").Add(_catcherSignButton);
         }
 
+        private void BuildAbandonControl()
+        {
+            _exitStatusLabel = new Label();
+            _exitStatusLabel.AddToClassList("pitch-exit-status");
+            _exitStatusLabel.style.display = DisplayStyle.None;
+            _abandonSlot.Add(_exitStatusLabel);
+            if (_tutorial)
+            {
+                _abandonSlot.style.display = DisplayStyle.None;
+                return;
+            }
+            _abandonButton = new DestructiveButton(
+                "이닝 포기",
+                "pitch-abandon-inning",
+                ShowAbandonConfirmation);
+            _abandonSlot.Add(_abandonButton);
+        }
+
         private void BuildPresentationControls()
         {
             Require<VisualElement>("pitch-skip-slot").Add(new SecondaryButton(
@@ -410,6 +615,16 @@ namespace Baseball.Presentation.Pitch
                 "포수 제안",
                 AccessibilityRole.StaticText,
                 focusable: true);
+            _situationDetailAccessibility = ConfigureDetailAccessibility(
+                _situationDetailLabel, "pitch-situation-detail", "경기 상황");
+            _batterDetailAccessibility = ConfigureDetailAccessibility(
+                _batterDetailLabel, "pitch-batter-detail", "타자 정보");
+            _scoutingDetailAccessibility = ConfigureDetailAccessibility(
+                _scoutingDetailLabel, "pitch-scouting-detail", "스카우팅 정보");
+            _rivalDetailAccessibility = ConfigureDetailAccessibility(
+                _rivalDetailLabel, "pitch-rival-detail", "라이벌 대응");
+            _pitcherDetailAccessibility = ConfigureDetailAccessibility(
+                _pitcherDetailLabel, "pitch-pitcher-detail", "투수 육성 능력");
             _aimAccessibility = BaseballAccessibility.Configure(
                 _aimSurface,
                 "pitch-continuous-aim",
@@ -436,16 +651,17 @@ namespace Baseball.Presentation.Pitch
             _inningAccessibility.Value = _inningLabel.text;
             _countAccessibility.Value = _countLabel.text;
             _batterAccessibility.Label = _batterLabel.text;
+            PitchHudContent content = PitchHudProjection.Project(state);
+            SetDetail(_situationDetailLabel, _situationDetailAccessibility, "경기 상황 · " + content.Situation);
+            SetDetail(_batterDetailLabel, _batterDetailAccessibility, "타자 · " + content.Batter);
+            SetDetail(_scoutingDetailLabel, _scoutingDetailAccessibility, "스카우팅 · " + content.Scouting);
+            SetDetail(_rivalDetailLabel, _rivalDetailAccessibility, content.Rival);
+            SetDetail(_pitcherDetailLabel, _pitcherDetailAccessibility, "육성 능력 · " + content.Pitcher);
             _tutorialCoachLabel.style.display = _tutorial ? DisplayStyle.Flex : DisplayStyle.None;
             if (_tutorial)
                 _tutorialCoachLabel.text = PitchTutorialCoachCopy.For(state.Context.PitchNumber, strikes);
-            if (state.Preparation != null)
-            {
-                CatcherRecommendationSnapshot recommendation = state.Preparation.PrimaryRecommendation;
-                _recommendationLabel.text = "포수 제안 · " + PitchKoreanCopy.PitchTypeName(recommendation.Call.PitchType) +
-                    " · " + PitchKoreanCopy.ZoneName(recommendation.Call.Zone) + " · 확신 " + recommendation.Confidence / 10 + "%";
-                _recommendationAccessibility.Label = _recommendationLabel.text;
-            }
+            _recommendationLabel.text = content.Recommendation;
+            _recommendationAccessibility.Label = _recommendationLabel.text;
             if (_catcherSignButton != null)
             {
                 _catcherSignButton.SetEnabled(state.Phase == PitchPlayPhase.Selecting && state.HoldsCall);
@@ -474,6 +690,8 @@ namespace Baseball.Presentation.Pitch
             _timingPanel.style.display = state.Phase == PitchPlayPhase.Timing ? DisplayStyle.Flex : DisplayStyle.None;
             _releaseSlot.style.display = state.Phase == PitchPlayPhase.Selecting || state.Phase == PitchPlayPhase.Timing
                 ? DisplayStyle.Flex : DisplayStyle.None;
+            _abandonSlot.style.display = !_tutorial && state.Phase == PitchPlayPhase.Selecting
+                ? DisplayStyle.Flex : DisplayStyle.None;
             _presentingPanel.style.display = state.Phase == PitchPlayPhase.Presenting ? DisplayStyle.Flex : DisplayStyle.None;
             _resultPanel.style.display = state.Phase == PitchPlayPhase.Result || state.Phase == PitchPlayPhase.Completed
                 ? DisplayStyle.Flex : DisplayStyle.None;
@@ -481,6 +699,7 @@ namespace Baseball.Presentation.Pitch
             SetAccessibilityActive(_inputPanel, state.Phase == PitchPlayPhase.Selecting);
             SetAccessibilityActive(_timingPanel, state.Phase == PitchPlayPhase.Timing);
             SetAccessibilityActive(_releaseSlot, state.Phase == PitchPlayPhase.Selecting || state.Phase == PitchPlayPhase.Timing);
+            SetAccessibilityActive(_abandonSlot, !_tutorial && state.Phase == PitchPlayPhase.Selecting);
             SetAccessibilityActive(_presentingPanel, state.Phase == PitchPlayPhase.Presenting);
             SetAccessibilityActive(_resultPanel, state.Phase == PitchPlayPhase.Result || state.Phase == PitchPlayPhase.Completed);
             SetAccessibilityActive(_resultSkipSlot, state.Phase == PitchPlayPhase.Result);
@@ -489,7 +708,8 @@ namespace Baseball.Presentation.Pitch
             {
                 _presentingLabel.text = PitchKoreanCopy.PitchTypeName(state.PitchType) + "가 포수 미트로 향합니다";
             }
-            if (result != null && (state.Phase == PitchPlayPhase.Result || state.Phase == PitchPlayPhase.Completed))
+            if (!_postgameVisible && result != null &&
+                (state.Phase == PitchPlayPhase.Result || state.Phase == PitchPlayPhase.Completed))
             {
                 _resultTitle.text = PitchKoreanCopy.OutcomeName(result.Outcome);
                 _resultDetail.text = result.ShortFeedback + "\n" + result.DetailFeedback +
@@ -533,6 +753,26 @@ namespace Baseball.Presentation.Pitch
         {
             if (BaseballAccessibility.TryGet(element, out BaseballAccessibilityMetadata metadata)) metadata.IsActive = active;
             foreach (VisualElement child in element.Children()) SetAccessibilityActive(child, active);
+        }
+
+        private static BaseballAccessibilityMetadata ConfigureDetailAccessibility(
+            Label label,
+            string stableId,
+            string accessibilityLabel) =>
+            BaseballAccessibility.Configure(
+                label,
+                stableId,
+                accessibilityLabel,
+                AccessibilityRole.StaticText,
+                focusable: true);
+
+        private static void SetDetail(
+            Label label,
+            BaseballAccessibilityMetadata accessibility,
+            string value)
+        {
+            label.text = value;
+            accessibility.Value = value;
         }
 
         private void OnNavigationCancel(NavigationCancelEvent evt)

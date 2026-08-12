@@ -34,6 +34,21 @@
     background-color: var(--baseball-surface-raised);
 }
 
+.pitch-context-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.pitch-context-item {
+    width: 50%;
+    min-width: 0;
+    padding: 6px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
 .pitch-top-card {
     min-height: 64px;
     flex-direction: row;
@@ -196,9 +211,21 @@
 }
 
 .pitch-release-slot,
+.pitch-abandon-slot,
 .pitch-skip-slot,
 .pitch-result-action {
     margin-top: 12px;
+}
+
+.pitch-abandon-slot {
+    align-items: stretch;
+}
+
+.pitch-exit-status {
+    margin-bottom: 8px;
+    color: var(--baseball-information);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
 }
 
 .pitch-release-control {
@@ -250,6 +277,44 @@
     color: var(--baseball-positive);
 }
 
+.pitch-postgame-summary {
+    display: none;
+    margin-top: 12px;
+}
+
+.pitch-postgame-copy,
+.pitch-postgame-log__detail,
+.pitch-postgame-status {
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.pitch-postgame-copy,
+.pitch-postgame-log__row,
+.pitch-postgame-status {
+    margin-top: 8px;
+}
+
+.pitch-postgame-log__row {
+    padding: 8px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 8px;
+    background-color: var(--baseball-surface);
+}
+
+.pitch-postgame-log__title {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-caption);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.pitch-postgame-status {
+    color: var(--baseball-information);
+}
+
 .baseball-high-contrast .pitch-panel,
 .baseball-high-contrast .pitch-top-card,
 .baseball-high-contrast .pitch-recommendation,
@@ -265,6 +330,11 @@
 .baseball-font-scale-160 .pitch-zone-row,
 .baseball-font-scale-200 .pitch-zone-row {
     height: 82px;
+}
+
+.baseball-font-scale-160 .pitch-context-item,
+.baseball-font-scale-200 .pitch-context-item {
+    width: 100%;
 }
 
 .baseball-reduced-motion .pitch-release-meter-fill {

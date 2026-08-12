@@ -43,7 +43,7 @@ namespace Baseball.Presentation.Pitch
         void OnSessionStarted();
         void OnSessionEnded();
         void OnRelease(PitchHapticCue cue);
-        void OnResult(PitchAudioCue audioCue, PitchHapticCue hapticCue);
+        void OnResult(PitchPresentationSnapshot presentation);
     }
 
     public sealed class NullPitchFeedbackBoundary : IPitchFeedbackBoundary
@@ -53,7 +53,7 @@ namespace Baseball.Presentation.Pitch
         public void OnSessionStarted() { }
         public void OnSessionEnded() { }
         public void OnRelease(PitchHapticCue cue) { }
-        public void OnResult(PitchAudioCue audioCue, PitchHapticCue hapticCue) { }
+        public void OnResult(PitchPresentationSnapshot presentation) { }
     }
 
     public sealed class PitchPlayRequest
@@ -152,7 +152,11 @@ namespace Baseball.Presentation.Pitch
             PitchKernelResult result,
             PlateAppearanceContext context,
             BatterSnapshot batter,
-            bool holdsCall = false)
+            bool holdsCall = false,
+            PitcherSnapshot pitcher = null,
+            BatterScoutingSnapshot scouting = null,
+            RivalMemorySnapshot rivalMemory = null,
+            GameStateSnapshot gameState = null)
         {
             Phase = phase;
             Preparation = preparation;
@@ -167,6 +171,10 @@ namespace Baseball.Presentation.Pitch
             Context = context;
             Batter = batter;
             HoldsCall = holdsCall;
+            Pitcher = pitcher;
+            Scouting = scouting;
+            RivalMemory = rivalMemory;
+            GameState = gameState;
         }
 
         public PitchPlayPhase Phase { get; }
@@ -182,5 +190,9 @@ namespace Baseball.Presentation.Pitch
         public PlateAppearanceContext Context { get; }
         public BatterSnapshot Batter { get; }
         public bool HoldsCall { get; }
+        public PitcherSnapshot Pitcher { get; }
+        public BatterScoutingSnapshot Scouting { get; }
+        public RivalMemorySnapshot RivalMemory { get; }
+        public GameStateSnapshot GameState { get; }
     }
 }

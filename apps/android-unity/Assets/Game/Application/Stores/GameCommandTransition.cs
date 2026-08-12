@@ -6,6 +6,8 @@ using Baseball.Application.HighSchool;
 using Baseball.Application.Meta;
 using Baseball.Application.Persistence;
 using Baseball.Application.Pro;
+using Baseball.Core.Domain;
+using Baseball.Core.Pitching;
 
 namespace Baseball.Application.Stores
 {
@@ -78,6 +80,8 @@ namespace Baseball.Application.Stores
                         return CompletePitch(current, value, commandId);
                     case AcknowledgePitchResultCommand value:
                         return AcknowledgePitch(current, value, commandId);
+                    case SuspendPitchSessionCommand value:
+                        return SuspendPitch(current, value, commandId);
                     case AbandonPitchSessionCommand value:
                         return AbandonPitch(current, value, commandId);
                     case ConfigureWeeklyProgramCommand value:
@@ -158,16 +162,17 @@ namespace Baseball.Application.Stores
         {
             if (current.Stage != ApplicationStage.Setup || current.HighSchool != null || current.Pro != null)
                 return Failure("high_school.start_not_available");
-            if (string.IsNullOrWhiteSpace(command.Request.Seed) ||
-                string.IsNullOrWhiteSpace(command.Request.PresetId) ||
-                string.IsNullOrWhiteSpace(command.Request.PlayerName) ||
-                command.Request.LifeNumber != current.Meta.LifeNumber)
+            var request = ResolvePersistedSetupDefaults(command.Request, current.Meta);
+            if (string.IsNullOrWhiteSpace(request.Seed) ||
+                string.IsNullOrWhiteSpace(request.PresetId) ||
+                string.IsNullOrWhiteSpace(request.PlayerName) ||
+                request.LifeNumber != current.Meta.LifeNumber)
             {
                 return Failure("high_school.start_invalid");
             }
 
             var setupError = HighSchoolSetupCatalog.Validate(
-                command.Request,
+                request,
                 current.Meta.SoulBalance,
                 current.Meta.AutomaticSoulEarned,
                 current.Meta.InheritedMemories,
@@ -175,31 +180,31 @@ namespace Baseball.Application.Stores
                 HighSchoolSetupCatalog.IsRebirth(current.Meta));
             if (setupError != null) return Failure(setupError);
 
-            var started = _highSchool.Start(command.Request);
+            var started = _highSchool.Start(request);
             if (!ValidStartedHighSchool(
                     started,
-                    command.Request.ChallengeLifeNumber ?? current.Meta.LifeNumber) ||
-                started.IsChallengeRun != command.Request.IsChallenge)
+                    request.ChallengeLifeNumber ?? current.Meta.LifeNumber) ||
+                started.IsChallengeRun != request.IsChallenge)
                 return Failure("high_school.port_invalid");
             var meta = current.Meta;
-            if (!command.Request.IsChallenge)
+            if (!request.IsChallenge)
             {
                 var achievements = AchievementRules.Unlock(
                     meta.Achievements,
                     AchievementRules.FromLifeNumber(started.LifeNumber));
                 var lastSetup = new HighSchoolLastSetupState(
-                    command.Request.PresetId,
-                    command.Request.PlayerName,
-                    command.Request.Region,
-                    command.Request.Difficulty,
-                    command.Request.Karmas,
-                    command.Request.InheritedSoulDomain);
+                    request.PresetId,
+                    request.PlayerName,
+                    request.Region,
+                    request.Difficulty,
+                    request.Karmas,
+                    request.InheritedSoulDomain);
                 meta = meta.With(
                     soulBalance: meta.SoulBalance -
-                        HighSchoolSetupCatalog.SoulBoostCost(command.Request.SoulBoosts),
+                        HighSchoolSetupCatalog.SoulBoostCost(request.SoulBoosts),
                     achievements: achievements,
                     lastHighSchoolSetup: lastSetup,
-                    equippedSignatureLegacyId: command.Request.SignatureLegacyId,
+                    equippedSignatureLegacyId: request.SignatureLegacyId,
                     clearReturnPlan: true);
             }
             return Success(current.Commit(
@@ -210,6 +215,45 @@ namespace Baseball.Application.Stores
                 meta: meta,
                 clearPitchResume: true,
                 clearPendingPitchCompletion: true));
+        }
+
+        private static StartHighSchoolCareerRequest ResolvePersistedSetupDefaults(
+            StartHighSchoolCareerRequest request,
+            MetaProgressState meta)
+        {
+            if (request == null || meta == null || request.IsChallenge) return request;
+            var memories = request.InheritedMemories.Count == 0
+                ? meta.InheritedMemories
+                : request.InheritedMemories;
+            var signatureLegacyId = string.IsNullOrWhiteSpace(request.SignatureLegacyId)
+                ? meta.EquippedSignatureLegacyId
+                : request.SignatureLegacyId;
+            var soulDomain = HighSchoolSetupCatalog.ResolveInheritedSoulDomain(
+                request.InheritedSoulDomain,
+                request.InheritedSoul);
+            if (ReferenceEquals(memories, request.InheritedMemories) &&
+                string.Equals(
+                    signatureLegacyId,
+                    request.SignatureLegacyId,
+                    StringComparison.Ordinal) &&
+                string.Equals(soulDomain, request.InheritedSoulDomain, StringComparison.Ordinal))
+            {
+                return request;
+            }
+            return new StartHighSchoolCareerRequest(
+                request.Seed,
+                request.PresetId,
+                request.PlayerName,
+                request.Region,
+                request.LifeNumber,
+                memories,
+                request.InheritedSoul,
+                request.Karmas,
+                soulDomain,
+                request.SoulBoosts,
+                request.Difficulty,
+                signatureLegacyId,
+                request.ChallengeLifeNumber);
         }
 
         private TransitionResult<GameSaveAggregate> StartQuickRebirth(
@@ -717,7 +761,8 @@ namespace Baseball.Application.Stores
                 command.AccumulatedReport ?? resume.AccumulatedReport,
                 consumedPitchIds: resume.ConsumedPitchIds,
                 awaitingCompletion: resume.AwaitingCompletion,
-                metrics: resume.Metrics);
+                metrics: resume.Metrics,
+                pitchLog: resume.PitchLog);
             return Success(current.Commit(commandId, pitchResume: updated));
         }
 
@@ -744,6 +789,7 @@ namespace Baseball.Application.Stores
             }
             if (command.BatterIndex != resume.CompletedBatters ||
                 resume.ConsumedPitchIds.Contains(command.PitchId, StringComparer.Ordinal) ||
+                resume.ConsumedPitchIds.Count >= PitchLogEntryState.MaximumEntries ||
                 resume.Scenario?.MaximumPitches is int maximumPitches &&
                     resume.ConsumedPitchIds.Count >= maximumPitches ||
                 string.IsNullOrWhiteSpace(command.PitchId) ||
@@ -771,7 +817,8 @@ namespace Baseball.Application.Stores
                 command.SequencePitch,
                 command.SequenceTag,
                 command.Delivery,
-                abilityMomentType);
+                abilityMomentType,
+                PitchLogEntry(command, resume.ConsumedPitchIds.Count + 1));
             var updated = new PitchResumeState(
                 resume.GameId,
                 resume.CareerKind,
@@ -786,7 +833,8 @@ namespace Baseball.Application.Stores
                 committed,
                 resume.ConsumedPitchIds,
                 resume.AwaitingCompletion,
-                resume.Metrics);
+                resume.Metrics,
+                resume.PitchLog);
             return Success(current.Commit(commandId, pitchResume: updated));
         }
 
@@ -827,6 +875,14 @@ namespace Baseball.Application.Stores
             var consumedIds = resume.ConsumedPitchIds
                 .Concat(new[] { committed.PitchId })
                 .ToArray();
+            var pitchLog = committed.PitchLogEntry == null
+                ? resume.PitchLog
+                : resume.PitchLog.Concat(new[] { committed.PitchLogEntry }).ToArray();
+            if (pitchLog.Count > PitchLogEntryState.MaximumEntries ||
+                resume.Scenario?.MaximumPitches is int logMaximum && pitchLog.Count > logMaximum)
+            {
+                return Failure("pitch.log_limit");
+            }
             var terminal = IsTerminalPitchSession(
                 resume,
                 command.CompletedBatters,
@@ -848,7 +904,8 @@ namespace Baseball.Application.Stores
                 command.AccumulatedReport ?? resume.AccumulatedReport,
                 consumedPitchIds: consumedIds,
                 awaitingCompletion: command.SessionCompleted || terminal,
-                metrics: nextMetrics);
+                metrics: nextMetrics,
+                pitchLog: pitchLog);
             return Success(current.Commit(commandId, pitchResume: updated));
         }
 
@@ -1003,7 +1060,8 @@ namespace Baseball.Application.Stores
                 resume.CareerKind,
                 resume.CareerId,
                 report,
-                command.CompletedAt.ToUnixTimeSeconds());
+                command.CompletedAt.ToUnixTimeSeconds(),
+                resume.PitchLog);
             return Success(current.Commit(
                 commandId,
                 stage: stage,
@@ -1049,6 +1107,64 @@ namespace Baseball.Application.Stores
             if (current.PitchResume.CareerKind == PitchCareerKind.Tutorial)
                 return Failure("pitch.tutorial_cannot_abandon");
             return Success(current.Commit(commandId, clearPitchResume: true));
+        }
+
+        private static TransitionResult<GameSaveAggregate> SuspendPitch(
+            GameSaveAggregate current,
+            SuspendPitchSessionCommand command,
+            string commandId)
+        {
+            var resume = current.PitchResume;
+            if (resume == null ||
+                !string.Equals(resume.GameId, command.GameId, StringComparison.Ordinal))
+            {
+                return Failure("pitch.session_mismatch");
+            }
+            if (resume.CareerKind == PitchCareerKind.Daily)
+                return Failure("daily.retired");
+            if (resume.CommittedPitch != null)
+                return Failure("pitch.committed_result_pending");
+            if (resume.AwaitingCompletion)
+                return Failure("pitch.completion_required");
+            if (resume.CareerKind == PitchCareerKind.Tutorial)
+                return Failure("pitch.tutorial_cannot_suspend");
+
+            ApplicationStage safeStage;
+            if (resume.CareerKind == PitchCareerKind.HighSchool)
+            {
+                if (current.HighSchool == null ||
+                    !string.Equals(
+                        current.HighSchool.CareerId,
+                        resume.CareerId,
+                        StringComparison.Ordinal))
+                {
+                    return Failure("pitch.career_mismatch");
+                }
+                safeStage = StageFor(current.HighSchool);
+            }
+            else if (resume.CareerKind == PitchCareerKind.Pro)
+            {
+                if (current.Pro == null ||
+                    !string.Equals(
+                        current.Pro.ProCareerId,
+                        resume.CareerId,
+                        StringComparison.Ordinal))
+                {
+                    return Failure("pitch.career_mismatch");
+                }
+                safeStage = StageFor(current.Pro);
+            }
+            else
+            {
+                return Failure("pitch.kind_invalid");
+            }
+
+            // Reuse the exact immutable resume object. The command receipt/revision is the durable
+            // acknowledgement that navigation may leave PitchHandoff without consuming a seed.
+            return Success(current.Commit(
+                commandId,
+                stage: safeStage,
+                pitchResume: resume));
         }
 
         private static bool ValidAccumulatedReport(
@@ -1203,6 +1319,35 @@ namespace Baseball.Application.Stores
             {
                 return false;
             }
+        }
+
+        private static PitchLogEntryState PitchLogEntry(
+            CommitPitchResultCommand command,
+            int pitchNumber)
+        {
+            var evidence = command.AbilityMomentEvidence;
+            var call = evidence.Call;
+            var execution = evidence.Execution;
+            return new PitchLogEntryState(
+                command.PitchId,
+                command.BatterIndex,
+                pitchNumber,
+                call.PitchType.Value(),
+                call.Zone.Row,
+                call.Zone.Column,
+                call.ZoneIntent.Value(),
+                call.Intensity.Value(),
+                execution.TargetX,
+                execution.TargetY,
+                execution.ActualX,
+                execution.ActualY,
+                execution.VelocityTenthsKph,
+                execution.HorizontalBreakTenthsCm,
+                execution.VerticalBreakTenthsCm,
+                execution.ExecutionQuality,
+                evidence.Outcome.Value(),
+                evidence.RecommendationAccepted,
+                command.CommittedAt.ToUnixTimeMilliseconds());
         }
 
         private static bool SameContext(
@@ -1864,7 +2009,10 @@ namespace Baseball.Application.Stores
                 clearReturnPlan: true);
             return Success(current.Commit(
                 commandId,
-                stage: ApplicationStage.BetweenLives,
+                // A custom rebirth must be immediately startable after the durable boundary.
+                // BetweenLives remains a readable legacy-save stage, but new commands commit the
+                // same Setup state the editor UI is about to submit.
+                stage: ApplicationStage.Setup,
                 clearHighSchool: true,
                 clearPro: true,
                 meta: meta,
@@ -2082,7 +2230,8 @@ namespace Baseball.Application.Stores
                 value.MaximumTrainingBlockSessions,
                 value.FrozenSignatureLegacyCandidates,
                 value.SelectedSignatureLegacy,
-                value.LifeDetail);
+                value.LifeDetail,
+                value.TrainingOutlooks);
         }
 
         private static HighSchoolCareerReadModel CopySignatureLegacyState(
@@ -2159,7 +2308,8 @@ namespace Baseball.Application.Stores
                 value.MaximumTrainingBlockSessions,
                 candidates,
                 selected,
-                value.LifeDetail);
+                value.LifeDetail,
+                value.TrainingOutlooks);
         }
 
         private static HighSchoolCareerReadModel CopyTutorialState(
@@ -2231,7 +2381,8 @@ namespace Baseball.Application.Stores
                 maximumTrainingBlockSessions: value.MaximumTrainingBlockSessions,
                 frozenSignatureLegacyCandidates: value.FrozenSignatureLegacyCandidates,
                 selectedSignatureLegacy: value.SelectedSignatureLegacy,
-                lifeDetail: value.LifeDetail);
+                lifeDetail: value.LifeDetail,
+                trainingOutlooks: value.TrainingOutlooks);
         }
 
         private static bool ValidStartedHighSchool(HighSchoolCareerReadModel value, int lifeNumber)

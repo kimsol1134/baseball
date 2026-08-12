@@ -20,7 +20,7 @@ namespace Baseball.Presentation.Records
         {
             if (viewModel.Route == ShellRoute.LifeCard)
             {
-                BuildLifeCard(host, viewModel);
+                BuildLifeCard(host, viewModel, navigator);
                 return;
             }
             if (viewModel.Route == ShellRoute.LifeArchive)
@@ -108,6 +108,15 @@ namespace Baseball.Presentation.Records
             host.Add(listSection);
 
             ScreenSectionViewModel selected = lives[selectedIndex];
+            if (!string.IsNullOrWhiteSpace(viewModel.PlayerPortraitAddress))
+            {
+                host.Add(new AddressableContentImage(
+                    viewModel.PlayerPortraitAddress,
+                    viewModel.PlayerPortraitLabel,
+                    "screen-lifearchive-selected-player-portrait",
+                    (navigator as IBaseballVisualAssets)?.VisualAssetLoader,
+                    compact: true));
+            }
             VisualElement detail = BuildArchiveSection(selected, viewModel.Route);
             detail.AddToClassList("life-archive-detail");
             host.Add(detail);
@@ -209,7 +218,10 @@ namespace Baseball.Presentation.Records
             }
         }
 
-        private static void BuildLifeCard(VisualElement host, BaseballScreenViewModel viewModel)
+        private static void BuildLifeCard(
+            VisualElement host,
+            BaseballScreenViewModel viewModel,
+            IShellNavigator navigator)
         {
             host.style.display = DisplayStyle.Flex;
             var card = new VisualElement { name = "life-card-capture" };
@@ -220,6 +232,17 @@ namespace Baseball.Presentation.Records
 
             var content = new VisualElement();
             content.AddToClassList("life-card-capture__content");
+            if (!string.IsNullOrWhiteSpace(viewModel.PlayerPortraitAddress))
+            {
+                var portrait = new AddressableContentImage(
+                    viewModel.PlayerPortraitAddress,
+                    viewModel.PlayerPortraitLabel,
+                    "screen-lifecard-player-portrait",
+                    (navigator as IBaseballVisualAssets)?.VisualAssetLoader,
+                    compact: true);
+                portrait.AddToClassList("life-card-capture__portrait");
+                content.Add(portrait);
+            }
             var eyebrow = new Label("회차 선수 카드");
             eyebrow.AddToClassList("baseball-eyebrow");
             content.Add(eyebrow);
@@ -233,24 +256,50 @@ namespace Baseball.Presentation.Records
                 content.Add(lead);
             }
 
-            var stats = new VisualElement();
-            stats.AddToClassList("life-card-capture__stats");
-            string[] rowIds = { "player", "fastball", "control", "stamina", "games", "strikeouts", "runs", "legacy_value" };
-            foreach (string rowId in rowIds)
+            var sections = new VisualElement();
+            sections.AddToClassList("life-card-capture__sections");
+            foreach (ScreenSectionViewModel section in viewModel.Sections)
             {
-                ScreenRowViewModel row = FindRow(viewModel.Sections, rowId);
-                if (row == null || string.IsNullOrWhiteSpace(row.Value)) continue;
-                var stat = new VisualElement();
-                stat.AddToClassList("life-card-capture__stat");
-                var label = new Label(row.Label);
-                label.AddToClassList("life-card-capture__stat-label");
-                var value = new Label(row.Value);
-                value.AddToClassList("life-card-capture__stat-value");
-                stat.Add(label);
-                stat.Add(value);
-                stats.Add(stat);
+                var sectionRoot = new VisualElement();
+                sectionRoot.AddToClassList("life-card-capture__section");
+                var heading = new Label(section.Heading);
+                heading.AddToClassList("life-card-capture__section-title");
+                sectionRoot.Add(heading);
+                var rows = new VisualElement();
+                rows.AddToClassList("life-card-capture__rows");
+                foreach (ScreenRowViewModel row in section.Rows)
+                {
+                    var rowRoot = new VisualElement();
+                    rowRoot.AddToClassList("life-card-capture__row");
+                    if (IsNarrativeRow(row.Id))
+                        rowRoot.AddToClassList("life-card-capture__row--narrative");
+                    var label = new Label(row.Label);
+                    label.AddToClassList("life-card-capture__row-label");
+                    rowRoot.Add(label);
+                    if (!string.IsNullOrWhiteSpace(row.Value))
+                    {
+                        var value = new Label(row.Value);
+                        value.AddToClassList("life-card-capture__row-value");
+                        rowRoot.Add(value);
+                    }
+                    if (!string.IsNullOrWhiteSpace(row.Detail))
+                    {
+                        var detail = new Label(row.Detail);
+                        detail.AddToClassList("life-card-capture__row-detail");
+                        rowRoot.Add(detail);
+                    }
+                    BaseballAccessibility.Configure(
+                        rowRoot,
+                        StableId(viewModel.Route, "card-row-" + row.Id),
+                        RowSummary(row),
+                        AccessibilityRole.StaticText,
+                        focusable: true);
+                    rows.Add(rowRoot);
+                }
+                sectionRoot.Add(rows);
+                sections.Add(sectionRoot);
             }
-            content.Add(stats);
+            content.Add(sections);
             var footer = new Label("야구 못하면 또 환생함");
             footer.AddToClassList("life-card-capture__footer");
             content.Add(footer);
@@ -264,14 +313,12 @@ namespace Baseball.Presentation.Records
                 focusable: true);
         }
 
-        private static ScreenRowViewModel FindRow(
-            IReadOnlyList<ScreenSectionViewModel> sections,
-            string rowId)
+        private static bool IsNarrativeRow(string rowId)
         {
-            foreach (ScreenSectionViewModel section in sections)
-                foreach (ScreenRowViewModel row in section.Rows)
-                    if (string.Equals(row.Id, rowId, StringComparison.Ordinal)) return row;
-            return null;
+            return rowId != null &&
+                (rowId.Contains("chronicle") || rowId.Contains("signature") ||
+                 rowId.Contains("people") || rowId.Contains("challenge") ||
+                 rowId.Contains("player"));
         }
     }
 }

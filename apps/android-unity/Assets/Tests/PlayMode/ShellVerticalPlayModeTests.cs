@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Linq;
 using System.Reflection;
 using Baseball.Presentation.Common;
 using Baseball.Presentation.Shell;
@@ -45,26 +46,35 @@ namespace Baseball.PlayMode.Tests
             var documentRoot = new VisualElement();
             using (var controller = new BaseballShellController(documentRoot, readModel, copy))
             {
-                ShellRoute[] routes = (ShellRoute[])Enum.GetValues(typeof(ShellRoute));
-                Assert.That(routes, Has.Length.EqualTo(23));
-                Assert.That(readModel.Routes, Has.Count.EqualTo(routes.Length));
+                ShellRoute[] routes = ((ShellRoute[])Enum.GetValues(typeof(ShellRoute)))
+                    .Where(route => route != ShellRoute.Daily)
+                    .ToArray();
+                Assert.That(routes, Has.Length.EqualTo(22));
+                Assert.That(readModel.Routes.Count, Is.EqualTo(routes.Length));
 
                 var pitchHandoffs = 0;
                 controller.PitchRequested += _ => pitchHandoffs++;
                 foreach (ShellRoute route in routes)
                 {
                     controller.Navigate(route);
-                    Label title = documentRoot.Q<Label>("screen-title");
+                    Label title = documentRoot.Q<Label>(className: "baseball-display");
                     Assert.That(controller.CurrentRoute, Is.EqualTo(route), route.ToString());
                     Assert.That(title, Is.Not.Null, route + " 화면 제목이 생성되지 않았습니다.");
                     Assert.That(title.text, Is.Not.Empty, route + " 화면 제목이 비었습니다.");
                 }
                 Assert.That(pitchHandoffs, Is.EqualTo(1));
 
+                controller.Navigate(ShellRoute.Daily);
+                Assert.That(controller.CurrentRoute, Is.EqualTo(ShellRoute.Opening),
+                    "legacy Daily navigation must normalize without constructing a retired screen");
+                Assert.Throws<ArgumentOutOfRangeException>(() => readModel.Read(ShellRoute.Daily));
+
                 controller.Navigate(ShellRoute.Setup);
                 controller.Navigate(ShellRoute.Training);
                 controller.HandleHardwareBack();
                 Assert.That(controller.CurrentRoute, Is.EqualTo(ShellRoute.Setup));
+                controller.HandleHardwareBack();
+                Assert.That(controller.CurrentRoute, Is.EqualTo(ShellRoute.Opening));
                 controller.HandleHardwareBack();
                 Assert.That(controller.CurrentRoute, Is.EqualTo(ShellRoute.Settings));
             }

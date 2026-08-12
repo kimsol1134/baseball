@@ -21,8 +21,13 @@ namespace Baseball.Editor
         private const string ApplicationId = "com.solkim.baseball.android";
         private const string BootScenePath = "Assets/Game/Bootstrap/00_Bootstrap.unity";
         private const string InternalQaDefine = "BASEBALL_INTERNAL_QA";
+        private const string PitchStageShaderPath =
+            "Assets/Game/Presentation/Pitch/Resources/PitchStageUnlit.shader";
+        private const string PitchStageShaderName = "Baseball/PitchStageUnlit";
         private const string DefaultVersion = "1.0.0";
         private const int DefaultVersionCode = 1;
+
+        internal static bool IsLocalVerificationPostprocessActive { get; private set; }
 
         [MenuItem("Baseball/Build/Android/Release Candidate")]
         public static void BuildReleaseCandidate()
@@ -54,6 +59,8 @@ namespace Baseball.Editor
             string version = ReadVersion();
             int versionCode = ReadVersionCode();
             ConfigurePlayer();
+            EnsurePitchStageShaderAlwaysIncluded();
+            ValidatePitchStageShaderResource();
             AssetDatabase.SaveAssets();
 
             GitState git = ReadGitState(repositoryRoot);
@@ -132,6 +139,7 @@ namespace Baseball.Editor
                     extraScriptingDefines = extraScriptingDefines
                 };
 
+                IsLocalVerificationPostprocessActive = kind == BuildKind.LocalVerification;
                 BuildReport report = BuildPipeline.BuildPlayer(options);
                 if (report.summary.result != BuildResult.Succeeded || !File.Exists(bundlePath) ||
                     new FileInfo(bundlePath).Length == 0 || !HasZipSignature(bundlePath))
@@ -178,6 +186,7 @@ namespace Baseball.Editor
             }
             finally
             {
+                IsLocalVerificationPostprocessActive = false;
                 if (customSigningConfigured)
                 {
                     ClearSigningSecrets();
@@ -265,6 +274,57 @@ namespace Baseball.Editor
             EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
             EditorUserBuildSettings.androidBuildType = AndroidBuildType.Release;
             EditorUserBuildSettings.exportAsGoogleAndroidProject = false;
+        }
+
+        private static void EnsurePitchStageShaderAlwaysIncluded()
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(PitchStageShaderPath);
+            if (shader == null ||
+                !string.Equals(shader.name, PitchStageShaderName, StringComparison.Ordinal))
+            {
+                throw new BuildFailedException(
+                    "The checked-in Resources pitch-stage shader is missing or invalid; " +
+                    "the player build would be vulnerable to shader stripping.");
+            }
+
+            SerializedObject graphics = LoadGraphicsSettings();
+            SerializedProperty included = graphics.FindProperty("m_AlwaysIncludedShaders");
+            if (included == null || !included.isArray)
+                throw new BuildFailedException("GraphicsSettings Always Included Shaders could not be read.");
+            for (int index = 0; index < included.arraySize; index++)
+                if (ReferenceEquals(included.GetArrayElementAtIndex(index).objectReferenceValue, shader))
+                    return;
+            included.InsertArrayElementAtIndex(included.arraySize);
+            included.GetArrayElementAtIndex(included.arraySize - 1).objectReferenceValue = shader;
+            graphics.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ValidatePitchStageShaderResource()
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(PitchStageShaderPath);
+            SerializedProperty included = LoadGraphicsSettings().FindProperty("m_AlwaysIncludedShaders");
+            bool preserved = included != null && included.isArray &&
+                Enumerable.Range(0, included.arraySize).Any(index => ReferenceEquals(
+                    included.GetArrayElementAtIndex(index).objectReferenceValue,
+                    shader));
+            if (shader == null ||
+                !string.Equals(shader.name, PitchStageShaderName, StringComparison.Ordinal) ||
+                !preserved)
+            {
+                throw new BuildFailedException(
+                    "The checked-in pitch-stage shader is not present in GraphicsSettings.alwaysIncludedShaders; " +
+                    "the player build would be vulnerable to shader variant stripping.");
+            }
+        }
+
+        private static SerializedObject LoadGraphicsSettings()
+        {
+            UnityEngine.Object settings = AssetDatabase.LoadAllAssetsAtPath(
+                    "ProjectSettings/GraphicsSettings.asset")
+                .FirstOrDefault();
+            if (settings == null)
+                throw new BuildFailedException("ProjectSettings/GraphicsSettings.asset could not be loaded.");
+            return new SerializedObject(settings);
         }
 
         private static void ApplyBuildVersion(string version, int versionCode)
@@ -562,7 +622,7 @@ namespace Baseball.Editor
                           + $"  \"buildUtc\": \"{DateTime.UtcNow:O}\",\n"
                           + $"  \"bundleFile\": \"{EscapeJson(Path.GetFileName(bundlePath))}\",\n"
                           + $"  \"bundleSha256\": \"{bundleSha256}\",\n"
-                          + $"  \"bundleBytes\": {report.summary.totalSize.ToString(CultureInfo.InvariantCulture)},\n"
+                          + $"  \"bundleBytes\": {new FileInfo(bundlePath).Length.ToString(CultureInfo.InvariantCulture)},\n"
                           + $"  \"symbolFile\": \"{EscapeJson(string.IsNullOrEmpty(symbolArchive) ? string.Empty : Path.GetFileName(symbolArchive))}\",\n"
                           + $"  \"symbolSha256\": \"{symbolSha256}\"\n"
                           + "}\n";

@@ -17,6 +17,86 @@ namespace Baseball.Application.Tests
     public sealed class ProApplicationFlowTests
     {
         [Test]
+        public void DirectProFactory_IsStableAndDistributesAcrossTheWholeTeamCatalog()
+        {
+            var first = DirectProStartRequestFactory.Create(
+                "777", "power_prospect", "윤하람");
+            var replay = DirectProStartRequestFactory.Create(
+                "777", "power_prospect", "윤하람");
+            var selectedTeams = Enumerable.Range(1, 100)
+                .Select(seed => DirectProStartRequestFactory.Create(
+                    seed.ToString(), "power_prospect", "윤하람").TeamId)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.That(first.Seed, Is.EqualTo("777"));
+            Assert.That(replay.Seed, Is.EqualTo(first.Seed));
+            Assert.That(replay.TeamId, Is.EqualTo(first.TeamId));
+            Assert.That(first.TeamId, Is.EqualTo("daejeon_rockets"));
+            Assert.That(selectedTeams, Has.Length.EqualTo(
+                Baseball.Core.Pro.ProCareerEngine.ProTeams.Count));
+        }
+
+        [Test]
+        public async Task DirectProFactory_SaveFailureThenRestartPreservesSelectedTeam()
+        {
+            var repository = UnlockedDirectRepository();
+            GameSaveAggregate saved;
+            string selectedTeam;
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository,
+                       new FakeHighSchoolPort(),
+                       new CoreProCareerPort(),
+                       "install-a"))
+            {
+                var request = DirectProStartRequestFactory.Create(
+                    store.Current, "power_prospect", "윤하람");
+                selectedTeam = request.TeamId;
+                Assert.That(request.Seed, Is.EqualTo(DeterministicSeed.Normalize(
+                    store.Current.InstallId + ":direct:" + store.Current.Revision)));
+                var envelope = new CommandEnvelope<GameCommand>(
+                    "direct-deterministic",
+                    store.Current.Revision,
+                    new StartDirectProCommand(request));
+                var publications = 0;
+                store.StatePublished += _ => publications++;
+
+                repository.FailSave = true;
+                Assert.That((await store.DispatchAsync(envelope)).Status,
+                    Is.EqualTo(DispatchStatus.PersistenceFailed));
+                Assert.That(store.Current.Pro, Is.Null);
+                Assert.That(publications, Is.Zero);
+
+                repository.FailSave = false;
+                Assert.That((await store.DispatchAsync(envelope)).Status,
+                    Is.EqualTo(DispatchStatus.Applied));
+                Assert.That(store.Current.Pro.TeamId, Is.EqualTo(selectedTeam));
+                Assert.That(repository.Saved.Pro.TeamId, Is.EqualTo(selectedTeam));
+                Assert.That(publications, Is.EqualTo(1));
+                saved = repository.Saved;
+            }
+
+            repository.LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                SaveLoadStatus.LoadedCanonical,
+                new SaveEnvelope<GameSaveAggregate>(
+                    SaveSchema.Name,
+                    SaveSchema.Version,
+                    saved.Revision,
+                    new DateTimeOffset(2026, 8, 12, 0, 0, 0, TimeSpan.Zero),
+                    new string('d', 64),
+                    saved));
+            using (var restarted = await GameApplicationStore.OpenAsync(
+                       repository,
+                       new FakeHighSchoolPort(),
+                       new CoreProCareerPort(),
+                       "install-a"))
+            {
+                Assert.That(restarted.Current.Pro.TeamId, Is.EqualTo(selectedTeam));
+                Assert.That(restarted.Current.Pro.Origin, Is.EqualTo(ProCareerOrigin.Direct));
+            }
+        }
+
+        [Test]
         public async Task DirectPro_IsLockedBeforeTheFirstCompletedLife()
         {
             using (var store = await GameApplicationStore.OpenAsync(
@@ -60,7 +140,7 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current.Pro, Is.Null);
                 Assert.That(store.Current.HighSchool, Is.Null);
                 Assert.That(store.Current.Meta.CreditedProCareerIds, Is.EquivalentTo(new[] { "pro-1" }));
-                Assert.That(store.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
+                Assert.That(store.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
                 Assert.That(store.Current.Meta.LifeArchive[0].LifeId, Is.EqualTo("life:prior"));
                 Assert.That(store.Current.Meta.LifeNumber, Is.EqualTo(2));
                 Assert.That(store.Current.Meta.SoulBalance, Is.EqualTo(balance).And.GreaterThan(0));
@@ -83,7 +163,7 @@ namespace Baseball.Application.Tests
                        UnlockedDirectRepository(highSchool),
                        new FakeHighSchoolPort(),
                        new FakeProPort(),
-                       "ignored"))
+                       "install-a"))
             {
                 var highSchoolRevision = store.Current.HighSchool.CoreRevision;
                 await Applied(store, "direct-alongside-hs", new StartDirectProCommand(
@@ -96,7 +176,7 @@ namespace Baseball.Application.Tests
                 Assert.That(store.Current.HighSchool.CareerId, Is.EqualTo("hs-active"));
                 Assert.That(store.Current.HighSchool.CoreRevision, Is.EqualTo(highSchoolRevision));
                 Assert.That(store.Current.HighSchool.ChapterNumber, Is.EqualTo(3));
-                Assert.That(store.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
+                Assert.That(store.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
                 Assert.That(store.Current.Meta.LifeNumber, Is.EqualTo(2));
             }
         }
@@ -168,7 +248,7 @@ namespace Baseball.Application.Tests
                     "fixture",
                     persisted));
             using (var restarted = await GameApplicationStore.OpenAsync(
-                       repository, new FakeHighSchoolPort(), new FakeProPort(), "ignored"))
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "install-a"))
             {
                 Assert.That(restarted.Current.Meta.Weekly.Program.Tasks.Single(value =>
                     value.Kind == WeeklyTaskKinds.ProWeeksAdvanced).Progress, Is.EqualTo(1));
@@ -246,8 +326,7 @@ namespace Baseball.Application.Tests
                         Is.EqualTo(DispatchStatus.AlreadyApplied));
                     Assert.That(store.Current.Meta.SoulBalance, Is.EqualTo(proBalance));
                     Assert.That(store.Current.Meta.LifeArchive, Is.Empty);
-                    Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates,
-                        Has.Count.EqualTo(3));
+                    Assert.That(store.Current.HighSchool.FrozenSignatureLegacyCandidates.Count, Is.EqualTo(3));
                     selectedId = store.Current.HighSchool.FrozenSignatureLegacyCandidates[0].Id;
                     selectedEvidence = store.Current.HighSchool.FrozenSignatureLegacyCandidates[0]
                         .EvidenceSummary;
@@ -262,13 +341,12 @@ namespace Baseball.Application.Tests
                            repository,
                            new FakeHighSchoolPort(),
                            new FakeProPort(),
-                           "ignored"))
+                           "install-a"))
                 {
                     Assert.That(restarted.Current.Stage, Is.EqualTo(ApplicationStage.Legacy));
                     Assert.That(restarted.Current.Pro.Phase, Is.EqualTo(ProCareerPhase.Completed));
                     Assert.That(restarted.Current.Meta.SoulBalance, Is.EqualTo(proBalance));
-                    Assert.That(restarted.Current.HighSchool.FrozenSignatureLegacyCandidates,
-                        Has.Count.EqualTo(3));
+                    Assert.That(restarted.Current.HighSchool.FrozenSignatureLegacyCandidates.Count, Is.EqualTo(3));
                     Assert.That(restarted.Current.HighSchool.FrozenSignatureLegacyCandidates[0]
                         .EvidenceSummary, Is.EqualTo(selectedEvidence));
                     var finalize = new CommandEnvelope<GameCommand>(
@@ -281,13 +359,12 @@ namespace Baseball.Application.Tests
                     Assert.That((await restarted.DispatchAsync(finalize)).Status,
                         Is.EqualTo(DispatchStatus.AlreadyApplied));
                     Assert.That(restarted.Current.Pro, Is.Null);
-                    Assert.That(restarted.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
+                    Assert.That(restarted.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
                     Assert.That(restarted.Current.Meta.LifeArchive[0].SignatureLegacy.Id,
                         Is.EqualTo(selectedId));
                     Assert.That(restarted.Current.Meta.LifeArchive[0].SignatureLegacy.EvidenceSummary,
                         Is.EqualTo(selectedEvidence));
-                    Assert.That(restarted.Current.Meta.LifeArchive[0].SignatureLegacyCandidates,
-                        Has.Count.EqualTo(3));
+                    Assert.That(restarted.Current.Meta.LifeArchive[0].SignatureLegacyCandidates.Count, Is.EqualTo(3));
                     Assert.That(restarted.Current.Meta.SoulBalance,
                         Is.GreaterThan(proBalance));
                 }
@@ -301,10 +378,10 @@ namespace Baseball.Application.Tests
                            repository,
                            new FakeHighSchoolPort(),
                            new FakeProPort(),
-                           "ignored"))
+                           "install-a"))
                 {
                     Assert.That(restarted.Current.Pro, Is.Null);
-                    Assert.That(restarted.Current.Meta.LifeArchive, Has.Count.EqualTo(1));
+                    Assert.That(restarted.Current.Meta.LifeArchive.Count, Is.EqualTo(1));
                     Assert.That(restarted.Current.Meta.LifeArchive[0].SignatureLegacy.EvidenceSummary,
                         Is.EqualTo(selectedEvidence));
                 }
@@ -463,7 +540,7 @@ namespace Baseball.Application.Tests
                        repository,
                        new FakeHighSchoolPort(),
                        new CoreProCareerPort(),
-                       "ignored"))
+                       "install-a"))
             {
                 Assert.That(restarted.Current.Pro.LastSegmentProgress, Is.Not.Null);
                 Assert.That(restarted.Current.Pro.LastSegmentProgress.TargetPitch,

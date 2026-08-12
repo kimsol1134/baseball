@@ -15,7 +15,7 @@ namespace Baseball.Platform.Crash
         private static void ResetStatics()
         {
             _instance = null;
-            CrashReporting.Configure(null);
+            CrashReporting.Reset();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -40,11 +40,6 @@ namespace Baseball.Platform.Crash
                 var firebase = new FirebaseCrashReporter();
                 await firebase.InitializeAsync();
                 if (firebase.IsReady) CrashReporting.Configure(firebase);
-            }
-            else
-            {
-                try { Firebase.Crashlytics.Crashlytics.IsCrashlyticsCollectionEnabled = false; }
-                catch (Exception) { /* The disabled SDK must not affect offline startup. */ }
             }
             AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
             TaskScheduler.UnobservedTaskException += HandleUnobservedTaskException;

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Baseball.Platform.Identity;
 using UnityEngine;
 
 namespace Baseball.Platform.Share
@@ -8,14 +9,14 @@ namespace Baseball.Platform.Share
     {
         public static void ClearShareCache()
         {
-            string directory = Path.Combine(UnityEngine.Application.temporaryCachePath, "share");
-            try
-            {
-                if (!Directory.Exists(directory)) return;
-                foreach (string file in Directory.GetFiles(directory, "*.png")) File.Delete(file);
-            }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
+            TryClearShareCache();
+        }
+
+        public static bool TryClearShareCache()
+        {
+            try { return InstallScopedLocalStateReconciler.ClearSharePngCache(
+                UnityEngine.Application.temporaryCachePath); }
+            catch (Exception) { return false; }
         }
 
         public static bool TryShareText(string chooserTitle, string text)

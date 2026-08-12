@@ -8,7 +8,6 @@ using Baseball.Application.HighSchool;
 using Baseball.Application.Persistence;
 using Baseball.Application.Stores;
 using Baseball.Platform.Analytics;
-using Baseball.Platform.Review;
 using Baseball.Presentation.Pitch;
 using UnityEngine;
 
@@ -132,7 +131,8 @@ namespace Baseball.Presentation.Shell
                     commit.Call,
                     commit.PreResultContext,
                     commit.Result.Snapshot.Outcome,
-                    commit.Result.Snapshot.Execution));
+                    commit.Result.Snapshot.Execution,
+                    recommendationAccepted: commit.Result.Snapshot.RecommendationAccepted));
             return await DispatchPitchAsync("commit", command, cancellationToken);
         }
 
@@ -216,7 +216,6 @@ namespace Baseball.Presentation.Shell
                     cancellationToken,
                     "install");
             }
-            if (completedKind != PitchCareerKind.Tutorial) TryRequestReview(report);
             return dispatch;
         }
 
@@ -293,6 +292,35 @@ namespace Baseball.Presentation.Shell
                     "abandoned");
             }
             return result;
+        }
+
+        public Task<ShellActionResult> SuspendAsync(
+            string gameId,
+            CancellationToken cancellationToken)
+        {
+            PitchResumeState resume = _store?.Current?.PitchResume;
+            if (resume == null || !string.Equals(resume.GameId, gameId, StringComparison.Ordinal))
+                return Task.FromResult(ShellActionResult.Failure("이어할 경기 진행이 없습니다."));
+            return DispatchPitchAsync(
+                "suspend",
+                new SuspendPitchSessionCommand(gameId),
+                cancellationToken);
+        }
+
+        public PitchSessionPostgameSnapshot ReadPostgame(string gameId)
+        {
+            GameSaveAggregate state = _store?.Current;
+            PendingPitchCompletion pending = state?.PendingPitchCompletion;
+            if (pending?.Report != null &&
+                string.Equals(pending.Report.GameId, gameId, StringComparison.Ordinal))
+            {
+                return new PitchSessionPostgameSnapshot(pending.Report, pending.PitchLog);
+            }
+            PitchResumeState resume = state?.PitchResume;
+            return resume?.AccumulatedReport != null &&
+                string.Equals(resume.GameId, gameId, StringComparison.Ordinal)
+                    ? new PitchSessionPostgameSnapshot(resume.AccumulatedReport, resume.PitchLog)
+                    : null;
         }
 
         private async Task<ShellActionResult> DispatchPitchAsync(
@@ -433,27 +461,5 @@ namespace Baseball.Presentation.Shell
             }
         }
 
-        private void TryRequestReview(PitchGameReport report)
-        {
-            try
-            {
-                GameSaveAggregate state = _store.Current;
-                int highSchoolGames = state.HighSchool?.Performance?.ImportantGames ?? 0;
-                int proGames = state.Pro?.CurrentSeason?.ImportantGames ?? 0;
-                int archivedGames = 0;
-                foreach (var life in state.Meta.LifeArchive)
-                    archivedGames += life.HighSchoolPerformance?.ImportantGames ?? 0;
-                var context = new ReviewEligibilityContext(
-                    state.HighSchool != null || state.Pro != null || state.Meta.LifeArchive.Count > 0,
-                    highSchoolGames + proGames + archivedGames,
-                    highSchoolGames + proGames,
-                    TimeSpan.FromSeconds(Math.Max(0d, Time.realtimeSinceStartupAsDouble)));
-                PlayReviewPrompt.TryRequest(context);
-            }
-            catch (Exception exception)
-            {
-                Baseball.Platform.Crash.CrashReporting.RecordUnexpected(exception, "review_prompt");
-            }
-        }
     }
 }

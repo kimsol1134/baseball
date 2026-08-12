@@ -62,6 +62,60 @@ namespace Baseball.Bootstrap.Tests
         }
 
         [Test]
+        public async Task AtomicFactory_ResolvesInstallIdentityInsideEverySerializedRetry()
+        {
+            string saveDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "baseball-bootstrap-identity-retry-" + Guid.NewGuid().ToString("N"));
+            RuntimeGameCoordinator coordinator = null;
+            var resolutions = 0;
+            try
+            {
+                var mainThread = new DedicatedMainThread();
+                try
+                {
+                    var factory = new AtomicRuntimeGameStoreFactory(
+                        saveDirectory,
+                        () =>
+                        {
+                            resolutions++;
+                            if (resolutions == 1)
+                                throw new IOException("simulated identity storage failure");
+                            return "install-identity-retry";
+                        });
+                    coordinator = new RuntimeGameCoordinator(
+                        factory,
+                        new DurableRuntimeGameLifecycleHooks(),
+                        mainThread);
+
+                    await AssertThrowsAsync<IOException>(() =>
+                        coordinator.InitializeAsync(CancellationToken.None));
+                    Assert.That(RuntimeGameServices.IsReady, Is.False);
+                    Assert.That(coordinator.State, Is.EqualTo(RuntimeGameLifecycleState.Created));
+
+                    await coordinator.InitializeAsync(CancellationToken.None);
+
+                    Assert.That(resolutions, Is.EqualTo(2));
+                    Assert.That(RuntimeGameServices.Store.Current.InstallId,
+                        Is.EqualTo("install-identity-retry"));
+                    coordinator.Dispose();
+                    coordinator = null;
+                }
+                finally
+                {
+                    coordinator?.Dispose();
+                    coordinator = null;
+                    mainThread.Dispose();
+                }
+            }
+            finally
+            {
+                coordinator?.Dispose();
+                if (Directory.Exists(saveDirectory)) Directory.Delete(saveDirectory, true);
+            }
+        }
+
+        [Test]
         public async Task Lifecycle_DeduplicatesPauseResumeAndLowMemory()
         {
             using (var mainThread = new DedicatedMainThread())
@@ -97,8 +151,8 @@ namespace Baseball.Bootstrap.Tests
                     new RecordingStoreFactory(), hooks, mainThread);
                 await coordinator.InitializeAsync(CancellationToken.None);
 
-                Assert.ThrowsAsync<InvalidOperationException>(
-                    async () => await coordinator.PauseAsync(CancellationToken.None));
+                await AssertThrowsAsync<InvalidOperationException>(() =>
+                    coordinator.PauseAsync(CancellationToken.None));
                 Assert.That(coordinator.State, Is.EqualTo(RuntimeGameLifecycleState.Running));
 
                 await coordinator.PauseAsync(CancellationToken.None);
@@ -122,15 +176,15 @@ namespace Baseball.Bootstrap.Tests
                     new RecordingStoreFactory(), hooks, mainThread);
                 await coordinator.InitializeAsync(CancellationToken.None);
 
-                Assert.ThrowsAsync<InvalidOperationException>(
-                    async () => await coordinator.LowMemoryAsync(CancellationToken.None));
+                await AssertThrowsAsync<InvalidOperationException>(() =>
+                    coordinator.LowMemoryAsync(CancellationToken.None));
                 await coordinator.LowMemoryAsync(CancellationToken.None);
                 Assert.That(hooks.LowMemoryCount, Is.EqualTo(2));
                 Assert.That(RuntimeGameServices.IsReady, Is.True);
 
                 await coordinator.PauseAsync(CancellationToken.None);
-                Assert.ThrowsAsync<InvalidOperationException>(
-                    async () => await coordinator.ResumeAsync(CancellationToken.None));
+                await AssertThrowsAsync<InvalidOperationException>(() =>
+                    coordinator.ResumeAsync(CancellationToken.None));
                 Assert.That(coordinator.State, Is.EqualTo(RuntimeGameLifecycleState.Paused));
                 await coordinator.ResumeAsync(CancellationToken.None);
 
@@ -153,8 +207,8 @@ namespace Baseball.Bootstrap.Tests
                 RuntimeGameServices.StartupFailed += _ => throw new Exception("subscriber failed");
                 RuntimeGameServices.StartupFailed += _ => failureNotifications++;
 
-                Assert.ThrowsAsync<InvalidOperationException>(
-                    async () => await coordinator.InitializeAsync(CancellationToken.None));
+                await AssertThrowsAsync<InvalidOperationException>(() =>
+                    coordinator.InitializeAsync(CancellationToken.None));
                 Assert.That(failureNotifications, Is.EqualTo(1));
                 Assert.That(RuntimeGameServices.IsReady, Is.False);
                 Assert.That(coordinator.State, Is.EqualTo(RuntimeGameLifecycleState.Created));
@@ -210,8 +264,8 @@ namespace Baseball.Bootstrap.Tests
                 Assert.That(unavailableCount, Is.EqualTo(1));
                 Assert.That(unavailableThread, Is.EqualTo(mainThread.ThreadId));
                 Assert.That(factory.LastRepository.DisposeCount, Is.EqualTo(1));
-                Assert.ThrowsAsync<ObjectDisposedException>(
-                    async () => await coordinator.ResumeAsync(CancellationToken.None));
+                await AssertThrowsAsync<ObjectDisposedException>(() =>
+                    coordinator.ResumeAsync(CancellationToken.None));
             }
         }
 
@@ -227,7 +281,7 @@ namespace Baseball.Bootstrap.Tests
 
                 var failure = Assert.Throws<AggregateException>(() => coordinator.Dispose());
 
-                Assert.That(failure.InnerExceptions, Has.Count.EqualTo(2));
+                Assert.That(failure.InnerExceptions.Count, Is.EqualTo(2));
                 Assert.That(coordinator.State, Is.EqualTo(RuntimeGameLifecycleState.Disposed));
                 Assert.That(RuntimeGameServices.IsReady, Is.False);
                 Assert.That(factory.LastRepository.DisposeCount, Is.EqualTo(1));
@@ -246,14 +300,7 @@ namespace Baseball.Bootstrap.Tests
             RuntimeGameCoordinator coordinator = null;
             try
             {
-                var seededHighSchool = new CoreHighSchoolCareerPort().Start(
-                    new StartHighSchoolCareerRequest(
-                        "seed", "power_prospect", "민서준", "서울", 1));
-                var seeded = GameSaveAggregate.Initial("install-return").Commit(
-                    "seed-official-game-count",
-                    stage: ApplicationStage.HighSchool,
-                    highSchool: seededHighSchool,
-                    meta: MetaProgressState.Initial.With(completedGameCount: 1));
+                var seeded = GameSaveAggregate.Initial("install-return");
                 using (var seedRepository = new AtomicSaveRepository<GameSaveAggregate>(
                            new SaveFileLayout(saveDirectory),
                            new SystemAtomicFileSystem(),
@@ -262,14 +309,15 @@ namespace Baseball.Bootstrap.Tests
                 {
                     await seedRepository.SaveAsync(seeded, seeded.Revision);
                 }
-                using (var mainThread = new DedicatedMainThread())
+                var mainThread = new DedicatedMainThread();
+                try
                 {
                     coordinator = new RuntimeGameCoordinator(
-                        new AtomicRuntimeGameStoreFactory(saveDirectory, "install-atomic"),
+                        new AtomicRuntimeGameStoreFactory(saveDirectory, "install-return"),
                         new DurableRuntimeGameLifecycleHooks(),
                         mainThread);
                     await coordinator.InitializeAsync(CancellationToken.None);
-                    Assert.That(RuntimeGameServices.Store.Current.Revision, Is.EqualTo(0));
+                    Assert.That(RuntimeGameServices.Store.Current.Revision, Is.Zero);
 
                     var result = await RuntimeGameServices.Store.DispatchAsync(
                         new CommandEnvelope<GameCommand>(
@@ -284,6 +332,12 @@ namespace Baseball.Bootstrap.Tests
                     Assert.That(File.ReadAllText(canonical), Does.Contain("android-unity-save-v1"));
                     coordinator.Dispose();
                     coordinator = null;
+                }
+                finally
+                {
+                    coordinator?.Dispose();
+                    coordinator = null;
+                    mainThread.Dispose();
                 }
             }
             finally
@@ -304,7 +358,24 @@ namespace Baseball.Bootstrap.Tests
             RuntimeGameCoordinator coordinator = null;
             try
             {
-                using (var mainThread = new DedicatedMainThread())
+                HighSchoolCareerReadModel seededHighSchool = new CoreHighSchoolCareerPort().Start(
+                    new StartHighSchoolCareerRequest(
+                        "return-seed", "power_prospect", "민서준", "서울", 1));
+                GameSaveAggregate seeded = GameSaveAggregate.Initial("install-return").Commit(
+                    "seed-official-game-count",
+                    stage: ApplicationStage.HighSchool,
+                    highSchool: seededHighSchool,
+                    meta: MetaProgressState.Initial.With(completedGameCount: 1));
+                using (var seedRepository = new AtomicSaveRepository<GameSaveAggregate>(
+                           new SaveFileLayout(saveDirectory),
+                           new SystemAtomicFileSystem(),
+                           new GameSaveValidator(),
+                           new GameSaveSemanticPriority()))
+                {
+                    await seedRepository.SaveAsync(seeded, seeded.Revision);
+                }
+                var mainThread = new DedicatedMainThread();
+                try
                 {
                     var sessionEndCount = 0;
                     var sessionEndThread = -1;
@@ -383,7 +454,7 @@ namespace Baseball.Bootstrap.Tests
                     Assert.That(lastSessionEnd.Minutes, Is.EqualTo(3));
                     Assert.That(lastSessionEnd.Games, Is.Zero,
                         "resume resets the completed-game session baseline");
-                    Assert.That(sessionEnds.Select(value => value.Games), Is.EqualTo(new[] { 1, 0 }));
+                    Assert.That(sessionEnds.Select(value => value.Games), Is.EqualTo(new[] { 0, 0 }));
 
                     var nextDay = pauseAt.AddDays(1);
                     var cold = await RuntimeReturnPlanAnalytics.ReserveNextDayOpenAsync(
@@ -398,6 +469,12 @@ namespace Baseball.Bootstrap.Tests
                     Assert.That(store.Current.Revision, Is.EqualTo(afterCold));
                     coordinator.Dispose();
                     coordinator = null;
+                }
+                finally
+                {
+                    coordinator?.Dispose();
+                    coordinator = null;
+                    mainThread.Dispose();
                 }
             }
             finally
@@ -539,6 +616,95 @@ namespace Baseball.Bootstrap.Tests
                 coordinator?.Dispose();
                 if (Directory.Exists(saveDirectory)) Directory.Delete(saveDirectory, true);
             }
+        }
+
+        [Test]
+        public async Task PreparedResetFailureSuppressesPauseRewriteAndCandidateRestartsCleanly()
+        {
+            string saveDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "baseball-bootstrap-reset-poison-" + Guid.NewGuid().ToString("N"));
+            GameApplicationStore oldStore = null;
+            try
+            {
+                var repository = new AtomicSaveRepository<GameSaveAggregate>(
+                    new SaveFileLayout(saveDirectory),
+                    new SystemAtomicFileSystem(),
+                    new GameSaveValidator(),
+                    new GameSaveSemanticPriority());
+                HighSchoolCareerReadModel highSchool = new CoreHighSchoolCareerPort().Start(
+                    new StartHighSchoolCareerRequest(
+                        "reset-seed", "power_prospect", "민서준", "서울", 1));
+                GameSaveAggregate seeded = GameSaveAggregate.Initial("install-old").Commit(
+                    "seed-completed-game",
+                    stage: ApplicationStage.HighSchool,
+                    highSchool: highSchool,
+                    meta: MetaProgressState.Initial.With(completedGameCount: 1));
+                await repository.SaveAsync(seeded, seeded.Revision);
+                oldStore = await GameApplicationStore.OpenAsync(
+                    repository,
+                    new UnusedHighSchoolPort(),
+                    new UnusedProPort(),
+                    "install-old");
+
+                GameResetException failure = await AssertThrowsAsync<GameResetException>(() =>
+                    oldStore.ResetWithPreparedIdentityAsync(
+                        "install-candidate",
+                        (_, __) => Task.FromException(
+                            new IOException("identity receipt unavailable"))));
+                Assert.That(failure.ResetCommitted, Is.True);
+                Assert.That(oldStore.IsPersistencePoisoned, Is.True);
+
+                var hooks = new DurableRuntimeGameLifecycleHooks(
+                    () => new DateTimeOffset(2026, 8, 12, 2, 0, 0, TimeSpan.Zero));
+                await hooks.PauseAsync(oldStore, CancellationToken.None);
+                SaveLoadResult<GameSaveAggregate> afterPause = await repository.LoadAsync();
+                Assert.That(afterPause.Status, Is.EqualTo(SaveLoadStatus.NoSave),
+                    "pause must not recreate the deleted old-install aggregate");
+
+                oldStore.Dispose();
+                oldStore = null;
+                using (var restartedRepository = new AtomicSaveRepository<GameSaveAggregate>(
+                           new SaveFileLayout(saveDirectory),
+                           new SystemAtomicFileSystem(),
+                           new GameSaveValidator(),
+                           new GameSaveSemanticPriority()))
+                using (var restarted = await GameApplicationStore.OpenAsync(
+                           restartedRepository,
+                           new UnusedHighSchoolPort(),
+                           new UnusedProPort(),
+                           "install-candidate"))
+                {
+                    Assert.That(restarted.Current.InstallId, Is.EqualTo("install-candidate"));
+                    Assert.That(restarted.Current.Revision, Is.Zero);
+                    Assert.That(restarted.IsPersistencePoisoned, Is.False);
+                }
+            }
+            finally
+            {
+                oldStore?.Dispose();
+                if (Directory.Exists(saveDirectory)) Directory.Delete(saveDirectory, true);
+            }
+        }
+
+        private static async Task<TException> AssertThrowsAsync<TException>(Func<Task> action)
+            where TException : Exception
+        {
+            try
+            {
+                await action();
+            }
+            catch (TException exception)
+            {
+                return exception;
+            }
+            catch (Exception exception)
+            {
+                Assert.Fail("Expected " + typeof(TException).Name + " but caught " +
+                    exception.GetType().Name + ": " + exception.Message);
+            }
+            Assert.Fail("Expected " + typeof(TException).Name + " but no exception was thrown.");
+            return null;
         }
 
         private sealed class RecordingStoreFactory : IRuntimeGameStoreFactory

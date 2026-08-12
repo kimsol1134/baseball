@@ -10,6 +10,19 @@ namespace Baseball.Core.Pro.Tests
     [TestFixture]
     public sealed class ProCareerFlowTests
     {
+        [TestCase(1UL, "gwangju_phoenix")]
+        [TestCase(7UL, "changwon_meteors")]
+        [TestCase(42UL, "daegu_forge")]
+        [TestCase(777UL, "daejeon_rockets")]
+        [TestCase(20260725UL, "jeju_storm")]
+        public void DirectTeamSelection_MatchesSwiftSplitMixFixture(
+            ulong seed,
+            string expectedTeamId)
+        {
+            Assert.That(DirectProCareerFactory.TeamForSeed(seed).Id,
+                Is.EqualTo(expectedTeamId));
+        }
+
         [Test]
         public void OneSeasonKeepsBaseballStatsInPlausibleKernelBands()
         {

@@ -1,0 +1,875 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Baseball Local Content
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Baseball Local Content
+  m_GUID: 2a7c39a85413f48e6b353e674265d232
+  m_SerializeEntries:
+  - m_GUID: 00116249871f84c8ebe3ebecc68ac2b9
+    m_Address: baseball/pro/PortraitPlayerPro17
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0030305ebb3924599a61341b16303e59
+    m_Address: baseball/highschool/PortraitPlayerYoung6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 00880ccc057c1492cb5607722bf04368
+    m_Address: baseball/highschool/PortraitPlayerYoung12
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 009ce2dd0b3684512b90ee5f48f5719a
+    m_Address: baseball/pro/PortraitPlayerPro20
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 012ec7461fc8e40da9a4abc892a88ce9
+    m_Address: baseball/pro/PortraitPlayerPro9
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 02a254a4c28324cabb553d310e93c646
+    m_Address: baseball/audio/crowd-groan
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 05eb27f1e2ed7449db03d54ae1707af7
+    m_Address: baseball/setup/PresetArt-precision_commander
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - setup
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 068e8f5e27962464091f161e397be514
+    m_Address: baseball/highschool/KeyArtCareerIntro
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0814916ac54934f8ca78e0e36010a07c
+    m_Address: baseball/highschool/KeyArtSchoolCrossroads
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0994699024cb94e0badb1daf8dcf40a5
+    m_Address: baseball/highschool/PortraitPlayerYoung20
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 09add6fc66fbc40f9a9a38000c6fc5c6
+    m_Address: baseball/highschool/PortraitPlayerYoung11
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0b119d62d563143de85dbcad3cd70970
+    m_Address: baseball/highschool/PortraitPlayerYoung8
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0dd430b093a6f4429a19450c2f4ce6f8
+    m_Address: baseball/highschool/PortraitPlayerYoung2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0fdb8631f5a554e1ebdbb275fba7d50b
+    m_Address: baseball/meta/MemoryArt-coach_letter
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 12f1b64e1f9bc461bb64abea135a25b1
+    m_Address: baseball/highschool/PortraitCoach2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1555f6420b05a49daa29e1f900d780dc
+    m_Address: baseball/highschool/PortraitRival3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1630e9f36b4e547e5904f46871619bc9
+    m_Address: baseball/pro/PortraitPlayerPro16
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 16ff14832a7a849b0bdef1e32375f1fd
+    m_Address: baseball/highschool/PortraitPlayer10
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 17d3bc59e69294244b792aebf18f2839
+    m_Address: baseball/audio/bat-contact-weak-3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 186b7954952624010be38c5d2ee1c9cf
+    m_Address: baseball/audio/umpire-strike-2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1b8fbe9e57e3b43dea61c7c970c379af
+    m_Address: baseball/audio/crowd-groan-2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1d73eb78aa3e3463db3c7d41d3db2f26
+    m_Address: baseball/highschool/PortraitPlayer13
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 218797abed2d745e7989fed5ab309461
+    m_Address: baseball/setup/PresetArt-power_prospect
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - setup
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2268be7a079be4f07b8bf57057d75d01
+    m_Address: baseball/highschool/PortraitCoach3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2af4526c1918c48ebbd75d17ac38c80d
+    m_Address: baseball/meta/MemoryArt-mechanics_video
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2b758637f032f41a8938560d1c9a0dba
+    m_Address: baseball/pitch/CatcherStance
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pitch
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2fa639170e878458685f96988c94f476
+    m_Address: baseball/highschool/PortraitPlayerYoung14
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3133e859cd1264eb28e2be7922a4622f
+    m_Address: baseball/meta/SceneArt-health
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 32eb240b8742e48e9a651be3cd61a7b0
+    m_Address: baseball/audio/crowd-cheer-2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3419d6097e1e547f18c1427a3c56f637
+    m_Address: baseball/meta/SceneArt-game
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 341a7771e5d104ca2952741d437caa6f
+    m_Address: baseball/audio/bat-foul-2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 36ba3c74b17a2499ab59c33456a1d874
+    m_Address: baseball/meta/SceneArt-draft
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3973784c1169648a39492ebac9bf07e5
+    m_Address: baseball/pro/PortraitPlayerPro4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 415e19f73520c4fde818868ca343a5d9
+    m_Address: baseball/highschool/PortraitPlayer19
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 42e2528ea06ba4527a3682fe4dc750a9
+    m_Address: baseball/audio/swing-miss
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 46b749429ec3941f691eb2653097c00d
+    m_Address: baseball/pro/PortraitPlayerPro8
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 49b31abf7a01643a1a7143f19c4f9f67
+    m_Address: baseball/meta/MemoryArt-recovery_routine
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 49ee9534de9a44c2c99b1340d72210ed
+    m_Address: baseball/highschool/PortraitPlayer17
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 573ccfabfb0ec4edcbb752c16f2a5635
+    m_Address: baseball/highschool/PortraitPlayer4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5793634c342014f2e9113a07acc872aa
+    m_Address: baseball/highschool/KeyArtReincarnation
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5a4e91eda67b642d9a941e11ed7e3761
+    m_Address: baseball/pro/PortraitPlayerPro12
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5c8343b90009040fda8a03337725e2f8
+    m_Address: baseball/highschool/PortraitPlayer8
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5e9ca0d5414b649f080b86ad11ec1264
+    m_Address: baseball/highschool/PortraitPlayerYoung17
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5ef50c2a6d70a47fcb8357c8c642e696
+    m_Address: baseball/highschool/PortraitPlayer9
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5fe780ac65ede41caadab6bdeddccc59
+    m_Address: baseball/pro/PortraitPlayerPro3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62a68670c713c4cf891c60ae1dd78b1e
+    m_Address: baseball/meta/SceneArt-growth
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 64bf3b9d2bea348eaace03c01c40806a
+    m_Address: baseball/pro/PortraitPlayerPro15
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 66576c85201ef40a7b7a7c910e3a22b6
+    m_Address: baseball/pro/PortraitPlayerPro14
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 66a266e15c5ef4decb12dd3d31be2f14
+    m_Address: baseball/meta/MemoryArt-two_strike_sequence
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6b49b491ce45d47e6b243e5953ed7cd6
+    m_Address: baseball/highschool/PortraitPlayer16
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7038df1e11c4f47568089900893643de
+    m_Address: baseball/highschool/PortraitPlayerYoung16
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 73eaf57fcc0f040d991e51c67a040fc0
+    m_Address: baseball/highschool/PortraitCatcher2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 755f8b3899ecf403193360926a27831e
+    m_Address: baseball/meta/MemoryArt-team_first_promise
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7b912003dc61e4f0ca2474ba59c33d75
+    m_Address: baseball/pro/PortraitPlayerPro1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7bc77fdd30da74055859dd2f78e4ab61
+    m_Address: baseball/audio/bat-contact-weak
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7bda4da89d47e4543b09f84ef9854957
+    m_Address: baseball/pro/PortraitPlayerPro10
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c37f8b4cad70439f8ad2fd23f1a3365
+    m_Address: baseball/highschool/PortraitPlayer15
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7c6b28fabf1a842b7b6366451f161ce2
+    m_Address: baseball/pro/PortraitPlayerPro7
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7eb59836ff749467baa59ead88e2e0bf
+    m_Address: baseball/highschool/TournamentBanner6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7eb5b8fef13bb418dbe5e708eac8f52a
+    m_Address: baseball/pro/PortraitPlayerPro18
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7ed1462e6012b4c97b907f17fdb39f0a
+    m_Address: baseball/audio/crowd-groan-3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 82301cba644c045b9a44f611296240da
+    m_Address: baseball/highschool/PortraitPlayer18
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 857415c02c3694d0aa83a5b7b528158e
+    m_Address: baseball/meta/LifeCardBackdrop
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 860ac78d9fd09426b9fd7b2ee1df46d5
+    m_Address: baseball/highschool/PortraitRival1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8626221a2b8bb468ab30e11fd9e63297
+    m_Address: baseball/highschool/PortraitPlayer5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 86d7f2a2d6098482a96d402330ee9ddb
+    m_Address: baseball/meta/MemoryArt-velocity_blueprint
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8919e3bb6acb24e15abfc168a757d8b4
+    m_Address: baseball/audio/umpire-strike-3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 89c1536d1a4184d0099999a82c27ff70
+    m_Address: baseball/highschool/PortraitPlayer3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8b7240ef821cf4b3b92f043e21fb828e
+    m_Address: baseball/highschool/TournamentBanner8
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8bd45276c4c134985b9075b033ad2a1c
+    m_Address: baseball/highschool/PortraitCatcher4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8be679108aac04924bfdc8e6cd877331
+    m_Address: baseball/meta/MemoryArt-stadium_echo
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8c400fcf44c624c25bc1b7c066653594
+    m_Address: baseball/meta/MemoryArt-winter_program
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8c91f9c11f7664f90bd0d63ce1626653
+    m_Address: baseball/highschool/PortraitPlayer12
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8cb5a2146108745eca00dd4e203c3c4f
+    m_Address: baseball/highschool/PortraitPlayerYoung9
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 928a4bbd74aa8431c82999a86663674b
+    m_Address: baseball/highschool/PortraitCatcher1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9512d23f8b5c74df693d1d157e57b1f1
+    m_Address: baseball/meta/MemoryArt-catcher_notebook
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 95829bb359c704ca9bb072606c74f76d
+    m_Address: baseball/meta/MemoryArt-first_pitch_map
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 95b6f0f1b3ce34779ac8f07b70593420
+    m_Address: baseball/highschool/PortraitPlayer7
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 97aa916c4da46412fa4c1d1e30a75d9c
+    m_Address: baseball/pro/KeyArtProStadiumTunnel
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 97b5de8a1284849f2b4b392d8bf6da2f
+    m_Address: baseball/audio/glove-catch-3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a1a90d4bf4264b91bcfdf0f986ebaf1
+    m_Address: baseball/pro/PortraitPlayerPro13
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9a946c1c6a43c45e298927aaa1d34916
+    m_Address: baseball/highschool/PortraitPlayerYoung5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e2d0bfbda09e446c9bd050c0666885a
+    m_Address: baseball/meta/SceneArt-media
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9f78f31577bc543bdb8bb6429381ee6c
+    m_Address: baseball/pro/PortraitPlayerPro19
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9fb192a6398174f229ed98dce9196090
+    m_Address: baseball/highschool/PortraitPlayer20
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a035acbd8f37f486891e4532b9e2e1dd
+    m_Address: baseball/audio/bat-contact-weak-2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a0dd39939d36e4026b44c4ed3e76fa68
+    m_Address: baseball/meta/SceneArt-life
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a2c4f8ccf2fbd41638cb3cff27045ec0
+    m_Address: baseball/setup/PresetArt-breaking_ball_artist
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - setup
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a30e514f40f0d4c698f40bde030f5a91
+    m_Address: baseball/audio/umpire-strikeout
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a741e0bb23a904204a52376d3dddb4b6
+    m_Address: baseball/highschool/PortraitPlayerYoung3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a8f181bbd786a44af9438876d1263e51
+    m_Address: baseball/meta/MemoryArt-failure_scorebook
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: acc276047aac0425fa232fd16f0f37da
+    m_Address: baseball/highschool/PortraitRival2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ad665bae934b84857b5a3cf7cc762a2a
+    m_Address: baseball/audio/crowd-cheer
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ae1dc304312c843e0a8f52b12142673d
+    m_Address: baseball/pro/PortraitPlayerPro6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: af994dfb51d1a42b1afacaea879af0cf
+    m_Address: baseball/highschool/PortraitPlayerYoung10
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b1429f1dd00ea450693af4337d620f48
+    m_Address: baseball/highschool/PortraitPlayerYoung15
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b30be7f25e3ae41a89f54eb74e85cabb
+    m_Address: baseball/audio/bat-contact-hard
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b35a9092944254837b193c8f4a61fbaf
+    m_Address: baseball/highschool/PortraitPlayerYoung1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b3bf4bec3a29b4d63bf0ca8433e5914b
+    m_Address: baseball/highschool/PortraitCoach1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b85067d83f78a4655a71993720090262
+    m_Address: baseball/highschool/PortraitPlayerYoung18
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bb1a1b1cbcbab4c75986d89d456b9cf9
+    m_Address: baseball/highschool/PortraitPlayerYoung7
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bd888c09744b544c59ad18518c3e7629
+    m_Address: baseball/highschool/KeyArtAwakening
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: bdee210172aff4cbd97c2870c2ffa7d0
+    m_Address: baseball/audio/bat-foul-3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c1cb669ec182541d38f16a4bba37e41e
+    m_Address: baseball/audio/crowd-loop
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c36e3bafbf84d443f908e774a6af37ff
+    m_Address: baseball/pitch/BatterStance
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pitch
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c45f8ee91a63941deb2a58c4f1d14064
+    m_Address: baseball/pro/PortraitPlayerPro5
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4bbe868786454505a03ed067d547207
+    m_Address: baseball/highschool/PortraitPlayer11
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c4f382c263be7438ab0d06529b9da22b
+    m_Address: baseball/meta/MemoryArt-bullpen_compass
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c87b09492e4ee40449b95a62f77cbd5c
+    m_Address: baseball/highschool/PortraitPlayer2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c8d8075c87e43438482795fa880f1999
+    m_Address: baseball/highschool/PortraitPlayer6
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cd85f68deb0b84129a06641ea43ed035
+    m_Address: baseball/highschool/KeyArtDraftDay
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cf39a6ebff58c417c8c1de6046f105f8
+    m_Address: baseball/audio/glove-catch-2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cf8c8cd16784344eda27a73a0631f278
+    m_Address: baseball/highschool/TournamentBanner2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d1f59dd2b048b4a7db47f35d6082d09d
+    m_Address: baseball/bootstrap/LaunchLogo
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - bootstrap
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d3b189898dcb04ab4a7b84ab2d624966
+    m_Address: baseball/audio/bat-contact-hard-3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d5516949d3adc4c76901ae9a4811e6b4
+    m_Address: baseball/audio/umpire-strike
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d711a8b729eab4a6a8c4e6e3fd0ee80e
+    m_Address: baseball/audio/bat-foul
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d89d801dd197547b491a8ace7a5a6ebb
+    m_Address: baseball/highschool/PortraitPlayerYoung13
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d9caf0e925a5a4242a6173eec773adae
+    m_Address: baseball/audio/bat-contact-hard-2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d9eca36e6f6604978a94a5c6289ebb19
+    m_Address: baseball/pro/PortraitPlayerPro11
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: db6a261bf6acd4609a0338a0170ded20
+    m_Address: baseball/highschool/PortraitPlayer1
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: dbd65ae9e6eb4454680cfa92e8e45886
+    m_Address: baseball/meta/MemoryArt-rival_notebook
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ddc278f90ecd34d1eba974e4d4792542
+    m_Address: baseball/meta/MemoryArt-fingertip_memory
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e1d45569a84f94589ac91057a8c0e0f1
+    m_Address: baseball/highschool/PortraitPlayer14
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e35f9e8ac9771482bb0313f7bd9280c7
+    m_Address: baseball/highschool/KeyArtStadiumNight
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e40731b09183e4d6eba6d08b46b2f069
+    m_Address: baseball/meta/MemoryArt-pressure_rehearsal
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e7ff2b5a1522f4d31ac2abca4dac03f5
+    m_Address: baseball/meta/MemoryArt-fatigue_diary
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e8fabb3551e6d4336a2b8ae2fc59f2ce
+    m_Address: baseball/meta/SceneArt-team
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e9573b550ee4a4c6597461678879bd2e
+    m_Address: baseball/audio/crowd-cheer-3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ea0402bd342d44e4cb549dafe6b62423
+    m_Address: baseball/highschool/PortraitPlayerYoung19
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ea2e742d731a443b3aea9bc01496914c
+    m_Address: baseball/meta/SceneArt-fan
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: eedb76b295f314b06b2bbf0e600ff0e4
+    m_Address: baseball/highschool/PortraitPlayerYoung4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ef919388354f04cc8aa79ef811aad4bb
+    m_Address: baseball/audio/glove-catch
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - audio
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f35d806f4a9614839a9e48a0112d17b2
+    m_Address: baseball/meta/MemoryArt-school_playbook
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f6fdb003830134999a952ef3271dfa16
+    m_Address: baseball/pro/KeyArtMajorDebut
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f75fdbf86befb4898970a9cd133f531e
+    m_Address: baseball/highschool/PortraitCatcher3
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f802fddc5dd6249a3b210e7ca71ca261
+    m_Address: baseball/highschool/PortraitCoach4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f83d2a9ab2c3844909b1aafde1bcf05d
+    m_Address: baseball/highschool/TournamentBanner4
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - highschool
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f8a57827aea88464fbc490bb7ad492e6
+    m_Address: baseball/pro/KeyArtRetirement
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fb4989e51d3fe4b689a66a18f0c93cf6
+    m_Address: baseball/meta/MemoryArt-draft_report
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd8029dd0a50f44648a5e6872b660d4c
+    m_Address: baseball/meta/BloomArt
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - meta
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fe98ef0c253d24d3d8531ef425c507f2
+    m_Address: baseball/pro/PortraitPlayerPro2
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - pro
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 6c8f53d272386476193228715351d7bd, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: a8bdc54fcc08c47098a16dfd7376c409, type: 2}
+    - {fileID: 11400000, guid: 43b2c2909a4664b7e9af5e4cc8b1ad2c, type: 2}

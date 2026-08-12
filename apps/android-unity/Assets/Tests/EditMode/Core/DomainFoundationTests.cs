@@ -11,7 +11,7 @@ namespace Baseball.Tests.EditMode.Core
         public void BalanceV4PresetsShareOneStartingBudgetAndCompleteRepertoires()
         {
             Assert.That(PitcherPresetCatalog.BalanceVersion, Is.EqualTo(4));
-            Assert.That(PitcherPresetCatalog.All, Has.Count.EqualTo(4));
+            Assert.That(PitcherPresetCatalog.All.Count, Is.EqualTo(4));
             foreach (var preset in PitcherPresetCatalog.All)
             {
                 var pitcher = preset.Pitcher;

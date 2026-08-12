@@ -68,42 +68,125 @@ NODE
   [[ "$failed" -eq 0 ]]
 }
 
+slugify() {
+  printf '%s' "$1" | tr '[:upper:]_.' '[:lower:]--'
+}
+
 run_tests() {
   local platform="$1"
-  local label
-  local result_file
-  local log_file
+  local evidence_name="$2"
+  local assembly_names="$3"
+  local test_filter="${4:-}"
+  local result_file="$artifact_root/${evidence_name}.xml"
+  local log_file="$artifact_root/${evidence_name}.log"
+  local -a command
   local unity_status
-  label="$(printf '%s' "$platform" | tr '[:upper:]' '[:lower:]')"
-  result_file="$artifact_root/${label}.xml"
-  log_file="$artifact_root/${label}.log"
   rm -f "$result_file" "$log_file"
 
+  command=(
+    "$unity_bin"
+    -batchmode
+    -nographics
+    -buildTarget Android
+    -projectPath "$project_path"
+    -runTests
+    -testPlatform "$platform"
+    -assemblyNames "$assembly_names"
+  )
+  if [[ -n "$test_filter" ]]; then
+    command+=(-testFilter "$test_filter")
+  fi
+  command+=(-testResults "$result_file" -logFile "$log_file")
+
   set +e
-  "$unity_bin" \
-    -batchmode \
-    -nographics \
-    -quit \
-    -buildTarget Android \
-    -projectPath "$project_path" \
-    -runTests \
-    -testPlatform "$platform" \
-    -testResults "$result_file" \
-    -logFile "$log_file"
+  "${command[@]}"
   unity_status=$?
   set -e
 
   if [[ "$unity_status" -ne 0 ]]; then
-    echo "$platform Unity process failed with exit code $unity_status." >&2
+    echo "$platform/$evidence_name Unity process failed with exit code $unity_status." >&2
   fi
 
-  if ! validate_results "$platform" "$result_file" "$log_file"; then
+  if ! validate_results "$platform/$evidence_name" "$result_file" "$log_file"; then
     return 1
   fi
   [[ "$unity_status" -eq 0 ]]
 }
 
 overall_status=0
-run_tests EditMode || overall_status=1
-run_tests PlayMode || overall_status=1
+editmode_assemblies=(
+  Baseball.Core.Tests
+  Baseball.Application.Tests
+  Baseball.Platform.Tests
+  Baseball.Presentation.Tests
+  Baseball.HighSchool.Tests
+  Baseball.Pro.Tests
+  Baseball.InternalQa.Tests
+)
+for assembly_name in "${editmode_assemblies[@]}"; do
+  evidence_name="editmode-$(slugify "$assembly_name")"
+  run_tests EditMode "$evidence_name" "$assembly_name" || overall_status=1
+done
+
+# Bootstrap owns serialized async lifecycle and reset recovery boundaries. Isolate
+# these Task tests for the same Unity 1.6 batch-runner limitation as persistence.
+bootstrap_tests=(
+  Initialize_OpensOnceAndPublishesReadyOnConfiguredMainThread
+  AtomicFactory_ResolvesInstallIdentityInsideEverySerializedRetry
+  Lifecycle_DeduplicatesPauseResumeAndLowMemory
+  FailedLifecycleHook_DoesNotAdvanceStateAndCanBeRetried
+  FailedResumeAndLowMemory_RemainRetryableWithoutLosingReadyStore
+  FailedInitialization_NotifiesSafelyAndCanBeRetried
+  ReadySubscriberFailure_DoesNotBlockOtherSubscribersOrPublication
+  Dispose_IsIdempotentClearsReadyAndRejectsFurtherCallbacks
+  DisposeFailure_StillClearsAndAttemptsEveryOwnedResource
+  AtomicFactory_OpensAggregateAndPersistsFirstCommandBeforePublish
+  DurableHooks_PrepareEligiblePlanOnceAndReserveWarmColdAnalyticsAfterSave
+  DurableResume_AdoptsExternalHigherRevisionAndPublishesOnMainThread
+  DurablePause_ContendedStaleRetryKeepsCommittedPublicationOnMainThread
+  PreparedResetFailureSuppressesPauseRewriteAndCandidateRestartsCleanly
+)
+for test_name in "${bootstrap_tests[@]}"; do
+  evidence_name="editmode-bootstrap-$(slugify "$test_name")"
+  test_filter="Baseball.Bootstrap.Tests.RuntimeGameCoordinatorTests.$test_name"
+  run_tests EditMode "$evidence_name" Baseball.Bootstrap.Tests "$test_filter" || overall_status=1
+done
+
+# Unity Test Framework 1.6 can stop advancing after more than one truly asynchronous
+# filesystem test in a batch. Keep every persistence test in a fresh Editor process;
+# each XML remains complete and non-empty, and every case still runs fail-closed.
+persistence_tests=(
+  Save_WritesSpecifiedEnvelopeAndRoundTrips
+  Checksum_IsIndependentOfObjectPropertyOrder
+  Save_RotatesExactlyThreeBackups
+  Save_SameRevisionAndPayload_IsIdempotentWithoutBackupRotation
+  Save_RejectsRevisionRegression
+  Save_RejectsSameRevisionConflict
+  Load_CorruptCanonical_RecoversHighestValidBackupAndQuarantinesOnce
+  Load_SameRevision_UsesExplicitSemanticPriority
+  Load_ChecksumMismatch_FallsBackToBackup
+  Load_AllCandidatesCorrupt_MovesThemToQuarantine
+  FutureSchema_IsPreservedAndNeverOverwritten
+  OlderSchema_IsPreservedAndNeverOverwritten
+  Save_FaultBeforeCandidateValidation_PreservesPreviousCanonical
+  Save_FaultAfterCandidateValidation_PreservesPreviousCanonical
+  Save_FaultAfterTempWrite_PreservesPreviousCanonical
+  Save_FaultAfterTempValidation_PreservesPreviousCanonical
+  Save_FaultAfterBackupRotation_PreservesPreviousCanonical
+  Save_FaultBeforeCanonicalSwap_PreservesPreviousCanonical
+  Save_FaultAfterCanonicalSwap_PreservesPreviousCanonical
+  Save_FaultBeforeCanonicalVerification_PreservesPreviousCanonical
+  Save_FaultAfterCanonicalVerification_PreservesPreviousCanonical
+  FirstSave_FaultAfterSwap_LeavesNoFalseCanonical
+  InvalidPayload_IsRejectedBeforeAnyFileMutation
+  Reset_DeletesCanonicalTempBackupsAndQuarantineWithoutRecovery
+  OneHundredSaveReloadCycles_PreserveStateHashInputs
+)
+for test_name in "${persistence_tests[@]}"; do
+  evidence_name="editmode-persistence-$(slugify "$test_name")"
+  test_filter="Baseball.Persistence.Tests.AtomicSaveRepositoryTests.$test_name"
+  run_tests EditMode "$evidence_name" Baseball.Persistence.Tests "$test_filter" || overall_status=1
+done
+
+run_tests PlayMode playmode Baseball.PlayMode.Tests || overall_status=1
 exit "$overall_status"

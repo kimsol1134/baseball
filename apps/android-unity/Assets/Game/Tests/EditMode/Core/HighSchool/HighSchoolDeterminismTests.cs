@@ -66,8 +66,8 @@ namespace Baseball.Core.HighSchool.Tests
             var training = engine.CommitTraining(
                 new CommitCareerTrainingParams(school.NextSeed, school.Snapshot, TrainingFocus.Command, TrainingIntensity.Standard));
             AssertSwiftTransition(training, HighSchoolCareerPhase.Training,
-                "14727619764395285174", "fa1c5a90797e4922", "d4a44330e3099c94",
-                36, 46, 36, 39, 13);
+                "14727619764395285174", "48fc6da377e52bdc", "33ad17500b1a30fd",
+                36, 46, 36, 39, 11);
         }
 
         [Test]

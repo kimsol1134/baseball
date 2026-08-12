@@ -27,7 +27,7 @@ namespace Baseball.Presentation.Tests.Screens
         public void EveryRouteHasACompleteKoreanViewModel()
         {
             ShellRoute[] routes = (ShellRoute[])Enum.GetValues(typeof(ShellRoute));
-            Assert.That(_readModel.Routes, Has.Count.EqualTo(routes.Length - 1));
+            Assert.That(_readModel.Routes.Count, Is.EqualTo(routes.Length - 1));
             Assert.That(new List<ShellRoute>(_readModel.Routes).Contains(ShellRoute.Daily), Is.False);
             foreach (ShellRoute route in _readModel.Routes)
             {
@@ -112,6 +112,14 @@ namespace Baseball.Presentation.Tests.Screens
             for (int index = 0; index < expected.Length - 1; index++)
             {
                 BaseballScreenViewModel screen = _readModel.Read(expected[index]);
+                if (expected[index] == ShellRoute.PitchHandoff)
+                {
+                    Assert.That(HasActionTo(screen, ShellRoute.PitchHandoff), Is.True,
+                        "저장된 투구 세션은 같은 handoff 화면에서 재개해야 합니다.");
+                    Assert.That(HasActionTo(screen, ShellRoute.ImportantGame), Is.True,
+                        "투구 이전 화면으로 돌아가는 명시 경로가 있어야 합니다.");
+                    continue;
+                }
                 Assert.That(
                     HasActionTo(screen, expected[index + 1]),
                     Is.True,

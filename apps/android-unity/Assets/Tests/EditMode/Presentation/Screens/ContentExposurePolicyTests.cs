@@ -35,9 +35,33 @@ namespace Baseball.Presentation.Tests.Screens
         public void ReRenderOfSameContentIsSuppressedButChangedInstanceCanExpose()
         {
             var deduplicator = new ContentExposureDeduplicator();
-            Assert.That(deduplicator.TryMark("prologue", "player-legacy-letter", "life-1"), Is.True);
-            Assert.That(deduplicator.TryMark("prologue", "player-legacy-letter", "life-1"), Is.False);
-            Assert.That(deduplicator.TryMark("prologue", "player-legacy-letter", "life-2"), Is.True);
+            Assert.That(deduplicator.TryBegin("prologue", "player-legacy-letter", "life-1"), Is.True);
+            deduplicator.Complete("prologue", "player-legacy-letter", "life-1");
+            Assert.That(deduplicator.TryBegin("prologue", "player-legacy-letter", "life-1"), Is.False);
+            Assert.That(deduplicator.TryBegin("prologue", "player-legacy-letter", "life-2"), Is.True);
+        }
+
+        [TestCase("hs-career-wind")]
+        [TestCase("player-legacy-letter")]
+        [TestCase("hs-player-heartline")]
+        [TestCase("choice:legacy_signature")]
+        [TestCase("reminder-opt-in")]
+        public void FailedDurableExposureIsReleasedAndCanSucceedOnReentry(string contentId)
+        {
+            var deduplicator = new ContentExposureDeduplicator();
+            const string route = "visible-route";
+            const string instance = "stable-instance";
+
+            Assert.That(deduplicator.TryBegin(route, contentId, instance), Is.True);
+            Assert.That(deduplicator.TryBegin(route, contentId, instance), Is.False,
+                "an in-flight save cannot be duplicated");
+            deduplicator.Release(route, contentId, instance);
+
+            Assert.That(deduplicator.TryBegin(route, contentId, instance), Is.True,
+                "save, I/O, or cancellation failure must become retryable without a restart");
+            deduplicator.Complete(route, contentId, instance);
+            Assert.That(deduplicator.TryBegin(route, contentId, instance), Is.False,
+                "only an acknowledged durable+enqueued exposure is process-locally complete");
         }
     }
 }

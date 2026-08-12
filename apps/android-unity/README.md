@@ -1,9 +1,13 @@
 # Android Unity port
 
 This directory is a Unity **6000.3.19f1** project for the portrait Android port.
-The checked-in bootstrap scene is intentionally empty: `AppRoot` is created before
-scene load and persists across scenes. Feature scenes and presentation composition
-are separate workstreams.
+The checked-in bootstrap scene is intentionally empty: `AppRoot` and the UI shell are
+created at runtime and persist without owning career state. The implementation deliberately
+uses one boot scene plus an explicit `PitchStage` object/Addressables lease lifecycle instead
+of empty additive shell/pitch scenes. Stage load failure preserves the saved session, and close
+destroys the stage and releases every visual lease. Deterministic EditMode/PlayMode fixtures and
+the reference-compile lane replace an Editor-only presentation sandbox; no QA scene enters the player.
+This reviewed deviation from plan §3.2 is recorded in `docs/android-unity/DECISIONS.md`.
 
 ## Assembly boundaries
 
@@ -47,15 +51,19 @@ Loads trust a valid canonical first. If it is corrupt, all backups are checked a
 highest valid revision wins; an injected semantic-priority policy breaks equal-revision
 ties. The corrupt canonical is quarantined and the recovered backup becomes canonical.
 A future schema and an older unmigrated schema are preserved without overwrite.
-Explicit reset removes temp/backups/quarantine before deleting canonical last, then
-verifies that no save candidate can be recovered.
+Explicit reset first fsyncs an irrevocable no-backup journal, then removes
+temp/backups/quarantine before deleting canonical last. Repository deletion, candidate install-ID
+publication, analytics/review/reminder cleanup, stale install-epoch deletion, and share-PNG cleanup
+have separate durable receipts. Startup finishes a pending journal before store publication and
+never repeats repository deletion after its receipt, so progress created after reset survives a
+later cleanup-pending restart.
 
 `PersistentStore<TState,TCommand>` serializes command execution, enforces command IDs,
 revision preconditions, revision `+1`, and durable receipts. It publishes the new state
 only after `IStateSaver.SaveAsync` succeeds. Downstream UI and analytics observers cannot
 turn an already durable command into a failure.
 
-The top-level aggregate is currently version `3`. Version `2` adds save-backed product
+The top-level aggregate is currently version `4`. Version `2` adds save-backed product
 settings and version `3` adds analytics one-shot receipts. Lifetime receipts are never
 evicted; only scoped time-series receipts use a bounded 512-entry LRU. Return-plan
 experiment assignment, anonymous receipt, Seoul saved-day key, development-rules version,
@@ -71,11 +79,14 @@ entries is removed.
 
 ## Runtime composition
 
-`AppRoot` captures Unity's main-thread synchronization context, obtains the anonymous
-install ID from Android's `noBackupFilesDir`, and opens a real
+`AppRoot` captures Unity's main-thread synchronization context and opens a real
 `AtomicSaveRepository<GameSaveAggregate>`. The aggregate is validated with
 `GameSaveValidator` and uses `GameSaveSemanticPriority`; career commands are delegated
 to `CoreHighSchoolCareerPort` and `CoreProCareerPort`.
+
+The store factory resolves the anonymous install ID from Android's `noBackupFilesDir` inside each
+serialized `OpenAsync` attempt. Identity I/O failure therefore publishes `StartupFailed` and the
+visible retry action retries durable identity access; no unsaved process-only ID is accepted.
 
 Scene-level composition can observe the runtime without constructing a mock store:
 
@@ -105,19 +116,18 @@ UNITY_BIN=/Applications/Unity/Hub/Editor/6000.3.19f1/Unity.app/Contents/MacOS/Un
   -logFile /tmp/baseball-unity-editmode.log
 ```
 
-On the current machine this command stops with exit `198` because no valid Unity Editor
-license is activated. Android Build Support is present with API 36/build-tools 36.0.0,
-NDK r27c, and OpenJDK 17.0.18; those modules were installed externally, not by repository
-code. License activation is therefore the remaining prerequisite for Unity EditMode and
-Android AAB execution.
+On the current machine Unity Personal is activated and `npm run test:unity` passes the
+EditMode product assemblies, isolated Bootstrap/Persistence fault cases, and PlayMode.
+Android Build Support is present with API 36/build-tools 36.0.0, NDK r27c, and OpenJDK
+17.0.18; those modules were installed externally, not by repository code.
 
 As a license-independent check, Application, Bootstrap, and Core compile against
 `.NET Standard 2.1`; a second compile includes AppRoot and the Unity 6000.3.19f1
 `UnityEngine.CoreModule` reference. The persistence, application, Core adapter, and
 Bootstrap lifecycle suites cover recovery, save-before-publish, snapshot resume,
 duplicate callbacks, exception isolation, main-thread publication, and idempotent
-disposal. Unity EditMode and Android IL2CPP round-trip tests remain the release authority
-once those external prerequisites are available. Static Newtonsoft round trips and
-`link.xml` validation cannot prove managed-code stripping behavior; an actual IL2CPP AAB
-build and on-device process-restart round trip remain blocked solely by the expired
-offline Unity Personal entitlement described above.
+disposal. Unity EditMode, an ARM64 IL2CPP internal-verification AAB, and 16KB API 35 ARM64
+emulator restart/fault smoke now pass. Static Newtonsoft round trips and `link.xml`
+validation alone still do not prove production managed-code stripping behavior; the
+remaining release authority is a clean production-signed AAB, physical-device round trip,
+service reception, and Play evidence recorded in `docs/android-unity/RELEASE_EVIDENCE.md`.

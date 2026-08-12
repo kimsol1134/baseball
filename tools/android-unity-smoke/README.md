@@ -10,6 +10,9 @@
 - bundletool `PAGE_ALIGNMENT_16K`, 생성 APK `zipalign -P 16`, 모든 ARM64 `.so` ELF LOAD
   16KB 정렬, `apkanalyzer` merged permission 허용 목록, `small/normal × 6 density`의 정확한
   compatible-screens 집합과 기기 native page size 기록
+- production smoke는 `build-manifest.json`·`checksums.sha256`·AAB SHA-256·현재 Git commit·
+  production distribution·upload certificate pin을 함께 검증한다. 같은 이름의 임의 AAB나
+  다른 commit의 산출물은 기기 증거로 채택하지 않는다.
 - production 모드 일곱 screenshot(내부 QA 모드는 추가 screenshot)의 PNG IHDR 기준
   portrait(`height > width`) 검증
 - 기기가 landscape 회전을 요청해도 앱이 portrait를 유지하는지 검증
@@ -19,6 +22,8 @@
 - 시스템 글자 크기 200% 상태 재실행
 - `RUNNING_LOW` trim-memory callback 뒤 process/foreground 유지
 - crash·ANR 및 앱 logcat의 민감정보 표식 검사
+- 패키지 프로세스 logcat의 누락/미지원 셰이더·핑크 재질·StrictMode·Firebase/Amplitude
+  초기화/브릿지 오류 fail-closed 검사(오프라인 전송 재시도는 제외)
 - `/data` 여유 공간과 `diskstats` 기록. 실제 low-storage 조작은 하지 않으며 내부 모드에서
   별도 샌드박스 ENOSPC 저장 실패 proxy를 실행
 - 각 단계 screenshot, 시작 결과, logcat, bundletool 결과 보관
@@ -30,6 +35,8 @@
 - Android SDK의 `adb`, cmdline-tools 16.0 `apkanalyzer`, build-tools 36.0.0 `zipalign`,
   Android NDK `llvm-readelf`
 - 서명된 release AAB. bundletool은 Unity 6000.3.19f1 Android Build Support 번들을 기본 사용
+- production 모드는 AAB와 같은 RC artifact의 `build-manifest.json`, `checksums.sha256`,
+  `BASEBALL_UPLOAD_CERT_SHA256` pin과 manifest의 Git commit과 일치하는 clean worktree가 필요하다.
 - APKS 서명용 keystore와 alias
 - store/key 비밀번호가 각각 한 줄로 든 권한 제한 파일
 
@@ -45,12 +52,15 @@ export BASEBALL_ANDROID_KEYSTORE=/absolute/path/release.keystore
 export BASEBALL_ANDROID_KEY_ALIAS=release
 export BASEBALL_ANDROID_STORE_PASSWORD_FILE=/absolute/secret/store-pass.txt
 export BASEBALL_ANDROID_KEY_PASSWORD_FILE=/absolute/secret/key-pass.txt
+export BASEBALL_UPLOAD_CERT_SHA256=0123456789ABCDEF...64_HEX
 ```
 
 선택:
 
 ```bash
 export BASEBALL_ADB_SERIAL=device-serial
+export BASEBALL_BUILD_MANIFEST=/absolute/path/build-manifest.json
+export BASEBALL_BUILD_CHECKSUMS=/absolute/path/checksums.sha256
 export BASEBALL_ADB=/absolute/path/to/adb
 export BASEBALL_UNITY_ANDROID_SDK=/absolute/path/to/AndroidPlayer/SDK
 export BASEBALL_BUNDLETOOL_JAR=/absolute/path/bundletool-all.jar
@@ -61,6 +71,7 @@ export BASEBALL_LLVM_READELF=/absolute/path/to/llvm-readelf
 export BASEBALL_ANDROID_PACKAGE_ID=com.solkim.baseball.android
 export BASEBALL_SMOKE_EVIDENCE_ROOT=/absolute/evidence/root
 export BASEBALL_SMOKE_LAUNCH_TIMEOUT_SECONDS=20
+export BASEBALL_SMOKE_PITCH_TIMEOUT_SECONDS=300
 export BASEBALL_SMOKE_SETTLE_SECONDS=1
 export BASEBALL_SMOKE_MODE=production
 ```
@@ -81,6 +92,13 @@ intent extra를 보내지 않습니다. 모든 cold/relaunch 구간은 passive f
 기다립니다. marker가 없거나 timeout이면 `*-first-interactive.txt`에 마지막 app log와 기대 marker를
 남기고 실패합니다. 생성된 base-master APK의 application ID와 `debuggable=false`도 확인하므로
 Local Verification 개발 AAB를 production smoke 증거로 사용할 수 없습니다.
+
+16KB page-size 기기에서 production smoke를 실행하면 passive launch만으로 통과하지 않습니다.
+저장된 실제 커리어 투구의 3D presentation이 끝날 때 production player가 내는
+`BASEBALL_PITCH_PRESENTATION_COMPLETED` marker를 기다립니다. 실행자가 화면에서 한 공을 직접
+완료해야 하며 기본 제한은 300초입니다. marker와 이후 crash·ANR 0 검사가 모두 통과한 경우에만
+`native_16k_execution=passed`를 기록합니다. internal QA pitch sample은 이 production 증거를
+대체하지 않습니다.
 
 ## 내부 QA 모드
 
@@ -115,9 +133,10 @@ bash tools/android-unity-smoke/run.sh
 `apk-permissions.txt`, `base-master-manifest.xml`, `apk-compatible-screens.txt`, 비식별 기기 모델·API,
 서명 검증, logcat과 `result.txt`가 남습니다. 기기 serial과 비밀번호는 evidence에 기록하지 않습니다.
 
-`native_page_size=16384`와 `native_16k_execution=passed`인 기기 실행 증거가 별도 출시 차단
-항목입니다. 4KB 기기 smoke는 `native_16k_execution=not_tested`로 기록되며, 통과해도 16KB
-기기 실행을 통과한 것으로 간주하지 않습니다.
+`native_page_size=16384`, `production_pitch_on_16k=passed`,
+`native_16k_execution=passed`가 모두 있는 production 기기 실행 증거가 별도 출시 차단
+항목입니다. 4KB 기기나 internal QA smoke는 `native_16k_execution=not_tested`로 기록되며,
+통과해도 16KB production 기기 실행을 통과한 것으로 간주하지 않습니다.
 
 ## 종료 코드와 복구
 

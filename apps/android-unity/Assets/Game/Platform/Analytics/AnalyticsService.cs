@@ -6,19 +6,23 @@ namespace Baseball.Platform.Analytics
 {
     public sealed class AnalyticsService
     {
+        private readonly object _stateGate = new object();
         private readonly AnalyticsContext _context;
         private readonly IReadOnlyList<IAnalyticsDestination> _destinations;
-        private readonly IAnalyticsOnceStore _onceStore;
+        private readonly Func<string, IAnalyticsOnceStore> _onceStoreForInstall;
+        private IAnalyticsOnceStore _onceStore;
 
         public AnalyticsService(
             AnalyticsContext context,
             IReadOnlyList<IAnalyticsDestination> destinations,
             IAnalyticsOnceStore onceStore,
-            string anonymousInstallId)
+            string anonymousInstallId,
+            Func<string, IAnalyticsOnceStore> onceStoreForInstall = null)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _destinations = destinations ?? throw new ArgumentNullException(nameof(destinations));
             _onceStore = onceStore ?? throw new ArgumentNullException(nameof(onceStore));
+            _onceStoreForInstall = onceStoreForInstall;
 
             foreach (IAnalyticsDestination destination in _destinations)
             {
@@ -29,19 +33,21 @@ namespace Baseball.Platform.Analytics
         public void Log(AnalyticsEvent analyticsEvent, IReadOnlyDictionary<string, object> properties = null)
         {
             Dictionary<string, object> product = AnalyticsPrivacyGuard.ValidateAndCopy(properties);
-            foreach (IAnalyticsDestination destination in _destinations)
+            lock (_stateGate)
             {
-                if (!destination.IsReady) continue;
-                Dictionary<string, object> payload = PayloadFor(destination.Kind, product);
-                Try(() => destination.Log(analyticsEvent.Value(), payload));
+                LogValidated(analyticsEvent, product);
             }
         }
 
         public bool LogOnce(AnalyticsEvent analyticsEvent, IReadOnlyDictionary<string, object> properties = null)
         {
-            if (!_onceStore.TryMark("event:" + analyticsEvent.Value())) return false;
-            Log(analyticsEvent, properties);
-            return true;
+            Dictionary<string, object> product = AnalyticsPrivacyGuard.ValidateAndCopy(properties);
+            lock (_stateGate)
+            {
+                if (!_onceStore.TryMark("event:" + analyticsEvent.Value())) return false;
+                LogValidated(analyticsEvent, product);
+                return true;
+            }
         }
 
         public bool LogOnce(
@@ -49,33 +55,65 @@ namespace Baseball.Platform.Analytics
             string localScope,
             IReadOnlyDictionary<string, object> properties = null)
         {
+            Dictionary<string, object> product = AnalyticsPrivacyGuard.ValidateAndCopy(properties);
             string scopeHash = StableHash.Fnv1A64(localScope ?? string.Empty);
-            if (!_onceStore.TryMark("scope:" + analyticsEvent.Value() + ":" + scopeHash)) return false;
-            Log(analyticsEvent, properties);
-            return true;
+            lock (_stateGate)
+            {
+                if (!_onceStore.TryMark("scope:" + analyticsEvent.Value() + ":" + scopeHash)) return false;
+                LogValidated(analyticsEvent, product);
+                return true;
+            }
         }
 
         public void Flush()
         {
-            foreach (IAnalyticsDestination destination in _destinations)
+            lock (_stateGate)
             {
-                if (destination.IsReady) Try(destination.Flush);
+                foreach (IAnalyticsDestination destination in _destinations)
+                {
+                    if (destination.IsReady) Try(destination.Flush);
+                }
             }
         }
 
         public void ResetIdentityAndOnceFlags()
         {
-            _onceStore.Clear();
+            lock (_stateGate)
+            {
+                Try(_onceStore.Clear);
+            }
         }
 
         public void ResetIdentityAndOnceFlags(string anonymousInstallId)
         {
             if (string.IsNullOrWhiteSpace(anonymousInstallId))
                 throw new ArgumentException("An anonymous install ID is required.", nameof(anonymousInstallId));
-            _onceStore.Clear();
+            lock (_stateGate)
+            {
+                IAnalyticsOnceStore previous = _onceStore;
+                IAnalyticsOnceStore replacement = _onceStoreForInstall == null
+                    ? previous
+                    : _onceStoreForInstall(anonymousInstallId) ??
+                      throw new InvalidOperationException("analytics.once_store_factory_returned_null");
+                Try(previous.Clear);
+                if (!ReferenceEquals(previous, replacement)) Try(replacement.Clear);
+                _onceStore = replacement;
+                foreach (IAnalyticsDestination destination in _destinations)
+                {
+                    Try(() => destination.SetAnonymousInstallId(anonymousInstallId));
+                }
+            }
+        }
+
+        private void LogValidated(
+            AnalyticsEvent analyticsEvent,
+            IReadOnlyDictionary<string, object> product)
+        {
             foreach (IAnalyticsDestination destination in _destinations)
             {
-                Try(() => destination.SetAnonymousInstallId(anonymousInstallId));
+                if (!destination.IsReady) continue;
+                Dictionary<string, object> payload = PayloadFor(destination.Kind, product);
+                Try(() => destination.Log(analyticsEvent.Value(), payload));
             }
         }
 

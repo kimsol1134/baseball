@@ -22,6 +22,11 @@ namespace Baseball.Persistence.Tests
         [SetUp]
         public void SetUp()
         {
+            CreateFreshLayout();
+        }
+
+        private void CreateFreshLayout()
+        {
             _testRoot = Path.Combine(
                 Path.GetTempPath(),
                 "BaseballAtomicSaveTests",
@@ -125,9 +130,21 @@ namespace Baseball.Persistence.Tests
             }
         }
 
-        [TestCase(6, 10, "changed", SaveFailureCode.RevisionRegression)]
-        [TestCase(7, 11, "changed", SaveFailureCode.RevisionConflict)]
-        public async Task Save_RejectsRevisionRegressionAndSameRevisionConflict(
+        [Test]
+        public Task Save_RejectsRevisionRegression()
+        {
+            return AssertRevisionFailure(
+                6, 10, "changed", SaveFailureCode.RevisionRegression);
+        }
+
+        [Test]
+        public Task Save_RejectsSameRevisionConflict()
+        {
+            return AssertRevisionFailure(
+                7, 11, "changed", SaveFailureCode.RevisionConflict);
+        }
+
+        private async Task AssertRevisionFailure(
             int attemptedRevision,
             int attemptedAbility,
             string attemptedPhase,
@@ -138,8 +155,8 @@ namespace Baseball.Persistence.Tests
                 await repository.SaveAsync(Payload(10, "safe", 0), 7);
                 var original = File.ReadAllBytes(_layout.CanonicalPath);
 
-                var exception = Assert.ThrowsAsync<SavePersistenceException>(async () =>
-                    await repository.SaveAsync(
+                var exception = await AssertThrowsAsync<SavePersistenceException>(() =>
+                    repository.SaveAsync(
                         Payload(attemptedAbility, attemptedPhase, 0),
                         (ulong)attemptedRevision));
 
@@ -164,7 +181,7 @@ namespace Baseball.Persistence.Tests
                 Assert.That(recovered.RequiresRecoveryNotice, Is.True);
                 Assert.That(recovered.Envelope.Revision, Is.EqualTo(2));
                 Assert.That(recovered.Envelope.Payload.Ability, Is.EqualTo(20));
-                Assert.That(recovered.QuarantinedPaths, Has.Count.EqualTo(1));
+                Assert.That(recovered.QuarantinedPaths.Count, Is.EqualTo(1));
                 Assert.That(File.Exists(recovered.QuarantinedPaths[0]), Is.True);
 
                 var secondLoad = await repository.LoadAsync();
@@ -230,16 +247,28 @@ namespace Baseball.Persistence.Tests
                 var load = await repository.LoadAsync();
 
                 Assert.That(load.Status, Is.EqualTo(SaveLoadStatus.UnrecoverableCorruption));
-                Assert.That(load.QuarantinedPaths, Has.Count.EqualTo(4));
+                Assert.That(load.QuarantinedPaths.Count, Is.EqualTo(4));
                 Assert.That(load.QuarantinedPaths.All(File.Exists), Is.True);
                 Assert.That(File.Exists(_layout.CanonicalPath), Is.False);
                 Assert.That(File.Exists(_layout.BackupPath(1)), Is.False);
             }
         }
 
-        [TestCase(2, SaveLoadStatus.FutureVersion, SaveFailureCode.FutureVersionWouldBeOverwritten)]
-        [TestCase(0, SaveLoadStatus.MigrationRequired, SaveFailureCode.MigrationRequired)]
-        public async Task UnsupportedSchema_IsPreservedAndNeverOverwritten(
+        [Test]
+        public Task FutureSchema_IsPreservedAndNeverOverwritten()
+        {
+            return AssertUnsupportedSchema(
+                2, SaveLoadStatus.FutureVersion, SaveFailureCode.FutureVersionWouldBeOverwritten);
+        }
+
+        [Test]
+        public Task OlderSchema_IsPreservedAndNeverOverwritten()
+        {
+            return AssertUnsupportedSchema(
+                0, SaveLoadStatus.MigrationRequired, SaveFailureCode.MigrationRequired);
+        }
+
+        private async Task AssertUnsupportedSchema(
             int schemaVersion,
             SaveLoadStatus expectedLoadStatus,
             SaveFailureCode expectedFailureCode)
@@ -253,8 +282,8 @@ namespace Baseball.Persistence.Tests
                 File.WriteAllBytes(_layout.CanonicalPath, unsupportedBytes);
 
                 var load = await repository.LoadAsync();
-                var exception = Assert.ThrowsAsync<SavePersistenceException>(async () =>
-                    await repository.SaveAsync(Payload(2, "new", 0), 2));
+                var exception = await AssertThrowsAsync<SavePersistenceException>(() =>
+                    repository.SaveAsync(Payload(2, "new", 0), 2));
 
                 Assert.That(load.Status, Is.EqualTo(expectedLoadStatus));
                 Assert.That(exception.Code, Is.EqualTo(expectedFailureCode));
@@ -265,17 +294,43 @@ namespace Baseball.Persistence.Tests
             }
         }
 
-        [TestCase(SaveFaultPoint.BeforeCandidateValidation)]
-        [TestCase(SaveFaultPoint.AfterCandidateValidation)]
-        [TestCase(SaveFaultPoint.AfterTempWrite)]
-        [TestCase(SaveFaultPoint.AfterTempValidation)]
-        [TestCase(SaveFaultPoint.AfterBackupRotation)]
-        [TestCase(SaveFaultPoint.BeforeCanonicalSwap)]
-        [TestCase(SaveFaultPoint.AfterCanonicalSwap)]
-        [TestCase(SaveFaultPoint.BeforeCanonicalVerification)]
-        [TestCase(SaveFaultPoint.AfterCanonicalVerification)]
-        public async Task Save_FaultAtEveryCheckpoint_PreservesPreviousCanonical(
-            SaveFaultPoint faultPoint)
+        [Test]
+        public Task Save_FaultBeforeCandidateValidation_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.BeforeCandidateValidation);
+
+        [Test]
+        public Task Save_FaultAfterCandidateValidation_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.AfterCandidateValidation);
+
+        [Test]
+        public Task Save_FaultAfterTempWrite_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.AfterTempWrite);
+
+        [Test]
+        public Task Save_FaultAfterTempValidation_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.AfterTempValidation);
+
+        [Test]
+        public Task Save_FaultAfterBackupRotation_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.AfterBackupRotation);
+
+        [Test]
+        public Task Save_FaultBeforeCanonicalSwap_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.BeforeCanonicalSwap);
+
+        [Test]
+        public Task Save_FaultAfterCanonicalSwap_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.AfterCanonicalSwap);
+
+        [Test]
+        public Task Save_FaultBeforeCanonicalVerification_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.BeforeCanonicalVerification);
+
+        [Test]
+        public Task Save_FaultAfterCanonicalVerification_PreservesPreviousCanonical() =>
+            AssertFaultPreservesPreviousCanonical(SaveFaultPoint.AfterCanonicalVerification);
+
+        private async Task AssertFaultPreservesPreviousCanonical(SaveFaultPoint faultPoint)
         {
             using (var repository = CreateRepository())
             {
@@ -285,8 +340,8 @@ namespace Baseball.Persistence.Tests
             var originalBytes = File.ReadAllBytes(_layout.CanonicalPath);
             using (var failingRepository = CreateRepository(new ThrowingFaultInjector(faultPoint)))
             {
-                Assert.CatchAsync<Exception>(async () =>
-                    await failingRepository.SaveAsync(Payload(12, "candidate", 0), 12));
+                await AssertThrowsAsync<Exception>(() =>
+                    failingRepository.SaveAsync(Payload(12, "candidate", 0), 12));
             }
 
             Assert.That(File.ReadAllBytes(_layout.CanonicalPath), Is.EqualTo(originalBytes));
@@ -298,14 +353,19 @@ namespace Baseball.Persistence.Tests
             }
         }
 
-        [TestCase(SaveFaultPoint.AfterCanonicalSwap)]
-        [TestCase(SaveFaultPoint.AfterCanonicalVerification)]
-        public void FirstSave_FaultAfterSwap_LeavesNoFalseCanonical(SaveFaultPoint faultPoint)
+        [Test]
+        public async Task FirstSave_FaultAfterSwap_LeavesNoFalseCanonical()
+        {
+            await AssertFirstSaveFaultLeavesNoCanonical(SaveFaultPoint.AfterCanonicalSwap);
+            await AssertFirstSaveFaultLeavesNoCanonical(SaveFaultPoint.AfterCanonicalVerification);
+        }
+
+        private async Task AssertFirstSaveFaultLeavesNoCanonical(SaveFaultPoint faultPoint)
         {
             using (var repository = CreateRepository(new ThrowingFaultInjector(faultPoint)))
             {
-                Assert.CatchAsync<Exception>(async () =>
-                    await repository.SaveAsync(Payload(1, "candidate", 0), 1));
+                await AssertThrowsAsync<Exception>(() =>
+                    repository.SaveAsync(Payload(1, "candidate", 0), 1));
             }
 
             Assert.That(File.Exists(_layout.CanonicalPath), Is.False);
@@ -316,8 +376,8 @@ namespace Baseball.Persistence.Tests
         {
             using (var repository = CreateRepository())
             {
-                var exception = Assert.ThrowsAsync<SavePersistenceException>(async () =>
-                    await repository.SaveAsync(Payload(101, "invalid", 0), 1));
+                var exception = await AssertThrowsAsync<SavePersistenceException>(() =>
+                    repository.SaveAsync(Payload(101, "invalid", 0), 1));
 
                 Assert.That(exception.Code, Is.EqualTo(SaveFailureCode.CandidateInvalid));
                 Assert.That(Directory.Exists(_layout.SaveDirectory), Is.True);
@@ -441,6 +501,26 @@ namespace Baseball.Persistence.Tests
             public int SemanticPriority { get; set; }
 
             public Dictionary<string, int> Counters { get; set; }
+        }
+
+        private static async Task<TException> AssertThrowsAsync<TException>(Func<Task> action)
+            where TException : Exception
+        {
+            try
+            {
+                await action();
+            }
+            catch (TException exception)
+            {
+                return exception;
+            }
+            catch (Exception exception)
+            {
+                Assert.Fail("Expected " + typeof(TException).Name + " but caught " +
+                    exception.GetType().Name + ": " + exception.Message);
+            }
+            Assert.Fail("Expected " + typeof(TException).Name + " but no exception was thrown.");
+            return null;
         }
 
         private sealed class TestPayloadValidator : ISavePayloadValidator<TestPayload>
