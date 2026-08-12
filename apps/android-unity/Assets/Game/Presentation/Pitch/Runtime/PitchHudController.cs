@@ -520,6 +520,15 @@ namespace Baseball.Presentation.Pitch
                 release.CapturePointer(evt.pointerId);
                 evt.StopPropagation();
             });
+            release.clicked += () =>
+            {
+                // Android accessibility services and shell-driven device smoke can
+                // deliver a semantic click without a matching pointer-up event.
+                // Keep the ordinary press/hold interaction, but make that click a
+                // deterministic neutral release instead of a dead control.
+                if (_presenter.Phase == PitchPlayPhase.Selecting)
+                    _presenter.SubmitNeutralRelease();
+            };
             release.RegisterCallback<PointerUpEvent>(evt =>
             {
                 if (!_pointerCapture.EndRelease(evt.pointerId)) return;

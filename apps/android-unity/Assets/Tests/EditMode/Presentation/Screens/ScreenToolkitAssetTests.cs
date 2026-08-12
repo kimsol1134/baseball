@@ -352,6 +352,8 @@ namespace Baseball.Presentation.Tests.Screens
             string hud = File.ReadAllText("Assets/Game/Presentation/Pitch/Runtime/PitchHudController.cs");
             StringAssert.Contains("pitch-postgame-log-", hud);
             StringAssert.Contains("결과 저장/계속", hud);
+            StringAssert.Contains("release.clicked +=", hud);
+            StringAssert.Contains("_presenter.SubmitNeutralRelease()", hud);
             StringAssert.DoesNotContain("PitchDemoRequestFactory", coordinator);
             StringAssert.DoesNotContain("PitchDemoRequestFactory", persistence);
             Assert.That(File.Exists("Assets/Game/Presentation/Pitch/Model/PitchDemoRequestFactory.cs"), Is.False);
