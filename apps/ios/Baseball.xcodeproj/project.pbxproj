@@ -51,6 +51,7 @@
 		6AF39BC5F556514B4E65261D /* AnalyticsContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F62B28391A7D32EB6880E3 /* AnalyticsContextTests.swift */; };
 		74CC5DD9D7ECD32F61707E5D /* GameAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B412E9D5634221ADBA8ED35 /* GameAudio.swift */; };
 		77B6A10F10B42E5D0C183205 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19519846B2DF9369A5DA8FC /* SettingsView.swift */; };
+		78FF958EF42BC5FED4FC5CD0 /* MoundHeartbeat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EDB806CB53B2CB6541201BE /* MoundHeartbeat.swift */; };
 		7957C1C3814C592C7B49DDC6 /* RunRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C8F87051DCDE81B44A819D /* RunRecapView.swift */; };
 		7ABAEA67E66023CCF56BCEDB /* QACaptureUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DDF52C7FC66A5A36C50638 /* QACaptureUITests.swift */; };
 		81B9B8504D8A35973B155E63 /* HighSchoolCareerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB871919CDBE86B35708EEBF /* HighSchoolCareerView.swift */; };
@@ -128,6 +129,7 @@
 		0F62F6768821513F9AA61316 /* LifeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeCardView.swift; sourceTree = "<group>"; };
 		11CAA2009FC09F663C6DDDDF /* SignatureLegacyIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignatureLegacyIntegrationTests.swift; sourceTree = "<group>"; };
 		146CB8283D0AEFCE220F27FE /* RunPledgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunPledgeTests.swift; sourceTree = "<group>"; };
+		1EDB806CB53B2CB6541201BE /* MoundHeartbeat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoundHeartbeat.swift; sourceTree = "<group>"; };
 		1F71BD5BC715F678CF9E14C5 /* SoundBank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundBank.swift; sourceTree = "<group>"; };
 		1F8835399622943256243E1B /* PadBedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PadBedTests.swift; sourceTree = "<group>"; };
 		27956A4973C78EE16192061C /* PlateFigures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateFigures.swift; sourceTree = "<group>"; };
@@ -301,6 +303,7 @@
 				2BAD21AD8917D769883E60B7 /* LifeArchiveView.swift */,
 				0F62F6768821513F9AA61316 /* LifeCardView.swift */,
 				CD3E88E4A7B3086BC982C1FF /* MobileCareerStore.swift */,
+				1EDB806CB53B2CB6541201BE /* MoundHeartbeat.swift */,
 				F94A4FC0E937518324E7DD23 /* OpeningView.swift */,
 				7A1D59E198E4D5D56F06F17C /* PitchDramaView.swift */,
 				5F3552DE680E36021D69234E /* PitchScenario.swift */,
@@ -578,6 +581,7 @@
 				FC2682FCBF2DAE8965DB929F /* LifeArchiveView.swift in Sources */,
 				98E80C6A739205CFC4F69E02 /* LifeCardView.swift in Sources */,
 				0E8B47740AB64ADAAD5B3CCF /* MobileCareerStore.swift in Sources */,
+				78FF958EF42BC5FED4FC5CD0 /* MoundHeartbeat.swift in Sources */,
 				D5AB687C52FABB539699F9D3 /* OpeningView.swift in Sources */,
 				AC643EFE859422711140B702 /* PitchDramaView.swift in Sources */,
 				3FA995542819DC5AC3209BE2 /* PitchScenario.swift in Sources */,

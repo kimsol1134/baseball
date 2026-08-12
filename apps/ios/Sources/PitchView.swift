@@ -210,8 +210,13 @@ struct PitchView: View {
     var onRetry: (() -> Void)? = nil
 
     @State private var confirmingAbort = false
+    @State private var moundHeartbeat = MoundHeartbeatController()
+    /// 직전 악재의 불규칙 박동은 해당 투구 번호에서 한 번만 소비한다. 앱이 백그라운드에서
+    /// 돌아오거나 같은 ready 상태를 다시 구성해도 안타/볼넷 충격을 재생하지 않는다.
+    @State private var irregularEpisodePitchCount: Int?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     /// 승부 장면 높이. 고정 320은 접근성 글자 크기에서 판정 텍스트가 잘린다(3차 패널 P1).
     @ScaledMetric(relativeTo: .body) private var dramaHeight: CGFloat = 320
     @State private var replayProgress: Double = 1
@@ -254,11 +259,8 @@ struct PitchView: View {
         session.context.strikes == 2 && (session.context.balls == 3 || session.context.outs == 2)
     }
 
-    /// 지금 이 순간의 조임(0~1). 심장박동 진동의 세기와 빠르기가 된다.
-    ///
-    /// 세 가지가 겹칠 때 실제로 손에 땀이 난다 — **경기의 무게**(레버리지), **주자**(한 방이면
-    /// 점수가 들어온다), **볼카운트**(다음 한 구가 타석을 끝낸다). 셋 다 코어가 이미 들고 있는
-    /// 값이라 새 상태를 만들지 않는다.
+    /// Legacy test seam. New callers use `MoundTensionModel` through the full input boundary
+    /// below; this keeps the existing situation tests focused on the same monotonic rule.
     static func tension(
         leverage: Int,
         runners: BaserunnerStateSnapshot,
@@ -266,30 +268,94 @@ struct PitchView: View {
         strikes: Int,
         outs: Int
     ) -> Double {
-        // 620 미만은 조여 오지 않는 이닝이다. 거기서도 폰이 뛰면 진동이 배경 소음이 된다.
-        let byLeverage = min(1, max(0, Double(leverage - 620) / 330))
-        guard byLeverage > 0 else { return 0 }
-        // 득점권 주자. 3루는 외야 뜬공 하나로도 들어온다.
-        let byRunners = runners.thirdOccupied ? 0.30 : runners.secondOccupied ? 0.20
-            : runners.firstOccupied ? 0.08 : 0
-        // 다음 한 구가 타석을 끝낼 수 있는 카운트.
-        let byCount = (balls == 3 && strikes == 2) ? 0.28
-            : strikes == 2 ? 0.16 : balls == 3 ? 0.12 : 0
-        let byOuts = outs == 2 ? 0.08 : 0
-        return min(1, byLeverage * 0.62 + byRunners + byCount + byOuts)
+        MoundTensionModel.tension(for: MoundTensionInput(
+            officialGame: true,
+            leverage: leverage,
+            runners: runners,
+            balls: balls,
+            strikes: strikes,
+            outs: outs,
+            fatigue: 0,
+            batterThreat: 50,
+            recentAdverseEvent: false,
+            composure: MoundComposureInput(command: 0, stamina: 0)
+        ))
     }
 
-    private var currentTension: Double {
-        // 던지고 결과를 보는 동안에는 박동을 멈춘다. 판정이 나오는 자리에 다른 진동이
-        // 겹치면 "잡은 공인지 맞은 공인지"를 손이 구분하지 못한다.
-        guard case .ready = session.stage, !isPractice else { return 0 }
-        return Self.tension(
+    private var recentAdverseEvent: Bool {
+        guard let snapshot = session.lastResult?.snapshot else { return false }
+        if snapshot.result == .walk || snapshot.outcome == .hitByPitch { return true }
+        let outcome = snapshot.outcome
+        switch outcome {
+        case .single, .double, .triple, .homeRun: return true
+        default: return false
+        }
+    }
+
+    private var moundTensionInput: MoundTensionInput {
+        MoundTensionInput(
+            officialGame: !isPractice,
             leverage: session.context.leverage,
             runners: session.gameState.runners,
             balls: session.context.balls,
             strikes: session.context.strikes,
-            outs: session.context.outs
+            outs: session.context.outs,
+            fatigue: session.context.fatigue,
+            batterThreat: MoundTensionModel.batterThreat(
+                contact: session.batter.contact,
+                discipline: session.batter.discipline,
+                power: session.batter.power
+            ),
+            recentAdverseEvent: recentAdverseEvent,
+            composure: session.scenario.moundComposure
         )
+    }
+
+    private var currentTension: Double {
+        guard case .ready = session.stage else { return 0 }
+        return MoundTensionModel.tension(for: moundTensionInput)
+    }
+
+    private var heartbeatSeed: UInt64 { MoundTensionModel.seed(from: session.scenario.id) }
+
+    private func startMoundHeartbeat(includeEntry: Bool) {
+        guard !isPractice, scenePhase == .active, case .ready = session.stage else {
+            stopMoundHeartbeat()
+            return
+        }
+
+        let tension = includeEntry
+            ? MoundTensionModel.entryTension(rawTension: currentTension, officialGame: true)
+            : currentTension
+        guard tension > 0 else {
+            stopMoundHeartbeat()
+            return
+        }
+
+        let shouldUseIrregularEpisode = !includeEntry
+            && recentAdverseEvent
+            && irregularEpisodePitchCount != session.pitchLog.count
+        if shouldUseIrregularEpisode {
+            irregularEpisodePitchCount = session.pitchLog.count
+        }
+
+        stopMoundHeartbeat()
+        moundHeartbeat.start(
+            tension: tension,
+            seed: heartbeatSeed,
+            includeEntry: includeEntry,
+            adverseEpisode: shouldUseIrregularEpisode
+        ) { event in
+            Haptics.shared.heartbeatBeat(tension: event.tension, irregular: event.isIrregular)
+            GameAudio.shared.playHeartbeat(tension: event.tension, irregular: event.isIrregular)
+        }
+    }
+
+    private func stopMoundHeartbeat() {
+        moundHeartbeat.stop()
+        audio.stopHeartbeat()
+        Haptics.shared.stopHeartbeat()
+        Haptics.shared.stopWindUp()
     }
 
     /// 빠른 진행은 저위험 타석에서만 연다. 득점 기대가 크게 흔들리는 승부처나
@@ -431,6 +497,7 @@ struct PitchView: View {
                let success = PitchCopy.hapticSuccess(outcome) {
                 Haptics.shared.outcome(success: success)
             }
+            startMoundHeartbeat(includeEntry: false)
         }
         .onAppear {
             audio.start()
@@ -438,13 +505,13 @@ struct PitchView: View {
             // 마운드에서는 관중과 심판이 음악이다. 패드는 화면을 나갈 때 돌아온다.
             audio.musicIntensity = 0
             Haptics.shared.prepare()
-            Haptics.shared.setHeartbeat(tension: currentTension)
+            startMoundHeartbeat(includeEntry: true)
         }
         .onDisappear {
             audio.crowdIntensity = 0.15
             audio.musicIntensity = 0.5
-            // 마운드를 떠나면 반드시 멈춘다 — 화면 밖에서 계속 뛰는 진동은 고장이다.
-            Haptics.shared.setHeartbeat(tension: 0)
+            // 마운드를 떠나면 반드시 멈춘다 — 화면 밖에서 계속 뛰는 진동·소리는 고장이다.
+            stopMoundHeartbeat()
         }
         // 등판이 끝나는 **그 순간 한 번만** 판정하고 저장한다. body 안에서 판정하면
         // 저장이 곧바로 판정을 뒤집어 축하 배지가 같은 프레임에 사라진다.
@@ -452,10 +519,19 @@ struct PitchView: View {
             sealOutingRecordsIfFinished()
         }
         .onAppear { sealOutingRecordsIfFinished() }
-        // 카운트·주자·아웃이 바뀔 때마다 조임을 다시 건다. 풀카운트로 들어가는 순간
-        // 손 안에서 박동이 빨라지는 것이 이 장치의 전부다.
-        .onChange(of: currentTension) { _, tension in
-            Haptics.shared.setHeartbeat(tension: tension)
+        .onChange(of: session.stage) { _, stage in
+            switch stage {
+            case .ready: startMoundHeartbeat(includeEntry: false)
+            default: stopMoundHeartbeat()
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                startMoundHeartbeat(includeEntry: false)
+            } else {
+                // Backgrounding must cancel both the stored schedule and any in-flight windup.
+                stopMoundHeartbeat()
+            }
         }
     }
 
@@ -804,10 +880,15 @@ struct PitchView: View {
                     pitchType: session.selectedPitchType,
                     velocityTenthsKPH: session.selectedAbilityReadout.nominalVelocityTenthsKPH,
                     autoRelease: autoRelease,
+                    tension: currentTension,
+                    hapticsEnabled: audio.hapticsEnabled,
+                    heartbeatSignal: moundHeartbeat.signal,
+                    disturbanceSeed: heartbeatSeed,
                     onDeliver: { delivery in
                         wasClutch = isClutchNow
                         session.throwPitch(delivery: delivery)
                     },
+                    onRelease: { stopMoundHeartbeat() },
                     onMeterEdge: { audio.play(.uiSelect) }
                 )
                 // 미터 제스처가 버거운 손을 위한 출구가 설정 화면에만 있으면

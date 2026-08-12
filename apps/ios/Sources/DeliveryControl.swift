@@ -25,7 +25,16 @@ struct DeliveryControl: View {
     let pitchType: PitchType
     let velocityTenthsKPH: Int
     let autoRelease: Bool
+    /// Effective official-game tension. Practice passes zero, so the existing meter and fatigue
+    /// aim sway remain untouched there.
+    let tension: Double
+    /// Vibration gates only tension jitter and haptics, not base meter motion or fatigue sway.
+    let hapticsEnabled: Bool
+    let heartbeatSignal: MoundHeartbeatSignal?
+    let disturbanceSeed: UInt64
     let onDeliver: (PitchDelivery) -> Void
+    /// Stops scheduled mound feedback before the release result is applied.
+    var onRelease: () -> Void = {}
     /// 미터가 방향을 바꿀 때(끝에 닿을 때) 알린다. 화면이 가벼운 햅틱을 준다.
     var onMeterEdge: () -> Void = {}
 
@@ -108,7 +117,10 @@ struct DeliveryControl: View {
 
     var body: some View {
         if autoRelease {
-            PrimaryPill(title: "던지기", identifier: "pitch.throw") { onDeliver(.neutral) }
+            PrimaryPill(title: "던지기", identifier: "pitch.throw") {
+                onRelease()
+                onDeliver(.neutral)
+            }
                 .accessibilityHint("자동 릴리스가 켜져 있어 타이밍 없이 던집니다.")
         } else {
             manual
@@ -133,6 +145,7 @@ struct DeliveryControl: View {
         }
         .onAppear { Haptics.shared.prepare() }
         .onDisappear {
+            onRelease()
             isPressing = false
             driver.stop()
             Haptics.shared.stopWindUp()
@@ -244,7 +257,10 @@ struct DeliveryControl: View {
         .accessibilityLabel("와인드업")
         .accessibilityHint("길게 눌러 와인드업하고, 끌어서 조준한 뒤 떼면 던집니다. 설정에서 자동 릴리스를 켜면 탭 한 번으로 던집니다.")
         .accessibilityAddTraits(.isButton)
-        .accessibilityAction { onDeliver(.neutral) }
+        .accessibilityAction {
+            onRelease()
+            onDeliver(.neutral)
+        }
     }
 
     /// 실제 조준 이탈. 저절로 생긴 흔들림에 손가락이 끈 만큼을 더한다.
@@ -272,6 +288,11 @@ struct DeliveryControl: View {
         driver.start(
             sweepSeconds: sweepSeconds,
             swayAmplitude: swayAmplitude,
+            tension: tension,
+            hapticsEnabled: hapticsEnabled,
+            reduceMotion: reduceMotion,
+            heartbeatSignal: heartbeatSignal,
+            disturbanceSeed: disturbanceSeed,
             onTick: { value, offset in
                 meter = value
                 sway = offset
@@ -279,7 +300,13 @@ struct DeliveryControl: View {
                 // 경계를 넘는 순간에만 한 번 친다. 연속 진동만으로는 어디가 시작인지 흐리다.
                 if inSweetSpot != wasInSweetSpot {
                     wasInSweetSpot = inSweetSpot
-                    if inSweetSpot { Haptics.shared.enteredSweetSpot() }
+                    if inSweetSpot {
+                        Haptics.shared.enteredSweetSpot(
+                            clarity: MoundTensionModel.sweetSpotHapticClarity(
+                                effectiveTension: tension
+                            )
+                        )
+                    }
                 }
             },
             onEdge: {
@@ -302,6 +329,7 @@ struct DeliveryControl: View {
             showHoldHint = true
             return
         }
+        onRelease()
         let delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius)
         if delivery.isPerfectRelease {
             // 정중앙에서 뗀 순간, 손과 눈과 귀가 동시에 안다. 이 게임에서 손으로 하는
@@ -395,6 +423,11 @@ final class MeterDriver {
     private var rising = true
     private var sweepSeconds: Double = 1
     private var swayAmplitude: CGFloat = 0
+    private var tension: Double = 0
+    private var hapticsEnabled = true
+    private var reduceMotion = false
+    private var heartbeatSignal: MoundHeartbeatSignal?
+    private var disturbanceSeed: UInt64 = 0
     private var phases: [Double] = [0, 0, 0, 0]
     private var onTick: ((Double, CGSize) -> Void)?
     private var onEdge: (() -> Void)?
@@ -406,12 +439,22 @@ final class MeterDriver {
     func start(
         sweepSeconds: Double,
         swayAmplitude: CGFloat,
+        tension: Double = 0,
+        hapticsEnabled: Bool = true,
+        reduceMotion: Bool = false,
+        heartbeatSignal: MoundHeartbeatSignal? = nil,
+        disturbanceSeed: UInt64 = 0,
         onTick: @escaping (Double, CGSize) -> Void,
         onEdge: @escaping () -> Void
     ) {
         stop()
         self.sweepSeconds = max(0.2, sweepSeconds)
         self.swayAmplitude = swayAmplitude
+        self.tension = min(1, max(0, tension))
+        self.hapticsEnabled = hapticsEnabled
+        self.reduceMotion = reduceMotion
+        self.heartbeatSignal = heartbeatSignal
+        self.disturbanceSeed = disturbanceSeed
         self.onTick = onTick
         self.onEdge = onEdge
         // 매 투구마다 위상을 새로 뽑는다. 고정하면 항상 같은 궤적이라 외울 수 있다.
@@ -430,6 +473,7 @@ final class MeterDriver {
         link = nil
         onTick = nil
         onEdge = nil
+        heartbeatSignal = nil
     }
 
     /// 지금 시각의 흔들림. 사인 두 개를 겹쳐 사람 손의 떨림처럼 불규칙하게 만든다.
@@ -463,6 +507,17 @@ final class MeterDriver {
             value -= progress
             if value <= 0 { value = 0; rising = true; onEdge?() }
         }
-        onTick?(value, sway)
+        let visibleMeter = MoundMeterDisturbance.position(
+            base: value,
+            at: link.timestamp,
+            effectiveTension: tension,
+            beatTimes: heartbeatSignal?.beatTimes ?? [],
+            hapticsEnabled: hapticsEnabled,
+            reduceMotion: reduceMotion,
+            seed: disturbanceSeed
+        )
+        // `visibleMeter` is the value stored by DeliveryControl and later passed to
+        // `delivery(meter:aim:aimRadius:)`, so the needle never lies about release scoring.
+        onTick?(visibleMeter, sway)
     }
 }

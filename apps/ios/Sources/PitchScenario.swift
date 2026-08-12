@@ -22,6 +22,9 @@ struct PitchScenario {
     let leverage: Int
     let scoreDifferential: Int
     let fatigue: Int
+    /// iOS-only presentation input. It is derived from saved values at the scenario boundary and
+    /// is never added to the shared save schema.
+    let moundComposure: MoundComposureInput
     let headline: String
     let detail: String
     /// 이닝이 끝나지 않아도 여기서 멈춘다. 볼넷이 이어질 때 세션이 무한히 길어지는 것을 막는다.
@@ -66,6 +69,10 @@ struct PitchScenario {
             leverage: situation.leverage,
             scoreDifferential: situation.scoreDifferential,
             fatigue: min(100, max(0, state.fatigue)),
+            moundComposure: MoundComposureInput(
+                command: state.pitcher.command,
+                stamina: state.pitcher.stamina
+            ),
             headline: situation.headline,
             detail: situation.detail,
             maximumBatters: 4,
@@ -151,6 +158,12 @@ struct PitchScenario {
             leverage: 200,
             scoreDifferential: 0,
             fatigue: 0,
+            moundComposure: MoundComposureInput(
+                command: state.pitcher.command,
+                stamina: state.pitcher.stamina,
+                awakenings: state.selectedAwakenings,
+                memories: state.selectedMemories
+            ),
             headline: "첫 불펜",
             detail: "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요.",
             // 두 타석 — 3구 스크립트(사인→흔들기→결정구)가 실제로 전달될 최소 길이.
@@ -236,6 +249,12 @@ struct PitchScenario {
             // 모든 승부가 리드를 지키는 경기였다 — 지고 있는 마운드가 한 번도 없었다.
             scoreDifferential: content?.scoreDifferential ?? 1,
             fatigue: min(100, max(0, state.fatigue)),
+            moundComposure: MoundComposureInput(
+                command: state.pitcher.command,
+                stamina: state.pitcher.stamina,
+                awakenings: state.selectedAwakenings,
+                memories: state.selectedMemories
+            ),
             headline: content?.title ?? "고교 공식 경기",
             detail: content?.narrative ?? "이 이닝을 막아야 합니다.",
             maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state),

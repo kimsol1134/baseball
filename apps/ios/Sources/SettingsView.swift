@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum SettingsCopy {
+    static let hapticsFooter = "진동을 끄면 승부 긴장에 따른 릴리스 미터 흔들림도 사라집니다. 기본 미터 이동과 피로에 따른 조준 흔들림은 그대로입니다."
+}
+
 /// 소리·손맛·접근성 설정. 자동 릴리스는 접근성 항목이라 맨 위에 둔다.
 struct SettingsView: View {
     let highSchool: HighSchoolCareerStore
@@ -34,6 +38,9 @@ struct SettingsView: View {
                 Toggle("소리", isOn: Binding(get: { audio.soundEnabled }, set: { audio.soundEnabled = $0 }))
                 Toggle("음악", isOn: Binding(get: { audio.musicEnabled }, set: { audio.musicEnabled = $0 }))
                 Toggle("진동", isOn: Binding(get: { audio.hapticsEnabled }, set: { audio.hapticsEnabled = $0 }))
+                Text(SettingsCopy.hapticsFooter)
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
                 Text("소리는 다른 앱의 음악을 멈추지 않고, 무음 스위치를 따릅니다.")
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)

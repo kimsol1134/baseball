@@ -16,6 +16,7 @@ final class Haptics {
 
     private var engine: CHHapticEngine?
     private var windUpPlayer: CHHapticAdvancedPatternPlayer?
+    private var heartbeatPlayer: CHHapticPatternPlayer?
     private var supportsHaptics: Bool { CHHapticEngine.capabilitiesForHardware().supportsHaptics }
 
     /// 폴백용. 준비해 두지 않으면 첫 진동이 눈에 띄게 늦다.
@@ -51,51 +52,24 @@ final class Haptics {
     }
 
     func teardown() {
+        stopHeartbeat()
         stopWindUp()
-        setHeartbeat(tension: 0)
         engine?.stop()
         engine = nil
     }
 
     // MARK: - 심장박동
 
-    /// 심장박동을 굴리는 타이머. Core Haptics에는 반복 재생이 없어서 두 박자 패턴을
-    /// 주기적으로 다시 낸다.
-    private var heartbeatTimer: Timer?
-    /// 지금 걸려 있는 긴장(0~1). 같은 값이면 타이머를 다시 깔지 않는다.
-    private var heartbeatTension: Double = 0
-
-    /// 승부처의 심장박동.
-    ///
-    /// 패드가 저절로 뛰는 순간이 있는 게임과 없는 게임은 다른 게임이다. 화면은 이미
-    /// "여기서 끝난다"고 말하고 있지만, 그 말은 눈으로 읽고 지나간다 — 손이 먼저 아는
-    /// 쪽이 훨씬 강하다. 긴장이 높을수록 **빨라지고 세진다.** 실제 심박이 그렇다.
-    ///
-    /// - Parameter tension: 0이면 멈춘다. 1이 가장 조인 상태다.
-    func setHeartbeat(tension: Double) {
+    /// One scheduler event produces one lub-dub. The scheduler owns cadence; this sink only
+    /// renders the shared event, so haptics, audio, and meter disturbance cannot drift apart.
+    func heartbeatBeat(tension: Double, irregular: Bool = false) {
+        guard isEnabled else { return }
+        stopHeartbeat()
         let clamped = min(1, max(0, tension))
-        // 0.02 안쪽의 변화로 타이머를 다시 깔면 박자가 매번 끊겨 심박으로 안 들린다.
-        guard abs(clamped - heartbeatTension) > 0.02 || (clamped == 0) != (heartbeatTension == 0) else { return }
-        heartbeatTension = clamped
-        heartbeatTimer?.invalidate()
-        heartbeatTimer = nil
-        guard clamped > 0, isEnabled else { return }
-        // 분당 62회(느슨) → 108회(최고조). 두 박자가 한 번의 박동이다.
-        let beatsPerMinute = 62 + 46 * clamped
-        let interval = 60 / beatsPerMinute
-        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.thump() }
-        }
-        // 스크롤·애니메이션 중에도 박동이 멈추면 안 된다.
-        RunLoop.main.add(timer, forMode: .common)
-        heartbeatTimer = timer
-        thump()
-    }
-
-    /// 두-둠. 첫 박이 세고 두 번째가 곧바로 뒤따른다.
-    private func thump() {
-        guard isEnabled, heartbeatTension > 0 else { return }
-        let strength = 0.28 + 0.42 * heartbeatTension
+        let irregularScale = irregular ? 1.08 : 1
+        let strength = MoundTensionModel.heartbeatHapticIntensity(
+            effectiveTension: clamped
+        ) * irregularScale
         guard supportsHaptics, let engine else {
             light.impactOccurred(intensity: strength)
             return
@@ -118,16 +92,25 @@ final class Haptics {
                 relativeTime: 0.16
             ),
         ]
-        try? engine.makePlayer(with: CHHapticPattern(events: events, parameters: [])).start(atTime: 0)
+        do {
+            let player = try engine.makePlayer(with: CHHapticPattern(events: events, parameters: []))
+            try player.start(atTime: 0)
+            heartbeatPlayer = player
+        } catch {
+            heartbeatPlayer = nil
+        }
+    }
+
+    /// 릴리스·화면 이탈·백그라운드 전환에서 이미 예약된 두 번째 박까지 즉시 접는다.
+    func stopHeartbeat() {
+        try? heartbeatPlayer?.stop(atTime: CHHapticTimeImmediate)
+        heartbeatPlayer = nil
     }
 
     // MARK: - 와인드업
 
     /// 누르기 시작. 공을 쥐는 느낌으로 짧고 무르게.
     func windUpBegan() {
-        // 와인드업 진동과 심장박동이 겹치면 둘 다 뭉개진다. 공을 쥐는 순간 심장은 멎는다 —
-        // 던지고 나면 화면이 긴장을 다시 계산해 걸어 준다.
-        setHeartbeat(tension: 0)
         guard isEnabled else { return }
         guard supportsHaptics, let engine else { return medium.impactOccurred(intensity: 0.7) }
         do {
@@ -178,13 +161,15 @@ final class Haptics {
     }
 
     /// 스위트 스폿에 막 들어섰을 때 한 번. 연속 진동만으로는 경계가 흐려서 놓친다.
-    func enteredSweetSpot() {
+    func enteredSweetSpot(clarity: Double = 1) {
         guard isEnabled else { return }
-        guard supportsHaptics, let engine else { return light.impactOccurred(intensity: 0.5) }
+        let clampedClarity = min(1, max(0, clarity))
+        let intensity = 0.18 + 0.32 * clampedClarity
+        guard supportsHaptics, let engine else { return light.impactOccurred(intensity: intensity) }
         let event = CHHapticEvent(
             eventType: .hapticTransient,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.45),
+                .init(parameterID: .hapticIntensity, value: Float(intensity)),
                 .init(parameterID: .hapticSharpness, value: 0.9),
             ],
             relativeTime: 0
@@ -246,7 +231,6 @@ final class Haptics {
     /// `released(quality:)`의 최고 강도와 구분되어야 한다. 같은 진동이면 950과 850이
     /// 손에서 같은 공이 되고, 그러면 정확히 가운데를 노릴 이유가 사라진다.
     func perfectRelease() {
-        setHeartbeat(tension: 0)
         stopWindUp()
         guard isEnabled else { return }
         guard supportsHaptics, let engine else { return rigid.impactOccurred(intensity: 1) }

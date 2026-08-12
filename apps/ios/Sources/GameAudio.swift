@@ -85,6 +85,9 @@ final class GameAudio {
 
     private let engine = AVAudioEngine()
     private let voices = VoiceBank()
+    /// Separate from ordinary cues so a release/background transition can cancel only the
+    /// scheduled heartbeat without cutting a glove catch or crowd response.
+    private let heartbeatBank = VoiceBank()
     private let crowd = CrowdBed()
     private let pad = PadBed()
     private var attached = false
@@ -141,6 +144,7 @@ final class GameAudio {
     }
 
     func stop() {
+        heartbeatBank.reset()
         guard isRunning else { return }
         crowdPlayer?.pause()
         for player in samplePlayers { player.stop() }
@@ -148,6 +152,27 @@ final class GameAudio {
         voices.reset()
         isRunning = false
         try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+    }
+
+    /// Renders one quiet low two-part heartbeat in the same engine as every other game sound.
+    /// The caller supplies the exact same scheduler event used by haptics and the meter.
+    func playHeartbeat(tension: Double, irregular: Bool = false) {
+        guard MoundHeartbeatSettings.heartbeatAudioEnabled(soundEnabled: soundEnabled) else { return }
+        if !isRunning { start() }
+        guard isRunning else { return }
+        if !engine.isRunning {
+            isRunning = false
+            start()
+            guard isRunning, engine.isRunning else { return }
+        }
+        for voice in Self.heartbeatVoices(tension: tension, irregular: irregular) {
+            heartbeatBank.add(voice)
+        }
+    }
+
+    /// Cancels only heartbeat voices. Other game audio may still be finishing naturally.
+    func stopHeartbeat() {
+        heartbeatBank.reset()
     }
 
     func play(_ cue: GameAudioCue) {
@@ -218,6 +243,10 @@ final class GameAudio {
         let cueNode = Self.makeSourceNode(format: format, renderer: voices)
         engine.attach(cueNode)
         engine.connect(cueNode, to: engine.mainMixerNode, format: format)
+
+        let heartbeatNode = Self.makeSourceNode(format: format, renderer: heartbeatBank)
+        engine.attach(heartbeatNode)
+        engine.connect(heartbeatNode, to: engine.mainMixerNode, format: format)
 
         // 관중: 녹음 루프가 있으면 그것을, 없으면 합성 베드를.
         if let loop = bank.buffer(for: .crowdLoop) {
@@ -426,6 +455,32 @@ final class GameAudio {
         case .uiSelect:
             return [.tone(duration: 0.03, attack: 0.001, gain: 0.1, frequencyHz: 1_180, shape: .sine)]
         }
+    }
+
+    /// Quiet enough to sit under the pitch-selection UI, but low enough to read as a body pulse
+    /// rather than another menu tone. The second pulse is delayed to form lub-dub.
+    nonisolated static func heartbeatVoices(tension: Double, irregular: Bool = false) -> [Voice] {
+        let clamped = min(1, max(0, tension))
+        let irregularScale = irregular ? 1.08 : 1
+        return [
+            .sweep(
+                duration: 0.11,
+                attack: 0.003,
+                gain: 0.040 * clamped * irregularScale,
+                fromHz: 78 - 12 * clamped,
+                toHz: 42 - 8 * clamped,
+                curve: 2.2
+            ),
+            .sweep(
+                duration: 0.13,
+                attack: 0.003,
+                gain: 0.027 * clamped * irregularScale,
+                fromHz: 55 - 8 * clamped,
+                toHz: 32 - 5 * clamped,
+                curve: 2.1,
+                delay: 0.16
+            ),
+        ]
     }
 
     // MARK: - 합성 프리미티브
