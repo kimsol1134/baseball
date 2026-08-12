@@ -523,6 +523,7 @@ const expected = [
   "android.permission.INTERNET",
   "android.permission.POST_NOTIFICATIONS",
   "android.permission.VIBRATE",
+  "com.solkim.baseball.android.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
 ].sort();
 if (JSON.stringify(permissions) !== JSON.stringify(expected)) {
   console.error(`permissions=${permissions.join(",")}`);

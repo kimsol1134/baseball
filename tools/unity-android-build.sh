@@ -262,9 +262,24 @@ const expectedPermissions = [
   "android.permission.INTERNET",
   "android.permission.POST_NOTIFICATIONS",
   "android.permission.VIBRATE",
+  "com.solkim.baseball.android.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
 ].sort();
 if (JSON.stringify(permissions) !== JSON.stringify(expectedPermissions)) {
   fail(`active permissions differ: ${permissions.join(", ")}`);
+}
+
+const declaredPermissions = [...xml.matchAll(/<permission\b[^>]*>/g)]
+  .map((match) => attributes(match[0]));
+const dynamicReceiverPermission = declaredPermissions.find(
+  (value) => value.name === "com.solkim.baseball.android.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+);
+if (!dynamicReceiverPermission) {
+  fail("AndroidX dynamic receiver permission declaration is missing");
+}
+if (dynamicReceiverPermission.protectionLevel !== "0x00000002") {
+  fail(
+    `AndroidX dynamic receiver permission protectionLevel is ${dynamicReceiverPermission.protectionLevel ?? "missing"}`,
+  );
 }
 
 const application = xml.match(/<application\b[^>]*>/)?.[0];
@@ -404,6 +419,7 @@ const expected = [
   "android.permission.INTERNET",
   "android.permission.POST_NOTIFICATIONS",
   "android.permission.VIBRATE",
+  "com.solkim.baseball.android.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
 ].sort();
 if (JSON.stringify(permissions) !== JSON.stringify(expected)) {
   console.error(`APK permissions differ: ${permissions.join(", ")}`);
