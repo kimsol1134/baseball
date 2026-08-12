@@ -20,6 +20,15 @@ dependencies {
 // Android Resolver Dependencies End
 **DEPS**}
 
+// Google Play flags the legacy Fragment/Activity versions pulled transitively by
+// play-services-base. Keep the resolved runtime graph on production-safe AndroidX
+// releases even when an upstream SDK keeps a conservative lower bound.
+configurations.configureEach {
+    resolutionStrategy.force \
+        'androidx.fragment:fragment:1.7.1', \
+        'androidx.activity:activity:1.8.1'
+}
+
 // Android Resolver Exclusions Start
 android {
   packaging {

@@ -832,6 +832,21 @@ const dependencyContracts = [
 for (const [relativePath, artifact] of dependencyContracts) {
   requireCondition(text(relativePath).includes(artifact), `${relativePath} does not pin ${artifact}`);
 }
+const androidGradleTemplate = text("apps/android-unity/Assets/Plugins/Android/mainTemplate.gradle");
+for (const artifact of [
+  "androidx.fragment:fragment:1.7.1",
+  "androidx.activity:activity:1.8.1",
+]) {
+  requireCondition(
+    androidGradleTemplate.includes(`'${artifact}'`),
+    `Android runtime dependency resolution must pin ${artifact}`,
+  );
+}
+requireCondition(
+  androidGradleTemplate.includes("configurations.configureEach") &&
+    androidGradleTemplate.includes("resolutionStrategy.force"),
+  "Android runtime must fail closed on legacy transitive AndroidX versions",
+);
 requireCondition(
   !text("apps/android-unity/Assets/Editor/AmplitudeDependencies.xml").includes("2.40.+"),
   "Amplitude Maven version must not float",
