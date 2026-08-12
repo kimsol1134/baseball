@@ -6,6 +6,106 @@ using Baseball.Application.Pro;
 
 namespace Baseball.Application.Meta
 {
+    /// <summary>
+    /// Install-scoped mastery for the direct-release gesture. Only successfully saved,
+    /// interactive high-school and Pro games contribute; tutorials and challenge runs do not.
+    /// Scores use the Core 0...1000 scale so the record remains presentation-independent.
+    /// </summary>
+    public sealed class PitchReleaseMasteryState
+    {
+        public PitchReleaseMasteryState(
+            int officialSessions = 0,
+            int directPitches = 0,
+            long deliveryScoreTotal = 0,
+            long releaseAccuracyTotal = 0,
+            long aimAccuracyTotal = 0,
+            int personalBest = 0,
+            string lastGameId = null,
+            int lastSessionAverage = 0,
+            int lastSessionBest = 0,
+            int previousPersonalBest = 0,
+            int? lastReleaseAverage = null,
+            int? lastAimAverage = null)
+        {
+            OfficialSessions = officialSessions;
+            DirectPitches = directPitches;
+            DeliveryScoreTotal = deliveryScoreTotal;
+            ReleaseAccuracyTotal = releaseAccuracyTotal;
+            AimAccuracyTotal = aimAccuracyTotal;
+            PersonalBest = personalBest;
+            LastGameId = lastGameId;
+            LastSessionAverage = lastSessionAverage;
+            LastSessionBest = lastSessionBest;
+            PreviousPersonalBest = previousPersonalBest;
+            LastReleaseAverage = lastReleaseAverage;
+            LastAimAverage = lastAimAverage;
+        }
+
+        public int OfficialSessions { get; }
+        public int DirectPitches { get; }
+        public long DeliveryScoreTotal { get; }
+        public long ReleaseAccuracyTotal { get; }
+        public long AimAccuracyTotal { get; }
+        public int PersonalBest { get; }
+        public string LastGameId { get; }
+        public int LastSessionAverage { get; }
+        public int LastSessionBest { get; }
+        public int PreviousPersonalBest { get; }
+        public int? LastReleaseAverage { get; }
+        public int? LastAimAverage { get; }
+        public int? LifetimeAverage => DirectPitches == 0
+            ? (int?)null
+            : (int)(DeliveryScoreTotal / DirectPitches);
+        public int? LifetimeReleaseAverage => DirectPitches == 0
+            ? (int?)null
+            : (int)(ReleaseAccuracyTotal / DirectPitches);
+        public int? LifetimeAimAverage => DirectPitches == 0
+            ? (int?)null
+            : (int)(AimAccuracyTotal / DirectPitches);
+
+        public static PitchReleaseMasteryState Empty { get; } = new PitchReleaseMasteryState();
+    }
+
+    public static class PitchReleaseMasteryRules
+    {
+        public static PitchReleaseMasteryState Record(
+            PitchReleaseMasteryState current,
+            string gameId,
+            int directPitches,
+            int deliveryScoreTotal,
+            int sessionBest,
+            int? releaseAccuracyTotal,
+            int? aimAccuracyTotal)
+        {
+            current = current ?? PitchReleaseMasteryState.Empty;
+            if (directPitches <= 0 || string.IsNullOrWhiteSpace(gameId)) return current;
+            if (string.Equals(current.LastGameId, gameId, StringComparison.Ordinal)) return current;
+
+            int sessionAverage = deliveryScoreTotal / directPitches;
+            int previousBest = current.PersonalBest;
+            int personalBest = Math.Max(previousBest, sessionBest);
+            int? releaseAverage = releaseAccuracyTotal.HasValue
+                ? releaseAccuracyTotal.Value / directPitches
+                : (int?)null;
+            int? aimAverage = aimAccuracyTotal.HasValue
+                ? aimAccuracyTotal.Value / directPitches
+                : (int?)null;
+            return new PitchReleaseMasteryState(
+                current.OfficialSessions + 1,
+                current.DirectPitches + directPitches,
+                current.DeliveryScoreTotal + deliveryScoreTotal,
+                current.ReleaseAccuracyTotal + (releaseAccuracyTotal ?? 0),
+                current.AimAccuracyTotal + (aimAccuracyTotal ?? 0),
+                personalBest,
+                gameId,
+                sessionAverage,
+                sessionBest,
+                previousBest,
+                releaseAverage,
+                aimAverage);
+        }
+    }
+
     /// <summary>Durable non-consumable setup values used by one-tap rebirth.</summary>
     public sealed class HighSchoolLastSetupState
     {
@@ -333,7 +433,8 @@ namespace Baseball.Application.Meta
             IReadOnlyList<string> unlockedSignatureLegacyIds = null,
             string equippedSignatureLegacyId = null,
             ReturnWelcomeHandledState returnWelcomeHandled = null,
-            int completedGameCount = 0)
+            int completedGameCount = 0,
+            PitchReleaseMasteryState pitchReleaseMastery = null)
         {
             LifeNumber = lifeNumber;
             SoulBalance = soulBalance;
@@ -353,6 +454,7 @@ namespace Baseball.Application.Meta
             EquippedSignatureLegacyId = equippedSignatureLegacyId;
             ReturnWelcomeHandled = returnWelcomeHandled;
             CompletedGameCount = completedGameCount;
+            PitchReleaseMastery = pitchReleaseMastery ?? PitchReleaseMasteryState.Empty;
         }
 
         public int LifeNumber { get; }
@@ -379,6 +481,7 @@ namespace Baseball.Application.Meta
         /// and rebirth cannot double-count or decrease it.
         /// </summary>
         public int CompletedGameCount { get; }
+        public PitchReleaseMasteryState PitchReleaseMastery { get; }
 
         public static MetaProgressState Initial { get; } = new MetaProgressState();
 
@@ -405,7 +508,8 @@ namespace Baseball.Application.Meta
             bool clearEquippedSignatureLegacy = false,
             ReturnWelcomeHandledState returnWelcomeHandled = null,
             bool clearReturnWelcomeHandled = false,
-            int? completedGameCount = null)
+            int? completedGameCount = null,
+            PitchReleaseMasteryState pitchReleaseMastery = null)
         {
             return new MetaProgressState(
                 lifeNumber ?? LifeNumber,
@@ -429,7 +533,8 @@ namespace Baseball.Application.Meta
                 clearReturnWelcomeHandled
                     ? null
                     : returnWelcomeHandled ?? ReturnWelcomeHandled,
-                completedGameCount ?? CompletedGameCount);
+                completedGameCount ?? CompletedGameCount,
+                pitchReleaseMastery ?? PitchReleaseMastery);
         }
 
         public static int ProSoulBonus(ProCareerReadModel state)

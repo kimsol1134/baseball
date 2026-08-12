@@ -15,6 +15,52 @@ namespace Baseball.Application.Tests
     public sealed class MetaProgressTests
     {
         [Test]
+        public void PitchReleaseMastery_IsDurableIdempotentAndOldSaveCompatible()
+        {
+            var first = PitchReleaseMasteryRules.Record(
+                PitchReleaseMasteryState.Empty,
+                "official-1",
+                directPitches: 2,
+                deliveryScoreTotal: 1650,
+                sessionBest: 900,
+                releaseAccuracyTotal: 1760,
+                aimAccuracyTotal: 1540);
+            var duplicate = PitchReleaseMasteryRules.Record(
+                first, "official-1", 2, 1650, 900, 1760, 1540);
+            var second = PitchReleaseMasteryRules.Record(
+                duplicate,
+                "official-2",
+                directPitches: 1,
+                deliveryScoreTotal: 940,
+                sessionBest: 940,
+                releaseAccuracyTotal: 960,
+                aimAccuracyTotal: 920);
+
+            Assert.That(duplicate, Is.SameAs(first));
+            Assert.That(second.OfficialSessions, Is.EqualTo(2));
+            Assert.That(second.DirectPitches, Is.EqualTo(3));
+            Assert.That(second.LifetimeAverage, Is.EqualTo(863));
+            Assert.That(second.LifetimeReleaseAverage, Is.EqualTo(906));
+            Assert.That(second.LifetimeAimAverage, Is.EqualTo(820));
+            Assert.That(second.PersonalBest, Is.EqualTo(940));
+            Assert.That(second.PreviousPersonalBest, Is.EqualTo(900));
+            Assert.That(second.LastSessionAverage, Is.EqualTo(940));
+
+            var aggregate = GameSaveAggregate.Initial("release-install").Commit(
+                "release-mastery",
+                meta: MetaProgressState.Initial.With(pitchReleaseMastery: second));
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(aggregate);
+            var roundTrip = Newtonsoft.Json.JsonConvert.DeserializeObject<GameSaveAggregate>(json);
+            Assert.That(roundTrip.Meta.PitchReleaseMastery.PersonalBest, Is.EqualTo(940));
+            Assert.That(new GameSaveValidator().Validate(roundTrip).IsValid, Is.True);
+
+            var oldMeta = Newtonsoft.Json.JsonConvert.DeserializeObject<MetaProgressState>(
+                "{\"lifeNumber\":1}");
+            Assert.That(oldMeta.PitchReleaseMastery, Is.Not.Null);
+            Assert.That(oldMeta.PitchReleaseMastery.DirectPitches, Is.Zero);
+        }
+
+        [Test]
         public void SeoulDailyStreak_UsesLocalMidnightAndRejectsRollback()
         {
             var beforeMidnight = new DateTimeOffset(2026, 8, 11, 14, 59, 0, TimeSpan.Zero);

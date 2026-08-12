@@ -1054,7 +1054,13 @@ namespace Baseball.Application.Stores
             var meta = resume.CareerKind == PitchCareerKind.Tutorial ||
                        resume.CareerKind == PitchCareerKind.HighSchool && highSchool?.IsChallengeRun == true
                 ? current.Meta
-                : ApplyPitchMeta(current.Meta, resume.CareerKind, report, command.CompletedAt, commandId);
+                : ApplyPitchMeta(
+                    current.Meta,
+                    resume.CareerKind,
+                    report,
+                    resume.PitchLog,
+                    command.CompletedAt,
+                    commandId);
             var pending = new PendingPitchCompletion(
                 "pitch-result:" + report.GameId,
                 resume.CareerKind,
@@ -1347,7 +1353,10 @@ namespace Baseball.Application.Stores
                 execution.ExecutionQuality,
                 evidence.Outcome.Value(),
                 evidence.RecommendationAccepted,
-                command.CommittedAt.ToUnixTimeMilliseconds());
+                command.CommittedAt.ToUnixTimeMilliseconds(),
+                command.Delivery?.ReleaseAccuracy,
+                command.Delivery?.AimAccuracy,
+                command.Delivery?.WasDirect);
         }
 
         private static bool SameContext(
@@ -2038,6 +2047,7 @@ namespace Baseball.Application.Stores
             MetaProgressState current,
             PitchCareerKind kind,
             PitchGameReport report,
+            IReadOnlyList<PitchLogEntryState> pitchLog,
             DateTimeOffset completedAt,
             string commandId)
         {
@@ -2075,10 +2085,30 @@ namespace Baseball.Application.Stores
             var achievements = AchievementRules.Unlock(
                 current.Achievements,
                 AchievementRules.FromPitch(report));
+            var directLog = (pitchLog ?? Array.Empty<PitchLogEntryState>())
+                .Where(value => value?.WasDirect == true)
+                .ToArray();
+            int? releaseAccuracyTotal = directLog.Length == report.DirectDeliveryCount &&
+                directLog.All(value => value.ReleaseAccuracy.HasValue)
+                    ? directLog.Sum(value => value.ReleaseAccuracy.Value)
+                    : (int?)null;
+            int? aimAccuracyTotal = directLog.Length == report.DirectDeliveryCount &&
+                directLog.All(value => value.AimAccuracy.HasValue)
+                    ? directLog.Sum(value => value.AimAccuracy.Value)
+                    : (int?)null;
+            var releaseMastery = PitchReleaseMasteryRules.Record(
+                current.PitchReleaseMastery,
+                report.GameId,
+                report.DirectDeliveryCount,
+                report.DeliveryScoreTotal,
+                report.BestDeliveryScore,
+                releaseAccuracyTotal,
+                aimAccuracyTotal);
             var updated = current.With(
                 daily: daily,
                 weekly: weekly,
-                achievements: achievements);
+                achievements: achievements,
+                pitchReleaseMastery: releaseMastery);
             return CompletedGameCountRules.Record(updated, 1);
         }
 

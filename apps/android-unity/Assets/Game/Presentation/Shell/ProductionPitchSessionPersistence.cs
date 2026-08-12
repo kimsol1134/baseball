@@ -314,12 +314,18 @@ namespace Baseball.Presentation.Shell
             if (pending?.Report != null &&
                 string.Equals(pending.Report.GameId, gameId, StringComparison.Ordinal))
             {
-                return new PitchSessionPostgameSnapshot(pending.Report, pending.PitchLog);
+                return new PitchSessionPostgameSnapshot(
+                    pending.Report,
+                    pending.PitchLog,
+                    state.Meta.PitchReleaseMastery);
             }
             PitchResumeState resume = state?.PitchResume;
             return resume?.AccumulatedReport != null &&
                 string.Equals(resume.GameId, gameId, StringComparison.Ordinal)
-                    ? new PitchSessionPostgameSnapshot(resume.AccumulatedReport, resume.PitchLog)
+                    ? new PitchSessionPostgameSnapshot(
+                        resume.AccumulatedReport,
+                        resume.PitchLog,
+                        state.Meta.PitchReleaseMastery)
                     : null;
         }
 

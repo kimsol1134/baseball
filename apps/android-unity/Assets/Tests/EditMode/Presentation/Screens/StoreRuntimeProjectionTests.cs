@@ -560,7 +560,21 @@ namespace Baseball.Presentation.Tests
                 "active-records",
                 stage: ApplicationStage.Pro,
                 highSchool: highSchool,
-                pro: pro);
+                pro: pro,
+                meta: MetaProgressState.Initial.With(
+                    pitchReleaseMastery: new PitchReleaseMasteryState(
+                        officialSessions: 3,
+                        directPitches: 8,
+                        deliveryScoreTotal: 6800,
+                        releaseAccuracyTotal: 7040,
+                        aimAccuracyTotal: 6560,
+                        personalBest: 920,
+                        lastGameId: "records-game",
+                        lastSessionAverage: 870,
+                        lastSessionBest: 920,
+                        previousPersonalBest: 890,
+                        lastReleaseAverage: 900,
+                        lastAimAverage: 840)));
 
             BaseballScreenViewModel records = ReadyModel(() => state).Read(ShellRoute.Records);
             ScreenRowViewModel hsRatings = records.Sections
@@ -572,6 +586,8 @@ namespace Baseball.Presentation.Tests
             ScreenRowViewModel proRatings = records.Sections
                 .Single(section => section.Id == "records-current-pro").Rows
                 .Single(row => row.Id == "records-current-pro-ratings");
+            ScreenSectionViewModel releaseMastery = records.Sections
+                .Single(section => section.Id == "records-release-mastery");
 
             Assert.That(hsRatings.Value, Is.EqualTo("구위 71 · 제구 79 · 변화 68 · 체력 73"));
             Assert.That(hsRatings.Detail, Is.EqualTo("팬 관심 88 · 포수와의 호흡 81 · 지도자의 믿음 74"));
@@ -586,6 +602,11 @@ namespace Baseball.Presentation.Tests
                     section.Id == "records-current-hs-prospects").Rows[0].Detail,
                 Is.EqualTo("제구형 · 내 선수"));
             Assert.That(proRatings.Value, Is.EqualTo("구위 83 · 제구 76 · 변화 81 · 체력 78"));
+            Assert.That(releaseMastery.Rows[0].Value, Is.EqualTo("920점"));
+            Assert.That(releaseMastery.Rows[0].Detail, Is.EqualTo("다음 목표 950점까지 30점"));
+            Assert.That(releaseMastery.Rows[1].Value,
+                Is.EqualTo("3경기 · 직접 투구 8구 · 평균 850점"));
+            Assert.That(releaseMastery.Rows[1].Detail, Is.EqualTo("타이밍 880 · 조준 820"));
             Assert.That(records.Sections.Single(section =>
                     section.Id == "records-current-pro-standings").Rows[0].Detail,
                 Is.EqualTo("선두 · 내 구단"));

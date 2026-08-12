@@ -366,6 +366,82 @@ namespace Baseball.Application.Tests
         }
 
         [Test]
+        public async Task OfficialDirectReleaseMastery_SavesAtomicallyAndSurvivesRestart()
+        {
+            var repository = new RecordingGameRepository();
+            var instant = new DateTimeOffset(2026, 8, 11, 2, 0, 0, TimeSpan.Zero);
+            using (var store = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "release-install"))
+            {
+                await Applied(store, "release-setup", new EnterSetupCommand());
+                await Applied(store, "release-start", new StartHighSchoolCareerCommand(
+                    new StartHighSchoolCareerRequest(
+                        "seed", "power_prospect", "민서준", "서울", 1)));
+                await Applied(store, "release-phase", new AdvanceHighSchoolCommand(
+                    new HighSchoolAction("important_game"), instant));
+                await Applied(store, "release-begin", new BeginPitchSessionCommand(
+                    "release-game", PitchCareerKind.HighSchool, "official", 4, instant));
+
+                var evidence = AbilityEvidence(null);
+                await Applied(store, "release-commit", new CommitPitchResultCommand(
+                    "release-game",
+                    "release-pitch",
+                    0,
+                    "release-hash",
+                    "{\"outcome\":\"terminal\"}",
+                    "{\"cue\":\"terminal\"}",
+                    instant.AddMinutes(1),
+                    delivery: new PitchDeliveryMetricState(920, 880, true),
+                    abilityMomentEvidence: evidence));
+                var report = new PitchGameReport(
+                    "release-game",
+                    pitches: 1,
+                    batters: 1,
+                    outs: 3,
+                    strikeouts: 0,
+                    walks: 0,
+                    hits: 0,
+                    runsAllowed: 0,
+                    directDeliveryCount: 1,
+                    deliveryScoreTotal: 900,
+                    bestDeliveryScore: 900);
+                await Applied(store, "release-consume", new ConsumeCommittedPitchResultCommand(
+                    "release-game",
+                    "release-pitch",
+                    1,
+                    "{\"terminal\":true}",
+                    report,
+                    sessionCompleted: true));
+                await Applied(store, "release-complete", new CompletePitchSessionCommand(
+                    report,
+                    instant.AddMinutes(2)));
+
+                PitchReleaseMasteryState mastery = store.Current.Meta.PitchReleaseMastery;
+                Assert.That(mastery.OfficialSessions, Is.EqualTo(1));
+                Assert.That(mastery.DirectPitches, Is.EqualTo(1));
+                Assert.That(mastery.PersonalBest, Is.EqualTo(900));
+                Assert.That(mastery.LastReleaseAverage, Is.EqualTo(920));
+                Assert.That(mastery.LastAimAverage, Is.EqualTo(880));
+                Assert.That(repository.Saved.Meta.PitchReleaseMastery.LastGameId,
+                    Is.EqualTo("release-game"));
+                Assert.That(store.Current.PendingPitchCompletion.PitchLog.Single().WasDirect,
+                    Is.True);
+            }
+
+            repository.LoadResult = SaveLoadResult<GameSaveAggregate>.Create(
+                SaveLoadStatus.LoadedCanonical,
+                Envelope(repository.Saved));
+            using (var restarted = await GameApplicationStore.OpenAsync(
+                       repository, new FakeHighSchoolPort(), new FakeProPort(), "release-install"))
+            {
+                Assert.That(restarted.Current.Meta.PitchReleaseMastery.PersonalBest, Is.EqualTo(900));
+                Assert.That(restarted.Current.Meta.PitchReleaseMastery.LifetimeAverage, Is.EqualTo(900));
+                Assert.That(restarted.Current.PendingPitchCompletion.PitchLog.Single().ReleaseAccuracy,
+                    Is.EqualTo(920));
+            }
+        }
+
+        [Test]
         public async Task AbandonedPitch_ClearsCheckpointButNeverReusesConsumedSeed()
         {
             using (var store = await GameApplicationStore.OpenAsync(

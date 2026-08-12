@@ -197,7 +197,8 @@ namespace Baseball.Presentation.Shell
                 PitchGameReport report = state.PendingPitchCompletion.Report;
                 PitchPostgameContent postgame = PitchPostgameProjection.Project(
                     report,
-                    state.PendingPitchCompletion.PitchLog);
+                    state.PendingPitchCompletion.PitchLog,
+                    state.Meta.PitchReleaseMastery);
                 var postgameRows = new List<ScreenRowViewModel>
                 {
                     new ScreenRowViewModel(
@@ -1198,6 +1199,36 @@ namespace Baseball.Presentation.Shell
         private static IReadOnlyList<ScreenSectionViewModel> RecordSections(GameSaveAggregate state)
         {
             var result = new List<ScreenSectionViewModel>();
+            PitchReleaseMasteryState release = state.Meta?.PitchReleaseMastery;
+            if (release != null && release.DirectPitches > 0)
+            {
+                int nextTarget = release.PersonalBest < 700 ? 700 :
+                    release.PersonalBest < 800 ? 800 :
+                    release.PersonalBest < 900 ? 900 :
+                    release.PersonalBest < 950 ? 950 : 1000;
+                result.Add(new ScreenSectionViewModel(
+                    "records-release-mastery",
+                    "직접 릴리스 숙련도",
+                    ScreenSectionTone.Milestone,
+                    new[]
+                    {
+                        new ScreenRowViewModel(
+                            "records-release-personal-best",
+                            "개인 최고",
+                            release.PersonalBest + "점",
+                            release.PersonalBest >= 1000
+                                ? "최고 단계를 달성했습니다."
+                                : "다음 목표 " + nextTarget + "점까지 " +
+                                  (nextTarget - release.PersonalBest) + "점"),
+                        new ScreenRowViewModel(
+                            "records-release-lifetime",
+                            "공식 경기 누적",
+                            release.OfficialSessions + "경기 · 직접 투구 " +
+                            release.DirectPitches + "구 · 평균 " + release.LifetimeAverage + "점",
+                            "타이밍 " + release.LifetimeReleaseAverage +
+                            " · 조준 " + release.LifetimeAimAverage)
+                    }));
+            }
             if (state.HighSchool != null)
             {
                 CareerPerformanceReadModel performance = state.HighSchool.Performance ??

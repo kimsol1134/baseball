@@ -247,6 +247,8 @@ namespace Baseball.Application.Persistence
             if (value.Meta == null) return SaveValidationResult.Invalid("aggregate.meta");
             if (value.Meta.CompletedGameCount < 0)
                 return SaveValidationResult.Invalid("aggregate.completed_game_count");
+            if (!ValidPitchReleaseMastery(value.Meta.PitchReleaseMastery))
+                return SaveValidationResult.Invalid("aggregate.pitch_release_mastery");
             if (!LegacyDailyInningCompatibility.IsValid(value.Meta.Daily))
                 return SaveValidationResult.Invalid("aggregate.daily_inning");
             if (!ValidSignatureLegacy(value.HighSchool))
@@ -746,7 +748,40 @@ namespace Baseball.Application.Persistence
                 IsZoneIntent(value.ZoneIntent) && IsPitchIntensity(value.Intensity) &&
                 value.VelocityTenthsKph > 0 && value.VelocityTenthsKph <= 2500 &&
                 value.ExecutionQuality >= 0 && value.ExecutionQuality <= 1000 &&
-                IsPitchOutcome(value.Outcome) && value.CommittedAtUnixMilliseconds >= 0;
+                IsPitchOutcome(value.Outcome) && value.CommittedAtUnixMilliseconds >= 0 &&
+                (!value.ReleaseAccuracy.HasValue ||
+                    value.ReleaseAccuracy.Value >= 0 && value.ReleaseAccuracy.Value <= 1000) &&
+                (!value.AimAccuracy.HasValue ||
+                    value.AimAccuracy.Value >= 0 && value.AimAccuracy.Value <= 1000) &&
+                (!value.WasDirect.HasValue || !value.WasDirect.Value ||
+                    value.ReleaseAccuracy.HasValue && value.AimAccuracy.HasValue);
+        }
+
+        private static bool ValidPitchReleaseMastery(PitchReleaseMasteryState value)
+        {
+            if (value == null || value.OfficialSessions < 0 || value.DirectPitches < 0 ||
+                value.DeliveryScoreTotal < 0 || value.ReleaseAccuracyTotal < 0 ||
+                value.AimAccuracyTotal < 0 || value.PersonalBest < 0 || value.PersonalBest > 1000 ||
+                value.LastSessionAverage < 0 || value.LastSessionAverage > 1000 ||
+                value.LastSessionBest < 0 || value.LastSessionBest > 1000 ||
+                value.PreviousPersonalBest < 0 || value.PreviousPersonalBest > 1000 ||
+                value.LastReleaseAverage is int release && (release < 0 || release > 1000) ||
+                value.LastAimAverage is int aim && (aim < 0 || aim > 1000))
+            {
+                return false;
+            }
+            if (value.DirectPitches == 0)
+            {
+                return value.OfficialSessions == 0 && value.DeliveryScoreTotal == 0 &&
+                    value.ReleaseAccuracyTotal == 0 && value.AimAccuracyTotal == 0 &&
+                    value.PersonalBest == 0 && string.IsNullOrWhiteSpace(value.LastGameId);
+            }
+            return value.OfficialSessions > 0 && !string.IsNullOrWhiteSpace(value.LastGameId) &&
+                value.DeliveryScoreTotal <= (long)value.DirectPitches * 1000 &&
+                value.ReleaseAccuracyTotal <= (long)value.DirectPitches * 1000 &&
+                value.AimAccuracyTotal <= (long)value.DirectPitches * 1000 &&
+                value.LastSessionBest <= value.PersonalBest &&
+                value.PreviousPersonalBest <= value.PersonalBest;
         }
 
         private static bool IsPitchType(string value)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Baseball.Application.HighSchool;
+using Baseball.Application.Meta;
 using Baseball.Application.Persistence;
 
 namespace Baseball.Presentation.Pitch
@@ -42,12 +43,14 @@ namespace Baseball.Presentation.Pitch
     {
         public static PitchPostgameContent Project(
             PitchGameReport report,
-            IReadOnlyList<PitchLogEntryState> pitchLog)
+            IReadOnlyList<PitchLogEntryState> pitchLog,
+            PitchReleaseMasteryState releaseMastery = null)
         {
             if (report == null) throw new ArgumentNullException(nameof(report));
             var log = (pitchLog ?? Array.Empty<PitchLogEntryState>())
                 .Where(value => value != null)
                 .ToArray();
+            releaseMastery = releaseMastery ?? PitchReleaseMasteryState.Empty;
             string summary = report.Batters + "타자 · " + report.Pitches + "구 · " +
                 report.Outs + "아웃 · 탈삼진 " + report.Strikeouts + " · 볼넷 " + report.Walks +
                 " · 피안타 " + report.Hits + " · 실점 " + report.RunsAllowed;
@@ -56,10 +59,11 @@ namespace Baseball.Presentation.Pitch
             string abilityTypes = report.AbilityMomentTypes == null || report.AbilityMomentTypes.Count == 0
                 ? "없음"
                 : string.Join("·", report.AbilityMomentTypes.Select(AbilityName));
+            string releaseProgress = ReleaseProgress(report, log, releaseMastery);
             string growth = "수싸움 성장 " + report.SequenceMasteryCount +
                 " · 능력 발현 " + report.AbilityMomentCount + "(" + abilityTypes + ")" +
                 " · 직접 릴리스 " + report.DirectDeliveryCount +
-                " · 완벽 릴리스 " + report.PerfectDeliveryCount;
+                " · 완벽 릴리스 " + report.PerfectDeliveryCount + releaseProgress;
             var lines = log.Select(value => new PitchPostgameLine(
                 (value.BatterIndex + 1) + "번 타자 · " + value.PitchNumber + "구 · " +
                 PitchTypeName(value.PitchType) + " · " + ZoneName(value.ZoneRow, value.ZoneColumn) +
@@ -70,6 +74,43 @@ namespace Baseball.Presentation.Pitch
                 " → 실제 " + Coordinate(value.ActualX, value.ActualY) +
                 " · " + (value.SignAccepted ? "포수 사인 수락" : "직접 배합"))).ToArray();
             return new PitchPostgameContent(summary, analysis, growth, lines);
+        }
+
+        private static string ReleaseProgress(
+            PitchGameReport report,
+            IReadOnlyList<PitchLogEntryState> log,
+            PitchReleaseMasteryState mastery)
+        {
+            if (report.DirectDeliveryCount <= 0)
+                return " · 다음 경기 직접 던지기로 릴리스 기록 시작";
+
+            var direct = log.Where(value => value.WasDirect == true).ToArray();
+            string component = direct.Length == report.DirectDeliveryCount &&
+                direct.All(value => value.ReleaseAccuracy.HasValue && value.AimAccuracy.HasValue)
+                    ? " · 타이밍 " + direct.Sum(value => value.ReleaseAccuracy.Value) / direct.Length +
+                      " · 조준 " + direct.Sum(value => value.AimAccuracy.Value) / direct.Length
+                    : string.Empty;
+            int average = report.AverageDeliveryScore ?? 0;
+            int best = mastery.PersonalBest > 0 ? mastery.PersonalBest : report.BestDeliveryScore;
+            string record = string.Equals(mastery.LastGameId, report.GameId, StringComparison.Ordinal) &&
+                mastery.PersonalBest > mastery.PreviousPersonalBest
+                    ? " · 개인 최고 +" + (mastery.PersonalBest - mastery.PreviousPersonalBest)
+                    : string.Empty;
+            int target = NextTarget(best);
+            string next = best >= 1000
+                ? " · 릴리스 최고 단계 달성"
+                : " · 다음 목표 " + target + "까지 " + (target - best);
+            return " · 세션 평균 " + average + " · 세션 최고 " + report.BestDeliveryScore +
+                component + " · 개인 최고 " + best + record + next;
+        }
+
+        private static int NextTarget(int score)
+        {
+            if (score < 700) return 700;
+            if (score < 800) return 800;
+            if (score < 900) return 900;
+            if (score < 950) return 950;
+            return 1000;
         }
 
         private static string PitchTypeName(string value)

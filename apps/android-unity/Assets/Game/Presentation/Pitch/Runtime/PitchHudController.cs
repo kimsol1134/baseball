@@ -146,7 +146,8 @@ namespace Baseball.Presentation.Pitch
             if (snapshot?.Report == null) return;
             PitchPostgameContent content = PitchPostgameProjection.Project(
                 snapshot.Report,
-                snapshot.PitchLog);
+                snapshot.PitchLog,
+                snapshot.ReleaseMastery);
             _postgameVisible = true;
             _resultTitle.text = "이닝 정산";
             _resultDetail.text = content.Summary;

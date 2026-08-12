@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Baseball.Application.HighSchool;
+using Baseball.Application.Meta;
 using Baseball.Application.Persistence;
 using Baseball.Core.Pitching;
 using Baseball.Presentation.Shell;
@@ -13,14 +14,17 @@ namespace Baseball.Presentation.Pitch
     {
         public PitchSessionPostgameSnapshot(
             PitchGameReport report,
-            IReadOnlyList<PitchLogEntryState> pitchLog)
+            IReadOnlyList<PitchLogEntryState> pitchLog,
+            PitchReleaseMasteryState releaseMastery = null)
         {
             Report = report ?? throw new ArgumentNullException(nameof(report));
             PitchLog = pitchLog ?? Array.Empty<PitchLogEntryState>();
+            ReleaseMastery = releaseMastery ?? PitchReleaseMasteryState.Empty;
         }
 
         public PitchGameReport Report { get; }
         public IReadOnlyList<PitchLogEntryState> PitchLog { get; }
+        public PitchReleaseMasteryState ReleaseMastery { get; }
     }
 
     public readonly struct PitchSessionLoadResult

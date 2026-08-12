@@ -29,8 +29,9 @@
 비밀값은 이 문서에 기록하지 않는다.
 
 - Play Console: 2026-08-12 `com.solkim.baseball.android` 유료 게임 생성, 대한민국 4,400원,
-  internal versionCode 1 제공 및 closed Alpha 대한민국 전체 출시 구성 완료. 게시 제출은 한국 개인
-  개발자 공개 전화 인증과 유료 앱 사업자·통신판매 정보가 없어 차단됐다.
+  internal versionCode 1 제공 및 closed Alpha 대한민국 전체 출시 구성 완료. 2026-08-13 등록정보와
+  정책 선언을 포함한 13개 v1 변경을 검토로 전송했다. 공개 전화 SMS 인증과 유료 앱
+  사업자·통신판매 정보, v2 AAB+symbols 원자 업로드는 프로덕션 게시 전에 남아 있다.
 - Firebase: project `baseball-reincarnation-android`(project number `951359066339`), Android App ID
   `1:951359066339:android:ea391d85ed2bac524cf5d6`, package `com.solkim.baseball.android` 등록 완료.
   GA4 전용 property `549574769`/Android stream `15421807578`를 기존 blog property와 분리해 연결했다.

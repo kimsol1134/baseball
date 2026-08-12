@@ -1,6 +1,6 @@
 # Android Unity 릴리스 증거
 
-기준 시각: 2026-08-12 KST
+기준 시각: 2026-08-13 KST
 현재 상태: clean commit의 Unity 6000.3.19f1 테스트, production upload-key 서명 v2 AAB,
 Firebase Crashlytics symbol upload, API 29/35(16KB)/36 production smoke, Play 내부·비공개
 트랙 구성이 완료됐다. v2 AAB와 Play native symbols를 같은 edit에 올리는 데도 성공했지만 한국
@@ -40,7 +40,7 @@ Firebase Crashlytics symbol upload, API 29/35(16KB)/36 production smoke, Play �
 
 ## 자동 검증
 
-- `npm run test:unity:static`: 433/433 통과
+- `npm run test:unity:static`: 435/435 통과
 - `npm run test:unity:references`: production player, internal-QA player, Core, Platform,
   Platform tests, Presentation tests, Android Editor 모두 warning/error 0
 - Unity Test Runner:
@@ -92,6 +92,9 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
 - 개인정보처리방침: `https://baseball-reincarnation.vercel.app/privacy`
 - 고객지원: `https://baseball-reincarnation.vercel.app/support`
 - 콘텐츠 등급, 타겟 연령(13+), 광고 없음, 광고 ID 없음, Data Safety, 정부·금융·건강 앱 선언 완료
+- 2026-08-13 게시 개요의 13개 변경사항을 Google 검토로 전송했다. closed Alpha
+  `1.0.0 내부 QA`, 대한민국, 테스터 목록, ko-KR 등록정보, 콘텐츠 등급, 13+ 타겟층,
+  개인정보처리방침, 광고/Data Safety/건강 선언이 현재 **검토 중**이다.
 - 무료 체험: Google의 신규 유료 게임 정책상 60분 체험은 기본 활성 대상이며 별도 앱 코드가
   필요 없다. 현재 Console에는 별도 토글이 보이지 않았으므로 실제 테스터 계정에서 설치→60분
   만료→구매→동일 save 유지까지 확인하기 전 완료로 판정하지 않는다.
@@ -110,18 +113,19 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
 
 ## 남은 출시 차단
 
-1. **한국 개발자 계정 정보**: Play 게시 개요의 유일한 제출 오류다. 사업자등록번호 저장은
-   완료했다. 남은 일은 요청된 공개 개발자 전화번호 SMS 코드를 계정 소유자가 확인하는 것과,
-   정부24에서 통신판매업을 신고해 발급받은 번호·신고기관을 입력하는 것이다. 현재 공정위 공식
-   조회에는 등록 정보가 없으므로 민감정보와 인증번호를 자동 생성하거나 추측하지 않는다.
+1. **한국 개발자 계정 정보**: 사업자등록번호 저장은 완료했다. 남은 일은 요청된 공개 개발자
+   전화번호 SMS 코드를 계정 소유자가 확인하는 것과, 정부24에서 통신판매업을 신고해 발급받은
+   번호·신고기관을 입력하는 것이다. 현재 공정위 공식 조회에는 등록 정보가 없으므로 민감정보와
+   인증번호를 자동 생성하거나 추측하지 않는다. 2026-08-13 Console UI의 v1 검토 제출은
+   성공했지만, 이 정보는 유료 프로덕션 게시와 v2 원자 업로드 전에 여전히 마감해야 한다.
 2. **비공개 테스트 시간 조건**: Play 대시보드 기준 현재 참여 선택 0명이다. 실제 Google 계정
    테스터 12명 이상이 opt-in하고 14일 이상 계속 참여해야 프로덕션 액세스를 신청할 수 있다.
 3. **물리 기기**: Low/Mid/High 실제 스마트폰에서 성능(p95 frame/peak memory), TalkBack 전체
    탐색, gesture/3-button Back, 실제 low-storage, background/force-stop, 구매 체험 경계를 확인한다.
    에뮬레이터 3종 결과는 이 증거를 대체하지 않는다.
-4. **Play 검토 산출물**: 계정 정보 해결 뒤 v2 AAB+native symbols를 같은 edit로 원자 commit하고,
-   현재 pending 변경을 검토 제출한 뒤
-   사전 출시 보고서·지원 기기 CSV·태블릿/ChromeOS/TV/XR 제외·무료 체험을 확인한다.
+4. **Play 검토 산출물**: 13개 v1 변경은 2026-08-13 검토 전송 완료다. 계정 정보 해결 뒤
+   v2 AAB+native symbols를 같은 edit로 원자 commit하고, 검토 결과·사전 출시 보고서·지원 기기
+   CSV·태블릿/ChromeOS/TV/XR 제외·무료 체험을 확인한다.
 5. **운영 수신**: 내부/비공개 설치에서 Firebase Analytics·Amplitude 수신과 실제 Crashlytics
    symbolication을 확인한다.
 6. **키 복구**: production upload keystore는 저장소 밖과 CI secret에 있으나 계정 소유자의

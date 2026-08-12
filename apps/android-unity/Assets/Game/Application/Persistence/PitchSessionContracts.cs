@@ -143,7 +143,10 @@ namespace Baseball.Application.Persistence
             int executionQuality,
             string outcome,
             bool signAccepted,
-            long committedAtUnixMilliseconds)
+            long committedAtUnixMilliseconds,
+            int? releaseAccuracy = null,
+            int? aimAccuracy = null,
+            bool? wasDirect = null)
         {
             PitchId = pitchId;
             BatterIndex = batterIndex;
@@ -164,6 +167,9 @@ namespace Baseball.Application.Persistence
             Outcome = outcome;
             SignAccepted = signAccepted;
             CommittedAtUnixMilliseconds = committedAtUnixMilliseconds;
+            ReleaseAccuracy = releaseAccuracy;
+            AimAccuracy = aimAccuracy;
+            WasDirect = wasDirect;
         }
 
         public string PitchId { get; }
@@ -185,6 +191,11 @@ namespace Baseball.Application.Persistence
         public string Outcome { get; }
         public bool SignAccepted { get; }
         public long CommittedAtUnixMilliseconds { get; }
+        /// <summary>Optional for pre-mastery saves; 0...1000 when present.</summary>
+        public int? ReleaseAccuracy { get; }
+        /// <summary>Optional for pre-mastery saves; 0...1000 when present.</summary>
+        public int? AimAccuracy { get; }
+        public bool? WasDirect { get; }
     }
 
     /// <summary>Delivery evidence for one committed pitch; automatic release sets WasDirect false.</summary>

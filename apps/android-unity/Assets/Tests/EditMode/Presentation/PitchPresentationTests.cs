@@ -4,6 +4,7 @@ using System.Linq;
 using Baseball.Core.Domain;
 using Baseball.Core.Pitching;
 using Baseball.Application.HighSchool;
+using Baseball.Application.Meta;
 using Baseball.Application.Persistence;
 using Baseball.Platform.Crash;
 using Baseball.Presentation.Pitch;
@@ -466,16 +467,34 @@ namespace Baseball.Presentation.Tests
             {
                 new PitchLogEntryState(
                     "pitch-1", 0, 1, "four_seam", 0, 1, "edge", "normal",
-                    0, 500, 25, 460, 1450, 18, -92, 880, "called_strike", true, 1),
+                    0, 500, 25, 460, 1450, 18, -92, 880, "called_strike", true, 1,
+                    releaseAccuracy: 920, aimAccuracy: 880, wasDirect: true),
                 new PitchLogEntryState(
                     "pitch-2", 0, 2, "slider", 2, 0, "chase", "max_effort",
-                    -500, -500, -430, -610, 1320, -124, -48, 820, "swinging_strike", false, 2),
+                    -500, -500, -430, -610, 1320, -124, -48, 820, "swinging_strike", false, 2,
+                    releaseAccuracy: 840, aimAccuracy: 760, wasDirect: true),
             };
+            var mastery = new PitchReleaseMasteryState(
+                officialSessions: 2,
+                directPitches: 5,
+                deliveryScoreTotal: 4050,
+                releaseAccuracyTotal: 4200,
+                aimAccuracyTotal: 3900,
+                personalBest: 900,
+                lastGameId: "postgame",
+                lastSessionAverage: 850,
+                lastSessionBest: 900,
+                previousPersonalBest: 860,
+                lastReleaseAverage: 880,
+                lastAimAverage: 820);
 
-            PitchPostgameContent content = PitchPostgameProjection.Project(report, log);
+            PitchPostgameContent content = PitchPostgameProjection.Project(report, log, mastery);
             Assert.That(content.Summary, Does.Contain("1타자 · 2구 · 1아웃"));
             Assert.That(content.Analysis, Is.EqualTo("기대 피해 120 · 실제 피해 40 · 포수 사인 수락 1/2"));
             Assert.That(content.Growth, Does.Contain("수싸움 성장 1 · 능력 발현 1(제구)"));
+            Assert.That(content.Growth, Does.Contain("세션 평균 850 · 세션 최고 900"));
+            Assert.That(content.Growth, Does.Contain("타이밍 880 · 조준 820"));
+            Assert.That(content.Growth, Does.Contain("개인 최고 900 · 개인 최고 +40 · 다음 목표 950까지 50"));
             Assert.That(content.Pitches.Count, Is.EqualTo(2));
             Assert.That(content.Pitches[0].Title, Does.Contain("직구 · 높은 가운데 · 스트라이크"));
             Assert.That(content.Pitches[0].Detail, Does.Contain("목표 (0,500) → 실제 (25,460)"));
