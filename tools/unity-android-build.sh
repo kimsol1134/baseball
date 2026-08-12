@@ -211,6 +211,23 @@ if [[ "$failed" -eq 0 && "$build_mode" == "rc" ]]; then
     fi
   fi
   if [[ "$failed" -eq 0 ]]; then
+    androidx_evidence="$artifact_directory/androidx-runtime-versions.txt"
+    : >"$androidx_evidence"
+    for version_entry in \
+      "base/root/META-INF/androidx.fragment_fragment.version:1.7.1" \
+      "base/root/META-INF/androidx.activity_activity.version:1.8.1"; do
+      entry_path="${version_entry%%:*}"
+      expected_version="${version_entry#*:}"
+      actual_version="$(unzip -p "$aab_path" "$entry_path" 2>/dev/null | tr -d '\r\n')"
+      printf '%s=%s\n' "$entry_path" "$actual_version" >>"$androidx_evidence"
+      if [[ "$actual_version" != "$expected_version" ]]; then
+        echo "Release-candidate AAB resolved $entry_path to '$actual_version', expected '$expected_version'" >&2
+        failed=1
+        break
+      fi
+    done
+  fi
+  if [[ "$failed" -eq 0 ]]; then
     if ! java -jar "$bundletool_jar" dump config --bundle="$aab_path" \
       >"$artifact_directory/bundle-config.txt" 2>"$artifact_directory/bundle-config.stderr.txt"; then
       echo "bundletool could not dump the release-candidate BundleConfig" >&2

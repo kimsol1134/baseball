@@ -690,6 +690,9 @@ for (const contract of [
   "jar verified.",
   "BASEBALL_UPLOAD_CERT_SHA256",
   "aab-signing-cert.sha256",
+  "androidx-runtime-versions.txt",
+  "androidx.fragment_fragment.version:1.7.1",
+  "androidx.activity_activity.version:1.8.1",
   "PAGE_ALIGNMENT_16K",
   "dump manifest",
   "merged-manifest.xml",
@@ -724,6 +727,13 @@ requireCondition(
 );
 
 const smokeRunner = text("tools/android-unity-smoke/run.sh");
+for (const contract of [
+  "androidx-runtime-versions.txt",
+  "androidx.fragment_fragment.version:1.7.1",
+  "androidx.activity_activity.version:1.8.1",
+]) {
+  requireCondition(smokeRunner.includes(contract), `Android smoke dependency contract missing '${contract}'`);
+}
 for (const contract of [
   "bundletool",
   "jarsigner -verify -certs",

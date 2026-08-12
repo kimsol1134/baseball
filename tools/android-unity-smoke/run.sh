@@ -357,6 +357,18 @@ else
   grep -Fq 'jar verified.' "$evidence_dir/aab-signature.txt" ||
     fail '내부 검증 AAB가 verified JAR 서명 결과를 남기지 않았습니다.'
 fi
+androidx_evidence="$evidence_dir/androidx-runtime-versions.txt"
+: >"$androidx_evidence"
+for version_entry in \
+  "base/root/META-INF/androidx.fragment_fragment.version:1.7.1" \
+  "base/root/META-INF/androidx.activity_activity.version:1.8.1"; do
+  entry_path="${version_entry%%:*}"
+  expected_version="${version_entry#*:}"
+  actual_version="$(unzip -p "$BASEBALL_AAB" "$entry_path" 2>/dev/null | tr -d '\r\n')"
+  printf '%s=%s\n' "$entry_path" "$actual_version" >>"$androidx_evidence"
+  [[ "$actual_version" == "$expected_version" ]] ||
+    fail "AAB AndroidX runtime version mismatch: $entry_path=$actual_version"
+done
 java -jar "$bundletool_jar" dump config --bundle="$BASEBALL_AAB" \
   >"$evidence_dir/bundle-config.txt" 2>"$evidence_dir/bundle-config.stderr.txt" ||
   fail 'AAB BundleConfig를 읽지 못했습니다.'
