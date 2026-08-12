@@ -714,6 +714,10 @@ for (const contract of [
   requireCondition(unityBuildRunner.includes(contract), `Unity build fail-closed contract missing '${contract}'`);
 }
 requireCondition(
+  unityBuildRunner.includes(".filter((line) => /^(?:android|com)\\.[A-Za-z0-9_.]+$/.test(line))"),
+  "Unity build APK permission parser must preserve app-defined permission identifiers",
+);
+requireCondition(
   text("docs/android-unity/THIRD_PARTY_LOCK.md").includes("Firebase CLI (CI symbols upload only) | 15.26.0"),
   "Firebase CLI symbol uploader must be version-locked in THIRD_PARTY_LOCK.md",
 );
@@ -780,6 +784,10 @@ for (const contract of [
 ]) {
   requireCondition(smokeRunner.includes(contract), `Android device smoke contract missing '${contract}'`);
 }
+requireCondition(
+  smokeRunner.includes(".filter((line) => /^(?:android|com)\\.[A-Za-z0-9_.]+$/.test(line))"),
+  "Android smoke APK permission parser must preserve app-defined permission identifiers",
+);
 const smokeReadme = text("tools/android-unity-smoke/README.md");
 for (const contract of [
   "`production`이 기본 모드",

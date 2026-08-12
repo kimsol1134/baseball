@@ -417,8 +417,9 @@ NODE
 const fs = require("node:fs");
 const raw = fs.readFileSync(process.env.APK_PERMISSIONS, "utf8");
 const permissions = [...new Set(
-  [...raw.matchAll(/\b(?:android|com)\.[A-Za-z0-9_.]*permission(?:\.[A-Za-z0-9_.]+)?\b/g)]
-    .map((match) => match[0])
+  raw.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^(?:android|com)\.[A-Za-z0-9_.]+$/.test(line))
 )].sort();
 const expected = [
   "android.permission.ACCESS_NETWORK_STATE",
