@@ -658,6 +658,7 @@ private struct WeeklyPlanView: View {
             .buttonStyle(.plain)
             .accessibilityAddTraits(selected ? .isSelected : [])
             .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("pro.plan.\(copy.plan.rawValue)")
         }
     }
 }

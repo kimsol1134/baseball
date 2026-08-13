@@ -298,6 +298,10 @@ final class CareerSmokeUITests: XCTestCase {
             finishProCareer(app),
             "프로 첫 주부터 은퇴까지 화면 흐름을 완료하지 못했습니다."
         )
+        XCTAssertTrue(
+            finishProLegacyAndReachNextPlayer(app),
+            "프로 은퇴 기록이 대표 유산과 다음 고교 선수까지 이어지지 않았습니다."
+        )
     }
 
     /// 프로는 구간 진행을 사용하되, 시즌 갈림길과 중요 경기는 실제 화면에서 직접 처리한다.
@@ -315,6 +319,21 @@ final class CareerSmokeUITests: XCTestCase {
             if app.buttons["pro.newPlayer"].exists {
                 capture(app, name: "11-pro-retired")
                 return true
+            }
+            if app.buttons["pro.plan.required"].exists
+                || (app.buttons["pro.advanceSegment"].exists
+                    && !app.buttons["pro.advanceSegment"].isEnabled) {
+                let plans = app.descendants(matching: .any).matching(
+                    NSPredicate(
+                        format: "identifier BEGINSWITH %@ AND identifier != %@",
+                        "pro.plan.", "pro.plan.required"
+                    )
+                )
+                guard plans.count > 0 else { return false }
+                let plan = plans.element(boundBy: 0)
+                guard plan.exists, bringIntoView(plan), plan.isEnabled else { return false }
+                plan.tap()
+                continue
             }
             if tapIfPresent(app.buttons["pro.advanceSegment"]) { continue }
 
@@ -360,6 +379,25 @@ final class CareerSmokeUITests: XCTestCase {
         }
         capture(app, name: "99-pro-career-step-limit")
         return false
+    }
+
+    /// 은퇴 버튼이 보이는 것으로 끝내지 않고, 프로 기록을 고교 대표 유산에 합치고 새
+    /// 선수의 편지까지 실제로 걷는다. 환생 게임의 가장 긴 결제 가치는 이 연결에 있다.
+    private func finishProLegacyAndReachNextPlayer(_ app: XCUIApplication) -> Bool {
+        let newPlayer = app.buttons["pro.newPlayer"]
+        guard newPlayer.waitForExistence(timeout: timeout), tapIfPresent(newPlayer) else { return false }
+        let confirmNewPlayer = app.buttons.matching(identifier: "pro.newPlayer.confirm").firstMatch
+        guard confirmNewPlayer.waitForExistence(timeout: timeout) else { return false }
+        confirmNewPlayer.tap()
+
+        let legacyConfirm = app.buttons["hs.legacy.confirm"]
+        guard legacyConfirm.waitForExistence(timeout: timeout) else { return false }
+        selectRequiredLegacy(app)
+        guard legacyConfirm.isEnabled, tapIfPresent(legacyConfirm) else { return false }
+        let closeLife = app.buttons["확정하고 이 선수의 이야기를 닫는다"]
+        guard closeLife.waitForExistence(timeout: timeout) else { return false }
+        closeLife.tap()
+        return finishRecapAndAssertPlayerContinuity(app)
     }
 
     /// SwiftUI가 카드 버튼의 identifier를 잠깐 `other`에 붙이는 프레임이 있어 역할을
@@ -608,9 +646,23 @@ final class CareerSmokeUITests: XCTestCase {
 
         let stamp = app.descendants(matching: .any)
             .matching(identifier: "hs.rebirth.stamp").firstMatch
-        if stamp.waitForExistence(timeout: 4) {
+        if !stamp.waitForExistence(timeout: 4) {
+            // 일반 플레이는 마지막 선수 설정으로 즉시 환생한다. 완주 픽스처처럼 설정
+            // 영수증이 없는 구버전 경로는 완료 화면에 머무르므로 다시 시작을 눌러 설정을
+            // 한 번 마쳐야 새 선수에게 편지가 도착한다.
+            let rebirth = app.buttons["hs.rebirth"]
+            guard rebirth.waitForExistence(timeout: timeout), tapIfPresent(rebirth) else {
+                return false
+            }
+            guard stamp.waitForExistence(timeout: 4) else { return false }
+        }
+        if stamp.exists {
             capture(app, name: "09-rebirth")
             _ = stamp.waitForNonExistence(timeout: timeout)
+        }
+
+        if app.buttons["hs.setup.next"].waitForExistence(timeout: 2) {
+            guard completeSetup(app) else { return false }
         }
 
         let inheritedLetter = app.descendants(matching: .any)
@@ -693,7 +745,7 @@ final class CareerSmokeUITests: XCTestCase {
 
     @discardableResult
     private func tapIfPresent(_ element: XCUIElement) -> Bool {
-        guard element.exists else { return false }
+        guard element.exists, element.isEnabled else { return false }
         guard bringIntoView(element) else { return false }
         element.tap()
         return true
