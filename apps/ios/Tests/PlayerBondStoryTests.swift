@@ -166,6 +166,80 @@ final class PlayerBondStoryTests: XCTestCase {
         )
     }
 
+    func testBondMemoryKeepsOnlyDefiningRelationshipChoices() {
+        XCTAssertEqual(
+            HighSchoolCareerStore.bondMemoryKind(
+                eventCategory: "health",
+                personalityChanged: false,
+                trustBefore: 40,
+                trustAfter: 35
+            ),
+            .healthChoice
+        )
+        XCTAssertEqual(
+            HighSchoolCareerStore.bondMemoryKind(
+                eventCategory: "coach",
+                personalityChanged: true,
+                trustBefore: 55,
+                trustAfter: 60
+            ),
+            .personality
+        )
+        XCTAssertEqual(
+            HighSchoolCareerStore.bondMemoryKind(
+                eventCategory: "catcher",
+                personalityChanged: false,
+                trustBefore: 68,
+                trustAfter: 74
+            ),
+            .trustMilestone
+        )
+        XCTAssertNil(HighSchoolCareerStore.bondMemoryKind(
+            eventCategory: "media",
+            personalityChanged: false,
+            trustBefore: 52,
+            trustAfter: 56
+        ))
+    }
+
+    func testBondMemoryRoundTripsThroughLiveSaveAndLifeRecord() throws {
+        let memory = HighSchoolCareerStore.PlayerBondMemory(
+            kind: .trustMilestone,
+            eventID: "evt-catcher-sign",
+            eventCategory: "catcher",
+            eventTitle: "사인 다툼",
+            response: .listen,
+            subjectName: "한결",
+            chapterNumber: 4,
+            trustBefore: 68,
+            trustAfter: 74
+        )
+        let save = HighSchoolCareerStore.SaveRecord(
+            result: nil,
+            inheritance: .firstLife,
+            archive: [],
+            bondMemories: [memory],
+            revision: 1
+        )
+        let restored = try JSONDecoder().decode(
+            HighSchoolCareerStore.SaveRecord.self,
+            from: JSONEncoder().encode(save)
+        )
+        XCTAssertEqual(restored.bondMemories, [memory])
+
+        let state = try HighSchoolCareerEngine().start(.init(
+            seed: "727272",
+            presetID: "precision_commander"
+        )).snapshot
+        let record = HighSchoolCareerStore.lifeRecord(
+            from: state,
+            memories: [],
+            previous: .firstLife,
+            bondMemories: [memory]
+        )
+        XCTAssertEqual(record.bondMemories, [memory])
+    }
+
     func testArchiveLineageIsAlwaysNewestFirst() {
         let ordered = LifeArchiveOrdering.newestFirst([
             life(drafted: false, lifeNumber: 1, playerName: "첫 선수"),

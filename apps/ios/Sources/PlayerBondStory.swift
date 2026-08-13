@@ -319,6 +319,7 @@ enum PlayerBondStory {
 struct PlayerHeartCard: View {
     let state: HighSchoolCareerSnapshot
     let presentation: PlayerHeartlinePresentation
+    let bondMemories: [HighSchoolCareerStore.PlayerBondMemory]
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -355,21 +356,26 @@ struct PlayerHeartCard: View {
             title: copyResolver.resolve(.heartCardTitle, arguments: [.userText(state.identity.name)]),
             tone: .raised
         ) {
-            HStack(alignment: .center, spacing: 12) {
-                PortraitView(
-                    seed: state.identity.portraitSeed,
-                    role: .player,
-                    size: 46,
-                    playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace
-                )
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(verbatim: line.mood)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(BaseballTheme.information)
-                    Text(verbatim: "“\(line.words)”")
-                        .font(.subheadline)
-                        .foregroundStyle(BaseballTheme.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center, spacing: 12) {
+                    PortraitView(
+                        seed: state.identity.portraitSeed,
+                        role: .player,
+                        size: 46,
+                        playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace
+                    )
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(verbatim: line.mood)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(BaseballTheme.information)
+                        Text(verbatim: "“\(line.words)”")
+                            .font(.subheadline)
+                            .foregroundStyle(BaseballTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                if !bondMemories.isEmpty {
+                    PlayerBondMemoryList(memories: bondMemories, limit: 1)
                 }
             }
             .accessibilityElement(children: .ignore)
@@ -442,6 +448,88 @@ struct PlayerLegacyQuote: View {
                 ]
             )
         )
+    }
+}
+
+/// Structured recall shared by the living player's heart card, farewell, archive, and next-life
+/// letter. Event and choice labels are resolved from stable IDs in the active language.
+struct PlayerBondMemoryList: View {
+    let memories: [HighSchoolCareerStore.PlayerBondMemory]
+    var limit: Int? = nil
+
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var visibleMemories: [HighSchoolCareerStore.PlayerBondMemory] {
+        let ordered = memories.sorted { $0.chapterNumber > $1.chapterNumber }
+        return limit.map { Array(ordered.prefix($0)) } ?? ordered
+    }
+
+    private func kindTitle(_ kind: HighSchoolCareerStore.PlayerBondMemory.Kind) -> String {
+        switch kind {
+        case .personality: copyResolver.resolve(.bondMemoryKindPersonality)
+        case .healthChoice: copyResolver.resolve(.bondMemoryKindHealth)
+        case .trustMilestone: copyResolver.resolve(.bondMemoryKindTrust)
+        }
+    }
+
+    private func eventTitle(_ memory: HighSchoolCareerStore.PlayerBondMemory) -> String {
+        let descriptor = RelationshipPresentationCatalog.eventDescriptor(
+            eventID: memory.eventID,
+            categoryID: memory.eventCategory
+        )
+        return descriptor.isKnownEvent
+            ? copyResolver.resolve(descriptor.titleToken)
+            : memory.eventTitle
+    }
+
+    private func choiceTitle(_ memory: HighSchoolCareerStore.PlayerBondMemory) -> String {
+        let event = CareerEventContent(
+            id: memory.eventID,
+            title: memory.eventTitle,
+            category: memory.eventCategory,
+            summary: ""
+        )
+        let descriptor = RelationshipPresentationCatalog.cardDescriptor(for: event)
+        let title = descriptor.choiceDescriptors.first { $0.response == memory.response }
+            .map { copyResolver.resolve($0.titleToken) }
+            ?? memory.response.rawValue
+        guard let subjectName = memory.subjectName, !subjectName.isEmpty else { return title }
+        return "\(subjectName) · \(title)"
+    }
+
+    var body: some View {
+        if !visibleMemories.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(copyResolver.resolve(.bondMemoryHeading))
+                    .eyebrowStyle(BaseballTheme.milestone)
+                ForEach(visibleMemories) { memory in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(copyResolver.resolve(
+                            .bondMemoryChoice,
+                            arguments: [
+                                .userText(kindTitle(memory.kind)),
+                                .userText(eventTitle(memory)),
+                                .userText(choiceTitle(memory)),
+                            ]
+                        ))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(copyResolver.resolve(
+                            .bondMemoryTrust,
+                            arguments: [
+                                .integer(memory.trustBefore), .integer(memory.trustAfter),
+                            ]
+                        ))
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                    }
+                }
+            }
+            .padding(10)
+            .background(BaseballTheme.milestone.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+            .accessibilityIdentifier("player.bondMemories")
+        }
     }
 }
 
@@ -527,6 +615,9 @@ struct PreviousPlayerLetterCard: View {
                             .font(.caption.weight(.bold))
                             .foregroundStyle(BaseballTheme.milestone)
                             .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if let memories = record.bondMemories, !memories.isEmpty {
+                        PlayerBondMemoryList(memories: memories, limit: 1)
                     }
                 }
             }

@@ -139,6 +139,7 @@ struct HighSchoolCareerView: View {
                         previous: career.inheritance,
                         nicknames: career.nicknames, chronicle: career.chronicle,
                         personality: career.personality,
+                        bondMemories: career.bondMemories,
                         startingPitcher: career.careerStartingPitcher
                     )
                 }
@@ -438,7 +439,11 @@ struct HighSchoolCareerView: View {
                             for: state,
                             personality: career.personality
                         ) {
-                            PlayerHeartCard(state: state, presentation: presentation)
+                            PlayerHeartCard(
+                                state: state,
+                                presentation: presentation,
+                                bondMemories: career.bondMemories
+                            )
                         }
                     }
                     .padding(BaseballMetrics.gutter)
@@ -2865,6 +2870,7 @@ private struct LegacyCard: View {
                 personality: career.personality,
                 signatureLegacy: selectedSignatureLegacy,
                 signatureLegacyCandidates: signatureCandidates,
+                bondMemories: career.bondMemories,
                 startingPitcher: career.careerStartingPitcher
             )
             BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionPlayerRecordCard), tone: .milestone) {
@@ -2874,6 +2880,9 @@ private struct LegacyCard: View {
                 }
             }
             ChronicleCard(entries: career.chronicle)
+            if !career.bondMemories.isEmpty {
+                PlayerBondMemoryList(memories: career.bondMemories)
+            }
             if let draft = state.draftResult {
                 let signature = draft.team.map { HighSchoolConclusionPresentation.localizedTeamName($0, resolver: copyResolver) }
                 let projected = HighSchoolConclusionPresentation.localizedDraftProjectedRange(
@@ -3269,6 +3278,7 @@ private struct CompletionCard: View {
                     from: state, memories: career.selectedMemories, previous: career.inheritance,
                     nicknames: career.nicknames, chronicle: career.chronicle,
                     personality: career.personality,
+                    bondMemories: career.bondMemories,
                     startingPitcher: career.careerStartingPitcher
                 ))
             }

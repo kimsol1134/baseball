@@ -149,6 +149,9 @@ final class HighSchoolCareerStore {
         /// 없는 옛 기록은 nil이라 카드가 그 줄을 통째로 접는다.
         var abilityStart: AbilityLine? = nil
         var abilityFinal: AbilityLine? = nil
+        /// The few relationship choices that defined this player. Optional keeps old archives
+        /// readable; a run records at most one meaningful moment per chapter.
+        var bondMemories: [PlayerBondMemory]? = nil
 
         /// 구위·제구·변화·체력 네 값. 카드와 아카이브가 함께 쓴다.
         struct AbilityLine: Codable, Equatable {
@@ -176,6 +179,25 @@ final class HighSchoolCareerStore {
             guard let appearanceSeed, !appearanceSeed.isEmpty else { return playerName }
             return appearanceSeed
         }
+    }
+
+    struct PlayerBondMemory: Codable, Equatable, Identifiable {
+        enum Kind: String, Codable {
+            case personality
+            case healthChoice = "health_choice"
+            case trustMilestone = "trust_milestone"
+        }
+
+        var id: String { "\(chapterNumber):\(eventID):\(kind.rawValue)" }
+        let kind: Kind
+        let eventID: String
+        let eventCategory: String
+        let eventTitle: String
+        let response: RelationshipResponse
+        let subjectName: String?
+        let chapterNumber: Int
+        let trustBefore: Int
+        let trustAfter: Int
     }
 
     struct InheritedStartComparison: Equatable {
@@ -308,6 +330,9 @@ final class HighSchoolCareerStore {
     /// 이번 회차의 연대기 — 이 선수가 살아온 순간들. 능력치 그래프는 결과만 남기지만
     /// 연대기는 과정을 남긴다. 애착은 과정에서 생긴다.
     private(set) var chronicle: [ChronicleEntry] = []
+    /// Meaningful relationship decisions for the current player. Unlike the full chronicle this
+    /// stays structured, so farewell, archive, and the next player's letter can recall it.
+    private(set) var bondMemories: [PlayerBondMemory] = []
     /// 방금 경기에 대한 커뮤니티 반응. 저장하지 않는다 — careerID·경기 번호로
     /// 결정론이라 필요하면 언제든 다시 만들 수 있고, 반응은 "방금"의 것일 때만 살아 있다.
     /// Ephemeral presentation values. These stable IDs are intentionally outside every save
@@ -726,6 +751,7 @@ final class HighSchoolCareerStore {
         let isChallenge = challengeLifeNumber != nil
         let previousInheritance = inheritance
         let previousLastSetup = lastSetup
+        let previousBondMemories = bondMemories
         if isChallenge {} else {
         lastSetup = LastSetup(
             presetID: preset.id, playerName: playerName, region: region,
@@ -809,6 +835,7 @@ final class HighSchoolCareerStore {
             // 별명과 연대기는 이번 회차의 것이다. 환생하면 새로 쓴다.
             nicknames = []
             chronicle = []
+            bondMemories = []
             chapterStartStrikeouts = 0
             goalCelebratedChapter = nil
             chapterGains = [:]
@@ -840,6 +867,7 @@ final class HighSchoolCareerStore {
                 result = nil
                 inheritance = previousInheritance
                 lastSetup = previousLastSetup
+                bondMemories = previousBondMemories
                 careerStartingPitcher = nil
                 signatureLegacyRulesVersion = nil
                 frozenSignatureLegacyCandidates = nil
@@ -1120,6 +1148,7 @@ final class HighSchoolCareerStore {
         archive = []
         nicknames = []
         chronicle = []
+        bondMemories = []
         chapterStartStrikeouts = 0
         goalCelebratedChapter = nil
         responseTally = ResponseTally()
@@ -1332,12 +1361,72 @@ final class HighSchoolCareerStore {
         }
         _ = perform(
             responseTally: candidateTally,
-            appendingChronicle: addedChronicle
+            appendingChronicle: addedChronicle,
+            bondMemory: { [weak self] beforeState, afterState in
+                self?.bondMemory(
+                    before: beforeState,
+                    after: afterState,
+                    response: response,
+                    personalityBefore: before,
+                    personalityAfter: candidateTally.personality
+                )
+            }
         ) {
             try engine.resolveRelationship(.init(
                 seed: $0.nextSeed, state: $0.snapshot, response: response
             ))
         }
+    }
+
+    private func bondMemory(
+        before: HighSchoolCareerSnapshot,
+        after: HighSchoolCareerSnapshot,
+        response: RelationshipResponse,
+        personalityBefore: Personality?,
+        personalityAfter: Personality?
+    ) -> PlayerBondMemory? {
+        guard let event = before.currentRelationshipEvent,
+              let relationship = after.lastRelationship,
+              !bondMemories.contains(where: { $0.chapterNumber == before.chapter.number })
+        else { return nil }
+
+        let kind = Self.bondMemoryKind(
+            eventCategory: event.category,
+            personalityChanged: personalityAfter != nil && personalityAfter != personalityBefore,
+            trustBefore: relationship.trustBefore,
+            trustAfter: relationship.trustAfter
+        )
+        guard let kind else { return nil }
+
+        let target = HighSchoolCareerEngine.relationshipTarget(forEventCategory: event.category)
+        let subjectName: String? = switch target {
+        case .coach: before.school?.coachName
+        case .catcher: before.school?.catcherName
+        case .rival: before.rival.name
+        }
+        return PlayerBondMemory(
+            kind: kind,
+            eventID: event.id,
+            eventCategory: event.category,
+            eventTitle: event.title,
+            response: response,
+            subjectName: subjectName,
+            chapterNumber: before.chapter.number,
+            trustBefore: relationship.trustBefore,
+            trustAfter: relationship.trustAfter
+        )
+    }
+
+    nonisolated static func bondMemoryKind(
+        eventCategory: String,
+        personalityChanged: Bool,
+        trustBefore: Int,
+        trustAfter: Int
+    ) -> PlayerBondMemory.Kind? {
+        if eventCategory == "health" { return .healthChoice }
+        if personalityChanged { return .personality }
+        if trustBefore < 70, trustAfter >= 70 { return .trustMilestone }
+        return nil
     }
 
     func chooseAwakening(_ awakening: AwakeningID) {
@@ -1942,6 +2031,7 @@ final class HighSchoolCareerStore {
                 pledgeBonusPermille: pledgeBonus, pledge: settledPledge, pledgeProgress: pledgeProgress,
                 signatureLegacy: signatureLegacy,
                 signatureLegacyCandidates: signatureCandidates.isEmpty ? nil : signatureCandidates,
+                bondMemories: bondMemories,
                 startingPitcher: careerStartingPitcher
             )
             let nextInheritance = Self.nextInheritance(
@@ -2139,6 +2229,7 @@ final class HighSchoolCareerStore {
         pledgeProgress: RunPledgeProgress? = nil,
         signatureLegacy: CareerSignatureLegacy? = nil,
         signatureLegacyCandidates: [CareerSignatureLegacy]? = nil,
+        bondMemories: [PlayerBondMemory] = [],
         /// 이 회차를 시작할 때의 능력. 카드가 "얼마나 키웠는지"를 말하려면 시작점이 있어야 한다.
         startingPitcher: PitcherSnapshot? = nil
     ) -> LifeRecord {
@@ -2181,7 +2272,8 @@ final class HighSchoolCareerStore {
             windID: state.careerWind.id,
             windTitle: state.careerWind.title,
             signatureLegacy: signatureLegacy,
-            signatureLegacyCandidates: signatureLegacyCandidates
+            signatureLegacyCandidates: signatureLegacyCandidates,
+            bondMemories: bondMemories.isEmpty ? nil : bondMemories
         )
         record.pitches = state.performance.pitches
         record.outs = state.performance.outs
@@ -2714,6 +2806,7 @@ final class HighSchoolCareerStore {
             gameResume: gameResume,
             chronicle: chronicle,
             responseTally: responseTally,
+            bondMemories: bondMemories,
             nextRunIntent: nextRunIntent
         )
     }
@@ -2731,6 +2824,7 @@ final class HighSchoolCareerStore {
         gameResume candidateGameResume: PitchSession.ResumeState?,
         chronicle candidateChronicle: [ChronicleEntry],
         responseTally candidateResponseTally: ResponseTally,
+        bondMemories candidateBondMemories: [PlayerBondMemory]? = nil,
         nextRunIntent candidateNextRunIntent: NextRunIntent?,
         currentCareerRetention retentionOverride: CurrentCareerRetention? = nil,
         overrides: PersistenceOverrides? = nil
@@ -2760,6 +2854,8 @@ final class HighSchoolCareerStore {
             chapterStartStrikeouts: chapterStartStrikeouts,
             goalCelebratedChapter: persistedGoalCelebratedChapter,
             responseTally: candidateResponseTally,
+            bondMemories: (candidateBondMemories ?? bondMemories).isEmpty
+                ? nil : (candidateBondMemories ?? bondMemories),
             chapterGains: chapterGains.isEmpty ? nil : chapterGains,
             chapterTrainingCount: chapterTrainingCount == 0 ? nil : chapterTrainingCount,
             careerStartingPitcher: careerStartingPitcher,
@@ -2842,6 +2938,7 @@ final class HighSchoolCareerStore {
         chapterStartStrikeouts = record.chapterStartStrikeouts ?? 0
         goalCelebratedChapter = record.goalCelebratedChapter
         responseTally = record.responseTally ?? ResponseTally()
+        bondMemories = record.bondMemories ?? []
         chapterGains = record.chapterGains ?? [:]
         chapterTrainingCount = record.chapterTrainingCount ?? 0
         careerStartingPitcher = record.careerStartingPitcher
@@ -2890,6 +2987,8 @@ final class HighSchoolCareerStore {
         var goalCelebratedChapter: Int? = nil
         /// 성격을 만든 선택들. 없는 옛 저장본은 0에서 시작한다.
         var responseTally: ResponseTally? = nil
+        /// Structured relationship memories. Missing old saves continue with an empty list.
+        var bondMemories: [PlayerBondMemory]? = nil
         /// 이번 챕터의 훈련 성장 정산. 없으면 챕터 리뷰가 "훈련 없이 지나간 챕터"라고
         /// 방금 한 플레이를 부정한다(3차 패널 P1) — 옛 저장본은 빈 값으로 시작한다.
         var chapterGains: [String: Int]? = nil
@@ -2988,6 +3087,7 @@ final class HighSchoolCareerStore {
             ?? record.result?.snapshot.performance.strikeouts ?? 0
         goalCelebratedChapter = record.goalCelebratedChapter
         responseTally = record.responseTally ?? ResponseTally()
+        bondMemories = record.bondMemories ?? []
         chapterGains = record.chapterGains ?? [:]
         chapterTrainingCount = record.chapterTrainingCount ?? 0
         careerStartingPitcher = record.careerStartingPitcher
@@ -3102,6 +3202,7 @@ final class HighSchoolCareerStore {
         clearGameResumeOnSuccess: Bool = false,
         responseTally candidateResponseTally: ResponseTally? = nil,
         appendingChronicle additionalChronicle: [ChronicleEntry] = [],
+        bondMemory memoryFactory: ((HighSchoolCareerSnapshot, HighSchoolCareerSnapshot) -> PlayerBondMemory?)? = nil,
         _ action: (HighSchoolCareerResult) throws -> HighSchoolCareerResult
     ) -> Bool {
         guard let current = result else { return false }
@@ -3127,18 +3228,25 @@ final class HighSchoolCareerStore {
             let nextSummary = summary ?? Self.progressSummary(before: before, after: updated.snapshot)
             let nextCue = cue ?? (gains.isEmpty ? .neutral : .growth)
             let nextResponseTally = candidateResponseTally ?? responseTally
+            var nextBondMemories = bondMemories
+            if let memory = memoryFactory?(before, updated.snapshot),
+               !nextBondMemories.contains(where: { $0.chapterNumber == memory.chapterNumber }) {
+                nextBondMemories.append(memory)
+            }
             let nextResume = clearGameResumeOnSuccess ? nil : gameResume
             guard persist(
                 result: updated,
                 gameResume: nextResume,
                 chronicle: candidateChronicle,
                 responseTally: nextResponseTally,
+                bondMemories: nextBondMemories,
                 nextRunIntent: nextRunIntent
             ) else { return false }
 
             result = updated
             gameResume = nextResume
             responseTally = nextResponseTally
+            bondMemories = nextBondMemories
             pendingGains = gains
             pendingBloom = bloom
             chronicle = candidateChronicle

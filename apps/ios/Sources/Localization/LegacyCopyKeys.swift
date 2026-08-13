@@ -102,6 +102,12 @@ enum LegacyUICopyKey: String, CaseIterable, Sendable {
     case previousMemories = "legacy.previous.memories"
     case previousSignature = "legacy.previous.signature"
     case previousAccessibility = "legacy.previous.accessibility"
+    case bondMemoryHeading = "legacy.bond-memory.heading"
+    case bondMemoryKindPersonality = "legacy.bond-memory.kind.personality"
+    case bondMemoryKindHealth = "legacy.bond-memory.kind.health"
+    case bondMemoryKindTrust = "legacy.bond-memory.kind.trust"
+    case bondMemoryChoice = "legacy.bond-memory.choice"
+    case bondMemoryTrust = "legacy.bond-memory.trust"
 
     case archiveTitle = "legacy.archive.title"
     case archiveStatDrafted = "legacy.archive.stat.drafted"

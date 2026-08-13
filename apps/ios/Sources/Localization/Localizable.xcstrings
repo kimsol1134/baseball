@@ -6483,6 +6483,13 @@
     ,"legacy.archive.summary.stat.walks" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "WALKS" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "볼넷" } } } }
     ,"legacy.archive.summary.stat.runs" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "RUNS" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "실점" } } } }
 
+    ,"legacy.bond-memory.heading" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "A MEMORY THIS PLAYER KEPT" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 선수에게 남은 기억" } } } }
+    ,"legacy.bond-memory.kind.personality" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The choice that shaped a personality" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "성격을 만든 선택" } } } }
+    ,"legacy.bond-memory.kind.health" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The day we protected the arm" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "팔을 지킨 날의 선택" } } } }
+    ,"legacy.bond-memory.kind.trust" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The moment trust took root" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "믿음이 자리 잡은 순간" } } } }
+    ,"legacy.bond-memory.choice" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ · %2$@ · %3$@" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ · %2$@ · %3$@" } } } }
+    ,"legacy.bond-memory.trust" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trust %1$lld → %2$lld" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "믿음 %1$lld → %2$lld" } } } }
+
     ,"legacy.recap.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "PLAYER %lld · THREE YEARS IN REVIEW" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld번째 선수 · 3년 돌아보기" } } } }
     ,"legacy.recap.stamp.drafted" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Drafted by %@" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 지명" } } } }
     ,"legacy.recap.stamp.undrafted" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Undrafted · Evaluation %lld" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "미지명 · 평가 %lld점" } } } }
