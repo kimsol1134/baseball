@@ -1,12 +1,12 @@
 import Foundation
 
-public indirect enum JSONValue: Codable, Equatable, Sendable {
+public enum JSONValue: Codable, Equatable, Sendable {
     case string(String)
     case int(Int)
     case double(Double)
     case bool(Bool)
-    case object([String: JSONValue])
-    case array([JSONValue])
+    indirect case object([String: JSONValue])
+    indirect case array([JSONValue])
     case null
 
     public init(from decoder: Decoder) throws {
@@ -56,4 +56,3 @@ public indirect enum JSONValue: Codable, Equatable, Sendable {
         return try JSONDecoder().decode(type, from: data)
     }
 }
-
