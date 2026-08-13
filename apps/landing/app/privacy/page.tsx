@@ -4,10 +4,13 @@ export const metadata: Metadata = {
   title: "개인정보 처리방침",
   description:
     "야구 못하면 또 환생함이 iOS와 Android에서 처리하는 정보와 이용 목적을 밝힙니다.",
-  alternates: { canonical: "/privacy" },
+  alternates: {
+    canonical: "/privacy",
+    languages: { "ko-KR": "/privacy", "en-US": "/en/privacy" },
+  },
 };
 
-const 최종수정일 = "2026년 8월 12일";
+const 최종수정일 = "2026년 8월 13일";
 
 const 섹션 = [
   {
@@ -34,18 +37,18 @@ const 섹션 = [
     ],
   },
   {
-    제목: "Android 품질 분석과 오류 진단",
+    제목: "제품 분석과 오류 진단",
     본문: [
-      "Android 버전은 Firebase Analytics와 Amplitude를 사용해 화면·게임 단계·기능 사용 같은 앱 상호작용, 앱 버전·빌드·기기 운영체제 같은 앱 정보 및 성능 정보를 처리합니다. 앱이 임의로 만든 설치 단위 식별자와 각 서비스의 설치 식별자가 함께 처리될 수 있습니다.",
+      "iOS와 Android 버전은 Firebase Analytics와 Amplitude를 사용해 화면·게임 단계·기능 사용 같은 앱 상호작용, 앱 버전·빌드·기기 운영체제 같은 앱 정보 및 성능 정보를 처리합니다. 앱이 임의로 만든 가명 설치 식별자와 각 서비스의 설치 식별자가 함께 처리될 수 있습니다.",
       "Firebase Analytics는 전송 과정의 IP 주소를 이용해 국가·도시 수준의 대략적인 위치를 파생할 수 있습니다. 앱은 위치 권한을 요청하지 않고 GPS·Wi-Fi 위치나 정확한 위치를 수집하지 않습니다.",
-      "Firebase Crashlytics는 충돌 로그, 스택 추적, 앱·운영체제·기기 상태, 충돌 세션 및 설치 식별자를 처리해 오류를 찾고 안정성을 개선합니다. 사용자 계정이나 광고 식별자를 Crashlytics 사용자 ID로 설정하지 않습니다.",
+      "Android의 Firebase Crashlytics와 플랫폼이 제공하는 진단 기능은 충돌 로그, 스택 추적, 앱·운영체제·기기 상태, 충돌 세션 및 설치 식별자를 처리해 오류를 찾고 안정성을 개선할 수 있습니다. 사용자 계정이나 광고 식별자를 진단 서비스의 사용자 ID로 설정하지 않습니다.",
       "이 정보는 게임 품질 분석, 오류 진단과 서비스 안정성 개선에만 사용합니다. Firebase와 Amplitude는 이 목적을 위한 서비스 제공자로서 정보를 처리하며, 저희는 이를 판매하거나 광고·광고 개인화에 사용하지 않습니다.",
     ],
   },
   {
     제목: "전송, 보관과 삭제",
     본문: [
-      "Android의 분석·진단 정보는 암호화된 연결을 통해 Firebase 또는 Amplitude로 전송됩니다. 네트워크가 없거나 해당 서비스가 실패해도 게임과 로컬 저장은 동작합니다.",
+      "분석·진단 정보는 암호화된 연결을 통해 Firebase, Amplitude 또는 해당 플랫폼 서비스로 전송됩니다. 네트워크가 없거나 해당 서비스가 실패해도 게임과 로컬 저장은 동작합니다.",
       "Firebase Crashlytics는 충돌 스택과 관련 식별자를 90일 동안 보관한 뒤 삭제 절차를 시작합니다. 그 밖의 분석 정보는 각 서비스에 설정한 보관 기간과 계약에 따라 보관한 뒤 삭제하거나 집계합니다.",
       "분석·진단 정보에 관한 열람 또는 삭제를 요청하려면 아래 이메일로 문의해 주세요. 계정을 만들지 않고 가명 설치 식별자만 사용하므로 특정 기록을 기술적으로 찾기 위해 앱에서 확인 가능한 추가 정보가 필요하거나, 개별 기록을 식별할 수 없는 경우가 있을 수 있습니다.",
     ],
@@ -53,7 +56,7 @@ const 섹션 = [
   {
     제목: "어린이와 방침 변경",
     본문: [
-      "이 게임은 어린이에게 이름·연락처 같은 직접 식별 정보를 요구하지 않고 광고를 제공하지 않습니다. Android에서는 위에 적은 앱 사용·진단 정보가 동일한 방식으로 처리될 수 있습니다.",
+      "이 게임은 어린이에게 이름·연락처 같은 직접 식별 정보를 요구하지 않고 광고를 제공하지 않습니다. iOS와 Android에서는 위에 적은 앱 사용·진단 정보가 동일한 목적에 따라 처리될 수 있습니다.",
       "처리하는 정보나 목적이 달라지면 이 페이지를 먼저 고치고, 중요한 변경은 앱 업데이트 설명 등 적절한 방법으로 알립니다.",
     ],
   },
@@ -68,6 +71,7 @@ export default function PrivacyPage() {
         <p className="legal-lede">
           야구 못하면 또 환생함의 iOS 및 Android 버전에 적용됩니다. 최종 수정일 {최종수정일}.
         </p>
+        <p><a href="/en/privacy" lang="en">Read in English</a></p>
       </header>
 
       <div className="legal-body">
@@ -83,7 +87,7 @@ export default function PrivacyPage() {
         <section>
           <h2>외부 서비스 안내</h2>
           <p>
-            Android에서 사용하는 서비스의 처리 방식은{" "}
+            사용하는 외부 서비스의 처리 방식은{" "}
             <a href="https://firebase.google.com/support/privacy/">Firebase 개인정보 보호 안내</a>와{" "}
             <a href="https://amplitude.com/security-and-privacy">Amplitude 보안·개인정보 안내</a>에서도 확인할 수 있습니다.
           </p>

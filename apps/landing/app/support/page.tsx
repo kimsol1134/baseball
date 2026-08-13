@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "고객지원",
   description: "야구 못하면 또 환생함의 iOS 및 Android 고객지원 안내입니다.",
-  alternates: { canonical: "/support" },
+  alternates: {
+    canonical: "/support",
+    languages: { "ko-KR": "/support", "en-US": "/en/support" },
+  },
 };
 
 const 섹션 = [
@@ -44,6 +47,7 @@ export default function SupportPage() {
         <p className="legal-kicker">고객지원</p>
         <h1>게임 이용을 도와드릴게요</h1>
         <p className="legal-lede">야구 못하면 또 환생함의 iOS 및 Android 지원 안내입니다.</p>
+        <p><a href="/en/support" lang="en">Read in English</a></p>
       </header>
 
       <div className="legal-body">
