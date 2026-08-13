@@ -10,10 +10,10 @@ import {
   useVideoConfig,
 } from "remotion";
 import {Audio} from "@remotion/media";
-import {fontStack, japaneseFontStack, palette} from "../theme";
+import {englishFontStack, fontStack, japaneseFontStack, palette} from "../theme";
 import {JapaneseAppScreen, type JapaneseScreenAsset} from "./JapaneseAppScreens";
 
-const capture = (name: string) => staticFile(`asc/${name}.png`);
+const capture = (name: string, root = "asc") => staticFile(`${root}/${name}.png`);
 const drama = (name: string) => staticFile(`drama/${name}.mp4`);
 const sfx = (name: string) => staticFile(`sfx/${name}.wav`);
 
@@ -156,6 +156,70 @@ export const ASC_SHOTS_JP: StoreShot[] = [
   },
 ];
 
+/**
+ * US storefront story: control the pitch, face an honest failure, inherit one earned advantage,
+ * and come back for another draft. The image under every headline is an English iOS capture from
+ * `public/asc/en-US`; this composition never paints English over a Korean app screen.
+ */
+export const ASC_SHOTS_EN: StoreShot[] = [
+  {
+    asset: "pitch-strike",
+    eyebrow: "ONE PITCH LEFT",
+    line1: "Choose it.",
+    line2: "Throw it.",
+    accent: "lime",
+    objectPosition: "50% 8%",
+  },
+  {
+    asset: "draft-failure",
+    eyebrow: "THREE YEARS. NO GUARANTEES.",
+    line1: "Miss the cut.",
+    line2: "Your name goes uncalled.",
+    accent: "rust",
+    objectPosition: "50% 0%",
+  },
+  {
+    asset: "rebirth",
+    eyebrow: "FAILURE STILL LEAVES SOMETHING",
+    line1: "This career ends.",
+    line2: "The next one begins.",
+    accent: "lime",
+    objectPosition: "50% 0%",
+  },
+  {
+    asset: "legacy-choice",
+    eyebrow: "BUILT FROM THE CAREER YOU PLAYED",
+    line1: "Carry one legacy",
+    line2: "into the next life.",
+    accent: "amber",
+    objectPosition: "50% 27%",
+  },
+  {
+    asset: "pitch-decision",
+    eyebrow: "HITTERS REMEMBER YOUR PATTERNS",
+    line1: "They adjust.",
+    line2: "So must you.",
+    accent: "lime",
+    objectPosition: "50% 5%",
+  },
+  {
+    asset: "next-life",
+    eyebrow: "A NEW PLAYER. NOT A BLANK SLATE.",
+    line1: "Your last failure",
+    line2: "becomes a head start.",
+    accent: "amber",
+    objectPosition: "50% 4%",
+  },
+  {
+    asset: "draft-success",
+    eyebrow: "ANOTHER CAREER. ANOTHER DRAFT.",
+    line1: "Will they call",
+    line2: "your name this time?",
+    accent: "lime",
+    objectPosition: "50% 0%",
+  },
+];
+
 const accentColor = (accent: StoreShot["accent"]) => {
   if (accent === "amber") return palette.amber;
   if (accent === "rust") return palette.rust;
@@ -201,7 +265,15 @@ const ASCScreenshots: React.FC<{
   shots: StoreShot[];
   fontFamily: string;
   localizedJapanese?: boolean;
-}> = ({shots, fontFamily, localizedJapanese = false}) => {
+  captureRoot?: string;
+  headlineSize?: number;
+}> = ({
+  shots,
+  fontFamily,
+  localizedJapanese = false,
+  captureRoot = "asc",
+  headlineSize = 102,
+}) => {
   const frame = useCurrentFrame();
   const {width, height} = useVideoConfig();
   const index = Math.min(shots.length - 1, Math.max(0, Math.floor(frame)));
@@ -244,7 +316,7 @@ const ASCScreenshots: React.FC<{
           style={{
             margin: 0,
             color: palette.bone,
-            fontSize: 102 * sx,
+            fontSize: headlineSize * sx,
             fontWeight: 900,
             lineHeight: 1.14,
             letterSpacing: "-0.052em",
@@ -284,7 +356,7 @@ const ASCScreenshots: React.FC<{
           </div>
         ) : (
           <Img
-            src={capture(shot.asset)}
+            src={capture(shot.asset, captureRoot)}
             style={{
               width: "100%",
               height: "100%",
@@ -316,6 +388,16 @@ export const ASCScreenshotsJP: React.FC = () => (
   <ASCScreenshots shots={ASC_SHOTS_JP} fontFamily={japaneseFontStack} localizedJapanese />
 );
 
+/** English overlays paired only with real English app captures. */
+export const ASCScreenshotsEN: React.FC = () => (
+  <ASCScreenshots
+    shots={ASC_SHOTS_EN}
+    fontFamily={englishFontStack}
+    captureRoot="asc/en-US"
+    headlineSize={90}
+  />
+);
+
 const PREVIEW = {width: 886, height: 1920};
 
 const fadeOpacity = (frame: number, duration: number, fade = 6) =>
@@ -332,6 +414,7 @@ const MovingCapture: React.FC<{
   position?: string;
   dim?: number;
   localizedJapanese?: boolean;
+  captureRoot?: string;
 }> = ({
   asset,
   duration,
@@ -340,6 +423,7 @@ const MovingCapture: React.FC<{
   position = "50% 12%",
   dim = 0,
   localizedJapanese = false,
+  captureRoot = "asc",
 }) => {
   const frame = useCurrentFrame();
   const scale = interpolate(frame, [0, duration], [fromScale, toScale], {
@@ -360,7 +444,7 @@ const MovingCapture: React.FC<{
         </div>
       ) : (
         <Img
-          src={capture(asset)}
+          src={capture(asset, captureRoot)}
           style={{
             width: PREVIEW.width,
             height: PREVIEW.height,
@@ -461,6 +545,7 @@ const CapturedScene: React.FC<{
   align?: "top" | "center" | "bottom";
   fontFamily?: string;
   localizedJapanese?: boolean;
+  captureRoot?: string;
 }> = ({
   duration,
   asset,
@@ -473,6 +558,7 @@ const CapturedScene: React.FC<{
   align,
   fontFamily,
   localizedJapanese,
+  captureRoot,
 }) => {
   const frame = useCurrentFrame();
   return (
@@ -483,6 +569,7 @@ const CapturedScene: React.FC<{
         position={position}
         dim={dim}
         localizedJapanese={localizedJapanese}
+        captureRoot={captureRoot}
       />
       <CopyOverlay
         eyebrow={eyebrow}
@@ -657,12 +744,39 @@ const PREVIEW_COPY_JP: PreviewCopy = {
   },
 };
 
+const PREVIEW_COPY_EN: PreviewCopy = {
+  lastPitch: {eyebrow: "THREE YEARS BUILT THIS MOMENT", line1: "One last", line2: "pitch."},
+  choice: {eyebrow: "PITCH · LOCATION · RELEASE", line1: "Every choice", line2: "is yours."},
+  collapse: {line1: "One pitch.", line2: "Then draft day."},
+  undrafted: {eyebrow: "THE FINAL ROUND ENDS", line1: "Your name", line2: "goes uncalled."},
+  question: "Game over?",
+  legacy: {eyebrow: "NO. CARRY ONE THING FORWARD.", line1: "End this career.", line2: "Start another."},
+  rebirth: {eyebrow: "THE BODY REMEMBERS", line1: "Player", line2: "number two."},
+  nextLife: {eyebrow: "FAILURE BECOMES AN ADVANTAGE", line1: "Your last career", line2: "shapes the next."},
+  payoff: {line1: "Again—", line2: "one last pitch."},
+  called: {eyebrow: "DRAFTED", line1: "This time,", line2: "they call your name."},
+  closing: {
+    line1: "Mound Reborn",
+    line2: "Build. Fail. Return.",
+    footer: "Premium game · No ads · No in-app purchases",
+  },
+};
+
 const ASCPreview: React.FC<{
   copy: PreviewCopy;
   fontFamily: string;
   motionFirst?: boolean;
   localizedJapanese?: boolean;
-}> = ({copy, fontFamily, motionFirst = false, localizedJapanese = false}) => {
+  captureRoot?: string;
+  actualCaptureOnly?: boolean;
+}> = ({
+  copy,
+  fontFamily,
+  motionFirst = false,
+  localizedJapanese = false,
+  captureRoot = "asc",
+  actualCaptureOnly = false,
+}) => {
   let cursor = 0;
   const at = (durationInFrames: number) => {
     const from = cursor;
@@ -697,6 +811,7 @@ const ASCPreview: React.FC<{
             dim={0.12}
             fontFamily={fontFamily}
             localizedJapanese={localizedJapanese}
+            captureRoot={captureRoot}
           />
         )}
       </Sequence>
@@ -710,21 +825,43 @@ const ASCPreview: React.FC<{
           accent="amber"
           fontFamily={fontFamily}
           localizedJapanese={localizedJapanese}
+          captureRoot={captureRoot}
         />
       </Sequence>
       <Sequence {...at(ASC_PREVIEW_BEATS.collapse)}>
-        <DramaScene
-          duration={ASC_PREVIEW_BEATS.collapse}
-          clip="home-run"
-          {...copy.collapse}
-          accent="rust"
-          startFrom={10}
-          zoom={1.08}
-          fontFamily={fontFamily}
-        />
-        <Sequence from={25} durationInFrames={ASC_PREVIEW_BEATS.collapse - 25}>
-          <Audio src={sfx("bat-contact-hard")} volume={0.82} />
-        </Sequence>
+        {actualCaptureOnly ? (
+          <>
+            <CapturedScene
+              duration={ASC_PREVIEW_BEATS.collapse}
+              asset="pitch-strike"
+              {...copy.collapse}
+              accent="lime"
+              position="50% 4%"
+              dim={0.08}
+              fontFamily={fontFamily}
+              localizedJapanese={localizedJapanese}
+              captureRoot={captureRoot}
+            />
+            <Sequence from={25} durationInFrames={ASC_PREVIEW_BEATS.collapse - 25}>
+              <Audio src={sfx("umpire-strike")} volume={0.82} />
+            </Sequence>
+          </>
+        ) : (
+          <>
+            <DramaScene
+              duration={ASC_PREVIEW_BEATS.collapse}
+              clip="home-run"
+              {...copy.collapse}
+              accent="rust"
+              startFrom={10}
+              zoom={1.08}
+              fontFamily={fontFamily}
+            />
+            <Sequence from={25} durationInFrames={ASC_PREVIEW_BEATS.collapse - 25}>
+              <Audio src={sfx("bat-contact-hard")} volume={0.82} />
+            </Sequence>
+          </>
+        )}
       </Sequence>
       <Sequence {...at(ASC_PREVIEW_BEATS.undrafted)}>
         <CapturedScene
@@ -737,6 +874,7 @@ const ASCPreview: React.FC<{
           align="bottom"
           fontFamily={fontFamily}
           localizedJapanese={localizedJapanese}
+          captureRoot={captureRoot}
         />
       </Sequence>
       <Sequence {...at(ASC_PREVIEW_BEATS.question)}>
@@ -752,6 +890,7 @@ const ASCPreview: React.FC<{
           dim={0.03}
           fontFamily={fontFamily}
           localizedJapanese={localizedJapanese}
+          captureRoot={captureRoot}
         />
       </Sequence>
       <Sequence {...at(ASC_PREVIEW_BEATS.rebirth)}>
@@ -764,6 +903,7 @@ const ASCPreview: React.FC<{
           align="bottom"
           fontFamily={fontFamily}
           localizedJapanese={localizedJapanese}
+          captureRoot={captureRoot}
         />
       </Sequence>
       <Sequence {...at(ASC_PREVIEW_BEATS.nextLife)}>
@@ -776,24 +916,41 @@ const ASCPreview: React.FC<{
           dim={0.08}
           fontFamily={fontFamily}
           localizedJapanese={localizedJapanese}
+          captureRoot={captureRoot}
         />
       </Sequence>
       <Sequence {...at(ASC_PREVIEW_BEATS.payoff)}>
-        <DramaScene
-          duration={ASC_PREVIEW_BEATS.payoff}
-          clip="swinging-strike"
-          {...copy.payoff}
-          accent="lime"
-          startFrom={10}
-          zoom={1.28}
-          fontFamily={fontFamily}
-        />
-        <Sequence from={28} durationInFrames={ASC_PREVIEW_BEATS.payoff - 28}>
-          <Audio src={sfx("swing-miss")} volume={0.9} />
-        </Sequence>
-        <Sequence from={48} durationInFrames={ASC_PREVIEW_BEATS.payoff - 48}>
-          <Audio src={sfx("umpire-strikeout")} volume={0.9} />
-        </Sequence>
+        {actualCaptureOnly ? (
+          <CapturedScene
+            duration={ASC_PREVIEW_BEATS.payoff}
+            asset="pitch-decision"
+            {...copy.payoff}
+            accent="lime"
+            position="50% 7%"
+            dim={0.1}
+            fontFamily={fontFamily}
+            localizedJapanese={localizedJapanese}
+            captureRoot={captureRoot}
+          />
+        ) : (
+          <>
+            <DramaScene
+              duration={ASC_PREVIEW_BEATS.payoff}
+              clip="swinging-strike"
+              {...copy.payoff}
+              accent="lime"
+              startFrom={10}
+              zoom={1.28}
+              fontFamily={fontFamily}
+            />
+            <Sequence from={28} durationInFrames={ASC_PREVIEW_BEATS.payoff - 28}>
+              <Audio src={sfx("swing-miss")} volume={0.9} />
+            </Sequence>
+            <Sequence from={48} durationInFrames={ASC_PREVIEW_BEATS.payoff - 48}>
+              <Audio src={sfx("umpire-strikeout")} volume={0.9} />
+            </Sequence>
+          </>
+        )}
       </Sequence>
       <Sequence {...at(ASC_PREVIEW_BEATS.called)}>
         <CapturedScene
@@ -805,6 +962,7 @@ const ASCPreview: React.FC<{
           align="bottom"
           fontFamily={fontFamily}
           localizedJapanese={localizedJapanese}
+          captureRoot={captureRoot}
         />
       </Sequence>
       <Sequence {...at(ASC_PREVIEW_BEATS.closing)}>
@@ -826,5 +984,15 @@ export const ASCPreviewJP: React.FC = () => (
     fontFamily={japaneseFontStack}
     motionFirst
     localizedJapanese
+  />
+);
+
+/** US App Store preview. Product UI comes from the English iOS capture directory. */
+export const ASCPreviewEN: React.FC = () => (
+  <ASCPreview
+    copy={PREVIEW_COPY_EN}
+    fontFamily={englishFontStack}
+    captureRoot="asc/en-US"
+    actualCaptureOnly
   />
 );

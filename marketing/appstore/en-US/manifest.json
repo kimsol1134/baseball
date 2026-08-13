@@ -1,0 +1,248 @@
+{
+  "schema": "baseball-app-store-media-v1",
+  "locale": "en-US",
+  "platform": "iOS",
+  "bundleID": "com.solkim.baseball.ios",
+  "version": "1.1.1",
+  "build": "52",
+  "sourceCommit": "e32375354a2a7f9e65435a0a3f55a366738525d0",
+  "generatedAt": "2026-08-13T06:31:25.276Z",
+  "uploadAuthorized": true,
+  "preview": {
+    "path": "preview/preview-en-US-886x1920.mov",
+    "role": "app-preview",
+    "bytes": 34254865,
+    "sha256": "a3f56dc60c20e3d372d9ebb77fc0da9b88389076680121214f292300a3f6cce6",
+    "durationSeconds": 27.621333,
+    "videoCodec": "h264",
+    "width": 886,
+    "height": 1920,
+    "frameRate": 30,
+    "audioCodec": "aac",
+    "audioChannels": 2,
+    "audioSampleRate": 48000
+  },
+  "screenshots": [
+    {
+      "path": "screenshots-6.9/01.png",
+      "role": "screenshot-6.9",
+      "bytes": 1689465,
+      "sha256": "66e60e2f7cd5da5bc70f9ade1c7a346a2a6df77d818deaa471eff6afc4895b70",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.9/02.png",
+      "role": "screenshot-6.9",
+      "bytes": 1640149,
+      "sha256": "92c9611deb83f164bf89056a269c8db7d53a9676b6f4ec1aac86878cd33881a6",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.9/03.png",
+      "role": "screenshot-6.9",
+      "bytes": 2567831,
+      "sha256": "81fdb677a0a81f7242071cf61b6a91d765de34fd9335e7c3b2c9fd5cef1d6b7e",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.9/04.png",
+      "role": "screenshot-6.9",
+      "bytes": 1973896,
+      "sha256": "d611c3ec58c4ac2e820c74cbfbe6223a31cbea64948d068f9fb051c4ae5c53c8",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.9/05.png",
+      "role": "screenshot-6.9",
+      "bytes": 1609889,
+      "sha256": "586fcbe5af1b22403248be3169472db2b431c718c8c8ceb809352b7ecb745a53",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.9/06.png",
+      "role": "screenshot-6.9",
+      "bytes": 1995958,
+      "sha256": "04855f0b971bead08910d97f70aa6f9b071f5ded211a05bd1fedd5ed6cf4a8f5",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.9/07.png",
+      "role": "screenshot-6.9",
+      "bytes": 2286509,
+      "sha256": "54cb35a8700abb22eef9201fa6b55ad85928c2a6b329bad1f2d585a583f7ecff",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.5/01.png",
+      "role": "screenshot-6.5",
+      "bytes": 1603690,
+      "sha256": "05a5aff417d0f7713d1dad8f40f510cb913ed0cfd18d28841c97d1e426441611",
+      "width": 1284,
+      "height": 2778,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.5/02.png",
+      "role": "screenshot-6.5",
+      "bytes": 1560286,
+      "sha256": "3b79e9a5cb96eaa52dbdd8f28f58ffb2fe923ca5151867d7e98dc0b3e7022fd1",
+      "width": 1284,
+      "height": 2778,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.5/03.png",
+      "role": "screenshot-6.5",
+      "bytes": 2447575,
+      "sha256": "243d0793f2aa927591638f3bc5ce9331b6ea5399e6881895da2eed3ebabb9290",
+      "width": 1284,
+      "height": 2778,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.5/04.png",
+      "role": "screenshot-6.5",
+      "bytes": 1866279,
+      "sha256": "d2f8790dd957cca2cf755b0c017388487154cb97c352edf2dc409042aba466b1",
+      "width": 1284,
+      "height": 2778,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.5/05.png",
+      "role": "screenshot-6.5",
+      "bytes": 1532862,
+      "sha256": "59ae8941c7ea4ebd428c8e7b26e12e446eb84dd8b8139a914cbdf6b6d2fcb3d0",
+      "width": 1284,
+      "height": 2778,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.5/06.png",
+      "role": "screenshot-6.5",
+      "bytes": 1900818,
+      "sha256": "c6ef88eb630e49999f20693b76e7f3fc5e8f1ea9458946307f24d5a60c6c4a11",
+      "width": 1284,
+      "height": 2778,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "screenshots-6.5/07.png",
+      "role": "screenshot-6.5",
+      "bytes": 2166798,
+      "sha256": "c8ba5a3470747e38c6f0cb5d2d69deefeb3bdf9b8585ab259ed2e2db1a5f1a0d",
+      "width": 1284,
+      "height": 2778,
+      "channels": "srgb  3.0"
+    }
+  ],
+  "supportingMedia": [
+    {
+      "path": "preview/poster-en-US.png",
+      "role": "poster-frame",
+      "bytes": 497339,
+      "sha256": "127d0e8ff31ace253c5947519ee917d99b0e3bbb91294aa41051470dcb316332",
+      "width": 886,
+      "height": 1920,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "evidence/screenshots-contact-sheet.jpg",
+      "role": "screenshot-contact-sheet",
+      "bytes": 369289,
+      "sha256": "adf7a1f65ff8fa90b6815a9371ab76a6f2b3deb7326f7534ee5357ddbc829261",
+      "width": 1448,
+      "height": 1498,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "evidence/preview-contact-sheet.jpg",
+      "role": "preview-contact-sheet",
+      "bytes": 331711,
+      "sha256": "ef14fad0136c9e46453cdf668a11aa312b6215951a3a68ab78c425abbdc94c1d",
+      "width": 1448,
+      "height": 1494,
+      "channels": "srgb  3.0"
+    }
+  ],
+  "sourceCaptures": [
+    {
+      "path": "apps/promo/public/asc/en-US/pitch-strike.png",
+      "bytes": 506839,
+      "sha256": "d8442d3e74bc428ca933bdee9418dcd86d1d8c0d1a69f9d0eb28550b36a807de",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "apps/promo/public/asc/en-US/draft-failure.png",
+      "bytes": 550332,
+      "sha256": "34d604e41aa7191004879455d9f327e2a38c4fc508b0e4d913fc7d827684055f",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "apps/promo/public/asc/en-US/rebirth.png",
+      "bytes": 1525753,
+      "sha256": "623c750dff1c2c514603f46fee767230b117f5644e172ef70854322b34e62c2b",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "apps/promo/public/asc/en-US/legacy-choice.png",
+      "bytes": 579070,
+      "sha256": "087be4aca4c3dd31bd65957ac724ccb7bc73c1e3c4b183d322d3635f28df3023",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "apps/promo/public/asc/en-US/pitch-decision.png",
+      "bytes": 300007,
+      "sha256": "141c222a766f524739bb052a1650dce510a36e598c7c9c4c950f7428302e9e57",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "apps/promo/public/asc/en-US/release-gesture.png",
+      "bytes": 274522,
+      "sha256": "3905f8aa117f2eab24e7adf0b5d3023ae5e070226c117d97382b78ecac5eea17",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "apps/promo/public/asc/en-US/next-life.png",
+      "bytes": 821778,
+      "sha256": "c18aa1c76ce3095f122ba950cb62b59a7a710315ec13f4a8b3b62e655e8da06d",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    },
+    {
+      "path": "apps/promo/public/asc/en-US/draft-success.png",
+      "bytes": 1100332,
+      "sha256": "0381ba85217b40d2ae6968a5c4880649cccbb1518c57a148bf8d5260422fc107",
+      "width": 1320,
+      "height": 2868,
+      "channels": "srgb  3.0"
+    }
+  ]
+}

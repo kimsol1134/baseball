@@ -22,6 +22,11 @@ export const fontStack =
 export const japaneseFontStack =
   '"Hiragino Sans", "Hiragino Kaku Gothic ProN", -apple-system, system-ui, sans-serif';
 
+/// English App Store copy uses a native iOS/macOS sans stack so the Remotion overlay and the
+/// captured English app feel like one product. No network font is required during rendering.
+export const englishFontStack =
+  '"SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif';
+
 /// 영상은 멀리서 본다. 랜딩페이지 스케일을 그대로 쓰면 아무것도 안 읽힌다.
 export const type = {
   display: 108,
