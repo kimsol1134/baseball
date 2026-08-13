@@ -107,6 +107,48 @@ public enum HighSchoolContentCatalog {
               summary: "드래프트 중계를 트는 순간, 이름이 불리지 않은 채 끝났던 그 방의 공기가 먼저 돌아옵니다.")
     ]
 
+    /// 전생 기록과 모순되지 않는 환생 사건만 돌려준다.
+    ///
+    /// echo가 nil이면 이 기능 이전의 진행 중 저장이므로 전체 풀을 그대로 유지한다. 새 회차는
+    /// 최소 영수증을 항상 넘겨 실제로 다치고, 무너지고, 별명을 얻고, 미지명된 삶에만 해당
+    /// 사건이 열린다. 동료 이탈은 현재 기록에 근거가 없으므로 새 회차 풀에서는 제외한다.
+    public static func eligibleRebirthEvents(
+        echo: RebirthEchoSnapshot?,
+        currentSchoolName: String?
+    ) -> [CareerEventContent] {
+        guard let echo else { return rebirthEvents }
+
+        var eligibleIDs: Set<String> = [
+            "evt-deja-vu-mound",
+            "evt-rival-deja-vu",
+            "evt-second-summer",
+            "evt-future-news",
+            "evt-glove-worn",
+        ]
+        if echo.inheritedMemoryCount > 0 {
+            eligibleIDs.insert("evt-body-remembers")
+        }
+        if echo.hadArmWarning {
+            eligibleIDs.insert("evt-memory-ache")
+        }
+        if echo.hadCollapseGame {
+            eligibleIDs.insert("evt-remembered-pitch")
+        }
+        if let nickname = echo.previousNickname,
+           !nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            eligibleIDs.insert("evt-old-nickname")
+        }
+        if echo.wasUndrafted {
+            eligibleIDs.insert("evt-undrafted-deja")
+        }
+        if let previousSchoolName = echo.previousSchoolName,
+           !previousSchoolName.isEmpty,
+           previousSchoolName == currentSchoolName {
+            eligibleIDs.insert("evt-known-coach")
+        }
+        return rebirthEvents.filter { eligibleIDs.contains($0.id) }
+    }
+
     /// Presentation-only union of every event ID that can reach the relationship card. The
     /// synthetic arm-care event is included so its localized title and summary have the same
     /// registry coverage as authored events; gameplay selection continues to use `events` and

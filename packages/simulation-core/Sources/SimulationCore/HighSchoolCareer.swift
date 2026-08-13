@@ -607,6 +607,9 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     /// "시즌의 증명이 부르는 순간"이 되게 하는 값이다. 옛 저장본은 nil이며 0으로 읽는다.
     /// 커밋에는 있을 때만 넣는다. [[focusStreak]] 패턴.
     public let awakeningSparks: Int?
+    /// 직전 삶에서 실제로 일어난 일만 환생 사건으로 되비추기 위한 작은 영수증.
+    /// nil인 구저장본은 기존 전체 환생 사건 풀을 유지한다.
+    public let rebirthEcho: RebirthEchoSnapshot?
     public let stateCommitment: String
 
     public var effectiveWorldRulesVersion: CareerRulesVersion {
@@ -663,6 +666,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         talent: TalentSnapshot? = nil,
         soulBoosts: [String]? = nil,
         awakeningSparks: Int? = nil,
+        rebirthEcho: RebirthEchoSnapshot? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -710,6 +714,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.talent = talent
         self.soulBoosts = soulBoosts
         self.awakeningSparks = awakeningSparks
+        self.rebirthEcho = rebirthEcho
         self.stateCommitment = stateCommitment
     }
 
@@ -760,7 +765,52 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.talent == rhs.talent
             && lhs.soulBoosts == rhs.soulBoosts
             && lhs.awakeningSparks == rhs.awakeningSparks
+            && lhs.rebirthEcho == rhs.rebirthEcho
             && lhs.stateCommitment == rhs.stateCommitment
+    }
+}
+
+/// 다음 삶이 기억할 수 있는 직전 선수의 사실만 담는다.
+///
+/// 전체 기록을 코어에 넘기지 않아 저장 결합도를 낮추고, 사건 선택에 필요한 최소 사실만
+/// 무결성 해시에 포함한다. 이름은 표현에, 나머지는 모순 사건 제거에 사용한다.
+public struct RebirthEchoSnapshot: Codable, Equatable, Sendable {
+    public let previousPlayerName: String?
+    public let previousSchoolName: String?
+    public let previousNickname: String?
+    public let inheritedMemoryCount: Int
+    public let hadArmWarning: Bool
+    public let hadCollapseGame: Bool
+    public let wasUndrafted: Bool
+
+    public init(
+        previousPlayerName: String? = nil,
+        previousSchoolName: String? = nil,
+        previousNickname: String? = nil,
+        inheritedMemoryCount: Int = 0,
+        hadArmWarning: Bool = false,
+        hadCollapseGame: Bool = false,
+        wasUndrafted: Bool = false
+    ) {
+        self.previousPlayerName = previousPlayerName
+        self.previousSchoolName = previousSchoolName
+        self.previousNickname = previousNickname
+        self.inheritedMemoryCount = inheritedMemoryCount
+        self.hadArmWarning = hadArmWarning
+        self.hadCollapseGame = hadCollapseGame
+        self.wasUndrafted = wasUndrafted
+    }
+
+    var commitmentToken: String {
+        [
+            previousPlayerName ?? "none",
+            previousSchoolName ?? "none",
+            previousNickname ?? "none",
+            String(inheritedMemoryCount),
+            hadArmWarning ? "1" : "0",
+            hadCollapseGame ? "1" : "0",
+            wasUndrafted ? "1" : "0",
+        ].joined(separator: ":")
     }
 }
 
@@ -825,6 +875,8 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
     public let signatureLegacyID: CareerSignatureLegacyID?
     /// 야구혼 환산 곡선. nil은 기존 저장의 v1 의미를 보존한다.
     public let inheritanceRulesVersion: Int?
+    /// 직전 삶에서 확인된 사실. 도전 모드와 첫 삶은 nil이다.
+    public let rebirthEcho: RebirthEchoSnapshot?
 
     public init(
         seed: String,
@@ -905,7 +957,8 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         soulBoosts: [SoulBoostID]? = nil,
         inheritedSoulTotal: Int? = nil,
         signatureLegacyID: CareerSignatureLegacyID?,
-        inheritanceRulesVersion: Int?
+        inheritanceRulesVersion: Int?,
+        rebirthEcho: RebirthEchoSnapshot? = nil
     ) {
         self.seed = seed
         self.presetID = presetID
@@ -921,6 +974,7 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         self.inheritedSoulTotal = inheritedSoulTotal
         self.signatureLegacyID = signatureLegacyID
         self.inheritanceRulesVersion = inheritanceRulesVersion
+        self.rebirthEcho = rebirthEcho
     }
 }
 
@@ -1360,6 +1414,7 @@ public struct HighSchoolCareerEngine: Sendable {
             armRisk: 0, injuryRecovery: 0, schedule: Self.makeSchedule(careerID: careerID),
             talent: talent,
             soulBoosts: boosts.isEmpty ? nil : boosts.map(\.rawValue).sorted(),
+            rebirthEcho: params.rebirthEcho,
             stateCommitment: ""
         )
         return result(seed: seed, state: signed(base), event: "high_school_career_started")
@@ -2565,7 +2620,10 @@ public struct HighSchoolCareerEngine: Sendable {
             )
             let guaranteedSlot = guaranteeGenerator.nextInt(upperBound: extendedSlotCount)
             if extendedSlot == guaranteedSlot || rebirthGenerator.nextInt(upperBound: 3) == 0 {
-                let pool = HighSchoolContentCatalog.rebirthEvents
+                let pool = HighSchoolContentCatalog.eligibleRebirthEvents(
+                    echo: state.rebirthEcho,
+                    currentSchoolName: state.school?.name
+                )
                 return pool[rebirthGenerator.nextInt(upperBound: pool.count)]
             }
         }
@@ -3183,6 +3241,7 @@ public struct HighSchoolCareerEngine: Sendable {
             talent: talent ?? state.talent,
             soulBoosts: state.soulBoosts,
             awakeningSparks: awakeningSparks ?? state.awakeningSparks,
+            rebirthEcho: state.rebirthEcho,
             stateCommitment: stateCommitment ?? state.stateCommitment)
     }
 
@@ -3291,6 +3350,9 @@ public struct HighSchoolCareerEngine: Sendable {
         }
         if let soulBoosts = state.soulBoosts, !soulBoosts.isEmpty {
             canonical.append("soul_boosts:\(soulBoosts.joined(separator: ","))")
+        }
+        if let rebirthEcho = state.rebirthEcho {
+            canonical.append("rebirth_echo:\(rebirthEcho.commitmentToken)")
         }
         // 스케줄 필드도 있을 때만 덧붙여, 이 기능 이전(스케줄 없음) 저장본이 기존 커밋먼트로 그대로
         // 검증되게 한다. 팔·focusStreak 필드와 같은 조건부 계열이다.

@@ -240,6 +240,35 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertEqual(record.bondMemories, [memory])
     }
 
+    func testRebirthEchoUsesOnlyFactsThePreviousPlayerActuallyLived() {
+        var record = life(
+            drafted: false,
+            memories: [.coachLetter],
+            chronicle: ["3학년 여름 — 무너진 날 — 마지막 경기에서 실점했습니다."],
+            playerName: "한마루"
+        )
+        record.nicknames = ["철완"]
+        record.hadArmWarning = true
+
+        let echo = HighSchoolCareerStore.rebirthEcho(from: record, inheritedMemoryCount: 1)
+        XCTAssertEqual(echo.previousPlayerName, "한마루")
+        XCTAssertEqual(echo.previousSchoolName, "서울덕성고")
+        XCTAssertEqual(echo.previousNickname, "철완")
+        XCTAssertEqual(echo.inheritedMemoryCount, 1)
+        XCTAssertTrue(echo.hadArmWarning)
+        XCTAssertTrue(echo.hadCollapseGame)
+        XCTAssertTrue(echo.wasUndrafted)
+
+        let clean = HighSchoolCareerStore.rebirthEcho(
+            from: life(drafted: true, chronicle: ["3학년 여름 — 마지막 경기를 마쳤습니다."]),
+            inheritedMemoryCount: 0
+        )
+        XCTAssertFalse(clean.hadArmWarning)
+        XCTAssertFalse(clean.hadCollapseGame)
+        XCTAssertFalse(clean.wasUndrafted)
+        XCTAssertNil(clean.previousNickname)
+    }
+
     func testArchiveLineageIsAlwaysNewestFirst() {
         let ordered = LifeArchiveOrdering.newestFirst([
             life(drafted: false, lifeNumber: 1, playerName: "첫 선수"),

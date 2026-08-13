@@ -104,6 +104,9 @@ final class HighSchoolCareerStore {
         var nicknames: [String]? = nil
         /// 이번 회차의 연대기("2학년 여름 — …"). 없는 옛 기록은 nil이다.
         var chronicle: [String]? = nil
+        /// 이 삶에서 팔 경고나 재활을 실제로 겪었는지. 다음 삶의 통증 회상이 이 값에 기대며,
+        /// 없는 옛 기록은 당시 연대기와 관계 기억으로 보수적으로 복원한다.
+        var hadArmWarning: Bool? = nil
         /// 3년을 함께한 사람들. 회차가 끝나면 감독·포수·숙적이 통째로 증발하던 것을
         /// 여기 남긴다(3차 패널 P2 — 애착 축). 없는 옛 기록은 nil이다.
         var coachName: String? = nil
@@ -797,6 +800,10 @@ final class HighSchoolCareerStore {
             }
         }
         carried.equippedSignatureLegacyID = equippedSignatureLegacyID
+        let previousLife = isChallenge ? nil : archive.first(where: { $0.lifeNumber < carried.lifeNumber })
+        let rebirthEcho = previousLife.map {
+            Self.rebirthEcho(from: $0, inheritedMemoryCount: carried.memories.count)
+        }
         // 영혼 상점 정산 — 부스트 비용은 지갑 잔액에서만 차감한다. 자동 성장 누적은
         // 별도 원장이라 구매나 프로 보너스로 조용히 움직이지 않는다.
         let boostCost = soulBoosts.reduce(0) { $0 + $1.cost }
@@ -828,7 +835,8 @@ final class HighSchoolCareerStore {
                     soulBoosts: isChallenge || purchased.isEmpty ? nil : purchased,
                     inheritedSoulTotal: isChallenge ? 0 : carried.automaticSoulTotal,
                     signatureLegacyID: equippedSignatureLegacyID,
-                    inheritanceRulesVersion: isChallenge ? nil : carried.inheritanceRulesVersion
+                    inheritanceRulesVersion: isChallenge ? nil : carried.inheritanceRulesVersion,
+                    rebirthEcho: isChallenge ? nil : rebirthEcho
                 )
             )
             if !isChallenge { inheritance = carried }
@@ -2255,6 +2263,9 @@ final class HighSchoolCareerStore {
             schoolStrength: state.school.map { HighSchoolPresentation.focus($0.strength) },
             nicknames: nicknames.isEmpty ? nil : nicknames.map(\.title),
             chronicle: chronicle.isEmpty ? nil : chronicle.map { "\($0.stage) — \($0.text)" },
+            hadArmWarning: (state.armRisk ?? 0) >= 55
+                || (state.injuryRecovery ?? 0) > 0
+                || bondMemories.contains(where: { $0.kind == .healthChoice }),
             coachName: state.school?.coachName,
             catcherName: state.school?.catcherName,
             rivalName: state.rival.name,
@@ -2284,6 +2295,23 @@ final class HighSchoolCareerStore {
         record.abilityStart = startingPitcher.map(LifeRecord.AbilityLine.init)
         record.playerLegacy = PlayerBondStory.legacy(for: record)
         return record
+    }
+
+    nonisolated static func rebirthEcho(
+        from record: LifeRecord,
+        inheritedMemoryCount: Int
+    ) -> RebirthEchoSnapshot {
+        let inferredArmWarning = record.bondMemories?.contains(where: { $0.kind == .healthChoice }) == true
+            || record.chronicle?.contains(where: { $0.contains("팔") || $0.contains("재활") }) == true
+        return RebirthEchoSnapshot(
+            previousPlayerName: record.playerName,
+            previousSchoolName: record.schoolName,
+            previousNickname: record.nicknames?.last,
+            inheritedMemoryCount: inheritedMemoryCount,
+            hadArmWarning: record.hadArmWarning ?? inferredArmWarning,
+            hadCollapseGame: record.chronicle?.contains(where: { $0.contains("무너진 날") }) == true,
+            wasUndrafted: !record.drafted
+        )
     }
 
     /// 회차 보상 계산. 순수 함수라 테스트할 수 있다.

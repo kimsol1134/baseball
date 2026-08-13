@@ -108,6 +108,7 @@ enum LegacyUICopyKey: String, CaseIterable, Sendable {
     case bondMemoryKindTrust = "legacy.bond-memory.kind.trust"
     case bondMemoryChoice = "legacy.bond-memory.choice"
     case bondMemoryTrust = "legacy.bond-memory.trust"
+    case rebirthEchoSource = "legacy.rebirth-echo.source"
 
     case archiveTitle = "legacy.archive.title"
     case archiveStatDrafted = "legacy.archive.stat.drafted"

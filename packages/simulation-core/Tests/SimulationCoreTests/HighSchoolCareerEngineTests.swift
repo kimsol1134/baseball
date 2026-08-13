@@ -574,6 +574,61 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         }
     }
 
+    func testRebirthEventsRequireFactsFromThePreviousLife() throws {
+        let emptyEcho = RebirthEchoSnapshot()
+        let baseline = Set(HighSchoolContentCatalog.eligibleRebirthEvents(
+            echo: emptyEcho,
+            currentSchoolName: "해동고"
+        ).map(\.id))
+        XCTAssertFalse(baseline.contains("evt-memory-ache"))
+        XCTAssertFalse(baseline.contains("evt-remembered-pitch"))
+        XCTAssertFalse(baseline.contains("evt-old-nickname"))
+        XCTAssertFalse(baseline.contains("evt-undrafted-deja"))
+        XCTAssertFalse(baseline.contains("evt-body-remembers"))
+        XCTAssertFalse(baseline.contains("evt-known-coach"))
+        XCTAssertFalse(baseline.contains("evt-lost-teammate"), "기록할 근거가 없는 동료 이탈은 만들지 않습니다.")
+
+        let groundedEcho = RebirthEchoSnapshot(
+            previousPlayerName: "한마루",
+            previousSchoolName: "해동고",
+            previousNickname: "철완",
+            inheritedMemoryCount: 2,
+            hadArmWarning: true,
+            hadCollapseGame: true,
+            wasUndrafted: true
+        )
+        let grounded = Set(HighSchoolContentCatalog.eligibleRebirthEvents(
+            echo: groundedEcho,
+            currentSchoolName: "해동고"
+        ).map(\.id))
+        XCTAssertTrue(grounded.isSuperset(of: [
+            "evt-memory-ache", "evt-remembered-pitch", "evt-old-nickname",
+            "evt-undrafted-deja", "evt-body-remembers", "evt-known-coach",
+        ]))
+        XCTAssertFalse(
+            Set(HighSchoolContentCatalog.eligibleRebirthEvents(
+                echo: groundedEcho,
+                currentSchoolName: "다른 학교"
+            ).map(\.id)).contains("evt-known-coach")
+        )
+    }
+
+    func testRebirthEchoIsIntegrityProtectedWithoutChangingLegacyStarts() throws {
+        let engine = HighSchoolCareerEngine()
+        let legacy = try engine.start(.init(seed: "424242", presetID: "power_prospect", lifeNumber: 2))
+        let grounded = try engine.start(.init(
+            seed: "424242",
+            presetID: "power_prospect",
+            lifeNumber: 2,
+            signatureLegacyID: nil,
+            inheritanceRulesVersion: nil,
+            rebirthEcho: .init(previousPlayerName: "한마루", hadArmWarning: true)
+        ))
+        XCTAssertNil(legacy.snapshot.rebirthEcho)
+        XCTAssertEqual(grounded.snapshot.rebirthEcho?.previousPlayerName, "한마루")
+        XCTAssertNotEqual(legacy.snapshot.stateCommitment, grounded.snapshot.stateCommitment)
+    }
+
     func testEveryImportantGameScenarioIsWellFormed() {
         // 신규 8종을 포함한 20종 시나리오 전부가 경기 상황으로 성립하는지 검증한다. 이닝 1–10,
         // 아웃 0–2, 레버리지 1–1000, 리드 주자 스피드 범위, 제목·서사 비어 있지 않음, id 고유.

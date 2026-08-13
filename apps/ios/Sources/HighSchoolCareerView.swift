@@ -1803,6 +1803,14 @@ private struct RelationshipCard: View {
                     quote: quote,
                     summary: summary
                 )
+                let echoSource = event.category == "rebirth"
+                    ? state.rebirthEcho?.previousPlayerName.map {
+                        copyResolver.resolve(
+                            LegacyUICopyKey.rebirthEchoSource,
+                            arguments: [.userText($0)]
+                        )
+                    }
+                    : nil
                 let visibleName: String? = switch event.category {
                 case "coach":
                     state.school.map {
@@ -1854,6 +1862,12 @@ private struct RelationshipCard: View {
                         .font(.body)
                         .foregroundStyle(BaseballTheme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let echoSource {
+                        Text(verbatim: echoSource)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.information)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.bottom, 4)
@@ -1862,7 +1876,7 @@ private struct RelationshipCard: View {
                     speaker: speaker,
                     name: visibleName ?? "",
                     title: title,
-                    primaryText: scene.visibleLine,
+                    primaryText: [scene.visibleLine, echoSource].compactMap { $0 }.joined(separator: " "),
                     summary: scene.accessibilitySummary,
                     resolver: copyResolver
                 )))
