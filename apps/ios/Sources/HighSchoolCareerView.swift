@@ -1080,6 +1080,17 @@ private struct InheritedStartComparisonCard: View {
                     "source_count": comparison.sources.count,
                 ]
             )
+            GameAnalytics.logOnce(
+                .lineageComparisonSeen,
+                scope: "lineage-comparison:\(comparison.careerID)",
+                properties: [
+                    "previous_total": comparison.previous.total,
+                    "current_total": comparison.current.total,
+                    "total_delta": comparison.totalDelta,
+                    "inherited_rating_delta": comparison.inheritedRatingDelta,
+                    "source_count": comparison.sources.count,
+                ]
+            )
         }
     }
 }
@@ -1937,6 +1948,23 @@ private struct RelationshipCard: View {
                 )))
                 .accessibilityIdentifier("hs.response.\(response.rawValue)")
             }
+        }
+        .onAppear {
+            guard let event, event.category == "rebirth" else { return }
+            let recent = state.rebirthEcho?.recentEventIDs?.contains(event.id) == true
+            GameAnalytics.logOnce(
+                .rebirthEchoSeen,
+                scope: "rebirth-echo:\(state.careerID):\(event.id):\(state.relationshipsCompleted)",
+                properties: [
+                    "event_id": event.id,
+                    "life_number": state.lifeNumber,
+                    "source_life_number": state.rebirthEcho?.previousLifeNumber ?? 0,
+                    "had_arm_warning": state.rebirthEcho?.hadArmWarning ?? false,
+                    "had_runs_allowed": state.rebirthEcho?.hasRunsAllowedFact ?? false,
+                    "has_inherited_power": state.rebirthEcho?.hasInheritedPower ?? false,
+                    "was_recent": recent,
+                ]
+            )
         }
     }
 }

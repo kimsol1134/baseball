@@ -127,6 +127,16 @@ enum GameAnalytics {
         case rebirthStarted = "rebirth_started"
         /// 새 선수의 시작에서 이전 선수와 계승 기여분 비교를 본 시점.
         case inheritedStartComparisonSeen = "inherited_start_comparison_seen"
+        /// 새 선수의 이름·외형이 한 사람의 정체성으로 durable하게 시작된 시점.
+        case lineageIdentityShown = "lineage_identity_shown"
+        /// 전 선수의 끝과 새 선수의 시작 수치를 직접 비교한 시점.
+        case lineageComparisonSeen = "lineage_comparison_seen"
+        /// 전생 사실에 근거한 환생 장면이 실제로 노출된 시점.
+        case rebirthEchoSeen = "rebirth_echo_seen"
+        /// 누적 숙련이 적용된 대표 유산을 새 선수가 장착한 시점.
+        case lineageMasteryEquipped = "lineage_mastery_equipped"
+        /// 사용자가 쌓인 선수 계보 아카이브를 실제로 연 시점.
+        case lineageArchiveOpened = "lineage_archive_opened"
         /// 회차 카드 공유(바이럴 신호).
         case lifeCardShared = "life_card_shared"
         /// 시스템 공유 UI를 연 시점. 완료와 구분한다.

@@ -280,10 +280,17 @@ enum PlayerBondStory {
             opening = "프로의 부름은 없었지만, 내가 보낸 3년까지 사라지는 건 아니죠."
         }
         let closing: String
-        if record.drafted, let signatureLegacy = record.signatureLegacy {
+        let bondFragment = strongestBondMemory(in: record).map(bondFarewellFragment)
+        if record.drafted, let signatureLegacy = record.signatureLegacy, let bondFragment {
+            closing = "우리가 만든 ‘\(signatureLegacy.title)’과 \(bondFragment)까지 안고 더 큰 마운드로 가 볼게요."
+        } else if record.drafted, let signatureLegacy = record.signatureLegacy {
             closing = "우리가 만든 ‘\(signatureLegacy.title)’과 함께 더 큰 마운드로 가 볼게요."
+        } else if let signatureLegacy = record.signatureLegacy, let bondFragment {
+            closing = "‘\(signatureLegacy.title)’과 \(bondFragment)이 다음 마운드의 시작에 닿기를 바라요."
         } else if let signatureLegacy = record.signatureLegacy {
             closing = "‘\(signatureLegacy.title)’이 언젠가 다른 마운드의 시작에 닿기를 바라요."
+        } else if let bondFragment {
+            closing = "\(bondFragment)은 다음 선수의 첫 공에도 이어질 거예요."
         } else if !record.memories.isEmpty {
             // 대표 유산 도입 전 기록도 당시 실제로 고른 계승을 말해야 한다. 동시에 기억
             // 하나 때문에 3년 동안 선택으로 만든 성격이 사라지지 않게, 선수다운 목소리와
@@ -315,6 +322,46 @@ enum PlayerBondStory {
             definingMoment: definingMoment,
             farewell: "\(opening) \(closing)"
         )
+    }
+
+    static func strongestBondMemory(
+        in record: HighSchoolCareerStore.LifeRecord
+    ) -> HighSchoolCareerStore.PlayerBondMemory? {
+        (record.bondMemories ?? [])
+            .filter {
+                RelationshipPresentationCatalog.eventDescriptor(
+                    eventID: $0.eventID,
+                    categoryID: $0.eventCategory
+                ).isKnownEvent
+            }
+            .max {
+                if $0.trustAfter != $1.trustAfter { return $0.trustAfter < $1.trustAfter }
+                let leftGain = $0.trustAfter - $0.trustBefore
+                let rightGain = $1.trustAfter - $1.trustBefore
+                if leftGain != rightGain { return leftGain < rightGain }
+                return $0.chapterNumber < $1.chapterNumber
+            }
+    }
+
+    private static func bondFarewellFragment(
+        _ memory: HighSchoolCareerStore.PlayerBondMemory
+    ) -> String {
+        let person = memory.subjectName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch memory.kind {
+        case .personality:
+            return person.map { "\($0) 앞에서 내 방식으로 답했던 선택" }
+                ?? "내 성격을 만든 선택"
+        case .healthChoice:
+            return person.map {
+                "\($0)\(KoreanCopy.particle($0, final: "과", open: "와")) 오래 던지기 위해 팔을 지킨 선택"
+            }
+                ?? "오래 던지기 위해 팔을 지킨 선택"
+        case .trustMilestone:
+            return person.map {
+                "\($0)\(KoreanCopy.particle($0, final: "과", open: "와")) 서로를 믿기로 한 선택"
+            }
+                ?? "혼자가 아니라고 믿기로 한 선택"
+        }
     }
 
     private static func definingMoment(for record: HighSchoolCareerStore.LifeRecord) -> String {

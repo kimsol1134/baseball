@@ -131,6 +131,58 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertTrue(decoded.playerLegacy?.farewell.contains("말없이 오래") == true)
     }
 
+    func testFarewellKeepsStrongestBondEvenWhenSignatureLegacyExists() {
+        var record = life(drafted: true)
+        record.signatureLegacy = CareerSignatureLegacy.definition(for: .commandMap)
+        record.bondMemories = [
+            .init(
+                kind: .personality,
+                eventID: "evt-coach-role",
+                eventCategory: "coach",
+                eventTitle: "옛 제목",
+                response: .explain,
+                subjectName: "박 감독",
+                chapterNumber: 2,
+                trustBefore: 50,
+                trustAfter: 58
+            ),
+            .init(
+                kind: .trustMilestone,
+                eventID: "evt-catcher-sign",
+                eventCategory: "catcher",
+                eventTitle: "옛 제목",
+                response: .listen,
+                subjectName: "한결",
+                chapterNumber: 5,
+                trustBefore: 68,
+                trustAfter: 76
+            ),
+        ]
+
+        let legacy = PlayerBondStory.legacy(for: record)
+        XCTAssertTrue(legacy.farewell.contains(record.signatureLegacy?.title ?? ""))
+        XCTAssertTrue(legacy.farewell.contains("한결과 서로를 믿기로 한 선택"))
+        XCTAssertFalse(legacy.farewell.contains("박 감독 앞에서"))
+    }
+
+    func testFinalRelationshipTrustRoundTripsWithTheLifeRecord() throws {
+        var record = life(drafted: false)
+        record.coachName = "박 감독"
+        record.catcherName = "한결"
+        record.rivalName = "윤해성"
+        record.coachTrust = 64
+        record.catcherTrust = 78
+        record.rivalTrust = 71
+
+        let decoded = try JSONDecoder().decode(
+            HighSchoolCareerStore.LifeRecord.self,
+            from: JSONEncoder().encode(record)
+        )
+        XCTAssertEqual(decoded.coachTrust, 64)
+        XCTAssertEqual(decoded.catcherTrust, 78)
+        XCTAssertEqual(decoded.rivalTrust, 71)
+    }
+
     func testRecordFromBeforePlayerLettersStillOpensAndGetsFallbackStory() throws {
         let json = """
         {

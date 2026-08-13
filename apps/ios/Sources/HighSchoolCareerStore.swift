@@ -112,6 +112,9 @@ final class HighSchoolCareerStore {
         var coachName: String? = nil
         var catcherName: String? = nil
         var rivalName: String? = nil
+        var coachTrust: Int? = nil
+        var catcherTrust: Int? = nil
+        var rivalTrust: Int? = nil
         /// 이 회차가 어떤 사람이었는가. 없는 옛 기록은 nil이다.
         var personality: String? = nil
         /// 이 회차의 careerID("career-시드-life-N"). 카드에 시드를 각인해
@@ -929,6 +932,25 @@ final class HighSchoolCareerStore {
                 loadState = .failed("새 선수의 시작을 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
                 return
             }
+            if !isChallenge {
+                let reusedName = previousLife.map {
+                    $0.playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        .localizedCaseInsensitiveCompare(name) == .orderedSame
+                } ?? false
+                let uniqueAppearance = previousLife.map {
+                    $0.portraitSeed != created.snapshot.identity.portraitSeed
+                } ?? true
+                GameAnalytics.logOnce(
+                    .lineageIdentityShown,
+                    scope: "lineage-identity:\(created.snapshot.careerID)",
+                    properties: [
+                        "life_number": created.snapshot.lifeNumber,
+                        "entry_point": entryPoint,
+                        "reused_name": reusedName,
+                        "has_unique_appearance": uniqueAppearance,
+                    ]
+                )
+            }
             // 같은 결정론 시드를 다시 시작해도 지난 로컬 보조 상태가 새 회차에 붙지
             // 않는다. durable save 뒤에만 로컬 보조 상태와 외부 퍼널을 갱신한다.
             UserDefaults.standard.removeObject(forKey: pledgeKey(created.snapshot.careerID))
@@ -952,6 +974,17 @@ final class HighSchoolCareerStore {
                             storedRulesVersion: carried.inheritanceRulesVersion
                         ),
                     ])
+                    if let lineageLoadout {
+                        GameAnalytics.log(.lineageMasteryEquipped, [
+                            "legacy_id": lineageLoadout.legacyID.rawValue,
+                            "family": definition.family.rawValue,
+                            "rank": lineageLoadout.masteryRank,
+                            "contributions": lineageLoadout.contributions,
+                            "source_life_number": lineageLoadout.sourceLifeNumber ?? 0,
+                            "life_number": carried.lifeNumber,
+                            "total_rating_bonus": definition.effect.totalRatingBonus,
+                        ])
+                    }
                 }
                 if carried.lifeNumber > 1 {
                     GameAnalytics.log(.rebirthStarted, [
@@ -2354,6 +2387,9 @@ final class HighSchoolCareerStore {
             coachName: state.school?.coachName,
             catcherName: state.school?.catcherName,
             rivalName: state.rival.name,
+            coachTrust: state.managerTrust ?? state.relationshipTrust,
+            catcherTrust: state.catcherTrust ?? state.relationshipTrust,
+            rivalTrust: state.rivalTrust ?? state.relationshipTrust,
             personality: personality?.title,
             careerID: state.careerID,
             pledgeID: pledge?.id,

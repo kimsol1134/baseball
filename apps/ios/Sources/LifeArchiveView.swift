@@ -218,6 +218,19 @@ struct LifeArchiveSection: View {
             }
             .accessibilityIdentifier("record.lifeArchive")
         }
+        .onAppear {
+            guard !records.isEmpty else { return }
+            GameAnalytics.logOnce(
+                .lineageArchiveOpened,
+                scope: "lineage-archive:\(records.count):\(records.map(\.lifeNumber).max() ?? 0)",
+                properties: [
+                    "life_count": records.count,
+                    "drafted_count": totals.drafted,
+                    "highest_mastery_rank": lineageMasteries.map(\.rank).max() ?? 1,
+                    "signature_family_count": Set(records.compactMap { $0.signatureLegacy?.family }).count,
+                ]
+            )
+        }
     }
 
     private func archiveStat(_ label: String, _ value: String) -> some View {
@@ -381,6 +394,7 @@ private struct LifeArchiveRow: View {
                     .padding(.bottom, 2)
                     .accessibilityIdentifier("archive.playerLegacy.\(record.lifeNumber)")
                     .onAppear(perform: logLegacySeen)
+                    ArchivedRelationshipsCard(record: record)
                     if let memories = record.bondMemories, !memories.isEmpty {
                         PlayerBondMemoryList(
                             memories: memories,
@@ -645,6 +659,47 @@ private struct LifeArchiveRow: View {
                 "has_frozen_legacy": record.playerLegacy != nil,
             ]
         )
+    }
+}
+
+private struct ArchivedRelationshipsCard: View {
+    let record: HighSchoolCareerStore.LifeRecord
+
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var rows: [(LegacyUICopyKey, String, Int)] {
+        var values: [(LegacyUICopyKey, String, Int)] = []
+        if let name = record.coachName, let trust = record.coachTrust {
+            values.append((.archiveRelationshipCoach, name, trust))
+        }
+        if let name = record.catcherName, let trust = record.catcherTrust {
+            values.append((.archiveRelationshipCatcher, name, trust))
+        }
+        if let name = record.rivalName, let trust = record.rivalTrust {
+            values.append((.archiveRelationshipRival, name, trust))
+        }
+        return values
+    }
+
+    var body: some View {
+        if !rows.isEmpty {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(verbatim: copyResolver.resolve(.archiveRelationships))
+                    .eyebrowStyle(BaseballTheme.information)
+                ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                    Text(verbatim: copyResolver.resolve(
+                        row.0,
+                        arguments: [.userText(row.1), .integer(row.2)]
+                    ))
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
+            }
+            .padding(10)
+            .background(BaseballTheme.information.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("archive.relationships.\(record.lifeNumber)")
+        }
     }
 }
 
