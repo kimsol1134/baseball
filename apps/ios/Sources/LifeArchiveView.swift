@@ -206,7 +206,7 @@ private struct PlayerLineageRibbon: View {
                         }
                         VStack(spacing: 4) {
                             PortraitView(
-                                seed: record.playerName,
+                                seed: record.portraitSeed,
                                 role: .player,
                                 size: 34,
                                 playerStage: record.drafted ? .pro : .ace
@@ -278,7 +278,7 @@ private struct LifeArchiveRow: View {
                 HStack(alignment: .center, spacing: 8) {
                     // 지난 회차들이 "숫자 목록"이 아니라 "살았던 사람들"로 읽히게 —
                     // 이름 시드가 같으면 그때 그 얼굴 그대로다.
-                    PortraitView(seed: record.playerName, role: .player, size: 30,
+                    PortraitView(seed: record.portraitSeed, role: .player, size: 30,
                                  playerStage: record.drafted ? .pro : .ace)
                     Text(
                         verbatim: copyResolver.resolve(
@@ -690,7 +690,7 @@ struct LifeSummaryCard: View {
                 Spacer(minLength: 0)
                 // 회차 카드와 같은 얼굴. 공유물 두 장의 주인공이 같아야 한다.
                 // 헤더 텍스트 블록(회차+이름 ≈ 76pt)과 같은 높이로 맞춘다.
-                PortraitView(seed: record.playerName, role: .player, size: 58,
+                PortraitView(seed: record.portraitSeed, role: .player, size: 58,
                              playerStage: record.drafted ? .pro : .ace)
             }
 

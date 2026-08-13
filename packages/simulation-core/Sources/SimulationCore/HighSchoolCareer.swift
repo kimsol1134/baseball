@@ -78,8 +78,26 @@ public struct PlayerIdentitySnapshot: Codable, Equatable, Sendable {
     public let throwingHand: ThrowingHand
     public let bodyType: BodyType
     public let region: String
-    public init(name: String, throwingHand: ThrowingHand, bodyType: BodyType, region: String) {
-        self.name = name; self.throwingHand = throwingHand; self.bodyType = bodyType; self.region = region
+    /// Generated portrait identity for this one life. Optional keeps pre-feature saves readable;
+    /// those saves retain their historical name-based portrait through `portraitSeed`.
+    public let appearanceSeed: String?
+    public init(
+        name: String,
+        throwingHand: ThrowingHand,
+        bodyType: BodyType,
+        region: String,
+        appearanceSeed: String? = nil
+    ) {
+        self.name = name
+        self.throwingHand = throwingHand
+        self.bodyType = bodyType
+        self.region = region
+        self.appearanceSeed = appearanceSeed
+    }
+
+    public var portraitSeed: String {
+        guard let appearanceSeed, !appearanceSeed.isEmpty else { return name }
+        return appearanceSeed
     }
 
     public static let defaultPitcher = PlayerIdentitySnapshot(

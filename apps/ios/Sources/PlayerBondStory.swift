@@ -357,7 +357,7 @@ struct PlayerHeartCard: View {
         ) {
             HStack(alignment: .center, spacing: 12) {
                 PortraitView(
-                    seed: state.identity.name,
+                    seed: state.identity.portraitSeed,
                     role: .player,
                     size: 46,
                     playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace
@@ -482,7 +482,7 @@ struct PreviousPlayerLetterCard: View {
         ) {
             HStack(alignment: .top, spacing: 12) {
                 PortraitView(
-                    seed: record.playerName,
+                    seed: record.portraitSeed,
                     role: .player,
                     size: 46,
                     playerStage: record.drafted ? .pro : .ace

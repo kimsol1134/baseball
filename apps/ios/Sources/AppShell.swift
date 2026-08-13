@@ -757,7 +757,7 @@ private struct TodayDashboard: View {
 
                 HStack(spacing: 10) {
                     // 프로가 된 그 얼굴 — 고교 대시보드와 같은 자리, 자란 모습이다.
-                    PortraitView(seed: state.identity.name, role: .player, size: 46, playerStage: .pro)
+                    PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46, playerStage: .pro)
                     Metric(
                         title: copyResolver.resolve(AppCopyKey.proFatigueLabel),
                         value: "\(state.fatigue)",

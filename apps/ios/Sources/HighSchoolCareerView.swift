@@ -864,7 +864,7 @@ private struct ChapterHeader: View {
             HStack(spacing: 10) {
                 // 주인공의 얼굴. 게임에서 가장 자주 보는 화면인데 정작 주인공이 없었다.
                 // 1학년(챕터 1~3)은 앳된 얼굴, 2학년부터는 에이스 얼굴 — 성장이 눈에 보인다.
-                PortraitView(seed: state.identity.name, role: .player, size: 46,
+                PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46,
                              playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
                 Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricFatigue), value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
                 Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTeamTrust), value: "\(state.relationshipTrust)")

@@ -18,3 +18,10 @@ enum StableHash {
     }
 }
 
+/// A display-only identity key that keeps one player's generated portrait stable across every
+/// screen and save. It intentionally does not participate in simulation commitments or RNG.
+public enum PlayerAppearanceSeed {
+    public static func make(careerSeed: String, lifeNumber: Int) -> String {
+        "player-\(StableHash.fnv1a64("\(careerSeed)|life:\(max(1, lifeNumber))|appearance-v1"))"
+    }
+}

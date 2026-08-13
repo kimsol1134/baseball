@@ -81,6 +81,8 @@ final class HighSchoolCareerStore {
         var id: Int { lifeNumber }
         let lifeNumber: Int
         let playerName: String
+        /// One-life portrait identity. Missing old records intentionally fall back to playerName.
+        var appearanceSeed: String? = nil
         let schoolName: String?
         let drafted: Bool
         let evaluationScore: Int
@@ -168,6 +170,11 @@ final class HighSchoolCareerStore {
         /// "미지명 · 평가 57점" / "3라운드 서울 …". 목록 한 줄에 결말이 들어가야 한다.
         var outcomeLine: String {
             drafted ? "지명 · \(teamName ?? "구단 미정")" : "미지명 · 평가 \(evaluationScore)점"
+        }
+
+        var portraitSeed: String {
+            guard let appearanceSeed, !appearanceSeed.isEmpty else { return playerName }
+            return appearanceSeed
         }
     }
 
@@ -710,13 +717,21 @@ final class HighSchoolCareerStore {
         }
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let name = trimmed.isEmpty ? preset.pitcher.name : trimmed
+        let careerSeed = trimmedSeed?.isEmpty == false
+            ? trimmedSeed!
+            : String(UInt64.random(in: 1...UInt64.max))
+        let lifeNumber = challengeLifeNumber ?? inheritance.lifeNumber
         let identity = PlayerIdentitySnapshot(
             name: name,
             throwingHand: preset.pitcher.throwingHand,
             bodyType: .balanced,
             // 코어가 모르는 지역이 오면 서울로 받는다 — 학교 이름이 조용히 서울로 바뀌는
             // 것보다, 여기서 한 번 거르는 쪽이 원인을 찾기 쉽다.
-            region: HighSchoolCareerEngine.regions.contains(region) ? region : "서울"
+            region: HighSchoolCareerEngine.regions.contains(region) ? region : "서울",
+            appearanceSeed: PlayerAppearanceSeed.make(
+                careerSeed: careerSeed,
+                lifeNumber: lifeNumber
+            )
         )
         var carried = inheritance
         // 직전 프로 커리어 영수증은 그 선수의 결말을 프로 tombstone 삭제까지 멱등하게
@@ -753,7 +768,7 @@ final class HighSchoolCareerStore {
             let created = try engine.start(
                 .init(
                     // 시드 입력은 커뮤니티 도전("이 시드로 지명 가능?")의 입구다.
-                    seed: trimmedSeed?.isEmpty == false ? trimmedSeed! : String(UInt64.random(in: 1...UInt64.max)),
+                    seed: careerSeed,
                     presetID: preset.id,
                     // challenge 모드는 카드의 회차를 그대로 쓴다 — 판(재능·바람·일정)은
                     // careerID("시드-회차")의 함수라 회차가 달라지면 다른 판이다.
@@ -2000,6 +2015,7 @@ final class HighSchoolCareerStore {
         var record = LifeRecord(
             lifeNumber: state.lifeNumber,
             playerName: state.identity.name,
+            appearanceSeed: state.identity.appearanceSeed,
             schoolName: state.school?.name,
             drafted: state.draftResult?.outcome == .drafted,
             evaluationScore: state.draftResult?.evaluationScore ?? 0,

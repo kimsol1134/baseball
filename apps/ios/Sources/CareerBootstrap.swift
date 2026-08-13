@@ -86,7 +86,11 @@ enum CareerBootstrap {
             name: name,
             throwingHand: preset.pitcher.throwingHand,
             bodyType: .balanced,
-            region: "서울"
+            region: "서울",
+            appearanceSeed: PlayerAppearanceSeed.make(
+                careerSeed: String(seed),
+                lifeNumber: 1
+            )
         )
         let pitcher = PitcherSnapshot(
             id: preset.pitcher.id,

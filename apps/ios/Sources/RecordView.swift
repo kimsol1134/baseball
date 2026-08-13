@@ -663,7 +663,7 @@ private struct ProspectRankingCard: View {
                                 // 명단에서 내 줄만 얼굴이 있다 — 스카우트가 명단 옆에
                                 // 붙여 둔 한 장의 사진처럼, 이 줄이 내 이야기라는 표식이다.
                                 if entry.isPlayer {
-                                    PortraitView(seed: entry.name, role: .player, size: 24,
+                                    PortraitView(seed: state.identity.portraitSeed, role: .player, size: 24,
                                                  playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace)
                                 }
                                 VStack(alignment: .leading, spacing: 0) {

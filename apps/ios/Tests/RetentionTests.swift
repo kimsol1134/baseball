@@ -5,6 +5,30 @@ import SimulationCore
 /// 손맛·소리·업적·환생 계승의 순수 판정을 지킨다. 모두 엔진/Game Center 없이 돈다.
 final class RetentionTests: XCTestCase {
 
+    @MainActor
+    func testCareerAppearanceSeedPersistsIntoArchiveRecord() throws {
+        let sync = SaveSync(key: "appearance-seed-\(UUID().uuidString).json")
+        defer { sync.clear() }
+        let store = HighSchoolCareerStore(sync: sync)
+        store.startCareer(
+            preset: PitcherPresetCatalog.all[0],
+            playerName: "아이",
+            seedOverride: "515151"
+        )
+        let state = try XCTUnwrap(store.state)
+        let expected = PlayerAppearanceSeed.make(careerSeed: "515151", lifeNumber: 1)
+        XCTAssertEqual(state.identity.appearanceSeed, expected)
+        XCTAssertEqual(state.identity.portraitSeed, expected)
+
+        let record = HighSchoolCareerStore.lifeRecord(
+            from: state,
+            memories: [],
+            previous: store.inheritance
+        )
+        XCTAssertEqual(record.appearanceSeed, expected)
+        XCTAssertEqual(record.portraitSeed, expected)
+    }
+
     // MARK: - 투구 제스처
 
     /// 미터 한가운데 + 중심 조준이 만점이어야 한다.

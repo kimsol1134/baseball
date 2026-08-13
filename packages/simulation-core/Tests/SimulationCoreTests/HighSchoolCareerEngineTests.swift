@@ -3,6 +3,31 @@ import XCTest
 @testable import SimulationCore
 
 final class HighSchoolCareerEngineTests: XCTestCase {
+    func testAppearanceSeedIsStablePerLifeAndOldIdentityFallsBackToName() throws {
+        let first = PlayerAppearanceSeed.make(careerSeed: "424242", lifeNumber: 3)
+        XCTAssertEqual(first, PlayerAppearanceSeed.make(careerSeed: "424242", lifeNumber: 3))
+        XCTAssertNotEqual(first, PlayerAppearanceSeed.make(careerSeed: "424242", lifeNumber: 4))
+        XCTAssertNotEqual(first, PlayerAppearanceSeed.make(careerSeed: "424243", lifeNumber: 3))
+
+        let identity = PlayerIdentitySnapshot(
+            name: "김하늘",
+            throwingHand: .left,
+            bodyType: .balanced,
+            region: "광주",
+            appearanceSeed: first
+        )
+        XCTAssertEqual(identity.portraitSeed, first)
+        XCTAssertEqual(try JSONDecoder().decode(
+            PlayerIdentitySnapshot.self,
+            from: JSONEncoder().encode(identity)
+        ), identity)
+
+        let oldJSON = Data(#"{"name":"김하늘","throwingHand":"left","bodyType":"balanced","region":"광주"}"#.utf8)
+        let restored = try JSONDecoder().decode(PlayerIdentitySnapshot.self, from: oldJSON)
+        XCTAssertNil(restored.appearanceSeed)
+        XCTAssertEqual(restored.portraitSeed, "김하늘")
+    }
+
     func testVerticalSliceContentMinimumsUseStableUniqueIDs() {
         XCTAssertEqual(HighSchoolContentCatalog.events.count, 36)
         XCTAssertEqual(Set(HighSchoolContentCatalog.events.map(\.id)).count, 36)

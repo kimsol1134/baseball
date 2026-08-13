@@ -37,7 +37,7 @@ struct LifeCardView: View {
                 // 지명된 회차는 프로 유니폼의 얼굴로 남는다 — 카드가 그 회차의 결말이다.
                 // size는 폭이다(높이 = 폭×76/58). 카드는 600pt 고정이라 초상 높이를
                 // 예전 아바타(76pt)와 같게 맞춰야 아래 연대기·푸터가 밀리지 않는다.
-                    PortraitView(seed: record.playerName, role: .player, size: 58,
+                    PortraitView(seed: record.portraitSeed, role: .player, size: 58,
                                  playerStage: record.drafted ? .pro : .ace)
                 VStack(alignment: .leading, spacing: 3) {
                     if let nickname = latestNickname {

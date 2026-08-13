@@ -973,7 +973,7 @@ private struct RetiredView: View {
 
             // 커리어를 끝낸 그 얼굴. 세 결말(미지명·지명·은퇴) 중 여기만 얼굴이 없었다.
             HStack(spacing: 12) {
-                PortraitView(seed: state.identity.name, role: .player, size: 56, playerStage: .pro)
+                PortraitView(seed: state.identity.portraitSeed, role: .player, size: 56, playerStage: .pro)
                 VStack(alignment: .leading, spacing: 2) {
                     // localization-safe: user-input
                     Text(state.identity.name).font(.headline)
