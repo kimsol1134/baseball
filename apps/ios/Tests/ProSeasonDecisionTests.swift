@@ -127,6 +127,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         let store = MobileCareerStore(sync: careerSync, weekly: weekly)
         store.result = beforeDecision
         store.loadState = .ready
+        store.selectedPlan = .earnTrust
 
         store.advanceSegment()
 
@@ -134,6 +135,49 @@ final class ProSeasonDecisionTests: XCTestCase {
         XCTAssertNotNil(store.state?.pendingDecision)
         XCTAssertEqual(store.state?.decisionHistory?.count ?? 0, beforeDecision.snapshot.decisionHistory?.count ?? 0)
         XCTAssertTrue(ProCareerEngine.seasonDecisionWeeks.contains(store.state?.week ?? -1))
+    }
+
+    func testAgencyRecoveryCanBatchAdvanceWithoutSilentlySkippingAppearances() throws {
+        let initial = try stateImmediatelyBeforeDecision(seed: 8_405)
+        let sync = isolatedSync("recovery-single-week")
+        sync.clear()
+        defer { sync.clear() }
+        let store = MobileCareerStore(sync: sync)
+        store.result = initial
+        store.loadState = .ready
+        store.selectedPlan = .recover
+
+        store.advanceSegment()
+
+        XCTAssertGreaterThan(store.state?.revision ?? 0, initial.snapshot.revision)
+        XCTAssertGreaterThan(store.state?.week ?? 0, initial.snapshot.week)
+        XCTAssertGreaterThan(store.state?.currentStats.games ?? 0, initial.snapshot.currentStats.games)
+        XCTAssertEqual(store.selectedPlan, .recover, "새 회복 루틴은 예정 등판을 유지하는 반복 가능한 계획입니다.")
+    }
+
+    func testWeeklyProgressSummaryIncludesAppearancesStartsAndInnings() throws {
+        let initial = try stateImmediatelyBeforeDecision(seed: 8_406)
+        let sync = isolatedSync("weekly-receipt-summary")
+        sync.clear()
+        defer { sync.clear() }
+        let store = MobileCareerStore(sync: sync)
+        store.result = initial
+        store.loadState = .ready
+        store.selectedPlan = .earnTrust
+
+        store.advanceWeek()
+
+        let summary = try XCTUnwrap(store.lastSummary)
+        XCTAssertTrue(summary.contains("경기"), summary)
+        XCTAssertTrue(summary.contains("선발"), summary)
+        XCTAssertTrue(summary.contains("이닝"), summary)
+    }
+
+    func testInningsTextUsesBaseballOutNotation() {
+        XCTAssertEqual(MobileCareerStore.inningsText(0), "0이닝")
+        XCTAssertEqual(MobileCareerStore.inningsText(1), "0⅓이닝")
+        XCTAssertEqual(MobileCareerStore.inningsText(2), "0⅔이닝")
+        XCTAssertEqual(MobileCareerStore.inningsText(19), "6⅓이닝")
     }
 
     func testFailedProGameSettlementDoesNotEmitCompletionOrAdvanceWeeklyProgress() throws {

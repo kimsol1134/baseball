@@ -131,6 +131,32 @@ final class PitchSessionTests: XCTestCase {
         XCTAssertEqual(session.selectedIntensity, recommendation.intensity)
     }
 
+    func testAlternativeCatcherCallIsOneTapAcceptedAndNextPitchGetsAFreshSign() throws {
+        let session = PitchSession(state: snapshot(), seed: "91732")
+        session.start()
+        let preparation = try XCTUnwrap(session.preparation)
+        let alternative = preparation.alternativeRecommendation.call
+        XCTAssertNotEqual(alternative, preparation.primaryRecommendation.call)
+
+        session.acceptCatcherAlternativeRecommendation()
+
+        XCTAssertFalse(session.holdCall)
+        XCTAssertEqual(session.selectedPitchType, alternative.pitchType)
+        XCTAssertEqual(session.selectedZone, alternative.zone)
+        XCTAssertEqual(session.selectedIntent, alternative.zoneIntent)
+        XCTAssertEqual(session.selectedIntensity, alternative.intensity)
+
+        session.throwPitch()
+
+        XCTAssertTrue(try XCTUnwrap(session.pitchLog.last).acceptedRecommendation)
+        if let next = session.preparation {
+            XCTAssertEqual(session.selectedPitchType, next.primaryRecommendation.call.pitchType)
+            XCTAssertEqual(session.selectedZone, next.primaryRecommendation.call.zone)
+            XCTAssertEqual(session.selectedIntent, next.primaryRecommendation.call.zoneIntent)
+            XCTAssertEqual(session.selectedIntensity, next.primaryRecommendation.call.intensity)
+        }
+    }
+
     func testCatcherTrustChangesVisibleScoutingReliabilityWithoutChangingTheBatter() {
         XCTAssertEqual(PitchScenario.scoutingReliability(base: 45, catcherTrust: 0), 20)
         XCTAssertEqual(PitchScenario.scoutingReliability(base: 45, catcherTrust: 50), 45)

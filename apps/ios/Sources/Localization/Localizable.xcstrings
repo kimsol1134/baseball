@@ -4555,6 +4555,26 @@
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수 제안" } }
       }
     }
+    ,"pitch.catcher.primary" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan A · Attack the read" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "1안 · 읽은 약점 공략" } }
+    } }
+    ,"pitch.catcher.alternative" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan B · Change the risk" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "2안 · 다른 위험 감수" } }
+    } }
+    ,"pitch.catcher.risk.walk" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Risk: miss the edge and fall behind" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "위험: 코스를 벗어나 불리한 카운트" } }
+    } }
+    ,"pitch.catcher.risk.damage" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Risk: a strike can become hard contact" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "위험: 스트라이크가 강한 타구로 연결" } }
+    } }
+    ,"pitch.catcher.risk.miss" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Risk: no chase means a clear ball" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "위험: 타자가 참으면 그대로 볼" } }
+    } }
     ,"pitch.catcher.reason.ahead" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the count advantage and make the hitter chase." } },
@@ -5169,6 +5189,10 @@
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Double-tap to review this permanent decision." } },
       "ko" : { "stringUnit" : { "state" : "translated", "value" : "두 번 탭하면 되돌릴 수 없는 선택을 확인합니다." } }
     } }
+    ,"pro.decision.follow-up" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The next direct matchup will reveal how this choice shaped your preparation." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 직접 승부에서 이 선택이 준비에 남긴 영향을 확인합니다." } }
+    } }
     ,"pro.decision.warning" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Once confirmed, this decision cannot be undone. Auto-advance will never skip it." } },
       "ko" : { "stringUnit" : { "state" : "translated", "value" : "확인한 뒤에는 되돌릴 수 없습니다. 자동 진행도 이 결정을 건너뛰지 않습니다." } }
@@ -5186,8 +5210,8 @@
       "ko" : { "stringUnit" : { "state" : "translated", "value" : "취소" } }
     } }
     ,"pro.decision.confirm.message" : { "localizations" : {
-      "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ Effect: %2$@. This decision cannot be undone." } },
-      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ 효과: %2$@. 이 선택은 되돌릴 수 없습니다." } }
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ Effect: %2$@. %3$@ This decision cannot be undone." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ 효과: %2$@. %3$@ 이 선택은 되돌릴 수 없습니다." } }
     } }
     ,"pro.effect.stuff.gain" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Stuff +%lld" } },
@@ -5268,6 +5292,38 @@
     ,"pro.weekly.role-promise" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Role promise for the rest of the season · %@" } },
       "ko" : { "stringUnit" : { "state" : "translated", "value" : "남은 시즌 역할 약속 · %@" } }
+    } }
+    ,"pro.weekly.standing.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your Place in the Club" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "구단에서 쌓은 자리" } }
+    } }
+    ,"pro.weekly.standing.prospect" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Prospect" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "가능성을 증명하는 유망주" } }
+    } }
+    ,"pro.weekly.standing.roster" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Major-League Roster" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "1군에서 계산하는 전력" } }
+    } }
+    ,"pro.weekly.standing.established" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Established Pitcher" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "마운드를 맡기는 주축 투수" } }
+    } }
+    ,"pro.weekly.standing.ace" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Ace" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "큰 경기를 맡는 에이스" } }
+    } }
+    ,"pro.weekly.standing.club-symbol" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Club Icon" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "구단의 시간을 함께한 상징" } }
+    } }
+    ,"pro.weekly.standing.schedule" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ role · about %2$lld scheduled appearances remaining. Direct moments are included in those games." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ 보직 · 남은 예정 등판 약 %2$lld회. 직접 승부도 이 경기 수 안에 포함됩니다." } }
+    } }
+    ,"pro.weekly.standing.veteran" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your recent performance and health—not age alone—decide your usage." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "나이만으로 자리를 빼앗기지 않습니다. 최근 성적과 몸 상태로 다음 등판을 정합니다." } }
     } }
     ,"pro.weekly.title" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose This Week's Work" } },
@@ -5362,12 +5418,20 @@
       "ko" : { "stringUnit" : { "state" : "translated", "value" : "회복" } }
     } }
     ,"pro.weekly.plan.recovery.effect" : { "localizations" : {
-      "en" : { "stringUnit" : { "state" : "translated", "value" : "Cuts fatigue and lowers injury risk." } },
-      "ko" : { "stringUnit" : { "state" : "translated", "value" : "피로가 줄고 부상 위험이 낮아집니다" } }
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Recover 20 fatigue this week." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 주 피로 20 회복" } }
     } }
     ,"pro.weekly.plan.recovery.cost" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "0 appearances · No rating growth · Runs for one week only." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "등판 0회 · 능력 성장 없음 · 한 주만 실행" } }
+    } }
+    ,"pro.weekly.recovery-agency.effect" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Reduce fatigue by 16 before adding the workload from scheduled appearances." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "피로를 먼저 16 낮춘 뒤 예정 등판의 투구 부담을 반영" } }
+    } }
+    ,"pro.weekly.recovery-agency.cost" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "No rating growth this week." } },
-      "ko" : { "stringUnit" : { "state" : "translated", "value" : "능력이 오르지 않습니다" } }
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 주 능력 성장 없음" } }
     } }
     ,"pro.weekly.plan.trust.minor.title" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Win the Call-Up Race" } },
@@ -5417,6 +5481,10 @@
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Focus Pitch" } },
       "ko" : { "stringUnit" : { "state" : "translated", "value" : "집중할 결정구" } }
     } }
+    ,"pro.weekly.choose-plan" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose this week's plan before advancing." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 주 계획을 직접 고른 뒤 진행하세요." } }
+    } }
     ,"pro.weekly.advance" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Advance 1 Week" } },
       "ko" : { "stringUnit" : { "state" : "translated", "value" : "1주 진행" } }
@@ -5428,6 +5496,10 @@
     ,"pro.weekly.advance-stop" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "Auto-advance stops for a key outing, role change, or injury." } },
       "ko" : { "stringUnit" : { "state" : "translated", "value" : "승부처 경기·역할 변화·부상이 생기면 그 자리에서 멈춥니다." } }
+    } }
+    ,"pro.weekly.recovery-single-week" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Recovery is never repeated through auto-advance. Advance one week, then choose again." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "회복은 자동 반복하지 않습니다. 한 주 진행한 뒤 다시 고르세요." } }
     } }
     ,"pro.important.eyebrow" : { "localizations" : {
       "en" : { "stringUnit" : { "state" : "translated", "value" : "IMPORTANT MOMENT · SEASON %1$lld, WEEK %2$lld" } },

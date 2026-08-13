@@ -250,6 +250,10 @@ struct ProSeasonDecisionView: View {
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(BaseballTheme.information)
                             .fixedSize(horizontal: false, vertical: true)
+                        Label(copyResolver.resolve(.decisionFollowUp), systemImage: "arrow.turn.down.right")
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
@@ -294,6 +298,7 @@ struct ProSeasonDecisionView: View {
                     arguments: [
                         .userText(ProCareerPresentation.choiceDetail(pendingChoice, resolver: copyResolver)),
                         .userText(ProCareerPresentation.effect(pendingChoice.effect, resolver: copyResolver)),
+                        .userText(copyResolver.resolve(.decisionFollowUp)),
                     ]
                 ))
             }
@@ -358,6 +363,19 @@ private struct WeeklyPlanView: View {
         }
     }
 
+    private static func standingLabel(
+        _ standing: ProCareerStanding,
+        resolver: GameCopyResolver
+    ) -> String {
+        switch standing {
+        case .prospect: resolver.resolve(.weeklyStandingProspect)
+        case .roster: resolver.resolve(.weeklyStandingRoster)
+        case .established: resolver.resolve(.weeklyStandingEstablished)
+        case .ace: resolver.resolve(.weeklyStandingAce)
+        case .clubSymbol: resolver.resolve(.weeklyStandingClubSymbol)
+        }
+    }
+
     private static func progressText(
         _ plan: ProWeekPlan,
         state: ProCareerSnapshot,
@@ -412,8 +430,16 @@ private struct WeeklyPlanView: View {
             PlanCopy(
                 plan: .recover,
                 title: resolver.resolve(veteran ? .weeklyRecoveryVeteranTitle : .weeklyRecoveryTitle),
-                effect: resolver.resolve(.weeklyRecoveryEffect),
-                cost: resolver.resolve(.weeklyRecoveryCost),
+                effect: resolver.resolve(
+                    (state.proRulesVersion ?? 1) >= ProCareerEngine.currentRulesVersion
+                        ? .weeklyRecoveryAgencyEffect
+                        : .weeklyRecoveryEffect
+                ),
+                cost: resolver.resolve(
+                    (state.proRulesVersion ?? 1) >= ProCareerEngine.currentRulesVersion
+                        ? .weeklyRecoveryAgencyCost
+                        : .weeklyRecoveryCost
+                ),
                 symbol: "bed.double"
             ),
             PlanCopy(
@@ -475,6 +501,30 @@ private struct WeeklyPlanView: View {
                 }
             }
 
+            let standing = ProCareerEngine.careerStanding(for: state)
+            BaseballCard(title: copyResolver.resolve(.weeklyStandingTitle), tone: .milestone) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Label(
+                        Self.standingLabel(standing, resolver: copyResolver),
+                        systemImage: standing == .clubSymbol ? "star.circle.fill" : "shield.lefthalf.filled"
+                    )
+                    .font(.headline)
+                    .foregroundStyle(BaseballTheme.milestone)
+                    Text(copyResolver.resolve(.weeklyStandingSchedule, arguments: [
+                        .userText(copyResolver.resolve(state.role.displayCopyToken)),
+                        .integer(ProCareerEngine.expectedRemainingOutings(for: state)),
+                    ]))
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    if state.age >= 33 {
+                        Text(copyResolver.resolve(.weeklyStandingVeteran))
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.positive)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+            }
+
             VStack(alignment: .leading, spacing: 3) {
                 Text(copyResolver.resolve(.weeklyTitle)).font(.headline)
                 Text(copyResolver.resolve(
@@ -489,6 +539,13 @@ private struct WeeklyPlanView: View {
             }
 
             let recommendation = Self.recommendation(for: state, resolver: copyResolver)
+
+            if career.selectedPlan == nil {
+                Label(copyResolver.resolve(.weeklyChoosePlan), systemImage: "hand.tap")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.information)
+                    .accessibilityIdentifier("pro.plan.required")
+            }
 
             ForEach(Self.plans(for: state, resolver: copyResolver), id: \.plan) { copy in
                 PlanCard(
@@ -519,6 +576,7 @@ private struct WeeklyPlanView: View {
             }
 
             PrimaryPill(title: copyResolver.resolve(.weeklyAdvance), identifier: "pro.advanceWeek", action: career.advanceWeek)
+                .disabled(career.selectedPlan == nil)
 
             Button(action: career.advanceSegment) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -529,13 +587,22 @@ private struct WeeklyPlanView: View {
                         ]
                     ))
                         .font(.subheadline.weight(.semibold))
-                    Text(copyResolver.resolve(.weeklyAdvanceStop))
+                    Text(copyResolver.resolve(
+                        career.selectedPlan == .recover && (state.proRulesVersion ?? 1) < ProCareerEngine.currentRulesVersion
+                            ? .weeklyRecoverySingleWeek
+                            : .weeklyAdvanceStop
+                    ))
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.bordered)
+            .disabled(
+                career.selectedPlan == nil
+                    || (career.selectedPlan == .recover
+                        && (state.proRulesVersion ?? 1) < ProCareerEngine.currentRulesVersion)
+            )
             .frame(minHeight: BaseballMetrics.minimumTapTarget)
             .accessibilityIdentifier("pro.advanceSegment")
         }
@@ -590,6 +657,7 @@ private struct WeeklyPlanView: View {
             }
             .buttonStyle(.plain)
             .accessibilityAddTraits(selected ? .isSelected : [])
+            .accessibilityElement(children: .combine)
         }
     }
 }

@@ -63,7 +63,9 @@ final class MobileCareerStore {
 
     var loadState: LoadState = .loading
     var result: ProCareerResult?
-    var selectedPlan: ProWeekPlan = .earnTrust
+    /// 주간 계획은 플레이어가 직접 고른다. 기본값을 두면 버튼을 누른 사실만으로
+    /// "내 선택"처럼 보이고, 회복 뒤에도 같은 계획이 여러 주 반복될 수 있다.
+    var selectedPlan: ProWeekPlan?
     /// 변화구 성장 계획에서 실제로 완성할 결정구.
     var selectedDevelopmentPitch: PitchType = .slider
     var lastSummary: String?
@@ -270,7 +272,7 @@ final class MobileCareerStore {
     // MARK: - 주간 진행
 
     func advanceWeek() {
-        guard let result else { return }
+        guard let result, let selectedPlan else { return }
         let beforeRevision = result.snapshot.revision
         perform { try engine.planWeek(.init(
             seed: result.nextSeed,
@@ -280,6 +282,9 @@ final class MobileCareerStore {
         )) }
         if self.result?.snapshot.revision != beforeRevision {
             weekly.record(.proWeeksAdvanced)
+            // 회복은 한 주짜리 명령이다. 성공한 저장 이후에만 선택을 비워 다음 주의
+            // 무음 미등판을 막는다. 저장 실패면 기존 선택도 그대로 남아 재시도할 수 있다.
+            if selectedPlan == .recover { self.selectedPlan = nil }
         }
     }
 
@@ -290,7 +295,8 @@ final class MobileCareerStore {
     /// 브레이크·페넌트레이스·시즌 막바지)은 이미 코어가 알고 있으니, **결정이 필요한 자리에서만
     /// 멈추게** 한다 — 구간이 바뀌거나, 중요 경기가 잡히거나, 역할·소속이 움직이거나, 다치거나.
     func advanceSegment() {
-        guard let result else { return }
+        guard let result, let selectedPlan,
+              selectedPlan != .recover || (result.snapshot.proRulesVersion ?? 1) >= ProCareerEngine.currentRulesVersion else { return }
         let beforeRevision = result.snapshot.revision
         var advancedWeeks = 0
         perform {
@@ -316,7 +322,8 @@ final class MobileCareerStore {
     }
 
     func advanceBlock() {
-        guard let result else { return }
+        guard let result, let selectedPlan,
+              selectedPlan != .recover || (result.snapshot.proRulesVersion ?? 1) >= ProCareerEngine.currentRulesVersion else { return }
         let beforeRevision = result.snapshot.revision
         var advancedWeeks = 0
         perform {
@@ -788,12 +795,38 @@ final class MobileCareerStore {
 
     private func progressSummary(before: ProCareerSnapshot?, after: ProCareerSnapshot) -> String {
         guard let before else { return "다음 일정이 준비됐습니다." }
-        if before.level != after.level { return "1군 출전 명단에 합류했습니다. 다음 주목받는 등판이 바로 이어집니다." }
-        if before.role != after.role { return "감독 면담 뒤 역할이 \(Self.roleName(after.role))으로 바뀌었습니다." }
-        if after.milestones.count > before.milestones.count { return "새 주요 기록 · \(after.milestones.last ?? "선수 기록")" }
+        let weeks = max(1, after.week - before.week)
+        let games = max(0, after.currentStats.games - before.currentStats.games)
+        let starts = max(0, after.currentStats.starts - before.currentStats.starts)
+        let outs = max(0, after.currentStats.inningsOuts - before.currentStats.inningsOuts)
         let fatigue = after.fatigue - before.fatigue
         let trust = after.managerTrust - before.managerTrust
-        return "\(before.week + 1)주차 완료 · 감독의 믿음 \(trust >= 0 ? "+" : "")\(trust) · 피로 \(fatigue >= 0 ? "+" : "")\(fatigue)"
+        var values = [
+            "\(before.week + 1)~\(after.week)주차",
+            "\(weeks)주",
+            "\(games)경기(선발 \(starts))",
+            Self.inningsText(outs),
+            "감독의 믿음 \(trust >= 0 ? "+" : "")\(trust)",
+            "피로 \(fatigue >= 0 ? "+" : "")\(fatigue)",
+        ]
+        if before.level != after.level {
+            values.append(after.level == .major ? "1군 합류" : "2군 이동")
+        }
+        if before.role != after.role { values.append("역할 변경: \(Self.roleName(after.role))") }
+        if after.milestones.count > before.milestones.count {
+            values.append("주요 기록: \(after.milestones.last ?? "선수 기록")")
+        }
+        return values.joined(separator: " · ")
+    }
+
+    nonisolated static func inningsText(_ outs: Int) -> String {
+        let safeOuts = max(0, outs)
+        let innings = safeOuts / 3
+        switch safeOuts % 3 {
+        case 1: return "\(innings)⅓이닝"
+        case 2: return "\(innings)⅔이닝"
+        default: return "\(innings)이닝"
+        }
     }
 
     nonisolated static func roleName(_ role: ProRole) -> String {

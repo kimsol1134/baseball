@@ -404,7 +404,10 @@ public struct PitchKernelEngine: Sendable {
             context: params.context,
             adaptation: adaptation
         )
+        // 1안과 2안은 모두 포수가 낸 사인이다. 2안을 고른 플레이어를 "사인을 거부했다"고
+        // 기록하면 관계 보상과 분석 지표가 거꾸로 읽힌다. 직접 수정만 false다.
         let recommendationAccepted = params.call == recommendations.primary.call
+            || params.call == recommendations.alternative.call
         let state = advanceCount(
             context: params.context,
             outcome: outcome

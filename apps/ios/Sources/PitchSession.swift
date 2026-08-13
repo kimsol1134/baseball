@@ -154,6 +154,14 @@ final class PitchSession {
         setSelectedCall(preparation.primaryRecommendation.call)
     }
 
+    /// 포수의 2안은 이 한 공에만 적용한다. 다음 공에서는 새 카운트·타자 적응을 반영한
+    /// 1안을 다시 받아, 한 번 고른 대안이 남은 타석 전체를 덮지 않게 한다.
+    func acceptCatcherAlternativeRecommendation() {
+        guard let preparation else { return }
+        holdCall = false
+        setSelectedCall(preparation.alternativeRecommendation.call)
+    }
+
     struct PitchLogEntry: Identifiable {
         let id = UUID()
         let pitchNumber: Int
