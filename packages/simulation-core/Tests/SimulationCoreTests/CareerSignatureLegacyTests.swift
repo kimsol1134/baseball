@@ -115,6 +115,25 @@ final class CareerSignatureLegacyTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(CareerSignatureLegacy.self, from: encoded), command)
     }
 
+    func testExpandedCandidateLimitAddsOneOptionWithoutChangingTheOriginalThree() throws {
+        let completed = try commandFocusedCareer(seed: "918201")
+        let original = CareerSignatureLegacy.candidates(
+            startingPitcher: completed.startingPitcher,
+            finalState: completed.finalState
+        )
+        let expanded = CareerSignatureLegacy.candidates(
+            startingPitcher: completed.startingPitcher,
+            finalState: completed.finalState,
+            candidateLimit: 4
+        )
+
+        XCTAssertEqual(original.count, 3)
+        XCTAssertEqual(expanded.count, 4)
+        XCTAssertEqual(Array(expanded.prefix(3)), original)
+        XCTAssertEqual(Set(expanded.map(\.id)).count, 4)
+        XCTAssertEqual(Set(expanded.map(\.family)).count, 4)
+    }
+
     func testCandidateRulesVersionFreezesV1AndFailsUnknownValuesClosed() throws {
         let completed = try commandFocusedCareer(seed: "918207")
         let legacyEntry = CareerSignatureLegacy.candidates(

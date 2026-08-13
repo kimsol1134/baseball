@@ -316,6 +316,25 @@ final class RetentionTests: XCTestCase {
         XCTAssertTrue(events.contains(.lifeCompleted))
     }
 
+    @MainActor
+    func testExtraMemoryBoostExpandsCurrentSignatureLegacyCandidates() throws {
+        let engine = HighSchoolCareerEngine()
+        let plain = try engine.start(.init(seed: "606063", presetID: "power_prospect")).snapshot
+        let expanded = try engine.start(.init(
+            seed: "606064",
+            presetID: "power_prospect",
+            soulBoosts: [.extraMemory]
+        )).snapshot
+
+        XCTAssertEqual(HighSchoolCareerStore.signatureLegacyCandidateCount(for: plain), 3)
+        XCTAssertEqual(HighSchoolCareerStore.signatureLegacyCandidateCount(for: expanded), 4)
+        XCTAssertEqual(HighSchoolSetupView.boostCopy(.extraMemory).title, "넓어진 유산의 시야")
+        XCTAssertEqual(
+            HighSchoolSetupView.boostCopy(.extraMemory).detail,
+            "이번 선수가 은퇴할 때 대표 유산 후보를 하나 더 발견합니다."
+        )
+    }
+
     /// 정상 회차는 어떤 시점에도 도전 런으로 오판되면 안 된다 — 파생 판별의 재발 방지.
     @MainActor
     func testNormalRunNeverBecomesChallengeRun() throws {

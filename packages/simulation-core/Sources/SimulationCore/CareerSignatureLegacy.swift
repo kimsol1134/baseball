@@ -205,12 +205,14 @@ public struct CareerSignatureLegacy: Codable, Equatable, Identifiable, Sendable 
     /// 서로 다른 빌드 family 세 개를 결정론적으로 고른다.
     public static func candidates(
         startingPitcher: PitcherSnapshot,
-        finalState: HighSchoolCareerSnapshot
+        finalState: HighSchoolCareerSnapshot,
+        candidateLimit: Int = 3
     ) -> [CareerSignatureLegacy] {
         candidates(
             startingPitcher: startingPitcher,
             finalState: finalState,
-            rulesVersion: .v1
+            rulesVersion: .v1,
+            candidateLimit: candidateLimit
         )
     }
 
@@ -218,23 +220,30 @@ public struct CareerSignatureLegacy: Codable, Equatable, Identifiable, Sendable 
     public static func candidates(
         startingPitcher: PitcherSnapshot,
         finalState: HighSchoolCareerSnapshot,
-        rulesVersion storedRulesVersion: Int?
+        rulesVersion storedRulesVersion: Int?,
+        candidateLimit: Int = 3
     ) -> [CareerSignatureLegacy] {
         candidates(
             startingPitcher: startingPitcher,
             finalState: finalState,
-            rulesVersion: CareerSignatureLegacyRulesVersion.resolve(storedValue: storedRulesVersion)
+            rulesVersion: CareerSignatureLegacyRulesVersion.resolve(storedValue: storedRulesVersion),
+            candidateLimit: candidateLimit
         )
     }
 
     public static func candidates(
         startingPitcher: PitcherSnapshot,
         finalState: HighSchoolCareerSnapshot,
-        rulesVersion: CareerSignatureLegacyRulesVersion
+        rulesVersion: CareerSignatureLegacyRulesVersion,
+        candidateLimit: Int = 3
     ) -> [CareerSignatureLegacy] {
         switch rulesVersion {
         case .v1:
-            v1Candidates(startingPitcher: startingPitcher, finalState: finalState)
+            v1Candidates(
+                startingPitcher: startingPitcher,
+                finalState: finalState,
+                candidateLimit: candidateLimit
+            )
         }
     }
 
@@ -244,13 +253,15 @@ public struct CareerSignatureLegacy: Codable, Equatable, Identifiable, Sendable 
         startingPitcher: PitcherSnapshot,
         highSchoolState: HighSchoolCareerSnapshot,
         proCareer: ProCareerSnapshot,
-        rulesVersion storedRulesVersion: Int?
+        rulesVersion storedRulesVersion: Int?,
+        candidateLimit: Int = 3
     ) -> [CareerSignatureLegacy] {
         candidates(
             startingPitcher: startingPitcher,
             highSchoolState: highSchoolState,
             proCareer: proCareer,
-            rulesVersion: CareerSignatureLegacyRulesVersion.resolve(storedValue: storedRulesVersion)
+            rulesVersion: CareerSignatureLegacyRulesVersion.resolve(storedValue: storedRulesVersion),
+            candidateLimit: candidateLimit
         )
     }
 
@@ -258,21 +269,24 @@ public struct CareerSignatureLegacy: Codable, Equatable, Identifiable, Sendable 
         startingPitcher: PitcherSnapshot,
         highSchoolState: HighSchoolCareerSnapshot,
         proCareer: ProCareerSnapshot,
-        rulesVersion: CareerSignatureLegacyRulesVersion
+        rulesVersion: CareerSignatureLegacyRulesVersion,
+        candidateLimit: Int = 3
     ) -> [CareerSignatureLegacy] {
         switch rulesVersion {
         case .v1:
             v1Candidates(
                 startingPitcher: startingPitcher,
                 highSchoolState: highSchoolState,
-                proCareer: proCareer
+                proCareer: proCareer,
+                candidateLimit: candidateLimit
             )
         }
     }
 
     private static func v1Candidates(
         startingPitcher: PitcherSnapshot,
-        finalState: HighSchoolCareerSnapshot
+        finalState: HighSchoolCareerSnapshot,
+        candidateLimit: Int
     ) -> [CareerSignatureLegacy] {
         let growth = Growth(
             stuff: max(0, finalState.pitcher.stuff - startingPitcher.stuff),
@@ -290,13 +304,14 @@ public struct CareerSignatureLegacy: Codable, Equatable, Identifiable, Sendable 
         return scored.sorted {
             if $0.score != $1.score { return $0.score > $1.score }
             return $0.legacy.id.rawValue < $1.legacy.id.rawValue
-        }.prefix(3).map(\.legacy)
+        }.prefix(normalizedCandidateLimit(candidateLimit)).map(\.legacy)
     }
 
     private static func v1Candidates(
         startingPitcher: PitcherSnapshot,
         highSchoolState: HighSchoolCareerSnapshot,
-        proCareer: ProCareerSnapshot
+        proCareer: ProCareerSnapshot,
+        candidateLimit: Int
     ) -> [CareerSignatureLegacy] {
         let highSchoolGrowth = Growth(
             stuff: max(0, highSchoolState.pitcher.stuff - startingPitcher.stuff),
@@ -339,7 +354,13 @@ public struct CareerSignatureLegacy: Codable, Equatable, Identifiable, Sendable 
         return scored.sorted {
             if $0.score != $1.score { return $0.score > $1.score }
             return $0.legacy.id.rawValue < $1.legacy.id.rawValue
-        }.prefix(3).map(\.legacy)
+        }.prefix(normalizedCandidateLimit(candidateLimit)).map(\.legacy)
+    }
+
+    /// 후보 확장 부스트가 있더라도 정의된 서로 다른 family 수를 넘길 수 없다.
+    /// 0 이하 요청은 프로토콜 오용이지만, 저장 복구 경로에서 빈 후보로 막히지 않게 1로 닫는다.
+    private static func normalizedCandidateLimit(_ requested: Int) -> Int {
+        min(CareerSignatureLegacyID.allCases.count, max(1, requested))
     }
 
     /// optional 하나만 받아 고정 효과를 한 번 적용한다. nil은 값 정체성이다.

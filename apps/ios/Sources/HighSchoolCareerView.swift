@@ -2825,6 +2825,16 @@ private struct LegacyCard: View {
                     tone: .milestone
                 ) {
                     VStack(alignment: .leading, spacing: 5) {
+                        if state.soulBoosts?.contains(SoulBoostID.extraMemory.rawValue) == true {
+                            let boostCopy = HighSchoolSetupView.localizedBoostCopy(
+                                .extraMemory,
+                                resolver: copyResolver
+                            )
+                            Label(boostCopy.title, systemImage: "sparkles")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(BaseballTheme.milestone)
+                                .accessibilityIdentifier("hs.signatureLegacy.extraMemoryActive")
+                        }
                         Text(copyResolver.resolve(AppCopyKey.conclusionSignatureDescription))
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
@@ -2842,6 +2852,7 @@ private struct LegacyCard: View {
                         properties: [
                             "life_number": state.lifeNumber,
                             "drafted": state.draftResult?.outcome == .drafted,
+                            "option_count": signatureCandidates.count,
                             "includes_pro_career": signatureCandidates.contains {
                                 $0.evidence.proPerformance != nil
                             },

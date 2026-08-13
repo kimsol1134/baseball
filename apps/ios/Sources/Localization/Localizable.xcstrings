@@ -1221,14 +1221,14 @@
     },
     "setup.boost.extra-memory.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Carry %lld Memory Cards instead of %lld this time." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번에 가져갈 기억이 %lld장에서 %lld장으로 늘어납니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Discover one additional Signature Legacy option when this player retires." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 선수가 은퇴할 때 대표 유산 후보를 하나 더 발견합니다." } }
       }
     },
     "setup.boost.extra-memory.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "More memories" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기억 확장" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Wider Legacy Horizon" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "넓어진 유산의 시야" } }
       }
     },
     "setup.boost.head-start.detail" : {

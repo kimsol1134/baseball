@@ -1668,16 +1668,24 @@ final class HighSchoolCareerStore {
     /// 로컬 UserDefaults의 마지막 프리셋을 추측에 쓰면 새 기기 SaveSync 복원에서 같은
     /// 커리어가 다른 세 후보를 만들 수 있으므로, 저장본 자체만 입력으로 사용한다.
     func signatureLegacyCandidates(for state: HighSchoolCareerSnapshot) -> [CareerSignatureLegacy] {
+        let candidateCount = Self.signatureLegacyCandidateCount(for: state)
         if let frozenSignatureLegacyCandidates,
-           frozenSignatureLegacyCandidates.count == 3,
-           Set(frozenSignatureLegacyCandidates.map(\.id)).count == 3 {
+           frozenSignatureLegacyCandidates.count == candidateCount,
+           Set(frozenSignatureLegacyCandidates.map(\.id)).count == candidateCount {
             return frozenSignatureLegacyCandidates
         }
         return CareerSignatureLegacy.candidates(
             startingPitcher: careerStartingPitcher ?? state.pitcher,
             finalState: state,
-            rulesVersion: signatureLegacyRulesVersion
+            rulesVersion: signatureLegacyRulesVersion,
+            candidateLimit: candidateCount
         )
+    }
+
+    /// 신규 대표 유산 규칙에서 `extraMemory`는 이번 선수가 실제 기록으로
+    /// 발견하는 대표 유산 후보를 하나 더 연다.
+    nonisolated static func signatureLegacyCandidateCount(for state: HighSchoolCareerSnapshot) -> Int {
+        state.soulBoosts?.contains(SoulBoostID.extraMemory.rawValue) == true ? 4 : 3
     }
 
     @discardableResult
@@ -1690,9 +1698,12 @@ final class HighSchoolCareerStore {
         let generated = CareerSignatureLegacy.candidates(
             startingPitcher: careerStartingPitcher ?? state.pitcher,
             finalState: state,
-            rulesVersion: signatureLegacyRulesVersion
+            rulesVersion: signatureLegacyRulesVersion,
+            candidateLimit: Self.signatureLegacyCandidateCount(for: state)
         )
-        guard generated.count == 3, Set(generated.map(\.id)).count == 3 else { return false }
+        let expectedCount = Self.signatureLegacyCandidateCount(for: state)
+        guard generated.count == expectedCount,
+              Set(generated.map(\.id)).count == expectedCount else { return false }
         frozenSignatureLegacyCandidates = generated
         guard save() else {
             frozenSignatureLegacyCandidates = nil
@@ -2157,9 +2168,12 @@ final class HighSchoolCareerStore {
                 startingPitcher: careerStartingPitcher ?? current.snapshot.pitcher,
                 highSchoolState: current.snapshot,
                 proCareer: proState,
-                rulesVersion: signatureLegacyRulesVersion
+                rulesVersion: signatureLegacyRulesVersion,
+                candidateLimit: Self.signatureLegacyCandidateCount(for: current.snapshot)
             )
-            guard generated.count == 3, Set(generated.map(\.id)).count == 3 else { return false }
+            let expectedCount = Self.signatureLegacyCandidateCount(for: current.snapshot)
+            guard generated.count == expectedCount,
+                  Set(generated.map(\.id)).count == expectedCount else { return false }
             combinedCandidates = generated
         } else {
             // 기능 도입 전에 시작한 선수는 당시 기억 카드 규칙으로 마무리한다.

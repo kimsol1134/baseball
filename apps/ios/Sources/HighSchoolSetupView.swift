@@ -503,11 +503,7 @@ struct HighSchoolSetupView: View {
                             Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(selected ? BaseballTheme.milestone : affordable ? BaseballTheme.textSecondary : BaseballTheme.border)
                             VStack(alignment: .leading, spacing: 1) {
-                                let copy = Self.localizedBoostCopy(
-                                    boost,
-                                    baseSlots: selectedKarmas.contains(.erasedMemory) ? 2 : 3,
-                                    resolver: copyResolver
-                                )
+                                let copy = Self.localizedBoostCopy(boost, resolver: copyResolver)
                                 GameCopyText(verbatim: copy.title)
                                     .font(.subheadline.weight(.semibold))
                                 GameCopyText(verbatim: copy.detail)
@@ -540,15 +536,12 @@ struct HighSchoolSetupView: View {
         }
     }
 
-    /// baseSlots: 카르마(기억 소거)로 기본 슬롯이 2장인 회차도 있다 — 고정 "3장에서
-    /// 4장" 문구는 그 회차에 거짓말이 된다(2차 패널 P1).
-    static func boostCopy(_ boost: SoulBoostID, baseSlots: Int = 3) -> (title: String, detail: String) {
-        localizedBoostCopy(boost, baseSlots: baseSlots, resolver: koreanResolver)
+    static func boostCopy(_ boost: SoulBoostID) -> (title: String, detail: String) {
+        localizedBoostCopy(boost, resolver: koreanResolver)
     }
 
     static func localizedBoostCopy(
         _ boost: SoulBoostID,
-        baseSlots: Int = 3,
         resolver: GameCopyResolver
     ) -> (title: String, detail: String) {
         switch boost {
@@ -560,10 +553,7 @@ struct HighSchoolSetupView: View {
         case .extraMemory:
             (
                 resolver.resolve(AppCopyKey.setupBoostExtraMemoryTitle),
-                resolver.resolve(
-                    AppCopyKey.setupBoostExtraMemoryDetail,
-                    arguments: [.integer(baseSlots), .integer(baseSlots + 1)]
-                )
+                resolver.resolve(AppCopyKey.setupBoostExtraMemoryDetail)
             )
         case .headStart:
             (
