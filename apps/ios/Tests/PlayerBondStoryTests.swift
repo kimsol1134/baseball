@@ -293,6 +293,37 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertEqual(loadout?.contributions, 3)
     }
 
+    func testLineageRankUpOnlyAppearsAtDurableThreeAndSixContributions() {
+        func powerLife(_ number: Int) -> HighSchoolCareerStore.LifeRecord {
+            var record = life(drafted: true, lifeNumber: number, playerName: "\(number)번째 선수")
+            record.signatureLegacy = CareerSignatureLegacy.definition(for: .powerImprint)
+            return record
+        }
+        let first = powerLife(1)
+        let second = powerLife(2)
+        let third = powerLife(3)
+        let fourth = powerLife(4)
+        let fifth = powerLife(5)
+        let sixth = powerLife(6)
+
+        XCTAssertNil(HighSchoolCareerStore.lineageRankUp(
+            family: .power, before: [first], after: [second, first]
+        ))
+        XCTAssertEqual(HighSchoolCareerStore.lineageRankUp(
+            family: .power, before: [second, first], after: [third, second, first]
+        )?.rank, 2)
+        XCTAssertNil(HighSchoolCareerStore.lineageRankUp(
+            family: .power,
+            before: [fourth, third, second, first],
+            after: [fifth, fourth, third, second, first]
+        ))
+        XCTAssertEqual(HighSchoolCareerStore.lineageRankUp(
+            family: .power,
+            before: [fifth, fourth, third, second, first],
+            after: [sixth, fifth, fourth, third, second, first]
+        )?.rank, 3)
+    }
+
     func testArchiveLineageIsAlwaysNewestFirst() {
         let ordered = LifeArchiveOrdering.newestFirst([
             life(drafted: false, lifeNumber: 1, playerName: "첫 선수"),

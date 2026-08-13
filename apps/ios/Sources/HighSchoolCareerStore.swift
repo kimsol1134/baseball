@@ -2086,6 +2086,9 @@ final class HighSchoolCareerStore {
             )
             var nextArchive = archive.filter { $0.lifeNumber != closed.lifeNumber }
             nextArchive.insert(closed, at: 0)
+            let masteryRankUp = signatureLegacy.flatMap {
+                Self.lineageRankUp(family: $0.family, before: archive, after: nextArchive)
+            }
             let recap = RunRecapView.Recap(
                 record: closed,
                 pledgeID: settledPledge?.id,
@@ -2131,9 +2134,13 @@ final class HighSchoolCareerStore {
                 return
             }
 
-            lastSummary = signatureLegacy.map {
-                "\($0.title)\(KoreanCopy.particle($0.title, final: "을", open: "를")) 새 선수에게 남깁니다."
-            } ?? "기억 \(chosen.count)장을 새 선수에게 남깁니다."
+            if let masteryRankUp {
+                lastSummary = "\(masteryRankUp.contributions)명의 선수가 이 감각을 이어 왔습니다. 계보 숙련 \(masteryRankUp.rank)등급에 올랐습니다."
+            } else {
+                lastSummary = signatureLegacy.map {
+                    "\($0.title)\(KoreanCopy.particle($0.title, final: "을", open: "를")) 새 선수에게 남깁니다."
+                } ?? "기억 \(chosen.count)장을 새 선수에게 남깁니다."
+            }
             feedbackCue = .growth
             feedbackTrigger += 1
             loadState = .ready
@@ -2162,6 +2169,14 @@ final class HighSchoolCareerStore {
                     "rating_growth": signatureLegacy.evidence.ratingGrowth ?? 0,
                     "includes_pro_career": signatureLegacy.evidence.proPerformance != nil,
                     "pro_seasons": signatureLegacy.evidence.proPerformance?.seasons ?? 0,
+                ])
+            }
+            if let masteryRankUp {
+                GameAnalytics.log(.lineageMasteryRankedUp, [
+                    "family": masteryRankUp.family.rawValue,
+                    "rank": masteryRankUp.rank,
+                    "contributions": masteryRankUp.contributions,
+                    "life_number": current.snapshot.lifeNumber,
                 ])
             }
             GameAnalytics.log(.lifeCompleted, [
@@ -2375,6 +2390,19 @@ final class HighSchoolCareerStore {
         )
     }
 
+    nonisolated static func lineageRankUp(
+        family: CareerSignatureLegacyFamily,
+        before: [LifeRecord],
+        after: [LifeRecord]
+    ) -> CareerLineageMastery? {
+        let previousRank = lineageMasteries(from: before)
+            .first { $0.family == family }?.rank ?? 0
+        guard let current = lineageMasteries(from: after).first(where: { $0.family == family }),
+              current.rank >= 2,
+              current.rank > previousRank else { return nil }
+        return current
+    }
+
     /// 회차 보상 계산. 순수 함수라 테스트할 수 있다.
     nonisolated static func nextInheritance(
         from state: HighSchoolCareerSnapshot,
@@ -2546,7 +2574,7 @@ final class HighSchoolCareerStore {
         loadState = .ready
         lastSummary = combinedCandidates == nil
             ? "프로 커리어를 마쳤습니다. 이제 당시 규칙대로 남길 기억을 고릅니다."
-            : "고교 시절과 프로 통산 기록에서 대표 유산 세 가지를 찾았습니다."
+            : "고교 시절과 프로 통산 기록에서 대표 유산 \(combinedCandidates?.count ?? 0)개를 찾았습니다."
         feedbackCue = .growth
         feedbackTrigger += 1
         if creditsNewProCareer {

@@ -157,12 +157,14 @@ enum GameAnalytics {
         case playerHeartlineSeen = "player_heartline_seen"
         /// 3년 돌아보기에서 다음 선수로 넘어가는 주 행동을 누른 시점.
         case recapContinueTapped = "recap_continue_tapped"
-        /// 한 선수의 성장·경기 기록으로 합성된 대표 유산 세 후보가 실제로 보인 시점.
+        /// 한 선수의 성장·경기 기록으로 합성된 대표 유산 후보가 실제로 보인 시점.
         case signatureLegacyOptionsSeen = "signature_legacy_options_seen"
-        /// 대표 유산 세 후보 중 하나를 직접 고른 시점.
+        /// 대표 유산 후보 중 하나를 직접 고른 시점.
         case signatureLegacySelected = "signature_legacy_selected"
         /// 발견 목록의 대표 유산 하나가 새 선수의 시작 능력에 실제 적용된 시점.
         case signatureLegacyEquipped = "signature_legacy_equipped"
+        /// durable 결산 뒤 같은 계열을 남긴 선수가 3명 또는 6명에 도달한 시점.
+        case lineageMasteryRankedUp = "lineage_mastery_ranked_up"
         /// 기억·대표 유산·야구혼까지 원자적으로 정산돼 한 선수의 인생이 닫힌 시점.
         case lifeCompleted = "life_completed"
         /// 사용자가 고른 훈련이 상태에 실제 반영된 시점.
