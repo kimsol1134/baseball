@@ -122,6 +122,8 @@ final class AnalyticsContextTests: XCTestCase {
 
     func testNewFunnelEventNamesAreStable() {
         XCTAssertEqual(GameAnalytics.Event.playerHeartlineSeen.rawValue, "player_heartline_seen")
+        XCTAssertEqual(GameAnalytics.Event.bondMemoryCreated.rawValue, "bond_memory_created")
+        XCTAssertEqual(GameAnalytics.Event.bondMemoryRecalled.rawValue, "bond_memory_recalled")
         XCTAssertEqual(GameAnalytics.Event.recapContinueTapped.rawValue, "recap_continue_tapped")
         XCTAssertEqual(GameAnalytics.Event.proCareerStarted.rawValue, "pro_career_started")
         XCTAssertEqual(GameAnalytics.Event.proLegacyRecorded.rawValue, "pro_legacy_recorded")

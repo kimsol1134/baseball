@@ -187,7 +187,7 @@ final class HighSchoolCareerStore {
     }
 
     struct PlayerBondMemory: Codable, Equatable, Identifiable {
-        enum Kind: String, Codable {
+        enum Kind: String, Codable, Hashable {
             case personality
             case healthChoice = "health_choice"
             case trustMilestone = "trust_milestone"
@@ -203,6 +203,31 @@ final class HighSchoolCareerStore {
         let chapterNumber: Int
         let trustBefore: Int
         let trustAfter: Int
+    }
+
+    /// 유대 기억은 회차 로그가 아니라 이 선수를 설명하는 세 장면이다. 구버전 저장에
+    /// 중복이 들어 있어도 최초 한 종류만 남기고, 이후 저장부터 같은 계약으로 고정한다.
+    nonisolated static func normalizedBondMemories(
+        _ memories: [PlayerBondMemory]
+    ) -> [PlayerBondMemory] {
+        var kinds = Set<PlayerBondMemory.Kind>()
+        var normalized: [PlayerBondMemory] = []
+        for memory in memories where kinds.insert(memory.kind).inserted {
+            normalized.append(memory)
+            if normalized.count == 3 { break }
+        }
+        return normalized
+    }
+
+    nonisolated static func appendingBondMemory(
+        _ memory: PlayerBondMemory,
+        to memories: [PlayerBondMemory]
+    ) -> [PlayerBondMemory] {
+        let normalized = normalizedBondMemories(memories)
+        guard normalized.count < 3,
+              !normalized.contains(where: { $0.kind == memory.kind })
+        else { return normalized }
+        return normalized + [memory]
     }
 
     struct InheritedStartComparison: Equatable {
@@ -1425,8 +1450,7 @@ final class HighSchoolCareerStore {
         personalityAfter: Personality?
     ) -> PlayerBondMemory? {
         guard let event = before.currentRelationshipEvent,
-              let relationship = after.lastRelationship,
-              !bondMemories.contains(where: { $0.chapterNumber == before.chapter.number })
+              let relationship = after.lastRelationship
         else { return nil }
 
         let kind = Self.bondMemoryKind(
@@ -2331,7 +2355,8 @@ final class HighSchoolCareerStore {
             signatureLegacy: signatureLegacy,
             signatureLegacyCandidates: signatureLegacyCandidates,
             inheritedLineageLoadout: state.lineageLoadout,
-            bondMemories: bondMemories.isEmpty ? nil : bondMemories
+            bondMemories: Self.normalizedBondMemories(bondMemories).isEmpty
+                ? nil : Self.normalizedBondMemories(bondMemories)
         )
         record.pitches = state.performance.pitches
         record.outs = state.performance.outs
@@ -2971,8 +2996,8 @@ final class HighSchoolCareerStore {
             chapterStartStrikeouts: chapterStartStrikeouts,
             goalCelebratedChapter: persistedGoalCelebratedChapter,
             responseTally: candidateResponseTally,
-            bondMemories: (candidateBondMemories ?? bondMemories).isEmpty
-                ? nil : (candidateBondMemories ?? bondMemories),
+            bondMemories: Self.normalizedBondMemories(candidateBondMemories ?? bondMemories).isEmpty
+                ? nil : Self.normalizedBondMemories(candidateBondMemories ?? bondMemories),
             chapterGains: chapterGains.isEmpty ? nil : chapterGains,
             chapterTrainingCount: chapterTrainingCount == 0 ? nil : chapterTrainingCount,
             careerStartingPitcher: careerStartingPitcher,
@@ -3055,7 +3080,7 @@ final class HighSchoolCareerStore {
         chapterStartStrikeouts = record.chapterStartStrikeouts ?? 0
         goalCelebratedChapter = record.goalCelebratedChapter
         responseTally = record.responseTally ?? ResponseTally()
-        bondMemories = record.bondMemories ?? []
+        bondMemories = Self.normalizedBondMemories(record.bondMemories ?? [])
         chapterGains = record.chapterGains ?? [:]
         chapterTrainingCount = record.chapterTrainingCount ?? 0
         careerStartingPitcher = record.careerStartingPitcher
@@ -3204,7 +3229,7 @@ final class HighSchoolCareerStore {
             ?? record.result?.snapshot.performance.strikeouts ?? 0
         goalCelebratedChapter = record.goalCelebratedChapter
         responseTally = record.responseTally ?? ResponseTally()
-        bondMemories = record.bondMemories ?? []
+        bondMemories = Self.normalizedBondMemories(record.bondMemories ?? [])
         chapterGains = record.chapterGains ?? [:]
         chapterTrainingCount = record.chapterTrainingCount ?? 0
         careerStartingPitcher = record.careerStartingPitcher
@@ -3345,10 +3370,15 @@ final class HighSchoolCareerStore {
             let nextSummary = summary ?? Self.progressSummary(before: before, after: updated.snapshot)
             let nextCue = cue ?? (gains.isEmpty ? .neutral : .growth)
             let nextResponseTally = candidateResponseTally ?? responseTally
-            var nextBondMemories = bondMemories
-            if let memory = memoryFactory?(before, updated.snapshot),
-               !nextBondMemories.contains(where: { $0.chapterNumber == memory.chapterNumber }) {
-                nextBondMemories.append(memory)
+            let previousBondMemories = Self.normalizedBondMemories(bondMemories)
+            var nextBondMemories = previousBondMemories
+            var createdBondMemory: PlayerBondMemory?
+            if let memory = memoryFactory?(before, updated.snapshot) {
+                nextBondMemories = Self.appendingBondMemory(memory, to: previousBondMemories)
+                if !previousBondMemories.contains(where: { $0.id == memory.id }),
+                   nextBondMemories.contains(where: { $0.id == memory.id }) {
+                    createdBondMemory = memory
+                }
             }
             let nextResume = clearGameResumeOnSuccess ? nil : gameResume
             guard persist(
@@ -3371,6 +3401,19 @@ final class HighSchoolCareerStore {
             feedbackCue = nextCue
             feedbackTrigger += 1
             loadState = .ready
+            if let createdBondMemory {
+                let relationshipTarget = switch createdBondMemory.eventCategory {
+                case "coach", "catcher", "rival": createdBondMemory.eventCategory
+                default: "none"
+                }
+                GameAnalytics.log(.bondMemoryCreated, [
+                    "kind": createdBondMemory.kind.rawValue,
+                    "event_id": createdBondMemory.eventID,
+                    "response_id": createdBondMemory.response.rawValue,
+                    "relationship_target": relationshipTarget,
+                    "life_number": updated.snapshot.lifeNumber,
+                ])
+            }
             // 국면 진입과 업적은 durable save가 성공한 뒤에만 외부로 보낸다.
             if updated.snapshot.phase != before.phase, !isChallengeRun {
                 GameAnalytics.log(.phaseEntered, [

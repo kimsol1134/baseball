@@ -2897,7 +2897,11 @@ private struct LegacyCard: View {
             }
             ChronicleCard(entries: career.chronicle)
             if !career.bondMemories.isEmpty {
-                PlayerBondMemoryList(memories: career.bondMemories)
+                PlayerBondMemoryList(
+                    memories: career.bondMemories,
+                    surface: .conclusion,
+                    lifeNumber: state.lifeNumber
+                )
             }
             if let draft = state.draftResult {
                 let signature = draft.team.map { HighSchoolConclusionPresentation.localizedTeamName($0, resolver: copyResolver) }

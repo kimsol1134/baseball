@@ -78,6 +78,13 @@ enum PlayerHeartlineBranch: String, Equatable {
     case completed
 }
 
+enum PlayerBondMemorySurface: String {
+    case heartline
+    case conclusion
+    case nextLife = "next_life"
+    case archive
+}
+
 struct PlayerHeartlinePresentation: Equatable {
     let branch: PlayerHeartlineBranch
     let line: PlayerHeartline
@@ -94,6 +101,19 @@ struct PlayerLegacy: Codable, Equatable {
 }
 
 enum PlayerBondStory {
+    static func preferredBondMemoryKind(
+        for branch: PlayerHeartlineBranch
+    ) -> HighSchoolCareerStore.PlayerBondMemory.Kind {
+        switch branch {
+        case .injuryRecovery, .armWarning, .fatigueWarning:
+            return .healthChoice
+        case .chapterReview, .awakening:
+            return .personality
+        case .draft, .legacy, .completed:
+            return .trustMilestone
+        }
+    }
+
     /// 상시 상태 카드가 아니라, 선수가 실제로 말을 걸 만한 순간만 고른다.
     /// 첫 공식 경기 전에는 플레이 방법을 익히는 주 행동이 우선이므로 항상 숨긴다.
     static func heartlinePresentation(
@@ -375,7 +395,15 @@ struct PlayerHeartCard: View {
                     }
                 }
                 if !bondMemories.isEmpty {
-                    PlayerBondMemoryList(memories: bondMemories, limit: 1)
+                    PlayerBondMemoryList(
+                        memories: bondMemories,
+                        surface: .heartline,
+                        lifeNumber: state.lifeNumber,
+                        preferredKind: PlayerBondStory.preferredBondMemoryKind(
+                            for: presentation.branch
+                        ),
+                        limit: 1
+                    )
                 }
             }
             .accessibilityElement(children: .ignore)
@@ -455,12 +483,34 @@ struct PlayerLegacyQuote: View {
 /// letter. Event and choice labels are resolved from stable IDs in the active language.
 struct PlayerBondMemoryList: View {
     let memories: [HighSchoolCareerStore.PlayerBondMemory]
+    let surface: PlayerBondMemorySurface
+    let lifeNumber: Int
+    var preferredKind: HighSchoolCareerStore.PlayerBondMemory.Kind? = nil
     var limit: Int? = nil
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
     private var visibleMemories: [HighSchoolCareerStore.PlayerBondMemory] {
-        let ordered = memories.sorted { $0.chapterNumber > $1.chapterNumber }
+        Self.displayMemories(memories, preferredKind: preferredKind, limit: limit)
+    }
+
+    static func displayMemories(
+        _ memories: [HighSchoolCareerStore.PlayerBondMemory],
+        preferredKind: HighSchoolCareerStore.PlayerBondMemory.Kind? = nil,
+        limit: Int? = nil
+    ) -> [HighSchoolCareerStore.PlayerBondMemory] {
+        var ordered = HighSchoolCareerStore.normalizedBondMemories(memories)
+            .filter {
+                RelationshipPresentationCatalog.eventDescriptor(
+                    eventID: $0.eventID,
+                    categoryID: $0.eventCategory
+                ).isKnownEvent
+            }
+            .sorted { $0.chapterNumber > $1.chapterNumber }
+        if let preferredKind,
+           let preferredIndex = ordered.firstIndex(where: { $0.kind == preferredKind }) {
+            ordered.insert(ordered.remove(at: preferredIndex), at: 0)
+        }
         return limit.map { Array(ordered.prefix($0)) } ?? ordered
     }
 
@@ -477,9 +527,7 @@ struct PlayerBondMemoryList: View {
             eventID: memory.eventID,
             categoryID: memory.eventCategory
         )
-        return descriptor.isKnownEvent
-            ? copyResolver.resolve(descriptor.titleToken)
-            : memory.eventTitle
+        return copyResolver.resolve(descriptor.titleToken)
     }
 
     private func choiceTitle(_ memory: HighSchoolCareerStore.PlayerBondMemory) -> String {
@@ -492,7 +540,7 @@ struct PlayerBondMemoryList: View {
         let descriptor = RelationshipPresentationCatalog.cardDescriptor(for: event)
         let title = descriptor.choiceDescriptors.first { $0.response == memory.response }
             .map { copyResolver.resolve($0.titleToken) }
-            ?? memory.response.rawValue
+            ?? copyResolver.resolve(.relationshipFallbackChoiceTitle(response: memory.response))
         guard let subjectName = memory.subjectName, !subjectName.isEmpty else { return title }
         return "\(subjectName) · \(title)"
     }
@@ -523,6 +571,17 @@ struct PlayerBondMemoryList: View {
                         ))
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textTertiary)
+                    }
+                    .onAppear {
+                        GameAnalytics.logOnce(
+                            .bondMemoryRecalled,
+                            scope: "bond-memory:\(memory.id):\(surface.rawValue):\(lifeNumber)",
+                            properties: [
+                                "kind": memory.kind.rawValue,
+                                "surface": surface.rawValue,
+                                "life_number": lifeNumber,
+                            ]
+                        )
                     }
                 }
             }
@@ -617,7 +676,12 @@ struct PreviousPlayerLetterCard: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if let memories = record.bondMemories, !memories.isEmpty {
-                        PlayerBondMemoryList(memories: memories, limit: 1)
+                        PlayerBondMemoryList(
+                            memories: memories,
+                            surface: .nextLife,
+                            lifeNumber: record.lifeNumber,
+                            limit: 1
+                        )
                     }
                 }
             }

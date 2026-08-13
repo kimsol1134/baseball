@@ -382,7 +382,11 @@ private struct LifeArchiveRow: View {
                     .accessibilityIdentifier("archive.playerLegacy.\(record.lifeNumber)")
                     .onAppear(perform: logLegacySeen)
                     if let memories = record.bondMemories, !memories.isEmpty {
-                        PlayerBondMemoryList(memories: memories)
+                        PlayerBondMemoryList(
+                            memories: memories,
+                            surface: .archive,
+                            lifeNumber: record.lifeNumber
+                        )
                     }
                     if let chronicle = record.chronicle, !chronicle.isEmpty {
                         ForEach(chronicle, id: \.self) { line in

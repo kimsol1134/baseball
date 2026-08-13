@@ -155,6 +155,10 @@ enum GameAnalytics {
         case playerLegacySeen = "player_legacy_seen"
         /// 선수가 실제 중요한 순간에 건넨 속마음 카드가 보인 시점.
         case playerHeartlineSeen = "player_heartline_seen"
+        /// 성격·건강·관계의 결정적 선택이 durable save 뒤 선수의 기억으로 남은 시점.
+        case bondMemoryCreated = "bond_memory_created"
+        /// 저장된 유대 기억이 진행·작별·편지·아카이브에서 실제로 다시 보인 시점.
+        case bondMemoryRecalled = "bond_memory_recalled"
         /// 3년 돌아보기에서 다음 선수로 넘어가는 주 행동을 누른 시점.
         case recapContinueTapped = "recap_continue_tapped"
         /// 한 선수의 성장·경기 기록으로 합성된 대표 유산 후보가 실제로 보인 시점.

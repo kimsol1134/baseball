@@ -240,6 +240,103 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertEqual(record.bondMemories, [memory])
     }
 
+    func testBondMemoriesKeepOnlyTheFirstMomentOfEachKindAndNeverExceedThree() {
+        func memory(
+            _ kind: HighSchoolCareerStore.PlayerBondMemory.Kind,
+            chapter: Int
+        ) -> HighSchoolCareerStore.PlayerBondMemory {
+            HighSchoolCareerStore.PlayerBondMemory(
+                kind: kind,
+                eventID: "event-\(chapter)",
+                eventCategory: kind == .healthChoice ? "health" : "catcher",
+                eventTitle: "기억 \(chapter)",
+                response: .listen,
+                subjectName: "한결",
+                chapterNumber: chapter,
+                trustBefore: 60,
+                trustAfter: 72
+            )
+        }
+
+        let personality = memory(.personality, chapter: 1)
+        let duplicatePersonality = memory(.personality, chapter: 2)
+        let health = memory(.healthChoice, chapter: 3)
+        let trust = memory(.trustMilestone, chapter: 4)
+
+        XCTAssertEqual(
+            HighSchoolCareerStore.normalizedBondMemories([
+                personality, duplicatePersonality, health, trust,
+            ]),
+            [personality, health, trust]
+        )
+        XCTAssertEqual(
+            HighSchoolCareerStore.appendingBondMemory(
+                duplicatePersonality,
+                to: [personality, health, trust]
+            ),
+            [personality, health, trust]
+        )
+    }
+
+    func testHeartlineRecallsTheMemoryMatchingItsEmotionalMoment() {
+        XCTAssertEqual(
+            PlayerBondStory.preferredBondMemoryKind(for: .armWarning),
+            .healthChoice
+        )
+        XCTAssertEqual(
+            PlayerBondStory.preferredBondMemoryKind(for: .chapterReview),
+            .personality
+        )
+        XCTAssertEqual(
+            PlayerBondStory.preferredBondMemoryKind(for: .draft),
+            .trustMilestone
+        )
+    }
+
+    func testBondMemoryDisplayPrefersMeaningfulKnownEventAndHidesRawUnknownData() {
+        let unknown = HighSchoolCareerStore.PlayerBondMemory(
+            kind: .trustMilestone,
+            eventID: "future-event-from-newer-save",
+            eventCategory: "future-category",
+            eventTitle: "RAW EVENT TITLE",
+            response: .listen,
+            subjectName: "한결",
+            chapterNumber: 9,
+            trustBefore: 68,
+            trustAfter: 74
+        )
+        let personality = HighSchoolCareerStore.PlayerBondMemory(
+            kind: .personality,
+            eventID: "evt-coach-role",
+            eventCategory: "coach",
+            eventTitle: "옛 제목",
+            response: .listen,
+            subjectName: "감독",
+            chapterNumber: 1,
+            trustBefore: 50,
+            trustAfter: 56
+        )
+        let health = HighSchoolCareerStore.PlayerBondMemory(
+            kind: .healthChoice,
+            eventID: "evt-recovery-day",
+            eventCategory: "health",
+            eventTitle: "옛 제목",
+            response: .listen,
+            subjectName: nil,
+            chapterNumber: 2,
+            trustBefore: 56,
+            trustAfter: 56
+        )
+
+        let displayed = PlayerBondMemoryList.displayMemories(
+            [unknown, personality, health],
+            preferredKind: .personality,
+            limit: 1
+        )
+        XCTAssertEqual(displayed, [personality])
+        XCTAssertFalse(displayed.contains { $0.eventTitle == "RAW EVENT TITLE" })
+    }
+
     func testRebirthEchoUsesOnlyFactsThePreviousPlayerActuallyLived() {
         var record = life(
             drafted: false,
