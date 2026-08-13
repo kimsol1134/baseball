@@ -7,6 +7,21 @@ import SimulationCore
 /// 고교 쪽이 오히려 정보가 많다. `ImportantGameScenarioContent`가 이닝·아웃·주자·레버리지·서사를
 /// 이미 갖고 있고 `RivalSnapshot`은 타격 수치까지 들고 있다.
 struct PitchScenario {
+    enum ProMoment: Sendable {
+        case majorDebut
+        case callUpAudition
+        case roleShowdown
+        case recordChase(ahead: Bool)
+        case standingsRace(ahead: Bool)
+        case openingStatement
+    }
+
+    enum PresentationContext: Sendable {
+        case pro(ProMoment)
+        case tutorial
+        case highSchool(scenarioID: String?)
+    }
+
     let id: String
     let pitcher: PitcherSnapshot
     /// 첫 타자가 이 승부의 주인공(라이벌)이고 뒤는 후속 타순이다.
@@ -27,6 +42,9 @@ struct PitchScenario {
     let moundComposure: MoundComposureInput
     let headline: String
     let detail: String
+    /// Ephemeral, language-neutral identity for rendering the two scenario lines. This is not
+    /// persisted and cannot affect a pitch, event hash, or RNG consumption.
+    let presentationContext: PresentationContext
     /// 이닝이 끝나지 않아도 여기서 멈춘다. 볼넷이 이어질 때 세션이 무한히 길어지는 것을 막는다.
     let maximumBatters: Int
     /// 투구 수 상한. 튜토리얼처럼 "배우는 자리"의 길이를 타자 수가 아니라 구 수로
@@ -75,6 +93,7 @@ struct PitchScenario {
             ),
             headline: situation.headline,
             detail: situation.detail,
+            presentationContext: .pro(situation.moment),
             maximumBatters: 4,
             maximumPitches: nil,
             developmentRulesVersion: state.balanceVersion ?? 1
@@ -82,6 +101,7 @@ struct PitchScenario {
     }
 
     private struct ProSituation {
+        let moment: ProMoment
         let inning: Int
         let outs: Int
         let runners: BaserunnerStateSnapshot
@@ -105,21 +125,21 @@ struct PitchScenario {
         let leading = (season + week) % 2 == 0
         switch trigger {
         case .majorDebut:
-            return ProSituation(inning: 6, outs: 0, runners: onSecond, scoreDifferential: 0, leverage: 780, headline: "1군 데뷔 등판", detail: "동점 · 무사 2루")
+            return ProSituation(moment: .majorDebut, inning: 6, outs: 0, runners: onSecond, scoreDifferential: 0, leverage: 780, headline: "1군 데뷔 등판", detail: "동점 · 무사 2루")
         case .callUpAudition:
-            return ProSituation(inning: 7, outs: 0, runners: onSecond, scoreDifferential: -1, leverage: 820, headline: "콜업을 결정할 등판", detail: "한 점 뒤짐 · 무사 2루 — 여기서 끊어야 반격이 산다")
+            return ProSituation(moment: .callUpAudition, inning: 7, outs: 0, runners: onSecond, scoreDifferential: -1, leverage: 820, headline: "콜업을 결정할 등판", detail: "한 점 뒤짐 · 무사 2루 — 여기서 끊어야 반격이 산다")
         case .roleShowdown:
-            return ProSituation(inning: 8, outs: 0, runners: onFirst, scoreDifferential: 1, leverage: 900, headline: "보직을 가를 등판", detail: "한 점 앞섬 · 무사 1루")
+            return ProSituation(moment: .roleShowdown, inning: 8, outs: 0, runners: onFirst, scoreDifferential: 1, leverage: 900, headline: "보직을 가를 등판", detail: "한 점 앞섬 · 무사 1루")
         case .recordChase:
             return leading
-                ? ProSituation(inning: 7, outs: 0, runners: onFirst, scoreDifferential: 2, leverage: 700, headline: "기록이 걸린 등판", detail: "두 점 앞섬 · 무사 1루")
-                : ProSituation(inning: 7, outs: 0, runners: onFirst, scoreDifferential: -2, leverage: 700, headline: "기록이 걸린 등판", detail: "두 점 뒤짐 · 무사 1루 — 점수와 상관없이 기록은 쌓인다")
+                ? ProSituation(moment: .recordChase(ahead: true), inning: 7, outs: 0, runners: onFirst, scoreDifferential: 2, leverage: 700, headline: "기록이 걸린 등판", detail: "두 점 앞섬 · 무사 1루")
+                : ProSituation(moment: .recordChase(ahead: false), inning: 7, outs: 0, runners: onFirst, scoreDifferential: -2, leverage: 700, headline: "기록이 걸린 등판", detail: "두 점 뒤짐 · 무사 1루 — 점수와 상관없이 기록은 쌓인다")
         case .standingsRace:
             return leading
-                ? ProSituation(inning: 9, outs: 0, runners: corners, scoreDifferential: 1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 앞섬 · 무사 1·2루")
-                : ProSituation(inning: 9, outs: 0, runners: corners, scoreDifferential: -1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 뒤짐 · 무사 1·2루 — 더 내주면 역전의 문이 닫힌다")
+                ? ProSituation(moment: .standingsRace(ahead: true), inning: 9, outs: 0, runners: corners, scoreDifferential: 1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 앞섬 · 무사 1·2루")
+                : ProSituation(moment: .standingsRace(ahead: false), inning: 9, outs: 0, runners: corners, scoreDifferential: -1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 뒤짐 · 무사 1·2루 — 더 내주면 역전의 문이 닫힌다")
         case .openingStatement, .none:
-            return ProSituation(inning: 5, outs: 0, runners: onSecond, scoreDifferential: 1, leverage: 720, headline: "시즌 첫 승부처", detail: "한 점 앞섬 · 무사 2루")
+            return ProSituation(moment: .openingStatement, inning: 5, outs: 0, runners: onSecond, scoreDifferential: 1, leverage: 720, headline: "시즌 첫 승부처", detail: "한 점 앞섬 · 무사 2루")
         }
     }
 
@@ -166,6 +186,7 @@ struct PitchScenario {
             ),
             headline: "첫 불펜",
             detail: "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요.",
+            presentationContext: .tutorial,
             // 두 타석 — 3구 스크립트(사인→흔들기→결정구)가 실제로 전달될 최소 길이.
             maximumBatters: 2,
             // 실측에서 첫 불펜이 13구까지 갔다(주석의 "통상 6구 안팎"과 두 배 이상 차이).
@@ -257,6 +278,7 @@ struct PitchScenario {
             ),
             headline: content?.title ?? "고교 공식 경기",
             detail: content?.narrative ?? "이 이닝을 막아야 합니다.",
+            presentationContext: .highSchool(scenarioID: content?.id),
             maximumBatters: maximumBattersOverride ?? highSchoolMaximumBatters(state: state),
             maximumPitches: nil,
             developmentRulesVersion: state.balanceVersion ?? 1

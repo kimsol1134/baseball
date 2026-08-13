@@ -92,7 +92,7 @@ struct PitchDramaView: View {
         }
         .overlay(alignment: .bottomLeading) {
             if let sequenceMoment {
-                Label(sequenceMoment.headline, systemImage: "brain.head.profile")
+                Label(PitchPresentation.sequenceTitle(sequenceMoment.tag, resolver: copyResolver), systemImage: "brain.head.profile")
                     .font(.caption.weight(.heavy))
                     .foregroundStyle(BaseballTheme.information)
                     .padding(.horizontal, 10)
@@ -112,15 +112,33 @@ struct PitchDramaView: View {
     }
 
     private var accessibilityLabel: String {
-        let speed = String(format: "%.1f", Double(execution.velocityTenthsKPH) / 10)
-        var text = "\(PitchCopy.localized(outcome, battedBall: battedBall, resolver: copyResolver)). 시속 \(speed)킬로미터."
-        if let fielding, let name = fielding.fielderName {
-            let distance = Double(fielding.landingDistanceTenthsMeters ?? 0) / 10
-            text += " 타구 \(Int(distance))미터, \(name)."
+        var text = copyResolver.resolve(.dramaAccessibility, arguments: [
+            .userText(PitchCopy.localized(outcome, battedBall: battedBall, resolver: copyResolver)),
+            .userText(GameFormatters.velocity(
+                tenthsKPH: execution.velocityTenthsKPH,
+                language: copyResolver.language
+            )),
+        ])
+        if let fielding {
+            let fielder = PitchPresentation.fielderName(
+                fielding.fielderName,
+                position: fielding.fielderPosition,
+                resolver: copyResolver
+            )
+            text += " " + copyResolver.resolve(.dramaFielding, arguments: [
+                .userText(GameFormatters.distance(
+                    tenthsMeters: fielding.landingDistanceTenthsMeters ?? 0,
+                    language: copyResolver.language
+                )),
+                .userText(fielder),
+            ])
         }
         if let sequenceMoment {
             // VoiceOver 순서는 판정 → 배합 이유다.
-            text += " 수싸움 적중. \(sequenceMoment.headline). \(sequenceMoment.detail)"
+            text += " " + copyResolver.resolve(.dramaSequence, arguments: [
+                .userText(PitchPresentation.sequenceTitle(sequenceMoment.tag, resolver: copyResolver)),
+                .userText(PitchPresentation.sequenceDetail(sequenceMoment.tag, resolver: copyResolver)),
+            ])
         }
         return text
     }
@@ -449,7 +467,12 @@ struct PitchDramaView: View {
         )
 
         // 담당 수비수가 낙하 지점으로 달려온다.
-        if let fielding, let name = fielding.fielderName {
+        if let fielding {
+            let name = PitchPresentation.fielderName(
+                fielding.fielderName,
+                position: fielding.fielderPosition,
+                resolver: copyResolver
+            )
             let start = Self.fielderHome(fielding.fielderPosition)
             let startPoint = point(distance: start.distance, degrees: start.degrees)
             let landingPoint = point(distance: landing, degrees: direction)
@@ -465,7 +488,7 @@ struct PitchDramaView: View {
                 with: .color(BaseballTheme.information)
             )
             if after > 0.55 {
-                let label = Text(name)
+                let label = Text(verbatim: name)
                     .font(.system(size: 13 * scale, weight: .bold))
                     .foregroundStyle(BaseballTheme.information)
                 context.draw(context.resolve(label), at: CGPoint(x: marker.x, y: marker.y - 18 * scale), anchor: .center)
@@ -474,7 +497,10 @@ struct PitchDramaView: View {
 
         // 비거리 숫자. 클립에서 가장 먼저 읽히는 값이다.
         if after > 0.35 {
-            let distanceText = Text("\(Int(landing))m")
+            let distanceText = Text(verbatim: GameFormatters.distance(
+                tenthsMeters: fielding?.landingDistanceTenthsMeters ?? Int(landing * 10),
+                language: copyResolver.language
+            ))
                 .font(.system(size: 26 * scale, weight: .heavy, design: .monospaced))
                 .foregroundStyle(tone)
             context.draw(

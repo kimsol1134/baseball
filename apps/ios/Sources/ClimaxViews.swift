@@ -32,6 +32,7 @@ struct DraftRevealView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     /// 공개 단계. 순서가 곧 긴장의 순서다.
     private enum Stage: Int {
@@ -44,8 +45,6 @@ struct DraftRevealView: View {
     }
 
     @State private var stage: Stage = .waiting
-    /// 전면 화면의 실제 폭. 글자를 여기에 맞춰 접는다.
-    @State private var screenWidth: CGFloat = 320
     @State private var visibleRound = 1
     @State private var stampScale: CGFloat = 1.6
     @State private var stampOpacity: Double = 0
@@ -74,13 +73,19 @@ struct DraftRevealView: View {
 
                 switch stage {
                 case .waiting:
-                    Text("호명을 기다립니다").eyebrowStyle(BaseballTheme.milestone)
+                    Text(copyResolver.resolve(AppCopyKey.conclusionDraftRevealWaiting))
+                        .eyebrowStyle(BaseballTheme.milestone)
+                    // localization-safe: user-input
                     Text(playerName)
                         .font(BaseballType.display)
                         .foregroundStyle(BaseballTheme.textPrimary)
                         .multilineTextAlignment(.center)
                 case .counting:
-                    Text("\(visibleRound)라운드").eyebrowStyle(BaseballTheme.milestone)
+                    Text(copyResolver.resolve(
+                        AppCopyKey.conclusionDraftRevealRound,
+                        arguments: [.integer(visibleRound)]
+                    )).eyebrowStyle(BaseballTheme.milestone)
+                    // localization-safe: symbol
                     Text(visibleRound < finalRound ? "…" : " ")
                         .font(BaseballType.display)
                         .foregroundStyle(BaseballTheme.textTertiary)
@@ -91,20 +96,15 @@ struct DraftRevealView: View {
 
                 Spacer()
             }
-            // **폭을 화면에서 직접 받아 못 박는다.**
-            //
-            // ZStack은 가장 넓은 자식에 맞춰 커지고, `.ignoresSafeArea()`가 그것을 화면 밖까지
-            // 허용한다. 그래서 줄바꿈 없는 한국어 제목 한 줄이 ZStack 자체를 화면보다 넓게
-            // 만들었고, 가운데 정렬된 내용이 좌우로 잘려 나갔다. `maxWidth: .infinity`나
-            // `fixedSize`로는 못 잡는다 — 제안 폭 자체가 없기 때문이다.
-            .frame(width: max(0, screenWidth - BaseballMetrics.gutter * 2))
-        }
-        .background(BaseballTheme.canvas.ignoresSafeArea())
-        .background {
-            GeometryReader { proxy in
-                Color.clear.onAppear { screenWidth = proxy.size.width }
+            // Window-relative width is finite before intrinsic text layout, so long
+            // localized copy wraps without expanding the outer ZStack or its CTA overlay.
+            .containerRelativeFrame(.horizontal) { length, _ in
+                max(0, length - BaseballMetrics.gutter * 2)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .containerRelativeFrame(.horizontal)
+        .background(BaseballTheme.canvas.ignoresSafeArea())
         // 버튼은 아래에 겹쳐 놓는다. 내용 VStack 안에 두고 `ignoresSafeArea`를 함께 걸면
         // 상태 표시줄 뒤로 밀려 올라가 위아래에 두 번 그려진 것처럼 보였고,
         // `safeAreaInset`도 같은 증상을 냈다.
@@ -119,7 +119,11 @@ struct DraftRevealView: View {
                     LifeCardShareButton(record: shareRecord)
                 }
                 PrimaryPill(
-                    title: stage == .revealed ? "계속" : "건너뛰기",
+                    title: copyResolver.resolve(
+                        stage == .revealed
+                            ? AppCopyKey.conclusionDraftRevealContinue
+                            : AppCopyKey.conclusionDraftRevealSkip
+                    ),
                     identifier: "hs.draft.reveal.done",
                     action: {
                         guard stage == .revealed else { return skipToReveal() }
@@ -141,28 +145,38 @@ struct DraftRevealView: View {
     @ViewBuilder private var reveal: some View {
         VStack(spacing: 12) {
             if drafted, let team = result.team {
-                Text("지명").eyebrowStyle(teamAccent)
-                Text(team.name)
+                Text(copyResolver.resolve(AppCopyKey.conclusionDraftRevealDrafted))
+                    .eyebrowStyle(teamAccent)
+                Text(HighSchoolConclusionPresentation.localizedTeamName(team, resolver: copyResolver))
                     .font(.system(.title, design: .default, weight: .heavy))
                     .foregroundStyle(teamAccent)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("\(result.round ?? 0)라운드 전체 \(result.overallPick ?? 0)순위")
+                Text(copyResolver.resolve(
+                    AppCopyKey.conclusionDraftRevealPick,
+                    arguments: [.integer(result.round ?? 0), .integer(result.overallPick ?? 0)]
+                ))
                     .font(BaseballType.scoreboard)
                     .foregroundStyle(BaseballTheme.textPrimary)
                 if let bonus = result.signingBonus {
-                    Text("계약금 \(KoreanCopy.money(won: bonus))")
+                    Text(copyResolver.resolve(
+                        AppCopyKey.conclusionDraftRevealBonus,
+                        arguments: [.userText(copyResolver.language == .korean
+                            ? KoreanCopy.money(won: bonus)
+                            : GameFormatters.krw(bonus, language: copyResolver.language))]
+                    ))
                         .font(.subheadline.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
             } else {
-                Text("전 라운드 종료").eyebrowStyle(BaseballTheme.textTertiary)
-                Text("이름이 불리지 않았습니다")
+                Text(copyResolver.resolve(AppCopyKey.conclusionDraftRevealComplete))
+                    .eyebrowStyle(BaseballTheme.textTertiary)
+                Text(copyResolver.resolve(AppCopyKey.conclusionDraftRevealNotCalled))
                     .font(.title2.bold())
                     .foregroundStyle(BaseballTheme.textPrimary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("3년은 여기서 끝납니다. 새 선수에게 무엇을 남길지 고르게 됩니다.")
+                Text(copyResolver.resolve(AppCopyKey.conclusionDraftRevealUndraftedBody))
                     .font(.subheadline)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .multilineTextAlignment(.center)
@@ -239,6 +253,7 @@ struct RebirthStampView: View {
     let onFinish: @MainActor @Sendable () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.gameCopyResolver) private var copyResolver
     @State private var stampScale: CGFloat = 2.2
     @State private var stampOpacity: Double = 0
 
@@ -249,14 +264,18 @@ struct RebirthStampView: View {
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onFinish)
             VStack(spacing: 10) {
-                Text("다시 태어납니다").eyebrowStyle(BaseballTheme.milestone)
-                Text("\(lifeNumber)번째 선수")
+                Text(copyResolver.resolve(AppCopyKey.conclusionRebirthStampTitle))
+                    .eyebrowStyle(BaseballTheme.milestone)
+                Text(copyResolver.resolve(
+                    AppCopyKey.conclusionRebirthStampLife,
+                    arguments: [.integer(lifeNumber)]
+                ))
                     .font(BaseballType.display)
                     .foregroundStyle(BaseballTheme.textPrimary)
                     .monospacedDigit()
                     .scaleEffect(stampScale)
                     .opacity(stampOpacity)
-                Text("고교 1학년 봄으로 돌아갑니다")
+                Text(copyResolver.resolve(AppCopyKey.conclusionRebirthStampBody))
                     .font(.subheadline)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .opacity(stampOpacity)
@@ -264,7 +283,10 @@ struct RebirthStampView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("hs.rebirth.stamp")
-        .accessibilityLabel("\(lifeNumber)번째 선수. 고교 1학년 봄으로 돌아갑니다.")
+        .accessibilityLabel(copyResolver.resolve(
+            AppCopyKey.conclusionRebirthStampAccessibility,
+            arguments: [.integer(lifeNumber)]
+        ))
         .onAppear {
             Haptics.shared.outcome(success: true)
             GameAudio.shared.play(.milestone)
@@ -328,22 +350,30 @@ struct HighlightStamp: View {
         /// 갱신 순간은 결과와 무관하게 하이라이트다.
         case velocityRecord
 
-        var title: String {
-            switch self {
-            case .homeRun: "홈런"
-            case .inningEndingStrikeout, .strikeoutStreak: "삼진"
-            case .inningShutdown: "위기 차단"
-            case .velocityRecord: "최고 구속"
+        func title(resolver: GameCopyResolver) -> String {
+            let key: LegacyUICopyKey = switch self {
+            case .homeRun: .highlightHomeRunTitle
+            case .inningEndingStrikeout, .strikeoutStreak: .highlightStrikeoutTitle
+            case .inningShutdown: .highlightShutdownTitle
+            case .velocityRecord: .highlightVelocityTitle
             }
+            return resolver.resolve(key)
         }
 
-        var subtitle: String? {
+        func subtitle(resolver: GameCopyResolver) -> String? {
             switch self {
-            case .homeRun(let distance): distance > 0 ? "\(distance)m" : nil
-            case .inningEndingStrikeout: "이닝 종료"
-            case .strikeoutStreak(let count): "\(count)타자 연속"
-            case .inningShutdown: "무실점 이닝 종료"
-            case .velocityRecord: "생애 신기록"
+            case .homeRun(let distance):
+                distance > 0
+                    ? GameFormatters.distance(tenthsMeters: distance * 10, language: resolver.language)
+                    : nil
+            case .inningEndingStrikeout:
+                resolver.resolve(.highlightInningEndingSubtitle)
+            case .strikeoutStreak(let count):
+                resolver.resolve(.highlightStreakSubtitle, arguments: [.integer(count)])
+            case .inningShutdown:
+                resolver.resolve(.highlightShutdownSubtitle)
+            case .velocityRecord:
+                resolver.resolve(.highlightVelocitySubtitle)
             }
         }
 
@@ -362,6 +392,7 @@ struct HighlightStamp: View {
     /// 구속(0.1km/h 단위). 두 장면 모두 이 숫자가 함께 나온다.
     let velocityTenthsKPH: Int
 
+    @Environment(\.gameCopyResolver) private var copyResolver
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var scale: CGFloat = 1.8
     @State private var opacity: Double = 0
@@ -399,19 +430,22 @@ struct HighlightStamp: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            Text(kind.title)
+            Text(verbatim: kind.title(resolver: copyResolver))
                 .font(BaseballType.display)
                 .foregroundStyle(kind.accent)
             HStack(spacing: 8) {
-                if let subtitle = kind.subtitle {
-                    Text(subtitle)
+                if let subtitle = kind.subtitle(resolver: copyResolver) {
+                    Text(verbatim: subtitle)
                         .font(BaseballType.scoreboard)
                         .foregroundStyle(BaseballTheme.textPrimary)
                 }
                 // 인플레이 아웃(위기 차단)에 구속을 병기하면 타구 장면에 투구 수치가
                 // 붙는 셈이다 — 그 스탬프는 부제만으로 말한다(QA 재검증 신규 5).
                 if kind != .inningShutdown {
-                    Text(String(format: "%.1fkm/h", Double(velocityTenthsKPH) / 10))
+                    Text(verbatim: GameFormatters.velocity(
+                        tenthsKPH: velocityTenthsKPH,
+                        language: copyResolver.language
+                    ))
                         .font(BaseballType.scoreboard)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
@@ -461,18 +495,19 @@ struct BloomCelebrationView: View {
     // 만개 아트가 번들에 있으면 축하 카드 배경에 깔린다.
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.gameCopyResolver) private var copyResolver
     @State private var burst: Double = 0
     @State private var scale: CGFloat = 0.7
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("만개").eyebrowStyle(BaseballTheme.milestone)
+            Text(verbatim: copyResolver.resolve(.bloomTitle)).eyebrowStyle(BaseballTheme.milestone)
 
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(ability.label)
+                Text(verbatim: copyResolver.resolve(ability.displayCopyToken))
                     .font(BaseballType.display)
                     .foregroundStyle(BaseballTheme.textPrimary)
-                Text(grade.label)
+                Text(verbatim: copyResolver.resolve(grade.displayCopyToken))
                     .font(BaseballType.heroNumeral)
                     .foregroundStyle(BaseballTheme.actionInk)
                     .padding(.horizontal, 10)
@@ -480,15 +515,22 @@ struct BloomCelebrationView: View {
                     .background(BaseballTheme.action, in: Capsule())
             }
 
-            Text("한계가 \(grade.ceiling)까지 열렸습니다.")
+            Text(
+                verbatim: copyResolver.resolve(
+                    .bloomCeiling,
+                    arguments: [.integer(grade.ceiling)]
+                )
+            )
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(BaseballTheme.milestone)
-            Text(TalentRules.meaning(grade))
+            Text(verbatim: LegacyPresentation.bloomMeaning(grade, resolver: copyResolver))
                 .font(.footnote)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button("확인", action: onDismiss)
+            Button(action: onDismiss) {
+                Text(verbatim: copyResolver.resolve(.bloomDismiss))
+            }
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(BaseballTheme.action)
                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
@@ -516,7 +558,16 @@ struct BloomCelebrationView: View {
         }
         .scaleEffect(scale)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(ability.label) 재능이 만개했습니다. 등급 \(grade.label), 한계 \(grade.ceiling).")
+        .accessibilityLabel(
+            copyResolver.resolve(
+                .bloomAccessibility,
+                arguments: [
+                    .userText(copyResolver.resolve(ability.displayCopyToken)),
+                    .userText(copyResolver.resolve(grade.displayCopyToken)),
+                    .integer(grade.ceiling),
+                ]
+            )
+        )
         .onAppear {
             Haptics.shared.outcome(success: true)
             GameAudio.shared.play(.milestone)

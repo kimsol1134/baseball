@@ -14,6 +14,16 @@ final class PromoCaptureUITests: XCTestCase {
     private let timeout: TimeInterval = 12
     private var startedAt = Date()
 
+    private func launchArguments(_ arguments: [String]) -> [String] {
+        let bundled = Bundle(for: PromoCaptureUITests.self)
+            .object(forInfoDictionaryKey: "BaseballCaptureLanguage") as? String
+        guard bundled == "en"
+                || ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_LANGUAGE"] == "en" else {
+            return arguments
+        }
+        return arguments + ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
@@ -60,7 +70,7 @@ final class PromoCaptureUITests: XCTestCase {
     /// 나쁘게 나오므로 영상에서는 "던지는 방법"을 보여 주는 짧은 컷으로만 쓴다.
     func testGestureForPromoVideo() {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetCareer", "-uiTestPromoCapture"]
+        app.launchArguments = launchArguments(["-uiTestResetCareer", "-uiTestPromoCapture"])
         app.launch()
         startedAt = Date()
 
@@ -73,12 +83,12 @@ final class PromoCaptureUITests: XCTestCase {
         hold(1.0)
         app.buttons["hs.prologue.throw"].tap()
 
-        let pad = app.descendants(matching: .any).matching(identifier: "와인드업").firstMatch
+        let pad = app.descendants(matching: .any).matching(identifier: "pitch.windup").firstMatch
         XCTAssertTrue(pad.waitForExistence(timeout: timeout), "와인드업 패드가 없습니다.")
         hold(2.5)
 
         for index in 0..<2 {
-            let currentPad = app.descendants(matching: .any).matching(identifier: "와인드업").firstMatch
+            let currentPad = app.descendants(matching: .any).matching(identifier: "pitch.windup").firstMatch
             guard currentPad.exists, currentPad.isHittable else { break }
             mark("gesture-press-\(index)")
             currentPad.press(
@@ -104,7 +114,9 @@ final class PromoCaptureUITests: XCTestCase {
     /// 애니메이션 길이에 맞춰 잡는다. 마커가 그대로 편집점이 된다.
     func testWalkthroughForPromoVideo() {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetCareer", "-uiTestAutoRelease", "-uiTestPromoCapture"]
+        app.launchArguments = launchArguments([
+            "-uiTestResetCareer", "-uiTestAutoRelease", "-uiTestPromoCapture",
+        ])
         app.launch()
         startedAt = Date()
         mark("launch")

@@ -9,6 +9,7 @@ struct GrowthCelebrationView: View {
     let onDismiss: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.gameCopyResolver) private var copyResolver
     @State private var appeared = false
 
     private var accent: Color { jackpot ? BaseballTheme.milestone : BaseballTheme.action }
@@ -18,11 +19,13 @@ struct GrowthCelebrationView: View {
             HStack(spacing: 8) {
                 Image(systemName: jackpot ? "sparkles" : "arrow.up.right.circle.fill")
                     .foregroundStyle(accent)
-                Text(jackpot ? "대성공!" : "능력이 올랐습니다")
+                Text(verbatim: copyResolver.resolve(jackpot ? .growthJackpotTitle : .growthTitle))
                     .font(BaseballType.sectionTitle)
                     .foregroundStyle(jackpot ? BaseballTheme.milestone : BaseballTheme.textPrimary)
                 Spacer()
-                Button("닫기", action: onDismiss)
+                Button(action: onDismiss) {
+                    Text(verbatim: copyResolver.resolve(.growthClose))
+                }
                     .font(.subheadline.weight(.semibold))
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
             }
@@ -33,17 +36,23 @@ struct GrowthCelebrationView: View {
             // (QA P2-1). 큰 숫자 + "다음 단계까지"만 남긴다.
             ForEach(gains) { gain in
                 StatTile(
-                    label: gain.label,
+                    label: copyResolver.resolve(gain.ability.displayCopyToken),
                     value: "\(gain.after)",
                     previousValue: "\(gain.before)",
-                    caption: RatingScale.nextStep(gain.after).map {
-                        "다음 단계 \($0.label)까지 \($0.minimum - gain.after)"
+                    caption: RatingScale.nextStep(gain.after).map { step in
+                        copyResolver.resolve(
+                            .growthNextStep,
+                            arguments: [
+                                .integer(step.minimum - gain.after),
+                                .userText(MetaPresentation.ratingMeaning(step, resolver: copyResolver)),
+                            ]
+                        )
                     },
                     tone: accent
                 )
             }
             if jackpot {
-                Text("몸이 완전히 열린 날 — 성장이 두 배로 붙었습니다.")
+                Text(verbatim: copyResolver.resolve(.growthJackpotBody))
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
             }

@@ -10,6 +10,7 @@ struct RecordView: View {
     let highSchool: HighSchoolCareerStore
     let career: MobileCareerStore
     var weekly: WeeklyProgramStore = .shared
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         Group {
@@ -39,7 +40,13 @@ struct RecordView: View {
                             highSchool: highSchool
                         )
                         if let last = highSchool.archive.first {
-                            BaseballCard(title: "\(last.lifeNumber)번째 선수가 남긴 것", tone: .milestone) {
+                            BaseballCard(
+                                title: copyResolver.resolve(
+                                    .archivedPlayer,
+                                    arguments: [.integer(last.lifeNumber)]
+                                ),
+                                tone: .milestone
+                            ) {
                                 VStack(alignment: .leading, spacing: 10) {
                                     LifeCardPreview(record: last)
                                     LifeCardShareButton(record: last)
@@ -63,10 +70,10 @@ struct RecordView: View {
                     .padding(BaseballMetrics.gutter)
                 }
             } else {
-                ContentUnavailableView("기록 없음", systemImage: "chart.bar")
+                ContentUnavailableView(copyResolver.resolve(.empty), systemImage: "chart.bar")
             }
         }
-        .navigationTitle("기록")
+        .navigationTitle(copyResolver.resolve(.navigation))
         .navigationBarTitleDisplayMode(.inline)
         .background(BaseballTheme.canvas)
     }
@@ -82,15 +89,12 @@ private struct HighSchoolRecordBoard: View {
     var highSchoolPersonality: Personality?
     let weekly: WeeklyProgramStore
     let highSchool: HighSchoolCareerStore
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     private var lines: [ProGameLine] { state.seasonLog ?? [] }
 
     /// 직접 던진 이닝만 따로 센다. 자동 경기까지 합치면 "내가 만든 기록"이 묻힌다.
     private var pitchedOuts: Int { lines.filter(\.played).reduce(0) { $0 + $1.outs } }
-
-    private static func innings(_ outs: Int) -> String {
-        "\(outs / 3)\(outs % 3 == 0 ? "" : ".\(outs % 3)")"
-    }
 
     var body: some View {
         ScrollView {
@@ -99,57 +103,90 @@ private struct HighSchoolRecordBoard: View {
                     store: weekly,
                     highSchool: highSchool
                 )
-                Text("\(state.chapter.title) · \(state.school?.name ?? "학교 미정")")
+                Text(copyResolver.resolve(
+                    .highSchoolHeader,
+                    arguments: [
+                        .userText(HighSchoolPresentation.localizedChapterTitle(
+                            state.chapter,
+                            resolver: copyResolver
+                        )),
+                        .userText(localizedSchoolName),
+                    ]
+                ))
                     .eyebrowStyle(BaseballTheme.action)
 
                 HStack(spacing: 10) {
-                    Metric(title: "등판", value: "\(state.performance.importantGamesCompleted)")
-                    Metric(title: "던진 이닝", value: Self.innings(pitchedOuts))
-                    Metric(title: "투구 수", value: "\(state.performance.pitches)")
+                    Metric(title: copyResolver.resolve(.appearances), value: "\(state.performance.importantGamesCompleted)")
+                    Metric(
+                        title: copyResolver.resolve(.pitchedInnings),
+                        value: GameFormatters.innings(outs: pitchedOuts, language: copyResolver.language)
+                    )
+                    Metric(title: copyResolver.resolve(.pitches), value: "\(state.performance.pitches)")
                 }
                 HStack(spacing: 10) {
-                    Metric(title: "탈삼진", value: "\(state.performance.strikeouts)", tone: .positive)
-                    Metric(title: "볼넷", value: "\(state.performance.walks)", tone: .warning)
-                    Metric(title: "실점", value: "\(state.performance.runsAllowed)")
+                    Metric(title: copyResolver.resolve(.strikeouts), value: "\(state.performance.strikeouts)", tone: .positive)
+                    Metric(title: copyResolver.resolve(.walks), value: "\(state.performance.walks)", tone: .warning)
+                    Metric(title: copyResolver.resolve(.runs), value: "\(state.performance.runsAllowed)")
                     // 팬 관심 — 호투가 쌓아 온 시선. 어디에도 안 보이면 죽은 숫자다.
-                    Metric(title: "팬 관심", value: "\(state.fanInterest)")
+                    Metric(title: copyResolver.resolve(.fanInterest), value: "\(state.fanInterest)")
                 }
 
                 ProspectRankingCard(state: state)
 
                 if let personality = highSchoolPersonality {
-                    BaseballCard(title: "스카우트 노트 — 기질") {
+                    BaseballCard(title: copyResolver.resolve(.scoutTemperament)) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("'\(personality.title)'")
+                            Text(copyResolver.resolve(
+                                .personalityTitle,
+                                arguments: [.userText(HighSchoolConclusionPresentation.localizedPersonalityTitle(
+                                    personality,
+                                    resolver: copyResolver
+                                ))]
+                            ))
                                 .font(.subheadline.weight(.bold))
                                 .foregroundStyle(BaseballTheme.milestone)
-                            Text(personality.scoutLine)
+                            Text(HighSchoolConclusionPresentation.localizedPersonalityScoutLine(
+                                personality,
+                                resolver: copyResolver
+                            ))
                                 .font(.footnote)
                                 .foregroundStyle(BaseballTheme.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
-                            Text("기질 특성 『\(personality.trait.title)』 — \(personality.trait.activationLine). 발동하면 승부 화면에 표시됩니다.")
+                            Text(copyResolver.resolve(
+                                .personalityTrait,
+                                arguments: [
+                                    .userText(HighSchoolPresentation.localizedPersonalityTraitTitle(
+                                        personality.trait,
+                                        resolver: copyResolver
+                                    )),
+                                    .userText(HighSchoolPresentation.localizedPersonalityTraitActivation(
+                                        personality.trait,
+                                        resolver: copyResolver
+                                    )),
+                                ]
+                            ))
                                 .font(.caption)
                                 .foregroundStyle(BaseballTheme.textSecondary)
-                            Text("성격은 선택이 만듭니다. 경기 성적은 성격을 바꾸지 못합니다.")
+                            Text(copyResolver.resolve(.personalityRule))
                                 .font(.caption2)
                                 .foregroundStyle(BaseballTheme.textTertiary)
                         }
                     }
                 }
 
-                BaseballCard(title: "현재 능력") {
+                BaseballCard(title: copyResolver.resolve(.currentAbility)) {
                     VStack(alignment: .leading, spacing: 10) {
-                        AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
-                        AbilityGaugeView(label: "제구", value: state.pitcher.command)
-                        AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
-                        AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
+                        AbilityGaugeView(label: copyResolver.resolve(.stuff), value: state.pitcher.stuff)
+                        AbilityGaugeView(label: copyResolver.resolve(.command), value: state.pitcher.command)
+                        AbilityGaugeView(label: copyResolver.resolve(.movement), value: state.pitcher.movement)
+                        AbilityGaugeView(label: copyResolver.resolve(.stamina), value: state.pitcher.stamina)
                     }
                 }
 
                 if lines.isEmpty, state.performance.importantGamesCompleted == 0 {
                     // 0과 대시 12칸의 벽은 "내가 이해 못 하는 빈 표"다(QA P1-13).
-                    BaseballCard(title: "기록") {
-                        Text("첫 등판을 던지면 여기에 쌓입니다. 탈삼진·볼넷·실점부터 WHIP·FIP 같은 세부 지표까지, 던진 만큼 정확해집니다.")
+                    BaseballCard(title: copyResolver.resolve(.statsEmptyTitle)) {
+                        Text(copyResolver.resolve(.statsEmptyBody))
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -158,7 +195,7 @@ private struct HighSchoolRecordBoard: View {
                 AdvancedStatsCard(
                     // 회차 카드·아카이브의 "탈삼진"은 직접 등판 기준이라, 기준을 안 적으면
                     // 같은 회차에 두 개의 탈삼진이 존재하게 된다(QA P1-5).
-                    title: "고교 통산 지표 · 팀 경기 포함",
+                    title: copyResolver.resolve(.highSchoolMetrics),
                     outs: lines.reduce(0) { $0 + $1.outs },
                     hits: lines.reduce(0) { $0 + ($1.hits ?? 0) },
                     walks: lines.reduce(0) { $0 + $1.walks },
@@ -170,21 +207,27 @@ private struct HighSchoolRecordBoard: View {
                 }
 
                 if lines.isEmpty {
-                    BaseballCard(title: "경기 기록") {
-                        Text("아직 치른 경기가 없습니다. 첫 고교 공식 경기를 던지면 여기에 쌓입니다.")
+                    BaseballCard(title: copyResolver.resolve(.gameRecord)) {
+                        Text(copyResolver.resolve(.gameRecordEmpty))
                             .font(.subheadline)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 } else {
-                    GameLogSection(title: "고교 경기", lines: lines)
+                    GameLogSection(title: copyResolver.resolve(.highSchoolGames), lines: lines)
                 }
 
                 if !state.selectedAwakenings.isEmpty {
-                    BaseballCard(title: "각성", tone: .milestone) {
+                    BaseballCard(title: copyResolver.resolve(.awakenings), tone: .milestone) {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(state.selectedAwakenings, id: \.self) { awakening in
-                                Label(HighSchoolPresentation.awakening(awakening).title, systemImage: "sparkles")
+                                Label(
+                                    HighSchoolPresentation.localizedAwakeningTitle(
+                                        awakening,
+                                        resolver: copyResolver
+                                    ),
+                                    systemImage: "sparkles"
+                                )
                                     .font(.subheadline)
                                     .foregroundStyle(BaseballTheme.milestone)
                             }
@@ -194,13 +237,16 @@ private struct HighSchoolRecordBoard: View {
 
                 if !archive.isEmpty { LifeArchiveSection(records: archive) }
 
-                BaseballCard(title: "최근 소식") {
+                BaseballCard(title: copyResolver.resolve(.latestNews)) {
                     if state.news.isEmpty {
-                        Text("아직 소식이 없습니다.").font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                        Text(copyResolver.resolve(.noNews)).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(Array(state.news.prefix(8).enumerated()), id: \.offset) { _, item in
-                                Label(item, systemImage: "star.circle")
+                                Label(
+                                    localizedNews(item),
+                                    systemImage: "star.circle"
+                                )
                                     .font(.subheadline)
                                     .foregroundStyle(BaseballTheme.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -213,6 +259,20 @@ private struct HighSchoolRecordBoard: View {
         }
         .background(BaseballTheme.canvas)
     }
+
+    private var localizedSchoolName: String {
+        guard let school = state.school else { return GameCopyResolver.unavailableText }
+        return HighSchoolPresentation.localizedSchoolName(
+            school,
+            rawRegion: state.identity.region,
+            resolver: copyResolver
+        )
+    }
+
+    private func localizedNews(_ raw: String) -> String {
+        guard copyResolver.language == .english else { return raw }
+        return HighSchoolConclusionPresentation.localizedChronicleText(raw, resolver: copyResolver)
+    }
 }
 
 private struct RecordBoard: View {
@@ -220,12 +280,9 @@ private struct RecordBoard: View {
     let archive: [HighSchoolCareerStore.LifeRecord]
     let weekly: WeeklyProgramStore
     let highSchool: HighSchoolCareerStore
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     /// 아웃 카운트를 "이닝.아웃" 표기로 바꾼다. 야구 기록지와 같은 읽기 방식이다.
-    private static func innings(_ outs: Int) -> String {
-        "\(outs / 3)\(outs % 3 == 0 ? "" : ".\(outs % 3)")"
-    }
-
     /// 새 저장은 시즌 합계를 쓰고, 도입 전 저장은 등판 목록으로 복구한다.
     private var seasonHits: Int {
         max(state.currentStats.hits, (state.gameLines ?? []).reduce(0) { $0 + ($1.hits ?? 0) })
@@ -254,11 +311,6 @@ private struct RecordBoard: View {
     }
 
     /// 9이닝당 실점. 코어가 자책점을 따로 세지 않으므로 평균자책이 아니라 실점으로 적는다.
-    private static func runsPerNine(_ stats: ProSeasonStats) -> String {
-        guard stats.inningsOuts > 0 else { return "-" }
-        return String(format: "%.2f", Double(stats.runsAllowed) * 27 / Double(stats.inningsOuts))
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
@@ -270,15 +322,25 @@ private struct RecordBoard: View {
                     ProDecisionHistoryCard(decisions: decisions)
                 }
                 HStack(spacing: 10) {
-                    Metric(title: "경기", value: "\(state.currentStats.games)")
-                    Metric(title: "이닝", value: Self.innings(state.currentStats.inningsOuts))
-                    Metric(title: "9이닝당 실점", value: Self.runsPerNine(state.currentStats))
+                    Metric(title: copyResolver.resolve(.totalsGames), value: "\(state.currentStats.games)")
+                    Metric(
+                        title: copyResolver.resolve(.totalsInnings),
+                        value: GameFormatters.innings(outs: state.currentStats.inningsOuts, language: copyResolver.language)
+                    )
+                    Metric(
+                        title: copyResolver.resolve(.totalsRA9),
+                        value: GameFormatters.ra9(
+                            runsAllowed: state.currentStats.runsAllowed,
+                            outs: state.currentStats.inningsOuts,
+                            language: copyResolver.language
+                        )
+                    )
                 }
                 HStack(spacing: 10) {
-                    Metric(title: "탈삼진", value: "\(state.currentStats.strikeouts)", tone: .positive)
-                    Metric(title: "볼넷", value: "\(state.currentStats.walks)", tone: .warning)
+                    Metric(title: copyResolver.resolve(.totalsStrikeouts), value: "\(state.currentStats.strikeouts)", tone: .positive)
+                    Metric(title: copyResolver.resolve(.walks), value: "\(state.currentStats.walks)", tone: .warning)
                     Metric(
-                        title: "승-패-세이브",
+                        title: copyResolver.resolve(.totalsRecord),
                         value: GameLineFormat.record(
                             wins: state.currentStats.wins,
                             losses: state.currentStats.losses,
@@ -288,20 +350,23 @@ private struct RecordBoard: View {
                 }
 
                 let identity = PitcherBuildRules.identity(for: state.pitcher)
-                BaseballCard(title: "현재 능력 · \(identity.label)") {
+                BaseballCard(title: copyResolver.resolve(
+                    .currentAbilityBuild,
+                    arguments: [.userText(ProCareerPresentation.buildLabel(identity, resolver: copyResolver))]
+                )) {
                     VStack(alignment: .leading, spacing: 10) {
-                        AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
-                        AbilityGaugeView(label: "제구", value: state.pitcher.command)
-                        AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
-                        AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
-                        Text(identity.strength)
+                        AbilityGaugeView(label: copyResolver.resolve(.stuff), value: state.pitcher.stuff)
+                        AbilityGaugeView(label: copyResolver.resolve(.command), value: state.pitcher.command)
+                        AbilityGaugeView(label: copyResolver.resolve(.movement), value: state.pitcher.movement)
+                        AbilityGaugeView(label: copyResolver.resolve(.stamina), value: state.pitcher.stamina)
+                        Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver))
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(BaseballTheme.positive)
                     }
                 }
 
                 AdvancedStatsCard(
-                    title: "\(state.season)시즌 지표",
+                    title: copyResolver.resolve(.seasonMetrics, arguments: [.integer(state.season)]),
                     outs: state.currentStats.inningsOuts,
                     hits: seasonHits,
                     walks: state.currentStats.walks,
@@ -323,21 +388,36 @@ private struct RecordBoard: View {
                 )
 
                 if let lines = state.gameLines, !lines.isEmpty {
-                    GameLogSection(title: "이번 시즌 등판", lines: lines)
+                    GameLogSection(title: copyResolver.resolve(.seasonOutings), lines: lines)
                 }
 
                 if !state.careerStats.isEmpty {
-                    BaseballCard(title: "통산 시즌") {
+                    BaseballCard(title: copyResolver.resolve(.careerSeasons)) {
                         VStack(spacing: 6) {
                             ForEach(state.careerStats, id: \.season) { season in
                                 HStack {
-                                    Text("\(season.season)시즌").font(.subheadline.weight(.semibold))
+                                    Text(copyResolver.resolve(.seasonLabel, arguments: [.integer(season.season)]))
+                                        .font(.subheadline.weight(.semibold))
                                     Spacer()
-                                    Text(
-                                        "\(season.games)G · \(Self.innings(season.inningsOuts))이닝 · "
-                                            + GameLineFormat.record(wins: season.wins, losses: season.losses, saves: season.saves)
-                                            + " · " + GameLineFormat.runsPerNine(outs: season.inningsOuts, runs: season.runsAllowed)
-                                    )
+                                    Text(copyResolver.resolve(
+                                        .seasonLine,
+                                        arguments: [
+                                            .integer(season.games),
+                                            .userText(GameFormatters.innings(
+                                                outs: season.inningsOuts,
+                                                language: copyResolver.language
+                                            )),
+                                            .userText(GameLineFormat.record(
+                                                wins: season.wins,
+                                                losses: season.losses,
+                                                saves: season.saves
+                                            )),
+                                            .userText(GameLineFormat.runsPerNine(
+                                                outs: season.inningsOuts,
+                                                runs: season.runsAllowed
+                                            )),
+                                        ]
+                                    ))
                                         .font(.subheadline.monospacedDigit())
                                         .foregroundStyle(BaseballTheme.textSecondary)
                                 }
@@ -347,25 +427,32 @@ private struct RecordBoard: View {
                     }
                 }
 
-                BaseballCard(title: "수상", tone: state.awards.isEmpty ? .standard : .milestone) {
+                BaseballCard(title: copyResolver.resolve(.awards), tone: state.awards.isEmpty ? .standard : .milestone) {
                     if state.awards.isEmpty {
-                        Text("아직 수상 기록이 없습니다.").font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                        Text(copyResolver.resolve(.noAwards)).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(state.awards, id: \.self) { award in
-                                Label(award, systemImage: "trophy.fill").foregroundStyle(BaseballTheme.milestone)
+                                Label(
+                                    ProCareerPresentation.award(award, resolver: copyResolver),
+                                    systemImage: "trophy.fill"
+                                )
+                                .foregroundStyle(BaseballTheme.milestone)
                             }
                         }
                     }
                 }
 
-                BaseballCard(title: "주요 기록") {
+                BaseballCard(title: copyResolver.resolve(.milestones)) {
                     if state.milestones.isEmpty {
-                        Text("아직 주요 기록이 없습니다.").font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                        Text(copyResolver.resolve(.noMilestones)).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(Array(state.milestones.reversed().enumerated()), id: \.offset) { _, milestone in
-                                Label(milestone, systemImage: "star.circle")
+                                Label(
+                                    ProCareerPresentation.milestone(milestone, resolver: copyResolver),
+                                    systemImage: "star.circle"
+                                )
                                     .font(.subheadline)
                                     .foregroundStyle(BaseballTheme.textSecondary)
                             }
@@ -376,7 +463,7 @@ private struct RecordBoard: View {
                 if !archive.isEmpty { LifeArchiveSection(records: archive) }
 
                 if let score = state.hallOfFameScore {
-                    BaseballCard(title: "명예의 전당 점수", tone: .milestone) {
+                    BaseballCard(title: copyResolver.resolve(.hallOfFame), tone: .milestone) {
                         Text("\(score)").font(.title2.bold().monospacedDigit())
                     }
                 }
@@ -390,33 +477,48 @@ private struct RecordBoard: View {
 /// iPhone에서도 시즌 선택이 한 번 쓰고 사라지지 않도록 기록 탭에 남기는 압축 기록.
 struct ProDecisionHistoryCard: View {
     let decisions: [ProDecisionRecord]
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
-        BaseballCard(title: "시즌 선택 기록", tone: .milestone) {
+        BaseballCard(title: copyResolver.resolve(.decisionHistory), tone: .milestone) {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(decisions.suffix(7).reversed())) { decision in
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("\(decision.season)시즌 · \(decision.week)주차")
+                        Text(copyResolver.resolve(
+                            .decisionDate,
+                            arguments: [.integer(decision.season), .integer(decision.week)]
+                        ))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textTertiary)
-                        Text(decision.choiceTitle)
+                        Text(ProCareerPresentation.decisionRecordTitle(decision, resolver: copyResolver))
                             .font(.subheadline.weight(.bold))
-                        Text(decision.effect.summary)
+                        Text(ProCareerPresentation.effect(decision.effect, resolver: copyResolver))
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel(Self.accessibilityLabel(for: decision))
+                    .accessibilityLabel(Self.accessibilityLabel(for: decision, resolver: copyResolver))
                 }
             }
         }
         .accessibilityIdentifier("record.proDecisionHistory")
     }
 
-    static func accessibilityLabel(for decision: ProDecisionRecord) -> String {
-        "\(decision.season)시즌 \(decision.week)주차, \(decision.choiceTitle), 효과: \(decision.effect.summary)"
+    static func accessibilityLabel(
+        for decision: ProDecisionRecord,
+        resolver: GameCopyResolver = GameCopyResolver(language: .korean, policy: .releaseSafe)
+    ) -> String {
+        resolver.resolve(
+            RecordUICopyKey.decisionAccessibility,
+            arguments: [
+                .integer(decision.season),
+                .integer(decision.week),
+                .userText(ProCareerPresentation.decisionRecordTitle(decision, resolver: resolver)),
+                .userText(ProCareerPresentation.effect(decision.effect, resolver: resolver)),
+            ]
+        )
     }
 }
 
@@ -431,6 +533,7 @@ private struct GameLogSection: View {
 
     /// 구원이면 한 시즌에 70등판이 넘는다. 처음부터 다 펼치면 화면이 목록에 잡아먹힌다.
     @State private var showsAll = false
+    @Environment(\.gameCopyResolver) private var copyResolver
     private static let collapsedCount = 20
 
     private var visible: [ProGameLine] {
@@ -450,7 +553,10 @@ private struct GameLogSection: View {
                     }
                 }
                 if lines.count > Self.collapsedCount {
-                    Button(showsAll ? "최근 \(Self.collapsedCount)경기만 보기" : "\(lines.count)경기 전체 보기") {
+                    Button(copyResolver.resolve(
+                        showsAll ? .showRecent : .showAll,
+                        arguments: [.integer(showsAll ? Self.collapsedCount : lines.count)]
+                    )) {
                         showsAll.toggle()
                     }
                     .font(.footnote.weight(.semibold))
@@ -465,39 +571,42 @@ private struct GameLogSection: View {
 
 private struct GameLogRow: View {
     let line: ProGameLine
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             // 직접 던진 경기는 이 화면에서 유일한 강조다. 자동으로 지나간 경기와 섞이면
             // "내가 만든 성적"이라는 감각이 사라진다.
             if line.played {
-                Text("직접 등판").eyebrowStyle(BaseballTheme.action)
+                Text(copyResolver.resolve(.directOuting)).eyebrowStyle(BaseballTheme.action)
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("\(line.week)주차")
+                Text(copyResolver.resolve(.week, arguments: [.integer(line.week)]))
                     .font(.footnote.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
-                Text(GameLineFormat.role(line))
+                Text(ProCareerPresentation.gameRole(line, resolver: copyResolver))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .foregroundStyle(BaseballTheme.textPrimary)
                 Spacer()
+                // localization-safe: numeric
                 Text(GameLineFormat.score(line))
                     .font(.subheadline.weight(.bold).monospacedDigit())
                     .foregroundStyle(BaseballTheme.textSecondary)
-                if let decision = GameLineFormat.decisionLabel(line.decision) {
+                if let decision = ProCareerPresentation.gameDecision(line.decision, resolver: copyResolver) {
+                    // localization-safe: resolved-copy
                     Text(decision)
                         .font(.footnote.weight(.heavy))
                         .foregroundStyle(GameLineFormat.decisionTone(line.decision))
                 }
             }
-            Text(GameLineFormat.pitchingLine(line))
+            Text(ProCareerPresentation.gameSummary(line, resolver: copyResolver))
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(GameLineFormat.accessibilityLabel(line))
+        .accessibilityLabel(ProCareerPresentation.gameAccessibility(line, resolver: copyResolver))
     }
 }
 
@@ -597,13 +706,15 @@ private struct ProspectRankingCard: View {
 /// 업적으로 가는 문. 도감·수집은 환생 게임의 리텐션 장치인데 설정 탭의 토글
 /// 아래 묻혀 있었다(QA P2-10) — 기록을 보는 자리가 곧 수집을 확인하는 자리다.
 struct AchievementsLinkCard: View {
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     var body: some View {
         NavigationLink {
             AchievementsView(store: .shared)
         } label: {
-            BaseballCard(title: "업적과 도감") {
+            BaseballCard(title: copyResolver.resolve(.achievements)) {
                 HStack {
-                    Text("달성한 기록과 앞으로의 도전을 봅니다.")
+                    Text(copyResolver.resolve(.achievementsBody))
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                     Spacer()

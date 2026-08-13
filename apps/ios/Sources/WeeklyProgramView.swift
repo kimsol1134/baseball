@@ -4,15 +4,29 @@ import SwiftUI
 struct WeeklyProgramSummaryRow: View {
     let store: WeeklyProgramStore
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     @ViewBuilder var body: some View {
         if let program = store.program {
+            let summary = copyResolver.resolve(
+                .weeklyProgramTitle,
+                arguments: [.integer(program.completedCount), .integer(program.tasks.count)]
+            )
+            let status = copyResolver.resolve(
+                program.claimed ? .weeklyClaimed : program.isRewardReady ? .weeklyRewardReady : .weeklyProgramProgress
+            )
+            let accessibilityKey: MetaUICopyKey = program.claimed
+                ? .weeklySummaryAccessibilityClaimed
+                : program.isRewardReady
+                    ? .weeklySummaryAccessibilityReady
+                    : .weeklySummaryAccessibilityProgress
             HStack(spacing: 8) {
                 Image(systemName: program.isRewardReady ? "seal.fill" : "book.closed.fill")
                     .foregroundStyle(program.isRewardReady ? BaseballTheme.milestone : BaseballTheme.information)
-                Text(store.summaryLine)
+                Text(verbatim: summary)
                     .font(.footnote.weight(.bold))
                 Spacer(minLength: 0)
-                Text(program.claimed ? "도장 완료" : program.isRewardReady ? "보상 준비" : "3개 중 2개")
+                Text(verbatim: status)
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textSecondary)
             }
@@ -20,7 +34,9 @@ struct WeeklyProgramSummaryRow: View {
             .padding(.vertical, 8)
             .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: 10))
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(store.summaryLine), \(program.claimed ? "주간 도장 받음" : program.isRewardReady ? "보상 받을 수 있음" : "세 목표 중 두 목표를 달성하면 완료")")
+            .accessibilityLabel(
+                copyResolver.resolve(accessibilityKey, arguments: [.userText(summary)])
+            )
             .accessibilityIdentifier("weekly.summary")
         }
     }
@@ -30,6 +46,8 @@ struct WeeklyProgramSummaryRow: View {
 struct WeeklyProgramView: View {
     let store: WeeklyProgramStore
     let highSchool: HighSchoolCareerStore
+
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     static func openedProperties(program: WeeklyProgram, source: String = "records") -> [String: Any] {
         [
@@ -42,9 +60,15 @@ struct WeeklyProgramView: View {
     var body: some View {
         Group {
             if let program = store.program {
-                BaseballCard(title: "이번 주 야구 노트 · \(program.completedCount)/\(program.tasks.count)", tone: program.isRewardReady ? .milestone : .raised) {
+                BaseballCard(
+                    title: copyResolver.resolve(
+                        .weeklyProgramTitle,
+                        arguments: [.integer(program.completedCount), .integer(program.tasks.count)]
+                    ),
+                    tone: program.isRewardReady ? .milestone : .raised
+                ) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("세 가지 중 두 가지만 마치면 됩니다. 놓친 주와 남은 목표에는 벌점이 없습니다.")
+                        Text(verbatim: copyResolver.resolve(.weeklyInstructions))
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -54,7 +78,7 @@ struct WeeklyProgramView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
                                         .foregroundStyle(task.isCompleted ? BaseballTheme.positive : BaseballTheme.textTertiary)
-                                    Text(task.kind.title)
+                                    Text(verbatim: MetaPresentation.weeklyTaskTitle(task.kind, resolver: copyResolver))
                                         .font(.subheadline.weight(.semibold))
                                     Spacer(minLength: 0)
                                     Text("\(task.boundedProgress)/\(task.target)")
@@ -65,16 +89,47 @@ struct WeeklyProgramView: View {
                                     .tint(task.isCompleted ? BaseballTheme.positive : BaseballTheme.information)
                             }
                             .accessibilityElement(children: .combine)
-                            .accessibilityLabel("\(task.kind.title), \(task.boundedProgress)/\(task.target)\(task.isCompleted ? ", 완료" : "")")
+                            .accessibilityLabel(
+                                copyResolver.resolve(
+                                    task.isCompleted ? .weeklyTaskAccessibilityComplete : .weeklyTaskAccessibility,
+                                    arguments: [
+                                        .userText(MetaPresentation.weeklyTaskTitle(task.kind, resolver: copyResolver)),
+                                        .integer(task.boundedProgress),
+                                        .integer(task.target),
+                                    ]
+                                )
+                            )
                         }
 
                         if let next = program.nextRewardTask {
-                            Label("도장까지 하나 · \(next.kind.nextAction)", systemImage: "arrow.forward.circle")
+                            Label {
+                                Text(
+                                    verbatim: copyResolver.resolve(
+                                        .weeklyOneForStamp,
+                                        arguments: [
+                                            .userText(MetaPresentation.weeklyTaskNextAction(next.kind, resolver: copyResolver)),
+                                        ]
+                                    )
+                                )
+                            } icon: {
+                                Image(systemName: "arrow.forward.circle")
+                            }
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(BaseballTheme.information)
                                 .fixedSize(horizontal: false, vertical: true)
                         } else if let remaining = program.soleRemainingTask, program.isRewardReady {
-                            Label("완주까지 하나 · \(remaining.kind.nextAction)", systemImage: "star.circle")
+                            Label {
+                                Text(
+                                    verbatim: copyResolver.resolve(
+                                        .weeklyOneForPerfect,
+                                        arguments: [
+                                            .userText(MetaPresentation.weeklyTaskNextAction(remaining.kind, resolver: copyResolver)),
+                                        ]
+                                    )
+                                )
+                            } icon: {
+                                Image(systemName: "star.circle")
+                            }
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(BaseballTheme.milestone)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -82,7 +137,10 @@ struct WeeklyProgramView: View {
 
                         if let reward = store.claimableReward {
                             PrimaryPill(
-                                title: "주간 기록 도장 받기 · 계승 포인트 +\(reward.soulPoints)",
+                                title: copyResolver.resolve(
+                                    .weeklyClaimAction,
+                                    arguments: [.integer(reward.soulPoints)]
+                                ),
                                 identifier: "weekly.claim"
                             ) {
                                 guard highSchool.acceptExternalSoulReward(
@@ -93,10 +151,15 @@ struct WeeklyProgramView: View {
                                 Haptics.shared.outcome(success: true)
                             }
                         } else if program.claimed {
-                            Label(
-                                program.isPerfect ? "주간 기록 도장 · 완주" : "주간 기록 도장 · 완료",
-                                systemImage: "seal.fill"
-                            )
+                            Label {
+                                Text(
+                                    verbatim: copyResolver.resolve(
+                                        program.isPerfect ? .weeklyStampPerfect : .weeklyStampComplete
+                                    )
+                                )
+                            } icon: {
+                                Image(systemName: "seal.fill")
+                            }
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(BaseballTheme.milestone)
                         }
@@ -109,22 +172,30 @@ struct WeeklyProgramView: View {
             }
 
             if !store.stamps.isEmpty {
-                BaseballCard(title: "주간 도장 보관함") {
+                BaseballCard(title: copyResolver.resolve(.weeklyVault)) {
                     VStack(spacing: 8) {
                         ForEach(store.stamps.prefix(12)) { stamp in
                             HStack(spacing: 8) {
                                 Image(systemName: stamp.perfect ? "seal.fill" : "seal")
                                     .foregroundStyle(stamp.perfect ? BaseballTheme.milestone : BaseballTheme.information)
                                 VStack(alignment: .leading, spacing: 1) {
+                                    // localization-safe: stable-id
                                     Text(stamp.weekKey)
                                         .font(.subheadline.weight(.semibold).monospacedDigit())
-                                    Text(stamp.perfect ? "3/3 완주" : "\(stamp.completedTaskCount)/3 완료")
+                                    Text(
+                                        verbatim: stamp.perfect
+                                            ? copyResolver.resolve(.weeklyStampLinePerfect)
+                                            : copyResolver.resolve(
+                                                .weeklyStampLine,
+                                                arguments: [.integer(stamp.completedTaskCount)]
+                                            )
+                                    )
                                         .font(.caption)
                                         .foregroundStyle(BaseballTheme.textSecondary)
                                 }
                                 Spacer(minLength: 0)
                                 if stamp.perfect {
-                                    Text("완주")
+                                    Text(verbatim: copyResolver.resolve(.weeklyPerfectBadge))
                                         .font(.caption2.weight(.heavy))
                                         .foregroundStyle(BaseballTheme.milestone)
                                         .padding(.horizontal, 7)

@@ -23,6 +23,17 @@ public enum GameFormatters {
         velocity(tenthsKPH: tenthsKPH, language: .english)
     }
 
+    public static func distance(tenthsMeters: Int, language: AppLanguage) -> String {
+        let meters = Double(max(0, tenthsMeters)) / 10
+        switch language {
+        case .korean:
+            return "\(decimal(meters, places: 0, locale: koreanLocale))m"
+        case .english:
+            let feet = meters * 3.28084
+            return "\(decimal(feet, places: 0, locale: englishLocale)) ft"
+        }
+    }
+
     public static func innings(outs: Int, language: AppLanguage) -> String {
         let safeOuts = max(0, outs)
         let full = safeOuts / 3

@@ -125,7 +125,7 @@ public struct GameCopyResolver: @unchecked Sendable {
     /// Exposed for focused tests and the Node-side schema checker. It deliberately describes
     /// format placeholders, not interpolation syntax or Korean source text.
     public static func placeholderKinds(in template: String) -> [String] {
-        var result: [String] = []
+        var placeholders: [(position: Int?, kind: String)] = []
         let characters = Array(template)
         var index = 0
         while index < characters.count {
@@ -139,6 +139,17 @@ public struct GameCopyResolver: @unchecked Sendable {
             }
 
             var cursor = index + 1
+            let positionStart = cursor
+            while cursor < characters.count, characters[cursor].isNumber { cursor += 1 }
+            let position: Int?
+            if cursor < characters.count, characters[cursor] == "$",
+               let parsed = Int(String(characters[positionStart..<cursor])) {
+                position = parsed
+                cursor += 1
+            } else {
+                position = nil
+                cursor = positionStart
+            }
             while cursor < characters.count, "-+ #0".contains(characters[cursor]) { cursor += 1 }
             while cursor < characters.count, characters[cursor].isNumber { cursor += 1 }
             if cursor < characters.count, characters[cursor] == "." {
@@ -152,15 +163,22 @@ public struct GameCopyResolver: @unchecked Sendable {
                 cursor += 1
             }
             guard cursor < characters.count else { break }
+            let kind: String?
             switch characters[cursor] {
-            case "@": result.append("string")
-            case "d", "i", "u": result.append("integer")
-            case "f", "F", "e", "E", "g", "G": result.append("decimal")
-            default: break
+            case "@": kind = "string"
+            case "d", "i", "u": kind = "integer"
+            case "f", "F", "e", "E", "g", "G": kind = "decimal"
+            default: kind = nil
+            }
+            if let kind {
+                placeholders.append((position: position, kind: kind))
             }
             index = cursor + 1
         }
-        return result
+        if placeholders.allSatisfy({ $0.position != nil }) {
+            return placeholders.sorted { $0.position! < $1.position! }.map(\.kind)
+        }
+        return placeholders.map(\.kind)
     }
 
     private func lookup(_ key: GameCopyKey) -> String? {

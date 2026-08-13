@@ -255,11 +255,15 @@ struct StatTile: View {
     var caption: String?
     var tone: Color = BaseballTheme.textPrimary
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
+            // localization-safe: resolved-copy
             Text(label).eyebrowStyle(BaseballTheme.textTertiary)
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 if let previousValue {
+                    // localization-safe: numeric
                     Text(previousValue)
                         .font(BaseballType.statNumeral)
                         .foregroundStyle(BaseballTheme.textTertiary)
@@ -267,6 +271,7 @@ struct StatTile: View {
                         .font(.caption.weight(.bold))
                         .foregroundStyle(BaseballTheme.textTertiary)
                 }
+                // localization-safe: numeric
                 Text(value)
                     .font(previousValue == nil ? BaseballType.heroNumeral : BaseballType.statNumeral)
                     .foregroundStyle(tone)
@@ -275,6 +280,7 @@ struct StatTile: View {
             .minimumScaleFactor(0.6)
             .lineLimit(1)
             if let caption {
+                // localization-safe: resolved-copy
                 Text(caption)
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
@@ -283,10 +289,32 @@ struct StatTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(
-            previousValue.map { "\(label) \($0)에서 \(value)" } ?? "\(label) \(value)"
-                + (caption.map { ". \($0)" } ?? "")
-        )
+        .accessibilityLabel(accessibilityCopy)
+    }
+
+    private var accessibilityCopy: String {
+        switch (previousValue, caption) {
+        case let (previous?, caption?):
+            copyResolver.resolve(
+                .statTileChangedCaptionAccessibility,
+                arguments: [.userText(label), .userText(previous), .userText(value), .userText(caption)]
+            )
+        case let (previous?, nil):
+            copyResolver.resolve(
+                .statTileChangedAccessibility,
+                arguments: [.userText(label), .userText(previous), .userText(value)]
+            )
+        case let (nil, caption?):
+            copyResolver.resolve(
+                .statTileCurrentCaptionAccessibility,
+                arguments: [.userText(label), .userText(value), .userText(caption)]
+            )
+        case (nil, nil):
+            copyResolver.resolve(
+                .statTileCurrentAccessibility,
+                arguments: [.userText(label), .userText(value)]
+            )
+        }
     }
 }
 
@@ -317,6 +345,7 @@ struct PrimaryPill: View {
 struct ScoreboardValue: View {
     let value: String
     var body: some View {
+        // localization-safe: numeric
         Text(value).font(BaseballType.statNumeral).foregroundStyle(BaseballTheme.textPrimary).monospacedDigit()
     }
 }
@@ -424,7 +453,9 @@ struct KeyArtHeader: View {
                     .frame(height: BaseballMetrics.keyArtHeight)
             }
             VStack(alignment: .leading, spacing: 6) {
+                // localization-safe: resolved-copy
                 Text(eyebrow).eyebrowStyle(accent)
+                // localization-safe: resolved-copy
                 Text(title)
                     .font(BaseballType.display)
                     .foregroundStyle(BaseballTheme.textPrimary)

@@ -2892,8 +2892,181 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Training complete. Check your updated ratings." } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련 결과를 확인했습니다." } }
       }
-    }
-,
+    },
+    "content.nickname.k-monster.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld career strikeouts — opposing lineups tense at the name alone." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "통산 탈삼진 %lld개 — 상대 타선이 그 이름만으로 흔들립니다." } }
+      }
+    },
+    "content.nickname.k-machine.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld career strikeouts — hitters can't find the bat on it." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "통산 탈삼진 %lld개 — 배트가 닿지 않습니다." } }
+      }
+    },
+    "content.nickname.k-hunter.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld career strikeouts — the crowd rises at two strikes." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "통산 탈삼진 %lld개 — 2스트라이크가 되면 관중이 일어섭니다." } }
+      }
+    },
+    "content.nickname.iron-wall.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld straight scoreless games — the plate is locked." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld경기째 무실점 — 홈플레이트가 잠겨 있습니다." } }
+      }
+    },
+    "content.nickname.zero.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld straight scoreless games — not a run allowed yet." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld경기째 무실점 — 아직 한 점도 내주지 않았습니다." } }
+      }
+    },
+    "content.nickname.flawless.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld games with zero walks — nothing misses the zone." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld경기 볼넷 0 — 존 밖으로 나가는 공이 없습니다." } }
+      }
+    },
+    "content.nickname.pinpoint.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "One walk or fewer per game — the ball listens to the fingertips." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기당 볼넷 1개 이하 — 공이 손끝의 말을 듣습니다." } }
+      }
+    },
+    "content.nickname.untouchable.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Strikeouts pile up and runs stay away — scouts say this is beyond high-school level." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "삼진은 쌓이고 실점은 없다 — 고교 레벨을 벗어난 투구라는 평가입니다." } }
+      }
+    },
+    "content.nickname.nine-k.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Six-plus strikeouts per game — one arm handles most of the outs." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기당 탈삼진 6개 이상 — 아웃 카운트 대부분을 혼자 책임집니다." } }
+      }
+    },
+    "content.nickname.workhorse.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Completed all %lld official high-school games — an arm that refuses to leave the mound." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld번의 고교 공식 경기를 전부 소화 — 마운드에서 내려가지 않는 어깨입니다." } }
+      }
+    },
+    "content.nickname.wild-thing.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Three walks per game — the joke is that even the pitcher doesn't know where it goes." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기당 볼넷 3개 — 공이 어디로 갈지 본인도 모른다는 놀림입니다." } }
+      }
+    },
+    "content.nickname.batting-practice.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Four runs allowed per game — hitters joke they came for batting practice." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기당 실점 4점 — 상대 타자들이 타격 훈련하러 온다는 조롱입니다." } }
+      }
+    },
+    "content.nickname.rough-diamond.reason" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The strikeout talent is real, but the runs follow — half hope, half worry about what polish could reveal." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "삼진을 잡는 재능은 진짜인데 실점이 그만큼 따라옵니다 — 다듬으면 무엇이 될지 모른다는 기대 반 걱정 반." } }
+      }
+    },
+    "content.pledge.get-drafted.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hear your name called" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이름이 불린다" } }
+      }
+    },
+    "content.pledge.strikeout-master.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Five strikeouts in a season" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 5탈삼진" } }
+      }
+    },
+    "content.pledge.clean-games.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Four scoreless outings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "무실점 등판 4회" } }
+      }
+    },
+    "content.pledge.iron-control.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Four strikeouts without a walk" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "무볼넷 4탈삼진" } }
+      }
+    },
+    "content.pledge.healthy-finish.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish with a healthy arm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팔을 지켜 완주" } }
+      }
+    },
+    "content.pledge.awakening-three.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Three awakenings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "세 번의 각성" } }
+      }
+    },
+    "content.pledge.fan-sixty.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Become a name in the stands" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "관중의 이름이 된다" } }
+      }
+    },
+    "content.pledge.evaluation-sixty-five.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Score 64 or higher" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "평가 64점" } }
+      }
+    },
+    "content.pledge.evaluation-seventy-five.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Score 67 or higher" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "평가 67점" } }
+      }
+    },
+    "content.pledge.iron-control-five.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Six strikeouts without a walk" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "무볼넷 6탈삼진" } }
+      }
+    },
+    "content.pledge.rival-three-strikeouts.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Beat the rival three times" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "숙적에게 세 번 앞선다" } }
+      }
+    },
+    "content.pledge.relationship-sixty-five.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "One person's complete trust" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 사람의 전적인 믿음" } }
+      }
+    },
+    "content.pledge.legacy-strikeout-master.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Forty strikeouts in three years" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 40탈삼진" } }
+      }
+    },
+    "content.pledge.legacy-clean-games.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Two scoreless outings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "무실점 등판 2회" } }
+      }
+    },
+    "content.pledge.legacy-get-drafted.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Get drafted" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지명받는다" } }
+      }
+    },
+    "content.pledge.legacy-iron-control.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish with eight walks or fewer" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "볼넷 8개 이하" } }
+      }
+    },
     "content.event.evt-bullpen-first.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "First Bullpen" } },
@@ -8260,7 +8433,1814 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Refuse to run, knowing the same silence may have to be faced directly." } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "도망치지 않지만 같은 침묵이 오면 정면으로 견뎌야 한다" } }
       }
+    },
+    "content.draft-team.seoul_comets.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Develop as a minor-league starter who can hit the intended spots" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "2군 선발로 뛰며 원하는 코스에 던지는 능력 향상" } }
+      }
+    },
+    "content.draft-team.seoul_comets.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cha Yoon-ho" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "차윤호" } }
+      }
+    },
+    "content.draft-team.seoul_comets.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Moon Jae-seok" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "문재석" } }
+      }
+    },
+    "content.draft-team.seoul_comets.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A veteran starter who survives with a slow curve and timing battles" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "느린 커브와 타이밍 싸움으로 살아남은 베테랑 선발" } }
+      }
+    },
+    "content.draft-team.seoul_comets.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "9 wins last season · RA9 3.91" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 9승 · ERA 3.91" } }
+      }
+    },
+    "content.draft-team.seoul_comets.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A defense-first coach who starts with a conversation" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선수와 대화부터 시작하는 수비 중심 지도자" } }
+      }
+    },
+    "content.draft-team.seoul_comets.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Three straight postseason appearances" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "3년 연속 포스트시즌 진출" } }
+      }
+    },
+    "content.draft-team.busan_marines.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Train as a starter trusted with long outings" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "긴 이닝을 맡는 선발로 훈련" } }
+      }
+    },
+    "content.draft-team.busan_marines.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Do Hyeon-woo" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "도현우" } }
+      }
+    },
+    "content.draft-team.busan_marines.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Kang Tae-rim" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "강태림" } }
+      }
+    },
+    "content.draft-team.busan_marines.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A right-handed ace built around a high Four-Seam and diving forkball" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "높은 포심과 낙차 큰 포크볼을 앞세운 우완 에이스" } }
+      }
+    },
+    "content.draft-team.busan_marines.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "11 wins last season · 142 strikeouts" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 11승 · 142탈삼진" } }
+      }
+    },
+    "content.draft-team.busan_marines.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A risk-taker who trusts starters with one more inning in big games" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "큰 경기일수록 선발에게 한 이닝을 더 맡기는 승부사" } }
+      }
+    },
+    "content.draft-team.busan_marines.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Two championship-series appearances" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "챔피언십 시리즈 진출 2회" } }
+      }
+    },
+    "content.draft-team.incheon_waves.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Polish one finishing pitch to a pro standard" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "결정구 한 종을 프로 수준으로 강화" } }
+      }
+    },
+    "content.draft-team.incheon_waves.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Baek Seung-chan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "백승찬" } }
+      }
+    },
+    "content.draft-team.incheon_waves.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Yoon Do-hwan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "윤도환" } }
+      }
+    },
+    "content.draft-team.incheon_waves.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A left-handed starter who survives with a slider and changing tempo" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "슬라이더와 템포 변화로 버티는 왼손 선발" } }
+      }
+    },
+    "content.draft-team.incheon_waves.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "8 wins last season · 126 strikeouts" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 8승 · 126탈삼진" } }
+      }
+    },
+    "content.draft-team.incheon_waves.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A coach who demands veteran freedom and strong defense" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "베테랑 자율과 강한 수비를 함께 요구하는 감독" } }
+      }
+    },
+    "content.draft-team.incheon_waves.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Two regular-season top-three finishes" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "정규시즌 상위 3위 2회" } }
+      }
+    },
+    "content.draft-team.daegu_forge.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep the fastball sharp and reach the top flight quickly from the bullpen" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 직구를 유지하며 불펜으로 빠른 1군 데뷔" } }
+      }
+    },
+    "content.draft-team.daegu_forge.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shin Jae-won" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "신재원" } }
+      }
+    },
+    "content.draft-team.daegu_forge.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Kwon Min-cheol" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "권민철" } }
+      }
+    },
+    "content.draft-team.daegu_forge.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A young right-handed ace who repeats low locations and changes speeds" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮은 코스와 완급을 반복하는 젊은 우완 에이스" } }
+      }
+    },
+    "content.draft-team.daegu_forge.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "12 wins last season · RA9 3.44" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 12승 · ERA 3.44" } }
+      }
+    },
+    "content.draft-team.daegu_forge.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "An infielder-turned-coach pushing fundamentals and a new generation together" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 수비와 세대교체를 함께 밀어붙이는 내야 출신 지도자" } }
+      }
+    },
+    "content.draft-team.daegu_forge.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Four rookie pitchers reached the top flight" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "신인 투수 4명 1군 데뷔" } }
+      }
+    },
+    "content.draft-team.daejeon_rockets.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Train as a starter who sequences pitches with the catcher" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수와 구종 순서를 맞추는 선발 훈련" } }
+      }
+    },
+    "content.draft-team.daejeon_rockets.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Jang Ha-jun" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "장하준" } }
+      }
+    },
+    "content.draft-team.daejeon_rockets.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bae Seong-woo" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "배성우" } }
+      }
+    },
+    "content.draft-team.daejeon_rockets.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A fireballer who beats hitters with a fast Four-Seam" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 포심으로 타자의 배트를 늦추는 파이어볼러" } }
+      }
+    },
+    "content.draft-team.daejeon_rockets.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Max 98.3 mph · 134 strikeouts" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최고 158.2km/h · 134탈삼진" } }
+      }
+    },
+    "content.draft-team.daejeon_rockets.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A long-view coach who gives a chosen starter a real chance" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한번 고른 선발은 충분한 기회를 주는 장기 운영형 감독" } }
+      }
+    },
+    "content.draft-team.daejeon_rockets.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A winning record in three straight seasons" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "3년 연속 승률 5할 이상" } }
+      }
+    },
+    "content.draft-team.gwangju_phoenix.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Train a breaking ball that separates from the Four-Seam's path" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "직구와 같은 궤도에서 갈라지는 변화구 훈련" } }
+      }
+    },
+    "content.draft-team.gwangju_phoenix.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Seo I-jun" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "서이준" } }
+      }
+    },
+    "content.draft-team.gwangju_phoenix.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Nam Gi-seok" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "남기석" } }
+      }
+    },
+    "content.draft-team.gwangju_phoenix.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A classic lefty who piles up strikeouts with a big curve" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "큰 각도의 커브로 삼진을 쌓는 왼손 정통파" } }
+      }
+    },
+    "content.draft-team.gwangju_phoenix.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "10 wins last season · 151 strikeouts" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 10승 · 151탈삼진" } }
+      }
+    },
+    "content.draft-team.gwangju_phoenix.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A young coach who trusts players to attack" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선수를 믿고 공격적으로 뛰게 하는 젊은 감독" } }
+      }
+    },
+    "content.draft-team.gwangju_phoenix.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A .561 winning percentage over the last two seasons" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 2년 승률 .561" } }
+      }
+    },
+    "content.draft-team.suwon_guardians.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cut the walks, then debut as a long reliever" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "볼넷을 줄인 뒤 1군 긴 이닝 구원으로 데뷔" } }
+      }
+    },
+    "content.draft-team.suwon_guardians.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ju Seong-min" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주성민" } }
+      }
+    },
+    "content.draft-team.suwon_guardians.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Oh Tae-geon" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오태건" } }
+      }
+    },
+    "content.draft-team.suwon_guardians.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A starter who cuts walks with a low arm slot and a changeup" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮은 팔 각도와 체인지업으로 볼넷을 줄이는 선발" } }
+      }
+    },
+    "content.draft-team.suwon_guardians.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "1.8 BB/9 last season · 17 quality starts" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 BB/9 1.8 · 퀄리티스타트 17회" } }
+      }
+    },
+    "content.draft-team.suwon_guardians.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A submarine pitcher turned coach who fine-tunes release timing" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "투수의 팔이 나오는 타이밍을 직접 잡는 잠수함 출신 지도자" } }
+      }
+    },
+    "content.draft-team.suwon_guardians.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Four straight postseason appearances" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "4년 연속 포스트시즌 진출" } }
+      }
+    },
+    "content.draft-team.changwon_meteors.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Raise Four-Seam life and top velocity together" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "직구의 움직임과 최고 구속을 함께 향상" } }
+      }
+    },
+    "content.draft-team.changwon_meteors.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ryu Han-gyeol" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "류한결" } }
+      }
+    },
+    "content.draft-team.changwon_meteors.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cha Gyeong-ho" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "차경호" } }
+      }
+    },
+    "content.draft-team.changwon_meteors.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A starter who creates fly balls with a high-spin left-handed Four-Seam" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "회전이 좋은 왼손 직구로 뜬공을 만드는 선발" } }
+      }
+    },
+    "content.draft-team.changwon_meteors.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "RA9 2.48 last season · 9 wins" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 ERA 2.48 · 9승" } }
+      }
+    },
+    "content.draft-team.changwon_meteors.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A coach who pairs hitting theory with easy communication" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타격 이론과 편안한 소통을 함께 쓰는 감독" } }
+      }
+    },
+    "content.draft-team.changwon_meteors.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Three regulars reached personal bests" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주전 3명 개인 최고 기록 달성" } }
+      }
+    },
+    "content.draft-team.jeonju_hanok.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Build stamina and challenge for a rotation spot" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "체력을 키워 선발 한 자리에 도전" } }
+      }
+    },
+    "content.draft-team.jeonju_hanok.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Moon Si-on" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "문시온" } }
+      }
+    },
+    "content.draft-team.jeonju_hanok.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Shin Do-yeong" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "신도영" } }
+      }
+    },
+    "content.draft-team.jeonju_hanok.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A right-handed starter who collects strikeouts with a fast Four-Seam and short slider" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 포심과 짧은 슬라이더로 삼진을 모으는 우완 선발" } }
+      }
+    },
+    "content.draft-team.jeonju_hanok.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "178 strikeouts last season · RA9 2.71" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 178탈삼진 · ERA 2.71" } }
+      }
+    },
+    "content.draft-team.jeonju_hanok.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A long-term developer who gives young players the first chance" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "젊은 선수에게 먼저 기회를 주는 장기 육성형 감독" } }
+      }
+    },
+    "content.draft-team.jeonju_hanok.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Six rookies reached the top-flight roster" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "신인 6명 1군 출전 명단 등록" } }
+      }
+    },
+    "content.draft-team.jeju_storm.development-plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the numbers to train as a pitcher who can start or relieve" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록을 활용해 선발과 구원을 오가는 투수로 훈련" } }
+      }
+    },
+    "content.draft-team.jeju_storm.position-competitor" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Han Yu-chan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한유찬" } }
+      }
+    },
+    "content.draft-team.jeju_storm.pro-coach" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Jo Min-gyu" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "조민규" } }
+      }
+    },
+    "content.draft-team.jeju_storm.competitor-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A right-handed starter who handles long outings with a heavy Four-Seam and cutter" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "묵직한 포심과 컷패스트볼로 긴 이닝을 버티는 우완 선발" } }
+      }
+    },
+    "content.draft-team.jeju_storm.competitor-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "13 wins last season · 147 strikeouts" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 시즌 13승 · 147탈삼진" } }
+      }
+    },
+    "content.draft-team.jeju_storm.coach-profile" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A coach who leans on big-game experience and one committed attack" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "큰 경기 경험을 바탕으로 한 번의 강한 승부를 강조하는 감독" } }
+      }
+    },
+    "content.draft-team.jeju_storm.coach-record" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Three postseason appearances" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포스트시즌 진출 3회" } }
+      }
+    },
+    "content.memory.velocity_blueprint.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Four-Seam Velocity Blueprint" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "직구 구속 훈련법" } }
+      }
+    },
+    "content.memory.velocity_blueprint.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More Four-Seam velocity and whiffs · Slightly less control" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "직구 구속·헛스윙 증가, 제구 소폭 감소" } }
+      }
+    },
+    "content.memory.fingertip_memory.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fingertip Memory" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "손끝의 기억" } }
+      }
+    },
+    "content.memory.fingertip_memory.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More breaking-ball movement · Slightly less stamina" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 움직임 상승, 체력 소폭 감소" } }
+      }
+    },
+    "content.memory.catcher_notebook.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Catcher's Notebook" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수의 노트" } }
+      }
+    },
+    "content.memory.catcher_notebook.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Better control and more weak contact" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구와 빗맞은 타구 유도 증가" } }
+      }
+    },
+    "content.memory.rival_notebook.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rival's Notebook" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "라이벌 노트" } }
+      }
+    },
+    "content.memory.rival_notebook.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Better control and breaking-ball whiffs" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구·변화구와 변화구 헛스윙 증가" } }
+      }
+    },
+    "content.memory.recovery_routine.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recovery Routine" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "회복 방법" } }
+      }
+    },
+    "content.memory.recovery_routine.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More stamina · Less fatigue per pitch" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "체력 상승, 공마다 피로 소모 감소" } }
+      }
+    },
+    "content.memory.pressure_rehearsal.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pressure Rehearsal" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "압박의 예행연습" } }
+      }
+    },
+    "content.memory.pressure_rehearsal.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More control and stamina · Better control in traffic" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구·체력과 위기 상황 제구 향상" } }
+      }
+    },
+    "content.memory.first_pitch_map.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "First-Pitch Map" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "초구 지도" } }
+      }
+    },
+    "content.memory.first_pitch_map.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Better first-pitch command · Slightly less stamina" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "초구 제구 상승, 체력 소폭 감소" } }
+      }
+    },
+    "content.memory.two_strike_sequence.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Two-Strike Sequence" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "2스트라이크 구종 순서" } }
+      }
+    },
+    "content.memory.two_strike_sequence.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More breaking-ball movement and whiffs · Slightly less stamina" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 움직임·헛스윙 상승, 체력 소폭 감소" } }
+      }
+    },
+    "content.memory.fatigue_diary.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fatigue Diary" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "피로 일지" } }
+      }
+    },
+    "content.memory.fatigue_diary.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More stamina and late-count control" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "체력과 후반 제구 상승" } }
+      }
+    },
+    "content.memory.mechanics_video.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mechanics Video" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "투구 동작 교정 영상" } }
+      }
+    },
+    "content.memory.mechanics_video.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Better control · Slightly less top-end stuff" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구 향상, 공의 최고 위력 소폭 감소" } }
+      }
+    },
+    "content.memory.school_playbook.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "School Playbook" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "학교에서 배운 승부법" } }
+      }
+    },
+    "content.memory.school_playbook.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Better control and breaking-ball movement" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구·변화구 향상" } }
+      }
+    },
+    "content.memory.coach_letter.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Coach's Letter" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "코치의 편지" } }
+      }
+    },
+    "content.memory.coach_letter.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Better control and stamina" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구·체력 향상" } }
+      }
+    },
+    "content.memory.draft_report.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Scouting Report" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구단 평가표" } }
+      }
+    },
+    "content.memory.draft_report.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More stuff and control" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위·제구 향상" } }
+      }
+    },
+    "content.memory.stadium_echo.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stadium Echo" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구장의 메아리" } }
+      }
+    },
+    "content.memory.stadium_echo.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More stuff and whiffs · Slightly less control" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위·헛스윙 증가, 제구 소폭 감소" } }
+      }
+    },
+    "content.memory.team_first_promise.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Team-First Promise" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팀을 위한 약속" } }
+      }
+    },
+    "content.memory.team_first_promise.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More control and stamina · More weak contact" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구·체력과 빗맞은 타구 유도 증가" } }
+      }
+    },
+    "content.memory.failure_scorebook.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failure Scorebook" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "실패의 스코어북" } }
+      }
+    },
+    "content.memory.failure_scorebook.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Better control and breaking-ball movement · Slightly less stamina" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구·변화구 향상, 체력 소폭 감소" } }
+      }
+    },
+    "content.memory.winter_program.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Winter Training Plan" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "겨울 훈련표" } }
+      }
+    },
+    "content.memory.winter_program.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More stuff and stamina · Less fatigue buildup" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위·체력 향상, 피로 누적 감소" } }
+      }
+    },
+    "content.memory.bullpen_compass.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bullpen Compass" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "불펜의 나침반" } }
+      }
+    },
+    "content.memory.bullpen_compass.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "More stuff and stamina · Less fatigue buildup" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위·체력 향상, 피로 누적 감소" } }
+      }
+    },
+    "content.signature-legacy.power_imprint.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fire Left on the Mound" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마운드에 남은 불꽃" } }
+      }
+    },
+    "content.signature-legacy.power_imprint.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The feel for attacking with power settles into the next pitcher's first pitch." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "강한 공으로 승부한 감각이 다음 투수의 첫 공에 스며듭니다." } }
+      }
+    },
+    "content.signature-legacy.power_imprint.evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This legacy's fixed starting effect." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 대표 유산의 고정 시작 효과입니다." } }
+      }
+    },
+    "content.signature-legacy.evidence.dynamic" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Evidence: %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@" } }
+      }
+    },
+    "content.signature-legacy.command_map.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Map to the Edge of the Mitt" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "미트 끝의 지도" } }
+      }
+    },
+    "content.signature-legacy.command_map.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The path to the intended spot becomes the next pitcher's starting reference." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "원하는 곳에 공을 놓던 궤적이 다음 투수의 기준점이 됩니다." } }
+      }
+    },
+    "content.signature-legacy.command_map.evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This legacy's fixed starting effect." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 대표 유산의 고정 시작 효과입니다." } }
+      }
+    },
+    "content.signature-legacy.breaking_trace.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Trace Left in the Fingertips" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "손끝에 남은 궤적" } }
+      }
+    },
+    "content.signature-legacy.breaking_trace.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The fingertip feel that broke the ball in front of hitters carries to the next pitcher." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타자 앞에서 공을 꺾던 손끝 감각이 다음 투수에게 이어집니다." } }
+      }
+    },
+    "content.signature-legacy.breaking_trace.evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This legacy's fixed starting effect." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 대표 유산의 고정 시작 효과입니다." } }
+      }
+    },
+    "content.signature-legacy.endurance_rhythm.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Long-Inning Rhythm" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "긴 이닝의 호흡" } }
+      }
+    },
+    "content.signature-legacy.endurance_rhythm.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The rhythm that held its mechanics through long outings stays in the next pitcher's body." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "끝까지 투구 동작을 지킨 호흡이 다음 투수의 몸에 남습니다." } }
+      }
+    },
+    "content.signature-legacy.endurance_rhythm.evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This legacy's fixed starting effect." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 대표 유산의 고정 시작 효과입니다." } }
+      }
+    },
+    "content.signature-legacy.gamecraft_ledger.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ledger of the Inning" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이닝을 읽는 장부" } }
+      }
+    },
+    "content.signature-legacy.gamecraft_ledger.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The record of reading hitters and game flow opens the next pitcher's judgment." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "타자의 노림수와 경기 흐름을 읽은 기록이 다음 투수의 판단을 엽니다." } }
+      }
+    },
+    "content.signature-legacy.gamecraft_ledger.evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This legacy's fixed starting effect." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 대표 유산의 고정 시작 효과입니다." } }
+      }
+    },
+    "content.signature-legacy.battery_promise.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Promise Between the Signs" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사인 사이의 약속" } }
+      }
+    },
+    "content.signature-legacy.battery_promise.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Trust built one pitch at a time with a catcher gives the next pitcher a calm start." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수와 한 공씩 쌓은 믿음이 다음 투수의 침착한 출발을 돕습니다." } }
+      }
+    },
+    "content.signature-legacy.battery_promise.evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This legacy's fixed starting effect." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 대표 유산의 고정 시작 효과입니다." } }
+      }
+    },
+    "content.personality.closer.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fierce Competitor" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "불같은 승부사" } }
+      }
+    },
+    "content.personality.closer.scout-line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Never backs down. The type whose velocity rises against big hitters in big games." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "물러서는 법을 모릅니다. 큰 경기, 큰 타자 앞에서 구속이 오르는 유형." } }
+      }
+    },
+    "content.personality.anchor.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quiet Anchor" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "조용한 버팀목" } }
+      }
+    },
+    "content.personality.anchor.scout-line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Listens all the way through, then moves first. Given time, the clubhouse gathers around this player." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "끝까지 듣고 먼저 움직입니다. 시간이 지나면 클럽하우스가 이 선수를 중심으로 돕니다." } }
+      }
+    },
+    "content.personality.tactician.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cold Analyst" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "차가운 분석가" } }
+      }
+    },
+    "content.personality.tactician.scout-line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Answers with evidence, not emotion. Smart enough to design the chess match with a hitter." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "감정을 빼고 근거로 답합니다. 타자와의 수싸움을 스스로 설계할 줄 아는 머리." } }
+      }
+    },
+    "content.personality.opener.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Flexible Center" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "유연한 중심" } }
+      }
+    },
+    "content.personality.opener.scout-line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Knows which side of the game the moment needs. Fits into any clubhouse and does the work." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "상황에 맞는 얼굴을 꺼낼 줄 압니다. 어느 클럽하우스에 놓아도 제 몫을 하는 유형." } }
+      }
+    },
+    "content.chronicle.school-admission.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "School admission" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "입학 기록" } }
+      }
+    },
+    "content.chronicle.personality-crystallized.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Personality crystallized" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "성격 확정" } }
+      }
+    },
+    "content.chronicle.personality-changed.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Personality changed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "성격 변화" } }
+      }
+    },
+    "content.chronicle.awakening.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Awakening" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "각성" } }
+      }
+    },
+    "content.chronicle.nickname.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Nickname" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "별명" } }
+      }
+    },
+    "content.chronicle.important-game.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Official game" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공식 경기" } }
+      }
+    },
+    "content.chronicle.game-growth.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Game-based growth" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기 기반 성장" } }
+      }
+    },
+    "content.chronicle.chapter-goal.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Chapter goal" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "장 목표" } }
+      }
+    },
+    "content.chronicle.draft.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Draft" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "드래프트" } }
+      }
+    },
+    "content.chronicle.pledge.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "High-school pledge" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년 목표" } }
+      }
+    },
+    "content.chronicle.bloom.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Talent bloom" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재능 만개" } }
+      }
+    },
+    "content.chronicle.pro-start.template" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pro start" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 진출" } }
+      }
+    },
+    "content.draft-result.projected-range.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Projected draft range" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "드래프트 예상 구간" } }
+      }
+    },
+    "content.draft-result.summary.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Draft result" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "드래프트 결과" } }
+      }
+    },
+    "content.draft-result.first-season-goal.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "First-season goal" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 시즌 목표" } }
+      }
+    },
+    "content.draft-result.evaluation-breakdown.value" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Evaluation breakdown" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "평가 항목" } }
+      }
     }
+    ,"content.pro-decision.extra_bullpen.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The mound is still open after the regular workout." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "정규 훈련이 끝난 뒤 마운드 사용 시간이 남았습니다." } }
+    } }
+    ,"content.pro-decision.choice.high_intensity.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep Throwing at Full Intensity" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "강하게 더 던진다" } }
+    } }
+    ,"content.pro-decision.choice.high_intensity.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Push both your stuff and movement higher." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위와 변화구를 함께 끌어올립니다." } }
+    } }
+    ,"content.pro-decision.choice.shape_work.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Work Only on Pitch Shape" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구만 다듬는다" } }
+    } }
+    ,"content.pro-decision.choice.shape_work.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Reduce the load and focus on the feel of your breaking pitches." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "부담을 줄이고 변화구 감각에 집중합니다." } }
+    } }
+    ,"content.pro-decision.choice.rest.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Shut It Down for Today" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 멈춘다" } }
+    } }
+    ,"content.pro-decision.choice.rest.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Trade extra growth for a fresher arm." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "성장 대신 몸을 회복합니다." } }
+    } }
+    ,"content.pro-decision.catcher_game_plan.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Set the pitch sequence and approach for your next outing." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 등판의 구종 순서와 승부 방식을 정합니다." } }
+    } }
+    ,"content.pro-decision.choice.battery_plan.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Build the Plan with Your Catcher" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수와 함께 짠다" } }
+    } }
+    ,"content.pro-decision.choice.battery_plan.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Prioritize battery rhythm and executing locations." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "배터리 호흡과 코스 실행을 우선합니다." } }
+    } }
+    ,"content.pro-decision.choice.staff_report.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Follow the Staff Report" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "감독 보고서를 따른다" } }
+    } }
+    ,"content.pro-decision.choice.staff_report.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Pitch the game the bench wants to see." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "벤치가 원하는 경기 운영에 맞춥니다." } }
+    } }
+    ,"content.pro-decision.choice.own_sequence.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Trust Your Own Sequence" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 공을 밀어붙인다" } }
+    } }
+    ,"content.pro-decision.choice.own_sequence.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Sharpen your breaking pitches, but put both relationships on the line." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 감각을 얻는 대신 두 사람의 믿음을 겁니다." } }
+    } }
+    ,"content.pro-decision.role_meeting.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The staff asks which role you want for the rest of the season." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "코칭스태프가 남은 시즌의 등판 역할을 묻습니다." } }
+    } }
+    ,"content.pro-decision.choice.challenge_starter.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Challenge for a Rotation Spot" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "선발에 도전한다" } }
+    } }
+    ,"content.pro-decision.choice.challenge_starter.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Accept the workload and pressure that come with preparing for long outings." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "긴 이닝 준비와 경쟁 부담을 받아들입니다." } }
+    } }
+    ,"content.pro-decision.choice.focus_relief.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Commit to Relief" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "구원에 집중한다" } }
+    } }
+    ,"content.pro-decision.choice.focus_relief.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose short-outing power and a tighter bond with your catcher." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "짧은 등판의 구위와 포수 호흡을 택합니다." } }
+    } }
+    ,"content.pro-decision.choice.close_games.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Take the Ninth Inning" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "마무리를 맡는다" } }
+    } }
+    ,"content.pro-decision.choice.close_games.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Own the pressure of the ninth and protect one-run leads." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "9회의 압박을 받아들이고 한 점 차 승부를 책임집니다." } }
+    } }
+    ,"content.pro-decision.record_chase.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose between chasing a personal mark and making the pitches your team needs." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "개인 기록과 팀에 필요한 투구 사이에서 훈련 방향을 고릅니다." } }
+    } }
+    ,"content.pro-decision.choice.strikeouts.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Chase Strikeouts" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "탈삼진을 노린다" } }
+    } }
+    ,"content.pro-decision.choice.strikeouts.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Train two put-away pitches at full intensity." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "결정구 두 가지를 강하게 연마합니다." } }
+    } }
+    ,"content.pro-decision.choice.run_prevention.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose Run Prevention" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "실점 억제를 택한다" } }
+    } }
+    ,"content.pro-decision.choice.run_prevention.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Refine command and how you navigate a lineup with your catcher." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구와 배터리 운영을 다듬습니다." } }
+    } }
+    ,"content.pro-decision.choice.body_management.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Protect Your Body" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "몸을 관리한다" } }
+    } }
+    ,"content.pro-decision.choice.body_management.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Build the stamina and recovery needed for a long season." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "긴 시즌을 버틸 체력과 회복을 택합니다." } }
+    } }
+    ,"content.pro-decision.rival_analysis.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Decide where to spend your film-room time before the next matchup." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 맞대결을 앞두고 분석 시간을 어디에 쓸지 정합니다." } }
+    } }
+    ,"content.pro-decision.choice.attack_weakness.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Dig into the Weakness" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "약점을 깊게 판다" } }
+    } }
+    ,"content.pro-decision.choice.attack_weakness.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Work with your catcher to execute a precise location plan." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수와 코스를 정교하게 맞춥니다." } }
+    } }
+    ,"content.pro-decision.choice.keep_strength.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Stay with Your Strengths" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 장점을 유지한다" } }
+    } }
+    ,"content.pro-decision.choice.keep_strength.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Raise the quality of your best stuff and breaking pitches." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위와 변화구 완성도를 높입니다." } }
+    } }
+    ,"content.pro-decision.choice.defer.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Wait Until the Matchup" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "맞대결까지 보류한다" } }
+    } }
+    ,"content.pro-decision.choice.defer.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Skip the extra work and arrive with a lighter body." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "추가 훈련 없이 몸을 가볍게 만듭니다." } }
+    } }
+    ,"content.pro-decision.season_finale.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Spend your last reserves on the standings race, recovery, or helping younger teammates." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "순위 경쟁과 회복, 동료 지원 사이에서 마지막 힘을 배분합니다." } }
+    } }
+    ,"content.pro-decision.choice.push_race.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Push for the Pennant Race" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "순위 경쟁에 건다" } }
+    } }
+    ,"content.pro-decision.choice.push_race.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Earn the manager's trust and accept the fatigue." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "감독의 믿음을 얻는 대신 피로를 감수합니다." } }
+    } }
+    ,"content.pro-decision.choice.recover_first.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Put Recovery First" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "회복을 우선한다" } }
+    } }
+    ,"content.pro-decision.choice.recover_first.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Heal up, even if the staff questions your willingness to pitch." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "출전 의지를 의심받더라도 몸을 회복합니다." } }
+    } }
+    ,"content.pro-decision.choice.support_youth.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Help the Young Pitchers" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "젊은 선수를 돕는다" } }
+    } }
+    ,"content.pro-decision.choice.support_youth.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Build trust with both the bench and your catcher." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "벤치와 배터리의 신뢰를 함께 쌓습니다." } }
+    } }
+    ,"content.pitcher-build.power.label" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Power Pitcher" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "강속구형" } }
+    } }
+    ,"content.pitcher-build.power.strength" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your fastball creates whiffs and strikeouts." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 공으로 헛스윙과 삼진을 만듭니다." } }
+    } }
+    ,"content.pitcher-build.power.tradeoff" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Too much max effort strains both command and stamina." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "전력투구를 남발하면 제구와 체력 부담이 커집니다." } }
+    } }
+    ,"content.pitcher-build.command.label" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Command Artist" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "정밀 제구형" } }
+    } }
+    ,"content.pitcher-build.command.strength" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You limit walks and attack the location you chose." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "볼넷을 줄이고 노린 코스에 승부합니다." } }
+    } }
+    ,"content.pitcher-build.command.tradeoff" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Precision without a put-away pitch can extend at-bats." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "정교하지만 결정구가 약하면 긴 승부가 늘어납니다." } }
+    } }
+    ,"content.pitcher-build.movement.label" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Breaking-Ball Pitcher" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구형" } }
+    } }
+    ,"content.pitcher-build.movement.strength" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Movement and weak contact keep hits off the board." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화와 약한 타구로 안타를 억제합니다." } }
+    } }
+    ,"content.pitcher-build.movement.tradeoff" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "A hanging breaking ball can turn into hard contact." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "행잉 변화구는 강한 타구로 이어질 수 있습니다." } }
+    } }
+    ,"content.pitcher-build.stamina.label" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Workhorse" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "이닝 소화형" } }
+    } }
+    ,"content.pitcher-build.stamina.strength" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Fatigue arrives later, so your stuff holds deep into outings." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "피로가 늦게 와 긴 이닝에도 구위를 지킵니다." } }
+    } }
+    ,"content.pitcher-build.stamina.tradeoff" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The payoff is late stability, not early dominance." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "초반 압도력보다 후반 안정성에 보상이 몰립니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-seoul.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Kang Do-hun" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "강도훈" } }
+    } }
+    ,"content.pro-rival.pro-rival-seoul.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Middle-Order Run Producer" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "중심 타선 해결사형" } }
+    } }
+    ,"content.pro-rival.pro-rival-seoul.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "82 HR over the last 3 seasons · .901 OPS" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 3시즌 82홈런 · OPS .901" } }
+    } }
+    ,"content.pro-rival.pro-rival-seoul.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "His swing stays short even when behind. He waits on pitches away and drives them the other way." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "카운트가 몰려도 스윙이 짧아지지 않습니다. 바깥쪽 승부를 기다렸다 밀어칩니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-busan.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Ma Tae-o" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "마태오" } }
+    } }
+    ,"content.pro-rival.pro-rival-busan.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Opposite-Field Slugger" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "우측 담장 거포형" } }
+    } }
+    ,"content.pro-rival.pro-rival-busan.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "96 HR over the last 3 seasons · .571 SLG" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 3시즌 96홈런 · 장타율 .571" } }
+    } }
+    ,"content.pro-rival.pro-rival-busan.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "He lifts low pitches over the right-field wall and never misses a mistake inside." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮게 깔린 공을 퍼올려 우측 담장을 넘깁니다. 몸쪽 실투 한 개를 놓치지 않습니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-incheon.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Baek Geon-u" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "백건우" } }
+    } }
+    ,"content.pro-rival.pro-rival-incheon.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Precision Contact Hitter" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "교타 정확형" } }
+    } }
+    ,"content.pro-rival.pro-rival-incheon.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : ".318 career AVG · 150 hits in 3 straight seasons" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "통산 타율 .318 · 3년 연속 150안타" } }
+    } }
+    ,"content.pro-rival.pro-rival-incheon.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "He extends at-bats with fouls and waits for the put-away pitch. He puts far more balls in play than he strikes out." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "파울로 승부를 늘리다 결정구를 받아칩니다. 삼진보다 인플레이 타구가 많습니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-daegu.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "No Jin-seong" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "노진성" } }
+    } }
+    ,"content.pro-rival.pro-rival-daegu.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Pull-Side Home Run Hitter" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "당겨치는 홈런형" } }
+    } }
+    ,"content.pro-rival.pro-rival-daegu.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "34 HR last season · League extra-base-hit leader" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 시즌 34홈런 · 최다 장타" } }
+    } }
+    ,"content.pro-rival.pro-rival-daegu.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "His quick bat turns on pitches inside. He shows his plan from the first pitch." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 배트로 안쪽 공을 끌어당깁니다. 초구부터 노림수를 숨기지 않습니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-daejeon.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Cheon U-jae" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "천우재" } }
+    } }
+    ,"content.pro-rival.pro-rival-daejeon.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "On-Base Specialist" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "선구안 출루형" } }
+    } }
+    ,"content.pro-rival.pro-rival-daejeon.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : ".420 OBP · League walk leader" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "출루율 .420 · 볼넷 최다" } }
+    } }
+    ,"content.pro-rival.pro-rival-daejeon.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "He will not chase outside the zone and has no fear of a full-count battle." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "존을 벗어난 공에는 손이 나가지 않습니다. 풀카운트 승부를 두려워하지 않습니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-gwangju.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Seo Gang-yun" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "서강윤" } }
+    } }
+    ,"content.pro-rival.pro-rival-gwangju.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Gap-Power Hitter" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "중장거리 갭 히터형" } }
+    } }
+    ,"content.pro-rival.pro-rival-gwangju.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "League doubles leader · .880 OPS" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "2루타 최다 · OPS .880" } }
+    } }
+    ,"content.pro-rival.pro-rival-gwangju.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "He hunts the left-center gap for extra bases and handles breaking-ball timing well." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "좌중간 갭을 노려 장타를 만듭니다. 변화구 타이밍에 강합니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-suwon.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Gu Bon-hyeok" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "구본혁" } }
+    } }
+    ,"content.pro-rival.pro-rival-suwon.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Complete Contact Hitter" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "컨택 무결점형" } }
+    } }
+    ,"content.pro-rival.pro-rival-suwon.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : ".300+ AVG and double-digit HR in 5 straight seasons" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "5년 연속 3할·두 자릿수 홈런" } }
+    } }
+    ,"content.pro-rival.pro-rival-suwon.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "There is no obvious weak spot. He can square up any pitch type." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "약점 코스가 뚜렷하지 않습니다. 어떤 구종이든 중심에 맞힙니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-changwon.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Ryu Seong-gwon" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "류성권" } }
+    } }
+    ,"content.pro-rival.pro-rival-changwon.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Long-Levered Power Hitter" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "장신 파워형" } }
+    } }
+    ,"content.pro-rival.pro-rival-changwon.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "40 HR last season · .612 SLG" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 시즌 40홈런 · 장타율 .612" } }
+    } }
+    ,"content.pro-rival.pro-rival-changwon.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "His reach covers the outer edge, and he can drive a high pitch without dropping the barrel." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "긴 리치로 바깥쪽까지 커버합니다. 높은 공을 그대로 받아넘깁니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-jeonju.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Mun Tae-gyeong" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "문태경" } }
+    } }
+    ,"content.pro-rival.pro-rival-jeonju.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Speed-and-Gaps Hitter" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 발 갭 타자형" } }
+    } }
+    ,"content.pro-rival.pro-rival-jeonju.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : ".300 AVG and 30 steals in 3 straight seasons" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "3년 연속 3할·30도루" } }
+    } }
+    ,"content.pro-rival.pro-rival-jeonju.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "He shortens up, then immediately looks for the next base. One mistake can become a run." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "짧게 끊어치고 곧바로 다음 베이스를 노립니다. 실투가 곧 실점입니다." } }
+    } }
+    ,"content.pro-rival.pro-rival-jeju.name" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Han Do-gyeol" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "한도결" } }
+    } }
+    ,"content.pro-rival.pro-rival-jeju.archetype" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Clutch Run Producer" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "득점권 해결사형" } }
+    } }
+    ,"content.pro-rival.pro-rival-jeju.record" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : ".352 AVG with runners in scoring position · Multiple walk-offs" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "득점권 타율 .352 · 끝내기 다수" } }
+    } }
+    ,"content.pro-rival.pro-rival-jeju.profile" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "His swing gets firmer with runners aboard. He is a bad-ball hitter who covers a wide zone." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "주자가 있을 때 스윙이 더 단단해집니다. 넓은 존을 커버하는 배드볼 히터입니다." } }
+    } }
+    ,"content.league-name.surname.gim" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Gim" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "김" } }
+    } }
+    ,"content.league-name.surname.i" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "I" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "이" } }
+    } }
+    ,"content.league-name.surname.bak" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Bak" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "박" } }
+    } }
+    ,"content.league-name.surname.choe" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Choe" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "최" } }
+    } }
+    ,"content.league-name.surname.jeong" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Jeong" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "정" } }
+    } }
+    ,"content.league-name.surname.gang" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Gang" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "강" } }
+    } }
+    ,"content.league-name.surname.jo" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Jo" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "조" } }
+    } }
+    ,"content.league-name.surname.yun" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Yun" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "윤" } }
+    } }
+    ,"content.league-name.surname.jang" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Jang" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "장" } }
+    } }
+    ,"content.league-name.surname.im" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Im" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "임" } }
+    } }
+    ,"content.league-name.surname.han" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Han" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "한" } }
+    } }
+    ,"content.league-name.surname.o" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "O" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "오" } }
+    } }
+    ,"content.league-name.surname.seo" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Seo" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "서" } }
+    } }
+    ,"content.league-name.surname.sin" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Sin" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "신" } }
+    } }
+    ,"content.league-name.surname.gwon" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Gwon" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "권" } }
+    } }
+    ,"content.league-name.surname.hwang" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Hwang" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "황" } }
+    } }
+    ,"content.league-name.given.dohyeon" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Do-hyeon" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "도현" } }
+    } }
+    ,"content.league-name.given.jihun" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Ji-hun" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "지훈" } }
+    } }
+    ,"content.league-name.given.seongmin" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Seong-min" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "성민" } }
+    } }
+    ,"content.league-name.given.ujin" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "U-jin" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "우진" } }
+    } }
+    ,"content.league-name.given.jaewon" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Jae-won" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "재원" } }
+    } }
+    ,"content.league-name.given.hajun" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Ha-jun" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "하준" } }
+    } }
+    ,"content.league-name.given.siu" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Si-u" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시우" } }
+    } }
+    ,"content.league-name.given.geonu" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Geon-u" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "건우" } }
+    } }
+    ,"content.league-name.given.yejun" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Ye-jun" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "예준" } }
+    } }
+    ,"content.league-name.given.seonu" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Seon-u" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "선우" } }
+    } }
+    ,"content.league-name.given.taeyun" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Tae-yun" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "태윤" } }
+    } }
+    ,"content.league-name.given.minseok" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Min-seok" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "민석" } }
+    } }
+    ,"content.league-name.given.hyeonu" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Hyeon-u" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "현우" } }
+    } }
+    ,"content.league-name.given.jeonghu" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Jeong-hu" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "정후" } }
+    } }
+    ,"content.league-name.given.seunghyeon" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Seung-hyeon" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "승현" } }
+    } }
+    ,"content.league-name.given.juhwan" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Ju-hwan" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "주환" } }
+    } }
+    ,"content.pro-summary.backup-recovered" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The current save could not be read, so the last healthy backup was restored." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 저장본을 읽지 못해 직전 정상 백업으로 복구했습니다." } }
+    } }
+    ,"content.pro-summary.joined-direct" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You joined %@ and will open your first season in the development league." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 입단. 2군에서 첫 시즌을 시작합니다." } }
+    } }
+    ,"content.pro-summary.joined-high-school" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You joined %@ with all three years of high-school growth intact." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 입단. 고교 3년의 능력을 그대로 안고 시작합니다." } }
+    } }
+    ,"content.pro-summary.outing-abandoned" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You left the outing. The next time you take the mound, a fresh inning will begin." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "등판을 중단했습니다. 다음 마운드는 새 이닝입니다." } }
+    } }
+    ,"content.pro-summary.season-recorded" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "This season is now part of your career record." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 기록을 통산 기록에 확정했습니다." } }
+    } }
+    ,"content.pro-summary.continue" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You will prepare for next season with %@." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@에서 다음 시즌을 준비합니다." } }
+    } }
+    ,"content.pro-summary.military" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You will return after completing two seasons of military service." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "두 시즌의 군 복무를 마치고 돌아옵니다." } }
+    } }
+    ,"content.pro-summary.free-agency" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You filed for free agency." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "FA를 신청했습니다." } }
+    } }
+    ,"content.pro-summary.retire" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You chose to retire." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "은퇴를 선택했습니다." } }
+    } }
+    ,"content.pro-summary.ready" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your next assignment is ready." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 일정이 준비됐습니다." } }
+    } }
+    ,"content.pro-summary.call-up" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You made the top-level roster. A spotlight outing is already waiting." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "1군 출전 명단에 합류했습니다. 다음 주목받는 등판이 바로 이어집니다." } }
+    } }
+    ,"content.pro-summary.role-changed" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "After meeting with the manager, your role changed to %@." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "감독 면담 뒤 역할이 %@으로 바뀌었습니다." } }
+    } }
+    ,"content.pro-summary.milestone" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "New milestone · %@" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 주요 기록 · %@" } }
+    } }
+    ,"content.pro-summary.week" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Week %1$lld complete · Manager trust %2$+lld · Fatigue %3$+lld" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld주차 완료 · 감독의 믿음 %2$+lld · 피로 %3$+lld" } }
+    } }
+    ,"content.pro-summary.decision" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ · %2$@ — %3$@" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ · %2$@ — %3$@" } }
+    } }
+    ,"content.pro-summary.updated" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your pro career has been updated." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 커리어가 갱신됐습니다." } }
+    } }
+    ,"content.pro-milestone.drafted" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Drafted" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 지명" } }
+    } }
+    ,"content.pro-milestone.rookie-contract" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Signed Rookie Contract" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "신인 계약" } }
+    } }
+    ,"content.pro-milestone.first-appearance" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "First Official Pro Appearance" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 첫 공식 등판" } }
+    } }
+    ,"content.pro-milestone.call-up" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Top-Level Call-Up" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "1군 콜업" } }
+    } }
+    ,"content.pro-milestone.first-major-moment" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "First High-Leverage Top-Level Outing" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "1군 첫 중요 승부" } }
+    } }
+    ,"content.pro-milestone.season-role" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %1$lld · %@ Role" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld시즌 %@ 역할" } }
+    } }
+    ,"content.pro-milestone.games" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld Career Games" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 통산 %lld경기" } }
+    } }
+    ,"content.pro-milestone.strikeouts" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld Career Strikeouts" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 통산 %lld탈삼진" } }
+    } }
+    ,"content.pro-milestone.season-complete" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Completed Season %lld" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld시즌 완주" } }
+    } }
+    ,"content.pro-milestone.retired" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Retired · %lld Career Seasons" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "은퇴 · 통산 %lld시즌" } }
+    } }
+    ,"content.pro-award.strikeouts" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %lld Strikeout Award" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 %lld 탈삼진상" } }
+    } }
+    ,"content.pro-award.run-prevention" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %lld Run Prevention Award" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 %lld 최소 실점상" } }
+    } }
+    ,"content.pro-award.command" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %lld Command Award" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 %lld 정밀 제구상" } }
+    } }
+    ,"content.pro-award.hit-prevention" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %lld Hit Prevention Award" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 %lld 피안타 억제상" } }
+    } }
+    ,"content.pro-award.innings" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %lld Innings Award" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 %lld 이닝 책임상" } }
+    } }
+    ,"content.pro-news.retirement.hall-of-fame" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your place in the Hall of Fame is secure." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "명예의 전당 헌액이 확정됐습니다." } }
+    } }
+    ,"content.pro-news.retirement.ceremony" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "At your retirement ceremony, you looked back on the final pitch of your career." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "은퇴식에서 선수 생활의 마지막 공을 돌아봤습니다." } }
+    } }
+    ,"content.pro-news.rookie-contract" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You signed your rookie contract. The competition for a development-league rotation spot begins now." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "신인 계약에 서명했습니다. 2군 선발 경쟁이 시작됩니다." } }
+    } }
+    ,"content.pro-news.call-up" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your development-league record and the manager's trust earned you a place on the top-level roster." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "2군 기록과 감독의 믿음을 쌓아 1군 출전 명단에 합류했습니다." } }
+    } }
+    ,"content.pro-news.demotion" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "A run of missed opportunities sends you back to the development league. You must build your case again." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "최근 등판이 이어지지 않아 2군으로 내려갑니다. 기록을 다시 쌓아야 합니다." } }
+    } }
+    ,"content.pro-news.military-return" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You returned after completing two seasons of military service." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "두 시즌의 군 복무를 마치고 복귀했습니다." } }
+    } }
+    ,"content.pro-news.segment.spring-camp" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Spring camp is open. Time to prepare for a new season." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "스프링캠프가 열렸습니다. 새 시즌 준비를 시작합니다." } }
+    } }
+    ,"content.pro-news.segment.opening" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Opening series has begun. It is time to make your first impression." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "개막 시리즈가 시작됐습니다. 첫인상을 남길 시간입니다." } }
+    } }
+    ,"content.pro-news.segment.first-half" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The first-half race is underway. Find your rhythm for the long season." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "전반기 레이스에 들어섰습니다. 긴 시즌의 리듬을 잡습니다." } }
+    } }
+    ,"content.pro-news.segment.all-star" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "It is the All-Star break. Recover now and prepare for the second half." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "올스타 휴식기입니다. 몸을 추스르고 후반기를 준비합니다." } }
+    } }
+    ,"content.pro-news.segment.pennant-race" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The pennant race is heating up. Every game carries more weight." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "순위 경쟁이 뜨거워집니다. 한 경기의 무게가 커집니다." } }
+    } }
+    ,"content.pro-news.segment.finale" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The season is winding down, with one last standings fight ahead." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 막바지, 마지막 순위 싸움이 남았습니다." } }
+    } }
+    ,"content.pro-news.rookie-offer" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Rookie contract offer · %1$@ · %2$@" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "신인 계약 제안 · %1$@ · %2$@" } }
+    } }
+    ,"content.pro-news.first-appearance" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your first official pro appearance is complete: %1$lld games and %2$lld strikeouts." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 첫 공식 등판을 마쳤습니다. %1$lld경기에서 %2$lld개의 삼진을 잡았습니다." } }
+    } }
+    ,"content.pro-news.week" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Week %1$lld · %2$lld games · %3$lld K · %4$lld walks · %5$lld runs" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld주차 · %2$lld경기 · %3$lldK · %4$lld볼넷 · %5$lld실점" } }
+    } }
+    ,"content.pro-news.role" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "After meeting with the manager, you will take the %@ role in your next outing." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "감독 면담 뒤 다음 등판부터 %@ 역할을 맡습니다." } }
+    } }
+    ,"content.pro-news.injury" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Overwork put you on the injured list for %lld weeks." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "과부하로 %lld주 부상자 명단에 올랐습니다." } }
+    } }
+    ,"content.pro-news.season-end" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %1$lld complete · %2$lld games · %3$lld K · %4$@ RA9" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 %1$lld 종료 · %2$lld경기 · %3$lldK · 9이닝당 실점 %4$@" } }
+    } }
+    ,"content.pro-news.free-agency" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Free-agent signing: a new challenge begins with %@." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "FA 계약: %@과 새 도전을 시작합니다." } }
+    } }
+    ,"content.pro-news.retirement.totals" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Career · %1$lld seasons · %2$lld games · %3$lld strikeouts · %4$@ RA9" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "통산 %1$lld시즌 · %2$lld경기 · %3$lld탈삼진 · 9이닝당 실점 %4$@" } }
+    } }
+    ,"content.pro-news.retirement.best-season" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Season %1$lld shone brightest: %2$lld games and %3$lld strikeouts." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "가장 빛난 해는 %1$lld시즌 — %2$lld경기에서 %3$lld개의 탈삼진을 잡았습니다." } }
+    } }
+    ,"content.pro-news.retirement.first-and-award" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "First milestone: %1$@ · Final award: %2$@" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 기록: %1$@ · 마지막 수상: %2$@" } }
+    } }
+    ,"content.pro-news.retirement.first" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "First milestone: %@" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 기록: %@" } }
+    } }
+    ,"content.pro-news.retirement.last-team" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You threw your final pitch wearing %@'s uniform." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 공은 %@의 유니폼으로 던졌습니다." } }
+    } }
+    ,"content.pro-tension.role.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "A Role Battle with %@" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@와의 자리 싸움" } }
+    } }
+    ,"content.pro-tension.role.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your results will be measured all season with one %@ role at stake." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 한 자리를 두고 시즌 내내 성적을 견줍니다." } }
+    } }
+    ,"content.pro-tension.record.power.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld Strikeouts This Season" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 %lld탈삼진" } }
+    } }
+    ,"content.pro-tension.record.power.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Overpower hitters with your fastball and chase a full-season strikeout mark." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 공으로 타자를 압도해 한 시즌 탈삼진 기록에 도전합니다." } }
+    } }
+    ,"content.pro-tension.record.command.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ BB/9 or Lower" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "9이닝당 볼넷 %@ 이하" } }
+    } }
+    ,"content.pro-tension.record.command.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Work the edges with precision and keep unnecessary runners off base." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "정교한 코스 승부로 불필요한 주자를 내보내지 않습니다." } }
+    } }
+    ,"content.pro-tension.record.movement.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ H/9 or Lower" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "9이닝당 피안타 %@ 이하" } }
+    } }
+    ,"content.pro-tension.record.movement.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Use late movement and weak contact to hold down hits." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "결정구의 변화와 약한 타구로 안타를 억제합니다." } }
+    } }
+    ,"content.pro-tension.record.stamina.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld Innings This Season" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 %lld이닝" } }
+    } }
+    ,"content.pro-tension.record.stamina.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Hold your stuff late and take responsibility for every out in your assignment." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "후반에도 구위를 지키며 맡은 아웃카운트를 끝까지 책임집니다." } }
+    } }
+    ,"content.pro-tension.rival.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Matchups with %@" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 맞대결" } }
+    } }
+    ,"content.pro-tension.rival.detail" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@'s %2$@ will meet you on the mound again and again this season." } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@의 %2$@. 올 시즌 몇 번이고 마운드에서 마주칩니다." } }
+    } }
+    ,"content.personality-trait.closer.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Putaway Pitch" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "결정구" } }
+    } }
+    ,"content.personality-trait.closer.activation" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Your pitches gain weight with two strikes" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "2스트라이크에서 공이 무거워집니다" } }
+    } }
+    ,"content.personality-trait.anchor.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Shoulder the Crisis" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "위기의 어깨" } }
+    } }
+    ,"content.personality-trait.anchor.activation" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You hold steady with runners on base" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "주자가 있을 때 흔들리지 않습니다" } }
+    } }
+    ,"content.personality-trait.tactician.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "Mind Game" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "수싸움" } }
+    } }
+    ,"content.personality-trait.tactician.activation" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "You take control of the sequence from the fifth pitch on" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "5구째부터 수싸움을 지배합니다" } }
+    } }
+    ,"content.personality-trait.opener.title" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "First-Pitch Command" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "초구 장악" } }
+    } }
+    ,"content.personality-trait.opener.activation" : { "localizations" : {
+      "en" : { "stringUnit" : { "state" : "translated", "value" : "The first pitch of each plate appearance is sharper" } },
+      "ko" : { "stringUnit" : { "state" : "translated", "value" : "타석의 첫 공이 날카롭습니다" } }
+    } }
+    ,"content.achievement.first_draft.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Your Name Was Called" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "이름이 불렸다" } } } }
+    ,"content.achievement.first_draft.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Get selected in the high-school draft." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 드래프트에서 지명을 받습니다." } } } }
+    ,"content.achievement.first_strikeout.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "First Strikeout" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 삼진" } } } }
+    ,"content.achievement.first_strikeout.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Record a strikeout in an official high-school game." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 공식 경기에서 삼진을 하나 잡습니다." } } } }
+    ,"content.achievement.clean_inning.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Scoreless Inning" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "무실점 이닝" } } } }
+    ,"content.achievement.clean_inning.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish an official high-school game without allowing a run." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 공식 경기를 실점 없이 끝냅니다." } } } }
+    ,"content.achievement.perfect_delivery.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Perfect Release" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "완벽한 릴리스" } } } }
+    ,"content.achievement.perfect_delivery.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Throw one pitch with near-perfect release and aim." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "거의 완벽한 릴리스와 조준으로 한 공을 던집니다." } } } }
+    ,"content.achievement.major_debut.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Top-Level Debut" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "1군 데뷔" } } } }
+    ,"content.achievement.major_debut.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Reach the top-level pro roster." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로 1군에 올라갑니다." } } } }
+    ,"content.achievement.hundred_strikeouts.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "100 Strikeouts in a Season" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 시즌 100탈삼진" } } } }
+    ,"content.achievement.hundred_strikeouts.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Record 100 strikeouts in one season." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 시즌에 100개의 삼진을 잡습니다." } } } }
+    ,"content.achievement.third_life.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Third Try" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "세 번째 도전" } } } }
+    ,"content.achievement.third_life.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Begin your third player." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "세 번째 선수를 시작합니다." } } } }
+    ,"content.achievement.fifth_life.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Fifth Try" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "다섯 번째 도전" } } } }
+    ,"content.achievement.fifth_life.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Begin your fifth player." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "다섯 번째 선수를 시작합니다." } } } }
+    ,"content.achievement.tenth_life.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Tenth Try" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "열 번째 도전" } } } }
+    ,"content.achievement.tenth_life.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Begin your tenth player." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "열 번째 선수를 시작합니다." } } } }
+    ,"content.achievement.karma_run.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Carry the Burden" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "짐을 지고" } } } }
+    ,"content.achievement.karma_run.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Reach the draft with a player carrying a handicap." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "핸디캡을 안고 키운 선수로 드래프트까지 갑니다." } } } }
+    ,"content.achievement.double_karma.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Carry Two Burdens" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "두 짐을 지고" } } } }
+    ,"content.achievement.double_karma.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Reach the draft with a player carrying two handicaps." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "핸디캡 두 개를 안고 키운 선수로 드래프트까지 갑니다." } } } }
+    ,"content.achievement.awakened_thrice.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Awaken Three Times" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "세 번 각성" } } } }
+    ,"content.achievement.awakened_thrice.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose three awakenings for one player." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 선수에게서 각성을 세 번 고릅니다." } } } }
+    ,"content.achievement.four_schools.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Four Roads" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "네 갈래 길" } } } }
+    ,"content.achievement.four_schools.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Develop players at four different schools." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "서로 다른 학교 네 곳에서 선수를 키웁니다." } } } }
+    ,"content.achievement.five_drafts.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Called Five Times" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "다섯 번의 호명" } } } }
+    ,"content.achievement.five_drafts.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Get drafted five times across all players." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "통산 다섯 번 지명을 받습니다." } } } }
+    ,"content.achievement.hall_of_fame.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Hall of Fame" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "명예의 전당" } } } }
+    ,"content.achievement.hall_of_fame.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Reach a Hall of Fame score above 70." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "명예의 전당 점수 70을 넘깁니다." } } } }
+    ,"content.weekly-task.played_on_two_days.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Pitch on Two Different Days" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "서로 다른 두 날에 던지기" } } } }
+    ,"content.weekly-task.played_on_two_days.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Pitch one game today and another on a different day, in either high school or pro play." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘 한 경기, 다른 날 한 경기. 고교·프로 어느 쪽이든 됩니다." } } } }
+    ,"content.weekly-task.daily_inning_completed.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Retired Goal" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "종료된 이전 목표" } } } }
+    ,"content.weekly-task.daily_inning_completed.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "This retired goal has been marked complete for compatibility." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "기능 종료로 완료 처리된 목표입니다." } } } }
+    ,"content.weekly-task.important_games_completed.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish 2 Official High-School Games" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 공식 경기 2번 마치기" } } } }
+    ,"content.weekly-task.important_games_completed.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish an official high-school game." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 공식 경기를 마치면 됩니다." } } } }
+    ,"content.weekly-task.chapters_advanced.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish 2 High-School Chapters" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 이야기 2장 마치기" } } } }
+    ,"content.weekly-task.chapters_advanced.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish the current story and advance to the next chapter." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금 이야기를 마치고 다음 장으로 가면 됩니다." } } } }
+    ,"content.weekly-task.next_run_started.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Begin Again with a New Player" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 선수로 다시 시작하기" } } } }
+    ,"content.weekly-task.next_run_started.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish the three high-school years and begin again with a new player." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년을 마치고 새 선수로 다시 시작하면 됩니다." } } } }
+    ,"content.weekly-task.pledge_selected.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a Three-Year Goal" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년 목표 정하기" } } } }
+    ,"content.weekly-task.pledge_selected.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose your goal for the three high-school years before selecting a school." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "학교를 고르기 전에 고교 3년의 목표를 정하면 됩니다." } } } }
+    ,"content.weekly-task.different_school_selected.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a Different School" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 선수와 다른 학교 고르기" } } } }
+    ,"content.weekly-task.different_school_selected.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a school different from your previous player's." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 선수와 다른 학교를 고르면 됩니다." } } } }
+    ,"content.weekly-task.sequence_mastery_triggered.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Win 3 Pitching Mind Games" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "수싸움 3회 성공하기" } } } }
+    ,"content.weekly-task.sequence_mastery_triggered.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Read velocity and location changes to outthink the hitter." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "구속 차와 코스 변화를 읽어 수싸움을 맞히면 됩니다." } } } }
+    ,"content.weekly-task.pro_weeks_advanced.title" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Advance 3 Pro Weeks" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로에서 3주 보내기" } } } }
+    ,"content.weekly-task.pro_weeks_advanced.next-action" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Advance one week in your pro career." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로에서 한 주를 보내면 됩니다." } } } }
+    ,"content.pledge.get-drafted.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Hear your name called in the draft." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "드래프트에서 이름이 불린다." } } } }
+    ,"content.pledge.strikeout-master.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Record 5 career strikeouts in games you pitch directly." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 등판 통산 5탈삼진을 만든다." } } } }
+    ,"content.pledge.clean-games.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish four directly pitched games without allowing a run." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 던진 경기에서 무실점을 네 번 만든다." } } } }
+    ,"content.pledge.iron-control.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Pitch at least four games and record 4 career strikeouts without a walk." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 등판 4경기 이상, 볼넷 없이 통산 4탈삼진을 만든다." } } } }
+    ,"content.pledge.healthy-finish.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Pitch four official high-school games and finish with fatigue at 78 or lower and no arm warning." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 공식 경기 네 번을 치르고 피로를 78 이하로 남긴 채 팔 경고 없이 완주한다." } } } }
+    ,"content.pledge.awakening-three.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose three awakenings from three different strategy families." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "각성 세 번을 고르고 서로 다른 전략 계열 세 가지를 모은다." } } } }
+    ,"content.pledge.fan-sixty.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Raise fan interest to 25 or higher." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "팬 관심을 25 이상으로 올린다." } } } }
+    ,"content.pledge.evaluation-sixty-five.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Earn a draft evaluation of 64 or higher." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "드래프트 평가 64점 이상을 받는다." } } } }
+    ,"content.pledge.evaluation-seventy-five.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Earn a draft evaluation of 67 or higher." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "드래프트 평가 67점 이상을 받는다." } } } }
+    ,"content.pledge.iron-control-five.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Pitch at least four games and record 6 career strikeouts without a walk." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 등판 4경기 이상, 볼넷 없이 통산 6탈삼진을 만든다." } } } }
+    ,"content.pledge.rival-three-strikeouts.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Strike out your rival three times over your high-school career." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년 동안 숙적을 세 번 삼진으로 잡는다." } } } }
+    ,"content.pledge.relationship-sixty-five.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Raise trust with your manager, catcher, or rival to 69 or higher." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "감독·포수·숙적 중 한 관계를 69 이상으로 만든다." } } } }
+    ,"content.pledge.legacy-strikeout-master.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Record 40 strikeouts directly over three years." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "3년 동안 직접 잡는 탈삼진 40개." } } } }
+    ,"content.pledge.legacy-clean-games.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish two directly pitched games without allowing a run." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 던진 경기에서 무실점을 두 번 만든다." } } } }
+    ,"content.pledge.legacy-get-drafted.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Hear your name called in the draft." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "드래프트에서 이름이 불린다." } } } }
+    ,"content.pledge.legacy-iron-control.detail" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish the season with 8 walks or fewer after at least four games." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌을 볼넷 8개 이하로 완주한다(4경기 이상)." } } } }
+
+    ,"content.player-heart.injury-recovery.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trying to Pitch Again" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 던지기 위해" } } } }
+    ,"content.player-heart.injury-recovery.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Please don't rush me right now. I want to come back right and pitch for a long time." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금은 서두르지 말아 줘요. 제대로 돌아와서 오래 던지고 싶어요." } } } }
+    ,"content.player-heart.arm-warning.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "A Signal from My Arm" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "팔이 보내는 신호" } } } }
+    ,"content.player-heart.arm-warning.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Today, I need you to watch my arm before the ball. I want us to stand together in the next game too." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 공보다 내 팔을 먼저 봐 줬으면 해요. 다음 경기에도 함께 서고 싶어요." } } } }
+    ,"content.player-heart.fatigue-warning.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Running a Little Tired" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "조금 지친 마음" } } } }
+    ,"content.player-heart.fatigue-warning.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "I'm a little tired. If you help choose when I rest, I can find my strength again." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "조금 지쳤어요. 쉬는 날까지 같이 골라 주면 다시 힘을 낼 수 있어요." } } } }
+    ,"content.player-heart.chapter-review.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Looking Back on a Chapter" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 시기를 지나며" } } } }
+    ,"content.player-heart.chapter-review.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Take a moment to look back at how far I've come. I want us to find the next answer together too." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "여기까지 온 나를 한번 돌아봐 줘요. 다음 이야기에서도 함께 답을 찾고 싶어요." } } } }
+    ,"content.player-heart.awakening.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "On the Verge of Change" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "달라지기 직전" } } } }
+    ,"content.player-heart.awakening.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "More than which pitch I gain, help me choose what kind of pitcher I become." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "어떤 공을 갖게 될지보다, 어떤 투수가 될지 같이 골라 줘요." } } } }
+    ,"content.player-heart.draft.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Waiting for My Name" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "이름을 기다리며" } } } }
+    ,"content.player-heart.draft.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Now I wait for my name to be called. Whatever happens, remember the three years we spent together." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "이제 내 이름이 불릴 차례를 기다려요. 어떤 결과여도 우리가 보낸 3년은 기억해 줘요." } } } }
+    ,"content.player-heart.legacy-drafted.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Facing a New Uniform" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 유니폼 앞에서" } } } }
+    ,"content.player-heart.legacy-drafted.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "They called my name. I'll take our three years with me and see how far I can go." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 이름이 불렸어요. 우리가 보낸 3년까지 데리고 더 멀리 가 볼게요." } } } }
+    ,"content.player-heart.legacy-undrafted.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "At the End of Three Years" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "3년을 마치며" } } } }
+    ,"content.player-heart.legacy-undrafted.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The result hurts. But please don't call the three years I lived a failure too." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "결과가 아프긴 해요. 그래도 내가 보낸 3년까지 실패로 부르지는 말아 줘요." } } } }
+    ,"content.player-heart.completed-drafted.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Facing a New Uniform" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 유니폼 앞에서" } } } }
+    ,"content.player-heart.completed-drafted.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "They called my name. I'll take our three years with me and see how far I can go." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 이름이 불렸어요. 우리가 보낸 3년까지 데리고 더 멀리 가 볼게요." } } } }
+    ,"content.player-heart.completed-undrafted.mood" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "At the End of Three Years" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "3년을 마치며" } } } }
+    ,"content.player-heart.completed-undrafted.words" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The result hurts. But please don't call the three years I lived a failure too." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "결과가 아프긴 해요. 그래도 내가 보낸 3년까지 실패로 부르지는 말아 줘요." } } } }
+
+    ,"content.player-legacy.title.signature" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The Pitcher Who Left His Own Game Behind" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "자기 공을 남긴 투수" } } } }
+    ,"content.player-legacy.title.drafted" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The Pitcher We Raised All the Way" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "끝까지 키워 낸 투수" } } } }
+    ,"content.player-legacy.title.pledge" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The Pitcher Who Kept a Promise" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "자기 목표를 지킨 투수" } } } }
+    ,"content.player-legacy.title.scoreless" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The Pitcher Who Protected Home" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "끝까지 홈을 지킨 투수" } } } }
+    ,"content.player-legacy.title.strikeouts" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The Pitcher Who Believed in the Strikeout" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "삼진을 믿었던 투수" } } } }
+    ,"content.player-legacy.title.together" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The Pitcher Who Shared Three Years with Us" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "함께 3년을 보낸 투수" } } } }
+    ,"content.player-legacy.opening.drafted" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "When they called my name, I first thought of the pitches we built one stitch at a time." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 이름이 불릴 때, 제일 먼저 우리가 한 땀씩 키운 공이 떠올랐어요." } } } }
+    ,"content.player-legacy.opening.undrafted-signature" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The pros never called, but %@. That time doesn't disappear." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로의 부름은 없었지만, %@ 그 시간까지 사라지는 건 아니죠." } } } }
+    ,"content.player-legacy.opening.undrafted" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The pros never called, but the three years I lived don't disappear." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로의 부름은 없었지만, 내가 보낸 3년까지 사라지는 건 아니죠." } } } }
+    ,"content.player-legacy.closing.drafted-signature" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "I'll carry '%@' with me to a bigger mound." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "우리가 만든 ‘%@’과 함께 더 큰 마운드로 가 볼게요." } } } }
+    ,"content.player-legacy.closing.undrafted-signature" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "I hope '%@' reaches the beginning of another mound someday." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "‘%@’이 언젠가 다른 마운드의 시작에 닿기를 바라요." } } } }
+    ,"content.player-legacy.closing.memory-fiery" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The heart that never backed down and the memories I chose will carry into the next player's first pitch." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막까지 물러서지 않았던 마음과 내가 고른 기억은 다음 선수의 첫 공에 이어질 거예요." } } } }
+    ,"content.player-legacy.closing.memory-steady" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The quiet days I built and the memories I chose will carry into the next player's first pitch." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "말없이 오래 쌓은 하루들과 내가 고른 기억은 다음 선수의 첫 공에 이어질 거예요." } } } }
+    ,"content.player-legacy.closing.memory-analyst" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Every reason behind my choices and the memories I chose will carry into the next player's first pitch." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "매번 그 공을 고른 이유와 내가 고른 기억은 다음 선수의 첫 공에 이어질 거예요." } } } }
+    ,"content.player-legacy.closing.memory-adaptable" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The answers I found for each situation and the memories I chose will carry into the next player's first pitch." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "상황마다 찾은 답과 내가 고른 기억은 다음 선수의 첫 공에 이어질 거예요." } } } }
+    ,"content.player-legacy.closing.memory-default" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The memories I chose will carry into the next player's first pitch." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "내가 고른 기억은 다음 선수의 첫 공에 이어질 거예요." } } } }
+    ,"content.player-legacy.closing.plain-fiery" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Please remember the heart that never backed down." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막까지 물러서지 않았던 마음만은 오래 기억해 주세요." } } } }
+    ,"content.player-legacy.closing.plain-steady" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "I hope the quiet days I built can strengthen someone's beginning." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "말없이 오래 쌓은 하루들이 누군가의 시작에 힘이 되면 좋겠어요." } } } }
+    ,"content.player-legacy.closing.plain-analyst" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Remember not only the result, but why I chose each pitch." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "결과뿐 아니라, 내가 매번 그 공을 고른 이유도 기억해 주세요." } } } }
+    ,"content.player-legacy.closing.plain-adaptable" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "I hope my record helps someone else find an answer of their own." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 기록이 다른 누군가에게 자기만의 답을 찾는 힌트가 되면 좋겠어요." } } } }
+    ,"content.player-legacy.closing.plain-default" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "I hope the record I leave can strengthen the beginning of another mound." } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "내가 남긴 기록이 언젠가 다른 마운드의 시작에 힘이 되면 좋겠어요." } } } }
+    ,"content.player-legacy.moment.drafted" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The day %1$@ called %2$@'s name" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@이 %2$@의 이름을 불렀던 날" } } } }
+    ,"content.player-legacy.moment.undrafted" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The day the final pitch was thrown at %@" } }, "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@에서 마지막 공을 던진 날" } } } }
   },
   "version" : "1.0"
 }

@@ -17,7 +17,8 @@ final class QACaptureUITests: XCTestCase {
     private let timeout: TimeInterval = 12
     private let maximumSteps = 600
     /// 호스트에서 바로 열 수 있는 자리. 못 쓰면 러너 임시 폴더로 물러난다.
-    private let preferredShotDirectory = "/tmp/claude-501/qa-shots"
+    private let preferredShotDirectory = ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_DIR"]
+        ?? "/tmp/claude-501/qa-shots"
 
     private var shotIndex = 0
     /// 같은 이름의 화면을 몇 번 찍었는가. 훈련·관계는 회차당 수십 번 나오므로 상한을 둔다.
@@ -85,9 +86,42 @@ final class QACaptureUITests: XCTestCase {
 
     // MARK: - 본편
 
+    private var captureModeEnabled: Bool {
+        let bundled = Bundle(for: QACaptureUITests.self)
+            .object(forInfoDictionaryKey: "BaseballCaptureMode") as? String
+        return bundled == "1"
+            || ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_STORE"] == "1"
+    }
+
+    private var captureLanguage: String? {
+        let bundled = Bundle(for: QACaptureUITests.self)
+            .object(forInfoDictionaryKey: "BaseballCaptureLanguage") as? String
+        if let bundled, !bundled.isEmpty { return bundled }
+        return ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_LANGUAGE"]
+    }
+
+    private func launchArguments(additional: [String] = [], autoRelease: Bool = true) -> [String] {
+        var arguments = [
+            "-uiTestResetCareer", "-baseball.audio.sound", "NO",
+        ]
+        if autoRelease { arguments.append("-uiTestAutoRelease") }
+        if captureLanguage == "en" {
+            arguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        } else if captureLanguage == "ko" {
+            arguments += ["-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
+        }
+        if ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_STORE"] == "1"
+            || ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_UNDRAFTED_FIXTURE"] == "1"
+            || ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_DRAFTED_FIXTURE"] == "1" {
+            arguments.append("-uiTestStoreCapture")
+        }
+        arguments += additional
+        return arguments
+    }
+
     func testWalkEveryScreenAndCapture() {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetCareer", "-uiTestAutoRelease", "-baseball.audio.sound", "NO"]
+        app.launchArguments = launchArguments()
         app.launch()
 
         // 1) 오프닝
@@ -273,6 +307,128 @@ final class QACaptureUITests: XCTestCase {
         XCTFail("\(maximumSteps)단계 안에 회차가 끝나지 않았습니다.")
     }
 
+    /// App Store의 투구·릴리스 장면만 빠르게 다시 찍는다. 긴 3년 종주와 분리해 카피 수정 뒤
+    /// 실제 영어 UI 원본을 몇 초 안에 갱신할 수 있게 한다.
+    func testCapturePitchStatesForStore() throws {
+        try XCTSkipUnless(
+            captureModeEnabled,
+            "App Store pitch-state capture was not requested."
+        )
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments(autoRelease: false)
+        app.launch()
+
+        let opening = app.buttons["hs.opening.start"]
+        if opening.waitForExistence(timeout: 8) { opening.tap() }
+
+        let start = app.buttons["hs.start"]
+        let next = app.buttons["hs.setup.next"]
+        var setupSteps = 0
+        while !start.exists, next.waitForExistence(timeout: timeout), setupSteps < 8 {
+            next.tap()
+            setupSteps += 1
+        }
+        XCTAssertTrue(start.waitForExistence(timeout: timeout), "The final setup step did not open.")
+        start.tap()
+
+        let openBullpen = app.buttons["hs.prologue.throw"]
+        XCTAssertTrue(openBullpen.waitForExistence(timeout: timeout), "The opening bullpen did not open.")
+        openBullpen.tap()
+
+        let windup = app.descendants(matching: .any).matching(identifier: "pitch.windup").firstMatch
+        XCTAssertTrue(windup.waitForExistence(timeout: timeout), "The pitch decision did not open.")
+        capture("store-pitch-decision")
+        captureScrolled(app, "store-release-gesture", swipes: 3)
+
+        XCTAssertTrue(bringIntoView(windup), "The windup control is not reachable.")
+        // The deterministic opening curveball takes 1.18 seconds per sweep at zero
+        // fatigue. Release near the first midpoint so the captured result is a real
+        // green-window delivery, not the short-tap teaching error.
+        windup.press(forDuration: 0.59)
+        RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        capture("store-pitch-strike")
+    }
+
+    /// 실제 엔진으로 만든 확정 지명 픽스처를 영어 App Store 마지막 장에 사용한다.
+    /// 평소 QA/CI에서는 건너뛰고, 명시적인 촬영 환경에서만 별도 실제 앱 화면을 남긴다.
+    func testCaptureDraftedCompletionFixtureForStore() throws {
+        try XCTSkipUnless(
+            captureModeEnabled,
+            "App Store drafted fixture capture was not requested."
+        )
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments(additional: ["-uiTestDraftedCareerFixture"])
+        app.launch()
+
+        let enterPro = app.buttons["hs.enterPro"]
+        XCTAssertTrue(
+            enterPro.waitForExistence(timeout: timeout),
+            "The deterministic drafted completion fixture did not open."
+        )
+        capture("draft-success")
+        captureScrolled(app, "draft-success-bottom", swipes: 2)
+    }
+
+    /// 실제 엔진의 확정 미지명 시드로 실패 → 유산 → 환생 → 다음 선수까지 촬영한다.
+    func testCaptureUndraftedRebirthFixtureForStore() throws {
+        try XCTSkipUnless(
+            captureModeEnabled,
+            "App Store undrafted fixture capture was not requested."
+        )
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments(additional: ["-uiTestUndraftedCareerFixture"])
+        app.launch()
+
+        let resolve = app.buttons["hs.draft.resolve"]
+        XCTAssertTrue(resolve.waitForExistence(timeout: timeout), "The deterministic pre-draft fixture did not open.")
+        resolve.tap()
+
+        let revealDone = app.buttons["hs.draft.reveal.done"]
+        XCTAssertTrue(revealDone.waitForExistence(timeout: timeout), "The undrafted reveal did not open.")
+        revealDone.tap()
+        // The reveal uses a spring from scale 1.6 and opacity 0. Capture only after
+        // the localized body has settled into its final constrained layout.
+        RunLoop.current.run(until: Date().addingTimeInterval(1.0))
+        capture("store-draft-failure")
+        revealDone.tap()
+
+        let legacyConfirm = app.buttons["hs.legacy.confirm"]
+        XCTAssertTrue(legacyConfirm.waitForExistence(timeout: timeout), "The legacy choice did not open.")
+        capture("store-legacy-choice")
+        captureScrolled(app, "store-legacy-choice-bottom", swipes: 2)
+        selectRequiredLegacy(app)
+        XCTAssertTrue(legacyConfirm.isEnabled, "No deterministic legacy option could be selected.")
+        capture("store-legacy-selected")
+        legacyConfirm.tap()
+
+        let lockIn = app.buttons["Lock it in and close this player's story"]
+        XCTAssertTrue(lockIn.waitForExistence(timeout: timeout), "The legacy confirmation did not open.")
+        lockIn.tap()
+
+        let recapContinue = app.buttons["hs.recap.continue"]
+        XCTAssertTrue(recapContinue.waitForExistence(timeout: timeout), "The undrafted career recap did not open.")
+        capture("store-rebirth-ready")
+        captureScrolled(app, "store-rebirth-ready-bottom", swipes: 2)
+        XCTAssertTrue(recapContinue.isHittable, "The recap Continue action is not reachable.")
+        recapContinue.tap()
+
+        let rebirth = app.buttons["hs.rebirth"]
+        XCTAssertTrue(rebirth.waitForExistence(timeout: timeout), "The completed career did not open after the recap.")
+        XCTAssertTrue(bringIntoView(rebirth), "The Rebirth action is not reachable.")
+        rebirth.tap()
+
+        let stamp = app.descendants(matching: .any).matching(identifier: "hs.rebirth.stamp").firstMatch
+        XCTAssertTrue(stamp.waitForExistence(timeout: 4), "The Rebirth stamp did not appear.")
+        capture("store-rebirth-stamp")
+        _ = stamp.waitForNonExistence(timeout: timeout)
+
+        XCTAssertTrue(
+            app.buttons["hs.setup.next"].waitForExistence(timeout: timeout),
+            "The next player's setup did not open."
+        )
+        capture("store-next-life")
+    }
+
     // MARK: - 구간별 촬영
 
     /// 선수 만들기. 단계마다 한 장씩 남긴다.
@@ -333,7 +489,7 @@ final class QACaptureUITests: XCTestCase {
 
     /// 기록 탭. 카드가 많아 아래로 훑으며 여러 장 남긴다.
     private func captureRecordTab(_ app: XCUIApplication, suffix: String) {
-        guard switchTab(app, to: "기록") else {
+        guard switchTab(app, to: localizedTabTitle(korean: "기록", english: "Records")) else {
             capture("record-tab-unreachable-\(suffix)")
             return
         }
@@ -342,29 +498,29 @@ final class QACaptureUITests: XCTestCase {
             app.swipeUp()
             capture("record-\(suffix)-p\(page)")
         }
-        _ = switchTab(app, to: "고교")
+        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School"))
     }
 
     private func captureProTab(_ app: XCUIApplication) {
-        guard switchTab(app, to: "프로") else { return }
+        guard switchTab(app, to: localizedTabTitle(korean: "프로", english: "Pro")) else { return }
         capture("pro-tab-locked")
         captureScrolled(app, "pro-tab-locked-bottom", swipes: 2)
-        _ = switchTab(app, to: "고교")
+        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School"))
     }
 
     private func captureSettingsTab(_ app: XCUIApplication) {
-        guard switchTab(app, to: "설정") else { return }
+        guard switchTab(app, to: localizedTabTitle(korean: "설정", english: "Settings")) else { return }
         capture("settings-top")
         for page in 1...3 {
             app.swipeUp()
             capture("settings-p\(page)")
         }
-        _ = switchTab(app, to: "고교")
+        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School"))
     }
 
     /// 회차 아카이브. 기록 탭 아래쪽에 있다 — 회차가 쌓였을 때만 볼 것이 있다.
     private func captureArchive(_ app: XCUIApplication) {
-        guard switchTab(app, to: "기록") else {
+        guard switchTab(app, to: localizedTabTitle(korean: "기록", english: "Records")) else {
             capture("archive-unreachable")
             return
         }
@@ -373,7 +529,7 @@ final class QACaptureUITests: XCTestCase {
             app.swipeUp()
             capture("archive-p\(page)")
         }
-        _ = switchTab(app, to: "고교")
+        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School"))
     }
 
     @discardableResult
@@ -389,6 +545,10 @@ final class QACaptureUITests: XCTestCase {
             return true
         }
         return false
+    }
+
+    private func localizedTabTitle(korean: String, english: String) -> String {
+        captureLanguage == "en" ? english : korean
     }
 
     // MARK: - 보조

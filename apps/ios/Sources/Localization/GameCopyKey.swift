@@ -771,6 +771,7 @@ public enum AppCopyKey {
     ] + communityBuzzKeys + prospectRankingKeys + reminderNudgeKeys + challengeEndKeys + schoolSelectionKeys + chapterHeaderKeys
         + chapterReviewKeys + tournamentKeys + chapterGoalKeys
         + trainingKeys + trainingResultKeys + highSchoolSetupKeys + importantGameKeys + awakeningKeys
+        + highSchoolConclusionKeys + pitchKeys + proFlowKeys + recordKeys + metaKeys + legacyKeys
 }
 
 public extension AppCopyKey {

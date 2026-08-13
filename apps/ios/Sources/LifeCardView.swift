@@ -9,6 +9,8 @@ import SwiftUI
 struct LifeCardView: View {
     let record: HighSchoolCareerStore.LifeRecord
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     /// 능력 성장 줄이 들어오면서 600으로는 연대기가 한 줄까지 밀렸다. 공유물은 세로로
     /// 길어도 손해가 없다 — 카톡·트위터 모두 세로 카드를 그대로 보여 준다.
     static let size = CGSize(width: 360, height: 680)
@@ -18,10 +20,15 @@ struct LifeCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("\(record.lifeNumber)번째 선수의 기록")
+                Text(copyResolver.resolve(
+                    AppCopyKey.conclusionLifeCardHeader,
+                    arguments: [.integer(record.lifeNumber)]
+                ))
                     .eyebrowStyle(BaseballTheme.milestone)
                 Spacer()
-                Text(record.drafted ? "지명" : "미지명")
+                Text(copyResolver.resolve(
+                    record.drafted ? AppCopyKey.conclusionLifeCardDrafted : AppCopyKey.conclusionLifeCardUndrafted
+                ))
                     .font(.caption.weight(.heavy))
                     .foregroundStyle(record.drafted ? BaseballTheme.action : BaseballTheme.textTertiary)
             }
@@ -30,20 +37,23 @@ struct LifeCardView: View {
                 // 지명된 회차는 프로 유니폼의 얼굴로 남는다 — 카드가 그 회차의 결말이다.
                 // size는 폭이다(높이 = 폭×76/58). 카드는 600pt 고정이라 초상 높이를
                 // 예전 아바타(76pt)와 같게 맞춰야 아래 연대기·푸터가 밀리지 않는다.
-                PortraitView(seed: record.playerName, role: .player, size: 58,
-                             playerStage: record.drafted ? .pro : .ace)
+                    PortraitView(seed: record.playerName, role: .player, size: 58,
+                                 playerStage: record.drafted ? .pro : .ace)
                 VStack(alignment: .leading, spacing: 3) {
                     if let nickname = latestNickname {
-                        Text("'\(nickname)'")
+                        let nicknameTitle = HighSchoolConclusionPresentation.localizedNicknameTitle(
+                            nickname, resolver: copyResolver
+                        )
+                        Text("'\(nicknameTitle)'")
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(BaseballTheme.milestone)
                     }
+                    // localization-safe: user-input
                     Text(record.playerName)
                         .font(BaseballType.display)
                         .foregroundStyle(BaseballTheme.textPrimary)
-                    Text([record.schoolName ?? "학교 미정", record.personality.map { "'\($0)'" },
-                          record.windTitle.map { "바람 · \($0)" }]
-                        .compactMap { $0 }.joined(separator: " · "))
+                    // localization-safe: resolved-copy
+                    Text(identityLine)
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                         // 카드가 빡빡해지면 SwiftUI가 이 줄부터 눌러 "…무…"로 끊는다.
@@ -55,12 +65,13 @@ struct LifeCardView: View {
 
             // 결과 — 이 카드의 헤드라인.
             VStack(alignment: .leading, spacing: 4) {
-                Text(record.drafted
-                     ? "\(record.teamName ?? "프로 구단") 지명"
-                     : "드래프트 미지명")
+                Text(record.drafted ? draftedResult : copyResolver.resolve(AppCopyKey.conclusionLifeCardResultUndrafted))
                     .font(.title3.weight(.heavy))
                     .foregroundStyle(record.drafted ? BaseballTheme.action : BaseballTheme.textPrimary)
-                Text("스카우트 평가 \(record.evaluationScore)점")
+                Text(copyResolver.resolve(
+                    AppCopyKey.conclusionLifeCardScoutScore,
+                    arguments: [.integer(record.evaluationScore)]
+                ))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
             }
@@ -79,21 +90,26 @@ struct LifeCardView: View {
             if let start = record.abilityStart, let end = record.abilityFinal {
                 VStack(alignment: .leading, spacing: 7) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("3년 동안 키운 것").eyebrowStyle(BaseballTheme.action)
+                        Text(copyResolver.resolve(AppCopyKey.conclusionLifeCardGrowthTitle))
+                            .eyebrowStyle(BaseballTheme.action)
                         Spacer(minLength: 0)
                         let delta = end.total - start.total
+                        // localization-safe: numeric
                         Text(delta > 0 ? "+\(delta)" : "\(delta)")
                             .font(.title3.weight(.black).monospacedDigit())
                             .foregroundStyle(delta > 0 ? BaseballTheme.action : BaseballTheme.textTertiary)
-                        Text("총합 \(start.total)→\(end.total)")
+                        Text(copyResolver.resolve(
+                            AppCopyKey.conclusionLifeCardGrowthTotal,
+                            arguments: [.integer(start.total), .integer(end.total)]
+                        ))
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }
                     VStack(spacing: 5) {
-                        growth("구위", start.stuff, end.stuff)
-                        growth("제구", start.command, end.command)
-                        growth("변화", start.movement, end.movement)
-                        growth("체력", start.stamina, end.stamina)
+                        growth(AppCopyKey.conclusionLifeCardGrowthStuff, start.stuff, end.stuff)
+                        growth(AppCopyKey.conclusionLifeCardGrowthCommand, start.command, end.command)
+                        growth(AppCopyKey.conclusionLifeCardGrowthMovement, start.movement, end.movement)
+                        growth(AppCopyKey.conclusionLifeCardGrowthStamina, start.stamina, end.stamina)
                     }
                 }
                 .padding(10)
@@ -101,25 +117,27 @@ struct LifeCardView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("3년 성적").eyebrowStyle(BaseballTheme.textTertiary)
+                Text(copyResolver.resolve(AppCopyKey.conclusionLifeCardStatsTitle))
+                    .eyebrowStyle(BaseballTheme.textTertiary)
                 // 야구를 아는 사람이 먼저 보는 줄. 이닝이 있어야 방어율·WHIP이 성립한다.
                 if let rate = rateLine {
                     HStack(spacing: 0) {
-                        rateStat("이닝", rate.innings)
-                        rateStat("방어율", rate.era)
-                        rateStat("WHIP", rate.whip)
-                        rateStat("K/9", rate.strikeoutsPerNine)
+                        rateStat(AppCopyKey.conclusionLifeCardInnings, rate.innings)
+                        rateStat(AppCopyKey.conclusionLifeCardRA9, rate.ra9)
+                        rateStat(AppCopyKey.conclusionLifeCardWHIP, rate.whip)
+                        rateStat(AppCopyKey.conclusionLifeCardK9, rate.strikeoutsPerNine)
                     }
                 }
                 HStack(spacing: 0) {
-                    stat("경기", record.games)
-                    stat("탈삼진", record.strikeouts)
-                    stat("피안타", record.hits ?? 0)
-                    stat("볼넷", record.walks)
-                    stat("실점", record.runsAllowed)
+                    stat(AppCopyKey.conclusionLifeCardGames, record.games)
+                    stat(AppCopyKey.conclusionLifeCardStrikeouts, record.strikeouts)
+                    stat(AppCopyKey.conclusionLifeCardHits, record.hits ?? 0)
+                    stat(AppCopyKey.conclusionLifeCardWalks, record.walks)
+                    stat(AppCopyKey.conclusionLifeCardRuns, record.runsAllowed)
                 }
                 // 던진 공 수와 탈삼진/볼넷은 "얼마나 잘 던졌나"를 한 줄로 말한다.
                 // 기록 탭의 통산 지표는 팀 자동 경기까지 합치므로 기준을 함께 적는다(QA P1-5).
+                // localization-safe: resolved-copy
                 Text(seasonLine)
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
@@ -127,26 +145,38 @@ struct LifeCardView: View {
             }
 
             if let nicknames = record.nicknames, !nicknames.isEmpty {
-                Text(nicknames.map { "'\($0)'" }.joined(separator: "  "))
+                Text(nicknames.map {
+                    "'\(HighSchoolConclusionPresentation.localizedNicknameTitle($0, resolver: copyResolver))'"
+                }.joined(separator: "  "))
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             if let signature = record.signatureLegacy {
-                Label("대표 유산 · \(signature.title)", systemImage: "seal.fill")
+                let localized = HighSchoolConclusionPresentation.localizedSignature(
+                    signature, resolver: copyResolver
+                )
+                Label(
+                    copyResolver.resolve(
+                        AppCopyKey.conclusionLifeCardSignature,
+                        arguments: [.userText(localized.title)]
+                    ),
+                    systemImage: "seal.fill"
+                )
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(BaseballTheme.milestone)
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel("대표 유산 \(signature.title)")
+                    .accessibilityLabel(copyResolver.resolve(
+                        AppCopyKey.conclusionLifeCardSignatureAccessibility,
+                        arguments: [.userText(localized.title)]
+                    ))
             }
 
             // 함께한 사람들 — 이 회차를 사람 이름으로 기억하게 한다.
             if record.coachName != nil || record.rivalName != nil {
-                Text([record.coachName.map { "\($0) 감독" },
-                      record.catcherName.map { "\($0) 포수" },
-                      record.rivalName.map { "숙적 \($0)" }]
-                    .compactMap { $0 }.joined(separator: " · "))
+                // localization-safe: resolved-copy
+                Text(castLine)
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.textSecondary)
             }
@@ -173,19 +203,25 @@ struct LifeCardView: View {
             Spacer(minLength: 0)
 
             HStack {
-                Text("야구 못하면 또 환생함")
+                Text(copyResolver.resolve(AppCopyKey.conclusionLifeCardFooter))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(BaseballTheme.textTertiary)
                 Spacer()
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text("\(record.lifeNumber)번째 선수 완주")
+                    Text(copyResolver.resolve(
+                        AppCopyKey.conclusionLifeCardComplete,
+                        arguments: [.integer(record.lifeNumber)]
+                    ))
                         .font(.caption2)
                         .foregroundStyle(BaseballTheme.textTertiary)
                     // 시드 각인 — 카드를 본 사람이 같은 판에 도전할 수 있는 입구.
                     // 회차를 함께 적는다: 재능·바람·일정은 시드+회차의 함수라, 회차가
                     // 다르면 같은 시드도 다른 판이다(3차 패널 P1 — 거짓 약속 방지).
                     if let seed = Self.seedText(record.careerID) {
-                        Text("도전 \(seed)-\(record.lifeNumber)")
+                        Text(copyResolver.resolve(
+                            AppCopyKey.conclusionLifeCardChallenge,
+                            arguments: [.userText(seed), .integer(record.lifeNumber)]
+                        ))
                             .font(BaseballType.scoreboardLabel)
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }
@@ -218,7 +254,7 @@ struct LifeCardView: View {
     }
 
     /// careerID("career-시드-life-N")에서 시드만 뽑는다.
-    static func seedText(_ careerID: String?) -> String? {
+    nonisolated static func seedText(_ careerID: String?) -> String? {
         guard let careerID, careerID.hasPrefix("career-") else { return nil }
         let parts = careerID.split(separator: "-")
         guard parts.count >= 2 else { return nil }
@@ -229,6 +265,42 @@ struct LifeCardView: View {
         guard let chronicle = record.chronicle else { return [] }
         if chronicle.count <= 5 { return chronicle }
         return [chronicle[0]] + chronicle.suffix(4)
+    }
+
+    private var identityLine: String {
+        let school = HighSchoolConclusionPresentation.localizedSchoolName(
+            record.schoolName, resolver: copyResolver
+        )
+        let personality = record.personality.map {
+            "'\(HighSchoolConclusionPresentation.localizedLifePersonality($0, resolver: copyResolver) ?? GameCopyResolver.unavailableText)'"
+        }
+        let wind = HighSchoolConclusionPresentation.localizedLifeWind(
+            id: record.windID, rawTitle: record.windTitle, resolver: copyResolver
+        ).map { copyResolver.resolve(AppCopyKey.conclusionLifeCardWind, arguments: [.userText($0)]) }
+        return [school, personality, wind].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private var draftedResult: String {
+        let team = HighSchoolConclusionPresentation.localizedLifeTeamName(
+            record.teamName, resolver: copyResolver
+        ) ?? copyResolver.resolve(AppCopyKey.conclusionLifeCardSchoolUnknown)
+        return copyResolver.resolve(
+            AppCopyKey.conclusionLifeCardResultDrafted,
+            arguments: [.userText(team)]
+        )
+    }
+
+    private var castLine: String {
+        let coach = HighSchoolConclusionPresentation.localizedLifeCastName(
+            rawName: record.coachName, schoolName: record.schoolName, role: .coach, resolver: copyResolver
+        ).map { copyResolver.resolve(AppCopyKey.conclusionLifeCardCoach, arguments: [.userText($0)]) }
+        let catcher = HighSchoolConclusionPresentation.localizedLifeCastName(
+            rawName: record.catcherName, schoolName: record.schoolName, role: .catcher, resolver: copyResolver
+        ).map { copyResolver.resolve(AppCopyKey.conclusionLifeCardCatcher, arguments: [.userText($0)]) }
+        let rival = HighSchoolConclusionPresentation.localizedLifeRivalName(
+            record.rivalName, resolver: copyResolver
+        ).map { copyResolver.resolve(AppCopyKey.conclusionLifeCardRival, arguments: [.userText($0)]) }
+        return [coach, catcher, rival].compactMap { $0 }.joined(separator: " · ")
     }
 
     /// 줄 수를 줄일 때 무엇을 버릴 것인가 — 입학(처음)과 결말(마지막)은 남기고
@@ -246,7 +318,9 @@ struct LifeCardView: View {
         VStack(alignment: .leading, spacing: 5) {
             // 처음과 마지막 — 시작한 아이와 끝낸 선수를 함께 담는다.
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                Text(line)
+                Text(HighSchoolConclusionPresentation.localizedChronicleLine(
+                    line, resolver: copyResolver
+                ))
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .lineLimit(lineLimit)
@@ -257,44 +331,36 @@ struct LifeCardView: View {
 
     /// 이닝이 있어야 만들어지는 지표들. 아웃 수를 남기지 않던 옛 기록에서는 nil이라
     /// 이 줄이 통째로 접힌다 — 이닝을 투구수로 어림해서 방어율을 지어내지 않는다.
-    private var rateLine: (innings: String, era: String, whip: String, strikeoutsPerNine: String)? {
-        guard let outs = record.outs, outs > 0 else { return nil }
-        let innings = Double(outs) / 3
-        // 야구 표기: 1.1 = 1과 3분의 1이닝. 소수 첫째 자리가 남은 아웃 수다.
-        let inningsText = "\(outs / 3).\(outs % 3)"
-        let era = Double(record.runsAllowed) * 9 / innings
-        let whip = Double(record.walks + (record.hits ?? 0)) / innings
-        let kPerNine = Double(record.strikeouts) * 9 / innings
-        return (
-            inningsText,
-            String(format: "%.2f", era),
-            String(format: "%.2f", whip),
-            String(format: "%.1f", kPerNine)
+    private var rateLine: HighSchoolConclusionPresentation.RateLine? {
+        HighSchoolConclusionPresentation.localizedLifeRateLine(
+            outs: record.outs,
+            runsAllowed: record.runsAllowed,
+            walks: record.walks,
+            hits: record.hits,
+            strikeouts: record.strikeouts,
+            resolver: copyResolver
         )
     }
 
     /// "132구 · 탈삼진/볼넷 3.1 · 직접 등판 기준". 숫자 넉 줄만으로는 잘 던졌는지가
     /// 안 잡힌다 — 비율 하나가 그것을 말해 준다.
     private var seasonLine: String {
-        var parts: [String] = []
-        if let pitches = record.pitches, pitches > 0 { parts.append("\(pitches)구") }
-        if record.walks > 0 {
-            let ratio = Double(record.strikeouts) / Double(record.walks)
-            parts.append(String(format: "탈삼진/볼넷 %.1f", ratio))
-        } else if record.strikeouts > 0 {
-            parts.append("볼넷 없이 \(record.strikeouts)탈삼진")
-        }
-        parts.append("직접 등판 기준")
-        return parts.joined(separator: " · ")
+        HighSchoolConclusionPresentation.localizedLifeSeasonLine(
+            pitches: record.pitches,
+            strikeouts: record.strikeouts,
+            walks: record.walks,
+            resolver: copyResolver
+        )
     }
 
     /// 비율 지표는 값이 주인공이다 — 이름은 작게 아래에 둔다.
-    private func rateStat(_ title: String, _ value: String) -> some View {
+    private func rateStat(_ title: GameCopyKey, _ value: String) -> some View {
         VStack(spacing: 1) {
+            // localization-safe: numeric
             Text(value)
                 .font(.title3.weight(.heavy).monospacedDigit())
                 .foregroundStyle(BaseballTheme.milestone)
-            Text(title)
+            Text(copyResolver.resolve(title))
                 .font(.caption2)
                 .foregroundStyle(BaseballTheme.textTertiary)
         }
@@ -303,11 +369,11 @@ struct LifeCardView: View {
 
     /// 한 줄짜리 성장 막대. 숫자 넉 줄보다 **길이**가 먼저 읽힌다 — 흐린 막대가
     /// 시작점이고, 그 위에 덧칠된 밝은 막대가 3년 동안 늘린 만큼이다.
-    private func growth(_ title: String, _ start: Int, _ end: Int) -> some View {
+    private func growth(_ title: GameCopyKey, _ start: Int, _ end: Int) -> some View {
         let delta = end - start
         let scale = 99.0
         return HStack(spacing: 8) {
-            Text(title)
+            Text(copyResolver.resolve(title))
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .frame(width: 26, alignment: .leading)
@@ -331,21 +397,43 @@ struct LifeCardView: View {
                 .font(.subheadline.weight(.heavy).monospacedDigit())
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .frame(width: 26, alignment: .trailing)
+            // localization-safe: numeric
             Text(delta > 0 ? "+\(delta)" : "±0")
                 .font(.caption2.weight(.heavy).monospacedDigit())
                 .foregroundStyle(delta > 0 ? BaseballTheme.action : BaseballTheme.textTertiary)
                 .frame(width: 28, alignment: .trailing)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title) \(start)에서 \(end)로 \(delta > 0 ? "\(delta) 올랐습니다" : "변화 없습니다")")
+        .accessibilityLabel(growthAccessibility(title: title, start: start, end: end, delta: delta))
     }
 
-    private func stat(_ title: String, _ value: Int) -> some View {
+    private func growthAccessibility(
+        title: GameCopyKey,
+        start: Int,
+        end: Int,
+        delta: Int
+    ) -> String {
+        let baseArguments: [LocalizedCopyArgument] = [
+            .userText(copyResolver.resolve(title)), .integer(start), .integer(end),
+        ]
+        if delta > 0 {
+            return copyResolver.resolve(
+                AppCopyKey.conclusionLifeCardGrowthAccessibilityUp,
+                arguments: baseArguments + [.integer(delta)]
+            )
+        }
+        return copyResolver.resolve(
+            AppCopyKey.conclusionLifeCardGrowthAccessibilityNoChange,
+            arguments: baseArguments
+        )
+    }
+
+    private func stat(_ title: GameCopyKey, _ value: Int) -> some View {
         VStack(spacing: 2) {
             Text("\(value)")
                 .font(.title3.weight(.bold).monospacedDigit())
                 .foregroundStyle(BaseballTheme.textPrimary)
-            Text(title)
+            Text(copyResolver.resolve(title))
                 .font(.caption2)
                 .foregroundStyle(BaseballTheme.textTertiary)
         }
@@ -366,9 +454,19 @@ enum LifeCardRenderer {
 
     @MainActor
     static func image(for record: HighSchoolCareerStore.LifeRecord) -> UIImage? {
-        let key = cacheKey(for: record)
+        image(for: record, resolver: GameCopyResolver())
+    }
+
+    @MainActor
+    static func image(
+        for record: HighSchoolCareerStore.LifeRecord,
+        resolver: GameCopyResolver
+    ) -> UIImage? {
+        let key = cacheKey(for: record, language: resolver.language)
         if let cache, cache.key == key { return cache.image }
-        let renderer = ImageRenderer(content: LifeCardView(record: record))
+        let renderer = ImageRenderer(
+            content: LifeCardView(record: record).environment(\.gameCopyResolver, resolver)
+        )
         renderer.scale = 3
         renderer.isOpaque = true
         guard let image = renderer.uiImage else { return nil }
@@ -378,10 +476,14 @@ enum LifeCardRenderer {
 
     /// 카드에 그려지는 것이 바뀌면 달라져야 하고, 그 외에는 같아야 한다.
     @MainActor
-    private static func cacheKey(for record: HighSchoolCareerStore.LifeRecord) -> String {
+    private static func cacheKey(
+        for record: HighSchoolCareerStore.LifeRecord,
+        language: AppLanguage
+    ) -> String {
         let abilities = [record.abilityStart?.total, record.abilityFinal?.total]
             .map { $0.map(String.init) ?? "-" }.joined(separator: "/")
         return [
+            language.rawValue,
             record.careerID ?? "", String(record.lifeNumber), record.playerName,
             String(record.evaluationScore), String(record.drafted), record.teamName ?? "",
             String(record.games), String(record.strikeouts), String(record.walks),
@@ -403,15 +505,40 @@ enum LifeCardShareText {
     static let storeURL = "https://apps.apple.com/kr/app/id6794754217"
 
     static func body(for record: HighSchoolCareerStore.LifeRecord) -> String {
-        var lines = ["\(record.playerName) · \(record.lifeNumber)번째 선수"]
+        body(for: record, resolver: GameCopyResolver())
+    }
+
+    static func body(
+        for record: HighSchoolCareerStore.LifeRecord,
+        resolver: GameCopyResolver
+    ) -> String {
+        var lines = [resolver.resolve(
+            AppCopyKey.conclusionLifeCardShareBodyHeader,
+            arguments: [.userText(record.playerName), .integer(record.lifeNumber)]
+        )]
         if record.drafted, let team = record.teamName {
-            lines.append("\(team) 지명 · 스카우트 평가 \(record.evaluationScore)점")
+            let localizedTeam = HighSchoolConclusionPresentation.localizedLifeTeamName(
+                team, resolver: resolver
+            ) ?? resolver.resolve(AppCopyKey.conclusionLifeCardSchoolUnknown)
+            lines.append(resolver.resolve(
+                AppCopyKey.conclusionLifeCardResultDrafted,
+                arguments: [.userText(localizedTeam)]
+            ) + " · " + resolver.resolve(
+                AppCopyKey.conclusionLifeCardScoutScore,
+                arguments: [.integer(record.evaluationScore)]
+            ))
         } else {
-            lines.append("드래프트 미지명 · 스카우트 평가 \(record.evaluationScore)점")
+            lines.append(resolver.resolve(AppCopyKey.conclusionLifeCardResultUndrafted) + " · " + resolver.resolve(
+                AppCopyKey.conclusionLifeCardScoutScore,
+                arguments: [.integer(record.evaluationScore)]
+            ))
         }
         // 시드는 "같은 판"을 여는 열쇠다. 카드에 각인된 문자열과 같은 형식으로 적는다.
         if let seed = LifeCardView.seedText(record.careerID) {
-            lines.append("같은 판에 도전: \(seed)-\(record.lifeNumber)")
+            lines.append(resolver.resolve(
+                AppCopyKey.conclusionLifeCardShareBodyChallenge,
+                arguments: [.userText(seed), .integer(record.lifeNumber)]
+            ))
         }
         lines.append(storeURL)
         return lines.joined(separator: "\n")
@@ -429,8 +556,10 @@ struct LifeCardPreview: View {
     let record: HighSchoolCareerStore.LifeRecord
     var maximumWidth: CGFloat = LifeCardView.size.width
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     var body: some View {
-        if let image = LifeCardRenderer.image(for: record) {
+        if let image = LifeCardRenderer.image(for: record, resolver: copyResolver) {
             // 비율은 이미지 자신의 것을 쓴다. 카드 크기 상수로 계산해 넘기면 굽힌 결과와
             // 1pt만 어긋나도 아래쪽(푸터)이 잘린다 — 실제로 그렇게 잘렸다.
             Image(uiImage: image)
@@ -440,7 +569,10 @@ struct LifeCardPreview: View {
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .frame(maxWidth: .infinity)
                 .fixedSize(horizontal: false, vertical: true)
-                .accessibilityLabel("\(record.playerName) 선수 기록 카드")
+                .accessibilityLabel(copyResolver.resolve(
+                    AppCopyKey.conclusionLifeCardPreviewAccessibility,
+                    arguments: [.userText(record.playerName)]
+                ))
         }
     }
 }
@@ -449,11 +581,16 @@ struct LifeCardPreview: View {
 struct LifeCardShareButton: View {
     let record: HighSchoolCareerStore.LifeRecord
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     var body: some View {
-        if let image = LifeCardRenderer.image(for: record) {
+        if let image = LifeCardRenderer.image(for: record, resolver: copyResolver) {
             ActivityShareButton(
-                items: [image, LifeCardShareText.body(for: record)],
-                subject: "\(record.playerName) · \(record.lifeNumber)번째 선수",
+                items: [image, LifeCardShareText.body(for: record, resolver: copyResolver)],
+                subject: copyResolver.resolve(
+                    AppCopyKey.conclusionLifeCardShareSubject,
+                    arguments: [.userText(record.playerName), .integer(record.lifeNumber)]
+                ),
                 onTapped: {
                     let properties: [String: Any] = ["life_number": record.lifeNumber]
                     GameAnalytics.log(.lifeCardShareTapped, properties)
@@ -464,7 +601,10 @@ struct LifeCardShareButton: View {
                     GameAnalytics.log(.lifeCardShareCompleted, ["life_number": record.lifeNumber])
                 }
             ) {
-                Label("선수 카드 공유", systemImage: "square.and.arrow.up")
+                Label(
+                    copyResolver.resolve(AppCopyKey.conclusionLifeCardShare),
+                    systemImage: "square.and.arrow.up"
+                )
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(BaseballTheme.action)
             }

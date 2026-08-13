@@ -444,7 +444,10 @@ struct HighSchoolSetupView: View {
                             .foregroundStyle(BaseballTheme.textSecondary)
                     } else if !career.inheritance.memories.isEmpty {
                         ForEach(career.inheritance.memories, id: \.self) { memory in
-                            let copy = HighSchoolPresentation.memory(memory)
+                            let copy = HighSchoolConclusionPresentation.localizedMemory(
+                                memory,
+                                resolver: copyResolver
+                            )
                             HStack(spacing: 8) {
                                 ArtThumb(assetName: "MemoryArt-\(memory.rawValue)", size: 34, cornerRadius: 7)
                                 GameCopyText(verbatim: copy.title)

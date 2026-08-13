@@ -87,9 +87,9 @@ struct DeliveryControl: View {
 
     private var tempoLabel: String {
         switch velocityTenthsKPH {
-        case 1_400...: "빠름"
-        case ..<1_230: "느림"
-        default: "보통"
+        case 1_400...: copyResolver.resolve(.deliveryTempoFast)
+        case ..<1_230: copyResolver.resolve(.deliveryTempoSlow)
+        default: copyResolver.resolve(.deliveryTempoNormal)
         }
     }
 
@@ -118,11 +118,11 @@ struct DeliveryControl: View {
 
     var body: some View {
         if autoRelease {
-            PrimaryPill(title: "던지기", identifier: "pitch.throw") {
+            PrimaryPill(title: copyResolver.resolve(.deliveryThrow), identifier: "pitch.throw") {
                 onRelease()
                 onDeliver(.neutral)
             }
-                .accessibilityHint("자동 릴리스가 켜져 있어 타이밍 없이 던집니다.")
+                .accessibilityHint(copyResolver.resolve(.deliveryAutoHint))
         } else {
             manual
         }
@@ -131,11 +131,17 @@ struct DeliveryControl: View {
     private var manual: some View {
         VStack(spacing: 10) {
             HStack {
-                Text("\(PitchCopy.localized(pitchType, resolver: copyResolver)) 릴리스")
+                Text(verbatim: copyResolver.resolve(
+                    .deliveryTitle,
+                    arguments: [.userText(PitchCopy.localized(pitchType, resolver: copyResolver))]
+                ))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(BaseballTheme.textSecondary)
                 Spacer(minLength: 0)
-                Text("\(tempoLabel) · \(String(format: "%.1f", Double(velocityTenthsKPH) / 10)) km/h")
+                Text(verbatim: tempoLabel + " · " + GameFormatters.velocity(
+                    tenthsKPH: velocityTenthsKPH,
+                    language: copyResolver.language
+                ))
                     .font(.caption.monospacedDigit().weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
             }
@@ -210,16 +216,18 @@ struct DeliveryControl: View {
                     .offset(x: clampedAim.width, y: clampedAim.height)
                 // "지금"은 조준과 미터가 **둘 다** 맞는 순간에만 — 조준만 보고 외치면
                 // 유저가 그 말을 믿고 미터 끝단에서 떼는 잘못된 타이밍을 학습한다(3차 패널 P0).
-                Text(onTarget && inPerfectBand ? "퍼펙트!"
-                     : onTarget && inSweetSpot ? "지금"
-                     : onTarget ? "타이밍을 기다리세요" : "끌어서 맞추세요")
+                Text(verbatim: copyResolver.resolve(
+                    onTarget && inPerfectBand ? .deliveryNowPerfect
+                        : onTarget && inSweetSpot ? .deliveryNow
+                        : onTarget ? .deliveryWait : .deliveryAim
+                ))
                     .font(onTarget && inPerfectBand ? .subheadline.weight(.black) : .caption.weight(.bold))
                     .foregroundStyle(onTarget && inPerfectBand ? BaseballTheme.milestone
                                      : onTarget && inSweetSpot ? BaseballTheme.action
                                      : BaseballTheme.textSecondary)
                     .offset(y: padHeight * 0.39)
             } else {
-                Text(showHoldHint ? "너무 짧아요 — 길게 눌러 미터를 채우세요" : "길게 눌러 와인드업")
+                Text(verbatim: copyResolver.resolve(showHoldHint ? .deliveryHoldLonger : .deliveryHold))
                     .font(.headline)
                     .foregroundStyle(BaseballTheme.actionInk)
             }
@@ -255,8 +263,9 @@ struct DeliveryControl: View {
                 }
                 .onEnded { _ in release() }
         )
-        .accessibilityLabel("와인드업")
-        .accessibilityHint("길게 눌러 와인드업하고, 끌어서 조준한 뒤 떼면 던집니다. 설정에서 자동 릴리스를 켜면 탭 한 번으로 던집니다.")
+        .accessibilityIdentifier("pitch.windup")
+        .accessibilityLabel(copyResolver.resolve(.deliveryAccessibilityLabel))
+        .accessibilityHint(copyResolver.resolve(.deliveryAccessibilityHint))
         .accessibilityAddTraits(.isButton)
         .accessibilityAction {
             onRelease()
@@ -379,6 +388,23 @@ struct DeliveryControl: View {
         }
     }
 
+    static func localizedVerdict(
+        _ delivery: PitchDelivery,
+        resolver: GameCopyResolver
+    ) -> (text: String, tone: BaseballCardTone)? {
+        guard !delivery.isNeutral else { return nil }
+        if delivery.isPerfectRelease {
+            return (resolver.resolve(.deliveryVerdictPerfect), .milestone)
+        }
+        let score = (delivery.releaseAccuracy + delivery.aimAccuracy) / 2
+        switch score {
+        case 850...: return (resolver.resolve(.deliveryVerdictExcellent), .positive)
+        case 650..<850: return (resolver.resolve(.deliveryVerdictGood), .positive)
+        case 400..<650: return (resolver.resolve(.deliveryVerdictOkay), .standard)
+        default: return (resolver.resolve(.deliveryVerdictMissed), .warning)
+        }
+    }
+
     /// 무엇을 놓쳤는지 한 줄로 말한다.
     ///
     /// 예전에는 타이밍과 조준을 평균 하나로 뭉개 "무난한 릴리스"라고만 했다. 그러면
@@ -399,6 +425,21 @@ struct DeliveryControl: View {
         return aim < 400
             ? "조준이 크게 흔들렸습니다 — 손가락을 과녁에 머무르게 하세요"
             : "조준이 살짝 흔들렸습니다"
+    }
+
+
+    static func localizedCoachingHint(
+        _ delivery: PitchDelivery,
+        resolver: GameCopyResolver
+    ) -> String? {
+        guard !delivery.isNeutral, !delivery.isPerfectRelease else { return nil }
+        let release = delivery.releaseAccuracy
+        let aim = delivery.aimAccuracy
+        guard min(release, aim) < 700 else { return nil }
+        if release <= aim {
+            return resolver.resolve(release < 400 ? .deliveryHintReleaseLarge : .deliveryHintReleaseSmall)
+        }
+        return resolver.resolve(aim < 400 ? .deliveryHintAimLarge : .deliveryHintAimSmall)
     }
 
     /// 이번 등판의 릴리스 점수. 타이밍과 조준의 평균이고, 중립(자동 릴리스)은 세지 않는다.

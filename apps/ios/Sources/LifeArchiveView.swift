@@ -52,6 +52,8 @@ struct ArchivedPledgePresentation: Equatable {
 struct LifeArchiveSection: View {
     let records: [HighSchoolCareerStore.LifeRecord]
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     private var orderedRecords: [HighSchoolCareerStore.LifeRecord] {
         LifeArchiveOrdering.newestFirst(records)
     }
@@ -81,7 +83,9 @@ struct LifeArchiveSection: View {
     }
 
     var body: some View {
-        BaseballCard(title: "지금까지 키운 선수 \(records.count)명") {
+        BaseballCard(
+            title: copyResolver.resolve(.archiveTitle, arguments: [.integer(records.count)])
+        ) {
             VStack(alignment: .leading, spacing: 0) {
                 if !records.isEmpty {
                     PlayerLineageRibbon(records: orderedRecords)
@@ -92,14 +96,22 @@ struct LifeArchiveSection: View {
                 }
                 if records.count >= 2 {
                     HStack(spacing: 16) {
-                        archiveStat("지명", "\(totals.drafted)/\(records.count)")
-                        archiveStat("통산 K", "\(totals.strikeouts)")
-                        archiveStat("최고 평가", "\(totals.bestEvaluation)")
-                        archiveStat("모은 계승 포인트", "\(totals.soul)")
+                        archiveStat(copyResolver.resolve(.archiveStatDrafted), "\(totals.drafted)/\(records.count)")
+                        archiveStat(copyResolver.resolve(.archiveStatStrikeouts), "\(totals.strikeouts)")
+                        archiveStat(copyResolver.resolve(.archiveStatEvaluation), "\(totals.bestEvaluation)")
+                        archiveStat(copyResolver.resolve(.archiveStatPoints), "\(totals.soul)")
                     }
                     .padding(.bottom, 10)
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("지난 선수 통산. 지명 \(totals.drafted)회, 통산 탈삼진 \(totals.strikeouts), 최고 평가 \(totals.bestEvaluation)점, 모은 계승 포인트 \(totals.soul)")
+                    .accessibilityLabel(
+                        copyResolver.resolve(
+                            .archiveTotalsAccessibility,
+                            arguments: [
+                                .integer(totals.drafted), .integer(totals.strikeouts),
+                                .integer(totals.bestEvaluation), .integer(totals.soul),
+                            ]
+                        )
+                    )
                     Rectangle()
                         .fill(BaseballTheme.border.opacity(0.35))
                         .frame(height: 1)
@@ -107,15 +119,30 @@ struct LifeArchiveSection: View {
                 if !records.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         if let next = nextStrikeoutMilestone {
-                            Text("통산 탈삼진 \(next)까지 \(next - totals.strikeouts)개 — 모든 선수의 기록은 영원히 쌓입니다.")
+                            Text(
+                                verbatim: copyResolver.resolve(
+                                    .archiveNextStrikeouts,
+                                    arguments: [.integer(next - totals.strikeouts), .integer(next)]
+                                )
+                            )
                         }
                         if let best = bestStrikeoutLife, best.strikeouts > 0 {
-                            Text("한 선수 최다 탈삼진 \(best.strikeouts) (\(best.lifeNumber)번째 선수) — 역대 기록은 깨라고 있는 것입니다.")
+                            Text(
+                                verbatim: copyResolver.resolve(
+                                    .archiveBestStrikeouts,
+                                    arguments: [.integer(best.strikeouts), .integer(best.lifeNumber)]
+                                )
+                            )
                         }
-                        Text("별명 도감 \(collectedNicknames.count)/\(NicknameRules.catalogCount)"
-                             + (collectedNicknames.count >= NicknameRules.catalogCount
-                                ? " — 세상이 부르는 모든 이름을 모았습니다."
-                                : " — 아직 못 얻은 이름이 있습니다."))
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                collectedNicknames.count >= NicknameRules.catalogCount
+                                    ? .archiveNicknameComplete : .archiveNicknameIncomplete,
+                                arguments: [
+                                    .integer(collectedNicknames.count), .integer(NicknameRules.catalogCount),
+                                ]
+                            )
+                        )
                     }
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
@@ -142,10 +169,10 @@ struct LifeArchiveSection: View {
 
     private func archiveStat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label)
+            Text(verbatim: label)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(BaseballTheme.textTertiary)
-            Text(value)
+            Text(verbatim: value)
                 .font(.subheadline.monospacedDigit().weight(.bold))
                 .foregroundStyle(BaseballTheme.textPrimary)
         }
@@ -157,13 +184,15 @@ struct LifeArchiveSection: View {
 private struct PlayerLineageRibbon: View {
     let records: [HighSchoolCareerStore.LifeRecord]
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     private var ordered: [HighSchoolCareerStore.LifeRecord] {
         LifeArchiveOrdering.newestFirst(records)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("함께 키운 선수들")
+            Text(verbatim: copyResolver.resolve(.archiveLineage))
                 .font(.caption.weight(.bold))
                 .foregroundStyle(BaseballTheme.textSecondary)
             ScrollView(.horizontal) {
@@ -182,16 +211,32 @@ private struct PlayerLineageRibbon: View {
                                 size: 34,
                                 playerStage: record.drafted ? .pro : .ace
                             )
-                            Text(record.playerName)
+                            Text(verbatim: record.playerName)
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(BaseballTheme.textPrimary)
                                 .lineLimit(1)
-                            Text("\(record.lifeNumber)번째")
+                            Text(
+                                verbatim: copyResolver.resolve(
+                                    .archivePlayerNumber,
+                                    arguments: [.integer(record.lifeNumber)]
+                                )
+                            )
                                 .font(.caption2.monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textTertiary)
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(record.lifeNumber)번째 선수 \(record.playerName), \(record.drafted ? "지명" : "미지명")")
+                        .accessibilityLabel(
+                            copyResolver.resolve(
+                                .archivePlayerAccessibility,
+                                arguments: [
+                                    .integer(record.lifeNumber), .userText(record.playerName),
+                                    .userText(HighSchoolConclusionPresentation.localizedSchoolName(
+                                        record.schoolName, resolver: copyResolver
+                                    )),
+                                    .userText(copyResolver.resolve(record.drafted ? .archiveDrafted : .archiveUndrafted)),
+                                ]
+                            )
+                        )
                     }
                 }
                 .padding(.vertical, 2)
@@ -206,6 +251,19 @@ private struct LifeArchiveRow: View {
     let record: HighSchoolCareerStore.LifeRecord
 
     @State private var expanded: Bool
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var schoolName: String {
+        HighSchoolConclusionPresentation.localizedSchoolName(record.schoolName, resolver: copyResolver)
+    }
+
+    private var draftStatus: String {
+        copyResolver.resolve(record.drafted ? .archiveDrafted : .archiveUndrafted)
+    }
+
+    private var outcome: String {
+        LegacyPresentation.archiveOutcome(record, resolver: copyResolver)
+    }
 
     init(record: HighSchoolCareerStore.LifeRecord, initiallyExpanded: Bool = false) {
         self.record = record
@@ -222,14 +280,19 @@ private struct LifeArchiveRow: View {
                     // 이름 시드가 같으면 그때 그 얼굴 그대로다.
                     PortraitView(seed: record.playerName, role: .player, size: 30,
                                  playerStage: record.drafted ? .pro : .ace)
-                    Text("\(record.lifeNumber)번째 선수")
+                    Text(
+                        verbatim: copyResolver.resolve(
+                            .archivePlayerNumber,
+                            arguments: [.integer(record.lifeNumber)]
+                        )
+                    )
                         .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(BaseballTheme.textPrimary)
-                    Text(record.schoolName ?? "학교 미정")
+                    Text(verbatim: schoolName)
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                     Spacer(minLength: 0)
-                    Text(record.drafted ? "지명" : "미지명")
+                    Text(verbatim: draftStatus)
                         .font(.caption.weight(.heavy))
                         .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.textTertiary)
                     Image(systemName: expanded ? "chevron.up" : "chevron.down")
@@ -241,22 +304,37 @@ private struct LifeArchiveRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(record.lifeNumber)번째 선수, \(record.schoolName ?? "학교 미정"), \(record.outcomeLine)")
+            .accessibilityLabel(
+                copyResolver.resolve(
+                    .archivePlayerAccessibility,
+                    arguments: [
+                        .integer(record.lifeNumber), .userText(record.playerName),
+                        .userText(schoolName), .userText(outcome),
+                    ]
+                )
+            )
 
             if expanded {
                 VStack(alignment: .leading, spacing: 6) {
                     LifeCardShareButton(record: record)
                         .padding(.bottom, 2)
                     PlayerLegacyQuote(
-                        legacy: record.playerLegacy ?? PlayerBondStory.legacy(for: record),
-                        heading: "\(record.playerName)이 남긴 말"
+                        legacy: LegacyPresentation.playerLegacy(for: record, resolver: copyResolver),
+                        heading: copyResolver.resolve(
+                            .quoteHeadingPlayer,
+                            arguments: [.userText(record.playerName)]
+                        )
                     )
                     .padding(.bottom, 2)
                     .accessibilityIdentifier("archive.playerLegacy.\(record.lifeNumber)")
                     .onAppear(perform: logLegacySeen)
                     if let chronicle = record.chronicle, !chronicle.isEmpty {
                         ForEach(chronicle, id: \.self) { line in
-                            Text(line)
+                            Text(
+                                verbatim: HighSchoolConclusionPresentation.localizedChronicleLine(
+                                    line, resolver: copyResolver
+                                )
+                            )
                                 .font(.caption)
                                 .foregroundStyle(BaseballTheme.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -264,26 +342,54 @@ private struct LifeArchiveRow: View {
                         Rectangle().fill(BaseballTheme.border.opacity(0.3)).frame(height: 1)
                     }
                     if let nicknames = record.nicknames, !nicknames.isEmpty {
-                        Text("세상이 부른 이름: \(nicknames.map { "'\($0)'" }.joined(separator: " "))")
+                        let titles = nicknames.map {
+                            "'\(HighSchoolConclusionPresentation.localizedNicknameTitle($0, resolver: copyResolver))'"
+                        }.joined(separator: " ")
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                .archiveCalledNames,
+                                arguments: [.userText(titles)]
+                            )
+                        )
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(BaseballTheme.milestone)
                     }
-                    Text(record.outcomeLine)
+                    Text(verbatim: outcome)
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.textSecondary)
-                    Text("\(record.games)등판 · \(record.strikeouts)K \(record.walks)BB \(record.runsAllowed)실점 · 계승 포인트 +\(record.soulPoints)")
+                    Text(
+                        verbatim: copyResolver.resolve(
+                            .archiveRecordLine,
+                            arguments: [
+                                .integer(record.games), .integer(record.strikeouts), .integer(record.walks),
+                                .integer(record.runsAllowed), .integer(record.soulPoints),
+                            ]
+                        )
+                    )
                         .font(.footnote.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                     if let signature = record.signatureLegacy {
+                        let localizedSignature = HighSchoolConclusionPresentation.localizedSignature(
+                            signature, resolver: copyResolver
+                        )
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("대표 유산 · \(signature.title)")
+                            Text(
+                                verbatim: copyResolver.resolve(
+                                    .archiveSignature,
+                                    arguments: [.userText(localizedSignature.title)]
+                                )
+                            )
                                 .font(.caption.weight(.heavy))
                                 .foregroundStyle(BaseballTheme.milestone)
-                            Text(signature.evidence.summary)
+                            Text(verbatim: localizedSignature.evidence)
                                 .font(.caption2)
                                 .foregroundStyle(BaseballTheme.information)
                                 .fixedSize(horizontal: false, vertical: true)
-                            Text(HighSchoolSetupView.signatureLegacyEffectLine(signature.effect))
+                            Text(
+                                verbatim: HighSchoolConclusionPresentation.localizedSignatureEffect(
+                                    signature.effect, resolver: copyResolver
+                                )
+                            )
                                 .font(.caption2.weight(.bold).monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textSecondary)
                         }
@@ -298,9 +404,18 @@ private struct LifeArchiveRow: View {
                         if let candidates = record.signatureLegacyCandidates {
                             let otherTitles = candidates
                                 .filter { $0.id != signature.id }
-                                .map(\.title)
+                                .map {
+                                    HighSchoolConclusionPresentation.localizedSignature(
+                                        $0, resolver: copyResolver
+                                    ).title
+                                }
                             if !otherTitles.isEmpty {
-                                Text("함께 발견한 유산 · \(otherTitles.joined(separator: " · "))")
+                                Text(
+                                    verbatim: copyResolver.resolve(
+                                        .archiveOtherSignatures,
+                                        arguments: [.userText(otherTitles.joined(separator: " · "))]
+                                    )
+                                )
                                     .font(.caption2)
                                     .foregroundStyle(BaseballTheme.textTertiary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -314,21 +429,43 @@ private struct LifeArchiveRow: View {
                         let achieved = record.pledgeAchieved == true
                         let ratio = achieved ? 1_000 : record.pledgeProgressRatioPermille
                             ?? min(999, max(0, current) * 1_000 / target)
-                        let progressLine = record.pledgeProgressLine ?? "현재 \(current) / 목표 \(target)"
-                        let status = achieved ? "이행" : ratio >= 800 ? "아슬아슬" : "미완"
+                        let progressLine = LegacyPresentation.archivedPledgeProgress(
+                            current: current, target: target, rawLine: record.pledgeProgressLine,
+                            resolver: copyResolver
+                        )
+                        let status = copyResolver.resolve(
+                            achieved ? .archivePledgeStatusAchieved
+                                : ratio >= 800 ? .archivePledgeStatusClose : .archivePledgeStatusIncomplete
+                        )
+                        let tier = LegacyPresentation.pledgeTier(pledge.tier, resolver: copyResolver)
+                        let title = record.pledgeID.map {
+                            LegacyPresentation.archivedPledgeTitle(
+                                id: $0, rawTitle: record.pledgeTitle, resolver: copyResolver
+                            )
+                        } ?? pledge.title
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 6) {
-                                Text("\(pledge.tier.title) 목표")
+                                Text(
+                                    verbatim: copyResolver.resolve(
+                                        .archivePledgeProgress,
+                                        arguments: [.userText(tier)]
+                                    )
+                                )
                                     .font(.caption2.weight(.heavy))
                                     .foregroundStyle(BaseballTheme.milestone)
-                                Text(pledge.title)
+                                Text(verbatim: title)
                                     .font(.caption.weight(.semibold))
                                 Spacer(minLength: 0)
-                                Text(status)
+                                Text(verbatim: status)
                                     .font(.caption.weight(.bold))
                                     .foregroundStyle(achieved ? BaseballTheme.positive : BaseballTheme.textTertiary)
                             }
-                            Text("\(progressLine) · 보상 계승 포인트 +\(pledge.rewardPermille / 10)%")
+                            Text(
+                                verbatim: copyResolver.resolve(
+                                    .archivePledgeReward,
+                                    arguments: [.userText(progressLine), .integer(pledge.rewardPermille / 10)]
+                                )
+                            )
                                 .font(.caption2.monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textSecondary)
                             ProgressView(value: Double(ratio), total: 1_000)
@@ -337,12 +474,29 @@ private struct LifeArchiveRow: View {
                         .padding(8)
                         .background(BaseballTheme.milestone.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(pledge.accessibilityLabel(
-                            progressLine: progressLine, status: status
-                        ))
+                        .accessibilityLabel(
+                            copyResolver.resolve(
+                                .pledgeAccessibility,
+                                arguments: [
+                                    .userText(tier), .userText(title), .userText(progressLine),
+                                    .integer(pledge.rewardPermille / 10),
+                                ]
+                            ) + ". \(status)"
+                        )
                     }
-                    if let windTitle = record.windTitle {
-                        Label("3년의 바람 · \(windTitle)", systemImage: "wind")
+                    if let windTitle = HighSchoolConclusionPresentation.localizedLifeWind(
+                        id: record.windID, rawTitle: record.windTitle, resolver: copyResolver
+                    ) {
+                        Label {
+                            Text(
+                                verbatim: copyResolver.resolve(
+                                    .archiveWind,
+                                    arguments: [.userText(windTitle)]
+                                )
+                            )
+                        } icon: {
+                            Image(systemName: "wind")
+                        }
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(BaseballTheme.information)
                             .accessibilityIdentifier("archive.wind")
@@ -350,33 +504,65 @@ private struct LifeArchiveRow: View {
                     // 왜 그 회차가 그렇게 끝났는지. 숫자만 있으면 "3회차는 왜 실패했나"에
                     // 아카이브가 답하지 못한다.
                     if let talent = record.talent {
-                        Text("재능 · " + TalentAbility.allCases
-                            .map { "\($0.label) \(talent.grade($0).label)" }
-                            .joined(separator: " · "))
+                        let line = TalentAbility.allCases.map {
+                            "\(copyResolver.resolve($0.displayCopyToken)) \(copyResolver.resolve(talent.grade($0).displayCopyToken))"
+                        }.joined(separator: " · ")
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                .archiveTalent,
+                                arguments: [.userText(line)]
+                            )
+                        )
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textSecondary)
                     }
                     if let awakenings = record.awakenings, !awakenings.isEmpty {
-                        Text("각성 · " + awakenings.map { HighSchoolPresentation.awakening($0).title }
-                            .joined(separator: " · "))
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                .archiveAwakenings,
+                                arguments: [.userText(awakenings.map {
+                                    HighSchoolPresentation.localizedAwakeningTitle($0, resolver: copyResolver)
+                                }.joined(separator: " · "))]
+                            )
+                        )
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if let karmas = record.karmas, !karmas.isEmpty {
-                        Text("핸디캡 · " + karmas.map { HighSchoolPresentation.karma($0).title }
-                            .joined(separator: " · "))
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                .archiveHandicaps,
+                                arguments: [.userText(karmas.map {
+                                    HighSchoolSetupView.localizedKarmaCopy($0, resolver: copyResolver).title
+                                }.joined(separator: " · "))]
+                            )
+                        )
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.warning)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if let strength = record.schoolStrength {
-                        Text("학교 강점 · \(strength)")
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                .archiveSchoolStrength,
+                                arguments: [
+                                    .userText(LegacyPresentation.schoolStrength(strength, resolver: copyResolver)),
+                                ]
+                            )
+                        )
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }
                     if !record.memories.isEmpty {
-                        Text("가져간 기억 · " + record.memories.map { HighSchoolPresentation.memory($0).title }.joined(separator: " · "))
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                .archiveMemories,
+                                arguments: [.userText(record.memories.map {
+                                    HighSchoolConclusionPresentation.localizedMemory($0, resolver: copyResolver).title
+                                }.joined(separator: " · "))]
+                            )
+                        )
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.milestone)
                             .fixedSize(horizontal: false, vertical: true)
@@ -411,6 +597,7 @@ struct LifeShareButton: View {
     let record: HighSchoolCareerStore.LifeRecord
 
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.gameCopyResolver) private var copyResolver
     @State private var rendered: UIImage?
 
     var body: some View {
@@ -418,7 +605,10 @@ struct LifeShareButton: View {
             if let rendered {
                 ActivityShareButton(
                     items: [rendered],
-                    subject: "\(record.lifeNumber)번째 선수 요약",
+                    subject: copyResolver.resolve(
+                        .archiveShareSubject,
+                        arguments: [.integer(record.lifeNumber)]
+                    ),
                     onTapped: {
                         let properties: [String: Any] = ["life_number": record.lifeNumber]
                         GameAnalytics.log(.lifeCardShareTapped, properties)
@@ -428,28 +618,43 @@ struct LifeShareButton: View {
                         GameAnalytics.log(.lifeCardShareCompleted, ["life_number": record.lifeNumber])
                     }
                 ) {
-                    Label("이 선수 기록 공유", systemImage: "square.and.arrow.up")
+                    Label {
+                        Text(verbatim: copyResolver.resolve(.archiveShare))
+                    } icon: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
                         .font(.footnote.weight(.semibold))
                         .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 }
                 .accessibilityIdentifier("record.share.\(record.lifeNumber)")
             } else {
                 // 렌더가 끝나기 전에는 자리만 잡는다. 버튼이 나타났다 사라지면 목록이 튄다.
-                Label("이 선수 기록 공유", systemImage: "square.and.arrow.up")
+                Label {
+                    Text(verbatim: copyResolver.resolve(.archiveShare))
+                } icon: {
+                    Image(systemName: "square.and.arrow.up")
+                }
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
             }
         }
         .task(id: record.lifeNumber) {
-            rendered = Self.render(record, scale: displayScale)
+            rendered = Self.render(record, scale: displayScale, resolver: copyResolver)
         }
     }
 
     /// 카드 한 장을 이미지로 굽는다. `ImageRenderer`는 메인 액터에서만 동작한다.
     @MainActor
-    static func render(_ record: HighSchoolCareerStore.LifeRecord, scale: CGFloat) -> UIImage? {
-        let renderer = ImageRenderer(content: LifeSummaryCard(record: record))
+    static func render(
+        _ record: HighSchoolCareerStore.LifeRecord,
+        scale: CGFloat,
+        resolver: GameCopyResolver
+    ) -> UIImage? {
+        let renderer = ImageRenderer(
+            content: LifeSummaryCard(record: record)
+                .environment(\.gameCopyResolver, resolver)
+        )
         renderer.scale = max(2, scale)
         return renderer.uiImage
     }
@@ -462,15 +667,22 @@ struct LifeShareButton: View {
 struct LifeSummaryCard: View {
     let record: HighSchoolCareerStore.LifeRecord
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("\(record.lifeNumber)번째 선수")
+                    Text(
+                        verbatim: copyResolver.resolve(
+                            .archivePlayerNumber,
+                            arguments: [.integer(record.lifeNumber)]
+                        )
+                    )
                         .font(.system(.largeTitle, design: .monospaced, weight: .black))
                         .foregroundStyle(BaseballTheme.action)
 
-                    Text(record.playerName)
+                    Text(verbatim: record.playerName)
                         .font(.title.bold())
                         .foregroundStyle(BaseballTheme.textPrimary)
                         .padding(.top, 2)
@@ -482,17 +694,30 @@ struct LifeSummaryCard: View {
                              playerStage: record.drafted ? .pro : .ace)
             }
 
-            Text(record.schoolName ?? "학교 미정")
+            Text(
+                verbatim: HighSchoolConclusionPresentation.localizedSchoolName(
+                    record.schoolName, resolver: copyResolver
+                )
+            )
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .padding(.top, 1)
 
-            Text(record.drafted ? "지명" : "미지명")
+            Text(verbatim: copyResolver.resolve(record.drafted ? .archiveDrafted : .archiveUndrafted))
                 .font(.system(.title2, design: .default, weight: .heavy))
                 .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.negative)
                 .padding(.top, 14)
 
-            Text(record.drafted ? (record.teamName ?? "구단 미정") : "평가 \(record.evaluationScore)점")
+            Text(
+                verbatim: record.drafted
+                    ? HighSchoolConclusionPresentation.localizedLifeTeamName(
+                        record.teamName, resolver: copyResolver
+                    ) ?? copyResolver.resolve(.archiveTeamUnknown)
+                    : copyResolver.resolve(
+                        .archiveEvaluation,
+                        arguments: [.integer(record.evaluationScore)]
+                    )
+            )
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(BaseballTheme.textSecondary)
 
@@ -502,13 +727,13 @@ struct LifeSummaryCard: View {
                 .padding(.vertical, 14)
 
             HStack(spacing: 16) {
-                stat("등판", "\(record.games)")
-                stat("탈삼진", "\(record.strikeouts)")
-                stat("볼넷", "\(record.walks)")
-                stat("실점", "\(record.runsAllowed)")
+                stat(copyResolver.resolve(.archiveStatOutings), "\(record.games)")
+                stat(copyResolver.resolve(.archiveStatStrikeouts), "\(record.strikeouts)")
+                stat(copyResolver.resolve(.archiveStatWalks), "\(record.walks)")
+                stat(copyResolver.resolve(.archiveStatRuns), "\(record.runsAllowed)")
             }
 
-            Text("야구 못하면 또 환생함")
+            Text(verbatim: copyResolver.resolve(.archiveSummaryFooter))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(BaseballTheme.textTertiary)
                 .padding(.top, 18)
@@ -520,10 +745,10 @@ struct LifeSummaryCard: View {
 
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(label)
+            Text(verbatim: label)
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(BaseballTheme.textTertiary)
-            Text(value)
+            Text(verbatim: value)
                 .font(.system(.title3, design: .monospaced, weight: .bold))
                 .foregroundStyle(BaseballTheme.textPrimary)
         }

@@ -47,6 +47,210 @@ enum HighSchoolPresentation {
         resolver.resolve(phase.displayCopyToken)
     }
 
+    static func localizedChapterTitle(
+        _ chapter: CareerChapterSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(CareerChapterPresentationCatalog.descriptor(for: chapter).titleToken)
+    }
+
+    /// Reauthors the store's frozen Korean compatibility summary from stable state and typed
+    /// numeric captures. Unknown source prose fails closed to neutral English.
+    @MainActor static func localizedStoreSummary(
+        _ raw: String,
+        career: HighSchoolCareerStore,
+        state: HighSchoolCareerSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard resolver.language == .english else { return raw }
+
+        switch raw {
+        case "UI 테스트용 미지명 직전 상태를 준비했습니다.",
+             "UI 테스트용 지명 완료 상태를 준비했습니다.":
+            return resolver.resolve(.highSchoolSummaryFixture)
+        case "현재 환생 기록을 읽지 못해 직전 정상 백업으로 복구했습니다.",
+             "iCloud 환생 기록을 읽지 못해 직전 정상 백업으로 복구했습니다.":
+            return resolver.resolve(.highSchoolSummaryBackupRecovered)
+        case "시드는 카드에 적힌 숫자만 입력할 수 있습니다. 다시 확인해 주세요.":
+            return resolver.resolve(.highSchoolSummarySeedInvalid)
+        case "기록 없는 도전 — 이 판의 결과는 선수 기록과 계승에 남지 않습니다.":
+            return resolver.resolve(.highSchoolSummaryChallengeStarted)
+        case "고교 첫 해가 시작됩니다.":
+            return resolver.resolve(.highSchoolSummaryFirstYear)
+        case "프로 커리어를 마치면 고교 시절과 통산 기록을 함께 돌아봅니다.":
+            return resolver.resolve(.highSchoolSummaryProPending)
+        case "프로 커리어를 마쳤습니다. 이제 당시 규칙대로 남길 기억을 고릅니다.":
+            return resolver.resolve(.highSchoolSummaryProMemoryChoice)
+        case "고교 시절과 프로 통산 기록에서 대표 유산 세 가지를 찾았습니다.":
+            return resolver.resolve(.highSchoolSummaryProLegacyFound)
+        case "다른 기기의 진행을 불러왔습니다.":
+            return resolver.resolve(.highSchoolSummaryCloudLoaded)
+        case "iCloud 환생 기록을 읽지 못해 이 기기의 진행을 유지합니다.":
+            return resolver.resolve(.highSchoolSummaryCloudKeptLocal)
+        case "등판을 중단했습니다. 다음 마운드는 새 이닝입니다.":
+            return resolver.resolve(.highSchoolSummaryOutingAbandoned)
+        default:
+            break
+        }
+
+        if let values = summaryCaptures(raw, pattern: #"^같은 훈련 (\d+)회 완료 · 능력 성장 \+(\d+)$"#),
+           values.count == 2, let count = Int(values[0]), let growth = Int(values[1]) {
+            return resolver.resolve(
+                .highSchoolSummaryRepeatTraining,
+                arguments: [.integer(count), .integer(growth)]
+            )
+        }
+
+        if raw.hasSuffix("번째 선수. 대표 유산 하나로 다시 시작합니다.")
+            || raw.contains("번째 선수. 기억 ") {
+            let memoryCount = career.inheritance.memories.count
+            let inherited: String
+            if career.inheritance.equippedSignatureLegacyID != nil, memoryCount > 0 {
+                inherited = resolver.resolve(.highSchoolSummaryRebirthBoth, arguments: [.integer(memoryCount)])
+            } else if career.inheritance.equippedSignatureLegacyID != nil {
+                inherited = resolver.resolve(.highSchoolSummaryRebirthSignature)
+            } else {
+                inherited = resolver.resolve(.highSchoolSummaryRebirthMemories, arguments: [.integer(memoryCount)])
+            }
+            return resolver.resolve(
+                .highSchoolSummaryRebirthStarted,
+                arguments: [.integer(state.lifeNumber), .userText(inherited)]
+            )
+        }
+
+        if let game = HighSchoolConclusionPresentation.localizedStoreGameSummary(raw, resolver: resolver) {
+            return game
+        }
+
+        if let values = summaryCaptures(raw, pattern: #"^(.+) 완수\. 삼진 (\d+)개"#),
+           values.count == 2, let strikeouts = Int(values[1]),
+           let frame = chapterGoalFrame(koreanTitle: values[0]) {
+            let title = resolver.resolve(.gameContent("content.chapter-goal.\(frame.rawValue).title"))
+            return resolver.resolve(
+                .highSchoolSummaryGoalCompleted,
+                arguments: [.userText(title), .integer(strikeouts)]
+            )
+        }
+
+        if let values = summaryCaptures(raw, pattern: #"^이제 사람들이 '([^']+)'"#),
+           let rawTitle = values.first {
+            let title = HighSchoolConclusionPresentation.localizedNicknameTitle(rawTitle, resolver: resolver)
+            return resolver.resolve(.highSchoolSummaryNicknameEarned, arguments: [.userText(title)])
+        }
+
+        if let values = summaryCaptures(raw, pattern: #"^기억 (\d+)장을 새 선수에게 남깁니다\.$"#),
+           let count = values.first.flatMap(Int.init) {
+            return resolver.resolve(.highSchoolSummaryMemoriesLeft, arguments: [.integer(count)])
+        }
+        if raw.hasSuffix("새 선수에게 남깁니다."),
+           let signature = career.pendingRecap?.record.signatureLegacy {
+            let title = HighSchoolConclusionPresentation.localizedSignature(
+                signature, resolver: resolver
+            ).title
+            return resolver.resolve(.highSchoolSummarySignatureLeft, arguments: [.userText(title)])
+        }
+
+        if raw.hasPrefix("목표를 정했습니다:"), let pledge = career.pledge {
+            return resolver.resolve(
+                .highSchoolSummaryPledgeChosen,
+                arguments: [
+                    .userText(LegacyPresentation.pledgeTitle(pledge, resolver: resolver)),
+                    .integer(pledge.rewardPermille / 10),
+                ]
+            )
+        }
+
+        if let receipt = career.trainingReceipt, raw == receipt.detail {
+            return localizedTrainingResultDetail(receipt, resolver: resolver)
+        }
+
+        if let relationship = state.lastRelationship,
+           let event = HighSchoolContentCatalog.relationshipEvents.first(where: { $0.title == relationship.title }),
+           let choice = RelationshipPresentationCatalog.cardDescriptor(for: event).choiceDescriptors
+               .first(where: { $0.response == relationship.response }) {
+            let abilityChange: String
+            if let focus = relationship.growthFocus,
+               let before = relationship.abilityBefore,
+               let after = relationship.abilityAfter {
+                abilityChange = resolver.resolve(
+                    .highSchoolSummaryRelationshipAbility,
+                    arguments: [
+                        .userText(resolver.resolve(focus.displayCopyToken)),
+                        .integer(after - before),
+                    ]
+                )
+            } else {
+                abilityChange = ""
+            }
+            return resolver.resolve(
+                .highSchoolSummaryRelationship,
+                arguments: [
+                    .userText(resolver.resolve(choice.detailToken)),
+                    .integer(relationship.trustAfter - relationship.trustBefore),
+                    .integer(relationship.fatigueAfter - relationship.fatigueBefore),
+                    .integer(relationship.fanInterestAfter - relationship.fanInterestBefore),
+                    .userText(abilityChange),
+                ]
+            )
+        }
+
+        let chapter = CareerChapterPresentationCatalog.descriptor(for: state.chapter)
+        if raw == "\(state.chapter.title) · \(state.chapter.season)" {
+            return resolver.resolve(
+                .highSchoolSummaryChapterAdvanced,
+                arguments: [
+                    .userText(resolver.resolve(chapter.titleToken)),
+                    .userText(resolver.resolve(chapter.seasonToken)),
+                ]
+            )
+        }
+
+        if let awakening = state.selectedAwakenings.last,
+           raw.contains(HighSchoolPresentation.awakening(awakening).title) {
+            return resolver.resolve(
+                .highSchoolSummaryAwakening,
+                arguments: [
+                    .userText(localizedAwakeningTitle(awakening, resolver: resolver)),
+                    .userText(localizedAwakeningDetail(awakening, resolver: resolver)),
+                ]
+            )
+        }
+
+        if let draft = state.draftResult {
+            return HighSchoolConclusionPresentation.localizedDraftSummary(draft, resolver: resolver)
+        }
+        return resolver.resolve(.highSchoolSummaryUpdated)
+    }
+
+    static func localizedSummaryCue(
+        _ cue: MobileCareerStore.FeedbackCue,
+        resolver: GameCopyResolver
+    ) -> String {
+        let key: LegacyUICopyKey = switch cue {
+        case .setback: .highSchoolSummaryCueSetback
+        case .growth: .highSchoolSummaryCueGrowth
+        case .success: .highSchoolSummaryCueSuccess
+        case .neutral: .highSchoolSummaryCueNeutral
+        }
+        return resolver.resolve(key)
+    }
+
+    static func localizedPersonalityTraitTitle(
+        _ trait: PersonalityTrait,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard resolver.language == .english else { return trait.title }
+        return resolver.resolve(.gameContent("content.personality-trait.\(trait.rawValue).title"))
+    }
+
+    static func localizedPersonalityTraitActivation(
+        _ trait: PersonalityTrait,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard resolver.language == .english else { return trait.activationLine }
+        return resolver.resolve(.gameContent("content.personality-trait.\(trait.rawValue).activation"))
+    }
+
     static func focus(_ focus: TrainingFocus) -> String {
         switch focus {
         case .velocity: "구위"
@@ -1331,6 +1535,25 @@ enum HighSchoolPresentation {
     }
 
     /// FNV-1a. 코어의 `StableHash`는 internal이라 셸에서 쓸 수 없어 같은 식을 여기에 둔다.
+    private static func summaryCaptures(_ value: String, pattern: String) -> [String]? {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let fullRange = NSRange(value.startIndex..<value.endIndex, in: value)
+        guard let match = regex.firstMatch(in: value, range: fullRange) else { return nil }
+        return (1..<match.numberOfRanges).compactMap { index in
+            Range(match.range(at: index), in: value).map { String(value[$0]) }
+        }
+    }
+
+    private static func chapterGoalFrame(koreanTitle: String) -> ChapterGoal.Frame? {
+        switch koreanTitle {
+        case "감독의 숙제": .coachAssignment
+        case "스카우트의 시선": .scoutAttention
+        case "포수의 내기": .catcherBet
+        case "나와의 약속": .personalPromise
+        default: nil
+        }
+    }
+
     private static func seedValue(_ value: String) -> UInt64 {
         var hash: UInt64 = 0xCBF2_9CE4_8422_2325
         for byte in value.utf8 {

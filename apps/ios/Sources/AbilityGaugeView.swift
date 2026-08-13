@@ -57,6 +57,7 @@ struct AbilityGaugeView: View {
     var talent: TalentGrade?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.gameCopyResolver) private var copyResolver
     @State private var animatedValue: Int?
 
     private var displayed: Int { animatedValue ?? value }
@@ -73,13 +74,25 @@ struct AbilityGaugeView: View {
                 // 실력이 아니라 **성장 한계**다 — S는 80까지 열려 있다는 뜻이고, 지금 45라는
                 // 사실과 아무 충돌이 없다. 한 단어와 한계 숫자가 그 오해를 통째로 없앤다.
                 if let talent {
-                    Text("재능 \(talent.label)")
+                    Text(
+                        verbatim: copyResolver.resolve(
+                            .abilityTalent,
+                            arguments: [.userText(talent.label)]
+                        )
+                    )
                         .font(.caption2.weight(.black))
                         .foregroundStyle(BaseballTheme.actionInk)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(RatingScale.tone(talent.ceiling), in: Capsule())
-                    Text(talent == .s ? "한계 없음" : "\(talent.ceiling)까지")
+                    Text(
+                        verbatim: talent == .s
+                            ? copyResolver.resolve(.abilityNoCeiling)
+                            : copyResolver.resolve(
+                                .abilityCeiling,
+                                arguments: [.integer(talent.ceiling)]
+                            )
+                    )
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textTertiary)
                 }
@@ -117,11 +130,11 @@ struct AbilityGaugeView: View {
             }
             .frame(height: 8)
             if showsMeaning {
-                Text(RatingScale.meaning(value))
+                Text(verbatim: MetaPresentation.ratingMeaning(value, resolver: copyResolver))
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
                 if let talent, value >= talent.ceiling, talent != .s {
-                    Text("재능의 한계에 닿았습니다. 계속 훈련하면 열립니다.")
+                    Text(verbatim: copyResolver.resolve(.abilityCeilingReached))
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.warning)
                         .fixedSize(horizontal: false, vertical: true)
@@ -138,10 +151,33 @@ struct AbilityGaugeView: View {
     }
 
     private var accessibilityText: String {
-        let talentText = talent.map { " 재능 \($0.label), 한계 \($0.ceiling)." } ?? ""
+        let talentText = talent.map {
+            copyResolver.resolve(
+                .abilityAccessibilityTalent,
+                arguments: [.userText($0.label), .integer($0.ceiling)]
+            )
+        } ?? ""
+        let meaning = MetaPresentation.ratingMeaning(value, resolver: copyResolver)
         if gained, let beforeValue {
-            return "\(label) \(beforeValue)에서 \(value).\(talentText) \(RatingScale.meaning(value))"
+            return copyResolver.resolve(
+                .abilityAccessibilityGained,
+                arguments: [
+                    .userText(label),
+                    .integer(beforeValue),
+                    .integer(value),
+                    .userText(talentText),
+                    .userText(meaning),
+                ]
+            )
         }
-        return "\(label) \(value).\(talentText) \(RatingScale.meaning(value))"
+        return copyResolver.resolve(
+            .abilityAccessibility,
+            arguments: [
+                .userText(label),
+                .integer(value),
+                .userText(talentText),
+                .userText(meaning),
+            ]
+        )
     }
 }

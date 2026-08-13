@@ -13,6 +13,7 @@ const schemaOnly = process.argv.includes("--schema-only");
 const koreanPattern = /[가-힣ㄱ-ㅎㅏ-ㅣ]/u;
 const allowedStatuses = ["inventory", "ko_locked", "en_draft", "semantic_reviewed", "language_reviewed", "ui_verified"];
 const requiredSurfaces = ["app_ui", "notification", "share", "accessibility", "simulation_core_game_copy"];
+const allowedCopyClasses = ["static_ui", "content", "dynamic", "proper_name", "user_input", "debug_only"];
 const statusIndex = new Map(allowedStatuses.map((value, index) => [value, index]));
 
 function hash(value) {
@@ -33,49 +34,180 @@ function swiftFiles(directory) {
 }
 
 function placeholderSignature(value) {
-  const matches = [];
+  const matches = new Map();
+  let sequentialIndex = 1;
   for (let index = 0; index < value.length; index += 1) {
     if (value[index] !== "%") continue;
     if (value[index + 1] === "%") {
       index += 1;
       continue;
     }
-    const match = value.slice(index).match(/^%[-+ #0]*\d*(?:\.\d+)?l{0,2}([@diufFeEgG])/u);
+    const match = value.slice(index).match(/^%(?:(\d+)\$)?[-+ #0]*\d*(?:\.\d+)?l{0,2}([@diufFeEgG])/u);
     if (!match) continue;
-    const kind = match[1] === "@" ? "string" : "diu".includes(match[1]) ? "integer" : "decimal";
-    matches.push(kind);
+    const argumentIndex = match[1] ? Number(match[1]) : sequentialIndex++;
+    const conversion = match[2];
+    const kind = conversion === "@" ? "string" : "diu".includes(conversion) ? "integer" : "decimal";
+    const previous = matches.get(argumentIndex);
+    matches.set(argumentIndex, previous && previous !== kind ? `${previous}|${kind}` : kind);
     index += match[0].length - 1;
   }
-  return matches;
+  return [...matches.entries()].sort(([left], [right]) => left - right).map(([, kind]) => kind);
 }
 
-function stripSwiftComments(line) {
-  return line.replace(/\/\/.*$/u, "");
+function swiftCodeMask(source) {
+  const output = [...source];
+  let index = 0;
+  let lineComment = false;
+  let blockCommentDepth = 0;
+  let quoteLength = 0;
+  while (index < source.length) {
+    const current = source[index];
+    const next = source[index + 1];
+    if (lineComment) {
+      if (current === "\n") lineComment = false;
+      else output[index] = " ";
+      index += 1;
+      continue;
+    }
+    if (blockCommentDepth > 0) {
+      output[index] = current === "\n" ? "\n" : " ";
+      if (current === "/" && next === "*") {
+        output[index + 1] = " ";
+        blockCommentDepth += 1;
+        index += 2;
+      } else if (current === "*" && next === "/") {
+        output[index + 1] = " ";
+        blockCommentDepth -= 1;
+        index += 2;
+      } else index += 1;
+      continue;
+    }
+    if (quoteLength > 0) {
+      output[index] = current === "\n" ? "\n" : " ";
+      if (current === "\\") {
+        if (index + 1 < source.length) output[index + 1] = source[index + 1] === "\n" ? "\n" : " ";
+        index += 2;
+      } else if (quoteLength === 3 && source.startsWith('"""', index)) {
+        output[index] = output[index + 1] = output[index + 2] = " ";
+        quoteLength = 0;
+        index += 3;
+      } else if (quoteLength === 1 && current === '"') {
+        quoteLength = 0;
+        index += 1;
+      } else index += 1;
+      continue;
+    }
+    if (current === "/" && next === "/") {
+      output[index] = output[index + 1] = " ";
+      lineComment = true;
+      index += 2;
+    } else if (current === "/" && next === "*") {
+      output[index] = output[index + 1] = " ";
+      blockCommentDepth = 1;
+      index += 2;
+    } else if (source.startsWith('"""', index)) {
+      output[index] = output[index + 1] = output[index + 2] = " ";
+      quoteLength = 3;
+      index += 3;
+    } else if (current === '"') {
+      output[index] = " ";
+      quoteLength = 1;
+      index += 1;
+    } else index += 1;
+  }
+  return output.join("");
+}
+
+function invocationEnd(source, openParen) {
+  let depth = 0;
+  let index = openParen;
+  let lineComment = false;
+  let blockCommentDepth = 0;
+  let quoteLength = 0;
+  while (index < source.length) {
+    const current = source[index];
+    const next = source[index + 1];
+    if (lineComment) {
+      if (current === "\n") lineComment = false;
+      index += 1;
+      continue;
+    }
+    if (blockCommentDepth > 0) {
+      if (current === "/" && next === "*") { blockCommentDepth += 1; index += 2; }
+      else if (current === "*" && next === "/") { blockCommentDepth -= 1; index += 2; }
+      else index += 1;
+      continue;
+    }
+    if (quoteLength > 0) {
+      if (current === "\\") index += 2;
+      else if (quoteLength === 3 && source.startsWith('"""', index)) { quoteLength = 0; index += 3; }
+      else if (quoteLength === 1 && current === '"') { quoteLength = 0; index += 1; }
+      else index += 1;
+      continue;
+    }
+    if (current === "/" && next === "/") { lineComment = true; index += 2; continue; }
+    if (current === "/" && next === "*") { blockCommentDepth = 1; index += 2; continue; }
+    if (source.startsWith('"""', index)) { quoteLength = 3; index += 3; continue; }
+    if (current === '"') { quoteLength = 1; index += 1; continue; }
+    if (current === "(") depth += 1;
+    if (current === ")") {
+      depth -= 1;
+      if (depth === 0) return index + 1;
+    }
+    index += 1;
+  }
+  return source.length;
+}
+
+function swiftCallSites(source, names) {
+  const mask = swiftCodeMask(source);
+  const pattern = new RegExp(`\\b(${names.join("|")})\\s*\\(`, "gu");
+  const sites = [];
+  for (const match of mask.matchAll(pattern)) {
+    const openParen = mask.indexOf("(", match.index);
+    const end = invocationEnd(source, openParen);
+    sites.push({
+      name: match[1],
+      line: source.slice(0, match.index).split("\n").length,
+      source: source.slice(match.index, end),
+    });
+  }
+  return sites;
+}
+
+const dynamicTextBoundaries = [
+  /\b(?:copyResolver|gameCopyResolver|localizedCopyResolver)\.resolve\s*\(/u,
+  /\b(?:ProCareerPresentation|HighSchoolPresentation|HighSchoolConclusionPresentation|PitchCopy|MetaPresentation|LegacyPresentation|RecordPresentation)\./u,
+  /\bGameFormatters\./u,
+];
+const localizationSafetyAnnotation = /\/\/\s*localization-safe:\s*(user-input|numeric|resolved-copy|stable-id|symbol)\b/u;
+
+function isSafeDynamicText(site, sourceLines) {
+  const argument = site.source.replace(/^Text\s*\(/u, "").trimStart();
+  if (/^(?:verbatim\s*:|"|#")/u.test(argument)) return true;
+  if (dynamicTextBoundaries.some((pattern) => pattern.test(site.source))) return true;
+  const nearby = sourceLines.slice(Math.max(0, site.line - 3), site.line).join("\n");
+  return localizationSafetyAnnotation.test(nearby) || localizationSafetyAnnotation.test(site.source);
 }
 
 function directDisplayPaths() {
   const failures = [];
-  const displayCall = /\b(Text|Label|Button|Toggle|Section)\s*\(/u;
-  const accessibilityCall = /\.accessibility(?:Label|Hint|Value)\s*\(/u;
-  const dynamicText = /\bText\s*\((?!\s*["`]|\s*verbatim:)/u;
-  // A resolved semantic token is a safe presentation boundary. Keep raw Text/view-model paths
-  // pending, but do not report a future `copyResolver.resolve(coreToken)` call as legacy text.
-  const semanticResolverPath = /\b(?:copyResolver|gameCopyResolver|localizedCopyResolver)\.resolve\s*\(/u;
   for (const path of swiftFiles(join(root, "apps/ios/Sources"))) {
-    const lines = readFileSync(path, "utf8").split("\n");
-    lines.forEach((raw, index) => {
-      const line = stripSwiftComments(raw);
-      if (!koreanPattern.test(line)) return;
-      if (displayCall.test(line) || accessibilityCall.test(line)) {
-        failures.push({ path: relative(root, path), line: index + 1, kind: "korean_display_literal" });
+    const source = readFileSync(path, "utf8");
+    const lines = source.split("\n");
+    for (const site of swiftCallSites(source, ["Text", "Label", "Button", "Toggle", "Section"])) {
+      if (koreanPattern.test(site.source)) {
+        failures.push({ path: relative(root, path), line: site.line, kind: "korean_display_literal" });
       }
-    });
-    lines.forEach((raw, index) => {
-      const line = stripSwiftComments(raw);
-      if (dynamicText.test(line) && !semanticResolverPath.test(line)) {
-        failures.push({ path: relative(root, path), line: index + 1, kind: "dynamic_text_path" });
+      if (site.name === "Text" && !isSafeDynamicText(site, lines)) {
+        failures.push({ path: relative(root, path), line: site.line, kind: "dynamic_text_path" });
       }
-    });
+    }
+    for (const site of swiftCallSites(source, ["accessibilityLabel", "accessibilityHint", "accessibilityValue"])) {
+      if (koreanPattern.test(site.source)) {
+        failures.push({ path: relative(root, path), line: site.line, kind: "korean_accessibility_literal" });
+      }
+    }
   }
   return failures;
 }
@@ -122,6 +254,9 @@ function collectTextFiles(directory) {
 function validateSchema(schema) {
   const failures = [];
   if (schema.schema_version !== 1) failures.push("schema_version must be 1");
+  if (!Number.isInteger(schema.scanner_version) || schema.scanner_version < 2) {
+    failures.push("scanner_version must be at least 2 for compatibility-boundary review");
+  }
   if (JSON.stringify(schema.required_surfaces) !== JSON.stringify(requiredSurfaces)) {
     failures.push(`required_surfaces must remain the canonical set: ${requiredSurfaces.join(", ")}`);
   }
@@ -147,8 +282,15 @@ function validateSchema(schema) {
     ids.add(entry.id);
     if (!entry.source_anchor?.path || !Number.isInteger(entry.source_anchor.line)) failures.push(`invalid source anchor: ${entry.id}`);
     if (!statusIndex.has(entry.status)) failures.push(`invalid status ${entry.status}: ${entry.id}`);
+    if (!allowedCopyClasses.includes(entry.copy_class)) failures.push(`invalid copy class ${entry.copy_class}: ${entry.id}`);
     if (entry.production_key !== null && !/^[a-z][a-z0-9_]*(?:[.-][a-z0-9_]+)+$/u.test(entry.production_key)) {
       failures.push(`non-semantic production key: ${entry.id}`);
+    }
+    if (entry.production_key === null && (typeof entry.exclusion_reason !== "string" || entry.exclusion_reason.trim().length < 20)) {
+      failures.push(`source literal lacks a semantic key or explicit exclusion reason: ${entry.id}`);
+    }
+    if (entry.status === "ui_verified" && entry.production_key === null && entry.disposition !== "compatibility_boundary") {
+      failures.push(`verified excluded literal lacks compatibility_boundary disposition: ${entry.id}`);
     }
     if (!requiredSurfaces.includes(entry.surface)) failures.push(`unsupported inventory surface ${entry.surface}: ${entry.id}`);
   }
@@ -161,6 +303,10 @@ function validateSchema(schema) {
   }
   if (JSON.stringify(generatedObserved) !== JSON.stringify(observed)) {
     failures.push(`generation.observed_surfaces does not match inventory: expected ${observed.join(", ")}, found ${generatedObserved.join(", ")}`);
+  }
+  const pendingCount = (schema.inventory ?? []).filter((entry) => entry.status !== "ui_verified").length;
+  if (schema.generation?.pending_count !== pendingCount) {
+    failures.push(`generation.pending_count mismatch: expected ${pendingCount}, found ${schema.generation?.pending_count}`);
   }
   const snapshot = hash(JSON.stringify(schema.inventory ?? []));
   if (snapshot !== schema.source_snapshot) failures.push(`source snapshot stale: expected ${snapshot}, found ${schema.source_snapshot}`);
@@ -238,6 +384,9 @@ if (failures.length) {
   console.error(`- pending inventory: ${pending.length}`);
   for (const [surface, count] of Object.entries(pendingBySurface)) console.error(`  - ${surface}: ${count}`);
   console.error(`- direct legacy display paths: ${legacyPaths.length}`);
+  legacyPaths.slice(0, 100).forEach((failure) => {
+    console.error(`  - ${failure.path}:${failure.line} (${failure.kind})`);
+  });
   console.error(`- catalog entries checked: ${schema.catalogs.length}`);
   console.error("- use --schema-only to validate the Phase A schema without claiming release readiness");
   const detailFailures = failures.filter((failure) => !failure.startsWith("pending inventory:") && !failure.startsWith("direct legacy display paths:"));

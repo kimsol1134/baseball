@@ -8,6 +8,7 @@ struct CareerFlowView: View {
     var retiresIntoSignatureLegacy = false
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         Group {
@@ -17,7 +18,7 @@ struct CareerFlowView: View {
                 decision
             }
         }
-        .navigationTitle("이번 주")
+        .navigationTitle(copyResolver.resolve(.navigationThisWeek))
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(trigger: career.feedbackTrigger) { _, _ in
             switch career.feedbackCue {
@@ -42,7 +43,14 @@ struct CareerFlowView: View {
                                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                         }
                         if let summary = career.lastSummary, career.pendingGains.isEmpty {
-                            ResultBanner(summary: summary, cue: career.feedbackCue)
+                            ResultBanner(
+                                summary: ProCareerPresentation.storeSummary(
+                                    summary,
+                                    state: state,
+                                    resolver: copyResolver
+                                ),
+                                cue: career.feedbackCue
+                            )
                                 .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         }
 
@@ -53,15 +61,18 @@ struct CareerFlowView: View {
                             if let pending = state.pendingDecision {
                                 ProSeasonDecisionView(career: career, decision: pending)
                             } else {
-                                ContentUnavailableView("시즌 결정을 불러올 수 없습니다", systemImage: "exclamationmark.triangle")
+                                ContentUnavailableView(
+                                    copyResolver.resolve(.seasonDecisionUnavailable),
+                                    systemImage: "exclamationmark.triangle"
+                                )
                             }
                         case .importantGame:
                             ImportantGameIntro(state: state, onStart: career.beginImportantGame)
                         case .seasonReview:
                             ActionCard(
-                                title: "시즌 종료",
-                                copy: "올해 경기 기록과 수상을 통산 기록에 더합니다.",
-                                button: "시즌 기록 확인",
+                                title: copyResolver.resolve(.seasonReviewTitle),
+                                copy: copyResolver.resolve(.seasonReviewBody),
+                                button: copyResolver.resolve(.seasonReviewAction),
                                 action: career.reviewSeason
                             )
                         case .offseasonDecision:
@@ -75,7 +86,10 @@ struct CareerFlowView: View {
                                 onStartNewPlayer: onStartNewPlayer
                             )
                         default:
-                            ContentUnavailableView("이번 일정은 끝났습니다", systemImage: "checkmark.circle")
+                            ContentUnavailableView(
+                                copyResolver.resolve(.scheduleComplete),
+                                systemImage: "checkmark.circle"
+                            )
                         }
                     }
                     .padding(BaseballMetrics.gutter)
@@ -114,6 +128,7 @@ private struct ResultBanner: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: symbol).foregroundStyle(tone.accent).font(.footnote)
+            // localization-safe: resolved-copy
             Text(summary)
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)
@@ -126,35 +141,49 @@ private struct ResultBanner: View {
 
 private struct CareerSummary: View {
     let career: MobileCareerStore
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         List {
             if let state = career.state {
-                Section("선수") {
-                    LabeledContent("이름", value: state.identity.name)
-                    LabeledContent("구단", value: state.team.name)
-                    LabeledContent("레벨", value: state.level == .major ? "1군" : "2군")
-                    LabeledContent("역할", value: MobileCareerStore.roleName(state.role))
+                Section(copyResolver.resolve(.summaryPlayer)) {
+                    LabeledContent(copyResolver.resolve(.summaryName), value: state.identity.name)
+                    LabeledContent(
+                        copyResolver.resolve(.summaryTeam),
+                        value: ProCareerPresentation.teamName(state.team, resolver: copyResolver)
+                    )
+                    LabeledContent(copyResolver.resolve(.summaryLevel), value: copyResolver.resolve(state.level.displayCopyToken))
+                    LabeledContent(copyResolver.resolve(.summaryRole), value: copyResolver.resolve(state.role.displayCopyToken))
                 }
-                Section("능력") {
-                    AbilityGaugeView(label: "구위", value: state.pitcher.stuff)
-                    AbilityGaugeView(label: "제구", value: state.pitcher.command)
-                    AbilityGaugeView(label: "변화구", value: state.pitcher.movement)
-                    AbilityGaugeView(label: "체력", value: state.pitcher.stamina)
+                Section(copyResolver.resolve(.summaryAbility)) {
+                    AbilityGaugeView(label: copyResolver.resolve(.summaryStuff), value: state.pitcher.stuff)
+                    AbilityGaugeView(label: copyResolver.resolve(.summaryCommand), value: state.pitcher.command)
+                    AbilityGaugeView(label: copyResolver.resolve(.summaryMovement), value: state.pitcher.movement)
+                    AbilityGaugeView(label: copyResolver.resolve(.summaryStamina), value: state.pitcher.stamina)
                 }
-                Section("최근 주요 기록") {
+                Section(copyResolver.resolve(.summaryMilestones)) {
                     ForEach(Array(state.milestones.suffix(6).reversed()), id: \.self) { milestone in
-                        Label(milestone, systemImage: milestone == state.milestones.last ? "star.fill" : "circle.fill")
+                        Label(
+                            ProCareerPresentation.milestone(milestone, resolver: copyResolver),
+                            systemImage: milestone == state.milestones.last ? "star.fill" : "circle.fill"
+                        )
                             .foregroundStyle(milestone == state.milestones.last ? BaseballTheme.milestone : BaseballTheme.textSecondary)
                     }
                 }
                 if let decisions = state.decisionHistory, !decisions.isEmpty {
-                    Section("시즌 선택 기록") {
+                    Section(copyResolver.resolve(.summaryDecisions)) {
                         ForEach(Array(decisions.suffix(7).reversed())) { decision in
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(decision.choiceTitle)
+                                Text(ProCareerPresentation.decisionRecordTitle(decision, resolver: copyResolver))
                                     .font(.subheadline.weight(.semibold))
-                                Text("\(decision.season)시즌 \(decision.week)주차 · \(decision.effect.summary)")
+                                Text(copyResolver.resolve(
+                                    .summaryDecisionLine,
+                                    arguments: [
+                                        .integer(decision.season),
+                                        .integer(decision.week),
+                                        .userText(ProCareerPresentation.effect(decision.effect, resolver: copyResolver)),
+                                    ]
+                                ))
                                     .font(.caption)
                                     .foregroundStyle(BaseballTheme.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -167,7 +196,7 @@ private struct CareerSummary: View {
         }
         .scrollContentBackground(.hidden)
         .background(BaseballTheme.canvas)
-        .navigationTitle("커리어")
+        .navigationTitle(copyResolver.resolve(.summaryNavigation))
     }
 }
 
@@ -190,12 +219,15 @@ struct ProSeasonDecisionView: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: .stadiumNight,
-                eyebrow: "\(decision.season)시즌 · \(decision.week)주차 결정",
+                eyebrow: copyResolver.resolve(
+                    .decisionEyebrow,
+                    arguments: [.integer(decision.season), .integer(decision.week)]
+                ),
                 title: decisionTitle,
                 accent: BaseballTheme.milestone
             )
 
-            Text(decision.detail)
+            Text(ProCareerPresentation.decisionDetail(decision, resolver: copyResolver))
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -204,17 +236,17 @@ struct ProSeasonDecisionView: View {
                 Button { pendingChoice = choice } label: {
                     VStack(alignment: .leading, spacing: 7) {
                         HStack(alignment: .firstTextBaseline) {
-                            Text(choice.title)
+                            Text(ProCareerPresentation.choiceTitle(choice, resolver: copyResolver))
                                 .font(.headline)
                             Spacer(minLength: 8)
                             Image(systemName: "chevron.right.circle.fill")
                                 .foregroundStyle(BaseballTheme.selection)
                         }
-                        Text(choice.detail)
+                        Text(ProCareerPresentation.choiceDetail(choice, resolver: copyResolver))
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Label(choice.effect.summary, systemImage: "plusminus.circle")
+                        Label(ProCareerPresentation.effect(choice.effect, resolver: copyResolver), systemImage: "plusminus.circle")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(BaseballTheme.information)
                             .fixedSize(horizontal: false, vertical: true)
@@ -228,41 +260,58 @@ struct ProSeasonDecisionView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Self.accessibilityLabel(for: choice))
-                .accessibilityHint("두 번 탭하면 되돌릴 수 없는 선택을 확인합니다.")
+                .accessibilityLabel(Self.accessibilityLabel(for: choice, resolver: copyResolver))
+                .accessibilityHint(copyResolver.resolve(.decisionHint))
                 .accessibilityIdentifier("pro.seasonDecision.choice.\(choice.id)")
             }
 
-            Label("확인한 뒤에는 되돌릴 수 없습니다. 자동 진행도 이 결정을 건너뛰지 않습니다.", systemImage: "exclamationmark.circle")
+            Label(copyResolver.resolve(.decisionWarning), systemImage: "exclamationmark.circle")
                 .font(.caption)
                 .foregroundStyle(BaseballTheme.warning)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityIdentifier("pro.seasonDecision")
         .confirmationDialog(
-            pendingChoice?.title ?? "선택 확인",
+            pendingChoice.map { ProCareerPresentation.choiceTitle($0, resolver: copyResolver) }
+                ?? copyResolver.resolve(.decisionConfirmTitle),
             isPresented: Binding(
                 get: { pendingChoice != nil },
                 set: { if !$0 { pendingChoice = nil } }
             ),
             titleVisibility: .visible
         ) {
-            Button("이 선택으로 결정") {
+            Button(copyResolver.resolve(.decisionConfirmAction)) {
                 guard let pendingChoice else { return }
                 career.applySeasonDecision(decisionID: decision.id, choiceID: pendingChoice.id)
                 self.pendingChoice = nil
             }
             .accessibilityIdentifier("pro.seasonDecision.confirm")
-            Button("취소", role: .cancel) { pendingChoice = nil }
+            Button(copyResolver.resolve(.decisionConfirmCancel), role: .cancel) { pendingChoice = nil }
         } message: {
             if let pendingChoice {
-                Text("\(pendingChoice.detail) 효과: \(pendingChoice.effect.summary). 이 선택은 되돌릴 수 없습니다.")
+                Text(copyResolver.resolve(
+                    .decisionConfirmMessage,
+                    arguments: [
+                        .userText(ProCareerPresentation.choiceDetail(pendingChoice, resolver: copyResolver)),
+                        .userText(ProCareerPresentation.effect(pendingChoice.effect, resolver: copyResolver)),
+                    ]
+                ))
             }
         }
     }
 
-    static func accessibilityLabel(for choice: ProSeasonDecisionChoice) -> String {
-        "\(choice.title). \(choice.detail). 효과: \(choice.effect.summary)"
+    static func accessibilityLabel(
+        for choice: ProSeasonDecisionChoice,
+        resolver: GameCopyResolver = GameCopyResolver(language: .korean, policy: .releaseSafe)
+    ) -> String {
+        resolver.resolve(
+            ProUICopyKey.decisionAccessibility,
+            arguments: [
+                .userText(ProCareerPresentation.choiceTitle(choice, resolver: resolver)),
+                .userText(ProCareerPresentation.choiceDetail(choice, resolver: resolver)),
+                .userText(ProCareerPresentation.effect(choice.effect, resolver: resolver)),
+            ]
+        )
     }
 }
 
@@ -301,94 +350,123 @@ private struct WeeklyPlanView: View {
         return resolver.resolve((segment ?? .seasonFinale).displayCopyToken)
     }
 
-    private static func careerArcName(_ season: Int) -> String {
+    private static func careerArcName(_ season: Int, resolver: GameCopyResolver) -> String {
         switch season {
-        case ...3: "루키 경쟁기"
-        case ...8: "전성기"
-        default: "베테랑 승부"
+        case ...3: resolver.resolve(.weeklyArcRookie)
+        case ...8: resolver.resolve(.weeklyArcPrime)
+        default: resolver.resolve(.weeklyArcVeteran)
         }
     }
 
-    private static func progressText(_ plan: ProWeekPlan, state: ProCareerSnapshot) -> String {
+    private static func progressText(
+        _ plan: ProWeekPlan,
+        state: ProCareerSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
         let current = state.developmentProgress?.value(for: plan) ?? 0
-        return "현재 \(current)/2 · 두 번 채우면 능력 +1"
+        return resolver.resolve(.weeklyProgress, arguments: [.integer(current)])
     }
 
     /// 구위와 변화구를 분리해 이번 선수가 어떤 무기를 완성하는지 선택하게 한다.
     /// 20시즌 내내 같은 카드 제목을 읽는 대신 지금 선수의 과제가 먼저 보인다.
-    private static func plans(for state: ProCareerSnapshot) -> [PlanCopy] {
+    private static func plans(for state: ProCareerSnapshot, resolver: GameCopyResolver) -> [PlanCopy] {
         let reliefRole = state.role != .starter
         let veteran = state.season >= 9
         return [
             PlanCopy(
                 plan: .developStuff,
-                title: reliefRole ? "한 타자 강속구" : (veteran ? "포심 위력 다듬기" : "강속구 불펜"),
-                effect: "구위·포심 구속·헛스윙 성장 · \(progressText(.developStuff, state: state))",
-                cost: "폭발력이 큰 대신 피로가 가장 크게 쌓입니다",
+                title: resolver.resolve(reliefRole ? .weeklyDevelopStuffRelief : veteran ? .weeklyDevelopStuffVeteran : .weeklyDevelopStuffStarter),
+                effect: resolver.resolve(.weeklyDevelopStuffEffect, arguments: [
+                    .userText(progressText(.developStuff, state: state, resolver: resolver)),
+                ]),
+                cost: resolver.resolve(.weeklyDevelopStuffCost),
                 symbol: "flame"
             ),
             PlanCopy(
                 plan: .developMovement,
-                title: "결정구 완성",
-                effect: "고른 변화구의 움직임·헛스윙 성장 · \(progressText(.developMovement, state: state))",
-                cost: "집중할 구종을 직접 골라야 합니다",
+                title: resolver.resolve(.weeklyDevelopMovementTitle),
+                effect: resolver.resolve(.weeklyDevelopMovementEffect, arguments: [
+                    .userText(progressText(.developMovement, state: state, resolver: resolver)),
+                ]),
+                cost: resolver.resolve(.weeklyDevelopMovementCost),
                 symbol: "hurricane"
             ),
-            PlanCopy(plan: .refineCommand, title: "코스 제구 훈련", effect: "제구·전 구종 코스 성장 · \(progressText(.refineCommand, state: state))", cost: "성장은 안정적이고 피로 부담은 작습니다", symbol: "scope"),
+            PlanCopy(
+                plan: .refineCommand,
+                title: resolver.resolve(.weeklyCommandTitle),
+                effect: resolver.resolve(.weeklyCommandEffect, arguments: [
+                    .userText(progressText(.refineCommand, state: state, resolver: resolver)),
+                ]),
+                cost: resolver.resolve(.weeklyCommandCost),
+                symbol: "scope"
+            ),
             PlanCopy(
                 plan: .buildStamina,
-                title: reliefRole ? "연투 버티기" : "긴 이닝 루틴",
-                effect: "후반 체감 피로가 줄어듭니다 · \(progressText(.buildStamina, state: state))",
-                cost: "초반 투구 위력은 바로 오르지 않습니다",
+                title: resolver.resolve(reliefRole ? .weeklyStaminaReliefTitle : .weeklyStaminaStarterTitle),
+                effect: resolver.resolve(.weeklyStaminaEffect, arguments: [
+                    .userText(progressText(.buildStamina, state: state, resolver: resolver)),
+                ]),
+                cost: resolver.resolve(.weeklyStaminaCost),
                 symbol: "figure.run"
             ),
             PlanCopy(
                 plan: .recover,
-                title: veteran ? "베테랑 회복 루틴" : "회복",
-                effect: "피로가 줄고 부상 위험이 낮아집니다",
-                cost: "능력이 오르지 않습니다",
+                title: resolver.resolve(veteran ? .weeklyRecoveryVeteranTitle : .weeklyRecoveryTitle),
+                effect: resolver.resolve(.weeklyRecoveryEffect),
+                cost: resolver.resolve(.weeklyRecoveryCost),
                 symbol: "bed.double"
             ),
             PlanCopy(
                 plan: .earnTrust,
-                title: state.level == .minor ? "콜업 경쟁 집중" : (reliefRole ? "필승조 신뢰 쌓기" : "로테이션 신뢰 쌓기"),
-                effect: "감독의 믿음이 오릅니다",
-                cost: "능력이 오르지 않습니다",
+                title: resolver.resolve(state.level == .minor ? .weeklyTrustMinorTitle : reliefRole ? .weeklyTrustReliefTitle : .weeklyTrustStarterTitle),
+                effect: resolver.resolve(.weeklyTrustEffect),
+                cost: resolver.resolve(.weeklyTrustCost),
                 symbol: "person.2"
             ),
         ]
     }
 
-    private static func recommendation(for state: ProCareerSnapshot) -> (plan: ProWeekPlan, reason: String) {
-        if state.fatigue >= 68 { return (.recover, "부상 예방") }
-        if state.level == .minor, state.managerTrust < 60 { return (.earnTrust, "콜업 우선") }
+    private static func recommendation(
+        for state: ProCareerSnapshot,
+        resolver: GameCopyResolver
+    ) -> (plan: ProWeekPlan, reason: String) {
+        if state.fatigue >= 68 { return (.recover, resolver.resolve(.weeklyRecommendInjury)) }
+        if state.level == .minor, state.managerTrust < 60 {
+            return (.earnTrust, resolver.resolve(.weeklyRecommendCallUp))
+        }
         let identity = PitcherBuildRules.identity(for: state.pitcher)
         return switch identity {
-        case .power: (.developStuff, "강속구형 강화")
-        case .command: (.refineCommand, "제구형 강화")
-        case .movement: (.developMovement, "변화구형 강화")
-        case .stamina: (.buildStamina, "이닝형 강화")
+        case .power: (.developStuff, resolver.resolve(.weeklyRecommendPower))
+        case .command: (.refineCommand, resolver.resolve(.weeklyRecommendCommand))
+        case .movement: (.developMovement, resolver.resolve(.weeklyRecommendMovement))
+        case .stamina: (.buildStamina, resolver.resolve(.weeklyRecommendStamina))
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             HStack(spacing: 10) {
-                Metric(title: "피로", value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
-                Metric(title: "감독의 믿음", value: "\(state.managerTrust)", tone: state.managerTrust >= 60 ? .positive : .standard)
-                Metric(title: "역할", value: MobileCareerStore.roleName(state.role))
+                Metric(title: copyResolver.resolve(.weeklyFatigue), value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
+                Metric(title: copyResolver.resolve(.weeklyManagerTrust), value: "\(state.managerTrust)", tone: state.managerTrust >= 60 ? .positive : .standard)
+                Metric(title: copyResolver.resolve(.weeklyRole), value: copyResolver.resolve(state.role.displayCopyToken))
             }
 
             let identity = PitcherBuildRules.identity(for: state.pitcher)
-            BaseballCard(title: "투구 청사진 · \(identity.label)", tone: .raised) {
+            BaseballCard(title: copyResolver.resolve(
+                .weeklyBlueprint,
+                arguments: [.userText(ProCareerPresentation.buildLabel(identity, resolver: copyResolver))]
+            ), tone: .raised) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(identity.strength).font(.footnote)
-                    Text(identity.tradeoff)
+                    Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver)).font(.footnote)
+                    Text(ProCareerPresentation.buildTradeoff(identity, resolver: copyResolver))
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.warning)
                     if let rolePreference = state.rolePreference {
                         Label(
-                            "남은 시즌 역할 약속 · \(MobileCareerStore.roleName(rolePreference))",
+                            copyResolver.resolve(
+                                .weeklyRolePromise,
+                                arguments: [.userText(copyResolver.resolve(rolePreference.displayCopyToken))]
+                            ),
                             systemImage: "checkmark.seal.fill"
                         )
                         .font(.footnote.weight(.semibold))
@@ -398,15 +476,21 @@ private struct WeeklyPlanView: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("이번 주에 할 일").font(.headline)
-                Text("\(Self.careerArcName(state.season)) · \(MobileCareerStore.roleName(state.role)) 루틴")
+                Text(copyResolver.resolve(.weeklyTitle)).font(.headline)
+                Text(copyResolver.resolve(
+                    .weeklyRoutine,
+                    arguments: [
+                        .userText(Self.careerArcName(state.season, resolver: copyResolver)),
+                        .userText(copyResolver.resolve(state.role.displayCopyToken)),
+                    ]
+                ))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textSecondary)
             }
 
-            let recommendation = Self.recommendation(for: state)
+            let recommendation = Self.recommendation(for: state, resolver: copyResolver)
 
-            ForEach(Self.plans(for: state), id: \.plan) { copy in
+            ForEach(Self.plans(for: state, resolver: copyResolver), id: \.plan) { copy in
                 PlanCard(
                     copy: copy,
                     selected: career.selectedPlan == copy.plan,
@@ -421,7 +505,7 @@ private struct WeeklyPlanView: View {
                     .map(\.pitchType)
                     .filter { $0 != .fourSeam }
                 if !breakingBalls.isEmpty {
-                    Picker("집중할 결정구", selection: Binding(
+                    Picker(copyResolver.resolve(.weeklyDevelopmentPitch), selection: Binding(
                         get: { career.selectedDevelopmentPitch },
                         set: { career.selectedDevelopmentPitch = $0 }
                     )) {
@@ -434,7 +518,7 @@ private struct WeeklyPlanView: View {
                 }
             }
 
-            PrimaryPill(title: "1주 진행", identifier: "pro.advanceWeek", action: career.advanceWeek)
+            PrimaryPill(title: copyResolver.resolve(.weeklyAdvance), identifier: "pro.advanceWeek", action: career.advanceWeek)
 
             Button(action: career.advanceSegment) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -445,7 +529,7 @@ private struct WeeklyPlanView: View {
                         ]
                     ))
                         .font(.subheadline.weight(.semibold))
-                    Text("승부처 경기·역할 변화·부상이 생기면 그 자리에서 멈춥니다.")
+                    Text(copyResolver.resolve(.weeklyAdvanceStop))
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
@@ -472,8 +556,10 @@ private struct WeeklyPlanView: View {
                         .frame(width: 28)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 6) {
+                            // localization-safe: resolved-copy
                             Text(copy.title).font(.subheadline.weight(.bold))
                             if let recommendation {
+                                // localization-safe: resolved-copy
                                 Text(recommendation)
                                     .font(.caption2.weight(.bold))
                                     .foregroundStyle(BaseballTheme.actionInk)
@@ -482,7 +568,9 @@ private struct WeeklyPlanView: View {
                                     .background(BaseballTheme.action, in: Capsule())
                             }
                         }
+                        // localization-safe: resolved-copy
                         Text(copy.effect).font(.footnote).foregroundStyle(BaseballTheme.positive)
+                        // localization-safe: resolved-copy
                         Text(copy.cost).font(.footnote).foregroundStyle(BaseballTheme.warning)
                     }
                     Spacer()
@@ -510,48 +598,58 @@ private struct WeeklyPlanView: View {
 private struct ImportantGameIntro: View {
     let state: ProCareerSnapshot
     let onStart: () -> Void
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: state.level == .major ? .proStadiumTunnel : .stadiumNight,
-                eyebrow: "IMPORTANT MOMENT · \(state.season)시즌 \(state.week)주차",
+                eyebrow: copyResolver.resolve(
+                    .importantEyebrow,
+                    arguments: [.integer(state.season), .integer(state.week)]
+                ),
                 title: state.level == .major
-                    ? "1군에서 자리를 정할 승부"
-                    : state.managerTrust < 55 ? "다음 등판 기회를 따낼 경기" : "선발·불펜 역할을 결정할 경기",
+                    ? copyResolver.resolve(.importantMajorTitle)
+                    : state.managerTrust < 55
+                        ? copyResolver.resolve(.importantMinorOpportunityTitle)
+                        : copyResolver.resolve(.importantMinorRoleTitle),
                 accent: BaseballTheme.milestone
             )
 
             if let rival = state.currentRival {
-                BaseballCard(title: "상대", tone: .milestone) {
+                let rivalCopy = ProCareerPresentation.rival(rival, resolver: copyResolver)
+                BaseballCard(title: copyResolver.resolve(.importantOpponent), tone: .milestone) {
                     HStack(alignment: .top, spacing: 10) {
                         // 고교 라이벌 카드와 같은 문법 — 상대에게 얼굴이 있어야 승부다.
                         PortraitView(seed: rival.name, role: .rival, size: 46)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("\(rival.name) · \(rival.teamName)").font(.headline)
-                            Text(rival.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
-                            Text(rival.profile).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                            Text("\(rivalCopy.name) · \(rivalCopy.teamName)").font(.headline)
+                            // localization-safe: resolved-copy
+                            Text(rivalCopy.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                            // localization-safe: resolved-copy
+                            Text(rivalCopy.profile).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
-                            Text(rival.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+                            // localization-safe: resolved-copy
+                            Text(rivalCopy.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
                         }
                     }
                     .accessibilityElement(children: .combine)
                 }
             }
 
-            BaseballCard(title: "내 상태") {
+            BaseballCard(title: copyResolver.resolve(.importantMyStatus)) {
                 HStack(spacing: 10) {
-                    Metric(title: "피로", value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
-                    Metric(title: "감독의 믿음", value: "\(state.managerTrust)")
-                    Metric(title: "포수와의 호흡", value: "\(state.catcherTrust)")
+                    Metric(title: copyResolver.resolve(.importantFatigue), value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
+                    Metric(title: copyResolver.resolve(.importantManagerTrust), value: "\(state.managerTrust)")
+                    Metric(title: copyResolver.resolve(.importantCatcherTrust), value: "\(state.catcherTrust)")
                 }
             }
 
-            Text("한 구씩 직접 던집니다. 구종·코스·노림·힘 배분을 고르면 결과가 그때그때 갈립니다.")
+            Text(copyResolver.resolve(.importantBody))
                 .font(.footnote)
                 .foregroundStyle(BaseballTheme.textSecondary)
 
-            PrimaryPill(title: "마운드에 오르기", identifier: "pro.game.start", action: onStart)
+            PrimaryPill(title: copyResolver.resolve(.importantAction), identifier: "pro.game.start", action: onStart)
         }
     }
 }
@@ -582,19 +680,37 @@ private struct OffseasonView: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: .stadiumNight,
-                eyebrow: "\(state.season)시즌 종료 · \(state.age)세",
-                title: "다음 시즌을 어떻게 맞을지 정하세요"
+                eyebrow: copyResolver.resolve(
+                    .offseasonEyebrow,
+                    arguments: [.integer(state.season), .integer(state.age)]
+                ),
+                title: copyResolver.resolve(.offseasonTitle)
             )
 
             HStack(spacing: 10) {
-                Metric(title: "1군 등록", value: "\(service)년", tone: freeAgencyReady ? .positive : .standard)
-                Metric(title: "군 복무", value: state.militaryCompleted ? "마침" : "미필")
-                Metric(title: "통산", value: "\(state.careerStats.count)시즌")
+                Metric(
+                    title: copyResolver.resolve(.offseasonService),
+                    value: copyResolver.resolve(.offseasonYears, arguments: [.integer(service)]),
+                    tone: freeAgencyReady ? .positive : .standard
+                )
+                Metric(
+                    title: copyResolver.resolve(.offseasonMilitary),
+                    value: copyResolver.resolve(
+                        state.militaryCompleted ? .offseasonMilitaryComplete : .offseasonMilitaryIncomplete
+                    )
+                )
+                Metric(
+                    title: copyResolver.resolve(.offseasonCareer),
+                    value: copyResolver.resolve(.offseasonSeasons, arguments: [.integer(state.careerStats.count)])
+                )
             }
 
             OffseasonChoice(
                 title: decisionLabel(.continueCareer),
-                detail: "\(state.team.name)에서 선발·불펜 자리 경쟁을 이어 갑니다.",
+                detail: copyResolver.resolve(
+                    .offseasonContinueDetail,
+                    arguments: [.userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver))]
+                ),
                 symbol: "arrow.forward.circle",
                 enabled: true,
                 note: nil
@@ -602,26 +718,29 @@ private struct OffseasonView: View {
 
             OffseasonChoice(
                 title: decisionLabel(.militaryService),
-                detail: "두 시즌을 비우고 돌아옵니다. 나이가 두 살 늘지만 이후 시즌이 온전해집니다.",
+                detail: copyResolver.resolve(.offseasonMilitaryDetail),
                 symbol: "shield",
                 enabled: !state.militaryCompleted,
-                note: state.militaryCompleted ? "이미 마쳤습니다." : nil
+                note: state.militaryCompleted ? copyResolver.resolve(.offseasonMilitaryDone) : nil
             ) { pending = .militaryService }
 
             OffseasonChoice(
                 title: decisionLabel(.freeAgency),
-                detail: "다른 구단과 계약해 새 팀에서 다시 시작합니다.",
+                detail: copyResolver.resolve(.offseasonFreeAgencyDetail),
                 symbol: "arrow.triangle.branch",
                 enabled: freeAgencyReady,
-                note: freeAgencyReady ? nil : "1군 등록 6년이 필요합니다. 지금 \(service)년."
+                note: freeAgencyReady ? nil : copyResolver.resolve(
+                    .offseasonFreeAgencyLocked,
+                    arguments: [.integer(service)]
+                )
             ) { pending = .freeAgency }
 
             OffseasonChoice(
                 title: decisionLabel(.retire),
-                detail: "여기서 커리어를 마칩니다. 통산 기록과 명예의 전당 점수가 확정됩니다.",
+                detail: copyResolver.resolve(.offseasonRetireDetail),
                 symbol: "flag.checkered",
                 enabled: true,
-                note: "되돌릴 수 없습니다."
+                note: copyResolver.resolve(.offseasonIrreversible)
             ) { pending = .retire }
         }
         .confirmationDialog(
@@ -634,36 +753,47 @@ private struct OffseasonView: View {
                 pending = nil
             }
             .accessibilityIdentifier("pro.offseason.confirm")
-            Button("취소") { pending = nil }
+            Button(copyResolver.resolve(.offseasonConfirmCancel)) { pending = nil }
         } message: {
+            // localization-safe: resolved-copy
             Text(confirmMessage)
         }
     }
 
     private var confirmTitle: String {
         switch pending {
-        case .retire: "정말 은퇴하시겠습니까?"
-        case .militaryService: "군 복무를 다녀오시겠습니까?"
-        case .freeAgency: "FA를 신청하시겠습니까?"
-        default: "다음 시즌을 시작하시겠습니까?"
+        case .retire: copyResolver.resolve(.offseasonConfirmRetireTitle)
+        case .militaryService: copyResolver.resolve(.offseasonConfirmMilitaryTitle)
+        case .freeAgency: copyResolver.resolve(.offseasonConfirmFreeAgencyTitle)
+        default: copyResolver.resolve(.offseasonConfirmContinueTitle)
         }
     }
 
     private var confirmAction: String {
         switch pending {
-        case .retire: "은퇴한다"
-        case .militaryService: "다녀온다"
-        case .freeAgency: "신청한다"
-        default: "시작한다"
+        case .retire: copyResolver.resolve(.offseasonConfirmRetireAction)
+        case .militaryService: copyResolver.resolve(.offseasonConfirmMilitaryAction)
+        case .freeAgency: copyResolver.resolve(.offseasonConfirmFreeAgencyAction)
+        default: copyResolver.resolve(.offseasonConfirmContinueAction)
         }
     }
 
     private var confirmMessage: String {
         switch pending {
-        case .retire: "통산 \(state.careerStats.count)시즌으로 커리어가 끝납니다. 되돌릴 수 없습니다."
-        case .militaryService: "두 시즌을 비웁니다. 돌아오면 \(state.age + 2)세입니다."
-        case .freeAgency: "구단이 바뀝니다. 지금 팀에서 쌓은 감독의 믿음은 새 팀에서 다시 쌓아야 합니다."
-        default: "\(state.team.name)에서 \(state.season + 1)시즌을 시작합니다."
+        case .retire:
+            copyResolver.resolve(.offseasonConfirmRetireMessage, arguments: [.integer(state.careerStats.count)])
+        case .militaryService:
+            copyResolver.resolve(.offseasonConfirmMilitaryMessage, arguments: [.integer(state.age + 2)])
+        case .freeAgency:
+            copyResolver.resolve(.offseasonConfirmFreeAgencyMessage)
+        default:
+            copyResolver.resolve(
+                .offseasonConfirmContinueMessage,
+                arguments: [
+                    .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
+                    .integer(state.season + 1),
+                ]
+            )
         }
     }
 }
@@ -684,10 +814,13 @@ private struct OffseasonChoice: View {
                     .foregroundStyle(enabled ? BaseballTheme.selection : BaseballTheme.textTertiary)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: 3) {
+                    // localization-safe: resolved-copy
                     Text(title).font(.subheadline.weight(.bold))
+                    // localization-safe: resolved-copy
                     Text(detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     if let note {
+                        // localization-safe: resolved-copy
                         Text(note).font(.caption).foregroundStyle(BaseballTheme.warning)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -718,32 +851,36 @@ private struct RetirementDecisionView: View {
     let state: ProCareerSnapshot
 
     @State private var confirming = false
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: .retirement,
-                eyebrow: "\(state.age)세 · 통산 \(state.careerStats.count)시즌",
-                title: "마지막 시즌이 끝났습니다",
+                eyebrow: copyResolver.resolve(
+                    .retirementEyebrow,
+                    arguments: [.integer(state.age), .integer(state.careerStats.count)]
+                ),
+                title: copyResolver.resolve(.retirementDecisionTitle),
                 accent: BaseballTheme.milestone
             )
 
-            BaseballCard(title: "여기까지", tone: .milestone) {
-                Text("더 이상 다음 시즌은 없습니다. 통산 기록을 확정하고 유니폼을 벗습니다.")
+            BaseballCard(title: copyResolver.resolve(.retirementHere), tone: .milestone) {
+                Text(copyResolver.resolve(.retirementDecisionBody))
                     .font(.subheadline)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             CareerTotals(state: state)
 
-            PrimaryPill(title: "은퇴하기", identifier: "pro.retire") { confirming = true }
+            PrimaryPill(title: copyResolver.resolve(.retirementAction), identifier: "pro.retire") { confirming = true }
         }
-        .confirmationDialog("은퇴하시겠습니까?", isPresented: $confirming, titleVisibility: .visible) {
-            Button("은퇴한다", role: .destructive) { career.chooseOffseason(.retire) }
+        .confirmationDialog(copyResolver.resolve(.retirementConfirmTitle), isPresented: $confirming, titleVisibility: .visible) {
+            Button(copyResolver.resolve(.retirementConfirmAction), role: .destructive) { career.chooseOffseason(.retire) }
                 .accessibilityIdentifier("pro.retire.confirm")
-            Button("취소") {}
+            Button(copyResolver.resolve(.retirementConfirmCancel)) {}
         } message: {
-            Text("통산 \(state.careerStats.count)시즌으로 커리어가 끝납니다.")
+            Text(copyResolver.resolve(.retirementConfirmMessage, arguments: [.integer(state.careerStats.count)]))
         }
     }
 }
@@ -755,13 +892,14 @@ private struct RetiredView: View {
     let onStartNewPlayer: () -> Void
 
     @State private var confirming = false
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: .retirement,
-                eyebrow: "은퇴",
-                title: "\(state.identity.name)의 커리어가 끝났습니다",
+                eyebrow: copyResolver.resolve(.retiredEyebrow),
+                title: copyResolver.resolve(.retiredTitle, arguments: [.userText(state.identity.name)]),
                 accent: BaseballTheme.milestone
             )
 
@@ -769,8 +907,18 @@ private struct RetiredView: View {
             HStack(spacing: 12) {
                 PortraitView(seed: state.identity.name, role: .player, size: 56, playerStage: .pro)
                 VStack(alignment: .leading, spacing: 2) {
+                    // localization-safe: user-input
                     Text(state.identity.name).font(.headline)
-                    Text("\(state.team.name) · \(MobileCareerStore.retirementDurationText(state))")
+                    Text(copyResolver.resolve(
+                        .retiredIdentityLine,
+                        arguments: [
+                            .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
+                            .userText(copyResolver.resolve(
+                                .offseasonSeasons,
+                                arguments: [.integer(state.careerStats.count)]
+                            )),
+                        ]
+                    ))
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
@@ -778,7 +926,7 @@ private struct RetiredView: View {
             }
 
             if let score = state.hallOfFameScore {
-                BaseballCard(title: "명예의 전당 점수", tone: .milestone) {
+                BaseballCard(title: copyResolver.resolve(.retiredHallOfFame), tone: .milestone) {
                     Text("\(score)").font(BaseballType.heroNumeral).foregroundStyle(BaseballTheme.milestone)
                 }
             }
@@ -789,33 +937,41 @@ private struct RetiredView: View {
             // 은퇴가 끝이 되지만, 야구혼으로 이어지면 은퇴가 다음 회차의 시작이 된다.
             BaseballCard(
                 title: retiresIntoSignatureLegacy
-                    ? "프로 기록을 대표 유산으로 남기기" : "프로 기록을 계승 포인트로 남기기",
+                    ? copyResolver.resolve(.retiredLegacyTitle) : copyResolver.resolve(.retiredSoulTitle),
                 tone: .milestone
             ) {
-                Text(retiresIntoSignatureLegacy
-                     ? "고교 시절부터 은퇴까지 직접 키운 능력과 통산 기록으로 대표 유산 세 가지를 찾습니다. 그중 하나를 다음 선수에게 직접 남길 수 있습니다."
-                     : "고교를 건너뛰고 시작한 프로 기록은 계승 포인트로 남습니다. 진행 중인 고교 선수나 다음 고교 선수의 계승 상점에서 사용할 수 있습니다.")
+                Text(copyResolver.resolve(
+                    retiresIntoSignatureLegacy ? .retiredLegacyBody : .retiredSoulBody
+                ))
                     .font(.subheadline)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("계승 포인트 +\(HighSchoolCareerStore.proSoulBonus(for: state))")
+                Text(copyResolver.resolve(
+                    .retiredSoulPoints,
+                    arguments: [.integer(HighSchoolCareerStore.proSoulBonus(for: state))]
+                ))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
             }
 
             if !state.awards.isEmpty {
-                BaseballCard(title: "수상", tone: .milestone) {
+                BaseballCard(title: copyResolver.resolve(.retiredAwards), tone: .milestone) {
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(state.awards, id: \.self) { award in
-                            Label(award, systemImage: "trophy.fill").foregroundStyle(BaseballTheme.milestone)
+                            Label(
+                                ProCareerPresentation.award(award, resolver: copyResolver),
+                                systemImage: "trophy.fill"
+                            )
+                            .foregroundStyle(BaseballTheme.milestone)
                         }
                     }
                 }
             }
 
-            BaseballCard(title: "회고") {
+            BaseballCard(title: copyResolver.resolve(.retiredRetrospective)) {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(Array(state.news.prefix(6).enumerated()), id: \.offset) { _, line in
-                        Text(line).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                        Text(ProCareerPresentation.news(line, state: state, resolver: copyResolver))
+                            .font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -823,37 +979,43 @@ private struct RetiredView: View {
 
             PrimaryPill(
                 title: retiresIntoSignatureLegacy
-                    ? "유산을 남기고 다음 선수 준비" : "계승 포인트를 남기고 고교로 돌아가기",
+                    ? copyResolver.resolve(.retiredLegacyAction) : copyResolver.resolve(.retiredSoulAction),
                 identifier: "pro.newPlayer"
             ) { confirming = true }
-            Text(retiresIntoSignatureLegacy
-                 ? "프로 기록을 안전하게 저장한 뒤, 다음 선수에게 남길 대표 유산 하나를 고릅니다."
-                 : "프로 기록을 안전하게 저장한 뒤 기존 고교 진행으로 돌아갑니다.")
+            Text(copyResolver.resolve(
+                retiresIntoSignatureLegacy ? .retiredLegacyFootnote : .retiredSoulFootnote
+            ))
                 .font(.caption)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .confirmationDialog(
-            retiresIntoSignatureLegacy ? "이 선수의 유산을 남길까요?" : "프로 기록을 계승 포인트로 남길까요?",
+            copyResolver.resolve(
+                retiresIntoSignatureLegacy ? .retiredLegacyConfirmTitle : .retiredSoulConfirmTitle
+            ),
             isPresented: $confirming,
             titleVisibility: .visible
         ) {
             Button(
-                retiresIntoSignatureLegacy ? "프로 기록을 유산으로 남기기" : "계승 포인트를 남기고 돌아가기",
+                copyResolver.resolve(
+                    retiresIntoSignatureLegacy ? .retiredLegacyConfirmAction : .retiredSoulConfirmAction
+                ),
                 action: onStartNewPlayer
             )
                 .accessibilityIdentifier("pro.newPlayer.confirm")
-            Button("취소") {}
+            Button(copyResolver.resolve(.retiredConfirmCancel)) {}
         } message: {
-            Text(retiresIntoSignatureLegacy
-                 ? "\(state.identity.name)의 프로 커리어를 닫고, 대표 유산을 고르는 화면으로 이동합니다."
-                 : "\(state.identity.name)의 프로 커리어를 닫고 고교 화면으로 돌아갑니다.")
+            Text(copyResolver.resolve(
+                retiresIntoSignatureLegacy ? .retiredLegacyConfirmMessage : .retiredSoulConfirmMessage,
+                arguments: [.userText(state.identity.name)]
+            ))
         }
     }
 }
 
 private struct CareerTotals: View {
     let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     private var totals: (games: Int, outs: Int, strikeouts: Int, wins: Int, losses: Int, saves: Int, runs: Int) {
         state.careerStats.reduce((0, 0, 0, 0, 0, 0, 0)) {
@@ -863,17 +1025,23 @@ private struct CareerTotals: View {
     }
 
     var body: some View {
-        BaseballCard(title: "통산") {
+        BaseballCard(title: copyResolver.resolve(.totalsTitle)) {
             VStack(spacing: 10) {
                 HStack(spacing: 10) {
-                    Metric(title: "경기", value: "\(totals.games)")
-                    Metric(title: "이닝", value: "\(totals.outs / 3)\(totals.outs % 3 == 0 ? "" : ".\(totals.outs % 3)")")
-                    Metric(title: "탈삼진", value: "\(totals.strikeouts)", tone: .positive)
+                    Metric(title: copyResolver.resolve(.totalsGames), value: "\(totals.games)")
+                    Metric(
+                        title: copyResolver.resolve(.totalsInnings),
+                        value: GameFormatters.innings(outs: totals.outs, language: copyResolver.language)
+                    )
+                    Metric(title: copyResolver.resolve(.totalsStrikeouts), value: "\(totals.strikeouts)", tone: .positive)
                 }
                 HStack(spacing: 10) {
-                    Metric(title: "승-패-세이브", value: GameLineFormat.record(wins: totals.wins, losses: totals.losses, saves: totals.saves))
-                    Metric(title: "9이닝당 실점", value: GameLineFormat.runsPerNine(outs: totals.outs, runs: totals.runs))
-                    Metric(title: "시즌", value: "\(state.careerStats.count)")
+                    Metric(title: copyResolver.resolve(.totalsRecord), value: GameLineFormat.record(wins: totals.wins, losses: totals.losses, saves: totals.saves))
+                    Metric(
+                        title: copyResolver.resolve(.totalsRA9),
+                        value: GameFormatters.ra9(runsAllowed: totals.runs, outs: totals.outs, language: copyResolver.language)
+                    )
+                    Metric(title: copyResolver.resolve(.totalsSeasons), value: "\(state.careerStats.count)")
                 }
             }
         }
@@ -889,6 +1057,7 @@ private struct ActionCard: View {
     var body: some View {
         BaseballCard(title: title, tone: .raised) {
             VStack(alignment: .leading, spacing: 12) {
+                // localization-safe: resolved-copy
                 Text(copy).font(.subheadline)
                 PrimaryPill(title: button, action: action)
             }

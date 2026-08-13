@@ -745,7 +745,7 @@ private struct TodayDashboard: View {
                     title: copyResolver.resolve(
                         AppCopyKey.proDashboardTitle,
                         arguments: [
-                            .userText(state.team.name),
+                            .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
                             .userText(copyResolver.resolve(state.level.displayCopyToken)),
                             .userText(copyResolver.resolve(state.role.displayCopyToken)),
                         ]
@@ -785,9 +785,16 @@ private struct TodayDashboard: View {
                     BaseballCard(title: copyResolver.resolve(AppCopyKey.proTensionsTitle)) {
                         VStack(alignment: .leading, spacing: 10) {
                             ForEach(Array(tensions.enumerated()), id: \.offset) { _, tension in
+                                let tensionCopy = ProCareerPresentation.tension(
+                                    tension,
+                                    state: state,
+                                    resolver: copyResolver
+                                )
                                 VStack(alignment: .leading, spacing: 2) {
-                                    GameCopyText(verbatim: tension.title).font(.subheadline.weight(.semibold))
-                                    GameCopyText(verbatim: tension.detail)
+                                    // localization-safe: resolved-copy
+                                    Text(tensionCopy.title).font(.subheadline.weight(.semibold))
+                                    // localization-safe: resolved-copy
+                                    Text(tensionCopy.detail)
                                         .font(.footnote)
                                         .foregroundStyle(BaseballTheme.textSecondary)
                                 }
@@ -799,16 +806,19 @@ private struct TodayDashboard: View {
                 }
 
                 if let rival = state.currentRival {
+                    let rivalCopy = ProCareerPresentation.rival(rival, resolver: copyResolver)
                     BaseballCard(title: copyResolver.resolve(AppCopyKey.proRivalTitle), tone: .warning) {
                         HStack(spacing: 10) {
                             // 고교 라이벌 카드와 같은 문법 — 상대에게 얼굴이 있어야 승부다.
                             PortraitView(seed: rival.name, role: .rival, size: 46)
                             VStack(alignment: .leading, spacing: 4) {
-                                GameCopyText(verbatim: "\(rival.name) · \(rival.teamName)").font(.headline)
-                                GameCopyText(verbatim: rival.archetype)
+                                Text("\(rivalCopy.name) · \(rivalCopy.teamName)").font(.headline)
+                                // localization-safe: resolved-copy
+                                Text(rivalCopy.archetype)
                                     .font(.subheadline)
                                     .foregroundStyle(BaseballTheme.textSecondary)
-                                GameCopyText(verbatim: rival.record)
+                                // localization-safe: resolved-copy
+                                Text(rivalCopy.record)
                                     .font(.footnote.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textSecondary)
                             }
@@ -820,7 +830,7 @@ private struct TodayDashboard: View {
                 if let milestone = state.milestones.last {
                     BaseballCard(title: copyResolver.resolve(AppCopyKey.proMilestoneTitle), tone: .milestone) {
                         Label {
-                            GameCopyText(verbatim: milestone)
+                            Text(ProCareerPresentation.milestone(milestone, resolver: copyResolver))
                         } icon: {
                             Image(systemName: "star.fill")
                         }
@@ -837,6 +847,7 @@ private struct TodayDashboard: View {
                                 GameCopyText(AppCopyKey.proDirectOuting).eyebrowStyle(BaseballTheme.action)
                             }
                             HStack(alignment: .firstTextBaseline, spacing: 12) {
+                                // localization-safe: numeric
                                 Text(GameLineFormat.score(line))
                                     .font(BaseballType.scoreboard)
                                     .foregroundStyle(BaseballTheme.textPrimary)
@@ -872,7 +883,7 @@ private struct TodayDashboard: View {
                 BaseballCard(title: copyResolver.resolve(AppCopyKey.proLatestNewsTitle)) {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(Array(state.news.prefix(3).enumerated()), id: \.offset) { _, item in
-                            GameCopyText(verbatim: item)
+                            Text(ProCareerPresentation.news(item, state: state, resolver: copyResolver))
                                 .font(.subheadline)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }

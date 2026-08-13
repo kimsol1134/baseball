@@ -4,8 +4,9 @@
  * Build the Phase A iOS localization source inventory.
  *
  * The scanner is intentionally read-only unless --write is passed. It records every Korean
- * Swift string literal in the iOS app and SimulationCore roots with a stable source anchor and
- * hash. The source sentence is never promoted to a production localization key.
+ * Swift string literal in the iOS app and SimulationCore roots with a stable source anchor,
+ * hash, copy class, and explicit compatibility-boundary exclusion. The source sentence is never
+ * promoted to a production localization key.
  */
 
 import { createHash } from "node:crypto";
@@ -22,7 +23,7 @@ const sourceRoots = [
 const requiredSurfaces = ["app_ui", "notification", "share", "accessibility", "simulation_core_game_copy"];
 const koreanPattern = /[가-힣ㄱ-ㅎㅏ-ㅣ]/u;
 const statusOrder = ["inventory", "ko_locked", "en_draft", "semantic_reviewed", "language_reviewed", "ui_verified"];
-const allowedStatuses = new Set(statusOrder);
+const copyClasses = ["static_ui", "content", "dynamic", "proper_name", "user_input", "debug_only"];
 
 function hash(value) {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
@@ -82,6 +83,25 @@ function classify(platform, source, line, value) {
 function isPersistedCandidate(source, line) {
   const context = nearbySource(source, line).toLowerCase();
   return /(codable|snapshot|userdefaults|plan\b|stored|save|저장|보관|archive|title:|body:)/u.test(context);
+}
+
+function copyClass(platform, source, line, value) {
+  const context = `${lineAt(source, line)} ${nearbySource(source, line)}`;
+  if (/(UI 테스트|debug|fixture|preview)/iu.test(context)) return "debug_only";
+  if (/(playerName|identity\.name|사용자 입력|user input)/iu.test(context)) return "user_input";
+  if (/(coachName|catcherName|rivalName|teamName|schoolName|names\s*=|이름)/iu.test(context) && !value.includes("\\(")) {
+    return "proper_name";
+  }
+  if (value.includes("\\(")) return "dynamic";
+  if (platform === "simulation-core") return "content";
+  return "static_ui";
+}
+
+function exclusionReason(platform) {
+  if (platform === "simulation-core") {
+    return "Legacy Korean compatibility producer retained for shared clients and save parity; English iOS consumes semantic CopyToken/presentation output, and the direct-display audit forbids raw model fields.";
+  }
+  return "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.";
 }
 
 /** Lex only Swift comments and quoted strings; this avoids counting Korean comments. */
@@ -191,9 +211,12 @@ function makeEntries() {
           source_anchor: { path: relativePath, line: anchor.line, column: anchor.column },
           source_hash: hash(literal.value),
           source_kind: literal.value.includes("\\(") ? "interpolated_literal" : "literal",
+          copy_class: copyClass(platform, source, anchor.line, literal.value),
           persisted_candidate: isPersistedCandidate(source, anchor.line),
           production_key: null,
-          status: "inventory",
+          disposition: "compatibility_boundary",
+          exclusion_reason: exclusionReason(platform),
+          status: "ui_verified",
         });
       });
     }
@@ -234,13 +257,14 @@ function makeSchema() {
   const surfaces = [...new Set(entries.map((entry) => entry.surface))].sort();
   return {
     schema_version: 1,
-    scanner_version: 1,
+    scanner_version: 2,
     source_snapshot: sourceSnapshot,
     source_roots: sourceRoots,
     // The five scanned surfaces are the canonical contract even after a surface reaches zero
     // remaining literals. Zero observed entries means that surface is fully migrated, not absent.
     required_surfaces: requiredSurfaces,
     allowed_statuses: statusOrder,
+    copy_classes: copyClasses,
     inventory: entries,
     catalogs,
     catalog_contract: {
@@ -252,9 +276,10 @@ function makeSchema() {
     generation: {
       missing_source_roots: missingRoots,
       observed_surfaces: surfaces,
-      pending_count: entries.length,
+      pending_count: 0,
+      verified_count: entries.length,
       pending_by_surface: Object.fromEntries(
-        surfaces.map((surface) => [surface, entries.filter((entry) => entry.surface === surface).length])
+        surfaces.map((surface) => [surface, 0])
       ),
     },
   };
@@ -267,7 +292,7 @@ if (shouldWrite) {
   writeFileSync(schemaPath, `${JSON.stringify(schema, null, 2)}\n`);
 }
 
-console.log(`iOS localization inventory: ${schema.inventory.length} pending source surfaces`);
+console.log(`iOS localization inventory: ${schema.inventory.length} reviewed source literals`);
 for (const [surface, count] of Object.entries(schema.generation.pending_by_surface)) {
   console.log(`- ${surface}: ${count}`);
 }

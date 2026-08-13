@@ -24,6 +24,7 @@ struct HighSchoolCareerView: View {
     /// 복귀 알림 권유 카드를 지금 띄우는가. 한 번 답하면 이 세션에서는 다시 묻지 않는다.
     @State private var showsReminderNudge = DailyReminder.shouldOfferOptIn()
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     /// A chapter goal is only honest when the chapter gives the player an official game in
     /// which strikeouts can be earned. This mirrors the existing view condition as a pure policy.
@@ -76,32 +77,45 @@ struct HighSchoolCareerView: View {
                 }
             case .failed(let message):
                 ContentUnavailableView {
-                    Label("고교 커리어를 열 수 없습니다", systemImage: "exclamationmark.triangle")
+                    Label {
+                        Text(verbatim: copyResolver.resolve(.careerErrorTitle))
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle")
+                    }
                 } description: {
-                    Text(message)
+                    Text(
+                        verbatim: copyResolver.language == .korean
+                            ? message : copyResolver.resolve(.careerErrorBody)
+                    )
                 } actions: {
                     // 비파괴 출구가 먼저다. 시드 오타 하나로 도달하는 화면의 유일한
                     // 버튼이 "전 회차 삭제"면 그건 함정이다(4차 패널 P0).
-                    PrimaryPill(title: "다시 불러오기", identifier: "hs.retry") {
+                    PrimaryPill(title: copyResolver.resolve(.careerErrorRetry), identifier: "hs.retry") {
                         career.returnToSetup()
                     }
-                    Button("모든 기록을 지우고 새로 시작", role: .destructive) {
+                    Button(role: .destructive) {
                         confirmingReset = true
+                    } label: {
+                        Text(verbatim: copyResolver.resolve(.careerErrorRestart))
                     }
                     .font(.footnote.weight(.semibold))
                     .accessibilityIdentifier("hs.restart")
                     .confirmationDialog(
-                        "모든 선수 기록을 지울까요?",
+                        copyResolver.resolve(.careerErrorResetTitle),
                         isPresented: $confirmingReset,
                         titleVisibility: .visible
                     ) {
-                        Button("계승 포인트·기억·아카이브를 모두 지운다", role: .destructive) {
+                        Button(role: .destructive) {
                             career.deleteCareer()
+                        } label: {
+                            Text(verbatim: copyResolver.resolve(.careerErrorResetConfirm))
                         }
                         // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
-                        Button("돌아간다") { confirmingReset = false }
+                        Button { confirmingReset = false } label: {
+                            Text(verbatim: copyResolver.resolve(.careerErrorResetCancel))
+                        }
                     } message: {
-                        Text("환생으로 쌓은 모든 것이 사라집니다. 되돌릴 수 없습니다.")
+                        Text(verbatim: copyResolver.resolve(.careerErrorResetMessage))
                     }
                 }
             case .ready:
@@ -138,7 +152,11 @@ struct HighSchoolCareerView: View {
                   let state = career.state, let draft = state.draftResult else { return }
             draftReveal = DraftReveal(
                 // 3년의 정산 장면이니 별명을 함께 부른다 — "'제로' 김솔".
-                result: draft, playerName: career.displayName(state.identity.name), careerID: state.careerID
+                result: draft,
+                playerName: HighSchoolConclusionPresentation.localizedDisplayName(
+                    baseName: state.identity.name, nicknames: career.nicknames, resolver: copyResolver
+                ),
+                careerID: state.careerID
             )
         }
         // 스탬프가 **먼저** 뜨고, 닫히면서 회차를 넘긴다.
@@ -295,7 +313,15 @@ struct HighSchoolCareerView: View {
                                                       onDismiss: career.acknowledgeGains)
                                     .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                             } else if let summary = career.lastSummary {
-                                SummaryBanner(summary: summary, cue: career.feedbackCue)
+                                SummaryBanner(
+                                    summary: HighSchoolPresentation.localizedStoreSummary(
+                                        summary,
+                                        career: career,
+                                        state: state,
+                                        resolver: copyResolver
+                                    ),
+                                    cue: career.feedbackCue
+                                )
                             }
                         }
                         // 3년에 세 번뿐인 각성 앞에서는 주변 소음을 접는다(QA P2-2) —
@@ -338,14 +364,25 @@ struct HighSchoolCareerView: View {
                                 HStack(spacing: 8) {
                                     Image(systemName: "checkmark.seal.fill")
                                         .foregroundStyle(BaseballTheme.milestone)
-                                    Text("목표 · \(pledge.title)")
+                                    Text(
+                                        verbatim: copyResolver.resolve(
+                                            .pledgeDashboardTitle,
+                                            arguments: [.userText(LegacyPresentation.pledgeTitle(
+                                                pledge, resolver: copyResolver
+                                            ))]
+                                        )
+                                    )
                                         .font(.footnote.weight(.bold))
                                     Spacer(minLength: 0)
                                     Text("\(progress.ratioPermille / 10)%")
                                         .font(.caption.monospacedDigit().weight(.bold))
                                         .foregroundStyle(BaseballTheme.milestone)
                                 }
-                                Text(progress.line)
+                                Text(
+                                    verbatim: LegacyPresentation.pledgeProgress(
+                                        progress, resolver: copyResolver
+                                    )
+                                )
                                     .font(.footnote.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textSecondary)
                                 ProgressView(value: Double(progress.ratioPermille), total: 1_000)
@@ -355,7 +392,12 @@ struct HighSchoolCareerView: View {
                             .padding(.vertical, 8)
                             .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: 10))
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("\(pledge.tier.title) 목표, \(pledge.title), \(progress.line), 보상 계승 포인트 \(pledge.rewardPermille / 10)퍼센트 추가")
+                            .accessibilityLabel(
+                                LegacyPresentation.pledgeAccessibility(
+                                    pledge: pledge, progress: progress, carried: false,
+                                    resolver: copyResolver
+                                )
+                            )
                         }
                         // 드래프트가 끝난 회차에 챕터 숙제는 소음이다. 각성 국면도 접는다.
                         if state.draftResult == nil, state.phase != .awakening {
@@ -496,10 +538,22 @@ struct HighSchoolCareerView: View {
             if career.chapterTrainingCount > 0 {
                 let summary = career.chapterGains
                     .sorted { $0.key < $1.key }
-                    .map { "\($0.key) +\($0.value)" }
+                    .map { rawLabel, value in
+                        let ability = TalentAbility.allCases.first { $0.label == rawLabel }
+                        let label = ability.map { copyResolver.resolve($0.displayCopyToken) }
+                            ?? (copyResolver.language == .korean ? rawLabel : GameCopyResolver.unavailableText)
+                        return "\(label) +\(value)"
+                    }
                     .joined(separator: " · ")
-                Text("이번 이야기 훈련 \(career.chapterTrainingCount)회"
-                     + (summary.isEmpty ? "" : " — \(summary)"))
+                Text(
+                    verbatim: copyResolver.resolve(
+                        .trainingTally,
+                        arguments: [
+                            .integer(career.chapterTrainingCount),
+                            .userText(summary.isEmpty ? "" : " — \(summary)"),
+                        ]
+                    )
+                )
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -827,6 +881,7 @@ private struct ChapterHeader: View {
                 Button { windExpanded.toggle() } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "wind")
+                        // localization-safe: resolved-copy
                         Text(windTitle)
                             .font(.caption.weight(.bold))
                         Spacer(minLength: 0)
@@ -849,6 +904,7 @@ private struct ChapterHeader: View {
 
                 if windExpanded {
                     VStack(alignment: .leading, spacing: 3) {
+                        // localization-safe: resolved-copy
                         Text(windDetail)
                         ForEach(Array(effects.enumerated()), id: \.offset) { _, effect in
                             Text(copyResolver.resolve(
@@ -878,6 +934,7 @@ private struct ChapterHeader: View {
 private struct SummaryBanner: View {
     let summary: String
     let cue: MobileCareerStore.FeedbackCue
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     private var accent: Color {
         switch cue {
@@ -890,17 +947,14 @@ private struct SummaryBanner: View {
 
     /// 무슨 일이 있었는지를 한 낱말로. 색만으로는 색각 이상이 있는 사람에게 전달되지 않는다.
     private var label: String {
-        switch cue {
-        case .setback: "차질"
-        case .growth: "성장"
-        case .success: "성과"
-        case .neutral: "경과"
-        }
+        HighSchoolPresentation.localizedSummaryCue(cue, resolver: copyResolver)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            // localization-safe: resolved-copy
             Text(label).eyebrowStyle(accent)
+            // localization-safe: resolved-copy
             Text(summary)
                 .font(.subheadline)
                 .foregroundStyle(BaseballTheme.textSecondary)
@@ -1472,6 +1526,7 @@ private struct TrainingCard: View {
                             Text(HighSchoolPresentation.localizedFocusDetail(option, resolver: copyResolver))
                                 .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                             if let windEffect = windEffect(for: option, resolver: copyResolver) {
+                                // localization-safe: resolved-copy
                                 Text(windEffect)
                                     .font(.caption.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.information)
@@ -1539,6 +1594,7 @@ private struct TrainingCard: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     let outlookPresentation = outlookCopy(resolver: copyResolver)
+                    // localization-safe: resolved-copy
                     Text(outlookPresentation.text)
                         .font(.footnote)
                         .foregroundStyle(outlookPresentation.tone)
@@ -2580,17 +2636,23 @@ private struct CommunityBuzzCard: View {
 /// 드래프트 직전과 회차를 접는 순간, 두 번의 되돌아보는 자리에 선다.
 private struct ChronicleCard: View {
     let entries: [HighSchoolCareerStore.ChronicleEntry]
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         if !entries.isEmpty {
-            BaseballCard(title: "3년의 이야기") {
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionChronicleTitle)) {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
+                        let localized = HighSchoolConclusionPresentation.localizedChronicleEntry(
+                            entry, resolver: copyResolver
+                        )
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(entry.stage)
+                            // localization-safe: resolved-copy
+                            Text(localized.stage)
                                 .font(.caption2.weight(.bold))
                                 .foregroundStyle(BaseballTheme.textTertiary)
-                            Text(entry.text)
+                            // localization-safe: resolved-copy
+                            Text(localized.text)
                                 .font(.footnote)
                                 .foregroundStyle(BaseballTheme.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -2608,31 +2670,49 @@ private struct DraftCard: View {
     let chronicle: [HighSchoolCareerStore.ChronicleEntry]
     let career: HighSchoolCareerStore
     let onResolve: () -> Void
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            BaseballCard(title: "드래프트", tone: .milestone) {
-                Text("3년의 기록이 평가됩니다. 지명 여부가 지금 정해집니다.")
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionDraftTitle), tone: .milestone) {
+                Text(copyResolver.resolve(AppCopyKey.conclusionDraftIntro))
                     .font(.subheadline)
             }
             if let personality = career.personality {
-                BaseballCard(title: "스카우트 평가서 — 기질") {
+                let personalityTitle = HighSchoolConclusionPresentation.localizedPersonalityTitle(
+                    personality, resolver: copyResolver
+                )
+                BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionScoutTitle)) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("'\(personality.title)'")
+                        Text("'\(personalityTitle)'")
                             .font(.subheadline.weight(.bold))
                             .foregroundStyle(BaseballTheme.milestone)
-                        Text(personality.scoutLine)
+                        Text(HighSchoolConclusionPresentation.localizedPersonalityScoutLine(
+                            personality, resolver: copyResolver
+                        ))
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
-            BaseballCard(title: "3년의 기록") {
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionRecordTitle)) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("고교 공식 경기 \(state.performance.importantGamesCompleted)회")
-                    Text("\(state.performance.strikeouts)탈삼진 · \(state.performance.walks)볼넷 · \(state.performance.runsAllowed)실점")
-                    Text("각성 \(state.selectedAwakenings.count)회 · 훈련 \(state.totalTrainingsCompleted)회")
+                    Text(copyResolver.resolve(
+                        AppCopyKey.conclusionOfficialGames,
+                        arguments: [.integer(state.performance.importantGamesCompleted)]
+                    ))
+                    Text(copyResolver.resolve(
+                        AppCopyKey.conclusionRecordStats,
+                        arguments: [
+                            .integer(state.performance.strikeouts), .integer(state.performance.walks),
+                            .integer(state.performance.runsAllowed),
+                        ]
+                    ))
+                    Text(copyResolver.resolve(
+                        AppCopyKey.conclusionAwakeningTraining,
+                        arguments: [.integer(state.selectedAwakenings.count), .integer(state.totalTrainingsCompleted)]
+                    ))
                 }
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
@@ -2643,7 +2723,11 @@ private struct DraftCard: View {
                 SeasonRecordCard(log: log)
             }
             ChronicleCard(entries: chronicle)
-            PrimaryButton(title: "결과 확인", identifier: "hs.draft.resolve", action: onResolve)
+            PrimaryButton(
+                title: copyResolver.resolve(AppCopyKey.conclusionResolveDraft),
+                identifier: "hs.draft.resolve",
+                action: onResolve
+            )
         }
     }
 }
@@ -2674,7 +2758,7 @@ private struct LegacyCard: View {
                 signatureLegacyCandidates: signatureCandidates,
                 startingPitcher: career.careerStartingPitcher
             )
-            BaseballCard(title: "선수 기록 카드", tone: .milestone) {
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionPlayerRecordCard), tone: .milestone) {
                 VStack(alignment: .leading, spacing: 10) {
                     LifeCardPreview(record: provisional)
                     LifeCardShareButton(record: provisional)
@@ -2682,31 +2766,69 @@ private struct LegacyCard: View {
             }
             ChronicleCard(entries: career.chronicle)
             if let draft = state.draftResult {
+                let signature = draft.team.map { HighSchoolConclusionPresentation.localizedTeamName($0, resolver: copyResolver) }
+                let projected = HighSchoolConclusionPresentation.localizedDraftProjectedRange(
+                    draft.projectedRange, resolver: copyResolver
+                )
+                let summary = HighSchoolConclusionPresentation.localizedDraftSummary(
+                    draft, resolver: copyResolver
+                )
+                let firstSeasonGoal = HighSchoolConclusionPresentation.localizedFirstSeasonGoal(
+                    draft.firstSeasonGoal, resolver: copyResolver
+                )
                 BaseballCard(title: copyResolver.resolve(draft.outcome.displayCopyToken),
                              tone: draft.outcome == .drafted ? .positive : .negative) {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(draft.summary).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                        // localization-safe: resolved-copy
+                        Text(summary).font(.subheadline).fixedSize(horizontal: false, vertical: true)
+                        // localization-safe: resolved-copy
+                        Text(projected)
+                            .font(.footnote.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(BaseballTheme.milestone)
+                        if let firstSeasonGoal {
+                            // localization-safe: resolved-copy
+                            Text(firstSeasonGoal)
+                                .font(.caption)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        if let signature {
+                            // localization-safe: resolved-copy
+                            Text(signature)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(BaseballTheme.information)
+                        }
                         // 무엇이 점수를 만들었는지. 이게 없으면 3년 동안 쌓은 것들이
                         // 결과에 어떻게 반영됐는지 알 방법이 없다.
-                        if let breakdown = draft.evaluationBreakdown, !breakdown.isEmpty {
+                        if let breakdown = HighSchoolConclusionPresentation.localizedEvaluationBreakdown(
+                            draft.evaluationBreakdown,
+                            resolver: copyResolver
+                        ), !breakdown.isEmpty {
                             Divider()
-                            Text("평가 \(draft.evaluationScore)점").eyebrowStyle(BaseballTheme.textTertiary)
-                            FlowRow(items: breakdown)
+                            Text(copyResolver.resolve(
+                                AppCopyKey.conclusionEvaluationScore,
+                                arguments: [.integer(draft.evaluationScore)]
+                            )).eyebrowStyle(BaseballTheme.textTertiary)
+                            FlowRow(items: breakdown, resolver: copyResolver)
                         }
                     }
                 }
             }
             WindSettlementCard(wind: state.careerWind)
             if career.usesSignatureLegacyRules {
+                let signatureCount = selectedSignatureLegacy == nil ? 0 : 1
                 BaseballCard(
-                    title: "이 선수가 남길 대표 유산 · \(selectedSignatureLegacy == nil ? "0" : "1")/1",
+                    title: copyResolver.resolve(
+                        AppCopyKey.conclusionSignatureTitle,
+                        arguments: [.integer(signatureCount)]
+                    ),
                     tone: .milestone
                 ) {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text("직접 키운 능력과 실제 경기 기록으로 세 가지 유산이 만들어졌습니다.")
+                        Text(copyResolver.resolve(AppCopyKey.conclusionSignatureDescription))
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
-                        Text("고른 하나는 새 선수에게 바로 이어지고, 나머지도 발견 목록에 남아 다음에 다시 고를 수 있습니다.")
+                        Text(copyResolver.resolve(AppCopyKey.conclusionSignatureRemainder))
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textTertiary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -2730,24 +2852,32 @@ private struct LegacyCard: View {
                 }
                 ForEach(signatureCandidates) { legacy in
                     let selected = legacy.id == career.selectedSignatureLegacyID
+                    let copy = HighSchoolConclusionPresentation.localizedSignature(
+                        legacy, resolver: copyResolver
+                    )
                     Button { career.selectSignatureLegacy(legacy.id) } label: {
                         HStack(alignment: .top, spacing: 10) {
                             Image(systemName: selected ? "checkmark.seal.fill" : "seal")
                                 .foregroundStyle(selected ? BaseballTheme.milestone : BaseballTheme.border)
                                 .font(.title3)
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(legacy.title)
+                                // localization-safe: resolved-copy
+                                Text(copy.title)
                                     .font(.subheadline.weight(.heavy))
                                     .foregroundStyle(BaseballTheme.textPrimary)
-                                Text(legacy.detail)
+                                // localization-safe: resolved-copy
+                                Text(copy.detail)
                                     .font(.footnote)
                                     .foregroundStyle(BaseballTheme.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
-                                Text(legacy.evidence.summary)
+                                // localization-safe: resolved-copy
+                                Text(copy.evidence)
                                     .font(.caption)
                                     .foregroundStyle(BaseballTheme.information)
                                     .fixedSize(horizontal: false, vertical: true)
-                                Text(HighSchoolSetupView.signatureLegacyEffectLine(legacy.effect))
+                                Text(HighSchoolConclusionPresentation.localizedSignatureEffect(
+                                    legacy.effect, resolver: copyResolver
+                                ))
                                     .font(.caption2.weight(.bold).monospacedDigit())
                                     .foregroundStyle(BaseballTheme.milestone)
                             }
@@ -2771,21 +2901,29 @@ private struct LegacyCard: View {
                 }
             }
             if !career.usesSignatureLegacyRules {
-                BaseballCard(title: "새 선수에게 남길 기억 · \(career.selectedMemories.count)/\(state.memorySlots)", tone: .milestone) {
+                BaseballCard(title: copyResolver.resolve(
+                    AppCopyKey.conclusionMemoryTitle,
+                    arguments: [.integer(career.selectedMemories.count), .integer(state.memorySlots)]
+                ), tone: .milestone) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("기능 업데이트 전에 시작한 선수입니다. 당시 규칙대로 기억을 고릅니다.")
+                        Text(copyResolver.resolve(AppCopyKey.conclusionMemoryDescription))
                             .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                         // 구규칙은 정확히 memorySlots장을 요구한다. 부족한 채로 확정하면
                         // 오류가 나므로 화면에서 막고 남은 장수를 알려 준다.
                         if career.selectedMemories.count < state.memorySlots {
-                            Text("\(state.memorySlots - career.selectedMemories.count)장 더 고르세요.")
+                            Text(copyResolver.resolve(
+                                AppCopyKey.conclusionMemoryMore,
+                                arguments: [.integer(state.memorySlots - career.selectedMemories.count)]
+                            ))
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(BaseballTheme.warning)
                         }
                     }
                 }
                 ForEach(state.legacyOptions, id: \.self) { option in
-                    let copy = HighSchoolPresentation.memory(option)
+                    let copy = HighSchoolConclusionPresentation.localizedMemory(
+                        option, resolver: copyResolver
+                    )
                     let selected = career.selectedMemories.contains(option)
                     Button { career.toggleMemory(option) } label: {
                         HStack(alignment: .center, spacing: 10) {
@@ -2793,7 +2931,9 @@ private struct LegacyCard: View {
                                 .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.border)
                             ArtThumb(assetName: "MemoryArt-\(option.rawValue)", size: 52)
                             VStack(alignment: .leading, spacing: 2) {
+                                // localization-safe: resolved-copy
                                 Text(copy.title).font(.subheadline.weight(.bold))
+                                // localization-safe: resolved-copy
                                 Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
@@ -2815,8 +2955,19 @@ private struct LegacyCard: View {
                     .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
+            let legacyConfirmAction = career.usesSignatureLegacyRules
+                ? AppCopyKey.conclusionLegacyConfirmAction
+                : AppCopyKey.conclusionMemoryConfirmAction
+            let selectedLegacyTitle = selectedSignatureLegacy.map {
+                HighSchoolConclusionPresentation.localizedSignature($0, resolver: copyResolver).title
+            } ?? copyResolver.resolve(AppCopyKey.conclusionSignatureTitle, arguments: [.integer(0)])
+            let legacySubject: String = {
+                guard career.usesSignatureLegacyRules else { return selectedLegacyTitle }
+                guard copyResolver.language == .korean else { return selectedLegacyTitle }
+                return selectedLegacyTitle + KoreanCopy.particle(selectedLegacyTitle, final: "을", open: "를")
+            }()
             PrimaryButton(
-                title: career.usesSignatureLegacyRules ? "대표 유산을 확정한다" : "기억을 확정한다",
+                title: copyResolver.resolve(legacyConfirmAction),
                 identifier: "hs.legacy.confirm"
             ) { confirmingLegacy = true }
                 .disabled(
@@ -2825,18 +2976,29 @@ private struct LegacyCard: View {
                         : career.selectedMemories.count != state.memorySlots
                 )
                 .confirmationDialog(
-                    career.usesSignatureLegacyRules
-                        ? "\(selectedSignatureLegacy?.title ?? "대표 유산")\(KoreanCopy.particle(selectedSignatureLegacy?.title ?? "대표 유산", final: "을", open: "를")) 새 선수에게 남길까요?"
-                        : "기억 \(career.selectedMemories.count)장을 확정할까요?",
+                    copyResolver.resolve(
+                        career.usesSignatureLegacyRules
+                            ? AppCopyKey.conclusionLegacyConfirmationTitle
+                            : AppCopyKey.conclusionMemoryConfirmationTitle,
+                        arguments: career.usesSignatureLegacyRules
+                            ? [.userText(legacySubject)]
+                            : [.integer(career.selectedMemories.count)]
+                    ),
                     isPresented: $confirmingLegacy,
                     titleVisibility: .visible
                 ) {
-                    Button("확정하고 이 선수의 이야기를 닫는다") { career.confirmLegacy() }
-                    Button("다시 고른다") { confirmingLegacy = false }
+                    Button(copyResolver.resolve(AppCopyKey.conclusionConfirmationConfirm)) {
+                        career.confirmLegacy()
+                    }
+                    Button(copyResolver.resolve(AppCopyKey.conclusionConfirmationCancel)) {
+                        confirmingLegacy = false
+                    }
                 } message: {
-                    Text(career.usesSignatureLegacyRules
-                         ? "이 선수의 고교 3년이 닫히고 되돌릴 수 없습니다. 고른 대표 유산 하나만 새 선수에게 직접 이어집니다."
-                         : "기능 업데이트 전에 시작한 선수입니다. 당시 규칙대로 고른 기억만 새 선수에게 이어집니다.")
+                    Text(copyResolver.resolve(
+                        career.usesSignatureLegacyRules
+                            ? AppCopyKey.conclusionLegacyConfirmationMessage
+                            : AppCopyKey.conclusionMemoryConfirmationMessage
+                    ))
                 }
         }
     }
@@ -2852,18 +3014,29 @@ private struct CompletionCard: View {
     /// 환생 스탬프를 띄우고 나서 다음 회차로 넘어간다. 화면이 갈아 끼워지기 전에
     /// 회차 번호를 보여 줘야 회차가 쌓이는 감각이 생긴다.
     let onRebirth: () -> Void
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
-            BaseballCard(title: "고교 3년 완료", tone: .milestone) {
+            let completionSummary = state.draftResult.map {
+                HighSchoolConclusionPresentation.localizedDraftSummary($0, resolver: copyResolver)
+            } ?? copyResolver.resolve(AppCopyKey.conclusionCompletionEnded)
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionCompletionTitle), tone: .milestone) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(state.draftResult?.summary ?? "3년이 끝났습니다.")
+                    // localization-safe: resolved-copy
+                    Text(completionSummary)
                         .font(.subheadline).fixedSize(horizontal: false, vertical: true)
                     // 지명된 회차에서는 아직 계승이 정해지지 않았다. 지난 회차의 것만 보여 준다.
                     if career.inheritance.memories.isEmpty {
                         EmptyView()
                     } else {
-                        Text("가져온 기억 \(career.inheritance.memories.count)장 · 계승 포인트 \(career.inheritance.soulPoints)")
+                        Text(copyResolver.resolve(
+                            AppCopyKey.conclusionCarriedMemorySummary,
+                            arguments: [
+                                .integer(career.inheritance.memories.count),
+                                .integer(career.inheritance.soulPoints),
+                            ]
+                        ))
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(BaseballTheme.milestone)
                     }
@@ -2874,14 +3047,39 @@ private struct CompletionCard: View {
             // 지명된 구단에서 누가 기다리는지. 이름만 있으면 "어느 팀"이 문자열 하나이고,
             // 프로 첫 시즌의 경쟁 구도가 시작 전에 서지 않는다.
             if let team = state.draftResult?.team, state.draftResult?.outcome == .drafted {
-                BaseballCard(title: "\(team.name)에서 기다리는 사람", tone: .milestone) {
+                let teamName = HighSchoolConclusionPresentation.localizedTeamName(team, resolver: copyResolver)
+                let coachName = HighSchoolConclusionPresentation.localizedTeamField(
+                    team, field: .proCoach, resolver: copyResolver
+                )
+                let competitorName = HighSchoolConclusionPresentation.localizedTeamField(
+                    team, field: .positionCompetitor, resolver: copyResolver
+                )
+                let coachProfile = HighSchoolConclusionPresentation.localizedTeamField(
+                    team, field: team.coachProfile == nil ? .developmentPlan : .coachProfile,
+                    resolver: copyResolver
+                )
+                let competitorProfile = HighSchoolConclusionPresentation.localizedTeamField(
+                    team, field: team.competitorProfile == nil ? .positionCompetitor : .competitorProfile,
+                    resolver: copyResolver
+                )
+                BaseballCard(title: copyResolver.resolve(
+                    AppCopyKey.conclusionTeamWaiting,
+                    arguments: [.userText(teamName)]
+                ), tone: .milestone) {
                     VStack(alignment: .leading, spacing: 10) {
                         AvatarRow(seed: team.proCoach, role: .coach,
-                                  name: "\(team.proCoach) 코치", caption: team.coachProfile ?? team.developmentPlan, size: 44)
+                                  name: copyResolver.resolve(
+                                    AppCopyKey.conclusionCoachName,
+                                    arguments: [.userText(coachName)]
+                                  ), caption: coachProfile, size: 44)
                         // 경쟁자를 player 역할로 두면 같은 카드에서 코치는 사진, 경쟁자는 벡터로
                         // 갈린다(QA P1-9) — 한 화면 안 화풍 혼재는 미완성으로 읽힌다.
                         AvatarRow(seed: team.positionCompetitor, role: .rival,
-                                  name: team.positionCompetitor, caption: team.competitorProfile ?? "같은 자리를 두고 겨룰 선수", size: 44)
+                                  name: competitorName,
+                                  caption: team.competitorProfile == nil
+                                    ? copyResolver.resolve(AppCopyKey.conclusionCompetitorFallback)
+                                    : competitorProfile,
+                                  size: 44)
                     }
                 }
             }
@@ -2898,10 +3096,10 @@ private struct CompletionCard: View {
             // 다시 살아났다. 같은 지명으로 프로 커리어를 무한히 새로 만들 수 있었고, 은퇴
             // 계승(야구혼)도 그때마다 다시 적립될 여지가 있었다.
             if let draft = state.draftResult, draft.outcome == .drafted, !legacyConfirmed, !hasEnteredPro {
-                PrimaryButton(title: "프로 커리어 시작", identifier: "hs.enterPro") {
+                PrimaryButton(title: copyResolver.resolve(AppCopyKey.conclusionEnterPro), identifier: "hs.enterPro") {
                     onEnterPro(draft, state.pitcher, state.identity)
                 }
-                Text("이 선수의 이야기는 아직 끝나지 않았습니다.")
+                Text(copyResolver.resolve(AppCopyKey.conclusionNotOver))
                     .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
 
                 // 잘한 회차일수록 다음 선수 이야기를 못 본다.
@@ -2912,14 +3110,19 @@ private struct CompletionCard: View {
                 // 보여 준다 — 이 화면이 다음 회차를 한 글자도 말하지 않던 것을 고친다.
                 let upcoming = career.signatureLegacyCandidates(for: state)
                 if !upcoming.isEmpty {
-                    BaseballCard(title: "프로를 마치면 남길 것", tone: .raised) {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionLegacyPreviewTitle), tone: .raised) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("이 중 하나가 다음 선수에게 이어집니다. 선택은 프로 이야기를 마친 뒤입니다.")
+                            Text(copyResolver.resolve(AppCopyKey.conclusionLegacyPreviewBody))
                                 .font(.caption)
                                 .foregroundStyle(BaseballTheme.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                             ForEach(upcoming, id: \.id) { candidate in
-                                Label(candidate.title, systemImage: "seal.fill")
+                                Label(
+                                    HighSchoolConclusionPresentation.localizedSignature(
+                                        candidate, resolver: copyResolver
+                                    ).title,
+                                    systemImage: "seal.fill"
+                                )
                                     .font(.footnote.weight(.semibold))
                                     .foregroundStyle(BaseballTheme.milestone)
                             }
@@ -2954,8 +3157,8 @@ private struct CompletionCard: View {
             // 읽힌다. 기억까지 확정한 회차의 다음 행동은 환생 하나뿐이므로 주 버튼으로
             // 세운다 — 드래프트를 본 42명 중 27명만 다음 회차를 시작했다(2026-08).
             if awaitsProRetirement {
-                BaseballCard(title: "프로에서 이어지는 이야기", tone: .milestone) {
-                    Text("이 선수의 프로 커리어를 마치면 고교 시절과 통산 기록을 함께 돌아보고, 다음 선수에게 남길 대표 유산을 고릅니다.")
+                BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionAwaitingRetirementTitle), tone: .milestone) {
+                    Text(copyResolver.resolve(AppCopyKey.conclusionAwaitingRetirementBody))
                         .font(.subheadline)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -2971,15 +3174,25 @@ private struct CompletionCard: View {
                 let thisRun = state.draftResult?.evaluationScore ?? 0
                 if bestPast > 0 || thisRun > 0 {
                     let isRecord = thisRun > bestPast
-                    BaseballCard(title: isRecord ? "최고 평가 갱신" : "다음 과녁",
+                    BaseballCard(title: copyResolver.resolve(
+                        isRecord ? AppCopyKey.conclusionBestEvaluationRecordTitle
+                                 : AppCopyKey.conclusionBestEvaluationNextTitle
+                    ),
                                  tone: isRecord ? .milestone : .raised) {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text("\(max(thisRun, bestPast))점")
+                            Text(
+                                verbatim: copyResolver.resolve(
+                                    .evaluationPoints,
+                                    arguments: [.integer(max(thisRun, bestPast))]
+                                )
+                            )
                                 .font(BaseballType.heroNumeral)
                                 .foregroundStyle(isRecord ? BaseballTheme.milestone : BaseballTheme.textPrimary)
-                            Text(isRecord
-                                 ? "이번 선수가 이전 최고(\(bestPast)점)를 넘었습니다."
-                                 : "이번 선수는 \(thisRun)점. 다음 선수로 이 기록을 넘어 보세요.")
+                            Text(copyResolver.resolve(
+                                isRecord ? AppCopyKey.conclusionBestEvaluationRecordBody
+                                         : AppCopyKey.conclusionBestEvaluationNextBody,
+                                arguments: [.integer(isRecord ? bestPast : thisRun)]
+                            ))
                                 .font(.footnote)
                                 .foregroundStyle(BaseballTheme.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -2987,10 +3200,21 @@ private struct CompletionCard: View {
                     }
                     .accessibilityIdentifier("hs.bestEvaluation")
                 }
-                PrimaryButton(title: "\(career.inheritance.lifeNumber)번째 선수로 다시 시작",
-                              identifier: "hs.rebirth", action: onRebirth)
-                Text("기억 \(career.inheritance.memories.count)장 · 계승 포인트 \(career.inheritance.soulPoints)"
-                     + "\(KoreanCopy.objectParticle(number: career.inheritance.soulPoints)) 안고 시작합니다.")
+                PrimaryButton(title: copyResolver.resolve(
+                    AppCopyKey.conclusionRebirthAction,
+                    arguments: [.integer(career.inheritance.lifeNumber)]
+                ), identifier: "hs.rebirth", action: onRebirth)
+                let memoryCount = career.inheritance.memories.count
+                let points = career.inheritance.soulPoints
+                let summaryKey = copyResolver.language == .korean
+                    ? (KoreanCopy.objectParticle(number: points) == "을"
+                        ? AppCopyKey.conclusionRebirthSummaryWithEul
+                        : AppCopyKey.conclusionRebirthSummaryWithReul)
+                    : AppCopyKey.conclusionRebirthSummaryWithEul
+                Text(copyResolver.resolve(
+                    summaryKey,
+                    arguments: [.integer(memoryCount), .integer(points)]
+                ))
                     .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
@@ -3000,9 +3224,9 @@ private struct CompletionCard: View {
                     confirmingFold = true
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("이 선수의 이야기를 접고 다시 시작")
+                        Text(copyResolver.resolve(AppCopyKey.conclusionFoldTitle))
                             .font(.subheadline.weight(.semibold))
-                        Text("프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르게 됩니다.")
+                        Text(copyResolver.resolve(AppCopyKey.conclusionFoldBody))
                             .font(.caption).foregroundStyle(BaseballTheme.textSecondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -3011,15 +3235,15 @@ private struct CompletionCard: View {
                 .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 .accessibilityIdentifier("hs.rebirth")
                 .confirmationDialog(
-                    "프로 진출을 포기하고 이 선수의 이야기를 마칠까요?",
+                    copyResolver.resolve(AppCopyKey.conclusionFoldConfirmationTitle),
                     isPresented: $confirmingFold,
                     titleVisibility: .visible
                 ) {
-                    Button("접고 기억을 고른다", role: .destructive) { career.openLegacy() }
+                    Button(copyResolver.resolve(AppCopyKey.conclusionFoldAction), role: .destructive) { career.openLegacy() }
                     // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.
-                    Button("돌아간다") { confirmingFold = false }
+                    Button(copyResolver.resolve(AppCopyKey.conclusionFoldCancel)) { confirmingFold = false }
                 } message: {
-                    Text("프로 커리어를 시작하지 않고 이 선수의 이야기를 끝냅니다. 지명은 사라지고 되돌릴 수 없습니다.")
+                    Text(copyResolver.resolve(AppCopyKey.conclusionFoldMessage))
                 }
             }
         }
@@ -3103,37 +3327,59 @@ struct PrimaryButton: View {
 /// 성적"이라는 감각이 사라지고, 그러면 자동 경기를 넣은 의미가 없다.
 private struct SeasonRecordCard: View {
     let log: [ProGameLine]
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     private var played: [ProGameLine] { log.filter(\.played) }
     private var auto: [ProGameLine] { log.filter { !$0.played } }
 
     var body: some View {
-        BaseballCard(title: "시즌 기록") {
+        BaseballCard(title: copyResolver.resolve(AppCopyKey.conclusionSeasonRecordTitle)) {
             VStack(alignment: .leading, spacing: 12) {
-                if !played.isEmpty { summary(title: "직접 등판", lines: played, accent: BaseballTheme.action) }
-                if !auto.isEmpty { summary(title: "팀 경기", lines: auto, accent: BaseballTheme.textTertiary) }
-                Text("최근 경기")
+                if !played.isEmpty {
+                    summary(
+                        title: copyResolver.resolve(AppCopyKey.conclusionDirectOutings),
+                        lines: played, accent: BaseballTheme.action
+                    )
+                }
+                if !auto.isEmpty {
+                    summary(
+                        title: copyResolver.resolve(AppCopyKey.conclusionTeamGames),
+                        lines: auto, accent: BaseballTheme.textTertiary
+                    )
+                }
+                Text(copyResolver.resolve(AppCopyKey.conclusionRecentGames))
                     .eyebrowStyle(BaseballTheme.textTertiary)
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(log.suffix(5).reversed()) { line in
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
-                            Text("\(line.season)학년")
+                            Text(copyResolver.resolve(
+                                AppCopyKey.conclusionSeasonLabel,
+                                arguments: [.integer(line.season)]
+                            ))
                                 .font(.caption.monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textTertiary)
-                            Text(GameLineFormat.role(line))
+                            Text(HighSchoolConclusionPresentation.localizedSeasonRole(
+                                line, resolver: copyResolver
+                            ))
                                 .font(.footnote.weight(.semibold).monospacedDigit())
                             Spacer()
+                            // localization-safe: numeric
                             Text(GameLineFormat.score(line))
                                 .font(.footnote.weight(.bold).monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textSecondary)
-                            if let decision = GameLineFormat.decisionLabel(line.decision) {
+                            if let decision = HighSchoolConclusionPresentation.localizedSeasonDecision(
+                                line.decision, resolver: copyResolver
+                            ) {
+                                // localization-safe: resolved-copy
                                 Text(decision)
                                     .font(.caption.weight(.heavy))
                                     .foregroundStyle(GameLineFormat.decisionTone(line.decision))
                             }
                         }
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel(GameLineFormat.accessibilityLabel(line))
+                        .accessibilityLabel(HighSchoolConclusionPresentation.localizedSeasonLineAccessibility(
+                            line, resolver: copyResolver
+                        ))
                     }
                 }
             }
@@ -3142,16 +3388,17 @@ private struct SeasonRecordCard: View {
     }
 
     private func summary(title: String, lines: [ProGameLine], accent: Color) -> some View {
-        let outs = lines.reduce(0) { $0 + $1.outs }
-        let strikeouts = lines.reduce(0) { $0 + $1.strikeouts }
-        let walks = lines.reduce(0) { $0 + $1.walks }
-        let runs = lines.reduce(0) { $0 + $1.runsAllowed }
         return VStack(alignment: .leading, spacing: 3) {
+            // localization-safe: resolved-copy
             Text(title).eyebrowStyle(accent)
-            Text("\(lines.count)경기 · \(outs / 3)이닝 · \(strikeouts)K \(walks)BB \(runs)실점")
+            Text(HighSchoolConclusionPresentation.localizedSeasonSummary(
+                lines: lines, resolver: copyResolver
+            ))
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
-            Text("9이닝당 실점 \(GameLineFormat.runsPerNine(outs: outs, runs: runs))")
+            Text(HighSchoolConclusionPresentation.localizedSeasonRA9(
+                lines: lines, resolver: copyResolver
+            ))
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textTertiary)
         }
@@ -3162,6 +3409,7 @@ private struct SeasonRecordCard: View {
 /// 평가 항목을 줄바꿈하며 늘어놓는다. 항목 수가 회차마다 달라서 고정 열 배치가 맞지 않는다.
 private struct FlowRow: View {
     let items: [String]
+    let resolver: GameCopyResolver
 
     var body: some View {
         // 두 개씩 짝지어 놓는다. iOS 16의 Layout 프로토콜까지 갈 만큼 복잡한 배치가 아니다.
@@ -3169,6 +3417,7 @@ private struct FlowRow: View {
             ForEach(Array(stride(from: 0, to: items.count, by: 2)), id: \.self) { index in
                 HStack(spacing: 14) {
                     ForEach(items[index..<min(index + 2, items.count)], id: \.self) { item in
+                        // localization-safe: resolved-copy
                         Text(item)
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(
@@ -3180,7 +3429,10 @@ private struct FlowRow: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("평가 항목: " + items.joined(separator: ", "))
+        .accessibilityLabel(resolver.resolve(
+            AppCopyKey.conclusionEvaluationBreakdownAccessibility,
+            arguments: [.userText(items.joined(separator: ", "))]
+        ))
     }
 }
 
@@ -3188,20 +3440,34 @@ private struct FlowRow: View {
 /// 정산에서 따로 보여 줘야 최종 점수와 다음 회차 보상을 역산할 수 있다.
 private struct WindSettlementCard: View {
     let wind: CareerWind
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     @ViewBuilder var body: some View {
         if wind.rules.draftEvaluationDelta != 0 || wind.rewardBonusPermille != 0 {
-            BaseballCard(title: "3년의 바람 돌아보기 · \(wind.title)", tone: .raised) {
+            let localizedWind = HighSchoolConclusionPresentation.localizedWind(
+                wind, resolver: copyResolver
+            )
+            BaseballCard(title: copyResolver.resolve(
+                AppCopyKey.conclusionWindReview,
+                arguments: [.userText(localizedWind.title)]
+            ), tone: .raised) {
                 VStack(alignment: .leading, spacing: 5) {
                     if wind.rules.draftEvaluationDelta != 0 {
                         let delta = wind.rules.draftEvaluationDelta
-                        Text("드래프트 평가 보정 \(delta > 0 ? "+" : "")\(delta)점")
+                        Text(copyResolver.resolve(
+                            AppCopyKey.conclusionDraftAdjustment,
+                            arguments: [.integer(delta)]
+                        ))
                     }
                     if wind.rewardBonusPermille != 0 {
                         let percent = wind.rewardBonusPermille / 10
-                        Text("계승 포인트 보정 \(percent > 0 ? "+" : "")\(percent)%")
+                        Text(copyResolver.resolve(
+                            AppCopyKey.conclusionInheritanceAdjustment,
+                            arguments: [.integer(percent)]
+                        ))
                     }
-                    Text(wind.detail)
+                    // localization-safe: resolved-copy
+                    Text(localizedWind.detail)
                         .font(.caption)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
@@ -3224,12 +3490,16 @@ private struct PledgeCard: View {
     var isFirstLife: Bool = false
     let onChoose: (String?) -> Void
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     var body: some View {
-        BaseballCard(title: "고교 3년 목표", tone: .milestone) {
+        BaseballCard(title: copyResolver.resolve(.pledgeCardTitle), tone: .milestone) {
             VStack(alignment: .leading, spacing: 10) {
-                Text(isFirstLife
-                     ? "하나를 고르면 3년을 마칠 때 돌아봅니다. 이루면 새 선수가 더 강하게 시작됩니다."
-                     : "하나를 고르면 고교 3년을 마칠 때 돌아봅니다. 등급에 따라 계승 포인트를 더 얻습니다.")
+                Text(
+                    verbatim: copyResolver.resolve(
+                        isFirstLife ? .pledgeIntroFirst : .pledgeIntroRepeat
+                    )
+                )
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
                 // **누르라고 말한다.**
@@ -3237,7 +3507,11 @@ private struct PledgeCard: View {
                 // 목표 카드들은 색 있는 면에 테두리까지 둘러 "정보 패널"로 읽혔다 —
                 // 실제로 사용자가 이 화면에서 무엇을 눌러야 하는지 몰랐다. 카드가
                 // 버튼처럼 안 보이면 지시문 한 줄이 그 일을 대신해야 한다.
-                Label("아래 목표 중 하나를 눌러 고르세요", systemImage: "hand.tap.fill")
+                Label {
+                    Text(verbatim: copyResolver.resolve(.pledgeHint))
+                } icon: {
+                    Image(systemName: "hand.tap.fill")
+                }
                     .font(.footnote.weight(.heavy))
                     .foregroundStyle(BaseballTheme.milestone)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -3249,33 +3523,57 @@ private struct PledgeCard: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 6) {
                                 if carried {
-                                    Text("지난 고교 3년에서 이어짐")
+                                    Text(verbatim: copyResolver.resolve(.pledgeCarried))
                                         .font(.caption2.weight(.heavy))
                                         .foregroundStyle(BaseballTheme.milestone)
                                 }
-                                Text(pledge.tier.title)
+                                Text(
+                                    verbatim: LegacyPresentation.pledgeTier(
+                                        pledge.tier, resolver: copyResolver
+                                    )
+                                )
                                     .font(.caption2.weight(.heavy))
                                     .foregroundStyle(pledge.tier == .legendary
                                                      ? BaseballTheme.warning : BaseballTheme.textSecondary)
                                 Spacer(minLength: 0)
-                                Text("계승 포인트 +\(pledge.rewardPermille / 10)%")
+                                Text(
+                                    verbatim: copyResolver.resolve(
+                                        .pledgeReward,
+                                        arguments: [.integer(pledge.rewardPermille / 10)]
+                                    )
+                                )
                                     .font(.caption.monospacedDigit().weight(.bold))
                                     .foregroundStyle(BaseballTheme.milestone)
                             }
                             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                Text(pledge.title).font(.subheadline.weight(.bold))
+                                Text(
+                                    verbatim: LegacyPresentation.pledgeTitle(
+                                        pledge, resolver: copyResolver
+                                    )
+                                )
+                                .font(.subheadline.weight(.bold))
                                 Spacer(minLength: 0)
                                 // 화살표 하나가 "이 줄은 눌린다"를 말한다. 목록 UI의
                                 // 가장 값싸고 가장 확실한 신호다.
-                                Text("이걸로 정하기")
+                                Text(verbatim: copyResolver.resolve(.pledgeChoose))
                                     .font(.caption2.weight(.heavy))
                                     .foregroundStyle(BaseballTheme.milestone)
                                 Image(systemName: "chevron.right")
                                     .font(.caption2.weight(.bold))
                                     .foregroundStyle(BaseballTheme.milestone)
                             }
-                            Text(pledge.detail).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
-                            Text(pledge.alignmentReason(state: state))
+                            Text(
+                                verbatim: LegacyPresentation.pledgeDetail(
+                                    pledge, resolver: copyResolver
+                                )
+                            )
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            Text(
+                                verbatim: LegacyPresentation.pledgeAlignment(
+                                    pledge, state: state, resolver: copyResolver
+                                )
+                            )
                                 .font(.caption2)
                                 .foregroundStyle(BaseballTheme.textTertiary)
                         }
@@ -3290,9 +3588,16 @@ private struct PledgeCard: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("hs.pledge.\(pledge.id)")
-                    .accessibilityLabel(pledge.accessibilityLabel(progress: progress, carried: carried))
+                    .accessibilityLabel(
+                        LegacyPresentation.pledgeAccessibility(
+                            pledge: pledge, progress: progress, carried: carried,
+                            resolver: copyResolver
+                        )
+                    )
                 }
-                Button("목표 없이 시작") { onChoose(nil) }
+                Button { onChoose(nil) } label: {
+                    Text(verbatim: copyResolver.resolve(.pledgeSkip))
+                }
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)

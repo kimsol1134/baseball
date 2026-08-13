@@ -320,7 +320,15 @@ struct PlayerHeartCard: View {
     let state: HighSchoolCareerSnapshot
     let presentation: PlayerHeartlinePresentation
 
-    private var line: PlayerHeartline { presentation.line }
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var line: PlayerHeartline {
+        LegacyPresentation.heartline(
+            presentation,
+            drafted: state.draftResult?.outcome == .drafted,
+            resolver: copyResolver
+        )
+    }
 
     static func analyticsScope(
         careerID: String,
@@ -343,7 +351,10 @@ struct PlayerHeartCard: View {
     }
 
     var body: some View {
-        BaseballCard(title: "\(state.identity.name)의 속마음", tone: .raised) {
+        BaseballCard(
+            title: copyResolver.resolve(.heartCardTitle, arguments: [.userText(state.identity.name)]),
+            tone: .raised
+        ) {
             HStack(alignment: .center, spacing: 12) {
                 PortraitView(
                     seed: state.identity.name,
@@ -352,17 +363,22 @@ struct PlayerHeartCard: View {
                     playerStage: state.chapter.schoolYear <= 1 ? .freshman : .ace
                 )
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(line.mood)
+                    Text(verbatim: line.mood)
                         .font(.caption.weight(.bold))
                         .foregroundStyle(BaseballTheme.information)
-                    Text("“\(line.words)”")
+                    Text(verbatim: "“\(line.words)”")
                         .font(.subheadline)
                         .foregroundStyle(BaseballTheme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(state.identity.name)의 속마음. \(line.mood). \(line.words)")
+            .accessibilityLabel(
+                copyResolver.resolve(
+                    .heartAccessibility,
+                    arguments: [.userText(state.identity.name), .userText(line.mood), .userText(line.words)]
+                )
+            )
             .accessibilityIdentifier("hs.playerHeart")
         }
         .onAppear {
@@ -386,20 +402,26 @@ struct PlayerHeartCard: View {
 /// 결산과 아카이브가 함께 쓰는, 한 선수가 남긴 문장.
 struct PlayerLegacyQuote: View {
     let legacy: PlayerLegacy
-    var heading = "선수가 남긴 말"
+    var heading: String? = nil
+
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var localizedHeading: String {
+        heading ?? copyResolver.resolve(.quoteHeading)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(heading).eyebrowStyle(BaseballTheme.milestone)
-            Text("“\(legacy.farewell)”")
+            Text(verbatim: localizedHeading).eyebrowStyle(BaseballTheme.milestone)
+            Text(verbatim: "“\(legacy.farewell)”")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("가장 오래 남은 순간")
+            Text(verbatim: copyResolver.resolve(.quoteDefiningMoment))
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(BaseballTheme.textTertiary)
                 .padding(.top, 2)
-            Text(legacy.definingMoment)
+            Text(verbatim: legacy.definingMoment)
                 .font(.caption)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -411,7 +433,15 @@ struct PlayerLegacyQuote: View {
                 .stroke(BaseballTheme.milestone.opacity(0.4), lineWidth: 1)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(heading). \(legacy.farewell). 가장 오래 남은 순간, \(legacy.definingMoment)")
+        .accessibilityLabel(
+            copyResolver.resolve(
+                .quoteAccessibility,
+                arguments: [
+                    .userText(localizedHeading), .userText(legacy.farewell),
+                    .userText(legacy.definingMoment),
+                ]
+            )
+        )
     }
 }
 
@@ -421,12 +451,19 @@ struct PreviousPlayerLetterCard: View {
     let record: HighSchoolCareerStore.LifeRecord
     let currentPlayerName: String
 
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     private var legacy: PlayerLegacy {
-        record.playerLegacy ?? PlayerBondStory.legacy(for: record)
+        LegacyPresentation.playerLegacy(for: record, resolver: copyResolver)
     }
 
     private var recipientLine: String {
-        Self.recipientLine(previousName: record.playerName, currentName: currentPlayerName)
+        let previous = record.playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let current = currentPlayerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !previous.isEmpty, previous.localizedCaseInsensitiveCompare(current) == .orderedSame {
+            return copyResolver.resolve(.previousRecipientSame)
+        }
+        return copyResolver.resolve(.previousRecipientNew, arguments: [.userText(currentPlayerName)])
     }
 
     static func recipientLine(previousName: String, currentName: String) -> String {
@@ -439,7 +476,10 @@ struct PreviousPlayerLetterCard: View {
     }
 
     var body: some View {
-        BaseballCard(title: "지난 선수 \(record.playerName)의 말", tone: .milestone) {
+        BaseballCard(
+            title: copyResolver.resolve(.previousTitle, arguments: [.userText(record.playerName)]),
+            tone: .milestone
+        ) {
             HStack(alignment: .top, spacing: 12) {
                 PortraitView(
                     seed: record.playerName,
@@ -448,26 +488,42 @@ struct PreviousPlayerLetterCard: View {
                     playerStage: record.drafted ? .pro : .ace
                 )
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(recipientLine)
+                    Text(verbatim: recipientLine)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textSecondary)
-                    Text(legacy.title)
+                    Text(verbatim: legacy.title)
                         .font(.caption.weight(.bold))
                         .foregroundStyle(BaseballTheme.milestone)
-                    Text("“\(legacy.farewell)”")
+                    Text(verbatim: "“\(legacy.farewell)”")
                         .font(.subheadline)
                         .foregroundStyle(BaseballTheme.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                     if !record.memories.isEmpty {
-                        Text("함께 온 기억 · " + record.memories
-                            .map { HighSchoolPresentation.memory($0).title }
-                            .joined(separator: " · "))
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                .previousMemories,
+                                arguments: [
+                                    .userText(record.memories.map {
+                                        HighSchoolConclusionPresentation.localizedMemory($0, resolver: copyResolver).title
+                                    }.joined(separator: " · ")),
+                                ]
+                            )
+                        )
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if let signatureLegacy = record.signatureLegacy {
-                        Text("직접 이어진 대표 유산 · \(signatureLegacy.title)")
+                        Text(
+                            verbatim: copyResolver.resolve(
+                                .previousSignature,
+                                arguments: [
+                                    .userText(HighSchoolConclusionPresentation.localizedSignature(
+                                        signatureLegacy, resolver: copyResolver
+                                    ).title),
+                                ]
+                            )
+                        )
                             .font(.caption.weight(.bold))
                             .foregroundStyle(BaseballTheme.milestone)
                             .fixedSize(horizontal: false, vertical: true)
@@ -475,7 +531,14 @@ struct PreviousPlayerLetterCard: View {
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("지난 선수 \(record.playerName)의 말. \(recipientLine). \(legacy.farewell)")
+            .accessibilityLabel(
+                copyResolver.resolve(
+                    .previousAccessibility,
+                    arguments: [
+                        .userText(record.playerName), .userText(recipientLine), .userText(legacy.farewell),
+                    ]
+                )
+            )
             .accessibilityIdentifier("hs.previousPlayerLetter")
         }
         .onAppear {

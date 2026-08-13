@@ -19,9 +19,14 @@ struct BaseballApp: App {
     /// 홍보 영상 촬영용. XCUITest는 자동화를 빠르게 하려고 대상 앱의 애니메이션을 꺼 버리는데,
     /// 그러면 승부 장면이 최종 프레임으로 튀어 녹화에 아무것도 남지 않는다. 촬영할 때만 되돌린다.
     nonisolated static let promoLaunchArgument = "-uiTestPromoCapture"
+    /// App Store 원본 촬영에서는 제품 UI만 남기고 상태 막대·홈 인디케이터를 숨긴다.
+    /// 이 인자는 UI 테스트가 명시적으로 전달할 때만 작동하며 제품 상태나 저장에는 관여하지 않는다.
+    nonisolated static let storeCaptureLaunchArgument = "-uiTestStoreCapture"
 #if DEBUG
     /// 지명 완료 화면 → 프로 진입을 밸런스 시드와 분리해 검증하는 Debug 전용 픽스처.
     nonisolated static let draftedCareerFixtureLaunchArgument = "-uiTestDraftedCareerFixture"
+    /// 미지명 직전 → 유산 → 환생을 실제 엔진 결과로 촬영하는 Debug 전용 픽스처.
+    nonisolated static let undraftedCareerFixtureLaunchArgument = "-uiTestUndraftedCareerFixture"
 #endif
 
     @Environment(\.scenePhase) private var scenePhase
@@ -263,6 +268,13 @@ struct BaseballApp: App {
                 // 디자인 시스템은 다크 전용이다(design-system.css의 `color-scheme: dark`).
                 // 기기 설정을 따라가면 라이트 모드에서 "Midnight Dugout" 방향이 통째로 사라진다.
                 .preferredColorScheme(.dark)
+                .statusBarHidden(
+                    ProcessInfo.processInfo.arguments.contains(Self.storeCaptureLaunchArgument)
+                )
+                .persistentSystemOverlays(
+                    ProcessInfo.processInfo.arguments.contains(Self.storeCaptureLaunchArgument)
+                        ? .hidden : .automatic
+                )
                 .environment(\.gameCopyResolver, GameCopyResolver())
                 .task {
                     let arguments = ProcessInfo.processInfo.arguments
@@ -287,6 +299,8 @@ struct BaseballApp: App {
 #if DEBUG
                         if arguments.contains(Self.draftedCareerFixtureLaunchArgument) {
                             _ = highSchool.installDraftedCareerFixtureForUITesting()
+                        } else if arguments.contains(Self.undraftedCareerFixtureLaunchArgument) {
+                            _ = highSchool.installUndraftedDraftFixtureForUITesting()
                         }
 #endif
                     } else if arguments.contains(Self.autoReleaseLaunchArgument) {

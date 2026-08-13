@@ -388,6 +388,129 @@ final class HighSchoolCareerStore {
     }
 
 #if DEBUG
+    /// 드래프트 버튼을 누르기 직전의 확정 미지명 XCUITest 픽스처.
+    ///
+    /// 실제 엔진으로 약한 3년을 끝까지 진행한 뒤, 복사본만 먼저 지명 처리해 미지명 결과를
+    /// 검증한다. 화면에는 원래의 `.draft` 상태를 설치하므로 촬영에서도 사용자가 누르는
+    /// `hs.draft.resolve`가 실제 판정을 수행하며 RNG·저장·결과 경로를 우회하지 않는다.
+    @discardableResult
+    func installUndraftedDraftFixtureForUITesting(seed: String = "17") -> Bool {
+        let fixtureEngine = HighSchoolCareerEngine()
+        do {
+            var fixture = try fixtureEngine.start(.init(
+                seed: seed,
+                presetID: "precision_commander",
+                identity: PlayerIdentitySnapshot(
+                    name: "Alex Han", throwingHand: .right, bodyType: .balanced, region: "서울"
+                )
+            ))
+            let startingPitcher = fixture.snapshot.pitcher
+            fixture = try fixtureEngine.completePrologue(.init(
+                seed: fixture.nextSeed,
+                state: fixture.snapshot
+            ))
+            fixture = try fixtureEngine.chooseSchool(.init(
+                seed: fixture.nextSeed,
+                state: fixture.snapshot,
+                schoolID: .miraeAnalytics
+            ))
+
+            fixtureLoop: for _ in 0..<100 {
+                switch fixture.snapshot.phase {
+                case .training:
+                    fixture = try fixtureEngine.commitTraining(.init(
+                        seed: fixture.nextSeed,
+                        state: fixture.snapshot,
+                        focus: fixture.snapshot.school?.strength ?? .command,
+                        intensity: .light
+                    ))
+                case .relationship:
+                    fixture = try fixtureEngine.resolveRelationship(.init(
+                        seed: fixture.nextSeed,
+                        state: fixture.snapshot,
+                        response: .challenge
+                    ))
+                case .importantGame:
+                    let number = fixture.snapshot.performance.importantGamesCompleted + 1
+                    fixture = try fixtureEngine.recordImportantGame(.init(
+                        seed: fixture.nextSeed,
+                        state: fixture.snapshot,
+                        report: .init(
+                            scenarioNumber: number,
+                            pitches: 18,
+                            strikeouts: 0,
+                            walks: 5,
+                            runsAllowed: 7,
+                            expectedDamage: 1_200,
+                            actualDamage: 4_500,
+                            recommendationAccepted: 0
+                        )
+                    ))
+                case .awakening:
+                    guard let awakening = fixture.snapshot.awakeningOptions.first else {
+                        throw NSError(
+                            domain: "BaseballIOS.UITestFixture",
+                            code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "각성 선택지가 없습니다."]
+                        )
+                    }
+                    fixture = try fixtureEngine.chooseAwakening(.init(
+                        seed: fixture.nextSeed,
+                        state: fixture.snapshot,
+                        awakening: awakening
+                    ))
+                case .chapterReview:
+                    fixture = try fixtureEngine.advanceChapter(.init(
+                        seed: fixture.nextSeed,
+                        state: fixture.snapshot
+                    ))
+                case .draft:
+                    break fixtureLoop
+                case .legacy, .completed:
+                    loadState = .failed("UI 테스트용 약한 고교 기록이 드래프트 직전 상태를 지나쳤습니다.")
+                    return false
+                case .prologue, .schoolSelection:
+                    loadState = .failed("UI 테스트용 미지명 픽스처가 이전 국면으로 돌아갔습니다.")
+                    return false
+                }
+            }
+
+            guard fixture.snapshot.phase == .draft else {
+                loadState = .failed("UI 테스트용 미지명 픽스처가 100단계 안에 드래프트에 도달하지 못했습니다.")
+                return false
+            }
+            let verified = try fixtureEngine.resolveDraft(.init(
+                seed: fixture.nextSeed,
+                state: fixture.snapshot
+            ))
+            guard verified.snapshot.phase == .legacy,
+                  verified.snapshot.draftResult?.outcome == .undrafted else {
+                loadState = .failed("UI 테스트용 약한 고교 기록이 미지명 결과를 만들지 못했습니다.")
+                return false
+            }
+
+            result = fixture
+            careerStartingPitcher = startingPitcher
+            enteredProCareerID = nil
+            lastSummary = "UI 테스트용 미지명 직전 상태를 준비했습니다."
+            feedbackCue = .neutral
+            feedbackTrigger += 1
+            loadState = .ready
+            guard save() else {
+                result = nil
+                careerStartingPitcher = nil
+                loadState = .failed("UI 테스트용 미지명 직전 상태를 저장하지 못했습니다.")
+                return false
+            }
+            return true
+        } catch {
+            result = nil
+            careerStartingPitcher = nil
+            loadState = .failed("UI 테스트용 미지명 직전 상태를 만들지 못했습니다: \(error.localizedDescription)")
+            return false
+        }
+    }
+
     /// 지명 완료 화면에서 시작하는 XCUITest 픽스처.
     ///
     /// 프로 화면 전환을 검증하는 테스트가 3년 자동 플레이의 난이도·드래프트 운까지 함께
@@ -400,7 +523,10 @@ final class HighSchoolCareerStore {
         do {
             var fixture = try fixtureEngine.start(.init(
                 seed: seed,
-                presetID: "power_prospect"
+                presetID: "power_prospect",
+                identity: PlayerIdentitySnapshot(
+                    name: "Jordan Lee", throwingHand: .right, bodyType: .balanced, region: "서울"
+                )
             ))
             let startingPitcher = fixture.snapshot.pitcher
             fixture = try fixtureEngine.completePrologue(.init(

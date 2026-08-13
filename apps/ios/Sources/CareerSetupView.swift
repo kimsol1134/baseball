@@ -9,10 +9,22 @@ struct CareerSetupView: View {
     @State private var playerName = ""
     @State private var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
     @FocusState private var nameFocused: Bool
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     private var presets: [PitcherPresetSnapshot] { PitcherPresetCatalog.all }
     private var selectedPreset: PitcherPresetSnapshot? {
         presets.first { $0.id == selectedPresetID } ?? presets.first
+    }
+
+    private var suggestedName: String {
+        selectedPreset.map { copyResolver.resolve($0.defaultPlayerNameCopyToken) }
+            ?? copyResolver.resolve(.careerSetupNamePlaceholder)
+    }
+
+    private var submittedPlayerName: String {
+        playerName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? suggestedName
+            : playerName
     }
 
     var body: some View {
@@ -20,12 +32,12 @@ struct CareerSetupView: View {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
                 KeyArtHeader(
                     art: .careerIntro,
-                    eyebrow: "프로 커리어 시작",
-                    title: "어떤 투수로 프로에 들어갈지 고르세요"
+                    eyebrow: copyResolver.resolve(.careerSetupEyebrow),
+                    title: copyResolver.resolve(.careerSetupTitle)
                 )
 
-                BaseballCard(title: "선수 이름") {
-                    TextField(selectedPreset?.pitcher.name ?? "이름", text: $playerName)
+                BaseballCard(title: copyResolver.resolve(.careerSetupPlayerName)) {
+                    TextField(suggestedName, text: $playerName)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .focused($nameFocused)
@@ -34,7 +46,7 @@ struct CareerSetupView: View {
                         .onSubmit { nameFocused = false }
                 }
 
-                Text("투수 유형")
+                Text(verbatim: copyResolver.resolve(.careerSetupPitcherType))
                     .font(.headline)
                     .padding(.top, 4)
 
@@ -46,14 +58,18 @@ struct CareerSetupView: View {
                     )
                 }
 
-                Text("유형은 시작 능력과 구종 구성만 정합니다. 이후 성장은 매주 고르는 훈련과 승부 결과로 갈립니다.")
+                Text(verbatim: copyResolver.resolve(.careerSetupExplanation))
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
 
-                PrimaryPill(title: "프로 지명 받기", identifier: "pro.setup.start", enabled: selectedPreset != nil) {
+                PrimaryPill(
+                    title: copyResolver.resolve(.careerSetupAction),
+                    identifier: "pro.setup.start",
+                    enabled: selectedPreset != nil
+                ) {
                     nameFocused = false
                     if let selectedPreset {
-                        career.startNewCareer(preset: selectedPreset, playerName: playerName)
+                        career.startNewCareer(preset: selectedPreset, playerName: submittedPlayerName)
                     }
                 }
             }
@@ -68,6 +84,8 @@ private struct PresetCard: View {
     let preset: PitcherPresetSnapshot
     let selected: Bool
     let onSelect: () -> Void
+
+    @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
         Button(action: onSelect) {
@@ -86,22 +104,56 @@ private struct PresetCard: View {
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(preset.name).font(.headline)
-                        Text(preset.tagline).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
+                        Text(verbatim: copyResolver.resolve(preset.nameCopyToken)).font(.headline)
+                        Text(verbatim: copyResolver.resolve(preset.taglineCopyToken))
+                            .font(.subheadline)
+                            .foregroundStyle(BaseballTheme.textSecondary)
                     }
                     Spacer()
                 }
                 VStack(alignment: .leading, spacing: 8) {
-                    AbilityGaugeView(label: "구위", value: preset.pitcher.stuff, showsMeaning: false)
-                    AbilityGaugeView(label: "제구", value: preset.pitcher.command, showsMeaning: false)
-                    AbilityGaugeView(label: "변화구", value: preset.pitcher.movement, showsMeaning: false)
-                    AbilityGaugeView(label: "체력", value: preset.pitcher.stamina, showsMeaning: false)
+                    AbilityGaugeView(
+                        label: copyResolver.resolve(AppCopyKey.setupStatStuff),
+                        value: preset.pitcher.stuff,
+                        showsMeaning: false
+                    )
+                    AbilityGaugeView(
+                        label: copyResolver.resolve(AppCopyKey.setupStatCommand),
+                        value: preset.pitcher.command,
+                        showsMeaning: false
+                    )
+                    AbilityGaugeView(
+                        label: copyResolver.resolve(AppCopyKey.setupStatMovement),
+                        value: preset.pitcher.movement,
+                        showsMeaning: false
+                    )
+                    AbilityGaugeView(
+                        label: copyResolver.resolve(AppCopyKey.setupStatStamina),
+                        value: preset.pitcher.stamina,
+                        showsMeaning: false
+                    )
                 }
-                Label(preset.strengths.joined(separator: " · "), systemImage: "sparkles")
+                Label {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        ForEach(Array(preset.strengthCopyTokens.enumerated()), id: \.offset) { index, token in
+                            if index > 0 {
+                                Text(verbatim: "·")
+                                    .foregroundStyle(BaseballTheme.textTertiary)
+                            }
+                            Text(verbatim: copyResolver.resolve(token))
+                        }
+                    }
+                } icon: {
+                    Image(systemName: "sparkles")
+                }
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.positive)
                     .fixedSize(horizontal: false, vertical: true)
-                Label(preset.tradeoff, systemImage: "exclamationmark.triangle")
+                Label {
+                    Text(verbatim: copyResolver.resolve(preset.tradeoffCopyToken))
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle")
+                }
                     .font(.footnote)
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)

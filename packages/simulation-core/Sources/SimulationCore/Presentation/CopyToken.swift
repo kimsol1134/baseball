@@ -48,6 +48,9 @@ public enum PresentationCopyFamily: String, CaseIterable, Sendable {
     case chapterReview = "chapter-review"
     case tournament
     case chapterGoal = "chapter-goal"
+    case draftResult = "draft-result"
+    case personality
+    case chronicle
 }
 
 /// Typed values passed across the language-neutral presentation boundary.
