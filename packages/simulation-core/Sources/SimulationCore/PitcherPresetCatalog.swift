@@ -281,7 +281,11 @@ public enum PitcherPresetCatalog {
                   let new = calibrated.profile(for: current.pitchType) else { return current }
             return PitchProfileSnapshot(
                 pitchType: current.pitchType, role: new.role,
-                velocityTenthsKPH: clamp(new.velocityTenthsKPH + current.velocityTenthsKPH - old.velocityTenthsKPH, 1_000, 1_700),
+                velocityTenthsKPH: clamp(
+                    new.velocityTenthsKPH + current.velocityTenthsKPH - old.velocityTenthsKPH,
+                    1_000,
+                    PitchAbilityRules.maximumProfileVelocityTenthsKPH(for: current.pitchType)
+                ),
                 control: clamp(new.control + current.control - old.control, 20, 80),
                 command: clamp(new.command + current.command - old.command, 20, 80),
                 movement: clamp(new.movement + current.movement - old.movement, 20, 80),

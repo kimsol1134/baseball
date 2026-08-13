@@ -54,6 +54,37 @@ final class PitcherDevelopmentRulesTests: XCTestCase {
         XCTAssertEqual(PitcherBuildRules.identity(for: movement), .movement)
     }
 
+    func testVelocityGrowthStopsAtGroundedProfileCeiling() throws {
+        let nearCeiling = PitcherSnapshot(
+            id: pitcher.id,
+            name: pitcher.name,
+            stuff: 79,
+            command: pitcher.command,
+            movement: pitcher.movement,
+            stamina: pitcher.stamina,
+            pitchProfiles: pitcher.pitchProfiles?.map { profile in
+                PitchProfileSnapshot(
+                    pitchType: profile.pitchType,
+                    role: profile.role,
+                    velocityTenthsKPH: 1_598,
+                    control: profile.control,
+                    command: profile.command,
+                    movement: profile.movement,
+                    whiff: profile.whiff,
+                    weakContact: profile.weakContact,
+                    fatigueCost: profile.fatigueCost
+                )
+            }
+        )
+
+        let grown = PitcherGrowthRules.grow(nearCeiling, focus: .velocity, points: 4)
+        XCTAssertEqual(grown.stuff, 80)
+        XCTAssertTrue(try XCTUnwrap(grown.pitchProfiles).allSatisfy {
+            $0.velocityTenthsKPH
+                == PitchAbilityRules.maximumProfileVelocityTenthsKPH(for: $0.pitchType)
+        })
+    }
+
     func testHighStaminaProducesDifferentAndBetterLateOutingAggregate() {
         let low = PitcherSnapshot(
             id: pitcher.id, name: pitcher.name, stuff: 50, command: 50,

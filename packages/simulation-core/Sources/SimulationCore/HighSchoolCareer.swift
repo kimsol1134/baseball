@@ -3137,7 +3137,11 @@ public struct HighSchoolCareerEngine: Sendable {
                 ?? pitchSet.map { $0.contains(profile.pitchType) }
                 ?? (nonFastball ? profile.pitchType != .fourSeam : true)
             return PitchProfileSnapshot(pitchType: profile.pitchType, role: profile.role,
-                velocityTenthsKPH: clamp(profile.velocityTenthsKPH + (matches ? velocity : 0), 1_000, 1_700),
+                velocityTenthsKPH: clamp(
+                    profile.velocityTenthsKPH + (matches ? velocity : 0),
+                    1_000,
+                    PitchAbilityRules.maximumProfileVelocityTenthsKPH(for: profile.pitchType)
+                ),
                 control: clamp(profile.control + (matches ? control : 0), 20, 80),
                 command: clamp(profile.command + (matches ? profileCommand : 0), 20, 80),
                 movement: clamp(profile.movement + (matches ? profileMovement : 0), 20, 80),
@@ -3166,7 +3170,11 @@ public struct HighSchoolCareerEngine: Sendable {
                 PitchProfileSnapshot(
                     pitchType: profile.pitchType,
                     role: profile.role,
-                    velocityTenthsKPH: clamp(profile.velocityTenthsKPH + (focus == .velocity ? points * 5 : 0), 1_000, 1_700),
+                    velocityTenthsKPH: clamp(
+                        profile.velocityTenthsKPH + (focus == .velocity ? points * 5 : 0),
+                        1_000,
+                        PitchAbilityRules.maximumProfileVelocityTenthsKPH(for: profile.pitchType)
+                    ),
                     control: clamp(profile.control + (focus == .command ? points : 0), 20, 80),
                     command: clamp(profile.command + (focus == .command || focus == .gamePlanning ? points : 0), 20, 80),
                     movement: clamp(profile.movement + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),

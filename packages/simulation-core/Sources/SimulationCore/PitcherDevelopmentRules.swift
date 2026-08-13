@@ -93,7 +93,8 @@ public enum PitcherGrowthRules {
                 && (breakingTarget == nil || profile.pitchType == breakingTarget)
             let velocity = bounded(
                 profile.velocityTenthsKPH + (focus == .velocity ? points * 5 : 0),
-                1_000, 1_700
+                1_000,
+                PitchAbilityRules.maximumProfileVelocityTenthsKPH(for: profile.pitchType)
             )
             let control = bounded(
                 profile.control + (focus == .command ? points : 0),

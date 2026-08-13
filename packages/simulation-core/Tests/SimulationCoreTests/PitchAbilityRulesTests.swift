@@ -59,7 +59,7 @@ final class PitchAbilityRulesTests: XCTestCase {
         XCTAssertEqual(normal.commandRating, 64)
         XCTAssertEqual(
             normal.nominalVelocityTenthsKPH,
-            1_470 + (pitcher.stuff - 50) * 2 - normal.effectiveFatigue
+            1_470 - normal.effectiveFatigue
         )
         XCTAssertEqual(normal.fatigueCost, 1)
         XCTAssertEqual(normal.movementRating, 57)
@@ -92,6 +92,46 @@ final class PitchAbilityRulesTests: XCTestCase {
             PitchAbilityRules.intensityEffect(.maxEffort).commandPenalty,
             PitchAbilityRules.intensityEffect(.controlled).commandPenalty
         )
+    }
+
+    func testLegacyEliteProfileIsGroundedByPitchIntensity() {
+        let legacyElite = PitcherSnapshot(
+            id: "legacy-elite",
+            name: "구속 상한 투수",
+            stuff: 80,
+            command: 60,
+            movement: 60,
+            stamina: 80,
+            pitchProfiles: [
+                PitchProfileSnapshot(
+                    pitchType: .fourSeam,
+                    role: .primary,
+                    velocityTenthsKPH: 1_700,
+                    control: 60,
+                    command: 60,
+                    movement: 60,
+                    whiff: 80,
+                    weakContact: 60,
+                    fatigueCost: 2
+                )
+            ]
+        )
+
+        let controlled = PitchAbilityRules.nominalVelocity(
+            pitcher: legacyElite, pitchType: .fourSeam, intensity: .controlled, fatigue: 0
+        )
+        let normal = PitchAbilityRules.nominalVelocity(
+            pitcher: legacyElite, pitchType: .fourSeam, intensity: .normal, fatigue: 0
+        )
+        let maxEffort = PitchAbilityRules.nominalVelocity(
+            pitcher: legacyElite, pitchType: .fourSeam, intensity: .maxEffort, fatigue: 0
+        )
+
+        XCTAssertEqual(controlled, 1_580)
+        XCTAssertEqual(normal, 1_600)
+        XCTAssertEqual(maxEffort, 1_640)
+        XCTAssertLessThan(controlled, normal)
+        XCTAssertLessThan(normal, maxEffort)
     }
 
     func testAbilityMomentOnlyCelebratesARelevantResolvedStrength() {

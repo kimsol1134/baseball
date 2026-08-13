@@ -58,6 +58,21 @@ namespace Baseball.Core.Pitching
 
     public static class PitchAbilityRules
     {
+        public const int MaximumProfileVelocityTenthsKph = 1600;
+        public const int MaximumExecutedVelocityTenthsKph = 1650;
+
+        public static int MaximumProfileVelocity(PitchType type)
+        {
+            switch (type)
+            {
+                case PitchType.FourSeam: return 1600;
+                case PitchType.Slider: return 1500;
+                case PitchType.Curveball: return 1370;
+                case PitchType.Changeup: return 1480;
+                default: throw new ArgumentOutOfRangeException(nameof(type));
+            }
+        }
+
         public static PitchAbilityReadout Readout(PitcherSnapshot pitcher, PitchCall call, PlateAppearanceContext context)
         {
             var profile = pitcher.Profile(call.PitchType);
@@ -103,7 +118,12 @@ namespace Baseball.Core.Pitching
         {
             var profile = pitcher.Profile(type);
             var baseVelocity = profile == null ? BaseVelocity(type) + (pitcher.Stuff - 50) * 4 : profile.VelocityTenthsKph;
-            return baseVelocity + Intensity(intensity).VelocityBonusTenthsKph - fatigue;
+            var rawVelocity = baseVelocity + Intensity(intensity).VelocityBonusTenthsKph - fatigue;
+            var profileCeiling = MaximumProfileVelocity(type);
+            var ceiling = intensity == PitchIntensity.Controlled ? profileCeiling - 20
+                : intensity == PitchIntensity.Normal ? profileCeiling
+                : profileCeiling + (type == PitchType.FourSeam ? 40 : 30);
+            return Math.Min(rawVelocity, ceiling);
         }
 
         public static int FatigueCost(PitchIntensity intensity, PitchProfileSnapshot profile)

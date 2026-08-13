@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Baseball.Core.Domain;
+using Baseball.Core.Pitching;
 
 namespace Baseball.Core.HighSchool
 {
@@ -77,7 +78,7 @@ namespace Baseball.Core.HighSchool
                     var velocity = Bound(
                         profile.VelocityTenthsKph + (focus == TrainingFocus.Velocity ? points * 5 : 0),
                         1000,
-                        1700);
+                        PitchAbilityRules.MaximumProfileVelocity(profile.PitchType));
                     var control = Bound(
                         profile.Control + (focus == TrainingFocus.Command ? points : 0),
                         20,

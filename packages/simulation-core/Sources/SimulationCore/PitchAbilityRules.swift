@@ -147,6 +147,21 @@ public enum PitchAbilityRules {
         let velocityBonusTenthsKPH: Int
     }
 
+    /// 육성 수치와 구위 보너스가 중첩되더라도 경기 화면에 판타지 구속이 노출되지 않게 하는
+    /// 현실 기반 상한. 과거 저장본의 170km/h 프로필은 읽을 수 있게 두고 실제 투구에서만
+    /// 완만하게 정상화한다.
+    public static let maximumProfileVelocityTenthsKPH = 1_600
+    public static let maximumExecutedVelocityTenthsKPH = 1_650
+
+    public static func maximumProfileVelocityTenthsKPH(for pitchType: PitchType) -> Int {
+        switch pitchType {
+        case .fourSeam: 1_600
+        case .slider: 1_500
+        case .curveball: 1_370
+        case .changeup: 1_480
+        }
+    }
+
     static func intensityEffect(_ intensity: PitchIntensity) -> IntensityEffect {
         switch intensity {
         // 셋 중 하나가 네 축(삼진·볼넷·피안타·실점) 전부에서 이기면 그건 선택지가 아니라
@@ -158,9 +173,9 @@ public enum PitchAbilityRules {
         // 줄고 구속을 더 잃는다(맞혀 잡는 쪽), 전력이면 제구를 덜 잃고 구속을 더 얻는다
         // (헛스윙 쪽). 어느 쪽도 공짜가 아니게 만드는 것이 목적이다.
         //
-        // 구속 폭(±10.5·13.0km/h)은 실제 투수의 완급보다 크다. −90/+115까지 낮춰 봤더니
-        // 전력투구의 삼진 우위가 사라져(26.1 = 힘 빼기와 동률) 거래가 다시 무너졌다.
-        // 야구적 사실성보다 **선택이 성립하는 것**을 택했다. 20,000타석 실측:
+        // 강도별 원시 보너스는 선택의 손익을 유지하되, 실제 표시 구속은 아래의 현실 기반
+        // 상한으로 제한한다. 강한 투수의 정체성은 구속 숫자만이 아니라 헛스윙·제구·변화와
+        // 체력에서 함께 드러나므로 170km/h를 넘겨 선택을 설명하지 않는다. 20,000타석 실측:
         //   힘 빼기 삼진 26.1 / 볼넷 9.4 / 피안타 16.4 / 실점 0.064
         //   보통     삼진 25.2 / 볼넷 10.4 / 피안타 17.2 / 실점 0.070
         //   전력     삼진 26.5 / 볼넷 12.5 / 피안타 17.1 / 실점 0.075
@@ -187,10 +202,20 @@ public enum PitchAbilityRules {
         fatigue: Int
     ) -> Int {
         let profile = pitcher.profile(for: pitchType)
-        let base = (profile?.velocityTenthsKPH ?? baseVelocityTenthsKPH(pitchType))
-            + (pitcher.stuff - 50) * 2
+        // 프로필 구속은 이미 구위 성장을 반영한 실제 기준값이다. 구위를 다시 더하면 같은
+        // 성장을 두 번 계산해 170km/h를 훌쩍 넘기므로, 프로필이 없는 구형 저장본에만
+        // 종합 구위로 기준 구속을 보완한다.
+        let base = profile?.velocityTenthsKPH
+            ?? baseVelocityTenthsKPH(pitchType) + (pitcher.stuff - 50) * 2
         let pressure = effectiveFatigue(rawFatigue: fatigue, stamina: pitcher.stamina)
-        return base + intensityEffect(intensity).velocityBonusTenthsKPH - pressure
+        let rawVelocity = base + intensityEffect(intensity).velocityBonusTenthsKPH - pressure
+        let profileCeiling = maximumProfileVelocityTenthsKPH(for: pitchType)
+        let intensityCeiling: Int = switch intensity {
+        case .controlled: profileCeiling - 20
+        case .normal: profileCeiling
+        case .maxEffort: profileCeiling + (pitchType == .fourSeam ? 40 : 30)
+        }
+        return min(rawVelocity, intensityCeiling)
     }
 
     /// 체력 50을 중립으로 두고 원피로를 75~125%로 조정한다. 피로가 0이면 어떤 체력도

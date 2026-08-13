@@ -1341,6 +1341,49 @@ final class PitchKernelEngineTests: XCTestCase {
         }
     }
 
+    func testEliteFastballNeverDisplaysFantasyVelocity() throws {
+        let elite = PitcherSnapshot(
+            id: "elite",
+            name: "최고 구속 투수",
+            stuff: 80,
+            command: 80,
+            movement: 70,
+            stamina: 80,
+            pitchProfiles: [
+                PitchProfileSnapshot(
+                    pitchType: .fourSeam,
+                    role: .primary,
+                    velocityTenthsKPH: 1_700,
+                    control: 80,
+                    command: 80,
+                    movement: 70,
+                    whiff: 80,
+                    weakContact: 70,
+                    fatigueCost: 1
+                )
+            ]
+        )
+        let call = PitchCall(
+            pitchType: .fourSeam,
+            zone: PitchZone(row: 1, column: 1),
+            zoneIntent: .strike,
+            intensity: .maxEffort
+        )
+
+        var velocities: [Int] = []
+        for seed in 1...100 {
+            velocities.append(
+                try submitPresetPitch(seed: seed, pitcher: elite, call: call)
+                    .snapshot.execution.velocityTenthsKPH
+            )
+        }
+
+        XCTAssertTrue(velocities.allSatisfy {
+            $0 <= PitchAbilityRules.maximumExecutedVelocityTenthsKPH
+        })
+        XCTAssertEqual(velocities.max(), PitchAbilityRules.maximumExecutedVelocityTenthsKPH)
+    }
+
     func testHighSchoolPresetRatingsAndFastballsLeaveRoomToDevelop() throws {
         let presets = PitcherPresetCatalog.all
         let fastballs = try presets.map { preset in

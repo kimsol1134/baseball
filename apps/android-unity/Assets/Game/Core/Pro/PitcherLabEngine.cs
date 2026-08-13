@@ -5,6 +5,7 @@ using System.Linq;
 using Baseball.Core.Catalogs;
 using Baseball.Core.Domain;
 using Baseball.Core.HighSchool;
+using Baseball.Core.Pitching;
 using Baseball.Core.Random;
 
 namespace Baseball.Core.Pro
@@ -279,7 +280,10 @@ namespace Baseball.Core.Pro
             IReadOnlyList<PitchProfileSnapshot> profiles = null;
             if (pitcher.PitchProfiles != null)
                 profiles = pitcher.PitchProfiles.Select(profile => new PitchProfileSnapshot(profile.PitchType, profile.Role,
-                    Clamp(profile.VelocityTenthsKph + (focus == TrainingFocus.Velocity ? points * 5 : 0), 1000, 1700),
+                    Clamp(
+                        profile.VelocityTenthsKph + (focus == TrainingFocus.Velocity ? points * 5 : 0),
+                        1000,
+                        PitchAbilityRules.MaximumProfileVelocity(profile.PitchType)),
                     Clamp(profile.Control + (focus == TrainingFocus.Command ? points : 0), 20, 80),
                     Clamp(profile.Command + (focus == TrainingFocus.Command || focus == TrainingFocus.GamePlanning ? points : 0), 20, 80),
                     Clamp(profile.Movement + (focus == TrainingFocus.BreakingBall && profile.PitchType != PitchType.FourSeam ? points * 2 : 0), 20, 80),

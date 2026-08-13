@@ -155,6 +155,41 @@ namespace Baseball.Tests.EditMode.Core
         }
 
         [Test]
+        public void LegacyEliteFastballNeverDisplaysFantasyVelocity()
+        {
+            var elite = new PitcherSnapshot(
+                "elite", "최고 구속 투수", 80, 80, 70, 80,
+                new[]
+                {
+                    new PitchProfileSnapshot(
+                        PitchType.FourSeam, PitchUsageRole.Primary, 1700,
+                        80, 80, 70, 80, 70, 1)
+                });
+            var call = new PitchCall(
+                PitchType.FourSeam, new PitchZone(1, 1), ZoneIntent.Strike,
+                PitchIntensity.MaxEffort);
+
+            var velocities = new List<int>();
+            for (var seed = 1; seed <= 100; seed++)
+            {
+                var baseInput = FixtureInput(seed.ToString());
+                var input = new PreparePitchParams(
+                    baseInput.Seed, elite, baseInput.Batter, baseInput.Scouting,
+                    baseInput.Context);
+                var preparation = engine.PreparePitch(input);
+                var command = new SubmitPitchParams(
+                    input.Seed, input.Pitcher, input.Batter, input.Scouting,
+                    input.Context, preparation.PreparationToken, call);
+                velocities.Add(engine.SubmitPitch(command).Snapshot.Execution.VelocityTenthsKph);
+            }
+
+            Assert.That(velocities.All(value =>
+                value <= PitchAbilityRules.MaximumExecutedVelocityTenthsKph), Is.True);
+            Assert.That(velocities.Max(), Is.EqualTo(
+                PitchAbilityRules.MaximumExecutedVelocityTenthsKph));
+        }
+
+        [Test]
         public void PreparationIsDeterministicAndCannotReadThePlayerCall()
         {
             var input = FixtureInput("99");

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Baseball.Core.Domain;
+using Baseball.Core.Pitching;
 
 namespace Baseball.Core.HighSchool
 {
@@ -20,7 +21,7 @@ namespace Baseball.Core.HighSchool
             else return null;
             var applied=TalentRules.Apply(state.Talent,ability,Rating(ability,state.Pitcher),1);var limit=applied.Allowed==0&&!applied.Bloomed.HasValue?" 재능 한계에 닿아 능력치는 오르지 않았지만 압박이 남았습니다.":"";var bloom=applied.Bloomed.HasValue?" "+AbilityLabel(applied.Bloomed.Value)+" 재능이 "+applied.Talent.Grade(applied.Bloomed.Value)+"로 만개했습니다.":"";var title=applied.Allowed>0?"경기 기반 성장 · "+AbilityLabel(ability)+" +"+applied.Allowed:"경기 기반 성장 · "+AbilityLabel(ability)+" 한계 압박";return new CareerGameGrowth(ability,applied.Allowed,reason,title,evidence+bloom+limit,applied.Talent,applied.Bloomed);
         }
-        public PitcherSnapshot Applying(PitcherSnapshot p){if(Points<=0)return p;var profiles=p.PitchProfiles==null?null:p.PitchProfiles.Select(x=>new PitchProfileSnapshot(x.PitchType,x.Role,Bound(x.VelocityTenthsKph+(Ability==TalentAbility.Stuff?Points*5:0),1000,1700),Bound(x.Control+(Ability==TalentAbility.Command?Points:0),20,80),Bound(x.Command+(Ability==TalentAbility.Command?Points:0),20,80),Bound(x.Movement+(Ability==TalentAbility.Movement&&x.PitchType!=PitchType.FourSeam?Points:0),20,80),Bound(x.Whiff+(Ability==TalentAbility.Movement&&x.PitchType!=PitchType.FourSeam?Points:0),20,80),x.WeakContact,Ability==TalentAbility.Stamina?Math.Max(0,x.FatigueCost-Points/2):x.FatigueCost)).ToArray();return new PitcherSnapshot(p.Id,p.Name,Bound(p.Stuff+(Ability==TalentAbility.Stuff?Points:0),20,80),Bound(p.Command+(Ability==TalentAbility.Command?Points:0),20,80),Bound(p.Movement+(Ability==TalentAbility.Movement?Points:0),20,80),Bound(p.Stamina+(Ability==TalentAbility.Stamina?Points:0),20,80),profiles,p.ThrowingHand);}
+        public PitcherSnapshot Applying(PitcherSnapshot p){if(Points<=0)return p;var profiles=p.PitchProfiles==null?null:p.PitchProfiles.Select(x=>new PitchProfileSnapshot(x.PitchType,x.Role,Bound(x.VelocityTenthsKph+(Ability==TalentAbility.Stuff?Points*5:0),1000,PitchAbilityRules.MaximumProfileVelocity(x.PitchType)),Bound(x.Control+(Ability==TalentAbility.Command?Points:0),20,80),Bound(x.Command+(Ability==TalentAbility.Command?Points:0),20,80),Bound(x.Movement+(Ability==TalentAbility.Movement&&x.PitchType!=PitchType.FourSeam?Points:0),20,80),Bound(x.Whiff+(Ability==TalentAbility.Movement&&x.PitchType!=PitchType.FourSeam?Points:0),20,80),x.WeakContact,Ability==TalentAbility.Stamina?Math.Max(0,x.FatigueCost-Points/2):x.FatigueCost)).ToArray();return new PitcherSnapshot(p.Id,p.Name,Bound(p.Stuff+(Ability==TalentAbility.Stuff?Points:0),20,80),Bound(p.Command+(Ability==TalentAbility.Command?Points:0),20,80),Bound(p.Movement+(Ability==TalentAbility.Movement?Points:0),20,80),Bound(p.Stamina+(Ability==TalentAbility.Stamina?Points:0),20,80),profiles,p.ThrowingHand);}
         private static int Rating(TalentAbility a,PitcherSnapshot p)=>a==TalentAbility.Stuff?p.Stuff:a==TalentAbility.Command?p.Command:a==TalentAbility.Movement?p.Movement:p.Stamina;
         private static int Bound(int x,int l,int h)=>Math.Min(h,Math.Max(l,x));
         private static string AbilityLabel(TalentAbility a)=>a==TalentAbility.Stuff?"구위":a==TalentAbility.Command?"제구":a==TalentAbility.Movement?"변화구":"체력";

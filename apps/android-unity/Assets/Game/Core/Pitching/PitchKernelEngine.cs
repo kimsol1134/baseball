@@ -418,9 +418,10 @@ namespace Baseball.Core.Pitching
                 case PitchType.Curveball: horizontal = -65; vertical = -185; break;
                 default: horizontal = 105; vertical = -45; break;
             }
-            var velocity = PitchAbilityRules.NominalVelocity(parameters.Pitcher, parameters.Call.PitchType,
+            var rawVelocity = PitchAbilityRules.NominalVelocity(parameters.Pitcher, parameters.Call.PitchType,
                 parameters.Call.Intensity, parameters.Context.Fatigue) + generator.NextInt(21) - 10 +
                 releaseShift * 10 / 500 + (perfect ? 6 : 0);
+            var velocity = Math.Min(PitchAbilityRules.MaximumExecutedVelocityTenthsKph, rawVelocity);
             var movementScale = (profile == null ? parameters.Pitcher.Movement : profile.Movement) - 50;
             var actualX = target.X + offsetX; var actualY = target.Y + offsetY;
             horizontal += movementScale * 2; vertical += movementScale * 2;
@@ -440,9 +441,11 @@ namespace Baseball.Core.Pitching
                 var magnus = progress * progress;
                 var lateral = initialLateral * elapsed + horizontalMeters * magnus;
                 var height = 1.85 + initialVertical * elapsed - 0.5 * 9.81 * elapsed * elapsed + verticalMeters * magnus;
+                var remainingDistance = index == 24 ? 0
+                    : (int)Math.Round(18440.0 * (1.0 - travelled), MidpointRounding.AwayFromZero);
                 trajectory.Add(flightMs * index / 24);
                 trajectory.Add((int)Math.Round(lateral * 1000.0, MidpointRounding.AwayFromZero));
-                trajectory.Add((int)Math.Round(18440.0 * (1.0 - travelled), MidpointRounding.AwayFromZero));
+                trajectory.Add(remainingDistance);
                 trajectory.Add((int)Math.Round(height * 1000.0, MidpointRounding.AwayFromZero));
             }
             const int controlOffset = 60;

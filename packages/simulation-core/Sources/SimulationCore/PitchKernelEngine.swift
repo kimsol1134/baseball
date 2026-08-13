@@ -1171,7 +1171,7 @@ public struct PitchKernelEngine: Sendable {
             horizontalBreak = 105
             verticalBreak = -45
         }
-        let velocity = PitchAbilityRules.nominalVelocity(
+        let rawVelocity = PitchAbilityRules.nominalVelocity(
             pitcher: params.pitcher,
             pitchType: params.call.pitchType,
             intensity: params.call.intensity,
@@ -1184,6 +1184,7 @@ public struct PitchKernelEngine: Sendable {
             // A perfect release adds another 0.6 km/h on top. Small in the sim, but it is the
             // number on screen right after the throw — the player sees the reward immediately.
             + (perfectRelease ? 6 : 0)
+        let velocity = min(PitchAbilityRules.maximumExecutedVelocityTenthsKPH, rawVelocity)
         let movementScale = (profile?.movement ?? params.pitcher.movement) - 50
         let actualX = target.x + offsetX
         let actualY = target.y + offsetY
@@ -1226,10 +1227,13 @@ public struct PitchKernelEngine: Sendable {
                 + initialVerticalVelocity * elapsedSeconds
                 - 0.5 * 9.81 * elapsedSeconds * elapsedSeconds
                 + verticalBreakMeters * magnusProgress
+            let remainingDistanceMillimeters = index == 24
+                ? 0
+                : Int((18_440.0 * (1.0 - travelledProgress)).rounded())
             return [
                 flightTimeMilliseconds * index / 24,
                 Int((lateralMeters * 1_000.0).rounded()),
-                Int((18_440.0 * (1.0 - travelledProgress)).rounded()),
+                remainingDistanceMillimeters,
                 Int((heightMeters * 1_000.0).rounded())
             ]
         }
@@ -1367,7 +1371,10 @@ public struct PitchKernelEngine: Sendable {
             // 바꾸지 않으면 그 훈련은 없는 것과 같다. 제구는 이미 `commandRating`에서
             // 투수 능력과 프로필을 섞고 있었으므로, 구위·변화도 같은 방식으로 섞는다.
             // 50이 영점이라 평균 투수에서는 값이 그대로다 — 실측 리그 기준 보정은 흔들리지 않는다.
-            ratingDifficulty = (params.pitcher.stuff - 50) * 4
+            // 프로필 구속에 종합 구위를 다시 더하던 중복 계산을 제거하면서 사라진
+            // `(stuff - 50)`만 헛스윙 난도로 옮긴다. 화면 숫자는 현실적으로 유지하되,
+            // 구위에 투자한 캐릭터의 탈삼진 정체성은 약해지지 않는다.
+            ratingDifficulty = (params.pitcher.stuff - 50) * 5
                 + (profile.whiff - 50) * 4
                 + (params.pitcher.movement - 50) * 3
                 + (profile.movement - 50) * 3
