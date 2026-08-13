@@ -219,6 +219,7 @@ final class PlayerBondStoryTests: XCTestCase {
             inheritance: .firstLife,
             archive: [],
             bondMemories: [memory],
+            rebirthEventIDs: ["evt-deja-vu-mound"],
             revision: 1
         )
         let restored = try JSONDecoder().decode(
@@ -226,6 +227,7 @@ final class PlayerBondStoryTests: XCTestCase {
             from: JSONEncoder().encode(save)
         )
         XCTAssertEqual(restored.bondMemories, [memory])
+        XCTAssertEqual(restored.rebirthEventIDs, ["evt-deja-vu-mound"])
 
         let state = try HighSchoolCareerEngine().start(.init(
             seed: "727272",
@@ -354,7 +356,9 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertEqual(echo.inheritedMemoryCount, 1)
         XCTAssertTrue(echo.hadArmWarning)
         XCTAssertTrue(echo.hadCollapseGame)
+        XCTAssertTrue(echo.hasRunsAllowedFact)
         XCTAssertTrue(echo.wasUndrafted)
+        XCTAssertEqual(echo.previousLifeNumber, 2)
 
         let clean = HighSchoolCareerStore.rebirthEcho(
             from: life(drafted: true, chronicle: ["3학년 여름 — 마지막 경기를 마쳤습니다."]),
@@ -364,6 +368,30 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertFalse(clean.hadCollapseGame)
         XCTAssertFalse(clean.wasUndrafted)
         XCTAssertNil(clean.previousNickname)
+    }
+
+    func testRebirthEchoCarriesLineagePowerAndRecentSceneRing() {
+        var oldest = life(drafted: true, lifeNumber: 1, playerName: "첫 선수")
+        oldest.rebirthEventIDs = ["evt-deja-vu-mound", "evt-known-coach"]
+        var recent = life(drafted: true, lifeNumber: 2, playerName: "둘째 선수")
+        recent.coachName = "박 감독"
+        recent.rivalName = "윤해성"
+        recent.rebirthEventIDs = ["evt-second-summer", "evt-known-coach"]
+
+        let ring = HighSchoolCareerStore.recentRebirthEventIDs(from: [oldest, recent])
+        XCTAssertEqual(ring, ["evt-deja-vu-mound", "evt-second-summer", "evt-known-coach"])
+
+        let echo = HighSchoolCareerStore.rebirthEcho(
+            from: recent,
+            inheritedMemoryCount: 0,
+            inheritedLegacyID: .commandMap,
+            automaticInheritanceTotal: 12,
+            recentEventIDs: ring
+        )
+        XCTAssertTrue(echo.hasInheritedPower)
+        XCTAssertEqual(echo.previousCoachName, "박 감독")
+        XCTAssertEqual(echo.previousRivalName, "윤해성")
+        XCTAssertEqual(echo.recentEventIDs, ring)
     }
 
     func testLineageMasteryCountsOneSelectedLegacyPerLife() {

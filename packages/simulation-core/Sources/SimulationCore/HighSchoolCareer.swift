@@ -786,6 +786,16 @@ public struct RebirthEchoSnapshot: Codable, Equatable, Sendable {
     public let hadArmWarning: Bool
     public let hadCollapseGame: Bool
     public let wasUndrafted: Bool
+    /// Added as optional facts so saves from before the richer echo receipt still decode and
+    /// retain their original commitment token.
+    public let previousLifeNumber: Int?
+    public let previousCoachName: String?
+    public let previousRivalName: String?
+    public let inheritedLegacyID: String?
+    public let automaticInheritanceTotal: Int?
+    public let hadRunsAllowed: Bool?
+    /// Oldest to newest. The selector first uses unseen events, then the least-recent event.
+    public let recentEventIDs: [String]?
 
     public init(
         previousPlayerName: String? = nil,
@@ -794,7 +804,14 @@ public struct RebirthEchoSnapshot: Codable, Equatable, Sendable {
         inheritedMemoryCount: Int = 0,
         hadArmWarning: Bool = false,
         hadCollapseGame: Bool = false,
-        wasUndrafted: Bool = false
+        wasUndrafted: Bool = false,
+        previousLifeNumber: Int? = nil,
+        previousCoachName: String? = nil,
+        previousRivalName: String? = nil,
+        inheritedLegacyID: String? = nil,
+        automaticInheritanceTotal: Int? = nil,
+        hadRunsAllowed: Bool? = nil,
+        recentEventIDs: [String]? = nil
     ) {
         self.previousPlayerName = previousPlayerName
         self.previousSchoolName = previousSchoolName
@@ -803,10 +820,23 @@ public struct RebirthEchoSnapshot: Codable, Equatable, Sendable {
         self.hadArmWarning = hadArmWarning
         self.hadCollapseGame = hadCollapseGame
         self.wasUndrafted = wasUndrafted
+        self.previousLifeNumber = previousLifeNumber
+        self.previousCoachName = previousCoachName
+        self.previousRivalName = previousRivalName
+        self.inheritedLegacyID = inheritedLegacyID
+        self.automaticInheritanceTotal = automaticInheritanceTotal
+        self.hadRunsAllowed = hadRunsAllowed
+        self.recentEventIDs = recentEventIDs
     }
 
+    public var hasInheritedPower: Bool {
+        inheritedMemoryCount > 0 || inheritedLegacyID != nil || (automaticInheritanceTotal ?? 0) > 0
+    }
+
+    public var hasRunsAllowedFact: Bool { hadRunsAllowed ?? hadCollapseGame }
+
     var commitmentToken: String {
-        [
+        var tokens = [
             previousPlayerName ?? "none",
             previousSchoolName ?? "none",
             previousNickname ?? "none",
@@ -814,7 +844,21 @@ public struct RebirthEchoSnapshot: Codable, Equatable, Sendable {
             hadArmWarning ? "1" : "0",
             hadCollapseGame ? "1" : "0",
             wasUndrafted ? "1" : "0",
-        ].joined(separator: ":")
+        ]
+        if previousLifeNumber != nil || previousCoachName != nil || previousRivalName != nil
+            || inheritedLegacyID != nil || automaticInheritanceTotal != nil
+            || hadRunsAllowed != nil || recentEventIDs != nil {
+            tokens += [
+                String(previousLifeNumber ?? 0),
+                previousCoachName ?? "none",
+                previousRivalName ?? "none",
+                inheritedLegacyID ?? "none",
+                String(automaticInheritanceTotal ?? 0),
+                hadRunsAllowed == true ? "1" : "0",
+                recentEventIDs?.joined(separator: ",") ?? "none",
+            ]
+        }
+        return tokens.joined(separator: ":")
     }
 }
 
@@ -2636,9 +2680,13 @@ public struct HighSchoolCareerEngine: Sendable {
             )
             let guaranteedSlot = guaranteeGenerator.nextInt(upperBound: extendedSlotCount)
             if extendedSlot == guaranteedSlot || rebirthGenerator.nextInt(upperBound: 3) == 0 {
-                let pool = HighSchoolContentCatalog.eligibleRebirthEvents(
+                let eligible = HighSchoolContentCatalog.eligibleRebirthEvents(
                     echo: state.rebirthEcho,
                     currentSchoolName: state.school?.name
+                )
+                let pool = HighSchoolContentCatalog.prioritizedRebirthEvents(
+                    eligible,
+                    recentEventIDs: state.rebirthEcho?.recentEventIDs ?? []
                 )
                 return pool[rebirthGenerator.nextInt(upperBound: pool.count)]
             }

@@ -93,8 +93,8 @@ public enum HighSchoolContentCatalog {
               summary: "지난번에 팔을 다쳤던 그 주차입니다. 아프지 않은데 그 자리가 신경 쓰입니다."),
         .init(id: "evt-second-summer", title: "다시 맞는 3학년 여름", category: "rebirth",
               summary: "같은 계절, 같은 대회. 이번에는 결과를 알고 시작합니다."),
-        .init(id: "evt-remembered-pitch", title: "그 코스의 사인", category: "rebirth",
-              summary: "지난 삶에서 홈런을 맞았던 바로 그 코스에 사인이 나옵니다. 포수는 아무것도 모릅니다."),
+        .init(id: "evt-remembered-pitch", title: "실점의 기시감", category: "rebirth",
+              summary: "지난 삶에서 실점한 순간과 닮은 긴장이 돌아온 가운데 포수가 승부구 사인을 냅니다."),
         .init(id: "evt-lost-teammate", title: "그만둔 동료", category: "rebirth",
               summary: "지난 삶에서 끝까지 함께 던졌던 동료가, 이번 삶에서는 야구를 그만뒀다는 소식을 듣습니다."),
         .init(id: "evt-future-news", title: "결말을 아는 뉴스", category: "rebirth",
@@ -120,19 +120,22 @@ public enum HighSchoolContentCatalog {
 
         var eligibleIDs: Set<String> = [
             "evt-deja-vu-mound",
-            "evt-rival-deja-vu",
             "evt-second-summer",
             "evt-future-news",
             "evt-glove-worn",
         ]
-        if echo.inheritedMemoryCount > 0 {
+        if echo.hasInheritedPower {
             eligibleIDs.insert("evt-body-remembers")
         }
         if echo.hadArmWarning {
             eligibleIDs.insert("evt-memory-ache")
         }
-        if echo.hadCollapseGame {
+        if echo.hasRunsAllowedFact {
             eligibleIDs.insert("evt-remembered-pitch")
+        }
+        if let rivalName = echo.previousRivalName,
+           !rivalName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            eligibleIDs.insert("evt-rival-deja-vu")
         }
         if let nickname = echo.previousNickname,
            !nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -141,12 +144,26 @@ public enum HighSchoolContentCatalog {
         if echo.wasUndrafted {
             eligibleIDs.insert("evt-undrafted-deja")
         }
-        if let previousSchoolName = echo.previousSchoolName,
-           !previousSchoolName.isEmpty,
-           previousSchoolName == currentSchoolName {
+        if let coachName = echo.previousCoachName,
+           !coachName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             eligibleIDs.insert("evt-known-coach")
         }
         return rebirthEvents.filter { eligibleIDs.contains($0.id) }
+    }
+
+    /// Prefer a scene outside the recent ring. If every eligible scene is recent, return only
+    /// the least-recent candidates so deterministic random selection cannot immediately repeat.
+    public static func prioritizedRebirthEvents(
+        _ events: [CareerEventContent],
+        recentEventIDs: [String]
+    ) -> [CareerEventContent] {
+        guard !events.isEmpty, !recentEventIDs.isEmpty else { return events }
+        let recent = Set(recentEventIDs)
+        let unseen = events.filter { !recent.contains($0.id) }
+        if !unseen.isEmpty { return unseen }
+        let rank = Dictionary(uniqueKeysWithValues: recentEventIDs.enumerated().map { ($0.element, $0.offset) })
+        let oldestRank = events.compactMap { rank[$0.id] }.min()
+        return events.filter { rank[$0.id] == oldestRank }
     }
 
     /// Presentation-only union of every event ID that can reach the relationship card. The

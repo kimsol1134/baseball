@@ -595,7 +595,10 @@ final class HighSchoolCareerEngineTests: XCTestCase {
             inheritedMemoryCount: 2,
             hadArmWarning: true,
             hadCollapseGame: true,
-            wasUndrafted: true
+            wasUndrafted: true,
+            previousCoachName: "박 감독",
+            previousRivalName: "윤해성",
+            hadRunsAllowed: true
         )
         let grounded = Set(HighSchoolContentCatalog.eligibleRebirthEvents(
             echo: groundedEcho,
@@ -605,11 +608,54 @@ final class HighSchoolCareerEngineTests: XCTestCase {
             "evt-memory-ache", "evt-remembered-pitch", "evt-old-nickname",
             "evt-undrafted-deja", "evt-body-remembers", "evt-known-coach",
         ]))
-        XCTAssertFalse(
+        XCTAssertTrue(
             Set(HighSchoolContentCatalog.eligibleRebirthEvents(
                 echo: groundedEcho,
                 currentSchoolName: "다른 학교"
             ).map(\.id)).contains("evt-known-coach")
+        )
+        XCTAssertTrue(grounded.contains("evt-rival-deja-vu"))
+    }
+
+    func testRebirthEchoNewFactsRemainBackwardCompatibleAndDriveEligibility() throws {
+        let oldJSON = """
+        {
+          "previousPlayerName":"옛 선수",
+          "inheritedMemoryCount":0,
+          "hadArmWarning":false,
+          "hadCollapseGame":false,
+          "wasUndrafted":false
+        }
+        """
+        let old = try JSONDecoder().decode(RebirthEchoSnapshot.self, from: Data(oldJSON.utf8))
+        XCTAssertNil(old.previousLifeNumber)
+        XCTAssertFalse(old.hasInheritedPower)
+        XCTAssertFalse(old.hasRunsAllowedFact)
+
+        let legacyOnly = RebirthEchoSnapshot(inheritedLegacyID: "command_legacy")
+        let events = Set(HighSchoolContentCatalog.eligibleRebirthEvents(
+            echo: legacyOnly,
+            currentSchoolName: nil
+        ).map(\.id))
+        XCTAssertTrue(events.contains("evt-body-remembers"))
+    }
+
+    func testRebirthEventRotationAvoidsRecentScenesThenUsesLeastRecent() {
+        let events = Array(HighSchoolContentCatalog.rebirthEvents.prefix(3))
+        let recent = [events[0].id, events[1].id]
+        XCTAssertEqual(
+            HighSchoolContentCatalog.prioritizedRebirthEvents(
+                events,
+                recentEventIDs: recent
+            ).map(\.id),
+            [events[2].id]
+        )
+        XCTAssertEqual(
+            HighSchoolContentCatalog.prioritizedRebirthEvents(
+                events,
+                recentEventIDs: [events[0].id, events[1].id, events[2].id]
+            ).map(\.id),
+            [events[0].id]
         )
     }
 

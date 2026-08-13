@@ -3573,14 +3573,14 @@
     },
     "content.event.evt-remembered-pitch.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The Sign for That Corner" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "그 코스의 사인" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A Familiar Scoring Threat" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "실점의 기시감" } }
       }
     },
     "content.event.evt-remembered-pitch.summary" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The catcher calls the exact spot where you gave up a home run in your last life." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에서 홈런을 맞았던 바로 그 코스에 사인이 나옵니다. 포수는 아무것도 모릅니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The tension of a run-scoring moment from your last life returns as the catcher calls the put-away pitch." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에서 실점한 순간과 닮은 긴장이 돌아온 가운데 포수가 승부구 사인을 냅니다." } }
       }
     },
     "content.event.evt-lost-teammate.title" : {
@@ -8112,20 +8112,20 @@
     },
     "content.relationship.evt-remembered-pitch.quote.low" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The catcher called for the exact location that became a home run in my last life. Knowing nothing, he set the mitt. “Here. How about it?”" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 지난 삶에서 홈런을 맞았던 바로 그 코스에 사인을 냈다. 그는 아무것도 모른 채 미트를 댄다. “여기, 어때?”" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The tension of a run-scoring moment from my last life returned. Knowing nothing, the catcher called the put-away pitch. “Here. How about it?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에서 실점했던 순간과 닮은 긴장이 돌아왔다. 포수는 아무것도 모른 채 승부구 사인을 낸다. “여기, 어때?”" } }
       }
     },
     "content.relationship.evt-remembered-pitch.quote.mid" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The catcher called for the exact location that became a home run in my last life. Knowing nothing, he set the mitt. “Here. How about it?”" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 지난 삶에서 홈런을 맞았던 바로 그 코스에 사인을 냈다. 그는 아무것도 모른 채 미트를 댄다. “여기, 어때?”" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The tension of a run-scoring moment from my last life returned. Knowing nothing, the catcher called the put-away pitch. “Here. How about it?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에서 실점했던 순간과 닮은 긴장이 돌아왔다. 포수는 아무것도 모른 채 승부구 사인을 낸다. “여기, 어때?”" } }
       }
     },
     "content.relationship.evt-remembered-pitch.quote.high" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The catcher called for the exact location that became a home run in my last life. Knowing nothing, he set the mitt. “Here. How about it?”" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 지난 삶에서 홈런을 맞았던 바로 그 코스에 사인을 냈다. 그는 아무것도 모른 채 미트를 댄다. “여기, 어때?”" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The tension of a run-scoring moment from my last life returned. Knowing nothing, the catcher called the put-away pitch. “Here. How about it?”" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 삶에서 실점했던 순간과 닮은 긴장이 돌아왔다. 포수는 아무것도 모른 채 승부구 사인을 낸다. “여기, 어때?”" } }
       }
     },
     "content.relationship.evt-remembered-pitch.choice.listen.title" : {
@@ -8136,14 +8136,14 @@
     },
     "content.relationship.evt-remembered-pitch.choice.listen.detail" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Give the same location a chance to produce a different result with a different battery." } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "같은 코스라도 다른 배터리와 다른 결과를 만들 기회를 연다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Give this battery a chance to write a different ending under familiar pressure." } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "익숙한 압박 속에서도 이번 배터리와 다른 결말을 만들 기회를 연다" } }
       }
     },
     "content.relationship.evt-remembered-pitch.choice.explain.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Say that is the one location you want to avoid" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "그 코스만은 피하고 싶다고 말한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Say this pressure feels dangerously familiar" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 압박이 위험할 만큼 익숙하다고 말한다" } }
       }
     },
     "content.relationship.evt-remembered-pitch.choice.explain.detail" : {
@@ -8154,8 +8154,8 @@
     },
     "content.relationship.evt-remembered-pitch.choice.challenge.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Challenge one ball higher than last time" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난번보다 공 하나 높게 승부한다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Take control and challenge one ball higher" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주도권을 잡고 공 하나 높게 승부한다" } }
       }
     },
     "content.relationship.evt-remembered-pitch.choice.challenge.detail" : {

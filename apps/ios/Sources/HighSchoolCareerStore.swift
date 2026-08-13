@@ -157,6 +157,8 @@ final class HighSchoolCareerStore {
         /// The few relationship choices that defined this player. Optional keeps old archives
         /// readable; a run records at most one meaningful moment per chapter.
         var bondMemories: [PlayerBondMemory]? = nil
+        /// Stable IDs of the rebirth scenes this player actually encountered.
+        var rebirthEventIDs: [String]? = nil
 
         /// 구위·제구·변화·체력 네 값. 카드와 아카이브가 함께 쓴다.
         struct AbilityLine: Codable, Equatable {
@@ -363,6 +365,8 @@ final class HighSchoolCareerStore {
     /// Meaningful relationship decisions for the current player. Unlike the full chronicle this
     /// stays structured, so farewell, archive, and the next player's letter can recall it.
     private(set) var bondMemories: [PlayerBondMemory] = []
+    /// 환생 장면도 회차의 경험이다. 다음 삶이 직전 장면을 반복하지 않도록 저장한다.
+    private(set) var rebirthEventIDs: [String] = []
     /// 방금 경기에 대한 커뮤니티 반응. 저장하지 않는다 — careerID·경기 번호로
     /// 결정론이라 필요하면 언제든 다시 만들 수 있고, 반응은 "방금"의 것일 때만 살아 있다.
     /// Ephemeral presentation values. These stable IDs are intentionally outside every save
@@ -782,6 +786,7 @@ final class HighSchoolCareerStore {
         let previousInheritance = inheritance
         let previousLastSetup = lastSetup
         let previousBondMemories = bondMemories
+        let previousRebirthEventIDs = rebirthEventIDs
         if isChallenge {} else {
         lastSetup = LastSetup(
             presetID: preset.id, playerName: playerName, region: region,
@@ -833,7 +838,13 @@ final class HighSchoolCareerStore {
         )
         let previousLife = isChallenge ? nil : archive.first(where: { $0.lifeNumber < carried.lifeNumber })
         let rebirthEcho = previousLife.map {
-            Self.rebirthEcho(from: $0, inheritedMemoryCount: carried.memories.count)
+            Self.rebirthEcho(
+                from: $0,
+                inheritedMemoryCount: carried.memories.count,
+                inheritedLegacyID: equippedSignatureLegacyID,
+                automaticInheritanceTotal: carried.automaticSoulTotal,
+                recentEventIDs: Self.recentRebirthEventIDs(from: archive)
+            )
         }
         // 영혼 상점 정산 — 부스트 비용은 지갑 잔액에서만 차감한다. 자동 성장 누적은
         // 별도 원장이라 구매나 프로 보너스로 조용히 움직이지 않는다.
@@ -876,6 +887,7 @@ final class HighSchoolCareerStore {
             nicknames = []
             chronicle = []
             bondMemories = []
+            rebirthEventIDs = []
             chapterStartStrikeouts = 0
             goalCelebratedChapter = nil
             chapterGains = [:]
@@ -908,6 +920,7 @@ final class HighSchoolCareerStore {
                 inheritance = previousInheritance
                 lastSetup = previousLastSetup
                 bondMemories = previousBondMemories
+                rebirthEventIDs = previousRebirthEventIDs
                 careerStartingPitcher = nil
                 signatureLegacyRulesVersion = nil
                 frozenSignatureLegacyCandidates = nil
@@ -2095,6 +2108,7 @@ final class HighSchoolCareerStore {
                 signatureLegacy: signatureLegacy,
                 signatureLegacyCandidates: signatureCandidates.isEmpty ? nil : signatureCandidates,
                 bondMemories: bondMemories,
+                rebirthEventIDs: rebirthEventIDs,
                 startingPitcher: careerStartingPitcher
             )
             let nextInheritance = Self.nextInheritance(
@@ -2308,6 +2322,7 @@ final class HighSchoolCareerStore {
         signatureLegacy: CareerSignatureLegacy? = nil,
         signatureLegacyCandidates: [CareerSignatureLegacy]? = nil,
         bondMemories: [PlayerBondMemory] = [],
+        rebirthEventIDs: [String] = [],
         /// 이 회차를 시작할 때의 능력. 카드가 "얼마나 키웠는지"를 말하려면 시작점이 있어야 한다.
         startingPitcher: PitcherSnapshot? = nil
     ) -> LifeRecord {
@@ -2356,7 +2371,8 @@ final class HighSchoolCareerStore {
             signatureLegacyCandidates: signatureLegacyCandidates,
             inheritedLineageLoadout: state.lineageLoadout,
             bondMemories: Self.normalizedBondMemories(bondMemories).isEmpty
-                ? nil : Self.normalizedBondMemories(bondMemories)
+                ? nil : Self.normalizedBondMemories(bondMemories),
+            rebirthEventIDs: rebirthEventIDs.isEmpty ? nil : Array(rebirthEventIDs.suffix(6))
         )
         record.pitches = state.performance.pitches
         record.outs = state.performance.outs
@@ -2371,7 +2387,10 @@ final class HighSchoolCareerStore {
 
     nonisolated static func rebirthEcho(
         from record: LifeRecord,
-        inheritedMemoryCount: Int
+        inheritedMemoryCount: Int,
+        inheritedLegacyID: CareerSignatureLegacyID? = nil,
+        automaticInheritanceTotal: Int = 0,
+        recentEventIDs: [String] = []
     ) -> RebirthEchoSnapshot {
         let inferredArmWarning = record.bondMemories?.contains(where: { $0.kind == .healthChoice }) == true
             || record.chronicle?.contains(where: { $0.contains("팔") || $0.contains("재활") }) == true
@@ -2382,8 +2401,31 @@ final class HighSchoolCareerStore {
             inheritedMemoryCount: inheritedMemoryCount,
             hadArmWarning: record.hadArmWarning ?? inferredArmWarning,
             hadCollapseGame: record.chronicle?.contains(where: { $0.contains("무너진 날") }) == true,
-            wasUndrafted: !record.drafted
+            wasUndrafted: !record.drafted,
+            previousLifeNumber: record.lifeNumber,
+            previousCoachName: record.coachName,
+            previousRivalName: record.rivalName,
+            inheritedLegacyID: inheritedLegacyID?.rawValue,
+            automaticInheritanceTotal: automaticInheritanceTotal,
+            hadRunsAllowed: record.runsAllowed > 0,
+            recentEventIDs: recentEventIDs
         )
+    }
+
+    /// 최근 세 삶에서 본 환생 장면을 오래된 순서로 넘긴다. 여섯 개만 유지해 무결성
+    /// 토큰이 끝없이 커지지 않으면서도 바로 전 회차 반복은 확실히 막는다.
+    nonisolated static func recentRebirthEventIDs(from archive: [LifeRecord]) -> [String] {
+        let newest = archive.sorted { $0.lifeNumber > $1.lifeNumber }.prefix(3)
+        var seen = Set<String>()
+        var newestFirst: [String] = []
+        for record in newest {
+            for eventID in (record.rebirthEventIDs ?? []).reversed()
+                where seen.insert(eventID).inserted {
+                newestFirst.append(eventID)
+                if newestFirst.count == 6 { return newestFirst.reversed() }
+            }
+        }
+        return newestFirst.reversed()
     }
 
     nonisolated static func lineageMasteries(from archive: [LifeRecord]) -> [CareerLineageMastery] {
@@ -2967,6 +3009,7 @@ final class HighSchoolCareerStore {
         chronicle candidateChronicle: [ChronicleEntry],
         responseTally candidateResponseTally: ResponseTally,
         bondMemories candidateBondMemories: [PlayerBondMemory]? = nil,
+        rebirthEventIDs candidateRebirthEventIDs: [String]? = nil,
         nextRunIntent candidateNextRunIntent: NextRunIntent?,
         currentCareerRetention retentionOverride: CurrentCareerRetention? = nil,
         overrides: PersistenceOverrides? = nil
@@ -2998,6 +3041,8 @@ final class HighSchoolCareerStore {
             responseTally: candidateResponseTally,
             bondMemories: Self.normalizedBondMemories(candidateBondMemories ?? bondMemories).isEmpty
                 ? nil : Self.normalizedBondMemories(candidateBondMemories ?? bondMemories),
+            rebirthEventIDs: (candidateRebirthEventIDs ?? rebirthEventIDs).isEmpty
+                ? nil : Array((candidateRebirthEventIDs ?? rebirthEventIDs).suffix(6)),
             chapterGains: chapterGains.isEmpty ? nil : chapterGains,
             chapterTrainingCount: chapterTrainingCount == 0 ? nil : chapterTrainingCount,
             careerStartingPitcher: careerStartingPitcher,
@@ -3081,6 +3126,7 @@ final class HighSchoolCareerStore {
         goalCelebratedChapter = record.goalCelebratedChapter
         responseTally = record.responseTally ?? ResponseTally()
         bondMemories = Self.normalizedBondMemories(record.bondMemories ?? [])
+        rebirthEventIDs = record.rebirthEventIDs ?? []
         chapterGains = record.chapterGains ?? [:]
         chapterTrainingCount = record.chapterTrainingCount ?? 0
         careerStartingPitcher = record.careerStartingPitcher
@@ -3131,6 +3177,8 @@ final class HighSchoolCareerStore {
         var responseTally: ResponseTally? = nil
         /// Structured relationship memories. Missing old saves continue with an empty list.
         var bondMemories: [PlayerBondMemory]? = nil
+        /// Stable IDs of rebirth scenes already consumed in the live run.
+        var rebirthEventIDs: [String]? = nil
         /// 이번 챕터의 훈련 성장 정산. 없으면 챕터 리뷰가 "훈련 없이 지나간 챕터"라고
         /// 방금 한 플레이를 부정한다(3차 패널 P1) — 옛 저장본은 빈 값으로 시작한다.
         var chapterGains: [String: Int]? = nil
@@ -3230,6 +3278,7 @@ final class HighSchoolCareerStore {
         goalCelebratedChapter = record.goalCelebratedChapter
         responseTally = record.responseTally ?? ResponseTally()
         bondMemories = Self.normalizedBondMemories(record.bondMemories ?? [])
+        rebirthEventIDs = record.rebirthEventIDs ?? []
         chapterGains = record.chapterGains ?? [:]
         chapterTrainingCount = record.chapterTrainingCount ?? 0
         careerStartingPitcher = record.careerStartingPitcher
@@ -3380,6 +3429,14 @@ final class HighSchoolCareerStore {
                     createdBondMemory = memory
                 }
             }
+            var nextRebirthEventIDs = rebirthEventIDs
+            if let event = before.currentRelationshipEvent,
+               event.category == "rebirth",
+               updated.snapshot.lastRelationship?.number != before.lastRelationship?.number,
+               !nextRebirthEventIDs.contains(event.id) {
+                nextRebirthEventIDs.append(event.id)
+                nextRebirthEventIDs = Array(nextRebirthEventIDs.suffix(6))
+            }
             let nextResume = clearGameResumeOnSuccess ? nil : gameResume
             guard persist(
                 result: updated,
@@ -3387,6 +3444,7 @@ final class HighSchoolCareerStore {
                 chronicle: candidateChronicle,
                 responseTally: nextResponseTally,
                 bondMemories: nextBondMemories,
+                rebirthEventIDs: nextRebirthEventIDs,
                 nextRunIntent: nextRunIntent
             ) else { return false }
 
@@ -3394,6 +3452,7 @@ final class HighSchoolCareerStore {
             gameResume = nextResume
             responseTally = nextResponseTally
             bondMemories = nextBondMemories
+            rebirthEventIDs = nextRebirthEventIDs
             pendingGains = gains
             pendingBloom = bloom
             chronicle = candidateChronicle
