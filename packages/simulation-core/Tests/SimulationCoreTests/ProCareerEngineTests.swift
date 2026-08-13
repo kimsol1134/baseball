@@ -155,11 +155,169 @@ final class ProCareerEngineTests: XCTestCase {
         }
     }
 
-    func testVeteranSeasonsUseTwoRepresentativeImportantGames() {
+    func testVeteransKeepTheSameRepresentativeGameBudget() {
         XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 1), 3)
         XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 8), 3)
-        XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 9), 2)
-        XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 12), 2)
+        XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 9), 3)
+        XCTAssertEqual(ProCareerEngine.maximumImportantGames(for: 20), 3)
+    }
+
+    func testCareerStandingAndExpectedUsageComeFromCareerRecordRatherThanAge() throws {
+        let rookie = try engine.start(startParams(seed: "311")).snapshot
+        XCTAssertEqual(ProCareerEngine.careerStanding(for: rookie), .prospect)
+        XCTAssertEqual(ProCareerEngine.expectedRemainingOutings(for: rookie), 24)
+
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(rookie)) as? [String: Any]
+        )
+        object["age"] = 39
+        object["serviceYears"] = 8
+        object["awards"] = ["가상 투수상", "가상 제구상", "가상 이닝상"]
+        let veteran = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+
+        XCTAssertEqual(ProCareerEngine.careerStanding(for: veteran), .clubSymbol)
+        XCTAssertEqual(
+            ProCareerEngine.expectedRemainingOutings(for: veteran),
+            ProCareerEngine.expectedRemainingOutings(for: rookie),
+            "나이만으로 예정 등판을 줄이면 안 됩니다."
+        )
+    }
+
+    func testImportantGameReplacesScheduledOutingInsteadOfAddingBonusGame() throws {
+        let pending = try firstImportantGame(seed: "312")
+        let beforeGames = pending.snapshot.currentStats.games
+        let beforeLines = try XCTUnwrap(pending.snapshot.gameLines)
+        let scheduled = try XCTUnwrap(beforeLines.last { $0.week == pending.snapshot.week && !$0.played })
+        let directReport = report(pending.snapshot.week)
+
+        let resolved = try engine.resolveImportantGame(.init(
+            seed: pending.nextSeed,
+            state: pending.snapshot,
+            report: directReport
+        ))
+
+        XCTAssertEqual(resolved.snapshot.currentStats.games, beforeGames)
+        XCTAssertEqual(resolved.snapshot.gameLines?.count, beforeLines.count)
+        let combined = try XCTUnwrap(resolved.snapshot.gameLines?.first { $0.outingNumber == scheduled.outingNumber })
+        XCTAssertTrue(combined.played)
+        XCTAssertGreaterThanOrEqual(combined.outs, directReport.outs ?? 0)
+        XCTAssertEqual(resolved.snapshot.currentStats.games, resolved.snapshot.gameLines?.count)
+        XCTAssertEqual(
+            resolved.snapshot.currentStats.inningsOuts,
+            resolved.snapshot.gameLines?.reduce(0) { $0 + $1.outs }
+        )
+        XCTAssertEqual(
+            resolved.snapshot.currentStats.runsAllowed,
+            resolved.snapshot.gameLines?.reduce(0) { $0 + $1.runsAllowed }
+        )
+    }
+
+    func testLegacyV4PendingImportantGameKeepsItsOriginalAppendSemantics() throws {
+        let pending = try firstImportantGame(seed: "3121")
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(pending.snapshot)) as? [String: Any]
+        )
+        object.removeValue(forKey: "proRulesVersion")
+        object["commitment"] = ""
+        let unsigned = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        object["commitment"] = engine.commitment(unsigned)
+        let legacy = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+
+        let resolved = try engine.resolveImportantGame(.init(
+            seed: pending.nextSeed,
+            state: legacy,
+            report: report(legacy.week)
+        ))
+
+        XCTAssertEqual(resolved.snapshot.currentStats.games, legacy.currentStats.games + 1)
+        XCTAssertEqual(resolved.snapshot.gameLines?.count, (legacy.gameLines?.count ?? 0) + 1)
+        XCTAssertNil(resolved.snapshot.proRulesVersion)
+    }
+
+    func testAgencyRecoveryKeepsScheduledAppearanceAndCombinesOutingLoad() throws {
+        var result = try engine.start(startParams(seed: "313"))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        XCTAssertEqual(result.snapshot.proRulesVersion, ProCareerEngine.currentRulesVersion)
+        let gamesBefore = result.snapshot.currentStats.games
+        let fatigueBefore = result.snapshot.fatigue
+
+        let recovered = try engine.planWeek(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            plan: .recover
+        ))
+
+        XCTAssertGreaterThan(recovered.snapshot.currentStats.games, gamesBefore)
+        XCTAssertLessThanOrEqual(recovered.snapshot.fatigue, fatigueBefore)
+        XCTAssertEqual(recovered.snapshot.pitcher, result.snapshot.pitcher)
+    }
+
+    func testSeasonChoicesAreAllRecalledAtTheNextDirectMatchupAfterSaveResume() throws {
+        let pending = try firstDecision(seed: "314")
+        let firstDecision = try XCTUnwrap(pending.snapshot.pendingDecision)
+        let firstChoice = firstDecision.choices[0]
+        var applied = try engine.applySeasonDecision(.init(
+            seed: pending.nextSeed,
+            state: pending.snapshot,
+            decisionID: firstDecision.id,
+            choiceID: firstChoice.id
+        ))
+
+        // 중요 경기 사이에 선택이 둘 이상 쌓여도 다음 직접 승부에서 모두 반응을 받는다.
+        for _ in 0..<80 {
+            if applied.snapshot.phase == .importantGame { break }
+            switch applied.snapshot.phase {
+            case .weeklyPlan:
+                applied = try engine.planWeek(.init(
+                    seed: applied.nextSeed,
+                    state: applied.snapshot,
+                    plan: .earnTrust
+                ))
+            case .seasonDecision:
+                applied = try resolvePendingDecision(applied)
+            default:
+                XCTFail("다음 직접 승부 전에 예기치 않은 단계 \(applied.snapshot.phase)")
+                return
+            }
+        }
+        XCTAssertEqual(applied.snapshot.phase, .importantGame)
+        let unresolved = (applied.snapshot.decisionHistory ?? []).filter {
+            $0.season == applied.snapshot.season && $0.followUpResolvedWeek == nil
+        }
+        XCTAssertFalse(unresolved.isEmpty)
+
+        let resumedState = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONEncoder().encode(applied.snapshot)
+        )
+        let uninterrupted = try engine.resolveImportantGame(.init(
+            seed: applied.nextSeed,
+            state: applied.snapshot,
+            report: report(applied.snapshot.week)
+        ))
+        let resumed = try engine.resolveImportantGame(.init(
+            seed: applied.nextSeed,
+            state: resumedState,
+            report: report(applied.snapshot.week)
+        ))
+
+        XCTAssertEqual(resumed, uninterrupted)
+        for record in unresolved {
+            let recalled = try XCTUnwrap(uninterrupted.snapshot.decisionHistory?.first {
+                $0.decisionID == record.decisionID
+            })
+            XCTAssertEqual(recalled.followUpResolvedWeek, applied.snapshot.week)
+            XCTAssertTrue(uninterrupted.snapshot.news.first?.contains(record.choiceTitle) == true)
+        }
     }
 
     func testSameSeedProducesSameImportantWeeksAndRivals() throws {
@@ -207,7 +365,7 @@ final class ProCareerEngineTests: XCTestCase {
 
         let encoded = try JSONEncoder().encode(result.snapshot)
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
-        for key in ["seasonSegment", "seasonTrigger", "currentRival", "seasonTensions", "seasonImportantGames", "pendingDecision", "decisionHistory", "developmentProgress", "rolePreference"] {
+        for key in ["seasonSegment", "seasonTrigger", "currentRival", "seasonTensions", "seasonImportantGames", "pendingDecision", "decisionHistory", "developmentProgress", "rolePreference", "proRulesVersion"] {
             object.removeValue(forKey: key)
         }
         // 실제 구버전 저장의 서명에는 당시 존재하지 않던 필드가 들어가지 않았다.
@@ -230,6 +388,17 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertNil(legacy.decisionHistory)
         XCTAssertNil(legacy.developmentProgress)
         XCTAssertNil(legacy.rolePreference)
+        XCTAssertNil(legacy.proRulesVersion)
+
+        // 진행 중인 구세이브에는 당시 약속한 회복 규칙(등판 없음)을 유지한다. 새 규칙은
+        // 다음 오프시즌부터 붙으므로 저장 업데이트가 기록을 소급 변경하지 않는다.
+        let legacyRecovery = try engine.planWeek(.init(
+            seed: result.nextSeed,
+            state: legacy,
+            plan: .recover
+        ))
+        XCTAssertEqual(legacyRecovery.snapshot.currentStats.games, legacy.currentStats.games)
+        XCTAssertEqual(legacyRecovery.snapshot.fatigue, max(0, legacy.fatigue - 20))
 
         // 크래시 없이 이어서 진행되고, 아크 필드가 결정론적으로 백필된다.
         let resumed = try engine.planWeek(.init(seed: result.nextSeed, state: legacy, plan: .refineCommand))

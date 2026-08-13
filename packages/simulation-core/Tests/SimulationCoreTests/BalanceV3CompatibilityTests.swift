@@ -8,6 +8,7 @@ final class BalanceV3CompatibilityTests: XCTestCase {
         let weekly = try weeklyPlanState(engine: engine, seed: "731001")
         let v3 = try rewriting(weekly.snapshot, engine: engine) { object in
             object["balanceVersion"] = 3
+            object.removeValue(forKey: "proRulesVersion")
         }
 
         let normalized = try engine.normalizeBalance(.init(seed: weekly.nextSeed, state: v3))
@@ -45,6 +46,7 @@ final class BalanceV3CompatibilityTests: XCTestCase {
         let current = try XCTUnwrap(opened)
         let decisionWeekV3 = try rewriting(current.state, engine: engine) { object in
             object["balanceVersion"] = 3
+            object.removeValue(forKey: "proRulesVersion")
         }
 
         let legacyProgress = try engine.planWeek(.init(
@@ -56,6 +58,7 @@ final class BalanceV3CompatibilityTests: XCTestCase {
         let pending = try XCTUnwrap(current.result.snapshot.pendingDecision)
         let persistedV3 = try rewriting(current.result.snapshot, engine: engine) { object in
             object["balanceVersion"] = 3
+            object.removeValue(forKey: "proRulesVersion")
         }
         let choice = try XCTUnwrap(pending.choices.first)
         let applied = try engine.applySeasonDecision(.init(
@@ -79,6 +82,7 @@ final class BalanceV3CompatibilityTests: XCTestCase {
         }
         let importantV3 = try rewriting(importantV4, engine: engine) { object in
             object["balanceVersion"] = 3
+            object.removeValue(forKey: "proRulesVersion")
         }
         let report = ImportantInningReport(
             scenarioNumber: 1,
