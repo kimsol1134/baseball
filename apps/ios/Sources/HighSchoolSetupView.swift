@@ -695,6 +695,9 @@ struct HighSchoolSetupView: View {
                         ForEach(unlockedSignatureLegacies) { legacy in
                             let selected = (selectedSignatureLegacyID
                                             ?? career.inheritance.equippedSignatureLegacyID) == legacy.id
+                            let mastery = HighSchoolCareerStore.lineageMasteries(from: career.archive)
+                                .first { $0.family == legacy.family }
+                                ?? CareerLineageMastery(family: legacy.family, contributions: 0)
                             Button { selectedSignatureLegacyID = legacy.id } label: {
                                 HStack(alignment: .top, spacing: 10) {
                                     Image(systemName: selected ? "checkmark.seal.fill" : "seal")
@@ -710,6 +713,27 @@ struct HighSchoolSetupView: View {
                                         GameCopyText(verbatim: Self.localizedSignatureLegacyEffectLine(legacy.effect, resolver: copyResolver))
                                             .font(.caption2.weight(.semibold).monospacedDigit())
                                             .foregroundStyle(BaseballTheme.milestone)
+                                        Text(verbatim: copyResolver.resolve(
+                                            LegacyUICopyKey.masteryRank,
+                                            arguments: [.integer(mastery.rank), .integer(mastery.contributions)]
+                                        ))
+                                        .font(.caption2.weight(.bold).monospacedDigit())
+                                        .foregroundStyle(BaseballTheme.information)
+                                        if let threshold = mastery.nextThreshold {
+                                            Text(verbatim: copyResolver.resolve(
+                                                LegacyUICopyKey.masteryNext,
+                                                arguments: [
+                                                    .integer(max(0, threshold - mastery.contributions)),
+                                                    .integer(mastery.rank + 1),
+                                                ]
+                                            ))
+                                            .font(.caption2)
+                                            .foregroundStyle(BaseballTheme.textTertiary)
+                                        } else {
+                                            Text(verbatim: copyResolver.resolve(LegacyUICopyKey.masteryMax))
+                                                .font(.caption2)
+                                                .foregroundStyle(BaseballTheme.textTertiary)
+                                        }
                                     }
                                     Spacer(minLength: 0)
                                 }

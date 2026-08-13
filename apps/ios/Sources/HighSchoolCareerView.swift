@@ -1007,6 +1007,8 @@ private struct InheritedStartComparisonCard: View {
                     resolver: copyResolver
                 ).title
             } ?? copyResolver.resolve(AppCopyKey.prologueInheritedStartBoost)
+        case "mastery":
+            copyResolver.resolve(LegacyUICopyKey.masteryStartSource)
         default:
             source.id
         }

@@ -34,6 +34,124 @@ public enum CareerSignatureLegacyFamily: String, Codable, CaseIterable, Hashable
     case battery
 }
 
+public enum CareerLineageRulesVersion: Int, Codable, CaseIterable, Sendable {
+    case v1 = 1
+    public static let current = CareerLineageRulesVersion.v1
+}
+
+/// 같은 감각을 실제로 남긴 선수 수에서 다시 계산되는 장기 숙련. 별도 화폐나 가변 원장이 없다.
+public struct CareerLineageMastery: Codable, Equatable, Sendable {
+    public let family: CareerSignatureLegacyFamily
+    public let contributions: Int
+    public let rank: Int
+    public let nextThreshold: Int?
+
+    public init(family: CareerSignatureLegacyFamily, contributions: Int) {
+        self.family = family
+        self.contributions = max(0, contributions)
+        switch contributions {
+        case 6...: rank = 3; nextThreshold = nil
+        case 3...: rank = 2; nextThreshold = 6
+        case 1...: rank = 1; nextThreshold = 3
+        default: rank = 0; nextThreshold = 1
+        }
+    }
+}
+
+/// 이번 선수가 실제로 장착해 시작한 하나의 계보 효과. 진행 중 밸런스가 바뀌지 않게 동결한다.
+public struct CareerLineageLoadout: Codable, Equatable, Sendable {
+    public let rulesVersion: Int
+    public let legacyID: CareerSignatureLegacyID
+    public let masteryRank: Int
+    public let contributions: Int
+    public let sourceLifeNumber: Int?
+
+    public init(
+        rulesVersion: Int = CareerLineageRulesVersion.current.rawValue,
+        legacyID: CareerSignatureLegacyID,
+        masteryRank: Int,
+        contributions: Int,
+        sourceLifeNumber: Int? = nil
+    ) {
+        self.rulesVersion = rulesVersion
+        self.legacyID = legacyID
+        self.masteryRank = min(3, max(0, masteryRank))
+        self.contributions = max(0, contributions)
+        self.sourceLifeNumber = sourceLifeNumber
+    }
+}
+
+public enum CareerLineageMasteryRules {
+    public static func masteries(
+        from selectedLegacyIDs: [CareerSignatureLegacyID]
+    ) -> [CareerLineageMastery] {
+        let counts = selectedLegacyIDs.reduce(into: [CareerSignatureLegacyFamily: Int]()) { result, id in
+            result[CareerSignatureLegacy.definition(for: id).family, default: 0] += 1
+        }
+        return CareerSignatureLegacyFamily.allCases.map {
+            CareerLineageMastery(family: $0, contributions: counts[$0, default: 0])
+        }
+    }
+
+    public static func mastery(
+        for id: CareerSignatureLegacyID,
+        selectedLegacyIDs: [CareerSignatureLegacyID]
+    ) -> CareerLineageMastery {
+        let family = CareerSignatureLegacy.definition(for: id).family
+        return masteries(from: selectedLegacyIDs).first { $0.family == family }
+            ?? CareerLineageMastery(family: family, contributions: 0)
+    }
+
+    /// 기본 +4 뒤에 적용하는 v1 숙련. rank 3 직접 보너스는 정확히 두 방향에 +1씩이며,
+    /// 재능 상한에 막힌 값은 다른 능력으로 옮기지 않는다.
+    public static func apply(
+        loadout: CareerLineageLoadout?,
+        pitcher: PitcherSnapshot,
+        talent: TalentSnapshot
+    ) -> (pitcher: PitcherSnapshot, talent: TalentSnapshot, catcherTrust: Int) {
+        guard let loadout else { return (pitcher, talent, 50) }
+        let family = CareerSignatureLegacy.definition(for: loadout.legacyID).family
+        var updatedTalent = talent
+        if loadout.masteryRank >= 2 {
+            let abilities: [TalentAbility] = switch family {
+            case .power: [.stuff]
+            case .command: [.command]
+            case .breaking: [.movement]
+            case .endurance: [.stamina]
+            case .gamecraft: [pitcher.command <= pitcher.movement ? .command : .movement]
+            case .battery: []
+            }
+            for ability in abilities {
+                let maximum = max(0, updatedTalent.grade(ability).bloomThreshold - 1)
+                updatedTalent.setPressure(min(maximum, updatedTalent.pressure(ability) + 2), for: ability)
+            }
+        }
+
+        guard loadout.masteryRank >= 3 else {
+            return (pitcher, updatedTalent, family == .battery && loadout.masteryRank >= 2 ? 55 : 50)
+        }
+        let bonus: CareerSignatureLegacyEffect = switch family {
+        case .power, .endurance: .init(stuff: 1, stamina: 1)
+        case .command, .breaking: .init(command: 1, movement: 1)
+        case .gamecraft, .battery: .init(command: 1, stamina: 1)
+        }
+        func capped(_ current: Int, _ add: Int, _ ability: TalentAbility) -> Int {
+            min(updatedTalent.ceiling(ability), current + add)
+        }
+        let updatedPitcher = PitcherSnapshot(
+            id: pitcher.id,
+            name: pitcher.name,
+            stuff: capped(pitcher.stuff, bonus.stuff, .stuff),
+            command: capped(pitcher.command, bonus.command, .command),
+            movement: capped(pitcher.movement, bonus.movement, .movement),
+            stamina: capped(pitcher.stamina, bonus.stamina, .stamina),
+            pitchProfiles: pitcher.pitchProfiles,
+            throwingHand: pitcher.throwingHand
+        )
+        return (updatedPitcher, updatedTalent, family == .battery ? 55 : 50)
+    }
+}
+
 /// 다음 선수의 시작 능력에 한 번만 더하는 작고 고정된 효과.
 public struct CareerSignatureLegacyEffect: Codable, Equatable, Sendable {
     public let stuff: Int

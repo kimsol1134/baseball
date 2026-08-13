@@ -610,6 +610,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     /// 직전 삶에서 실제로 일어난 일만 환생 사건으로 되비추기 위한 작은 영수증.
     /// nil인 구저장본은 기존 전체 환생 사건 풀을 유지한다.
     public let rebirthEcho: RebirthEchoSnapshot?
+    public let lineageLoadout: CareerLineageLoadout?
     public let stateCommitment: String
 
     public var effectiveWorldRulesVersion: CareerRulesVersion {
@@ -667,6 +668,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         soulBoosts: [String]? = nil,
         awakeningSparks: Int? = nil,
         rebirthEcho: RebirthEchoSnapshot? = nil,
+        lineageLoadout: CareerLineageLoadout? = nil,
         stateCommitment: String
     ) {
         self.careerID = careerID
@@ -715,6 +717,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.soulBoosts = soulBoosts
         self.awakeningSparks = awakeningSparks
         self.rebirthEcho = rebirthEcho
+        self.lineageLoadout = lineageLoadout
         self.stateCommitment = stateCommitment
     }
 
@@ -766,6 +769,7 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.soulBoosts == rhs.soulBoosts
             && lhs.awakeningSparks == rhs.awakeningSparks
             && lhs.rebirthEcho == rhs.rebirthEcho
+            && lhs.lineageLoadout == rhs.lineageLoadout
             && lhs.stateCommitment == rhs.stateCommitment
     }
 }
@@ -877,6 +881,7 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
     public let inheritanceRulesVersion: Int?
     /// 직전 삶에서 확인된 사실. 도전 모드와 첫 삶은 nil이다.
     public let rebirthEcho: RebirthEchoSnapshot?
+    public let lineageLoadout: CareerLineageLoadout?
 
     public init(
         seed: String,
@@ -958,7 +963,8 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         inheritedSoulTotal: Int? = nil,
         signatureLegacyID: CareerSignatureLegacyID?,
         inheritanceRulesVersion: Int?,
-        rebirthEcho: RebirthEchoSnapshot? = nil
+        rebirthEcho: RebirthEchoSnapshot? = nil,
+        lineageLoadout: CareerLineageLoadout? = nil
     ) {
         self.seed = seed
         self.presetID = presetID
@@ -975,6 +981,7 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         self.signatureLegacyID = signatureLegacyID
         self.inheritanceRulesVersion = inheritanceRulesVersion
         self.rebirthEcho = rebirthEcho
+        self.lineageLoadout = lineageLoadout
     }
 }
 
@@ -1368,6 +1375,7 @@ public struct HighSchoolCareerEngine: Sendable {
         // 직전 회차가 기억 확장(슬롯 4)으로 골랐을 수 있으므로 계승은 4장까지 받는다.
         guard params.creationAllocation.total == 5, params.inheritedMemories.count <= 4,
               params.karmas.count == Set(params.karmas).count, params.karmas.count <= 2,
+              params.lineageLoadout.map({ $0.legacyID == params.signatureLegacyID }) ?? true,
               !params.identity.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !params.identity.region.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw SimulationError.invalidPitcherLab("career creation or inherited memories are invalid")
@@ -1395,6 +1403,13 @@ public struct HighSchoolCareerEngine: Sendable {
             bonusPoints: boosts.contains(.headStart) ? 5 : 0, to: pitcher)
         pitcher = applyKarmas(params.karmas, to: pitcher)
         pitcher = CareerSignatureLegacy.apply(params.signatureLegacyID, to: pitcher)
+        let masteryResult = CareerLineageMasteryRules.apply(
+            loadout: params.lineageLoadout,
+            pitcher: pitcher,
+            talent: talent
+        )
+        pitcher = masteryResult.pitcher
+        talent = masteryResult.talent
         let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille } + wind.rewardBonusPermille
         let memorySlots = (params.karmas.contains(.erasedMemory) ? 2 : 3) + (boosts.contains(.extraMemory) ? 1 : 0)
         let base = HighSchoolCareerSnapshot(
@@ -1404,7 +1419,7 @@ public struct HighSchoolCareerEngine: Sendable {
             pitcher: pitcher, schoolOptions: Self.schools(for: params.identity.region), school: nil,
             rival: rival(seed: seed, difficulty: params.difficulty.simulationDifficulty, karmas: params.karmas, windBonus: wind.rivalBonus), chapter: Self.chapters[0], chapterTrainingCount: 0,
             totalTrainingsCompleted: 0, milestoneIndex: 0, relationshipsCompleted: 0,
-            relationshipTrust: 50, managerTrust: 50, catcherTrust: 50, rivalTrust: 50,
+            relationshipTrust: 50, managerTrust: 50, catcherTrust: masteryResult.catcherTrust, rivalTrust: 50,
             selectedAwakenings: [], awakeningOptions: [], fatigue: 5,
             performance: CareerPerformanceSnapshot(), currentGameScenario: nil, currentRelationshipEvent: nil, lastTraining: nil,
             news: (wind.newsLine.map { [$0] } ?? []) + Self.prologueNews(identity: params.identity, lifeNumber: params.lifeNumber, inheritedMemoryCount: params.inheritedMemories.count),
@@ -1415,6 +1430,7 @@ public struct HighSchoolCareerEngine: Sendable {
             talent: talent,
             soulBoosts: boosts.isEmpty ? nil : boosts.map(\.rawValue).sorted(),
             rebirthEcho: params.rebirthEcho,
+            lineageLoadout: params.lineageLoadout,
             stateCommitment: ""
         )
         return result(seed: seed, state: signed(base), event: "high_school_career_started")
@@ -3242,6 +3258,7 @@ public struct HighSchoolCareerEngine: Sendable {
             soulBoosts: state.soulBoosts,
             awakeningSparks: awakeningSparks ?? state.awakeningSparks,
             rebirthEcho: state.rebirthEcho,
+            lineageLoadout: state.lineageLoadout,
             stateCommitment: stateCommitment ?? state.stateCommitment)
     }
 
@@ -3353,6 +3370,9 @@ public struct HighSchoolCareerEngine: Sendable {
         }
         if let rebirthEcho = state.rebirthEcho {
             canonical.append("rebirth_echo:\(rebirthEcho.commitmentToken)")
+        }
+        if let loadout = state.lineageLoadout {
+            canonical.append("lineage_loadout:\(loadout.rulesVersion):\(loadout.legacyID.rawValue):\(loadout.masteryRank):\(loadout.contributions):\(loadout.sourceLifeNumber.map(String.init) ?? "none")")
         }
         // 스케줄 필드도 있을 때만 덧붙여, 이 기능 이전(스케줄 없음) 저장본이 기존 커밋먼트로 그대로
         // 검증되게 한다. 팔·focusStreak 필드와 같은 조건부 계열이다.

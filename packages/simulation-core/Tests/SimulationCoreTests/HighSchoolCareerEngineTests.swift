@@ -629,6 +629,36 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         XCTAssertNotEqual(legacy.snapshot.stateCommitment, grounded.snapshot.stateCommitment)
     }
 
+    func testLineageLoadoutIsAppliedOnceAndIntegrityProtected() throws {
+        let engine = HighSchoolCareerEngine()
+        let loadout = CareerLineageLoadout(
+            legacyID: .batteryPromise,
+            masteryRank: 2,
+            contributions: 3,
+            sourceLifeNumber: 4
+        )
+        let result = try engine.start(.init(
+            seed: "515151",
+            presetID: "precision_commander",
+            lifeNumber: 5,
+            signatureLegacyID: .batteryPromise,
+            inheritanceRulesVersion: SoulInheritanceRulesVersion.current.rawValue,
+            lineageLoadout: loadout
+        ))
+        XCTAssertEqual(result.snapshot.lineageLoadout, loadout)
+        XCTAssertEqual(result.snapshot.catcherTrust, 55)
+        XCTAssertFalse(result.snapshot.stateCommitment.isEmpty)
+
+        XCTAssertThrowsError(try engine.start(.init(
+            seed: "515151",
+            presetID: "precision_commander",
+            lifeNumber: 5,
+            signatureLegacyID: .commandMap,
+            inheritanceRulesVersion: SoulInheritanceRulesVersion.current.rawValue,
+            lineageLoadout: loadout
+        )))
+    }
+
     func testEveryImportantGameScenarioIsWellFormed() {
         // 신규 8종을 포함한 20종 시나리오 전부가 경기 상황으로 성립하는지 검증한다. 이닝 1–10,
         // 아웃 0–2, 레버리지 1–1000, 리드 주자 스피드 범위, 제목·서사 비어 있지 않음, id 고유.

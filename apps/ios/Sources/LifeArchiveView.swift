@@ -96,6 +96,22 @@ struct LifeArchiveSection: View {
         records.max { $0.strikeouts < $1.strikeouts }
     }
 
+    private var lineageMasteries: [CareerLineageMastery] {
+        HighSchoolCareerStore.lineageMasteries(from: records)
+    }
+
+    private func familyName(_ family: CareerSignatureLegacyFamily) -> String {
+        let key: LegacyUICopyKey = switch family {
+        case .power: .masteryFamilyPower
+        case .command: .masteryFamilyCommand
+        case .breaking: .masteryFamilyBreaking
+        case .endurance: .masteryFamilyEndurance
+        case .gamecraft: .masteryFamilyGamecraft
+        case .battery: .masteryFamilyBattery
+        }
+        return copyResolver.resolve(key)
+    }
+
     var body: some View {
         BaseballCard(
             title: copyResolver.resolve(.archiveTitle, arguments: [.integer(records.count)])
@@ -104,6 +120,29 @@ struct LifeArchiveSection: View {
                 if !records.isEmpty {
                     PlayerLineageRibbon(records: orderedRecords)
                         .padding(.bottom, 10)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(verbatim: copyResolver.resolve(LegacyUICopyKey.masteryArchiveHeading))
+                            .eyebrowStyle(BaseballTheme.information)
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                            ForEach(lineageMasteries, id: \.family) { mastery in
+                                HStack {
+                                    Text(verbatim: familyName(mastery.family))
+                                        .font(.caption.weight(.semibold))
+                                    Spacer(minLength: 4)
+                                    Text(verbatim: copyResolver.resolve(
+                                        LegacyUICopyKey.masteryRank,
+                                        arguments: [.integer(mastery.rank), .integer(mastery.contributions)]
+                                    ))
+                                        .font(.caption2.monospacedDigit())
+                                        .foregroundStyle(BaseballTheme.textSecondary)
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 6)
+                                .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: 8))
+                            }
+                        }
+                    }
+                    .padding(.bottom, 10)
                     Rectangle()
                         .fill(BaseballTheme.border.opacity(0.35))
                         .frame(height: 1)

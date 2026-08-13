@@ -269,6 +269,30 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertNil(clean.previousNickname)
     }
 
+    func testLineageMasteryCountsOneSelectedLegacyPerLife() {
+        var first = life(drafted: true, lifeNumber: 1, playerName: "첫 선수")
+        first.signatureLegacy = CareerSignatureLegacy.definition(for: .powerImprint)
+        var duplicate = first
+        duplicate.signatureLegacy = CareerSignatureLegacy.definition(for: .powerImprint)
+        var second = life(drafted: true, lifeNumber: 2, playerName: "둘째 선수")
+        second.signatureLegacy = CareerSignatureLegacy.definition(for: .powerImprint)
+        var third = life(drafted: false, lifeNumber: 3, playerName: "셋째 선수")
+        third.signatureLegacy = CareerSignatureLegacy.definition(for: .powerImprint)
+
+        let mastery = HighSchoolCareerStore.lineageMasteries(from: [first, duplicate, second, third])
+            .first { $0.family == .power }
+        XCTAssertEqual(mastery?.contributions, 3)
+        XCTAssertEqual(mastery?.rank, 2)
+
+        let loadout = HighSchoolCareerStore.lineageLoadout(
+            equippedLegacyID: .powerImprint,
+            archive: [first, duplicate, second, third]
+        )
+        XCTAssertEqual(loadout?.sourceLifeNumber, 3)
+        XCTAssertEqual(loadout?.masteryRank, 2)
+        XCTAssertEqual(loadout?.contributions, 3)
+    }
+
     func testArchiveLineageIsAlwaysNewestFirst() {
         let ordered = LifeArchiveOrdering.newestFirst([
             life(drafted: false, lifeNumber: 1, playerName: "첫 선수"),

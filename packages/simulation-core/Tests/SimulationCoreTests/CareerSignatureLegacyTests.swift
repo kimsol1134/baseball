@@ -3,6 +3,62 @@ import XCTest
 @testable import SimulationCore
 
 final class CareerSignatureLegacyTests: XCTestCase {
+    func testLineageMasteryUsesOneThreeSixThresholds() {
+        let ids: [CareerSignatureLegacyID] = [
+            .powerImprint, .powerImprint, .powerImprint,
+            .commandMap, .commandMap, .commandMap, .commandMap, .commandMap, .commandMap,
+        ]
+        let masteries = CareerLineageMasteryRules.masteries(from: ids)
+        let power = masteries.first { $0.family == .power }
+        let command = masteries.first { $0.family == .command }
+        let breaking = masteries.first { $0.family == .breaking }
+        XCTAssertEqual(power, .init(family: .power, contributions: 3))
+        XCTAssertEqual(power?.rank, 2)
+        XCTAssertEqual(power?.nextThreshold, 6)
+        XCTAssertEqual(command?.rank, 3)
+        XCTAssertNil(command?.nextThreshold)
+        XCTAssertEqual(breaking?.rank, 0)
+        XCTAssertEqual(breaking?.nextThreshold, 1)
+    }
+
+    func testRankThreeAddsAtMostTwoAndNeverMovesBlockedBonus() {
+        let pitcher = PitcherSnapshot(
+            id: "mastery", name: "테스트", stuff: 52, command: 50, movement: 50, stamina: 51
+        )
+        let talent = TalentSnapshot(stuff: .d, command: .s, movement: .s, stamina: .d)
+        let loadout = CareerLineageLoadout(
+            legacyID: .powerImprint,
+            masteryRank: 3,
+            contributions: 6
+        )
+        let applied = CareerLineageMasteryRules.apply(
+            loadout: loadout,
+            pitcher: pitcher,
+            talent: talent
+        )
+        XCTAssertEqual(applied.pitcher.stuff, 52, "막힌 구위 +1은 다른 능력으로 옮기지 않습니다.")
+        XCTAssertEqual(applied.pitcher.stamina, 52)
+        XCTAssertLessThanOrEqual(
+            applied.pitcher.stuff + applied.pitcher.command + applied.pitcher.movement + applied.pitcher.stamina
+                - (pitcher.stuff + pitcher.command + pitcher.movement + pitcher.stamina),
+            2
+        )
+        XCTAssertEqual(applied.talent.stuffPressure, 1, "D 재능은 임계치 직전에서 멈춥니다.")
+    }
+
+    func testBatteryRankTwoOnlyRaisesStartingCatcherTrust() {
+        let pitcher = PitcherSnapshot(
+            id: "battery", name: "테스트", stuff: 50, command: 50, movement: 50, stamina: 50
+        )
+        let applied = CareerLineageMasteryRules.apply(
+            loadout: .init(legacyID: .batteryPromise, masteryRank: 2, contributions: 3),
+            pitcher: pitcher,
+            talent: .unlimited
+        )
+        XCTAssertEqual(applied.pitcher, pitcher)
+        XCTAssertEqual(applied.catcherTrust, 55)
+    }
+
     func testV4CoreListeningUsesOneSafeBudgetAcrossEverySchoolArchetype() throws {
         let engine = HighSchoolCareerEngine()
         let genericFeedback = "상대의 말을 끝까지 듣고 다음 준비 기준을 함께 확인했습니다."

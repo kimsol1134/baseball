@@ -142,6 +142,8 @@ final class HighSchoolCareerStore {
         /// 함께 발견한 세 후보도 회차에 귀속해 둔다. 선택하지 않은 두 후보가 발견 목록에는
         /// 남으면서 정작 어느 선수가 만든 유산인지 아카이브에서 사라지면 수집의 의미가 약해진다.
         var signatureLegacyCandidates: [CareerSignatureLegacy]? = nil
+        /// 이 선수가 시작할 때 실제로 장착한 유산과 당시 숙련. 이후 승급해도 과거는 바뀌지 않는다.
+        var inheritedLineageLoadout: CareerLineageLoadout? = nil
 
         /// 3년 동안 실제로 던진 공의 수. 성적을 "몇 경기"보다 구체적으로 말한다.
         var pitches: Int? = nil
@@ -800,6 +802,10 @@ final class HighSchoolCareerStore {
             }
         }
         carried.equippedSignatureLegacyID = equippedSignatureLegacyID
+        let lineageLoadout = isChallenge ? nil : Self.lineageLoadout(
+            equippedLegacyID: equippedSignatureLegacyID,
+            archive: archive
+        )
         let previousLife = isChallenge ? nil : archive.first(where: { $0.lifeNumber < carried.lifeNumber })
         let rebirthEcho = previousLife.map {
             Self.rebirthEcho(from: $0, inheritedMemoryCount: carried.memories.count)
@@ -836,7 +842,8 @@ final class HighSchoolCareerStore {
                     inheritedSoulTotal: isChallenge ? 0 : carried.automaticSoulTotal,
                     signatureLegacyID: equippedSignatureLegacyID,
                     inheritanceRulesVersion: isChallenge ? nil : carried.inheritanceRulesVersion,
-                    rebirthEcho: isChallenge ? nil : rebirthEcho
+                    rebirthEcho: isChallenge ? nil : rebirthEcho,
+                    lineageLoadout: lineageLoadout
                 )
             )
             if !isChallenge { inheritance = carried }
@@ -997,6 +1004,21 @@ final class HighSchoolCareerStore {
                 signatureLegacyID: nil,
                 inheritanceRulesVersion: inheritance.inheritanceRulesVersion
             )).snapshot.pitcher
+            let signatureOnly = try engine.start(.init(
+                seed: common.seed,
+                presetID: common.presetID,
+                lifeNumber: common.lifeNumber,
+                inheritedSoulPoints: inheritance.automaticSoulTotal,
+                inheritedSoulDomain: inheritance.automaticSoulTotal == 0 ? nil : setup.soulDomain,
+                inheritedMemories: inheritance.memories,
+                identity: common.identity,
+                difficulty: common.difficulty,
+                karmas: common.karmas,
+                soulBoosts: purchasedBoosts.isEmpty ? nil : purchasedBoosts,
+                inheritedSoulTotal: inheritance.automaticSoulTotal,
+                signatureLegacyID: inheritance.equippedSignatureLegacyID,
+                inheritanceRulesVersion: inheritance.inheritanceRulesVersion
+            )).snapshot.pitcher
 
             let current = LifeRecord.AbilityLine(state.pitcher)
             let bareLine = LifeRecord.AbilityLine(bare)
@@ -1019,12 +1041,21 @@ final class HighSchoolCareerStore {
                     signatureLegacyID: nil
                 ))
             }
-            let signatureDelta = current.total - boostLine.total
+            let signatureLine = LifeRecord.AbilityLine(signatureOnly)
+            let signatureDelta = signatureLine.total - boostLine.total
             if signatureDelta != 0, let legacy = inheritance.equippedSignatureLegacy {
                 sources.append(.init(
                     id: "signature",
                     ratingDelta: signatureDelta,
                     signatureLegacyID: legacy.id
+                ))
+            }
+            let masteryDelta = current.total - signatureLine.total
+            if masteryDelta != 0, let legacyID = state.lineageLoadout?.legacyID {
+                sources.append(.init(
+                    id: "mastery",
+                    ratingDelta: masteryDelta,
+                    signatureLegacyID: legacyID
                 ))
             }
             return InheritedStartComparison(
@@ -2284,6 +2315,7 @@ final class HighSchoolCareerStore {
             windTitle: state.careerWind.title,
             signatureLegacy: signatureLegacy,
             signatureLegacyCandidates: signatureLegacyCandidates,
+            inheritedLineageLoadout: state.lineageLoadout,
             bondMemories: bondMemories.isEmpty ? nil : bondMemories
         )
         record.pitches = state.performance.pitches
@@ -2311,6 +2343,35 @@ final class HighSchoolCareerStore {
             hadArmWarning: record.hadArmWarning ?? inferredArmWarning,
             hadCollapseGame: record.chronicle?.contains(where: { $0.contains("무너진 날") }) == true,
             wasUndrafted: !record.drafted
+        )
+    }
+
+    nonisolated static func lineageMasteries(from archive: [LifeRecord]) -> [CareerLineageMastery] {
+        let uniqueSelectedIDs = Dictionary(grouping: archive, by: \.lifeNumber)
+            .keys.sorted()
+            .compactMap { lifeNumber in
+                archive.first { $0.lifeNumber == lifeNumber }?.signatureLegacy?.id
+            }
+        return CareerLineageMasteryRules.masteries(from: uniqueSelectedIDs)
+    }
+
+    nonisolated static func lineageLoadout(
+        equippedLegacyID: CareerSignatureLegacyID?,
+        archive: [LifeRecord]
+    ) -> CareerLineageLoadout? {
+        guard let equippedLegacyID else { return nil }
+        let family = CareerSignatureLegacy.definition(for: equippedLegacyID).family
+        let mastery = lineageMasteries(from: archive).first { $0.family == family }
+            ?? CareerLineageMastery(family: family, contributions: 0)
+        let sourceLifeNumber = archive
+            .filter { $0.signatureLegacy?.id == equippedLegacyID }
+            .map(\.lifeNumber)
+            .max()
+        return CareerLineageLoadout(
+            legacyID: equippedLegacyID,
+            masteryRank: mastery.rank,
+            contributions: mastery.contributions,
+            sourceLifeNumber: sourceLifeNumber
         )
     }
 
