@@ -34,9 +34,9 @@ final class LocalizationCoverageTests: XCTestCase {
         XCTAssertTrue(AppCopyKey.allCases.allSatisfy { $0.table == .localizable })
     }
 
-    func testPrologueKeysAreExactly25UniqueAndAppearOnceInAllCases() {
+    func testPrologueKeysAreExactly31UniqueAndAppearOnceInAllCases() {
         XCTAssertEqual(AppCopyKey.prologueKeys.count, Set(AppCopyKey.prologueKeys).count)
-        XCTAssertEqual(Set(AppCopyKey.prologueKeys).count, 25)
+        XCTAssertEqual(Set(AppCopyKey.prologueKeys).count, 31)
 
         for key in AppCopyKey.prologueKeys {
             XCTAssertEqual(
@@ -1679,6 +1679,12 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.prologueThrow: "첫 공을 던진다",
             AppCopyKey.prologueSkip: "바로 학교 고르기",
             AppCopyKey.prologueCurrentPlayerTitle: "지금의 나",
+            AppCopyKey.prologueInheritedStartTitle: "계보가 바꾼 시작",
+            AppCopyKey.prologueInheritedStartJourney: "%@의 마지막 %lld → 이번 선수의 시작 %lld (%@)",
+            AppCopyKey.prologueInheritedStartTotal: "시작에 스며든 계승 성장 %@",
+            AppCopyKey.prologueInheritedStartSoul: "야구혼과 이전 선수의 기억",
+            AppCopyKey.prologueInheritedStartBoost: "환생 상점 부스트",
+            AppCopyKey.prologueInheritedStartSource: "%@ · %@",
             AppCopyKey.prologueAbilityTalent: "재능 %@",
             AppCopyKey.prologueAbilityCeiling: "%lld까지",
             AppCopyKey.prologueAbilityNoCeiling: "한계 없음",

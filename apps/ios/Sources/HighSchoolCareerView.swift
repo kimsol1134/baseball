@@ -513,6 +513,9 @@ struct HighSchoolCareerView: View {
                let previous = career.archive.first,
                previous.lifeNumber < state.lifeNumber {
                 PreviousPlayerLetterCard(record: previous, currentPlayerName: state.identity.name)
+                if let comparison = career.inheritedStartComparison(for: state, previous: previous) {
+                    InheritedStartComparisonCard(comparison: comparison)
+                }
             }
             PrologueCard(
                 state: state,
@@ -967,6 +970,112 @@ private struct SummaryBanner: View {
 }
 
 // MARK: - 단계 카드
+
+private struct InheritedStartComparisonCard: View {
+    let comparison: HighSchoolCareerStore.InheritedStartComparison
+
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var abilities: [(CopyToken, Int, Int)] {
+        [
+            (TrainingFocus.velocity.displayCopyToken, comparison.previous.stuff, comparison.current.stuff),
+            (TrainingFocus.command.displayCopyToken, comparison.previous.command, comparison.current.command),
+            (TrainingFocus.breakingBall.displayCopyToken, comparison.previous.movement, comparison.current.movement),
+            (TrainingFocus.stamina.displayCopyToken, comparison.previous.stamina, comparison.current.stamina),
+        ]
+    }
+
+    private func signed(_ value: Int) -> String {
+        value > 0 ? "+\(value)" : "\(value)"
+    }
+
+    private func sourceTitle(_ source: HighSchoolCareerStore.InheritedStartComparison.Source) -> String {
+        switch source.id {
+        case "soul":
+            copyResolver.resolve(AppCopyKey.prologueInheritedStartSoul)
+        case "boost":
+            copyResolver.resolve(AppCopyKey.prologueInheritedStartBoost)
+        case "signature":
+            source.signatureLegacyID.map {
+                HighSchoolConclusionPresentation.localizedSignature(
+                    CareerSignatureLegacy.definition(for: $0),
+                    resolver: copyResolver
+                ).title
+            } ?? copyResolver.resolve(AppCopyKey.prologueInheritedStartBoost)
+        default:
+            source.id
+        }
+    }
+
+    var body: some View {
+        BaseballCard(
+            title: copyResolver.resolve(AppCopyKey.prologueInheritedStartTitle),
+            tone: .milestone
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(copyResolver.resolve(
+                    AppCopyKey.prologueInheritedStartJourney,
+                    arguments: [
+                        .userText(comparison.previousName),
+                        .integer(comparison.previous.total),
+                        .integer(comparison.current.total),
+                        .userText(signed(comparison.totalDelta)),
+                    ]
+                ))
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    ForEach(Array(abilities.enumerated()), id: \.offset) { _, ability in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(copyResolver.resolve(ability.0))
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                            Text("\(ability.1) → \(ability.2)")
+                                .font(.caption.monospacedDigit().weight(.bold))
+                                .foregroundStyle(BaseballTheme.textPrimary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
+                Divider()
+                Text(copyResolver.resolve(
+                    AppCopyKey.prologueInheritedStartTotal,
+                    arguments: [.userText(signed(comparison.inheritedRatingDelta))]
+                ))
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(BaseballTheme.milestone)
+
+                ForEach(comparison.sources) { source in
+                    Text(copyResolver.resolve(
+                        AppCopyKey.prologueInheritedStartSource,
+                        arguments: [
+                            .userText(sourceTitle(source)),
+                            .userText(signed(source.ratingDelta)),
+                        ]
+                    ))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
+            }
+            .accessibilityIdentifier("hs.prologue.inheritedStartComparison")
+        }
+        .onAppear {
+            GameAnalytics.logOnce(
+                .inheritedStartComparisonSeen,
+                scope: "inherited-start:\(comparison.careerID)",
+                properties: [
+                    "previous_total": comparison.previous.total,
+                    "current_total": comparison.current.total,
+                    "inherited_rating_delta": comparison.inheritedRatingDelta,
+                    "source_count": comparison.sources.count,
+                ]
+            )
+        }
+    }
+}
 
 private struct PrologueCard: View {
     let state: HighSchoolCareerSnapshot

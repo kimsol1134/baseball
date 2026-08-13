@@ -15,6 +15,20 @@ enum LifeArchiveOrdering {
             }
             .map(\.element)
     }
+
+    /// A lineage is causal, so the ribbon runs from the first player toward the newest player.
+    static func oldestFirst(
+        _ records: [HighSchoolCareerStore.LifeRecord]
+    ) -> [HighSchoolCareerStore.LifeRecord] {
+        records.enumerated()
+            .sorted {
+                if $0.element.lifeNumber != $1.element.lifeNumber {
+                    return $0.element.lifeNumber < $1.element.lifeNumber
+                }
+                return $0.offset < $1.offset
+            }
+            .map(\.element)
+    }
 }
 
 struct ArchivedPledgePresentation: Equatable {
@@ -187,7 +201,7 @@ private struct PlayerLineageRibbon: View {
     @Environment(\.gameCopyResolver) private var copyResolver
 
     private var ordered: [HighSchoolCareerStore.LifeRecord] {
-        LifeArchiveOrdering.newestFirst(records)
+        LifeArchiveOrdering.oldestFirst(records)
     }
 
     var body: some View {

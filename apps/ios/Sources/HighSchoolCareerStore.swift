@@ -178,6 +178,23 @@ final class HighSchoolCareerStore {
         }
     }
 
+    struct InheritedStartComparison: Equatable {
+        struct Source: Equatable, Identifiable {
+            let id: String
+            let ratingDelta: Int
+            let signatureLegacyID: CareerSignatureLegacyID?
+        }
+
+        let previousName: String
+        let careerID: String
+        let previous: LifeRecord.AbilityLine
+        let current: LifeRecord.AbilityLine
+        let sources: [Source]
+
+        var totalDelta: Int { current.total - previous.total }
+        var inheritedRatingDelta: Int { sources.reduce(0) { $0 + $1.ratingDelta } }
+    }
+
     var loadState: LoadState = .loading
     var result: HighSchoolCareerResult?
     var lastSummary: String?
@@ -881,6 +898,119 @@ final class HighSchoolCareerStore {
         } catch {
             loadState = .failed(error.localizedDescription)
         }
+    }
+
+    /// Replays only the deterministic start pipeline to explain what the lineage changed. The
+    /// comparison is display-only and never writes a save or consumes the active career RNG.
+    func inheritedStartComparison(
+        for state: HighSchoolCareerSnapshot,
+        previous: LifeRecord
+    ) -> InheritedStartComparison? {
+        guard state.phase == .prologue,
+              let previousFinal = previous.abilityFinal,
+              let setup = lastSetup,
+              let preset = PitcherPresetCatalog.all.first(where: { $0.id == setup.presetID }),
+              let seed = Self.careerSeed(from: state.careerID, lifeNumber: state.lifeNumber)
+        else { return nil }
+
+        let purchasedBoosts = (state.soulBoosts ?? []).compactMap(SoulBoostID.init(rawValue:))
+        let common = (
+            seed: seed,
+            presetID: preset.id,
+            lifeNumber: state.lifeNumber,
+            identity: state.identity,
+            difficulty: state.difficulty,
+            karmas: state.karmas
+        )
+
+        do {
+            let bare = try engine.start(.init(
+                seed: common.seed,
+                presetID: common.presetID,
+                lifeNumber: common.lifeNumber,
+                identity: common.identity,
+                difficulty: common.difficulty,
+                karmas: common.karmas
+            )).snapshot.pitcher
+            let soulAndMemories = try engine.start(.init(
+                seed: common.seed,
+                presetID: common.presetID,
+                lifeNumber: common.lifeNumber,
+                inheritedSoulPoints: inheritance.automaticSoulTotal,
+                inheritedSoulDomain: inheritance.automaticSoulTotal == 0 ? nil : setup.soulDomain,
+                inheritedMemories: inheritance.memories,
+                identity: common.identity,
+                difficulty: common.difficulty,
+                karmas: common.karmas,
+                inheritedSoulTotal: inheritance.automaticSoulTotal,
+                signatureLegacyID: nil,
+                inheritanceRulesVersion: inheritance.inheritanceRulesVersion
+            )).snapshot.pitcher
+            let boosted = try engine.start(.init(
+                seed: common.seed,
+                presetID: common.presetID,
+                lifeNumber: common.lifeNumber,
+                inheritedSoulPoints: inheritance.automaticSoulTotal,
+                inheritedSoulDomain: inheritance.automaticSoulTotal == 0 ? nil : setup.soulDomain,
+                inheritedMemories: inheritance.memories,
+                identity: common.identity,
+                difficulty: common.difficulty,
+                karmas: common.karmas,
+                soulBoosts: purchasedBoosts.isEmpty ? nil : purchasedBoosts,
+                inheritedSoulTotal: inheritance.automaticSoulTotal,
+                signatureLegacyID: nil,
+                inheritanceRulesVersion: inheritance.inheritanceRulesVersion
+            )).snapshot.pitcher
+
+            let current = LifeRecord.AbilityLine(state.pitcher)
+            let bareLine = LifeRecord.AbilityLine(bare)
+            let soulLine = LifeRecord.AbilityLine(soulAndMemories)
+            let boostLine = LifeRecord.AbilityLine(boosted)
+            var sources: [InheritedStartComparison.Source] = []
+            let soulDelta = soulLine.total - bareLine.total
+            if soulDelta != 0 {
+                sources.append(.init(
+                    id: "soul",
+                    ratingDelta: soulDelta,
+                    signatureLegacyID: nil
+                ))
+            }
+            let boostDelta = boostLine.total - soulLine.total
+            if boostDelta != 0 {
+                sources.append(.init(
+                    id: "boost",
+                    ratingDelta: boostDelta,
+                    signatureLegacyID: nil
+                ))
+            }
+            let signatureDelta = current.total - boostLine.total
+            if signatureDelta != 0, let legacy = inheritance.equippedSignatureLegacy {
+                sources.append(.init(
+                    id: "signature",
+                    ratingDelta: signatureDelta,
+                    signatureLegacyID: legacy.id
+                ))
+            }
+            return InheritedStartComparison(
+                previousName: previous.playerName,
+                careerID: state.careerID,
+                previous: previousFinal,
+                current: current,
+                sources: sources
+            )
+        } catch {
+            return nil
+        }
+    }
+
+    nonisolated private static func careerSeed(from careerID: String, lifeNumber: Int) -> String? {
+        let prefix = "career-"
+        let suffix = "-life-\(lifeNumber)"
+        guard careerID.hasPrefix(prefix), careerID.hasSuffix(suffix) else { return nil }
+        let start = careerID.index(careerID.startIndex, offsetBy: prefix.count)
+        let end = careerID.index(careerID.endIndex, offsetBy: -suffix.count)
+        let seed = String(careerID[start..<end])
+        return UInt64(seed) == nil ? nil : seed
     }
 
     /// 실패 화면의 비파괴 출구. 메모리에 진행이 있으면 돌아가고, 시작 실패면 다시 복원한다.

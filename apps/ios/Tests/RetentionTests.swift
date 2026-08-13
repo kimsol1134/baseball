@@ -29,6 +29,58 @@ final class RetentionTests: XCTestCase {
         XCTAssertEqual(record.portraitSeed, expected)
     }
 
+    @MainActor
+    func testInheritedStartComparisonExplainsDeterministicRatingSources() throws {
+        let sync = SaveSync(key: "inherited-start-\(UUID().uuidString).json")
+        defer { sync.clear() }
+        let engine = HighSchoolCareerEngine()
+        let priorState = try engine.start(.init(
+            seed: "616160",
+            presetID: PitcherPresetCatalog.all[0].id,
+            lifeNumber: 1
+        )).snapshot
+        let priorRecord = HighSchoolCareerStore.lifeRecord(
+            from: priorState,
+            memories: [],
+            previous: .firstLife,
+            startingPitcher: priorState.pitcher
+        )
+        var inheritance = HighSchoolCareerStore.Inheritance.firstLife
+        inheritance.lifeNumber = 2
+        inheritance.soulPoints = 100
+        inheritance.soulTotalEarned = 100
+        inheritance.automaticSoulEarned = 100
+        let save = HighSchoolCareerStore.SaveRecord(
+            result: nil,
+            inheritance: inheritance,
+            archive: [priorRecord],
+            revision: 1
+        )
+        XCTAssertTrue(sync.write(try JSONEncoder().encode(save)))
+
+        let store = HighSchoolCareerStore(sync: sync)
+        let priorSetup = store.lastSetup
+        defer { store.lastSetup = priorSetup }
+        store.restoreOrCreate()
+        store.startCareer(
+            preset: PitcherPresetCatalog.all[0],
+            playerName: "이어진 선수",
+            seedOverride: "616161"
+        )
+        let state = try XCTUnwrap(store.state)
+        let comparison = try XCTUnwrap(store.inheritedStartComparison(
+            for: state,
+            previous: priorRecord
+        ))
+
+        XCTAssertEqual(comparison.current.total, HighSchoolCareerStore.LifeRecord.AbilityLine(state.pitcher).total)
+        XCTAssertTrue(comparison.sources.contains { $0.id == "soul" && $0.ratingDelta > 0 })
+        XCTAssertEqual(
+            comparison.inheritedRatingDelta,
+            comparison.sources.reduce(0) { $0 + $1.ratingDelta }
+        )
+    }
+
     // MARK: - 투구 제스처
 
     /// 미터 한가운데 + 중심 조준이 만점이어야 한다.

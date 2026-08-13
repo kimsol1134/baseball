@@ -153,6 +153,12 @@ public enum AppCopyKey {
     public static let prologueThrow = GameCopyKey.localizable("prologue.action.throw")
     public static let prologueSkip = GameCopyKey.localizable("prologue.action.skip")
     public static let prologueCurrentPlayerTitle = GameCopyKey.localizable("prologue.current-player.title")
+    public static let prologueInheritedStartTitle = GameCopyKey.localizable("prologue.inherited-start.title")
+    public static let prologueInheritedStartJourney = GameCopyKey.localizable("prologue.inherited-start.journey")
+    public static let prologueInheritedStartTotal = GameCopyKey.localizable("prologue.inherited-start.total")
+    public static let prologueInheritedStartSoul = GameCopyKey.localizable("prologue.inherited-start.source.soul")
+    public static let prologueInheritedStartBoost = GameCopyKey.localizable("prologue.inherited-start.source.boost")
+    public static let prologueInheritedStartSource = GameCopyKey.localizable("prologue.inherited-start.source.line")
     public static let prologueAbilityTalent = GameCopyKey.localizable("prologue.ability.talent")
     public static let prologueAbilityCeiling = GameCopyKey.localizable("prologue.ability.ceiling")
     public static let prologueAbilityNoCeiling = GameCopyKey.localizable("prologue.ability.no-ceiling")
@@ -173,6 +179,9 @@ public enum AppCopyKey {
         prologueFirstLifeTitle, prologueRebirthTitle, prologueFirstLifeCoachQuote,
         prologueWindHeading, prologueWindNeutralExplanation, prologueWindAccessibility,
         prologueHandicapHeading, prologueThrow, prologueSkip, prologueCurrentPlayerTitle,
+        prologueInheritedStartTitle, prologueInheritedStartJourney,
+        prologueInheritedStartTotal, prologueInheritedStartSoul,
+        prologueInheritedStartBoost, prologueInheritedStartSource,
         prologueAbilityTalent, prologueAbilityCeiling, prologueAbilityNoCeiling,
         prologueAbilityExplanation, prologueAbilityAccessibility,
         prologueAbilityMeaningBest, prologueAbilityMeaningProTop,

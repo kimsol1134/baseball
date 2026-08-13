@@ -125,6 +125,8 @@ enum GameAnalytics {
         case draftResolved = "draft_resolved"
         /// 환생 시작 — 이 게임의 코어 리텐션 신호. 회차를 다시 시작하는 사람이 남는 사람이다.
         case rebirthStarted = "rebirth_started"
+        /// 새 선수의 시작에서 이전 선수와 계승 기여분 비교를 본 시점.
+        case inheritedStartComparisonSeen = "inherited_start_comparison_seen"
         /// 회차 카드 공유(바이럴 신호).
         case lifeCardShared = "life_card_shared"
         /// 시스템 공유 UI를 연 시점. 완료와 구분한다.

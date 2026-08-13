@@ -176,6 +176,15 @@ final class PlayerBondStoryTests: XCTestCase {
         XCTAssertEqual(ordered.map(\.playerName), ["셋째 선수", "둘째 선수", "첫 선수"])
     }
 
+    func testArchiveLineageRibbonRunsOldestToNewest() {
+        let ordered = LifeArchiveOrdering.oldestFirst([
+            life(drafted: true, lifeNumber: 3, playerName: "셋째 선수"),
+            life(drafted: false, lifeNumber: 1, playerName: "첫 선수"),
+            life(drafted: false, lifeNumber: 2, playerName: "둘째 선수"),
+        ])
+        XCTAssertEqual(ordered.map(\.lifeNumber), [1, 2, 3])
+    }
+
     func testRecapLegacyLogsOnlyAtActualRevealAndOnlyOnce() {
         XCTAssertFalse(RunRecapView.legacyIsVisible(revealed: 2, stampCount: 3))
         XCTAssertFalse(RunRecapView.shouldLogLegacy(

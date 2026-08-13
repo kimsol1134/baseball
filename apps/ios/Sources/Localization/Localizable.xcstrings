@@ -433,6 +433,42 @@
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금의 나" } }
       }
     },
+    "prologue.inherited-start.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "What the Lineage Changed" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "계보가 바꾼 시작" } }
+      }
+    },
+    "prologue.inherited-start.journey" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@'s final %lld → this player's start %lld (%@)" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@의 마지막 %lld → 이번 선수의 시작 %lld (%@)" } }
+      }
+    },
+    "prologue.inherited-start.total" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Inherited starting growth %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시작에 스며든 계승 성장 %@" } }
+      }
+    },
+    "prologue.inherited-start.source.soul" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Baseball Spirit and carried memories" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "야구혼과 이전 선수의 기억" } }
+      }
+    },
+    "prologue.inherited-start.source.boost" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rebirth shop boost" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "환생 상점 부스트" } }
+      }
+    },
+    "prologue.inherited-start.source.line" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@" } }
+      }
+    },
     "prologue.handicap.heading" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Handicaps" } },
