@@ -15,10 +15,16 @@ final class AppLanguageTests: XCTestCase {
         XCTAssertEqual(AppLanguage(localeIdentifier: "ko_KR"), .korean)
     }
 
+    func testJapaneseLanguageRegionsNormalizeToJapanese() {
+        XCTAssertEqual(AppLanguage(localeIdentifier: "ja"), .japanese)
+        XCTAssertEqual(AppLanguage(localeIdentifier: "ja-JP"), .japanese)
+        XCTAssertEqual(AppLanguage(localeIdentifier: "ja_JP"), .japanese)
+    }
+
     func testUnknownLocaleUsesTheKoreanDevelopmentLanguage() {
         XCTAssertEqual(AppLanguage(localeIdentifier: "fr-FR"), .korean)
         XCTAssertEqual(AppLanguage(localeIdentifier: "", developmentLanguage: .korean), .korean)
-        XCTAssertEqual(AppLanguage.resolve(preferredLocalizations: ["de-DE", "ja-JP"]), .korean)
+        XCTAssertEqual(AppLanguage.resolve(preferredLocalizations: ["de-DE", "fr-FR"]), .korean)
     }
 
     func testSupportedPreferenceWinsOverUnknownPreference() {
@@ -29,6 +35,10 @@ final class AppLanguageTests: XCTestCase {
         XCTAssertEqual(
             AppLanguage.resolve(preferredLocalizations: ["de-DE", "ko-KR"]),
             .korean
+        )
+        XCTAssertEqual(
+            AppLanguage.resolve(preferredLocalizations: ["de-DE", "ja-JP"]),
+            .japanese
         )
     }
 }

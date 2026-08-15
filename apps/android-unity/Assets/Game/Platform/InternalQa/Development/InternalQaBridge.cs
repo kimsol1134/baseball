@@ -3,6 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Baseball.Application.Commands;
 using Baseball.Application.HighSchool;
@@ -27,6 +29,7 @@ namespace Baseball.Platform.InternalQa
     public sealed class InternalQaBridge : MonoBehaviour
     {
         private const float ReadyTimeoutSeconds = 60f;
+        private const float CrashReporterReadyTimeoutSeconds = 20f;
         private const string MarkerPrefix = "BASEBALL_QA_MARKER schema=1";
         private bool _running;
         private bool _showSurface;
@@ -34,6 +37,7 @@ namespace Baseball.Platform.InternalQa
         private string _seed = InternalQaRequest.DefaultSeed;
         private string _phase = "prologue";
         private string _quality = "high";
+        private string _pitch = "four_seam";
         private string _lastStatus = "대기 중";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -89,11 +93,16 @@ namespace Baseball.Platform.InternalQa
             if (GUILayout.Button("setup")) RunSurface("fixture", "setup");
             if (GUILayout.Button("prologue")) RunSurface("fixture", "prologue");
             GUILayout.EndHorizontal();
+            if (GUILayout.Button("school selection")) RunSurface("fixture", "school_selection");
             if (GUILayout.Button("onboarding → tutorial checkpoint"))
                 RunSurface("tutorial-checkpoint", "tutorial_checkpoint");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("pitch High")) RunPitchSurface("high");
-            if (GUILayout.Button("pitch Low")) RunPitchSurface("low");
+            if (GUILayout.Button("직구")) RunPitchSurface("four_seam");
+            if (GUILayout.Button("슬라이더")) RunPitchSurface("slider");
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("커브")) RunPitchSurface("curveball");
+            if (GUILayout.Button("체인지업")) RunPitchSurface("changeup");
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("nonfatal")) RunSurface("nonfatal", _phase);
@@ -119,7 +128,7 @@ namespace Baseball.Platform.InternalQa
         {
             _phase = phase;
             if (!InternalQaRequest.TryCreate(
-                    command, _seed, phase, _quality, out InternalQaRequest request, out string error))
+                command, _seed, phase, _quality, out InternalQaRequest request, out string error))
             {
                 Mark("command_rejected", "failed", "reason=" + error);
                 return;
@@ -127,10 +136,17 @@ namespace Baseball.Platform.InternalQa
             Execute(request);
         }
 
-        private void RunPitchSurface(string quality)
+        private void RunPitchSurface(string pitch)
         {
-            _quality = quality;
-            RunSurface("pitch-sample", _phase);
+            _pitch = pitch;
+            if (!InternalQaRequest.TryCreate(
+                    "pitch-sample", _seed, _phase, _quality, _pitch,
+                    out InternalQaRequest request, out string error))
+            {
+                Mark("command_rejected", "failed", "reason=" + error);
+                return;
+            }
+            Execute(request);
         }
 
         private async void Execute(InternalQaRequest request)
@@ -149,6 +165,9 @@ namespace Baseball.Platform.InternalQa
                     case "ping":
                         Mark("ping", "passed", "bridge=ready");
                         break;
+                    case "save-inspect":
+                        InspectSave();
+                        break;
                     case "fixture":
                     case "tutorial-checkpoint":
                         await ApplyFixture(request);
@@ -157,7 +176,7 @@ namespace Baseball.Platform.InternalQa
                         StartCoroutine(PlayPitchSample(request));
                         return;
                     case "nonfatal":
-                        RunNonfatalProbe();
+                        await RunNonfatalProbe();
                         break;
                     case "crash":
                         StartCoroutine(RunCrashProbe());
@@ -219,6 +238,57 @@ namespace Baseball.Platform.InternalQa
                 return;
             }
 
+            if (request.Phase == "school_selection")
+            {
+                await Dispatch(store, request.Seed + ":school-selection", new SkipTutorialCommand());
+                Mark("fixture_ready", "passed", "phase=school_selection seed=" + request.Seed);
+                return;
+            }
+
+            if (request.Phase == "training" || request.Phase == "overview" ||
+                request.Phase == "relationship")
+            {
+                await Dispatch(store, request.Seed + ":school-selection", new SkipTutorialCommand());
+                await Dispatch(
+                    store,
+                    request.Seed + ":pledge-skip",
+                    new ChoosePledgeCommand(null, new DateTimeOffset(2026, 8, 11, 0, 0, 0, TimeSpan.Zero)));
+                CareerChoiceReadModel school = store.Current.HighSchool?.SchoolChoices?.Count > 0
+                    ? store.Current.HighSchool.SchoolChoices[0]
+                    : null;
+                if (school == null) throw new InvalidOperationException("training_fixture_school_missing");
+                await Dispatch(
+                    store,
+                    request.Seed + ":school",
+                    new AdvanceHighSchoolCommand(
+                        new HighSchoolAction("choose_school", school.Payload),
+                        new DateTimeOffset(2026, 8, 11, 0, 1, 0, TimeSpan.Zero)));
+                if (request.Phase == "relationship")
+                {
+                    await Dispatch(
+                        store,
+                        request.Seed + ":relationship-training-block",
+                        new AdvanceHighSchoolCommand(
+                            new HighSchoolAction("train_block", "velocity:standard"),
+                            new DateTimeOffset(2026, 8, 11, 0, 2, 0, TimeSpan.Zero)));
+                    if (store.Current.HighSchool?.Phase != HighSchoolPhase.Relationship)
+                        throw new InvalidOperationException("relationship_fixture_phase_missing");
+                    BaseballShellHost relationshipHost = FindAnyObjectByType<BaseballShellHost>();
+                    if (relationshipHost?.Controller == null)
+                        throw new InvalidOperationException("relationship_fixture_shell_missing");
+                    relationshipHost.Controller.Navigate(ShellRoute.Relationship);
+                }
+                if (request.Phase == "overview")
+                {
+                    BaseballShellHost host = FindAnyObjectByType<BaseballShellHost>();
+                    if (host?.Controller == null)
+                        throw new InvalidOperationException("overview_fixture_shell_missing");
+                    host.Controller.Navigate(ShellRoute.HighSchoolOverview);
+                }
+                Mark("fixture_ready", "passed", "phase=" + request.Phase + " seed=" + request.Seed);
+                return;
+            }
+
             var startedAt = new DateTimeOffset(2026, 8, 11, 0, 0, 0, TimeSpan.Zero);
             await Dispatch(
                 store,
@@ -269,7 +339,10 @@ namespace Baseball.Platform.InternalQa
                 _running = false;
                 yield break;
             }
-            PitchPresentationSnapshot expected = InternalQaPitchFixture.Create(request.Seed);
+            BaseballShellController shellController =
+                FindAnyObjectByType<BaseballShellHost>()?.Controller;
+            shellController?.SetPitchPresentationActive(true);
+            PitchPresentationSnapshot expected = InternalQaPitchFixture.Create(request.Seed, request.PitchType);
             bool readable = false;
             bool completed = false;
             stage.ResultReadable += snapshot =>
@@ -279,7 +352,8 @@ namespace Baseball.Platform.InternalQa
                 Mark(
                     "pitch_result_readable",
                     "passed",
-                    "quality=" + request.Quality.Value() + " pitch_id=" + SafeToken(snapshot.PitchId));
+                    "quality=" + request.Quality.Value() + " pitch=" + request.PitchType.Value() +
+                    " pitch_id=" + SafeToken(snapshot.PitchId));
             };
             stage.PresentationCompleted += snapshot =>
             {
@@ -295,7 +369,8 @@ namespace Baseball.Platform.InternalQa
                 Mark(
                     "pitch_presentation_completed",
                     "passed",
-                    "quality=" + request.Quality.Value() + " outcome=" + expected.Call.Value());
+                    "quality=" + request.Quality.Value() + " pitch=" + request.PitchType.Value() +
+                    " outcome=" + expected.Call.Value());
             }
             else
             {
@@ -304,20 +379,32 @@ namespace Baseball.Platform.InternalQa
                     "failed",
                     "reason=" + (readable ? "completion_timeout" : "readable_timeout"));
             }
+            shellController?.SetPitchPresentationActive(false);
             Destroy(stageObject);
             _running = false;
         }
 
-        private static void RunNonfatalProbe()
+        private static async Task RunNonfatalProbe()
         {
-            bool reporterReady = CrashReporting.Reporter.IsReady;
+            float deadline = Time.realtimeSinceStartup + CrashReporterReadyTimeoutSeconds;
+            while (!CrashReporting.Reporter.IsReady && Time.realtimeSinceStartup < deadline)
+            {
+                await Task.Delay(100);
+            }
+
+            if (!CrashReporting.Reporter.IsReady)
+            {
+                Mark("nonfatal_invoked", "failed", "reason=reporter_not_ready");
+                return;
+            }
+
             CrashReporting.RecordUnexpected(
                 new InvalidOperationException("internal_qa_nonfatal_probe"),
                 "internal_qa_nonfatal");
             Mark(
                 "nonfatal_invoked",
                 "passed",
-                "reporter_ready=" + (reporterReady ? "true" : "false"));
+                "reporter_ready=true");
         }
 
         private IEnumerator RunCrashProbe()
@@ -499,6 +586,53 @@ namespace Baseball.Platform.InternalQa
                 "phase=tutorial scenario=" + SafeToken(resume.ScenarioId));
         }
 
+        private static void InspectSave()
+        {
+            if (!RuntimeGameServices.TryGetStore(out GameApplicationStore store))
+                throw new InvalidOperationException("runtime_not_ready");
+
+            GameSaveAggregate current = store.Current;
+            HighSchoolCareerReadModel highSchool = current.HighSchool;
+            string coreCommitment = "none";
+            if (highSchool != null && !string.IsNullOrEmpty(highSchool.CoreStateJson))
+            {
+                using (SHA256 sha256 = SHA256.Create())
+                {
+                    coreCommitment = BitConverter.ToString(
+                        sha256.ComputeHash(Encoding.UTF8.GetBytes(highSchool.CoreStateJson)))
+                        .Replace("-", string.Empty)
+                        .ToLowerInvariant();
+                }
+            }
+            Mark(
+                "save_inspect",
+                "passed",
+                "revision=" + current.Revision.ToString() +
+                " aggregateVersion=" + current.AggregateVersion.ToString() +
+                " stage=" + StageValue(current.Stage) +
+                " highSchool=" + (current.HighSchool != null ? "present" : "null") +
+                " pro=" + (current.Pro != null ? "present" : "null") +
+                " pitchResume=" + (current.PitchResume != null ? "present" : "null") +
+                " pendingPitchCompletion=" + (current.PendingPitchCompletion != null ? "present" : "null") +
+                " deleted=" + (current.Deleted ? "true" : "false") +
+                " settings=" + SettingsToken(current.Settings) +
+                " commandReceiptCount=" + current.CommandReceipts.Count.ToString() +
+                " analyticsReceiptCount=" + (current.AnalyticsReceipts?.Records?.Count ?? 0).ToString() +
+                " coreCommitmentSha256=" + coreCommitment);
+        }
+
+        private static string SettingsToken(GameSettingsState settings)
+        {
+            if (settings == null) return "missing";
+            return "auto=" + (settings.AutoReleaseEnabled ? "1" : "0") +
+                ",sound=" + (settings.SoundEnabled ? "1" : "0") +
+                ",music=" + (settings.MusicEnabled ? "1" : "0") +
+                ",haptics=" + (settings.HapticsEnabled ? "1" : "0") +
+                ",notifications=" + (settings.NotificationsEnabled ? "1" : "0") +
+                ",contrast=" + (settings.HighContrastEnabled ? "1" : "0") +
+                ",motion=" + (settings.ReducedMotionEnabled ? "1" : "0");
+        }
+
         private static bool TryConsumeAndroidIntent(
             out InternalQaRequest request,
             out string errorCode)
@@ -517,12 +651,14 @@ namespace Baseball.Platform.InternalQa
                     string seed = intent.Call<string>("getStringExtra", InternalQaRequest.SeedExtra);
                     string phase = intent.Call<string>("getStringExtra", InternalQaRequest.PhaseExtra);
                     string quality = intent.Call<string>("getStringExtra", InternalQaRequest.QualityExtra);
+                    string pitch = intent.Call<string>("getStringExtra", InternalQaRequest.PitchExtra);
                     RemoveIntentExtra(intent, InternalQaRequest.CommandExtra);
                     RemoveIntentExtra(intent, InternalQaRequest.SeedExtra);
                     RemoveIntentExtra(intent, InternalQaRequest.PhaseExtra);
                     RemoveIntentExtra(intent, InternalQaRequest.QualityExtra);
+                    RemoveIntentExtra(intent, InternalQaRequest.PitchExtra);
                     return InternalQaRequest.TryCreate(
-                        command, seed, phase, quality, out request, out errorCode);
+                        command, seed, phase, quality, pitch, out request, out errorCode);
                 }
             }
             catch (Exception exception)

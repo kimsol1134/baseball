@@ -90,6 +90,7 @@ namespace Baseball.Presentation.Shell
             (_runtime as IBaseballShellSettings)?.NotificationSettingsRequired ?? false;
         public string NotificationsUnavailableReason =>
             (_runtime as IBaseballShellSettings)?.NotificationsUnavailableReason ?? "알림 서비스를 사용할 수 없습니다.";
+        public int SetupStep => (_runtime as IBaseballSetupDraft)?.SetupStep ?? 0;
         public string PlayerName => (_runtime as IBaseballSetupDraft)?.PlayerName ?? "한결";
         public string SuggestedPlayerName =>
             (_runtime as IBaseballSetupDraft)?.SuggestedPlayerName ?? "민서준";
@@ -538,6 +539,9 @@ namespace Baseball.Presentation.Shell
 
         public void SetPlayerName(string value) =>
             SetDraftValue(() => (_runtime as IBaseballSetupDraft)?.SetPlayerName(value));
+
+        public void SetSetupStep(int value) =>
+            SetDraftValue(() => (_runtime as IBaseballSetupDraft)?.SetSetupStep(value));
 
         public void SetRegion(string value) =>
             SetDraftValue(() => (_runtime as IBaseballSetupDraft)?.SetRegion(value));

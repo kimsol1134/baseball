@@ -4,7 +4,8 @@
 
 이 문서는 구현 소스와 출시 증거를 구분한다. clean commit의 Unity 테스트, production upload-key
 서명 v5 AAB, Firebase symbols, API 29/35(16KB)/36 smoke, Play 내부·비공개 트랙은 준비됐다. v5
-AAB는 아직 Play에 업로드하지 않았고 활성 closed Alpha는 versionCode 1이다.
+AAB+native symbols는 같은 Play edit로 commit됐고 internal은 versionCode 5를 제공한다. closed Alpha
+v5는 검토 중이며 승인 전까지 versionCode 1을 계속 제공한다.
 사업자등록번호는 실제 증빙으로 저장했고 공개전화는 SMS 인증, 통신판매업은 신규 신고를 기다린다. 다만
 **한국 개발자 정보, 12명/14일 비공개 테스트와 물리 스마트폰 증거가 없으므로 Google Play RC로
 승인된 상태가 아니다.**
@@ -96,8 +97,8 @@ AAB는 아직 Play에 업로드하지 않았고 활성 closed Alpha는 versionCo
 1. 요청된 공개 전화번호 SMS 코드를 확인하고, 정부24 통신판매업 신고 완료 뒤 발급 번호·기관을 제출한다.
 2. closed Alpha의 opt-in 테스터를 12명 이상 확보하고 14일 이상 유지한다.
 3. Low/Mid/High 실제 세로 스마트폰에서 성능, TalkBack, 실제 저용량, Back/재개를 기록한다.
-4. v5 AAB+native symbols를 같은 Play edit로 commit하고, 변경을 검토 제출한 뒤 사전 출시 보고서,
-   지원 기기 CSV, 폼 팩터 제외와 60분 체험을 확인한다.
+4. closed Alpha v5 검토 완료 뒤 사전 출시 보고서, Device Catalog 승인·지원 기기 CSV,
+   폼 팩터 제외와 60분 체험을 확인한다.
 5. 내부/비공개 설치에서 Firebase/Amplitude 수신과 Crashlytics symbolication을 확인한다.
 6. `DEVICE_MATRIX.md`, `PARITY_MATRIX.md`, `RELEASE_EVIDENCE.md`의 빈 칸이 모두 증거로 채워진 뒤 RC를 승인한다.
 

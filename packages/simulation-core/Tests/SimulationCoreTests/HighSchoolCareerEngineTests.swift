@@ -1161,18 +1161,7 @@ final class HighSchoolCareerEngineTests: XCTestCase {
     func testCannedSpreadPolicyReachesDraftAndReportsBoundedScores() throws {
         let engine = HighSchoolCareerEngine()
         let seeds = Self.draftBalanceSeeds
-        let (rate, drafted, scores) = try draftOutcomes(engine, seeds: seeds, policy: .ordinary)
-        let sorted = scores.sorted()
-        // V4 public thresholds are 59/63/67. The same synthetic score sample makes a compact
-        // monotonicity diagnostic; exact threshold and weighted-variance contracts have separate
-        // pure regression assertions.
-        func rateAtOrAbove(_ threshold: Int) -> Int {
-            Int((Double(scores.filter { $0 >= threshold }.count) / Double(scores.count) * 100).rounded())
-        }
-        print("[draft-balance] ordinary/standard rate=\(Int((rate * 100).rounded()))% (\(drafted)/\(seeds.count)) "
-            + "score min=\(sorted.first ?? 0) p25=\(sorted[sorted.count / 4]) median=\(sorted[sorted.count / 2]) "
-            + "p75=\(sorted[min(sorted.count - 1, sorted.count * 3 / 4)]) max=\(sorted.last ?? 0) "
-            + "| v4-thresholds relaxed(≥59)=\(rateAtOrAbove(59))% standard(≥63)=\(rateAtOrAbove(63))% challenging(≥67)=\(rateAtOrAbove(67))%")
+        let (_, _, scores) = try draftOutcomes(engine, seeds: seeds, policy: .ordinary)
         XCTAssertEqual(scores.count, seeds.count)
         XCTAssertTrue(scores.allSatisfy { (0...100).contains($0) })
     }
@@ -1184,8 +1173,6 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         let seeds = Self.draftBalanceSeeds
         let focused = try draftOutcomes(engine, seeds: seeds, policy: .focused)
         let neglect = try draftOutcomes(engine, seeds: seeds, policy: .neglect)
-        print("[draft-balance] focused rate=\(Int((focused.rate * 100).rounded()))% (\(focused.drafted)/\(seeds.count)) "
-            + "neglect rate=\(Int((neglect.rate * 100).rounded()))% (\(neglect.drafted)/\(seeds.count))")
         XCTAssertGreaterThanOrEqual(focused.rate, 0.9, "a focused, dominant run must remain reliably draftable")
         XCTAssertLessThanOrEqual(neglect.rate, 0.1, "a neglected, thrown run must reliably miss the draft")
     }
@@ -1199,8 +1186,6 @@ final class HighSchoolCareerEngineTests: XCTestCase {
         let relaxed = try draftOutcomes(engine, seeds: seeds, policy: .ordinary, difficulty: .init(careerHarshness: .relaxed)).rate
         let standard = try draftOutcomes(engine, seeds: seeds, policy: .ordinary, difficulty: .init(careerHarshness: .standard)).rate
         let challenging = try draftOutcomes(engine, seeds: seeds, policy: .ordinary, difficulty: .init(careerHarshness: .challenging)).rate
-        print("[draft-balance] harshness relaxed=\(Int((relaxed * 100).rounded()))% "
-            + "standard=\(Int((standard * 100).rounded()))% challenging=\(Int((challenging * 100).rounded()))%")
         XCTAssertGreaterThanOrEqual(relaxed, standard, "relaxed harshness must draft at least as often as standard")
         XCTAssertGreaterThanOrEqual(standard, challenging, "standard harshness must draft at least as often as challenging")
     }
@@ -1475,16 +1460,13 @@ extension HighSchoolCareerEngineTests {
     func testOrdinaryPushThroughInjuryRateLandsInSpecBand() throws {
         let engine = HighSchoolCareerEngine()
         let seeds = (1...40).map(String.init)
-        var injured = 0, drafted = 0, warned = 0
+        var injured = 0
         for seed in seeds {
             let s = Int(seed)!
             let out = try runArmCareer(engine, seed: seed, pitchesForGame: { self.ordinaryPitches(s, $0) }, armResponse: .challenge, useRecovery: true)
             if out.injured { injured += 1 }
-            if out.sawWarning { warned += 1 }
-            if out.draft?.outcome == .drafted { drafted += 1 }
         }
         let rate = Double(injured) / Double(seeds.count)
-        print("[arm-balance] ordinary push-through injuryRate=\(Int((rate * 100).rounded()))% (\(injured)/40) warned=\(warned)/40 drafted=\(drafted)/40")
         XCTAssertGreaterThanOrEqual(rate, 0.15, "혹사를 강행하는 평범 정책의 부상이 너무 드뭅니다 — 위험 곡선이 약합니다")
         XCTAssertLessThanOrEqual(rate, 0.35, "평범 정책이 너무 자주 다칩니다 — 무리한 등판의 여지가 없습니다")
     }

@@ -8,7 +8,7 @@ import SimulationCore
 /// an English fallback.
 enum PitchPresentation {
     static func batterName(_ batter: BatterSnapshot, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return batter.name }
+        guard resolver.language != .korean else { return batter.name }
         if batter.id == "bullpen-batter" { return resolver.resolve(.batterPractice) }
         if batter.id == "bullpen-batter-2" { return resolver.resolve(.batterPracticeB) }
 
@@ -17,7 +17,7 @@ enum PitchPresentation {
 
         // Frozen shipped-name inventory. These are display spellings only; the Korean names and
         // stable batter IDs remain untouched in saves and simulation inputs.
-        let shippedNames: [String: String] = [
+        let englishNames: [String: String] = [
             "구본휘": "Gu Bon-hwi", "설재빈": "Seol Jae-bin", "천유겸": "Cheon Yu-gyeom",
             "봉시원": "Bong Si-won", "옥준서": "Ok Jun-seo", "석다온": "Seok Da-on",
             "여준호": "Yeo Jun-ho", "심우재": "Sim Woo-jae", "표시윤": "Pyo Si-yoon",
@@ -27,7 +27,18 @@ enum PitchPresentation {
             "구본혁": "Gu Bon-hyeok", "류성권": "Ryu Seong-gwon", "문태경": "Moon Tae-gyeong",
             "한도결": "Han Do-gyeol", "오재민": "Oh Jae-min",
         ]
-        return shippedNames[batter.name] ?? resolver.resolve(.batterOpponent)
+        let japaneseNames: [String: String] = [
+            "구본휘": "ク・ボンフィ", "설재빈": "ソル・ジェビン", "천유겸": "チョン・ユギョム",
+            "봉시원": "ポン・シウォン", "옥준서": "オク・ジュンソ", "석다온": "ソク・ダオン",
+            "여준호": "ヨ・ジュノ", "심우재": "シム・ウジェ", "표시윤": "ピョ・シユン",
+            "명하람": "ミョン・ハラム", "국지훈": "クク・ジフン", "노경환": "ノ・ギョンファン",
+            "강도훈": "カン・ドフン", "마태오": "マ・テオ", "백건우": "ペク・ゴヌ",
+            "노진성": "ノ・ジンソン", "천우재": "チョン・ウジェ", "서강윤": "ソ・ガンユン",
+            "구본혁": "ク・ボニョク", "류성권": "リュ・ソングォン", "문태경": "ムン・テギョン",
+            "한도결": "ハン・ドギョル", "오재민": "オ・ジェミン",
+        ]
+        let names = resolver.language == .japanese ? japaneseNames : englishNames
+        return names[batter.name] ?? resolver.resolve(.batterOpponent)
     }
 
     static func fielderName(
@@ -35,10 +46,10 @@ enum PitchPresentation {
         position: FielderPosition?,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else {
+        guard resolver.language != .korean else {
             return rawName ?? fielder(position, resolver: resolver)
         }
-        let shippedNames: [String: String] = [
+        let englishNames: [String: String] = [
             "본인": "You",
             "유시환": "Si-hwan Yu",
             "임태오": "Tae-o Im",
@@ -49,11 +60,23 @@ enum PitchPresentation {
             "신태양": "Tae-yang Shin",
             "도경훈": "Gyeong-hoon Do",
         ]
-        return rawName.flatMap { shippedNames[$0] } ?? fielder(position, resolver: resolver)
+        let japaneseNames: [String: String] = [
+            "본인": "自分",
+            "유시환": "ユ・シファン",
+            "임태오": "イム・テオ",
+            "나건우": "ナ・ゴヌ",
+            "배준서": "ペ・ジュンソ",
+            "하민규": "ハ・ミンギュ",
+            "조유찬": "チョ・ユチャン",
+            "신태양": "シン・テヤン",
+            "도경훈": "ト・ギョンフン",
+        ]
+        let names = resolver.language == .japanese ? japaneseNames : englishNames
+        return rawName.flatMap { names[$0] } ?? fielder(position, resolver: resolver)
     }
 
     static func scenarioHeadline(_ scenario: PitchScenario, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return scenario.headline }
+        guard resolver.language != .korean else { return scenario.headline }
         switch scenario.presentationContext {
         case .tutorial:
             return resolver.resolve(.scenarioTutorialTitle)
@@ -73,7 +96,7 @@ enum PitchPresentation {
     }
 
     static func scenarioDetail(_ scenario: PitchScenario, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return scenario.detail }
+        guard resolver.language != .korean else { return scenario.detail }
         switch scenario.presentationContext {
         case .tutorial:
             return resolver.resolve(.scenarioTutorialBody)
@@ -136,7 +159,7 @@ enum PitchPresentation {
         legacy: String,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return legacy }
+        guard resolver.language != .korean else { return legacy }
         let key: PitchUICopyKey = switch outcome {
         case .ball: .feedbackBall
         case .calledStrike: .feedbackCalledStrike
@@ -153,7 +176,7 @@ enum PitchPresentation {
     }
 
     static func detailFeedback(_ snapshot: PlateAppearanceSnapshot, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return snapshot.detailFeedback }
+        guard resolver.language != .korean else { return snapshot.detailFeedback }
         return resolver.resolve(
             .feedbackDetail,
             arguments: [
@@ -263,7 +286,7 @@ enum PitchPresentation {
         batSide: BatSide,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return snapshot.warning }
+        guard resolver.language != .korean else { return snapshot.warning }
         switch (snapshot.detectedPitch, snapshot.detectedZone) {
         case let (pitch?, zone?):
             return resolver.resolve(.adaptationPitchAndZone, arguments: [
@@ -297,17 +320,17 @@ enum PitchPresentation {
     }
 
     static func analysisPattern(_ analysis: PostgameAnalysisSnapshot, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return analysis.patternWarning }
+        guard resolver.language != .korean else { return analysis.patternWarning }
         return analysis.patternWarning.isEmpty ? "" : resolver.resolve(.analysisPatternWarning)
     }
 
     static func analysisGrowth(_ analysis: PostgameAnalysisSnapshot, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return analysis.growthSignal }
+        guard resolver.language != .korean else { return analysis.growthSignal }
         return analysis.growthSignal.isEmpty ? "" : resolver.resolve(.analysisGrowthSignal)
     }
 
     static func catcherReason(_ recommendation: CatcherRecommendationSnapshot, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return recommendation.shortReason }
+        guard resolver.language != .korean else { return recommendation.shortReason }
         let codes = recommendation.reasonCodes
         let key: PitchUICopyKey
         if codes.contains("rival.pattern_detected") { key = .catcherReasonPattern }

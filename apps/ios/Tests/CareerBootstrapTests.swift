@@ -26,6 +26,17 @@ final class CareerBootstrapTests: XCTestCase {
         XCTAssertEqual(result.snapshot.pitcher.name, "테스트")
     }
 
+    /// Wave 0 characterization: the linked iOS bootstrap still signs the rookie contract
+    /// before it exposes week one. This deliberately records the legacy path; it does not
+    /// change the product flow.
+    func testWave0RookieStartAutomaticallySignsBeforeWeekOne() throws {
+        let result = try CareerBootstrap.startCareer(preset: preset, playerName: "웨이브0투수", seed: 20_260_814)
+        XCTAssertEqual(result.snapshot.phase, .weeklyPlan)
+        XCTAssertEqual(result.snapshot.week, 0)
+        XCTAssertEqual(result.snapshot.contract?.yearsRemaining, 3)
+        XCTAssertTrue(result.events.contains("rookie_contract_signed"))
+    }
+
     func testStartCareerIsDeterministicForTheSameSeed() throws {
         let first = try CareerBootstrap.startCareer(preset: preset, playerName: "민서준", seed: 777)
         let second = try CareerBootstrap.startCareer(preset: preset, playerName: "민서준", seed: 777)
@@ -71,5 +82,106 @@ final class CareerBootstrapTests: XCTestCase {
         XCTAssertEqual(store.state?.draftResult?.outcome, .drafted)
         XCTAssertNotNil(store.state?.draftResult?.team)
         XCTAssertFalse(store.hasEnteredPro)
+    }
+
+    /// Wave 0 characterization: store review persists only the existing core review result;
+    /// there is no salary, fan-support, or team-legacy settlement object yet.
+    @MainActor
+    func testWave0SeasonReviewStoreHasNoSalaryFanOrTeamLegacySettlement() throws {
+        let review = try seasonReviewFixture()
+        let contractBefore = review.snapshot.contract
+        let store = MobileCareerStore(saveWriter: { _ in true })
+        store.result = review
+
+        store.reviewSeason()
+
+        let state = try XCTUnwrap(store.state)
+        XCTAssertEqual(store.result?.events, ["pro_season_reviewed"])
+        XCTAssertEqual(store.lastSummary, "시즌 기록을 통산 기록에 확정했습니다.")
+        XCTAssertEqual(state.contract, contractBefore)
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(state)) as? [String: Any]
+        )
+        for key in ["salarySettlement", "fanSupport", "teamLegacy", "teamRecords", "settlement"] {
+            XCTAssertNil(object[key], "legacy season-review JSON unexpectedly contains \(key)")
+        }
+    }
+
+    /// Wave 0 characterization: the season-review branch is still a single generic action card,
+    /// so no salary/fan/team-legacy settlement is exposed by the current UI.
+    func testWave0SeasonReviewUIIsTheCurrentPlainActionCard() throws {
+        let sourceURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/CareerFlowView.swift")
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let start = try XCTUnwrap(source.range(of: "case .seasonReview:"))
+        let remainder = source[start.upperBound...]
+        let end = try XCTUnwrap(remainder.range(of: "case .offseasonDecision:"))
+        let branch = String(remainder[..<end.lowerBound])
+
+        XCTAssertTrue(branch.contains("ActionCard("))
+        XCTAssertTrue(branch.contains("career.reviewSeason"))
+        for token in ["salary", "fanSupport", "teamLegacy", "teamRecords", "settlement"] {
+            XCTAssertFalse(branch.contains(token), "season-review UI unexpectedly contains \(token)")
+        }
+    }
+
+    private func seasonReviewFixture() throws -> ProCareerResult {
+        let engine = ProCareerEngine()
+        var result = try CareerBootstrap.startCareer(
+            preset: preset,
+            playerName: "웨이브0투수",
+            seed: 20_260_815,
+            engine: engine
+        )
+        var steps = 0
+        while result.snapshot.phase != .seasonReview {
+            steps += 1
+            guard steps <= 160 else {
+                throw SimulationError.invalidProCareer("Wave 0 season-review fixture exceeded its step bound")
+            }
+            switch result.snapshot.phase {
+            case .weeklyPlan:
+                let plan: ProWeekPlan = result.snapshot.fatigue > 72
+                    ? .recover
+                    : result.snapshot.managerTrust < 62 ? .earnTrust : .refineCommand
+                result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: plan))
+            case .importantGame:
+                result = try engine.resolveImportantGame(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    report: .init(
+                        scenarioNumber: result.snapshot.week,
+                        pitches: 18,
+                        strikeouts: 2,
+                        walks: 0,
+                        runsAllowed: 0,
+                        expectedDamage: 380,
+                        actualDamage: 240,
+                        recommendationAccepted: 12
+                    )
+                ))
+            case .seasonDecision:
+                guard let decision = result.snapshot.pendingDecision,
+                      let choice = decision.choices.min(by: {
+                          if $0.effect.fatigueDelta != $1.effect.fatigueDelta {
+                              return $0.effect.fatigueDelta < $1.effect.fatigueDelta
+                          }
+                          return $0.id < $1.id
+                      }) else {
+                    throw SimulationError.invalidProCareer("Wave 0 season-review fixture has no decision choice")
+                }
+                result = try engine.applySeasonDecision(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    decisionID: decision.id,
+                    choiceID: choice.id
+                ))
+            default:
+                throw SimulationError.invalidProCareer("Wave 0 season-review fixture entered \(result.snapshot.phase.rawValue)")
+            }
+        }
+        return result
     }
 }

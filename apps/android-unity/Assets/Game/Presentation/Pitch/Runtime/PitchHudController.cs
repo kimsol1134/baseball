@@ -22,6 +22,10 @@ namespace Baseball.Presentation.Pitch
         private readonly bool _tutorial;
         private readonly PitchPointerCaptureState _pointerCapture = new PitchPointerCaptureState();
         private VisualElement _root;
+        private ScrollView _scroll;
+        private VisualElement _topCard;
+        private VisualElement _catcherSignSlot;
+        private VisualElement _contextPanel;
         private VisualElement _inputPanel;
         private VisualElement _timingPanel;
         private VisualElement _presentingPanel;
@@ -80,6 +84,7 @@ namespace Baseball.Presentation.Pitch
         private bool _synchronizingChoices;
         private bool _exitBusy;
         private bool _postgameVisible;
+        private PitchPlayPhase _lastRenderedPhase = PitchPlayPhase.Idle;
         private bool _disposed;
 
         public PitchHudController(
@@ -346,6 +351,10 @@ namespace Baseball.Presentation.Pitch
             _theme = new BaseballThemeController(_root, highContrast, reducedMotion);
             _safeArea = new BaseballSafeAreaController(_root);
 
+            _scroll = Require<ScrollView>("pitch-scroll");
+            _topCard = Require<VisualElement>("pitch-top-card");
+            _catcherSignSlot = Require<VisualElement>("pitch-catcher-sign-slot");
+            _contextPanel = Require<VisualElement>("pitch-context-panel");
             _inputPanel = Require<VisualElement>("pitch-input-panel");
             _timingPanel = Require<VisualElement>("pitch-timing-panel");
             _presentingPanel = Require<VisualElement>("pitch-presenting-panel");
@@ -640,7 +649,7 @@ namespace Baseball.Presentation.Pitch
                 "pitch-continuous-aim",
                 "연속 코스 선택",
                 AccessibilityRole.Container,
-                hint: "손가락으로 포수 미트 위치를 옮기거나 위의 아홉 칸을 선택하세요.",
+                hint: "손가락으로 목표 지점을 옮기거나 위의 아홉 칸을 선택하세요.",
                 focusable: false);
             _resultAccessibility = BaseballAccessibility.Configure(
                 _resultTitle,
@@ -652,6 +661,8 @@ namespace Baseball.Presentation.Pitch
 
         private void Render(PitchPlayViewState state)
         {
+            PitchPlayPhase previousPhase = _lastRenderedPhase;
+            _lastRenderedPhase = state.Phase;
             PlateAppearanceSnapshot result = state.Result == null ? null : state.Result.Snapshot;
             _inningLabel.text = state.Context.Inning + "회 · " + state.Context.Outs + "아웃";
             int balls = result == null ? state.Context.Balls : result.Balls;
@@ -667,7 +678,18 @@ namespace Baseball.Presentation.Pitch
             SetDetail(_scoutingDetailLabel, _scoutingDetailAccessibility, "스카우팅 · " + content.Scouting);
             SetDetail(_rivalDetailLabel, _rivalDetailAccessibility, content.Rival);
             SetDetail(_pitcherDetailLabel, _pitcherDetailAccessibility, "육성 능력 · " + content.Pitcher);
-            _tutorialCoachLabel.style.display = _tutorial ? DisplayStyle.Flex : DisplayStyle.None;
+            bool motionFocus = state.Phase == PitchPlayPhase.Presenting;
+            bool resultFocus = state.Phase == PitchPlayPhase.Result || state.Phase == PitchPlayPhase.Completed;
+            bool showDecisionContext = !motionFocus && !resultFocus;
+            _topCard.style.display = showDecisionContext ? DisplayStyle.Flex : DisplayStyle.None;
+            _tutorialCoachLabel.style.display = _tutorial && showDecisionContext
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            _recommendationLabel.style.display = showDecisionContext ? DisplayStyle.Flex : DisplayStyle.None;
+            _catcherSignSlot.style.display = state.Phase == PitchPlayPhase.Selecting
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+            _contextPanel.style.display = showDecisionContext ? DisplayStyle.Flex : DisplayStyle.None;
             if (_tutorial)
                 _tutorialCoachLabel.text = PitchTutorialCoachCopy.For(state.Context.PitchNumber, strikes);
             _recommendationLabel.text = content.Recommendation;
@@ -702,7 +724,9 @@ namespace Baseball.Presentation.Pitch
                 ? DisplayStyle.Flex : DisplayStyle.None;
             _abandonSlot.style.display = !_tutorial && state.Phase == PitchPlayPhase.Selecting
                 ? DisplayStyle.Flex : DisplayStyle.None;
-            _presentingPanel.style.display = state.Phase == PitchPlayPhase.Presenting ? DisplayStyle.Flex : DisplayStyle.None;
+            // The live pitch is a clean trajectory view: no actor billboards and no HUD card
+            // may cover the ball, trail, strike zone, or plate crossing.
+            _presentingPanel.style.display = DisplayStyle.None;
             _resultPanel.style.display = state.Phase == PitchPlayPhase.Result || state.Phase == PitchPlayPhase.Completed
                 ? DisplayStyle.Flex : DisplayStyle.None;
             _resultSkipSlot.style.display = state.Phase == PitchPlayPhase.Result ? DisplayStyle.Flex : DisplayStyle.None;
@@ -710,13 +734,13 @@ namespace Baseball.Presentation.Pitch
             SetAccessibilityActive(_timingPanel, state.Phase == PitchPlayPhase.Timing);
             SetAccessibilityActive(_releaseSlot, state.Phase == PitchPlayPhase.Selecting || state.Phase == PitchPlayPhase.Timing);
             SetAccessibilityActive(_abandonSlot, !_tutorial && state.Phase == PitchPlayPhase.Selecting);
-            SetAccessibilityActive(_presentingPanel, state.Phase == PitchPlayPhase.Presenting);
+            SetAccessibilityActive(_presentingPanel, false);
             SetAccessibilityActive(_resultPanel, state.Phase == PitchPlayPhase.Result || state.Phase == PitchPlayPhase.Completed);
             SetAccessibilityActive(_resultSkipSlot, state.Phase == PitchPlayPhase.Result);
 
             if (state.Phase == PitchPlayPhase.Presenting)
             {
-                _presentingLabel.text = PitchKoreanCopy.PitchTypeName(state.PitchType) + "가 포수 미트로 향합니다";
+                _presentingLabel.text = PitchKoreanCopy.PitchTypeName(state.PitchType) + " 궤적을 재생합니다";
             }
             if (!_postgameVisible && result != null &&
                 (state.Phase == PitchPlayPhase.Result || state.Phase == PitchPlayPhase.Completed))
@@ -732,6 +756,11 @@ namespace Baseball.Presentation.Pitch
                 _resultAccessibility.Value = _resultDetail.text + ". " + _resultStats.text;
                 Require<VisualElement>("pitch-result-action").style.display = state.Phase == PitchPlayPhase.Completed
                     ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+            if (previousPhase != state.Phase)
+            {
+                if (resultFocus)
+                    _scroll.schedule.Execute(() => _scroll.ScrollTo(_resultPanel));
             }
             RebuildAccessibility();
             if (state.Phase == PitchPlayPhase.Result) _accessibility.FocusScreen(_resultTitle);

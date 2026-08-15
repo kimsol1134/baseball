@@ -1,0 +1,16 @@
+<resources>
+    <string name="pro_career_contract">契約比較</string>
+    <string name="pro_career_settlement">シーズン決算</string>
+    <string name="pro_career_investment">オフシーズン投資</string>
+    <string name="pro_career_retirement">引退記録</string>
+    <string name="pro_career_team">球団</string>
+    <string name="pro_career_years">期間 %1$d年</string>
+    <string name="pro_career_salary">年俸 %1$d</string>
+    <string name="pro_career_signing_bonus">契約金 %1$d</string>
+    <string name="pro_career_fan">ファン支持 %1$d → %2$d</string>
+    <string name="pro_career_legacy">球団レガシー %1$d → %2$d</string>
+    <string name="pro_career_hof">名誉スコア %1$d → %2$d</string>
+    <string name="pro_career_funds">利用可能資金 %1$d</string>
+    <string name="pro_career_retire_action">引退プレビュー</string>
+    <string name="pro_career_fixture_boundary">リリース前検証画面</string>
+</resources>

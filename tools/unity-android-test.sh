@@ -66,11 +66,11 @@ NODE
     echo "$platform Unity log is missing or empty: $log_file" >&2
     failed=1
   elif grep -Eiq \
-    'No valid Unity Editor license|LICENSE SYSTEM.*(fail|error)|error CS[0-9]{4}:|Scripts have compiler errors|Compilation failed|Aborting batchmode due to failure|Fatal Error|test run failed' \
+    'No valid Unity Editor license|LICENSE SYSTEM.*(fail|error)|error CS[0-9]{4}:|Scripts have compiler errors|Compilation failed|Aborting batchmode due to failure|Fatal Error|test run failed|Generation of the Firebase Android resource file .* failed' \
     "$log_file"; then
     echo "$platform Unity log contains a license, compile, fatal, or test-run failure: $log_file" >&2
     grep -Ein \
-      'No valid Unity Editor license|LICENSE SYSTEM.*(fail|error)|error CS[0-9]{4}:|Scripts have compiler errors|Compilation failed|Aborting batchmode due to failure|Fatal Error|test run failed' \
+      'No valid Unity Editor license|LICENSE SYSTEM.*(fail|error)|error CS[0-9]{4}:|Scripts have compiler errors|Compilation failed|Aborting batchmode due to failure|Fatal Error|test run failed|Generation of the Firebase Android resource file .* failed' \
       "$log_file" | tail -n 20 >&2 || true
     failed=1
   fi
@@ -213,6 +213,8 @@ done
 # filesystem test in a batch. Keep every persistence test in a fresh Editor process;
 # each XML remains complete and non-empty, and every case still runs fail-closed.
 persistence_tests=(
+  CurrentEmulatorClone_IsReadByTheRealCSharpAggregateReader
+  KotlinWrittenFixture_IsReadAndRewrittenByTheRealCSharpReader
   Save_WritesSpecifiedEnvelopeAndRoundTrips
   Checksum_IsIndependentOfObjectPropertyOrder
   Save_RotatesExactlyThreeBackups
@@ -241,7 +243,12 @@ persistence_tests=(
 )
 for test_name in "${persistence_tests[@]}"; do
   evidence_name="editmode-persistence-$(slugify "$test_name")"
-  test_filter="Baseball.Persistence.Tests.AtomicSaveRepositoryTests.$test_name"
+  if [[ "$test_name" == "CurrentEmulatorClone_IsReadByTheRealCSharpAggregateReader" ||
+        "$test_name" == "KotlinWrittenFixture_IsReadAndRewrittenByTheRealCSharpReader" ]]; then
+    test_filter="Baseball.Persistence.Tests.Phase6KotlinSaveCompatibilityTests.$test_name"
+  else
+    test_filter="Baseball.Persistence.Tests.AtomicSaveRepositoryTests.$test_name"
+  fi
   run_tests EditMode "$evidence_name" Baseball.Persistence.Tests "$test_filter" || overall_status=1
 done
 

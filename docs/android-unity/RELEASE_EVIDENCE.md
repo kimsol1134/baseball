@@ -3,7 +3,8 @@
 기준 시각: 2026-08-13 KST
 현재 상태: clean commit의 Unity 6000.3.19f1 테스트, production upload-key 서명 v5 AAB,
 Firebase Crashlytics symbol upload, API 29/35(16KB)/36 production smoke, Play 내부·비공개
-트랙 구성이 완료됐다. v5 AAB는 아직 Play에 업로드하지 않았으며 활성 closed Alpha는 versionCode 1이다.
+트랙 구성이 완료됐다. v5 AAB와 nativeCode symbols를 같은 Play edit로 commit했다. internal은
+versionCode 5를 제공하고 closed Alpha는 v5 검토 중이며, 승인 전까지 v1을 계속 제공한다.
 사업자등록번호는 실제 증빙과 대조해 계정에 저장했고 공개 전화번호는 SMS 인증 대기 중이다.
 본인 Google 계정은 closed Alpha 초대를 수락해 실제 tester 상태가 됐다. **프로덕션 RC 승인은 아직
 아니다.** 아래 사람·시간·물리기기 조건은 자동화 증거로 대체하지 않는다.
@@ -91,19 +92,27 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
 - 앱/package 생성 완료: `야구 못하면 또 환생함` / `com.solkim.baseball.android`
 - 유료 상태, 대한민국 가격 `KRW 4,400`, 제품 세금 카테고리 `디지털 앱 판매`
 - Play가 App Bundle의 `16KB 지원`, min API 26, target SDK 36, ARM64, OpenGL ES 3.0을 확인
+- Play App Bundle 탐색기: versionCode 5 활성, 신규 설치 91.5MB, update 24.7MB,
+  지원 Android 기기 5,573대
+- Play App Signing 범용 APK: `com.solkim.baseball.android` / `1.0.0` (5), SHA-256
+  `6bd2fb671b2616ceb0f57a993112a2484282769a8250ab347d5c4e6170b9e4de`, signing certificate
+  SHA-256 `AE6A526DAC8935B0B4F3848D3AE63A31A24D9C3DFB2913E1FFA61FA5019C40E8`
 - 자동 보호: 설치 프로그램 선택 활성, 보호 수준 `양호`
-- internal track: versionCode 1 `내부 테스터에게 제공됨`
+- internal track: `1.0.0 v5 비공개 QA`, versionCode 5 `내부 테스터에게 제공됨`
 - internal opt-in: `https://play.google.com/apps/internaltest/4701687514240048485`
-- closed Alpha: versionCode 1, 대한민국 1개 국가, 테스터 이메일 목록 1개, 전체 출시 구성 완료
+- closed Alpha: `1.0.0 v5 비공개 QA`, versionCode 5 전체 출시 **검토 중**. 대한민국 1개 국가,
+  테스터 이메일 목록 1개이며 승인 전 versionCode 1을 계속 제공
 - closed Alpha opt-in URL에서 본인 Google 계정이 `You are a tester` 상태임을 2026-08-13 확인했다.
   초대 pool은 13명이지만 본인 외 실제 opt-in과 14일 연속 참여는 아직 확인하지 않았다.
 - 스토어 등록정보: ko-KR 이름/필수 문구/그래픽과 production screenshots 6장 등록
 - 개인정보처리방침: `https://baseball-reincarnation.vercel.app/privacy`
 - 고객지원: `https://baseball-reincarnation.vercel.app/support`
 - 콘텐츠 등급, 타겟 연령(13+), 광고 없음, 광고 ID 없음, Data Safety, 정부·금융·건강 앱 선언 완료
-- 2026-08-13 게시 개요의 13개 변경사항을 Google 검토로 전송했다. closed Alpha
-  `1.0.0 내부 QA`, 대한민국, 테스터 목록, ko-KR 등록정보, 콘텐츠 등급, 13+ 타겟층,
-  개인정보처리방침, 광고/Data Safety/건강 선언이 현재 **검토 중**이다.
+- 2026-08-13 등록정보·선언·closed Alpha v1 변경은 검토를 통과해 게시됐다. 이후 Android Publisher
+  edit `01963951099059515908`에서 v5 AAB, nativeCode symbols, internal/Alpha track을 validate하고
+  원자 commit했다. 게시 개요에는 closed Alpha v5 `전체 출시 시작`이 **검토 중**으로 표시된다.
+- Play App Bundle 탐색기 `다운로드` 탭에서 versionCode 5의 `네이티브 디버그 기호`
+  `native-debug-symbols.zip` 27.5MB가 연결된 것을 확인했다.
 - Firebase Android 전용 GA4 앱 `1.0.0`의 production 수신을 Console에서 확인했다. 최근 28일
   Android 활성 사용자 15명, `UnityPlayerActivity` 화면 15회, `first_open` 9회,
   `session_start` 8회, `session_ended` 6회, `onboarding_started` 3회가 보였고 앱 안정성은
@@ -118,9 +127,8 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
 - 과거 검증: versionCode 2 AAB와 `nativeCode` symbols를 같은 Play edit에
   `application/octet-stream`으로 업로드하고 internal/closed Alpha track update까지 검증했다.
   edit commit은 아래 한국 개발자 계정 정보 403 오류로 거부됐고, partial publish를 막기 위해 edit
-  전체를 삭제했다. 따라서 현재 Play 활성 버전은 안전하게 versionCode 1이다. v5 새 closed Alpha
-  draft 화면까지 열었으나 브라우저 확장의 로컬 파일 접근 권한이 꺼져 있어 AAB 선택 전에 중단했다.
-  v5 파일이 Play로 전송됐다고 주장하지 않는다.
+  전체를 삭제했다. v5에서는 Android Publisher 범위를 포함한 ADC로 같은 절차를 재실행했고
+  AAB 응답 SHA-256이 로컬 값과 일치한 뒤 심볼·두 트랙·validate·commit을 모두 성공시켰다.
 - 사업자등록번호는 국세청 발급 증빙과 대조한 실제 값으로 계정에 저장했다. 공개 개발자 전화번호는
   기존 확인 연락처와 같은 번호로 입력하고 SMS 6자리 인증을 요청했다.
 - 공정거래위원회 통신판매사업자 공식 조회에서 현재 등록 정보가 없음을 확인했다. 따라서
@@ -135,15 +143,15 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
    전화번호 SMS 코드를 계정 소유자가 확인하는 것과, 정부24에서 통신판매업을 신고해 발급받은
    번호·신고기관을 입력하는 것이다. 현재 공정위 공식 조회에는 등록 정보가 없으므로 민감정보와
    인증번호를 자동 생성하거나 추측하지 않는다. 2026-08-13 Console UI의 v1 검토 제출은
-   성공했지만, 이 정보는 유료 프로덕션 게시와 v5 원자 업로드 전에 여전히 마감해야 한다.
+   성공했지만, 이 정보는 유료 프로덕션 게시 전에 여전히 마감해야 한다.
 2. **비공개 테스트 시간 조건**: 본인 Google 계정 1개는 실제 tester 상태다. 실제 Google 계정
    테스터 12명 이상이 opt-in하고 14일 이상 계속 참여해야 프로덕션 액세스를 신청할 수 있다.
 3. **물리 기기**: Low/Mid/High 실제 스마트폰에서 성능(p95 frame/peak memory), TalkBack 전체
    탐색, gesture/3-button Back, 실제 low-storage, background/force-stop, 구매 체험 경계를 확인한다.
    에뮬레이터 3종 결과는 이 증거를 대체하지 않는다.
-4. **Play 검토 산출물**: 13개 v1 변경은 2026-08-13 검토 전송 완료다. 계정 정보 해결 뒤
-   v5 AAB+native symbols를 같은 edit로 원자 commit하고, 검토 결과·사전 출시 보고서·지원 기기
-   CSV·태블릿/ChromeOS/TV/XR 제외·무료 체험을 확인한다.
+4. **Play 검토 산출물**: v5 AAB+native symbols 원자 commit과 internal 제공은 완료했다. closed Alpha
+   v5 검토 결과, 자동 사전 출시 보고서, 지원 기기 CSV, 태블릿/ChromeOS/TV/XR 제외와 무료 체험을
+   확인해야 한다. Device Catalog CSV/제외 도구는 별도 Device Catalog 이용약관 동의 전까지 사용하지 않는다.
 5. **Crashlytics 실오류 복원**: Firebase Analytics와 Amplitude Android production 수신은
    Console에서 확인했다. 남은 운영 증거는 내부/비공개 설치의 의도적 test crash가 업로드한
    IL2CPP symbol과 결합되어 사람이 읽을 수 있는 stack으로 복원되는지 확인하는 것이다.

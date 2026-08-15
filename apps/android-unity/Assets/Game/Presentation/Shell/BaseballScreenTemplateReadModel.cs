@@ -51,7 +51,7 @@ namespace Baseball.Presentation.Shell
             screens.Add(ShellRoute.Prologue, Screen(Activate(ShellRoute.Prologue), "highschool", false,
                 Sections(
                     Section("arrival", ScreenSectionTone.Information, Row("arrival_detail")),
-                    Section("ability", ScreenSectionTone.Plain, Row("fastball"), Row("control"), Row("stamina")),
+                    Section("ability", ScreenSectionTone.Plain, Row("fastball"), Row("control"), Row("movement"), Row("stamina")),
                     Section("school", ScreenSectionTone.Milestone, Row("school_choice"), Row("school_detail"))),
                 Actions(Primary("choose_school", ShellRoute.HighSchoolOverview), Secondary("reselect", ShellRoute.Setup))));
 

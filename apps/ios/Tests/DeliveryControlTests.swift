@@ -7,8 +7,116 @@ import SimulationCore
 /// `delivery(meter:aim:aimRadius:)`는 순수 함수다 — 미터 값과 조준 이탈만 받아 릴리스·조준
 /// 점수를 만든다. 여기서 계약이 깨지면 손맛 전체가 조용히 무너지는데, UI 테스트는 전부
 /// `-uiTestAutoRelease`로 이 경로를 우회하므로 아무도 알아채지 못한다.
+@MainActor
 final class DeliveryControlTests: XCTestCase {
     private let radius: CGFloat = 46
+
+    func testManualSliderIsTheRegisteredAppDefaultWithoutOverwritingUserChoice() {
+        let suiteName = "DeliveryControlTests.\(#function)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.removePersistentDomain(forName: suiteName)
+
+        PitchControlPreferences.registerDefaults(in: defaults)
+        XCTAssertFalse(defaults.bool(forKey: PitchControlPreferences.autoReleaseKey))
+
+        defaults.set(true, forKey: PitchControlPreferences.autoReleaseKey)
+        PitchControlPreferences.registerDefaults(in: defaults)
+        XCTAssertTrue(
+            defaults.bool(forKey: PitchControlPreferences.autoReleaseKey),
+            "사용자가 켠 접근성용 자동 릴리스는 앱 기본값 등록이 덮어쓰면 안 됩니다."
+        )
+    }
+
+    func testPerfectFeedbackLivesPastItsAnimationAndSequencesTheAccentSound() {
+        let animationNanoseconds = UInt64(
+            PerfectReleaseFeedback.animationDuration * 1_000_000_000
+        )
+        XCTAssertGreaterThan(
+            PerfectReleaseFeedback.standardLifetimeNanoseconds,
+            animationNanoseconds,
+            "축하 레이어가 페이드 완료 전에 제거되면 마지막 프레임이 다시 잘립니다."
+        )
+        XCTAssertGreaterThan(
+            PerfectReleaseFeedback.accentSoundDelayNanoseconds,
+            110_000_000,
+            "퍼펙트 축하음은 짧은 릴리스 소리가 끝난 뒤 이어져야 합니다."
+        )
+        XCTAssertLessThan(
+            PerfectReleaseFeedback.accentSoundDelayNanoseconds,
+            PerfectReleaseFeedback.reduceMotionLifetimeNanoseconds
+        )
+    }
+
+    func testPerfectHapticIsNotImmediatelyOverwrittenByOutcomeHaptic() {
+        XCTAssertFalse(PerfectReleaseFeedback.shouldPlayOutcomeHaptic(after: PitchDelivery(
+            releaseAccuracy: PitchDelivery.perfectReleaseThreshold,
+            aimAccuracy: 1_000
+        )))
+        XCTAssertTrue(PerfectReleaseFeedback.shouldPlayOutcomeHaptic(after: PitchDelivery(
+            releaseAccuracy: PitchDelivery.perfectReleaseThreshold - 1,
+            aimAccuracy: 1_000
+        )))
+        XCTAssertTrue(PerfectReleaseFeedback.shouldPlayOutcomeHaptic(after: .neutral))
+    }
+
+    func testPitchFeedbackTimelineSeparatesReleaseResultAndNextHeartbeat() {
+        let cases: [(reduceMotion: Bool, clutch: Bool)] = [
+            (false, false),
+            (false, true),
+            (true, false),
+            (true, true),
+        ]
+
+        for value in cases {
+            let result = PitchFeedbackTimeline.resultHapticDelay(
+                reduceMotion: value.reduceMotion,
+                isClutch: value.clutch
+            )
+            let heartbeat = PitchFeedbackTimeline.heartbeatResumeDelay(
+                reduceMotion: value.reduceMotion,
+                isClutch: value.clutch
+            )
+            XCTAssertGreaterThanOrEqual(result, 0.28, "릴리스 패턴이 끝나기 전에 결과 햅틱이 끼면 안 됩니다.")
+            XCTAssertGreaterThan(
+                heartbeat - result,
+                0.5,
+                "결과와 다음 심박 사이에 장면을 읽을 수 있는 정적이 필요합니다."
+            )
+        }
+    }
+
+    func testPitchFeedbackTimelineTracksReplayTempo() {
+        XCTAssertEqual(
+            PitchFeedbackTimeline.resultHapticDelay(reduceMotion: false, isClutch: false),
+            0.92,
+            accuracy: 0.000_001
+        )
+        XCTAssertEqual(
+            PitchFeedbackTimeline.resultHapticDelay(reduceMotion: false, isClutch: true),
+            0.92 * PitchFeedbackTimeline.clutchTempo,
+            accuracy: 0.000_001
+        )
+        XCTAssertEqual(
+            PitchFeedbackTimeline.resultHapticDelay(reduceMotion: true, isClutch: true),
+            PitchFeedbackTimeline.reducedMotionCueInterval,
+            accuracy: 0.000_001
+        )
+        XCTAssertGreaterThan(
+            PitchFeedbackTimeline.heartbeatResumeDelay(reduceMotion: false, isClutch: false),
+            PitchFeedbackTimeline.standardReplayDuration
+        )
+        XCTAssertGreaterThan(
+            PitchFeedbackTimeline.heartbeatResumeDelay(reduceMotion: false, isClutch: true),
+            PitchFeedbackTimeline.standardReplayDuration * PitchFeedbackTimeline.clutchTempo
+        )
+    }
+
+    func testPitchFeedbackNanosecondConversionIsDeterministic() {
+        XCTAssertEqual(PitchFeedbackTimeline.nanoseconds(0.28), 280_000_000)
+        XCTAssertEqual(PitchFeedbackTimeline.nanoseconds(0.92), 920_000_000)
+        XCTAssertEqual(PitchFeedbackTimeline.nanoseconds(-1), 0)
+    }
 
     // MARK: - 릴리스
 
@@ -65,6 +173,27 @@ final class DeliveryControlTests: XCTestCase {
         XCTAssertLessThan(tired, fresh)
     }
 
+    func testFatigueAlsoIncreasesAimSway() {
+        let fresh = DeliveryControl.swayAmplitude(fatigue: 0)
+        let tired = DeliveryControl.swayAmplitude(fatigue: 100)
+        XCTAssertGreaterThan(tired, fresh)
+    }
+
+    func testReduceMotionSoftensAimSwayAndSlowsMeter() {
+        XCTAssertLessThan(
+            DeliveryControl.swayAmplitude(fatigue: 60, reduceMotion: true),
+            DeliveryControl.swayAmplitude(fatigue: 60)
+        )
+        XCTAssertGreaterThan(
+            DeliveryControl.sweepSeconds(
+                velocityTenthsKPH: 1_350,
+                fatigue: 60,
+                reduceMotion: true
+            ),
+            DeliveryControl.sweepSeconds(velocityTenthsKPH: 1_350, fatigue: 60)
+        )
+    }
+
     // MARK: - 조준
 
     func testAimOnTargetIsPerfect() {
@@ -106,6 +235,25 @@ final class DeliveryControlTests: XCTestCase {
     /// 자동 릴리스(접근성 경로)로 던진 공은 판정을 내지 않는다. 손으로 만든 결과가 아니다.
     func testNeutralDeliveryHasNoVerdict() {
         XCTAssertNil(DeliveryControl.verdict(.neutral))
+    }
+
+    func testAutomaticReleaseDoesNotCountAsManualMastery() {
+        XCTAssertNil(DeliveryControl.score(.neutral))
+        XCTAssertEqual(
+            DeliveryControl.score(PitchDelivery(releaseAccuracy: 900, aimAccuracy: 700)),
+            800
+        )
+    }
+
+    func testCoachingHintNamesTheWeakerManualAxis() {
+        XCTAssertEqual(
+            DeliveryControl.coachingHint(PitchDelivery(releaseAccuracy: 300, aimAccuracy: 800)),
+            "미터를 크게 놓쳤습니다 — 초록 구간에서 떼세요"
+        )
+        XCTAssertEqual(
+            DeliveryControl.coachingHint(PitchDelivery(releaseAccuracy: 800, aimAccuracy: 300)),
+            "조준이 크게 흔들렸습니다 — 손가락을 과녁에 머무르게 하세요"
+        )
     }
 }
 

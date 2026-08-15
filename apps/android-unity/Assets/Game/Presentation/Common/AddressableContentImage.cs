@@ -16,6 +16,7 @@ namespace Baseball.Presentation.Common
         private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
         private readonly Image _image;
         private readonly Label _fallback;
+        private readonly bool _compact;
         private IBaseballVisualAssetLease _lease;
         private bool _disposed;
 
@@ -27,6 +28,7 @@ namespace Baseball.Presentation.Common
             bool compact = false)
         {
             name = stableId;
+            _compact = compact;
             AddToClassList(compact
                 ? "baseball-content-image--compact"
                 : "baseball-content-image");
@@ -46,7 +48,10 @@ namespace Baseball.Presentation.Common
                 focusable: true);
             Add(_image);
 
-            _fallback = new Label("삽화를 불러오는 중입니다.");
+            // Compact portrait slots are intentionally narrow. A full loading sentence wraps
+            // one syllable per line there and looks like an error badge, so keep the visible
+            // placeholder quiet while accessibility retains the complete state description.
+            _fallback = new Label(compact ? "…" : "삽화를 불러오는 중입니다.");
             _fallback.AddToClassList("baseball-content-image__fallback");
             BaseballAccessibility.Configure(
                 _fallback,
@@ -157,7 +162,9 @@ namespace Baseball.Presentation.Common
         private void ShowFallback()
         {
             _image.style.display = DisplayStyle.None;
-            _fallback.text = "삽화를 불러오지 못했습니다. 선택과 저장 상태는 그대로 유지됩니다.";
+            _fallback.text = _compact
+                ? "삽화 없음"
+                : "삽화를 불러오지 못했습니다. 선택과 저장 상태는 그대로 유지됩니다.";
             _fallback.style.display = DisplayStyle.Flex;
             if (BaseballAccessibility.TryGet(
                     _fallback,

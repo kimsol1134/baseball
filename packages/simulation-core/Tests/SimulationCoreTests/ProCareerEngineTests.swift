@@ -438,7 +438,7 @@ final class ProCareerEngineTests: XCTestCase {
             XCTAssertEqual(Set(types).count, ProCareerEngine.maximumSeasonDecisions)
             typesAcrossRuns.formUnion(types)
         }
-        XCTAssertEqual(typesAcrossRuns, Set(ProSeasonDecisionType.allCases))
+        XCTAssertEqual(typesAcrossRuns, Set(ProSeasonDecisionType.allCases.filter { $0 != .mediaOpportunity }))
     }
 
     func testScheduledDecisionStopsWeeklyAdvanceAndAppliesOnlyConfirmedChoice() throws {

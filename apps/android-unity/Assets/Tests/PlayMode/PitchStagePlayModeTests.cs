@@ -31,7 +31,7 @@ namespace Baseball.PlayMode.Tests
         }
 
         [UnityTest]
-        public IEnumerator ContactFlightCameraFollowsAuthoritativeArcAndSkipRestoresCatcherView()
+        public IEnumerator ContactFlightCameraFollowsAuthoritativeArcAndSkipRestoresPlateView()
         {
             var stageObject = new GameObject("Contact Camera Pitch Stage");
             var stage = stageObject.AddComponent<PitchStageController>();
@@ -40,7 +40,7 @@ namespace Baseball.PlayMode.Tests
             Transform ball = stageObject.transform.Find("Authoritative Pitch Ball");
             Assert.That(camera, Is.Not.Null);
             Assert.That(ball, Is.Not.Null);
-            Vector3 catcherView = camera.transform.position;
+            Vector3 plateView = camera.transform.position;
             bool readable = false;
             bool completed = false;
             stage.ResultReadable += _ => readable = true;
@@ -52,7 +52,7 @@ namespace Baseball.PlayMode.Tests
                 "접촉 결과의 readable 경계가 게시되지 않았습니다.",
                 2f);
             yield return PlayModeDeadline.Until(
-                () => Vector3.Distance(camera.transform.position, catcherView) > 1f,
+                () => Vector3.Distance(camera.transform.position, plateView) > 1f,
                 "접촉 뒤 카메라가 결정된 타구 궤적을 따라가지 않았습니다.",
                 2f);
 
@@ -65,7 +65,7 @@ namespace Baseball.PlayMode.Tests
                 () => completed,
                 "타구 follow 중 skip 뒤 presentation이 완료되지 않았습니다.",
                 2f);
-            Assert.That(Vector3.Distance(camera.transform.position, catcherView), Is.LessThan(0.01f));
+            Assert.That(Vector3.Distance(camera.transform.position, plateView), Is.LessThan(0.01f));
 
             UnityEngine.Object.Destroy(stageObject);
             yield return null;
@@ -73,14 +73,14 @@ namespace Baseball.PlayMode.Tests
         }
 
         [UnityTest]
-        public IEnumerator ReducedMotionContactKeepsCatcherViewAndCompletesWithinDeadline()
+        public IEnumerator ReducedMotionContactKeepsPlateViewAndCompletesWithinDeadline()
         {
             var stageObject = new GameObject("Reduced Contact Camera Pitch Stage");
             var stage = stageObject.AddComponent<PitchStageController>();
             yield return PrepareStage(stage);
             stage.ReducedMotion = true;
             Camera camera = stageObject.GetComponentInChildren<Camera>();
-            Vector3 catcherView = camera.transform.position;
+            Vector3 plateView = camera.transform.position;
             bool completed = false;
             stage.PresentationCompleted += _ => completed = true;
 
@@ -91,13 +91,13 @@ namespace Baseball.PlayMode.Tests
             {
                 maximumCameraTravel = Mathf.Max(
                     maximumCameraTravel,
-                    Vector3.Distance(camera.transform.position, catcherView));
+                    Vector3.Distance(camera.transform.position, plateView));
                 yield return null;
             }
 
             Assert.That(completed, Is.True, "reduced-motion 접촉 presentation이 2초 안에 완료되지 않았습니다.");
             Assert.That(maximumCameraTravel, Is.LessThan(0.01f));
-            Assert.That(Vector3.Distance(camera.transform.position, catcherView), Is.LessThan(0.01f));
+            Assert.That(Vector3.Distance(camera.transform.position, plateView), Is.LessThan(0.01f));
 
             UnityEngine.Object.Destroy(stageObject);
             yield return null;
@@ -121,7 +121,7 @@ namespace Baseball.PlayMode.Tests
             stageObject.SendMessage("ApplyQuality", PitchQualityTier.High, SendMessageOptions.RequireReceiver);
             Assert.That(stage.QualityTier, Is.EqualTo(PitchQualityTier.High));
             Assert.That(CrashRuntimeDiagnostics.CurrentQualityTier, Is.EqualTo("high"));
-            Assert.That(trail.minVertexDistance, Is.EqualTo(0.035f).Within(0.001f));
+            Assert.That(trail.minVertexDistance, Is.EqualTo(0.025f).Within(0.001f));
             Assert.That(particles.main.maxParticles, Is.EqualTo(24));
 
             stage.Play(expected);
@@ -129,7 +129,7 @@ namespace Baseball.PlayMode.Tests
             stageObject.SendMessage("HandleLowMemory", SendMessageOptions.RequireReceiver);
             Assert.That(stage.QualityTier, Is.EqualTo(PitchQualityTier.Low));
             Assert.That(CrashRuntimeDiagnostics.CurrentQualityTier, Is.EqualTo("low"));
-            Assert.That(trail.minVertexDistance, Is.EqualTo(0.07f).Within(0.001f));
+            Assert.That(trail.minVertexDistance, Is.EqualTo(0.05f).Within(0.001f));
             Assert.That(particles.main.maxParticles, Is.EqualTo(8));
             Assert.That(QualitySettings.antiAliasing, Is.Zero);
             Assert.That(UnityEngine.Application.targetFrameRate, Is.EqualTo(30));
@@ -150,7 +150,7 @@ namespace Baseball.PlayMode.Tests
         }
 
         [UnityTest]
-        public IEnumerator RequiredArtworkFramesPortraitAndReleasesAllLeases()
+        public IEnumerator StadiumOnlyStageFramesPortraitAndReleasesItsLease()
         {
             var stageObject = new GameObject("Portrait Artwork Pitch Stage");
             var stage = stageObject.AddComponent<PitchStageController>();
@@ -167,10 +167,8 @@ namespace Baseball.PlayMode.Tests
             Transform batter = stageObject.transform.Find("Batter Stance Billboard");
             Transform catcher = stageObject.transform.Find("Catcher Stance Billboard");
             Assert.That(backdrop, Is.Not.Null);
-            Assert.That(batter, Is.Not.Null);
-            Assert.That(catcher, Is.Not.Null);
-            Assert.That(camera.WorldToViewportPoint(batter.position).x, Is.InRange(0.05f, 0.95f));
-            Assert.That(camera.WorldToViewportPoint(catcher.position).x, Is.InRange(0.05f, 0.95f));
+            Assert.That(batter, Is.Null);
+            Assert.That(catcher, Is.Null);
 
             SpriteRenderer backdropRenderer = backdrop.GetComponent<SpriteRenderer>();
             Vector3 minimum = camera.WorldToViewportPoint(backdrop.TransformPoint(
@@ -184,7 +182,7 @@ namespace Baseball.PlayMode.Tests
 
             UnityEngine.Object.Destroy(stageObject);
             yield return null;
-            Assert.That(loader.DisposedCount, Is.EqualTo(3));
+            Assert.That(loader.DisposedCount, Is.EqualTo(1));
         }
 
         [UnityTest]
@@ -192,7 +190,7 @@ namespace Baseball.PlayMode.Tests
         {
             var stageObject = new GameObject("Missing Artwork Pitch Stage");
             var stage = stageObject.AddComponent<PitchStageController>();
-            var loader = new FakeStageVisualAssetLoader(missingCatcher: true);
+            var loader = new FakeStageVisualAssetLoader(missingStadium: true);
 
             yield return Await(stage.PrepareVisualsAsync(loader, CancellationToken.None), false);
 
@@ -202,7 +200,7 @@ namespace Baseball.PlayMode.Tests
             Assert.That(stageObject.transform.Find("Catcher Stance Billboard"), Is.Null);
             Assert.That(() => stage.Play(CreateContactSnapshot()),
                 Throws.TypeOf<InvalidOperationException>());
-            Assert.That(loader.DisposedCount, Is.EqualTo(2));
+            Assert.That(loader.DisposedCount, Is.EqualTo(0));
 
             UnityEngine.Object.Destroy(stageObject);
             yield return null;
@@ -322,11 +320,11 @@ namespace Baseball.PlayMode.Tests
 
         private sealed class FakeStageVisualAssetLoader : IBaseballVisualAssetLoader
         {
-            private readonly bool _missingCatcher;
+            private readonly bool _missingStadium;
 
-            public FakeStageVisualAssetLoader(bool missingCatcher = false)
+            public FakeStageVisualAssetLoader(bool missingStadium = false)
             {
-                _missingCatcher = missingCatcher;
+                _missingStadium = missingStadium;
             }
 
             public int DisposedCount { get; private set; }
@@ -336,11 +334,10 @@ namespace Baseball.PlayMode.Tests
                 CancellationToken cancellationToken)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (_missingCatcher && address == PitchStageVisualPolicy.CatcherAddress)
+                if (_missingStadium && address == PitchStageVisualPolicy.StadiumAddress)
                     return Task.FromResult<IBaseballVisualAssetLease>(null);
-                int width = address == PitchStageVisualPolicy.StadiumAddress ? 1290 :
-                    address == PitchStageVisualPolicy.BatterAddress ? 613 : 694;
-                int height = address == PitchStageVisualPolicy.StadiumAddress ? 725 : 850;
+                int width = 1290;
+                int height = 725;
                 var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
                 Sprite sprite = Sprite.Create(
                     texture,

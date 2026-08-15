@@ -1592,6 +1592,41 @@ private struct TrainingCard: View {
         )
     }
 
+    /// SwiftUICore가 `ForEach`의 item closure를 다른 executor에서 호출하는 경로를
+    /// 피한다. 각 행은 고정된 View로 만들고, actor-bound 상태는 Binding으로만 넘긴다.
+    private func focusOptionButton(_ option: TrainingFocus) -> some View {
+        TrainingFocusOptionButton(
+            option: option,
+            title: HighSchoolPresentation.localized(option, resolver: copyResolver),
+            detail: HighSchoolPresentation.localizedFocusDetail(option, resolver: copyResolver),
+            windEffect: windEffect(for: option, resolver: copyResolver),
+            opportunityBadge: copyResolver.resolve(AppCopyKey.trainingBadgeOpportunity),
+            schoolStrengthBadge: copyResolver.resolve(AppCopyKey.trainingBadgeSchoolStrength),
+            isOpportunity: state.trainingOpportunity?.focus == option,
+            isSchoolStrength: state.school?.strength == option,
+            selection: $focus
+        )
+    }
+
+    private func intensityOptionButton(_ option: TrainingIntensity) -> some View {
+        TrainingIntensityOptionButton(
+            option: option,
+            title: HighSchoolPresentation.localized(option, focus: focus, resolver: copyResolver),
+            selection: $intensity
+        )
+    }
+
+    private func targetPitchPicker(title: String) -> some View {
+        TrainingTargetPitchPicker(
+            title: title,
+            availablePitches: Set(breakingBalls),
+            sliderTitle: PitchCopy.localized(.slider, resolver: copyResolver),
+            curveballTitle: PitchCopy.localized(.curveball, resolver: copyResolver),
+            changeupTitle: PitchCopy.localized(.changeup, resolver: copyResolver),
+            selection: $targetPitch
+        )
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             let health = HighSchoolPresentation.localizedArmHealth(armHealth, resolver: copyResolver)
@@ -1620,99 +1655,28 @@ private struct TrainingCard: View {
             }
 
             Text(copyResolver.resolve(AppCopyKey.trainingPrompt)).font(.headline)
-            ForEach(TrainingFocus.allCases, id: \.self) { option in
-                let isOpportunity = state.trainingOpportunity?.focus == option
-                let isSchoolStrength = state.school?.strength == option
-                Button { focus = option } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: HighSchoolPresentation.focusSymbol(option))
-                            .font(.title3)
-                            .foregroundStyle(focus == option ? BaseballTheme.selection : BaseballTheme.textSecondary)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 6) {
-                                Text(HighSchoolPresentation.localized(option, resolver: copyResolver)).font(.subheadline.weight(.bold))
-                                if isOpportunity {
-                                    Text(copyResolver.resolve(AppCopyKey.trainingBadgeOpportunity))
-                                        .font(.caption2.weight(.bold))
-                                        .padding(.horizontal, 6).padding(.vertical, 2)
-                                        .background(BaseballTheme.milestone.opacity(0.25), in: Capsule())
-                                        .foregroundStyle(BaseballTheme.milestone)
-                                }
-                                // 학교 특기는 3년 내내 붙는 상수 보너스인데, 학교 선택 화면
-                                // 이후로는 어디에도 안 보였다. 기회와 특기가 겹치는 턴을
-                                // 알아보는 것이 훈련의 진짜 결정이라 여기 있어야 한다.
-                                if isSchoolStrength {
-                                    Text(copyResolver.resolve(AppCopyKey.trainingBadgeSchoolStrength))
-                                        .font(.caption2.weight(.bold))
-                                        .padding(.horizontal, 6).padding(.vertical, 2)
-                                        .background(BaseballTheme.action.opacity(0.25), in: Capsule())
-                                        .foregroundStyle(BaseballTheme.action)
-                                }
-                            }
-                            Text(HighSchoolPresentation.localizedFocusDetail(option, resolver: copyResolver))
-                                .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                            if let windEffect = windEffect(for: option, resolver: copyResolver) {
-                                // localization-safe: resolved-copy
-                                Text(windEffect)
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(BaseballTheme.information)
-                            }
-                        }
-                        Spacer()
-                        Image(systemName: focus == option ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(focus == option ? BaseballTheme.selection : BaseballTheme.border)
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
-                    .background(
-                        focus == option ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
-                        in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                            .stroke(focus == option ? BaseballTheme.selection : BaseballTheme.border, lineWidth: focus == option ? 2 : 1)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("hs.focus.\(option.rawValue)")
-                .accessibilityAddTraits(focus == option ? .isSelected : [])
-            }
+            // 열거형은 고정 여섯 개다. 명시적 행은 SwiftUICore의 지연 item closure를
+            // 만들지 않으면서 CaseIterable 선언 순서와 같은 화면 순서를 보존한다.
+            focusOptionButton(.velocity)
+            focusOptionButton(.command)
+            focusOptionButton(.breakingBall)
+            focusOptionButton(.stamina)
+            focusOptionButton(.recovery)
+            focusOptionButton(.gamePlanning)
 
             if focus == .breakingBall, !breakingBalls.isEmpty {
                 let title = copyResolver.resolve(AppCopyKey.trainingPitchPickerTitle)
                 BaseballCard(title: title) {
-                    Picker(title, selection: $targetPitch) {
-                        ForEach(breakingBalls, id: \.self) { pitch in
-                            Text(PitchCopy.localized(pitch, resolver: copyResolver)).tag(pitch)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .accessibilityIdentifier("hs.training.targetPitch")
+                    targetPitchPicker(title: title)
                 }
             }
 
             BaseballCard(title: copyResolver.resolve(AppCopyKey.trainingIntensityTitle)) {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 6) {
-                        ForEach(TrainingIntensity.allCases, id: \.self) { option in
-                            Button { intensity = option } label: {
-                                Text(HighSchoolPresentation.localized(option, focus: focus, resolver: copyResolver))
-                                    .font(.footnote.weight(.semibold))
-                                    .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
-                            }
-                            .buttonStyle(.plain)
-                            .background(
-                                intensity == option ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surfaceRaised,
-                                in: RoundedRectangle(cornerRadius: 8)
-                            )
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(intensity == option ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6),
-                                            lineWidth: intensity == option ? 2 : 1)
-                            }
-                            .accessibilityAddTraits(intensity == option ? .isSelected : [])
-                        }
+                        intensityOptionButton(.light)
+                        intensityOptionButton(.standard)
+                        intensityOptionButton(.intensive)
                     }
                     if doubleBonus {
                         Text(copyResolver.resolve(AppCopyKey.trainingDoubleBonus))
@@ -1751,6 +1715,143 @@ private struct TrainingCard: View {
             .frame(minHeight: BaseballMetrics.minimumTapTarget)
             .accessibilityIdentifier("hs.training.commitBlock")
         }
+    }
+}
+
+private struct TrainingFocusOptionButton: View {
+    let option: TrainingFocus
+    let title: String
+    let detail: String
+    let windEffect: String?
+    let opportunityBadge: String
+    let schoolStrengthBadge: String
+    let isOpportunity: Bool
+    let isSchoolStrength: Bool
+    @Binding var selection: TrainingFocus
+
+    private var isSelected: Bool { selection == option }
+
+    var body: some View {
+        Button { selection = option } label: {
+            HStack(spacing: 12) {
+                Image(systemName: HighSchoolPresentation.focusSymbol(option))
+                    .font(.title3)
+                    .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.textSecondary)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        // localization-safe: resolved-copy
+                        Text(title).font(.subheadline.weight(.bold))
+                        if isOpportunity {
+                            // localization-safe: resolved-copy
+                            Text(opportunityBadge)
+                                .font(.caption2.weight(.bold))
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(BaseballTheme.milestone.opacity(0.25), in: Capsule())
+                                .foregroundStyle(BaseballTheme.milestone)
+                        }
+                        // 학교 특기는 3년 내내 붙는 상수 보너스다. 기회와 특기가
+                        // 겹치는 턴을 알아보는 것이 훈련의 실제 결정이라 함께 표시한다.
+                        if isSchoolStrength {
+                            // localization-safe: resolved-copy
+                            Text(schoolStrengthBadge)
+                                .font(.caption2.weight(.bold))
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(BaseballTheme.action.opacity(0.25), in: Capsule())
+                            .foregroundStyle(BaseballTheme.action)
+                        }
+                    }
+                    // localization-safe: resolved-copy
+                    Text(detail)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                    if let windEffect {
+                        // localization-safe: resolved-copy
+                        Text(windEffect)
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.information)
+                    }
+                }
+                Spacer()
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.border)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            .background(
+                isSelected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
+                in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                    .stroke(
+                        isSelected ? BaseballTheme.selection : BaseballTheme.border,
+                        lineWidth: isSelected ? 2 : 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("hs.focus.\(option.rawValue)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+private struct TrainingIntensityOptionButton: View {
+    let option: TrainingIntensity
+    let title: String
+    @Binding var selection: TrainingIntensity
+
+    private var isSelected: Bool { selection == option }
+
+    var body: some View {
+        Button { selection = option } label: {
+            // localization-safe: resolved-copy
+            Text(title)
+                .font(.footnote.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+        }
+        .buttonStyle(.plain)
+        .background(
+            isSelected ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surfaceRaised,
+            in: RoundedRectangle(cornerRadius: 8)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(
+                    isSelected ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6),
+                    lineWidth: isSelected ? 2 : 1
+                )
+        }
+        .accessibilityIdentifier("hs.intensity.\(option.rawValue)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+private struct TrainingTargetPitchPicker: View {
+    let title: String
+    let availablePitches: Set<PitchType>
+    let sliderTitle: String
+    let curveballTitle: String
+    let changeupTitle: String
+    @Binding var selection: PitchType
+
+    var body: some View {
+        Picker(title, selection: $selection) {
+            if availablePitches.contains(.slider) {
+                // localization-safe: resolved-copy
+                Text(sliderTitle).tag(PitchType.slider)
+            }
+            if availablePitches.contains(.curveball) {
+                // localization-safe: resolved-copy
+                Text(curveballTitle).tag(PitchType.curveball)
+            }
+            if availablePitches.contains(.changeup) {
+                // localization-safe: resolved-copy
+                Text(changeupTitle).tag(PitchType.changeup)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("hs.training.targetPitch")
     }
 }
 

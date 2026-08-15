@@ -438,8 +438,7 @@ namespace Baseball.Application.HighSchool
                     FocusTitle(value),
                     state.TrainingOpportunity?.Focus == value
                         ? "오늘의 성장 기회 · " + state.TrainingOpportunity.Reason
-                        : "현재 능력과 피로를 기준으로 훈련합니다.",
-                    "강도를 고르면 성장 전망을 확인할 수 있습니다."))
+                        : "훈련 초점을 선택합니다."))
                 .ToArray();
         }
 

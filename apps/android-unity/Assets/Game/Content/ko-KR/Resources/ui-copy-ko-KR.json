@@ -64,6 +64,8 @@
     { "key": "prologue.row.fastball.value", "value": "61" },
     { "key": "prologue.row.control.label", "value": "제구" },
     { "key": "prologue.row.control.value", "value": "48" },
+    { "key": "prologue.row.movement.label", "value": "변화" },
+    { "key": "prologue.row.movement.value", "value": "52" },
     { "key": "prologue.row.stamina.label", "value": "체력" },
     { "key": "prologue.row.stamina.value", "value": "55" },
     { "key": "prologue.section.school", "value": "어느 학교로 갈지 고르세요" },

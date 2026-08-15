@@ -61,3 +61,21 @@ apps/android-unity/Assets/StreamingAssets/
 # Android Unity의 .NET 참조/정적 테스트는 로컬 빌드 산출물만 제외한다.
 tools/unity-static-tests/bin/
 tools/unity-static-tests/obj/
+tools/pitch-fixture-compare/bin/
+tools/pitch-fixture-compare/obj/
+
+# Standalone pitch-only Unity library source. The export itself lives under artifacts/;
+# Unity's editor cache and generated IDE projects never belong in the repository.
+apps/android-pitch-unity/[Ll]ibrary/
+apps/android-pitch-unity/[Tt]emp/
+apps/android-pitch-unity/[Oo]bj/
+apps/android-pitch-unity/[Ll]ogs/
+apps/android-pitch-unity/[Uu]ser[Ss]ettings/
+apps/android-pitch-unity/[Mm]emoryCaptures/
+apps/android-pitch-unity/[Bb]uilds/
+apps/android-pitch-unity/*.csproj
+apps/android-pitch-unity/*.sln
+apps/android-pitch-unity/*.slnx
+apps/android-pitch-unity/.idea/
+apps/android-pitch-unity/.vs/
+apps/android-pitch-unity/.vscode/

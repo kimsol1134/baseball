@@ -130,6 +130,7 @@ namespace Baseball.Platform.Tests
             string controller = Read("apps/android-unity/Assets/Game/Presentation/Shell/BaseballShellController.cs");
             string screenContracts = Read("apps/android-unity/Assets/Game/Presentation/Shell/ScreenContracts.cs");
             string bootstrap = Read("apps/android-unity/Assets/Game/Platform/Crash/CrashReportingBootstrap.cs");
+            string firebaseReporter = Read("apps/android-unity/Assets/Game/Platform/Crash/FirebaseCrashReporter.cs");
             string configuration = Read("apps/android-unity/Assets/Game/Platform/Configuration/AnalyticsRuntimeConfiguration.cs");
             string analyticsBootstrap = Read("apps/android-unity/Assets/Game/Platform/Analytics/AnalyticsBootstrap.cs");
 
@@ -155,6 +156,12 @@ namespace Baseball.Platform.Tests
             Assert.That(bootstrap, Does.Contain("if (firebase.IsReady) CrashReporting.Configure(firebase)"));
             Assert.That(bootstrap, Does.Contain("CrashReporting.Reset()"));
             Assert.That(bootstrap, Does.Not.Contain("CrashReporting.Configure(null)"));
+            Assert.That(firebaseReporter, Does.Contain("Task.WhenAny(dependencyCheck, Task.Delay(DependencyTimeout))"));
+            Assert.That(firebaseReporter, Does.Contain("if (TryBindDefaultApp()) return"));
+            Assert.That(firebaseReporter, Does.Contain("attempt < DefaultAppPollAttempts"));
+            Assert.That(firebaseReporter, Does.Contain("Task.Delay(DefaultAppPollDelayMilliseconds)"));
+            Assert.That(firebaseReporter, Does.Contain("FirebaseApp.DefaultInstance == null"));
+            Assert.That(firebaseReporter, Does.Contain("TimeSpan.FromSeconds(10)"));
             Assert.That(configuration, Does.Contain("#elif BASEBALL_INTERNAL_QA"));
             Assert.That(configuration, Does.Contain("return AnalyticsDistribution.Internal"));
             Assert.That(configuration, Does.Contain("AnalyticsContext.ParseDistribution(distribution)"));

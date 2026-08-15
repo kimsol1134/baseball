@@ -239,6 +239,19 @@
     justify-content: center;
 }
 
+.pitch-presenting-panel {
+    width: 100%;
+    max-width: 360px;
+    min-height: 104px;
+    align-self: center;
+    background-color: rgba(8, 20, 16, 0.86);
+}
+
+.pitch-presenting-panel .baseball-section-title,
+.pitch-presenting-panel .pitch-help {
+    -unity-text-align: middle-center;
+}
+
 .pitch-release-label,
 .pitch-presenting-label,
 .pitch-result-detail {

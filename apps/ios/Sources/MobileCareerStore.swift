@@ -5,7 +5,13 @@ import SimulationCore
 @MainActor
 @Observable
 final class MobileCareerStore {
-    static let currentSaveSchemaVersion = 2
+    /// Schema 2 is the last journey-nil format that production builds may continue to write.
+    /// Schema 3 is the first format that is allowed to carry the Wave 1 journey aggregate or a
+    /// journey-generation tombstone. Keeping the two write versions explicit prevents a legacy
+    /// path from silently downgrading a journey save.
+    static let legacySaveSchemaVersion = 2
+    static let journeySaveSchemaVersion = 3
+    static let currentSaveSchemaVersion = journeySaveSchemaVersion
     static let unreadableSaveMessage = "저장 데이터는 남아 있지만 현재 버전에서 읽을 수 없습니다. 앱을 삭제하거나 새 커리어를 시작하지 말고 다시 불러오기를 눌러 주세요."
 
     enum ProCareerOrigin: String, Codable, Equatable {
@@ -80,7 +86,8 @@ final class MobileCareerStore {
     /// 진행 중인 중요 경기. `importantGame` 단계에서만 존재한다.
     var pitchSession: PitchSession?
 
-    @ObservationIgnored private let engine = ProCareerEngine()
+    @ObservationIgnored private let engine: ProCareerEngine
+    @ObservationIgnored private let featureConfiguration: AppFeatureConfiguration
     @ObservationIgnored private let sync: SaveSync
     @ObservationIgnored private let weekly: WeeklyProgramStore
     /// 테스트는 이 경계에서만 저장 실패를 주입한다. nil이면 실제 SaveSync를 쓴다.
@@ -88,11 +95,19 @@ final class MobileCareerStore {
 
     var state: ProCareerSnapshot? { result?.snapshot }
 
+    private var isBlockedByUnreadableSave: Bool {
+        if case .failed(Self.unreadableSaveMessage) = loadState { return true }
+        return false
+    }
+
     init(
         sync: SaveSync = SaveSync(key: "baseball-mobile-pro-v1.json"),
         weekly: WeeklyProgramStore = .shared,
-        saveWriter: ((Data) -> Bool)? = nil
+        saveWriter: ((Data) -> Bool)? = nil,
+        configuration: AppFeatureConfiguration = .production
     ) {
+        self.engine = ProCareerEngine(journeyEnabled: configuration.proCareerJourneyV1)
+        self.featureConfiguration = configuration
         self.sync = sync
         self.weekly = weekly
         self.saveWriter = saveWriter
@@ -134,6 +149,7 @@ final class MobileCareerStore {
     /// 유료앱에서는 앱 구매가 곧 이용 권한이므로 디버그/릴리스가 같은 경로를 탄다.
     @discardableResult
     func startNewCareer(preset: PitcherPresetSnapshot, playerName: String) -> Bool {
+        guard !isBlockedByUnreadableSave else { return false }
         let previousResult = result
         let previousSource = sourceHighSchoolCareerID
         let previousOrigin = careerOrigin
@@ -143,11 +159,18 @@ final class MobileCareerStore {
         let previousLoadState = loadState
         do {
             let seed = UInt64.random(in: 1...UInt64.max)
-            let created = try CareerBootstrap.startCareer(preset: preset, playerName: playerName, seed: seed)
+            let created = try CareerBootstrap.startCareer(
+                preset: preset,
+                playerName: playerName,
+                seed: seed,
+                engine: engine
+            )
             result = created
             sourceHighSchoolCareerID = nil
             careerOrigin = .direct
-            lastSummary = "\(created.snapshot.team.name) 입단. 2군에서 첫 시즌을 시작합니다."
+            lastSummary = created.snapshot.phase == .contractOffer
+                ? "\(created.snapshot.team.name) 지명. 신인 계약 제안을 확인해 주세요."
+                : "\(created.snapshot.team.name) 입단. 2군에서 첫 시즌을 시작합니다."
             feedbackCue = .success
             feedbackTrigger += 1
             loadState = .ready
@@ -181,8 +204,10 @@ final class MobileCareerStore {
         draft: DraftResultSnapshot,
         pitcher: PitcherSnapshot,
         identity: PlayerIdentitySnapshot,
-        sourceHighSchoolCareerID: String
+        sourceHighSchoolCareerID: String,
+        sourceFanInterest: Int? = nil
     ) -> Bool {
+        guard !isBlockedByUnreadableSave else { return false }
         let previousResult = result
         let previousSource = self.sourceHighSchoolCareerID
         let previousOrigin = careerOrigin
@@ -195,12 +220,16 @@ final class MobileCareerStore {
                 draft: draft,
                 pitcher: pitcher,
                 identity: identity,
-                seed: UInt64.random(in: 1...UInt64.max)
+                seed: UInt64.random(in: 1...UInt64.max),
+                sourceFanInterest: sourceFanInterest,
+                engine: engine
             )
             result = created
             self.sourceHighSchoolCareerID = sourceHighSchoolCareerID
             careerOrigin = .highSchool
-            lastSummary = "\(created.snapshot.team.name) 입단. 고교 3년의 능력을 그대로 안고 시작합니다."
+            lastSummary = created.snapshot.phase == .contractOffer
+                ? "\(created.snapshot.team.name) 지명. 신인 계약 제안을 확인해 주세요."
+                : "\(created.snapshot.team.name) 입단. 고교 3년의 능력을 그대로 안고 시작합니다."
             feedbackCue = .success
             feedbackTrigger += 1
             loadState = .ready
@@ -231,15 +260,22 @@ final class MobileCareerStore {
     @discardableResult
     func deleteCareer() -> Bool {
         // clear() 대신 묘비 — 고교 쪽과 같은 이유(iCloud 부활 방지).
+        guard let deletedResult = result else { return false }
+        // The tombstone must stay in the same generation as the career it deletes. A legacy
+        // production build may replace a schema-2 tombstone with its next legacy career, while a
+        // schema-2 writer must never replace a schema-3 journey tombstone. Capture this before the
+        // in-memory result is cleared below.
+        let tombstoneSchemaVersion = Self.schemaVersion(for: deletedResult)
         let tombstone = Self.nextSyncRevision(
             after: syncedRevision,
-            atLeast: result?.snapshot.revision ?? 0
+            atLeast: deletedResult.snapshot.revision
         )
-        guard let data = try? JSONEncoder().encode(
+        guard canWrite(schemaVersion: tombstoneSchemaVersion),
+              let data = try? JSONEncoder().encode(
             ProSaveRecord(
                 result: nil,
                 deletedRevision: tombstone,
-                schemaVersion: Self.currentSaveSchemaVersion,
+                schemaVersion: tombstoneSchemaVersion,
                 syncRevision: tombstone
             )
         ), sync.write(data) else {
@@ -456,8 +492,9 @@ final class MobileCareerStore {
               decision.id == decisionID,
               let choice = decision.choices.first(where: { $0.id == choiceID }) else { return }
         let beforeRevision = result.snapshot.revision
+        let fanBefore = result.snapshot.journeyState?.reputation.fanSupport ?? 0
         perform(
-            summary: "\(decision.title) · \(choice.title) — \(choice.effect.summary)",
+            summary: decision.type == .mediaOpportunity ? nil : "\(decision.title) · \(choice.title) — \(choice.effect.summary)",
             cue: .success
         ) {
             try engine.applySeasonDecision(.init(
@@ -473,6 +510,13 @@ final class MobileCareerStore {
             decision: decision,
             choice: choice
         ))
+        if decision.type == .mediaOpportunity {
+            GameAnalytics.log(.proEndorsementSelected, Self.endorsementAnalyticsProperties(
+                decision: decision,
+                choice: choice,
+                fanBefore: fanBefore
+            ))
+        }
     }
 
     static func decisionAnalyticsProperties(
@@ -487,11 +531,151 @@ final class MobileCareerStore {
         ]
     }
 
+    static func endorsementAnalyticsProperties(
+        decision: ProSeasonDecision,
+        choice: ProSeasonDecisionChoice,
+        fanBefore: Int
+    ) -> [String: Any] {
+        let category = String(choice.id.split(separator: ".").last ?? "unknown")
+        let income = choice.journeyEffect?.income ?? 0
+        return [
+            "season": decision.season,
+            "choice": category,
+            "fan_band": fanBand(fanBefore),
+            "income_band": incomeBand(income),
+        ]
+    }
+
+    static func fanBand(_ value: Int) -> String {
+        switch value {
+        case 0..<35: "0_34"
+        case 35..<60: "35_59"
+        case 60..<80: "60_79"
+        default: "80_100"
+        }
+    }
+
+    static func incomeBand(_ value: Int64) -> String {
+        switch value {
+        case 0: "none"
+        case 1..<10_000_000: "under_10m"
+        case 10_000_000..<30_000_000: "10m_29m"
+        default: "30m_plus"
+        }
+    }
+
+    static func fundsBand(_ value: Int64) -> String {
+        switch value {
+        case 0..<20_000_000: "0_19m"
+        case 20_000_000..<40_000_000: "20m_39m"
+        case 40_000_000..<50_000_000: "40m_49m"
+        default: "50m_plus"
+        }
+    }
+
     func reviewSeason() {
         guard let result else { return }
+        guard featureConfiguration.proCareerJourneyV1 || result.snapshot.journeyState == nil else { return }
         perform(summary: "시즌 기록을 통산 기록에 확정했습니다.", cue: .success) {
             try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
         }
+    }
+
+    func acknowledgeSettlement() {
+        guard featureConfiguration.proCareerJourneyV1,
+              let result,
+              let settlement = result.snapshot.journeyState?.lastSettlement else { return }
+        perform(summary: nil, cue: .success) {
+            try engine.acknowledgeSettlement(.init(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                expectedRevision: result.snapshot.revision,
+                settlementID: settlement.id
+            ))
+        }
+    }
+
+    /// Seedless, revision-bound rookie signing. The candidate result is persisted by `perform`
+    /// before this store publishes the new contract, finance, goal, or achievement state.
+    @discardableResult
+    func acceptContract(ambition: ProCareerAmbition?) -> Bool {
+        guard let market = result?.snapshot.journeyState?.pendingContractMarket,
+              market.kind == .rookie,
+              let offer = market.offers.first else { return false }
+        return acceptContract(
+            marketID: market.id,
+            offerID: offer.id,
+            ambition: ambition
+        )
+    }
+
+    @discardableResult
+    func acceptContract(
+        marketID: String,
+        offerID: String,
+        ambition: ProCareerAmbition?
+    ) -> Bool {
+        guard featureConfiguration.proCareerJourneyV1, let current = result else { return false }
+        let market = current.snapshot.journeyState?.pendingContractMarket
+        let offer = market?.offers.first(where: { $0.id == offerID })
+        let accepted = perform(summary: "계약을 확정했습니다.", cue: .success) {
+            try engine.acceptContract(.init(
+                seed: current.nextSeed,
+                state: current.snapshot,
+                expectedRevision: current.snapshot.revision,
+                marketID: marketID,
+                offerID: offerID,
+                ambition: ambition
+            ))
+        }
+        guard accepted,
+              let updated = result?.snapshot,
+              updated.revision == current.snapshot.revision + 1 else { return accepted }
+        GameAnalytics.log(.proContractSigned, [
+            "market_kind": market?.kind.rawValue ?? "rookie",
+            "offer_kind": offer?.contractKind.rawValue ?? "unknown",
+            "outlook": offer?.outlook.rawValue ?? "unknown",
+            "role": offer?.rolePromise.rawValue ?? updated.role.rawValue,
+            "transfer": offer?.teamID != current.snapshot.team.id,
+            "ambition_selected": ambition != nil,
+        ])
+        return accepted
+    }
+
+    /// Investment selection is persisted before the store publishes the new season. The event
+    /// contains only stable categories and a coarse funds band, never raw money or player text.
+    @discardableResult
+    func chooseInvestment(
+        investment: ProOffseasonInvestment,
+        focus: ProDevelopmentFocus? = nil
+    ) -> Bool {
+        guard let current = result,
+              let journey = current.snapshot.journeyState else { return false }
+        let cost = ProFinanceRules.investmentCost(for: investment)
+        let affordable = journey.finances.availableFunds >= cost
+        let selected = perform(summary: nil, cue: .success) {
+            try engine.chooseInvestment(.init(
+                seed: current.nextSeed,
+                state: current.snapshot,
+                expectedRevision: current.snapshot.revision,
+                investment: investment,
+                focus: focus
+            ))
+        }
+        guard selected else { return false }
+        GameAnalytics.log(.proOffseasonInvestmentSelected, [
+            "season": current.snapshot.season + 1,
+            "investment": investment.rawValue,
+            "affordable": affordable,
+            "funds_band": Self.fundsBand(journey.finances.availableFunds),
+        ])
+        return true
+    }
+
+    /// Compatibility entry point for the pre-Wave 5 store surface. It remains an equal
+    /// no-investment choice, while the product UI calls the full parameterized boundary above.
+    func chooseInvestment() {
+        _ = chooseInvestment(investment: .none)
     }
 
     func continueCareer() { chooseOffseason(.continueCareer) }
@@ -510,14 +694,22 @@ final class MobileCareerStore {
         case .retire: summary = "은퇴를 선택했습니다."
         }
         perform(summary: summary, cue: decision == .retire ? .neutral : .success) {
-            try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: decision))
+            try engine.chooseOffseason(.init(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                decision: decision,
+                expectedRevision: result.snapshot.journeyState == nil ? nil : result.snapshot.revision
+            ))
         }
     }
 
     /// FA 신청 자격. 코어와 같은 식(1군 등록 6년)을 쓴다 — 화면이 못 누를 버튼을 내면
     /// 사용자는 오류 메시지로 규칙을 배우게 된다.
     static func freeAgencyService(_ state: ProCareerSnapshot) -> Int {
-        state.serviceYears + (state.level == .major ? 1 : 0)
+        if state.journeyState != nil {
+            return state.serviceYears
+        }
+        return state.serviceYears + (state.level == .major ? 1 : 0)
     }
 
     func acknowledgeGains() {
@@ -567,6 +759,11 @@ final class MobileCareerStore {
         result: ProCareerResult,
         gameResume: PitchSession.ResumeState?
     ) -> Bool {
+        guard featureConfiguration.proCareerJourneyV1 || result.snapshot.journeyState == nil else {
+            return false
+        }
+        let schemaVersion = Self.schemaVersion(for: result)
+        guard canWrite(schemaVersion: schemaVersion) else { return false }
         let candidateRevision = Self.nextSyncRevision(
             after: syncedRevision,
             atLeast: result.snapshot.revision
@@ -576,7 +773,7 @@ final class MobileCareerStore {
             gameResume: gameResume,
             sourceHighSchoolCareerID: sourceHighSchoolCareerID,
             origin: careerOrigin,
-            schemaVersion: Self.currentSaveSchemaVersion,
+            schemaVersion: schemaVersion,
             syncRevision: candidateRevision
         )
         guard let data = try? JSONEncoder().encode(record) else { return false }
@@ -659,8 +856,9 @@ final class MobileCareerStore {
         let decoder = JSONDecoder()
         if let record = try? decoder.decode(ProSaveRecord.self, from: data) {
             let version = record.schemaVersion ?? 1
-            if (1...currentSaveSchemaVersion).contains(version),
-               record.result != nil || record.deletedRevision != nil {
+            if (1...journeySaveSchemaVersion).contains(version),
+               record.result != nil || record.deletedRevision != nil,
+               !(version < journeySaveSchemaVersion && record.result?.snapshot.journeyState != nil) {
                 return record
             }
         }
@@ -674,6 +872,44 @@ final class MobileCareerStore {
 
     private static func saveRevision(_ data: Data) -> UInt64? {
         decodeSaveRecord(data)?.effectiveRevision
+    }
+
+    private static func schemaVersion(for result: ProCareerResult) -> Int {
+        result.snapshot.journeyState == nil ? legacySaveSchemaVersion : journeySaveSchemaVersion
+    }
+
+    private static func shouldAutoMigrateJourney(on state: ProCareerSnapshot) -> Bool {
+        switch state.phase {
+        case .offseasonDecision, .retirementDecision:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Read only the outer schema marker for the write downgrade gate. This deliberately works for
+    /// future records that the full decoder cannot understand: a legacy writer must not replace a
+    /// newer journey save or deletion tombstone merely because it cannot decode it.
+    private static func rawSchemaVersion(_ data: Data) -> UInt64? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        if let version = object["schemaVersion"] as? Int {
+            return version >= 0 ? UInt64(version) : nil
+        }
+        // A pre-wrapper ProCareerResult is schema 1.
+        return object["snapshot"] != nil ? 1 : nil
+    }
+
+    private func canWrite(schemaVersion: Int) -> Bool {
+        guard let existingData = sync.read(
+            revision: Self.rawSchemaVersion,
+            conflictPriority: { _ in 0 }
+        ),
+        let existingVersion = Self.rawSchemaVersion(existingData) else {
+            return true
+        }
+        return existingVersion <= UInt64(schemaVersion)
     }
 
     /// ProSaveRecord의 명시적 삭제 묘비만 live보다 높은 동률 우선순위를 갖는다.
@@ -713,22 +949,54 @@ final class MobileCareerStore {
             pendingGains = []
             return .needsSetup
         }
-        let decoded = record.result
-        guard let decoded else { return .unavailable }
+        guard let decoded = record.result else { return .unavailable }
         syncedRevision = max(syncedRevision, record.effectiveRevision)
+        var restored = decoded
+        if featureConfiguration.proCareerJourneyV1,
+           decoded.snapshot.journeyState == nil,
+           Self.shouldAutoMigrateJourney(on: decoded.snapshot) {
+            do {
+                let migrated = try engine.migrateJourneyIfSafe(.init(
+                    seed: decoded.nextSeed,
+                    state: decoded.snapshot
+                ))
+                if migrated.snapshot.journeyState != nil {
+                    let migrationRevision = Self.nextSyncRevision(
+                        after: syncedRevision,
+                        atLeast: migrated.snapshot.revision
+                    )
+                    let migratedRecord = ProSaveRecord(
+                        result: migrated,
+                        gameResume: record.gameResume,
+                        sourceHighSchoolCareerID: record.sourceHighSchoolCareerID,
+                        origin: record.origin,
+                        schemaVersion: Self.journeySaveSchemaVersion,
+                        syncRevision: migrationRevision
+                    )
+                    guard let migrationData = try? JSONEncoder().encode(migratedRecord),
+                          sync.write(migrationData) else {
+                        return .unavailable
+                    }
+                    syncedRevision = migrationRevision
+                    restored = migrated
+                }
+            } catch {
+                return .unavailable
+            }
+        }
         // 유료앱에서는 앱 자체가 구매 증거다. 저장된 스냅숏의 권한 출처(개발 빌드 포함)를 이유로
         // 진행을 버리면 TestFlight 사용자의 커리어만 사라진다.
-        result = decoded
+        result = restored
         sourceHighSchoolCareerID = record.sourceHighSchoolCareerID
         careerOrigin = record.origin
         pitchSession = nil
         gameResume = nil
         pendingGains = []
         // 등판 도중 내려간 앱 — 타석 경계에서 이어 던진다(고교와 같은 검사).
-        if decoded.snapshot.phase == .importantGame,
+        if restored.snapshot.phase == .importantGame,
            let resume = record.gameResume,
-           PitchScenario.pro(state: decoded.snapshot).id == resume.scenarioID {
-            let session = PitchSession(state: decoded.snapshot, seed: resume.seed)
+           PitchScenario.pro(state: restored.snapshot).id == resume.scenarioID {
+            let session = PitchSession(state: restored.snapshot, seed: resume.seed)
             session.start()
             session.restore(from: resume)
             attachCheckpoint(session)
@@ -756,6 +1024,9 @@ final class MobileCareerStore {
     ) -> Bool {
         do {
             let before = result?.snapshot
+            guard featureConfiguration.proCareerJourneyV1 || before?.journeyState == nil else {
+                return false
+            }
             let updated = try action()
             let gains = Self.gains(before: before?.pitcher, after: updated.snapshot.pitcher)
             let nextSummary = summary ?? progressSummary(before: before, after: updated.snapshot)

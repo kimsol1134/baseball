@@ -6,3 +6,344 @@
 .highschool-screen .screen-data-row__value {
     color: var(--baseball-milestone);
 }
+
+.highschool-screen .screen-actions {
+    margin-top: 4px;
+    margin-bottom: 16px;
+}
+
+.highschool-screen--prologue .screen-player-portrait {
+    width: 72px;
+    min-width: 72px;
+    height: 94px;
+    margin-top: 10px;
+}
+
+.baseball-font-scale-160 .highschool-screen--prologue .screen-player-portrait,
+.baseball-font-scale-200 .highschool-screen--prologue .screen-player-portrait {
+    width: 92px;
+    min-width: 92px;
+    height: 120px;
+}
+
+.highschool-screen--training .screen-key-art {
+    height: 116px;
+    margin-bottom: 10px;
+}
+
+.highschool-screen--training .screen-hero {
+    min-height: 0;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.highschool-screen--training .screen-player-portrait {
+    width: 58px;
+    min-width: 58px;
+    height: 76px;
+    margin-top: 8px;
+}
+
+.highschool-screen--training .screen-section--hs-training-outlook {
+    margin-top: 8px;
+    margin-bottom: 14px;
+}
+
+.highschool-screen--training .screen-data-row--hs-training-outlook-value {
+    flex-direction: column;
+    align-items: flex-start;
+    border-bottom-width: 0;
+    padding-top: 4px;
+    padding-bottom: 0;
+}
+
+.highschool-screen--training .screen-data-row--hs-training-outlook-value .screen-data-row__value {
+    max-width: 100%;
+    margin-left: 0;
+    margin-top: 8px;
+    color: var(--baseball-milestone);
+    font-size: var(--baseball-font-section);
+    -unity-text-align: middle-left;
+}
+
+.highschool-screen--overview .screen-key-art {
+    height: 132px;
+    margin-bottom: 10px;
+}
+
+.highschool-screen--overview .screen-hero {
+    min-height: 0;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.highschool-screen--overview .screen-player-portrait {
+    width: 58px;
+    min-width: 58px;
+    height: 76px;
+    margin-top: 8px;
+}
+
+.highschool-screen--overview .screen-section--hs-overview-metrics .baseball-section__content,
+.highschool-screen--overview .screen-section--record .baseball-section__content {
+    flex-direction: row;
+}
+
+.highschool-screen--overview .screen-section--hs-overview-metrics .screen-data-row,
+.highschool-screen--overview .screen-section--record .screen-data-row {
+    width: 33.333%;
+    min-width: 0;
+    min-height: 82px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom-width: 0;
+    border-right-width: 1px;
+    border-right-color: var(--baseball-border);
+}
+
+.highschool-screen--overview .screen-section--hs-overview-metrics .screen-data-row__value,
+.highschool-screen--overview .screen-section--record .screen-data-row__value {
+    max-width: 100%;
+    margin-left: 0;
+    margin-top: 5px;
+    color: var(--baseball-milestone);
+    font-size: var(--baseball-font-section);
+    -unity-text-align: middle-left;
+}
+
+.highschool-screen--overview .screen-data-row--hs-career-wind-copy,
+.highschool-screen--overview .screen-data-row--hs-chapter-season,
+.highschool-screen--overview .screen-data-row--hs-chapter-result,
+.highschool-screen--overview .screen-data-row--next-detail {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.highschool-screen--overview .screen-data-row--hs-career-wind-copy .screen-data-row__value,
+.highschool-screen--overview .screen-data-row--hs-chapter-season .screen-data-row__value,
+.highschool-screen--overview .screen-data-row--hs-chapter-result .screen-data-row__value,
+.highschool-screen--overview .screen-data-row--next-detail .screen-data-row__value {
+    max-width: 100%;
+    margin-left: 0;
+    margin-top: 6px;
+    -unity-text-align: middle-left;
+}
+
+.highschool-screen--relationship .screen-key-art {
+    height: 108px;
+    margin-bottom: 10px;
+}
+
+.highschool-screen--relationship .screen-hero {
+    min-height: 0;
+    padding: 14px;
+    margin-bottom: 12px;
+}
+
+.relationship-scene-card {
+    margin-bottom: 12px;
+}
+
+.relationship-scene-card__identity {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+}
+
+.relationship-scene-card__art,
+.relationship-scene-card__art.baseball-content-image--compact {
+    width: 68px;
+    min-width: 68px;
+    height: 68px;
+    margin-right: 12px;
+    margin-bottom: 0;
+}
+
+.relationship-scene-card__speaker-copy {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.relationship-scene-card__role {
+    color: var(--baseball-information);
+    font-size: var(--baseball-font-eyebrow);
+    -unity-font-style: bold;
+}
+
+.relationship-scene-card__name {
+    margin-top: 3px;
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-section);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.relationship-scene-card__trust {
+    flex-shrink: 0;
+    margin-left: 8px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: var(--baseball-information);
+    background-color: var(--baseball-information-soft);
+    font-size: var(--baseball-font-caption);
+    -unity-font-style: bold;
+}
+
+.relationship-scene-card__quote {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-top-color: var(--baseball-border);
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-body);
+    white-space: normal;
+}
+
+.baseball-choice-group--relationship {
+    margin-top: 4px;
+}
+
+.baseball-choice-group--relationship .screen-data-row__detail {
+    margin-bottom: 8px;
+}
+
+.baseball-choice-group--relationship .baseball-choice-card {
+    min-height: 58px;
+    margin-bottom: 8px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    -unity-font-style: bold;
+}
+
+.baseball-font-scale-160 .relationship-scene-card__identity,
+.baseball-font-scale-200 .relationship-scene-card__identity {
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.baseball-font-scale-160 .relationship-scene-card__trust,
+.baseball-font-scale-200 .relationship-scene-card__trust {
+    margin-top: 8px;
+}
+
+.prologue-school-guide {
+    margin-bottom: 14px;
+}
+
+.prologue-school-guide Label {
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-body);
+    white-space: normal;
+}
+
+.prologue-ability-card {
+    margin-top: 8px;
+}
+
+.prologue-narrative-card {
+    margin-bottom: 12px;
+}
+
+.prologue-narrative-copy {
+    width: 100%;
+}
+
+.prologue-narrative-copy__title {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-section);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.prologue-narrative-copy__body,
+.prologue-narrative-copy__detail {
+    margin-top: 6px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.prologue-narrative-copy__detail {
+    color: var(--baseball-milestone);
+}
+
+.prologue-ability-row {
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+.prologue-ability-row__heading {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.prologue-ability-row__label,
+.prologue-ability-row__value {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-body);
+    -unity-font-style: bold;
+}
+
+.prologue-ability-row__value {
+    color: var(--baseball-milestone);
+}
+
+.prologue-ability-row__detail,
+.prologue-ability-explanation {
+    margin-top: 5px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.baseball-choice-group--school {
+    margin-top: 4px;
+}
+
+.baseball-visual-choice--school {
+    flex-direction: column;
+    padding: 10px;
+    margin-bottom: 14px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 14px;
+    background-color: var(--baseball-surface);
+}
+
+.baseball-visual-choice--school .baseball-visual-choice__gallery {
+    width: 100%;
+    min-width: 0;
+    margin-right: 0;
+    margin-bottom: 8px;
+}
+
+.baseball-visual-choice--school .baseball-visual-choice__gallery > .baseball-content-image--compact {
+    width: 50%;
+    min-width: 0;
+    height: 148px;
+    margin-bottom: 0;
+}
+
+.baseball-visual-choice--school > .baseball-choice-card {
+    width: 100%;
+    min-height: 112px;
+    margin-bottom: 0;
+    white-space: normal;
+    -unity-text-align: middle-left;
+}
+
+.baseball-font-scale-160 .baseball-visual-choice--school .baseball-visual-choice__gallery > .baseball-content-image--compact,
+.baseball-font-scale-200 .baseball-visual-choice--school .baseball-visual-choice__gallery > .baseball-content-image--compact {
+    height: 184px;
+}
+
+.baseball-font-scale-160 .baseball-visual-choice--school > .baseball-choice-card,
+.baseball-font-scale-200 .baseball-visual-choice--school > .baseball-choice-card {
+    min-height: 168px;
+}

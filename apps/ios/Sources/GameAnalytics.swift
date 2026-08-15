@@ -159,6 +159,12 @@ enum GameAnalytics {
         case weeklyProgramCompleted = "weekly_program_completed"
         /// 프로 시즌 중 3주 단위 결정을 확정한 시점.
         case proSeasonDecisionSelected = "pro_season_decision_selected"
+        /// 오프시즌 투자 선택이 저장 성공으로 확정된 시점.
+        case proOffseasonInvestmentSelected = "pro_offseason_investment_selected"
+        /// 미디어 기회 선택과 출연 효과가 저장 성공으로 확정된 시점.
+        case proEndorsementSelected = "pro_endorsement_selected"
+        /// 신인 계약 제안을 저장 성공으로 확정한 시점.
+        case proContractSigned = "pro_contract_signed"
         /// 프로 은퇴 기록·야구혼·대표 유산 후보가 고교 저장에 원자적으로 접힌 시점.
         case proLegacyRecorded = "pro_legacy_recorded"
         /// 결산·기록·다음 회차에서 전 선수가 남긴 말을 실제로 본 시점.

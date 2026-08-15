@@ -31,7 +31,7 @@ enum HighSchoolConclusionPresentation {
         _ rawValue: String,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return rawValue }
+        guard resolver.language != .korean else { return rawValue }
         switch rawValue {
         case "1라운드": return resolver.resolve(AppCopyKey.conclusionProjectedFirstRound)
         case "2~3라운드": return resolver.resolve(AppCopyKey.conclusionProjectedMiddleRounds)
@@ -45,7 +45,7 @@ enum HighSchoolConclusionPresentation {
         _ draft: DraftResultSnapshot,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return draft.summary }
+        guard resolver.language != .korean else { return draft.summary }
         switch draft.outcome {
         case .undrafted:
             guard draft.summary == "마지막 라운드까지 이름이 불리지 않았습니다. 다음 선수에게 남길 기록을 고르세요." else {
@@ -70,7 +70,7 @@ enum HighSchoolConclusionPresentation {
         resolver: GameCopyResolver
     ) -> String? {
         guard let rawValue else { return nil }
-        guard resolver.language == .english else { return rawValue }
+        guard resolver.language != .korean else { return rawValue }
         guard rawValue == "퓨처스 선발 10경기와 볼넷률 8% 이하" else {
             return GameCopyResolver.unavailableText
         }
@@ -82,7 +82,7 @@ enum HighSchoolConclusionPresentation {
         resolver: GameCopyResolver
     ) -> [String]? {
         guard let rawValues else { return nil }
-        guard resolver.language == .english else { return rawValues }
+        guard resolver.language != .korean else { return rawValues }
         return rawValues.map { localizedBreakdownItem($0, resolver: resolver) }
     }
 
@@ -101,7 +101,7 @@ enum HighSchoolConclusionPresentation {
         _ rawValue: String,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return rawValue }
+        guard resolver.language != .korean else { return rawValue }
         let definitions: [(String, GameCopyKey, Bool)] = [
             ("능력 ", AppCopyKey.conclusionBreakdownAbility, false),
             ("고교 공식 경기 ", AppCopyKey.conclusionBreakdownHighSchool, true),
@@ -136,7 +136,7 @@ enum HighSchoolConclusionPresentation {
         guard let rawValue = rawTeamField(team, field: field) else {
             return resolver.language == .korean ? "" : GameCopyResolver.unavailableText
         }
-        guard resolver.language == .english else { return rawValue }
+        guard resolver.language != .korean else { return rawValue }
         guard let descriptor = DraftConclusionPresentationCatalog.teamFieldDescriptor(
             teamID: team.id, field: field
         ), descriptor.rawValue == rawValue else {
@@ -149,7 +149,7 @@ enum HighSchoolConclusionPresentation {
         _ personality: Personality,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return personality.title }
+        guard resolver.language != .korean else { return personality.title }
         guard let descriptor = DraftConclusionPresentationCatalog.personalityDescriptor(for: personality.trait) else {
             return GameCopyResolver.unavailableText
         }
@@ -160,7 +160,7 @@ enum HighSchoolConclusionPresentation {
         _ personality: Personality,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return personality.scoutLine }
+        guard resolver.language != .korean else { return personality.scoutLine }
         guard let descriptor = DraftConclusionPresentationCatalog.personalityDescriptor(for: personality.trait) else {
             return GameCopyResolver.unavailableText
         }
@@ -172,7 +172,7 @@ enum HighSchoolConclusionPresentation {
         resolver: GameCopyResolver
     ) -> MemoryCopy {
         let raw = HighSchoolPresentation.memory(id)
-        guard resolver.language == .english else {
+        guard resolver.language != .korean else {
             return MemoryCopy(title: raw.title, detail: raw.detail)
         }
         let descriptor = DraftConclusionPresentationCatalog.memoryDescriptors.first { $0.id == id }
@@ -186,7 +186,7 @@ enum HighSchoolConclusionPresentation {
         _ legacy: CareerSignatureLegacy,
         resolver: GameCopyResolver
     ) -> SignatureCopy {
-        guard resolver.language == .english else {
+        guard resolver.language != .korean else {
             return SignatureCopy(
                 title: legacy.title,
                 detail: legacy.detail,
@@ -257,7 +257,7 @@ enum HighSchoolConclusionPresentation {
         _ wind: CareerWind,
         resolver: GameCopyResolver
     ) -> (title: String, detail: String) {
-        guard resolver.language == .english else { return (wind.title, wind.detail) }
+        guard resolver.language != .korean else { return (wind.title, wind.detail) }
         let descriptor = CareerWindPresentationCatalog.descriptor(for: wind)
         return (resolver.resolve(descriptor.titleToken), resolver.resolve(descriptor.detailToken))
     }
@@ -268,7 +268,7 @@ enum HighSchoolConclusionPresentation {
         _ rawStage: String,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return rawStage }
+        guard resolver.language != .korean else { return rawStage }
         let parts = rawStage.split(separator: " ", maxSplits: 1).map(String.init)
         guard parts.count == 2,
               let year = Int(parts[0].replacingOccurrences(of: "학년", with: "")),
@@ -304,7 +304,7 @@ enum HighSchoolConclusionPresentation {
         }
         let stage = String(rawLine[..<separator.lowerBound])
         let text = String(rawLine[separator.upperBound...])
-        guard resolver.language == .english else { return rawLine }
+        guard resolver.language != .korean else { return rawLine }
         let localizedStage = localizedChronicleStage(stage, resolver: resolver)
         let localizedText = localizedChronicleText(text, resolver: resolver)
         guard localizedStage != GameCopyResolver.unavailableText,
@@ -318,7 +318,7 @@ enum HighSchoolConclusionPresentation {
         _ rawText: String,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return rawText }
+        guard resolver.language != .korean else { return rawText }
 
         if rawText == "프로 유니폼을 입었습니다." {
             return resolver.resolve(AppCopyKey.conclusionChronicleProStart)
@@ -738,7 +738,7 @@ enum HighSchoolConclusionPresentation {
     // MARK: - Life card helpers
 
     static func localizedNicknameTitle(_ rawTitle: String, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return rawTitle }
+        guard resolver.language != .korean else { return rawTitle }
         guard let descriptor = NicknamePresentationCatalog.descriptors.first(where: { $0.koreanTitle == rawTitle }) else {
             return GameCopyResolver.unavailableText
         }
@@ -747,7 +747,7 @@ enum HighSchoolConclusionPresentation {
 
     static func localizedSchoolName(_ rawName: String?, resolver: GameCopyResolver) -> String {
         guard let rawName else { return resolver.resolve(AppCopyKey.conclusionLifeCardSchoolUnknown) }
-        guard resolver.language == .english else { return rawName }
+        guard resolver.language != .korean else { return rawName }
         for region in HighSchoolCareerEngine.regions {
             if let school = HighSchoolCareerEngine.schools(for: region).first(where: { $0.name == rawName }) {
                 return HighSchoolPresentation.localizedSchoolName(school, rawRegion: region, resolver: resolver)
@@ -758,7 +758,7 @@ enum HighSchoolConclusionPresentation {
 
     static func localizedLifeTeamName(_ rawName: String?, resolver: GameCopyResolver) -> String? {
         guard let rawName else { return nil }
-        guard resolver.language == .english else { return rawName }
+        guard resolver.language != .korean else { return rawName }
         guard let descriptor = DraftTeamPresentationCatalog.descriptors.first(where: { $0.rawTeamName == rawName }) else {
             return GameCopyResolver.unavailableText
         }
@@ -767,7 +767,7 @@ enum HighSchoolConclusionPresentation {
 
     static func localizedLifePersonality(_ rawTitle: String?, resolver: GameCopyResolver) -> String? {
         guard let rawTitle else { return nil }
-        guard resolver.language == .english else { return rawTitle }
+        guard resolver.language != .korean else { return rawTitle }
         guard let descriptor = DraftConclusionPresentationCatalog.personalityDescriptors.first(where: { $0.rawTitle == rawTitle }) else {
             return GameCopyResolver.unavailableText
         }
@@ -776,7 +776,7 @@ enum HighSchoolConclusionPresentation {
 
     static func localizedLifeWind(id: String?, rawTitle: String?, resolver: GameCopyResolver) -> String? {
         guard let id, let rawTitle else { return nil }
-        guard resolver.language == .english else { return rawTitle }
+        guard resolver.language != .korean else { return rawTitle }
         let winds = CareerWindPresentationCatalog.v1Winds + CareerWindPresentationCatalog.v2Winds
         guard let wind = winds.first(where: { $0.id == id && $0.title == rawTitle }) else {
             return GameCopyResolver.unavailableText
@@ -791,7 +791,7 @@ enum HighSchoolConclusionPresentation {
         resolver: GameCopyResolver
     ) -> String? {
         guard let rawName else { return nil }
-        guard resolver.language == .english else { return rawName }
+        guard resolver.language != .korean else { return rawName }
         for region in HighSchoolCareerEngine.regions {
             for school in HighSchoolCareerEngine.schools(for: region) where school.name == schoolName {
                 let expected = role == .coach ? school.coachName : school.catcherName
@@ -807,7 +807,7 @@ enum HighSchoolConclusionPresentation {
 
     static func localizedLifeRivalName(_ rawName: String?, resolver: GameCopyResolver) -> String? {
         guard let rawName else { return nil }
-        guard resolver.language == .english else { return rawName }
+        guard resolver.language != .korean else { return rawName }
         let rawRivals: [String: String] = [
             "서하준": "rival-seo", "권태오": "rival-lee", "남도현": "rival-park", "배시우": "rival-kang",
             "류건우": "rival-yoon", "정세현": "rival-choi", "강이안": "rival-home-run", "문재윤": "rival-speed",

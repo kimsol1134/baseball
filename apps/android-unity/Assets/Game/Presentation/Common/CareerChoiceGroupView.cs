@@ -20,6 +20,7 @@ namespace Baseball.Presentation.Common
             foreach (ScreenChoiceGroupViewModel group in viewModel.ChoiceGroups)
             {
                 var section = new BaseballSection(group.Heading, "screen-choice-group-" + group.Id);
+                section.AddToClassList("baseball-choice-group--" + group.Id.Replace('_', '-'));
                 if (!string.IsNullOrWhiteSpace(group.Detail))
                 {
                     var detail = new Label(group.Detail);
@@ -34,7 +35,7 @@ namespace Baseball.Presentation.Common
                     ChoiceCard card = null;
                     card = new ChoiceCard(
                         option.Title,
-                        Detail(option),
+                        Detail(group.Id, option),
                         "screen-choice-" + group.Id + "-" + option.Id,
                         () =>
                         {
@@ -49,7 +50,11 @@ namespace Baseball.Presentation.Common
                             draft.SetChoice(group.Id, option.Payload);
                             foreach (ChoiceCard value in cards) value.SetSelected(ReferenceEquals(value, card));
                             navigator.Announce(option.Title + " 선택을 확정했습니다.");
-                        });
+                        },
+                        showDescription: !string.Equals(
+                            group.Id,
+                            "relationship",
+                            StringComparison.Ordinal));
                     bool selectedState = group.AllowsMultiple
                         ? draft.IsChoiceSelected(group.Id, option.Payload)
                         : string.Equals(selectedSingle, option.Payload, StringComparison.Ordinal);
@@ -57,7 +62,7 @@ namespace Baseball.Presentation.Common
                     card.SetEnabled(option.IsEnabled);
                     if (!option.IsEnabled) card.tooltip = option.DisabledReason;
                     cards.Add(card);
-                    section.Content.Add(!string.IsNullOrWhiteSpace(option.SecondaryArtworkAddress)
+                    VisualElement choiceElement = !string.IsNullOrWhiteSpace(option.SecondaryArtworkAddress)
                         ? AddressableContentImage.WrapChoiceGallery(
                             card,
                             option.ArtworkAddress,
@@ -73,7 +78,9 @@ namespace Baseball.Presentation.Common
                             option.ArtworkAddress,
                             option.Title + " 선택지 삽화",
                             "screen-choice-art-" + group.Id + "-" + option.Id,
-                            loader));
+                            loader);
+                    choiceElement.AddToClassList("baseball-visual-choice--" + group.Id.Replace('_', '-'));
+                    section.Content.Add(choiceElement);
                 }
                 if (group.AllowsMultiple)
                 {
@@ -87,8 +94,23 @@ namespace Baseball.Presentation.Common
             }
         }
 
-        private static string Detail(ScreenChoiceOptionViewModel option)
+        private static string Detail(string groupId, ScreenChoiceOptionViewModel option)
         {
+            if (string.Equals(groupId, "school", StringComparison.Ordinal))
+            {
+                string[] parts = (option.Detail ?? string.Empty)
+                    .Split(new[] { " · " }, StringSplitOptions.RemoveEmptyEntries);
+                string philosophy = parts.Length > 0 ? parts[0] : option.Detail;
+                string people = parts.Length > 1
+                    ? "3년을 함께할 사람 · " + string.Join(" · ", parts, 1, parts.Length - 1)
+                    : string.Empty;
+                string result = philosophy ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(option.EffectSummary))
+                    result += (result.Length == 0 ? string.Empty : "\n") + option.EffectSummary;
+                if (!string.IsNullOrWhiteSpace(people))
+                    result += (result.Length == 0 ? string.Empty : "\n") + people;
+                return result;
+            }
             if (string.IsNullOrWhiteSpace(option.EffectSummary)) return option.Detail;
             return string.IsNullOrWhiteSpace(option.Detail)
                 ? option.EffectSummary

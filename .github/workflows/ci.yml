@@ -29,7 +29,43 @@ jobs:
           swift-version: ${{ matrix.swift }}
           check-latest: true
       - name: Test simulation packages
-        run: swift test --package-path packages/simulation-core
+        run: swift test --package-path packages/simulation-core --build-path .build/pro-career-depth-swift
+      - name: Wave 4 pro-career gate
+        run: npm run check:pro-career
+
+  swift-wave6:
+    name: Swift Wave 6 fixture and distribution (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: SwiftyLab/setup-swift@v1.14.0
+        with:
+          swift-version: "6.3.3"
+          check-latest: true
+      - name: Export Swift semantic fixture
+        run: npm run export:android:swift-pro-fixture:v2
+      - name: Verify committed fixture is deterministic
+        run: |
+          npm run export:android:swift-pro-fixture:v2
+          git diff --exit-code -- apps/android/game-core/src/test/resources/fixtures/swift-pro-career-oracle-v2.json
+      - name: Run Wave 6 distribution smoke
+        run: npm run run:pro-career:distribution:smoke
+
+  android-compose-wave6:
+    name: Android Compose Wave 6 core and fixture gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Run Wave 6 Kotlin tests
+        working-directory: apps/android
+        run: ./gradlew :game-core:test :game-application:test :feature-career:testDebugUnitTest --no-daemon --console=plain
+      - name: Run real Kotlin journey smoke distribution
+        working-directory: apps/android
+        run: ./gradlew :game-core:runProCareerDistribution --no-daemon --console=plain
 
   ios:
     name: iOS build and tests

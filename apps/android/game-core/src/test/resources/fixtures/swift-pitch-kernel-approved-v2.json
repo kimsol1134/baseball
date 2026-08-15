@@ -1,0 +1,29 @@
+{
+  "fixtureSchema": "baseball-cross-runtime-fixture-v1",
+  "sourceRuntime": "swift",
+  "sourceCommit": "23acbb8ec233836e802009c8852c430e08075d3c",
+  "inputSha256": "d61eb1b2b39628f55e9318a062628ee71f941de979ccf0f360ccaa5dc1b1b2ce",
+  "outputSha256": "1be138df2264c62481590ca4c1bfe1ad9072ff45a30b14531316906fcc9127fe",
+  "input": {
+    "sourceFixture": "apps/android-unity/Assets/Tests/EditMode/Core/Fixtures/pitch_oracle_v2.json",
+    "sourceSetSha256": "bdf4288abbc6dc81e96f8c725202af4e764bb293640e3fb0e3571abef182c76b",
+    "fixture": "PitchKernelEngineTests.makePrepareParams defaults; primary recommendation; seeds 1...N"
+  },
+  "expected": {
+    "exactRuns": 128,
+    "canonicalRowsFnv1a64": "56b7c99922f1d66d",
+    "distribution": {
+      "ball": 2552,
+      "called_strike": 2458,
+      "swinging_strike": 2755,
+      "foul": 1060,
+      "in_play_out": 871,
+      "single": 226,
+      "double": 59,
+      "triple": 4,
+      "home_run": 14,
+      "hit_by_pitch": 1
+    }
+  },
+  "authorityScope": "approved Swift PitchKernel oracle summary; complete rows are frozen in the C# export from the same source set"
+}

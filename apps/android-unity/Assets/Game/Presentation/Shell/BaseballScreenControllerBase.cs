@@ -44,6 +44,15 @@ namespace Baseball.Presentation.Shell
             template.CloneTree(host);
             _screenRoot = host.Q<VisualElement>("screen-root") ?? host;
             _assetLifetime = new CancellationTokenSource();
+            ScrollView mobileScroll = host.Q<ScrollView>("screen-scroll") ??
+                host.Q<ScrollView>(className: "screen-scroll");
+            if (mobileScroll != null)
+            {
+                mobileScroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+                mobileScroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+                mobileScroll.verticalScroller.style.display = DisplayStyle.None;
+                mobileScroll.horizontalScroller.style.display = DisplayStyle.None;
+            }
 
             Label eyebrow = Require<Label>(host, "screen-eyebrow");
             Label title = Require<Label>(host, "screen-title");
@@ -227,7 +236,7 @@ namespace Baseball.Presentation.Shell
             return "screen-" + route.ToString().ToLowerInvariant() + "-" + suffix;
         }
 
-        private static VisualElement CreateSection(ScreenSectionViewModel section, ShellRoute route)
+        protected static VisualElement CreateSection(ScreenSectionViewModel section, ShellRoute route)
         {
             VisualElement content;
             VisualElement container;
@@ -247,14 +256,17 @@ namespace Baseball.Presentation.Shell
                 content = callout.Content;
             }
 
+            container.AddToClassList("screen-section--" + CssToken(section.Id));
+
             foreach (ScreenRowViewModel row in section.Rows) content.Add(CreateRow(row, route));
             return container;
         }
 
-        private static VisualElement CreateRow(ScreenRowViewModel row, ShellRoute route)
+        protected static VisualElement CreateRow(ScreenRowViewModel row, ShellRoute route)
         {
             var root = new VisualElement();
             root.AddToClassList("screen-data-row");
+            root.AddToClassList("screen-data-row--" + CssToken(row.Id));
             var copyColumn = new VisualElement();
             copyColumn.AddToClassList("screen-data-row__copy");
             var label = new Label(row.Label);
@@ -283,6 +295,18 @@ namespace Baseball.Presentation.Shell
                 AccessibilityRole.StaticText,
                 focusable: true);
             return root;
+        }
+
+        private static string CssToken(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "unknown";
+            var result = new char[value.Length];
+            for (var index = 0; index < value.Length; index++)
+            {
+                char character = char.ToLowerInvariant(value[index]);
+                result[index] = char.IsLetterOrDigit(character) ? character : '-';
+            }
+            return new string(result);
         }
 
         private static VisualElement CreateAction(ScreenActionViewModel action, ShellRoute route, IShellNavigator navigator)

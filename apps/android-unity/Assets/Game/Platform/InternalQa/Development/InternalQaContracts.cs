@@ -15,11 +15,13 @@ namespace Baseball.Platform.InternalQa
         public const string SeedExtra = "baseball.qa.seed";
         public const string PhaseExtra = "baseball.qa.phase";
         public const string QualityExtra = "baseball.qa.quality";
+        public const string PitchExtra = "baseball.qa.pitch";
         public const string DefaultSeed = "20260811";
 
         private static readonly HashSet<string> Commands = new HashSet<string>(StringComparer.Ordinal)
         {
             "ping",
+            "save-inspect",
             "fixture",
             "tutorial-checkpoint",
             "pitch-sample",
@@ -36,27 +38,50 @@ namespace Baseball.Platform.InternalQa
             "opening",
             "setup",
             "prologue",
+            "school_selection",
+            "training",
+            "overview",
+            "relationship",
             "tutorial_checkpoint"
         };
 
-        private InternalQaRequest(string command, string seed, string phase, PitchQualityTier quality)
+        private InternalQaRequest(
+            string command,
+            string seed,
+            string phase,
+            PitchQualityTier quality,
+            PitchType pitchType)
         {
             Command = command;
             Seed = seed;
             Phase = phase;
             Quality = quality;
+            PitchType = pitchType;
         }
 
         public string Command { get; }
         public string Seed { get; }
         public string Phase { get; }
         public PitchQualityTier Quality { get; }
+        public PitchType PitchType { get; }
 
         public static bool TryCreate(
             string command,
             string seed,
             string phase,
             string quality,
+            out InternalQaRequest request,
+            out string errorCode)
+        {
+            return TryCreate(command, seed, phase, quality, null, out request, out errorCode);
+        }
+
+        public static bool TryCreate(
+            string command,
+            string seed,
+            string phase,
+            string quality,
+            string pitch,
             out InternalQaRequest request,
             out string errorCode)
         {
@@ -98,48 +123,93 @@ namespace Baseball.Platform.InternalQa
                     return false;
             }
 
+            PitchType pitchType;
+            switch ((pitch ?? "four_seam").Trim().ToLowerInvariant())
+            {
+                case "four_seam": pitchType = PitchType.FourSeam; break;
+                case "slider": pitchType = PitchType.Slider; break;
+                case "curveball": pitchType = PitchType.Curveball; break;
+                case "changeup": pitchType = PitchType.Changeup; break;
+                default:
+                    errorCode = "pitch_not_allowed";
+                    return false;
+            }
+
             if (normalizedCommand == "tutorial-checkpoint") normalizedPhase = "tutorial_checkpoint";
-            request = new InternalQaRequest(normalizedCommand, normalizedSeed, normalizedPhase, tier);
+            request = new InternalQaRequest(normalizedCommand, normalizedSeed, normalizedPhase, tier, pitchType);
             return true;
         }
     }
 
     public static class InternalQaPitchFixture
     {
-        public static PitchPresentationSnapshot Create(string seed)
+        public static PitchPresentationSnapshot Create(string seed) => Create(seed, PitchType.FourSeam);
+
+        public static PitchPresentationSnapshot Create(string seed, PitchType pitchType)
         {
             ulong presentationSeed = ulong.TryParse(seed, out ulong numeric)
                 ? numeric
                 : StableHash.Fnv1A64Value(seed ?? string.Empty);
+            IReadOnlyList<TrajectoryPoint> trajectory = Trajectory(pitchType);
+            double velocity = pitchType == PitchType.FourSeam ? 146.2d :
+                pitchType == PitchType.Slider ? 133.4d :
+                pitchType == PitchType.Curveball ? 121.8d : 128.6d;
             return new PitchPresentationSnapshot(
-                "internal-qa-pitch-" + presentationSeed,
-                PitchType.FourSeam,
-                0.08d,
-                0.12d,
-                146.2d,
-                0.18d,
-                new[]
-                {
-                    new TrajectoryPoint(0d, 0d, 1.85d, 18.44d),
-                    new TrajectoryPoint(0.5d, 0.03d, 1.24d, 9.2d),
-                    new TrajectoryPoint(1d, 0.08d, 0.82d, 0d)
-                },
-                PitchOutcome.Double,
-                SwingPresentation.Contact,
-                new ContactPresentation(156d, 24d, 12d, 830),
-                new FieldingPresentation(
-                    FieldingSector.Outfield,
-                    PitchOutcome.Double,
-                    34d,
-                    1.2d,
-                    7d,
-                    "결정된 내부 QA 외야 타구"),
+                "internal-qa-pitch-" + pitchType.Value() + "-" + presentationSeed,
+                pitchType,
+                trajectory[trajectory.Count - 1].XMeters,
+                trajectory[trajectory.Count - 1].YMeters,
+                velocity,
+                0.48d,
+                trajectory,
+                PitchOutcome.CalledStrike,
+                SwingPresentation.Take,
+                null,
+                null,
                 new ScoreDelta(0),
-                PitchAudioCue.HardContact,
-                PitchHapticCue.Contact,
+                PitchAudioCue.GloveCatch,
+                PitchHapticCue.Catch,
                 presentationSeed,
-                "내부 QA 우중간 2루타");
+                "내부 QA " + pitchType.Value() + " 궤적");
         }
+
+        private static IReadOnlyList<TrajectoryPoint> Trajectory(PitchType pitchType)
+        {
+            switch (pitchType)
+            {
+                case PitchType.Slider:
+                    return new[]
+                    {
+                        Point(0d, 0d, 1.85d, 18.44d), Point(.25d, -.01d, 1.66d, 13.83d),
+                        Point(.5d, -.06d, 1.43d, 9.22d), Point(.75d, -.18d, 1.18d, 4.61d),
+                        Point(1d, -.38d, .92d, 0d)
+                    };
+                case PitchType.Curveball:
+                    return new[]
+                    {
+                        Point(0d, 0d, 1.85d, 18.44d), Point(.25d, -.01d, 1.78d, 13.83d),
+                        Point(.5d, -.04d, 1.60d, 9.22d), Point(.75d, -.10d, 1.28d, 4.61d),
+                        Point(1d, -.18d, .78d, 0d)
+                    };
+                case PitchType.Changeup:
+                    return new[]
+                    {
+                        Point(0d, 0d, 1.85d, 18.44d), Point(.25d, .01d, 1.68d, 13.83d),
+                        Point(.5d, .05d, 1.46d, 9.22d), Point(.75d, .14d, 1.18d, 4.61d),
+                        Point(1d, .28d, .86d, 0d)
+                    };
+                default:
+                    return new[]
+                    {
+                        Point(0d, 0d, 1.85d, 18.44d), Point(.25d, .01d, 1.67d, 13.83d),
+                        Point(.5d, .02d, 1.45d, 9.22d), Point(.75d, .04d, 1.20d, 4.61d),
+                        Point(1d, .07d, .94d, 0d)
+                    };
+            }
+        }
+
+        private static TrajectoryPoint Point(double t, double x, double y, double z) =>
+            new TrajectoryPoint(t, x, y, z);
     }
 }
 #endif

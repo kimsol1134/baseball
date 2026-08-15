@@ -72,7 +72,7 @@ public struct GameCopyResolver: @unchecked Sendable {
         let values = token.arguments.map(\.cVarArgument)
         return String(
             format: template,
-            locale: Locale(identifier: language == .english ? "en_US_POSIX" : "ko_KR"),
+            locale: Locale(identifier: language.formattingLocaleIdentifier),
             arguments: values
         )
     }
@@ -206,6 +206,16 @@ public struct GameCopyResolver: @unchecked Sendable {
             break
         }
         return Self.unavailableText
+    }
+}
+
+private extension AppLanguage {
+    var formattingLocaleIdentifier: String {
+        switch self {
+        case .korean: "ko_KR"
+        case .english: "en_US_POSIX"
+        case .japanese: "ja_JP"
+        }
     }
 }
 

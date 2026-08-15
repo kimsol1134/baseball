@@ -535,7 +535,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         XCTAssertEqual(cloud.data(forKey: sync.key), latestValid, "복구한 세이브가 iCloud도 치유해야 합니다.")
     }
 
-    func testLegacyRawProSaveLoadsAndMigratesToCurrentSchema() throws {
+    func testLegacyRawProSaveRewrapsAsLegacySchemaWithoutJourney() throws {
         let cloud = ProMemoryRemoteStore()
         let sync = SaveSync(
             key: "pro-legacy-migration-\(UUID().uuidString).json",
@@ -557,9 +557,48 @@ final class ProSeasonDecisionTests: XCTestCase {
             MobileCareerStore.ProSaveRecord.self,
             from: migratedData
         )
-        XCTAssertEqual(migrated.schemaVersion, MobileCareerStore.currentSaveSchemaVersion)
+        XCTAssertEqual(migrated.schemaVersion, MobileCareerStore.legacySaveSchemaVersion)
+        XCTAssertNotEqual(migrated.schemaVersion, MobileCareerStore.currentSaveSchemaVersion)
+        XCTAssertNil(migrated.result?.snapshot.journeyState)
         XCTAssertNotNil(migrated.syncRevision)
         XCTAssertEqual(migrated.result, legacy)
+    }
+
+    func testLegacyDeleteWritesSchemaTwoAndAllowsAnotherLegacyCareerImmediately() throws {
+        let cloud = ProMemoryRemoteStore()
+        let sync = SaveSync(
+            key: "pro-legacy-delete-new-generation-\(UUID().uuidString).json",
+            store: cloud
+        )
+        sync.clear()
+        defer { sync.clear() }
+
+        let store = MobileCareerStore(sync: sync, configuration: .production)
+        store.result = try firstDecision(seed: 91_105)
+        store.loadState = .ready
+        XCTAssertTrue(store.save())
+        XCTAssertTrue(store.deleteCareer())
+
+        let tombstoneData = try XCTUnwrap(cloud.data(forKey: sync.key))
+        let tombstone = try JSONDecoder().decode(
+            MobileCareerStore.ProSaveRecord.self,
+            from: tombstoneData
+        )
+        XCTAssertEqual(tombstone.schemaVersion, MobileCareerStore.legacySaveSchemaVersion)
+        XCTAssertNil(tombstone.result)
+
+        XCTAssertTrue(store.startNewCareer(
+            preset: PitcherPresetCatalog.all[0],
+            playerName: "두 번째 레거시"
+        ))
+        let newData = try XCTUnwrap(cloud.data(forKey: sync.key))
+        let newRecord = try JSONDecoder().decode(
+            MobileCareerStore.ProSaveRecord.self,
+            from: newData
+        )
+        XCTAssertEqual(newRecord.schemaVersion, MobileCareerStore.legacySaveSchemaVersion)
+        XCTAssertNil(newRecord.result?.snapshot.journeyState)
+        XCTAssertGreaterThan(newRecord.effectiveRevision, tombstone.effectiveRevision)
     }
 
     func testFutureProSchemaIsPreservedUntilACompatibleUpdateArrives() throws {

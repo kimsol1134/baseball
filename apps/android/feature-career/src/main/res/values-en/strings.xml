@@ -1,0 +1,16 @@
+<resources>
+    <string name="pro_career_contract">Contract comparison</string>
+    <string name="pro_career_settlement">Season settlement</string>
+    <string name="pro_career_investment">Offseason investment</string>
+    <string name="pro_career_retirement">Retirement record</string>
+    <string name="pro_career_team">Team</string>
+    <string name="pro_career_years">%1$d years</string>
+    <string name="pro_career_salary">Salary %1$d</string>
+    <string name="pro_career_signing_bonus">Signing bonus %1$d</string>
+    <string name="pro_career_fan">Fan support %1$d → %2$d</string>
+    <string name="pro_career_legacy">Team legacy %1$d → %2$d</string>
+    <string name="pro_career_hof">Honor score %1$d → %2$d</string>
+    <string name="pro_career_funds">Available funds %1$d</string>
+    <string name="pro_career_retire_action">Retirement preview</string>
+    <string name="pro_career_fixture_boundary">Pre-release verification surface</string>
+</resources>

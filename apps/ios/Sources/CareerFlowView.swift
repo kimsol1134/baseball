@@ -54,42 +54,50 @@ struct CareerFlowView: View {
                                 .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         }
 
-                        switch state.phase {
-                        case .weeklyPlan:
-                            WeeklyPlanView(career: career, state: state)
-                        case .seasonDecision:
-                            if let pending = state.pendingDecision {
-                                ProSeasonDecisionView(career: career, decision: pending)
-                            } else {
+                        if state.phase == .seasonSettlement, state.journeyState != nil {
+                            ProSeasonSettlementView(career: career, state: state)
+                        } else {
+                            switch state.phase {
+                            case .contractOffer:
+                                ProContractOfferView(career: career, state: state)
+                            case .offseasonInvestment:
+                                ProOffseasonInvestmentView(career: career, state: state)
+                            case .weeklyPlan:
+                                WeeklyPlanView(career: career, state: state)
+                            case .seasonDecision:
+                                if let pending = state.pendingDecision {
+                                    ProSeasonDecisionView(career: career, decision: pending)
+                                } else {
+                                    ContentUnavailableView(
+                                        copyResolver.resolve(.seasonDecisionUnavailable),
+                                        systemImage: "exclamationmark.triangle"
+                                    )
+                                }
+                            case .importantGame:
+                                ImportantGameIntro(state: state, onStart: career.beginImportantGame)
+                            case .seasonReview:
+                                ActionCard(
+                                    title: copyResolver.resolve(.seasonReviewTitle),
+                                    copy: copyResolver.resolve(.seasonReviewBody),
+                                    button: copyResolver.resolve(.seasonReviewAction),
+                                    action: career.reviewSeason
+                                )
+                            case .offseasonDecision:
+                                OffseasonView(career: career, state: state)
+                            case .retirementDecision:
+                                RetirementDecisionView(career: career, state: state)
+                            case .completed:
+                                RetiredView(
+                                    state: state,
+                                    retiresIntoSignatureLegacy: retiresIntoSignatureLegacy,
+                                    onStartNewPlayer: onStartNewPlayer
+                                )
+                            default:
                                 ContentUnavailableView(
-                                    copyResolver.resolve(.seasonDecisionUnavailable),
-                                    systemImage: "exclamationmark.triangle"
+                                    copyResolver.resolve(.scheduleComplete),
+                                    systemImage: "checkmark.circle"
                                 )
                             }
-                        case .importantGame:
-                            ImportantGameIntro(state: state, onStart: career.beginImportantGame)
-                        case .seasonReview:
-                            ActionCard(
-                                title: copyResolver.resolve(.seasonReviewTitle),
-                                copy: copyResolver.resolve(.seasonReviewBody),
-                                button: copyResolver.resolve(.seasonReviewAction),
-                                action: career.reviewSeason
-                            )
-                        case .offseasonDecision:
-                            OffseasonView(career: career, state: state)
-                        case .retirementDecision:
-                            RetirementDecisionView(career: career, state: state)
-                        case .completed:
-                            RetiredView(
-                                state: state,
-                                retiresIntoSignatureLegacy: retiresIntoSignatureLegacy,
-                                onStartNewPlayer: onStartNewPlayer
-                            )
-                        default:
-                            ContentUnavailableView(
-                                copyResolver.resolve(.scheduleComplete),
-                                systemImage: "checkmark.circle"
-                            )
                         }
                     }
                     .padding(BaseballMetrics.gutter)
@@ -101,6 +109,725 @@ struct CareerFlowView: View {
             }
         } else {
             ProgressView()
+        }
+    }
+}
+
+private struct ProOffseasonInvestmentView: View {
+    let career: MobileCareerStore
+    let state: ProCareerSnapshot
+    @State private var selectedInvestment: ProOffseasonInvestment?
+    @State private var selectedFocus: ProDevelopmentFocus = .stuff
+    @State private var showingConfirmation = false
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private static let options: [ProOffseasonInvestment] = [
+        .pitchLab, .recoveryTeam, .fanFoundation, .none,
+    ]
+
+    private var availableFunds: Int64 {
+        state.journeyState?.finances.availableFunds ?? 0
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            KeyArtHeader(
+                art: .stadiumNight,
+                eyebrow: copyResolver.resolve(.offseasonInvestmentEyebrow),
+                title: copyResolver.resolve(.offseasonInvestmentTitle),
+                accent: BaseballTheme.milestone
+            )
+
+            BaseballCard(title: copyResolver.resolve(.offseasonInvestmentBody), tone: .raised) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(copyResolver.resolve(
+                        .offseasonInvestmentDetail,
+                        arguments: [.integer(state.season + 1)]
+                    ))
+                    Text(copyResolver.resolve(
+                        .offseasonInvestmentFunds,
+                        arguments: [.userText(GameFormatters.krw(Int(clamping: availableFunds), language: copyResolver.language))]
+                    ))
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(BaseballTheme.information)
+                }
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+
+            ForEach(Self.options, id: \.rawValue) { investment in
+                investmentCard(investment)
+            }
+
+            if selectedInvestment == .pitchLab {
+                BaseballCard(title: copyResolver.resolve(.offseasonInvestmentFocus), tone: .raised) {
+                    Picker(copyResolver.resolve(.offseasonInvestmentFocus), selection: $selectedFocus) {
+                        ForEach(ProDevelopmentFocus.allCases, id: \.rawValue) { focus in
+                            // localization-safe: resolved-copy
+                            Text(focusTitle(focus)).tag(focus)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("pro.offseasonInvestment.focus")
+                }
+            }
+
+            if let selectedInvestment {
+                PrimaryPill(
+                    title: copyResolver.resolve(.offseasonInvestmentConfirmAction),
+                    identifier: "pro.offseasonInvestment.continue",
+                    action: { showingConfirmation = true }
+                )
+                .accessibilityIdentifier("pro.offseasonInvestment.confirm")
+                .accessibilityHint(copyResolver.resolve(.offseasonInvestmentConfirmTitle))
+                .accessibilityValue(choiceTitle(selectedInvestment))
+            }
+        }
+        .accessibilityIdentifier("pro.offseasonInvestment")
+        .confirmationDialog(
+            copyResolver.resolve(.offseasonInvestmentConfirmTitle),
+            isPresented: $showingConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button(copyResolver.resolve(.offseasonInvestmentConfirmAction)) {
+                guard let selectedInvestment else { return }
+                _ = career.chooseInvestment(
+                    investment: selectedInvestment,
+                    focus: selectedInvestment == .pitchLab ? selectedFocus : nil
+                )
+                self.selectedInvestment = nil
+            }
+            .accessibilityIdentifier("pro.offseasonInvestment.confirm.action")
+            Button(copyResolver.resolve(.offseasonInvestmentConfirmCancel), role: .cancel) { }
+        } message: {
+            if let selectedInvestment {
+                Text(copyResolver.resolve(
+                    .offseasonInvestmentConfirmMessage,
+                    arguments: [
+                        .userText(choiceTitle(selectedInvestment)),
+                        .userText(benefitText(selectedInvestment)),
+                    ]
+                ))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func investmentCard(_ investment: ProOffseasonInvestment) -> some View {
+        let cost = ProFinanceRules.investmentCost(for: investment)
+        let affordable = availableFunds >= cost
+        Button {
+            selectedInvestment = investment
+        } label: {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    // localization-safe: resolved-copy
+                    Text(choiceTitle(investment))
+                        .font(.headline)
+                    Spacer(minLength: 8)
+                    Text(GameFormatters.krw(Int(clamping: cost), language: copyResolver.language))
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(affordable ? BaseballTheme.information : BaseballTheme.textTertiary)
+                }
+                Text(copyResolver.resolve(
+                    .offseasonInvestmentCost,
+                    arguments: [.userText(GameFormatters.krw(Int(clamping: cost), language: copyResolver.language))]
+                ))
+                .font(.footnote)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                Text(copyResolver.resolve(
+                    .offseasonInvestmentBenefit,
+                    arguments: [.userText(benefitText(investment))]
+                ))
+                .font(.footnote)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                Text(copyResolver.resolve(
+                    .offseasonInvestmentDuration,
+                    arguments: [.userText(durationText(investment))]
+                ))
+                .font(.caption)
+                .foregroundStyle(BaseballTheme.textTertiary)
+                if !affordable {
+                    Label(copyResolver.resolve(.offseasonInvestmentInsufficient), systemImage: "lock.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.warning)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                    .stroke(selectedInvestment == investment ? BaseballTheme.selection : BaseballTheme.border, lineWidth: selectedInvestment == investment ? 2 : 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(!affordable)
+        .accessibilityIdentifier("pro.offseasonInvestment.choice.\(investment.rawValue)")
+        .accessibilityLabel(choiceTitle(investment))
+        .accessibilityValue(benefitText(investment))
+    }
+
+    private func choiceTitle(_ investment: ProOffseasonInvestment) -> String {
+        copyResolver.resolve(copyKey(for: investment))
+    }
+
+    private func focusTitle(_ focus: ProDevelopmentFocus) -> String {
+        let key: ProUICopyKey
+        switch focus {
+        case .stuff: key = .offseasonInvestmentFocusStuff
+        case .command: key = .offseasonInvestmentFocusCommand
+        case .movement: key = .offseasonInvestmentFocusMovement
+        case .stamina: key = .offseasonInvestmentFocusStamina
+        }
+        return copyResolver.resolve(key)
+    }
+
+    private func copyKey(for investment: ProOffseasonInvestment) -> ProUICopyKey {
+        switch investment {
+        case .pitchLab: .offseasonInvestmentChoicePitchLab
+        case .recoveryTeam: .offseasonInvestmentChoiceRecoveryTeam
+        case .fanFoundation: .offseasonInvestmentChoiceFanFoundation
+        case .none: .offseasonInvestmentChoiceNone
+        }
+    }
+
+    private func benefitText(_ investment: ProOffseasonInvestment) -> String {
+        switch investment {
+        case .pitchLab:
+            return copyResolver.resolve(
+                .offseasonInvestmentPitchLabBenefit,
+                arguments: [.userText(focusTitle(selectedFocus))]
+            )
+        case .recoveryTeam:
+            return copyResolver.resolve(.offseasonInvestmentRecoveryTeamBenefit)
+        case .fanFoundation:
+            return copyResolver.resolve(.offseasonInvestmentFoundationBenefit)
+        case .none:
+            return copyResolver.resolve(.journeyEffectNone)
+        }
+    }
+
+    private func durationText(_ investment: ProOffseasonInvestment) -> String {
+        switch investment {
+        case .pitchLab: copyResolver.resolve(.offseasonInvestmentDurationSeason)
+        case .recoveryTeam: copyResolver.resolve(.offseasonInvestmentDurationCharge)
+        case .fanFoundation, .none: copyResolver.resolve(.offseasonInvestmentDurationImmediate)
+        }
+    }
+}
+
+struct ProSeasonSettlementView: View {
+    let career: MobileCareerStore
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var settlement: ProSeasonSettlement? { state.journeyState?.lastSettlement }
+
+    var body: some View {
+        if let settlement {
+            VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                KeyArtHeader(
+                    art: .stadiumNight,
+                    eyebrow: copyResolver.resolve(.journeySettlementEyebrow),
+                    title: copyResolver.resolve(.journeySettlementTitle, arguments: [.integer(settlement.season)]),
+                    accent: BaseballTheme.milestone
+                )
+
+                BaseballCard(title: ProCareerPresentation.teamName(state.team, resolver: copyResolver), tone: .positive) {
+                    Text(copyResolver.resolve(
+                        .journeySettlementStats,
+                        arguments: [
+                            .integer(settlement.stats.games),
+                            .userText(GameFormatters.innings(outs: settlement.stats.inningsOuts, language: copyResolver.language)),
+                            .integer(settlement.stats.strikeouts),
+                        ]
+                    ))
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                }
+
+                BaseballCard(title: copyResolver.resolve(.directionTitle)) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(copyResolver.resolve(
+                            .journeySettlementLegacy,
+                            arguments: [.integer(settlement.teamLegacyBefore), .integer(settlement.teamLegacyAfter)]
+                        ))
+                        if let goalProgress = settlement.goalProgressAfter {
+                            Text(ProCareerPresentation.goalTitle(goalProgress.ambition, resolver: copyResolver))
+                                .font(.subheadline.weight(.semibold))
+                            ProCareerGoalMetricsView(
+                                progress: goalProgress,
+                                identifierPrefix: "pro.settlement.goal"
+                            )
+                        }
+                        Text(copyResolver.resolve(
+                            .journeySettlementHOF,
+                            arguments: [.integer(settlement.hallOfFameBefore), .integer(settlement.hallOfFameAfter)]
+                        ))
+                        Text(copyResolver.resolve(
+                            .journeySettlementContract,
+                            arguments: [.integer(settlement.contractYearsBefore), .integer(settlement.contractYearsAfter)]
+                        ))
+                        if settlement.goalCompleted {
+                            Label(copyResolver.resolve(.journeySettlementGoalCompleted), systemImage: "checkmark.seal.fill")
+                                .foregroundStyle(BaseballTheme.milestone)
+                        }
+                        Text(copyResolver.resolve(
+                            .journeySettlementNext,
+                            arguments: [.userText(nextRouteText(settlement.nextRoute))]
+                        ))
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                    }
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+
+                BaseballCard(title: copyResolver.resolve(.journeySettlementSalary), tone: .raised) {
+                    Text(GameFormatters.krw(safeInt(settlement.salaryIncome), language: copyResolver.language))
+                        .font(BaseballType.statNumeral)
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                        .monospacedDigit()
+                        .accessibilityLabel(copyResolver.resolve(
+                            .journeySettlementSalary,
+                            arguments: [.userText(GameFormatters.krw(safeInt(settlement.salaryIncome), language: copyResolver.language))]
+                        ))
+                }
+
+                BaseballCard(title: copyResolver.resolve(.journeySettlementFanReasons), tone: .raised) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(copyResolver.resolve(
+                            .journeySettlementFan,
+                            arguments: [.integer(settlement.fanBefore), .integer(settlement.fanAfter)]
+                        ))
+                        Text(copyResolver.resolve(
+                            .journeySettlementFanDelta,
+                            arguments: [.userText(signed(settlement.fanDelta))]
+                        ))
+                        ForEach(settlement.fanReasons) { reason in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(copyResolver.resolve(.gameContent("content.pro-fan-reason.\(reason.kind.rawValue)")))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                // localization-safe: numeric
+                                Text(signed(reason.delta))
+                                    .monospacedDigit()
+                                    .foregroundStyle(reason.delta >= 0 ? BaseballTheme.positive : BaseballTheme.warning)
+                            }
+                            .font(.caption)
+                        }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityIdentifier("pro.settlement.fanReasons")
+
+                BaseballCard(title: copyResolver.resolve(.journeySettlementMerchandise), tone: .raised) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(GameFormatters.krw(safeInt(settlement.merchandiseIncome), language: copyResolver.language))
+                            .font(BaseballType.statNumeral)
+                            .monospacedDigit()
+                        if let tier = settlement.merchandiseTier {
+                            Text(copyResolver.resolve(
+                                .journeySettlementMerchandiseTier,
+                                arguments: [.userText(copyResolver.resolve(.gameContent("content.pro-merchandise-tier.\(tier.rawValue)")))]
+                            ))
+                            .font(.subheadline)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityIdentifier("pro.settlement.merchandise")
+
+                if state.journeyState?.migration.financeNoticePending == true {
+                    Text(copyResolver.resolve(.journeySettlementMigrationNotice))
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                PrimaryPill(
+                    title: copyResolver.resolve(.journeySettlementAcknowledge),
+                    identifier: "pro.settlement.acknowledge",
+                    action: career.acknowledgeSettlement
+                )
+            }
+            .accessibilityIdentifier("pro.seasonSettlement")
+        } else {
+            ContentUnavailableView(copyResolver.resolve(.scheduleComplete), systemImage: "exclamationmark.triangle")
+        }
+    }
+
+    private func safeInt(_ value: Int64) -> Int {
+        Int(clamping: value)
+    }
+
+    private func signed(_ value: Int) -> String {
+        value >= 0 ? "+\(value)" : String(value)
+    }
+
+    private func nextRouteText(_ route: ProSettlementNextRoute) -> String {
+        switch route {
+        case .underContract: copyResolver.resolve(.journeySettlementNextUnderContract)
+        case .renewalMarket: copyResolver.resolve(.journeySettlementNextRenewal)
+        case .freeAgencyEligible: copyResolver.resolve(.journeySettlementNextFreeAgency)
+        case .forcedRetirement: copyResolver.resolve(.journeySettlementNextRetirement)
+        }
+    }
+}
+
+/// Persisted offers are rendered from the stored market in canonical order. A rookie market is a
+/// single sheet; renewal and open-market decisions remain comparable cards with no default offer.
+struct ProContractOfferView: View {
+    let career: MobileCareerStore
+    let state: ProCareerSnapshot
+
+    @Environment(\.gameCopyResolver) private var copyResolver
+    @State private var selectedAmbition: ProCareerAmbition?
+    @State private var pendingOfferID: String?
+
+    private static let ambitions: [ProCareerAmbition] = [
+        .franchiseIcon,
+        .recordBook,
+        .enduringPro,
+    ]
+
+    private var market: ProContractMarket? { state.journeyState?.pendingContractMarket }
+    private var offer: ProContractOffer? { market?.offers.first }
+    private var pendingOffer: ProContractOffer? {
+        guard let pendingOfferID else { return nil }
+        return market?.offers.first(where: { $0.id == pendingOfferID })
+    }
+    private var allAmbitionsCompleted: Bool {
+        guard let journey = state.journeyState else { return false }
+        let completed = Set(
+            journey.goalHistory.filter { $0.outcome == .completed }.map(\.ambition)
+                + (journey.activeGoal?.completedSeason != nil ? [journey.activeGoal!.ambition] : [])
+        )
+        return completed.count == Self.ambitions.count
+    }
+    private var goalSelectionComplete: Bool {
+        guard let market else { return false }
+        return selectedAmbition != nil || (market.kind != .rookie && allAmbitionsCompleted)
+    }
+
+    var body: some View {
+        if let market, !market.offers.isEmpty {
+            VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                KeyArtHeader(
+                    art: .stadiumNight,
+                    eyebrow: market.kind == .rookie
+                        ? copyResolver.resolve(.contractOfferEyebrow)
+                        : copyResolver.resolve(.contractOfferMarketOpen),
+                    title: marketTitle(market),
+                    accent: BaseballTheme.information
+                )
+
+                if market.kind != .rookie {
+                    Text(copyResolver.resolve(.contractOfferMarketCompare))
+                        .font(.subheadline)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("pro.contractOffer.market.compare")
+                }
+
+                if market.kind == .rookie {
+                    BaseballCard(
+                        title: copyResolver.resolve(
+                            .contractOfferTeam,
+                            arguments: [.userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver))]
+                        ),
+                        tone: .raised
+                    ) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let round = market.draftRound {
+                                Text(copyResolver.resolve(.contractOfferDraftRound, arguments: [.integer(round)]))
+                            }
+                            if let pick = market.overallPick {
+                                Text(copyResolver.resolve(.contractOfferDraftPick, arguments: [.integer(pick)]))
+                            }
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                ForEach(Array(market.offers.enumerated()), id: \.offset) { index, offer in
+                    offerCard(offer, index: index, selectable: market.kind != .rookie)
+                }
+
+                BaseballCard(title: copyResolver.resolve(.contractOfferGoalTitle), tone: .milestone) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(copyResolver.resolve(.contractOfferGoalInstruction))
+                            .font(.subheadline)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if market.kind != .rookie && allAmbitionsCompleted {
+                            Text(copyResolver.resolve(.contractOfferAllAmbitionsComplete))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(BaseballTheme.milestone)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("pro.contractOffer.ambition.all-complete")
+                        } else {
+                            ForEach(Self.ambitions, id: \.rawValue) { ambition in
+                                ambitionChoice(ambition, marketKind: market.kind)
+                            }
+                        }
+                    }
+                }
+
+                if !goalSelectionComplete {
+                    Label(copyResolver.resolve(.contractOfferAmbitionRequired), systemImage: "hand.tap")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.information)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("pro.contractOffer.ambition.required")
+                }
+
+                if market.kind == .rookie, let offer {
+                    PrimaryPill(
+                        title: copyResolver.resolve(.contractOfferSign),
+                        identifier: "pro.contractOffer.sign",
+                        enabled: goalSelectionComplete
+                    ) {
+                        pendingOfferID = offer.id
+                    }
+                }
+            }
+            .accessibilityIdentifier("pro.contractOffer")
+            .confirmationDialog(
+                copyResolver.resolve(.contractOfferConfirmTitle),
+                isPresented: Binding(
+                    get: { pendingOffer != nil },
+                    set: { if !$0 { pendingOfferID = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                if let pendingOffer {
+                    Button(copyResolver.resolve(.contractOfferConfirmAction)) {
+                        career.acceptContract(
+                            marketID: market.id,
+                            offerID: pendingOffer.id,
+                            ambition: selectedAmbition
+                        )
+                        pendingOfferID = nil
+                    }
+                    .disabled(!goalSelectionComplete)
+                    .accessibilityIdentifier("pro.contractOffer.confirm.accept")
+                }
+                Button(copyResolver.resolve(.contractOfferConfirmCancel)) {
+                    pendingOfferID = nil
+                }
+                .accessibilityIdentifier("pro.contractOffer.confirm.cancel")
+            } message: {
+                Text(verbatim: confirmationMessage(for: pendingOffer))
+            }
+        } else {
+            ContentUnavailableView(copyResolver.resolve(.scheduleComplete), systemImage: "exclamationmark.triangle")
+                .accessibilityIdentifier("pro.contractOffer.invalid")
+        }
+    }
+
+    @ViewBuilder
+    private func offerCard(_ offer: ProContractOffer, index: Int, selectable: Bool) -> some View {
+        let prefix = "pro.contractOffer.offer.\(index)"
+        let card = BaseballCard(
+            title: teamName(for: offer),
+            tone: offer.teamID == state.team.id ? .positive : .raised
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                contractValue(
+                    title: copyResolver.resolve(.contractOfferDurationTitle),
+                    value: copyResolver.resolve(.contractOfferDuration, arguments: [.integer(offer.years)]),
+                    identifier: "\(prefix).duration"
+                )
+                contractValue(
+                    title: copyResolver.resolve(.contractOfferAnnualSalary),
+                    value: GameFormatters.krw(offer.annualSalary, language: copyResolver.language),
+                    identifier: "\(prefix).annualSalary"
+                )
+                Text(copyResolver.resolve(
+                    .contractOfferRolePromise,
+                    arguments: [.userText(copyResolver.resolve(offer.rolePromise.displayCopyToken))]
+                ))
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("\(prefix).role")
+                contractValue(
+                    title: copyResolver.resolve(.contractOfferGuaranteedSalary),
+                    value: GameFormatters.krw(totalGuaranteedSalary(for: offer), language: copyResolver.language),
+                    identifier: "\(prefix).guarantee"
+                )
+                if let signingBonus = offer.signingBonus {
+                    contractValue(
+                        title: copyResolver.resolve(.contractOfferSigningBonus),
+                        value: GameFormatters.krw(signingBonus, language: copyResolver.language),
+                        identifier: "\(prefix).signingBonus"
+                    )
+                }
+                Text(copyResolver.resolve(
+                    .contractOfferExpectation,
+                    arguments: [
+                        .userText(expectationName(offer.expectation.kind)),
+                        .integer(offer.expectation.target),
+                        .userText(difficultyName(offer.expectation.difficulty)),
+                    ]
+                ))
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("\(prefix).expectation")
+                Text(copyResolver.resolve(
+                    .contractOfferOutlookLine,
+                    arguments: [.userText(outlookName(offer.outlook))]
+                ))
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel(copyResolver.resolve(.contractOfferOutlook))
+                Text(copyResolver.resolve(
+                    .contractOfferLegacyImpact,
+                    arguments: [.userText(
+                        copyResolver.resolve(offer.preservesTeamLegacy ? .contractOfferLegacyPreserved : .contractOfferLegacyReset)
+                    )]
+                ))
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("\(prefix).legacy")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityIdentifier("\(prefix).team")
+
+        if selectable {
+            Button {
+                pendingOfferID = offer.id
+            } label: {
+                card
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(copyResolver.resolve(.contractOfferReview))
+            .accessibilityIdentifier(prefix)
+        } else {
+            card
+        }
+    }
+
+    @ViewBuilder
+    private func contractValue(title: String, value: String, identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textSecondary)
+            Text(verbatim: value)
+                .font(BaseballType.statNumeral)
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .monospacedDigit()
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(identifier)
+    }
+
+    @ViewBuilder
+    private func ambitionChoice(_ ambition: ProCareerAmbition, marketKind: ProContractMarketKind) -> some View {
+        let selected = selectedAmbition == ambition
+        let completed = state.journeyState?.goalHistory.contains { $0.outcome == .completed && $0.ambition == ambition } == true
+        let isCurrentActive = state.journeyState?.activeGoal?.ambition == ambition
+            && state.journeyState?.activeGoal?.completedSeason == nil
+        let disabled = marketKind != .rookie && completed && !isCurrentActive
+        Button {
+            selectedAmbition = ambition
+        } label: {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textTertiary)
+                Text(verbatim: ambitionName(ambition))
+                    .font(.headline)
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(BaseballTheme.surface, in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                    .stroke(selected ? BaseballTheme.selection : BaseballTheme.border, lineWidth: selected ? 2 : 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityValue(disabled ? copyResolver.resolve(.contractOfferAllAmbitionsComplete) : "")
+        .accessibilityIdentifier("pro.contractOffer.ambition.\(ambition.rawValue)")
+    }
+
+    private func marketTitle(_ market: ProContractMarket) -> String {
+        switch market.kind {
+        case .rookie: copyResolver.resolve(.contractOfferTitle)
+        case .renewal: copyResolver.resolve(.contractOfferMarketRenewalTitle)
+        case .freeAgency: copyResolver.resolve(.contractOfferMarketFreeAgencyTitle)
+        }
+    }
+
+    private func teamName(for offer: ProContractOffer) -> String {
+        let team = ProCareerEngine.proTeams.first(where: { $0.id == offer.teamID }) ?? state.team
+        return ProCareerPresentation.teamName(team, resolver: copyResolver)
+    }
+
+    private func confirmationMessage(for offer: ProContractOffer?) -> String {
+        guard let offer else { return copyResolver.resolve(.contractOfferConfirmMessage) }
+        let arguments: [GameCopyArgument] = [
+            .userText(teamName(for: offer)),
+            .integer(offer.years),
+        ]
+        if offer.teamID != state.team.id {
+            return copyResolver.resolve(.contractOfferConfirmTransferMessage, arguments: arguments)
+        }
+        return copyResolver.resolve(.contractOfferConfirmMessage, arguments: arguments)
+    }
+
+    private func totalGuaranteedSalary(for offer: ProContractOffer) -> Int {
+        Int(clamping: Int64(offer.annualSalary) * Int64(offer.years))
+    }
+
+    private func ambitionName(_ ambition: ProCareerAmbition) -> String {
+        switch ambition {
+        case .franchiseIcon: copyResolver.resolve(.ambitionFranchiseIcon)
+        case .recordBook: copyResolver.resolve(.ambitionRecordBook)
+        case .enduringPro: copyResolver.resolve(.ambitionEnduringPro)
+        }
+    }
+
+    private func outlookName(_ outlook: ProTeamOutlook) -> String {
+        switch outlook {
+        case .opportunity: copyResolver.resolve(.teamOutlookOpportunity)
+        case .balanced: copyResolver.resolve(.teamOutlookBalanced)
+        case .contender: copyResolver.resolve(.teamOutlookContender)
+        }
+    }
+
+    private func expectationName(_ kind: ProContractExpectationKind) -> String {
+        switch kind {
+        case .majorRoster: copyResolver.resolve(.contractExpectationMajorRoster)
+        case .innings: copyResolver.resolve(.contractExpectationInnings)
+        case .strikeouts: copyResolver.resolve(.contractExpectationStrikeouts)
+        case .saves: copyResolver.resolve(.contractExpectationSaves)
+        case .runPrevention: copyResolver.resolve(.contractExpectationRunPrevention)
+        }
+    }
+
+    private func difficultyName(_ difficulty: ProExpectationDifficulty) -> String {
+        switch difficulty {
+        case .accessible: copyResolver.resolve(.contractOfferDifficultyAccessible)
+        case .standard: copyResolver.resolve(.contractOfferDifficultyStandard)
+        case .stretch: copyResolver.resolve(.contractOfferDifficultyStretch)
         }
     }
 }
@@ -181,7 +908,11 @@ private struct CareerSummary: View {
                                     arguments: [
                                         .integer(decision.season),
                                         .integer(decision.week),
-                                        .userText(ProCareerPresentation.effect(decision.effect, resolver: copyResolver)),
+                                        .userText(ProCareerPresentation.combinedEffect(
+                                            decision.effect,
+                                            journeyEffect: decision.journeyEffect,
+                                            resolver: copyResolver
+                                        )),
                                     ]
                                 ))
                                     .font(.caption)
@@ -209,10 +940,7 @@ struct ProSeasonDecisionView: View {
     @Environment(\.gameCopyResolver) private var copyResolver
 
     private var decisionTitle: String {
-        if copyResolver.language == .korean {
-            return decision.title
-        }
-        return copyResolver.resolve(decision.type.displayCopyToken)
+        ProCareerPresentation.decisionTitle(decision, resolver: copyResolver)
     }
 
     var body: some View {
@@ -246,11 +974,18 @@ struct ProSeasonDecisionView: View {
                             .font(.footnote)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Label(ProCareerPresentation.effect(choice.effect, resolver: copyResolver), systemImage: "plusminus.circle")
+                        Label(ProCareerPresentation.combinedEffect(
+                            choice.effect,
+                            journeyEffect: choice.journeyEffect,
+                            resolver: copyResolver
+                        ), systemImage: "plusminus.circle")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(BaseballTheme.information)
                             .fixedSize(horizontal: false, vertical: true)
-                        Label(copyResolver.resolve(.decisionFollowUp), systemImage: "arrow.turn.down.right")
+                        Label(
+                            ProCareerPresentation.decisionTiming(for: decision, resolver: copyResolver),
+                            systemImage: decision.type == .mediaOpportunity ? "bolt.fill" : "arrow.turn.down.right"
+                        )
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -297,8 +1032,12 @@ struct ProSeasonDecisionView: View {
                     .decisionConfirmMessage,
                     arguments: [
                         .userText(ProCareerPresentation.choiceDetail(pendingChoice, resolver: copyResolver)),
-                        .userText(ProCareerPresentation.effect(pendingChoice.effect, resolver: copyResolver)),
-                        .userText(copyResolver.resolve(.decisionFollowUp)),
+                        .userText(ProCareerPresentation.combinedEffect(
+                            pendingChoice.effect,
+                            journeyEffect: pendingChoice.journeyEffect,
+                            resolver: copyResolver
+                        )),
+                        .userText(ProCareerPresentation.decisionTiming(for: decision, resolver: copyResolver)),
                     ]
                 ))
             }
@@ -314,7 +1053,12 @@ struct ProSeasonDecisionView: View {
             arguments: [
                 .userText(ProCareerPresentation.choiceTitle(choice, resolver: resolver)),
                 .userText(ProCareerPresentation.choiceDetail(choice, resolver: resolver)),
-                .userText(ProCareerPresentation.effect(choice.effect, resolver: resolver)),
+                .userText(ProCareerPresentation.combinedEffect(
+                    choice.effect,
+                    journeyEffect: choice.journeyEffect,
+                    resolver: resolver
+                )),
+                .userText(ProCareerPresentation.decisionTiming(for: choice, resolver: resolver)),
             ]
         )
     }
@@ -739,7 +1483,20 @@ private struct OffseasonView: View {
     @State private var pending: OffseasonDecision?
 
     private var service: Int { MobileCareerStore.freeAgencyService(state) }
-    private var freeAgencyReady: Bool { service >= 6 }
+    private var journeyContractYears: Int? { state.journeyState == nil ? nil : state.contract?.yearsRemaining ?? 0 }
+    private var journeyContractExpired: Bool { journeyContractYears == 0 && state.journeyState != nil }
+    private var journeyContractActive: Bool { journeyContractYears.map { $0 >= 1 } ?? false }
+    private var freeAgencyReady: Bool {
+        guard service >= 6 else { return false }
+        return state.journeyState == nil || journeyContractExpired
+    }
+    private var freeAgencyLock: String? {
+        if freeAgencyReady { return nil }
+        if state.journeyState != nil && journeyContractActive {
+            return copyResolver.resolve(.offseasonActiveContractOpenMarketLocked)
+        }
+        return copyResolver.resolve(.offseasonOpenMarketServiceLocked, arguments: [.integer(service)])
+    }
 
     private func decisionLabel(_ decision: OffseasonDecision) -> String {
         copyResolver.resolve(decision.displayCopyToken)
@@ -774,12 +1531,47 @@ private struct OffseasonView: View {
                 )
             }
 
+            if let journeyContractYears {
+                BaseballCard(
+                    title: journeyContractExpired
+                        ? copyResolver.resolve(.contractOfferExpired)
+                        : copyResolver.resolve(.contractOfferRemainingTitle),
+                    tone: journeyContractExpired ? .warning : .raised
+                ) {
+                    Text(
+                        journeyContractExpired
+                            ? copyResolver.resolve(.offseasonContractExpired)
+                            : copyResolver.resolve(.contractOfferRemaining, arguments: [.integer(journeyContractYears)])
+                    )
+                        .font(.subheadline)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            RetirementPreviewCard(state: state)
+
             OffseasonChoice(
-                title: decisionLabel(.continueCareer),
-                detail: copyResolver.resolve(
-                    .offseasonContinueDetail,
-                    arguments: [.userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver))]
-                ),
+                title: journeyContractExpired
+                    ? copyResolver.resolve(.offseasonRenewalChoice)
+                    : decisionLabel(.continueCareer),
+                detail: journeyContractExpired
+                    ? copyResolver.resolve(
+                        .offseasonRenewalDetail,
+                        arguments: [.userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver))]
+                    )
+                    : journeyContractActive
+                        ? copyResolver.resolve(
+                            .offseasonActiveContractDetail,
+                            arguments: [
+                                .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
+                                .integer(journeyContractYears ?? 0),
+                            ]
+                        )
+                        : copyResolver.resolve(
+                            .offseasonContinueDetail,
+                            arguments: [.userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver))]
+                        ),
                 symbol: "arrow.forward.circle",
                 enabled: true,
                 note: nil
@@ -787,21 +1579,24 @@ private struct OffseasonView: View {
 
             OffseasonChoice(
                 title: decisionLabel(.militaryService),
-                detail: copyResolver.resolve(.offseasonMilitaryDetail),
+                detail: state.journeyState == nil
+                    ? copyResolver.resolve(.offseasonMilitaryDetail)
+                    : copyResolver.resolve(.offseasonMilitaryJourneyDetail),
                 symbol: "shield",
                 enabled: !state.militaryCompleted,
-                note: state.militaryCompleted ? copyResolver.resolve(.offseasonMilitaryDone) : nil
+                note: state.militaryCompleted
+                    ? copyResolver.resolve(.offseasonMilitaryDone)
+                    : nil
             ) { pending = .militaryService }
 
             OffseasonChoice(
-                title: decisionLabel(.freeAgency),
-                detail: copyResolver.resolve(.offseasonFreeAgencyDetail),
+                title: state.journeyState != nil
+                    ? copyResolver.resolve(.offseasonOpenMarketChoice)
+                    : decisionLabel(.freeAgency),
+                detail: copyResolver.resolve(.offseasonOpenMarketDetail),
                 symbol: "arrow.triangle.branch",
                 enabled: freeAgencyReady,
-                note: freeAgencyReady ? nil : copyResolver.resolve(
-                    .offseasonFreeAgencyLocked,
-                    arguments: [.integer(service)]
-                )
+                note: freeAgencyLock
             ) { pending = .freeAgency }
 
             OffseasonChoice(
@@ -941,6 +1736,7 @@ private struct RetirementDecisionView: View {
             }
 
             CareerTotals(state: state)
+            RetirementPreviewCard(state: state)
 
             PrimaryPill(title: copyResolver.resolve(.retirementAction), identifier: "pro.retire") { confirming = true }
         }
@@ -951,6 +1747,51 @@ private struct RetirementDecisionView: View {
         } message: {
             Text(copyResolver.resolve(.retirementConfirmMessage, arguments: [.integer(state.careerStats.count)]))
         }
+    }
+}
+
+private struct RetirementPreviewCard: View {
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var preview: ProRetirementPreview {
+        ProCareerEngine.retirementPreview(for: state)
+    }
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.retirementPreviewTitle), tone: .raised) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(copyResolver.resolve(.retirementPreviewScore, arguments: [.integer(preview.finalScore)]))
+                    .font(.headline.monospacedDigit())
+                    .accessibilityIdentifier("pro.retirement.preview.score")
+                Text(copyResolver.resolve(
+                    .retirementPreviewRetiredNumber,
+                    arguments: [.integer(preview.lastTeamSeasons), .integer(preview.lastTeamLegacy), .integer(preview.fanSupport)]
+                ))
+                .accessibilityIdentifier("pro.retirement.preview.retired-number")
+                if preview.retiredNumberEligible {
+                    Label(copyResolver.resolve(.retirementPreviewRetiredNumberEligible), systemImage: "number.circle.fill")
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .accessibilityIdentifier("pro.retirement.preview.retired-number.eligible")
+                }
+                if !preview.clubHallTeamIDs.isEmpty {
+                    Text(copyResolver.resolve(.retirementPreviewClubHall))
+                        .font(.subheadline.weight(.semibold))
+                        .accessibilityIdentifier("pro.retirement.preview.club-hall")
+                    ForEach(preview.clubHallTeamIDs, id: \.self) { teamID in
+                        Label(
+                            ProCareerPresentation.teamName(teamID, resolver: copyResolver),
+                            systemImage: "building.columns"
+                        )
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .accessibilityIdentifier("pro.retirement.preview.club-hall.\(teamID)")
+                    }
+                }
+            }
+            .font(.subheadline)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityIdentifier("pro.retirement.preview")
     }
 }
 
@@ -977,8 +1818,8 @@ private struct RetiredView: View {
                 PortraitView(seed: state.identity.portraitSeed, role: .player, size: 56, playerStage: .pro)
                 VStack(alignment: .leading, spacing: 2) {
                     // localization-safe: user-input
-                    Text(state.identity.name).font(.headline)
-                    Text(copyResolver.resolve(
+                    Text(verbatim: state.identity.name).font(.headline)
+                    Text(verbatim: copyResolver.resolve(
                         .retiredIdentityLine,
                         arguments: [
                             .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
@@ -996,11 +1837,22 @@ private struct RetiredView: View {
 
             if let score = state.hallOfFameScore {
                 BaseballCard(title: copyResolver.resolve(.retiredHallOfFame), tone: .milestone) {
-                    Text("\(score)").font(BaseballType.heroNumeral).foregroundStyle(BaseballTheme.milestone)
+                    Text(verbatim: copyResolver.resolve(.retirementFinalScore, arguments: [.integer(score)]))
+                        .font(BaseballType.heroNumeral)
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .accessibilityIdentifier("pro.retirement.final.score")
                 }
             }
 
             CareerTotals(state: state)
+
+            if state.journeyState != nil {
+                ProTeamCareerRecordsCard(state: state, accessibilityPrefix: "pro.retirement")
+            }
+
+            if let journey = state.journeyState, !journey.retirementHonors.isEmpty {
+                RetirementHonorsCard(honors: journey.retirementHonors)
+            }
 
             // 이 커리어가 다음 회차에 남기는 것. 프로의 시간이 환생 루프와 무관하면
             // 은퇴가 끝이 되지만, 야구혼으로 이어지면 은퇴가 다음 회차의 시작이 된다.
@@ -1009,12 +1861,12 @@ private struct RetiredView: View {
                     ? copyResolver.resolve(.retiredLegacyTitle) : copyResolver.resolve(.retiredSoulTitle),
                 tone: .milestone
             ) {
-                Text(copyResolver.resolve(
+                Text(verbatim: copyResolver.resolve(
                     retiresIntoSignatureLegacy ? .retiredLegacyBody : .retiredSoulBody
                 ))
                     .font(.subheadline)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(copyResolver.resolve(
+                Text(verbatim: copyResolver.resolve(
                     .retiredSoulPoints,
                     arguments: [.integer(HighSchoolCareerStore.proSoulBonus(for: state))]
                 ))
@@ -1039,7 +1891,7 @@ private struct RetiredView: View {
             BaseballCard(title: copyResolver.resolve(.retiredRetrospective)) {
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(Array(state.news.prefix(6).enumerated()), id: \.offset) { _, line in
-                        Text(ProCareerPresentation.news(line, state: state, resolver: copyResolver))
+                        Text(verbatim: ProCareerPresentation.news(line, state: state, resolver: copyResolver))
                             .font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -1051,7 +1903,7 @@ private struct RetiredView: View {
                     ? copyResolver.resolve(.retiredLegacyAction) : copyResolver.resolve(.retiredSoulAction),
                 identifier: "pro.newPlayer"
             ) { confirming = true }
-            Text(copyResolver.resolve(
+            Text(verbatim: copyResolver.resolve(
                 retiresIntoSignatureLegacy ? .retiredLegacyFootnote : .retiredSoulFootnote
             ))
                 .font(.caption)
@@ -1074,10 +1926,49 @@ private struct RetiredView: View {
                 .accessibilityIdentifier("pro.newPlayer.confirm")
             Button(copyResolver.resolve(.retiredConfirmCancel)) {}
         } message: {
-            Text(copyResolver.resolve(
+            Text(verbatim: copyResolver.resolve(
                 retiresIntoSignatureLegacy ? .retiredLegacyConfirmMessage : .retiredSoulConfirmMessage,
                 arguments: [.userText(state.identity.name)]
             ))
+        }
+    }
+}
+
+private struct RetirementHonorsCard: View {
+    let honors: [ProRetirementHonor]
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.retirementHonorsTitle), tone: .milestone) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(honors) { honor in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(verbatim: ProCareerPresentation.honorTitle(honor.kind, resolver: copyResolver))
+                            .font(.subheadline.weight(.semibold))
+                        Text(verbatim: value(for: honor))
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("pro.retirement.honor.\(honor.id)")
+                }
+            }
+        }
+        .accessibilityIdentifier("pro.retirement.honors")
+    }
+
+    private func value(for honor: ProRetirementHonor) -> String {
+        switch honor.kind {
+        case .hallOfFame:
+            return copyResolver.resolve(.retirementHonorScore, arguments: [.integer(Int(clamping: honor.value ?? 0))])
+        case .retiredNumber, .clubHall:
+            return copyResolver.resolve(.retirementHonorTeam, arguments: [.userText(ProCareerPresentation.teamName(honor.teamID ?? "", resolver: copyResolver))])
+        case .ambitionCompleted:
+            let ambition = honor.referenceID.flatMap(ProCareerAmbition.init(rawValue:))
+            return copyResolver.resolve(.retirementHonorValue, arguments: [.userText(ambition.map { ProCareerPresentation.goalTitle($0, resolver: copyResolver) } ?? GameCopyResolver.unavailableText)])
+        case .careerEarnings:
+            return copyResolver.resolve(.retirementHonorValue, arguments: [.userText(GameFormatters.krw(Int(clamping: honor.value ?? 0), language: copyResolver.language))])
         }
     }
 }

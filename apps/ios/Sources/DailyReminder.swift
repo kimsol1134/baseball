@@ -663,8 +663,8 @@ enum DailyReminder {
         }
 
         // Korean remains the development language, so old personalized payloads are valid there.
-        // English must never fall back to a Korean sentence stored by an older build.
-        guard resolver.language == .english else { return legacyValue }
+        // Other languages must never fall back to a Korean sentence stored by an older build.
+        guard resolver.language != .korean else { return legacyValue }
         return resolver.resolve(genericKey)
     }
 
@@ -687,22 +687,54 @@ enum DailyReminder {
         ).day
     }
 
+    /// UserNotifications의 Objective-C payload는 `Any` 사전이라 actor 사이로 그대로
+    /// 넘길 수 없다. delegate callback 안에서 이 값 타입으로 먼저 정규화한 뒤 메인
+    /// actor에는 Sendable 값만 전달한다.
+    struct OpenedContext: Sendable {
+        let deepLink: URL?
+        let destination: String
+        let reason: String
+        let receipt: String
+        let experimentID: String
+        let variant: String
+        let savedDayKey: String
+        let developmentRulesVersion: Int
+
+        var analyticsProperties: [String: Any] {
+            [
+                "destination": destination,
+                "reason": reason,
+                "plan_receipt": receipt,
+                "experiment_id": experimentID,
+                "variant": variant,
+                "saved_day_key": savedDayKey,
+                "development_rules_version": developmentRulesVersion,
+            ]
+        }
+    }
+
     /// 예전 알림에는 destination/reason이 없다. 링크에서 목적지를 복원하고 이유는
     /// legacy로 고정해 새 실험 코호트와 섞이지 않게 한다.
-    static func openedProperties(userInfo: [AnyHashable: Any]) -> [String: Any] {
+    static func openedContext(userInfo: [AnyHashable: Any]) -> OpenedContext {
         let rawLink = userInfo[linkUserInfoKey] as? String
-        let inferred = rawLink.flatMap(URL.init(string:)).flatMap(Destination.resolve)
+        let deepLink = rawLink.flatMap(URL.init(string:))
+        let inferred = deepLink.flatMap(Destination.resolve)
         let destination = (userInfo[destinationUserInfoKey] as? String)
             ?? inferred?.rawValue ?? "unknown"
-        return [
-            "destination": destination,
-            "reason": (userInfo[reasonUserInfoKey] as? String) ?? "legacy",
-            "plan_receipt": (userInfo[receiptUserInfoKey] as? String) ?? "legacy",
-            "experiment_id": (userInfo[experimentUserInfoKey] as? String) ?? "legacy",
-            "variant": (userInfo[variantUserInfoKey] as? String) ?? "legacy",
-            "saved_day_key": (userInfo[savedDayUserInfoKey] as? String) ?? "legacy",
-            "development_rules_version": (userInfo[rulesVersionUserInfoKey] as? Int) ?? 0,
-        ]
+        return OpenedContext(
+            deepLink: deepLink,
+            destination: destination,
+            reason: (userInfo[reasonUserInfoKey] as? String) ?? "legacy",
+            receipt: (userInfo[receiptUserInfoKey] as? String) ?? "legacy",
+            experimentID: (userInfo[experimentUserInfoKey] as? String) ?? "legacy",
+            variant: (userInfo[variantUserInfoKey] as? String) ?? "legacy",
+            savedDayKey: (userInfo[savedDayUserInfoKey] as? String) ?? "legacy",
+            developmentRulesVersion: (userInfo[rulesVersionUserInfoKey] as? Int) ?? 0
+        )
+    }
+
+    static func openedProperties(userInfo: [AnyHashable: Any]) -> [String: Any] {
+        openedContext(userInfo: userInfo).analyticsProperties
     }
 
     @MainActor private static func reschedule(
@@ -766,6 +798,21 @@ enum DailyReminder {
     }
 }
 
+/// UserNotifications가 건네는 Objective-C completion block에는 Sendable 표기가 없다.
+/// 콜백 자체만 좁게 감싸고 실제 실행은 반드시 MainActor에서 한 번만 수행한다.
+private final class NotificationDelegateCompletion: @unchecked Sendable {
+    private let callback: () -> Void
+
+    init(_ callback: @escaping () -> Void) {
+        self.callback = callback
+    }
+
+    @MainActor
+    func call() {
+        callback()
+    }
+}
+
 /// 알림을 눌렀을 때 약속한 커리어 화면을 연다.
 @MainActor
 final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
@@ -780,22 +827,34 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate {
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
-        let info = response.notification.request.content.userInfo
-        guard let raw = info[DailyReminder.linkUserInfoKey] as? String,
-              let url = URL(string: raw) else { return }
-        await MainActor.run {
-            GameAnalytics.log(.reminderOpened, DailyReminder.openedProperties(userInfo: info))
-            if let handler = self.onDeepLink { handler(url) } else { self.pendingDeepLink = url }
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        // AnyHashable/Any payload는 이 동기 callback 안에서 끝내고 Sendable 값만 hop한다.
+        let context = DailyReminder.openedContext(
+            userInfo: response.notification.request.content.userInfo
+        )
+        let completion = NotificationDelegateCompletion(completionHandler)
+
+        Task { @MainActor [weak self] in
+            // UIKit의 snapshot/state-restoration 정리도 메인 actor에서 끝나야 한다.
+            defer { completion.call() }
+            guard let url = context.deepLink else { return }
+            GameAnalytics.log(.reminderOpened, context.analyticsProperties)
+            if let handler = self?.onDeepLink {
+                handler(url)
+            } else {
+                self?.pendingDeepLink = url
+            }
         }
     }
 
     /// 앱이 떠 있을 때도 배너를 보여 준다 — 안 보여 주면 켜 둔 알림이 조용히 사라진다.
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }

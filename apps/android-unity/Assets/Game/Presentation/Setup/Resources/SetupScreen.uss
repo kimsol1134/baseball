@@ -1,15 +1,238 @@
-.setup-hero {
-    background-color: var(--baseball-information-soft);
+.setup-screen .setup-hero {
+    display: none;
+}
+
+.setup-screen .screen-scroll .unity-scroll-view__content-container {
+    padding-top: 0;
+    padding-bottom: 24px;
+}
+
+.setup-step-content {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.setup-progress {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+}
+
+.setup-progress .baseball-eyebrow {
+    margin-bottom: 8px;
+}
+
+.setup-progress__track {
+    width: 100%;
+    height: 3px;
+    flex-direction: row;
+}
+
+.setup-progress__segment {
+    height: 3px;
+    flex-grow: 1;
+    margin-right: 4px;
+    border-radius: 999px;
+    background-color: var(--baseball-border);
+}
+
+.setup-progress__segment--complete {
+    background-color: var(--baseball-action);
+}
+
+.setup-step-heading {
+    width: 100%;
+    margin-bottom: 18px;
+}
+
+.setup-step-title {
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-display);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+.setup-step-lead {
+    margin-top: 8px;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-body);
+    white-space: normal;
+}
+
+.setup-name-card {
+    width: 100%;
+    padding: 16px;
+    margin-bottom: 8px;
+    border-radius: 14px;
+    background-color: var(--baseball-surface);
 }
 
 .setup-name-field {
-    min-height: 52px;
+    min-height: 58px;
     color: var(--baseball-text-primary);
-    font-size: var(--baseball-font-body);
+    font-size: var(--baseball-font-stat);
+    -unity-font-style: bold;
 }
 
-.setup-name-field .unity-text-input {
+.setup-name-field .unity-text-input,
+.setup-seed-field .unity-text-input,
+.setup-name-field .unity-base-text-field__input,
+.setup-seed-field .unity-base-text-field__input,
+.setup-name-field .unity-text-field__input,
+.setup-seed-field .unity-text-field__input {
     color: var(--baseball-text-primary);
     background-color: var(--baseball-surface-raised);
     border-color: var(--baseball-border-strong);
+    border-width: 1px;
+    border-radius: 10px;
+}
+
+.setup-seed-field {
+    min-height: 48px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: var(--baseball-text-primary);
+    font-size: var(--baseball-font-caption);
+}
+
+.setup-step-content > .baseball-button,
+.setup-step-content > .baseball-content-image,
+.setup-step-content > .baseball-inline-error,
+.setup-step-content > .baseball-callout,
+.setup-step-content > .baseball-section,
+.setup-step-content > .baseball-choice-card,
+.setup-step-content > .baseball-visual-choice {
+    margin-bottom: 12px;
+}
+
+.setup-region-grid {
+    width: 100%;
+}
+
+.setup-region-row {
+    width: 100%;
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.setup-region-row > .setup-region-card:first-child {
+    margin-right: 8px;
+}
+
+.setup-region-card {
+    width: auto;
+    min-width: 0;
+    flex-basis: 0;
+    flex-grow: 1;
+    min-height: 64px;
+    margin-bottom: 0;
+    padding: 10px;
+    font-size: var(--baseball-font-caption);
+    -unity-text-align: middle-center;
+}
+
+.setup-region-spacer {
+    min-width: 0;
+    flex-basis: 0;
+    flex-grow: 1;
+    margin-left: 8px;
+}
+
+.setup-preset-card {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-width: 1px;
+    border-color: var(--baseball-border);
+    border-radius: 14px;
+    background-color: var(--baseball-surface);
+}
+
+.setup-preset-card--selected {
+    border-width: 2px;
+    border-color: var(--baseball-selection);
+    background-color: var(--baseball-selection-soft);
+}
+
+.setup-preset-card > .baseball-content-image {
+    height: 150px;
+    margin-bottom: 8px;
+}
+
+.setup-preset-card__choice {
+    min-height: 58px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border-width: 0;
+    background-color: transparent;
+}
+
+.setup-ability-row {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.setup-ability-row__heading {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    color: var(--baseball-text-secondary);
+    font-size: var(--baseball-font-caption);
+}
+
+.setup-ability-row__value {
+    color: var(--baseball-text-primary);
+    -unity-font-style: bold;
+}
+
+.setup-preset-card__effect {
+    margin-top: 8px;
+    color: var(--baseball-warning);
+    font-size: var(--baseball-font-caption);
+    white-space: normal;
+}
+
+.setup-step-footer {
+    width: 100%;
+    flex-shrink: 0;
+    padding: 10px 16px 12px 16px;
+    border-top-width: 1px;
+    border-top-color: var(--baseball-border);
+    background-color: var(--baseball-surface);
+}
+
+.setup-step-footer__actions {
+    width: 100%;
+    max-width: 480px;
+    align-self: center;
+}
+
+.setup-step-footer__actions > .baseball-button {
+    margin-top: 4px;
+}
+
+.baseball-font-scale-160 .setup-region-card,
+.baseball-font-scale-200 .setup-region-card {
+    width: 100%;
+}
+
+.baseball-font-scale-160 .setup-region-row,
+.baseball-font-scale-200 .setup-region-row {
+    flex-direction: column;
+}
+
+.baseball-font-scale-160 .setup-region-row > .setup-region-card:first-child,
+.baseball-font-scale-200 .setup-region-row > .setup-region-card:first-child {
+    margin-right: 0;
+    margin-bottom: 8px;
+}
+
+.baseball-font-scale-160 .setup-region-spacer,
+.baseball-font-scale-200 .setup-region-spacer {
+    display: none;
+}
+
+.baseball-font-scale-200 .setup-preset-card > .baseball-content-image {
+    height: 136px;
 }

@@ -1,0 +1,767 @@
+{
+  "schema": "android-unity-save-v1",
+  "schemaVersion": 1,
+  "revision": "5",
+  "writtenAtUtc": "2026-08-13T13:54:48.709Z",
+  "payloadSha256": "02d3b34c91ac97f819dfc3684008e0113daa755fa125caecf4028f2a17f639c1",
+  "payload": {
+    "aggregateVersion": 4,
+    "revision": 5,
+    "installId": "718fa1083cc647d0b169ff301fdb9ad7",
+    "stage": "highSchool",
+    "highSchool": {
+      "careerId": "career-2-life-1",
+      "lifeNumber": 1,
+      "phase": "training",
+      "nextSeed": "15943601342025964378",
+      "coreRevision": 2,
+      "playerId": "pitcher-power",
+      "playerName": "내부 QA 투수",
+      "presetId": "power_prospect",
+      "ratings": {
+        "stuff": 44,
+        "command": 35,
+        "movement": 37,
+        "stamina": 39,
+        "total": 155
+      },
+      "performance": {
+        "importantGames": 0,
+        "pitches": 0,
+        "outs": 0,
+        "strikeouts": 0,
+        "walks": 0,
+        "hits": 0,
+        "runsAllowed": 0
+      },
+      "schoolId": "HanbitTraditional",
+      "schoolName": "서울덕성고",
+      "schoolYear": 1,
+      "chapterNumber": 1,
+      "remainingImportantGames": 4,
+      "remainingChapterAdvances": 7,
+      "draft": null,
+      "coreStateJson": "{\"CareerId\":\"career-2-life-1\",\"Revision\":2,\"LifeNumber\":1,\"Phase\":\"Training\",\"Identity\":{\"Name\":\"내부 QA 투수\",\"ThrowingHand\":\"Right\",\"BodyType\":\"Balanced\",\"Region\":\"서울\"},\"Difficulty\":{\"CareerHarshness\":\"Standard\",\"InformationClarity\":\"Standard\",\"SimulationDifficulty\":\"Standard\",\"InterventionAssist\":\"Standard\"},\"Karmas\":[],\"LegacyRewardPermille\":1050,\"MemorySlots\":3,\"Pitcher\":{\"Id\":\"pitcher-power\",\"Name\":\"내부 QA 투수\",\"Stuff\":44,\"Command\":35,\"Movement\":37,\"Stamina\":39,\"PitchProfiles\":[{\"PitchType\":\"FourSeam\",\"Role\":\"Primary\",\"VelocityTenthsKph\":1410,\"Control\":35,\"Command\":32,\"Movement\":37,\"Whiff\":45,\"WeakContact\":41,\"FatigueCost\":2},{\"PitchType\":\"Slider\",\"Role\":\"Secondary\",\"VelocityTenthsKph\":1240,\"Control\":31,\"Command\":29,\"Movement\":40,\"Whiff\":41,\"WeakContact\":38,\"FatigueCost\":2},{\"PitchType\":\"Curveball\",\"Role\":\"Secondary\",\"VelocityTenthsKph\":1090,\"Control\":27,\"Command\":26,\"Movement\":38,\"Whiff\":33,\"WeakContact\":35,\"FatigueCost\":2},{\"PitchType\":\"Changeup\",\"Role\":\"Development\",\"VelocityTenthsKph\":1210,\"Control\":23,\"Command\":22,\"Movement\":31,\"Whiff\":28,\"WeakContact\":31,\"FatigueCost\":2}],\"ThrowingHand\":\"Right\"},\"SchoolOptions\":[{\"Id\":\"HanbitTraditional\",\"Name\":\"서울덕성고\",\"Philosophy\":\"기본기와 긴 이닝\",\"CoachName\":\"윤태문\",\"CoachArchetype\":\"원칙형\",\"CatcherName\":\"서준호\",\"CatcherArchetype\":\"안정형\",\"CoachPersonality\":\"새벽 반복 훈련을 고집하며 핑계보다 공 하나를 더 던지게 합니다.\",\"CoachRecord\":\"재임 14년 · 전국대회 4강 6회\",\"CatcherPersonality\":\"실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수입니다.\",\"CatcherRecord\":\"중학 마지막 시즌 26경기 · 도루저지율 .438\",\"Strength\":\"Stamina\",\"Tradeoff\":\"새 구종을 시험할 기회가 적습니다.\"},{\"Id\":\"MiraeAnalytics\",\"Name\":\"서울배성고\",\"Philosophy\":\"기록을 활용한 타자 상대법\",\"CoachName\":\"노재형\",\"CoachArchetype\":\"분석형\",\"CatcherName\":\"한도윤\",\"CatcherArchetype\":\"분석형\",\"CoachPersonality\":null,\"CoachRecord\":null,\"CatcherPersonality\":null,\"CatcherRecord\":null,\"Strength\":\"GamePlanning\",\"Tradeoff\":\"데이터가 적을 때 판단이 흔들릴 수 있습니다.\"},{\"Id\":\"HaedongPower\",\"Name\":\"서울충림고\",\"Philosophy\":\"빠른 직구와 공격적인 승부\",\"CoachName\":\"오승렬\",\"CoachArchetype\":\"승부형\",\"CatcherName\":\"차민석\",\"CatcherArchetype\":\"공격형\",\"CoachPersonality\":null,\"CoachRecord\":null,\"CatcherPersonality\":null,\"CatcherRecord\":null,\"Strength\":\"Velocity\",\"Tradeoff\":\"빠른 공을 많이 던질수록 피로가 쌓이고 제구가 흔들립니다.\"},{\"Id\":\"CheongamDevelopment\",\"Name\":\"서울경원고\",\"Philosophy\":\"개인별 투구 동작과 변화구 훈련\",\"CoachName\":\"배도환\",\"CoachArchetype\":\"육성형\",\"CatcherName\":\"문하진\",\"CatcherArchetype\":\"공감형\",\"CoachPersonality\":null,\"CoachRecord\":null,\"CatcherPersonality\":null,\"CatcherRecord\":null,\"Strength\":\"BreakingBall\",\"Tradeoff\":\"팀이 연패하면 개인 훈련 시간이 줄어듭니다.\"}],\"School\":{\"Id\":\"HanbitTraditional\",\"Name\":\"서울덕성고\",\"Philosophy\":\"기본기와 긴 이닝\",\"CoachName\":\"윤태문\",\"CoachArchetype\":\"원칙형\",\"CatcherName\":\"서준호\",\"CatcherArchetype\":\"안정형\",\"CoachPersonality\":\"새벽 반복 훈련을 고집하며 핑계보다 공 하나를 더 던지게 합니다.\",\"CoachRecord\":\"재임 14년 · 전국대회 4강 6회\",\"CatcherPersonality\":\"실투 뒤에도 먼저 투수에게 공을 돌려주는 매일 출전형 포수입니다.\",\"CatcherRecord\":\"중학 마지막 시즌 26경기 · 도루저지율 .438\",\"Strength\":\"Stamina\",\"Tradeoff\":\"새 구종을 시험할 기회가 적습니다.\"},\"Rival\":{\"Id\":\"rival-park\",\"Name\":\"남도현\",\"Archetype\":\"안타 제조형\",\"Contact\":46,\"Discipline\":45,\"Power\":37,\"Personality\":null,\"SignatureRecord\":null},\"Chapter\":{\"Number\":1,\"Title\":\"낯선 마운드\",\"SchoolYear\":1,\"Season\":\"봄\",\"Theme\":\"첫 고교 훈련과 첫 공식 등판이 기다린다\"},\"ChapterTrainingCount\":0,\"TotalTrainingsCompleted\":0,\"MilestoneIndex\":0,\"RelationshipsCompleted\":0,\"RelationshipTrust\":50,\"ManagerTrust\":50,\"CatcherTrust\":50,\"RivalTrust\":50,\"SelectedAwakenings\":[],\"AwakeningOptions\":[],\"Fatigue\":5,\"Performance\":{\"ImportantGamesCompleted\":0,\"Pitches\":0,\"Strikeouts\":0,\"Walks\":0,\"RunsAllowed\":0,\"ExpectedDamage\":0,\"ActualDamage\":0,\"Outs\":null,\"Hits\":null},\"SeasonLog\":[],\"CurrentGameScenario\":null,\"CurrentRelationshipEvent\":null,\"LastTraining\":null,\"LastRelationship\":null,\"News\":[\"서울덕성고 입학이 확정됐습니다. 윤태문 감독은 첫 훈련부터 ‘기본기와 긴 이닝’을 강조했습니다.\",\"고교 진학 제안 도착 · 내부 QA 투수 · 서울 4개 학교\",\"이번 3년의 바람 — 배터리의 해. 조용한 출발 대신 포수와 쌓는 믿음이 더 빠르게 깊어집니다.\",\"서울 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다.\"],\"FanInterest\":2,\"DraftResult\":null,\"LegacyOptions\":[],\"SelectedMemories\":[],\"BalanceVersion\":4,\"WorldRulesVersion\":2,\"ArmRisk\":0,\"InjuryRecovery\":0,\"Schedule\":{\"TrainingsByChapter\":[1,2,1,2,3,2,1,3],\"MilestonesByChapter\":[[\"Relationship\"],[\"Awakening\"],[\"ImportantGame\"],[\"Relationship\",\"Awakening\"],[\"ImportantGame\",\"Relationship\"],[\"ImportantGame\",\"Relationship\"],[\"Relationship\"],[\"Awakening\",\"ImportantGame\"]],\"TrainingTotal\":15,\"RelationshipTotal\":5,\"ImportantGameTotal\":4,\"AwakeningTotal\":3,\"CommitmentToken\":\"1,2,1,2,3,2,1,3|relationship;awakening;important_game;relationship,awakening;important_game,relationship;important_game,relationship;relationship;awakening,important_game\"},\"TrainingOpportunity\":{\"Focus\":\"GamePlanning\",\"Reason\":\"포수와 읽은 타자 습관이 남아 있습니다 — 경기 계획을 정리할 날입니다.\"},\"Talent\":{\"Stuff\":\"D\",\"Command\":\"B\",\"Movement\":\"C\",\"Stamina\":\"S\",\"StuffPressure\":0,\"CommandPressure\":0,\"MovementPressure\":0,\"StaminaPressure\":0},\"SoulBoosts\":null,\"AwakeningSparks\":null,\"StateCommitment\":\"6230b543dcbc707d\",\"EffectiveWorldRulesVersion\":\"V2\",\"CareerWind\":{\"Id\":\"battery_year\",\"Title\":\"배터리의 해\",\"Detail\":\"조용한 출발 대신 포수와 쌓는 믿음이 더 빠르게 깊어집니다.\",\"RulesVersion\":\"V2\",\"RivalBonus\":0,\"StartingFanInterest\":2,\"RewardBonusPermille\":50,\"Rules\":{\"FavoredTraining\":null,\"FavoredTrainingBonus\":0,\"TrainingFatigueDelta\":0,\"ExtraFatigueFocus\":null,\"ExtraFatigueDelta\":0,\"RecoveryBonus\":0,\"FavoredRelationship\":\"Catcher\",\"FavoredRelationshipBonus\":2,\"RelationshipLossPenalty\":0,\"FanInterestGainBonus\":0,\"DraftEvaluationDelta\":0},\"NewsLine\":\"이번 3년의 바람 — 배터리의 해. 조용한 출발 대신 포수와 쌓는 믿음이 더 빠르게 깊어집니다.\",\"EffectDescriptions\":[\"포수 믿음 변화 +2\",\"시작 팬 관심 2\",\"야구혼 보정 +5%\"]}}",
+      "pledgeId": null,
+      "pledgeDecided": true,
+      "karmas": [],
+      "awakenings": [],
+      "schoolChoices": [],
+      "trainingFocusChoices": [
+        {
+          "id": "velocity",
+          "title": "구속",
+          "detail": "훈련 초점을 선택합니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "velocity",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "command",
+          "title": "제구",
+          "detail": "훈련 초점을 선택합니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "command",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "breaking_ball",
+          "title": "변화구",
+          "detail": "훈련 초점을 선택합니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "breaking_ball",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "stamina",
+          "title": "체력",
+          "detail": "훈련 초점을 선택합니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "stamina",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "recovery",
+          "title": "회복",
+          "detail": "훈련 초점을 선택합니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "recovery",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "game_planning",
+          "title": "경기 운영",
+          "detail": "오늘의 성장 기회 · 포수와 읽은 타자 습관이 남아 있습니다 — 경기 계획을 정리할 날입니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "game_planning",
+          "recommended": false,
+          "recommendationReason": null
+        }
+      ],
+      "trainingIntensityChoices": [
+        {
+          "id": "light",
+          "title": "가볍게",
+          "detail": "피로 +3 · 성장 신호가 낮습니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "light",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "standard",
+          "title": "표준",
+          "detail": "피로 +8 · 성장과 컨디션의 균형을 잡습니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "standard",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "intensive",
+          "title": "집중",
+          "detail": "피로 +15 · 성장 신호가 높지만 팔 부담도 큽니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "intensive",
+          "recommended": false,
+          "recommendationReason": null
+        }
+      ],
+      "relationshipChoices": [],
+      "awakeningChoices": [],
+      "legacyMemoryChoices": [],
+      "memorySlots": 3,
+      "tournament": null,
+      "prospectRankings": [
+        {
+          "rank": 1,
+          "name": "고하준",
+          "school": "금강고",
+          "tag": "타자들이 타이밍을 못 잡는 디셉션",
+          "isPlayer": false
+        },
+        {
+          "rank": 2,
+          "name": "권영웅",
+          "school": "한서고",
+          "tag": "타자들이 타이밍을 못 잡는 디셉션",
+          "isPlayer": false
+        },
+        {
+          "rank": 3,
+          "name": "신찬영",
+          "school": "서령고",
+          "tag": "각이 다른 종변화구 — 헛스윙 유도 1위",
+          "isPlayer": false
+        },
+        {
+          "rank": 4,
+          "name": "안시우",
+          "school": "금강고",
+          "tag": "존 네 귀퉁이를 마음대로 쓰는 완성형 제구",
+          "isPlayer": false
+        },
+        {
+          "rank": 5,
+          "name": "유재민",
+          "school": "삼도고",
+          "tag": "이닝을 먹는 체력 — 완투가 기본",
+          "isPlayer": false
+        },
+        {
+          "rank": 6,
+          "name": "임서준",
+          "school": "삼도고",
+          "tag": "각이 다른 종변화구 — 헛스윙 유도 1위",
+          "isPlayer": false
+        },
+        {
+          "rank": 7,
+          "name": "박하준",
+          "school": "동성공고",
+          "tag": "최고 구속으로 스카우트 보고서 첫 줄을 차지한 파이어볼러",
+          "isPlayer": false
+        },
+        {
+          "rank": 8,
+          "name": "차석현",
+          "school": "청암고",
+          "tag": "위기에서만 구속이 오르는 승부사",
+          "isPlayer": false
+        },
+        {
+          "rank": 9,
+          "name": "박시우",
+          "school": "대양고",
+          "tag": "존 네 귀퉁이를 마음대로 쓰는 완성형 제구",
+          "isPlayer": false
+        },
+        {
+          "rank": 10,
+          "name": "배도현",
+          "school": "서령고",
+          "tag": "존 네 귀퉁이를 마음대로 쓰는 완성형 제구",
+          "isPlayer": false
+        },
+        {
+          "rank": 11,
+          "name": "정재민",
+          "school": "대양고",
+          "tag": "무명 학교에서 혼자 팀을 끌어올린 화제의 투수",
+          "isPlayer": false
+        },
+        {
+          "rank": 12,
+          "name": "박서준",
+          "school": "동성공고",
+          "tag": "3학년 여름에 만개한 늦깎이 에이스",
+          "isPlayer": false
+        },
+        {
+          "rank": 13,
+          "name": "이민재",
+          "school": "금강고",
+          "tag": "부상 복귀 후 더 강해져 돌아온 재활의 표본",
+          "isPlayer": false
+        },
+        {
+          "rank": 14,
+          "name": "한민재",
+          "school": "청암고",
+          "tag": "3학년 여름에 만개한 늦깎이 에이스",
+          "isPlayer": false
+        },
+        {
+          "rank": 15,
+          "name": "서건우",
+          "school": "금강고",
+          "tag": "무명 학교에서 혼자 팀을 끌어올린 화제의 투수",
+          "isPlayer": false
+        },
+        {
+          "rank": 16,
+          "name": "정성민",
+          "school": "동성공고",
+          "tag": "3학년 여름에 만개한 늦깎이 에이스",
+          "isPlayer": false
+        },
+        {
+          "rank": 17,
+          "name": "한영웅",
+          "school": "서령고",
+          "tag": "이닝을 먹는 체력 — 완투가 기본",
+          "isPlayer": false
+        },
+        {
+          "rank": 18,
+          "name": "배건우",
+          "school": "금강고",
+          "tag": "부상 복귀 후 더 강해져 돌아온 재활의 표본",
+          "isPlayer": false
+        },
+        {
+          "rank": 19,
+          "name": "박태윤",
+          "school": "금강고",
+          "tag": "위기에서만 구속이 오르는 승부사",
+          "isPlayer": false
+        },
+        {
+          "rank": 20,
+          "name": "고은찬",
+          "school": "금강고",
+          "tag": "최고 구속으로 스카우트 보고서 첫 줄을 차지한 파이어볼러",
+          "isPlayer": false
+        }
+      ],
+      "gameLines": [],
+      "pitchingRecord": {
+        "games": 0,
+        "starts": 0,
+        "outs": 0,
+        "strikeouts": 0,
+        "walks": 0,
+        "runsAllowed": 0,
+        "wins": 0,
+        "losses": 0,
+        "saves": 0,
+        "hits": 0,
+        "homeRuns": 0,
+        "pitches": 0,
+        "qualityStarts": 0,
+        "innings": 0.0,
+        "inningsText": "0",
+        "runsPerNine": null,
+        "strikeoutsPerNine": null,
+        "walksPerNine": null,
+        "strikeoutToWalk": null,
+        "whip": null,
+        "hitsPerNine": null,
+        "homeRunsPerNine": null,
+        "fieldingIndependentPitching": null,
+        "battersFaced": 0,
+        "strikeoutRate": null,
+        "battingAverageOnBallsInPlay": null
+      },
+      "signatureLegacyChoices": [],
+      "equippedSignatureLegacyId": null,
+      "selectedSignatureLegacyId": null,
+      "difficulty": "standard",
+      "isChallengeRun": false,
+      "legacySelectionMode": "signatureLegacy",
+      "tutorialCompleted": false,
+      "tutorialAttemptCount": 0,
+      "pledgeRulesVersion": 2,
+      "legacyRewardPermille": 1050,
+      "rivalStrikeouts": 0,
+      "fatigue": 5,
+      "armRisk": 0,
+      "injuryRecovery": 0,
+      "managerTrust": 50,
+      "catcherTrust": 50,
+      "rivalTrust": 50,
+      "fanInterest": 2,
+      "draftForecastScore": 51,
+      "chapterProgress": {
+        "number": 1,
+        "title": "낯선 마운드",
+        "schoolYear": 1,
+        "season": "봄",
+        "goal": "첫 고교 훈련과 첫 공식 등판이 기다린다",
+        "trainingsCompleted": 0,
+        "trainingsRequired": 1,
+        "milestoneIndex": 0,
+        "milestoneCount": 1,
+        "resultLine": null
+      },
+      "scheduleMilestones": [
+        {
+          "chapterNumber": 1,
+          "order": 0,
+          "phase": "relationship",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 2,
+          "order": 0,
+          "phase": "awakening",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 3,
+          "order": 0,
+          "phase": "important_game",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 4,
+          "order": 0,
+          "phase": "relationship",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 4,
+          "order": 1,
+          "phase": "awakening",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 5,
+          "order": 0,
+          "phase": "important_game",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 5,
+          "order": 1,
+          "phase": "relationship",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 6,
+          "order": 0,
+          "phase": "important_game",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 6,
+          "order": 1,
+          "phase": "relationship",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 7,
+          "order": 0,
+          "phase": "relationship",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 8,
+          "order": 0,
+          "phase": "awakening",
+          "completed": false,
+          "current": false
+        },
+        {
+          "chapterNumber": 8,
+          "order": 1,
+          "phase": "important_game",
+          "completed": false,
+          "current": false
+        }
+      ],
+      "currentRelationshipEvent": null,
+      "currentGameScenario": null,
+      "lastTraining": null,
+      "lastRelationship": null,
+      "news": [
+        "서울덕성고 입학이 확정됐습니다. 윤태문 감독은 첫 훈련부터 ‘기본기와 긴 이닝’을 강조했습니다.",
+        "고교 진학 제안 도착 · 내부 QA 투수 · 서울 4개 학교",
+        "이번 3년의 바람 — 배터리의 해. 조용한 출발 대신 포수와 쌓는 믿음이 더 빠르게 깊어집니다.",
+        "서울 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다."
+      ],
+      "trainingPitchChoices": [
+        {
+          "id": "slider",
+          "title": "슬라이더",
+          "detail": "이 변화구의 움직임과 헛스윙을 집중적으로 다듬습니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "slider",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "curveball",
+          "title": "커브",
+          "detail": "이 변화구의 움직임과 헛스윙을 집중적으로 다듬습니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "curveball",
+          "recommended": false,
+          "recommendationReason": null
+        },
+        {
+          "id": "changeup",
+          "title": "체인지업",
+          "detail": "이 변화구의 움직임과 헛스윙을 집중적으로 다듬습니다.",
+          "effectSummary": null,
+          "enabled": true,
+          "disabledReason": null,
+          "payload": "changeup",
+          "recommended": false,
+          "recommendationReason": null
+        }
+      ],
+      "lastTrainingBlock": null,
+      "maximumTrainingBlockSessions": 3,
+      "frozenSignatureLegacyCandidates": [],
+      "selectedSignatureLegacy": null,
+      "lifeDetail": {
+        "startingRatings": {
+          "stuff": 44,
+          "command": 35,
+          "movement": 37,
+          "stamina": 39,
+          "total": 155
+        },
+        "nicknames": [],
+        "chronicle": [
+          "서울 중학교 마지막 대회에서 보여준 공이 같은 지역 네 고교의 관심을 끌었습니다.",
+          "이번 3년의 바람 — 배터리의 해. 조용한 출발 대신 포수와 쌓는 믿음이 더 빠르게 깊어집니다.",
+          "고교 진학 제안 도착 · 내부 QA 투수 · 서울 4개 학교",
+          "서울덕성고 입학이 확정됐습니다. 윤태문 감독은 첫 훈련부터 ‘기본기와 긴 이닝’을 강조했습니다."
+        ],
+        "coachName": "윤태문",
+        "catcherName": "서준호",
+        "rivalName": "남도현",
+        "personality": null,
+        "windId": "battery_year",
+        "windTitle": "배터리의 해",
+        "schoolStrength": "체력",
+        "responseTally": {
+          "listen": 0,
+          "explain": 0,
+          "challenge": 0
+        },
+        "talents": [
+          {
+            "abilityId": "stuff",
+            "abilityTitle": "구위",
+            "gradeId": "d",
+            "gradeTitle": "D등급"
+          },
+          {
+            "abilityId": "command",
+            "abilityTitle": "제구",
+            "gradeId": "b",
+            "gradeTitle": "B등급"
+          },
+          {
+            "abilityId": "movement",
+            "abilityTitle": "변화",
+            "gradeId": "c",
+            "gradeTitle": "C등급"
+          },
+          {
+            "abilityId": "stamina",
+            "abilityTitle": "체력",
+            "gradeId": "s",
+            "gradeTitle": "S등급"
+          }
+        ],
+        "presetId": "power_prospect",
+        "presetTitle": "강속구 원석",
+        "difficultyId": "standard",
+        "difficultyTitle": "표준"
+      },
+      "trainingOutlooks": [
+        {
+          "focusId": "velocity",
+          "intensityId": "light",
+          "outlookId": "none",
+          "title": "성장 없음",
+          "summary": "이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다."
+        },
+        {
+          "focusId": "velocity",
+          "intensityId": "standard",
+          "outlookId": "zero_or_one",
+          "title": "0~1",
+          "summary": "+1이 나올 수도, 성장 없이 지날 수도 있습니다."
+        },
+        {
+          "focusId": "velocity",
+          "intensityId": "intensive",
+          "outlookId": "zero_or_one",
+          "title": "0~1",
+          "summary": "+1이 나올 수도, 성장 없이 지날 수도 있습니다."
+        },
+        {
+          "focusId": "command",
+          "intensityId": "light",
+          "outlookId": "none",
+          "title": "성장 없음",
+          "summary": "이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다."
+        },
+        {
+          "focusId": "command",
+          "intensityId": "standard",
+          "outlookId": "none",
+          "title": "성장 없음",
+          "summary": "이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다."
+        },
+        {
+          "focusId": "command",
+          "intensityId": "intensive",
+          "outlookId": "one",
+          "title": "+1",
+          "summary": "+1이 확실한 훈련입니다."
+        },
+        {
+          "focusId": "breaking_ball",
+          "intensityId": "light",
+          "outlookId": "none",
+          "title": "성장 없음",
+          "summary": "이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다."
+        },
+        {
+          "focusId": "breaking_ball",
+          "intensityId": "standard",
+          "outlookId": "zero_or_one",
+          "title": "0~1",
+          "summary": "+1이 나올 수도, 성장 없이 지날 수도 있습니다."
+        },
+        {
+          "focusId": "breaking_ball",
+          "intensityId": "intensive",
+          "outlookId": "zero_or_one",
+          "title": "0~1",
+          "summary": "+1이 나올 수도, 성장 없이 지날 수도 있습니다."
+        },
+        {
+          "focusId": "stamina",
+          "intensityId": "light",
+          "outlookId": "zero_or_one",
+          "title": "0~1",
+          "summary": "+1이 나올 수도, 성장 없이 지날 수도 있습니다."
+        },
+        {
+          "focusId": "stamina",
+          "intensityId": "standard",
+          "outlookId": "one",
+          "title": "+1",
+          "summary": "+1이 확실한 훈련입니다."
+        },
+        {
+          "focusId": "stamina",
+          "intensityId": "intensive",
+          "outlookId": "one_or_two",
+          "title": "+1~2",
+          "summary": "+1은 확실하고, 잘 풀리면 +2까지 오릅니다."
+        },
+        {
+          "focusId": "recovery",
+          "intensityId": "light",
+          "outlookId": "none",
+          "title": "성장 없음",
+          "summary": "이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다."
+        },
+        {
+          "focusId": "recovery",
+          "intensityId": "standard",
+          "outlookId": "none",
+          "title": "성장 없음",
+          "summary": "이대로면 성장 없이 지나갑니다. 피로가 높거나 강도가 약합니다."
+        },
+        {
+          "focusId": "recovery",
+          "intensityId": "intensive",
+          "outlookId": "one",
+          "title": "+1",
+          "summary": "+1이 확실한 훈련입니다."
+        },
+        {
+          "focusId": "game_planning",
+          "intensityId": "light",
+          "outlookId": "zero_or_one",
+          "title": "0~1",
+          "summary": "+1이 나올 수도, 성장 없이 지날 수도 있습니다."
+        },
+        {
+          "focusId": "game_planning",
+          "intensityId": "standard",
+          "outlookId": "one",
+          "title": "+1",
+          "summary": "+1이 확실한 훈련입니다."
+        },
+        {
+          "focusId": "game_planning",
+          "intensityId": "intensive",
+          "outlookId": "one",
+          "title": "+1",
+          "summary": "+1이 확실한 훈련입니다."
+        }
+      ]
+    },
+    "pro": null,
+    "meta": {
+      "lifeNumber": 1,
+      "soulBalance": 0,
+      "soulLifetimeEarned": 0,
+      "automaticSoulEarned": 0,
+      "inheritedMemories": [],
+      "creditedRewardIds": [],
+      "creditedProCareerIds": [],
+      "lifeArchive": [],
+      "daily": {
+        "lastBaseballDayKey": null,
+        "lastDailyInningDayKey": null,
+        "currentStreak": 0,
+        "bestStreak": 0,
+        "dailyInning": null
+      },
+      "weekly": {
+        "program": null,
+        "stamps": [],
+        "lastObservedWeekStartDayKey": null,
+        "processedReceiptIds": [],
+        "playedDayKeys": []
+      },
+      "achievements": {
+        "unlocked": [],
+        "unacknowledged": []
+      },
+      "nextRunIntent": null,
+      "returnPlan": null,
+      "lastHighSchoolSetup": {
+        "presetId": "power_prospect",
+        "playerName": "내부 QA 투수",
+        "region": "서울",
+        "difficulty": "standard",
+        "karmas": [],
+        "soulDomain": null
+      },
+      "unlockedSignatureLegacyIds": [],
+      "equippedSignatureLegacyId": null,
+      "returnWelcomeHandled": null,
+      "completedGameCount": 0,
+      "pitchReleaseMastery": {
+        "officialSessions": 0,
+        "directPitches": 0,
+        "deliveryScoreTotal": 0,
+        "releaseAccuracyTotal": 0,
+        "aimAccuracyTotal": 0,
+        "personalBest": 0,
+        "lastGameId": null,
+        "lastSessionAverage": 0,
+        "lastSessionBest": 0,
+        "previousPersonalBest": 0,
+        "lastReleaseAverage": null,
+        "lastAimAverage": null,
+        "lifetimeAverage": null,
+        "lifetimeReleaseAverage": null,
+        "lifetimeAimAverage": null
+      }
+    },
+    "pitchResume": null,
+    "pendingPitchCompletion": null,
+    "settings": {
+      "schemaVersion": 1,
+      "autoReleaseEnabled": false,
+      "soundEnabled": true,
+      "musicEnabled": true,
+      "hapticsEnabled": true,
+      "notificationsEnabled": false,
+      "highContrastEnabled": false,
+      "reducedMotionEnabled": false
+    },
+    "analyticsReceipts": {
+      "schemaVersion": 1,
+      "records": []
+    },
+    "commandReceipts": [
+      "internal-qa:2:pledge-skip",
+      "internal-qa:2:prologue",
+      "internal-qa:2:school",
+      "internal-qa:2:school-selection",
+      "internal-qa:2:setup"
+    ],
+    "deleted": false
+  }
+}

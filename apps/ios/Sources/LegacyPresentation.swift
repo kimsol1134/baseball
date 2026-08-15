@@ -3,12 +3,12 @@ import SimulationCore
 
 enum LegacyPresentation {
     static func pledgeTitle(_ pledge: RunPledge, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return pledge.title }
+        guard resolver.language != .korean else { return pledge.title }
         return resolver.resolve(.gameContent("content.pledge.\(pledgeContentID(pledge)).title"))
     }
 
     static func pledgeDetail(_ pledge: RunPledge, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return pledge.detail }
+        guard resolver.language != .korean else { return pledge.detail }
         return resolver.resolve(.gameContent("content.pledge.\(pledgeContentID(pledge)).detail"))
     }
 
@@ -17,7 +17,7 @@ enum LegacyPresentation {
         rawTitle: String?,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else {
+        guard resolver.language != .korean else {
             return rawTitle ?? RunPledge.pledge(id: id, rulesVersion: RunPledge.legacyRulesVersion)?.title
                 ?? resolver.resolve(.pledgeCardTitle)
         }
@@ -36,7 +36,7 @@ enum LegacyPresentation {
     }
 
     static func pledgeProgress(_ progress: RunPledgeProgress, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return progress.line }
+        guard resolver.language != .korean else { return progress.line }
         return resolver.resolve(
             .pledgeProgress,
             arguments: [.integer(progress.current), .integer(progress.target)]
@@ -49,7 +49,7 @@ enum LegacyPresentation {
         rawLine: String?,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else {
+        guard resolver.language != .korean else {
             return rawLine ?? resolver.resolve(.pledgeProgress, arguments: [.integer(current), .integer(target)])
         }
         return resolver.resolve(.pledgeProgress, arguments: [.integer(current), .integer(target)])
@@ -61,7 +61,7 @@ enum LegacyPresentation {
         resolver: GameCopyResolver
     ) -> String {
         let raw = pledge.alignmentReason(state: state)
-        guard resolver.language == .english else { return raw }
+        guard resolver.language != .korean else { return raw }
         let key: LegacyUICopyKey = switch raw {
         case "제구가 가장 높은 능력이라 볼넷 억제에 잘 맞습니다.": .pledgeAlignmentControl
         case "제구 강점을 전체 평가로 이어 가는 목표입니다.": .pledgeAlignmentEvaluation
@@ -99,7 +99,7 @@ enum LegacyPresentation {
         drafted: Bool,
         resolver: GameCopyResolver
     ) -> PlayerHeartline {
-        guard resolver.language == .english else { return presentation.line }
+        guard resolver.language != .korean else { return presentation.line }
         let branch = switch presentation.branch {
         case .completed: drafted ? "completed-drafted" : "completed-undrafted"
         case .legacy: drafted ? "legacy-drafted" : "legacy-undrafted"
@@ -115,7 +115,7 @@ enum LegacyPresentation {
         for record: HighSchoolCareerStore.LifeRecord,
         resolver: GameCopyResolver
     ) -> PlayerLegacy {
-        guard resolver.language == .english else {
+        guard resolver.language != .korean else {
             return record.playerLegacy ?? PlayerBondStory.legacy(for: record)
         }
 
@@ -177,7 +177,7 @@ enum LegacyPresentation {
     }
 
     static func rivalLine(_ raw: String, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return raw }
+        guard resolver.language != .korean else { return raw }
         let pattern = #"^숙적 (.+) — (\d+)타석 (\d+)삼진 (\d+)피안타$"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return GameCopyResolver.unavailableText
@@ -204,7 +204,7 @@ enum LegacyPresentation {
     }
 
     static func schoolStrength(_ raw: String, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return raw }
+        guard resolver.language != .korean else { return raw }
         let focuses: [TrainingFocus] = [.velocity, .command, .breakingBall, .stamina, .recovery, .gamePlanning]
         guard let focus = focuses.first(where: { HighSchoolPresentation.focus($0) == raw }) else {
             return GameCopyResolver.unavailableText
@@ -213,7 +213,7 @@ enum LegacyPresentation {
     }
 
     static func bloomMeaning(_ grade: TalentGrade, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return TalentRules.meaning(grade) }
+        guard resolver.language != .korean else { return TalentRules.meaning(grade) }
         let key: LegacyUICopyKey = switch grade {
         case .d: LegacyUICopyKey.bloomMeaningD
         case .c: LegacyUICopyKey.bloomMeaningC

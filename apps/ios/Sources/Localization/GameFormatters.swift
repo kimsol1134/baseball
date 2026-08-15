@@ -7,6 +7,7 @@ import Foundation
 public enum GameFormatters {
     private static let englishLocale = Locale(identifier: "en_US_POSIX")
     private static let koreanLocale = Locale(identifier: "ko_KR")
+    private static let japaneseLocale = Locale(identifier: "ja_JP")
 
     public static func velocity(tenthsKPH: Int, language: AppLanguage) -> String {
         let kph = Double(max(0, tenthsKPH)) / 10
@@ -16,6 +17,8 @@ public enum GameFormatters {
         case .english:
             let mph = kph / 1.609344
             return "\(decimal(mph, places: 1, locale: englishLocale)) mph"
+        case .japanese:
+            return "\(decimal(kph, places: 1, locale: japaneseLocale)) km/h"
         }
     }
 
@@ -31,6 +34,8 @@ public enum GameFormatters {
         case .english:
             let feet = meters * 3.28084
             return "\(decimal(feet, places: 0, locale: englishLocale)) ft"
+        case .japanese:
+            return "\(decimal(meters, places: 0, locale: japaneseLocale))m"
         }
     }
 
@@ -49,6 +54,14 @@ public enum GameFormatters {
             default: fraction = ""
             }
             return "\(full)\(fraction) IP"
+        case .japanese:
+            let fraction: String
+            switch remainder {
+            case 1: fraction = "⅓"
+            case 2: fraction = "⅔"
+            default: fraction = ""
+            }
+            return "\(full)\(fraction)回"
         }
     }
 
@@ -60,6 +73,8 @@ public enum GameFormatters {
             return "\(safeInning)회"
         case .english:
             return "\(safeInning)\(ordinalSuffix(for: safeInning)) inning"
+        case .japanese:
+            return "\(safeInning)回"
         }
     }
 
@@ -72,7 +87,7 @@ public enum GameFormatters {
     public static func avg(hits: Int, atBats: Int, language: AppLanguage) -> String {
         guard atBats > 0 else { return unavailableMetric(suffix: "AVG", language: language) }
         let value = Double(max(0, hits)) / Double(atBats)
-        let formatted = decimal(value, places: 3, locale: language == .english ? englishLocale : koreanLocale)
+        let formatted = decimal(value, places: 3, locale: locale(for: language))
         let withoutLeadingZero = formatted.hasPrefix("0.") ? String(formatted.dropFirst()) : formatted
         return language == .english ? "\(withoutLeadingZero) AVG" : withoutLeadingZero
     }
@@ -86,17 +101,29 @@ public enum GameFormatters {
     /// KRW remains KRW in English. No storefront or exchange-rate conversion is performed.
     public static func krw(_ amount: Int, language: AppLanguage) -> String {
         let value = max(0, amount)
-        let formatted = number(value, locale: language == .english ? englishLocale : koreanLocale)
-        return language == .english ? "KRW \(formatted)" : "\(formatted)원"
+        let formatted = number(value, locale: locale(for: language))
+        switch language {
+        case .korean: return "\(formatted)원"
+        case .english: return "KRW \(formatted)"
+        case .japanese: return "\(formatted)ウォン"
+        }
     }
 
     private static func metric(_ value: Double, suffix: String, places: Int, language: AppLanguage) -> String {
-        let formatted = decimal(value, places: places, locale: language == .english ? englishLocale : koreanLocale)
+        let formatted = decimal(value, places: places, locale: locale(for: language))
         return language == .english ? "\(formatted) \(suffix)" : formatted
     }
 
     private static func unavailableMetric(suffix: String, language: AppLanguage) -> String {
         language == .english ? "— \(suffix)" : "—"
+    }
+
+    private static func locale(for language: AppLanguage) -> Locale {
+        switch language {
+        case .korean: koreanLocale
+        case .english: englishLocale
+        case .japanese: japaneseLocale
+        }
     }
 
     private static func ordinalSuffix(for value: Int) -> String {

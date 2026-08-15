@@ -12,12 +12,8 @@ namespace Baseball.Presentation.Tests
         {
             Assert.That(PitchStageVisualPolicy.StadiumAddress,
                 Is.EqualTo("baseball/highschool/KeyArtStadiumNight"));
-            Assert.That(PitchStageVisualPolicy.BatterAddress,
-                Is.EqualTo("baseball/pitch/BatterStance"));
-            Assert.That(PitchStageVisualPolicy.CatcherAddress,
-                Is.EqualTo("baseball/pitch/CatcherStance"));
-            Assert.That(PitchStageVisualPolicy.HasRequiredSprites(true, true, true), Is.True);
-            Assert.That(PitchStageVisualPolicy.HasRequiredSprites(true, false, true), Is.False);
+            Assert.That(PitchStageVisualPolicy.HasRequiredSprites(true), Is.True);
+            Assert.That(PitchStageVisualPolicy.HasRequiredSprites(false), Is.False);
             Assert.That(PitchStageVisualPolicy.ShaderResourcePath, Is.EqualTo("PitchStageUnlit"));
             Assert.That(PitchStageVisualPolicy.ShaderName, Is.EqualTo("Baseball/PitchStageUnlit"));
         }
@@ -56,6 +52,9 @@ namespace Baseball.Presentation.Tests
             Assert.That(stage, Does.Contain("PrimitiveType.Sphere"), "the authoritative ball remains 3D");
             Assert.That(stage, Does.Not.Contain("PrimitiveType.Capsule"));
             Assert.That(stage, Does.Not.Contain("PrimitiveType.Cube"));
+            Assert.That(stage, Does.Not.Contain("Batter Stance Billboard"));
+            Assert.That(stage, Does.Not.Contain("Catcher Stance Billboard"));
+            Assert.That(stage, Does.Not.Contain("AnimateActors"));
             Assert.That(stage, Does.Not.Contain("CameraClearFlags.SolidColor"));
             Assert.That(stage, Does.Contain("SpriteRenderer"));
             Assert.That(stage, Does.Contain("pitch.stage_visual_assets_not_ready"));
@@ -85,13 +84,7 @@ namespace Baseball.Presentation.Tests
             Assert.That(consume, Is.GreaterThan(durableMarker));
             Assert.That(coordinator, Does.Contain("#if !BASEBALL_INTERNAL_QA"));
             Assert.That(coordinator, Does.Contain("PitchPresentationCompletionMarker.LogLine"));
-            foreach (string logicalName in new[]
-                     {
-                         "KeyArtStadiumNight", "BatterStance", "CatcherStance"
-                     })
-            {
-                Assert.That(manifest, Does.Contain("\"logicalName\": \"" + logicalName + "\""));
-            }
+            Assert.That(manifest, Does.Contain("\"logicalName\": \"KeyArtStadiumNight\""));
             Assert.That(manifest, Does.Contain("\"addressableLabel\": \"pitch\""));
             Assert.That(manifest, Does.Contain("\"addressableLabel\": \"highschool\""));
         }

@@ -5,6 +5,9 @@ import SimulationCore
 @main
 struct BaseballApp: App {
     init() {
+        // 새 설치의 기본 투구는 수동 슬라이더다. 등록 기본값은 이미 저장된 접근성 선택을
+        // 덮어쓰지 않으므로 자동 릴리스를 직접 켠 사용자는 그대로 유지된다.
+        PitchControlPreferences.registerDefaults()
         // 분석은 설정이 있을 때만 켜진다 — 없으면 이 호출은 무동작이다.
         GameAnalytics.configure()
     }
@@ -294,7 +297,7 @@ struct BaseballApp: App {
                         // 새면 조작 경로가 통째로 달라진다.
                         UserDefaults.standard.set(
                             arguments.contains(Self.autoReleaseLaunchArgument),
-                            forKey: "baseball.pitch.autoRelease"
+                            forKey: PitchControlPreferences.autoReleaseKey
                         )
 #if DEBUG
                         if arguments.contains(Self.draftedCareerFixtureLaunchArgument) {
@@ -304,7 +307,7 @@ struct BaseballApp: App {
                         }
 #endif
                     } else if arguments.contains(Self.autoReleaseLaunchArgument) {
-                        UserDefaults.standard.set(true, forKey: "baseball.pitch.autoRelease")
+                        UserDefaults.standard.set(true, forKey: PitchControlPreferences.autoReleaseKey)
                     }
                     highSchool.restoreOrCreate()
                     pro.restoreOrCreateCareer()

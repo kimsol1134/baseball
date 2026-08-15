@@ -838,6 +838,9 @@ if [[ "$smoke_mode" == "internal" ]]; then
   qa_pitch_low_result="passed"
   launch_internal_command \
     '11-qa-nonfatal' 'nonfatal' 'nonfatal_invoked' 'prologue' 'high'
+  grep -Fq 'name=nonfatal_invoked status=passed reporter_ready=true' \
+    "$evidence_dir/11-qa-nonfatal-qa-marker.txt" ||
+    fail '내부 QA nonfatal probe가 준비된 Crashlytics reporter를 사용하지 않았습니다.'
   qa_nonfatal_result="passed"
   launch_internal_command \
     '12-qa-save-corruption' 'save-corruption' 'save_corruption_recovered' 'prologue' 'high'
@@ -894,11 +897,38 @@ if [[ "$smoke_mode" == "internal" ]]; then
     done
     [[ -z "$("${adb_command[@]}" shell pidof "$package_id" 2>/dev/null | tr -d '\r')" ]] ||
       fail '내부 QA crash probe가 process를 종료하지 않았습니다.'
+    # The app process can exit before crash_dump64 finishes appending the
+    # tombstone to Android's dedicated crash log buffer. Wait for that writer
+    # to quiesce before preserving and clearing the intentional crash.
+    crash_dump_deadline=$((SECONDS + launch_timeout_seconds))
+    while [[ "$SECONDS" -lt "$crash_dump_deadline" ]] &&
+      [[ -n "$("${adb_command[@]}" shell pidof crash_dump64 2>/dev/null | tr -d '\r')" ]]; do
+      sleep 0.25
+    done
+    [[ -z "$("${adb_command[@]}" shell pidof crash_dump64 2>/dev/null | tr -d '\r')" ]] ||
+      fail '내부 QA crash tombstone 기록이 제한 시간 안에 끝나지 않았습니다.'
+    sleep "$settle_seconds"
     "${adb_command[@]}" logcat -b crash -d -v threadtime >"$evidence_dir/18-qa-crash-buffer.txt"
     grep -Fqi "$package_id" "$evidence_dir/18-qa-crash-buffer.txt" ||
       fail '내부 QA crash buffer에서 package 증거를 찾지 못했습니다.'
     qa_crash_result="passed"
     "${adb_command[@]}" logcat -c
+    # Android 10 and some vendor images keep the dedicated crash buffer when the
+    # default logcat selection is cleared. Preserve the intentional crash above,
+    # then explicitly clear and verify that buffer so the final scan only covers
+    # the post-crash relaunch window.
+    for crash_clear_attempt in 1 2 3 4 5; do
+      "${adb_command[@]}" logcat -b crash -c
+      sleep 0.25
+      "${adb_command[@]}" logcat -b crash -d -v threadtime \
+        >"$evidence_dir/18-qa-crash-buffer-after-clear.txt"
+      if ! grep -Fqi "$package_id" "$evidence_dir/18-qa-crash-buffer-after-clear.txt"; then
+        break
+      fi
+    done
+    if grep -Fqi "$package_id" "$evidence_dir/18-qa-crash-buffer-after-clear.txt"; then
+      fail '내부 QA 의도적 crash 뒤 전용 crash buffer를 격리하지 못했습니다.'
+    fi
     launch_and_capture '19-qa-post-crash-relaunch'
   fi
 fi

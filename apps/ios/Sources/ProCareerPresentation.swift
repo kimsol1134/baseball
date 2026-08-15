@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import SimulationCore
 
 /// English-safe projection for professional-career snapshots.
@@ -20,13 +21,90 @@ enum ProCareerPresentation {
         let detail: String
     }
 
+    static func goalTitle(_ ambition: ProCareerAmbition, resolver: GameCopyResolver) -> String {
+        let key: ProUICopyKey = switch ambition {
+        case .franchiseIcon: .directionGoalFranchise
+        case .recordBook: .directionGoalRecord
+        case .enduringPro: .directionGoalEnduring
+        }
+        return resolver.resolve(key)
+    }
+
+    static func goalMetricTitle(_ kind: ProCareerGoalMetricKind, resolver: GameCopyResolver) -> String {
+        let key: ProUICopyKey = switch kind {
+        case .anchorTeamSeasons: .goalMetricAnchorSeasons
+        case .anchorTeamLegacy: .goalMetricAnchorLegacy
+        case .hallOfFameProjection: .goalMetricHOF
+        case .awards: .goalMetricAwards
+        case .proSeasons: .goalMetricProSeasons
+        case .majorServiceYears: .goalMetricMajorService
+        }
+        return resolver.resolve(key)
+    }
+
+    static func teamRecords(for state: ProCareerSnapshot) -> [ProTeamCareerRecord] {
+        guard let journey = state.journeyState else { return [] }
+        return ProTeamCareerRecordRules.backfill(
+            careerStats: state.careerStats,
+            recognitions: journey.recognitions,
+            existing: journey.teamRecords
+        )
+    }
+
+    static func teamName(_ teamID: String, resolver: GameCopyResolver) -> String {
+        guard let team = ProCareerEngine.proTeams.first(where: { $0.id == teamID }) else {
+            return teamID
+        }
+        return teamName(team, resolver: resolver)
+    }
+
+    static func honorTitle(_ kind: ProRetirementHonorKind, resolver: GameCopyResolver) -> String {
+        let key: ProUICopyKey = switch kind {
+        case .hallOfFame: .retirementHonorHallOfFame
+        case .retiredNumber: .retirementHonorRetiredNumber
+        case .clubHall: .retirementHonorClubHall
+        case .ambitionCompleted: .retirementHonorAmbition
+        case .careerEarnings: .retirementHonorEarnings
+        }
+        return resolver.resolve(key)
+    }
+
     static func teamName(_ team: DraftTeamSnapshot, resolver: GameCopyResolver) -> String {
         HighSchoolConclusionPresentation.localizedTeamName(team, resolver: resolver)
     }
 
     static func decisionDetail(_ decision: ProSeasonDecision, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return decision.detail }
+        if decision.type == .mediaOpportunity {
+            return resolver.resolve(.gameContent("content.pro-media-opportunity.detail"))
+        }
+        guard resolver.language != .korean else { return decision.detail }
         return resolver.resolve(.gameContent("content.pro-decision.\(decision.type.rawValue).detail"))
+    }
+
+    static func decisionTitle(_ decision: ProSeasonDecision, resolver: GameCopyResolver) -> String {
+        if decision.type == .mediaOpportunity {
+            return resolver.resolve(.gameContent("content.pro-media-opportunity.title"))
+        }
+        if resolver.language == .korean { return decision.title }
+        return resolver.resolve(decision.type.displayCopyToken)
+    }
+
+    static func decisionTiming(
+        for decision: ProSeasonDecision,
+        resolver: GameCopyResolver
+    ) -> String {
+        decision.type == .mediaOpportunity
+            ? resolver.resolve(.decisionImmediateEffect)
+            : resolver.resolve(.decisionFollowUp)
+    }
+
+    static func decisionTiming(
+        for choice: ProSeasonDecisionChoice,
+        resolver: GameCopyResolver
+    ) -> String {
+        choice.id.hasPrefix("media_opportunity.")
+            ? resolver.resolve(.decisionImmediateEffect)
+            : resolver.resolve(.decisionFollowUp)
     }
 
     static func storeSummary(
@@ -34,7 +112,7 @@ enum ProCareerPresentation {
         state: ProCareerSnapshot,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return raw }
+        guard resolver.language != .korean else { return raw }
         let team = teamName(state.team, resolver: resolver)
         switch raw {
         case "현재 저장본을 읽지 못해 직전 정상 백업으로 복구했습니다.":
@@ -43,10 +121,14 @@ enum ProCareerPresentation {
             return legacy("content.pro-summary.joined-direct", [.userText(team)], resolver: resolver)
         case let value where value.hasSuffix("입단. 고교 3년의 능력을 그대로 안고 시작합니다."):
             return legacy("content.pro-summary.joined-high-school", [.userText(team)], resolver: resolver)
+        case let value where value.hasSuffix("지명. 신인 계약 제안을 확인해 주세요."):
+            return legacy("content.pro-summary.rookie-offer", [.userText(team)], resolver: resolver)
         case "등판을 중단했습니다. 다음 마운드는 새 이닝입니다.":
             return legacy("content.pro-summary.outing-abandoned", resolver: resolver)
         case "시즌 기록을 통산 기록에 확정했습니다.":
             return legacy("content.pro-summary.season-recorded", resolver: resolver)
+        case "계약을 확정했습니다.":
+            return legacy("content.pro-summary.contract-signed", resolver: resolver)
         case "현재 구단에서 다음 시즌을 준비합니다.":
             return legacy("content.pro-summary.continue", [.userText(team)], resolver: resolver)
         case "두 시즌의 군 복무를 마치고 돌아옵니다.":
@@ -103,7 +185,7 @@ enum ProCareerPresentation {
     }
 
     static func milestone(_ raw: String, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return raw }
+        guard resolver.language != .korean else { return raw }
         let exact: [String: String] = [
             "프로 지명": "content.pro-milestone.drafted",
             "신인 계약": "content.pro-milestone.rookie-contract",
@@ -140,7 +222,7 @@ enum ProCareerPresentation {
     }
 
     static func award(_ raw: String, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return raw }
+        guard resolver.language != .korean else { return raw }
         let patterns: [(String, String)] = [
             (#"^시즌 (\d+) 탈삼진상$"#, "content.pro-award.strikeouts"),
             (#"^시즌 (\d+) 최소 실점상$"#, "content.pro-award.run-prevention"),
@@ -161,7 +243,10 @@ enum ProCareerPresentation {
         state: ProCareerSnapshot? = nil,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return raw }
+        if let mediaKey = mediaNewsKey(raw) {
+            return resolver.resolve(.gameContent(mediaKey))
+        }
+        guard resolver.language != .korean else { return raw }
         switch raw {
         case "명예의 전당 헌액이 확정됐습니다.":
             return legacy("content.pro-news.retirement.hall-of-fame", resolver: resolver)
@@ -289,23 +374,94 @@ enum ProCareerPresentation {
         return GameCopyResolver.unavailableText
     }
 
+    private static func mediaNewsKey(_ raw: String) -> String? {
+        switch raw {
+        case "content.pro-media-opportunity.resolved.advertising_shoot",
+             "content.pro-media-opportunity.resolved.fan_together_shoot",
+             "content.pro-media-opportunity.resolved.focus_on_season":
+            return raw
+        default:
+            return nil
+        }
+    }
+
     static func choiceTitle(_ choice: ProSeasonDecisionChoice, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return choice.title }
+        if choice.id.hasPrefix("media_opportunity.") {
+            let suffix = String(choice.id.dropFirst("media_opportunity.".count))
+            let contentSuffix = switch suffix {
+            case "advertising_shoot": "advertising"
+            case "fan_together_shoot": "fan_together"
+            case "focus_on_season": "focus"
+            default: suffix
+            }
+            return resolver.resolve(.gameContent("content.pro-media-opportunity.choice.\(contentSuffix).title"))
+        }
+        guard resolver.language != .korean else { return choice.title }
         return resolver.resolve(.gameContent("content.pro-decision.choice.\(choice.id).title"))
     }
 
     static func choiceDetail(_ choice: ProSeasonDecisionChoice, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return choice.detail }
+        if choice.id.hasPrefix("media_opportunity.") {
+            let suffix = String(choice.id.dropFirst("media_opportunity.".count))
+            let contentSuffix = switch suffix {
+            case "advertising_shoot": "advertising"
+            case "fan_together_shoot": "fan_together"
+            case "focus_on_season": "focus"
+            default: suffix
+            }
+            return resolver.resolve(.gameContent("content.pro-media-opportunity.choice.\(contentSuffix).detail"))
+        }
+        guard resolver.language != .korean else { return choice.detail }
         return resolver.resolve(.gameContent("content.pro-decision.choice.\(choice.id).detail"))
     }
 
     static func decisionRecordTitle(_ record: ProDecisionRecord, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return record.choiceTitle }
+        if record.type == .mediaOpportunity {
+            let suffix = String(record.choiceID.dropFirst("media_opportunity.".count))
+            let contentSuffix = switch suffix {
+            case "advertising_shoot": "advertising"
+            case "fan_together_shoot": "fan_together"
+            case "focus_on_season": "focus"
+            default: suffix
+            }
+            return resolver.resolve(.gameContent("content.pro-media-opportunity.choice.\(contentSuffix).title"))
+        }
+        guard resolver.language != .korean else { return record.choiceTitle }
         return resolver.resolve(.gameContent("content.pro-decision.choice.\(record.choiceID).title"))
     }
 
+    static func journeyEffect(_ effect: ProJourneyEffect?, resolver: GameCopyResolver) -> String? {
+        guard let effect else { return nil }
+        var parts: [String] = []
+        if effect.income != 0 {
+            parts.append(resolver.resolve(
+                .journeyEffectIncome,
+                arguments: [.userText(GameFormatters.krw(Int(clamping: effect.income), language: resolver.language))]
+            ))
+        }
+        if effect.fanDelta != 0 {
+            parts.append(resolver.resolve(.journeyEffectFan, arguments: [.integer(effect.fanDelta)]))
+        }
+        if effect.communityDelta != 0 {
+            parts.append(resolver.resolve(.journeyEffectCommunity, arguments: [.integer(effect.communityDelta)]))
+        }
+        return parts.isEmpty ? resolver.resolve(.journeyEffectNone) : parts.joined(separator: " · ")
+    }
+
+    static func combinedEffect(
+        _ effect: ProDecisionEffect,
+        journeyEffect: ProJourneyEffect?,
+        resolver: GameCopyResolver
+    ) -> String {
+        var parts = [ProCareerPresentation.effect(effect, resolver: resolver)]
+        if let journey = Self.journeyEffect(journeyEffect, resolver: resolver), !journey.isEmpty {
+            parts.append(journey)
+        }
+        return parts.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
     static func effect(_ effect: ProDecisionEffect, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return effect.summary }
+        guard resolver.language != .korean else { return effect.summary }
         var parts: [String] = []
         append(effect.stuffDelta, gain: .effectStuffGain, loss: .effectStuffLoss, to: &parts, resolver: resolver)
         append(effect.commandDelta, gain: .effectCommandGain, loss: .effectCommandLoss, to: &parts, resolver: resolver)
@@ -321,22 +477,22 @@ enum ProCareerPresentation {
     }
 
     static func buildLabel(_ identity: PitcherBuildIdentity, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return identity.label }
+        guard resolver.language != .korean else { return identity.label }
         return resolver.resolve(.gameContent("content.pitcher-build.\(identity.rawValue).label"))
     }
 
     static func buildStrength(_ identity: PitcherBuildIdentity, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return identity.strength }
+        guard resolver.language != .korean else { return identity.strength }
         return resolver.resolve(.gameContent("content.pitcher-build.\(identity.rawValue).strength"))
     }
 
     static func buildTradeoff(_ identity: PitcherBuildIdentity, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return identity.tradeoff }
+        guard resolver.language != .korean else { return identity.tradeoff }
         return resolver.resolve(.gameContent("content.pitcher-build.\(identity.rawValue).tradeoff"))
     }
 
     static func rival(_ rival: ProRivalBatter, resolver: GameCopyResolver) -> RivalCopy {
-        guard resolver.language == .english else {
+        guard resolver.language != .korean else {
             return RivalCopy(
                 name: rival.name,
                 teamName: rival.teamName,
@@ -361,7 +517,7 @@ enum ProCareerPresentation {
         state: ProCareerSnapshot,
         resolver: GameCopyResolver
     ) -> TensionCopy {
-        guard resolver.language == .english else {
+        guard resolver.language != .korean else {
             return TensionCopy(title: tension.title, detail: tension.detail)
         }
         switch tension.kind {
@@ -424,7 +580,7 @@ enum ProCareerPresentation {
     }
 
     static func leagueTeamName(_ rawName: String, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return rawName }
+        guard resolver.language != .korean else { return rawName }
         guard let team = HighSchoolCareerEngine.teams.first(where: { $0.name == rawName }) else {
             return GameCopyResolver.unavailableText
         }
@@ -436,7 +592,7 @@ enum ProCareerPresentation {
         isPlayer: Bool,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english, !isPlayer else { return rawName }
+        guard resolver.language != .korean, !isPlayer else { return rawName }
         let surnameIDs: [(String, String)] = [
             ("김", "gim"), ("이", "i"), ("박", "bak"), ("최", "choe"),
             ("정", "jeong"), ("강", "gang"), ("조", "jo"), ("윤", "yun"),
@@ -580,5 +736,31 @@ enum ProCareerPresentation {
             guard let range = Range(match.range(at: index), in: value) else { return nil }
             return String(value[range])
         }
+    }
+}
+
+struct ProCareerGoalMetricsView: View {
+    let progress: ProCareerGoalProgress
+    var identifierPrefix = "pro.goal"
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Array(progress.metrics.enumerated()), id: \.offset) { index, metric in
+                Text(copyResolver.resolve(
+                    .directionGoalMetric,
+                    arguments: [
+                        .userText(ProCareerPresentation.goalMetricTitle(metric.kind, resolver: copyResolver)),
+                        .integer(metric.current),
+                        .integer(metric.target),
+                    ]
+                ))
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(metric.current >= metric.target ? BaseballTheme.milestone : BaseballTheme.textSecondary)
+                .accessibilityIdentifier("\(identifierPrefix).metric.\(index)")
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("\(identifierPrefix).metrics")
     }
 }

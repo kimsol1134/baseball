@@ -45,9 +45,17 @@ Relationships, regional atmosphere, career milestones, and the choices you made 
 - No ads
 - No in-app purchases
 - Playable offline
-- English and Korean
+- English, Korean, and Japanese
 
 Mound Reborn takes place in an original fictional baseball world inspired by the regional culture and atmosphere of Korean baseball. It is not affiliated with any real league, club, school, or player.
+
+## Version 1.1.2
+
+### What's New
+
+Mound Reborn can now be played in Japanese. The complete high-school, draft, professional, retirement, and rebirth career is available in Japanese.
+
+This update also fixes crashes that could occur after training or while handling notifications, and improves baseball terminology, record formatting, and accessibility across Korean, English, and Japanese.
 
 ## Version 1.1.1
 
@@ -68,21 +76,23 @@ The pages must offer complete English content before this metadata is submitted.
 
 ### Beta description
 
-Play a pitcher's full career from high school through the draft, professional baseball, retirement, and rebirth. This build adds the complete English interface to the existing Korean iOS app without changing gameplay or save data.
+Play a pitcher's full career from high school through the draft, professional baseball, retirement, and rebirth. This build adds the complete Japanese interface while preserving gameplay and save data across Korean, English, and Japanese.
 
 ### What to Test
 
-Use iOS Settings to set the app language to English, then start a new career. Please check:
+Use iOS Settings to set the app language to Japanese, then start a new career. Please check:
 
 1. First launch, player creation, school choice, and the first important game.
 2. Pitch selection, aiming, results, and hitter-adjustment feedback.
 3. Draft failure, rebirth, legacy selection, and the next player's opening state.
 4. Draft success and the professional-career flow when available.
-5. Any Korean text, awkward baseball terminology, clipped copy, inaccessible controls, or save mismatch after switching between English and Korean.
+5. Any Korean fallback, awkward baseball terminology, clipped copy, inaccessible controls, or save mismatch after switching among Japanese, English, and Korean.
 
 ## App Review notes
 
-Version 1.1.1 adds English to the existing iPhone app. It uses the same bundle ID, paid product, gameplay rules, content IDs, and save data as the Korean version; only presentation text and locale-aware formatting change. Reviewers can select English from the app's language setting in iOS Settings.
+Version 1.1.2 adds Japanese to the existing iPhone app. It uses the same bundle ID, paid product, gameplay rules, content IDs, and save data; only presentation text and locale-aware formatting change. Reviewers can select Japanese from the app's language setting in iOS Settings.
+
+This build also fixes crashes that could occur after training or during notification handling. The signed binary contains Korean, English, and Japanese localization resources.
 
 The game is a single upfront purchase. It contains no advertising or in-app purchases. Firebase and Amplitude are used for unlinked product-interaction and diagnostic analytics as disclosed in the app privacy information and privacy policy.
 

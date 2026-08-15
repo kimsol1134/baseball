@@ -853,7 +853,8 @@ public extension CopyToken {
         },
         [
             ProCareerPhase.contractOffer, .weeklyPlan, .seasonDecision, .importantGame,
-            .seasonReview, .offseasonDecision, .retirementDecision, .completed,
+            .seasonReview, .seasonSettlement, .offseasonDecision, .offseasonInvestment,
+            .retirementDecision, .completed,
         ].map {
             PresentationCopyDescriptor(family: .proCareerPhase, rawValue: $0.rawValue, token: $0.displayCopyToken)
         },

@@ -58,7 +58,7 @@ namespace Baseball.Presentation.Tests
         }
 
         [Test]
-        public void SetupProjectionAndControllerDisableStartWhileSeedDraftIsInvalid()
+        public void SetupProjectionDisablesInvalidStartAndFirstStepHidesFinalAction()
         {
             GameSaveAggregate state = SetupState("setup-projection-install");
             var valid = true;
@@ -86,11 +86,10 @@ namespace Baseball.Presentation.Tests
                        KoreanUiCopyCatalog.LoadDefault(),
                        ShellRoute.Setup))
             {
-                VisualElement button = root.Q<VisualElement>(
-                    "screen-setup-action-start_high_school");
-                Assert.That(button, Is.Not.Null);
-                Assert.That(button.enabledInHierarchy, Is.False,
-                    "the mounted Setup controller must mirror the validation state");
+                Assert.That(root.Q<VisualElement>("screen-setup-step-next"), Is.Not.Null,
+                    "iOS parity requires the first setup screen to show only the next-step action");
+                Assert.That(root.Q<VisualElement>("screen-setup-action-start_high_school"), Is.Null,
+                    "the final start action must not compete with the name decision on step one");
             }
         }
 
@@ -355,6 +354,11 @@ namespace Baseball.Presentation.Tests
             Assert.That(screen.Actions[0].Style, Is.EqualTo(ScreenActionStyle.Primary));
             Assert.That(screen.Actions[1].Label, Is.EqualTo("바로 학교 고르기"));
             Assert.That(screen.Actions[1].Style, Is.EqualTo(ScreenActionStyle.Secondary));
+            Assert.That(screen.Title, Is.EqualTo("첫 번째 야구 인생"));
+            Assert.That(screen.Lead, Does.Contain("첫 불펜"));
+            Assert.That(screen.Sections.Single(section => section.Id == "ability").Rows
+                .Select(row => row.Id),
+                Is.EqualTo(new[] { "fastball", "control", "movement", "stamina" }));
         }
 
         [Test]
@@ -774,6 +778,10 @@ namespace Baseball.Presentation.Tests
                 .Single(group => group.Id == "school").Choices.Single();
             Assert.That(selection.KeyArtAddress,
                 Is.EqualTo("baseball/highschool/KeyArtSchoolCrossroads"));
+            Assert.That(selection.Title, Is.EqualTo("어느 학교에서 3년을 보낼까요?"));
+            Assert.That(selection.Lead, Does.Contain("감독과 포수"));
+            Assert.That(selection.Sections.Any(section => section.Id == "hs-career-wind"), Is.False,
+                "school comparison must not repeat the prologue wind card");
             Assert.That(school.ArtworkAddress,
                 Is.EqualTo("baseball/highschool/PortraitCoach1"));
             Assert.That(school.SecondaryArtworkAddress,

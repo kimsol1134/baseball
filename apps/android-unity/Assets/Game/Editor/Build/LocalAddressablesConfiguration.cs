@@ -137,7 +137,12 @@ namespace Baseball.Editor
             bundled.UseAssetBundleCrc = true;
             bundled.UseAssetBundleCrcForCachedBundles = true;
             bundled.UseUnityWebRequestForLocalBundles = false;
-            bundled.StripDownloadOptions = true;
+            // Android local bundles live behind a jar:file URI. Addressables classifies that URI
+            // as remote even though the bytes are packaged in the APK; stripping the download
+            // options then emits a misleading warning on every image load. Keep the metadata so
+            // the provider can inspect the packaged bundle without treating the warning as an
+            // asset failure.
+            bundled.StripDownloadOptions = false;
             content.StaticContent = true;
             EditorUtility.SetDirty(bundled);
             EditorUtility.SetDirty(content);
@@ -163,7 +168,8 @@ namespace Baseball.Editor
             if (bundled == null
                 || bundled.BuildPath.GetName(settings) != AddressableAssetSettings.kLocalBuildPath
                 || bundled.LoadPath.GetName(settings) != AddressableAssetSettings.kLocalLoadPath
-                || !bundled.IncludeInBuild)
+                || !bundled.IncludeInBuild
+                || bundled.StripDownloadOptions)
             {
                 throw new BuildFailedException("Addressables group is not locked to local build/load paths.");
             }

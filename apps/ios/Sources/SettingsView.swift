@@ -19,7 +19,8 @@ struct SettingsView: View {
     /// 설정 화면에 남아 "그래서 뭐가 지워졌지"를 확인할 방법이 없다.
     var onResetAll: () -> Void = {}
 
-    @AppStorage("baseball.pitch.autoRelease") private var autoRelease = false
+    @AppStorage(PitchControlPreferences.autoReleaseKey)
+    private var autoRelease = PitchControlPreferences.defaultAutoRelease
     @AppStorage(DailyReminder.enabledKey) private var reminderOn = false
     @State private var audio = GameAudio.shared
     @State private var achievements = AchievementStore.shared

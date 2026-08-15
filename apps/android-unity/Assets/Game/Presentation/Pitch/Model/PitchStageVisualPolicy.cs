@@ -6,14 +6,11 @@ namespace Baseball.Presentation.Pitch
     public static class PitchStageVisualPolicy
     {
         public const string StadiumAddress = "baseball/highschool/KeyArtStadiumNight";
-        public const string BatterAddress = "baseball/pitch/BatterStance";
-        public const string CatcherAddress = "baseball/pitch/CatcherStance";
         public const string ShaderResourcePath = "PitchStageUnlit";
         public const string ShaderName = "Baseball/PitchStageUnlit";
         public const string ShaderUnavailableError = "pitch.stage_shader_unavailable";
 
-        public static bool HasRequiredSprites(bool stadium, bool batter, bool catcher) =>
-            stadium && batter && catcher;
+        public static bool HasRequiredSprites(bool stadium) => stadium;
 
         public static float CoverScale(
             float spriteWidth,

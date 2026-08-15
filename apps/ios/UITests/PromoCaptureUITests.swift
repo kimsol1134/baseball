@@ -17,9 +17,13 @@ final class PromoCaptureUITests: XCTestCase {
     private func launchArguments(_ arguments: [String]) -> [String] {
         let bundled = Bundle(for: PromoCaptureUITests.self)
             .object(forInfoDictionaryKey: "BaseballCaptureLanguage") as? String
-        guard bundled == "en"
-                || ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_LANGUAGE"] == "en" else {
+        let language = (bundled?.isEmpty == false ? bundled : nil)
+            ?? ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_LANGUAGE"]
+        guard language == "en" || language == "ja" else {
             return arguments
+        }
+        if language == "ja" {
+            return arguments + ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         }
         return arguments + ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
     }

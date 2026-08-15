@@ -59,6 +59,7 @@ enum CareerBootstrap {
         pitcher: PitcherSnapshot,
         identity: PlayerIdentitySnapshot,
         seed: UInt64,
+        sourceFanInterest: Int? = nil,
         engine: ProCareerEngine = ProCareerEngine()
     ) throws -> ProCareerResult {
         let started = try engine.start(
@@ -67,10 +68,11 @@ enum CareerBootstrap {
                 identity: identity,
                 pitcher: pitcher,
                 draftResult: draft,
-                entitlement: AppEntitlement.paidApp()
+                entitlement: AppEntitlement.paidApp(),
+                sourceFanInterest: sourceFanInterest
             )
         )
-        return try engine.signContract(.init(seed: started.nextSeed, state: started.snapshot))
+        return try legacyAutoSignIfNeeded(engine: engine, started: started)
     }
 
     /// 계약 서명까지 끝난 첫 주차 상태를 만든다.
@@ -112,6 +114,17 @@ enum CareerBootstrap {
                 entitlement: AppEntitlement.paidApp()
             )
         )
+        return try legacyAutoSignIfNeeded(engine: engine, started: started)
+    }
+
+    /// The legacy bootstrap surface historically returned a signed first week. Keep that
+    /// compatibility adapter isolated and explicit; Journey starts must remain on the persisted
+    /// contract-offer screen until the player chooses an ambition and signs.
+    private static func legacyAutoSignIfNeeded(
+        engine: ProCareerEngine,
+        started: ProCareerResult
+    ) throws -> ProCareerResult {
+        guard !engine.journeyEnabled else { return started }
         return try engine.signContract(.init(seed: started.nextSeed, state: started.snapshot))
     }
 }

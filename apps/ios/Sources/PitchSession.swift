@@ -219,6 +219,9 @@ final class PitchSession {
         var pitchLog: [LogLine]? = nil
         /// 수싸움 적중 도입 전 복구본은 nil이며, 빈 목록으로 이어진다.
         var sequenceMoments: [PitchSequenceMoment]? = nil
+        /// 수동 릴리스 숙련 기록 도입 전 복구본은 nil이다. 자동 릴리스의 중립값은 애초에
+        /// 이 배열에 들어오지 않으므로, 복구 뒤에도 실제로 손으로 던진 공만 평균에 남는다.
+        var deliveryScores: [Int]? = nil
 
         /// PitchLogEntry의 Codable 거울. id(UUID)는 표시용이라 싣지 않는다.
         struct LogLine: Codable, Equatable {
@@ -261,7 +264,8 @@ final class PitchSession {
                                     shortFeedback: $0.shortFeedback, acceptedRecommendation: $0.acceptedRecommendation,
                                     sequenceMoment: $0.sequenceMoment, abilityMoment: $0.abilityMoment)
             },
-            sequenceMoments: sequenceMoments
+            sequenceMoments: sequenceMoments,
+            deliveryScores: deliveryScores
         )
     }
 
@@ -306,6 +310,7 @@ final class PitchSession {
                           sequenceMoment: $0.sequenceMoment, abilityMoment: $0.abilityMoment)
         }
         sequenceMoments = resume.sequenceMoments ?? pitchLog.compactMap(\.sequenceMoment)
+        deliveryScores = resume.deliveryScores ?? []
         if let lastLog = pitchLog.last {
             // An explicit nil means the last pitch did not earn a badge. Do not resurrect
             // an older moment merely because one exists earlier in the inning.

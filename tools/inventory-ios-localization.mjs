@@ -233,13 +233,16 @@ function readCatalog(catalogPath) {
     const localizations = value.localizations ?? {};
     const ko = localizations.ko?.stringUnit?.value ?? "";
     const en = localizations.en?.stringUnit?.value ?? "";
+    const ja = localizations.ja?.stringUnit?.value ?? "";
     entries.push({
       key,
       file: relative(root, catalogPath),
       ko,
       en,
+      ja,
       ko_state: localizations.ko?.stringUnit?.state ?? null,
       en_state: localizations.en?.stringUnit?.state ?? null,
+      ja_state: localizations.ja?.stringUnit?.state ?? null,
       status: "ui_verified",
     });
   }
@@ -270,7 +273,7 @@ function makeSchema() {
     catalog_contract: {
       semantic_key_pattern: "^[a-z][a-z0-9_]*(?:[.-][a-z0-9_]+)+$",
       source_sentence_keys_forbidden: true,
-      required_localizations: ["ko", "en"],
+      required_localizations: ["ko", "en", "ja"],
       required_catalog_status: "ui_verified",
     },
     generation: {

@@ -10,9 +10,7 @@ final class RoundTripStabilityTests: XCTestCase {
         let result = try engine.start(StartHighSchoolCareerParams(seed: "20260723", presetID: "precision_commander"))
         let encoded = try JSONValue.from(result)
         let decoded = try encoded.decode(HighSchoolCareerResult.self)
-        print("REPRO phase=\(decoded.snapshot.phase) schools=\(decoded.snapshot.schoolOptions.count)")
-        let same = decoded.snapshot == result.snapshot
-        print("REPRO equal=\(same)")
+        XCTAssertEqual(decoded.snapshot, result.snapshot)
     }
 
     func testFullRPCSequenceStepByStep() throws {
@@ -25,16 +23,10 @@ final class RoundTripStabilityTests: XCTestCase {
             let resp = try JSONDecoder().decode(RPCResponse.self, from: out.data(using: .utf8)!)
             return try resp.result!.decode(HighSchoolCareerResult.self)
         }
-        print("STEP start")
         let start = try call("startHighSchoolCareer", try JSONValue.from(StartHighSchoolCareerParams(seed: "20260723", presetID: "precision_commander")))
-        print("STEP start ok phase=\(start.snapshot.phase)")
         let prologue = try call("completeMiddleSchoolPrologue", try JSONValue.from(AdvanceCareerChapterParams(seed: start.nextSeed, state: start.snapshot)))
-        print("STEP prologue ok phase=\(prologue.snapshot.phase)")
         let schoolID = prologue.snapshot.schoolOptions[0].id
         let school = try call("chooseSchool", try JSONValue.from(ChooseSchoolParams(seed: prologue.nextSeed, state: prologue.snapshot, schoolID: schoolID)))
-        print("STEP school ok phase=\(school.snapshot.phase) school=\(school.snapshot.school?.name ?? "-")")
-        print("STEP compare start")
-        let equal = school.snapshot == school.snapshot
-        print("STEP compare ok \(equal)")
+        XCTAssertNotNil(school.snapshot.school)
     }
 }

@@ -551,6 +551,30 @@ final class PitchSessionTests: XCTestCase {
         XCTAssertNil(restored.pitchLog.first?.sequenceMoment)
     }
 
+    func testManualReleaseMasteryScoresSurviveResumeWhileLegacyStartsEmpty() throws {
+        var resume = syntheticResume(log: [])
+        resume.deliveryScores = [920, 760, 830]
+
+        let encoded = try JSONEncoder().encode(resume)
+        let decoded = try JSONDecoder().decode(PitchSession.ResumeState.self, from: encoded)
+        let restored = PitchSession(state: snapshot(), seed: "release-mastery-resume")
+        restored.restore(from: decoded)
+
+        XCTAssertEqual(restored.deliveryScores, [920, 760, 830])
+        XCTAssertEqual(restored.averageDeliveryScore, 836)
+
+        var legacyObject = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        legacyObject.removeValue(forKey: "deliveryScores")
+        let legacy = try JSONDecoder().decode(
+            PitchSession.ResumeState.self,
+            from: JSONSerialization.data(withJSONObject: legacyObject)
+        )
+        restored.restore(from: legacy)
+
+        XCTAssertTrue(restored.deliveryScores.isEmpty)
+        XCTAssertNil(restored.averageDeliveryScore)
+    }
+
     func testFirstPitchToNextBatterCannotUsePreviousBattersPitchForTwoPitchTag() {
         let previousBatterPitch = PitchSession.ResumeState.LogLine(
             pitchNumber: 3,

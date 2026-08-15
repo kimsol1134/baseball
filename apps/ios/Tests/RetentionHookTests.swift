@@ -264,7 +264,7 @@ final class RetentionHookTests: XCTestCase {
     }
 
     func testReminderOpenedPropertiesSupportNewAndLegacyRequests() {
-        let current = DailyReminder.openedProperties(userInfo: [
+        let currentUserInfo: [AnyHashable: Any] = [
             DailyReminder.linkUserInfoKey: "com.solkim.baseball.ios://pro",
             DailyReminder.destinationUserInfoKey: "pro",
             DailyReminder.reasonUserInfoKey: "pro_phase",
@@ -273,7 +273,10 @@ final class RetentionHookTests: XCTestCase {
             DailyReminder.variantUserInfoKey: "guided",
             DailyReminder.savedDayUserInfoKey: "20260809",
             DailyReminder.rulesVersionUserInfoKey: 4,
-        ])
+        ]
+        let context = DailyReminder.openedContext(userInfo: currentUserInfo)
+        let current = context.analyticsProperties
+        XCTAssertEqual(context.deepLink, URL(string: "com.solkim.baseball.ios://pro"))
         XCTAssertEqual(current["destination"] as? String, "pro")
         XCTAssertEqual(current["reason"] as? String, "pro_phase")
         XCTAssertEqual(current["plan_receipt"] as? String, "receipt-a")
@@ -287,6 +290,29 @@ final class RetentionHookTests: XCTestCase {
         XCTAssertEqual(legacy["reason"] as? String, "legacy")
         XCTAssertEqual(legacy["plan_receipt"] as? String, "legacy")
         XCTAssertEqual(legacy["development_rules_version"] as? Int, 0)
+    }
+
+    /// async Objective-C delegate witness는 완료 continuation을 background thread에서
+    /// 끝내 UIKit state restoration assertion을 일으켰다. 명시적 completion API와
+    /// MainActor hop을 소스 경계로 고정한다.
+    func testNotificationRouterCompletesDelegateOnMainActor() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/DailyReminder.swift"),
+            encoding: .utf8
+        )
+        let start = try XCTUnwrap(source.range(of: "final class NotificationRouter"))
+        let router = String(source[start.lowerBound...])
+
+        XCTAssertTrue(router.contains("withCompletionHandler completionHandler"))
+        XCTAssertTrue(router.contains("Task { @MainActor"))
+        XCTAssertTrue(router.contains("defer { completion.call() }"))
+        XCTAssertFalse(router.contains("didReceive response: UNNotificationResponse\n    ) async"))
+        XCTAssertFalse(router.contains("willPresent notification: UNNotification\n    ) async"))
     }
 
     @MainActor

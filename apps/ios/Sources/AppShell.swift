@@ -217,7 +217,8 @@ struct AppShell: View {
                                 draft: draft,
                                 pitcher: pitcher,
                                 identity: identity,
-                                sourceHighSchoolCareerID: sourceHighSchoolCareerID
+                                sourceHighSchoolCareerID: sourceHighSchoolCareerID,
+                                sourceFanInterest: highSchool.state?.fanInterest
                             ) else {
                                 selection = .highSchool
                                 return
@@ -500,9 +501,9 @@ private struct ReturnWelcomeCard: View {
             let resolved = copyResolver.resolve(reference)
             if resolved != GameCopyResolver.unavailableText { return resolved }
         }
-        return copyResolver.language == .english
-            ? copyResolver.resolve(englishFallback)
-            : legacyValue
+        return copyResolver.language == .korean
+            ? legacyValue
+            : copyResolver.resolve(englishFallback)
     }
 
     private func continueTitleKey(for destination: DailyReminder.Destination) -> GameCopyKey {
@@ -777,6 +778,10 @@ private struct TodayDashboard: View {
                     )
                 }
 
+                if state.journeyState != nil {
+                    CareerDirectionCard(state: state)
+                }
+
                 BaseballCard(title: copyResolver.resolve(AppCopyKey.proNextActionTitle), tone: .raised) {
                     GameCopyText(Self.actionKey(state.phase)).font(.body.weight(.semibold))
                 }
@@ -921,6 +926,7 @@ private struct TodayDashboard: View {
         case .weeklyPlan: AppCopyKey.proActionWeeklyPlan
         case .importantGame: AppCopyKey.proActionImportantGame
         case .seasonReview: AppCopyKey.proActionSeasonReview
+        case .seasonSettlement: ProUICopyKey.actionSeasonSettlement.gameCopyKey
         case .offseasonDecision: AppCopyKey.proActionOffseasonDecision
         default: AppCopyKey.proActionDefault
         }
@@ -997,6 +1003,220 @@ private struct TodayDashboard: View {
         case (.some, true): key = AppCopyKey.proOutingAccessibilityDecisionPlayed
         }
         return resolver.resolve(key, arguments: arguments)
+    }
+}
+
+struct CareerDirectionCard: View {
+    let state: ProCareerSnapshot
+    @State private var isExpanded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        if let journey = state.journeyState {
+            let records = ProCareerPresentation.teamRecords(for: state)
+            let record = ProTeamCareerRecordRules.record(teamID: state.team.id, in: records)
+            let legacyScore = record.map(ProTeamLegacyRules.score(record:)) ?? 0
+            let tier = record.map(ProTeamLegacyRules.tier(record:))
+            BaseballCard(title: copyResolver.resolve(.directionTitle), tone: .raised) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(verbatim: copyResolver.resolve(.directionContract, arguments: contractText(for: state, resolver: copyResolver)))
+                    if let goal = journey.activeGoal {
+                        Text(verbatim: ProCareerPresentation.goalTitle(goal.ambition, resolver: copyResolver))
+                            .font(.subheadline.weight(.semibold))
+                        ProCareerGoalMetricsView(
+                            progress: ProCareerGoalRules.progress(state: state, goal: goal),
+                            identifierPrefix: "pro.careerDirection.goal"
+                        )
+                    } else {
+                        Text(verbatim: copyResolver.resolve(.directionNoGoal))
+                    }
+                    if let tier {
+                        if let record, let next = ProTeamLegacyRules.nextTierProjection(record: record) {
+                            Text(verbatim: legacyProgressText(
+                                record: record,
+                                score: legacyScore,
+                                tier: tier,
+                                next: next,
+                                resolver: copyResolver
+                            ))
+                        } else {
+                            Text(verbatim: copyResolver.resolve(
+                                .directionLegacy,
+                                arguments: [.userText(copyResolver.resolve(tierKey(tier))), .integer(legacyScore)]
+                            ))
+                        }
+                    }
+                    Text(verbatim: copyResolver.resolve(
+                        .directionHOF,
+                        arguments: [.integer(ProCareerEngine.hallOfFameProjection(for: state))]
+                    ))
+                    Text(verbatim: copyResolver.resolve(
+                        .directionFan,
+                        arguments: [.integer(journey.reputation.fanSupport)]
+                    ))
+                    Text(verbatim: copyResolver.resolve(
+                        .directionFinance,
+                        arguments: [
+                            .userText(GameFormatters.krw(Int(clamping: journey.finances.careerEarnings), language: copyResolver.language)),
+                            .userText(GameFormatters.krw(Int(clamping: journey.finances.availableFunds), language: copyResolver.language)),
+                        ]
+                    ))
+                    Button {
+                        withAnimation(reduceMotion ? nil : .snappy) { isExpanded.toggle() }
+                    } label: {
+                        Label(
+                            copyResolver.resolve(isExpanded ? .directionCollapse : .directionExpand),
+                            systemImage: isExpanded ? "chevron.up" : "chevron.down"
+                        )
+                        .font(.footnote.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(BaseballTheme.action)
+                    .accessibilityIdentifier("pro.careerDirection.toggle")
+                    if isExpanded {
+                        BaseballCard(title: copyResolver.resolve(.directionRecords), tone: .standard) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(records, id: \.teamID) { teamRecord in
+                                    CareerDirectionTeamRecordRow(record: teamRecord)
+                                }
+                            }
+                        }
+                        .accessibilityIdentifier("pro.careerDirection.records")
+                    }
+                }
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("pro.careerDirection")
+        }
+    }
+
+    private func contractText(
+        for state: ProCareerSnapshot,
+        resolver: GameCopyResolver
+    ) -> [LocalizedCopyArgument] {
+        guard let contract = state.contract else {
+            return [.userText(resolver.resolve(.directionNoGoal)), .integer(0), .userText("—")]
+        }
+        return [
+            .userText(resolver.resolve(contract.rolePromise.displayCopyToken)),
+            .integer(max(0, contract.yearsRemaining)),
+            .userText(GameFormatters.krw(contract.annualSalary, language: resolver.language)),
+        ]
+    }
+
+    private func legacyProgressText(
+        record: ProTeamCareerRecord,
+        score: Int,
+        tier: ProTeamLegacyTier,
+        next: ProTeamLegacyRules.Threshold,
+        resolver: GameCopyResolver
+    ) -> String {
+        let scoreRemaining = max(0, next.minimumScore - score)
+        let currentTier = resolver.resolve(tierKey(tier))
+        let nextTier = resolver.resolve(tierKey(next.tier))
+        guard let minimumSeasons = next.minimumCompletedSeasons else {
+            return resolver.resolve(
+                .directionLegacyNext,
+                arguments: [
+                    .userText(currentTier),
+                    .integer(score),
+                    .userText(nextTier),
+                    .integer(scoreRemaining),
+                ]
+            )
+        }
+
+        let seasonsRemaining = max(0, minimumSeasons - record.completedSeasons)
+        switch (scoreRemaining > 0, seasonsRemaining > 0) {
+        case (true, true):
+            return resolver.resolve(
+                .directionLegacyNextBoth,
+                arguments: [
+                    .userText(currentTier),
+                    .integer(score),
+                    .userText(nextTier),
+                    .integer(scoreRemaining),
+                    .integer(seasonsRemaining),
+                ]
+            )
+        case (true, false):
+            return resolver.resolve(
+                .directionLegacyNext,
+                arguments: [
+                    .userText(currentTier),
+                    .integer(score),
+                    .userText(nextTier),
+                    .integer(scoreRemaining),
+                ]
+            )
+        case (false, true):
+            return resolver.resolve(
+                .directionLegacyNextSeasons,
+                arguments: [
+                    .userText(currentTier),
+                    .integer(score),
+                    .userText(nextTier),
+                    .integer(seasonsRemaining),
+                ]
+            )
+        case (false, false):
+            return resolver.resolve(
+                .directionLegacyNext,
+                arguments: [
+                    .userText(currentTier),
+                    .integer(score),
+                    .userText(nextTier),
+                    .integer(0),
+                ]
+            )
+        }
+    }
+
+    private func tierKey(_ tier: ProTeamLegacyTier) -> ProUICopyKey {
+        switch tier {
+        case .newFace: .directionTierNewFace
+        case .supportingPillar: .directionTierSupportingPillar
+        case .corePlayer: .directionTierCorePlayer
+        case .clubAce: .directionTierClubAce
+        case .clubSymbol: .directionTierClubSymbol
+        case .retiredNumberCandidate: .directionTierRetiredNumber
+        }
+    }
+}
+
+private struct CareerDirectionTeamRecordRow: View {
+    let record: ProTeamCareerRecord
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        let teamName = ProCareerPresentation.teamName(record.teamID, resolver: copyResolver)
+        VStack(alignment: .leading, spacing: 3) {
+            Text(verbatim: teamName)
+                .font(.subheadline.weight(.semibold))
+            Text(verbatim: copyResolver.resolve(
+                .directionRecordLine,
+                arguments: [.userText(teamName), .integer(record.completedSeasons), .integer(record.consecutiveSeasons)]
+            ))
+            Text(verbatim: copyResolver.resolve(
+                .directionRecordStats,
+                arguments: [
+                    .integer(record.games),
+                    .userText(GameFormatters.innings(outs: record.inningsOuts, language: copyResolver.language)),
+                    .integer(record.strikeouts),
+                    .integer(record.awardCount),
+                ]
+            ))
+            Text(verbatim: copyResolver.resolve(.directionRecordCommunity, arguments: [.integer(record.communityPoints)]))
+                .font(.caption)
+                .foregroundStyle(BaseballTheme.textTertiary)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("pro.careerDirection.record.\(record.teamID)")
     }
 }
 

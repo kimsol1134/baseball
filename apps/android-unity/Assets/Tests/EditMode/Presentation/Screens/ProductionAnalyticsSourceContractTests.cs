@@ -309,14 +309,14 @@ namespace Baseball.Presentation.Tests.Screens
             string runtime = Read(
                 "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
 
-            Assert.That(setup, Does.Contain("AddReadOnlyMemories(host, memories, artworkLoader)"));
+            Assert.That(setup, Does.Contain("AddReadOnlyMemories(host, memories)"));
             Assert.That(setup, Does.Contain("자동으로 이어집니다"));
             Assert.That(setup, Does.Not.Contain("장착하지 않음"));
             Assert.That(setup, Does.Not.Contain("WithNone(options.SignatureLegacies"));
             Assert.That(setup, Does.Not.Contain("WithNone(options.SoulDomains"));
             Assert.That(setup, Does.Contain("if (options.AutomaticSoul > 0)"));
             int difficulty = setup.IndexOf(
-                "AddSingleChoice(host, navigator, \"난이도\"", StringComparison.Ordinal);
+                "AddSingleChoice(host, \"난이도\"", StringComparison.Ordinal);
             int challengeReturn = setup.IndexOf("if (challenge)", difficulty, StringComparison.Ordinal);
             Assert.That(difficulty, Is.GreaterThanOrEqualTo(0));
             Assert.That(challengeReturn, Is.GreaterThan(difficulty),
@@ -338,6 +338,32 @@ namespace Baseball.Presentation.Tests.Screens
             Assert.That(runtime, Does.Contain("_setupSoulBoosts.Clear();"));
             Assert.That(runtime, Does.Contain("HighSchoolSetupCatalog.Regions.FirstOrDefault()?.Payload"));
             Assert.That(runtime, Does.Contain("HighSchoolSetupCatalog.Presets.FirstOrDefault()?.Payload"));
+        }
+
+        [Test]
+        public void SetupPresentsOneIosDecisionPerStepAndOnlyStartsOnTheFinalStep()
+        {
+            string setup = Read(
+                "apps/android-unity/Assets/Game/Presentation/Setup/SetupScreenController.cs");
+            string uxml = Read(
+                "apps/android-unity/Assets/Game/Presentation/Setup/Resources/SetupScreen.uxml");
+            string style = Read(
+                "apps/android-unity/Assets/Game/Presentation/Setup/Resources/SetupScreen.uss");
+
+            Assert.That(setup, Does.Contain("case 0: AddNameStep(host, rebirth)"));
+            Assert.That(setup, Does.Contain("case 1: AddRegionStep(host)"));
+            Assert.That(setup, Does.Contain("case 2: AddPresetStep(host)"));
+            Assert.That(setup, Does.Contain("default: AddHandicapStep(host)"));
+            Assert.That(setup, Does.Contain("if (_step == _stepCount - 1)"));
+            Assert.That(setup, Does.Contain("screen-setup-step-next"));
+            Assert.That(setup, Does.Contain("screen-setup-step-back"));
+            Assert.That(setup, Does.Contain("new AbilityGauge"));
+            Assert.That(uxml, Does.Contain("class=\"setup-step-footer\""));
+            Assert.That(style, Does.Contain(".setup-region-grid"));
+            Assert.That(style, Does.Contain(".setup-preset-card--selected"));
+            Assert.That(style, Does.Contain(".unity-base-text-field__input"));
+            Assert.That(setup, Does.Contain("verticalScrollerVisibility = ScrollerVisibility.Hidden"));
+            Assert.That(setup, Does.Contain("scroll.verticalScroller.style.display = DisplayStyle.None"));
         }
 
         [Test]

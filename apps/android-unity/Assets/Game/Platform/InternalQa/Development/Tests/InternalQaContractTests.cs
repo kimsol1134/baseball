@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || (DEVELOPMENT_BUILD && BASEBALL_INTERNAL_QA)
 using NUnit.Framework;
+using Baseball.Core.Domain;
 using Baseball.Presentation.Pitch;
 
 namespace Baseball.Platform.InternalQa.Tests
@@ -35,15 +36,37 @@ namespace Baseball.Platform.InternalQa.Tests
 
             Assert.That(second.PitchId, Is.EqualTo(first.PitchId));
             Assert.That(second.PresentationSeed, Is.EqualTo(first.PresentationSeed));
+            Assert.That(second.PitchType, Is.EqualTo(first.PitchType));
             Assert.That(second.Call, Is.EqualTo(first.Call));
-            Assert.That(second.Contact.ExitVelocityKph, Is.EqualTo(first.Contact.ExitVelocityKph));
-            Assert.That(second.Fielding.LandingDistanceMeters, Is.EqualTo(first.Fielding.LandingDistanceMeters));
+            Assert.That(second.VelocityKph, Is.EqualTo(first.VelocityKph));
             Assert.That(second.Trajectory.Count, Is.EqualTo(first.Trajectory.Count));
             Assert.That(first.PresentationSeed, Is.EqualTo(20260811UL));
         }
 
+        [TestCase("four_seam", PitchType.FourSeam)]
+        [TestCase("slider", PitchType.Slider)]
+        [TestCase("curveball", PitchType.Curveball)]
+        [TestCase("changeup", PitchType.Changeup)]
+        public void PitchFixtureExposesEveryPitchWithADistinctTrajectory(
+            string pitch,
+            PitchType expected)
+        {
+            Assert.That(InternalQaRequest.TryCreate(
+                "pitch-sample", "42", "prologue", "high", pitch,
+                out InternalQaRequest request, out string error), Is.True, error);
+            PitchPresentationSnapshot snapshot = InternalQaPitchFixture.Create("42", request.PitchType);
+            Assert.That(snapshot.PitchType, Is.EqualTo(expected));
+            Assert.That(snapshot.Contact, Is.Null);
+            Assert.That(snapshot.Fielding, Is.Null);
+            Assert.That(snapshot.Trajectory.Count, Is.EqualTo(5));
+        }
+
         [TestCase("tutorial-checkpoint", "opening", "tutorial_checkpoint")]
         [TestCase("pitch-sample", "setup", "setup")]
+        [TestCase("fixture", "school_selection", "school_selection")]
+        [TestCase("fixture", "training", "training")]
+        [TestCase("fixture", "overview", "overview")]
+        [TestCase("fixture", "relationship", "relationship")]
         public void CommandNormalizationHasStablePhaseRules(
             string command,
             string requestedPhase,

@@ -52,7 +52,8 @@ final class CareerSmokeUITests: XCTestCase {
 
     private func launch(
         pitchAbilityFeedback: Bool = false,
-        draftedCareerFixture: Bool = false
+        draftedCareerFixture: Bool = false,
+        language: String? = nil
     ) -> XCUIApplication {
         let app = XCUIApplication()
         // 자동 릴리스로 돌린다. 타이밍 제스처는 사람이 손으로 확인하고, 이 테스트는 흐름을 본다.
@@ -70,9 +71,33 @@ final class CareerSmokeUITests: XCTestCase {
         if draftedCareerFixture {
             launchArguments.append("-uiTestDraftedCareerFixture")
         }
+        if language == "ja" {
+            launchArguments += ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        }
         app.launchArguments = launchArguments
         app.launch()
         return app
+    }
+
+    func testJapaneseBinaryRunsFromOpeningThroughPrologueWithoutHangulFallback() {
+        let app = launch(language: "ja")
+
+        let opening = app.buttons["hs.opening.start"]
+        XCTAssertTrue(opening.waitForExistence(timeout: timeout), "日本語のオープニングが表示されません。")
+        XCTAssertEqual(opening.label, "スタート")
+        XCTAssertTrue(app.staticTexts["生まれ変わったマウンド"].exists)
+        assertVisibleCopyContainsNoHangul(app, context: "Japanese opening")
+
+        opening.tap()
+        let next = app.buttons["hs.setup.next"]
+        XCTAssertTrue(next.waitForExistence(timeout: timeout), "日本語の選手作成画面が表示されません。")
+        XCTAssertEqual(next.label, "次へ")
+        XCTAssertTrue(completeSetup(app), "日本語の選手作成を完了できません。")
+
+        let firstPitch = app.buttons["hs.prologue.throw"]
+        XCTAssertTrue(firstPitch.waitForExistence(timeout: timeout), "日本語のプロローグが表示されません。")
+        XCTAssertEqual(firstPitch.label, "初球を投げる")
+        assertVisibleCopyContainsNoHangul(app, context: "Japanese prologue")
     }
 
     func testHighSchoolCareerRunsThroughDraftAndRebirth() {
@@ -228,6 +253,22 @@ final class CareerSmokeUITests: XCTestCase {
 
         let commit = app.buttons["hs.training.commit"]
         XCTAssertTrue(commit.waitForExistence(timeout: timeout), "첫 훈련 화면이 열리지 않았습니다.")
+
+        // 이 여섯 행은 App Store crash의 actor-isolation 경계였다. 화면이 열린 뒤 모든
+        // 고정 행이 접근성 트리에 남아 있으면 구조 수정이 선택지를 누락하지 않은 것이다.
+        for identifier in [
+            "hs.focus.velocity",
+            "hs.focus.command",
+            "hs.focus.breaking_ball",
+            "hs.focus.stamina",
+            "hs.focus.recovery",
+            "hs.focus.game_planning",
+        ] {
+            XCTAssertTrue(
+                app.buttons[identifier].waitForExistence(timeout: 2),
+                "훈련 선택 행이 누락됐습니다: \(identifier)"
+            )
+        }
 
         // 첫 훈련이 같은 국면에 머물더라도 반복해, 관계·경기처럼 더 짧은 국면으로
         // 갈아타는 경계까지 가능한 한 함께 밟는다.
@@ -619,6 +660,102 @@ final class CareerSmokeUITests: XCTestCase {
         capture(app, name: "14-controls-after-result")
     }
 
+    /// 퍼펙트 축하가 다음 공의 입력 패드에 잔상으로 붙거나 타석 종료와 함께 잘리지 않는다.
+    /// 실제 2.5% 타이밍 창은 유닛 테스트가 지키고, 이 테스트는 Debug 전용 고정 인자로
+    /// 피드백의 화면 수명·위치·지속 배지를 결정적으로 검증한다.
+    func testPerfectReleaseEffectStaysWithThrownPitch() {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestPerfectRelease",
+            "-baseball.audio.sound", "NO",
+        ]
+        app.launch()
+
+        dismissOpening(app)
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
+
+        let openBullpen = app.buttons["hs.prologue.throw"]
+        XCTAssertTrue(openBullpen.waitForExistence(timeout: timeout), "첫 불펜 진입 버튼이 없습니다.")
+        openBullpen.tap()
+
+        let pad = windUpPad(app)
+        XCTAssertTrue(pad.waitForExistence(timeout: timeout), "수동 와인드업 패드가 없습니다.")
+        XCTAssertTrue(bringIntoView(pad), "와인드업 패드를 화면에 가져오지 못했습니다.")
+        pad.press(forDuration: 0.25)
+
+        let effect = app.descendants(matching: .any)
+            .matching(identifier: "pitch.perfectEffect").firstMatch
+        XCTAssertTrue(
+            effect.waitForExistence(timeout: 0.35),
+            "퍼펙트 직후 축하 이펙트가 한 프레임도 나타나지 않았습니다."
+        )
+        let effectFrame = effect.frame
+        XCTAssertGreaterThan(effectFrame.width, 0)
+        XCTAssertGreaterThan(effectFrame.height, 0)
+
+        let nextPad = windUpPad(app)
+        if nextPad.exists {
+            XCTAssertLessThanOrEqual(
+                effectFrame.maxY,
+                nextPad.frame.minY,
+                "퍼펙트 축하가 다음 공의 '길게 눌러 와인드업' 안내와 다시 겹쳤습니다."
+            )
+        }
+        var verifiedTerminalStage = app.buttons["pitch.nextBatter"].exists
+            || app.buttons["pitch.finish"].exists
+        if verifiedTerminalStage {
+            XCTAssertTrue(effect.exists, "타석 종료와 함께 퍼펙트 축하가 잘렸습니다.")
+        }
+
+        XCTAssertTrue(
+            effect.waitForNonExistence(timeout: 1.2),
+            "축하 이펙트가 끝난 뒤 화면에 잔상으로 남았습니다."
+        )
+
+        let persistentBadge = app.descendants(matching: .any)
+            .matching(identifier: "pitch.perfectRelease").firstMatch
+        XCTAssertTrue(
+            persistentBadge.waitForExistence(timeout: 0.5),
+            "방금 던진 공의 결과에 퍼펙트 릴리스 배지가 남지 않았습니다."
+        )
+        XCTAssertTrue(persistentBadge.exists, "짧은 축하가 끝나며 결과 배지까지 사라졌습니다.")
+
+        // 첫 공이 파울·스트라이크라면 강제 퍼펙트를 더 던져 타석 종료/투구 수 상한까지 간다.
+        // footer가 nextBatter/finish로 교체되는 바로 그 프레임에도 화면 소유 축하가 살아 있어야 한다.
+        var additionalPitches = 0
+        while !verifiedTerminalStage, additionalPitches < 7 {
+            let currentPad = windUpPad(app)
+            guard currentPad.waitForExistence(timeout: 1) else { break }
+            XCTAssertTrue(bringIntoView(currentPad), "다음 와인드업 패드를 가져오지 못했습니다.")
+            currentPad.press(forDuration: 0.25)
+
+            let terminalEffect = app.descendants(matching: .any)
+                .matching(identifier: "pitch.perfectEffect").firstMatch
+            XCTAssertTrue(
+                terminalEffect.waitForExistence(timeout: 0.35),
+                "연속 퍼펙트에서 축하 이펙트가 다시 시작되지 않았습니다."
+            )
+            verifiedTerminalStage = app.buttons["pitch.nextBatter"].exists
+                || app.buttons["pitch.finish"].exists
+            if verifiedTerminalStage {
+                XCTAssertTrue(
+                    terminalEffect.exists,
+                    "footer가 종료 상태로 바뀌는 순간 퍼펙트 축하가 함께 제거됐습니다."
+                )
+            }
+            XCTAssertTrue(
+                terminalEffect.waitForNonExistence(timeout: 1.2),
+                "연속 퍼펙트 축하가 다음 투구까지 잔상으로 남았습니다."
+            )
+            additionalPitches += 1
+        }
+        XCTAssertTrue(
+            verifiedTerminalStage,
+            "퍼펙트 축하의 타석 종료 수명을 검증할 terminal footer에 도달하지 못했습니다."
+        )
+    }
+
     /// 와인드업 패드. 라벨만 갖고 있어 종류를 특정하지 않고 찾는다.
     private func windUpPad(_ app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: "와인드업").firstMatch
@@ -788,8 +925,21 @@ final class CareerSmokeUITests: XCTestCase {
 
     /// 학교는 되돌릴 수 없어 확인 창이 뜬다. 카드만 누르고 넘어가면 그 자리에서 막힌다.
     private func confirmSchool(_ app: XCUIApplication) {
-        let confirm = app.buttons.matching(identifier: "hs.school.confirm").firstMatch
-        if confirm.waitForExistence(timeout: 3) { confirm.tap() }
+        let matches = app.buttons.matching(identifier: "hs.school.confirm")
+        guard matches.count > 0 else { return }
+
+        // iOS 26 alert는 같은 identifier를 가진 wrapper/실제 버튼을 함께 노출한다.
+        // 바깥 wrapper의 tap이 합성됐지만 alert가 남는 경우가 있어 안쪽 버튼을 먼저 누른다.
+        let confirm = matches.element(boundBy: matches.count - 1)
+        guard confirm.waitForExistence(timeout: 3) else { return }
+        confirm.tap()
+        if !confirm.waitForNonExistence(timeout: 2) {
+            let retryMatches = app.buttons.matching(identifier: "hs.school.confirm")
+            guard retryMatches.count > 0 else { return }
+            retryMatches.element(boundBy: retryMatches.count - 1)
+                .coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                .tap()
+        }
     }
 
     /// 각성도 되돌릴 수 없어 확인 창이 뜬다.
@@ -818,6 +968,25 @@ final class CareerSmokeUITests: XCTestCase {
             return identifier.isEmpty ? "<\(element.label)>" : identifier
         }
         return buttons.joined(separator: ", ")
+    }
+
+    private func assertVisibleCopyContainsNoHangul(
+        _ app: XCUIApplication,
+        context: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let hangul = try! NSRegularExpression(pattern: "[가-힣ㄱ-ㅎㅏ-ㅣ]")
+        let labels = app.staticTexts.allElementsBoundByIndex.map(\.label).filter { !$0.isEmpty }
+        let contaminated = labels.filter { label in
+            hangul.firstMatch(in: label, range: NSRange(label.startIndex..., in: label)) != nil
+        }
+        XCTAssertTrue(
+            contaminated.isEmpty,
+            "\(context) contains Korean fallback: \(contaminated.joined(separator: " | "))",
+            file: file,
+            line: line
+        )
     }
 
     /// 스크린 중앙(상태 바·하단 탭 제외)의 픽셀 중 RGB 최댓값이 40/255를

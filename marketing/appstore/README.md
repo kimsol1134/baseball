@@ -83,6 +83,9 @@ Steam 스토어 초안(`docs/STEAM_STORE_PAGE_DRAFT.md`)을 재사용하되 다�
 ## 5. 제출 전 확인
 
 - [ ] 릴리스 구성 빌드 성공 (`-configuration Release`)
+- [ ] 서명된 IPA에 `ko.lproj`, `en.lproj`, `ja.lproj`와 각 언어의 `Localizable.strings`, `GameContent.strings`, `InfoPlist.strings` 포함
+- [ ] 일본어 기기 언어 또는 앱별 언어 설정으로 TestFlight 실기기 스모크 테스트 통과
+- [ ] ASC 처리 완료 후 빌드의 지원 언어에 `Japanese` 표시 확인 — 일본어 메타데이터만 존재하는 상태로는 제출·출시 금지
 - [ ] 실기기 1대 이상에서 새 커리어 → 중요 경기 → 결과 반영 완주
 - [ ] 개인정보 처리방침 URL (수집 없음이므로 정적 페이지 1장)
 - [ ] 연령 등급 설문 (폭력·도박 없음)

@@ -4,7 +4,7 @@
     <Style src="project://database/Assets/Game/Presentation/Pitch/Resources/PitchPlay.uss" />
     <ui:VisualElement name="pitch-play-root" class="baseball-theme pitch-play-root">
         <ui:ScrollView name="pitch-scroll" class="pitch-scroll">
-            <ui:VisualElement class="pitch-top-card">
+            <ui:VisualElement name="pitch-top-card" class="pitch-top-card">
                 <ui:VisualElement name="pitch-back-slot" class="pitch-back-slot" />
                 <ui:VisualElement class="pitch-score-copy">
                     <ui:Label name="pitch-inning" class="baseball-eyebrow" />

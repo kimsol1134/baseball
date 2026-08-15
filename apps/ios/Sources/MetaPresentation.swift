@@ -3,22 +3,22 @@ import SimulationCore
 
 enum MetaPresentation {
     static func achievementTitle(_ achievement: Achievement, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return achievement.title }
+        guard resolver.language != .korean else { return achievement.title }
         return resolver.resolve(.gameContent("content.achievement.\(achievement.rawValue).title"))
     }
 
     static func achievementDetail(_ achievement: Achievement, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return achievement.detail }
+        guard resolver.language != .korean else { return achievement.detail }
         return resolver.resolve(.gameContent("content.achievement.\(achievement.rawValue).detail"))
     }
 
     static func weeklyTaskTitle(_ kind: WeeklyTaskKind, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return kind.title }
+        guard resolver.language != .korean else { return kind.title }
         return resolver.resolve(.gameContent("content.weekly-task.\(kind.rawValue).title"))
     }
 
     static func weeklyTaskNextAction(_ kind: WeeklyTaskKind, resolver: GameCopyResolver) -> String {
-        guard resolver.language == .english else { return kind.nextAction }
+        guard resolver.language != .korean else { return kind.nextAction }
         return resolver.resolve(.gameContent("content.weekly-task.\(kind.rawValue).next-action"))
     }
 

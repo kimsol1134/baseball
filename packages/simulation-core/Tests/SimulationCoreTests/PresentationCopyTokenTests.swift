@@ -424,7 +424,8 @@ final class PresentationCopyTokenTests: XCTestCase {
             .proCareerPhase,
             rawValues: [
                 "contract_offer", "weekly_plan", "season_decision", "important_game",
-                "season_review", "offseason_decision", "retirement_decision", "completed",
+                "season_review", "season_settlement", "offseason_decision", "offseason_investment",
+                "retirement_decision", "completed",
             ]
         )
         assertFamily(.proLevel, rawValues: ["minor", "major"])
@@ -444,7 +445,7 @@ final class PresentationCopyTokenTests: XCTestCase {
             .proSeasonDecisionType,
             rawValues: [
                 "extra_bullpen", "catcher_game_plan", "role_meeting", "record_chase",
-                "rival_analysis", "season_finale",
+                "rival_analysis", "season_finale", "media_opportunity",
             ]
         )
         assertFamily(

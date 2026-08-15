@@ -1,0 +1,22 @@
+{
+  "fixtureSchema": "baseball-cross-runtime-fixture-v1",
+  "sourceRuntime": "swift",
+  "sourceCommit": "792d72859dc5dcfdc8cefa8b69ab50bc072c212f",
+  "inputSha256": "adc6dcf00ae63e7cfbfdd27bd646e62e1e639e230db00eb32ca559c211fa61e5",
+  "outputSha256": "34bebd145767ea5ba1eb43d6573de7cc1edf1cd6c881899976c0e2af93ee68e2",
+  "authorityScope": "legacy-simulation-engine-not-pitch-kernel",
+  "input": {
+    "seed": "20260721",
+    "pitcher": {"id": "pitcher-1", "name": "테스트투수", "stuff": 62, "command": 54, "movement": 58, "stamina": 60},
+    "batter": {"id": "batter-1", "name": "이준호", "contact": 56, "discipline": 52, "power": 58},
+    "count": {"balls": 1, "strikes": 1},
+    "fatigue": 12,
+    "selection": {"pitchType": "slider", "zone": {"row": 2, "column": 0}, "intensity": "normal"}
+  },
+  "expected": {
+    "outcome": "swinging_strike",
+    "nextSeed": "15755400384280304560",
+    "executionScore": 268,
+    "eventHash": "f364eac495291948"
+  }
+}

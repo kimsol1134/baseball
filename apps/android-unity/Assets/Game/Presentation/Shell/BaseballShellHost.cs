@@ -2,9 +2,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Baseball.Presentation.Pitch;
 using Baseball.Presentation.Common;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace Baseball.Presentation.Shell
 {
@@ -40,9 +37,6 @@ namespace Baseball.Presentation.Shell
         {
             _pitchFlow?.Tick(Time.unscaledDeltaTime);
             bool backPressed = false;
-#if ENABLE_INPUT_SYSTEM
-            backPressed = Keyboard.current?.escapeKey.wasPressedThisFrame == true;
-#endif
 #if ENABLE_LEGACY_INPUT_MANAGER
             backPressed |= Input.GetKeyDown(KeyCode.Escape);
 #endif

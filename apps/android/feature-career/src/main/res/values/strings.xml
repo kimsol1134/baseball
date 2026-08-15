@@ -1,0 +1,16 @@
+<resources>
+    <string name="pro_career_contract">계약 비교</string>
+    <string name="pro_career_settlement">시즌 결산</string>
+    <string name="pro_career_investment">오프시즌 투자</string>
+    <string name="pro_career_retirement">은퇴 기록</string>
+    <string name="pro_career_team">구단</string>
+    <string name="pro_career_years">기간 %1$d년</string>
+    <string name="pro_career_salary">연봉 %1$d</string>
+    <string name="pro_career_signing_bonus">계약금 %1$d</string>
+    <string name="pro_career_fan">팬 지지 %1$d → %2$d</string>
+    <string name="pro_career_legacy">구단 유산 %1$d → %2$d</string>
+    <string name="pro_career_hof">명예 점수 %1$d → %2$d</string>
+    <string name="pro_career_funds">가용 자금 %1$d</string>
+    <string name="pro_career_retire_action">은퇴 미리보기</string>
+    <string name="pro_career_fixture_boundary">출시 전 검증 화면</string>
+</resources>

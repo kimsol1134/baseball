@@ -5,6 +5,7 @@ import Foundation
 public enum AppLanguage: String, Codable, CaseIterable, Sendable {
     case korean = "ko"
     case english = "en"
+    case japanese = "ja"
 
     /// Normalizes `en-US`, `en_GB`, and other language-region identifiers to the supported app language.
     /// Unknown values use the development language, Korean, as required by the release plan.
@@ -17,6 +18,7 @@ public enum AppLanguage: String, Codable, CaseIterable, Sendable {
 
         switch languageCode {
         case "en": self = .english
+        case "ja": self = .japanese
         case "ko": self = .korean
         default: self = developmentLanguage
         }
@@ -34,6 +36,7 @@ public enum AppLanguage: String, Codable, CaseIterable, Sendable {
                 .replacingOccurrences(of: "_", with: "-")
                 .lowercased()
             if normalized.hasPrefix("en-") || normalized == "en" ||
+                normalized.hasPrefix("ja-") || normalized == "ja" ||
                 normalized.hasPrefix("ko-") || normalized == "ko" {
                 return candidate
             }

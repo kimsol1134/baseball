@@ -90,8 +90,9 @@ namespace Unity.Notifications.Android
 namespace Firebase
 {
     public enum DependencyStatus { Available, Unavailable }
-    public static class FirebaseApp
+    public sealed class FirebaseApp
     {
+        public static FirebaseApp DefaultInstance => new FirebaseApp();
         public static Task<DependencyStatus> CheckAndFixDependenciesAsync() =>
             Task.FromResult(DependencyStatus.Available);
     }

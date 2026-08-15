@@ -270,7 +270,7 @@ private struct HighSchoolRecordBoard: View {
     }
 
     private func localizedNews(_ raw: String) -> String {
-        guard copyResolver.language == .english else { return raw }
+        guard copyResolver.language != .korean else { return raw }
         return HighSchoolConclusionPresentation.localizedChronicleText(raw, resolver: copyResolver)
     }
 }
@@ -427,6 +427,10 @@ private struct RecordBoard: View {
                     }
                 }
 
+                if state.journeyState != nil {
+                    ProTeamCareerRecordsCard(state: state)
+                }
+
                 BaseballCard(title: copyResolver.resolve(.awards), tone: state.awards.isEmpty ? .standard : .milestone) {
                     if state.awards.isEmpty {
                         Text(copyResolver.resolve(.noAwards)).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
@@ -471,6 +475,71 @@ private struct RecordBoard: View {
             .padding(BaseballMetrics.gutter)
         }
         .background(BaseballTheme.canvas)
+    }
+}
+
+struct ProTeamCareerRecordsCard: View {
+    let state: ProCareerSnapshot
+    let accessibilityPrefix: String
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    init(state: ProCareerSnapshot, accessibilityPrefix: String = "record") {
+        self.state = state
+        self.accessibilityPrefix = accessibilityPrefix
+    }
+
+    private var records: [ProTeamCareerRecord] {
+        ProCareerPresentation.teamRecords(for: state)
+    }
+
+    private var recordsAccessibilityIdentifier: String {
+        accessibilityPrefix == "record"
+            ? "record.teamCareerRecords"
+            : "\(accessibilityPrefix).teamCareerRecords"
+    }
+
+    private func recordAccessibilityIdentifier(for teamID: String) -> String {
+        accessibilityPrefix == "record"
+            ? "record.teamCareerRecords.\(teamID)"
+            : "\(accessibilityPrefix).teamCareerRecords.\(teamID)"
+    }
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.teamRecordsTitle), tone: .raised) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(records, id: \.teamID) { record in
+                    let teamName = ProCareerPresentation.teamName(record.teamID, resolver: copyResolver)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(verbatim: teamName)
+                            .font(.subheadline.weight(.semibold))
+                        Text(verbatim: copyResolver.resolve(
+                            .teamRecordLine,
+                            arguments: [
+                                .userText(teamName),
+                                .integer(record.completedSeasons),
+                                .integer(record.consecutiveSeasons),
+                            ]
+                        ))
+                        Text(verbatim: copyResolver.resolve(
+                            .teamRecordStats,
+                            arguments: [
+                                .integer(record.games),
+                                .userText(GameFormatters.innings(outs: record.inningsOuts, language: copyResolver.language)),
+                                .integer(record.strikeouts),
+                                .integer(record.awardCount),
+                            ]
+                        ))
+                        Text(verbatim: copyResolver.resolve(.teamRecordCommunity, arguments: [.integer(record.communityPoints)]))
+                            .font(.caption)
+                            .foregroundStyle(BaseballTheme.textTertiary)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier(recordAccessibilityIdentifier(for: record.teamID))
+                }
+            }
+        }
+        .accessibilityIdentifier(recordsAccessibilityIdentifier)
     }
 }
 

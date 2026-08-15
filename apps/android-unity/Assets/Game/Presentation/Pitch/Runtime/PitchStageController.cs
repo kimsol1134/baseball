@@ -24,8 +24,6 @@ namespace Baseball.Presentation.Pitch
         private static bool _shaderReadyMarkerLogged;
         private static readonly Vector3 DefaultCameraPosition = new Vector3(0f, 1.20f, -2.35f);
         private static readonly Vector3 DefaultCameraTarget = new Vector3(0f, 1.15f, 7.2f);
-        private static readonly Vector3 BatterRestPosition = new Vector3(0.27f, 0.88f, 0.30f);
-        private static readonly Vector3 CatcherRestPosition = new Vector3(-0.22f, 0.69f, -0.34f);
         private const float StadiumLayerDistance = 22f;
 
         [SerializeField] private Camera stageCamera;
@@ -34,16 +32,10 @@ namespace Baseball.Presentation.Pitch
 
         private Transform _ball;
         private TrailRenderer _trail;
-        private Transform _batterBody;
-        private Transform _catcherBody;
         private SpriteRenderer _stadiumRenderer;
-        private SpriteRenderer _batterRenderer;
-        private SpriteRenderer _catcherRenderer;
         private LineRenderer _fieldChalk;
         private ParticleSystem _contactParticles;
         private IBaseballVisualAssetLease _stadiumLease;
-        private IBaseballVisualAssetLease _batterLease;
-        private IBaseballVisualAssetLease _catcherLease;
         private readonly List<Material> _runtimeMaterials = new List<Material>();
         private readonly float[] _frameMilliseconds = new float[FrameSampleCapacity];
         private Coroutine _activePresentation;
@@ -131,11 +123,7 @@ namespace Baseball.Presentation.Pitch
         {
             if (_activePresentation != null) StopCoroutine(_activePresentation);
             _stadiumLease?.Dispose();
-            _batterLease?.Dispose();
-            _catcherLease?.Dispose();
             _stadiumLease = null;
-            _batterLease = null;
-            _catcherLease = null;
             foreach (Material material in _runtimeMaterials)
             {
                 if (material != null) Destroy(material);
@@ -186,8 +174,8 @@ namespace Baseball.Presentation.Pitch
         }
 
         /// <summary>
-        /// Loads all required local Addressables before gameplay can present. Missing artwork never
-        /// falls back to production primitives; the caller keeps the saved pitch session intact.
+        /// Loads the local ballpark backdrop before gameplay can present. The live stage deliberately
+        /// contains no batter or catcher billboard: the strike zone, ball and trajectory are the focus.
         /// </summary>
         public async Task<bool> PrepareVisualsAsync(
             IBaseballVisualAssetLoader loader,
@@ -198,36 +186,21 @@ namespace Baseball.Presentation.Pitch
             EnsureStage();
             if (loader == null) return false;
             IBaseballVisualAssetLease stadium = null;
-            IBaseballVisualAssetLease batter = null;
-            IBaseballVisualAssetLease catcher = null;
             try
             {
                 stadium = await loader.LoadSpriteAsync(
                     PitchStageVisualPolicy.StadiumAddress,
                     cancellationToken);
-                batter = await loader.LoadSpriteAsync(
-                    PitchStageVisualPolicy.BatterAddress,
-                    cancellationToken);
-                catcher = await loader.LoadSpriteAsync(
-                    PitchStageVisualPolicy.CatcherAddress,
-                    cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!PitchStageVisualPolicy.HasRequiredSprites(
-                        stadium?.Sprite != null,
-                        batter?.Sprite != null,
-                        catcher?.Sprite != null))
+                if (!PitchStageVisualPolicy.HasRequiredSprites(stadium?.Sprite != null))
                 {
                     VisualPreparationError = "pitch.stage_visual_assets_not_ready";
                     return false;
                 }
 
-                EnsureVisualLayers(stadium.Sprite, batter.Sprite, catcher.Sprite);
+                EnsureVisualLayers(stadium.Sprite);
                 _stadiumLease = stadium;
-                _batterLease = batter;
-                _catcherLease = catcher;
                 stadium = null;
-                batter = null;
-                catcher = null;
                 _visualsReady = true;
                 VisualPreparationError = string.Empty;
                 stageCamera.enabled = true;
@@ -247,8 +220,6 @@ namespace Baseball.Presentation.Pitch
             finally
             {
                 stadium?.Dispose();
-                batter?.Dispose();
-                catcher?.Dispose();
             }
         }
 
@@ -260,7 +231,6 @@ namespace Baseball.Presentation.Pitch
             _trail.Clear();
             _trail.enabled = !reducedMotion;
             _ball.gameObject.SetActive(true);
-            PoseActors();
 
             float flightDuration = reducedMotion
                 ? Mathf.Min(0.45f, (float)snapshot.FlightDurationSeconds)
@@ -275,13 +245,11 @@ namespace Baseball.Presentation.Pitch
                 if (!reducedMotion)
                 {
                     FollowBall(normalized);
-                    AnimateActors(snapshot, normalized);
                 }
                 yield return null;
             }
 
             _ball.position = Evaluate(snapshot.Trajectory, 1f);
-            AnimateActors(snapshot, 1f);
             ResultReadable?.Invoke(snapshot);
             EmitContactParticles(snapshot);
 
@@ -318,8 +286,6 @@ namespace Baseball.Presentation.Pitch
             _trail.enabled = false;
             _ball.gameObject.SetActive(true);
             _ball.position = Evaluate(snapshot.Trajectory, 1f);
-            PoseActors();
-            AnimateActors(snapshot, 1f);
             ResultReadable?.Invoke(snapshot);
 
             float held = 0f;
@@ -467,8 +433,8 @@ namespace Baseball.Presentation.Pitch
             }
             if (_trail != null)
             {
-                _trail.time = high ? 0.18f : 0.12f;
-                _trail.minVertexDistance = high ? 0.035f : 0.07f;
+                _trail.time = high ? 0.28f : 0.20f;
+                _trail.minVertexDistance = high ? 0.025f : 0.05f;
             }
             if (_contactParticles != null)
             {
@@ -524,14 +490,14 @@ namespace Baseball.Presentation.Pitch
                 GameObject ballObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 ballObject.name = "Authoritative Pitch Ball";
                 ballObject.transform.SetParent(transform, false);
-                ballObject.transform.localScale = Vector3.one * 0.074f;
+                ballObject.transform.localScale = Vector3.one * 0.105f;
                 Destroy(ballObject.GetComponent<Collider>());
                 var renderer = ballObject.GetComponent<MeshRenderer>();
                 renderer.sharedMaterial = CreateMaterial(new Color(0.97f, 0.96f, 0.91f, 1f));
                 _trail = ballObject.AddComponent<TrailRenderer>();
-                _trail.time = 0.18f;
-                _trail.minVertexDistance = 0.035f;
-                _trail.widthMultiplier = 0.035f;
+                _trail.time = 0.28f;
+                _trail.minVertexDistance = 0.025f;
+                _trail.widthMultiplier = 0.055f;
                 _trail.sharedMaterial = CreateMaterial(new Color(0.82f, 0.91f, 1f, 0.72f));
                 _trail.startColor = new Color(0.86f, 0.94f, 1f, 0.76f);
                 _trail.endColor = new Color(0.58f, 0.75f, 1f, 0f);
@@ -565,7 +531,7 @@ namespace Baseball.Presentation.Pitch
             RestoreDefaultCamera();
         }
 
-        private void EnsureVisualLayers(Sprite stadium, Sprite batter, Sprite catcher)
+        private void EnsureVisualLayers(Sprite stadium)
         {
             if (_stadiumRenderer == null)
             {
@@ -576,23 +542,6 @@ namespace Baseball.Presentation.Pitch
             }
             else _stadiumRenderer.sprite = stadium;
 
-            if (_batterRenderer == null)
-            {
-                _batterRenderer = CreateSpriteLayer("Batter Stance Billboard", batter, 10);
-                _batterBody = _batterRenderer.transform;
-            }
-            else _batterRenderer.sprite = batter;
-
-            if (_catcherRenderer == null)
-            {
-                _catcherRenderer = CreateSpriteLayer("Catcher Stance Billboard", catcher, 8);
-                _catcherBody = _catcherRenderer.transform;
-            }
-            else _catcherRenderer.sprite = catcher;
-
-            _batterBody.localScale = Vector3.one * 0.12f;
-            _catcherBody.localScale = Vector3.one * 0.11f;
-            PoseActors();
         }
 
         private SpriteRenderer CreateSpriteLayer(string name, Sprite sprite, int sortingOrder)
@@ -603,42 +552,6 @@ namespace Baseball.Presentation.Pitch
             renderer.sprite = sprite;
             renderer.sortingOrder = sortingOrder;
             return renderer;
-        }
-
-        private void PoseActors()
-        {
-            if (_batterBody != null)
-            {
-                _batterBody.localPosition = BatterRestPosition;
-                _batterBody.localRotation = Quaternion.identity;
-            }
-            if (_catcherBody != null)
-            {
-                _catcherBody.localPosition = CatcherRestPosition;
-                _catcherBody.localRotation = Quaternion.identity;
-            }
-        }
-
-        private void AnimateActors(PitchPresentationSnapshot snapshot, float normalized)
-        {
-            if (_catcherBody != null)
-            {
-                Vector3 catchPoint = PitchSpace.PlateCrossing(snapshot.ActualPlateX, snapshot.ActualPlateY);
-                float receive = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.45f, 1f, normalized));
-                Vector3 receivePose = CatcherRestPosition + new Vector3(
-                    Mathf.Clamp(catchPoint.x, -0.5f, 0.5f) * 0.16f,
-                    Mathf.Clamp(catchPoint.y - 0.85f, -0.5f, 0.5f) * 0.12f,
-                    0f);
-                _catcherBody.localPosition = Vector3.Lerp(CatcherRestPosition, receivePose, receive);
-            }
-
-            if (_batterBody == null || snapshot.Swing == SwingPresentation.Take) return;
-            float swing = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.52f, 0.94f, normalized));
-            _batterBody.localPosition = BatterRestPosition + new Vector3(
-                Mathf.Lerp(0f, -0.08f, swing),
-                Mathf.Sin(swing * Mathf.PI) * 0.035f,
-                0f);
-            _batterBody.localRotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, 7f, swing));
         }
 
         private void EnsureFieldReferenceLayers()

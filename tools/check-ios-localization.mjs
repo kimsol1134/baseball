@@ -11,6 +11,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const schemaPath = join(root, "docs/localization/ios-copy-schema.json");
 const schemaOnly = process.argv.includes("--schema-only");
 const koreanPattern = /[가-힣ㄱ-ㅎㅏ-ㅣ]/u;
+const japaneseForbiddenPattern = /(?:日本野球機構|甲子園|読売|阪神|ヤクルト|DeNA|オリックス|ソフトバンク|楽天|西武|ロッテ|日本ハム|中日|広島東洋|ジャイアンツ|タイガース|スワローズ|ベイスターズ|カープ|ドラゴンズ|ファイターズ|イーグルス|ライオンズ|マリーンズ|バファローズ|ホークス|死亡|死ぬ|事故死|死後|あの世|異世界転生)/iu;
 const allowedStatuses = ["inventory", "ko_locked", "en_draft", "semantic_reviewed", "language_reviewed", "ui_verified"];
 const requiredSurfaces = ["app_ui", "notification", "share", "accessibility", "simulation_core_game_copy"];
 const allowedCopyClasses = ["static_ui", "content", "dynamic", "proper_name", "user_input", "debug_only"];
@@ -231,7 +232,7 @@ function realWorldIPFailures(catalogs) {
   const failures = [];
   for (const entry of catalogs) {
     for (const term of blocklist) {
-      if (entry.en.includes(term)) failures.push(`${entry.file}:${entry.key} contains ${term}`);
+      if (entry.en.includes(term) || entry.ja.includes(term)) failures.push(`${entry.file}:${entry.key} contains ${term}`);
     }
   }
   const marketingRoot = join(root, "marketing/appstore/en-US");
@@ -311,6 +312,9 @@ function validateSchema(schema) {
   const snapshot = hash(JSON.stringify(schema.inventory ?? []));
   if (snapshot !== schema.source_snapshot) failures.push(`source snapshot stale: expected ${snapshot}, found ${schema.source_snapshot}`);
   if (!Array.isArray(schema.catalogs)) failures.push("catalogs must be an array");
+  if (JSON.stringify(schema.catalog_contract?.required_localizations) !== JSON.stringify(["ko", "en", "ja"])) {
+    failures.push("catalog_contract.required_localizations must be ko, en, ja");
+  }
   return failures;
 }
 
@@ -321,12 +325,22 @@ function validateCatalogs(schema) {
     if (keys.has(entry.key)) failures.push(`duplicate catalog key: ${entry.key}`);
     keys.add(entry.key);
     if (!/^[a-z][a-z0-9_]*(?:[.-][a-z0-9_]+)+$/u.test(entry.key)) failures.push(`non-semantic catalog key: ${entry.key}`);
-    if (!entry.ko || !entry.en) failures.push(`empty ko/en value: ${entry.key}`);
+    if (!entry.ko || !entry.en || !entry.ja) failures.push(`empty ko/en/ja value: ${entry.key}`);
+    if ([entry.ko_state, entry.en_state, entry.ja_state].some((state) => state !== "translated")) {
+      failures.push(`ko/en/ja catalog state must be translated: ${entry.key}`);
+    }
+    if (koreanPattern.test(entry.ja)) failures.push(`Japanese value contains Korean: ${entry.key}`);
+    if (japaneseForbiddenPattern.test(entry.ja)) failures.push(`Japanese value contains a prohibited term: ${entry.key}`);
+    if (/[\uE000-\uF8FF]|ZXQ/u.test(entry.ja)) failures.push(`Japanese value contains a translation marker: ${entry.key}`);
+    if (/[％﹪]/u.test(entry.ja)) failures.push(`Japanese value contains a full-width percent sign: ${entry.key}`);
     if (!allowedStatuses.includes(entry.status) || statusIndex.get(entry.status) < statusIndex.get("ui_verified")) {
       failures.push(`catalog key is not ui_verified: ${entry.key} (${entry.status})`);
     }
     if (JSON.stringify(placeholderSignature(entry.ko)) !== JSON.stringify(placeholderSignature(entry.en))) {
-      failures.push(`placeholder parity mismatch: ${entry.key}`);
+      failures.push(`ko/en placeholder parity mismatch: ${entry.key}`);
+    }
+    if (JSON.stringify(placeholderSignature(entry.ko)) !== JSON.stringify(placeholderSignature(entry.ja))) {
+      failures.push(`ko/ja placeholder parity mismatch: ${entry.key}`);
     }
   }
   return failures;
@@ -336,9 +350,13 @@ function validateInfoPlist() {
   const failures = [];
   const ko = parseInfoPlistStrings(join(root, "apps/ios/Sources/Localization/ko.lproj/InfoPlist.strings"));
   const en = parseInfoPlistStrings(join(root, "apps/ios/Sources/Localization/en.lproj/InfoPlist.strings"));
+  const ja = parseInfoPlistStrings(join(root, "apps/ios/Sources/Localization/ja.lproj/InfoPlist.strings"));
   if (!ko.CFBundleDisplayName) failures.push("ko InfoPlist.strings is missing CFBundleDisplayName");
   if (!en.CFBundleDisplayName) failures.push("en InfoPlist.strings is missing CFBundleDisplayName");
+  if (!ja.CFBundleDisplayName) failures.push("ja InfoPlist.strings is missing CFBundleDisplayName");
   if (en.CFBundleDisplayName && koreanPattern.test(en.CFBundleDisplayName)) failures.push("English InfoPlist display name contains Korean");
+  if (ja.CFBundleDisplayName && koreanPattern.test(ja.CFBundleDisplayName)) failures.push("Japanese InfoPlist display name contains Korean");
+  if (!existsSync(join(root, "apps/ios/Sources/ja.lproj/LaunchScreen.storyboard"))) failures.push("ja LaunchScreen.storyboard is missing");
   return failures;
 }
 

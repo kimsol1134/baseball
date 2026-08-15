@@ -7,6 +7,13 @@
     flex-grow: 1;
 }
 
+/* Mobile screens scroll by touch; desktop-style tracks/arrows obscure content and do not exist
+   in the iOS presentation. Keep scrolling enabled while hiding only the visual scrollers. */
+.screen-scroll .unity-scroll-view__vertical-scroller,
+.screen-scroll .unity-scroll-view__horizontal-scroller {
+    display: none;
+}
+
 .screen-scroll .unity-scroll-view__content-container {
     width: 100%;
     max-width: 480px;

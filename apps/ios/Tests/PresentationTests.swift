@@ -284,6 +284,38 @@ final class PresentationTests: XCTestCase {
         XCTAssertTrue(relationshipCard.contains("detail: choice.accessibilityDetail"))
     }
 
+    /// App Store build에서 SwiftUICore가 TrainingCard의 `ForEach` item closure를
+    /// background executor에서 호출해 `_swift_task_checkIsolatedSwift`로 종료됐다.
+    /// 선택지가 고정 열거형인 동안에는 지연 item closure를 다시 만들지 않는다.
+    func testTrainingCardAvoidsDeferredForEachActorBoundary() throws {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let source = try String(
+            contentsOf: repositoryRoot.appendingPathComponent(
+                "apps/ios/Sources/HighSchoolCareerView.swift"
+            ),
+            encoding: .utf8
+        )
+        let start = try XCTUnwrap(source.range(of: "private struct TrainingCard"))
+        let end = try XCTUnwrap(
+            source.range(of: "private struct RelationshipCard", range: start.upperBound..<source.endIndex)
+        )
+        let trainingViews = String(source[start.lowerBound..<end.lowerBound])
+
+        XCTAssertFalse(trainingViews.contains("ForEach("))
+        for option in [
+            ".velocity", ".command", ".breakingBall", ".stamina", ".recovery", ".gamePlanning",
+        ] {
+            XCTAssertTrue(trainingViews.contains("focusOptionButton(\(option))"), option)
+        }
+        for option in [".light", ".standard", ".intensive"] {
+            XCTAssertTrue(trainingViews.contains("intensityOptionButton(\(option))"), option)
+        }
+    }
+
     /// `f74bff6`에서 제거한 전면 암전 커튼을 실수로 다시 붙이지 않는다.
     /// 실제 프레임은 UI 테스트가 별도로 검증하고, 이 테스트는 원인이었던
     /// 수식어가 다시 들어오는 순간 빠르게 막는다.

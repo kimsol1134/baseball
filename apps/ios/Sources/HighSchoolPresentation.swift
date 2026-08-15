@@ -62,7 +62,7 @@ enum HighSchoolPresentation {
         state: HighSchoolCareerSnapshot,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return raw }
+        guard resolver.language != .korean else { return raw }
 
         switch raw {
         case "UI 테스트용 미지명 직전 상태를 준비했습니다.",
@@ -239,7 +239,7 @@ enum HighSchoolPresentation {
         _ trait: PersonalityTrait,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return trait.title }
+        guard resolver.language != .korean else { return trait.title }
         return resolver.resolve(.gameContent("content.personality-trait.\(trait.rawValue).title"))
     }
 
@@ -247,7 +247,7 @@ enum HighSchoolPresentation {
         _ trait: PersonalityTrait,
         resolver: GameCopyResolver
     ) -> String {
-        guard resolver.language == .english else { return trait.activationLine }
+        guard resolver.language != .korean else { return trait.activationLine }
         return resolver.resolve(.gameContent("content.personality-trait.\(trait.rawValue).activation"))
     }
 

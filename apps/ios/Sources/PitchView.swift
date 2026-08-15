@@ -267,6 +267,57 @@ enum PitchBuildCopy {
     }
 }
 
+/// 퍼펙트 릴리스 피드백의 시간·감각 계약.
+///
+/// 시각 효과는 한 프레임이라도 실제로 그려진 뒤 사라져야 하고, 릴리스 소리 뒤에 축하음이
+/// 이어져야 한다. 결과 햅틱을 같은 순간에 한 번 더 치면 고유한 퍼펙트 패턴이 뭉개진다.
+enum PerfectReleaseFeedback {
+    static let animationDuration: TimeInterval = 0.62
+    static let standardLifetimeNanoseconds: UInt64 = 720_000_000
+    static let reduceMotionLifetimeNanoseconds: UInt64 = 550_000_000
+    /// 기본 릴리스 소리(약 0.11초)가 끝난 뒤 축하음이 이어지는 간격.
+    static let accentSoundDelayNanoseconds: UInt64 = 120_000_000
+
+    static func lifetimeNanoseconds(reduceMotion: Bool) -> UInt64 {
+        reduceMotion ? reduceMotionLifetimeNanoseconds : standardLifetimeNanoseconds
+    }
+
+    static func shouldPlayOutcomeHaptic(after delivery: PitchDelivery?) -> Bool {
+        delivery?.isPerfectRelease != true
+    }
+}
+
+/// 릴리스 뒤 촉감의 순서. 화면·소리와 같은 야구 장면을 공유해야 손에서 사건의 원인이 읽힌다.
+///
+/// 릴리스는 손을 뗀 즉시, 결과는 공이 포수 미트나 배트에 닿을 때, 다음 심박은 장면이 끝나고
+/// 다시 배합을 고르는 순간에 온다. 이 간격을 한곳에 두어 리플레이와 햅틱이 따로 drift하지 않는다.
+enum PitchFeedbackTimeline {
+    static let reducedMotionCueInterval: TimeInterval = 0.28
+    static let standardContactDelay: TimeInterval = 0.92
+    static let standardReplayDuration: TimeInterval = 1.6
+    static let clutchTempo = 1.625
+    static let reducedMotionDecisionDelay: TimeInterval = 1.2
+    static let standardDecisionDelay: TimeInterval = 1.7
+    static let clutchDecisionDelay: TimeInterval = 2.9
+
+    static func tempo(isClutch: Bool) -> Double {
+        isClutch ? clutchTempo : 1
+    }
+
+    static func resultHapticDelay(reduceMotion: Bool, isClutch: Bool) -> TimeInterval {
+        reduceMotion ? reducedMotionCueInterval : standardContactDelay * tempo(isClutch: isClutch)
+    }
+
+    static func heartbeatResumeDelay(reduceMotion: Bool, isClutch: Bool) -> TimeInterval {
+        if reduceMotion { return reducedMotionDecisionDelay }
+        return isClutch ? clutchDecisionDelay : standardDecisionDelay
+    }
+
+    static func nanoseconds(_ interval: TimeInterval) -> UInt64 {
+        UInt64((max(0, interval) * 1_000_000_000).rounded())
+    }
+}
+
 /// 중요 경기 승부 화면. App Store 스크린샷의 주력 화면이다(계획 문서 §2.3).
 struct PitchView: View {
     let session: PitchSession
@@ -284,6 +335,9 @@ struct PitchView: View {
     /// 직전 악재의 불규칙 박동은 해당 투구 번호에서 한 번만 소비한다. 앱이 백그라운드에서
     /// 돌아오거나 같은 ready 상태를 다시 구성해도 안타/볼넷 충격을 재생하지 않는다.
     @State private var irregularEpisodePitchCount: Int?
+    /// 릴리스 뒤 결과 촉감과 다음 심박을 한 task로 묶는다. 새 와인드업·화면 이탈·백그라운드가
+    /// 오면 id가 사라지며 남은 피드백이 취소되어 이전 공이 새 공의 손맛을 침범하지 않는다.
+    @State private var scheduledPitchFeedback: ScheduledPitchFeedback?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -291,7 +345,11 @@ struct PitchView: View {
     /// 승부 장면 높이. 고정 320은 접근성 글자 크기에서 판정 텍스트가 잘린다(3차 패널 P1).
     @ScaledMetric(relativeTo: .body) private var dramaHeight: CGFloat = 320
     @State private var replayProgress: Double = 1
-    @AppStorage("baseball.pitch.autoRelease") private var autoRelease = false
+    /// 입력 패드가 아니라 투구 화면이 소유한다. 다음 공·다음 타자 상태로 바뀌어도 방금 공의
+    /// 축하가 끝까지 남고, 새 입력 안내와 같은 뷰 계층에서 섞이지 않는다.
+    @State private var perfectReleaseCelebrationID: UUID?
+    @AppStorage(PitchControlPreferences.autoReleaseKey)
+    private var autoRelease = PitchControlPreferences.defaultAutoRelease
     /// 생애 최고 구속(0.1km/h). 회차를 넘어 쌓인다 — 갱신은 그 자체로 하이라이트다.
     @AppStorage("baseball.bestVelocityTenths") private var bestVelocityTenths = 0
     /// 등판 평균 릴리스의 개인 최고. 릴리스는 결과를 가장 크게 흔드는 조작인데,
@@ -317,6 +375,15 @@ struct PitchView: View {
         let deliveryAverage: Int?
         let isDeliveryRecord: Bool
         let previousDeliveryBest: Int
+    }
+
+    private struct ScheduledPitchFeedback: Equatable, Identifiable {
+        let id: UUID
+        let pitchCount: Int
+        /// nil은 볼·파울처럼 결과 햅틱을 의도적으로 생략하거나 퍼펙트 패턴을 보존하는 공이다.
+        let outcomeSuccess: Bool?
+        let resultDelay: TimeInterval
+        let heartbeatDelay: TimeInterval
     }
     /// 방금 공이 승부구(풀카운트·2아웃 2스트라이크)였는가. 던지는 순간 잡아 둔다 —
     /// 결과가 반영되면 카운트가 이미 넘어가 있어 되짚을 수 없다.
@@ -429,6 +496,93 @@ struct PitchView: View {
         Haptics.shared.stopWindUp()
     }
 
+    private func cancelScheduledPitchFeedback() {
+        scheduledPitchFeedback = nil
+    }
+
+    private func schedulePitchFeedback() {
+        let outcomeSuccess: Bool?
+        if PerfectReleaseFeedback.shouldPlayOutcomeHaptic(after: session.lastDelivery),
+           let outcome = session.lastResult?.snapshot.outcome {
+            outcomeSuccess = PitchCopy.hapticSuccess(outcome)
+        } else {
+            outcomeSuccess = nil
+        }
+
+        scheduledPitchFeedback = ScheduledPitchFeedback(
+            id: UUID(),
+            pitchCount: session.pitchLog.count,
+            outcomeSuccess: outcomeSuccess,
+            resultDelay: PitchFeedbackTimeline.resultHapticDelay(
+                reduceMotion: reduceMotion,
+                isClutch: wasClutch
+            ),
+            heartbeatDelay: PitchFeedbackTimeline.heartbeatResumeDelay(
+                reduceMotion: reduceMotion,
+                isClutch: wasClutch
+            )
+        )
+    }
+
+    /// 결과 햅틱을 포구·타격에 붙이고, 충분한 정적 뒤에 다음 심박을 다시 올린다.
+    @MainActor
+    private func runScheduledPitchFeedback(_ feedback: ScheduledPitchFeedback) async {
+        var elapsed: TimeInterval = 0
+        if let success = feedback.outcomeSuccess {
+            guard await waitForPitchFeedback(feedback.resultDelay),
+                  scheduledPitchFeedback?.id == feedback.id else { return }
+            Haptics.shared.outcome(success: success)
+            elapsed = feedback.resultDelay
+        }
+
+        guard await waitForPitchFeedback(feedback.heartbeatDelay - elapsed),
+              scheduledPitchFeedback?.id == feedback.id else { return }
+
+        if session.pitchLog.count == feedback.pitchCount,
+           !isPractice,
+           scenePhase == .active,
+           case .ready = session.stage {
+            startMoundHeartbeat(includeEntry: false)
+        }
+        if scheduledPitchFeedback?.id == feedback.id {
+            scheduledPitchFeedback = nil
+        }
+    }
+
+    private func waitForPitchFeedback(_ seconds: TimeInterval) async -> Bool {
+        guard seconds > 0 else { return !Task.isCancelled }
+        do {
+            try await Task.sleep(nanoseconds: PitchFeedbackTimeline.nanoseconds(seconds))
+            return !Task.isCancelled
+        } catch {
+            return false
+        }
+    }
+
+    /// 축하음과 자동 소멸을 오버레이의 task 수명에 묶는다. 화면을 떠나거나 새 퍼펙트가
+    /// 들어오면 이전 task가 취소되어 늦은 소리·늦은 상태 변경이 남지 않는다.
+    @MainActor
+    private func runPerfectReleaseFeedback(id: UUID) async {
+        let lifetime = PerfectReleaseFeedback.lifetimeNanoseconds(reduceMotion: reduceMotion)
+        do {
+            try await Task.sleep(nanoseconds: PerfectReleaseFeedback.accentSoundDelayNanoseconds)
+        } catch {
+            return
+        }
+        guard perfectReleaseCelebrationID == id else { return }
+        audio.play(.milestone)
+
+        do {
+            try await Task.sleep(
+                nanoseconds: lifetime - PerfectReleaseFeedback.accentSoundDelayNanoseconds
+            )
+        } catch {
+            return
+        }
+        guard perfectReleaseCelebrationID == id else { return }
+        perfectReleaseCelebrationID = nil
+    }
+
     /// 빠른 진행은 저위험 타석에서만 연다. 득점 기대가 크게 흔들리는 승부처나
     /// 풀카운트/2스트라이크는 이 게임의 핵심이므로 한 구씩 직접 던진다.
     static func canFastForwardCurrentBatter(
@@ -533,7 +687,10 @@ struct PitchView: View {
                     // 루프인데 그 두 동작 사이에 스크롤이 끼어 있었다.
                     // 승부구 슬로모(2.6초)는 연출이 끝난 뒤에 되돌아간다. 모션 축소도
                     // 결과를 읽을 1.2초는 남긴다 — 접근성 설정이 피드백을 삭제하면 안 된다.
-                    let delay = reduceMotion ? 1.2 : (wasClutch ? 2.9 : 1.7)
+                    let delay = PitchFeedbackTimeline.heartbeatResumeDelay(
+                        reduceMotion: reduceMotion,
+                        isClutch: wasClutch
+                    )
                     DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                         guard case .ready = session.stage else { return }
                         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
@@ -545,11 +702,26 @@ struct PitchView: View {
             footer
         }
         .background(BaseballTheme.canvas)
+        // 화면 단위 축하 레이어. footer의 stage 교체와 독립되어 다음 공 안내에 잔상이 붙지 않는다.
+        .overlay {
+            if let celebrationID = perfectReleaseCelebrationID {
+                PerfectReleaseCelebration(
+                    title: copyResolver.resolve(.deliveryNowPerfect),
+                    reduceMotion: reduceMotion
+                )
+                .id(celebrationID)
+                .task { await runPerfectReleaseFeedback(id: celebrationID) }
+            }
+        }
         // 스코어보드 바가 상단을 맡는다. 내비게이션 제목은 같은 정보를 두 번 말한다.
         .toolbar(.hidden, for: .navigationBar)
         // 승부 중에는 탭 바를 숨긴다. 이닝 중간에 다른 탭으로 빠져나가면 세션 상태가
         // 화면에서 사라지고, 주력 장면의 몰입도 끊긴다.
         .toolbar(.hidden, for: .tabBar)
+        .task(id: scheduledPitchFeedback?.id) {
+            guard let feedback = scheduledPitchFeedback else { return }
+            await runScheduledPitchFeedback(feedback)
+        }
         .onChange(of: session.pitchLog.count) { _, _ in
             // 생애 최고 구속 갱신. 첫 공은 기준선만 잡고 조용히 지나간다 —
             // 0에서의 갱신은 신기록이 아니라 첫 기록이다.
@@ -560,13 +732,9 @@ struct PitchView: View {
                 wasVelocityRecord = false
             }
             replay()
-            // 결과를 손으로도 알려 준다. 화면을 안 보고 있어도 방금 그 공이 잡은 공인지
-            // 맞은 공인지 구분된다.
-            if let outcome = session.lastResult?.snapshot.outcome,
-               let success = PitchCopy.hapticSuccess(outcome) {
-                Haptics.shared.outcome(success: success)
-            }
-            startMoundHeartbeat(includeEntry: false)
+            // 결과는 공이 도착한 순간에, 다음 심박은 리플레이가 끝난 뒤에 온다. 즉시 연달아
+            // 울리면 릴리스·결과·심박이 한 덩어리 진동이 되어 무엇을 잘했는지 읽히지 않는다.
+            schedulePitchFeedback()
         }
         .onAppear {
             audio.start()
@@ -580,6 +748,7 @@ struct PitchView: View {
             audio.crowdIntensity = 0.15
             audio.musicIntensity = 0.5
             // 마운드를 떠나면 반드시 멈춘다 — 화면 밖에서 계속 뛰는 진동·소리는 고장이다.
+            cancelScheduledPitchFeedback()
             stopMoundHeartbeat()
         }
         // 등판이 끝나는 **그 순간 한 번만** 판정하고 저장한다. body 안에서 판정하면
@@ -590,15 +759,21 @@ struct PitchView: View {
         .onAppear { sealOutingRecordsIfFinished() }
         .onChange(of: session.stage) { _, stage in
             switch stage {
-            case .ready: startMoundHeartbeat(includeEntry: false)
+            case .ready:
+                if scheduledPitchFeedback == nil {
+                    startMoundHeartbeat(includeEntry: false)
+                }
             default: stopMoundHeartbeat()
             }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
-                startMoundHeartbeat(includeEntry: false)
+                if scheduledPitchFeedback == nil {
+                    startMoundHeartbeat(includeEntry: false)
+                }
             } else {
                 // Backgrounding must cancel both the stored schedule and any in-flight windup.
+                cancelScheduledPitchFeedback()
                 stopMoundHeartbeat()
             }
         }
@@ -998,8 +1173,15 @@ struct PitchView: View {
                     onDeliver: { delivery in
                         wasClutch = isClutchNow
                         session.throwPitch(delivery: delivery)
+                        if delivery.isPerfectRelease {
+                            perfectReleaseCelebrationID = UUID()
+                        }
                     },
-                    onRelease: { stopMoundHeartbeat() },
+                    onWindUp: { cancelScheduledPitchFeedback() },
+                    onRelease: {
+                        cancelScheduledPitchFeedback()
+                        stopMoundHeartbeat()
+                    },
                     onMeterEdge: { audio.play(.uiSelect) }
                 )
                 // 미터 제스처가 버거운 손을 위한 출구가 설정 화면에만 있으면
@@ -1014,6 +1196,8 @@ struct PitchView: View {
                 .accessibilityIdentifier("pitch.autoRelease")
                 if canFastForwardCurrentBatter {
                     Button {
+                        cancelScheduledPitchFeedback()
+                        stopMoundHeartbeat()
                         wasClutch = false
                         _ = session.fastForwardCurrentBatter()
                     } label: {
@@ -1032,6 +1216,7 @@ struct PitchView: View {
                 }
             case .betweenBatters:
                 PrimaryPill(title: copyResolver.resolve(.nextBatter), identifier: "pitch.nextBatter") {
+                    cancelScheduledPitchFeedback()
                     session.advanceToNextBatter()
                 }
             case .finished, .failed:
@@ -1144,7 +1329,7 @@ struct PitchView: View {
             // 장면은 건너뛰어도 소리의 박자는 남긴다 — 전부 겹치면 죽 소리가 된다.
             // 비행을 기다릴 필요만 없으니 간격을 압축한다(충돌 → 콜 → 관중).
             for (index, cue) in session.lastCues.enumerated() {
-                let delay = 0.28 * Double(min(index, 3))
+                let delay = PitchFeedbackTimeline.reducedMotionCueInterval * Double(min(index, 3))
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) { audio.play(cue) }
             }
             return
@@ -1152,8 +1337,10 @@ struct PitchView: View {
         replayProgress = 0
         // 승부구는 슬로모션 — 같은 1.6초면 승부구가 승부구로 안 읽힌다. 소리 박자도
         // 같은 배율로 늘어져야 심판이 공보다 빨라지지 않는다.
-        let tempo = wasClutch ? 1.625 : 1.0
-        withAnimation(.linear(duration: 1.6 * tempo)) { replayProgress = 1 }
+        let tempo = PitchFeedbackTimeline.tempo(isClutch: wasClutch)
+        withAnimation(.linear(duration: PitchFeedbackTimeline.standardReplayDuration * tempo)) {
+            replayProgress = 1
+        }
 
         // 릴리스는 바로, 물리적 충돌(포구·타격)은 공이 도착하는 순간(0.58 × 1.6초)에.
         // 그 뒤는 실제 야구의 박자다 — 포구, 한 박 쉬고 심판 콜, 또 한 박 뒤에 관중.
@@ -1169,7 +1356,10 @@ struct PitchView: View {
             // 삼진 풀콜은 반 박 더 뜸을 들인다 — 심판이 펀치아웃 동작과 함께 지르는 그 사이.
             let delay = if cue == .umpireStrikeout { 1.32 * tempo } else {
                 switch index {
-                case 0: 0.92 * tempo
+                case 0: PitchFeedbackTimeline.resultHapticDelay(
+                    reduceMotion: false,
+                    isClutch: wasClutch
+                )
                 case 1: 1.18 * tempo
                 default: 1.5 * tempo
                 }
@@ -1180,6 +1370,109 @@ struct PitchView: View {
 }
 
 // MARK: - 부품
+
+/// 퍼펙트 릴리스가 방금 공의 결과 위에서 터지는 짧은 축하 레이어.
+///
+/// 입력 패드 안에 두면 SwiftUI가 같은 위치의 다음 DeliveryControl에 상태를 재사용한다. 화면
+/// 오버레이로 분리하면 타석 종료로 footer가 사라져도 수명이 유지되고, 패드 문구와 겹치지 않는다.
+private struct PerfectReleaseCelebration: View {
+    let title: String
+    let reduceMotion: Bool
+
+    @State private var progress: CGFloat = 0
+
+    private var fadingOpacity: Double {
+        let value = Double(progress)
+        guard value > 0.82 else { return 1 }
+        return max(0, (1 - value) / 0.18)
+    }
+
+    private var remainingOpacity: Double {
+        max(0, 1 - Double(progress))
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let center = CGPoint(
+                x: geometry.size.width / 2,
+                y: min(max(geometry.size.height * 0.55, 220), geometry.size.height - 190)
+            )
+
+            ZStack {
+                RadialGradient(
+                    colors: [
+                        BaseballTheme.milestone.opacity(reduceMotion ? 0.34 : 0.52 * remainingOpacity),
+                        BaseballTheme.milestone.opacity(reduceMotion ? 0.1 : 0.14 * remainingOpacity),
+                        .clear,
+                    ],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 150
+                )
+                .frame(width: 300, height: 300)
+                .position(center)
+
+                if !reduceMotion {
+                    Circle()
+                        .stroke(BaseballTheme.milestone.opacity(0.9 * remainingOpacity), lineWidth: 4)
+                        .frame(width: 82 + 190 * progress, height: 82 + 190 * progress)
+                        .position(center)
+
+                    Circle()
+                        .stroke(
+                            BaseballTheme.fieldChalk.opacity(0.62 * remainingOpacity),
+                            style: StrokeStyle(lineWidth: 2, dash: [5, 7])
+                        )
+                        .frame(width: 52 + 122 * progress, height: 52 + 122 * progress)
+                        .rotationEffect(.degrees(70 * Double(progress)))
+                        .position(center)
+
+                    ForEach(0..<8, id: \.self) { index in
+                        Capsule()
+                            .fill(BaseballTheme.milestone.opacity(0.86 * remainingOpacity))
+                            .frame(width: 4, height: 20)
+                            .offset(y: -58 - 42 * progress)
+                            .rotationEffect(.degrees(Double(index) * 45))
+                            .position(center)
+                    }
+                }
+
+                Label {
+                    Text(verbatim: title)
+                } icon: {
+                    Image(systemName: "target")
+                }
+                    .font(.title2.weight(.black))
+                    .foregroundStyle(BaseballTheme.canvas)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 11)
+                    .background(BaseballTheme.milestone, in: Capsule())
+                    .overlay(Capsule().stroke(BaseballTheme.fieldChalk.opacity(0.7), lineWidth: 1))
+                    .shadow(color: BaseballTheme.milestone.opacity(0.52), radius: 16)
+                    .scaleEffect(reduceMotion ? 1 : 0.78 + 0.28 * progress)
+                    .offset(y: reduceMotion ? 0 : -24 * progress)
+                    .opacity(reduceMotion ? 1 : fadingOpacity)
+                    .position(center)
+                    .accessibilityLabel(Text(verbatim: title))
+                    .accessibilityIdentifier("pitch.perfectEffect")
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .onAppear {
+            guard !reduceMotion else { return }
+            // 삽입 프레임을 먼저 그린 뒤 1로 보낸다. 0→1을 같은 트랜잭션에서 처리하면
+            // SwiftUI가 시작 상태를 합쳐 버려 섬광이 아예 보이지 않을 수 있다.
+            DispatchQueue.main.async {
+                withAnimation(.easeOut(duration: PerfectReleaseFeedback.animationDuration)) {
+                    progress = 1
+                }
+            }
+        }
+    }
+}
 
 /// 지금 경기가 어떤 상황인지.
 ///
@@ -1310,9 +1603,23 @@ struct ScoreboardBar: View {
         runners: BaserunnerStateSnapshot,
         language: AppLanguage
     ) -> String {
-        guard language == .english else { return situationLine(outs: outs, runners: runners) }
+        guard language != .korean else { return situationLine(outs: outs, runners: runners) }
         let safeOuts = min(2, max(0, outs))
         let occupied = [runners.firstOccupied, runners.secondOccupied, runners.thirdOccupied]
+
+        if language == .japanese {
+            let runnerText: String
+            switch occupied {
+            case [false, false, false]: runnerText = "走者なし"
+            case [true, true, true]: runnerText = "満塁"
+            default:
+                let bases = zip(occupied, ["一塁", "二塁", "三塁"])
+                    .filter(\.0).map(\.1).joined(separator: "・")
+                runnerText = "走者 \(bases)"
+            }
+            return "\(safeOuts)アウト・\(runnerText)"
+        }
+
         let runnerText: String
         switch occupied {
         case [false, false, false]: runnerText = "bases empty"
@@ -1449,7 +1756,14 @@ private struct RunnerDiamond: View {
     }
 
     static func voiceOverLabel(_ runners: BaserunnerStateSnapshot, language: AppLanguage) -> String {
-        guard language == .english else { return voiceOverLabel(runners) }
+        guard language != .korean else { return voiceOverLabel(runners) }
+        if language == .japanese {
+            var bases: [String] = []
+            if runners.firstOccupied { bases.append("一塁") }
+            if runners.secondOccupied { bases.append("二塁") }
+            if runners.thirdOccupied { bases.append("三塁") }
+            return bases.isEmpty ? "なし" : bases.joined(separator: "、")
+        }
         var bases: [String] = []
         if runners.firstOccupied { bases.append("first") }
         if runners.secondOccupied { bases.append("second") }

@@ -1,0 +1,46 @@
+{
+  "fixtureSchema": "baseball-pro-career-fixture-v1",
+  "sourceRuntime": "swift",
+  "sourceCommit": "792d72859dc5dcfdc8cefa8b69ab50bc072c212f",
+  "inputSha256": "78f6e4e41f638d6ef09bb961d5a731e412126ebfe0b94756b52763ef9885a982",
+  "outputSha256": "850ce637c48fa28b689effe52e2233961743fc1327728bdf3e12eada7f224d39",
+  "authorityScope": "current-swift-pro-core-vertical",
+  "input": {
+    "fixture": "ProCareerEngine.Phase5Vertical",
+    "start": "linked",
+    "preset": "power_prospect",
+    "team": "proTeams[0]",
+    "postStart": ["signContract", "planWeek:earnTrust"],
+    "decisionWeeks": [6, 13, 20],
+    "maximumCareerSeasons": 20,
+    "maximumSeasonDecisions": 3,
+    "seedRange": "100..119",
+    "locale": "ko-KR",
+    "timezone": "Asia/Seoul"
+  },
+  "expected": {
+    "exactRuns": 20,
+    "canonicalRow": "seed|careerID|startNextSeed|teamID|signedRevision|signedNextSeed|firstWeekNextSeed|firstWeekStats|phase|level|role|segment|decisionWeeks|maximumCareerSeasons|maximumSeasonDecisions\n",
+    "rows": [      {"seed":"100","careerID":"pro-e242f915e8a4282b","startNextSeed":"2532601429470541124","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"17244576003465156699","firstWeekNextSeed":"11782548031191625029","firstWeekStats":[1,1,14,6,4,5,9,102],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"101","careerID":"pro-43af3ad66445386e","startNextSeed":"15060681878671775511","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"4721487104379300744","firstWeekNextSeed":"11625460744376706732","firstWeekStats":[1,1,16,6,2,7,10,102],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"102","careerID":"pro-0eb2f09f31f2d911","startNextSeed":"1243045329627533100","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"3304483664418628671","firstWeekNextSeed":"492863262765342702","firstWeekStats":[1,1,18,4,0,3,8,93],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"103","careerID":"pro-ccb1207feaf070b4","startNextSeed":"1866550240620900528","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"9921870495102034351","firstWeekNextSeed":"17376363599684655716","firstWeekStats":[1,1,18,9,0,0,1,86],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"104","careerID":"pro-3e1468439d233cdf","startNextSeed":"5149949291087212246","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"18197638718495984546","firstWeekNextSeed":"10783251288322250756","firstWeekStats":[1,1,17,5,2,6,7,98],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"105","careerID":"pro-1987de2cf4ac23b2","startNextSeed":"13520556390570570131","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"6154175804941733601","firstWeekNextSeed":"6544322001072925694","firstWeekStats":[1,1,18,5,0,1,5,84],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"106","careerID":"pro-38c52b0a7d79c105","startNextSeed":"2475505609494469522","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"4854633653540526819","firstWeekNextSeed":"2576087042157984423","firstWeekStats":[1,1,16,6,4,0,7,97],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"107","careerID":"pro-8f561dcbe861c0d8","startNextSeed":"2522708310006964940","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"3821150728188037400","firstWeekNextSeed":"692401233366316786","firstWeekStats":[1,1,14,6,4,3,4,97],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"108","careerID":"pro-1156e143999fa503","startNextSeed":"14779109287369959188","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"14137927722617759115","firstWeekNextSeed":"645948608153338168","firstWeekStats":[1,1,14,6,2,2,10,97],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"109","careerID":"pro-3f6994ccd62c3d66","startNextSeed":"12911555454244211934","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"9122391988581042102","firstWeekNextSeed":"17101998457091586731","firstWeekStats":[1,1,17,6,1,3,7,96],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"110","careerID":"pro-371ae74e5eedee24","startNextSeed":"10415119907296966887","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"5456262584813215386","firstWeekNextSeed":"12226049413491766239","firstWeekStats":[1,1,18,8,1,0,3,97],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"111","careerID":"pro-68c3b25aa28e6b81","startNextSeed":"17957624262515163977","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"14066256288500624907","firstWeekNextSeed":"15159712701558788587","firstWeekStats":[1,1,16,6,1,1,8,98],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"112","careerID":"pro-7335be1d00c8055e","startNextSeed":"8322708147046919738","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"215888116863550202","firstWeekNextSeed":"2307280562479354822","firstWeekStats":[1,1,18,6,1,4,6,93],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"113","careerID":"pro-d8564608afaf1a9b","startNextSeed":"12583251242654464876","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"5162668076620035476","firstWeekNextSeed":"5140041476735378162","firstWeekStats":[1,1,18,3,2,2,5,79],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"114","careerID":"pro-ae28d8781f50f988","startNextSeed":"7402764794868543633","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"16361560920090822292","firstWeekNextSeed":"3071166431044241866","firstWeekStats":[1,1,17,7,1,6,11,97],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"115","careerID":"pro-bdb95926a987dab5","startNextSeed":"5692280587187851116","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"13567994396270090200","firstWeekNextSeed":"17181169783027936693","firstWeekStats":[1,1,18,3,1,0,6,94],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"116","careerID":"pro-2dc717fae32e7662","startNextSeed":"15762048743580106609","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"16608969375651130126","firstWeekNextSeed":"17858208436243366353","firstWeekStats":[1,1,18,8,0,5,7,96],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"117","careerID":"pro-f28cd98678a1eacf","startNextSeed":"5412126991504962750","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"5247024169100922312","firstWeekNextSeed":"11786321990245223505","firstWeekStats":[1,1,16,5,1,4,8,97],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"118","careerID":"pro-c904c49a5554f7dc","startNextSeed":"8288105064287199793","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"3490691887624468448","firstWeekNextSeed":"11880190945802544123","firstWeekStats":[1,1,17,3,2,2,9,96],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3},
+      {"seed":"119","careerID":"pro-6f6db4ae4a8fa059","startNextSeed":"3066530030326113719","teamID":"seoul_comets","signedRevision":1,"signedNextSeed":"9014308634336845685","firstWeekNextSeed":"1731876719588116687","firstWeekStats":[1,1,17,9,1,2,6,96],"phase":"weekly_plan","level":"minor","role":"long_relief","segment":"opening","decisionWeeks":[6,13,20],"maximumCareerSeasons":20,"maximumSeasonDecisions":3}
+    ]
+  }
+}

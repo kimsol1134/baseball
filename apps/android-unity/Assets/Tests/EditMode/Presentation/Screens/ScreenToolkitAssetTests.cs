@@ -98,7 +98,8 @@ namespace Baseball.Presentation.Tests.Screens
             StringAssert.Contains("BaseballSafeAreaController", controller);
             StringAssert.Contains("NavigationCancelEvent", controller);
             StringAssert.Contains("KeyCode.Escape", host);
-            StringAssert.Contains("Keyboard.current?.escapeKey.wasPressedThisFrame", host);
+            StringAssert.DoesNotContain("Keyboard.current", host);
+            StringAssert.Contains("ENABLE_LEGACY_INPUT_MANAGER", host);
             StringAssert.Contains("_runtime.PreferredRoute", controller);
             StringAssert.DoesNotContain("new MockBaseballCareerReadModel", host);
         }
@@ -354,6 +355,11 @@ namespace Baseball.Presentation.Tests.Screens
             StringAssert.Contains("결과 저장/계속", hud);
             StringAssert.Contains("release.clicked +=", hud);
             StringAssert.Contains("_presenter.SubmitNeutralRelease()", hud);
+            StringAssert.Contains("bool motionFocus = state.Phase == PitchPlayPhase.Presenting", hud);
+            StringAssert.Contains("_topCard.style.display = showDecisionContext", hud);
+            StringAssert.Contains("_contextPanel.style.display = showDecisionContext", hud);
+            StringAssert.Contains("_presentingPanel.style.display = DisplayStyle.None", hud);
+            StringAssert.Contains("SetAccessibilityActive(_presentingPanel, false)", hud);
             StringAssert.DoesNotContain("PitchDemoRequestFactory", coordinator);
             StringAssert.DoesNotContain("PitchDemoRequestFactory", persistence);
             Assert.That(File.Exists("Assets/Game/Presentation/Pitch/Model/PitchDemoRequestFactory.cs"), Is.False);

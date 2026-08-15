@@ -31,9 +31,10 @@ targets:
       - path: Sources/Localization/GameContent.xcstrings
       - path: Sources/Localization/ko.lproj/InfoPlist.strings
       - path: Sources/Localization/en.lproj/InfoPlist.strings
+      - path: Sources/Localization/ja.lproj/InfoPlist.strings
     # 언어별 LaunchScreen.storyboard를 명시한다. 한국어는 기존 브러시 로고를, 영어는
-    # Mound Reborn 워드마크를 그린다. UILaunchScreen의 자동 이미지 참조는 에셋 카탈로그
-    # 갱신 뒤 iOS 캐시에 다른 이미지가 남을 수 있어 사용하지 않는다.
+    # Mound Reborn, 일본어는 현지화된 워드마크를 그린다. UILaunchScreen의 자동 이미지
+    # 참조는 에셋 카탈로그 갱신 뒤 iOS 캐시에 다른 이미지가 남을 수 있어 사용하지 않는다.
     info:
       path: Sources/Info.plist
       properties:
@@ -76,8 +77,8 @@ targets:
         # 번들·실행 파일 이름은 ASCII로 둔다. 홈 화면에 보이는 이름은 Info.plist의
         # CFBundleDisplayName이고, 한글 PRODUCT_NAME은 TEST_HOST 경로를 깨뜨린다.
         PRODUCT_NAME: BaseballIOS
-        MARKETING_VERSION: 1.1.1
-        CURRENT_PROJECT_VERSION: 52
+        MARKETING_VERSION: 1.1.2
+        CURRENT_PROJECT_VERSION: 53
         SWIFT_OBJC_BRIDGING_HEADER: Sources/BaseballIOS-Bridging-Header.h
         CODE_SIGN_STYLE: Automatic
         # 아카이브·업로드에 필요하다. 없으면 "requires a development team"으로 실패한다.

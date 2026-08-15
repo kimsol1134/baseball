@@ -292,10 +292,12 @@ namespace Baseball.Presentation.Shell
 
     public interface IBaseballSetupDraft
     {
+        int SetupStep { get; }
         string PlayerName { get; }
         string SuggestedPlayerName { get; }
         string Region { get; }
         string PresetId { get; }
+        void SetSetupStep(int value);
         void SetPlayerName(string value);
         void SetRegion(string value);
         void SetPresetId(string value);

@@ -264,12 +264,19 @@ namespace Baseball.Presentation.Common
         private readonly string _title;
         private readonly string _description;
 
-        public ChoiceCard(string title, string description, string stableId, Action onClick)
+        public ChoiceCard(
+            string title,
+            string description,
+            string stableId,
+            Action onClick,
+            bool showDescription = true)
             : base(onClick)
         {
             _title = title ?? string.Empty;
             _description = description ?? string.Empty;
-            text = string.IsNullOrEmpty(_description) ? _title : $"{_title}\n{_description}";
+            text = string.IsNullOrEmpty(_description) || !showDescription
+                ? _title
+                : $"{_title}\n{_description}";
             AddToClassList("baseball-choice-card");
             _accessibility = BaseballAccessibility.Configure(
                 this,

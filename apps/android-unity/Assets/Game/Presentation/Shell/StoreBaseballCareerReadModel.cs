@@ -65,8 +65,8 @@ namespace Baseball.Presentation.Shell
             return new BaseballScreenViewModel(
                 route,
                 template.Feature,
-                template.AppBarTitle,
-                template.Eyebrow,
+                ProjectAppBarTitle(route, template, state),
+                ProjectEyebrow(route, template, state),
                 ProjectTitle(route, template, state),
                 ProjectLead(template, state),
                 ProjectSections(route, template.Sections, state),
@@ -76,6 +76,43 @@ namespace Baseball.Presentation.Shell
                 ProjectChoiceGroups(route, state),
                 PlayerPortraitAddress(route, state),
                 PlayerPortraitLabel(route, state));
+        }
+
+        private static string ProjectAppBarTitle(
+            ShellRoute route,
+            BaseballScreenViewModel template,
+            GameSaveAggregate state)
+        {
+            if (route == ShellRoute.Prologue)
+            {
+                return state.HighSchool?.Phase == HighSchoolPhase.SchoolSelection
+                    ? "학교 선택"
+                    : "첫날";
+            }
+            if (route == ShellRoute.HighSchoolOverview) return "고교 생활";
+            return template.AppBarTitle;
+        }
+
+        private static string ProjectEyebrow(
+            ShellRoute route,
+            BaseballScreenViewModel template,
+            GameSaveAggregate state)
+        {
+            if (route == ShellRoute.Prologue)
+            {
+                return state.HighSchool?.Phase == HighSchoolPhase.SchoolSelection
+                    ? "3년을 보낼 학교"
+                    : "새 선수의 시작";
+            }
+            if (route == ShellRoute.HighSchoolOverview && state.HighSchool != null)
+            {
+                ChapterProgressReadModel chapter = state.HighSchool.ChapterProgress;
+                return state.HighSchool.SchoolYear + "학년" +
+                    (chapter == null || string.IsNullOrWhiteSpace(chapter.Season)
+                        ? " · " + state.HighSchool.ChapterNumber + "장"
+                        : " · " + chapter.Season);
+            }
+            return template.Eyebrow;
         }
 
         public static ShellRoute PreferredRouteFor(GameSaveAggregate state)
@@ -154,6 +191,22 @@ namespace Baseball.Presentation.Shell
             BaseballScreenViewModel template,
             GameSaveAggregate state)
         {
+            if (route == ShellRoute.Prologue && state.HighSchool != null)
+            {
+                return state.HighSchool.Phase == HighSchoolPhase.SchoolSelection
+                    ? "어느 학교에서 3년을 보낼까요?"
+                    : state.HighSchool.LifeNumber <= 1
+                        ? "첫 번째 야구 인생"
+                        : state.HighSchool.LifeNumber + "번째 선수의 첫날";
+            }
+            if (route == ShellRoute.HighSchoolOverview && state.HighSchool != null)
+            {
+                string school = string.IsNullOrWhiteSpace(state.HighSchool.SchoolName)
+                    ? "고교 야구"
+                    : state.HighSchool.SchoolName;
+                string chapter = state.HighSchool.ChapterProgress?.Title;
+                return string.IsNullOrWhiteSpace(chapter) ? school : school + " · " + chapter;
+            }
             LifeArchiveRecord selectedLife = route == ShellRoute.LifeCard
                 ? SelectedLifeRecord(state)
                 : route == ShellRoute.RunRecap
@@ -173,6 +226,13 @@ namespace Baseball.Presentation.Shell
         {
             if (state.PendingPitchCompletion != null) return "저장된 경기 결과를 확인한 뒤 다음 일정으로 이동합니다.";
             if (state.PitchResume != null) return "마지막으로 저장된 타자 경계부터 이어 던집니다.";
+            if (state.HighSchool?.Phase == HighSchoolPhase.Prologue)
+                return "첫 불펜으로 손끝을 확인하거나, 바로 학교를 고를 수 있습니다.";
+            if (state.HighSchool?.Phase == HighSchoolPhase.SchoolSelection)
+                return "강점과 감수할 점, 3년을 함께할 감독과 포수를 비교하세요.";
+            if (state.HighSchool != null && template.Route == ShellRoute.HighSchoolOverview &&
+                state.HighSchool.ChapterProgress != null)
+                return state.HighSchool.ChapterProgress.Goal;
             return template.Lead;
         }
 
@@ -191,6 +251,9 @@ namespace Baseball.Presentation.Shell
                         .ToArray()))
                 .Where(section => section.Rows.Count > 0)
                 .ToList();
+
+            if (route == ShellRoute.HighSchoolOverview && state.HighSchool != null)
+                projected.RemoveAll(section => string.Equals(section.Id, "status", StringComparison.Ordinal));
 
             if (state.PendingPitchCompletion?.Report != null)
             {
@@ -408,6 +471,7 @@ namespace Baseball.Presentation.Shell
             GameSaveAggregate state)
         {
             if (route != ShellRoute.Prologue || state?.HighSchool == null ||
+                state.HighSchool.Phase != HighSchoolPhase.Prologue ||
                 state.HighSchool.IsChallengeRun || state.Meta?.LifeArchive == null) return null;
             return state.Meta.LifeArchive
                 .Where(value => value != null && value.LifeNumber < state.HighSchool.LifeNumber)
@@ -439,7 +503,9 @@ namespace Baseball.Presentation.Shell
             HighSchoolCareerReadModel career)
         {
             if (career == null) return;
-            if (route == ShellRoute.Prologue || route == ShellRoute.HighSchoolOverview)
+            bool prologue = route == ShellRoute.Prologue &&
+                career.Phase == HighSchoolPhase.Prologue;
+            if (prologue || route == ShellRoute.HighSchoolOverview)
             {
                 CareerWind wind = CareerWind.For(career.CareerId, CareerRulesVersion.V2);
                 sections.Insert(0, new ScreenSectionViewModel(
@@ -457,10 +523,29 @@ namespace Baseball.Presentation.Shell
                                 : string.Join(" · ", wind.EffectDescriptions))
                     }));
             }
-            if ((route == ShellRoute.Prologue || route == ShellRoute.HighSchoolOverview) &&
+            if (route == ShellRoute.HighSchoolOverview &&
                 career.ChapterProgress != null)
             {
                 ChapterProgressReadModel chapter = career.ChapterProgress;
+                sections.Insert(0, new ScreenSectionViewModel(
+                    "hs-overview-metrics",
+                    "지금의 선수",
+                    ScreenSectionTone.Plain,
+                    new[]
+                    {
+                        new ScreenRowViewModel(
+                            "hs-overview-fatigue",
+                            "피로",
+                            career.Fatigue.ToString()),
+                        new ScreenRowViewModel(
+                            "hs-overview-trust",
+                            "감독 믿음",
+                            career.ManagerTrust.ToString()),
+                        new ScreenRowViewModel(
+                            "hs-overview-training",
+                            "이번 장 훈련",
+                            chapter.TrainingsCompleted + "/" + chapter.TrainingsRequired)
+                    }));
                 sections.Add(new ScreenSectionViewModel(
                     "hs-chapter-progress",
                     chapter.Title,
@@ -2738,7 +2823,17 @@ namespace Baseball.Presentation.Shell
                 default:
                     return null;
             }
-            return new ScreenRowViewModel(row.Id, row.Label, value, row.Detail);
+            string detail = row.Detail;
+            if (route == ShellRoute.Prologue && state.HighSchool?.Phase == HighSchoolPhase.Prologue)
+            {
+                string talentAbilityId = string.Equals(row.Id, "fastball", StringComparison.Ordinal)
+                    ? "stuff"
+                    : row.Id;
+                TalentGradeReadModel talent = state.HighSchool.LifeDetail?.Talents?
+                    .FirstOrDefault(candidate => string.Equals(candidate.AbilityId, talentAbilityId, StringComparison.Ordinal));
+                if (talent != null) detail = "재능 " + talent.GradeTitle;
+            }
+            return new ScreenRowViewModel(row.Id, row.Label, value, detail);
         }
 
         private static string InningsTitle(int outs)
@@ -2870,6 +2965,7 @@ namespace Baseball.Presentation.Shell
                         return Actions(Command(
                             "choose_school", "학교 선택 확정", ShellRoute.Training,
                             "가상 학교를 선택하고 저장합니다.",
+                            confirm: true,
                             enabled: HasSelected("school", state.HighSchool.SchoolChoices)));
                     }
                     break;
@@ -3404,8 +3500,9 @@ namespace Baseball.Presentation.Shell
             switch (route)
             {
                 case ShellRoute.Opening: return "baseball/bootstrap/LaunchLogo";
-                case ShellRoute.Setup: return BaseballVisualContentCatalog.SetupPreset(
-                    string.IsNullOrWhiteSpace(setupPresetId) ? "power_prospect" : setupPresetId);
+                // Setup owns step-specific artwork inside its content, matching the iOS flow.
+                // A route-level hero would show the preset before the player reaches that step.
+                case ShellRoute.Setup: return string.Empty;
                 case ShellRoute.Prologue: return "baseball/highschool/KeyArtCareerIntro";
                 case ShellRoute.HighSchoolOverview:
                 case ShellRoute.Training:

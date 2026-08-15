@@ -113,11 +113,11 @@ if [[ ! -s "$artifact_root/android-build.log" ]]; then
   echo "Unity Android build log is missing or empty" >&2
   failed=1
 elif grep -Eiq \
-  'No valid Unity Editor license|LICENSE SYSTEM.*(fail|error)|error CS[0-9]{4}:|Scripts have compiler errors|Compilation failed|Aborting batchmode due to failure|BuildFailedException|Fatal Error' \
+  'No valid Unity Editor license|LICENSE SYSTEM.*(fail|error)|error CS[0-9]{4}:|Scripts have compiler errors|Compilation failed|Aborting batchmode due to failure|BuildFailedException|Fatal Error|Generation of the Firebase Android resource file .* failed|If you have not included a valid Firebase Android resources' \
   "$artifact_root/android-build.log"; then
   echo "Unity Android build log contains a license, compile, build, or fatal error" >&2
   grep -Ein \
-    'No valid Unity Editor license|LICENSE SYSTEM.*(fail|error)|error CS[0-9]{4}:|Scripts have compiler errors|Compilation failed|Aborting batchmode due to failure|BuildFailedException|Fatal Error' \
+    'No valid Unity Editor license|LICENSE SYSTEM.*(fail|error)|error CS[0-9]{4}:|Scripts have compiler errors|Compilation failed|Aborting batchmode due to failure|BuildFailedException|Fatal Error|Generation of the Firebase Android resource file .* failed|If you have not included a valid Firebase Android resources' \
     "$artifact_root/android-build.log" | tail -n 20 >&2 || true
   failed=1
 fi

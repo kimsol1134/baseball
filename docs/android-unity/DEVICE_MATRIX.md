@@ -7,9 +7,12 @@
 | High | Galaxy S20 FE 이상, 120Hz 포함 | 미확보 | 대기 | |
 | API edge | Android 16/API 36 | API 36 ARM64 emulator | v5 production smoke 통과 / 물리 대기 | `/private/tmp/baseball-v5-api36-smoke/20260812T212855Z` |
 | 16KB page | `getconf PAGE_SIZE=16384`, ARM64, API 35+ | `sdk_gphone16k_arm64`, API 35 emulator | v5 production AAB 수직 루프 통과 / 물리 대기 | `/private/tmp/baseball-v5-smoke/20260812T211007Z`; 실제 투구·shader·crash/ANR 0 |
-| Play farm | 사전 출시 보고서 | v5 업로드 대기 | 계정 정보·업로드 뒤 대기 | Play versionCode 1 활성; 본인 tester opt-in 완료 |
+| Play farm | 사전 출시 보고서 | v5 closed Alpha 검토 중 | 승인 뒤 자동 보고서 대기 | internal v5 제공; Alpha는 승인 전 v1 유지; 지원 기기 5,573대 |
 
 각 기기에서 clean install, update, airplane mode, background/force-stop, gesture/3-button navigation, 글자 200%, TalkBack, pitch frame time, peak memory를 기록한다.
+
+Play App Bundle 탐색기에서 versionCode 5의 지원 Android 기기 5,573대를 확인했다. Device Catalog
+CSV와 기기 제외는 별도 Device Catalog 서비스 약관 동의가 필요한 기능이므로 승인 전에는 사용하지 않는다.
 
 16KB production emulator 행은 smoke `device-metadata.txt`의 `native_page_size=16384`, `result.txt`의
 `native_16k_execution=passed`, APK `zipalign -P 16`, ARM64 ELF LOAD 정렬, 설치/실행

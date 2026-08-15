@@ -107,6 +107,8 @@ final class QACaptureUITests: XCTestCase {
         if autoRelease { arguments.append("-uiTestAutoRelease") }
         if captureLanguage == "en" {
             arguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        } else if captureLanguage == "ja" {
+            arguments += ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         } else if captureLanguage == "ko" {
             arguments += ["-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
         }
@@ -489,7 +491,7 @@ final class QACaptureUITests: XCTestCase {
 
     /// 기록 탭. 카드가 많아 아래로 훑으며 여러 장 남긴다.
     private func captureRecordTab(_ app: XCUIApplication, suffix: String) {
-        guard switchTab(app, to: localizedTabTitle(korean: "기록", english: "Records")) else {
+        guard switchTab(app, to: localizedTabTitle(korean: "기록", english: "Records", japanese: "記録")) else {
             capture("record-tab-unreachable-\(suffix)")
             return
         }
@@ -498,29 +500,29 @@ final class QACaptureUITests: XCTestCase {
             app.swipeUp()
             capture("record-\(suffix)-p\(page)")
         }
-        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School"))
+        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School", japanese: "高校"))
     }
 
     private func captureProTab(_ app: XCUIApplication) {
-        guard switchTab(app, to: localizedTabTitle(korean: "프로", english: "Pro")) else { return }
+        guard switchTab(app, to: localizedTabTitle(korean: "프로", english: "Pro", japanese: "プロ")) else { return }
         capture("pro-tab-locked")
         captureScrolled(app, "pro-tab-locked-bottom", swipes: 2)
-        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School"))
+        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School", japanese: "高校"))
     }
 
     private func captureSettingsTab(_ app: XCUIApplication) {
-        guard switchTab(app, to: localizedTabTitle(korean: "설정", english: "Settings")) else { return }
+        guard switchTab(app, to: localizedTabTitle(korean: "설정", english: "Settings", japanese: "設定")) else { return }
         capture("settings-top")
         for page in 1...3 {
             app.swipeUp()
             capture("settings-p\(page)")
         }
-        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School"))
+        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School", japanese: "高校"))
     }
 
     /// 회차 아카이브. 기록 탭 아래쪽에 있다 — 회차가 쌓였을 때만 볼 것이 있다.
     private func captureArchive(_ app: XCUIApplication) {
-        guard switchTab(app, to: localizedTabTitle(korean: "기록", english: "Records")) else {
+        guard switchTab(app, to: localizedTabTitle(korean: "기록", english: "Records", japanese: "記録")) else {
             capture("archive-unreachable")
             return
         }
@@ -529,7 +531,7 @@ final class QACaptureUITests: XCTestCase {
             app.swipeUp()
             capture("archive-p\(page)")
         }
-        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School"))
+        _ = switchTab(app, to: localizedTabTitle(korean: "고교", english: "High School", japanese: "高校"))
     }
 
     @discardableResult
@@ -547,8 +549,12 @@ final class QACaptureUITests: XCTestCase {
         return false
     }
 
-    private func localizedTabTitle(korean: String, english: String) -> String {
-        captureLanguage == "en" ? english : korean
+    private func localizedTabTitle(korean: String, english: String, japanese: String) -> String {
+        switch captureLanguage {
+        case "en": english
+        case "ja": japanese
+        default: korean
+        }
     }
 
     // MARK: - 보조

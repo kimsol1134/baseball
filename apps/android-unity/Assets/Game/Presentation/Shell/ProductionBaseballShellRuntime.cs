@@ -43,6 +43,7 @@ namespace Baseball.Presentation.Shell
         private ShellRuntimeStatus _status = ShellRuntimeStatus.Loading;
         private string _statusMessage = "안전하게 저장된 진행 상황을 확인하는 중입니다.";
         private string _playerName = string.Empty;
+        private int _setupStep;
         private string _region = "서울";
         private string _presetId = "power_prospect";
         private string _seedInput = string.Empty;
@@ -120,6 +121,7 @@ namespace Baseball.Presentation.Shell
         public bool IsBusy => _store?.IsBusy == true;
         public string StatusMessage => _statusMessage;
         public IReadOnlyList<ShellRoute> Routes => _readModel.Routes;
+        public int SetupStep => _setupStep;
         public string PlayerName => _playerName;
         public string SuggestedPlayerName => PitcherPresetCatalog.All.FirstOrDefault(value =>
             string.Equals(value.Id, _presetId, StringComparison.Ordinal))?.Pitcher?.Name ?? "민서준";
@@ -343,8 +345,16 @@ namespace Baseball.Presentation.Shell
             if (SetupPlayerNamePolicy.TryUpdate(_playerName, value, out string next))
             {
                 _playerName = next;
-                Changed?.Invoke();
             }
+        }
+
+        public void SetSetupStep(int value)
+        {
+            int maximum = SetupOptions?.AdvancedOptionsVisible == true ? 3 : 2;
+            int next = Math.Max(0, Math.Min(maximum, value));
+            if (_setupStep == next) return;
+            _setupStep = next;
+            Changed?.Invoke();
         }
 
         public void DiscardTransientDraft(ShellRoute route)
@@ -385,7 +395,6 @@ namespace Baseball.Presentation.Shell
                     string.Equals(option.Payload, value, StringComparison.Ordinal)))
             {
                 _region = value;
-                Changed?.Invoke();
             }
         }
 
@@ -395,7 +404,6 @@ namespace Baseball.Presentation.Shell
                     string.Equals(option.Payload, value, StringComparison.Ordinal)))
             {
                 _presetId = value;
-                Changed?.Invoke();
             }
         }
 
@@ -403,7 +411,6 @@ namespace Baseball.Presentation.Shell
         {
             _seedInput = (value ?? string.Empty).Trim();
             _seedValidationMessage = SetupSeedInputPolicy.ValidationMessage(_seedInput);
-            Changed?.Invoke();
         }
 
         public void SetSetupSingle(string group, string payload)
@@ -1203,6 +1210,7 @@ namespace Baseball.Presentation.Shell
             if (enteringSetup)
             {
                 HighSchoolSetupReadModel options = HighSchoolSetupCatalog.For(state.Meta);
+                _setupStep = 0;
                 _playerName = string.Empty;
                 _region = HighSchoolSetupCatalog.Regions.FirstOrDefault()?.Payload ?? "서울";
                 _presetId = HighSchoolSetupCatalog.Presets.FirstOrDefault()?.Payload ?? "power_prospect";

@@ -2,6 +2,25 @@ import SwiftUI
 import UIKit
 import SimulationCore
 
+/// 투구 조작 방식의 제품 기본값.
+///
+/// 수동 투구 슬라이더는 화면별 편의 기본값이 아니라 게임의 핵심 조작이다. 한곳에서
+/// 등록해 새 설치와 새 화면이 같은 계약을 읽게 한다. `register(defaults:)`는 사용자가
+/// 접근성을 위해 이미 켠 자동 릴리스 값을 덮어쓰지 않는다.
+enum PitchControlPreferences {
+    static let autoReleaseKey = "baseball.pitch.autoRelease"
+    static let defaultAutoRelease = false
+
+#if DEBUG
+    /// UI 회귀 테스트가 좁은 퍼펙트 타이밍 창과 무관하게 피드백 수명을 검증하는 전용 인자.
+    static let perfectReleaseUITestArgument = "-uiTestPerfectRelease"
+#endif
+
+    static func registerDefaults(in defaults: UserDefaults = .standard) {
+        defaults.register(defaults: [autoReleaseKey: defaultAutoRelease])
+    }
+}
+
 /// 누르고 → 조준하고 → 떼는 투구 제스처.
 ///
 /// 이전에는 드롭다운 네 개를 고르고 버튼을 눌렀다. 결정은 있는데 신체적 표현이 없어서
@@ -33,6 +52,8 @@ struct DeliveryControl: View {
     let heartbeatSignal: MoundHeartbeatSignal?
     let disturbanceSeed: UInt64
     let onDeliver: (PitchDelivery) -> Void
+    /// A new physical action supersedes any delayed feedback left by the previous pitch.
+    var onWindUp: () -> Void = {}
     /// Stops scheduled mound feedback before the release result is applied.
     var onRelease: () -> Void = {}
     /// 미터가 방향을 바꿀 때(끝에 닿을 때) 알린다. 화면이 가벼운 햅틱을 준다.
@@ -43,8 +64,6 @@ struct DeliveryControl: View {
     /// 접근성 글자 크기에서 안내 문구가 커지면 92pt 고정 패드 안에서 겹친다 —
     /// 패드가 글자를 따라 자란다(3차 패널 P1, Dynamic Type).
     @ScaledMetric(relativeTo: .body) private var padHeight: CGFloat = 92
-    /// 퍼펙트 섬광의 글자 크기. 접근성 글자 크기를 따라 커진다.
-    @ScaledMetric(relativeTo: .title2) private var perfectTextSize: CGFloat = 26
     @State private var isPressing = false
     @State private var meter: Double = 0
     /// 손가락이 끈 거리. 흔들림을 상쇄하는 데 쓴다.
@@ -57,8 +76,6 @@ struct DeliveryControl: View {
     @State private var pressStartedAt: CFTimeInterval = 0
     /// 오탭 직후 안내를 띄운다. 다음 와인드업에서 지운다.
     @State private var showHoldHint = false
-    /// 퍼펙트 릴리스 섬광의 밝기(1 → 0). 던진 그 자리에서 터져야 손과 눈이 이어진다.
-    @State private var perfectFlash: Double = 0
     private static let minimumHoldSeconds: CFTimeInterval = 0.14
 
     /// 미터가 한쪽 끝까지 가는 시간(초). 실제 구속과 피로가 높을수록 짧아진다.
@@ -99,6 +116,11 @@ struct DeliveryControl: View {
     /// 저절로 흔들리는 폭(pt). 피로하면 커진다. 반경 46에 대해 이 정도면 가만히 두었을 때
     /// 조준이 500점 근처에서 오르내려, 끌어서 붙잡아야 800점을 넘긴다.
     private var swayAmplitude: CGFloat {
+        Self.swayAmplitude(fatigue: fatigue, reduceMotion: reduceMotion)
+    }
+
+    /// 피로가 조준 난도에 실제로 이어지는 계약. 순수 함수로 두어 손맛 회귀를 테스트한다.
+    static func swayAmplitude(fatigue: Int, reduceMotion: Bool = false) -> CGFloat {
         let base: CGFloat = 26
         let tired = CGFloat(min(100, max(0, fatigue))) / 100 * 16
         return reduceMotion ? (base + tired) * 0.55 : base + tired
@@ -233,27 +255,6 @@ struct DeliveryControl: View {
             }
         }
         .frame(height: padHeight)
-        // 퍼펙트 섬광 — 손을 뗀 그 자리에서 터진다.
-        .overlay {
-            if perfectFlash > 0 {
-                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                    .fill(
-                        RadialGradient(
-                            colors: [BaseballTheme.milestone.opacity(0.95 * perfectFlash),
-                                     BaseballTheme.milestone.opacity(0.15 * perfectFlash),
-                                     .clear],
-                            center: .center, startRadius: 0, endRadius: 180
-                        )
-                    )
-                    .overlay {
-                        Text("PERFECT")
-                            .font(.system(size: perfectTextSize, weight: .black, design: .rounded))
-                            .foregroundStyle(BaseballTheme.canvas.opacity(perfectFlash))
-                            .scaleEffect(1 + (1 - perfectFlash) * 0.5)
-                    }
-                    .allowsHitTesting(false)
-            }
-        }
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -287,6 +288,7 @@ struct DeliveryControl: View {
     }
 
     private func beginWindUp() {
+        onWindUp()
         isPressing = true
         pressStartedAt = CACurrentMediaTime()
         showHoldHint = false
@@ -340,14 +342,21 @@ struct DeliveryControl: View {
             return
         }
         onRelease()
-        let delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius)
+        let delivery: PitchDelivery
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains(PitchControlPreferences.perfectReleaseUITestArgument) {
+            delivery = PitchDelivery(releaseAccuracy: 1_000, aimAccuracy: 1_000)
+        } else {
+            delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius)
+        }
+#else
+        delivery = Self.delivery(meter: meter, aim: clampedAim, aimRadius: Self.aimRadius)
+#endif
         if delivery.isPerfectRelease {
             // 정중앙에서 뗀 순간, 손과 눈과 귀가 동시에 안다. 이 게임에서 손으로 하는
             // 일은 하나뿐이라, 그 하나를 완벽히 해냈을 때가 가장 크게 터져야 한다.
+            // 시각·음향 축하는 stage가 바뀌어도 살아야 하므로 PitchView가 맡는다.
             Haptics.shared.perfectRelease()
-            GameAudio.shared.play(.milestone)
-            perfectFlash = 1
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.55)) { perfectFlash = 0 }
         } else {
             Haptics.shared.released(
                 quality: Double(delivery.releaseAccuracy + delivery.aimAccuracy) / 2_000
