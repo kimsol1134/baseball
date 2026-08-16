@@ -170,13 +170,28 @@ final class ProCareerContractWave3Tests: XCTestCase {
         )
         let legacy = try XCTUnwrap(flow.range(of: ".journeySettlementLegacy"))
         let goal = try XCTUnwrap(flow.range(of: "if let goalProgress = settlement.goalProgressAfter"))
-        let salary = try XCTUnwrap(flow.range(of: "BaseballCard(title: copyResolver.resolve(.journeySettlementSalary)"))
-        let merchandise = try XCTUnwrap(flow.range(of: "BaseballCard(title: copyResolver.resolve(.journeySettlementMerchandise)"))
+        let salary = try XCTUnwrap(flow.range(of: "BaseballCard(title: copyResolver.resolve(.journeySettlementSalaryTitle)"))
+        let merchandise = try XCTUnwrap(flow.range(of: "BaseballCard(title: copyResolver.resolve(.journeySettlementMerchandiseTitle)"))
 
         XCTAssertLessThan(records.lowerBound, legacy.lowerBound)
         XCTAssertLessThan(legacy.lowerBound, goal.lowerBound)
         XCTAssertLessThan(goal.lowerBound, salary.lowerBound)
         XCTAssertLessThan(salary.lowerBound, merchandise.lowerBound)
+    }
+
+    func testSettlementMoneyCardsUseSeparateTitleAndAccessibleValueTemplates() {
+        let resolver = GameCopyResolver(language: .japanese, policy: .strict)
+
+        XCTAssertEqual(resolver.resolve(.journeySettlementSalaryTitle), "年俸")
+        XCTAssertEqual(
+            resolver.resolve(.journeySettlementSalary, arguments: [.userText("1億円")]),
+            "年俸 1億円"
+        )
+        XCTAssertEqual(resolver.resolve(.journeySettlementMerchandiseTitle), "応援商品収益")
+        XCTAssertEqual(
+            resolver.resolve(.journeySettlementMerchandise, arguments: [.userText("500万円")]),
+            "応援商品収益 500万円"
+        )
     }
 
     func testWave5BenefitAndImmediateTimingCatalogsAreExplicitInKoEnJa() throws {

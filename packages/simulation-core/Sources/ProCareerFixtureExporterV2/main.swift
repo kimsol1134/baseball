@@ -1,16 +1,27 @@
 import CryptoKit
 import Foundation
-@_spi(ProCareerFixture) import SimulationCore
+import SimulationCore
 
 private let schema = "baseball-pro-career-fixture-v2"
 private let sourceRevision = "wave6-swift-semantic-oracle-2026-08-15"
 private let defaultOutput = "artifacts/android-compose/fixtures/swift-pro-career-oracle-v2.json"
+private let realGoalOrder: [ProCareerAmbition] = [.franchiseIcon, .enduringPro, .recordBook]
 
 private struct FixtureRow {
     let id: String
     let inputCanonical: String
     let outputCanonical: String
     let output: [String: Any]
+    let hashReason: String
+}
+
+private struct RealJourneyEvidence {
+    let final: ProCareerResult
+    let trace: [String]
+    let selectedAmbitions: [String]
+    let selectedOffers: [String]
+    let firstRenewalMarket: ProContractMarket?
+    let projectionState: ProCareerSnapshot
 }
 
 private func sha256(_ value: String) -> String {
@@ -35,10 +46,10 @@ private func draft(team: DraftTeamSnapshot) -> DraftResultSnapshot {
     )
 }
 
-private func start(seed: String, sourceFanInterest: Int? = nil, journeyEnabled: Bool = true) throws -> ProCareerResult {
+private func start(seed: String, sourceFanInterest: Int? = nil, journeyEnabled: Bool = true, presetID: String = "power_prospect") throws -> ProCareerResult {
     let seedValue = UInt64(seed) ?? 0
     let team = ProCareerEngine.proTeams[Int(seedValue % UInt64(ProCareerEngine.proTeams.count))]
-    let pitcher = PitcherPresetCatalog.all.first(where: { $0.id == "power_prospect" })!.pitcher
+    let pitcher = PitcherPresetCatalog.all.first(where: { $0.id == presetID })!.pitcher
     return try ProCareerEngine(journeyEnabled: journeyEnabled).start(.init(
         seed: seed,
         identity: .defaultPitcher,
@@ -49,7 +60,33 @@ private func start(seed: String, sourceFanInterest: Int? = nil, journeyEnabled: 
     ))
 }
 
-private func report(for state: ProCareerSnapshot, salt: Int = 0) -> ImportantInningReport {
+private func stableChoice(_ lhs: ProSeasonDecisionChoice, _ rhs: ProSeasonDecisionChoice) -> Bool {
+    if lhs.effect.fatigueDelta != rhs.effect.fatigueDelta {
+        return lhs.effect.fatigueDelta < rhs.effect.fatigueDelta
+    }
+    return lhs.id < rhs.id
+}
+
+private func strongReport(for state: ProCareerSnapshot) -> ImportantInningReport {
+    .init(
+        scenarioNumber: state.week,
+        pitches: 24,
+        strikeouts: 4,
+        walks: 0,
+        runsAllowed: 0,
+        expectedDamage: 420,
+        actualDamage: 160,
+        recommendationAccepted: 16,
+        outs: 3,
+        teamRuns: 4,
+        scoreDifferentialAtEntry: 2,
+        sequenceMasteryCount: 1,
+        hits: 0,
+        homeRuns: 0
+    )
+}
+
+private func ordinaryReport(for state: ProCareerSnapshot, salt: Int = 0) -> ImportantInningReport {
     let variation = (state.season + state.week + salt) % 3
     return .init(
         scenarioNumber: state.week,
@@ -69,24 +106,34 @@ private func report(for state: ProCareerSnapshot, salt: Int = 0) -> ImportantInn
     )
 }
 
-private func stableChoice(_ lhs: ProSeasonDecisionChoice, _ rhs: ProSeasonDecisionChoice) -> Bool {
-    if lhs.effect.fatigueDelta != rhs.effect.fatigueDelta { return lhs.effect.fatigueDelta < rhs.effect.fatigueDelta }
-    return lhs.id < rhs.id
-}
-
-private func playUntilSeasonReview(_ initial: ProCareerResult, engine: ProCareerEngine, salt: Int = 0, preferMediaChoice: Bool = false) throws -> ProCareerResult {
+private func playUntilSeasonReview(
+    _ initial: ProCareerResult,
+    engine: ProCareerEngine,
+    report: (ProCareerSnapshot) -> ImportantInningReport,
+    trace: inout [String],
+    preferMediaChoice: Bool = false
+) throws -> ProCareerResult {
     var result = initial
     var steps = 0
     while result.snapshot.phase != .seasonReview {
         steps += 1
-        guard steps <= 180 else { throw NSError(domain: "ProFixtureV2", code: 10) }
+        guard steps <= 220 else { throw NSError(domain: "ProFixtureV2", code: 10) }
         let state = result.snapshot
         switch state.phase {
         case .weeklyPlan:
-            let plan: ProWeekPlan = state.fatigue > 72 ? .recover : (state.managerTrust < 68 ? .earnTrust : .refineCommand)
+            let plan: ProWeekPlan
+            if state.injuryWeeks > 0 || state.fatigue > 72 {
+                plan = .recover
+            } else if state.managerTrust < 68 {
+                plan = .earnTrust
+            } else {
+                plan = .refineCommand
+            }
             result = try engine.planWeek(.init(seed: result.nextSeed, state: state, plan: plan))
+            trace.append("plan_week:\(plan.rawValue)")
         case .importantGame:
-            result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: state, report: report(for: state, salt: salt)))
+            result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: state, report: report(state)))
+            trace.append("resolve_important_game")
         case .seasonDecision:
             guard let decision = state.pendingDecision else { throw NSError(domain: "ProFixtureV2", code: 11) }
             let choice: ProSeasonDecisionChoice
@@ -96,21 +143,29 @@ private func playUntilSeasonReview(_ initial: ProCareerResult, engine: ProCareer
                 choice = decision.choices.min(by: stableChoice)!
             }
             result = try engine.applySeasonDecision(.init(seed: result.nextSeed, state: state, decisionID: decision.id, choiceID: choice.id))
+            trace.append("apply_season_decision:\(decision.type.rawValue):\(choice.id)")
         default:
             throw NSError(domain: "ProFixtureV2", code: 12)
         }
     }
+    result = try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
+    trace.append("review_season:season=\(result.snapshot.season):level=\(result.snapshot.level.rawValue):games=\(result.snapshot.currentStats.games):outs=\(result.snapshot.currentStats.inningsOuts)")
     return result
 }
 
-private func playSeason(_ initial: ProCareerResult, engine: ProCareerEngine, salt: Int = 0, preferMediaChoice: Bool = false) throws -> ProCareerResult {
-    let reviewReady = try playUntilSeasonReview(initial, engine: engine, salt: salt, preferMediaChoice: preferMediaChoice)
-    return try engine.reviewSeason(.init(seed: reviewReady.nextSeed, state: reviewReady.snapshot))
-}
-
-private func accept(_ result: ProCareerResult, engine: ProCareerEngine, ambition: ProCareerAmbition?) throws -> ProCareerResult {
-    let market = result.snapshot.journeyState!.pendingContractMarket!
-    let offer = market.offers[0]
+private func accept(
+    _ result: ProCareerResult,
+    engine: ProCareerEngine,
+    ambition: ProCareerAmbition?,
+    trace: inout [String],
+    selectedOffers: inout [String]
+) throws -> ProCareerResult {
+    guard let market = result.snapshot.journeyState?.pendingContractMarket,
+          let offer = market.offers.first else {
+        throw NSError(domain: "ProFixtureV2", code: 20)
+    }
+    selectedOffers.append(offer.id)
+    trace.append("accept_contract:\(market.kind.rawValue):\(offer.id):ambition=\(ambition?.rawValue ?? "nil")")
     return try engine.acceptContract(.init(
         seed: result.nextSeed,
         state: result.snapshot,
@@ -121,213 +176,116 @@ private func accept(_ result: ProCareerResult, engine: ProCareerEngine, ambition
     ))
 }
 
-private struct PositiveRetirementFixture {
-    let state: ProCareerSnapshot
-    let canonicalInputs: [String: Any]
+private func nextAmbition(for state: ProCareerSnapshot) -> ProCareerAmbition? {
+    let completed = Set(state.journeyState?.goalHistory.filter { $0.outcome == .completed }.map(\.ambition) ?? [])
+    return realGoalOrder.first(where: { !completed.contains($0) })
 }
 
-private func positiveRetirementFixture(engine: ProCareerEngine) throws -> PositiveRetirementFixture {
-    let careerID = "pro-wave6-positive-retirement"
-    let team = ProCareerEngine.proTeams[0]
-    let pitcher = PitcherPresetCatalog.all.first(where: { $0.id == "power_prospect" })!.pitcher
-    let seasonStats = (1...20).map { season in
-        ProSeasonStats(
-            season: season,
-            teamID: team.id,
-            games: 30,
-            starts: 30,
-            inningsOuts: 540,
-            strikeouts: 300,
-            walks: 0,
-            runsAllowed: 0,
-            hits: 0,
-            homeRuns: 0,
-            pitches: 720,
-            wins: 10
-        )
-    }
-    let ambitionSpecs: [(ProCareerAmbition, Int)] = [
-        (.franchiseIcon, 8),
-        (.recordBook, 12),
-        (.enduringPro, 16),
-    ]
-    let goalHistory = ambitionSpecs.map { ambition, completedSeason in
-        let anchorTeamID = ambition == .franchiseIcon ? team.id : nil
-        return ProCareerGoalRecord(
-            id: ProCareerGoalRules.goalID(careerID: careerID, season: 1, ambition: ambition, anchorTeamID: anchorTeamID),
-            ambition: ambition,
-            selectedSeason: 1,
-            anchorTeamID: anchorTeamID,
-            completedSeason: completedSeason,
-            endedSeason: completedSeason,
-            outcome: .completed
-        )
-    }.sorted { $0.id < $1.id }
-    let seasonRecognitions = seasonStats.flatMap { stats in
-        ProCareerRecognitionRules.currentSeasonRecognitions(
-            careerID: careerID,
-            season: stats.season,
-            teamID: team.id,
-            stats: stats,
-            level: .major
-        )
-    }
-    let ambitionRecognitions = ambitionSpecs.map { ambition, season in
-        ProCareerRecognition(
-            careerID: careerID,
-            kind: .milestone,
-            contentID: "pro.ambition.\(ambition.rawValue).completed",
-            season: season,
-            teamID: team.id
-        )
-    }
-    let recognitions = (seasonRecognitions + ambitionRecognitions).sorted(by: ProCareerJourneyRules.recognitionOrder)
+private func runRealJourney() throws -> RealJourneyEvidence {
+    let engine = ProCareerEngine(journeyEnabled: true)
+    var trace: [String] = []
+    var selectedAmbitions: [String] = []
+    var selectedOffers: [String] = []
 
-    func contract(
-        _ suffix: String,
-        kind: ProContractKind,
-        signedSeason: Int,
-        totalYears: Int,
-        coveredSeasons: [Int],
-        endedSeason: Int?,
-        endReason: ProContractEndReason?,
-        annualSalary: Int,
-        signingBonus: Int?
-    ) -> ProContractRecord {
-        ProContractRecord(
-            contractID: "contract:\(careerID):\(suffix)",
-            teamID: team.id,
-            kind: kind,
-            signedSeason: signedSeason,
-            totalYears: totalYears,
-            annualSalary: annualSalary,
-            signingBonus: signingBonus,
-            rolePromise: .starter,
-            expectation: .init(kind: .majorRoster, target: 1, difficulty: .accessible),
-            coveredSeasons: coveredSeasons,
-            fulfilledExpectationSeasons: [],
-            endedSeason: endedSeason,
-            endReason: endReason
-        )
+    var result = try start(seed: "620050", sourceFanInterest: 30, presetID: "power_prospect")
+    trace.append("start:620050:preset=power_prospect")
+    let rookieAmbition: ProCareerAmbition = .franchiseIcon
+    selectedAmbitions.append(rookieAmbition.rawValue)
+    result = try accept(result, engine: engine, ambition: rookieAmbition, trace: &trace, selectedOffers: &selectedOffers)
+
+    var firstRenewalMarket: ProContractMarket?
+    var projectionState = result.snapshot
+    while result.snapshot.phase != .completed {
+        result = try playUntilSeasonReview(result, engine: engine, report: strongReport, trace: &trace)
+        if result.snapshot.season == 1 { projectionState = result.snapshot }
+        let settlement = try unwrapSettlement(result.snapshot)
+        result = try engine.acknowledgeSettlement(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            expectedRevision: result.snapshot.revision,
+            settlementID: settlement.id
+        ))
+        trace.append("acknowledge_settlement:\(settlement.id)")
+
+        if result.snapshot.phase == .retirementDecision {
+            guard result.snapshot.season == ProCareerEngine.maximumCareerSeasons else {
+                throw NSError(domain: "ProFixtureV2", code: 21)
+            }
+            result = try engine.chooseOffseason(.init(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                decision: .retire,
+                expectedRevision: result.snapshot.revision
+            ))
+            trace.append("choose_offseason:retire")
+            break
+        }
+
+        result = try engine.chooseOffseason(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            decision: .continueCareer,
+            expectedRevision: result.snapshot.revision
+        ))
+        trace.append("choose_offseason:continue")
+
+        if let market = result.snapshot.journeyState?.pendingContractMarket {
+            if firstRenewalMarket == nil, market.kind == .renewal {
+                firstRenewalMarket = market
+            }
+            let ambition = nextAmbition(for: result.snapshot)
+            if let ambition { selectedAmbitions.append(ambition.rawValue) }
+            result = try accept(result, engine: engine, ambition: ambition, trace: &trace, selectedOffers: &selectedOffers)
+        }
+
+        if result.snapshot.phase == .offseasonInvestment {
+            let funds = result.snapshot.journeyState?.finances.availableFunds ?? 0
+            let investment: ProOffseasonInvestment = funds >= ProFinanceRules.investmentCost(for: .fanFoundation)
+                ? .fanFoundation
+                : .none
+            result = try engine.chooseInvestment(.init(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                expectedRevision: result.snapshot.revision,
+                investment: investment
+            ))
+            trace.append("choose_investment:\(investment.rawValue)")
+        }
     }
 
-    let rookieContract = contract("01", kind: .rookie, signedSeason: 1, totalYears: 3, coveredSeasons: [1, 2, 3], endedSeason: 3, endReason: .expired, annualSalary: 60_000_000, signingBonus: 120_000_000)
-    let contracts = [
-        rookieContract,
-        contract("04", kind: .renewalLong, signedSeason: 4, totalYears: 4, coveredSeasons: [4, 5, 6, 7], endedSeason: 7, endReason: .expired, annualSalary: 70_000_000, signingBonus: nil),
-        contract("08", kind: .renewalLong, signedSeason: 8, totalYears: 4, coveredSeasons: [8, 9, 10, 11], endedSeason: 11, endReason: .expired, annualSalary: 80_000_000, signingBonus: nil),
-        contract("12", kind: .renewalLong, signedSeason: 12, totalYears: 4, coveredSeasons: [12, 13, 14, 15], endedSeason: 15, endReason: .expired, annualSalary: 90_000_000, signingBonus: nil),
-        contract("16", kind: .proveIt, signedSeason: 16, totalYears: 1, coveredSeasons: [16], endedSeason: 16, endReason: .expired, annualSalary: 95_000_000, signingBonus: nil),
-        contract("17", kind: .renewalLong, signedSeason: 17, totalYears: 4, coveredSeasons: [17, 18, 19], endedSeason: nil, endReason: nil, annualSalary: 100_000_000, signingBonus: nil),
-    ].sorted { $0.contractID < $1.contractID }
-    let signing = ProFinanceTransaction(
-        id: "signing:\(careerID):\(rookieContract.contractID)",
-        season: 1,
-        kind: .signingBonus,
-        amount: 120_000_000
-    )
-    let teamRecords = ProTeamCareerRecordRules.backfill(careerStats: seasonStats, recognitions: recognitions)
-    let currentContract = contracts.last!
-    let journey = ProCareerJourneyState(
-        rulesVersion: 1,
-        activeGoal: nil,
-        goalHistory: goalHistory,
-        pendingContractMarket: nil,
-        contractHistory: contracts,
-        teamRecords: teamRecords,
-        recognitions: recognitions,
-        reputation: .init(fanSupport: 80),
-        finances: .init(careerEarnings: signing.amount, availableFunds: signing.amount, transactions: [signing]),
-        activeSeasonBenefit: nil,
-        lastSettlement: nil,
-        settlementAcknowledged: true,
-        offseasonTransition: nil,
-        retirementHonors: [],
-        migration: .init(source: .newCareer, initializedSeason: 1, financeStartsSeason: 1, unassignedLegacyAwards: 0, financeNoticePending: false)
-    )
-    func makeState(commitment: String) -> ProCareerSnapshot {
-        ProCareerSnapshot(
-            proCareerID: careerID,
-            revision: 0,
-            phase: .offseasonDecision,
-            identity: .defaultPitcher,
-            pitcher: pitcher,
-            team: team,
-            entitlement: activeEntitlement(),
-            age: 38,
-            season: 20,
-            week: 24,
-            level: .major,
-            role: .starter,
-            rolePreference: .starter,
-            managerTrust: 80,
-            catcherTrust: 80,
-            fatigue: 0,
-            injuryWeeks: 0,
-            serviceYears: 20,
-            militaryCompleted: false,
-            contract: .init(
-                yearsRemaining: 1,
-                annualSalary: currentContract.annualSalary,
-                rolePromise: currentContract.rolePromise,
-                id: currentContract.contractID,
-                teamID: currentContract.teamID,
-                totalYears: currentContract.totalYears,
-                signedSeason: currentContract.signedSeason,
-                kind: currentContract.kind,
-                expectation: currentContract.expectation
-            ),
-            currentStats: seasonStats.last!,
-            gameLines: [],
-            careerStats: seasonStats,
-            awards: [],
-            milestones: [],
-            news: [],
-            hallOfFameScore: nil,
-            commitment: commitment,
-            balanceVersion: PitcherPresetCatalog.balanceVersion,
-            proRulesVersion: ProCareerEngine.currentRulesVersion,
-            journeyState: journey
-        )
+    let journey = try unwrapJourney(result.snapshot)
+    let preview = ProRetirementRules.preview(for: result.snapshot)
+    guard result.snapshot.phase == .completed else { throw NSError(domain: "ProFixtureV2", code: 22) }
+    guard result.snapshot.careerStats.count == ProCareerEngine.maximumCareerSeasons else { throw NSError(domain: "ProFixtureV2", code: 23) }
+    guard journey.activeGoal == nil else { throw NSError(domain: "ProFixtureV2", code: 24) }
+    guard !selectedOffers.isEmpty,
+          !selectedAmbitions.isEmpty,
+          trace.contains(where: { $0.hasPrefix("plan_week:") }),
+          trace.contains(where: { $0 == "resolve_important_game" }),
+          trace.contains(where: { $0.hasPrefix("review_season:") }),
+          trace.contains(where: { $0.hasPrefix("acknowledge_settlement:") }),
+          trace.contains("choose_offseason:retire") else {
+        throw NSError(domain: "ProFixtureV2", code: 25)
     }
-    let unsigned = makeState(commitment: "")
-    let signed = makeState(commitment: engine.fixtureCommitment(unsigned))
-    let semanticInputs: [String: Any] = [
-        "rulesVersion": ProCareerEngine.currentRulesVersion,
-        "hallOfFameThreshold": 70,
-        "retirementThresholds": ["lastTeamSeasons": 8, "lastTeamLegacy": 80, "fanSupport": 60],
-        "careerStats": seasonStats.map { stats in
-            [
-                "season": stats.season,
-                "teamID": stats.teamID,
-                "games": stats.games,
-                "inningsOuts": stats.inningsOuts,
-                "strikeouts": stats.strikeouts,
-                "wins": stats.wins,
-            ]
-        },
-        "teamRecord": teamRecords.map { record in
-            [
-                "teamID": record.teamID,
-                "completedSeasons": record.completedSeasons,
-                "legacy": ProTeamLegacyRules.score(record: record),
-                "awardCount": record.awardCount,
-            ]
-        },
-        "goalWires": goalHistory.map { record in
-            [
-                "id": record.id,
-                "ambition": record.ambition.rawValue,
-                "selectedSeason": record.selectedSeason,
-                "anchorTeamID": record.anchorTeamID as Any,
-                "completedSeason": record.completedSeason as Any,
-                "outcome": record.outcome.rawValue,
-            ]
-        },
-        "fanSupport": journey.reputation.fanSupport,
-        "careerEarnings": journey.finances.careerEarnings,
-    ]
-    return PositiveRetirementFixture(state: signed, canonicalInputs: semanticInputs)
+    guard journey.retirementHonors == preview.honors else { throw NSError(domain: "ProFixtureV2", code: 26) }
+    return RealJourneyEvidence(
+        final: result,
+        trace: trace,
+        selectedAmbitions: selectedAmbitions,
+        selectedOffers: selectedOffers,
+        firstRenewalMarket: firstRenewalMarket,
+        projectionState: projectionState
+    )
+}
+
+private func unwrapJourney(_ state: ProCareerSnapshot) throws -> ProCareerJourneyState {
+    guard let journey = state.journeyState else { throw NSError(domain: "ProFixtureV2", code: 30) }
+    return journey
+}
+
+private func unwrapSettlement(_ state: ProCareerSnapshot) throws -> ProSeasonSettlement {
+    guard let settlement = state.journeyState?.lastSettlement else { throw NSError(domain: "ProFixtureV2", code: 31) }
+    return settlement
 }
 
 private func marketCanonical(_ market: ProContractMarket) -> String {
@@ -342,42 +300,57 @@ private func marketCanonical(_ market: ProContractMarket) -> String {
     return [market.id, market.kind.rawValue, String(market.forSeason), String(market.generatedAtRevision), market.offers.map(offer).joined(separator: ";")].joined(separator: "|")
 }
 
-private func row(_ id: String, input: String, output: [String: Any], canonical: String) -> FixtureRow {
-    FixtureRow(id: id, inputCanonical: input, outputCanonical: canonical, output: output)
+private func row(_ id: String, input: String, output: [String: Any], canonical: String, hashReason: String = "SHA-256(UTF-8(inputCanonical)) and SHA-256(UTF-8(outputCanonical)); public command semantic fields are independently recomputable") -> FixtureRow {
+    FixtureRow(id: id, inputCanonical: input, outputCanonical: canonical, output: output, hashReason: hashReason)
 }
 
-private func errorID(_ work: () throws -> Void) -> String {
+private func actualErrorID(_ work: () throws -> Void) -> String {
     do {
         try work()
         return "none"
     } catch let SimulationError.invalidProCareer(detail) {
-        let lower = detail.lowercased()
-        if lower.contains("stale") { return "stale_revision_or_market" }
-        if lower.contains("settlement") { return "invalid_settlement" }
-        if lower.contains("offer") { return "invalid_offer" }
-        if lower.contains("transition") { return "invalid_transition" }
-        return detail.replacingOccurrences(of: " ", with: "_")
+        // These command surfaces already publish stable machine IDs. Preserve the actual ID;
+        // do not collapse distinct stale-market, stale-revision, or validation errors.
+        return detail
     } catch {
-        return String(describing: error).replacingOccurrences(of: " ", with: "_")
+        return String(describing: error)
     }
+}
+
+private func commandCounts(_ trace: [String]) -> [String: Int] {
+    var counts: [String: Int] = [:]
+    for item in trace {
+        let command = item.split(separator: ":", maxSplits: 1).first.map(String.init) ?? item
+        counts[command, default: 0] += 1
+    }
+    return counts
+}
+
+private func canonicalCommandCounts(_ trace: [String]) -> String {
+    let counts = commandCounts(trace)
+    return counts.keys.sorted().map { "\($0)=\(counts[$0] ?? 0)" }.joined(separator: ",")
 }
 
 private func buildRows() throws -> [FixtureRow] {
     let engine = ProCareerEngine(journeyEnabled: true)
+    let real = try runRealJourney()
+
     let started = try start(seed: "620001", sourceFanInterest: 30)
-    let rookieMarket = started.snapshot.journeyState!.pendingContractMarket!
-    let rookie = try accept(started, engine: engine, ambition: .recordBook)
+    var sampleTrace = ["start:620001:preset=power_prospect"]
+    var sampleOffers: [String] = []
+    let rookieMarket = try XCTMarket(started.snapshot)
+    let rookie = try accept(started, engine: engine, ambition: .recordBook, trace: &sampleTrace, selectedOffers: &sampleOffers)
     let rookieOffer = rookieMarket.offers[0]
     let rookieCanonical = [
-        started.nextSeed, rookieMarket.id, rookieOffer.id, rookieOffer.teamID, String(rookieOffer.years),
-        String(rookieOffer.annualSalary), String(rookieOffer.signingBonus ?? 0), rookie.snapshot.phase.rawValue,
-        rookie.snapshot.nextSeedEvidence,
+        "seed=620001", "market=\(rookieMarket.id)", "offer=\(rookieOffer.id)", "team=\(rookieOffer.teamID)",
+        "years=\(rookieOffer.years)", "salary=\(rookieOffer.annualSalary)", "bonus=\(rookieOffer.signingBonus ?? 0)",
+        "phase=\(rookie.snapshot.phase.rawValue)", "ambition=record_book",
     ].joined(separator: "|")
 
     var rows: [FixtureRow] = []
     rows.append(row(
         "rookie_contract",
-        input: "journey:start:620001|accept:rookie|ambition:record_book",
+        input: "commands=start(seed=620001,preset=power_prospect)|accept_contract(market=rookie,offer=first,ambition=record_book)",
         output: [
             "nextSeed": rookie.nextSeed,
             "careerID": rookie.snapshot.proCareerID,
@@ -386,26 +359,29 @@ private func buildRows() throws -> [FixtureRow] {
             "teamID": rookieOffer.teamID,
             "years": rookieOffer.years,
             "annualSalary": rookieOffer.annualSalary,
-            "signingBonus": rookieOffer.signingBonus as Any,
+            "signingBonus": rookieOffer.signingBonus ?? NSNull(),
             "contractKind": rookieOffer.contractKind.rawValue,
             "phase": rookie.snapshot.phase.rawValue,
-            "stateCommitment": rookie.snapshot.commitment,
         ],
         canonical: rookieCanonical
     ))
 
-    let reviewed = try playSeason(rookie, engine: engine, salt: 1)
-    let settlement = reviewed.snapshot.journeyState!.lastSettlement!
+    let reviewed = try playUntilSeasonReview(
+        rookie,
+        engine: engine,
+        report: { ordinaryReport(for: $0, salt: 1) },
+        trace: &sampleTrace
+    )
+    let settlement = try unwrapSettlement(reviewed.snapshot)
     let settlementCanonical = [
-        settlement.id, String(settlement.season), settlement.teamID, String(settlement.salaryIncome),
-        String(settlement.merchandiseIncome), String(settlement.fanBefore), String(settlement.fanAfter),
-        String(settlement.fanDelta), String(settlement.teamLegacyBefore), String(settlement.teamLegacyAfter),
-        String(settlement.hallOfFameBefore), String(settlement.hallOfFameAfter), String(settlement.contractYearsBefore),
-        String(settlement.contractYearsAfter), settlement.nextRoute.rawValue,
+        "id=\(settlement.id)", "season=\(settlement.season)", "team=\(settlement.teamID)",
+        "salary=\(settlement.salaryIncome)", "merchandise=\(settlement.merchandiseIncome)",
+        "fan=\(settlement.fanBefore)->\(settlement.fanAfter)", "legacy=\(settlement.teamLegacyBefore)->\(settlement.teamLegacyAfter)",
+        "hof=\(settlement.hallOfFameBefore)->\(settlement.hallOfFameAfter)", "route=\(settlement.nextRoute.rawValue)",
     ].joined(separator: "|")
     rows.append(row(
         "season_settlement",
-        input: "command:plan_week*|command:resolve_game*|command:review_season|seed_chain:next",
+        input: "commands=plan_week*,resolve_important_game*,apply_season_decision*,review_season|seed_chain=public_results",
         output: [
             "settlementID": settlement.id,
             "salaryIncome": settlement.salaryIncome,
@@ -421,163 +397,152 @@ private func buildRows() throws -> [FixtureRow] {
             "contractYearsAfter": settlement.contractYearsAfter,
             "nextRoute": settlement.nextRoute.rawValue,
             "nextSeed": reviewed.nextSeed,
-            "stateCommitment": reviewed.snapshot.commitment,
             "fanReasonIDs": settlement.fanReasons.map(\.id).sorted(),
         ],
         canonical: settlementCanonical
     ))
 
     let acknowledged = try engine.acknowledgeSettlement(.init(seed: reviewed.nextSeed, state: reviewed.snapshot, expectedRevision: reviewed.snapshot.revision, settlementID: settlement.id))
+    sampleTrace.append("acknowledge_settlement:\(settlement.id)")
     let transition = try engine.chooseOffseason(.init(seed: acknowledged.nextSeed, state: acknowledged.snapshot, decision: .continueCareer, expectedRevision: acknowledged.snapshot.revision))
+    sampleTrace.append("choose_offseason:continue")
     let invested = try engine.chooseInvestment(.init(seed: transition.nextSeed, state: transition.snapshot, expectedRevision: transition.snapshot.revision, investment: .pitchLab, focus: .command))
-    let investmentTransaction = invested.snapshot.journeyState!.finances.transactions.first(where: { $0.kind == .investment })!
-    let investmentCanonical = [investmentTransaction.id, String(investmentTransaction.amount), String(invested.snapshot.journeyState!.finances.availableFunds), String(invested.snapshot.season), invested.snapshot.phase.rawValue].joined(separator: "|")
+    sampleTrace.append("choose_investment:pitch_lab")
+    guard let investmentTransaction = invested.snapshot.journeyState?.finances.transactions.first(where: { $0.kind == .investment }) else {
+        throw NSError(domain: "ProFixtureV2", code: 32)
+    }
+    let investmentCanonical = [
+        "id=\(investmentTransaction.id)", "amount=\(investmentTransaction.amount)",
+        "availableFunds=\(invested.snapshot.journeyState!.finances.availableFunds)", "season=\(invested.snapshot.season)",
+        "focus=command", "phase=\(invested.snapshot.phase.rawValue)",
+    ].joined(separator: "|")
     rows.append(row(
         "investment",
-        input: "settlement:1|acknowledge|offseason:continue|investment:pitch_lab|focus:command",
+        input: "commands=acknowledge_settlement(season=1)|choose_offseason(continue)|choose_investment(pitch_lab,focus=command)",
         output: [
             "transactionID": investmentTransaction.id,
             "amount": investmentTransaction.amount,
             "availableFunds": invested.snapshot.journeyState!.finances.availableFunds,
-            "investmentSeason": invested.snapshot.journeyState!.finances.investmentSeason as Any,
-            "developmentFocus": invested.snapshot.developmentProgress?.command as Any,
+            "investmentSeason": invested.snapshot.journeyState!.finances.investmentSeason ?? NSNull(),
+            "developmentFocus": invested.snapshot.developmentProgress?.command ?? NSNull(),
             "phase": invested.snapshot.phase.rawValue,
             "nextSeed": invested.nextSeed,
-            "stateCommitment": invested.snapshot.commitment,
         ],
         canonical: investmentCanonical
     ))
 
-    let marketFixtureState = invested.snapshot
-    let renewalMarket = ProContractMarketRules.renewalMarket(state: marketFixtureState)
-        ?? ProContractMarketRules.makeRenewalMarket(
-            careerID: marketFixtureState.proCareerID,
-            team: marketFixtureState.team,
-            pitcher: marketFixtureState.pitcher,
-            level: marketFixtureState.level,
-            role: marketFixtureState.role,
-            previousStats: marketFixtureState.currentStats,
-            marketScore: 65,
-            forSeason: marketFixtureState.season + 1,
-            generatedAtRevision: marketFixtureState.revision,
-            maximumCareerSeasons: ProCareerEngine.maximumCareerSeasons
-        )
-    if let renewalMarket {
-        rows.append(row(
-            "renewal_market",
-            input: "rules:renewal_market|state:journey|season:\(marketFixtureState.season)|role:\(marketFixtureState.role.rawValue)",
-            output: [
-                "marketID": renewalMarket.id,
-                "kind": renewalMarket.kind.rawValue,
-                "offerCount": renewalMarket.offers.count,
-                "canonicalRows": renewalMarket.offers.map { $0.id + ":" + String($0.years) + ":" + String($0.annualSalary) + ":" + $0.rolePromise.rawValue + ":" + $0.expectation.difficulty.rawValue },
-            ],
-            canonical: marketCanonical(renewalMarket)
-        ))
+    guard let renewalMarket = real.firstRenewalMarket else {
+        throw NSError(domain: "ProFixtureV2", code: 34)
     }
+    rows.append(row(
+        "renewal_market",
+        input: "inputKind=real_command_generated|start(seed=620050,preset=power_prospect,fan=30)|accept_rookie_contract|complete_three_seasons|acknowledge_settlement|choose_offseason(continue)|capture_first_renewal_market",
+        output: [
+            "inputKind": "real_command_generated",
+            "marketID": renewalMarket.id,
+            "kind": renewalMarket.kind.rawValue,
+            "offerCount": renewalMarket.offers.count,
+            "canonicalRows": renewalMarket.offers.map { $0.id + ":" + String($0.years) + ":" + String($0.annualSalary) + ":" + $0.rolePromise.rawValue + ":" + $0.expectation.difficulty.rawValue },
+        ],
+        canonical: marketCanonical(renewalMarket),
+        hashReason: "SHA-256(UTF-8(inputCanonical)) and SHA-256(UTF-8(outputCanonical)); persisted renewal market captured from public command output, not an engine signature"
+    ))
 
-    let freeAgencyMarket = ProContractMarketRules.freeAgencyMarket(state: marketFixtureState)
-        ?? ProContractMarketRules.makeFreeAgencyMarket(
-            careerID: marketFixtureState.proCareerID,
-            currentTeam: marketFixtureState.team,
-            pitcher: marketFixtureState.pitcher,
-            level: marketFixtureState.level,
-            role: marketFixtureState.role,
-            previousStats: marketFixtureState.currentStats,
-            marketScore: 65,
-            fanSupport: marketFixtureState.journeyState?.reputation.fanSupport ?? 30,
-            forSeason: marketFixtureState.season + 1,
-            generatedAtRevision: marketFixtureState.revision,
-            maximumCareerSeasons: ProCareerEngine.maximumCareerSeasons
-        )
-    if let freeAgencyMarket {
-        rows.append(row(
-            "free_agency_market",
-            input: "rules:free_agency_market|state:journey|season:\(marketFixtureState.season)|serviceYears:\(marketFixtureState.serviceYears)",
-            output: [
-                "marketID": freeAgencyMarket.id,
-                "kind": freeAgencyMarket.kind.rawValue,
-                "offerCount": freeAgencyMarket.offers.count,
-                "teams": freeAgencyMarket.offers.map(\.teamID),
-                "canonicalRows": freeAgencyMarket.offers.map { $0.id + ":" + String($0.years) + ":" + String($0.annualSalary) + ":" + $0.rolePromise.rawValue + ":" + $0.outlook.rawValue },
-            ],
-            canonical: marketCanonical(freeAgencyMarket)
-        ))
+    guard let freeAgencyMarket = ProContractMarketRules.makeFreeAgencyMarket(
+        careerID: invested.snapshot.proCareerID,
+        currentTeam: invested.snapshot.team,
+        pitcher: invested.snapshot.pitcher,
+        level: invested.snapshot.level,
+        role: invested.snapshot.role,
+        previousStats: invested.snapshot.currentStats,
+        marketScore: 65,
+        fanSupport: invested.snapshot.journeyState?.reputation.fanSupport ?? 30,
+        forSeason: invested.snapshot.season + 1,
+        generatedAtRevision: invested.snapshot.revision,
+        maximumCareerSeasons: ProCareerEngine.maximumCareerSeasons
+    ) else {
+        throw NSError(domain: "ProFixtureV2", code: 35)
     }
+    rows.append(row(
+        "free_agency_market",
+        input: "inputKind=pure_rules_projection|rules=makeFreeAgencyMarket|marketScore=65|fanSupport=derived|forSeason=next",
+        output: [
+            "inputKind": "pure_rules_projection",
+            "marketID": freeAgencyMarket.id,
+            "kind": freeAgencyMarket.kind.rawValue,
+            "offerCount": freeAgencyMarket.offers.count,
+            "teams": freeAgencyMarket.offers.map(\.teamID),
+            "canonicalRows": freeAgencyMarket.offers.map { $0.id + ":" + String($0.years) + ":" + String($0.annualSalary) + ":" + $0.rolePromise.rawValue + ":" + $0.outlook.rawValue },
+        ],
+        canonical: marketCanonical(freeAgencyMarket),
+        hashReason: "SHA-256(UTF-8(inputCanonical)) and SHA-256(UTF-8(outputCanonical)); pure rules projection from canonical market inputs, not an engine signature"
+    ))
 
-    var mediaReviewed: ProCareerResult?
-    for candidate in 620010...620040 where mediaReviewed == nil {
-        let candidateStarted = try start(seed: String(candidate), sourceFanInterest: 30)
-        let candidateRookie = try accept(candidateStarted, engine: engine, ambition: .recordBook)
-        let candidateSettlement = try playSeason(candidateRookie, engine: engine, salt: candidate)
-        let candidateAcknowledged = try engine.acknowledgeSettlement(.init(seed: candidateSettlement.nextSeed, state: candidateSettlement.snapshot, expectedRevision: candidateSettlement.snapshot.revision, settlementID: candidateSettlement.snapshot.journeyState!.lastSettlement!.id))
-        let candidateTransition = try engine.chooseOffseason(.init(seed: candidateAcknowledged.nextSeed, state: candidateAcknowledged.snapshot, decision: .continueCareer, expectedRevision: candidateAcknowledged.snapshot.revision))
-        let candidateSeason = try engine.chooseInvestment(.init(seed: candidateTransition.nextSeed, state: candidateTransition.snapshot, expectedRevision: candidateTransition.snapshot.revision, investment: .fanFoundation))
-        let candidateReviewed = try playSeason(candidateSeason, engine: engine, salt: candidate, preferMediaChoice: true)
-        if candidateReviewed.snapshot.decisionHistory?.contains(where: { $0.type == .mediaOpportunity }) == true {
-            mediaReviewed = candidateReviewed
-        }
-    }
-    guard let mediaReviewed else { throw NSError(domain: "ProFixtureV2", code: 13) }
+    let mediaStarted = try start(seed: "620010", sourceFanInterest: 30)
+    var mediaTrace = ["start:620010:preset=power_prospect"]
+    var mediaOffers: [String] = []
+    let mediaRookie = try accept(mediaStarted, engine: engine, ambition: .recordBook, trace: &mediaTrace, selectedOffers: &mediaOffers)
+    let mediaSeason1 = try playUntilSeasonReview(mediaRookie, engine: engine, report: { ordinaryReport(for: $0, salt: 10) }, trace: &mediaTrace)
+    let mediaSettlement1 = try unwrapSettlement(mediaSeason1.snapshot)
+    let mediaAcknowledged1 = try engine.acknowledgeSettlement(.init(seed: mediaSeason1.nextSeed, state: mediaSeason1.snapshot, expectedRevision: mediaSeason1.snapshot.revision, settlementID: mediaSettlement1.id))
+    mediaTrace.append("acknowledge_settlement:\(mediaSettlement1.id)")
+    let mediaTransition = try engine.chooseOffseason(.init(seed: mediaAcknowledged1.nextSeed, state: mediaAcknowledged1.snapshot, decision: .continueCareer, expectedRevision: mediaAcknowledged1.snapshot.revision))
+    mediaTrace.append("choose_offseason:continue")
+    let mediaInvested = try engine.chooseInvestment(.init(seed: mediaTransition.nextSeed, state: mediaTransition.snapshot, expectedRevision: mediaTransition.snapshot.revision, investment: .fanFoundation))
+    mediaTrace.append("choose_investment:fan_foundation")
+    let mediaReviewed = try playUntilSeasonReview(mediaInvested, engine: engine, report: { ordinaryReport(for: $0, salt: 11) }, trace: &mediaTrace, preferMediaChoice: true)
     let mediaRecord = mediaReviewed.snapshot.decisionHistory?.last(where: { $0.type == .mediaOpportunity })
     let endorsement = mediaReviewed.snapshot.journeyState?.finances.transactions.last(where: { $0.kind == .endorsement })
-    let mediaCanonical = [mediaRecord?.decisionID ?? "none", mediaRecord?.choiceID ?? "none", endorsement?.id ?? "none", String(endorsement?.amount ?? 0), String(mediaReviewed.snapshot.journeyState?.reputation.fanSupport ?? 0)].joined(separator: "|")
+    let mediaCanonical = [
+        "mediaDecision=\(mediaRecord?.decisionID ?? "none")", "mediaChoice=\(mediaRecord?.choiceID ?? "none")",
+        "endorsement=\(endorsement?.id ?? "none")", "amount=\(endorsement?.amount ?? 0)",
+        "fan=\(mediaReviewed.snapshot.journeyState?.reputation.fanSupport ?? 0)",
+    ].joined(separator: "|")
     rows.append(row(
         "fan_finance_media",
-        input: "fanFoundation|fan>=35|mediaSlot:stable_hash|choice:fan_together_shoot",
+        input: "commands=start(seed=620010)|accept_contract(record_book)|season_1|acknowledge|offseason=continue|investment=fan_foundation|season_2|media_choice=stable_first_if_present",
         output: [
-            "mediaDecisionID": mediaRecord?.decisionID as Any,
-            "mediaChoiceID": mediaRecord?.choiceID as Any,
-            "endorsementTransactionID": endorsement?.id as Any,
-            "endorsementAmount": endorsement?.amount as Any,
-            "fanSupport": mediaReviewed.snapshot.journeyState?.reputation.fanSupport as Any,
-            "communityPoints": mediaReviewed.snapshot.journeyState?.teamRecords.first(where: { $0.teamID == mediaReviewed.snapshot.team.id })?.communityPoints as Any,
+            "mediaObserved": mediaRecord != nil,
+            "mediaDecisionID": mediaRecord?.decisionID ?? NSNull(),
+            "mediaChoiceID": mediaRecord?.choiceID ?? NSNull(),
+            "endorsementTransactionID": endorsement?.id ?? NSNull(),
+            "endorsementAmount": endorsement?.amount ?? NSNull(),
+            "fanSupport": mediaReviewed.snapshot.journeyState?.reputation.fanSupport ?? NSNull(),
+            "communityPoints": mediaReviewed.snapshot.journeyState?.teamRecords.first(where: { $0.teamID == mediaReviewed.snapshot.team.id })?.communityPoints ?? NSNull(),
             "nextSeed": mediaReviewed.nextSeed,
         ],
         canonical: mediaCanonical
     ))
 
-    let preview = ProRetirementRules.preview(for: mediaReviewed.snapshot)
-    let currentRecord = mediaReviewed.snapshot.journeyState?.teamRecords.first(where: { $0.teamID == mediaReviewed.snapshot.team.id })
-    let legacyCanonical = [
-        mediaReviewed.snapshot.team.id,
-        String(currentRecord?.completedSeasons ?? 0),
-        String(currentRecord.map(ProTeamLegacyRules.score(record:)) ?? 0),
-        String(preview.finalScore),
-        preview.honors.map(\.kind.rawValue).joined(separator: ","),
-        preview.completedAmbitions.map(\.rawValue).joined(separator: ","),
+    let projection = ProRetirementRules.preview(for: real.projectionState)
+    let projectionRecord = real.projectionState.journeyState?.teamRecords.first(where: { $0.teamID == real.projectionState.team.id })
+    let projectionCanonical = [
+        "inputKind=pure_rule_projection", "team=\(real.projectionState.team.id)",
+        "seasons=\(projectionRecord?.completedSeasons ?? 0)", "legacy=\(projectionRecord.map(ProTeamLegacyRules.score(record:)) ?? 0)",
+        "hof=\(projection.finalScore)", "honors=\(projection.honors.map(\.kind.rawValue).joined(separator: ","))",
     ].joined(separator: "|")
     rows.append(row(
         "team_legacy_ambition_honors",
-        input: "projection:retirement|teamRecords:typed|goalHistory:typed|honors:stable_order",
+        input: "inputKind=pure_rule_projection|rules=ProRetirementRules.preview|state=real_journey_season_1_review_output",
         output: [
-            "teamID": mediaReviewed.snapshot.team.id,
-            "teamSeasons": currentRecord?.completedSeasons as Any,
-            "teamLegacy": currentRecord.map(ProTeamLegacyRules.score(record:)) as Any,
-            "hallOfFameProjection": preview.finalScore,
-            "retiredNumberEligible": preview.retiredNumberEligible,
-            "clubHallTeamIDs": preview.clubHallTeamIDs,
-            "completedAmbitions": preview.completedAmbitions.map(\.rawValue),
-            "honorKinds": preview.honors.map(\.kind.rawValue),
+            "inputKind": "pure_rule_projection",
+            "teamID": real.projectionState.team.id,
+            "teamSeasons": projectionRecord?.completedSeasons ?? NSNull(),
+            "teamLegacy": projectionRecord.map(ProTeamLegacyRules.score(record:)) ?? NSNull(),
+            "hallOfFameProjection": projection.finalScore,
+            "retiredNumberEligible": projection.retiredNumberEligible,
+            "clubHallTeamIDs": projection.clubHallTeamIDs,
+            "completedAmbitions": projection.completedAmbitions.map(\.rawValue),
+            "honorKinds": projection.honors.map(\.kind.rawValue),
         ],
-        canonical: legacyCanonical
+        canonical: projectionCanonical,
+        hashReason: "SHA-256(UTF-8(inputCanonical)) and SHA-256(UTF-8(outputCanonical)); pure retirement projection over a real command-produced intermediate state"
     ))
 
-    let positiveEngine = ProCareerEngine(journeyEnabled: true)
-    let positiveInput = try positiveRetirementFixture(engine: positiveEngine)
-    let positiveRetirement = try positiveEngine.chooseOffseason(.init(
-        seed: "620050",
-        state: positiveInput.state,
-        decision: .retire,
-        expectedRevision: positiveInput.state.revision
-    ))
-    let positiveJourney = positiveRetirement.snapshot.journeyState!
-    let positivePreview = ProRetirementRules.preview(for: positiveRetirement.snapshot)
-    let completedWires = positiveJourney.goalHistory
-        .filter { $0.outcome == .completed }
-        .map { $0.ambition.rawValue }
-        .sorted()
-    let positiveHonorRows: [[String: Any]] = positiveJourney.retirementHonors.map { honor in
+    let finalJourney = try unwrapJourney(real.final.snapshot)
+    let finalPreview = ProRetirementRules.preview(for: real.final.snapshot)
+    let completedAmbitions = finalJourney.goalHistory.filter { $0.outcome == .completed }.map(\.ambition.rawValue).sorted()
+    let honorRows: [[String: Any]] = finalJourney.retirementHonors.map { honor in
         [
             "id": honor.id,
             "kind": honor.kind.rawValue,
@@ -586,48 +551,52 @@ private func buildRows() throws -> [FixtureRow] {
             "value": honor.value ?? NSNull(),
         ]
     }
-    let positiveCanonical = [
-        "command:choose_offseason.retire",
-        "input:valid_constructed_signed_state",
-        "careerID:\(positiveRetirement.snapshot.proCareerID)",
-        "season:\(positiveRetirement.snapshot.season)",
-        "team:\(positivePreview.lastTeamSeasons):\(positivePreview.lastTeamLegacy)",
-        "hof:\(positivePreview.finalScore)",
-        "ambitions:\(completedWires.joined(separator: ","))",
-        "honors:\(positiveJourney.retirementHonors.map(\.id).joined(separator: ","))",
+    let realCanonical = [
+        "inputKind=real_command_generated", "commands=\(canonicalCommandCounts(real.trace))",
+        "completedSeasons=\(real.final.snapshot.careerStats.count)", "hof=\(finalPreview.finalScore)",
+        "team=\(finalPreview.lastTeamSeasons):\(finalPreview.lastTeamLegacy)",
+        "ambitions=\(completedAmbitions.joined(separator: ","))",
+        "honors=\(finalJourney.retirementHonors.map(\.id).joined(separator: ","))",
     ].joined(separator: "|")
     rows.append(row(
-        "positive_retirement_semantics",
-        input: "command:choose_offseason.retire|input:valid_constructed_signed_state|semantic_inputs:canonical",
+        "real_retirement_command",
+        input: "inputKind=real_command_generated|start(seed=620050,preset=power_prospect,fan=30)|accept_contract(ambition=franchise_icon)|repeat(public_weekly_commands,season_review,acknowledge,continue_or_renew,investment_or_skip) until exact_20_seasons|choose_offseason(retire)",
         output: [
-            "execution": "command:choose_offseason.retire",
-            "inputKind": "valid_constructed_signed_state",
-            "pureRuleProjection": "ProRetirementRules.preview(command_output)",
-            "phase": positiveRetirement.snapshot.phase.rawValue,
-            "hallOfFameScore": positiveRetirement.snapshot.hallOfFameScore as Any,
-            "lastTeamSeasons": positivePreview.lastTeamSeasons,
-            "lastTeamLegacy": positivePreview.lastTeamLegacy,
-            "fanSupport": positivePreview.fanSupport,
-            "retiredNumberEligible": positivePreview.retiredNumberEligible,
-            "completedAmbitionWires": completedWires,
-            "allThreeAmbitionsCompleted": completedWires.count == 3,
-            "honorKinds": positiveJourney.retirementHonors.map(\.kind.rawValue),
-            "honors": positiveHonorRows,
-            "canonicalSemanticInputs": positiveInput.canonicalInputs,
+            "inputKind": "real_command_generated",
+            "actualRetirementCommand": "choose_offseason.retire",
+            "retirementMode": "maximum_season_evaluation_horizon",
+            "voluntaryRetirement": false,
+            "phase": real.final.snapshot.phase.rawValue,
+            "completedSeasons": real.final.snapshot.careerStats.count,
+            "hallOfFameScore": real.final.snapshot.hallOfFameScore ?? NSNull(),
+            "lastTeamSeasons": finalPreview.lastTeamSeasons,
+            "lastTeamLegacy": finalPreview.lastTeamLegacy,
+            "fanSupport": finalPreview.fanSupport,
+            "retiredNumberEligible": finalPreview.retiredNumberEligible,
+            "completedAmbitions": completedAmbitions,
+            "allThreeAmbitionsCompleted": completedAmbitions.count == 3,
+            "honorKinds": finalJourney.retirementHonors.map(\.kind.rawValue),
+            "honors": honorRows,
+            "selectedAmbitions": real.selectedAmbitions,
+            "selectedOffers": real.selectedOffers,
+            "commandCounts": commandCounts(real.trace),
+            "commandTraceSha256": sha256(real.trace.joined(separator: "\n")),
+            "retirementProjectionMatchesCommand": finalJourney.retirementHonors == finalPreview.honors,
         ],
-        canonical: positiveCanonical
+        canonical: realCanonical
     ))
 
     let legacyEngine = ProCareerEngine()
     let legacyStarted = try start(seed: "620007", journeyEnabled: false)
     let legacySigned = try legacyEngine.signContract(.init(seed: legacyStarted.nextSeed, state: legacyStarted.snapshot))
-    let legacyReviewReady = try playUntilSeasonReview(legacySigned, engine: legacyEngine, salt: 7)
+    var legacyTrace = ["start:620007:legacy", "sign_contract"]
+    let legacyReviewReady = try playUntilSeasonReview(legacySigned, engine: legacyEngine, report: { ordinaryReport(for: $0, salt: 7) }, trace: &legacyTrace)
     let migrated = try ProCareerEngine(journeyEnabled: true).migrateJourneyIfSafe(.init(seed: legacyReviewReady.nextSeed, state: legacyReviewReady.snapshot))
-    let migration = migrated.snapshot.journeyState!.migration
+    let migration = try unwrapJourney(migrated.snapshot).migration
     let migrationCanonical = [migration.source.rawValue, String(migration.initializedSeason), String(migration.financeStartsSeason), String(migration.unassignedLegacyAwards), migration.financeNoticePending ? "1" : "0", migrated.snapshot.phase.rawValue].joined(separator: "|")
     rows.append(row(
         "legacy_migration",
-        input: "legacy:start|legacy:sign_contract|legacy:season_review|migrate:safe_boundary|seedless:true",
+        input: "commands=legacy_start|legacy_sign_contract|legacy_weekly_play|legacy_review_season|migrateJourneyIfSafe",
         output: [
             "source": migration.source.rawValue,
             "initializedSeason": migration.initializedSeason,
@@ -635,69 +604,82 @@ private func buildRows() throws -> [FixtureRow] {
             "unassignedLegacyAwards": migration.unassignedLegacyAwards,
             "financeNoticePending": migration.financeNoticePending,
             "phase": migrated.snapshot.phase.rawValue,
-            "salaryTransactions": migrated.snapshot.journeyState!.finances.transactions.filter { $0.kind == .salary }.count,
+            "salaryTransactions": try unwrapJourney(migrated.snapshot).finances.transactions.filter { $0.kind == .salary }.count,
             "nextSeed": migrated.nextSeed,
-            "stateCommitment": migrated.snapshot.commitment,
         ],
         canonical: migrationCanonical
     ))
 
-    let staleRevisionError = errorID {
+    let staleRevisionError = actualErrorID {
         _ = try engine.acceptContract(.init(seed: "620099", state: rookie.snapshot, expectedRevision: rookie.snapshot.revision + 1, marketID: rookieMarket.id, offerID: rookieOffer.id, ambition: .recordBook))
     }
     let invalidOfferStarted = try start(seed: "620002")
-    let invalidOfferMarket = invalidOfferStarted.snapshot.journeyState!.pendingContractMarket!
-    let invalidOfferError = errorID {
-        _ = try engine.acceptContract(.init(
-            seed: invalidOfferStarted.nextSeed,
-            state: invalidOfferStarted.snapshot,
-            expectedRevision: invalidOfferStarted.snapshot.revision,
-            marketID: invalidOfferMarket.id,
-            offerID: "offer:not-present",
-            ambition: .recordBook
-        ))
+    let invalidOfferMarket = try XCTMarket(invalidOfferStarted.snapshot)
+    let invalidOfferError = actualErrorID {
+        _ = try engine.acceptContract(.init(seed: invalidOfferStarted.nextSeed, state: invalidOfferStarted.snapshot, expectedRevision: invalidOfferStarted.snapshot.revision, marketID: invalidOfferMarket.id, offerID: "offer:not-present", ambition: .recordBook))
     }
-    let invalidSettlementError = errorID {
-        _ = try engine.acknowledgeSettlement(.init(
-            seed: reviewed.nextSeed,
-            state: reviewed.snapshot,
-            expectedRevision: reviewed.snapshot.revision,
-            settlementID: "settlement:not-present"
-        ))
+    let invalidSettlementError = actualErrorID {
+        _ = try engine.acknowledgeSettlement(.init(seed: reviewed.nextSeed, state: reviewed.snapshot, expectedRevision: reviewed.snapshot.revision, settlementID: "settlement:not-present"))
     }
     let commandErrors = [staleRevisionError, invalidOfferError, invalidSettlementError]
     rows.append(row(
         "command_errors",
-        input: "accept_contract:stale_revision|accept_contract:invalid_offer|acknowledge_settlement:invalid_id",
-        output: ["errorIDs": commandErrors],
+        input: "commands=accept_contract(stale_revision)|accept_contract(invalid_offer)|acknowledge_settlement(invalid_settlement_id)",
+        output: ["errorIDs": commandErrors, "executedCases": ["stale_revision", "invalid_offer", "invalid_settlement"]],
         canonical: commandErrors.joined(separator: "|")
     ))
 
-    let deterministicCanonical = [rookie.nextSeed, rookie.snapshot.commitment, reviewed.nextSeed, reviewed.snapshot.commitment, invested.nextSeed, invested.snapshot.commitment].joined(separator: "|")
+    let replayCanonical = [
+        "rookie.nextSeed=\(rookie.nextSeed)", "reviewed.nextSeed=\(reviewed.nextSeed)", "invested.nextSeed=\(invested.nextSeed)",
+        "rookie.phase=\(rookie.snapshot.phase.rawValue)", "settlement.id=\(settlement.id)", "investment.id=\(investmentTransaction.id)",
+    ].joined(separator: "|")
     rows.append(row(
-        "deterministic_next_seed_commitment",
-        input: "replay:seed=620001|commands:accept,season_settlement,investment",
+        "deterministic_replay_hash",
+        input: "replay=seed=620001|commands=accept_contract,weekly_play,review_season,acknowledge,choose_offseason,choose_investment",
         output: [
             "nextSeeds": [rookie.nextSeed, reviewed.nextSeed, invested.nextSeed],
-            "commitments": [rookie.snapshot.commitment, reviewed.snapshot.commitment, invested.snapshot.commitment],
-            "replayCanonicalSha256": sha256(deterministicCanonical),
+            "semanticReplaySha256": sha256(replayCanonical),
         ],
-        canonical: deterministicCanonical
+        canonical: replayCanonical,
+        hashReason: "SHA-256 over independently recomputable next-seed and semantic-ID fields; no state signature material is exported"
     ))
 
-    let finalRows = rows.sorted { $0.id < $1.id }
-    return finalRows
+    guard rows.count == 11, Set(rows.map(\.id)).count == rows.count else {
+        throw NSError(domain: "ProFixtureV2", code: 36)
+    }
+    return rows.sorted { $0.id < $1.id }
 }
 
-private extension ProCareerSnapshot {
-    var nextSeedEvidence: String { commitment }
+private func XCTMarket(_ state: ProCareerSnapshot) throws -> ProContractMarket {
+    guard let market = state.journeyState?.pendingContractMarket else {
+        throw NSError(domain: "ProFixtureV2", code: 33)
+    }
+    return market
 }
 
 private func writeFixture(to path: String, rows: [FixtureRow]) throws {
+    let caseIDs = rows.map(\.id)
     let inputCanonical = [
-        "fixture:ProCareerEngine.JourneyWave6", "journeyEnabled:true", "commands:start,accept,planWeek,resolveImportantGame,applySeasonDecision,reviewSeason,acknowledgeSettlement,chooseOffseason,chooseInvestment,applyMediaChoice,retire,migrate", "cases:rookie_contract,season_settlement,investment,renewal_market,free_agency_market,fan_finance_media,team_legacy_ambition_honors,positive_retirement_semantics,legacy_migration,command_errors,deterministic_next_seed_commitment", "stateFields:stableIDs,rawEnums,decimalMoney,canonicalCommitment", "locale:independent", "timezone:UTC",
+        "fixture=ProCareerEngine.JourneyWave6",
+        "journeyEnabled=true",
+        "commands=start,accept_contract,plan_week,resolve_important_game,apply_season_decision,review_season,acknowledge_settlement,choose_offseason,choose_investment,migrateJourneyIfSafe",
+        "cases=\(caseIDs.joined(separator: ","))",
+        "canonicalFields=semantic-inputs,actual-command-output,stable-error-id",
+        "locale=stable_ids_only",
+        "timezone=UTC",
     ].joined(separator: "|")
     let outputCanonical = rows.map { "\($0.id)|\($0.outputCanonical)\n" }.joined()
+    let cases: [[String: Any]] = rows.map {
+        [
+            "caseID": $0.id,
+            "inputCanonical": $0.inputCanonical,
+            "inputSha256": sha256($0.inputCanonical),
+            "outputCanonical": $0.outputCanonical,
+            "outputSha256": sha256($0.outputCanonical),
+            "hashReason": $0.hashReason,
+            "output": $0.output,
+        ]
+    }
     let root: [String: Any] = [
         "fixtureSchema": schema,
         "sourceRuntime": "swift",
@@ -705,18 +687,21 @@ private func writeFixture(to path: String, rows: [FixtureRow]) throws {
         "inputSha256": sha256(inputCanonical),
         "outputSha256": sha256(outputCanonical),
         "authorityScope": "swift-journey-semantic-oracle",
+        "canonicalization": [
+            "inputHash": "SHA-256(UTF-8(inputCanonical))",
+            "caseOutputHash": "SHA-256(UTF-8(outputCanonical))",
+            "fixtureOutputHash": "SHA-256(concat(caseID|outputCanonical\\n))",
+            "independentConsumer": "recompute from semantic inputs and public rules/commands",
+        ],
         "input": [
             "fixture": "ProCareerEngine.JourneyWave6",
             "journeyEnabled": true,
-            "commandWire": ["start", "accept_contract", "plan_week", "resolve_important_game", "apply_season_decision", "review_season", "acknowledge_settlement", "choose_offseason", "choose_investment", "apply_media_choice", "retire", "migrate"],
+            "commandWire": ["start", "accept_contract", "plan_week", "resolve_important_game", "apply_season_decision", "review_season", "acknowledge_settlement", "choose_offseason", "choose_investment", "migrateJourneyIfSafe"],
+            "caseOrder": caseIDs,
             "locale": "stable_ids_only",
             "timezone": "UTC",
         ],
-        "expected": [
-            "exactRuns": rows.count,
-            "canonicalRow": "caseID|outputCanonical\\n",
-            "rows": rows.map { ["caseID": $0.id, "inputCanonical": $0.inputCanonical, "inputSha256": sha256($0.inputCanonical), "outputCanonical": $0.outputCanonical, "outputSha256": sha256($0.outputCanonical), "wireCommitment": sha256($0.outputCanonical), "output": $0.output] },
-        ],
+        "cases": cases,
     ]
     let data = try JSONSerialization.data(withJSONObject: root, options: [.sortedKeys, .prettyPrinted])
     let url = URL(fileURLWithPath: path)

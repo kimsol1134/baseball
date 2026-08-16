@@ -64,6 +64,48 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
         XCTAssertEqual(record.awardCount, 1)
     }
 
+    func testSeasonHonorThresholdsAreExact() {
+        let teamID = ProCareerEngine.proTeams[0].id
+        func awardIDs(_ stats: ProSeasonStats) -> Set<String> {
+            Set(ProCareerRecognitionRules.currentSeasonRecognitions(
+                careerID: "wave4-award-boundary",
+                season: stats.season,
+                teamID: teamID,
+                stats: stats,
+                level: .major
+            ).filter { $0.kind == .award }.map(\.contentID))
+        }
+
+        let exceptional = ProSeasonStats(
+            season: 1,
+            teamID: teamID,
+            games: 20,
+            inningsOuts: 360,
+            strikeouts: 120,
+            walks: 33,
+            runsAllowed: 39,
+            hits: 113
+        )
+        XCTAssertEqual(awardIDs(exceptional), Set([
+            "pro.award.command",
+            "pro.award.hits",
+            "pro.award.innings",
+            "pro.award.run-prevention",
+            "pro.award.strikeouts",
+        ]))
+
+        XCTAssertFalse(awardIDs(.init(season: 1, teamID: teamID, inningsOuts: 359, strikeouts: 119, walks: 100, runsAllowed: 100, hits: 200)).contains("pro.award.strikeouts"))
+        XCTAssertTrue(awardIDs(.init(season: 1, teamID: teamID, inningsOuts: 1, strikeouts: 120)).contains("pro.award.strikeouts"))
+        XCTAssertFalse(awardIDs(.init(season: 1, teamID: teamID, games: 20, inningsOuts: 360, runsAllowed: 40)).contains("pro.award.run-prevention"), "RA9 3.00 is outside the strict award boundary")
+        XCTAssertTrue(awardIDs(.init(season: 1, teamID: teamID, games: 20, inningsOuts: 360, runsAllowed: 39)).contains("pro.award.run-prevention"))
+        XCTAssertFalse(awardIDs(.init(season: 1, teamID: teamID, inningsOuts: 180, walks: 17)).contains("pro.award.command"))
+        XCTAssertTrue(awardIDs(.init(season: 1, teamID: teamID, inningsOuts: 180, walks: 16)).contains("pro.award.command"))
+        XCTAssertFalse(awardIDs(.init(season: 1, teamID: teamID, inningsOuts: 180, hits: 57)).contains("pro.award.hits"))
+        XCTAssertTrue(awardIDs(.init(season: 1, teamID: teamID, inningsOuts: 180, hits: 56)).contains("pro.award.hits"))
+        XCTAssertFalse(awardIDs(.init(season: 1, teamID: teamID, inningsOuts: 359)).contains("pro.award.innings"))
+        XCTAssertTrue(awardIDs(.init(season: 1, teamID: teamID, inningsOuts: 360)).contains("pro.award.innings"))
+    }
+
     func testLegacyScoreCapsAndTierBoundariesAreExact() {
         let record = ProTeamCareerRecord(teamID: "team", completedSeasons: 8, consecutiveSeasons: 8, games: 0, starts: 0, inningsOuts: 3_000, strikeouts: 4_000, wins: 0, saves: 0, awardCount: 20, communityPoints: 20, lastSeason: 8)
         XCTAssertEqual(ProTeamLegacyRules.score(record: record), 100)

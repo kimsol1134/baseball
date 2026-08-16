@@ -263,7 +263,7 @@
     "app.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Mound Reborn" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "生まれ変わったマウンド" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "野球がダメならまた転生" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "야구 못하면 또 환생함" } }
       }
     },
@@ -10641,6 +10641,13 @@
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "연봉 %1$@" } }
       }
     },
+    "pro.settlement.salary.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Salary" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "年俸" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연봉" } }
+      }
+    },
     "pro.settlement.fan" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Fan support %1$lld → %2$lld" } },
@@ -10667,6 +10674,13 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Support merchandise %1$@" } },
         "ja" : { "stringUnit" : { "state" : "translated", "value" : "応援商品収益 %1$@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "응원 상품 수익 %1$@" } }
+      }
+    },
+    "pro.settlement.merchandise.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Support merchandise" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "応援商品収益" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "응원 상품 수익" } }
       }
     },
     "pro.settlement.merchandise.tier" : {

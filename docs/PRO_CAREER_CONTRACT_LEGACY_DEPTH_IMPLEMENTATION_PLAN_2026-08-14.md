@@ -3,12 +3,13 @@
 | 항목 | 값 |
 |---|---|
 | 문서 ID | `DOC-PRO-CAREER-CONTRACT-LEGACY-DEPTH-2026-08-14` |
-| 상태 | **구현 준비 완료(Ready for implementation)** |
-| 기준일 | 2026-08-14 KST |
+| 상태 | **Swift core/iOS 구현·자동·서명 검증 완료(Release 비활성, 실기기·사용자 검증 보류)** |
+| 기준일 | 2026-08-16 KST |
 | 실행 주체 | 이 저장소를 수정하는 AI 에이전트 |
 | 입력 | 유료 구매자 리뷰 1건 + 현재 Swift/iOS/Kotlin 구현 + 기존 프로 주체성 계획 |
 | 제품 범위 | 프로 입단부터 은퇴까지의 계약, 장기 목표, 구단별 유산, 팬, 제한된 재정 선택 |
 | 1차 코드 범위 | `packages/simulation-core`, `apps/ios` |
+| 이번 실행 범위 | Swift core와 iOS만 구현·검증. Kotlin/Android는 수정하지 않고 후속 웨이브로 보류 |
 | 패리티 범위 | `apps/android/game-core`, `apps/android/game-application`, `apps/android/feature-career` |
 | 비범위 | 광고 도입, 무료화, 가격 변경, 전체 구단 경영, 장비 인벤토리, 실제 야구 IP |
 
@@ -2351,3 +2352,178 @@ Simulator/기기 증거:
 | 2026-08-14 | offer non-dominance에 공개 계약 목표 난도를 포함 | 마지막 시즌의 기간 cap 이후 재계약 2안도 실제 trade-off를 유지하기 위해 |
 | 2026-08-15 | Wave 3 canonical fallback은 선택 band maximum 공통 base와 renewal 90/110·FA 100/115/85 multiplier를 쓰는 collision-safe tuple로 확정 | contractKind/teamID가 salary hash base를 분리해 정규 시도만으로 non-dominance가 수학적으로 불가능한 충돌을 해소하되, 임의 연봉 수리·ID/기간 변경·formula 완화를 금지하기 위해 |
 | 2026-08-15 | FA 외부 후보는 demand hash로 set을 고정한 뒤 `teamID|forSeason|demand` signal과 stable teamID tie-break로 challenge/opportunity slot에 배정 | 시즌 신호가 slot trade-off를 바꿀 수 있게 하면서 persisted public outlook을 contender/opportunity로 유지하고 후보 재추첨을 막기 위해 |
+| 2026-08-15 | `stable_random` 자동 분포 cohort는 FA 자격 발생 시 저장된 3개 FA offer를 사용하고, 주간 계획·시즌 결정·투자는 정책과 독립된 deterministic 표본을 사용 | 재계약 행동은 `legacy_first`·`security_first`가 별도 진단하므로 balance denominator에 재계약 route coin을 다시 섞지 않고, 공개된 FA trade-off를 한 seed당 한 커리어로 측정하기 위해 |
+| 2026-08-15 | 자동 완주의 중요 경기 입력을 6개 결과(0~4실점, 0~3볼넷, 0~3피안타)로 확장하되 제품 수상 조건·HOF 70점 기준·v3 산식은 변경하지 않음 | 기존 러너 입력이 좋은 결과에 치우쳐 평범한 장기 커리어도 명예의 전당에 과다 진입한 문제를 입력 표본에서 교정하고, 실패를 숨기려고 제품 판정 상수를 완화하지 않기 위해 |
+| 2026-08-15 | 미완료 `record_book`은 자동 완주에서 완료 또는 은퇴까지 유지하고, 다른 미완료 목표는 계약 갱신 시 75% deterministic continuity를 적용하며 iOS는 현재 목표를 기본 선택으로 표시 | 커리어 전체 누적 목표가 계약마다 초기화되는 비현실적 행동을 피하면서 사용자가 새 계약에서 목표를 바꿀 선택권은 보존하기 위해 |
+| 2026-08-15 | 사용자 지시에 따라 이번 구현·검증 범위를 Swift core와 iOS로 제한하고 Kotlin/Android 패리티·출시 작업은 후속 웨이브로 보류 | 미완성 다중 플랫폼 상태를 공개하지 않으며, iOS production gate는 계속 `false`로 유지하기 위해 |
+
+---
+
+## 21. 2026-08-15~16 Swift/iOS 구현 실행 결과
+
+이 절은 계획을 대체하지 않고, 현재 작업 트리에서 실제로 구현·실행한 범위와 아직 완료로 볼 수
+없는 항목을 고정한다. 다음 AI 에이전트는 아래 표의 `보류`를 임의로 완료 처리하거나 production
+rollout을 켜지 않는다.
+
+### 21.1 범위 판정
+
+| 영역 | 상태 | 판정 근거 |
+|---|---|---|
+| Swift journey state machine | 구현·자동 검증 완료 | 계약, 결산, 재정, 목표, 구단 유산, 은퇴 명예가 공개 명령으로 20시즌 완주 |
+| Swift 분포 runner | 구현·release gate 통과 | 5정책 × 1,000커리어 × 20시즌, 합계 100,000시즌 |
+| Swift semantic oracle v2 | 구현·결정론 검증 완료 | 정렬된 11 case, 두 번 생성한 파일이 byte-identical |
+| iOS SwiftUI 흐름 | 구현·자동 검증 완료 | feature gate, 계약·결산·투자·은퇴 화면, ko/en/ja copy와 접근성 식별자 |
+| iOS 일본어 20시즌 UI 여정 | 검증 완료 | 실제 UI로 신인 계약부터 20회 정산, 최대 시즌 은퇴와 명예 표시까지 1/1 통과 |
+| 최신 소스의 signed IPA | 검증 완료 | App Store export, 배포 서명·entitlement·ko/en/ja·Release gate 검사 통과 |
+| Kotlin/Android 패리티 | **보류** | 사용자 지시로 이번 실행 범위에서 제외. 기존 Android 변경은 수정·되돌림 금지 |
+| 실제 사용자 5명 이해도 조사 | **보류** | 자동 테스트로 대체할 수 없는 제품 완료 조건 |
+| 일본어 실기기/TestFlight smoke | **보류** | ASC 제출·업로드를 승인받지 않았고 실제 사용자 데이터를 건드리지 않음 |
+| production rollout | **비활성** | `AppFeatureConfiguration.production.proCareerJourneyV1 == false` 유지 |
+
+### 21.2 실제 구현 요약
+
+#### Swift core와 장기 안정성
+
+- 재정 transaction ID suffix를 64비트 안정 해시 전체로 확장하고, cap eviction 뒤에도 signing
+  bonus·급여·결산의 exact-once 의미를 검증한다.
+- settlement 저장·확인·다음 phase 전환의 단조성과 idempotency를 강화한다.
+- `activeGoal`과 `goalHistory` 사이의 유일성·완료 상태 불변식을 strict validation에 포함한다.
+- 신규 journey는 versioned HOF v3 projection을 사용하고, 기존 save의 과거 판정 branch는 고정한다.
+- 시즌 수상 조건은 제품 상수를 바꾸지 않았다. 경계 테스트가 `K >= 120`, `RA9 < 3.0 &&
+  games >= 20`, `BB9 < 2.5 && outs >= 180`, `H9 < 8.5 && outs >= 180`,
+  `inningsOuts >= 360`을 정확히 고정한다.
+
+#### 분포 runner
+
+- 합성 결과를 사후 보정하지 않고 `start`, 계약 수락, 주간 계획, 중요 경기, 시즌 결정, 결산,
+  오프시즌, 투자, 은퇴의 public command를 실제로 호출한다.
+- `salary_first`, `legacy_first`, `role_first`, `security_first`, `stable_random`을 같은 seed set에서
+  실행한다. release balance denominator는 seed당 한 커리어인 `stable_random`만 사용한다.
+- `stable_random`은 FA 자격 시 저장된 3개 FA offer 중 하나를 안정적으로 표본화한다. 다른 4정책은
+  trade-off 진단이며 balance 분모에 합산하지 않는다.
+- 중요 경기 입력을 6개 결과군으로 넓혔지만 수상 조건, HOF 70점 threshold, HOF v3 공식은
+  완화하지 않았다.
+- 미완료 `record_book`은 은퇴 또는 완료까지 유지한다. 다른 미완료 목표는 계약 협상마다
+  deterministic 75% 확률로 이어가고, 나머지 경우 실제 미완료 대안으로 전환한다.
+- release 실행에서 smoke 전용 policy/FA-route 환경 변수를 받으면 즉시 실패한다.
+
+#### Swift oracle exporter
+
+- production이 호출할 수 있는 fixture SPI를 제거했다.
+- 신인 계약, 재계약, FA, 결산, 팬·재정·미디어, 투자, migration, 오류, replay, 구단 유산·목표·명예,
+  실제 은퇴 명령의 11개 독립 semantic case를 만든다.
+- 재계약 row와 20시즌 은퇴 row는 projection fallback이 아니라 public command 결과만 사용하며
+  `inputKind=real_command_generated`를 기록한다.
+- 각 case의 input/output canonical hash와 fixture root input/output hash는 서로 독립적으로 계산한다.
+  내부 state signature를 semantic output으로 내보내지 않는다.
+
+#### iOS
+
+- `-uiTestProCareerJourneyV1`은 `#if DEBUG`에서만 컴파일한다. Release는 launch argument와 무관하게
+  `.production`을 사용한다.
+- UI reset은 lazy store를 먼저 restore한 뒤 정상 delete 경로로 tombstone을 써서 과거 프로
+  저장이 되살아나는 문제를 막는다.
+- 계약, 결산, 시즌 결정, 투자, 은퇴 preview/honors root에 안정 접근성 식별자를 제공한다.
+- 결산의 연봉·응원 상품 카드 title key와 값/VoiceOver 문장 key를 분리해 placeholder 오용을 막고
+  ko/en/ja를 모두 채웠다.
+- namespaced 시즌 결정 ID를 copy catalog suffix로 안전하게 변환하며 과거 unnamespaced save도
+  그대로 표시한다.
+- 계약 확인 dialog의 SwiftUI 전환 중 nil offer에서는 인자를 요구하는 template을 해석하지 않는다.
+- 후속 계약 시장은 현재 미완료 목표를 기본 선택하지만 사용자가 다른 목표로 바꿀 수 있다.
+- 일본어 UI acceptance는 신인 계약, 주간 계획, 시즌 결정, 중요 경기, 20회 결산, 투자,
+  후속 계약, 최대 시즌 은퇴, 명예 표시를 한 실제 화면 여정으로 검증한다.
+
+### 21.3 자동 검증 증거
+
+다음 결과는 이 작업 트리와 안정 build 경로에서 직접 실행했다.
+
+| 검증 | 결과 |
+|---|---|
+| `npm run check:copy` | 통과, 실존 IP/internal term 위반 0 |
+| `npm run check:korean-copy:ci` | 1,393 strings, error 0, warning 0 |
+| `npm run test:korean-copy` | 10/10 통과 |
+| `npm run check:ios-localization` | 3,200 entries, pending 0 |
+| `npm run check:balance` | 통과 |
+| `npm run check:pro-career` | 14/14 통과, 수상 exact-boundary 포함 |
+| `xcodebuild test -only-testing:BaseballIOSTests` | 474/474 통과 |
+| Swift package 전체 테스트 | 452개 실행, 실패 0, 명시적 opt-in evidence 1개 skip, 714.215초 |
+| 일본어 최대 시즌 UI test | 1/1 통과, 실패·skip 0, 테스트 본체 2,182.535초 |
+| signed IPA 검사 | archive/export 성공, Apple Distribution 서명, `get-task-allow=false`, ko/en/ja 포함, Release UI-test gate 부재 |
+
+안정 경로는 Swift `.build/pro-career-depth-swift`, iOS `.build/pro-career-depth-ios`다. retry마다
+새 DerivedData를 만들지 않았다. 원래 고정 simulator가 다른 프로젝트의 반복 UI 실행에 점유돼
+첫 run은 환경 간섭 증거가 있는 무효 run으로 제외했다. 코드나 테스트를 그 실패에 맞춰 바꾸지 않고
+`Baseball Pro Career QA` 한 대만 임시로 만든 뒤, iPhone 17 Pro Max / iOS 26.5의 깨끗한 환경에서
+같은 테스트를 통과시켰다. 통과한 `.xcresult`는
+`.build/pro-career-depth-ios/journey.xcresult`에 있으며 84MB다. 전용 임시 simulator는 테스트 종료와
+결과 보존을 확인한 직후 삭제했고, 다른 작업이 사용 중인 기존 simulator는 변경하지 않았다.
+
+Swift 전체 결과 로그는 `.build/pro-career-depth-swift/swift-test-final.log`다. 해당 로그의 최종
+`All tests` 집계는 452개 실행, 실패 0, 예상하지 못한 실패 0, skip 1이다. skip은 Wave 0 evidence
+생성을 명시적으로 opt-in했을 때만 실행하는 기존 characterization test다.
+
+최신 IPA는 `.build/pro-career-depth-ios/export-app-store/BaseballIOS.ipa`이고 SHA-256은
+`b616dce8874abd37835fb8a954e67a4501c82cf473f54aa1b87c23d6a3cea26f`다. 서명은
+`Apple Distribution: sol kim (D48DDX5D5W)`, provisioning profile의 `get-task-allow`는 `false`다.
+서명된 payload에는 `en.lproj`, `ja.lproj`, `ko.lproj`와 세 언어의 앱 이름이 있고 Release
+executable에는 `uiTestProCareerJourneyV1` 문자열이 없다. 이 export는 파일 생성만 했으며 ASC에
+업로드하지 않았다.
+
+보존한 iOS 안정 build 경로 전체는 약 2.9GB다. 그 안의 signed archive는 약 87MB, IPA는
+28,771,500 bytes, 통과한 UI `.xcresult`는 약 84MB다. 분포·oracle evidence 디렉터리는 약
+3.6MB다. 실패한 첫 UI run의 result와 일시적인 IPA 압축 해제본은 macOS 휴지통으로 옮겼고,
+최신 통과 evidence와 배포 서명 산출물만 보존했다.
+
+### 21.4 1,000 seed × 20 season 분포 판정
+
+최종 release artifact는
+`artifacts/analysis/pro-career-wave6/swift-distribution-1000x20.json`이다.
+
+| `stable_random` 지표 | 교정 전 기준선 | 최종 | 수용 범위 | 판정 |
+|---|---:|---:|---:|---|
+| 조기 fan 100 커리어 발생률 | 0.0% | 0.0% | 1% 이하 | 통과 |
+| 12시즌 이상 HOF | 43.7% | 33.8% | 5~35% | 통과 |
+| 12시즌 이상 영구결번 | 30.4% | 21.4% | 5~25% | 통과 |
+| `enduring_pro` | 19.7% | 39.0% (`179/458`) | 10~50% | 통과 |
+| `franchise_icon` | 19.2% | 37.0% (`183/494`) | 10~50% | 통과 |
+| `record_book` | 9.9% | 33.8% (`328/968`) | 10~50% | 통과 |
+
+최종 artifact는 `mode=release`, `thresholdEnforced=true`, `valid=true`, `failingChecks=[]`다.
+실패 run, 계약 누락, 중복 finance/salary/settlement, 음수 잔액, offer 수 불일치, dominated market,
+team record 불일치는 모두 0이다. 5개 정책 axis profile은 모두 다르고, 같은 seed에서 비교 가능한
+65,518회 선택 중 45,480회가 정책별로 달라 `noUniversallyOptimalOfferArchetype=true`다.
+
+| evidence | SHA-256 |
+|---|---|
+| 최종 release 분포 | `561bbf31e4d958d87cb3ab3d77dfff2108832f2448a74f42dbe8f9376fe5d58e` |
+| 교정 전 기준선 | `dbb6c012b034e428bb277ee7891e51f15cb3d23c5c7d1b971d6c469719a101b7` |
+
+### 21.5 Swift oracle 판정
+
+최종 evidence는 `artifacts/analysis/pro-career-wave6/swift-pro-career-oracle-v2.json`이다.
+
+- 두 번 생성한 JSON은 byte-identical이며 파일 SHA-256은
+  `41e81d0f65fe201516fa382803eb1869ef1adce6c3517c204d1cb23e5281b451`이다.
+- case ID 11개는 중복 없이 정렬되어 있다.
+- root input SHA-256은
+  `70ec6c6305350f07c9c4af316440bd30be7b9c00b6b3304a9cb6fdb967b4f83c`다.
+- semantic output SHA-256은
+  `1f77b55e16093a7064f086d39fb7c50f837b635ec2392ed8758a3a297c297400`이다.
+- 실제 은퇴 row는 647개 public command로 정확히 20시즌을 끝낸 뒤
+  `choose_offseason.retire`를 실행한다. 최종 phase는 `completed`이고 preview와 command 결과가
+  일치한다.
+- 현재 Android fixture와 semantic output/root input hash가 같은 것은 read-only로 확인했지만,
+  Swift provenance 개선분으로 전체 JSON byte는 다르다. Kotlin fixture 갱신은 이번 범위가 아니다.
+
+### 21.6 자동 검증 이후 보류 조건과 후속 에이전트 규칙
+
+Swift core/iOS로 한정된 이번 구현과 자동 검증은 완료됐다. 다만 아래 외부 검증과 rollout 조건은
+자동 테스트 통과와 구분하며, 완료되기 전에는 제품 전체 또는 공개 출시 완료로 판정하지 않는다.
+
+1. signed IPA 검사는 완료됐지만 `proCareerJourneyV1` production 값을 켜거나 ASC에 업로드하지 않는다.
+2. Kotlin/Android 작업은 별도 승인 뒤 Swift oracle을 소비하는 후속 웨이브로 시작한다. 현재 Android
+   diff를 정리·되돌리거나 Swift 결과에 맞춰 조용히 덮어쓰지 않는다.
+3. 제품 완료를 선언하려면 최소 5명의 실제 사용자가 계약 조건, 이적 trade-off, 구단 유산,
+   다음 목표를 도움 없이 설명하는지 별도로 관찰한다.
+4. 공개 제출 전 일본어 실기기 또는 TestFlight smoke와 signed IPA 현지화 검사를 다시 실행한다.
+5. 이 실행에서는 commit, push, 배포, ASC 제출을 하지 않는다.

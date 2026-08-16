@@ -16,6 +16,42 @@ private final class ProMemoryRemoteStore: SaveSyncRemoteStoring {
 final class ProSeasonDecisionTests: XCTestCase {
     private let engine = ProCareerEngine()
 
+    /// 삭제 성공은 "레코드가 있었는가"가 아니라 "진행이 없는 상태를 보장했는가"다.
+    /// 이 계약이 무너지면 모든 진행 삭제가 Settings에 남는 회귀가 다시 생긴다.
+    func testProDeletionTreatsOnlyConfirmedEmptyStoreAsSuccessfulNoOp() {
+        let store = MobileCareerStore()
+        store.result = nil
+
+        store.loadState = .loading
+        XCTAssertFalse(store.deleteCareer())
+
+        store.loadState = .failed(MobileCareerStore.unreadableSaveMessage)
+        XCTAssertFalse(store.deleteCareer())
+
+        store.loadState = .needsSetup
+        XCTAssertTrue(store.deleteCareer())
+        XCTAssertEqual(store.loadState, .needsSetup)
+    }
+
+    func testNamespacedOrdinaryDecisionChoiceIDsResolveJapaneseCatalogSuffixes() {
+        let resolver = GameCopyResolver(language: .japanese, policy: .strict)
+        let choice = ProSeasonDecisionChoice(
+            id: "catcher_game_plan.battery_plan",
+            title: "포수와 함께 짠다",
+            detail: "배터리 호흡과 코스 실행을 우선합니다.",
+            effect: .init(commandDelta: 1, catcherTrustDelta: 8, fatigueDelta: 4)
+        )
+
+        XCTAssertEqual(
+            ProCareerPresentation.choiceTitle(choice, resolver: resolver),
+            "捕手と一緒に計画を立てる"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.choiceDetail(choice, resolver: resolver),
+            "バッテリーのリズムと実行場所を優先します。"
+        )
+    }
+
     func testDecisionScreenRendersAllThreeFullyDisclosedAccessibleChoices() throws {
         let pendingResult = try firstDecision(seed: 8_401)
         let decision = try XCTUnwrap(pendingResult.snapshot.pendingDecision)
@@ -586,6 +622,10 @@ final class ProSeasonDecisionTests: XCTestCase {
         )
         XCTAssertEqual(tombstone.schemaVersion, MobileCareerStore.legacySaveSchemaVersion)
         XCTAssertNil(tombstone.result)
+
+        // 이미 삭제된 상태에서 다시 눌러도 성공해야 하며, 묘비를 불필요하게 바꾸지 않는다.
+        XCTAssertTrue(store.deleteCareer())
+        XCTAssertEqual(cloud.data(forKey: sync.key), tombstoneData)
 
         XCTAssertTrue(store.startNewCareer(
             preset: PitcherPresetCatalog.all[0],

@@ -32,9 +32,10 @@ targets:
       - path: Sources/Localization/ko.lproj/InfoPlist.strings
       - path: Sources/Localization/en.lproj/InfoPlist.strings
       - path: Sources/Localization/ja.lproj/InfoPlist.strings
-    # 언어별 LaunchScreen.storyboard를 명시한다. 한국어는 기존 브러시 로고를, 영어는
+    # 언어별 LaunchScreenV2.storyboard를 명시한다. 한국어는 기존 브러시 로고를, 영어는
     # Mound Reborn, 일본어는 현지화된 워드마크를 그린다. UILaunchScreen의 자동 이미지
     # 참조는 에셋 카탈로그 갱신 뒤 iOS 캐시에 다른 이미지가 남을 수 있어 사용하지 않는다.
+    # V2 이름은 예전 영어 Launch Screen 캐시가 한국어 실행에 재사용되는 것도 막는다.
     info:
       path: Sources/Info.plist
       properties:
@@ -59,7 +60,7 @@ targets:
         UIApplicationSupportsIndirectInputEvents: true
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
-        UILaunchStoryboardName: LaunchScreen
+        UILaunchStoryboardName: LaunchScreenV2
         # 아이폰 세로 고정. 승부 화면의 존 그리드·궤적 뷰·와인드업 제스처가 모두 세로 기준이다.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

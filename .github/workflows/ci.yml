@@ -42,12 +42,13 @@ jobs:
         with:
           swift-version: "6.3.3"
           check-latest: true
-      - name: Export Swift semantic fixture
-        run: npm run export:android:swift-pro-fixture:v2
-      - name: Verify committed fixture is deterministic
+      - name: Export and verify Swift semantic fixture deterministically
         run: |
-          npm run export:android:swift-pro-fixture:v2
-          git diff --exit-code -- apps/android/game-core/src/test/resources/fixtures/swift-pro-career-oracle-v2.json
+          swift build --package-path packages/simulation-core --build-path .build/pro-career-depth-swift --product pro-career-fixture-exporter-v2
+          BASEBALL_PRO_ORACLE_V2_OUTPUT=.build/pro-career-depth-swift/swift-pro-career-oracle-v2.first.json .build/pro-career-depth-swift/debug/pro-career-fixture-exporter-v2
+          cmp -s .build/pro-career-depth-swift/swift-pro-career-oracle-v2.first.json apps/android/game-core/src/test/resources/fixtures/swift-pro-career-oracle-v2.json
+          BASEBALL_PRO_ORACLE_V2_OUTPUT=.build/pro-career-depth-swift/swift-pro-career-oracle-v2.second.json .build/pro-career-depth-swift/debug/pro-career-fixture-exporter-v2
+          cmp -s .build/pro-career-depth-swift/swift-pro-career-oracle-v2.first.json .build/pro-career-depth-swift/swift-pro-career-oracle-v2.second.json
       - name: Run Wave 6 distribution smoke
         run: npm run run:pro-career:distribution:smoke
 

@@ -53,6 +53,7 @@ final class CareerSmokeUITests: XCTestCase {
     private func launch(
         pitchAbilityFeedback: Bool = false,
         draftedCareerFixture: Bool = false,
+        journeyEnabled: Bool = false,
         language: String? = nil
     ) -> XCUIApplication {
         let app = XCUIApplication()
@@ -71,6 +72,9 @@ final class CareerSmokeUITests: XCTestCase {
         if draftedCareerFixture {
             launchArguments.append("-uiTestDraftedCareerFixture")
         }
+        if journeyEnabled {
+            launchArguments.append("-uiTestProCareerJourneyV1")
+        }
         if language == "ja" {
             launchArguments += ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         }
@@ -85,7 +89,7 @@ final class CareerSmokeUITests: XCTestCase {
         let opening = app.buttons["hs.opening.start"]
         XCTAssertTrue(opening.waitForExistence(timeout: timeout), "日本語のオープニングが表示されません。")
         XCTAssertEqual(opening.label, "スタート")
-        XCTAssertTrue(app.staticTexts["生まれ変わったマウンド"].exists)
+        XCTAssertTrue(app.staticTexts["野球がダメならまた転生"].exists)
         assertVisibleCopyContainsNoHangul(app, context: "Japanese opening")
 
         opening.tap()
@@ -98,6 +102,40 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(firstPitch.waitForExistence(timeout: timeout), "日本語のプロローグが表示されません。")
         XCTAssertEqual(firstPitch.label, "初球を投げる")
         assertVisibleCopyContainsNoHangul(app, context: "Japanese prologue")
+    }
+
+    /// 프로를 시작하지 않은 상태에서도 "모든 진행 삭제"는 성공으로 끝나야 한다.
+    /// 삭제할 프로가 없다는 no-op을 실패로 오인하면 설정 탭에 그대로 남는다.
+    func testDeleteAllProgressReturnsToFirstLaunchWhenProCareerIsAlreadyEmpty() {
+        let app = launch(draftedCareerFixture: true)
+
+        let settingsTab = app.tabBars.buttons["설정"]
+        XCTAssertTrue(settingsTab.waitForExistence(timeout: timeout), "설정 탭이 열리지 않았습니다.")
+        settingsTab.tap()
+
+        let deleteAll = app.buttons["settings.deleteAll"]
+        // SwiftUI List는 화면 밖의 행을 지연 생성하므로, 존재 여부를 기다리기 전에
+        // 목록 끝까지 내려 삭제 행을 접근성 트리에 올린다.
+        for _ in 0..<8 {
+            if deleteAll.exists, deleteAll.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(deleteAll.waitForExistence(timeout: timeout), "모든 진행 삭제 버튼이 없습니다.")
+        XCTAssertTrue(deleteAll.isHittable, "모든 진행 삭제 버튼을 화면에 올리지 못했습니다.")
+        deleteAll.tap()
+
+        // confirmationDialog의 SwiftUI 접근성 트리는 같은 액션을 부모/자식 버튼으로
+        // 중복 노출할 수 있으므로 첫 번째 실제 매치를 사용한다.
+        let confirm = app.buttons.matching(identifier: "settings.deleteAll.confirm").firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: timeout), "진행 삭제 확인 버튼이 없습니다.")
+        confirm.tap()
+
+        let opening = app.buttons["hs.opening.start"]
+        XCTAssertTrue(
+            opening.waitForExistence(timeout: timeout),
+            "모든 진행 삭제 후 첫 실행 오프닝으로 돌아오지 않았습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
+        XCTAssertFalse(app.tabBars.firstMatch.exists, "첫 실행 오프닝에 기존 탭 바가 남았습니다.")
     }
 
     func testHighSchoolCareerRunsThroughDraftAndRebirth() {
@@ -304,14 +342,16 @@ final class CareerSmokeUITests: XCTestCase {
     }
 
     /// 드래프트를 통과했다면 프로 커리어가 그 결과로 열려야 한다.
-    func testDraftedRunCanEnterProCareer() {
+    func testJapaneseDraftedRunCompletesProCareerJourneyAtMaximumHorizon() throws {
         // 프로 20시즌을 실제 UI로 완주하므로 일반 스모크의 기본 제한보다 오래 걸린다.
         // 밸런스나 기기 속도 변화가 기능 실패로 오인되지 않도록 이 종주만 여유를 명시한다.
-        executionTimeAllowance = 1_800
+        // A measured 20-season run on the iPhone 17 Pro Max simulator takes about 37 minutes.
+        // Keep enough headroom for slower CI hosts while still bounding a genuinely stuck run.
+        executionTimeAllowance = 3_000
 
         // 고교 3년 UI 종주는 별도 테스트가 맡는다. 여기서는 실제 고교 엔진으로 완주한
         // 확정 지명 픽스처를 써서, 드래프트 밸런스와 무관한 프로 전환·은퇴 흐름만 지킨다.
-        let app = launch(draftedCareerFixture: true)
+        let app = launch(draftedCareerFixture: true, journeyEnabled: true, language: "ja")
         let enterPro = app.buttons["hs.enterPro"]
         XCTAssertTrue(
             enterPro.waitForExistence(timeout: timeout),
@@ -329,84 +369,189 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(bringIntoView(enterPro), "프로 진입 버튼을 다시 화면에 올리지 못했습니다.")
         enterPro.tap()
 
+        let proTabs = app.segmentedControls.firstMatch
+        let proTabsOpened = proTabs.waitForExistence(timeout: timeout)
+        if !proTabsOpened {
+            capture(app, name: "10-pro-entry-failed")
+        }
         XCTAssertTrue(
-            app.staticTexts["다음 행동"].waitForExistence(timeout: timeout)
-                || app.buttons["1주 진행"].waitForExistence(timeout: timeout),
-            "프로 커리어 화면이 열리지 않았습니다."
+            proTabsOpened,
+            "프로 커리어 화면이 열리지 않았습니다. 보이는 버튼: \(visibleIdentifiers(app))"
         )
+        let thisWeek = proTabs.buttons.element(boundBy: 1)
+        XCTAssertTrue(thisWeek.exists, "프로의 이번 주 화면 선택지가 없습니다.")
+        XCTAssertEqual(thisWeek.label, "今週")
         capture(app, name: "10-pro-entered")
-        XCTAssertTrue(
+        thisWeek.tap()
+
+        let evidence = try XCTUnwrap(
             finishProCareer(app),
-            "프로 첫 주부터 은퇴까지 화면 흐름을 완료하지 못했습니다."
+            "프로 첫 주부터 최대 시즌 은퇴까지 화면 흐름을 완료하지 못했습니다."
         )
-        XCTAssertTrue(
-            finishProLegacyAndReachNextPlayer(app),
-            "프로 은퇴 기록이 대표 유산과 다음 고교 선수까지 이어지지 않았습니다."
+        XCTAssertTrue(evidence.rookieContractSeen, "신인 계약 화면을 보지 못했습니다.")
+        XCTAssertTrue(evidence.rookieContractSigned, "신인 계약을 실제로 서명하지 못했습니다.")
+        XCTAssertGreaterThanOrEqual(evidence.settlementsSeen, 1, "시즌 결산 화면을 보지 못했습니다.")
+        XCTAssertEqual(
+            evidence.settlementsSeen,
+            expectedMaximumCareerSeasons,
+            "자발적 조기 은퇴가 아니라 제품 최대 시즌까지 모든 결산을 봐야 합니다."
         )
+        XCTAssertEqual(
+            evidence.settlementsAcknowledged,
+            evidence.settlementsSeen,
+            "모든 persisted settlement는 확인 액션으로 닫혀야 합니다."
+        )
+        XCTAssertGreaterThanOrEqual(evidence.offseasonsSeen, 1, "오프시즌 화면을 보지 못했습니다.")
+        XCTAssertGreaterThanOrEqual(evidence.offseasonsCompleted, 1, "오프시즌 계속 경로를 완료하지 못했습니다.")
+        XCTAssertGreaterThanOrEqual(evidence.investmentsSeen, 1, "오프시즌 투자 화면을 보지 못했습니다.")
+        XCTAssertGreaterThanOrEqual(evidence.investmentsCompleted, 1, "투자하지 않음 경로를 완료하지 못했습니다.")
+        if evidence.laterContractMarketsPresented > 0 {
+            XCTAssertGreaterThanOrEqual(
+                evidence.laterContractMarketsAccepted,
+                1,
+                "후속 계약 시장이 열렸지만 실제 offer를 수락하지 않았습니다."
+            )
+        }
+        XCTAssertTrue(evidence.retirementPreviewSeen, "최대 시즌 은퇴 미리보기를 보지 못했습니다.")
+        XCTAssertTrue(evidence.finalHonorsReached, "최종 은퇴 명예와 새 선수 경계에 도달하지 못했습니다.")
     }
 
     /// 프로는 구간 진행을 사용하되, 시즌 갈림길과 중요 경기는 실제 화면에서 직접 처리한다.
     /// 코어 완주 테스트만으로는 화면의 누락 국면·빈 화면·확인창 연결 단절을 잡을 수 없다.
-    private func finishProCareer(_ app: XCUIApplication) -> Bool {
-        // 입단 직후 기본 화면은 '오늘' 대시보드다. 실제 결정을 내리는 '이번 주'로 옮긴다.
-        let weeklyScreen = app.segmentedControls.buttons["이번 주"]
-        guard weeklyScreen.waitForExistence(timeout: timeout) else { return false }
-        weeklyScreen.tap()
+    private struct ProJourneyEvidence {
+        var rookieContractSeen = false
+        var rookieContractSigned = false
+        var settlementsSeen = 0
+        var settlementsAcknowledged = 0
+        var offseasonsSeen = 0
+        var offseasonsCompleted = 0
+        var investmentsSeen = 0
+        var investmentsCompleted = 0
+        var laterContractMarketsPresented = 0
+        var laterContractMarketsAccepted = 0
+        var retirementPreviewSeen = false
+        var finalHonorsReached = false
+    }
 
+    private let expectedMaximumCareerSeasons = 20
+
+    private func finishProCareer(_ app: XCUIApplication) -> ProJourneyEvidence? {
+        var evidence = ProJourneyEvidence()
         var steps = 0
-        while steps < 700 {
+        while steps < 1_200 {
             steps += 1
 
             if app.buttons["pro.newPlayer"].exists {
                 capture(app, name: "11-pro-retired")
-                return true
+                let honors = identified(app, "pro.retirement.honors")
+                let finalScore = identified(app, "pro.retirement.final.score")
+                guard honors.waitForExistence(timeout: timeout), finalScore.exists else {
+                    return stopProJourney(app, "최종 은퇴 명예 또는 최종 점수 영역이 없습니다.")
+                }
+                XCTAssertTrue(bringIntoView(honors), "최종 은퇴 명예를 화면에 올리지 못했습니다.")
+                assertVisibleCopyContainsNoHangul(app, context: "Japanese final retirement honors")
+                evidence.finalHonorsReached = true
+                return evidence
             }
-            if app.buttons["pro.plan.required"].exists
+
+            if identified(app, "pro.contractOffer").exists {
+                guard handleContractOffer(app, evidence: &evidence) else { return nil }
+                continue
+            }
+
+            if identified(app, "pro.seasonSettlement").exists {
+                guard handleSettlement(app, evidence: &evidence) else { return nil }
+                continue
+            }
+
+            if identified(app, "pro.offseasonInvestment").exists {
+                guard handleInvestment(app, evidence: &evidence) else { return nil }
+                continue
+            }
+
+            if identified(app, "pro.seasonDecision").exists {
+                guard let choice = firstSeasonDecisionChoice(app), choice.exists,
+                      bringIntoView(choice) else {
+                    return stopProJourney(app, "시즌 결정 화면에 stable choice action이 없습니다.")
+                }
+                choice.tap()
+                let confirmMatches = app.buttons.matching(identifier: "pro.seasonDecision.confirm")
+                guard confirmMatches.count > 0 else {
+                    return stopProJourney(app, "시즌 결정 확인 action이 없습니다.")
+                }
+                let confirm = confirmMatches.element(boundBy: confirmMatches.count - 1)
+                guard confirm.waitForExistence(timeout: timeout), tapIfPresent(confirm) else {
+                    return stopProJourney(app, "시즌 결정 확인 action을 누를 수 없습니다.")
+                }
+                continue
+            }
+
+            if app.buttons["pro.game.start"].exists {
+                guard tapIfPresent(app.buttons["pro.game.start"]) else {
+                    return stopProJourney(app, "중요 경기 시작 action을 누를 수 없습니다.")
+                }
+                guard playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true) else {
+                    return stopProJourney(app, "중요 경기를 실제 투구 UI로 끝내지 못했습니다.")
+                }
+                continue
+            }
+
+            if app.buttons["pro.seasonReview.confirm"].exists {
+                guard tapIfPresent(app.buttons["pro.seasonReview.confirm"]) else {
+                    return stopProJourney(app, "시즌 리뷰 확인 action을 누를 수 없습니다.")
+                }
+                continue
+            }
+
+            if app.buttons["pro.offseason.arrow.forward.circle"].exists {
+                evidence.offseasonsSeen += 1
+                if evidence.offseasonsSeen == 1 {
+                    assertVisibleCopyContainsNoHangul(app, context: "Japanese first offseason")
+                }
+                guard tapIfPresent(app.buttons["pro.offseason.arrow.forward.circle"]) else {
+                    return stopProJourney(app, "오프시즌 계속/재계약 경로를 누를 수 없습니다.")
+                }
+                let confirmMatches = app.buttons.matching(identifier: "pro.offseason.confirm")
+                guard confirmMatches.count > 0 else {
+                    return stopProJourney(app, "오프시즌 확인 dialog가 열리지 않았습니다.")
+                }
+                let confirm = confirmMatches.element(boundBy: confirmMatches.count - 1)
+                guard confirm.waitForExistence(timeout: timeout), tapIfPresent(confirm) else {
+                    return stopProJourney(app, "오프시즌 확인 action을 누를 수 없습니다.")
+                }
+                evidence.offseasonsCompleted += 1
+                continue
+            }
+
+            // A read-only retirement projection is intentionally visible in every ordinary
+            // offseason. Only the maximum-horizon retirement phase exposes `pro.retire`, so
+            // do not mistake an early projection card for the forced-retirement boundary.
+            if app.buttons["pro.retire"].exists {
+                guard identified(app, "pro.retirement.preview").exists else {
+                    return stopProJourney(app, "최대 시즌 은퇴 action 앞에 미리보기가 없습니다.")
+                }
+                guard handleRetirementPreview(app, evidence: &evidence) else { return nil }
+                continue
+            }
+
+            if identified(app, "pro.plan.required").exists
                 || (app.buttons["pro.advanceSegment"].exists
                     && !app.buttons["pro.advanceSegment"].isEnabled) {
-                let plans = app.descendants(matching: .any).matching(
-                    NSPredicate(
-                        format: "identifier BEGINSWITH %@ AND identifier != %@",
-                        "pro.plan.", "pro.plan.required"
-                    )
-                )
-                guard plans.count > 0 else { return false }
-                let plan = plans.element(boundBy: 0)
-                guard plan.exists, bringIntoView(plan), plan.isEnabled else { return false }
+                guard let plan = firstWeeklyPlan(app), plan.exists, bringIntoView(plan), plan.isEnabled else {
+                    return stopProJourney(app, "주간 계획 화면에 선택 가능한 stable plan이 없습니다.")
+                }
                 plan.tap()
                 continue
             }
             if tapIfPresent(app.buttons["pro.advanceSegment"]) { continue }
 
-            if let choice = firstSeasonDecisionChoice(app) {
-                guard choice.exists, bringIntoView(choice) else { return false }
-                choice.tap()
-                let identifiedConfirm = app.buttons.matching(
-                    identifier: "pro.seasonDecision.confirm"
-                ).firstMatch
-                let confirm = identifiedConfirm.exists
-                    ? identifiedConfirm : app.buttons["이 선택으로 결정"].firstMatch
-                guard confirm.waitForExistence(timeout: timeout) else { return false }
-                confirm.tap()
-                continue
-            }
-
-            if tapIfPresent(app.buttons["pro.game.start"]) {
-                _ = playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true)
-                continue
-            }
-            if tapIfPresent(app.buttons["시즌 기록 확인"]) { continue }
-
-            if tapIfPresent(app.buttons["pro.offseason.arrow.forward.circle"]) {
-                let confirm = app.buttons.matching(identifier: "pro.offseason.confirm").firstMatch
-                guard confirm.waitForExistence(timeout: timeout) else { return false }
-                confirm.tap()
-                continue
-            }
-            if tapIfPresent(app.buttons["pro.retire"]) {
-                let confirm = app.buttons.matching(identifier: "pro.retire.confirm").firstMatch
-                guard confirm.waitForExistence(timeout: timeout) else { return false }
-                confirm.tap()
+            // A phase mutation can recreate the tab content and restore the default Today tab.
+            // Re-select the structural second segment by index; its Japanese label is asserted,
+            // never used as the selector.
+            let tabs = app.segmentedControls.firstMatch
+            let week = tabs.buttons.element(boundBy: 1)
+            if tabs.exists, week.exists, week.label == "今週", !week.isSelected {
+                week.tap()
                 continue
             }
 
@@ -414,12 +559,237 @@ final class CareerSmokeUITests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(0.15))
             if app.buttons["pro.advanceSegment"].exists
                 || app.buttons["pro.game.start"].exists
-                || app.buttons["pro.retire"].exists { continue }
-            capture(app, name: "99-stuck-pro-career")
+                || app.buttons["pro.seasonReview.confirm"].exists
+                || identified(app, "pro.seasonSettlement").exists
+                || identified(app, "pro.offseasonInvestment").exists { continue }
+            return stopProJourney(app, "프로 여정의 어느 phase에서도 진행 가능한 stable action을 찾지 못했습니다.")
+        }
+        return stopProJourney(app, "프로 여정이 1,200단계 안에 최대 시즌 은퇴까지 끝나지 않았습니다.")
+    }
+
+    private func handleContractOffer(
+        _ app: XCUIApplication,
+        evidence: inout ProJourneyEvidence
+    ) -> Bool {
+        let offerRoot = identified(app, "pro.contractOffer")
+        guard offerRoot.waitForExistence(timeout: timeout) else {
+            failProJourney(app, "계약 offer 화면이 stable root로 열리지 않았습니다.")
             return false
         }
-        capture(app, name: "99-pro-career-step-limit")
-        return false
+        assertVisibleCopyContainsNoHangul(app, context: "Japanese contract offer")
+        for suffix in ["duration", "annualSalary", "role", "expectation", "legacy"] {
+            let identifier = "pro.contractOffer.offer.0.\(suffix)"
+            guard identified(app, identifier).waitForExistence(timeout: timeout) else {
+                failProJourney(app, "계약 offer의 \(suffix) semantic region이 없습니다.")
+                return false
+            }
+            XCTAssertFalse(identified(app, identifier).label.isEmpty, identifier)
+        }
+
+        if identified(app, "pro.contractOffer.ambition.required").exists {
+            let ambitionIDs = [
+                "pro.contractOffer.ambition.franchise_icon",
+                "pro.contractOffer.ambition.record_book",
+                "pro.contractOffer.ambition.enduring_pro",
+            ]
+            guard let ambition = ambitionIDs
+                .map({ app.buttons[$0] })
+                .first(where: { $0.exists && $0.isEnabled }),
+                bringIntoView(ambition) else {
+                failProJourney(app, "서명에 필요한 unfinished ambition을 선택할 수 없습니다.")
+                return false
+            }
+            ambition.tap()
+        }
+
+        let rookieSign = app.buttons["pro.contractOffer.sign"]
+        let isRookie = rookieSign.waitForExistence(timeout: 1)
+        if isRookie {
+            if !evidence.rookieContractSeen {
+                evidence.rookieContractSeen = true
+            }
+            guard tapIfPresent(rookieSign) else {
+                failProJourney(app, "신인 계약 서명 action을 누를 수 없습니다.")
+                return false
+            }
+        } else {
+            evidence.laterContractMarketsPresented += 1
+            let offerIDs = (0...2).map { "pro.contractOffer.offer.\($0)" }
+            guard let offer = offerIDs
+                .map({ app.buttons[$0] })
+                .first(where: { $0.exists && $0.isEnabled }),
+                bringIntoView(offer) else {
+                failProJourney(app, "후속 계약 시장에서 선택 가능한 실제 offer card가 없습니다.")
+                return false
+            }
+            offer.tap()
+        }
+
+        let confirmMatches = app.buttons.matching(identifier: "pro.contractOffer.confirm.accept")
+        guard confirmMatches.count > 0 else {
+            failProJourney(app, "계약 offer 확인 action이 열리지 않았습니다.")
+            return false
+        }
+        let confirm = confirmMatches.element(boundBy: confirmMatches.count - 1)
+        guard confirm.waitForExistence(timeout: timeout), tapIfPresent(confirm) else {
+            failProJourney(app, "계약 offer 확인 action을 누를 수 없습니다.")
+            return false
+        }
+        if isRookie {
+            evidence.rookieContractSigned = true
+        } else {
+            evidence.laterContractMarketsAccepted += 1
+        }
+        if isRookie {
+            guard identified(app, "pro.plan.required").waitForExistence(timeout: timeout)
+                || app.buttons["pro.advanceSegment"].waitForExistence(timeout: timeout) else {
+                failProJourney(app, "신인 계약 수락 뒤 주간 계획 phase로 돌아오지 않았습니다.")
+                return false
+            }
+        } else {
+            guard identified(app, "pro.offseasonInvestment").waitForExistence(timeout: timeout) else {
+                failProJourney(app, "후속 계약 수락 뒤 오프시즌 투자 phase가 열리지 않았습니다.")
+                return false
+            }
+        }
+        return true
+    }
+
+    private func handleSettlement(
+        _ app: XCUIApplication,
+        evidence: inout ProJourneyEvidence
+    ) -> Bool {
+        evidence.settlementsSeen += 1
+        assertVisibleCopyContainsNoHangul(app, context: "Japanese season settlement")
+        for identifier in [
+            "pro.seasonSettlement",
+            "pro.settlement.goal.metrics",
+            "pro.settlement.fanReasons",
+            "pro.settlement.merchandise",
+        ] {
+            guard identified(app, identifier).waitForExistence(timeout: timeout) else {
+                failProJourney(app, "결산의 \(identifier) semantic region이 없습니다.")
+                return false
+            }
+        }
+        let acknowledge = app.buttons["pro.settlement.acknowledge"]
+        guard acknowledge.waitForExistence(timeout: timeout), bringIntoView(acknowledge) else {
+            failProJourney(app, "persisted settlement acknowledge action이 없습니다.")
+            return false
+        }
+        XCTAssertEqual(acknowledge.label, "決算を確認")
+        acknowledge.tap()
+        evidence.settlementsAcknowledged += 1
+        guard identified(app, "pro.seasonSettlement").waitForNonExistence(timeout: timeout) else {
+            failProJourney(app, "결산 확인 뒤 settlement 화면이 닫히지 않았습니다.")
+            return false
+        }
+        return true
+    }
+
+    private func handleInvestment(
+        _ app: XCUIApplication,
+        evidence: inout ProJourneyEvidence
+    ) -> Bool {
+        evidence.investmentsSeen += 1
+        if evidence.investmentsSeen == 1 {
+            assertVisibleCopyContainsNoHangul(app, context: "Japanese first offseason investment")
+        }
+        guard identified(app, "pro.offseasonInvestment").waitForExistence(timeout: timeout) else {
+            failProJourney(app, "오프시즌 투자 stable root가 없습니다.")
+            return false
+        }
+        let none = app.buttons["pro.offseasonInvestment.choice.none"]
+        guard none.waitForExistence(timeout: timeout), none.isEnabled, bringIntoView(none) else {
+            failProJourney(app, "동등한 투자하지 않음 선택지를 누를 수 없습니다.")
+            return false
+        }
+        XCTAssertEqual(none.label, "投資しない")
+        none.tap()
+
+        let confirm = app.buttons["pro.offseasonInvestment.confirm"]
+        guard confirm.waitForExistence(timeout: timeout), tapIfPresent(confirm) else {
+            failProJourney(app, "투자 확인 action을 열 수 없습니다.")
+            return false
+        }
+        let confirmMatches = app.buttons.matching(identifier: "pro.offseasonInvestment.confirm.action")
+        guard confirmMatches.count > 0 else {
+            failProJourney(app, "투자 confirmation dialog action이 없습니다.")
+            return false
+        }
+        let confirmAction = confirmMatches.element(boundBy: confirmMatches.count - 1)
+        guard confirmAction.waitForExistence(timeout: timeout), tapIfPresent(confirmAction) else {
+            failProJourney(app, "투자 confirmation dialog action을 누를 수 없습니다.")
+            return false
+        }
+        evidence.investmentsCompleted += 1
+        guard identified(app, "pro.offseasonInvestment").waitForNonExistence(timeout: timeout) else {
+            failProJourney(app, "투자하지 않음 확인 뒤 투자 화면이 닫히지 않았습니다.")
+            return false
+        }
+        return true
+    }
+
+    private func handleRetirementPreview(
+        _ app: XCUIApplication,
+        evidence: inout ProJourneyEvidence
+    ) -> Bool {
+        guard evidence.settlementsSeen == expectedMaximumCareerSeasons else {
+            failProJourney(
+                app,
+                "은퇴 미리보기가 최대 시즌 결산 \(expectedMaximumCareerSeasons)회 뒤에 열리지 않았습니다."
+            )
+            return false
+        }
+        assertVisibleCopyContainsNoHangul(app, context: "Japanese retirement preview")
+        for identifier in [
+            "pro.retirement.preview",
+            "pro.retirement.preview.score",
+            "pro.retirement.preview.retired-number",
+        ] {
+            guard identified(app, identifier).waitForExistence(timeout: timeout) else {
+                failProJourney(app, "은퇴 미리보기의 \(identifier) semantic region이 없습니다.")
+                return false
+            }
+        }
+        let maximumSeasonLabel = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS %@", "\(expectedMaximumCareerSeasons) キャリアシーズン")
+        ).firstMatch
+        XCTAssertTrue(
+            maximumSeasonLabel.exists,
+            "제품 최대 시즌이 아닌 조기 은퇴 미리보기입니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
+
+        let retire = app.buttons["pro.retire"]
+        guard retire.waitForExistence(timeout: timeout), tapIfPresent(retire) else {
+            failProJourney(app, "은퇴 미리보기의 retire action을 누를 수 없습니다.")
+            return false
+        }
+        let confirmMatches = app.buttons.matching(identifier: "pro.retire.confirm")
+        guard confirmMatches.count > 0 else {
+            failProJourney(app, "은퇴 확인 dialog action이 없습니다.")
+            return false
+        }
+        let confirm = confirmMatches.element(boundBy: confirmMatches.count - 1)
+        guard confirm.waitForExistence(timeout: timeout), tapIfPresent(confirm) else {
+            failProJourney(app, "은퇴 확인 dialog action을 누를 수 없습니다.")
+            return false
+        }
+        evidence.retirementPreviewSeen = true
+        return true
+    }
+
+    private func firstWeeklyPlan(_ app: XCUIApplication) -> XCUIElement? {
+        [
+            "pro.plan.earnTrust",
+            "pro.plan.refineCommand",
+            "pro.plan.developStuff",
+            "pro.plan.buildStamina",
+            "pro.plan.developMovement",
+            "pro.plan.recover",
+        ]
+            .map { app.buttons[$0] }
+            .first(where: { $0.exists && $0.isEnabled })
     }
 
     /// 은퇴 버튼이 보이는 것으로 끝내지 않고, 프로 기록을 고교 대표 유산에 합치고 새
@@ -441,24 +811,16 @@ final class CareerSmokeUITests: XCTestCase {
         return finishRecapAndAssertPlayerContinuity(app)
     }
 
-    /// SwiftUI가 카드 버튼의 identifier를 잠깐 `other`에 붙이는 프레임이 있어 역할을
-    /// `button`으로만 한정하면 화면에 선택지가 보이는데도 0개로 판정될 수 있다.
-    /// identifier를 우선하고, 실제 접근성 문구의 공통 계약인 "효과:"를 안전망으로 쓴다.
+    /// 시즌 결정은 내용이 매번 달라지므로 localized label이 아닌 제품 접근성 계약으로만
+    /// 선택한다. 화면이 안정화되기 전에는 nil을 돌려 caller가 진단을 남기고 실패한다.
     private func firstSeasonDecisionChoice(_ app: XCUIApplication) -> XCUIElement? {
         let byIdentifier = app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier BEGINSWITH %@", "pro.seasonDecision.choice.")
         )
-        if byIdentifier.count > 0 { return byIdentifier.element(boundBy: 0) }
-
-        let decision = app.descendants(matching: .any)["pro.seasonDecision"]
-        let decisionEyebrow = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@", "주차 결정")
-        )
-        guard decision.exists || decisionEyebrow.count > 0 else { return nil }
-        let byAccessibleEffect = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS %@", "효과:")
-        )
-        return byAccessibleEffect.count > 0 ? byAccessibleEffect.element(boundBy: 0) : nil
+        guard byIdentifier.count > 0 else { return nil }
+        return (0..<byIdentifier.count)
+            .map { byIdentifier.element(boundBy: $0) }
+            .first(where: { $0.exists && $0.isEnabled })
     }
 
     /// 새 회차는 대표 유산 하나를, 기능 도입 전 저장은 기존 기억을 필요한 만큼 고른다.
@@ -844,11 +1206,9 @@ final class CareerSmokeUITests: XCTestCase {
 
         var pitches = 0
         var captured = false
-        var usedFastForward = false
         while !finish.exists, pitches < 120 {
             if usesFastForwardWhenAvailable, fastForward.exists, bringIntoView(fastForward) {
                 fastForward.tap()
-                usedFastForward = true
                 pitches += 1
             } else if throwButton.exists, bringIntoView(throwButton) {
                 throwButton.tap()
@@ -871,7 +1231,12 @@ final class CareerSmokeUITests: XCTestCase {
         )
         _ = bringIntoView(finish)
         finish.tap()
-        return usedFastForward
+        let finished = finish.waitForNonExistence(timeout: timeout)
+        XCTAssertTrue(
+            finished,
+            "등판 종료를 탭한 뒤에도 투구 화면이 사라지지 않았습니다."
+        )
+        return finished
     }
 
     /// 1회차에는 오프닝 장면이 먼저 뜬다. 넘기지 않으면 선수 만들기 화면에 닿지 못한다.
@@ -893,12 +1258,14 @@ final class CareerSmokeUITests: XCTestCase {
         guard element.exists else { return false }
         if element.isHittable { return true }
         let app = XCUIApplication()
+        let scrollView = app.scrollViews.firstMatch
+        guard scrollView.waitForExistence(timeout: 1) else { return false }
         for _ in 0..<attempts {
-            app.swipeUp()
+            scrollView.swipeUp()
             if element.isHittable { return true }
         }
         for _ in 0..<attempts {
-            app.swipeDown()
+            scrollView.swipeDown()
             if element.isHittable { return true }
         }
         return element.isHittable
@@ -959,6 +1326,20 @@ final class CareerSmokeUITests: XCTestCase {
         guard first.exists, bringIntoView(first) else { return false }
         first.tap()
         return true
+    }
+
+    private func identified(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
+    private func failProJourney(_ app: XCUIApplication, _ message: String) {
+        capture(app, name: "99-stuck-pro-career")
+        XCTFail("\(message) 보이는 버튼: \(visibleIdentifiers(app))")
+    }
+
+    private func stopProJourney(_ app: XCUIApplication, _ message: String) -> ProJourneyEvidence? {
+        failProJourney(app, message)
+        return nil
     }
 
     /// 막혔을 때 무엇이 보이는지 알려 준다. 진단 없는 실패 메시지는 두 번 일하게 만든다.

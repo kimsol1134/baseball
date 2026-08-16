@@ -26,6 +26,29 @@ enum AppTab: Hashable, CaseIterable, Identifiable {
     }
 }
 
+/// 시스템 Launch Screen 다음에 이어지는, 언어가 확정된 앱 초기 로딩 화면.
+///
+/// iOS가 보관한 예전 Launch Screen 스냅샷과 달리 현재 앱 언어의 String Catalog를 직접
+/// 해석하므로 한국어 실행에서는 반드시 정식 한국어 제목이 보인다.
+struct AppLoadingView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            GameCopyText(.appTitle)
+                .font(BaseballType.display)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .accessibilityIdentifier("app.loading.title")
+
+            ProgressView()
+                .tint(BaseballTheme.action)
+                .accessibilityIdentifier("app.loading.progress")
+        }
+        .padding(BaseballMetrics.gutter)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(BaseballTheme.canvas)
+    }
+}
+
 struct AppShell: View {
     let highSchool: HighSchoolCareerStore
     let pro: MobileCareerStore
@@ -353,7 +376,7 @@ struct AppShell: View {
     @ViewBuilder private var proTab: some View {
         switch pro.loadState {
         case .loading:
-            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).background(BaseballTheme.canvas)
+            AppLoadingView()
         case .needsSetup:
             ProLockedView(
                 pro: pro,

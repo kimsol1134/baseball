@@ -2,6 +2,15 @@ import XCTest
 import SimulationCore
 @testable import BaseballIOS
 
+private final class CareerBootstrapMemoryRemoteStore: SaveSyncRemoteStoring {
+    private var values: [String: Data] = [:]
+
+    func data(forKey key: String) -> Data? { values[key] }
+    func set(_ value: Any?, forKey key: String) { values[key] = value as? Data }
+    func removeObject(forKey key: String) { values.removeValue(forKey: key) }
+    @discardableResult func synchronize() -> Bool { true }
+}
+
 /// 유료앱 권한 모델과 새 커리어 생성 경로를 지킨다.
 final class CareerBootstrapTests: XCTestCase {
     private var preset: PitcherPresetSnapshot {
@@ -90,7 +99,13 @@ final class CareerBootstrapTests: XCTestCase {
     func testWave0SeasonReviewStoreHasNoSalaryFanOrTeamLegacySettlement() throws {
         let review = try seasonReviewFixture()
         let contractBefore = review.snapshot.contract
-        let store = MobileCareerStore(saveWriter: { _ in true })
+        let sync = SaveSync(
+            key: "career-bootstrap-wave0-\(UUID().uuidString).json",
+            store: CareerBootstrapMemoryRemoteStore()
+        )
+        sync.clear()
+        defer { sync.clear() }
+        let store = MobileCareerStore(sync: sync, saveWriter: { _ in true })
         store.result = review
 
         store.reviewSeason()

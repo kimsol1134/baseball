@@ -80,6 +80,7 @@ struct CareerFlowView: View {
                                     title: copyResolver.resolve(.seasonReviewTitle),
                                     copy: copyResolver.resolve(.seasonReviewBody),
                                     button: copyResolver.resolve(.seasonReviewAction),
+                                    identifier: "pro.seasonReview.confirm",
                                     action: career.reviewSeason
                                 )
                             case .offseasonDecision:
@@ -184,6 +185,7 @@ private struct ProOffseasonInvestmentView: View {
                 .accessibilityValue(choiceTitle(selectedInvestment))
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pro.offseasonInvestment")
         .confirmationDialog(
             copyResolver.resolve(.offseasonInvestmentConfirmTitle),
@@ -384,7 +386,7 @@ struct ProSeasonSettlementView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
 
-                BaseballCard(title: copyResolver.resolve(.journeySettlementSalary), tone: .raised) {
+                BaseballCard(title: copyResolver.resolve(.journeySettlementSalaryTitle), tone: .raised) {
                     Text(GameFormatters.krw(safeInt(settlement.salaryIncome), language: copyResolver.language))
                         .font(BaseballType.statNumeral)
                         .foregroundStyle(BaseballTheme.textPrimary)
@@ -421,11 +423,15 @@ struct ProSeasonSettlementView: View {
                 }
                 .accessibilityIdentifier("pro.settlement.fanReasons")
 
-                BaseballCard(title: copyResolver.resolve(.journeySettlementMerchandise), tone: .raised) {
+                BaseballCard(title: copyResolver.resolve(.journeySettlementMerchandiseTitle), tone: .raised) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(GameFormatters.krw(safeInt(settlement.merchandiseIncome), language: copyResolver.language))
                             .font(BaseballType.statNumeral)
                             .monospacedDigit()
+                            .accessibilityLabel(copyResolver.resolve(
+                                .journeySettlementMerchandise,
+                                arguments: [.userText(GameFormatters.krw(safeInt(settlement.merchandiseIncome), language: copyResolver.language))]
+                            ))
                         if let tier = settlement.merchandiseTier {
                             Text(copyResolver.resolve(
                                 .journeySettlementMerchandiseTier,
@@ -452,6 +458,7 @@ struct ProSeasonSettlementView: View {
                     action: career.acknowledgeSettlement
                 )
             }
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("pro.seasonSettlement")
         } else {
             ContentUnavailableView(copyResolver.resolve(.scheduleComplete), systemImage: "exclamationmark.triangle")
@@ -596,7 +603,17 @@ struct ProContractOfferView: View {
                     }
                 }
             }
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("pro.contractOffer")
+            .task(id: market.id) {
+                guard market.kind != .rookie,
+                      selectedAmbition == nil,
+                      let activeGoal = state.journeyState?.activeGoal,
+                      activeGoal.completedSeason == nil else {
+                    return
+                }
+                selectedAmbition = activeGoal.ambition
+            }
             .confirmationDialog(
                 copyResolver.resolve(.contractOfferConfirmTitle),
                 isPresented: Binding(
@@ -701,7 +718,9 @@ struct ProContractOfferView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .accessibilityIdentifier("\(prefix).team")
+        // Do not put an accessibility identifier on the card container. SwiftUI propagates
+        // that identifier to the contained semantic fields on this screen and masks their
+        // stable duration/salary/role/expectation/legacy identifiers.
 
         if selectable {
             Button {
@@ -782,7 +801,10 @@ struct ProContractOfferView: View {
     }
 
     private func confirmationMessage(for offer: ProContractOffer?) -> String {
-        guard let offer else { return copyResolver.resolve(.contractOfferConfirmMessage) }
+        // SwiftUI may evaluate the dialog message once while its presentation binding is
+        // transitioning. The localized template requires two arguments, so do not resolve it
+        // until the selected persisted offer is available.
+        guard let offer else { return "" }
         let arguments: [GameCopyArgument] = [
             .userText(teamName(for: offer)),
             .integer(offer.years),
@@ -1009,6 +1031,7 @@ struct ProSeasonDecisionView: View {
                 .foregroundStyle(BaseballTheme.warning)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pro.seasonDecision")
         .confirmationDialog(
             pendingChoice.map { ProCareerPresentation.choiceTitle($0, resolver: copyResolver) }
@@ -1791,6 +1814,7 @@ private struct RetirementPreviewCard: View {
             .font(.subheadline)
             .fixedSize(horizontal: false, vertical: true)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pro.retirement.preview")
     }
 }
@@ -1955,6 +1979,7 @@ private struct RetirementHonorsCard: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pro.retirement.honors")
     }
 
@@ -2012,14 +2037,29 @@ private struct ActionCard: View {
     let title: String
     let copy: String
     let button: String
+    let identifier: String?
     let action: () -> Void
+
+    init(
+        title: String,
+        copy: String,
+        button: String,
+        identifier: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.copy = copy
+        self.button = button
+        self.identifier = identifier
+        self.action = action
+    }
 
     var body: some View {
         BaseballCard(title: title, tone: .raised) {
             VStack(alignment: .leading, spacing: 12) {
                 // localization-safe: resolved-copy
                 Text(copy).font(.subheadline)
-                PrimaryPill(title: button, action: action)
+                PrimaryPill(title: button, identifier: identifier, action: action)
             }
         }
     }

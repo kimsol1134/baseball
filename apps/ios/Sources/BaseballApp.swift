@@ -10,6 +10,15 @@ struct BaseballApp: App {
         PitchControlPreferences.registerDefaults()
         // 분석은 설정이 있을 때만 켜진다 — 없으면 이 호출은 무동작이다.
         GameAnalytics.configure()
+
+#if DEBUG
+        let proConfiguration = ProcessInfo.processInfo.arguments.contains(
+            Self.proCareerJourneyLaunchArgument
+        ) ? AppFeatureConfiguration.journeyV1Tests : .production
+#else
+        let proConfiguration = AppFeatureConfiguration.production
+#endif
+        _pro = State(initialValue: MobileCareerStore(configuration: proConfiguration))
     }
 
     /// UI 스모크 테스트가 저장된 커리어를 지우고 첫 실행 상태에서 시작하도록 하는 인자.
@@ -26,6 +35,9 @@ struct BaseballApp: App {
     /// 이 인자는 UI 테스트가 명시적으로 전달할 때만 작동하며 제품 상태나 저장에는 관여하지 않는다.
     nonisolated static let storeCaptureLaunchArgument = "-uiTestStoreCapture"
 #if DEBUG
+    /// iOS UI acceptance only. Release builds do not compile an argument path that enables the
+    /// journey rollout gate.
+    nonisolated static let proCareerJourneyLaunchArgument = "-uiTestProCareerJourneyV1"
     /// 지명 완료 화면 → 프로 진입을 밸런스 시드와 분리해 검증하는 Debug 전용 픽스처.
     nonisolated static let draftedCareerFixtureLaunchArgument = "-uiTestDraftedCareerFixture"
     /// 미지명 직전 → 유산 → 환생을 실제 엔진 결과로 촬영하는 Debug 전용 픽스처.
@@ -34,13 +46,17 @@ struct BaseballApp: App {
 
     @Environment(\.scenePhase) private var scenePhase
     @State private var highSchool = HighSchoolCareerStore()
-    @State private var pro = MobileCareerStore()
+    @State private var pro: MobileCareerStore
     @State private var remoteChangeObserver: NSObjectProtocol?
     /// 앱이 뜨기 전 저장돼 있던 계획. 초기 `.active` 전환이 알림을 새로 짜도 이 값은
     /// 보존되어 첫 설치와 실제 복귀를 구분한다.
     @State private var previousReturnPlan = DailyReminder.storedPlan()
     /// 지난 세션이 있었을 때만 앱 안에 보여 줄 현재의 이어하기 한 가지.
     @State private var returnWelcomePlan: DailyReminder.Plan?
+    /// 시스템 Launch Screen 뒤에서도 현재 앱 언어의 제목을 최소 한 박자 보장한다.
+    /// 저장 복원이 아주 빨라도 이 화면이 사라지지 않아 오래된 시스템 스냅샷이 보이는 문제를
+    /// 앱이 직접 덮어쓴다.
+    @State private var isPresentingLocalizedLaunch = true
     /// 이번 세션이 언제 시작됐는가. 세션 깊이(분·진행)를 재는 데만 쓴다.
     @State private var sessionStartedAt = Date()
     @State private var sessionStartedGames = 0
@@ -262,12 +278,20 @@ struct BaseballApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AppShell(
-                highSchool: highSchool,
-                pro: pro,
-                returnWelcomePlan: returnWelcomePlan,
-                onDismissReturnWelcome: { returnWelcomePlan = nil }
-            )
+            ZStack {
+                AppShell(
+                    highSchool: highSchool,
+                    pro: pro,
+                    returnWelcomePlan: returnWelcomePlan,
+                    onDismissReturnWelcome: { returnWelcomePlan = nil }
+                )
+
+                if isPresentingLocalizedLaunch {
+                    AppLoadingView()
+                        .transition(.opacity)
+                        .zIndex(1)
+                }
+            }
                 // 디자인 시스템은 다크 전용이다(design-system.css의 `color-scheme: dark`).
                 // 기기 설정을 따라가면 라이트 모드에서 "Midnight Dugout" 방향이 통째로 사라진다.
                 .preferredColorScheme(.dark)
@@ -280,13 +304,21 @@ struct BaseballApp: App {
                 )
                 .environment(\.gameCopyResolver, GameCopyResolver())
                 .task {
+                    let minimumLaunchPresentation = Task {
+                        try? await Task.sleep(for: .milliseconds(700))
+                    }
                     let arguments = ProcessInfo.processInfo.arguments
                     if arguments.contains(Self.promoLaunchArgument) {
                         UIView.setAnimationsEnabled(true)
                     }
                     if arguments.contains(Self.resetLaunchArgument) {
-                        highSchool.deleteCareer()
-                        pro.deleteCareer()
+                        // The stores restore lazily. Load the existing records before asking the
+                        // normal delete paths to write their tombstones; otherwise a reset can
+                        // leave an old Pro record in place when `result` is still nil.
+                        highSchool.restoreOrCreate()
+                        pro.restoreOrCreateCareer()
+                        _ = highSchool.deleteCareer()
+                        _ = pro.deleteCareer()
                         GameAnalytics.resetCompletedGameCountForUITesting()
                         DailyReminder.resetForUITesting()
                         // `previousReturnPlan`은 App 초기화 때 이미 읽힌 값이라 defaults만 지워서는
@@ -346,6 +378,10 @@ struct BaseballApp: App {
                         returnWelcomePlan = nil
                         previousReturnPlan = nil
                         DailyReminder.refresh(plan: nil)
+                    }
+                    _ = await minimumLaunchPresentation.value
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isPresentingLocalizedLaunch = false
                     }
                 }
                 .task {

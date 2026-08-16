@@ -397,7 +397,9 @@ enum ProCareerPresentation {
             return resolver.resolve(.gameContent("content.pro-media-opportunity.choice.\(contentSuffix).title"))
         }
         guard resolver.language != .korean else { return choice.title }
-        return resolver.resolve(.gameContent("content.pro-decision.choice.\(choice.id).title"))
+        return resolver.resolve(.gameContent(
+            "content.pro-decision.choice.\(ordinaryDecisionChoiceContentID(choice.id)).title"
+        ))
     }
 
     static func choiceDetail(_ choice: ProSeasonDecisionChoice, resolver: GameCopyResolver) -> String {
@@ -412,7 +414,9 @@ enum ProCareerPresentation {
             return resolver.resolve(.gameContent("content.pro-media-opportunity.choice.\(contentSuffix).detail"))
         }
         guard resolver.language != .korean else { return choice.detail }
-        return resolver.resolve(.gameContent("content.pro-decision.choice.\(choice.id).detail"))
+        return resolver.resolve(.gameContent(
+            "content.pro-decision.choice.\(ordinaryDecisionChoiceContentID(choice.id)).detail"
+        ))
     }
 
     static func decisionRecordTitle(_ record: ProDecisionRecord, resolver: GameCopyResolver) -> String {
@@ -427,7 +431,17 @@ enum ProCareerPresentation {
             return resolver.resolve(.gameContent("content.pro-media-opportunity.choice.\(contentSuffix).title"))
         }
         guard resolver.language != .korean else { return record.choiceTitle }
-        return resolver.resolve(.gameContent("content.pro-decision.choice.\(record.choiceID).title"))
+        return resolver.resolve(.gameContent(
+            "content.pro-decision.choice.\(ordinaryDecisionChoiceContentID(record.choiceID)).title"
+        ))
+    }
+
+    /// Core decision IDs are namespaced as `<decision-type>.<choice>`, while the shared copy
+    /// catalog intentionally keys choices by the reusable suffix only. Older persisted rows may
+    /// already contain an unnamespaced suffix, so keep those unchanged.
+    private static func ordinaryDecisionChoiceContentID(_ persistedID: String) -> String {
+        persistedID.split(separator: ".", omittingEmptySubsequences: true).last.map(String.init)
+            ?? persistedID
     }
 
     static func journeyEffect(_ effect: ProJourneyEffect?, resolver: GameCopyResolver) -> String? {

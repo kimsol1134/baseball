@@ -68,11 +68,31 @@ final class JapaneseLocalizationTests: XCTestCase {
     func testJapaneseInfoPlistAndLaunchScreenResourcesExist() throws {
         let root = repositoryRoot()
         let info = root.appendingPathComponent("apps/ios/Sources/Localization/ja.lproj/InfoPlist.strings")
-        let launch = root.appendingPathComponent("apps/ios/Sources/ja.lproj/LaunchScreen.storyboard")
+        let launch = root.appendingPathComponent("apps/ios/Sources/ja.lproj/LaunchScreenV2.storyboard")
         XCTAssertTrue(FileManager.default.fileExists(atPath: info.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: launch.path))
         XCTAssertTrue(try String(contentsOf: info, encoding: .utf8).contains("野球がダメならまた転生"))
         XCTAssertTrue(try String(contentsOf: launch, encoding: .utf8).contains("野球がダメなら"))
+    }
+
+    func testLocalizedLaunchAndLoadingTitlesStayInSync() throws {
+        let root = repositoryRoot()
+        let koreanLaunch = root.appendingPathComponent("apps/ios/Sources/ko.lproj/LaunchScreenV2.storyboard")
+        let englishLaunch = root.appendingPathComponent("apps/ios/Sources/en.lproj/LaunchScreenV2.storyboard")
+        let appShell = root.appendingPathComponent("apps/ios/Sources/AppShell.swift")
+        let info = root.appendingPathComponent("apps/ios/Sources/Info.plist")
+
+        XCTAssertTrue(FileManager.default.fileExists(atPath: koreanLaunch.path))
+        XCTAssertTrue(try String(contentsOf: koreanLaunch, encoding: .utf8).contains("야구 못하면 또&#10;환생함"))
+        XCTAssertTrue(try String(contentsOf: englishLaunch, encoding: .utf8).contains("MOUND&#10;REBORN"))
+        XCTAssertTrue(try String(contentsOf: appShell, encoding: .utf8).contains("GameCopyText(.appTitle)"))
+        XCTAssertTrue(try String(contentsOf: info, encoding: .utf8).contains("LaunchScreenV2"))
+
+        let entries = try catalogEntries()
+        let appTitle = try XCTUnwrap(entries.first { $0.key == "app.title" })
+        XCTAssertEqual(appTitle.korean, "야구 못하면 또 환생함")
+        XCTAssertEqual(appTitle.english, "Mound Reborn")
+        XCTAssertEqual(appTitle.japanese, "野球がダメならまた転生")
     }
 
     private func catalogEntries() throws -> [Entry] {

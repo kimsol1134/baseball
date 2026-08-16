@@ -4145,14 +4145,6 @@ public struct ProCareerEngine: Sendable {
         return StableHash.fnv1a64(values.joined(separator: "|"))
     }
 
-    /// Fixture exporters may construct a canonical signed input for semantic command coverage.
-    /// This is intentionally SPI-only; it exposes no validation bypass and production state still
-    /// has to pass the same commitment and journey invariants before any command is accepted.
-    @_spi(ProCareerFixture)
-    public func fixtureCommitment(_ state: ProCareerSnapshot) -> String {
-        commitment(state)
-    }
-
     private func decisionCommitment(_ decision: ProSeasonDecision) -> String {
         var values = [
             decision.id,
@@ -4271,10 +4263,10 @@ public struct ProCareerEngine: Sendable {
             ))
         }
 
-        // v3 keeps the 70-point induction threshold but removes the saturation paths that made
-        // ordinary long careers induct automatically. The Wave 6 20x20 evidence required slower
-        // workload, strikeout, quality, and recognition units; the high-signal semantic fixture
-        // still crosses the unchanged threshold with both strong performance and three awards.
+        // v3 is a new, explicitly versioned projection for new journeys. It keeps the fixed
+        // 70-point induction threshold while weighting bounded longevity, workload, quality,
+        // decisions, and awards as independent semantic career evidence. Older saves stay on
+        // the frozen branch above so their stored HOF results remain byte-compatible.
         let longevity = min(15, max(0, serviceYears))
         let strikeoutContribution = min(22, max(0, strikeouts) / 200)
         let workloadContribution = min(15, max(0, outs) / 600)

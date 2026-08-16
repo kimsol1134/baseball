@@ -260,7 +260,11 @@ final class MobileCareerStore {
     @discardableResult
     func deleteCareer() -> Bool {
         // clear() 대신 묘비 — 고교 쪽과 같은 이유(iCloud 부활 방지).
-        guard let deletedResult = result else { return false }
+        // 삭제 API의 성공은 "무언가를 실제로 지웠는가"가 아니라 "호출 뒤 진행이 없는가"다.
+        // 복원이 끝나 빈 저장소임이 확정된 경우는 성공한 no-op으로 돌려, 전체 초기화 같은
+        // 호출자가 `false`를 저장 오류로 오인해 화면 복귀를 건너뛰지 않게 한다.
+        // loading/failed의 nil은 미확인·손상 저장일 수 있으므로 여전히 실패다.
+        guard let deletedResult = result else { return loadState == .needsSetup }
         // The tombstone must stay in the same generation as the career it deletes. A legacy
         // production build may replace a schema-2 tombstone with its next legacy career, while a
         // schema-2 writer must never replace a schema-3 journey tombstone. Capture this before the

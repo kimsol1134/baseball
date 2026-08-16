@@ -20,8 +20,22 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertFalse(AppFeatureConfiguration.production.proCareerJourneyV1)
         XCTAssertTrue(AppFeatureConfiguration.journeyV1Tests.proCareerJourneyV1)
 
+        let appSource = try String(
+            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/BaseballApp.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(appSource.contains("#if DEBUG"))
+        XCTAssertTrue(appSource.contains("proCareerJourneyLaunchArgument"))
+        XCTAssertTrue(appSource.contains("AppFeatureConfiguration.journeyV1Tests : .production"))
+        XCTAssertTrue(appSource.contains("let proConfiguration = AppFeatureConfiguration.production"))
+
         var writes: [Data] = []
+        let legacyCloud = JourneyWave1MemoryRemoteStore()
+        let legacySync = SaveSync(key: "wave1-production-\(UUID().uuidString).json", store: legacyCloud)
+        legacySync.clear()
+        defer { legacySync.clear() }
         let store = MobileCareerStore(
+            sync: legacySync,
             saveWriter: { writes.append($0); return true },
             configuration: .production
         )
@@ -162,7 +176,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertEqual(store.state?.journeyState?.reputation.fanSupport, 30)
     }
 
-    func testWave2OfferUIHasStableAccessibilityAndExplicitUnselectedChoices() throws {
+    func testWave2OfferUIHasStableAccessibilityAndRetainsCurrentGoalByDefault() throws {
         let flow = try String(
             contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/CareerFlowView.swift"),
             encoding: .utf8
@@ -171,8 +185,12 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertTrue(flow.contains("case .contractOffer:"))
         XCTAssertTrue(flow.contains("accessibilityIdentifier(\"pro.contractOffer\")"))
         XCTAssertTrue(flow.contains("identifier: \"pro.contractOffer.sign\""))
+        XCTAssertTrue(flow.contains("identifier: \"pro.seasonReview.confirm\""))
+        XCTAssertTrue(flow.contains(".accessibilityElement(children: .contain)\n        .accessibilityIdentifier(\"pro.seasonDecision\")"))
         XCTAssertTrue(flow.contains("pro.contractOffer.ambition.\\(ambition.rawValue)"))
         XCTAssertTrue(flow.contains("@State private var selectedAmbition: ProCareerAmbition?"))
+        XCTAssertTrue(flow.contains(".task(id: market.id)"))
+        XCTAssertTrue(flow.contains("selectedAmbition = activeGoal.ambition"))
         XCTAssertTrue(flow.contains("contractOfferGuaranteedSalary"))
         XCTAssertTrue(flow.contains("contractOfferSigningBonus"))
         XCTAssertTrue(flow.contains("contractOfferDurationTitle"))
@@ -227,6 +245,25 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertTrue(sourceFiles.contains("pro.retirement.honors"))
         XCTAssertTrue(sourceFiles.contains("pro.retirement.honor.\\(honor.id)"))
         XCTAssertTrue(sourceFiles.contains("accessibilityReduceMotion"))
+    }
+
+    func testRetirementProjectionAndHonorsPreserveChildAccessibilityIDs() throws {
+        let flow = try String(
+            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/CareerFlowView.swift"),
+            encoding: .utf8
+        )
+        let previewStart = try XCTUnwrap(flow.range(of: "private struct RetirementPreviewCard: View"))
+        let retiredStart = try XCTUnwrap(flow.range(of: "private struct RetiredView: View"))
+        let honorsStart = try XCTUnwrap(flow.range(of: "private struct RetirementHonorsCard: View"))
+        let totalsStart = try XCTUnwrap(flow.range(of: "private struct CareerTotals: View"))
+        let preview = flow[previewStart.lowerBound..<retiredStart.lowerBound]
+        let honors = flow[honorsStart.lowerBound..<totalsStart.lowerBound]
+
+        XCTAssertTrue(preview.contains(".accessibilityElement(children: .contain)"))
+        XCTAssertTrue(preview.contains("pro.retirement.preview.score"))
+        XCTAssertTrue(preview.contains("pro.retirement.preview.retired-number"))
+        XCTAssertTrue(honors.contains(".accessibilityElement(children: .contain)"))
+        XCTAssertTrue(honors.contains("pro.retirement.honor.\\(honor.id)"))
     }
 
     func testWave4CopyHasKoreanEnglishJapaneseParityAndProjectionLanguage() throws {

@@ -66,7 +66,7 @@ struct HighSchoolCareerView: View {
         Group {
             switch career.loadState {
             case .loading:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                AppLoadingView()
             case .needsSetup:
                 // 첫 회차에는 오프닝 장면을 먼저 보여 준다. 앱을 열자마자 폼이 나오면
                 // 게임이 시작됐다는 것 자체가 전달되지 않는다.

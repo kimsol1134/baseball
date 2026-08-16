@@ -138,6 +138,7 @@ struct SettingsView: View {
             Section {
                 Button(copyResolver.resolve(AppCopyKey.settingsDeleteAction), role: .destructive) { confirmingReset = true }
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                    .accessibilityIdentifier("settings.deleteAll")
             } footer: {
                 GameCopyText(AppCopyKey.settingsDeleteFooter)
             }
@@ -152,30 +153,39 @@ struct SettingsView: View {
             titleVisibility: .visible
         ) {
             Button(copyResolver.resolve(AppCopyKey.settingsDeleteConfirmationAction), role: .destructive) {
-                // 삭제가 실제로 성공했을 때만 첫 화면으로 되돌린다. 저장 쓰기가 실패하면
-                // 진행은 그대로 남아 있는데 화면만 오프닝으로 가서, 되돌릴 수 없는 것을
-                // 되돌린 것처럼 보이게 된다.
-                let clearedHighSchool = highSchool.deleteCareer()
-                let clearedPro = pro.deleteCareer()
-                // "모든 진행"에는 UserDefaults의 진행 흔적도 포함된다 — 남기면
-                // 새 회차의 첫 신기록·첫 별점 순간이 이미 소모돼 있다.
-                UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
-                LegacyDailyInningData.clear()
-                ReviewPrompt.reset()
-                // 연속 기록도 진행이다. 남기면 새 시작이 "12일 연속"에서 출발한다.
-                for key in UserDefaults.standard.dictionaryRepresentation().keys
-                where DailyStreak.allPlayKeyPrefixes.contains(where: key.hasPrefix) {
-                    UserDefaults.standard.removeObject(forKey: key)
-                }
-                // 알림 권유는 다시 물어볼 수 있어야 한다 — 지운 사람은 다시 시작할 사람이다.
-                UserDefaults.standard.removeObject(forKey: DailyReminder.promptedKey)
-                // 지운 다음의 첫 화면은 오프닝이어야 한다. 껍데기가 탭을 고교로 되돌리고
-                // 오프닝 표시 상태까지 초기화한다.
-                if clearedHighSchool && clearedPro { onResetAll() }
+                deleteAllProgress()
             }
+            .accessibilityIdentifier("settings.deleteAll.confirm")
             Button(copyResolver.resolve(AppCopyKey.settingsDeleteConfirmationCancel)) {}
         } message: {
             GameCopyText(AppCopyKey.settingsDeleteConfirmationMessage)
         }
+    }
+
+    /// 영속 진행과 화면 복귀를 한 성공 경로에 묶는다. 삭제 항목을 추가할 때 이 함수의
+    /// `guard`에 포함하지 않으면 컴파일 리뷰에서 한눈에 드러나고, 아래 UI 회귀 테스트가
+    /// 실제 오프닝 도달까지 다시 검증한다.
+    private func deleteAllProgress() {
+        // 삭제가 실제로 성공했을 때만 첫 화면으로 되돌린다. 저장 쓰기가 실패하면
+        // 진행은 그대로 남아 있는데 화면만 오프닝으로 가서, 되돌릴 수 없는 것을
+        // 되돌린 것처럼 보이게 된다. deleteCareer()는 이미 빈 상태도 성공하는 멱등 계약이다.
+        guard highSchool.deleteCareer(), pro.deleteCareer() else { return }
+
+        // "모든 진행"에는 UserDefaults의 진행 흔적도 포함된다 — 남기면
+        // 새 회차의 첫 신기록·첫 별점 순간이 이미 소모돼 있다.
+        UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
+        LegacyDailyInningData.clear()
+        ReviewPrompt.reset()
+        // 연속 기록도 진행이다. 남기면 새 시작이 "12일 연속"에서 출발한다.
+        for key in UserDefaults.standard.dictionaryRepresentation().keys
+        where DailyStreak.allPlayKeyPrefixes.contains(where: key.hasPrefix) {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        // 알림 권유는 다시 물어볼 수 있어야 한다 — 지운 사람은 다시 시작할 사람이다.
+        UserDefaults.standard.removeObject(forKey: DailyReminder.promptedKey)
+
+        // 이 콜백이 탭을 고교로 옮기고 HighSchoolCareerView의 정체성을 바꿔 오프닝의
+        // local @State까지 새로 만든다. 삭제 성공의 마지막 문장으로 고정한다.
+        onResetAll()
     }
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24127" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="launch-view-controller">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24127" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="launch-view-controller-v2">
     <device id="retina6_12" orientation="portrait" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
@@ -11,17 +11,17 @@
     <scenes>
         <scene sceneID="launch-scene">
             <objects>
-                <viewController id="launch-view-controller" sceneMemberID="viewController">
+                <viewController id="launch-view-controller-v2" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="launch-view">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="野球がダメなら&#10;また転生" textAlignment="center" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="YES" minimumScaleFactor="0.75" translatesAutoresizingMaskIntoConstraints="NO" id="launch-wordmark-shadow">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="야구 못하면 또&#10;환생함" textAlignment="center" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="YES" minimumScaleFactor="0.75" translatesAutoresizingMaskIntoConstraints="NO" id="launch-wordmark-shadow">
                                 <rect key="frame" x="30.5" y="361" width="340" height="130"/>
                                 <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="44"/>
                                 <color key="textColor" red="0.070" green="0.300" blue="0.145" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="野球がダメなら&#10;また転生" textAlignment="center" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="YES" minimumScaleFactor="0.75" translatesAutoresizingMaskIntoConstraints="NO" id="launch-wordmark">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="야구 못하면 또&#10;환생함" textAlignment="center" numberOfLines="2" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="YES" minimumScaleFactor="0.75" translatesAutoresizingMaskIntoConstraints="NO" id="launch-wordmark">
                                 <rect key="frame" x="26.5" y="357" width="340" height="130"/>
                                 <fontDescription key="fontDescription" type="system" weight="heavy" pointSize="44"/>
                                 <color key="textColor" red="0.965" green="0.945" blue="0.835" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
