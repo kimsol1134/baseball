@@ -11,7 +11,7 @@
     "content.awakening.explosive_fastball.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Explosive Four-Seam" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "爆発物 フォーシーム" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "爆発するフォーシーム" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "폭발하는 포심" } }
       }
     },
@@ -39,7 +39,7 @@
     "content.awakening.disappearing_breaker.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Vanishing Breaking Ball" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "消失 変化球" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "消える変化球" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "사라지는 변화구" } }
       }
     },
@@ -375,7 +375,7 @@
     "content.pitcher-preset.precision_commander.name" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Command Specialist" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球 スペシャリスト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "精密制球型" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "정교한 제구형" } }
       }
     },
@@ -424,7 +424,7 @@
     "content.pitcher-preset.breaking_ball_artist.name" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Breaking Ball Artist" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球 アーティスト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球アーティスト" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 아티스트" } }
       }
     },
@@ -438,7 +438,7 @@
     "content.pitcher-preset.breaking_ball_artist.strength.0" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Breaking-ball movement" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球 動き" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球の動き" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 움직임" } }
       }
     },
@@ -3042,7 +3042,7 @@
     "content.training-focus.breaking_ball.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Improves the break and drop on your breaking ball." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球 のブレイクとドロップを改善します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球が伸びます。ボールがより曲がり、より落ちます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구가 오릅니다. 공이 더 꺾이고 떨어집니다." } }
       }
     },
@@ -3056,7 +3056,7 @@
     "content.training-focus.breaking_ball.tradeoff" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Polishes only the breaking ball you choose. Higher intensity adds a little arm risk." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "のみを研磨します 変化球 あなたが選びます。強度が高いと、腕のリスクが少し追加されます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "選んだ決め球だけを速く仕上げます。強度を上げるほど、腕のリスクが少し増えます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "고른 결정구만 빠르게 완성합니다. 강하게 할수록 팔 위험이 조금 오릅니다." } }
       }
     },
@@ -3147,7 +3147,7 @@
     "content.training-focus.velocity.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Builds stuff, adds life to the fastball, and creates more whiffs—but costs fatigue." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球威を作り、速球に命を吹き込み、より多くの球威を生み出す 空振り—ただし疲労がかかります。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球威が上がります。速球が速くなり、空振りが増えます。疲労は大きめです。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "구위가 오릅니다. 직구가 빨라지고 헛스윙이 늘어납니다. 피로가 큽니다." } }
       }
     },
@@ -3209,9 +3209,9 @@
     },
     "content.training-opportunity.breaking_ball.reason.fallback" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's opening points to this training focus." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今日の冒頭では、このトレーニングの焦点について説明します。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 이 초점을 점검할 날입니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A breaking ball slips two days for every day off. Pin it back down today." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球は一日休むと二日逃げる。今日のうちに取り戻そう。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구는 하루 쉬면 이틀 도망간다. 오늘 다시 잡아 두자." } }
       }
     },
     "content.training-opportunity.command.reason.0" : {
@@ -3237,9 +3237,9 @@
     },
     "content.training-opportunity.command.reason.fallback" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's opening points to this training focus." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今日の冒頭では、このトレーニングの焦点について説明します。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 이 초점을 점검할 날입니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Command isn't a feeling — it's repetition. Stack the same corner again today." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球は感覚ではなく反復だ。今日も同じコースに積み重ねよう。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구는 감이 아니라 반복이다. 오늘도 같은 코스에 쌓자." } }
       }
     },
     "content.training-opportunity.game_planning.reason.0" : {
@@ -3265,9 +3265,9 @@
     },
     "content.training-opportunity.game_planning.reason.fallback" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's opening points to this training focus." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今日の冒頭では、このトレーニングの焦点について説明します。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 이 초점을 점검할 날입니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Even on a slow day, the mind can pitch. Get the sequences in order." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "体を休める日でも、頭は投げられる。配球を整理しておこう。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "몸이 쉬는 날에도 머리는 던질 수 있다. 배합을 정리해 두자." } }
       }
     },
     "content.training-opportunity.recovery.reason.0" : {
@@ -3293,9 +3293,9 @@
     },
     "content.training-opportunity.recovery.reason.fallback" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's opening points to this training focus." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今日の冒頭では、このトレーニングの焦点について説明します。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 이 초점을 점검할 날입니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The arm is honest. The rest you give it today lives in your next pitch." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "腕は正直だ。今日休ませた分だけ、次の球が生きる。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팔은 정직하다. 오늘 쉬어 준 만큼 다음 공이 산다." } }
       }
     },
     "content.training-opportunity.stamina.reason.0" : {
@@ -3308,7 +3308,7 @@
     "content.training-opportunity.stamina.reason.1" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "You are recovering faster. Stamina work should stick today." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "回復が早くなってきています。 スタミナ 今日は仕事が続くはずです。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "回復が早くなってきた。今日はスタミナ練習がよく身につく。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "회복이 빨라졌다. 오늘 체력 훈련이 잘 붙는다." } }
       }
     },
@@ -3321,9 +3321,9 @@
     },
     "content.training-opportunity.stamina.reason.fallback" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's opening points to this training focus." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今日の冒頭では、このトレーニングの焦点について説明します。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 이 초점을 점검할 날입니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Summer's seventh inning is thrown by winter's legs. Build them today." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "夏の7回は、冬の下半身が投げる。今日積み上げておこう。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "여름의 7회는 겨울의 하체가 던진다. 오늘 쌓아 두자." } }
       }
     },
     "content.training-opportunity.velocity.reason.0" : {
@@ -3349,9 +3349,9 @@
     },
     "content.training-opportunity.velocity.reason.fallback" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today's opening points to this training focus." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今日の冒頭では、このトレーニングの焦点について説明します。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오늘은 이 초점을 점검할 날입니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Velocity doesn't strike like lightning. Today is another layer of the base." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球速は雷のようには来ない。今日も土台から固める。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구속은 벼락처럼 오지 않는다. 오늘도 바닥부터 다진다." } }
       }
     },
     "content.training-outlook.none.detail" : {
@@ -3532,7 +3532,7 @@
     "content.training-result.detail.jackpot" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Huge breakthrough—the day opened up for you. %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "大きな進歩 — 一日が幕を開けました。 %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "大成功！今日は体が完全に開きました。%@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "대성공! 오늘은 몸이 완전히 열렸습니다. %@" } }
       }
     },
@@ -3812,7 +3812,7 @@
     "content.event.evt-rival-video.summary" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Your rival sends a clip showing he has timed your four-seam fastball." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ライバルがあなたのタイムを計ったことを示すクリップを送信します フォーシーム 速球。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ライバルがフォーシームのタイミングを完全に合わせた映像が届きました。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "라이벌이 당신의 포심 타이밍을 정확히 맞히는 영상이 도착했습니다." } }
       }
     },
@@ -3833,7 +3833,7 @@
     "content.event.evt-command-wall.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The Control Wall" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "の 制球 壁" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球の壁" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구의 벽" } }
       }
     },
@@ -4092,7 +4092,7 @@
     "content.event.evt-bullpen-rival.summary" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "A teammate competing for the starting spot asks to see your new breaking-ball grip." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "スタートの座を争うチームメイトが、あなたの新しい姿を見たいと言ってきました。 変化球 グリップ。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "先発の座を争うチームメイトが、新しい変化球のグリップを見せてほしいと言ってきます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "선발 자리를 다투는 동료가 새 변화구 그립을 보여 달라고 합니다." } }
       }
     },
@@ -4911,14 +4911,14 @@
     "content.relationship.evt-rival-video.quote.low" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "“Your high four-seam does not scare me anymore.” He sent a hitting clip with not a single swing-and-miss." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "「あなたのハイは フォーシーム もう怖くないよ。」彼は一打も打たないヒットクリップを送った 空振り." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "「お前の高めのフォーシーム、もう怖くない。」空振りひとつない打撃映像だけが、ぽんと送られてきた。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "“네 높은 포심, 이제 안 무서워.” 헛스윙 하나 없는 타격 영상만 툭 보내왔다." } }
       }
     },
     "content.relationship.evt-rival-video.quote.mid" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "“I have the timing on your high four-seam now.” A short hitting clip came with the message." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "「あなたのハイのタイミングを私は持っています フォーシーム 今ね。」メッセージには短いヒットクリップが付属していました。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "「高めのフォーシーム、タイミング合わせたよ。」短い打撃映像が添えられていた。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "“높은 포심 타이밍, 이제 맞췄어.” 짧은 타격 영상이 함께 도착했다." } }
       }
     },
@@ -5072,7 +5072,7 @@
     "content.relationship.evt-battery-dinner.choice.explain.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Explain when the breaking ball gets away" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球 がいつ逃げるかを説明する" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "手から抜ける日の感覚を話す" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "손에서 빠지는 날의 감각을 말한다" } }
       }
     },
@@ -5121,7 +5121,7 @@
     "content.relationship.evt-body-remembers.choice.explain.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn it into a breaking ball only the two of you know." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "それをに変えてください 変化球 二人だけが知っています。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "二人だけが知る変化球にできる" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "둘만 아는 변화구로 만들 수 있다" } }
       }
     },
@@ -6835,16 +6835,16 @@
     },
     "content.relationship.fallback.event.summary" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Someone is waiting for your answer." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "誰かがあなたの答えを待っています。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "누군가 다음 선택을 기다리고 있습니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Someone is watching you, waiting for an answer." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "誰かが答えを待って、こちらを見ています。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "누군가 대답을 기다리며 이쪽을 보고 있습니다." } }
       }
     },
     "content.relationship.fallback.quote" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The conversation does not continue." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "会話が続かない。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대화가 이어지지 않습니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The words trail off, and only the pop of the mitt fills the silence." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "言葉が途切れ、ミットの音だけが残る。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "말이 끊긴 자리에 미트 소리만 남는다." } }
       }
     },
     "content.relationship.fallback.choice.listen.title" : {
@@ -7220,9 +7220,9 @@
     },
     "content.important-game.fallback.narrative" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Read the situation and get ready for the next batter." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "状況を読んで次の打者に備える。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경기 상황을 확인하고 다음 타자를 준비하세요." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The mound belongs to whoever is ready. The next batter is stepping in." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "マウンドは準備を終えた者のもの。次の打者が入ってきます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마운드는 준비를 마친 쪽의 것입니다. 다음 타자가 들어섭니다." } }
       }
     },
     "content.important-game.game-debut.title" : {
@@ -7291,7 +7291,7 @@
     "content.important-game.game-loaded.narrative" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "You need weak contact without giving up a walk." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "四球を諦めずに打ち損じが必要です。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "四球を避けながら、弱い打球を打たせたい場面です。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "볼넷을 피하면서 약한 타구가 필요한 상황" } }
       }
     },
@@ -8579,7 +8579,7 @@
     "content.prospect-tag.breaking-ball-artist" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "A breaking-ball artist who leads his class in strikeouts" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あ 変化球 三振数でクラストップのアーティスト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "角度の違う縦の変化球 — 空振り誘発クラス1位" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "각이 다른 종변화구 — 헛스윙 유도 1위" } }
       }
     },
@@ -8803,7 +8803,7 @@
     "content.relationship.evt-command-wall.choice.explain.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave a visible checkpoint for the next command session." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の制球 セッションのために、目に見えるチェックポイントを残しておきます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球が乱れる原因を、次の練習の基準点として残す" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구가 흐트러지는 원인을 다음 훈련의 기준점으로 남긴다" } }
       }
     },
@@ -9041,7 +9041,7 @@
     "content.relationship.evt-mechanics-camera.choice.listen.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Set velocity aside and recover the release checkpoint." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速度を脇に置き、リリース チェックポイントを回復します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球速をいったん脇に置き、リリースの基準点を取り戻す" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "구속을 잠시 내려놓고 릴리스의 기준점을 되찾는다" } }
       }
     },
@@ -9111,7 +9111,7 @@
     "content.relationship.evt-rain-delay.choice.explain.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Hold breaking balls until the fingers wake up" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ホールド 変化球指が目覚めるまで" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "指の感覚が戻るまで変化球を封印する" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "손가락 감각이 돌아올 때까지 변화구를 미룬다" } }
       }
     },
@@ -9125,7 +9125,7 @@
     "content.relationship.evt-rain-delay.choice.challenge.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Open with the primary breaking ball" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プライマリ 変化球 で開く" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "先頭打者から決め球の変化球を使う" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 타자부터 주무기 변화구를 꺼낸다" } }
       }
     },
@@ -9174,7 +9174,7 @@
     "content.relationship.evt-loaded-bases.choice.explain.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Show the hitter tendency behind the whiff call" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "空振り コールの背後にある打者の傾向を表示する" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "空振りを狙った根拠となる打者の癖を映像で見せる" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "헛스윙을 노린 타자 습관을 영상으로 보여준다" } }
       }
     },
@@ -10091,7 +10091,7 @@
     "content.draft-team.busan_marines.competitor-profile" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "A right-handed ace built around a high Four-Seam and diving forkball" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高身長を核とした右利きのエース フォーシーム そしてダイビングフォークボール" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高めのフォーシームと落差の大きいフォークを武器にする右腕エース" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "높은 포심과 낙차 큰 포크볼을 앞세운 우완 에이스" } }
       }
     },
@@ -10266,7 +10266,7 @@
     "content.draft-team.gwangju_phoenix.development-plan" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Train a breaking ball that separates from the Four-Seam's path" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "フォーシーム のパスから分離する 変化球 を訓練する" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速球と同じ軌道から分かれる変化球の訓練" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "직구와 같은 궤도에서 갈라지는 변화구 훈련" } }
       }
     },
@@ -10364,7 +10364,7 @@
     "content.draft-team.changwon_meteors.development-plan" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Raise Four-Seam life and top velocity together" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "上げる フォーシーム ライフと最高速度を両立" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速球の動きと最高球速を同時に引き上げる" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "직구의 움직임과 최고 구속을 함께 향상" } }
       }
     },
@@ -10434,7 +10434,7 @@
     "content.draft-team.jeonju_hanok.competitor-profile" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "A right-handed starter who collects strikeouts with a fast Four-Seam and short slider" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "俊足で三振を集める右腕先発投手 フォーシーム そしてショートスライダー" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速いフォーシームと小さく曲がるスライダーで三振を積み上げる右腕先発" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 포심과 짧은 슬라이더로 삼진을 모으는 우완 선발" } }
       }
     },
@@ -10511,7 +10511,7 @@
     "content.memory.velocity_blueprint.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Four-Seam Velocity Blueprint" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "フォーシーム 速度ブループリント" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速球の球速トレーニング法" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "직구 구속 훈련법" } }
       }
     },
@@ -10532,7 +10532,7 @@
     "content.memory.fingertip_memory.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "More breaking-ball movement · Slightly less stamina" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "もっと見る 変化球 動き・スタミナがやや少ない" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球の動きが上昇、スタミナが小幅に減少" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 움직임 상승, 체력 소폭 감소" } }
       }
     },
@@ -10616,7 +10616,7 @@
     "content.memory.two_strike_sequence.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "More breaking-ball movement and whiffs · Slightly less stamina" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "より多くの 変化球 動作と 空振り · スタミナがわずかに低下" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球の動きと空振りが上昇、スタミナが小幅に減少" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구 움직임·헛스윙 상승, 체력 소폭 감소" } }
       }
     },
@@ -11365,7 +11365,7 @@
     "content.pitcher-build.power.strength" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Your fastball creates whiffs and strikeouts." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたの速球は 空振り と三振を生み出します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速い球で空振りと三振を生み出します。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "빠른 공으로 헛스윙과 삼진을 만듭니다." } }
       }
     },
@@ -11379,7 +11379,7 @@
     "content.pitcher-build.command.label" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Command Artist" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球 アーティスト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "精密制球型" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "정밀 제구형" } }
       }
     },
@@ -11400,21 +11400,21 @@
     "content.pitcher-build.movement.label" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Breaking-Ball Pitcher" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球 投手" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球型" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구형" } }
       }
     },
     "content.pitcher-build.movement.strength" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Movement and weak contact keep hits off the board." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化量 と弱い接触により、ヒットがボードから外されます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化と弱い打球でヒットを抑えます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화와 약한 타구로 안타를 억제합니다." } }
       }
     },
     "content.pitcher-build.movement.tradeoff" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "A hanging breaking ball can turn into hard contact." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球 ぶら下がっていると激しい接触につながる可能性があります。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "抜けた変化球は強い打球につながることがあります。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "행잉 변화구는 강한 타구로 이어질 수 있습니다." } }
       }
     },
@@ -11603,7 +11603,7 @@
     "content.pro-rival.pro-rival-gwangju.profile" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "He hunts the left-center gap for extra bases and handles breaking-ball timing well." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "彼は左中間の隙間を狙って追加塁打を狙ってハンドルを握る 変化球 タイミングが良い。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "左中間のギャップを狙って長打を作ります。変化球のタイミングに強いタイプです。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "좌중간 갭을 노려 장타를 만듭니다. 변화구 타이밍에 강합니다." } }
       }
     },
@@ -12471,7 +12471,7 @@
     "content.personality-trait.opener.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "First-Pitch Command" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "初球 制球" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "初球支配" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "초구 장악" } }
       }
     },

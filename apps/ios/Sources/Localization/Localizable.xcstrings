@@ -116,7 +116,7 @@
     "awakening.node.voice.locked" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ branch, Tier %lld, %@, locked. %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ ブランチ、層 %lld、%@、ロックされています。 %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@の枝、第%lld層、%@、ロック中。%@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 갈래 %lld단, %@, 잠김. %@" } }
       }
     },
@@ -1264,7 +1264,7 @@
     "settings.audio.haptics.footer" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "If you turn off haptics, the release meter will no longer wobble with game pressure. The meter's normal movement and fatigue-based aim shake remain." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ハプティクスをオフにすると、試合の圧力によってリリース メーターがぐらつきなくなります。メーターの通常の動きと疲労による照準のブレは残ります。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ハプティクスをオフにすると、勝負の緊張によるリリースメーターの揺れがなくなります。メーターの基本的な動きと、疲労による照準のブレはそのまま残ります。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "진동을 끄면 승부 긴장에 따른 릴리스 미터 흔들림도 사라집니다. 기본 미터 이동과 피로에 따른 조준 흔들림은 그대로입니다." } }
       }
     },
@@ -1740,7 +1740,7 @@
     "setup.name.title.rebirth" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a name for your rebirth" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "転生 の名前を選択してください" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "生まれ変わる名前を決めましょう" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 태어날 이름을 정하세요" } }
       }
     },
@@ -1782,7 +1782,7 @@
     "setup.quick-rebirth.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Rebirth shortcut" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "転生 ショートカット" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "すぐに転生" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "바로 환생" } }
       }
     },
@@ -1852,7 +1852,7 @@
     "setup.soul-domain.game.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Command and batter plans come first. Survive with better pitch-by-pitch decisions." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球 とバッタープランが最初に来ます。投球ごとのより良い判断で生き残れます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球と打者攻略から先に伸びます。読み合いで生き残るタイプです。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구와 타자 상대법에 먼저 들어갑니다. 수 싸움으로 버티는 쪽입니다." } }
       }
     },
@@ -1873,7 +1873,7 @@
     "setup.soul-domain.technique.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Command and breaking balls come first. Put the pitch where you want it." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球 と 変化球 が最初に来ます。投球を好きな場所に置きます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球と変化球から先に伸びます。狙った場所に投げ込むタイプです。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구와 변화구에 먼저 들어갑니다. 원하는 곳에 꽂는 쪽입니다." } }
       }
     },
@@ -1908,7 +1908,7 @@
     "setup.start.rebirth" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Begin rebirth" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "転生 を開始します" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "生まれ変わる" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 태어나기" } }
       }
     },
@@ -4176,7 +4176,7 @@
     "pitch.ability.accessibility-summary" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Baseline %@. Location %lld, movement %lld, stamina %lld. Fatigue %lld becomes %lld. Arm load per pitch %lld. %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基準 %@。コース %lld、変化量 %lld、スタミナ %lld。疲労 %lld から %lld。1球あたりの腕への負荷 %lld。%@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基準球速 %@。コース %lld、変化量 %lld、スタミナ %lld。疲労 %lld で体感 %lld。1球あたりの腕への負担 %lld。%@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "기준 구속 %@, 코스 %lld, 움직임 %lld, 체력 %lld, 피로 %lld에서 체감 %lld, 한 구 팔 부담 %lld. %@" } }
       }
     },
@@ -4288,35 +4288,35 @@
     "pitch.build.command" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Command build synergy: this pitch is built to hold its target." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球 相乗効果を構築: この投球はターゲットを保持するように構築されています。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "精密制球型シナジー · 狙ったコースに寄せる球です。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "정밀 제구형 시너지 · 노린 코스에 붙이는 공입니다." } }
       }
     },
     "pitch.build.movement.primary" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Movement build synergy: this pitch creates break and weak contact." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化量 相乗効果を構築: この投球はブレークと打ち損じを生み出します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球型シナジー · 動きと凡打を活かします。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구형 시너지 · 움직임과 범타를 살립니다." } }
       }
     },
     "pitch.build.movement.secondary" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Movement build bridge: this fastball sets up your put-away pitches." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化量 ブリッジを構築: この速球が決め球をセットアップします。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球型のつなぎ球 · 決め球のためのフォーシームです。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구형 연결구 · 결정구를 위한 포심입니다." } }
       }
     },
     "pitch.build.power.primary" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Power build synergy: your four-seam gains velocity and swing-and-miss." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "パワービルド相乗効果: フォーシーム の速度が向上し、空振り が向上します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速球型シナジー · フォーシームの球速と空振りを活かします。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "강속구형 시너지 · 포심 구속과 헛스윙을 살립니다." } }
       }
     },
     "pitch.build.power.secondary" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Power build complement: this pitch creates separation from your four-seam." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "パワービルドの補完: この投球は、フォーシーム からの分離を生み出します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速球型の補助球 · フォーシームとの球速差を作ります。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "강속구형 보조구 · 포심과의 속도 차를 만듭니다." } }
       }
     },
@@ -4792,7 +4792,7 @@
     "pitch.adaptation.accessibility" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Hitter read: %@. %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打者の読み方: %@。 %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打者がこちらの球を読んでいる度合い %@。%@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "타자가 내 공을 읽는 정도 %@. %@" } }
       }
     },
@@ -4953,7 +4953,7 @@
     "pitch.analysis.whiff-rate" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Whiff Rate" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "空振り レート" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "空振り" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "헛스윙" } }
       }
     },
@@ -4981,7 +4981,7 @@
     "pitch.build.fatigue-cost" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Arm load +%lld per pitch. %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "投球ごとに腕の負荷 +%lld。 %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1球あたりの腕への負担 +%lld。%@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 구 팔 부담 +%lld. %@" } }
       }
     },
@@ -5702,7 +5702,7 @@
     "pitch.drama.sequence" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Sequence read. %@. %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "シーケンスを読み取ります。 %@。 %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読み合いが的中。%@。%@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "수싸움 적중. %@. %@" } }
       }
     },
@@ -6528,7 +6528,7 @@
     "pro.weekly.plan.stuff.veteran.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Refine the Four-Seam" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "フォーシーム を調整します" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "フォーシームの威力を磨く" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "포심 위력 다듬기" } }
       }
     },
@@ -6724,14 +6724,14 @@
     "pro.weekly.recommendation.command" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Build on Command" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球 に基づいて構築する" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球型を強化" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구형 강화" } }
       }
     },
     "pro.weekly.recommendation.movement" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Build on Movement" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化量 に基づいて構築" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "変化球型を強化" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "변화구형 강화" } }
       }
     },
@@ -8565,14 +8565,14 @@
     "legacy.pledge.alignment.control" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Your best rating is Control, making this a natural fit for limiting walks." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたの最高評価は 制球 で、これは四球を制限するのに自然に適合します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球が最も高い能力なので、四球の抑制によく合います。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구가 가장 높은 능력이라 볼넷 억제에 잘 맞습니다." } }
       }
     },
     "legacy.pledge.alignment.evaluation" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "This turns your Control strength into an overall draft grade." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "これにより、あなたの 制球 の強さがドラフト全体のグレードに変わります。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "制球の強みをドラフト全体の評価につなげる目標です。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "제구 강점을 전체 평가로 이어 가는 목표입니다." } }
       }
     },
@@ -8985,7 +8985,7 @@
     "legacy.heart.accessibility" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@'s thoughts. %2$@. %3$@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%1$@の感想。 %2$@。 %3$@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%1$@の本音。%2$@。%3$@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@의 속마음. %2$@. %3$@" } }
       }
     },
@@ -9013,7 +9013,7 @@
     "legacy.quote.accessibility" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@. %2$@. The moment that lasted: %3$@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%1$@。 %2$@。続いた瞬間: %3$@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%1$@。%2$@。いちばん長く残った瞬間、%3$@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$@. %2$@. 가장 오래 남은 순간, %3$@" } }
       }
     },
@@ -9055,7 +9055,7 @@
     "legacy.previous.accessibility" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "A message from %1$@. %2$@. %3$@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%1$@さんからのメッセージです。 %2$@。 %3$@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "前の選手%1$@の言葉。%2$@。%3$@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "지난 선수 %1$@의 말. %2$@. %3$@" } }
       }
     },
@@ -9587,7 +9587,7 @@
     "legacy.recap.points.spend" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Spend the balance in the Legacy Shop during rebirth—break talent walls, carry more memories, or change your growth rhythm." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "転生 中にレガシー ショップで残高を費やして、才能の壁を打ち破ったり、より多くの思い出を持ち運んだり、成長リズムを変えたりしましょう。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "残高は転生のとき継承ショップで使います — 才能の壁の突破、記憶の拡張、成長リズム。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "잔액은 환생할 때 계승 상점에서 씁니다 — 재능 돌파·기억 확장·성장 리듬." } }
       }
     },

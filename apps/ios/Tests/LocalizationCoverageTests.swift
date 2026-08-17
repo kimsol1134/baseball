@@ -1240,7 +1240,7 @@ final class LocalizationCoverageTests: XCTestCase {
         try assertToken(.importantGameScenarioFallbackTitle(), expectedKorean: "중요 경기")
         try assertToken(
             .importantGameScenarioFallbackNarrative(),
-            expectedKorean: "경기 상황을 확인하고 다음 타자를 준비하세요."
+            expectedKorean: "마운드는 준비를 마친 쪽의 것입니다. 다음 타자가 들어섭니다."
         )
 
         let unknownScenario = ImportantGameScenarioContent(
