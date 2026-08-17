@@ -1,11 +1,9 @@
 package com.solkim.baseball.application
 
 import com.solkim.baseball.model.JsonValue
-import com.solkim.baseball.model.Hashing
 import com.solkim.baseball.persistence.AtomicJsonRepository
 import com.solkim.baseball.persistence.JsonPayloadCodec
 import com.solkim.baseball.persistence.KotlinSaveRepository
-import com.solkim.baseball.persistence.KotlinSaveContract
 import com.solkim.baseball.persistence.LegacySaveCompatibilityException
 import com.solkim.baseball.persistence.SaveEnvelope
 import com.solkim.baseball.persistence.SaveFailureCode
@@ -116,16 +114,19 @@ public class CSharpLegacyGameStoreRepository(
             )
         }
 
-        val nextPayload = when (val command = envelope.command) {
-            is GameCommand.UpdateSettings -> currentPayload.withSettings(command.settings, envelope.commandId)
-            else -> throw GameCommandException("nativeAuthoritative.legacy_command_not_ported")
+        val applied = try {
+            CSharpLegacyAggregateBridge.apply(currentPayload, envelope)
+        } catch (error: GameCommandException) {
+            throw error
+        } catch (error: IllegalArgumentException) {
+            throw GameCommandException(error.message ?: "game.command.rejected")
         }
         val nextRevision = currentRevision.checkedIncrement()
-        val written = delegate.save(nextPayload, nextRevision)
+        val written = delegate.save(applied.payload, nextRevision)
         val after = projectEnvelope(written.envelope).payload
         GameDispatchResult(
             state = after,
-            eventHash = GameCommandCodec.resultHash(before, envelope, "legacy.settings.updated"),
+            eventHash = GameCommandCodec.resultHash(before, envelope, applied.eventName),
             duplicate = false,
         )
     }
@@ -150,21 +151,7 @@ public class CSharpLegacyGameStoreRepository(
         val payload = envelope.payload
         val payloadInstallId = payload.string("installId")
         if (payloadInstallId != installId) throw IllegalStateException("game.store.install_mismatch")
-        val state = GameAggregateState(
-            aggregateVersion = payload.intOrDefault("aggregateVersion", GameAggregateState.CURRENT_AGGREGATE_VERSION),
-            revision = envelope.revision,
-            installId = installId,
-            stage = GameStage.entries.firstOrNull { it.wire == payload.string("stage") }
-                ?: throw IllegalStateException("game.store.stage_unknown"),
-            meta = GameMetaState(
-                completedGameCount = payload.objectOrNull("meta")?.ulongOrDefault("completedGameCount", 0UL) ?: 0UL,
-            ),
-            settings = payload.objectOrNull("settings")?.toSettings() ?: GameSettingsState(),
-            deleted = payload.boolOrDefault("deleted", false),
-            // The typed commitment is not a legacy field.  This stable projection value lets the
-            // Kotlin command hash and rollback evidence bind to the exact canonical payload.
-            commitment = envelope.payloadSha256,
-        )
+        val state = CSharpLegacyAggregateBridge.project(payload, envelope.revision, envelope.payloadSha256)
         return SaveEnvelope(
             schema = envelope.schema,
             schemaVersion = envelope.schemaVersion,
@@ -207,56 +194,8 @@ public class CSharpLegacyGameStoreRepository(
         "reducedMotionEnabled" to JsonValue.Bool(false),
     ))
 
-    private fun JsonValue.Obj.withSettings(settings: GameSettingsState, commandId: String): JsonValue.Obj {
-        val next = LinkedHashMap(entries)
-        next["revision"] = JsonValue.Num((ulong("revision") + 1UL).toString())
-        next["settings"] = JsonValue.Obj(linkedMapOf(
-            "schemaVersion" to JsonValue.Num("1"),
-            "autoReleaseEnabled" to JsonValue.Bool(settings.autoReleaseEnabled),
-            "soundEnabled" to JsonValue.Bool(settings.soundEnabled),
-            "musicEnabled" to JsonValue.Bool(settings.musicEnabled),
-            "hapticsEnabled" to JsonValue.Bool(settings.hapticsEnabled),
-            "notificationsEnabled" to JsonValue.Bool(settings.notificationsEnabled),
-            "highContrastEnabled" to JsonValue.Bool(settings.highContrastEnabled),
-            "reducedMotionEnabled" to JsonValue.Bool(settings.reducedMotionEnabled),
-        ))
-        val receipts = stringArray("commandReceipts").toMutableSet()
-        receipts += commandId
-        next["commandReceipts"] = JsonValue.Arr(receipts.toList().sorted().map(JsonValue::Str))
-        return JsonValue.Obj(next)
-    }
-
-    private fun JsonValue.Obj.toSettings(): GameSettingsState = GameSettingsState(
-        autoReleaseEnabled = boolOrDefault("autoReleaseEnabled", false),
-        soundEnabled = boolOrDefault("soundEnabled", true),
-        musicEnabled = boolOrDefault("musicEnabled", true),
-        hapticsEnabled = boolOrDefault("hapticsEnabled", true),
-        notificationsEnabled = boolOrDefault("notificationsEnabled", false),
-        highContrastEnabled = boolOrDefault("highContrastEnabled", false),
-        reducedMotionEnabled = boolOrDefault("reducedMotionEnabled", false),
-    )
-
-    private fun JsonValue.Obj.objectOrNull(name: String): JsonValue.Obj? = this[name] as? JsonValue.Obj
     private fun JsonValue.Obj.string(name: String): String =
         (this[name] as? JsonValue.Str)?.value ?: throw IllegalStateException("game.store.${name}_missing")
-    private fun JsonValue.Obj.intOrDefault(name: String, default: Int): Int =
-        (this[name] as? JsonValue.Num)?.raw?.toIntOrNull() ?: default
-    private fun JsonValue.Obj.ulong(name: String): ULong =
-        when (val value = this[name]) {
-            is JsonValue.Num -> value.raw.toULongOrNull() ?: 0UL
-            is JsonValue.Str -> value.value.toULongOrNull() ?: 0UL
-            else -> 0UL
-        }
-    private fun JsonValue.Obj.ulongOrDefault(name: String, default: ULong): ULong =
-        when (val value = this[name]) {
-            is JsonValue.Num -> value.raw.toULongOrNull() ?: default
-            is JsonValue.Str -> value.value.toULongOrNull() ?: default
-            else -> default
-        }
-    private fun JsonValue.Obj.boolOrDefault(name: String, default: Boolean): Boolean =
-        (this[name] as? JsonValue.Bool)?.value ?: default
-    private fun JsonValue.Obj.stringArray(name: String): List<String> =
-        (this[name] as? JsonValue.Arr)?.values?.mapNotNull { (it as? JsonValue.Str)?.value } ?: emptyList()
     private fun ULong.checkedIncrement(): ULong =
         if (this == ULong.MAX_VALUE) throw SaveRepositoryException(SaveFailureCode.REVISION_REGRESSION, "save.revision_exhausted") else this + 1UL
 }
