@@ -166,8 +166,10 @@ extension HighSchoolCareerStore {
             currentCareerRetention: retention
         ) else { return false }
 
-        chronicle = candidateChronicle
-        nextRunIntent = nil
+        updatePersisted {
+            $0.chronicle = candidateChronicle
+            $0.nextRunIntent = nil
+        }
         UserDefaults.standard.set(storedID, forKey: pledgeKey(careerID))
         UserDefaults.standard.set(
             RunPledge.currentRulesVersion, forKey: pledgeRulesVersionKey(careerID)
@@ -208,7 +210,7 @@ extension HighSchoolCareerStore {
             responseTally: responseTally,
             nextRunIntent: intent
         ) else { return false }
-        nextRunIntent = intent
+        updatePersisted { $0.nextRunIntent = intent }
         GameAnalytics.log(.nextRunIntentSaved, [
             "pledge_id": intent.pledgeID,
             "source_life_number": intent.sourceLifeNumber,

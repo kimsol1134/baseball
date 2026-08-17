@@ -20,8 +20,10 @@ extension HighSchoolCareerStore {
             responseTally: responseTally,
             nextRunIntent: nextRunIntent
         ) else { return }
-        self.result = checkpointed
-        gameResume = nil
+        updatePersisted {
+            $0.result = checkpointed
+            $0.gameResume = nil
+        }
         let session = PitchSession(highSchool: result.snapshot, seed: sessionSeed)
         session.start()
         session.trait = personality?.trait
@@ -139,13 +141,15 @@ extension HighSchoolCareerStore {
                 overrides: overrides
             ) else { return }
 
-            result = updated
-            gameResume = nil
+            updatePersisted {
+                $0.result = updated
+                $0.gameResume = nil
+                $0.nicknames = candidateNicknames
+                $0.chronicle = candidateChronicle
+                $0.goalCelebratedChapter = candidateGoal
+                $0.pendingGameCompletion = completion
+            }
             pitchSession = nil
-            nicknames = candidateNicknames
-            chronicle = candidateChronicle
-            goalCelebratedChapter = candidateGoal
-            pendingGameCompletion = completion
             pendingGains = gains
             if countsTowardWeeklyProgram { mirrorRetention(retention) }
             if let completedGoal {
@@ -181,7 +185,7 @@ extension HighSchoolCareerStore {
                 responseTally: responseTally,
                 nextRunIntent: nextRunIntent
             ) {
-                gameResume = nil
+                updatePersisted { $0.gameResume = nil }
                 pitchSession = nil
             }
         }
@@ -308,7 +312,7 @@ extension HighSchoolCareerStore {
             nextRunIntent: nextRunIntent,
             overrides: overrides
         ) else { return false }
-        pendingGameCompletion = nil
+        updatePersisted { $0.pendingGameCompletion = nil }
         return true
     }
 
@@ -321,7 +325,7 @@ extension HighSchoolCareerStore {
         let goal = ChapterGoal.goal(careerID: snapshot.careerID, chapterNumber: chapter)
         let progress = snapshot.performance.strikeouts - chapterStartStrikeouts
         guard progress >= goal.targetStrikeouts else { return }
-        goalCelebratedChapter = chapter
+        updatePersisted { $0.goalCelebratedChapter = chapter }
         note("\(goal.title) 완수 — 이번 이야기 탈삼진 \(progress)개.")
         lastSummary = "\(goal.title) 완수. 삼진 \(progress)개 — 숙제는 끝났고, 다음은 욕심의 영역입니다."
         feedbackCue = .success
@@ -357,7 +361,9 @@ extension HighSchoolCareerStore {
     /// 연대기에 한 줄을 적는다. 드물게 불러야 한다 — 매주 적으면 일기가 아니라 로그다.
     func note(_ text: String) {
         guard let chapter = result?.snapshot.chapter else { return }
-        chronicle.append(ChronicleEntry(stage: "\(chapter.schoolYear)학년 \(chapter.season)", text: text))
+        updatePersisted {
+            $0.chronicle.append(ChronicleEntry(stage: "\(chapter.schoolYear)학년 \(chapter.season)", text: text))
+        }
         save()
     }
 
@@ -374,7 +380,7 @@ extension HighSchoolCareerStore {
         let fresh = NicknameRules.earned(performance: performance)
             .filter { earned in !nicknames.contains { $0.id == earned.id } }
         guard !fresh.isEmpty else { return }
-        nicknames.append(contentsOf: fresh)
+        updatePersisted { $0.nicknames.append(contentsOf: fresh) }
         for earned in fresh { note("'\(earned.title)'\(KoreanCopy.particle(earned.title, final: "이라는", open: "라는")) 별명을 얻었습니다. \(earned.reason)") }
         if let first = fresh.first {
             lastSummary = "이제 사람들이 '\(first.title)'\(KoreanCopy.particle(first.title, final: "이라고", open: "라고")) 부릅니다. \(first.reason)"

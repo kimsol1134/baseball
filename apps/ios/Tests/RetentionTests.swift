@@ -478,16 +478,20 @@ final class RetentionTests: XCTestCase {
         let snapshot = Self.highSchoolSnapshot(
             strikeouts: 5, walks: 0, runsAllowed: 0, rewardPermille: 1_000
         )
-        store.result = HighSchoolCareerResult(
-            revision: snapshot.revision,
-            nextSeed: "99002",
-            events: [],
-            snapshot: snapshot,
-            eventHash: "stale-legacy-fixture"
-        )
+        store.updatePersisted {
+            $0.result = HighSchoolCareerResult(
+                revision: snapshot.revision,
+                nextSeed: "99002",
+                events: [],
+                snapshot: snapshot,
+                eventHash: "stale-legacy-fixture"
+            )
+        }
         store.loadState = .ready
         store.choosePledge("get_drafted")
-        store.selectedSignatureLegacyID = store.signatureLegacyCandidates(for: snapshot).first?.id
+        store.updatePersisted {
+            $0.selectedSignatureLegacyID = store.signatureLegacyCandidates(for: snapshot).first?.id
+        }
         // Count is valid, but neither card is in this stale snapshot's empty offered list.
         store.selectedMemories = [.coachLetter, .recoveryRoutine]
         let inheritanceBefore = store.inheritance
@@ -549,13 +553,15 @@ final class RetentionTests: XCTestCase {
         let snapshot = Self.highSchoolSnapshot(
             strikeouts: 0, walks: 0, runsAllowed: 0, rewardPermille: 1_000
         )
-        store.result = HighSchoolCareerResult(
-            revision: snapshot.revision,
-            nextSeed: "99003",
-            events: [],
-            snapshot: snapshot,
-            eventHash: "stale-game-fixture"
-        )
+        store.updatePersisted {
+            $0.result = HighSchoolCareerResult(
+                revision: snapshot.revision,
+                nextSeed: "99003",
+                events: [],
+                snapshot: snapshot,
+                eventHash: "stale-game-fixture"
+            )
+        }
         store.loadState = .ready
         let session = PitchSession(highSchool: snapshot, seed: "99004")
         session.start()

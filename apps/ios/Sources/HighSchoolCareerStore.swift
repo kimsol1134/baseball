@@ -4,12 +4,12 @@ import SimulationCore
 
 /// 고교 커리어 진행 상태. 프로 커리어와 같은 방식으로 공유 코어를 직접 호출한다.
 ///
-/// 코어(`HighSchoolCareer.swift` 2,042줄)는 이미 완성돼 데스크톱에서 돌아간다. iOS에는 화면만
-/// 없었다(DOC-IOS-TOP §4).
+/// 디스크 스키마는 `HighSchoolCareerSaveRecord`, 코덱은 `HighSchoolCareerPersistence`.
+/// 저장본을 메모리에 올릴 때는 `applyPersistedRecord` / `clearLiveSession`만 쓴다.
 @MainActor
 @Observable
 final class HighSchoolCareerStore {
-    static let currentSaveSchemaVersion = 2
+    static var currentSaveSchemaVersion: Int { HighSchoolCareerPersistence.currentSchemaVersion }
     static let unreadableSaveMessage = "환생 기록은 남아 있지만 현재 버전에서 읽을 수 없습니다. 앱을 삭제하거나 새 선수를 만들지 말고 다시 불러오기를 눌러 주세요."
 
     enum LoadState: Equatable {
@@ -253,7 +253,97 @@ final class HighSchoolCareerStore {
     }
 
     var loadState: LoadState = .loading
-    var result: HighSchoolCareerResult?
+    /// 내구 필드는 하나씩 둔다. 한 가방에 넣으면 `chapterGains`만 바뀌어도 `result`를
+    /// 보는 화면이 같이 갱신된다. 디스크 왕복만 `HighSchoolCareerPersistedState`로 모은다.
+    private var durableResult: HighSchoolCareerResult?
+    private var durableInheritance: Inheritance = .firstLife
+    private var durableArchive: [LifeRecord] = []
+    private var durableEnteredProCareerID: String?
+    private var durableNicknames: [Nickname] = []
+    private var durableChronicle: [ChronicleEntry] = []
+    private var durableChapterStartStrikeouts = 0
+    private var durableGoalCelebratedChapter: Int?
+    private var durableResponseTally = ResponseTally()
+    private var durableBondMemories: [PlayerBondMemory] = []
+    private var durableRebirthEventIDs: [String] = []
+    private var durableChapterGains: [String: Int] = [:]
+    private var durableChapterTrainingCount = 0
+    private var durableCareerStartingPitcher: PitcherSnapshot?
+    private var durableSignatureLegacyRulesVersion: Int?
+    private var durableFrozenSignatureLegacyCandidates: [CareerSignatureLegacy]?
+    private var durableSelectedSignatureLegacyID: CareerSignatureLegacyID?
+    private var durableGameResume: PitchSession.ResumeState?
+    private var durableChallengeCareerID: String?
+    private var durableNextRunIntent: NextRunIntent?
+    private var durableCreditedExternalRewardIDs: Set<String> = []
+    private var durablePendingGameCompletion: PendingGameCompletion?
+    private var durableSavedRevision: UInt64 = 0
+
+    func capturePersisted() -> HighSchoolCareerPersistedState {
+        HighSchoolCareerPersistedState(
+            result: durableResult,
+            inheritance: durableInheritance,
+            archive: durableArchive,
+            enteredProCareerID: durableEnteredProCareerID,
+            nicknames: durableNicknames,
+            chronicle: durableChronicle,
+            chapterStartStrikeouts: durableChapterStartStrikeouts,
+            goalCelebratedChapter: durableGoalCelebratedChapter,
+            responseTally: durableResponseTally,
+            bondMemories: durableBondMemories,
+            rebirthEventIDs: durableRebirthEventIDs,
+            chapterGains: durableChapterGains,
+            chapterTrainingCount: durableChapterTrainingCount,
+            careerStartingPitcher: durableCareerStartingPitcher,
+            signatureLegacyRulesVersion: durableSignatureLegacyRulesVersion,
+            frozenSignatureLegacyCandidates: durableFrozenSignatureLegacyCandidates,
+            selectedSignatureLegacyID: durableSelectedSignatureLegacyID,
+            gameResume: durableGameResume,
+            challengeCareerID: durableChallengeCareerID,
+            nextRunIntent: durableNextRunIntent,
+            creditedExternalRewardIDs: durableCreditedExternalRewardIDs,
+            pendingGameCompletion: durablePendingGameCompletion,
+            savedRevision: durableSavedRevision
+        )
+    }
+
+    func updatePersisted(_ body: (inout HighSchoolCareerPersistedState) -> Void) {
+        var next = capturePersisted()
+        body(&next)
+        replacePersisted(next)
+    }
+
+    func replacePersisted(_ next: HighSchoolCareerPersistedState) {
+        assign(&durableResult, next.result)
+        assign(&durableInheritance, next.inheritance)
+        assign(&durableArchive, next.archive)
+        assign(&durableEnteredProCareerID, next.enteredProCareerID)
+        assign(&durableNicknames, next.nicknames)
+        assign(&durableChronicle, next.chronicle)
+        assign(&durableChapterStartStrikeouts, next.chapterStartStrikeouts)
+        assign(&durableGoalCelebratedChapter, next.goalCelebratedChapter)
+        assign(&durableResponseTally, next.responseTally)
+        assign(&durableBondMemories, next.bondMemories)
+        assign(&durableRebirthEventIDs, next.rebirthEventIDs)
+        assign(&durableChapterGains, next.chapterGains)
+        assign(&durableChapterTrainingCount, next.chapterTrainingCount)
+        assign(&durableCareerStartingPitcher, next.careerStartingPitcher)
+        assign(&durableSignatureLegacyRulesVersion, next.signatureLegacyRulesVersion)
+        assign(&durableFrozenSignatureLegacyCandidates, next.frozenSignatureLegacyCandidates)
+        assign(&durableSelectedSignatureLegacyID, next.selectedSignatureLegacyID)
+        assign(&durableGameResume, next.gameResume)
+        assign(&durableChallengeCareerID, next.challengeCareerID)
+        assign(&durableNextRunIntent, next.nextRunIntent)
+        assign(&durableCreditedExternalRewardIDs, next.creditedExternalRewardIDs)
+        assign(&durablePendingGameCompletion, next.pendingGameCompletion)
+        assign(&durableSavedRevision, next.savedRevision)
+    }
+
+    private func assign<T: Equatable>(_ storage: inout T, _ next: T) {
+        if storage != next { storage = next }
+    }
+
+    var result: HighSchoolCareerResult? { durableResult }
     var lastSummary: String?
     var feedbackTrigger = 0
     var feedbackCue: MobileCareerStore.FeedbackCue = .neutral
@@ -264,7 +354,7 @@ final class HighSchoolCareerStore {
     /// legacy 단계에서 고른 기억 카드.
     var selectedMemories: [MemoryCardID] = []
     /// 플레이 기록으로 생성된 대표 유산 세 후보 중 사용자가 고른 하나.
-    var selectedSignatureLegacyID: CareerSignatureLegacyID?
+    var selectedSignatureLegacyID: CareerSignatureLegacyID? { durableSelectedSignatureLegacyID }
     /// 방금 만개한 재능. 화면이 축하하고 나서 비운다.
     var pendingBloom: Bloom?
     /// 방금 끝난 훈련의 영수증.
@@ -304,12 +394,12 @@ final class HighSchoolCareerStore {
     /// 방금 닫힌 회차의 정산. 화면이 보여 주고 나서 비운다.
     var pendingRecap: RunRecapView.Recap?
     /// 지난 회차에서 사용자가 직접 저장한 재도전 목표. 선택하거나 버릴 때까지 유지한다.
-    var nextRunIntent: NextRunIntent? = nil
+    var nextRunIntent: NextRunIntent? { durableNextRunIntent }
     /// 진행 중인 등판의 타석 경계 스냅샷. 앱이 죽어도 이닝이 증발하지 않는다.
-    var gameResume: PitchSession.ResumeState?
+    var gameResume: PitchSession.ResumeState? { durableGameResume }
     /// 코어 경기 결과와 함께 먼저 저장되는 외부 후속 작업 영수증. 주간·분석·업적 저장
     /// 도중 앱이 종료돼도 다음 실행에서 stable ID로 정확히 한 번 마저 적용한다.
-    var pendingGameCompletion: PendingGameCompletion?
+    var pendingGameCompletion: PendingGameCompletion? { durablePendingGameCompletion }
     /// 별점 요청 신호. 첫 무실점 이닝처럼 감정이 양(+)인 조기 지점에서 켜진다 —
     /// 뷰가 requestReview 환경을 갖고 있으므로 스토어는 신호만 올린다.
     var reviewMoment = 0
@@ -318,7 +408,7 @@ final class HighSchoolCareerStore {
     /// 프로 저장본의 유무로 판단하면 안 된다 — 은퇴하고 "새 선수로 다시 시작"을 누르면 프로
     /// 저장본이 지워지므로, 같은 지명으로 프로 커리어를 무한히 새로 만들 수 있다(은퇴 계승
     /// 야구혼이 그때마다 다시 적립될 여지도 있다). 고교 쪽에 사실을 남긴다.
-    var enteredProCareerID: String?
+    var enteredProCareerID: String? { durableEnteredProCareerID }
 
     /// 지금 회차가 이미 프로에 다녀왔는가.
     var hasEnteredPro: Bool {
@@ -333,16 +423,16 @@ final class HighSchoolCareerStore {
               state.phase == .completed,
               state.draftResult?.outcome == .drafted else { return false }
         if enteredProCareerID == state.careerID { return true }
-        let previousEntered = enteredProCareerID
-        let previousChronicle = chronicle
-        enteredProCareerID = state.careerID
-        chronicle.append(ChronicleEntry(
-            stage: "\(state.chapter.schoolYear)학년 \(state.chapter.season)",
-            text: "프로 유니폼을 입었습니다."
-        ))
+        let previous = capturePersisted()
+        updatePersisted {
+            $0.enteredProCareerID = state.careerID
+            $0.chronicle.append(ChronicleEntry(
+                stage: "\(state.chapter.schoolYear)학년 \(state.chapter.season)",
+                text: "프로 유니폼을 입었습니다."
+            ))
+        }
         guard save() else {
-            enteredProCareerID = previousEntered
-            chronicle = previousChronicle
+            replacePersisted(previous)
             loadState = .failed("프로 진입 기록을 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
             return false
         }
@@ -353,23 +443,23 @@ final class HighSchoolCareerStore {
         let ability: TalentAbility
         let grade: TalentGrade
     }
-    var inheritance: Inheritance = .firstLife
+    var inheritance: Inheritance { durableInheritance }
     /// 주간 노트처럼 커리어 밖에서 들어온 보상 영수증. optional 저장 필드로 남겨
     /// 구버전 저장본은 빈 집합으로 열고, 같은 ID는 앱 재시작·기기 동기화 뒤에도 한 번만 준다.
-    var creditedExternalRewardIDs: Set<String> = []
+    var creditedExternalRewardIDs: Set<String> { durableCreditedExternalRewardIDs }
     /// 끝난 회차들. 최근이 앞이다.
-    var archive: [LifeRecord] = []
+    var archive: [LifeRecord] { durableArchive }
     /// 이번 회차에 세상이 붙여 준 별명들. 한 번 얻으면 회차가 끝날 때까지 남는다 —
     /// 세상은 별명을 회수하지 않는다. 조건 판정은 커널(NicknameRules)이 한다.
-    var nicknames: [Nickname] = []
+    var nicknames: [Nickname] { durableNicknames }
     /// 이번 회차의 연대기 — 이 선수가 살아온 순간들. 능력치 그래프는 결과만 남기지만
     /// 연대기는 과정을 남긴다. 애착은 과정에서 생긴다.
-    var chronicle: [ChronicleEntry] = []
+    var chronicle: [ChronicleEntry] { durableChronicle }
     /// Meaningful relationship decisions for the current player. Unlike the full chronicle this
     /// stays structured, so farewell, archive, and the next player's letter can recall it.
-    var bondMemories: [PlayerBondMemory] = []
+    var bondMemories: [PlayerBondMemory] { durableBondMemories }
     /// 환생 장면도 회차의 경험이다. 다음 삶이 직전 장면을 반복하지 않도록 저장한다.
-    var rebirthEventIDs: [String] = []
+    var rebirthEventIDs: [String] { durableRebirthEventIDs }
     /// 방금 경기에 대한 커뮤니티 반응. 저장하지 않는다 — careerID·경기 번호로
     /// 결정론이라 필요하면 언제든 다시 만들 수 있고, 반응은 "방금"의 것일 때만 살아 있다.
     /// Ephemeral presentation values. These stable IDs are intentionally outside every save
@@ -380,21 +470,21 @@ final class HighSchoolCareerStore {
     /// 이번 챕터의 훈련 누적(능력별 증가·횟수). 저장하지 않는 표시용 —
     /// 100번의 +1이 낱장으로 흩어지면 훈련 구간 전체가 "같은 화면의 반복"으로
     /// 기억된다(QA P1-15). 누적 한 줄이 "한 단위"의 체감을 만든다.
-    var chapterGains: [String: Int] = [:]
-    var chapterTrainingCount = 0
+    var chapterGains: [String: Int] { durableChapterGains }
+    var chapterTrainingCount: Int { durableChapterTrainingCount }
     /// 이번 챕터가 시작될 때의 통산 탈삼진. 챕터 목표의 진행은 이 값과의 차이다.
-    var chapterStartStrikeouts: Int = 0
+    var chapterStartStrikeouts: Int { durableChapterStartStrikeouts }
     /// 목표 축하를 이미 한 챕터 번호. 같은 챕터에서 두 번 축하하면 축하가 값싸진다.
-    var goalCelebratedChapter: Int?
+    var goalCelebratedChapter: Int? { durableGoalCelebratedChapter }
     /// 관계 응답 누적 — 성격은 선택이 만든다. 경기 성적은 여기 한 획도 못 긋는다.
-    var responseTally = ResponseTally()
+    var responseTally: ResponseTally { durableResponseTally }
     /// 이번 회차에 계승·프리셋 적용을 모두 마친 직후의 선수. 마지막 능력과 비교하면
     /// 유저가 이번 3년 동안 한 땀씩 키운 양만 남는다. optional 저장으로 구버전과 호환한다.
-    var careerStartingPitcher: PitcherSnapshot?
+    var careerStartingPitcher: PitcherSnapshot? { durableCareerStartingPitcher }
     /// 회차 시작 시 고정한 대표 유산 후보 규칙과, 결말에 처음 생성된 세 후보 원본.
     /// 후보를 한 번 보여 준 뒤 앱이 업데이트돼도 선택지가 바뀌거나 선택이 사라지지 않는다.
-    var signatureLegacyRulesVersion: Int?
-    var frozenSignatureLegacyCandidates: [CareerSignatureLegacy]?
+    var signatureLegacyRulesVersion: Int? { durableSignatureLegacyRulesVersion }
+    var frozenSignatureLegacyCandidates: [CareerSignatureLegacy]? { durableFrozenSignatureLegacyCandidates }
 
     static let currentSignatureLegacyRulesVersion = CareerSignatureLegacyRulesVersion.current.rawValue
 
@@ -471,12 +561,12 @@ final class HighSchoolCareerStore {
     var bullpenRetries = 0
     /// 회차를 넘어 단조 증가하는 저장 리비전. 진행(result)이 없는 계승-전용 레코드도
     /// 이 값으로 충돌 판정을 이겨야, 오래된 iCloud 사본이 방금 끝난 회차를 되살리지 않는다.
-    var savedRevision: UInt64 = 0
+    var savedRevision: UInt64 { durableSavedRevision }
     /// 진행 중 challenge 모드의 careerID. nil이면 도전이 아니다.
     ///
     /// 처음에는 "스냅숏 회차 != 계승 회차"로 파생 판별했다 — confirmLegacy가 계승
     /// 회차를 +1 올리는 순간 **모든 정상 회차**가 challenge로 오판돼 마지막 화면
     /// (환생 스탬프·프로 진입)이 사라졌고, 회차가 우연히 같은 도전은 반대로 실계승을
     /// 오염시켰다(5차 패널 P0 ×2). 명시 플래그는 옵셔널이라 옛 저장본은 nil = 비도전.
-    var challengeCareerID: String?
+    var challengeCareerID: String? { durableChallengeCareerID }
 }

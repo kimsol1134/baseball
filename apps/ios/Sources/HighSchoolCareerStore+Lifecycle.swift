@@ -111,23 +111,29 @@ extension HighSchoolCareerStore {
                 return false
             }
 
-            result = fixture
-            careerStartingPitcher = startingPitcher
-            enteredProCareerID = nil
+            updatePersisted {
+                $0.result = fixture
+                $0.careerStartingPitcher = startingPitcher
+                $0.enteredProCareerID = nil
+            }
             lastSummary = "UI 테스트용 미지명 직전 상태를 준비했습니다."
             feedbackCue = .neutral
             feedbackTrigger += 1
             loadState = .ready
             guard save() else {
-                result = nil
-                careerStartingPitcher = nil
+                updatePersisted {
+                    $0.result = nil
+                    $0.careerStartingPitcher = nil
+                }
                 loadState = .failed("UI 테스트용 미지명 직전 상태를 저장하지 못했습니다.")
                 return false
             }
             return true
         } catch {
-            result = nil
-            careerStartingPitcher = nil
+            updatePersisted {
+                $0.result = nil
+                $0.careerStartingPitcher = nil
+            }
             loadState = .failed("UI 테스트용 미지명 직전 상태를 만들지 못했습니다: \(error.localizedDescription)")
             return false
         }
@@ -233,23 +239,29 @@ extension HighSchoolCareerStore {
                 return false
             }
 
-            result = fixture
-            careerStartingPitcher = startingPitcher
-            enteredProCareerID = nil
+            updatePersisted {
+                $0.result = fixture
+                $0.careerStartingPitcher = startingPitcher
+                $0.enteredProCareerID = nil
+            }
             lastSummary = "UI 테스트용 지명 완료 상태를 준비했습니다."
             feedbackCue = .success
             feedbackTrigger += 1
             loadState = .ready
             guard save() else {
-                result = nil
-                careerStartingPitcher = nil
+                updatePersisted {
+                    $0.result = nil
+                    $0.careerStartingPitcher = nil
+                }
                 loadState = .failed("UI 테스트용 지명 상태를 저장하지 못했습니다.")
                 return false
             }
             return true
         } catch {
-            result = nil
-            careerStartingPitcher = nil
+            updatePersisted {
+                $0.result = nil
+                $0.careerStartingPitcher = nil
+            }
             loadState = .failed("UI 테스트용 지명 상태를 만들지 못했습니다: \(error.localizedDescription)")
             return false
         }
@@ -421,23 +433,24 @@ extension HighSchoolCareerStore {
                     lineageLoadout: lineageLoadout
                 )
             )
-            if !isChallenge { inheritance = carried }
-            // 별명과 연대기는 이번 회차의 것이다. 환생하면 새로 쓴다.
-            nicknames = []
-            chronicle = []
-            bondMemories = []
-            rebirthEventIDs = []
-            chapterStartStrikeouts = 0
-            goalCelebratedChapter = nil
-            chapterGains = [:]
-            chapterTrainingCount = 0
-            responseTally = ResponseTally()
-            careerStartingPitcher = created.snapshot.pitcher
-            signatureLegacyRulesVersion = isChallenge ? nil : Self.currentSignatureLegacyRulesVersion
-            frozenSignatureLegacyCandidates = nil
-            selectedSignatureLegacyID = nil
-            result = created
-            challengeCareerID = isChallenge ? created.snapshot.careerID : nil
+            updatePersisted {
+                if !isChallenge { $0.inheritance = carried }
+                $0.nicknames = []
+                $0.chronicle = []
+                $0.bondMemories = []
+                $0.rebirthEventIDs = []
+                $0.chapterStartStrikeouts = 0
+                $0.goalCelebratedChapter = nil
+                $0.chapterGains = [:]
+                $0.chapterTrainingCount = 0
+                $0.responseTally = ResponseTally()
+                $0.careerStartingPitcher = created.snapshot.pitcher
+                $0.signatureLegacyRulesVersion = isChallenge ? nil : Self.currentSignatureLegacyRulesVersion
+                $0.frozenSignatureLegacyCandidates = nil
+                $0.selectedSignatureLegacyID = nil
+                $0.result = created
+                $0.challengeCareerID = isChallenge ? created.snapshot.careerID : nil
+            }
             let carriedLegacyCopy: String
             if equippedSignatureLegacyID != nil, carried.memories.isEmpty {
                 carriedLegacyCopy = "대표 유산 하나"
@@ -455,16 +468,18 @@ extension HighSchoolCareerStore {
             feedbackTrigger += 1
             loadState = .ready
             guard save() else {
-                result = nil
-                inheritance = previousInheritance
+                updatePersisted {
+                    $0.result = nil
+                    $0.inheritance = previousInheritance
+                    $0.bondMemories = previousBondMemories
+                    $0.rebirthEventIDs = previousRebirthEventIDs
+                    $0.careerStartingPitcher = nil
+                    $0.signatureLegacyRulesVersion = nil
+                    $0.frozenSignatureLegacyCandidates = nil
+                    $0.selectedSignatureLegacyID = nil
+                    $0.challengeCareerID = nil
+                }
                 lastSetup = previousLastSetup
-                bondMemories = previousBondMemories
-                rebirthEventIDs = previousRebirthEventIDs
-                careerStartingPitcher = nil
-                signatureLegacyRulesVersion = nil
-                frozenSignatureLegacyCandidates = nil
-                selectedSignatureLegacyID = nil
-                challengeCareerID = nil
                 loadState = .failed("새 선수의 시작을 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
                 return
             }
@@ -717,17 +732,19 @@ extension HighSchoolCareerStore {
 
     /// challenge 모드를 닫는다. 아카이브·계승·야구혼 어디에도 반영하지 않는다.
     func endChallengeRun() {
-        result = nil
+        updatePersisted {
+            $0.result = nil
+            $0.pendingGameCompletion = nil
+            $0.selectedSignatureLegacyID = nil
+            $0.careerStartingPitcher = nil
+            $0.signatureLegacyRulesVersion = nil
+            $0.frozenSignatureLegacyCandidates = nil
+            $0.challengeCareerID = nil
+        }
         pitchSession = nil
         tutorialSession = nil
-        pendingGameCompletion = nil
         pendingGains = []
         trainingReceipt = nil
-        selectedSignatureLegacyID = nil
-        careerStartingPitcher = nil
-        signatureLegacyRulesVersion = nil
-        frozenSignatureLegacyCandidates = nil
-        challengeCareerID = nil
         loadState = .needsSetup
         save()
     }
@@ -737,70 +754,24 @@ extension HighSchoolCareerStore {
         let deletedCareerID = result?.snapshot.careerID
         // 메모리와 보조 UserDefaults를 지우기 전에 더 높은 리비전의 묘비를 먼저 내린다.
         // 실패하면 현재 화면·진행·빠른 시작 재료가 모두 그대로여야 같은 버튼으로 재시도할 수 있다.
-        let tombstoneRevision = Self.nextSavedRevision(
+        let tombstoneRevision = HighSchoolCareerPersistence.nextRevision(
             after: savedRevision,
             atLeast: result?.snapshot.revision ?? 0
         )
-        let tombstone = SaveRecord(
-            result: nil,
-            inheritance: .firstLife,
-            archive: [],
-            enteredProCareerID: nil,
-            nicknames: nil,
-            chronicle: nil,
-            chapterStartStrikeouts: 0,
-            goalCelebratedChapter: nil,
-            responseTally: ResponseTally(),
-            chapterGains: nil,
-            chapterTrainingCount: nil,
-            careerStartingPitcher: nil,
-            signatureLegacyRulesVersion: nil,
-            frozenSignatureLegacyCandidates: nil,
-            selectedSignatureLegacyID: nil,
-            gameResume: nil,
-            challengeCareerID: nil,
-            nextRunIntent: nil,
-            creditedExternalRewardIDs: nil,
+        var tombstoneState = HighSchoolCareerPersistedState.empty
+        tombstoneState.savedRevision = tombstoneRevision
+        let tombstone = HighSchoolCareerPersistence.record(
+            from: tombstoneState,
             currentCareerRetention: nil,
-            revision: tombstoneRevision,
-            schemaVersion: Self.currentSaveSchemaVersion
+            revision: tombstoneRevision
         )
-        guard let data = try? JSONEncoder().encode(tombstone),
+        guard let data = HighSchoolCareerPersistence.encode(tombstone),
               saveWriter?(data) ?? sync.write(data) else { return false }
         sync.discardRecoveryCopies()
-        savedRevision = tombstoneRevision
-
-        challengeCareerID = nil
-        result = nil
-        pitchSession = nil
-        tutorialSession = nil
-        pendingGains = []
-        trainingReceipt = nil
-        selectedMemories = []
-        selectedSignatureLegacyID = nil
-        careerStartingPitcher = nil
-        signatureLegacyRulesVersion = nil
-        frozenSignatureLegacyCandidates = nil
-        inheritance = .firstLife
-        creditedExternalRewardIDs = []
-        archive = []
-        nicknames = []
-        chronicle = []
-        bondMemories = []
-        chapterStartStrikeouts = 0
-        goalCelebratedChapter = nil
-        responseTally = ResponseTally()
-        chapterGains = [:]
-        chapterTrainingCount = 0
-        gameResume = nil
-        pendingGameCompletion = nil
-        nextRunIntent = nil
+        replacePersisted(tombstoneState)
+        clearLiveSession()
         lastSetup = nil
-        if let deletedCareerID {
-            UserDefaults.standard.removeObject(forKey: pledgeKey(deletedCareerID))
-            UserDefaults.standard.removeObject(forKey: pledgeRulesVersionKey(deletedCareerID))
-            UserDefaults.standard.removeObject(forKey: rivalLedgerKey(deletedCareerID))
-        }
+        forgetLocalCareerKeys(deletedCareerID)
         // clear() 대신 **묘비를 쓴다.** iCloud 키-값 저장은 결국적 일관성이라 지운
         // 자리에 업로드 지연분·다른 기기의 옛 저장본이 되살아난다 — "모든 진행 삭제가
         // 가끔 안 먹힌다"의 원인. 리비전 +1의 빈 레코드는 어떤 옛 사본과 만나도 이긴다.

@@ -54,9 +54,9 @@ extension HighSchoolCareerStore {
         let expectedCount = Self.signatureLegacyCandidateCount(for: state)
         guard generated.count == expectedCount,
               Set(generated.map(\.id)).count == expectedCount else { return false }
-        frozenSignatureLegacyCandidates = generated
+        updatePersisted { $0.frozenSignatureLegacyCandidates = generated }
         guard save() else {
-            frozenSignatureLegacyCandidates = nil
+            updatePersisted { $0.frozenSignatureLegacyCandidates = nil }
             loadState = .failed("대표 유산 후보를 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
             return false
         }
@@ -76,9 +76,9 @@ extension HighSchoolCareerStore {
             return
         }
         let previous = selectedSignatureLegacyID
-        selectedSignatureLegacyID = id
+        updatePersisted { $0.selectedSignatureLegacyID = id }
         guard save() else {
-            selectedSignatureLegacyID = previous
+            updatePersisted { $0.selectedSignatureLegacyID = previous }
             loadState = .failed("대표 유산 선택을 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
             return
         }
@@ -189,25 +189,29 @@ extension HighSchoolCareerStore {
                     .map(\.evaluationScore).max() ?? 0
             )
 
-            result = completed
-            inheritance = nextInheritance
-            archive = nextArchive
+            updatePersisted {
+                $0.result = completed
+                $0.inheritance = nextInheritance
+                $0.archive = nextArchive
+                $0.selectedSignatureLegacyID = nil
+                $0.careerStartingPitcher = nil
+                $0.signatureLegacyRulesVersion = nil
+                $0.frozenSignatureLegacyCandidates = nil
+            }
             pendingRecap = recap
             selectedMemories = []
-            selectedSignatureLegacyID = nil
-            careerStartingPitcher = nil
-            signatureLegacyRulesVersion = nil
-            frozenSignatureLegacyCandidates = nil
             guard save() else {
-                result = current
-                inheritance = previousInheritance
-                archive = previousArchive
+                updatePersisted {
+                    $0.result = current
+                    $0.inheritance = previousInheritance
+                    $0.archive = previousArchive
+                    $0.selectedSignatureLegacyID = previousSelectedSignature
+                    $0.careerStartingPitcher = previousStartingPitcher
+                    $0.signatureLegacyRulesVersion = activeRulesVersion
+                    $0.frozenSignatureLegacyCandidates = previousCandidates
+                }
                 pendingRecap = previousRecap
                 selectedMemories = previousSelectedMemories
-                selectedSignatureLegacyID = previousSelectedSignature
-                careerStartingPitcher = previousStartingPitcher
-                signatureLegacyRulesVersion = activeRulesVersion
-                frozenSignatureLegacyCandidates = previousCandidates
                 loadState = .failed("이 선수의 결말을 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
                 return
             }
@@ -294,14 +298,16 @@ extension HighSchoolCareerStore {
     /// 새 선수 생성 완료까지 계승분(야구혼·기억·아카이브)이 메모리에만 있었다 —
     /// 그 사이가 하필 이름을 고민하는 화면이라, 앱이 내려가면 회차 전체가 1회차로 리셋됐다.
     func beginNextLife() {
-        result = nil
+        updatePersisted {
+            $0.result = nil
+            $0.selectedSignatureLegacyID = nil
+            $0.careerStartingPitcher = nil
+            $0.signatureLegacyRulesVersion = nil
+            $0.frozenSignatureLegacyCandidates = nil
+        }
         pitchSession = nil
         pendingGains = []
         trainingReceipt = nil
-        selectedSignatureLegacyID = nil
-        careerStartingPitcher = nil
-        signatureLegacyRulesVersion = nil
-        frozenSignatureLegacyCandidates = nil
         loadState = .needsSetup
         save()
     }

@@ -20,7 +20,7 @@ final class ProSeasonDecisionTests: XCTestCase {
     /// 이 계약이 무너지면 모든 진행 삭제가 Settings에 남는 회귀가 다시 생긴다.
     func testProDeletionTreatsOnlyConfirmedEmptyStoreAsSuccessfulNoOp() {
         let store = MobileCareerStore()
-        store.result = nil
+        store.updatePersisted { $0.result = nil }
 
         store.loadState = .loading
         XCTAssertFalse(store.deleteCareer())
@@ -59,7 +59,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
         let store = MobileCareerStore(sync: sync)
-        store.result = pendingResult
+        store.updatePersisted { $0.result = pendingResult }
         store.loadState = .ready
 
         XCTAssertEqual(decision.choices.count, 3)
@@ -95,7 +95,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
         let store = MobileCareerStore(sync: sync)
-        store.result = pendingResult
+        store.updatePersisted { $0.result = pendingResult }
         store.loadState = .ready
 
         store.applySeasonDecision(decisionID: decision.id, choiceID: choice.id)
@@ -128,7 +128,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
         let store = MobileCareerStore(sync: sync)
-        store.result = pendingResult
+        store.updatePersisted { $0.result = pendingResult }
         store.loadState = .ready
         store.save()
 
@@ -161,7 +161,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         careerSync.clear()
         defer { careerSync.clear() }
         let store = MobileCareerStore(sync: careerSync, weekly: weekly)
-        store.result = beforeDecision
+        store.updatePersisted { $0.result = beforeDecision }
         store.loadState = .ready
         store.selectedPlan = .earnTrust
 
@@ -179,7 +179,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
         let store = MobileCareerStore(sync: sync)
-        store.result = initial
+        store.updatePersisted { $0.result = initial }
         store.loadState = .ready
         store.selectedPlan = .recover
 
@@ -197,7 +197,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
         let store = MobileCareerStore(sync: sync)
-        store.result = initial
+        store.updatePersisted { $0.result = initial }
         store.loadState = .ready
         store.selectedPlan = .earnTrust
 
@@ -244,7 +244,9 @@ final class ProSeasonDecisionTests: XCTestCase {
             $0.kind == .sequenceMasteryTriggered
         }?.progress
 
-        let store = MobileCareerStore(sync: careerSync, weekly: weekly)
+        // legacy 시작(자동 서명 → weeklyPlan)을 전제로 잘못된 국면의 정산 원자성을 본다.
+        // journey 경로의 같은 불변식은 Wave1~5 테스트가 계약 수락 이후 상태로 검증한다.
+        let store = MobileCareerStore(sync: careerSync, weekly: weekly, configuration: .legacyTests)
         store.startNewCareer(preset: PitcherPresetCatalog.all[0], playerName: "실패 경계")
         let result = try XCTUnwrap(store.result)
         XCTAssertEqual(result.snapshot.phase, .weeklyPlan)
@@ -287,7 +289,7 @@ final class ProSeasonDecisionTests: XCTestCase {
             writeAttempts += 1
             return shouldFail ? false : careerSync.write(data)
         })
-        store.result = initial
+        store.updatePersisted { $0.result = initial }
         store.selectedPlan = .recover
         store.lastSummary = "저장 전 화면"
         store.feedbackCue = .neutral
@@ -344,7 +346,7 @@ final class ProSeasonDecisionTests: XCTestCase {
             writeAttempts += 1
             return shouldFail ? false : sync.write(data)
         })
-        store.result = pendingResult
+        store.updatePersisted { $0.result = pendingResult }
         store.lastSummary = "결정 전 화면"
         store.loadState = .ready
         let achievementsBefore = AchievementStore.shared.progress
@@ -392,7 +394,7 @@ final class ProSeasonDecisionTests: XCTestCase {
             writeAttempts += 1
             return shouldFail ? false : careerSync.write(data)
         })
-        store.result = important
+        store.updatePersisted { $0.result = important }
         store.lastSummary = "등판 전 화면"
         store.loadState = .ready
 
@@ -555,7 +557,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         defer { sync.clear() }
         let result = try firstDecision(seed: 91_101)
         let writer = MobileCareerStore(sync: sync)
-        writer.result = result
+        writer.updatePersisted { $0.result = result }
         writer.loadState = .ready
         XCTAssertTrue(writer.save())
         XCTAssertTrue(writer.save(), "같은 스냅숏 체크포인트도 동기화 리비전은 전진해야 합니다.")
@@ -609,10 +611,10 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
 
-        // 구버전 공개 빌드(legacy 라이터)의 저장 세대 규약을 검증한다. production은 이제
-        // journey 라이터이므로 여기서는 고정된 legacy 설정을 쓴다.
+        // 구버전 공개 빌드(legacy 라이터)의 저장 세대 규약을 검증한다.
         let store = MobileCareerStore(sync: sync, configuration: .legacyTests)
-        store.result = try firstDecision(seed: 91_105)
+        let pending = try firstDecision(seed: 91_105)
+        store.updatePersisted { $0.result = pending }
         store.loadState = .ready
         XCTAssertTrue(store.save())
         XCTAssertTrue(store.deleteCareer())
@@ -680,7 +682,8 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
         let store = MobileCareerStore(sync: sync)
-        store.result = try firstDecision(seed: 91_103)
+        let pending = try firstDecision(seed: 91_103)
+        store.updatePersisted { $0.result = pending }
         store.loadState = .ready
         XCTAssertTrue(store.save())
         XCTAssertTrue(store.deleteCareer())
@@ -825,7 +828,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         let store = MobileCareerStore(sync: sync, saveWriter: { data in
             shouldFail ? false : sync.write(data)
         })
-        store.result = important
+        store.updatePersisted { $0.result = important }
         store.loadState = .ready
         store.beginImportantGame()
         let session = try XCTUnwrap(store.pitchSession)
@@ -874,7 +877,9 @@ final class ProSeasonDecisionTests: XCTestCase {
             GameAnalytics.eventSinkForTesting = nil
         }
         let store = MobileCareerStore(sync: sync)
-        store.result = ProCareerResult(snapshot: corrupt, nextSeed: pendingResult.nextSeed, events: [])
+        store.updatePersisted {
+            $0.result = ProCareerResult(snapshot: corrupt, nextSeed: pendingResult.nextSeed, events: [])
+        }
         store.loadState = .ready
         var events: [GameAnalytics.Event] = []
         GameAnalytics.eventSinkForTesting = { event, _ in events.append(event) }
@@ -895,7 +900,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         healthySync.clear()
         defer { healthySync.clear() }
         let healthyStore = MobileCareerStore(sync: healthySync)
-        healthyStore.result = pendingResult
+        healthyStore.updatePersisted { $0.result = pendingResult }
         healthyStore.loadState = .ready
         XCTAssertFalse(healthyStore.recoverStalledSeasonDecision())
         XCTAssertEqual(healthyStore.state?.phase, .seasonDecision)
@@ -1025,13 +1030,15 @@ final class ProSeasonDecisionTests: XCTestCase {
         _ result: ProCareerResult,
         sync: SaveSync
     ) throws -> ProCareerResult {
-        let writer = MobileCareerStore(sync: sync)
+        // legacy 20시즌 왕복은 저장이 바이트 그대로 돌아와야 한다. journey 설정으로 읽으면
+        // 오프시즌 경계에서 자동 이전이 붙어 결과가 달라진다 — 이전 동작은 Wave1 테스트 소관.
+        let writer = MobileCareerStore(sync: sync, configuration: .legacyTests)
         writer.restoreOrCreateCareer()
-        writer.result = result
+        writer.updatePersisted { $0.result = result }
         writer.loadState = .ready
         XCTAssertTrue(writer.save())
 
-        let reader = MobileCareerStore(sync: sync)
+        let reader = MobileCareerStore(sync: sync, configuration: .legacyTests)
         reader.restoreOrCreateCareer()
         XCTAssertEqual(reader.loadState, .ready)
         XCTAssertEqual(reader.result, result)

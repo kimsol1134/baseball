@@ -99,31 +99,28 @@ extension HighSchoolCareerStore {
         let previousEnteredProCareerID = enteredProCareerID
         let creditsNewProCareer = inheritance.creditedProCareerID == nil
 
-        result = opened
-        // source/entered 필드가 없던 정상 고교→프로 저장도 이번 원자 저장에서 연결 영수증을
-        // 보강한다. 그래야 프로 삭제 뒤 같은 지명으로 다시 들어가 중복 보상을 만들지 못한다.
-        enteredProCareerID = current.snapshot.careerID
-        if creditsNewProCareer {
-            let bonus = Self.proSoulBonus(for: proState)
-            inheritance.creditedProCareerID = proState.proCareerID
-            // Legacy saves had a single total. Freeze that historical automatic amount before
-            // adding the Pro wallet credit so a long career does not silently alter the next
-            // high-school pitcher's ratings.
-            inheritance.automaticSoulEarned = inheritance.automaticSoulTotal
-            inheritance.soulTotalEarned = inheritance.soulTotal + bonus
-            inheritance.soulPoints += bonus
+        updatePersisted {
+            $0.result = opened
+            $0.enteredProCareerID = current.snapshot.careerID
+            if creditsNewProCareer {
+                let bonus = Self.proSoulBonus(for: proState)
+                $0.inheritance.creditedProCareerID = proState.proCareerID
+                $0.inheritance.automaticSoulEarned = $0.inheritance.automaticSoulTotal
+                $0.inheritance.soulTotalEarned = $0.inheritance.soulTotal + bonus
+                $0.inheritance.soulPoints += bonus
+            }
+            $0.frozenSignatureLegacyCandidates = combinedCandidates
+            $0.selectedSignatureLegacyID = nil
         }
-        // 고교 기록만으로 미리 생성된 후보가 있더라도 프로 은퇴 시점에는 통산 기록을 포함한
-        // 세 후보로 교체하고 다시 고르게 한다. 선택과 실제 근거가 어긋나지 않게 한다.
-        frozenSignatureLegacyCandidates = combinedCandidates
-        selectedSignatureLegacyID = nil
 
         guard save() else {
-            result = previousResult
-            inheritance = previousInheritance
-            frozenSignatureLegacyCandidates = previousCandidates
-            selectedSignatureLegacyID = previousSelection
-            enteredProCareerID = previousEnteredProCareerID
+            updatePersisted {
+                $0.result = previousResult
+                $0.inheritance = previousInheritance
+                $0.frozenSignatureLegacyCandidates = previousCandidates
+                $0.selectedSignatureLegacyID = previousSelection
+                $0.enteredProCareerID = previousEnteredProCareerID
+            }
             loadState = .failed("프로 기록을 유산으로 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
             return false
         }
@@ -156,13 +153,17 @@ extension HighSchoolCareerStore {
         let previousInheritance = inheritance
         let previousReceipts = creditedExternalRewardIDs
         let bonus = Self.proSoulBonus(for: proState)
-        creditedExternalRewardIDs.insert(receipt)
-        inheritance.automaticSoulEarned = inheritance.automaticSoulTotal
-        inheritance.soulTotalEarned = inheritance.soulTotal + bonus
-        inheritance.soulPoints += bonus
+        updatePersisted {
+            $0.creditedExternalRewardIDs.insert(receipt)
+            $0.inheritance.automaticSoulEarned = $0.inheritance.automaticSoulTotal
+            $0.inheritance.soulTotalEarned = $0.inheritance.soulTotal + bonus
+            $0.inheritance.soulPoints += bonus
+        }
         guard save() else {
-            inheritance = previousInheritance
-            creditedExternalRewardIDs = previousReceipts
+            updatePersisted {
+                $0.inheritance = previousInheritance
+                $0.creditedExternalRewardIDs = previousReceipts
+            }
             loadState = .failed("프로 기록을 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
             return false
         }
@@ -189,13 +190,17 @@ extension HighSchoolCareerStore {
         let previousRewardIDs = creditedExternalRewardIDs
         let previousAutomaticSoul = inheritance.automaticSoulTotal
         let previousSoulTotal = inheritance.soulTotal
-        creditedExternalRewardIDs.insert(id)
-        inheritance.soulTotalEarned = previousSoulTotal + soulPoints
-        inheritance.automaticSoulEarned = previousAutomaticSoul + soulPoints
-        inheritance.soulPoints += soulPoints
+        updatePersisted {
+            $0.creditedExternalRewardIDs.insert(id)
+            $0.inheritance.soulTotalEarned = previousSoulTotal + soulPoints
+            $0.inheritance.automaticSoulEarned = previousAutomaticSoul + soulPoints
+            $0.inheritance.soulPoints += soulPoints
+        }
         guard save() else {
-            inheritance = previousInheritance
-            creditedExternalRewardIDs = previousRewardIDs
+            updatePersisted {
+                $0.inheritance = previousInheritance
+                $0.creditedExternalRewardIDs = previousRewardIDs
+            }
             return false
         }
         return true

@@ -68,9 +68,11 @@ extension HighSchoolCareerStore {
             targetPitch: targetPitch
         )) }
         guard let after = result?.snapshot, after.revision != before.revision else { return }
-        chapterTrainingCount += 1
-        for gain in pendingGains where gain.after > gain.before {
-            chapterGains[gain.label, default: 0] += gain.after - gain.before
+        updatePersisted {
+            $0.chapterTrainingCount += 1
+            for gain in pendingGains where gain.after > gain.before {
+                $0.chapterGains[gain.label, default: 0] += gain.after - gain.before
+            }
         }
         trainingReceipt = Self.receipt(training: after.lastTraining, gains: pendingGains,
                                        bloom: pendingBloom, fatigueAfter: after.fatigue, focus: focus)
@@ -276,7 +278,11 @@ extension HighSchoolCareerStore {
         if countsTowardWeeklyProgram {
             weekly.record(.chaptersAdvanced)
         }
-        chapterStartStrikeouts = result?.snapshot.performance.strikeouts ?? chapterStartStrikeouts
+        updatePersisted {
+            $0.chapterStartStrikeouts = result?.snapshot.performance.strikeouts ?? $0.chapterStartStrikeouts
+            $0.chapterGains = [:]
+            $0.chapterTrainingCount = 0
+        }
         if countsTowardWeeklyProgram {
             let chapter = result?.snapshot.chapter.number ?? 0
             GameAnalytics.log(.chapterAdvanced, [
@@ -284,8 +290,6 @@ extension HighSchoolCareerStore {
                 "act_number": HighSchoolPresentation.actNumber(chapter: chapter),
             ])
         }
-        chapterGains = [:]
-        chapterTrainingCount = 0
         if let snapshot = result?.snapshot {
             worldNews = CommunityBuzz.rivalNewsLines(
                 careerID: snapshot.careerID,

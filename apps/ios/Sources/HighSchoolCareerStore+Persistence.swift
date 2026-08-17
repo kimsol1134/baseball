@@ -37,7 +37,7 @@ extension HighSchoolCareerStore {
     ) -> Bool {
         // 진행이 없어도 계승분과 아카이브는 쓴다. 이게 없으면 회차 사이(기억 확정 후 ~
         // 새 선수 생성 전)에 앱이 내려갈 때 환생 진행 전체가 사라진다.
-        let candidateRevision = Self.nextSavedRevision(
+        let candidateRevision = HighSchoolCareerPersistence.nextRevision(
             after: savedRevision,
             atLeast: candidateResult?.snapshot.revision ?? 0
         )
@@ -45,45 +45,26 @@ extension HighSchoolCareerStore {
             ?? retentionOverride ?? candidateResult.map { current in
             retentionEnvelope(for: current.snapshot, rivalLedger: rivalLedger)
         }
-        let persistedNicknames = overrides?.nicknames ?? nicknames
-        let persistedGoalCelebratedChapter = overrides.map(\.goalCelebratedChapter)
-            ?? goalCelebratedChapter
-        let persistedPendingGameCompletion = overrides.map(\.pendingGameCompletion)
-            ?? pendingGameCompletion
-        let record = SaveRecord(
+        let draft = capturePersisted().drafting(
             result: candidateResult,
-            inheritance: inheritance,
-            archive: archive,
-            enteredProCareerID: enteredProCareerID,
-            nicknames: persistedNicknames.isEmpty ? nil : persistedNicknames,
-            chronicle: candidateChronicle.isEmpty ? nil : candidateChronicle,
-            chapterStartStrikeouts: chapterStartStrikeouts,
-            goalCelebratedChapter: persistedGoalCelebratedChapter,
-            responseTally: candidateResponseTally,
-            bondMemories: Self.normalizedBondMemories(candidateBondMemories ?? bondMemories).isEmpty
-                ? nil : Self.normalizedBondMemories(candidateBondMemories ?? bondMemories),
-            rebirthEventIDs: (candidateRebirthEventIDs ?? rebirthEventIDs).isEmpty
-                ? nil : Array((candidateRebirthEventIDs ?? rebirthEventIDs).suffix(6)),
-            chapterGains: chapterGains.isEmpty ? nil : chapterGains,
-            chapterTrainingCount: chapterTrainingCount == 0 ? nil : chapterTrainingCount,
-            careerStartingPitcher: careerStartingPitcher,
-            signatureLegacyRulesVersion: signatureLegacyRulesVersion,
-            frozenSignatureLegacyCandidates: frozenSignatureLegacyCandidates,
-            selectedSignatureLegacyID: selectedSignatureLegacyID,
             gameResume: candidateGameResume,
-            challengeCareerID: challengeCareerID,
+            chronicle: candidateChronicle,
+            responseTally: candidateResponseTally,
+            bondMemories: candidateBondMemories,
+            rebirthEventIDs: candidateRebirthEventIDs,
             nextRunIntent: candidateNextRunIntent,
-            creditedExternalRewardIDs: creditedExternalRewardIDs.isEmpty ? nil : creditedExternalRewardIDs,
-            currentCareerRetention: currentCareerRetention,
-            pendingGameCompletion: persistedPendingGameCompletion,
-            revision: candidateRevision,
-            schemaVersion: Self.currentSaveSchemaVersion
+            overrides: overrides
         )
-        guard let data = try? JSONEncoder().encode(record),
+        let record = HighSchoolCareerPersistence.record(
+            from: draft,
+            currentCareerRetention: currentCareerRetention,
+            revision: candidateRevision
+        )
+        guard let data = HighSchoolCareerPersistence.encode(record),
               saveWriter?(data) ?? sync.write(data) else {
             return false
         }
-        savedRevision = candidateRevision
+        updatePersisted { $0.savedRevision = candidateRevision }
         return true
     }
 
@@ -126,153 +107,69 @@ extension HighSchoolCareerStore {
     @discardableResult
     private func applyHigherResultlessRecordDuringSession() -> Bool {
         guard let data = sync.read(
-            revision: Self.saveRevision,
-            conflictPriority: Self.saveConflictPriority
+            revision: HighSchoolCareerPersistence.revision,
+            conflictPriority: HighSchoolCareerPersistence.conflictPriority
         ),
-        let record = Self.decodeSaveRecord(data),
+        let record = HighSchoolCareerPersistence.decode(data),
         record.result == nil,
         record.effectiveRevision >= savedRevision else { return false }
 
         let removedCareerID = result?.snapshot.careerID
-        inheritance = record.inheritance
-        if inheritance.soulTotalEarned == nil { inheritance.soulTotalEarned = inheritance.soulPoints }
-        if inheritance.automaticSoulEarned == nil {
-            inheritance.automaticSoulEarned = inheritance.soulTotal
+        applyPersistedRecord(record, chapterStartFallback: .zero)
+        clearLiveSession()
+        loadState = .needsSetup
+        lastSummary = nil
+        forgetLocalCareerKeys(removedCareerID)
+        return true
+    }
+
+    typealias ChapterStartFallback = HighSchoolCareerPersistence.ChapterStartFallback
+
+    /// 디스크 레코드의 내구 필드만 메모리에 올린다. result·세션은 `clearLiveSession` 뒤에
+    /// 호출자가 다시 붙인다. restore와 원격 묘비 적용이 같은 대입표를 쓰게 한다.
+    func applyPersistedRecord(
+        _ record: HighSchoolCareerSaveRecord,
+        chapterStartFallback: ChapterStartFallback
+    ) {
+        replacePersisted(
+            HighSchoolCareerPersistence.materialize(
+                record,
+                chapterStartFallback: chapterStartFallback
+            )
+        )
+    }
+
+    /// 저장하지 않는 관찰 상태를 비운다. 원격 묘비가 리비전만 올리고 옛 선수를 남기면
+    /// 다음 저장이 지운 선수를 다시 올릴 수 있다.
+    func clearLiveSession() {
+        updatePersisted {
+            $0.result = nil
+            $0.gameResume = nil
         }
-        archive = record.archive ?? []
-        enteredProCareerID = record.enteredProCareerID
-        nicknames = record.nicknames ?? []
-        chronicle = record.chronicle ?? []
-        chapterStartStrikeouts = record.chapterStartStrikeouts ?? 0
-        goalCelebratedChapter = record.goalCelebratedChapter
-        responseTally = record.responseTally ?? ResponseTally()
-        bondMemories = Self.normalizedBondMemories(record.bondMemories ?? [])
-        rebirthEventIDs = record.rebirthEventIDs ?? []
-        chapterGains = record.chapterGains ?? [:]
-        chapterTrainingCount = record.chapterTrainingCount ?? 0
-        careerStartingPitcher = record.careerStartingPitcher
-        signatureLegacyRulesVersion = record.signatureLegacyRulesVersion
-        frozenSignatureLegacyCandidates = record.frozenSignatureLegacyCandidates
-        selectedSignatureLegacyID = record.selectedSignatureLegacyID
-        challengeCareerID = record.challengeCareerID
-        nextRunIntent = record.nextRunIntent
-        creditedExternalRewardIDs = record.creditedExternalRewardIDs ?? []
-        pendingGameCompletion = record.pendingGameCompletion
-        savedRevision = record.effectiveRevision
-        result = nil
         pitchSession = nil
         tutorialSession = nil
-        gameResume = nil
         pendingGains = []
         trainingReceipt = nil
         pendingBloom = nil
         pendingRecap = nil
         selectedMemories = []
-        loadState = .needsSetup
-        lastSummary = nil
-        if let removedCareerID {
-            UserDefaults.standard.removeObject(forKey: pledgeKey(removedCareerID))
-            UserDefaults.standard.removeObject(forKey: pledgeRulesVersionKey(removedCareerID))
-            UserDefaults.standard.removeObject(forKey: rivalLedgerKey(removedCareerID))
-        }
-        return true
+        buzz = []
+        worldNews = []
     }
 
-    /// 진행이 없어도(회차 사이) 계승분을 담을 수 있게 `result`가 옵셔널이다.
-    /// 테스트에서 인코딩 호환을 검증하므로 private이 아니다.
-    struct SaveRecord: Codable {
-        let result: HighSchoolCareerResult?
-        let inheritance: Inheritance
-        /// 옵셔널이라 이 필드가 없는 옛 저장본도 그대로 열린다.
-        var archive: [LifeRecord]?
-        /// 이미 프로로 보낸 회차. 없는 옛 저장본은 nil이다.
-        var enteredProCareerID: String?
-        /// 이번 회차의 별명. 없는 옛 저장본은 빈 목록으로 시작한다.
-        var nicknames: [Nickname]? = nil
-        /// 이번 회차의 연대기. 없는 옛 저장본은 빈 목록으로 시작한다.
-        var chronicle: [ChronicleEntry]? = nil
-        /// 챕터 목표 진행 기준점·축하 여부. 없는 옛 저장본은 현재 값으로 초기화된다.
-        var chapterStartStrikeouts: Int? = nil
-        var goalCelebratedChapter: Int? = nil
-        /// 성격을 만든 선택들. 없는 옛 저장본은 0에서 시작한다.
-        var responseTally: ResponseTally? = nil
-        /// Structured relationship memories. Missing old saves continue with an empty list.
-        var bondMemories: [PlayerBondMemory]? = nil
-        /// Stable IDs of rebirth scenes already consumed in the live run.
-        var rebirthEventIDs: [String]? = nil
-        /// 이번 챕터의 훈련 성장 정산. 없으면 챕터 리뷰가 "훈련 없이 지나간 챕터"라고
-        /// 방금 한 플레이를 부정한다(3차 패널 P1) — 옛 저장본은 빈 값으로 시작한다.
-        var chapterGains: [String: Int]? = nil
-        var chapterTrainingCount: Int? = nil
-        /// 이번 회차의 직접 성장량 기준과 아직 확정하지 않은 대표 유산 선택.
-        /// 모두 optional이라 기능 도입 전 저장본은 그대로 열린다.
-        var careerStartingPitcher: PitcherSnapshot? = nil
-        var signatureLegacyRulesVersion: Int? = nil
-        var frozenSignatureLegacyCandidates: [CareerSignatureLegacy]? = nil
-        var selectedSignatureLegacyID: CareerSignatureLegacyID? = nil
-        /// 진행 중 등판의 타석 경계 스냅샷. 없는 옛 저장본은 nil이다.
-        var gameResume: PitchSession.ResumeState? = nil
-        /// 진행 중 challenge 모드의 careerID. 없는 옛 저장본은 nil = 비도전이다.
-        var challengeCareerID: String? = nil
-        /// 지난 회차에서 직접 저장한 재도전 목표. 없는 옛 저장본은 추천 없음이다.
-        var nextRunIntent: NextRunIntent? = nil
-        /// 외부 보상 중복 지급 방지 영수증. 없는 옛 저장본은 빈 집합이다.
-        var creditedExternalRewardIDs: Set<String>? = nil
-        /// 현재 회차의 약속 결정·숙적 원장. 없는 옛 저장본은 기존 UserDefaults를 migration
-        /// source로 사용하고, 다음 저장부터 이 필드에 함께 싣는다.
-        var currentCareerRetention: CurrentCareerRetention? = nil
-        /// 경기 코어 결과는 저장됐지만 주간·분석·업적 후속 작업이 남은 영수증.
-        /// 없는 옛 저장본은 미처리 작업이 없는 것으로 읽는다.
-        var pendingGameCompletion: PendingGameCompletion? = nil
-        /// 계승-전용 레코드의 충돌 판정용. 없는 옛 저장본은 진행의 리비전으로 판정한다.
-        var revision: UInt64?
-        /// nil은 버전 필드 도입 전 저장이다. 미래 버전은 덮지 않고 업데이트를 기다린다.
-        var schemaVersion: Int? = nil
-
-        var effectiveRevision: UInt64 {
-            max(revision ?? 0, result?.snapshot.revision ?? 0)
-        }
-    }
-
-    /// 같은 리비전에서 다른 기기의 live 진행과 삭제/회차-사이 레코드가 충돌하면
-    /// result-less 쪽이 이긴다. stable ID나 문구가 아니라 저장 의미만 본다.
-    private static func saveConflictPriority(_ data: Data) -> Int {
-        guard let record = decodeSaveRecord(data) else {
-            return 0
-        }
-        return record.result == nil ? 1 : 0
-    }
-
-    enum RestoreOutcome: Equatable {
-        case live(recoveredFromBackup: Bool)
-        case needsSetup
-        case unavailable
-    }
-
-    static func nextSavedRevision(after current: UInt64, atLeast minimum: UInt64) -> UInt64 {
-        let incremented = current == UInt64.max ? UInt64.max : current + 1
-        return max(incremented, minimum)
-    }
-
-    private static func decodeSaveRecord(_ data: Data) -> SaveRecord? {
-        guard let record = try? JSONDecoder().decode(SaveRecord.self, from: data) else {
-            return nil
-        }
-        let version = record.schemaVersion ?? 1
-        guard (1...currentSaveSchemaVersion).contains(version) else { return nil }
-        return record
-    }
-
-    private static func saveRevision(_ data: Data) -> UInt64? {
-        decodeSaveRecord(data)?.effectiveRevision
+    func forgetLocalCareerKeys(_ careerID: String?) {
+        guard let careerID else { return }
+        UserDefaults.standard.removeObject(forKey: pledgeKey(careerID))
+        UserDefaults.standard.removeObject(forKey: pledgeRulesVersionKey(careerID))
+        UserDefaults.standard.removeObject(forKey: rivalLedgerKey(careerID))
     }
 
     func restore() -> RestoreOutcome {
         let recovered: Bool
         let data: Data
         switch sync.readRecovering(
-            revision: Self.saveRevision,
-            conflictPriority: Self.saveConflictPriority
+            revision: HighSchoolCareerPersistence.revision,
+            conflictPriority: HighSchoolCareerPersistence.conflictPriority
         ) {
         case .missing:
             return .needsSetup
@@ -282,77 +179,43 @@ extension HighSchoolCareerStore {
             data = candidate
             recovered = source == .backup
         }
-        guard let record = Self.decodeSaveRecord(data) else { return .unavailable }
-        inheritance = record.inheritance
-        // 분리 회계 마이그레이션 — 총량 필드가 없는 옛 저장본은 잔액을 총량으로 승계한다.
-        // 이 한 줄이 없으면 첫 구매 순간 평생 총량이 잔액으로 붕괴한다(3차 패널 P0).
-        if inheritance.soulTotalEarned == nil { inheritance.soulTotalEarned = inheritance.soulPoints }
-        if inheritance.automaticSoulEarned == nil {
-            inheritance.automaticSoulEarned = inheritance.soulTotal
-        }
-        archive = record.archive ?? []
-        enteredProCareerID = record.enteredProCareerID
-        nicknames = record.nicknames ?? []
-        chronicle = record.chronicle ?? []
-        chapterStartStrikeouts = record.chapterStartStrikeouts
-            ?? record.result?.snapshot.performance.strikeouts ?? 0
-        goalCelebratedChapter = record.goalCelebratedChapter
-        responseTally = record.responseTally ?? ResponseTally()
-        bondMemories = Self.normalizedBondMemories(record.bondMemories ?? [])
-        rebirthEventIDs = record.rebirthEventIDs ?? []
-        chapterGains = record.chapterGains ?? [:]
-        chapterTrainingCount = record.chapterTrainingCount ?? 0
-        careerStartingPitcher = record.careerStartingPitcher
-        signatureLegacyRulesVersion = record.signatureLegacyRulesVersion
-        frozenSignatureLegacyCandidates = record.frozenSignatureLegacyCandidates
-        selectedSignatureLegacyID = record.selectedSignatureLegacyID
-        challengeCareerID = record.challengeCareerID
-        nextRunIntent = record.nextRunIntent
-        creditedExternalRewardIDs = record.creditedExternalRewardIDs ?? []
-        pendingGameCompletion = record.pendingGameCompletion
-        savedRevision = record.effectiveRevision
-        // Clear every live-only observation before branching on result. Without this, a higher
-        // remote tombstone updates the revision but leaves the old player/session in memory and a
-        // later save can publish that deleted player again.
-        result = nil
-        pitchSession = nil
-        tutorialSession = nil
-        gameResume = nil
-        pendingGains = []
-        trainingReceipt = nil
-        pendingBloom = nil
-        pendingRecap = nil
-        selectedMemories = []
-        buzz = []
-        worldNews = []
+        guard let record = HighSchoolCareerPersistence.decode(data) else { return .unavailable }
+        applyPersistedRecord(record, chapterStartFallback: .savedResultStrikeouts)
+        clearLiveSession()
         // 진행이 없는 레코드는 "회차 사이"다 — 계승분만 안고 새 선수 만들기로 간다.
         guard let saved = record.result else { return .needsSetup }
-        result = saved
+        updatePersisted { $0.result = saved }
         if let retention = record.currentCareerRetention,
            retention.careerID == saved.snapshot.careerID {
             mirrorRetention(retention)
         }
-        // 등판 도중에 내려간 앱 — 타석 경계에서 이어 던진다. 시나리오가 지금 스냅샷에서
-        // 같은 id로 재구성될 때만 복원한다(스냅샷이 달라졌으면 그 이닝은 이미 다른 세계다).
-        if saved.snapshot.phase == .importantGame,
-           let resume = record.gameResume,
-           PitchScenario.highSchool(state: saved.snapshot).id == resume.scenarioID {
-            // 이 필드가 없던 버전은 모든 고교 승부가 최대 4타자였다. 새 2/5/6타자
-            // 규칙으로 재계산하면 저장 뒤 재접속만으로 같은 경기의 길이가 달라진다.
-            let savedMaximumBatters = max(1, min(6, resume.maximumBatters ?? 4))
-            let scenario = PitchScenario.highSchool(
-                state: saved.snapshot,
-                maximumBattersOverride: savedMaximumBatters
-            )
-            let session = PitchSession(scenario: scenario, seed: resume.seed)
-            session.start()
-            session.restore(from: resume)
-            session.trait = personality?.trait
-            attachCheckpoint(session)
-            gameResume = resume
-            pitchSession = session
-        }
+        restoreImportantGameSession(from: record, saved: saved)
         return .live(recoveredFromBackup: recovered)
+    }
+
+    /// 등판 도중에 내려간 앱 — 타석 경계에서 이어 던진다. 시나리오가 지금 스냅샷에서
+    /// 같은 id로 재구성될 때만 복원한다(스냅샷이 달라졌으면 그 이닝은 이미 다른 세계다).
+    private func restoreImportantGameSession(
+        from record: HighSchoolCareerSaveRecord,
+        saved: HighSchoolCareerResult
+    ) {
+        guard saved.snapshot.phase == .importantGame,
+              let resume = record.gameResume,
+              PitchScenario.highSchool(state: saved.snapshot).id == resume.scenarioID else { return }
+        // 이 필드가 없던 버전은 모든 고교 승부가 최대 4타자였다. 새 2/5/6타자
+        // 규칙으로 재계산하면 저장 뒤 재접속만으로 같은 경기의 길이가 달라진다.
+        let savedMaximumBatters = max(1, min(6, resume.maximumBatters ?? 4))
+        let scenario = PitchScenario.highSchool(
+            state: saved.snapshot,
+            maximumBattersOverride: savedMaximumBatters
+        )
+        let session = PitchSession(scenario: scenario, seed: resume.seed)
+        session.start()
+        session.restore(from: resume)
+        session.trait = personality?.trait
+        attachCheckpoint(session)
+        updatePersisted { $0.gameResume = resume }
+        pitchSession = session
     }
 
     /// 세션의 타석 경계마다 진행을 디스크로. 등판이 통째로 날아가는 일은 유료 게임의
@@ -368,7 +231,7 @@ extension HighSchoolCareerStore {
                 responseTally: self.responseTally,
                 nextRunIntent: self.nextRunIntent
             ) else { return }
-            self.gameResume = resume
+            self.updatePersisted { $0.gameResume = resume }
         }
     }
 
@@ -400,7 +263,7 @@ extension HighSchoolCareerStore {
             ])
         }
         pitchSession = nil
-        gameResume = nil
+        updatePersisted { $0.gameResume = nil }
         lastSummary = "등판을 중단했습니다. 다음 마운드는 새 이닝입니다."
         feedbackCue = .setback
         feedbackTrigger += 1
@@ -469,14 +332,16 @@ extension HighSchoolCareerStore {
                 nextRunIntent: nextRunIntent
             ) else { return false }
 
-            result = updated
-            gameResume = nextResume
-            responseTally = nextResponseTally
-            bondMemories = nextBondMemories
-            rebirthEventIDs = nextRebirthEventIDs
+            updatePersisted {
+                $0.result = updated
+                $0.gameResume = nextResume
+                $0.responseTally = nextResponseTally
+                $0.bondMemories = nextBondMemories
+                $0.rebirthEventIDs = nextRebirthEventIDs
+                $0.chronicle = candidateChronicle
+            }
             pendingGains = gains
             pendingBloom = bloom
-            chronicle = candidateChronicle
             lastSummary = nextSummary
             feedbackCue = nextCue
             feedbackTrigger += 1
