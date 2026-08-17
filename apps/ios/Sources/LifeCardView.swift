@@ -597,8 +597,8 @@ struct LifeCardShareButton: View {
                     // One-version dashboard compatibility. This legacy event is removed after 1.0.2.
                     GameAnalytics.log(.lifeCardShared, properties)
                 },
-                onCompleted: {
-                    GameAnalytics.log(.lifeCardShareCompleted, ["life_number": record.lifeNumber])
+                onFinished: { finish in
+                    GameAnalytics.logShareFinish(finish, ["life_number": record.lifeNumber])
                 }
             ) {
                 Label(

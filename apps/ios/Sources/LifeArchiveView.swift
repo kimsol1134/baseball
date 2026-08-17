@@ -719,7 +719,9 @@ struct LifeShareButton: View {
         Group {
             if let rendered {
                 ActivityShareButton(
-                    items: [rendered],
+                    // 이미지 한 장만 보내면 받은 쪽에 게임으로 돌아올 경로가 없다. 완료
+                    // 경로(LifeCardShareButton)와 같이 시드·스토어 링크 텍스트를 함께 싣는다.
+                    items: [rendered, LifeCardShareText.body(for: record, resolver: copyResolver)],
                     subject: copyResolver.resolve(
                         .archiveShareSubject,
                         arguments: [.integer(record.lifeNumber)]
@@ -729,8 +731,8 @@ struct LifeShareButton: View {
                         GameAnalytics.log(.lifeCardShareTapped, properties)
                         GameAnalytics.log(.lifeCardShared, properties)
                     },
-                    onCompleted: {
-                        GameAnalytics.log(.lifeCardShareCompleted, ["life_number": record.lifeNumber])
+                    onFinished: { finish in
+                        GameAnalytics.logShareFinish(finish, ["life_number": record.lifeNumber])
                     }
                 ) {
                     Label {

@@ -143,6 +143,9 @@ enum GameAnalytics {
         case lifeCardShareTapped = "life_card_share_tapped"
         /// 시스템 공유 콜백이 성공으로 끝난 시점.
         case lifeCardShareCompleted = "life_card_share_completed"
+        /// 공유 시트를 완료 없이 닫은 시점. tapped(84) 대비 completed(15)의 간극이
+        /// 취소인지, 복사인지, 확장 앱의 false 리턴인지 여기의 outcome·activity_type이 가른다.
+        case lifeCardShareDismissed = "life_card_share_dismissed"
         /// 회차 시작에서 약속을 고른 시점.
         case runPledgeSelected = "run_pledge_selected"
         /// 회차 끝에서 약속 결과가 확정된 시점.
@@ -229,6 +232,19 @@ enum GameAnalytics {
         case returnPlanNextDayOpen = "return_plan_next_day_open"
         /// 세션 종료(백그라운드 전환). `games`로 세션 깊이를 잰다.
         case sessionEnded = "session_ended"
+
+        // MARK: - 검은 화면·진행 불가 감시 (2026-08 리뷰 대응)
+        //
+        // 1.0.2~1.0.4의 검은 화면·진행 불가 리뷰는 크래시 리포트에 잡히지 않았다 — 앱이
+        // 죽지 않고 멈춰 있었기 때문이다. 화면이 스스로 "오래 떠 있다"고 신고해야
+        // 재발과 빈도를 알 수 있다.
+
+        /// 로딩·대기 화면이 기준 시간을 넘겨 화면에 남았다. `context`가 어느 화면인지다.
+        case screenStallDetected = "screen_stall_detected"
+        /// 멈춘 화면을 복구 버튼으로 빠져나왔다. detected 대비 복구율을 본다.
+        case screenStallRecovered = "screen_stall_recovered"
+        /// 은퇴 후 '다음 선수 준비'가 실패했다. `reason`으로 저장 실패와 연결 붕괴를 나눈다.
+        case legacyHandoffFailed = "legacy_handoff_failed"
     }
 
     private static var amplitude: Amplitude?
@@ -330,6 +346,17 @@ enum GameAnalytics {
         let payloads = Self.payloads(for: properties, context: context)
         Analytics.logEvent(event.rawValue, parameters: payloads.firebase)
         amplitude?.track(eventType: event.rawValue, eventProperties: payloads.amplitude)
+    }
+
+    /// 공유 종료 한 번을 완료/이탈 이벤트로 나눠 기록한다. outcome·activity_type 속성이
+    /// "취소인가, 복사인가, 확장 앱의 false 리턴인가"를 대시보드에서 가른다.
+    static func logShareFinish(_ finish: ShareFinish, _ properties: [String: Any] = [:]) {
+        var enriched = properties
+        enriched["outcome"] = finish.outcome
+        if let activityType = finish.activityType {
+            enriched["activity_type"] = activityType
+        }
+        log(finish.countsAsCompleted ? .lifeCardShareCompleted : .lifeCardShareDismissed, enriched)
     }
 
     nonisolated static func isUITest(arguments: [String]) -> Bool {
