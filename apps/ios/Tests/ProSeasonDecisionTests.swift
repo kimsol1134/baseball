@@ -611,7 +611,8 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
 
-        // 구버전 공개 빌드(legacy 라이터)의 저장 세대 규약을 검증한다.
+        // 구버전 공개 빌드(legacy 라이터)의 저장 세대 규약을 검증한다. production은 이제
+        // journey 라이터이므로 여기서는 고정된 legacy 설정을 쓴다.
         let store = MobileCareerStore(sync: sync, configuration: .legacyTests)
         let pending = try firstDecision(seed: 91_105)
         store.updatePersisted { $0.result = pending }

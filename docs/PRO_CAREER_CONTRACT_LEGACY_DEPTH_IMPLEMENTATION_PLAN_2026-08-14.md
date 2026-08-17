@@ -3,8 +3,8 @@
 | 항목 | 값 |
 |---|---|
 | 문서 ID | `DOC-PRO-CAREER-CONTRACT-LEGACY-DEPTH-2026-08-14` |
-| 상태 | **Swift core/iOS 구현·자동·서명 검증 완료(Release 비활성, 실기기·사용자 검증 보류)** |
-| 기준일 | 2026-08-16 KST |
+| 상태 | **iOS 단독 선행 출시 확정 — production 플래그 활성(§21.7). 실기기 ja smoke·ASC 제출 절차 진행 중** |
+| 기준일 | 2026-08-17 KST |
 | 실행 주체 | 이 저장소를 수정하는 AI 에이전트 |
 | 입력 | 유료 구매자 리뷰 1건 + 현재 Swift/iOS/Kotlin 구현 + 기존 프로 주체성 계획 |
 | 제품 범위 | 프로 입단부터 은퇴까지의 계약, 장기 목표, 구단별 유산, 팬, 제한된 재정 선택 |
@@ -2356,6 +2356,7 @@ Simulator/기기 증거:
 | 2026-08-15 | 자동 완주의 중요 경기 입력을 6개 결과(0~4실점, 0~3볼넷, 0~3피안타)로 확장하되 제품 수상 조건·HOF 70점 기준·v3 산식은 변경하지 않음 | 기존 러너 입력이 좋은 결과에 치우쳐 평범한 장기 커리어도 명예의 전당에 과다 진입한 문제를 입력 표본에서 교정하고, 실패를 숨기려고 제품 판정 상수를 완화하지 않기 위해 |
 | 2026-08-15 | 미완료 `record_book`은 자동 완주에서 완료 또는 은퇴까지 유지하고, 다른 미완료 목표는 계약 갱신 시 75% deterministic continuity를 적용하며 iOS는 현재 목표를 기본 선택으로 표시 | 커리어 전체 누적 목표가 계약마다 초기화되는 비현실적 행동을 피하면서 사용자가 새 계약에서 목표를 바꿀 선택권은 보존하기 위해 |
 | 2026-08-15 | 사용자 지시에 따라 이번 구현·검증 범위를 Swift core와 iOS로 제한하고 Kotlin/Android 패리티·출시 작업은 후속 웨이브로 보류 | 미완성 다중 플랫폼 상태를 공개하지 않으며, iOS production gate는 계속 `false`로 유지하기 위해 |
+| 2026-08-17 | 사용자 결정으로 **iOS 단독 선행 출시** 확정 — `AppFeatureConfiguration.production.proCareerJourneyV1 = true`. Kotlin/Android 패리티는 계속 후속 웨이브 | 2026-08 출시 데이터에서 이탈이 프로 구간에 집중되고(경기 완료→인생 완주 57%) 리뷰가 계약·FA·연봉 부재를 지목함. Android는 아직 미출시 상태라 플랫폼 동시성보다 iOS 리텐션 개선이 우선 |
 
 ---
 
@@ -2377,8 +2378,8 @@ rollout을 켜지 않는다.
 | 최신 소스의 signed IPA | 검증 완료 | App Store export, 배포 서명·entitlement·ko/en/ja·Release gate 검사 통과 |
 | Kotlin/Android 패리티 | **보류** | 사용자 지시로 이번 실행 범위에서 제외. 기존 Android 변경은 수정·되돌림 금지 |
 | 실제 사용자 5명 이해도 조사 | **보류** | 자동 테스트로 대체할 수 없는 제품 완료 조건 |
-| 일본어 실기기/TestFlight smoke | **보류** | ASC 제출·업로드를 승인받지 않았고 실제 사용자 데이터를 건드리지 않음 |
-| production rollout | **비활성** | `AppFeatureConfiguration.production.proCareerJourneyV1 == false` 유지 |
+| 일본어 실기기/TestFlight smoke | **보류 → 출시 전 필수(§21.7)** | ASC 제출 직전 실기기 또는 TestFlight에서 재확인 |
+| production rollout | **활성 (2026-08-17)** | 사용자 결정으로 iOS 단독 선행 출시. `AppFeatureConfiguration.production.proCareerJourneyV1 == true` |
 
 ### 21.2 실제 구현 요약
 
@@ -2520,10 +2521,53 @@ team record 불일치는 모두 0이다. 5개 정책 axis profile은 모두 다�
 Swift core/iOS로 한정된 이번 구현과 자동 검증은 완료됐다. 다만 아래 외부 검증과 rollout 조건은
 자동 테스트 통과와 구분하며, 완료되기 전에는 제품 전체 또는 공개 출시 완료로 판정하지 않는다.
 
-1. signed IPA 검사는 완료됐지만 `proCareerJourneyV1` production 값을 켜거나 ASC에 업로드하지 않는다.
+1. ~~signed IPA 검사는 완료됐지만 `proCareerJourneyV1` production 값을 켜거나 ASC에 업로드하지 않는다.~~
+   → 2026-08-17 사용자 결정으로 대체(§21.7). production 값은 켰고, ASC 업로드는 §21.7의 출시 전
+   필수 절차를 통과한 뒤 별도 승인으로 진행한다.
 2. Kotlin/Android 작업은 별도 승인 뒤 Swift oracle을 소비하는 후속 웨이브로 시작한다. 현재 Android
    diff를 정리·되돌리거나 Swift 결과에 맞춰 조용히 덮어쓰지 않는다.
 3. 제품 완료를 선언하려면 최소 5명의 실제 사용자가 계약 조건, 이적 trade-off, 구단 유산,
-   다음 목표를 도움 없이 설명하는지 별도로 관찰한다.
+   다음 목표를 도움 없이 설명하는지 별도로 관찰한다. 이 조건은 iOS 선행 출시를 막지 않는 대신
+   출시 후 첫 패치 전까지 수집한다(§21.7).
 4. 공개 제출 전 일본어 실기기 또는 TestFlight smoke와 signed IPA 현지화 검사를 다시 실행한다.
 5. 이 실행에서는 commit, push, 배포, ASC 제출을 하지 않는다.
+
+### 21.7 2026-08-17 iOS 단독 선행 출시 결정
+
+사용자가 iOS 단독 선행 출시를 확정했다. 근거: 2026-08 출시 데이터에서 첫 인생 완주 전 이탈이
+43%로 프로 구간에 집중되고, 리뷰가 계약·FA·연봉·선발 보직 부재를 직접 지목했다. Android는
+미출시 상태이므로 플랫폼 동시성이 iOS 리텐션 개선을 막을 이유가 없다.
+
+적용한 변경:
+
+- `AppFeatureConfiguration.production.proCareerJourneyV1 = true`.
+- 구버전 공개 빌드(≤1.1.x)의 legacy 스키마-2 라이터 규약은 새 고정 설정
+  `AppFeatureConfiguration.legacyTests`로 계속 회귀 검증한다(테스트가 production 대신 이것을 쓴다).
+- Wave 0 golden oracle과 legacy 엔진 동작은 변경하지 않았다 — journey는 별도 상태 기계이고,
+  기존 스키마-2 저장은 safe boundary에서만 자동 이전된다(기존 Wave 1 검증 유지).
+
+출시 전 필수 절차(순서대로):
+
+1. ✅ 2026-08-17 전체 자동 검증 재실행 완료:
+   - core `swift test` 453개 통과(스킵 1: opt-in Wave0 생성기), Wave5 분포
+     `seeds=1000 seasons=20` 위반 0.
+   - `check:pro-career`(Wave 4 gate) 14개 통과, `check:pro-career:wave5` 통과.
+   - iOS 유닛 전체(프로모 익스포트 제외) 통과 — production 플래그 전환에 맞춰 legacy
+     특성화 테스트 3건은 `AppFeatureConfiguration.legacyTests`로 고정.
+   - UI: 고교 드래프트·환생 스모크, 수동 릴리스 제스처(투구 슬라이더 불변 규칙),
+     일본어 journey 20시즌 완주(전용 시뮬레이터, 38분) 모두 통과.
+   - 참고: 공유 시뮬레이터에서 병렬 세션의 유닛 테스트가 같은 앱 프로세스에 끼어들어
+     UI 테스트가 오탐 실패한 사례가 있었다. 여정급 UI 검증은 전용 시뮬레이터에서 돌린다.
+2. 마케팅 버전 상향(1.2.0 (57), 완료)과 릴리스 아카이브 생성, signed IPA의 ko/en/ja
+   현지화 리소스 검사(AGENTS.md iOS 배포 불변 규칙). 아카이브는 작업 트리의 병렬
+   리팩터링(스토어·뷰 분할)이 수렴한 뒤에 뜬다. What's New 문안은
+   `marketing/appstore/RELEASE_NOTES_1.2.0.md`.
+3. 일본어 실기기 또는 TestFlight smoke — journey 화면(계약 제안·시즌 결산·투자·은퇴 명예)을
+   일본어로 신인 계약부터 최소 1회 정산까지 통과.
+4. 사용자 승인 후 ASC 업로드·심사 제출. App Store 지원 언어에 Japanese 표시 확인.
+
+출시 후 조건:
+
+- 실사용자 5명 이해도 관찰(§21.6-3)을 첫 패치 전까지 수집하고 결과를 이 문서에 기록한다.
+- Amplitude에서 `pro_contract_signed`·`pro_season_decision_selected`·`life_completed` 퍼널과
+  `screen_stall_detected`(2026-08-17 추가)를 journey 코호트로 나눠 모니터링한다.

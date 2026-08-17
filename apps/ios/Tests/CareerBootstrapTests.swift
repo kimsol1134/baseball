@@ -106,6 +106,7 @@ final class CareerBootstrapTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
         // Wave 0 특성화: 구버전(legacy) 라이터의 시즌 리뷰 JSON 형태를 고정한다.
+        // production은 2026-08-17부터 journey 라이터라 여기서는 legacy 설정을 명시한다.
         let store = MobileCareerStore(sync: sync, saveWriter: { _ in true }, configuration: .legacyTests)
         store.updatePersisted { $0.result = review }
 

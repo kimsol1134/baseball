@@ -16,10 +16,23 @@ private final class JourneyWave1MemoryRemoteStore: SaveSyncRemoteStoring {
 final class ProCareerJourneyWave1Tests: XCTestCase {
     private var preset: PitcherPresetSnapshot { PitcherPresetCatalog.all[0] }
 
-    func testLegacyWriterStaysOnSchemaTwoAndRejectsJourneySaves() throws {
-        XCTAssertFalse(AppFeatureConfiguration.legacyTests.proCareerJourneyV1)
+    // 2026-08-17 iOS 단독 선행 출시 결정: production이 journey를 켠다. 구버전 공개 빌드의
+    // legacy 스키마-2 라이터 규약은 `legacyTests` 고정 설정으로 계속 회귀 검증한다.
+    func testProductionFeatureFlagEnablesJourneyWhileLegacyWritersStayPinned() throws {
+        XCTAssertTrue(AppFeatureConfiguration.production.proCareerJourneyV1)
         XCTAssertTrue(AppFeatureConfiguration.journeyV1Tests.proCareerJourneyV1)
+        XCTAssertFalse(AppFeatureConfiguration.legacyTests.proCareerJourneyV1)
 
+        let appSource = try String(
+            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/BaseballApp.swift"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(appSource.contains("#if DEBUG"))
+        XCTAssertTrue(appSource.contains("proCareerJourneyLaunchArgument"))
+        XCTAssertTrue(appSource.contains("AppFeatureConfiguration.journeyV1Tests : .production"))
+        XCTAssertTrue(appSource.contains("let proConfiguration = AppFeatureConfiguration.production"))
+
+        // 구버전 빌드(legacy 라이터)는 여전히 스키마 2로 시작하고 journey 저장을 거부한다.
         var writes: [Data] = []
         let legacyCloud = JourneyWave1MemoryRemoteStore()
         let legacySync = SaveSync(key: "wave1-legacy-\(UUID().uuidString).json", store: legacyCloud)
@@ -44,6 +57,30 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         legacyWriter.updatePersisted { $0.result = journeyResult }
         XCTAssertFalse(legacyWriter.save())
         XCTAssertEqual(writes.count, 1, "legacy writer must not write journey saves")
+
+        // 현재 production은 journey 라이터다: 신인은 계약 제안에서 시작하고 스키마 3을 쓴다.
+        var productionWrites: [Data] = []
+        let productionCloud = JourneyWave1MemoryRemoteStore()
+        let productionSync = SaveSync(
+            key: "wave1-production-\(UUID().uuidString).json",
+            store: productionCloud
+        )
+        defer { productionSync.clear() }
+        let productionStore = MobileCareerStore(
+            sync: productionSync,
+            saveWriter: { productionWrites.append($0); return true },
+            configuration: .production
+        )
+        XCTAssertTrue(productionStore.startNewCareer(preset: preset, playerName: "웨이브1프로덕션"))
+        let productionState = try XCTUnwrap(productionStore.state)
+        XCTAssertEqual(productionState.phase, .contractOffer)
+        XCTAssertNotNil(productionState.journeyState)
+        let productionRecord = try JSONDecoder().decode(
+            MobileCareerStore.ProSaveRecord.self,
+            from: try XCTUnwrap(productionWrites.first)
+        )
+        XCTAssertEqual(productionRecord.schemaVersion, MobileCareerStore.journeySaveSchemaVersion)
+        XCTAssertNotNil(productionRecord.result?.snapshot.journeyState)
     }
 
     func testWave2EnabledStartShowsAndPersistsRookieContractOfferSchema3() throws {
