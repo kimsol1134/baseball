@@ -461,7 +461,7 @@ public class ReminderAlarmReceiver : BroadcastReceiver() {
         }
         val pending = PendingIntent.getActivity(context, rawToken.hashCode(), openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.baseball_notification_small)
             .setContentTitle(intent.getStringExtra("baseball.notification.title") ?: "다음 장면을 기다리고 있어요")
             .setContentText(intent.getStringExtra("baseball.notification.body") ?: "저장된 복귀 계획을 확인해 보세요.")
             .setAutoCancel(true)

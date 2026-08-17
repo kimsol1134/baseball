@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.google.services) apply false
 }
 
 val phase9ExternalSdkEnabled = providers.gradleProperty("phase9ExternalSdks")
@@ -11,23 +12,41 @@ val phase9AmplitudeApiKey = providers.gradleProperty("phase9AmplitudeApiKey").or
     .replace("\\", "\\\\")
     .replace("\"", "\\\"")
 val phase10VersionCode = providers.gradleProperty("phase10VersionCode")
-    .orElse("32")
+    .orElse("37")
     .get()
     .toIntOrNull()
-    ?.also { require(it > 31) { "phase10VersionCode must be higher than the current internal baseline" } }
+    ?.also { require(it > 5) { "versionCode must be higher than the current Play Unity baseline" } }
     ?: error("phase10VersionCode must be an integer")
 val phase10VersionName = providers.gradleProperty("phase10VersionName").orElse("1.0.0").get()
+val releaseDistribution = providers.gradleProperty("phase11Distribution").orElse("internal").get()
+    .also { require(it in setOf("internal", "production")) { "phase11Distribution must be internal or production" } }
 
-fun phase10Input(property: String, environment: String): String? =
-    providers.gradleProperty(property)
-        .orElse(providers.environmentVariable(environment))
-        .orNull
-        ?.takeIf(String::isNotBlank)
+fun firstSecret(property: String, vararg environments: String): String? =
+    providers.gradleProperty(property).orNull?.takeIf(String::isNotBlank)
+        ?: environments.firstNotNullOfOrNull { name ->
+            providers.environmentVariable(name).orNull?.takeIf(String::isNotBlank)
+        }
 
-val phase10KeystorePath = phase10Input("phase10SigningKeystorePath", "BASEBALL_PHASE10_SIGNING_KEYSTORE_PATH")
-val phase10StorePassword = phase10Input("phase10SigningStorePassword", "BASEBALL_PHASE10_SIGNING_STORE_PASSWORD")
-val phase10KeyAlias = phase10Input("phase10SigningKeyAlias", "BASEBALL_PHASE10_SIGNING_KEY_ALIAS")
-val phase10KeyPassword = phase10Input("phase10SigningKeyPassword", "BASEBALL_PHASE10_SIGNING_KEY_PASSWORD")
+val phase10KeystorePath = firstSecret(
+    "phase10SigningKeystorePath",
+    "BASEBALL_PHASE10_SIGNING_KEYSTORE_PATH",
+    "BASEBALL_UPLOAD_KEYSTORE_PATH",
+)
+val phase10StorePassword = firstSecret(
+    "phase10SigningStorePassword",
+    "BASEBALL_PHASE10_SIGNING_STORE_PASSWORD",
+    "BASEBALL_UPLOAD_KEYSTORE_PASSWORD",
+)
+val phase10KeyAlias = firstSecret(
+    "phase10SigningKeyAlias",
+    "BASEBALL_PHASE10_SIGNING_KEY_ALIAS",
+    "BASEBALL_UPLOAD_KEY_ALIAS",
+)
+val phase10KeyPassword = firstSecret(
+    "phase10SigningKeyPassword",
+    "BASEBALL_PHASE10_SIGNING_KEY_PASSWORD",
+    "BASEBALL_UPLOAD_KEY_PASSWORD",
+)
 val phase10SigningConfigured = listOf(
     phase10KeystorePath,
     phase10StorePassword,
@@ -35,13 +54,17 @@ val phase10SigningConfigured = listOf(
     phase10KeyPassword,
 ).all { it != null }
 
+if (phase9ExternalSdkEnabled) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.solkim.baseball.android"
     compileSdk = 36
 
     defaultConfig {
         // The package ID is production-stable. Debug keeps the Phase 9 fixture isolated via the
-        // suffix below; release is the Phase 10 nativeAuthoritative rehearsal package.
+        // suffix below; release is the nativeAuthoritative Play/update package.
         applicationId = "com.solkim.baseball.android"
         minSdk = 26
         targetSdk = 36
@@ -52,6 +75,7 @@ android {
         buildConfigField("String", "PHASE9_AMPLITUDE_API_KEY", "\"$phase9AmplitudeApiKey\"")
         buildConfigField("String", "NATIVE_AUTHORITY_MODE", "\"nativeShadowReadOnly\"")
         buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "false")
+        buildConfigField("String", "RELEASE_DISTRIBUTION", "\"development\"")
     }
 
     buildFeatures { buildConfig = true }
@@ -73,11 +97,13 @@ android {
             versionNameSuffix = "-migration"
             buildConfigField("String", "NATIVE_AUTHORITY_MODE", "\"nativeShadowReadOnly\"")
             buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "false")
+            buildConfigField("String", "RELEASE_DISTRIBUTION", "\"development\"")
         }
         release {
             isMinifyEnabled = false
             buildConfigField("String", "NATIVE_AUTHORITY_MODE", "\"nativeAuthoritative\"")
             buildConfigField("boolean", "PHASE10_PRODUCTION_BUILD", "true")
+            buildConfigField("String", "RELEASE_DISTRIBUTION", "\"$releaseDistribution\"")
             if (phase10SigningConfigured) signingConfig = signingConfigs.getByName("phase10")
         }
     }
@@ -88,7 +114,8 @@ android {
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        jniLibs.useLegacyPackaging = true
+        // Play's 16KB page-size gate needs uncompressed, aligned native libraries.
+        jniLibs.useLegacyPackaging = false
     }
 }
 

@@ -29,8 +29,12 @@ public class BaseballApplication : Application() {
         super.onCreate()
         val nativeAuthoritative = BuildConfig.PHASE10_PRODUCTION_BUILD &&
             BuildConfig.NATIVE_AUTHORITY_MODE == NativeAuthorityMode.NATIVE_AUTHORITATIVE.wire
-        val distribution = if (nativeAuthoritative) "internal" else "development"
-        val environment = if (nativeAuthoritative) "phase10-rehearsal" else "compose-dev"
+        val distribution = if (nativeAuthoritative) BuildConfig.RELEASE_DISTRIBUTION else "development"
+        val environment = when {
+            !nativeAuthoritative -> "compose-dev"
+            BuildConfig.RELEASE_DISTRIBUTION == "production" -> "production"
+            else -> "phase10-rehearsal"
+        }
         platform = NativePhase9Platform(
             this,
             Phase9NativeSdkConfiguration(
@@ -96,7 +100,7 @@ public class BaseballApplication : Application() {
         val state = gameStore.current
         platform.crashReporter.setContext(
             CrashContext(
-                distribution = if (BuildConfig.PHASE10_PRODUCTION_BUILD) "internal" else "development",
+                distribution = if (BuildConfig.PHASE10_PRODUCTION_BUILD) BuildConfig.RELEASE_DISTRIBUTION else "development",
                 appSchema = "phase9",
                 phase = state.stage.wire,
                 life = state.highSchool?.run?.lifeNumber ?: 0,

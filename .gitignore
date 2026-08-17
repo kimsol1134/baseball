@@ -47,6 +47,7 @@ apps/android-unity/.vscode/
 *.keystore.properties
 apps/android-unity/Assets/google-services.json
 apps/android-unity/Assets/google-services.json.meta
+apps/android/app/google-services.json
 apps/android-unity/Assets/Game/Resources/analytics-config.generated.json
 apps/android-unity/Assets/Game/Resources/analytics-config.generated.json.meta
 # Firebase Unity regenerates these platform resources from the injected
