@@ -51,13 +51,23 @@
   (`marketing/appstore/RELEASE_NOTES_1.2.0.md`).
 - 빌드 번들 locales: `["ko","en","ja"]` — App Store 지원 언어에 Japanese 표시 충족.
 
-## 5. 남은 절차
+## 5. 문안 개선과 심사 제출
 
-1. **TestFlight 일본어 스모크(AGENTS.md 배포 불변 규칙)** — 실기기가 모두 오프라인이라
-   자동화 기기 테스트를 대신 TestFlight로 확인한다: 일본어 기기 설정에서 빌드 57을 설치해
-   신인 계약 → 첫 정산까지 일본어 표기로 통과하는지 확인.
-2. 스모크 통과 확인 뒤 심사 제출(reviewSubmission 생성·제출).
-3. 심사 승인 후 수동 출시. 출시 후 실사용자 5명 이해도 관찰(§21.6-3)과 journey 코호트
-   퍼널(`pro_contract_signed`→`life_completed`, `screen_stall_detected`) 모니터링.
+- 2026-08-17 14:53 사용자 지시: "심사 제출 진행 + ASC 메타데이터를 유저 입장에서
+  다운로드 받고 싶어지게 개선(기능 나열 금지)".
+- What's New를 기능 목록에서 **유저가 겪을 장면 서사**로 전면 재작성(ko/en×4/ja),
+  프로모션 텍스트 신규 등록(새 버전에 승계되지 않아 비어 있었음), 설명의 프로 구간을
+  journey 내용(계약 서명·연봉·FA·영구결번)으로 치환. 원본: `marketing/appstore/RELEASE_NOTES_1.2.0.md`.
+- 심사 제출: reviewSubmission `2e3ce284-4416-4d8d-9a8b-a6e6c5150d30`, 버전 1.2.0 아이템,
+  제출 시각 2026-08-17 14:59 KST, 상태 `WAITING_FOR_REVIEW`.
+- 일본어 스모크: 시뮬레이터 20시즌 journey UI 통과(§2). 실기기가 오프라인이라 기기
+  스모크는 TestFlight 빌드 57로 대체 가능하며, 사용자가 제출을 직접 지시했다. 심사 중에도
+  TestFlight 확인에서 문제가 발견되면 제출 철회로 되돌릴 수 있다.
+
+## 6. 남은 절차
+
+1. 심사 승인 후 수동 출시(MANUAL).
+2. 출시 후 실사용자 5명 이해도 관찰(§21.6-3)과 journey 코호트 퍼널
+   (`pro_contract_signed`→`life_completed`, `screen_stall_detected`) 모니터링.
 
 이 작업에서는 Git stage, commit, push를 수행하지 않았다.
