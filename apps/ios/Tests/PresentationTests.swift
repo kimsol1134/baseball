@@ -265,15 +265,10 @@ final class PresentationTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-        let source = try String(
-            contentsOf: repositoryRoot.appendingPathComponent(
-                "apps/ios/Sources/HighSchoolCareerView.swift"
-            ),
-            encoding: .utf8
-        )
-        let start = try XCTUnwrap(source.range(of: "private struct RelationshipCard"))
+        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolRelationshipViews.swift")
+        let start = try XCTUnwrap(source.range(of: "struct RelationshipCard"))
         let end = try XCTUnwrap(
-            source.range(of: "private struct ImportantGameCard", range: start.upperBound..<source.endIndex)
+            source.range(of: "struct ImportantGameCard", range: start.upperBound..<source.endIndex)
         )
         let relationshipCard = String(source[start.lowerBound..<end.lowerBound])
 
@@ -288,22 +283,9 @@ final class PresentationTests: XCTestCase {
     /// background executor에서 호출해 `_swift_task_checkIsolatedSwift`로 종료됐다.
     /// 선택지가 고정 열거형인 동안에는 지연 item closure를 다시 만들지 않는다.
     func testTrainingCardAvoidsDeferredForEachActorBoundary() throws {
-        let repositoryRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let source = try String(
-            contentsOf: repositoryRoot.appendingPathComponent(
-                "apps/ios/Sources/HighSchoolCareerView.swift"
-            ),
-            encoding: .utf8
-        )
-        let start = try XCTUnwrap(source.range(of: "private struct TrainingCard"))
-        let end = try XCTUnwrap(
-            source.range(of: "private struct RelationshipCard", range: start.upperBound..<source.endIndex)
-        )
-        let trainingViews = String(source[start.lowerBound..<end.lowerBound])
+        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolTrainingViews.swift")
+        let start = try XCTUnwrap(source.range(of: "struct TrainingCard"))
+        let trainingViews = String(source[start.lowerBound...])
 
         XCTAssertFalse(trainingViews.contains("ForEach("))
         for option in [
@@ -320,17 +302,10 @@ final class PresentationTests: XCTestCase {
     /// 실제 프레임은 UI 테스트가 별도로 검증하고, 이 테스트는 원인이었던
     /// 수식어가 다시 들어오는 순간 빠르게 막는다.
     func testCareerPhaseFlowDoesNotInstallOpaquePhaseCurtain() throws {
-        let repositoryRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let source = try String(
-            contentsOf: repositoryRoot.appendingPathComponent(
-                "apps/ios/Sources/HighSchoolCareerView.swift"
-            ),
-            encoding: .utf8
-        )
+        let source = try IOSSourceScan.readAll([
+            "apps/ios/Sources/HighSchoolCareerView.swift",
+            "apps/ios/Sources/HighSchoolSharedViews.swift",
+        ])
 
         XCTAssertFalse(source.contains(".phaseCurtain("))
         XCTAssertFalse(source.contains("struct PhaseCurtain"))

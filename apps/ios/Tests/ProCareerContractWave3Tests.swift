@@ -13,10 +13,15 @@ final class ProCareerContractWave3Tests: XCTestCase {
     }
 
     func testOfferSurfaceUsesPersistedComparableCardsAndExplicitConfirmation() throws {
-        let flow = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/CareerFlowView.swift"),
-            encoding: .utf8
-        )
+        let flow = try IOSSourceScan.readAll([
+            "apps/ios/Sources/CareerFlowView.swift",
+            "apps/ios/Sources/ProContractOfferView.swift",
+            "apps/ios/Sources/ProOffseasonInvestmentView.swift",
+            "apps/ios/Sources/ProSeasonSettlementView.swift",
+            "apps/ios/Sources/ProSeasonDecisionView.swift",
+            "apps/ios/Sources/ProOffseasonViews.swift",
+            "apps/ios/Sources/CareerFlowChrome.swift",
+        ])
 
         XCTAssertTrue(flow.contains("ForEach(Array(market.offers.enumerated()), id: \\.offset)"))
         XCTAssertTrue(flow.contains("offerCard(offer, index: index, selectable: market.kind != .rookie)"))
@@ -91,10 +96,15 @@ final class ProCareerContractWave3Tests: XCTestCase {
     }
 
     func testWave5InvestmentAccessibilityAndMediaContentContracts() throws {
-        let flow = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/CareerFlowView.swift"),
-            encoding: .utf8
-        )
+        let flow = try IOSSourceScan.readAll([
+            "apps/ios/Sources/CareerFlowView.swift",
+            "apps/ios/Sources/ProContractOfferView.swift",
+            "apps/ios/Sources/ProOffseasonInvestmentView.swift",
+            "apps/ios/Sources/ProSeasonSettlementView.swift",
+            "apps/ios/Sources/ProSeasonDecisionView.swift",
+            "apps/ios/Sources/ProOffseasonViews.swift",
+            "apps/ios/Sources/CareerFlowChrome.swift",
+        ])
         for identifier in [
             "pro.offseasonInvestment.choice.",
             "pro.offseasonInvestment.focus",
@@ -148,10 +158,15 @@ final class ProCareerContractWave3Tests: XCTestCase {
     }
 
     func testWave5PresentationContractsExposeBenefitsAndKeepMoneyAfterCareerDirection() throws {
-        let flow = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/CareerFlowView.swift"),
-            encoding: .utf8
-        )
+        let flow = try IOSSourceScan.readAll([
+            "apps/ios/Sources/CareerFlowView.swift",
+            "apps/ios/Sources/ProContractOfferView.swift",
+            "apps/ios/Sources/ProOffseasonInvestmentView.swift",
+            "apps/ios/Sources/ProSeasonSettlementView.swift",
+            "apps/ios/Sources/ProSeasonDecisionView.swift",
+            "apps/ios/Sources/ProOffseasonViews.swift",
+            "apps/ios/Sources/CareerFlowChrome.swift",
+        ])
         let presentation = try String(
             contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/ProCareerPresentation.swift"),
             encoding: .utf8

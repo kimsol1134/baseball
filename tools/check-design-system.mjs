@@ -124,6 +124,8 @@ const narrowBarAllowlist = new Map([
   ["apps/ios/Sources/AbilityGaugeView.swift", 2],
   // 와인드업 미터를 오가는 바늘. 이것도 가로 막대 위의 표식이다.
   ["apps/ios/Sources/DeliveryControl.swift", 1],
+  // 프롤로그 능력 게이지의 재능 한계 눈금. AbilityGaugeView와 같은 가로 막대 표식이다.
+  ["apps/ios/Sources/HighSchoolPrologueViews.swift", 1],
 ]);
 for (const path of filesUnder(iosSource, new Set([".swift"]))) {
   const relativePath = relative(root, path);
@@ -142,7 +144,7 @@ const contractChecks = [
   // 유료앱 권한 모델과 iOS 출고 규격. 되돌아가면 릴리스 빌드가 다시 빈 화면이 된다.
   // 시즌 등판 기록이 화면에서 사라지면 3주 건너뛰기가 다시 커리어를 증발시킨다.
   ["apps/ios/Sources/RecordView.swift", "gameLines"],
-  ["apps/ios/Sources/AppShell.swift", "최근 등판"],
+  ["apps/ios/Sources/AppShell.swift", "gameLines"],
   ["apps/ios/Sources/CareerBootstrap.swift", "source: .purchase"],
   ["apps/ios/Sources/MobileCareerStore.swift", "case needsSetup"],
   ["apps/ios/Sources/PitchSession.swift", "engine.submitPitch"],
@@ -154,7 +156,7 @@ const contractChecks = [
   ["apps/ios/Sources/DeliveryControl.swift", "autoRelease"],
   ["apps/ios/Sources/GameAudio.swift", ".mixWithOthers"],
   ["apps/ios/Sources/GameAudio.swift", "nonisolated static func makeSourceNode"],
-  ["apps/ios/Sources/HighSchoolCareerStore.swift", "nextInheritance"],
+  ["apps/ios/Sources/HighSchoolCareerStore+Rebirth.swift", "nextInheritance"],
   ["apps/ios/Sources/HighSchoolCareerView.swift", "case .legacy:"],
   ["apps/ios/Sources/AchievementStore.swift", "isGameCenterAuthenticated"],
   ["apps/ios/Sources/SettingsView.swift", "자동 릴리스"],

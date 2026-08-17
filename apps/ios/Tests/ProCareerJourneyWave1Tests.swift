@@ -16,9 +16,12 @@ private final class JourneyWave1MemoryRemoteStore: SaveSyncRemoteStoring {
 final class ProCareerJourneyWave1Tests: XCTestCase {
     private var preset: PitcherPresetSnapshot { PitcherPresetCatalog.all[0] }
 
-    func testProductionFeatureFlagKeepsLegacyStartAndRejectsJourneyWrites() throws {
-        XCTAssertFalse(AppFeatureConfiguration.production.proCareerJourneyV1)
+    // 2026-08-17 iOS 단독 선행 출시 결정: production이 journey를 켠다. 구버전 공개 빌드의
+    // legacy 스키마-2 라이터 규약은 `legacyTests` 고정 설정으로 계속 회귀 검증한다.
+    func testProductionFeatureFlagEnablesJourneyWhileLegacyWritersStayPinned() throws {
+        XCTAssertTrue(AppFeatureConfiguration.production.proCareerJourneyV1)
         XCTAssertTrue(AppFeatureConfiguration.journeyV1Tests.proCareerJourneyV1)
+        XCTAssertFalse(AppFeatureConfiguration.legacyTests.proCareerJourneyV1)
 
         let appSource = try String(
             contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/BaseballApp.swift"),
@@ -29,18 +32,19 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertTrue(appSource.contains("AppFeatureConfiguration.journeyV1Tests : .production"))
         XCTAssertTrue(appSource.contains("let proConfiguration = AppFeatureConfiguration.production"))
 
+        // 구버전 빌드(legacy 라이터)는 여전히 스키마 2로 시작하고 journey 저장을 거부한다.
         var writes: [Data] = []
         let legacyCloud = JourneyWave1MemoryRemoteStore()
-        let legacySync = SaveSync(key: "wave1-production-\(UUID().uuidString).json", store: legacyCloud)
+        let legacySync = SaveSync(key: "wave1-legacy-\(UUID().uuidString).json", store: legacyCloud)
         legacySync.clear()
         defer { legacySync.clear() }
-        let store = MobileCareerStore(
+        let legacyWriter = MobileCareerStore(
             sync: legacySync,
             saveWriter: { writes.append($0); return true },
-            configuration: .production
+            configuration: .legacyTests
         )
-        XCTAssertTrue(store.startNewCareer(preset: preset, playerName: "웨이브1레거시"))
-        let legacyState = try XCTUnwrap(store.state)
+        XCTAssertTrue(legacyWriter.startNewCareer(preset: preset, playerName: "웨이브1레거시"))
+        let legacyState = try XCTUnwrap(legacyWriter.state)
         XCTAssertNil(legacyState.journeyState)
         XCTAssertEqual(writes.count, 1)
         let legacyRecord = try JSONDecoder().decode(
@@ -50,28 +54,33 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertEqual(legacyRecord.schemaVersion, MobileCareerStore.legacySaveSchemaVersion)
 
         let journeyResult = try journeyFixture()
-        store.result = journeyResult
-        XCTAssertFalse(store.save())
-        XCTAssertEqual(writes.count, 1, "production must not write journey saves")
+        legacyWriter.result = journeyResult
+        XCTAssertFalse(legacyWriter.save())
+        XCTAssertEqual(writes.count, 1, "legacy writer must not write journey saves")
 
-        var journeyWrites: [Data] = []
-        let journeyCloud = JourneyWave1MemoryRemoteStore()
-        let journeySync = SaveSync(key: "wave1-schema-\(UUID().uuidString).json", store: journeyCloud)
-        defer { journeySync.clear() }
-        let journeyStore = MobileCareerStore(
-            sync: journeySync,
-            saveWriter: { journeyWrites.append($0); return true },
-            configuration: .journeyV1Tests
+        // 현재 production은 journey 라이터다: 신인은 계약 제안에서 시작하고 스키마 3을 쓴다.
+        var productionWrites: [Data] = []
+        let productionCloud = JourneyWave1MemoryRemoteStore()
+        let productionSync = SaveSync(
+            key: "wave1-production-\(UUID().uuidString).json",
+            store: productionCloud
         )
-        journeyStore.result = journeyResult
-        journeyStore.loadState = .ready
-        XCTAssertTrue(journeyStore.save())
-        let journeyRecord = try JSONDecoder().decode(
+        defer { productionSync.clear() }
+        let productionStore = MobileCareerStore(
+            sync: productionSync,
+            saveWriter: { productionWrites.append($0); return true },
+            configuration: .production
+        )
+        XCTAssertTrue(productionStore.startNewCareer(preset: preset, playerName: "웨이브1프로덕션"))
+        let productionState = try XCTUnwrap(productionStore.state)
+        XCTAssertEqual(productionState.phase, .contractOffer)
+        XCTAssertNotNil(productionState.journeyState)
+        let productionRecord = try JSONDecoder().decode(
             MobileCareerStore.ProSaveRecord.self,
-            from: try XCTUnwrap(journeyWrites.first)
+            from: try XCTUnwrap(productionWrites.first)
         )
-        XCTAssertEqual(journeyRecord.schemaVersion, MobileCareerStore.journeySaveSchemaVersion)
-        XCTAssertNotNil(journeyRecord.result?.snapshot.journeyState)
+        XCTAssertEqual(productionRecord.schemaVersion, MobileCareerStore.journeySaveSchemaVersion)
+        XCTAssertNotNil(productionRecord.result?.snapshot.journeyState)
     }
 
     func testWave2EnabledStartShowsAndPersistsRookieContractOfferSchema3() throws {
@@ -177,10 +186,11 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
     }
 
     func testWave2OfferUIHasStableAccessibilityAndRetainsCurrentGoalByDefault() throws {
-        let flow = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/CareerFlowView.swift"),
-            encoding: .utf8
-        )
+        let flow = try IOSSourceScan.readAll([
+            "apps/ios/Sources/CareerFlowView.swift",
+            "apps/ios/Sources/ProContractOfferView.swift",
+            "apps/ios/Sources/ProSeasonDecisionView.swift",
+        ])
         XCTAssertTrue(flow.contains("struct ProContractOfferView: View"))
         XCTAssertTrue(flow.contains("case .contractOffer:"))
         XCTAssertTrue(flow.contains("accessibilityIdentifier(\"pro.contractOffer\")"))
@@ -225,9 +235,13 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
     }
 
     func testWave4ViewsConsumeSharedProjectionsAndExposeStableAccessibilityIDs() throws {
-        let sourceFiles = ["AppShell.swift", "CareerFlowView.swift", "RecordView.swift"].map {
-            try! String(contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/\($0)"), encoding: .utf8)
-        }.joined(separator: "\n")
+        let sourceFiles = try IOSSourceScan.readAll([
+            "apps/ios/Sources/AppShell.swift",
+            "apps/ios/Sources/CareerFlowView.swift",
+            "apps/ios/Sources/RecordView.swift",
+            "apps/ios/Sources/ProRetirementViews.swift",
+            "apps/ios/Sources/ProSeasonSettlementView.swift",
+        ])
         XCTAssertTrue(sourceFiles.contains("ProCareerGoalMetricsView"))
         XCTAssertTrue(sourceFiles.contains("ProCareerPresentation.teamRecords(for: state)"))
         XCTAssertTrue(sourceFiles.contains("ProCareerEngine.retirementPreview(for: state)"))
@@ -248,14 +262,11 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
     }
 
     func testRetirementProjectionAndHonorsPreserveChildAccessibilityIDs() throws {
-        let flow = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/CareerFlowView.swift"),
-            encoding: .utf8
-        )
-        let previewStart = try XCTUnwrap(flow.range(of: "private struct RetirementPreviewCard: View"))
-        let retiredStart = try XCTUnwrap(flow.range(of: "private struct RetiredView: View"))
-        let honorsStart = try XCTUnwrap(flow.range(of: "private struct RetirementHonorsCard: View"))
-        let totalsStart = try XCTUnwrap(flow.range(of: "private struct CareerTotals: View"))
+        let flow = try IOSSourceScan.read("apps/ios/Sources/ProRetirementViews.swift")
+        let previewStart = try XCTUnwrap(flow.range(of: "struct RetirementPreviewCard: View"))
+        let retiredStart = try XCTUnwrap(flow.range(of: "struct RetiredView: View"))
+        let honorsStart = try XCTUnwrap(flow.range(of: "struct RetirementHonorsCard: View"))
+        let totalsStart = try XCTUnwrap(flow.range(of: "struct CareerTotals: View"))
         let preview = flow[previewStart.lowerBound..<retiredStart.lowerBound]
         let honors = flow[honorsStart.lowerBound..<totalsStart.lowerBound]
 
@@ -455,7 +466,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertEqual(tombstone.schemaVersion, MobileCareerStore.journeySaveSchemaVersion)
         XCTAssertNil(tombstone.result)
 
-        let legacyStore = MobileCareerStore(sync: sync, configuration: .production)
+        let legacyStore = MobileCareerStore(sync: sync, configuration: .legacyTests)
         legacyStore.restoreOrCreateCareer()
         XCTAssertEqual(legacyStore.loadState, .needsSetup)
         XCTAssertFalse(legacyStore.startNewCareer(preset: preset, playerName: "구버전 덮어쓰기"))
@@ -494,10 +505,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
 
     func testWave1SwiftUISurfacesHaveStableAccessibilityRootsAndStoredProjectionInputs() throws {
         let root = repositoryRoot()
-        let flow = try String(
-            contentsOf: root.appendingPathComponent("apps/ios/Sources/CareerFlowView.swift"),
-            encoding: .utf8
-        )
+        let flow = try IOSSourceScan.read("apps/ios/Sources/ProSeasonSettlementView.swift")
         let shell = try String(
             contentsOf: root.appendingPathComponent("apps/ios/Sources/AppShell.swift"),
             encoding: .utf8

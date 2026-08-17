@@ -2237,19 +2237,13 @@ final class LocalizationCoverageTests: XCTestCase {
     }
 
     func testBoundedBatchViewsDoNotRenderLegacyRawPresentationFields() throws {
-        let repositoryRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let source = try String(
-            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/HighSchoolCareerView.swift"),
-            encoding: .utf8
-        )
+        let headerSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolChapterHeaderViews.swift")
+        let resultSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolTrainingResultViews.swift")
+        let relationshipSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolRelationshipViews.swift")
 
-        let chapterStart = try XCTUnwrap(source.range(of: "private struct ChapterHeader"))
-        let chapterEnd = try XCTUnwrap(source.range(of: "/// 직전 행동의 결과 한 줄.", range: chapterStart.upperBound..<source.endIndex))
-        let chapterBlock = String(source[chapterStart.lowerBound..<chapterEnd.lowerBound])
+        let chapterStart = try XCTUnwrap(headerSource.range(of: "struct ChapterHeader"))
+        let chapterEnd = try XCTUnwrap(headerSource.range(of: "/// 직전 행동의 결과 한 줄.", range: chapterStart.upperBound..<headerSource.endIndex))
+        let chapterBlock = String(headerSource[chapterStart.lowerBound..<chapterEnd.lowerBound])
         XCTAssertFalse(chapterBlock.contains("state.chapter.title"))
         XCTAssertFalse(chapterBlock.contains("state.chapter.season"))
         XCTAssertFalse(chapterBlock.contains("state.school.name"))
@@ -2264,20 +2258,20 @@ final class LocalizationCoverageTests: XCTestCase {
         XCTAssertTrue(chapterBlock.contains("chapterCopy.titleToken"))
         XCTAssertTrue(chapterBlock.contains("chapterCopy.seasonToken"))
 
-        let resultStart = try XCTUnwrap(source.range(of: "private struct TrainingResultPanel"))
-        let resultEnd = try XCTUnwrap(source.range(of: "/// 복귀 알림 권유.", range: resultStart.upperBound..<source.endIndex))
-        let resultBlock = String(source[resultStart.lowerBound..<resultEnd.lowerBound])
+        let resultStart = try XCTUnwrap(resultSource.range(of: "struct TrainingResultPanel"))
+        let resultEnd = try XCTUnwrap(resultSource.range(of: "/// 복귀 알림 권유.", range: resultStart.upperBound..<resultSource.endIndex))
+        let resultBlock = String(resultSource[resultStart.lowerBound..<resultEnd.lowerBound])
         XCTAssertFalse(resultBlock.contains("receipt.headline"))
         XCTAssertFalse(resultBlock.contains("receipt.detail"))
         XCTAssertFalse(resultBlock.contains("gain.label"))
         XCTAssertTrue(resultBlock.contains("localizedTrainingResultDetail"))
         XCTAssertTrue(resultBlock.contains("localizedTrainingGainRow"))
 
-        let relationshipStart = try XCTUnwrap(source.range(of: "private struct RelationshipCard"))
+        let relationshipStart = try XCTUnwrap(relationshipSource.range(of: "struct RelationshipCard"))
         let relationshipEnd = try XCTUnwrap(
-            source.range(of: "private struct ImportantGameCard", range: relationshipStart.upperBound..<source.endIndex)
+            relationshipSource.range(of: "struct ImportantGameCard", range: relationshipStart.upperBound..<relationshipSource.endIndex)
         )
-        let relationshipBlock = String(source[relationshipStart.lowerBound..<relationshipEnd.lowerBound])
+        let relationshipBlock = String(relationshipSource[relationshipStart.lowerBound..<relationshipEnd.lowerBound])
         for forbidden in [
             "event.title", "event.summary", "scene?.choices", ".quote(",
             "school.coachName", "school.catcherName", "state.rival.name",
@@ -2293,14 +2287,8 @@ final class LocalizationCoverageTests: XCTestCase {
     }
 
     func testPrologueViewSourceDoesNotRenderLegacyRawPresentationFields() throws {
-        let repositoryRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let sourceURL = repositoryRoot.appendingPathComponent("apps/ios/Sources/HighSchoolCareerView.swift")
-        let source = try String(contentsOf: sourceURL, encoding: .utf8)
-        let start = try XCTUnwrap(source.range(of: "private struct PrologueCard"))
+        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolPrologueViews.swift")
+        let start = try XCTUnwrap(source.range(of: "struct PrologueCard"))
         let end = try XCTUnwrap(source.range(of: "/// 학교 선택.", range: start.upperBound..<source.endIndex))
         let prologueBlock = String(source[start.lowerBound..<end.lowerBound])
 

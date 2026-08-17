@@ -44,17 +44,10 @@ final class LocalizationBoundaryTests: XCTestCase {
     }
 
     func testBoundedCardsHaveExplicitSemanticSourceBoundaries() throws {
-        let repositoryRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let source = try String(
-            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/HighSchoolCareerView.swift"),
-            encoding: .utf8
-        )
+        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolRelationshipViews.swift")
+        let router = try IOSSourceScan.read("apps/ios/Sources/HighSchoolCareerView.swift")
 
-        let importantStart = try XCTUnwrap(source.range(of: "private struct ImportantGameCard"))
+        let importantStart = try XCTUnwrap(source.range(of: "struct ImportantGameCard"))
         let importantEnd = try XCTUnwrap(
             source.range(of: "/// 각성 스킬트리.", range: importantStart.upperBound..<source.endIndex)
         )
@@ -67,17 +60,14 @@ final class LocalizationBoundaryTests: XCTestCase {
         ] {
             XCTAssertFalse(importantBlock.contains(forbidden), forbidden)
         }
-        XCTAssertFalse(source.contains("ImportantGameCard(state: state, rivalLine:"))
+        XCTAssertFalse(router.contains("ImportantGameCard(state: state, rivalLine:"))
         XCTAssertTrue(importantBlock.contains("HighSchoolPresentation.localizedImportantGameScenarioTitle"))
         XCTAssertTrue(importantBlock.contains("localizedImportantGameScenarioTitle"))
         XCTAssertTrue(importantBlock.contains("localizedImportantGameScenarioNarrative"))
         XCTAssertTrue(importantBlock.contains("localizedImportantGameRivalAccessibility"))
         XCTAssertTrue(importantBlock.contains("Text(verbatim:"))
 
-        let presentationSource = try String(
-            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/HighSchoolPresentation.swift"),
-            encoding: .utf8
-        )
+        let presentationSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolPresentation.swift")
         for key in [
             "AppCopyKey.importantGameOpponentTitle",
             "AppCopyKey.importantGameFinalShowdownTitle",
@@ -95,11 +85,10 @@ final class LocalizationBoundaryTests: XCTestCase {
         }
         XCTAssertFalse(presentationSource.contains("CopyToken.importantGame"))
 
-        let reminderStart = try XCTUnwrap(source.range(of: "private struct ReminderNudgeCard"))
-        let reminderEnd = try XCTUnwrap(
-            source.range(of: "// MARK: - Challenge 마감", range: reminderStart.upperBound..<source.endIndex)
-        )
-        let reminderBlock = String(source[reminderStart.lowerBound..<reminderEnd.lowerBound])
+        let reminderSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolTrainingResultViews.swift")
+        let reminderStart = try XCTUnwrap(reminderSource.range(of: "struct ReminderNudgeCard"))
+        let reminderEnd = reminderSource.endIndex
+        let reminderBlock = String(reminderSource[reminderStart.lowerBound..<reminderEnd])
         for forbidden in ["내일도 이어 던지기", "알림 켜기", "괜찮습니다", "매일 저녁 7시 30분"] {
             XCTAssertFalse(reminderBlock.contains(forbidden), forbidden)
         }
@@ -107,11 +96,9 @@ final class LocalizationBoundaryTests: XCTestCase {
         XCTAssertTrue(reminderBlock.contains("AppCopyKey.reminderNudgeAccessibility"))
         XCTAssertTrue(reminderBlock.contains("GameAnalytics.logOnce(.reminderOfferShown, [\"source\": \"after_first_game\"])") )
 
-        let challengeStart = try XCTUnwrap(source.range(of: "private struct ChallengeEndCard"))
-        let challengeEnd = try XCTUnwrap(
-            source.range(of: "// MARK: - 머리말", range: challengeStart.upperBound..<source.endIndex)
-        )
-        let challengeBlock = String(source[challengeStart.lowerBound..<challengeEnd.lowerBound])
+        let challengeSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolChallengeViews.swift")
+        let challengeStart = try XCTUnwrap(challengeSource.range(of: "struct ChallengeEndCard"))
+        let challengeBlock = String(challengeSource[challengeStart.lowerBound...])
         for forbidden in [
             "기록 없는 도전 결과", "스카우트 평가", "탈삼진", "볼넷", "실점",
             "도전을 닫는다", "이 도전은 선수 기록이나 다음 회차 보상",
@@ -125,20 +112,9 @@ final class LocalizationBoundaryTests: XCTestCase {
     }
 
     func testAwakeningSkillTreeSurfaceUsesTypedResolvedCopyBoundary() throws {
-        let repositoryRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let source = try String(
-            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/HighSchoolCareerView.swift"),
-            encoding: .utf8
-        )
-        let start = try XCTUnwrap(source.range(of: "private struct AwakeningCard"))
-        let end = try XCTUnwrap(
-            source.range(of: "private struct ChapterReviewCard", range: start.upperBound..<source.endIndex)
-        )
-        let block = String(source[start.lowerBound..<end.lowerBound])
+        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolAwakeningViews.swift")
+        let start = try XCTUnwrap(source.range(of: "struct AwakeningCard"))
+        let block = String(source[start.lowerBound...])
 
         for forbidden in [
             "HighSchoolPresentation.awakening(",
@@ -185,15 +161,7 @@ final class LocalizationBoundaryTests: XCTestCase {
     }
 
     func testNextThreeHighSchoolCardsRejectOnlyBoundedRawDisplayPaths() throws {
-        let repositoryRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let source = try String(
-            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/HighSchoolCareerView.swift"),
-            encoding: .utf8
-        )
+        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolChapterReviewViews.swift")
 
         func block(from startMarker: String, to endMarker: String) throws -> String {
             let start = try XCTUnwrap(source.range(of: startMarker), startMarker)
@@ -213,15 +181,15 @@ final class LocalizationBoundaryTests: XCTestCase {
         }
 
         let review = withoutComments(try block(
-            from: "private struct ChapterReviewCard",
+            from: "struct ChapterReviewCard",
             to: "/// 대회 대진"
         ))
         let tournament = withoutComments(try block(
-            from: "private struct TournamentCard",
+            from: "struct TournamentCard",
             to: "/// 이번 챕터의 숙제"
         ))
         let goal = withoutComments(try block(
-            from: "private struct ChapterGoalCard",
+            from: "struct ChapterGoalCard",
             to: "/// 어딘가의 게시판"
         ))
         let rawDisplayPattern = try NSRegularExpression(
@@ -291,11 +259,8 @@ final class LocalizationBoundaryTests: XCTestCase {
         XCTAssertFalse(appShell.contains("forecast.interestedTeam"))
         XCTAssertFalse(appShell.contains(".userText(forecast.interestedTeam)"))
 
-        let highSchoolSource = try String(
-            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/HighSchoolCareerView.swift"),
-            encoding: .utf8
-        )
-        let buzzStart = try XCTUnwrap(highSchoolSource.range(of: "private struct CommunityBuzzCard"))
+        let highSchoolSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolChapterReviewViews.swift")
+        let buzzStart = try XCTUnwrap(highSchoolSource.range(of: "struct CommunityBuzzCard"))
         let buzzEnd = try XCTUnwrap(
             highSchoolSource.range(of: "/// 이 회차가 살아온 순간들.", range: buzzStart.upperBound..<highSchoolSource.endIndex)
         )

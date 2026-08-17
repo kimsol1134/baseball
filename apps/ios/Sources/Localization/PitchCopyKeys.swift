@@ -28,6 +28,7 @@ enum PitchUICopyKey: String, CaseIterable, Sendable {
     case stateFailedBody = "pitch.state.failed.body"
     case statePlateEndedTitle = "pitch.state.plate-ended.title"
     case statePlateEndedBody = "pitch.state.plate-ended.body"
+    case statePreparing = "pitch.state.preparing"
 
     case badgePerfectRelease = "pitch.badge.perfect-release"
     case badgeClutch = "pitch.badge.clutch"
