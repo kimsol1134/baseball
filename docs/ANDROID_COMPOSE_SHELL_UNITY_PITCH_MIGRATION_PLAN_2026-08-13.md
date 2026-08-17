@@ -1349,13 +1349,12 @@ Opening
   없이 기록했다. final emulator state는 Compose `MainActivity`다.
 - [ ] `NOT production RC`: 실제 v5 upload certificate의 private key를 이 작업에서 사용할 수
   없었다. 따라서 같은 cert의 local internal rehearsal만 증거로 남기고 Play/RC 제출은 중단했다.
-- [ ] `NOT full authority transfer`: native-authoritative legacy adapter는 Phase 10 rehearsal의
-  settings command만 write하고 나머지 unported command는 fail-closed한다. 전체 Kotlin command
-  reducer와 Play/CI/device 증거는 Phase 11 이후 범위이며 이 작업에서는 시작하지 않았다.
+- [x] `VERIFIED / later Phase 11`: native-authoritative legacy adapter는 더 이상
+  `legacy_command_not_ported`로 커리어 명령을 거절하지 않는다. 구현과 JVM 증거는
+  Phase 11 ledger에 둔다. Play/CI/device 증거는 여전히 이 Phase 10 작업 범위 밖이다.
 
 상세 로그·SHA·manifest·cert·save·UI XML·fixture 비교는
-`docs/android-compose/PHASE10_CUTOVER_EVIDENCE.md`에 고정한다. 이 ledger 이후 Phase 11은
-시작하지 않는다.
+`docs/android-compose/PHASE10_CUTOVER_EVIDENCE.md`에 고정한다.
 
 ### Phase 11 — CI/RC/Play
 
@@ -1377,6 +1376,36 @@ Opening
 12. Play internal → closed staged rollout
 
 Play production rollout은 internal/closed의 update migration과 14일 기준을 통과한 뒤에만 한다.
+
+#### Phase 11 실행 ledger — 2026-08-17
+
+- [x] `VERIFIED / JVM`: C# `HighSchoolCareerSnapshot` decode/Sign/encode. 실제 relationship
+  fixture commitment `2db72000520a4639`와 일치하고, encode 후 같은 Sign으로 다시 읽힌다.
+- [x] `VERIFIED / JVM`: `CSharpLegacyGameStoreRepository.dispatchLegacy`가 settings만이 아니라
+  EnterSetup, HighSchool Phase 4, pitch resume, analytics, Pro(Kotlin sidecar)를 C# v1
+  payload에 원자 저장한다. `GameStateReducer.dispatch`는 호출하지 않는다.
+- [x] `VERIFIED / JVM`: `save-v1-current.json` relationship 세이브에서 Listen 명령이
+  revision을 진행하고, 다시 열면 같은 HighSchool phase가 보이며 coreStateJson Sign이
+  C# 알고리즘과 맞는다. Phase 10 settings stub 회귀도 유지된다.
+- [x] `VERIFIED / source`: Play 제품명, adaptive/monochrome 아이콘, small/normal
+  화면 필터, `resizeableActivity=false`, 업로드 키/Firebase/Amplitude 주입 경로,
+  `check:android:compose:release`와 `build:android:compose:rc` 엔트리.
+- [x] `VERIFIED / JVM modules`: `:game-model:test :game-core:test :game-application:test
+  :game-persistence:test :platform:test :unity-bridge:test` 통과. `npm run
+  test:unity:static` 447/447. copy/IP, Korean-copy, dialogue, Unity assets 150
+  통과. 전체 `:app:test`/`lint`는 pitch Unity export가 없어 lockfile의
+  `androidx.games:games-frame-pacing:2.1.2`를 해석하지 못해 실행하지 않았다.
+- [x] `VERIFIED / fail-closed`: instrumentation은 연결된 기기 없음으로 exit 2.
+  `build:android:compose:rc`는 업로드 키 환경 변수 없음으로 exit 2. Play
+  업로드는 호출하지 않았다.
+- [ ] `NOT RUN`: 전체 Android app `lint`/dependency lock, C# oracle batch, Unity
+  EditMode/PlayMode, Compose connected instrumentation.
+- [ ] `NOT RUN`: API 29 / API 35 16KB / API 36 emulator matrix.
+- [ ] `NOT production RC`: 이 머신에 Unity 6000.3.19f1과 pitch export가 없고,
+  업로드 키 암호/Amplitude 키가 프로세스 환경에 없다. 서명 production AAB,
+  cert pin 실행, Play internal→closed 업로드, 실기기 Low/Mid/High,
+  Firebase/Amplitude/Crashlytics 실수신은 하지 않았다. 업로드 절차는
+  `docs/android-compose/PLAY_SUBMISSION_CHECKLIST.md`에만 남겨 두었다.
 
 ### Phase 12 — legacy 제거
 

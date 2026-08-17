@@ -16,6 +16,11 @@ const required = [
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolContentCatalog.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolKernel.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/HighSchoolStateCodec.kt",
+  "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/CSharpHighSchoolSnapshotCodec.kt",
+  "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/highschool/CSharpHighSchoolSnapshotWire.kt",
+  "apps/android/game-core/src/test/resources/fixtures/csharp-high-school-snapshot-relationship-v1.json",
+  "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/CSharpLegacyAggregateBridge.kt",
+  "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/CSharpLegacyProBridge.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/CommittedPitchReplay.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyModels.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pro/ProJourneyKernel.kt",
@@ -37,6 +42,11 @@ const required = [
   "apps/android-pitch-unity/Assets/PitchRuntime/Bridge/PitchBridgeReceiver.cs",
   "apps/android-pitch-unity/Assets/PitchRuntime/Rendering/PitchTrajectoryRenderer.cs",
   "tools/export-android-pitch-unity.sh",
+  "tools/android-compose-build.sh",
+  "tools/android-compose-instrumentation.sh",
+  "tools/check-android-compose-release.mjs",
+  "apps/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+  "apps/android/app/src/main/res/values/strings.xml",
 ];
 
 const errors = [];
@@ -112,6 +122,16 @@ const unityRuntimeFiles = [
   "apps/android-pitch-unity/Assets/PitchRuntime/Rendering/PitchTrajectoryRenderer.cs",
 ].map((relativePath) => readFileSync(resolve(root, relativePath), "utf8"));
 
+const productLabel = readFileSync(resolve(root, "apps/android/app/src/main/res/values/strings.xml"), "utf8");
+if (!productLabel.includes(">야구 못하면 또 환생함<")) {
+  errors.push("product application label is not the Play store name");
+}
+if (!manifest.includes('android:icon="@mipmap/ic_launcher"') || !manifest.includes("<compatible-screens>")) {
+  errors.push("Play launcher icon or smartphone screen filter is missing");
+}
+if (!manifest.includes('android:resizeableActivity="false"')) {
+  errors.push("portrait-only resizeableActivity=false is not declared");
+}
 if (!appGradle.includes('applicationId = "com.solkim.baseball.android"')) {
   errors.push("production application ID is not explicit");
 }
@@ -126,6 +146,23 @@ if (!appGradle.includes('NATIVE_AUTHORITY_MODE", "\\"nativeShadowReadOnly\\"')) 
 }
 if (!applicationRoot.includes('getExternalFilesDir(null)') || !applicationRoot.includes('resolve("save")')) {
   errors.push("production external save location is not explicit");
+}
+const legacyRepository = readFileSync(
+  resolve(root, "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/CSharpLegacyGameStoreRepository.kt"),
+  "utf8",
+);
+const legacyBridge = readFileSync(
+  resolve(root, "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/CSharpLegacyAggregateBridge.kt"),
+  "utf8",
+);
+if (!legacyRepository.includes("CSharpLegacyAggregateBridge.apply")) {
+  errors.push("native-authoritative repository does not apply the C# command bridge");
+}
+if (legacyRepository.includes("legacy_command_not_ported")) {
+  errors.push("native-authoritative repository still fail-closes unported career commands");
+}
+if (!legacyBridge.includes("HighSchoolPhase4CommandStore") || !legacyBridge.includes("CSharpHighSchoolSnapshotWire")) {
+  errors.push("C# legacy aggregate bridge is missing HighSchool write-back");
 }
 if (!manifest.includes("PitchUnityActivity") || !manifest.includes("MainActivity")) {
   errors.push("both shell and pitch activities must be declared");
