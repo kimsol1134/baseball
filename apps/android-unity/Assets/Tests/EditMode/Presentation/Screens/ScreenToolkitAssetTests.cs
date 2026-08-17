@@ -116,7 +116,7 @@ namespace Baseball.Presentation.Tests.Screens
             StringAssert.Contains("AndroidAudioFocusService", feedback);
             StringAssert.Contains(
                 "settings.HapticsEnabled && !settings.ReducedMotionEnabled",
-                File.ReadAllText("Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs"));
+                ProductionRuntimeSource());
             StringAssert.DoesNotContain("sound.SetEnabled(false)", settings);
             StringAssert.DoesNotContain("music.SetEnabled(false)", settings);
             StringAssert.Contains("NotificationSettingsRequired", settings);
@@ -132,7 +132,7 @@ namespace Baseball.Presentation.Tests.Screens
         public void LifeCardShareCapturesCardOnlyPngAndDoesNotClaimChooserCompletion()
         {
             string controller = File.ReadAllText("Assets/Game/Presentation/Shell/BaseballShellController.cs");
-            string runtime = File.ReadAllText("Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string capture = File.ReadAllText("Assets/Game/Presentation/Records/ScreenLifeCardPngCapture.cs");
             string card = File.ReadAllText("Assets/Game/Presentation/Records/RecordsScreenController.cs");
             string style = File.ReadAllText("Assets/Game/Presentation/Records/Resources/RecordsScreen.uss");
@@ -196,8 +196,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void StartupRetryActionAwaitsSerializedAppRootCoordinatorBridge()
         {
-            string runtime = File.ReadAllText(
-                "Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string appRoot = File.ReadAllText("Assets/Game/Bootstrap/AppRoot.cs");
             string bootstrap = File.ReadAllText("Assets/Game/Bootstrap/BootstrapConfiguration.cs");
             string composition = File.ReadAllText("Assets/Game/Bootstrap/RuntimeGameComposition.cs");
@@ -295,7 +294,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void SaveResetPublishesAnonymousIdentityOnlyAfterDurableReset()
         {
-            string runtime = File.ReadAllText("Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             int prepare = runtime.IndexOf("AnonymousInstallIdentity.PrepareReset(", System.StringComparison.Ordinal);
             int reset = runtime.IndexOf("await _store.ResetWithPreparedIdentityAsync(", System.StringComparison.Ordinal);
             int replace = runtime.IndexOf("AnonymousInstallIdentity.PublishPreparedReset(installId)", System.StringComparison.Ordinal);
@@ -316,7 +315,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void ProductSettingsUseAtomicGameSaveCommandsInsteadOfPlayerPrefs()
         {
-            string runtime = File.ReadAllText("Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             StringAssert.Contains("GameSettingsState Settings", runtime);
             StringAssert.Contains("UpdateGameSettingsCommand", runtime);
             StringAssert.Contains("await _store.DispatchAsync", runtime);
@@ -416,8 +415,7 @@ namespace Baseball.Presentation.Tests.Screens
         {
             string coordinator = File.ReadAllText(
                 "Assets/Game/Presentation/Pitch/Runtime/PitchShellFlowCoordinator.cs");
-            string model = File.ReadAllText(
-                "Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
+            string model = StoreCareerReadModelSource();
             string shell = File.ReadAllText(
                 "Assets/Game/Presentation/Shell/BaseballShellController.cs");
             int method = coordinator.IndexOf(
@@ -438,8 +436,8 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void FirstBullpenUsesDurableTutorialKindAndCannotExposeAbortUi()
         {
-            string model = File.ReadAllText("Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
-            string runtime = File.ReadAllText("Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string model = StoreCareerReadModelSource();
+            string runtime = ProductionRuntimeSource();
             string persistence = File.ReadAllText("Assets/Game/Presentation/Shell/ProductionPitchSessionPersistence.cs");
             string hud = File.ReadAllText("Assets/Game/Presentation/Pitch/Runtime/PitchHudController.cs");
             StringAssert.Contains("첫 공을 던진다", model);
@@ -471,8 +469,8 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void ProductionProjectionRendersSavedRowsAndActualChoicePayloads()
         {
-            string model = File.ReadAllText("Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
-            string runtime = File.ReadAllText("Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string model = StoreCareerReadModelSource();
+            string runtime = ProductionRuntimeSource();
             StringAssert.Contains("Tournament", model);
             StringAssert.Contains("ProspectRankings", model);
             StringAssert.Contains("GameLines", model);
@@ -702,7 +700,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void ReminderPlanIsProjectedFromSaveAndConsumedByShellNavigation()
         {
-            string runtime = File.ReadAllText("Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string shell = File.ReadAllText("Assets/Game/Presentation/Shell/BaseballShellController.cs");
             string reminder = File.ReadAllText("Assets/Game/Platform/Notifications/AndroidReminderService.cs");
             StringAssert.Contains("reminders.ConfigurePlan", runtime);
@@ -730,8 +728,7 @@ namespace Baseball.Presentation.Tests.Screens
                 "Assets/Game/Presentation/Shell/BaseballShellController.cs");
             string template = File.ReadAllText(
                 "Assets/Game/Presentation/Shell/BaseballScreenTemplateReadModel.cs");
-            string model = File.ReadAllText(
-                "Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
+            string model = StoreCareerReadModelSource();
             string factory = File.ReadAllText(
                 "Assets/Game/Presentation/Shell/BaseballScreenControllerFactory.cs");
             string pitch = File.ReadAllText(
@@ -749,8 +746,7 @@ namespace Baseball.Presentation.Tests.Screens
             StringAssert.DoesNotContain("Meta?.Daily", pitch);
             StringAssert.DoesNotContain("\"daily.", copy);
             StringAssert.DoesNotContain("일일 도전", copy);
-            string runtime = File.ReadAllText(
-                "Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             StringAssert.Contains("ClearRetiredDailyResume", runtime);
             StringAssert.Contains("new AbandonPitchSessionCommand(resume.GameId)", runtime);
             StringAssert.DoesNotContain("begin_daily_pitch", runtime);
@@ -974,6 +970,24 @@ namespace Baseball.Presentation.Tests.Screens
             public bool IsChoiceSelected(string group, string payload) => false;
             public void RetryStartup() { }
             public void Dispose() { }
+        }
+
+        private static string StoreCareerReadModelSource()
+        {
+            return string.Join(
+                "\n",
+                Directory.GetFiles("Assets/Game/Presentation/Shell", "StoreBaseballCareer*.cs")
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .Select(File.ReadAllText));
+        }
+
+        private static string ProductionRuntimeSource()
+        {
+            return string.Join(
+                "\n",
+                Directory.GetFiles("Assets/Game/Presentation/Shell", "ProductionBaseballShellRuntime*.cs")
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .Select(File.ReadAllText));
         }
 
         private static string Slice(string source, string start, string end)

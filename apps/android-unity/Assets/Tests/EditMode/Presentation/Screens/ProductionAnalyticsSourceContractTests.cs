@@ -33,7 +33,7 @@ namespace Baseball.Presentation.Tests.Screens
         {
             string receipts = Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionAnalyticsReceipts.cs");
             string pitch = Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionPitchSessionPersistence.cs");
-            string runtime = Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
 
             Assert.That(receipts, Does.Not.Contain("repeatedEvent"));
             Assert.That(receipts, Does.Not.Contain("[\"action\"]"));
@@ -121,7 +121,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void ReturnPlanExposureUsesRenderedRouteAndNeverSyntheticPublishRoute()
         {
-            string runtime = Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string controller = Read("apps/android-unity/Assets/Game/Presentation/Shell/BaseballShellController.cs");
             string receipts = Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionAnalyticsReceipts.cs");
             int publishStart = runtime.IndexOf("private void OnStatePublished", StringComparison.Ordinal);
@@ -186,8 +186,7 @@ namespace Baseball.Presentation.Tests.Screens
         {
             string platform = Read(
                 "apps/android-unity/Assets/Game/Platform/Notifications/AndroidReminderService.cs");
-            string runtime = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string receipts = Read(
                 "apps/android-unity/Assets/Game/Presentation/Shell/ProductionAnalyticsReceipts.cs");
 
@@ -207,7 +206,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void ShareChooserLogsTappedOnlyAndPngCarriesKoreanText()
         {
-            string runtime = Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string share = Read("apps/android-unity/Assets/Game/Platform/Share/AndroidShareService.cs");
             Assert.That(runtime, Does.Contain("if (imageOpened || textOpened)"));
             Assert.That(runtime, Does.Contain("AnalyticsEvent.LifeCardShareTapped"));
@@ -221,10 +220,8 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void EveryProjectedCommandActionHasAProductionDispatchPath()
         {
-            string projection = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
-            string runtime = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string projection = StoreCareerReadModelSource();
+            string runtime = ProductionRuntimeSource();
             string[] actionIds = Regex.Matches(
                     projection,
                     @"Command\(\s*""([^""]+)""",
@@ -253,10 +250,8 @@ namespace Baseball.Presentation.Tests.Screens
         {
             string template = Read(
                 "apps/android-unity/Assets/Game/Presentation/Shell/BaseballScreenTemplateReadModel.cs");
-            string projection = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
-            string runtime = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string projection = StoreCareerReadModelSource();
+            string runtime = ProductionRuntimeSource();
             string meta = Read(
                 "apps/android-unity/Assets/Game/Presentation/Meta/MetaScreenController.cs");
 
@@ -275,12 +270,10 @@ namespace Baseball.Presentation.Tests.Screens
         {
             string template = Read(
                 "apps/android-unity/Assets/Game/Presentation/Shell/BaseballScreenTemplateReadModel.cs");
-            string projection = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
+            string projection = StoreCareerReadModelSource();
             string factory = Read(
                 "apps/android-unity/Assets/Game/Presentation/Shell/BaseballScreenControllerFactory.cs");
-            string runtime = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string pitch = Read(
                 "apps/android-unity/Assets/Game/Presentation/Shell/ProductionPitchSessionPersistence.cs");
             string copy = Read(
@@ -306,8 +299,7 @@ namespace Baseball.Presentation.Tests.Screens
         {
             string setup = Read(
                 "apps/android-unity/Assets/Game/Presentation/Setup/SetupScreenController.cs");
-            string runtime = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
 
             Assert.That(setup, Does.Contain("AddReadOnlyMemories(host, memories)"));
             Assert.That(setup, Does.Contain("자동으로 이어집니다"));
@@ -369,8 +361,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void DirectProStartUsesAuthoritativeSeededTeamFactory()
         {
-            string runtime = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             Assert.That(runtime, Does.Contain(
                 "new StartDirectProCommand(DirectProStartRequestFactory.Create("));
             Assert.That(runtime, Does.Contain("state,\n                        _presetId,\n                        EffectivePlayerName()"));
@@ -381,8 +372,7 @@ namespace Baseball.Presentation.Tests.Screens
         [Test]
         public void LifeCardShareUsesNullSafeFrozenArchiveProjection()
         {
-            string runtime = Read(
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string copy = Read(
                 "apps/android-unity/Assets/Game/Presentation/Shell/LifeCardShareCopy.cs");
 
@@ -394,14 +384,15 @@ namespace Baseball.Presentation.Tests.Screens
 
         private static string ProductionSource()
         {
-            string[] paths =
-            {
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionAnalyticsReceipts.cs",
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs",
-                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionPitchSessionPersistence.cs",
-                "apps/android-unity/Assets/Game/Platform/Notifications/AndroidReminderService.cs",
-            };
-            return string.Join("\n", paths.Select(Read));
+            return string.Join(
+                "\n",
+                new[]
+                {
+                    ProductionRuntimeSource(),
+                    Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionAnalyticsReceipts.cs"),
+                    Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionPitchSessionPersistence.cs"),
+                    Read("apps/android-unity/Assets/Game/Platform/Notifications/AndroidReminderService.cs"),
+                });
         }
 
         private static int Count(string source, string pattern)
@@ -410,6 +401,30 @@ namespace Baseball.Presentation.Tests.Screens
             for (int index = 0; (index = source.IndexOf(pattern, index, StringComparison.Ordinal)) >= 0;
                  index += pattern.Length) count++;
             return count;
+        }
+
+        private static string StoreCareerReadModelSource()
+        {
+            string sample = FindFromParents(
+                "apps/android-unity/Assets/Game/Presentation/Shell/StoreBaseballCareerReadModel.cs");
+            string directory = Path.GetDirectoryName(sample);
+            return string.Join(
+                "\n",
+                Directory.GetFiles(directory, "StoreBaseballCareer*.cs")
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .Select(File.ReadAllText));
+        }
+
+        private static string ProductionRuntimeSource()
+        {
+            string sample = FindFromParents(
+                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string directory = Path.GetDirectoryName(sample);
+            return string.Join(
+                "\n",
+                Directory.GetFiles(directory, "ProductionBaseballShellRuntime*.cs")
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .Select(File.ReadAllText));
         }
 
         private static string Read(string relativePath) =>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baseball.Platform.Notifications;
 using Baseball.Platform.Review;
 using Baseball.Platform.Share;
@@ -334,9 +335,7 @@ namespace Baseball.Platform.Tests
             string service = File.ReadAllText(FindFromParents(Path.Combine(
                 "apps", "android-unity", "Assets", "Game", "Platform", "Notifications",
                 "AndroidReminderService.cs")));
-            string runtime = File.ReadAllText(FindFromParents(Path.Combine(
-                "apps", "android-unity", "Assets", "Game", "Presentation", "Shell",
-                "ProductionBaseballShellRuntime.cs")));
+            string runtime = ProductionRuntimeSource();
             Assert.That(service, Does.Contain("public void RequestEnabled(bool enabled, string source = \"settings\")"));
             Assert.That(service, Does.Contain("EnablementChanged?.Invoke(allowed, source)"));
             Assert.That(service, Does.Contain("ResolvePersistedDenial(bool saved)"));
@@ -753,9 +752,7 @@ namespace Baseball.Platform.Tests
         [Test]
         public void ResetJournalProductionWiringConvergesBeforeStoreOpenAndFinalizesAfterCleanup()
         {
-            string runtime = File.ReadAllText(FindFromParents(Path.Combine(
-                "apps", "android-unity", "Assets", "Game", "Presentation", "Shell",
-                "ProductionBaseballShellRuntime.cs")));
+            string runtime = ProductionRuntimeSource();
             string factory = File.ReadAllText(FindFromParents(Path.Combine(
                 "apps", "android-unity", "Assets", "Game", "Bootstrap",
                 "RuntimeGameComposition.cs")));
@@ -872,6 +869,19 @@ namespace Baseball.Platform.Tests
             string deleteBody = source.Substring(deleteStart, deleteEnd - deleteStart);
             Assert.That(deleteBody, Does.Contain("throw new UnsupportedOperationException"));
             Assert.That(deleteBody, Does.Not.Contain(".delete()"));
+        }
+
+        private static string ProductionRuntimeSource()
+        {
+            string sample = FindFromParents(Path.Combine(
+                "apps", "android-unity", "Assets", "Game", "Presentation", "Shell",
+                "ProductionBaseballShellRuntime.cs"));
+            string directory = Path.GetDirectoryName(sample);
+            return string.Join(
+                "\n",
+                Directory.GetFiles(directory, "ProductionBaseballShellRuntime*.cs")
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .Select(File.ReadAllText));
         }
 
         private static string FindFromParents(string relativePath)

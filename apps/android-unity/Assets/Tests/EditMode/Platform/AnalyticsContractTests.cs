@@ -278,19 +278,31 @@ namespace Baseball.Platform.Tests
         [Test]
         public void ProductionCallersUseStartupBarrierInsteadOfNullableServiceLogging()
         {
-            string[] relativePaths =
-            {
-                Path.Combine("apps", "android-unity", "Assets", "Game", "Presentation", "Shell", "ProductionBaseballShellRuntime.cs"),
-                Path.Combine("apps", "android-unity", "Assets", "Game", "Presentation", "Shell", "ProductionAnalyticsReceipts.cs"),
-                Path.Combine("apps", "android-unity", "Assets", "Game", "Presentation", "Shell", "ProductionPitchSessionPersistence.cs"),
-                Path.Combine("apps", "android-unity", "Assets", "Game", "Platform", "Notifications", "AndroidReminderService.cs")
-            };
+            string runtimeDirectory = Path.GetDirectoryName(FindFromParents(Path.Combine(
+                "apps", "android-unity", "Assets", "Game", "Presentation", "Shell",
+                "ProductionBaseballShellRuntime.cs")));
+            IEnumerable<string> relativePaths = Directory.GetFiles(
+                    runtimeDirectory,
+                    "ProductionBaseballShellRuntime*.cs")
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .Concat(new[]
+                {
+                    FindFromParents(Path.Combine(
+                        "apps", "android-unity", "Assets", "Game", "Presentation", "Shell",
+                        "ProductionAnalyticsReceipts.cs")),
+                    FindFromParents(Path.Combine(
+                        "apps", "android-unity", "Assets", "Game", "Presentation", "Shell",
+                        "ProductionPitchSessionPersistence.cs")),
+                    FindFromParents(Path.Combine(
+                        "apps", "android-unity", "Assets", "Game", "Platform", "Notifications",
+                        "AndroidReminderService.cs")),
+                });
 
-            foreach (string relativePath in relativePaths)
+            foreach (string path in relativePaths)
             {
-                string source = File.ReadAllText(FindFromParents(relativePath));
-                Assert.That(source, Does.Not.Contain("AnalyticsBootstrap.Service?.Log"), relativePath);
-                Assert.That(source, Does.Not.Contain("AnalyticsBootstrap.Service.Log"), relativePath);
+                string source = File.ReadAllText(path);
+                Assert.That(source, Does.Not.Contain("AnalyticsBootstrap.Service?.Log"), path);
+                Assert.That(source, Does.Not.Contain("AnalyticsBootstrap.Service.Log"), path);
             }
         }
 

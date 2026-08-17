@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Baseball.Platform.Crash;
 using NUnit.Framework;
 
@@ -124,7 +125,7 @@ namespace Baseball.Platform.Tests
         [Test]
         public void ProductionSourcesUseBuildConfigAndActualStageLifecycle()
         {
-            string runtime = Read("apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string runtime = ProductionRuntimeSource();
             string stage = Read("apps/android-unity/Assets/Game/Presentation/Pitch/Runtime/PitchStageController.cs");
             string coordinator = Read("apps/android-unity/Assets/Game/Presentation/Pitch/Runtime/PitchShellFlowCoordinator.cs");
             string controller = Read("apps/android-unity/Assets/Game/Presentation/Shell/BaseballShellController.cs");
@@ -182,13 +183,27 @@ namespace Baseball.Platform.Tests
             Assert.That(context.PitchStageLoaded, Is.EqualTo(stageLoaded));
         }
 
-        private static string Read(string relativePath)
+        private static string ProductionRuntimeSource()
+        {
+            string sample = FindFromParents(
+                "apps/android-unity/Assets/Game/Presentation/Shell/ProductionBaseballShellRuntime.cs");
+            string directory = Path.GetDirectoryName(sample);
+            return string.Join(
+                "\n",
+                Directory.GetFiles(directory, "ProductionBaseballShellRuntime*.cs")
+                    .OrderBy(path => path, StringComparer.Ordinal)
+                    .Select(File.ReadAllText));
+        }
+
+        private static string Read(string relativePath) => File.ReadAllText(FindFromParents(relativePath));
+
+        private static string FindFromParents(string relativePath)
         {
             DirectoryInfo current = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
             while (current != null)
             {
                 string candidate = Path.Combine(current.FullName, relativePath);
-                if (File.Exists(candidate)) return File.ReadAllText(candidate);
+                if (File.Exists(candidate)) return candidate;
                 current = current.Parent;
             }
             throw new FileNotFoundException("Repository source was not found.", relativePath);
