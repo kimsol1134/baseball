@@ -260,17 +260,10 @@ final class PresentationTests: XCTestCase {
     }
 
     func testRelationshipCardRendersPolicyOutputInsteadOfDuplicateRawCopy() throws {
-        let repositoryRoot = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolRelationshipViews.swift")
-        let start = try XCTUnwrap(source.range(of: "struct RelationshipCard"))
-        let end = try XCTUnwrap(
-            source.range(of: "struct ImportantGameCard", range: start.upperBound..<source.endIndex)
+        let relationshipCard = try IOSSourceScan.typeBody(
+            "RelationshipCard",
+            in: "apps/ios/Sources/HighSchoolRelationshipViews.swift"
         )
-        let relationshipCard = String(source[start.lowerBound..<end.lowerBound])
 
         XCTAssertTrue(relationshipCard.contains("Text(verbatim: scene.visibleLine)"))
         XCTAssertFalse(relationshipCard.contains("Text(verbatim: summary)"))
@@ -283,9 +276,10 @@ final class PresentationTests: XCTestCase {
     /// background executor에서 호출해 `_swift_task_checkIsolatedSwift`로 종료됐다.
     /// 선택지가 고정 열거형인 동안에는 지연 item closure를 다시 만들지 않는다.
     func testTrainingCardAvoidsDeferredForEachActorBoundary() throws {
-        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolTrainingViews.swift")
-        let start = try XCTUnwrap(source.range(of: "struct TrainingCard"))
-        let trainingViews = String(source[start.lowerBound...])
+        let trainingViews = try IOSSourceScan.typeBody(
+            "TrainingCard",
+            in: "apps/ios/Sources/HighSchoolTrainingViews.swift"
+        )
 
         XCTAssertFalse(trainingViews.contains("ForEach("))
         for option in [

@@ -2237,13 +2237,10 @@ final class LocalizationCoverageTests: XCTestCase {
     }
 
     func testBoundedBatchViewsDoNotRenderLegacyRawPresentationFields() throws {
-        let headerSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolChapterHeaderViews.swift")
-        let resultSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolTrainingResultViews.swift")
-        let relationshipSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolRelationshipViews.swift")
-
-        let chapterStart = try XCTUnwrap(headerSource.range(of: "struct ChapterHeader"))
-        let chapterEnd = try XCTUnwrap(headerSource.range(of: "/// 직전 행동의 결과 한 줄.", range: chapterStart.upperBound..<headerSource.endIndex))
-        let chapterBlock = String(headerSource[chapterStart.lowerBound..<chapterEnd.lowerBound])
+        let chapterBlock = try IOSSourceScan.typeBody(
+            "ChapterHeader",
+            in: "apps/ios/Sources/HighSchoolChapterHeaderViews.swift"
+        )
         XCTAssertFalse(chapterBlock.contains("state.chapter.title"))
         XCTAssertFalse(chapterBlock.contains("state.chapter.season"))
         XCTAssertFalse(chapterBlock.contains("state.school.name"))
@@ -2258,20 +2255,20 @@ final class LocalizationCoverageTests: XCTestCase {
         XCTAssertTrue(chapterBlock.contains("chapterCopy.titleToken"))
         XCTAssertTrue(chapterBlock.contains("chapterCopy.seasonToken"))
 
-        let resultStart = try XCTUnwrap(resultSource.range(of: "struct TrainingResultPanel"))
-        let resultEnd = try XCTUnwrap(resultSource.range(of: "/// 복귀 알림 권유.", range: resultStart.upperBound..<resultSource.endIndex))
-        let resultBlock = String(resultSource[resultStart.lowerBound..<resultEnd.lowerBound])
+        let resultBlock = try IOSSourceScan.typeBody(
+            "TrainingResultPanel",
+            in: "apps/ios/Sources/HighSchoolTrainingResultViews.swift"
+        )
         XCTAssertFalse(resultBlock.contains("receipt.headline"))
         XCTAssertFalse(resultBlock.contains("receipt.detail"))
         XCTAssertFalse(resultBlock.contains("gain.label"))
         XCTAssertTrue(resultBlock.contains("localizedTrainingResultDetail"))
         XCTAssertTrue(resultBlock.contains("localizedTrainingGainRow"))
 
-        let relationshipStart = try XCTUnwrap(relationshipSource.range(of: "struct RelationshipCard"))
-        let relationshipEnd = try XCTUnwrap(
-            relationshipSource.range(of: "struct ImportantGameCard", range: relationshipStart.upperBound..<relationshipSource.endIndex)
+        let relationshipBlock = try IOSSourceScan.typeBody(
+            "RelationshipCard",
+            in: "apps/ios/Sources/HighSchoolRelationshipViews.swift"
         )
-        let relationshipBlock = String(relationshipSource[relationshipStart.lowerBound..<relationshipEnd.lowerBound])
         for forbidden in [
             "event.title", "event.summary", "scene?.choices", ".quote(",
             "school.coachName", "school.catcherName", "state.rival.name",
@@ -2287,10 +2284,10 @@ final class LocalizationCoverageTests: XCTestCase {
     }
 
     func testPrologueViewSourceDoesNotRenderLegacyRawPresentationFields() throws {
-        let source = try IOSSourceScan.read("apps/ios/Sources/HighSchoolPrologueViews.swift")
-        let start = try XCTUnwrap(source.range(of: "struct PrologueCard"))
-        let end = try XCTUnwrap(source.range(of: "/// 학교 선택.", range: start.upperBound..<source.endIndex))
-        let prologueBlock = String(source[start.lowerBound..<end.lowerBound])
+        let prologueBlock = try IOSSourceScan.typeBody(
+            "PrologueCard",
+            in: "apps/ios/Sources/HighSchoolPrologueViews.swift"
+        )
 
         for forbidden in [
             "state.news", "hasPrefix", "HighSchoolPresentation.karma",
