@@ -806,6 +806,34 @@
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · %@ %@" } }
       }
     },
+    "pro.legacy-handoff.save-failed.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't save the record" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "記録を保存できませんでした" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록을 저장하지 못했습니다" } }
+      }
+    },
+    "pro.legacy-handoff.link-broken.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Can't Link This Record to the Current Life" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この記録を現在の人生に結び付けられません" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록을 이번 회차에 연결할 수 없습니다" } }
+      }
+    },
+    "pro.legacy-handoff.link-broken.message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This retired player's pro record belongs to a different life than the high-school career in progress. Keep only the Legacy Points and clear the pro record to start the next player." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "引退した選手のプロ記録は、進行中の高校の人生とは別の人生のものです。レガシーポイントだけを残してプロ記録を整理すると、次の選手を始められます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "은퇴한 선수의 프로 기록이 지금 진행 중인 고교 회차와 달라 그대로 연결할 수 없습니다. 계승 포인트 보상만 남기고 프로 기록을 정리하면 다음 선수를 시작할 수 있습니다." } }
+      }
+    },
+    "pro.legacy-handoff.link-broken.fallback-action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep the Points and Clear" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ポイントだけ残して整理" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "계승 포인트만 남기고 정리" } }
+      }
+    },
     "pro.level.majors" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Majors" } },
@@ -4586,6 +4614,13 @@
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "타석 종료" } }
       }
     },
+    "pitch.state.preparing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Preparing the next matchup…" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の勝負を準備中…" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 승부를 준비하는 중…" } }
+      }
+    },
     "pitch.trait.active" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ ACTIVE — %@" } },
@@ -6005,6 +6040,20 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The season decision could not be loaded" } },
         "ja" : { "stringUnit" : { "state" : "translated", "value" : "シーズン決定を読み込めませんでした" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 결정을 불러올 수 없습니다" } }
+      }
+    },
+    "pro.flow.unavailable.season-decision.recover-detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This week's decision couldn't be loaded. You can skip it and move on to the next schedule." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今週の決定を読み込めませんでした。決定なしで次の日程に進めます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 주 결정을 불러오지 못했습니다. 결정 없이 다음 일정으로 넘어갈 수 있습니다." } }
+      }
+    },
+    "pro.flow.unavailable.season-decision.recover-action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Move to the Next Schedule" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の日程へ進む" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 일정으로 넘어가기" } }
       }
     },
     "pro.flow.unavailable.schedule-complete" : {

@@ -609,7 +609,9 @@ final class ProSeasonDecisionTests: XCTestCase {
         sync.clear()
         defer { sync.clear() }
 
-        let store = MobileCareerStore(sync: sync, configuration: .production)
+        // 구버전 공개 빌드(legacy 라이터)의 저장 세대 규약을 검증한다. production은 이제
+        // journey 라이터이므로 여기서는 고정된 legacy 설정을 쓴다.
+        let store = MobileCareerStore(sync: sync, configuration: .legacyTests)
         store.result = try firstDecision(seed: 91_105)
         store.loadState = .ready
         XCTAssertTrue(store.save())
@@ -847,6 +849,57 @@ final class ProSeasonDecisionTests: XCTestCase {
         reloaded.restoreOrCreateCareer()
         XCTAssertEqual(reloaded.result, store.result)
         XCTAssertNil(reloaded.pitchSession)
+    }
+
+    // 시즌 결정 국면인데 pending이 없는 저장은 모든 엔진 호출이 거부되는 함정이다.
+    // 화면의 복구 버튼이 이 상태만 정확히 풀고, 건강한 결정은 건드리지 않아야 한다.
+    func testRecoverStalledSeasonDecisionReturnsCorruptSaveToWeeklyPlan() throws {
+        let pendingResult = try firstDecision(seed: 91_106)
+        // 실제 손상 벡터를 재현한다: 국면은 시즌 결정인데 pending 필드가 저장에서 사라졌다.
+        var json = try XCTUnwrap(
+            try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(pendingResult.snapshot)
+            ) as? [String: Any]
+        )
+        json.removeValue(forKey: "pendingDecision")
+        let corrupt = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: json)
+        )
+        XCTAssertNil(corrupt.pendingDecision)
+        let sync = isolatedSync("decision-recover")
+        sync.clear()
+        defer {
+            sync.clear()
+            GameAnalytics.eventSinkForTesting = nil
+        }
+        let store = MobileCareerStore(sync: sync)
+        store.result = ProCareerResult(snapshot: corrupt, nextSeed: pendingResult.nextSeed, events: [])
+        store.loadState = .ready
+        var events: [GameAnalytics.Event] = []
+        GameAnalytics.eventSinkForTesting = { event, _ in events.append(event) }
+
+        XCTAssertTrue(store.recoverStalledSeasonDecision())
+
+        XCTAssertEqual(store.state?.phase, .weeklyPlan)
+        XCTAssertNil(store.state?.pendingDecision)
+        XCTAssertEqual(store.loadState, .ready)
+        XCTAssertTrue(events.contains(.screenStallRecovered))
+        // 복구 뒤에는 정상 진행이 다시 열린다.
+        store.selectedPlan = .recover
+        store.advanceWeek()
+        XCTAssertGreaterThan(store.state?.week ?? 0, corrupt.week)
+
+        // 건강한 시즌 결정에는 손대지 않는다.
+        let healthySync = isolatedSync("decision-recover-noop")
+        healthySync.clear()
+        defer { healthySync.clear() }
+        let healthyStore = MobileCareerStore(sync: healthySync)
+        healthyStore.result = pendingResult
+        healthyStore.loadState = .ready
+        XCTAssertFalse(healthyStore.recoverStalledSeasonDecision())
+        XCTAssertEqual(healthyStore.state?.phase, .seasonDecision)
+        XCTAssertNotNil(healthyStore.state?.pendingDecision)
     }
 
     private func firstDecision(seed: UInt64) throws -> ProCareerResult {

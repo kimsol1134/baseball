@@ -636,6 +636,11 @@ public enum AppCopyKey {
     public static let errorDeleteMessage = GameCopyKey.localizable("error.career.delete.message")
     public static let careerUnavailable = GameCopyKey.localizable("career.unavailable")
 
+    public static let legacyHandoffSaveFailedTitle = GameCopyKey.localizable("pro.legacy-handoff.save-failed.title")
+    public static let legacyHandoffLinkBrokenTitle = GameCopyKey.localizable("pro.legacy-handoff.link-broken.title")
+    public static let legacyHandoffLinkBrokenMessage = GameCopyKey.localizable("pro.legacy-handoff.link-broken.message")
+    public static let legacyHandoffFallbackAction = GameCopyKey.localizable("pro.legacy-handoff.link-broken.fallback-action")
+
     public static let proSeasonHeader = GameCopyKey.localizable("pro.dashboard.season-header")
     public static let proDashboardTitle = GameCopyKey.localizable("pro.dashboard.title")
     public static let proFatigueLabel = GameCopyKey.localizable("pro.dashboard.fatigue")
@@ -764,6 +769,8 @@ public enum AppCopyKey {
         proViewPicker, proToday, proThisWeek,
         errorCareerOpenTitle, errorRetry, errorReset, errorDeleteTitle, errorDeleteAction,
         errorCancel, errorDeleteMessage, careerUnavailable,
+        legacyHandoffSaveFailedTitle, legacyHandoffLinkBrokenTitle,
+        legacyHandoffLinkBrokenMessage, legacyHandoffFallbackAction,
         proSeasonHeader, proDashboardTitle, proFatigueLabel, proManagerTrustLabel,
         proInjuryLabel, proInjuryWeeks, proInjuryNormal, proNextActionTitle, proTensionsTitle,
         proRivalTitle, proMilestoneTitle, proLatestOutingTitle, proDirectOuting, proOutingWeek,

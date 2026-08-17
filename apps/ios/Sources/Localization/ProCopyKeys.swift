@@ -8,6 +8,8 @@ import Foundation
 enum ProUICopyKey: String, CaseIterable, Sendable {
     case navigationThisWeek = "pro.flow.navigation.this-week"
     case seasonDecisionUnavailable = "pro.flow.unavailable.season-decision"
+    case seasonDecisionRecoverDetail = "pro.flow.unavailable.season-decision.recover-detail"
+    case seasonDecisionRecoverAction = "pro.flow.unavailable.season-decision.recover-action"
     case scheduleComplete = "pro.flow.unavailable.schedule-complete"
     case seasonReviewTitle = "pro.flow.season-review.title"
     case seasonReviewBody = "pro.flow.season-review.body"

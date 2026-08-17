@@ -50,6 +50,31 @@ struct AppLoadingView: View {
 }
 
 struct AppShell: View {
+    /// 은퇴 후 '다음 선수 준비'가 실패한 이유. 예전에는 조용한 guard가 실패를 삼켜서
+    /// 사용자는 "눌러도 아무 일도 없다"고만 느꼈다(1.0.4 리뷰의 진행 불가).
+    enum LegacyHandoffIssue: Equatable {
+        /// 저장이 실패했고 고교 스토어가 이미 원인 메시지를 갖고 있다.
+        case saveFailed(String)
+        /// 은퇴한 선수의 프로 기록이 현재 고교 회차와 연결되지 않는다.
+        case linkageBroken
+
+        var analyticsReason: String {
+            switch self {
+            case .saveFailed: "save_failed"
+            case .linkageBroken: "linkage_broken"
+            }
+        }
+    }
+
+    /// 유산 접기 실패를 사용자에게 보일 유형으로 나눈다. 고교 스토어가 실패 메시지를
+    /// 남겼다면 그 원인(저장 실패)을 그대로 보여 주고, 아니면 연결이 깨진 저장이다.
+    static func legacyHandoffIssue(
+        highSchoolLoadState: HighSchoolCareerStore.LoadState
+    ) -> LegacyHandoffIssue {
+        if case .failed(let message) = highSchoolLoadState { return .saveFailed(message) }
+        return .linkageBroken
+    }
+
     let highSchool: HighSchoolCareerStore
     let pro: MobileCareerStore
     var weekly: WeeklyProgramStore = .shared
@@ -58,6 +83,7 @@ struct AppShell: View {
     @State private var selection: AppTab = .highSchool
     @State private var returnPlanHighSchoolRevision: UInt64?
     @State private var returnPlanProRevision: UInt64?
+    @State private var legacyHandoffIssue: LegacyHandoffIssue?
     @Environment(\.gameCopyResolver) private var copyResolver
 
     /// 제거 전 배포가 남긴 링크도 빈 화면으로 보내지 않는다.
@@ -329,6 +355,34 @@ struct AppShell: View {
             },
             onDismiss: onDismissReturnWelcome
         ))
+        // '다음 선수 준비' 실패는 반드시 눈에 보여야 한다. 알림 없이 삼키면
+        // 은퇴 화면에서 버튼만 눌리지 않는 것처럼 보인다(1.0.4 리뷰의 진행 불가).
+        .alert(
+            legacyHandoffIssue == .linkageBroken
+                ? copyResolver.resolve(AppCopyKey.legacyHandoffLinkBrokenTitle)
+                : copyResolver.resolve(AppCopyKey.legacyHandoffSaveFailedTitle),
+            isPresented: Binding(
+                get: { legacyHandoffIssue != nil },
+                set: { if !$0 { legacyHandoffIssue = nil } }
+            ),
+            presenting: legacyHandoffIssue
+        ) { issue in
+            if issue == .linkageBroken {
+                Button(copyResolver.resolve(AppCopyKey.legacyHandoffFallbackAction)) {
+                    resolveLegacyHandoffWithStandaloneFallback()
+                }
+                Button(copyResolver.resolve(AppCopyKey.errorCancel), role: .cancel) {}
+            } else {
+                Button(copyResolver.resolve(.actionClose), role: .cancel) {}
+            }
+        } message: { issue in
+            switch issue {
+            case .saveFailed(let message):
+                Text(verbatim: message)
+            case .linkageBroken:
+                Text(verbatim: copyResolver.resolve(AppCopyKey.legacyHandoffLinkBrokenMessage))
+            }
+        }
         // 고교 탭이 사라지는 순간 그 탭을 보고 있으면 빈 화면이 남는다.
         .onChange(of: showsHighSchool) { _, shows in
             if !shows, selection == .highSchool { selection = .pro }
@@ -412,11 +466,36 @@ struct AppShell: View {
                     // 명시된 원본 고교와 현재 저장이 다르면 어느 쪽도 지우지 않는다.
                     recorded = false
                 }
-                guard recorded else { return }
-                guard pro.deleteCareer() else { return }
+                guard recorded else {
+                    // 조용히 돌아가면 사용자는 "버튼이 안 눌린다"로만 느낀다. 원인을
+                    // 알리고, 연결이 깨진 저장에는 야구혼만 남기는 출구를 제안한다.
+                    let issue = Self.legacyHandoffIssue(highSchoolLoadState: highSchool.loadState)
+                    GameAnalytics.log(.legacyHandoffFailed, [
+                        "reason": issue.analyticsReason,
+                        "links_current_high_school": linksToCurrentHighSchool,
+                    ])
+                    legacyHandoffIssue = issue
+                    return
+                }
+                guard pro.deleteCareer() else {
+                    // deleteCareer가 배너로 재시도를 안내한다. 여기서는 빈도만 잰다.
+                    GameAnalytics.log(.legacyHandoffFailed, ["reason": "cleanup_save_failed"])
+                    return
+                }
                 selection = .highSchool
             }
         }
+    }
+
+    /// 연결이 깨진 프로 기록의 출구: 야구혼 보상만 계정에 남기고 프로 저장을 정리한다.
+    /// `recordStandaloneProLegacy`는 영수증 기반이라 재시도해도 보상이 중복되지 않는다.
+    private func resolveLegacyHandoffWithStandaloneFallback() {
+        guard highSchool.recordStandaloneProLegacy(pro.state) else {
+            legacyHandoffIssue = Self.legacyHandoffIssue(highSchoolLoadState: highSchool.loadState)
+            return
+        }
+        guard pro.deleteCareer() else { return }
+        selection = .highSchool
     }
 }
 

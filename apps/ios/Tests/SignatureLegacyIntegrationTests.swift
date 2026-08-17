@@ -488,6 +488,23 @@ final class SignatureLegacyIntegrationTests: XCTestCase {
         return (startingPitcher, result)
     }
 
+    // '다음 선수 준비' 실패는 조용히 삼켜지지 않고 유형별 알림으로 나뉜다.
+    // 저장 실패는 스토어가 남긴 원인 메시지를 그대로 보여 주고, 그 외에는 연결이 깨진
+    // 저장으로 분류해 계승 포인트만 남기는 출구를 제안한다(1.0.4 진행 불가 리뷰 대응).
+    func testLegacyHandoffIssueClassifiesSaveFailureAndLinkageBreakage() {
+        let saveFailure = AppShell.legacyHandoffIssue(
+            highSchoolLoadState: .failed("저장 공간이 부족합니다.")
+        )
+        XCTAssertEqual(saveFailure, .saveFailed("저장 공간이 부족합니다."))
+        XCTAssertEqual(saveFailure.analyticsReason, "save_failed")
+
+        for state: HighSchoolCareerStore.LoadState in [.ready, .needsSetup, .loading] {
+            let issue = AppShell.legacyHandoffIssue(highSchoolLoadState: state)
+            XCTAssertEqual(issue, .linkageBroken)
+            XCTAssertEqual(issue.analyticsReason, "linkage_broken")
+        }
+    }
+
     private static func completedProCareer(
         highSchoolState: HighSchoolCareerSnapshot,
         teamOverride: DraftTeamSnapshot? = nil

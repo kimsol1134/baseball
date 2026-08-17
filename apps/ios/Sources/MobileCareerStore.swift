@@ -523,6 +523,24 @@ final class MobileCareerStore {
         }
     }
 
+    /// 시즌 결정 국면인데 pending 결정이 없는 손상 저장을 사용자가 직접 푼다.
+    ///
+    /// 이 상태는 엔진의 모든 호출이 거부되는 함정이라, 화면의 복구 버튼이 유일한 출구다.
+    /// 성공하면 주간 계획(마지막 주면 시즌 리뷰)으로 되돌아간다.
+    @discardableResult
+    func recoverStalledSeasonDecision() -> Bool {
+        guard let result,
+              result.snapshot.phase == .seasonDecision,
+              result.snapshot.pendingDecision == nil else { return false }
+        let recovered = perform(summary: "시즌 결정을 불러오지 못해 주간 일정으로 되돌렸습니다.", cue: .neutral) {
+            try engine.recoverMissingSeasonDecision(.init(seed: result.nextSeed, state: result.snapshot))
+        }
+        if recovered {
+            GameAnalytics.log(.screenStallRecovered, ["context": "pro_season_decision_missing"])
+        }
+        return recovered
+    }
+
     static func decisionAnalyticsProperties(
         decision: ProSeasonDecision,
         choice: ProSeasonDecisionChoice
