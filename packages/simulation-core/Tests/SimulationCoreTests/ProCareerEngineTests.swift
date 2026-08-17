@@ -1034,6 +1034,65 @@ final class ProCareerEngineTests: XCTestCase {
         }
     }
 
+    // 시즌 결정 국면인데 pending 결정이 없는 저장은 모든 엔진 호출이 validateState에서
+    // 거부되는 함정이다(1.0.x "진행이 안 됩니다" 리뷰의 모양). 복구 API가 이 상태만
+    // 정확히 풀고, 정상 상태는 건드리지 못해야 한다.
+    func testRecoverMissingSeasonDecisionUnblocksCorruptSaveOnly() throws {
+        var result = try engine.start(startParams(seed: "9101"))
+        result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: .earnTrust))
+        let healthy = result.snapshot
+
+        // 손상 상태에서는 주간 계획조차 거부된다 — 복구 없이는 출구가 없다.
+        let corrupt = corruptedSeasonDecision(healthy)
+        XCTAssertThrowsError(try engine.planWeek(.init(seed: result.nextSeed, state: corrupt, plan: .earnTrust)))
+
+        let recovered = try engine.recoverMissingSeasonDecision(.init(seed: result.nextSeed, state: corrupt))
+        XCTAssertEqual(recovered.snapshot.phase, .weeklyPlan)
+        XCTAssertEqual(recovered.snapshot.revision, corrupt.revision + 1)
+        XCTAssertNil(recovered.snapshot.pendingDecision)
+        // 복구된 저장으로는 정상 진행이 다시 열린다.
+        XCTAssertNoThrow(try engine.planWeek(.init(seed: recovered.nextSeed, state: recovered.snapshot, plan: .earnTrust)))
+
+        // 24주를 다 쓴 손상 저장은 주간 계획이 아니라 시즌 리뷰로 나간다.
+        let lastWeek = corruptedSeasonDecision(healthy, week: 24)
+        let reviewed = try engine.recoverMissingSeasonDecision(.init(seed: result.nextSeed, state: lastWeek))
+        XCTAssertEqual(reviewed.snapshot.phase, .seasonReview)
+
+        // 정상 주간 계획 상태와 pending이 살아 있는 진짜 시즌 결정에는 손대지 못한다.
+        XCTAssertThrowsError(try engine.recoverMissingSeasonDecision(.init(seed: result.nextSeed, state: healthy)))
+        var decision = try firstDecision(seed: "9102")
+        XCTAssertNotNil(decision.snapshot.pendingDecision)
+        XCTAssertThrowsError(try engine.recoverMissingSeasonDecision(.init(seed: decision.nextSeed, state: decision.snapshot)))
+        // 진짜 결정은 여전히 정상 경로로 풀린다.
+        decision = try resolvePendingDecision(decision)
+        XCTAssertEqual(decision.snapshot.phase, .weeklyPlan)
+    }
+
+    /// 구버전 저장이 남긴 손상 모양을 재현한다: 국면은 시즌 결정인데 pending이 없다.
+    private func corruptedSeasonDecision(_ snapshot: ProCareerSnapshot, week: Int? = nil) -> ProCareerSnapshot {
+        ProCareerSnapshot(
+            proCareerID: snapshot.proCareerID, revision: snapshot.revision, phase: .seasonDecision,
+            identity: snapshot.identity, pitcher: snapshot.pitcher, team: snapshot.team,
+            entitlement: snapshot.entitlement, age: snapshot.age, season: snapshot.season,
+            week: week ?? snapshot.week, level: snapshot.level, role: snapshot.role,
+            rolePreference: snapshot.rolePreference, managerTrust: snapshot.managerTrust,
+            catcherTrust: snapshot.catcherTrust, fatigue: snapshot.fatigue,
+            injuryWeeks: snapshot.injuryWeeks, serviceYears: snapshot.serviceYears,
+            militaryCompleted: snapshot.militaryCompleted, contract: snapshot.contract,
+            currentStats: snapshot.currentStats, gameLines: snapshot.gameLines,
+            careerStats: snapshot.careerStats, awards: snapshot.awards,
+            milestones: snapshot.milestones, news: snapshot.news,
+            hallOfFameScore: snapshot.hallOfFameScore, commitment: snapshot.commitment,
+            balanceVersion: snapshot.balanceVersion, proRulesVersion: snapshot.proRulesVersion,
+            seasonSegment: snapshot.seasonSegment, seasonTrigger: snapshot.seasonTrigger,
+            currentRival: snapshot.currentRival, seasonTensions: snapshot.seasonTensions,
+            seasonImportantGames: snapshot.seasonImportantGames, pendingDecision: nil,
+            decisionHistory: snapshot.decisionHistory, developmentProgress: snapshot.developmentProgress,
+            journeyState: snapshot.journeyState
+        )
+    }
+
     private func completeCareer(seed: String) throws -> ProCareerResult {
         var result = try engine.start(startParams(seed: seed))
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
