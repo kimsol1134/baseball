@@ -1024,7 +1024,7 @@ final class CareerSmokeUITests: XCTestCase {
 
     /// 퍼펙트 축하가 다음 공의 입력 패드에 잔상으로 붙거나 타석 종료와 함께 잘리지 않는다.
     /// 실제 2.5% 타이밍 창은 유닛 테스트가 지키고, 이 테스트는 Debug 전용 고정 인자로
-    /// 피드백의 화면 수명·위치·지속 배지를 결정적으로 검증한다.
+    /// 피드백의 화면 수명·위치를 결정적으로 검증한다.
     func testPerfectReleaseEffectStaysWithThrownPitch() {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -1077,11 +1077,10 @@ final class CareerSmokeUITests: XCTestCase {
 
         let persistentBadge = app.descendants(matching: .any)
             .matching(identifier: "pitch.perfectRelease").firstMatch
-        XCTAssertTrue(
-            persistentBadge.waitForExistence(timeout: 0.5),
-            "방금 던진 공의 결과에 퍼펙트 릴리스 배지가 남지 않았습니다."
+        XCTAssertFalse(
+            persistentBadge.exists,
+            "결과 장면 구석의 퍼펙트 릴리스 배지는 제거된 상태여야 합니다."
         )
-        XCTAssertTrue(persistentBadge.exists, "짧은 축하가 끝나며 결과 배지까지 사라졌습니다.")
 
         // 첫 공이 파울·스트라이크라면 강제 퍼펙트를 더 던져 타석 종료/투구 수 상한까지 간다.
         // footer가 nextBatter/finish로 교체되는 바로 그 프레임에도 화면 소유 축하가 살아 있어야 한다.

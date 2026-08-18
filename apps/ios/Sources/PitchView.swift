@@ -593,20 +593,6 @@ struct PitchView: View {
                             .id(result.snapshot.revision)
                     }
                 }
-                // 퍼펙트 릴리스 — 던진 손이 만든 결과라 승부 장면 위에 남는다.
-                // 결과가 안타든 삼진이든, 정확히 가운데에서 뗀 사실은 그 자체로 보상이다.
-                .overlay(alignment: .topTrailing) {
-                    if session.lastDelivery?.isPerfectRelease == true {
-                        Label(copyResolver.resolve(.badgePerfectRelease), systemImage: "target")
-                            .font(.caption.weight(.heavy))
-                            .foregroundStyle(BaseballTheme.canvas)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(BaseballTheme.milestone, in: Capsule())
-                            .padding(10)
-                            .accessibilityIdentifier("pitch.perfectRelease")
-                    }
-                }
                 // 승부구 배지 — 슬로모션이 왜 걸렸는지 화면이 말해 준다.
                 .overlay(alignment: .topLeading) {
                     if wasClutch, replayProgress < 1 {

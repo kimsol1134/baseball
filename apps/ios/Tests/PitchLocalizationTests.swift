@@ -105,6 +105,11 @@ final class PitchLocalizationTests: XCTestCase {
             DeliveryControl.localizedVerdict(missedRelease, resolver: korean)?.text,
             DeliveryControl.verdict(missedRelease)?.text
         )
+        let perfectRelease = PitchDelivery(releaseAccuracy: 1_000, aimAccuracy: 1_000)
+        XCTAssertEqual(
+            DeliveryControl.localizedVerdict(perfectRelease, resolver: korean)?.text,
+            DeliveryControl.verdict(perfectRelease)?.text
+        )
     }
 
     func testEnglishPitchUnitsUseMphAndFeetWhileKoreanUnitsStayStable() {

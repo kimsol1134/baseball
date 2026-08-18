@@ -224,6 +224,13 @@ final class DeliveryControlTests: XCTestCase {
     // MARK: - 판정 문구
 
     func testVerdictBandsMatchScores() {
+        XCTAssertEqual(
+            DeliveryControl.verdict(PitchDelivery(
+                releaseAccuracy: PitchDelivery.perfectReleaseThreshold,
+                aimAccuracy: 500
+            ))?.text,
+            "퍼펙트 릴리스 — 제대로 긁혔다"
+        )
         XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 900, aimAccuracy: 900))?.text, "완벽한 릴리스")
         XCTAssertEqual(DeliveryControl.verdict(PitchDelivery(releaseAccuracy: 700, aimAccuracy: 700))?.text, "좋은 릴리스")
         // 정확히 500/500은 자동 릴리스의 중립값이라 판정이 없다(아래 테스트). 손으로 만든

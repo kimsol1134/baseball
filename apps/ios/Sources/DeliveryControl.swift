@@ -386,7 +386,7 @@ struct DeliveryControl: View {
         // 정중앙 릴리스는 별도 등급이다. 아래 평균 점수는 조준이 흔들리면 850 밑으로
         // 떨어지므로, 타이밍을 완벽히 맞힌 사실이 그 평균에 묻혀 사라졌다.
         if delivery.isPerfectRelease {
-            return ("퍼펙트 릴리스 — 손끝에서 딱 떨어졌습니다", .milestone)
+            return ("퍼펙트 릴리스 — 제대로 긁혔다", .milestone)
         }
         let score = (delivery.releaseAccuracy + delivery.aimAccuracy) / 2
         switch score {

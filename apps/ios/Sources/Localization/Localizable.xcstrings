@@ -5673,9 +5673,9 @@
     },
     "pitch.delivery.verdict.perfect" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Perfect release — right off your fingertips" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "指先ですぐに完璧なリリースが可能" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "퍼펙트 릴리스 — 손끝에서 딱 떨어졌습니다" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Perfect release — got the bite" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "パーフェクトリリース — しっかり切れた" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "퍼펙트 릴리스 — 제대로 긁혔다" } }
       }
     },
     "pitch.delivery.wait" : {
