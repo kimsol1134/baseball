@@ -2,6 +2,7 @@ package com.solkim.baseball.application
 
 import com.solkim.baseball.core.highschool.HighSchoolPhase
 import com.solkim.baseball.core.highschool.HighSchoolPhase4Command
+import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchZone
 import com.solkim.baseball.core.pro.ProCareerPhase
@@ -400,7 +401,7 @@ class Phase8ScreenProjectionTest {
     private suspend fun finishTutorialPitch(store: KotlinGameStore) {
         val pitch = requireNotNull(store.current.pitch)
         val phase7 = Phase7VerticalController(store, "phase8-ui")
-        val request = phase7.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1))
+        val request = phase7.submitPitch(pitch.sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
         phase7.consumePresentation(pitch.sessionId, request)
         phase7.completePitchAndPostgame(pitch.sessionId)
         assertEquals(PitchBoundary.COMPLETED, store.current.pitch?.boundary)
@@ -447,7 +448,7 @@ class Phase8ScreenProjectionTest {
                 firstPitch = false
             }
             val pitch = requireNotNull(store.current.pitch)
-            val request = phase7.submitPitch(pitch.sessionId, pitchCount % 4, PitchKind.FOUR_SEAM, PitchZone(1, 1))
+            val request = phase7.submitPitch(pitch.sessionId, pitchCount % 4, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
             phase7.consumePresentation(pitch.sessionId, request)
             phase7.completePitchAndPostgame(pitch.sessionId)
             pitchCount += 1

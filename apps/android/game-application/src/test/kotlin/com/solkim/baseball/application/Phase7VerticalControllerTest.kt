@@ -1,6 +1,7 @@
 package com.solkim.baseball.application
 
 import com.solkim.baseball.core.highschool.HighSchoolPhase
+import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchZone
 import kotlinx.coroutines.runBlocking
@@ -79,6 +80,7 @@ class Phase7VerticalControllerTest {
                 0,
                 PitchKind.FOUR_SEAM,
                 PitchZone(1, 1),
+                PitchDelivery(1_000, 1_000),
             )
             assertEquals(PitchBoundary.COMMITTED, store.current.pitch?.boundary)
 
@@ -144,7 +146,7 @@ class Phase7VerticalControllerTest {
         store = restart(store, repository, "phase7-vertical")
         controller = Phase7VerticalController(store)
         assertEquals(PitchBoundary.PLAYING, store.current.pitch?.boundary)
-        val request = controller.submitPitch(reservedSession, 2, PitchKind.SLIDER, PitchZone(1, 1))
+        val request = controller.submitPitch(reservedSession, 2, PitchKind.SLIDER, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
         assertEquals(PitchBoundary.COMMITTED, store.current.pitch?.boundary)
 
         store = restart(store, repository, "phase7-vertical")
@@ -250,6 +252,7 @@ class Phase7VerticalControllerTest {
                             pitchIndex = pitchCount % 4,
                             pitchType = PitchKind.FOUR_SEAM,
                             zone = PitchZone(1, 1),
+                            delivery = PitchDelivery(1_000, 1_000),
                         )
                         controller.consumePresentation(launch.sessionId, request)
                         controller.completePitchAndPostgame(launch.sessionId)
@@ -378,7 +381,7 @@ class Phase7VerticalControllerTest {
 
             store = reopen(store, repository, installId)
             controller = Phase7VerticalController(store)
-            val presentation = controller.submitPitch(sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1))
+            val presentation = controller.submitPitch(sessionId, 0, PitchKind.FOUR_SEAM, PitchZone(1, 1), PitchDelivery(1_000, 1_000))
             if (target == PitchBoundary.COMMITTED) {
                 store = reopen(store, repository, installId)
                 assertEquals(target, store.current.pitch?.boundary)

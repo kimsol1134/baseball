@@ -1,0 +1,114 @@
+name: Android Compose
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_release_candidate:
+        description: "Build a signed Compose + pitch Unity production RC AAB"
+        type: boolean
+        default: true
+      version_name:
+        description: "Android versionName"
+        type: string
+        default: "1.0.0"
+      version_code:
+        description: "Android versionCode (must be higher than Play Unity baseline 5)"
+        type: string
+        default: "37"
+
+concurrency:
+  group: android-compose-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static-contracts:
+    name: Static contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check:copy:android:unity
+      - run: npm run check:android:compose
+      - run: npm run check:android:compose:release
+
+  signed-aab:
+    name: Signed Compose production candidate
+    if: github.event_name == 'workflow_dispatch' && inputs.build_release_candidate
+    needs: static-contracts
+    runs-on: [self-hosted, macOS, unity-6000.3.19f1, android]
+    timeout-minutes: 90
+    env:
+      BASEBALL_VERSION_NAME: ${{ inputs.version_name }}
+      BASEBALL_VERSION_CODE: ${{ inputs.version_code }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          clean: true
+      - name: Bind runner-local credential paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "BASEBALL_UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/baseball-upload.keystore"
+            echo "BASEBALL_GOOGLE_SERVICES_PATH=$RUNNER_TEMP/google-services.json"
+            echo "BASEBALL_FIREBASE_CLI_DIR=$RUNNER_TEMP/baseball-firebase-cli"
+            echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/baseball-firebase-service-account.json"
+          } >> "$GITHUB_ENV"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Require Compose source contracts
+        run: npm run check:android:compose && npm run check:android:compose:release
+      - name: Inject production-only configuration
+        shell: bash
+        env:
+          BASEBALL_UPLOAD_KEYSTORE_B64: ${{ secrets.BASEBALL_UPLOAD_KEYSTORE_B64 }}
+          BASEBALL_GOOGLE_SERVICES_B64: ${{ secrets.BASEBALL_GOOGLE_SERVICES_B64 }}
+          BASEBALL_AMPLITUDE_API_KEY: ${{ secrets.BASEBALL_AMPLITUDE_API_KEY }}
+          BASEBALL_FIREBASE_SERVICE_ACCOUNT_B64: ${{ secrets.BASEBALL_FIREBASE_SERVICE_ACCOUNT_B64 }}
+        run: |
+          set -euo pipefail
+          test -n "$BASEBALL_UPLOAD_KEYSTORE_B64"
+          test -n "$BASEBALL_GOOGLE_SERVICES_B64"
+          test -n "$BASEBALL_AMPLITUDE_API_KEY"
+          test -n "$BASEBALL_FIREBASE_SERVICE_ACCOUNT_B64"
+          node -e 'require("node:fs").writeFileSync(process.env.BASEBALL_UPLOAD_KEYSTORE_PATH, Buffer.from(process.env.BASEBALL_UPLOAD_KEYSTORE_B64, "base64"), { mode: 0o600 })'
+          node -e 'require("node:fs").writeFileSync(process.env.BASEBALL_GOOGLE_SERVICES_PATH, Buffer.from(process.env.BASEBALL_GOOGLE_SERVICES_B64, "base64"), { mode: 0o600 })'
+          node -e 'require("node:fs").writeFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, Buffer.from(process.env.BASEBALL_FIREBASE_SERVICE_ACCOUNT_B64, "base64"), { mode: 0o600 })'
+      - name: Build signed Compose RC
+        env:
+          BASEBALL_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.BASEBALL_UPLOAD_KEYSTORE_PASSWORD }}
+          BASEBALL_UPLOAD_KEY_ALIAS: ${{ secrets.BASEBALL_UPLOAD_KEY_ALIAS }}
+          BASEBALL_UPLOAD_KEY_PASSWORD: ${{ secrets.BASEBALL_UPLOAD_KEY_PASSWORD }}
+          BASEBALL_UPLOAD_CERT_SHA256: ${{ secrets.BASEBALL_UPLOAD_CERT_SHA256 }}
+          BASEBALL_AMPLITUDE_API_KEY: ${{ secrets.BASEBALL_AMPLITUDE_API_KEY }}
+        run: npm run build:android:compose:rc
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: baseball-android-compose-candidate-${{ inputs.version_name }}-${{ inputs.version_code }}-${{ github.sha }}
+          path: |
+            artifacts/android-compose/rc
+            artifacts/android-compose/unity-export/export.log
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove injected signing and service credentials
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f -- \
+            "$BASEBALL_UPLOAD_KEYSTORE_PATH" \
+            "$BASEBALL_GOOGLE_SERVICES_PATH" \
+            "$GOOGLE_APPLICATION_CREDENTIALS" \
+            "apps/android/app/google-services.json"

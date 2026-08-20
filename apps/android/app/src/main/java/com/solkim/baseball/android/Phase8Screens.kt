@@ -103,7 +103,7 @@ public fun Phase8Shell(
             TopAppBar(
                 title = {
                     Column {
-                        Text("마운드의 계절", style = MaterialTheme.typography.titleLarge)
+                        Text("야구 못하면 또 환생함", style = MaterialTheme.typography.titleLarge)
                         Text(model.title, style = MaterialTheme.typography.labelMedium)
                     }
                 },

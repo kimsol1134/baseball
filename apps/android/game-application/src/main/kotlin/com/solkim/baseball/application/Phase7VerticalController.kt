@@ -260,6 +260,7 @@ public class Phase7VerticalController(
         pitchIndex: Int,
         pitchType: PitchKind,
         zone: PitchZone,
+        delivery: PitchDelivery,
     ): PitchPresentationRequest {
         val state = store.state.value
         val pitch = requireNotNull(state.pitch) { "phase7.pitch_missing" }
@@ -268,13 +269,13 @@ public class Phase7VerticalController(
             PitchCareerKind.TUTORIAL -> KotlinPitchPresentationSession().request(sessionId, pitchIndex, pitch.pitchIndex + 1)
             PitchCareerKind.HIGH_SCHOOL -> {
                 val call = PitchCall(pitchType, zone, ZoneIntent.EDGE, PitchIntensity.NORMAL)
-                dispatch(GameCommand.HighSchool(HighSchoolPhase4Command.SubmitPitch(sessionId, call, PitchDelivery(1_000, 1_000))) )
+                dispatch(GameCommand.HighSchool(HighSchoolPhase4Command.SubmitPitch(sessionId, call, delivery)))
                 val presentation = requireNotNull(store.state.value.highSchool?.lastPresentation) { "phase7.presentation_missing" }
                 PitchPresentationFactory.fromHighSchoolPresentation(sessionId, presentation.pitchNumber, presentation)
             }
             PitchCareerKind.PRO -> {
                 val call = PitchCall(pitchType, zone, ZoneIntent.EDGE, PitchIntensity.NORMAL)
-                dispatch(GameCommand.Pro(ProCommand.SubmitPitch(sessionId, call, PitchDelivery(1_000, 1_000))))
+                dispatch(GameCommand.Pro(ProCommand.SubmitPitch(sessionId, call, delivery)))
                 val after = store.state.value
                 val presentation = requireNotNull(after.pro?.lastPresentation) { "phase7.pro_presentation_missing" }
                 val outcome = after.pro?.activePitch?.log?.entries?.lastOrNull()?.outcome ?: PitchOutcome.CALLED_STRIKE

@@ -10,6 +10,8 @@ const required = [
   "apps/android/app/src/main/AndroidManifest.xml",
   "apps/android/app/src/main/java/com/solkim/baseball/android/MainActivity.kt",
   "apps/android/app/src/main/java/com/solkim/baseball/android/PitchUnityActivity.kt",
+  "apps/android/app/src/main/java/com/solkim/baseball/android/PitchDeliveryControl.kt",
+  "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchReleaseMeter.kt",
   "apps/android/unity-runtime/src/main/kotlin/com/solkim/baseball/bridge/UnityRuntimeHost.kt",
   "apps/android/game-model/src/main/kotlin/com/solkim/baseball/model/PitchIpcModels.kt",
   "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchKernel.kt",
@@ -242,6 +244,51 @@ if (!activity.includes("onNewIntent") || !activity.includes("FLAG_ACTIVITY_REORD
 }
 if (!activity.includes("KotlinPitchPresentationSession") || activity.includes("DemoPitchRequests")) {
   errors.push("pitch Activity must use the Kotlin authoritative presentation session");
+}
+if (activity.includes("Compose Pitch HUD") || activity.includes('Text("투구하기")')) {
+  errors.push("pitch overlay still uses the one-tap migration HUD instead of the pitch slider");
+}
+if (!activity.includes("PitchDeliveryControl") || !activity.includes("autoReleaseEnabled")) {
+  errors.push("pitch overlay must host PitchDeliveryControl and read the saved auto-release setting");
+}
+const deliveryControl = readFileSync(
+  resolve(root, "apps/android/app/src/main/java/com/solkim/baseball/android/PitchDeliveryControl.kt"),
+  "utf8",
+);
+for (const marker of [
+  "누르고 있다가 놓기",
+  "PitchDelivery.NEUTRAL",
+  "PitchReleaseMeter.delivery",
+  "MINIMUM_HOLD_SECONDS",
+]) {
+  if (!deliveryControl.includes(marker)) errors.push(`pitch slider marker missing: ${marker}`);
+}
+if (!deliveryControl.includes("if (autoRelease)") || !deliveryControl.includes("onDeliver(PitchDelivery.NEUTRAL)")) {
+  errors.push("auto-release must stay an explicit accessibility path that throws a neutral pitch");
+}
+const releaseMeter = readFileSync(
+  resolve(root, "apps/android/game-core/src/main/kotlin/com/solkim/baseball/core/pitch/PitchReleaseMeter.kt"),
+  "utf8",
+);
+for (const marker of ["PERFECT_PHASE: Double = 0.5", "fun phase(", "fun delivery("]) {
+  if (!releaseMeter.includes(marker)) errors.push(`release meter marker missing: ${marker}`);
+}
+const phase7 = readFileSync(
+  resolve(root, "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/Phase7VerticalController.kt"),
+  "utf8",
+);
+if (phase7.includes("PitchDelivery(1_000, 1_000)")) {
+  errors.push("Phase7 submitPitch must not hardcode a perfect delivery");
+}
+if (!phase7.includes("delivery: PitchDelivery") || !phase7.includes("SubmitPitch(sessionId, call, delivery)")) {
+  errors.push("Phase7 submitPitch must pass the player's PitchDelivery into the career command");
+}
+const settingsModel = readFileSync(
+  resolve(root, "apps/android/game-application/src/main/kotlin/com/solkim/baseball/application/GameAggregateModels.kt"),
+  "utf8",
+);
+if (!settingsModel.includes("autoReleaseEnabled: Boolean = false")) {
+  errors.push("auto-release must default off so the pitch slider is the product default");
 }
 for (const marker of [
   "public class PitchKernel",

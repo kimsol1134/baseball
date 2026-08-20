@@ -59,6 +59,7 @@ import com.solkim.baseball.bridge.ProtocolDecisionKind
 import com.solkim.baseball.bridge.UnityRuntimeHost
 import com.solkim.baseball.bridge.UnityRuntimeHostRegistry
 import com.solkim.baseball.bridge.UnityRuntimeUnavailableException
+import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchZone
 import com.solkim.baseball.design.BaseballMigrationTheme
@@ -136,9 +137,10 @@ public class PitchUnityActivity : ComponentActivity(), UnityBridgeCallbacks.List
                     selectedZone = selectedZone,
                     unityReady = unityReady,
                     resultReady = resultReady,
+                    autoRelease = store.current.settings.autoReleaseEnabled,
                     onSelectPitch = { selectedPitchIndex = it },
                     onSelectZone = { selectedZone = it },
-                    onSubmit = ::submitSelectedPitch,
+                    onDeliver = ::submitSelectedPitch,
                     onReplay = ::replayExact,
                     onPostgame = ::completeAndReturn,
                     onBack = ::handleBack,
@@ -425,7 +427,7 @@ public class PitchUnityActivity : ComponentActivity(), UnityBridgeCallbacks.List
         }
     }
 
-    private fun submitSelectedPitch() {
+    private fun submitSelectedPitch(delivery: PitchDelivery) {
         if (!unityReady) {
             status = "Unity 준비 전에는 투구를 시작할 수 없습니다"
             return
@@ -438,6 +440,7 @@ public class PitchUnityActivity : ComponentActivity(), UnityBridgeCallbacks.List
                     pitchIndex = selectedPitchIndex,
                     pitchType = pitchTypeForIndex(selectedPitchIndex),
                     zone = selectedZone,
+                    delivery = delivery,
                 )
                 withContext(Dispatchers.Main) {
                     request = saved
@@ -608,9 +611,10 @@ private fun PitchSessionOverlay(
     selectedZone: PitchZone,
     unityReady: Boolean,
     resultReady: Boolean,
+    autoRelease: Boolean,
     onSelectPitch: (Int) -> Unit,
     onSelectZone: (PitchZone) -> Unit,
-    onSubmit: () -> Unit,
+    onDeliver: (PitchDelivery) -> Unit,
     onReplay: () -> Unit,
     onPostgame: () -> Unit,
     onBack: () -> Unit,
@@ -626,10 +630,10 @@ private fun PitchSessionOverlay(
             ) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Compose Pitch HUD", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("직접 투구", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text(status, style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            if (unityReady) "Unity: trajectory-only renderer ready" else "Unity: 연결 대기",
+                            if (unityReady) "공 궤적 준비 완료" else "공 궤적 연결 대기",
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.semantics { stateDescription = if (unityReady) "Unity 준비 완료" else "Unity 연결 대기" },
                         )
@@ -660,11 +664,11 @@ private fun PitchSessionOverlay(
                             }
                             Text("코스 선택", style = MaterialTheme.typography.titleMedium, color = ComposeColor.White)
                             ZonePicker(selectedZone, onSelectZone)
-                            Button(
-                                onClick = onSubmit,
+                            PitchDeliveryControl(
+                                autoRelease = autoRelease,
                                 enabled = unityReady,
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = "선택한 구종과 코스로 투구" },
-                            ) { Text("투구하기") }
+                                onDeliver = onDeliver,
+                            )
                         }
                         OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = "투구를 일시정지하고 Compose로 돌아가기" }) {
                             Text("뒤로가기 · 저장 후 일시정지", color = ComposeColor.White)
