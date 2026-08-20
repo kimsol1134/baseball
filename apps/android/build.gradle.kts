@@ -14,5 +14,10 @@ allprojects {
 subprojects {
     dependencyLocking {
         lockAllConfigurations()
+        // Production RC pulls Firebase/Amplitude/Unity transitives that debug lock
+        // generation never recorded (kotlin-stdlib-common on releaseRuntimeClasspath).
+        if (findProperty("baseballIgnoreDependencyLocks") == "true") {
+            lockMode.set(org.gradle.api.artifacts.dsl.LockMode.LENIENT)
+        }
     }
 }
