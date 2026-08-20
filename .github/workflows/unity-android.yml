@@ -262,7 +262,17 @@ jobs:
           BASEBALL_UPLOAD_KEY_PASSWORD: ${{ secrets.BASEBALL_UPLOAD_KEY_PASSWORD }}
           BASEBALL_UPLOAD_CERT_SHA256: ${{ secrets.BASEBALL_UPLOAD_CERT_SHA256 }}
           BASEBALL_AMPLITUDE_API_KEY: ${{ secrets.BASEBALL_AMPLITUDE_API_KEY }}
-        run: npm run build:android:compose:rc
+        run: |
+          set -euo pipefail
+          ANDROID_SDK="${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}"
+          if [[ ! -d "$ANDROID_SDK" ]]; then
+            ANDROID_SDK="/Applications/Unity/Hub/Editor/6000.3.19f1/PlaybackEngines/AndroidPlayer/SDK"
+          fi
+          test -d "$ANDROID_SDK"
+          export ANDROID_HOME="$ANDROID_SDK"
+          export ANDROID_SDK_ROOT="$ANDROID_SDK"
+          printf 'sdk.dir=%s\n' "$ANDROID_SDK" > apps/android/local.properties
+          npm run build:android:compose:rc
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
