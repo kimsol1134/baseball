@@ -111,6 +111,9 @@ case "$BUILD_MODE" in
       -Pphase11Distribution=production \
       -PbaseballIgnoreDependencyLocks=true
 
+    cleanup_injection
+    CLEANED_INJECTION=0
+
     AAB_SOURCE="$REPO_ROOT/apps/android/app/build/outputs/bundle/release/app-release.aab"
     if [[ ! -f "$AAB_SOURCE" ]]; then
       fail "Compose release AAB was not produced: $AAB_SOURCE"
