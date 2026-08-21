@@ -37,11 +37,19 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.solkim.baseball.core.pitch.MoundHeartbeatAudio
+import com.solkim.baseball.core.pitch.MoundHeartbeatCadence
 import com.solkim.baseball.core.pitch.MoundHeartbeatPattern
+import com.solkim.baseball.core.pitch.MoundHeartbeatSettings
 import com.solkim.baseball.core.pitch.MoundMeterDisturbance
+import com.solkim.baseball.core.pitch.MoundTensionModel
 import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchReleaseMeter
 import com.solkim.baseball.design.BaseballColors
+import com.solkim.baseball.platform.NativeAudioHapticsService
+import com.solkim.baseball.platform.NativePlaybackSettings
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.hypot
 import kotlin.random.Random
@@ -60,8 +68,10 @@ public fun PitchDeliveryControl(
     fatigue: Int = 0,
     reduceMotion: Boolean = false,
     hapticsEnabled: Boolean = true,
+    soundEnabled: Boolean = true,
     tension: Double = 0.0,
     disturbanceSeed: ULong = 0UL,
+    adverseEpisode: Boolean = false,
 ) {
     if (autoRelease) {
         Button(
@@ -80,6 +90,8 @@ public fun PitchDeliveryControl(
     val aimRadiusPx = with(density) { PitchReleaseMeter.AIM_RADIUS_POINTS.toFloat().dp.toPx() }
     val context = LocalContext.current
     val vibrator = remember(context) { context.pitchVibrator() }
+    val audio = remember(context) { context.pitchAudio() }
+    val playback = NativePlaybackSettings(soundEnabled, false, hapticsEnabled, reduceMotion)
     var pressing by remember { mutableStateOf(false) }
     var meter by remember { mutableStateOf(0.0) }
     var drag by remember { mutableStateOf(Offset.Zero) }
@@ -92,28 +104,50 @@ public fun PitchDeliveryControl(
     val amplitude = PitchReleaseMeter.swayAmplitude(fatigue, reduceMotion)
     val amplitudePx = with(density) { amplitude.toFloat().dp.toPx() }.toDouble()
 
-    LaunchedEffect(pressing, sweep, amplitudePx, tension, disturbanceSeed, hapticsEnabled, reduceMotion) {
-        if (!pressing) return@LaunchedEffect
+    LaunchedEffect(pressing, sweep, amplitudePx, tension, disturbanceSeed, hapticsEnabled, soundEnabled, reduceMotion, adverseEpisode) {
+        if (!pressing) {
+            audio?.stopHeartbeat()
+            return@LaunchedEffect
+        }
         val phases = DoubleArray(4) { Random.nextDouble(0.0, 2 * PI) }
-        val beats = if (tension > 0.0) MoundHeartbeatPattern.entry(tension).beats.map { it.offset } else emptyList()
-        val start = withFrameNanos { it }
-        var last = start
-        while (true) {
-            val now = withFrameNanos { it }
-            val elapsed = ((now - start).coerceAtLeast(0L)) / 1_000_000_000.0
-            val delta = ((now - last).coerceAtLeast(0L)) / 1_000_000_000.0
-            last = now
-            val step = minOf(0.1, delta)
-            val base = PitchReleaseMeter.phase(elapsed, sweep)
-            meter = MoundMeterDisturbance.position(base, elapsed, tension, beats, hapticsEnabled, reduceMotion, disturbanceSeed)
-            val offset = PitchReleaseMeter.swayOffset(elapsed, amplitudePx, phases)
-            sway = Offset(offset.first.toFloat(), offset.second.toFloat())
-            val inSweet = kotlin.math.abs(meter - 0.5) <= 0.09
-            if (inSweet && !wasInSweetSpot && hapticsEnabled && !reduceMotion) {
-                vibrator.pulse(18)
+        val beats = mutableListOf<Double>()
+        val startNanos = System.nanoTime()
+        val heartbeatJob = launch {
+            runMoundHeartbeat(tension, disturbanceSeed, includeEntry = true, adverseEpisode) { eventTension, irregular ->
+                val elapsed = (System.nanoTime() - startNanos) / 1_000_000_000.0
+                beats.add(elapsed)
+                if (beats.size > 24) beats.removeAt(0)
+                if (MoundHeartbeatSettings.heartbeatAudioEnabled(soundEnabled)) {
+                    audio?.playHeartbeat(MoundHeartbeatAudio.renderPcm(eventTension, irregular), MoundHeartbeatAudio.SAMPLE_RATE, playback)
+                }
+                if (hapticsEnabled) {
+                    val intensity = MoundTensionModel.heartbeatHapticIntensity(eventTension) * if (irregular) 1.08 else 1.0
+                    audio?.heartbeatBeat(intensity, playback)
+                }
             }
-            wasInSweetSpot = inSweet
-            if (step < 0) break
+        }
+        try {
+            var last = withFrameNanos { it }
+            while (true) {
+                val now = withFrameNanos { it }
+                val elapsed = ((System.nanoTime() - startNanos).coerceAtLeast(0L)) / 1_000_000_000.0
+                val delta = ((now - last).coerceAtLeast(0L)) / 1_000_000_000.0
+                last = now
+                val step = minOf(0.1, delta)
+                val base = PitchReleaseMeter.phase(elapsed, sweep)
+                meter = MoundMeterDisturbance.position(base, elapsed, tension, beats, hapticsEnabled, reduceMotion, disturbanceSeed)
+                val offset = PitchReleaseMeter.swayOffset(elapsed, amplitudePx, phases)
+                sway = Offset(offset.first.toFloat(), offset.second.toFloat())
+                val inSweet = kotlin.math.abs(meter - 0.5) <= 0.09
+                if (inSweet && !wasInSweetSpot && hapticsEnabled && !reduceMotion) {
+                    vibrator.pulse(18)
+                }
+                wasInSweetSpot = inSweet
+                if (step < 0) break
+            }
+        } finally {
+            heartbeatJob.cancel()
+            audio?.stopHeartbeat()
         }
     }
 
@@ -267,6 +301,58 @@ private fun clampAim(aim: Offset, radius: Float): Offset {
     val scale = radius / length.coerceAtLeast(1f)
     return Offset(aim.x * scale, aim.y * scale)
 }
+
+private suspend fun runMoundHeartbeat(
+    tension: Double,
+    seed: ULong,
+    includeEntry: Boolean,
+    adverseEpisode: Boolean,
+    onBeat: (tension: Double, irregular: Boolean) -> Unit,
+) {
+    if (tension <= 0.0) return
+    val cadence = MoundHeartbeatCadence.forTension(tension)
+    if (includeEntry) {
+        val entry = MoundHeartbeatPattern.entry(tension)
+        emitHeartbeatPattern(entry, tension, onBeat)
+        delaySeconds(entry.rest)
+    }
+    if (cadence.cycles <= 0) return
+    var burstIndex = 0
+    var irregularEpisode = adverseEpisode
+    while (true) {
+        val pattern = MoundHeartbeatPattern.burst(
+            tension,
+            seed + burstIndex.toULong(),
+            burstIndex,
+            irregularEpisode,
+        )
+        emitHeartbeatPattern(pattern, tension, onBeat)
+        delaySeconds(pattern.rest)
+        irregularEpisode = false
+        burstIndex += 1
+    }
+}
+
+private suspend fun emitHeartbeatPattern(
+    pattern: MoundHeartbeatPattern,
+    tension: Double,
+    onBeat: (tension: Double, irregular: Boolean) -> Unit,
+) {
+    var elapsed = 0.0
+    for (beat in pattern.beats) {
+        delaySeconds(beat.offset - elapsed)
+        onBeat(tension, beat.isIrregular)
+        elapsed = beat.offset
+    }
+}
+
+private suspend fun delaySeconds(seconds: Double) {
+    if (seconds <= 0.0) return
+    delay((seconds * 1_000.0).toLong())
+}
+
+private fun android.content.Context.pitchAudio(): NativeAudioHapticsService? =
+    (applicationContext as? BaseballApplication)?.platform?.audioHaptics
 
 private fun android.content.Context.pitchVibrator(): Vibrator? = try {
     if (Build.VERSION.SDK_INT >= 31) {

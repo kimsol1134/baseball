@@ -306,6 +306,14 @@ public class Phase9PlatformContractTest {
     }
 
     @Test
+    public fun heartbeatHapticIsTwoPartLubDub() {
+        assertEquals(160L, HeartbeatHaptic.SECONDARY_DELAY_MS)
+        assertEquals(255, HeartbeatHaptic.amplitude(1.0))
+        assertEquals((0.62 * 255).toInt(), HeartbeatHaptic.amplitude(1.0, 0.62))
+        assertEquals(0, HeartbeatHaptic.amplitude(0.0))
+    }
+
+    @Test
     public fun freshNotificationPermissionIsRequestableAndAskedStateIsDurableTruth() {
         assertEquals(NotificationPermissionTruth.REQUESTABLE, NotificationPermissionPolicy.classify(true, false, true, false))
         assertEquals(NotificationPermissionTruth.DENIED, NotificationPermissionPolicy.classify(true, false, true, true))

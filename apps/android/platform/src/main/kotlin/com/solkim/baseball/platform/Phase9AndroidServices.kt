@@ -17,13 +17,17 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.media.AudioAttributes
+import android.media.AudioFormat
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.media.AudioTrack
 import android.media.MediaPlayer
 import android.media.SoundPool
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -684,6 +688,18 @@ public object HapticPolicy {
     public fun shouldVibrate(settings: NativePlaybackSettings, systemHapticsEnabled: Boolean): Boolean = settings.hapticsEnabled && !settings.reducedMotionEnabled && systemHapticsEnabled
 }
 
+/** iOS `Haptics.heartbeatBeat` — two transients 0.16s apart. Reduce-motion does not mute this pulse. */
+public object HeartbeatHaptic {
+    public const val PRIMARY_MS: Long = 18
+    public const val SECONDARY_DELAY_MS: Long = 160
+    public const val SECONDARY_MS: Long = 12
+
+    public fun amplitude(intensity: Double, scale: Double = 1.0): Int {
+        if (intensity <= 0.0) return 0
+        return (intensity.coerceIn(0.0, 1.0) * scale * 255.0).toInt().coerceIn(1, 255)
+    }
+}
+
 public class NativeAudioHapticsService(
     private val context: Context,
 ) {
@@ -697,6 +713,8 @@ public class NativeAudioHapticsService(
     private var pausedForLifecycle = false
     private val loadedSamples = linkedMapOf<Int, Int>()
     private val pendingSamples = linkedMapOf<Int, Pair<Float, Float>>()
+    private val heartbeatHandler = Handler(Looper.getMainLooper())
+    private var heartbeatTrack: AudioTrack? = null
 
     init {
         soundPool.setOnLoadCompleteListener { pool, sampleId, status ->
@@ -766,7 +784,70 @@ public class NativeAudioHapticsService(
         }
     }
 
+    public fun playHeartbeat(pcm: ShortArray, sampleRate: Int, settings: NativePlaybackSettings) {
+        if (!settings.soundEnabled || pcm.isEmpty() || sampleRate <= 0) return
+        stopHeartbeatAudio()
+        runCatching {
+            val minBytes = AudioTrack.getMinBufferSize(
+                sampleRate,
+                AudioFormat.CHANNEL_OUT_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+            )
+            val frameCount = maxOf(pcm.size, if (minBytes > 0) minBytes / 2 else pcm.size)
+            val buffer = if (frameCount == pcm.size) pcm else ShortArray(frameCount).also { pcm.copyInto(it) }
+            val track = AudioTrack.Builder()
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_GAME)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build(),
+                )
+                .setAudioFormat(
+                    AudioFormat.Builder()
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setSampleRate(sampleRate)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                        .build(),
+                )
+                .setBufferSizeInBytes(buffer.size * 2)
+                .setTransferMode(AudioTrack.MODE_STATIC)
+                .build()
+            track.write(buffer, 0, buffer.size)
+            track.setNotificationMarkerPosition(pcm.size)
+            track.setPlaybackPositionUpdateListener(
+                object : AudioTrack.OnPlaybackPositionUpdateListener {
+                    override fun onMarkerReached(finished: AudioTrack) {
+                        if (heartbeatTrack === finished) stopHeartbeatAudio()
+                    }
+                    override fun onPeriodicNotification(track: AudioTrack) = Unit
+                },
+                heartbeatHandler,
+            )
+            heartbeatTrack = track
+            track.play()
+        }
+    }
+
+    public fun heartbeatBeat(intensity: Double, settings: NativePlaybackSettings) {
+        stopHeartbeatHaptics()
+        if (!settings.hapticsEnabled || intensity <= 0.0) return
+        val systemEnabled = systemHapticsEnabled()
+        if (!systemEnabled) return
+        vibrateAmplitude(HeartbeatHaptic.PRIMARY_MS, HeartbeatHaptic.amplitude(intensity))
+        val secondary = HeartbeatHaptic.amplitude(intensity, 0.62)
+        heartbeatHandler.postDelayed(
+            { vibrateAmplitude(HeartbeatHaptic.SECONDARY_MS, secondary) },
+            HeartbeatHaptic.SECONDARY_DELAY_MS,
+        )
+    }
+
+    public fun stopHeartbeat() {
+        stopHeartbeatAudio()
+        stopHeartbeatHaptics()
+    }
+
     public fun pauseForLifecycle() {
+        stopHeartbeat()
         if (music?.isPlaying == true) {
             pausedForLifecycle = true
             music?.pause()
@@ -789,13 +870,58 @@ public class NativeAudioHapticsService(
         pausedForLifecycle = false
         abandonFocus()
     }
-    public fun release() { stopMusic(); loadedSamples.clear(); pendingSamples.clear(); soundPool.release() }
+    public fun release() {
+        stopHeartbeat()
+        stopMusic()
+        loadedSamples.clear()
+        pendingSamples.clear()
+        soundPool.release()
+    }
 
     public fun vibrate(settings: NativePlaybackSettings, milliseconds: Long = 24L) {
-        val systemEnabled = try { Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) == 1 } catch (_: Throwable) { true }
-        if (!HapticPolicy.shouldVibrate(settings, systemEnabled)) return
-        val vibrator = if (Build.VERSION.SDK_INT >= 31) context.getSystemService(VibratorManager::class.java).defaultVibrator else context.getSystemService(Vibrator::class.java)
-        runCatching { if (Build.VERSION.SDK_INT >= 26) vibrator.vibrate(VibrationEffect.createOneShot(milliseconds.coerceIn(1L, 100L), VibrationEffect.DEFAULT_AMPLITUDE)) else @Suppress("DEPRECATION") vibrator.vibrate(milliseconds.coerceIn(1L, 100L)) }
+        if (!HapticPolicy.shouldVibrate(settings, systemHapticsEnabled())) return
+        vibrateAmplitude(milliseconds, VibrationEffect.DEFAULT_AMPLITUDE)
+    }
+
+    private fun stopHeartbeatAudio() {
+        val track = heartbeatTrack
+        heartbeatTrack = null
+        if (track == null) return
+        runCatching { track.setPlaybackPositionUpdateListener(null) }
+        runCatching { if (track.playState == AudioTrack.PLAYSTATE_PLAYING) track.stop() }
+        runCatching { track.release() }
+    }
+
+    private fun stopHeartbeatHaptics() {
+        heartbeatHandler.removeCallbacksAndMessages(null)
+    }
+
+    private fun systemHapticsEnabled(): Boolean = try {
+        Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) == 1
+    } catch (_: Throwable) {
+        true
+    }
+
+    private fun vibrateAmplitude(milliseconds: Long, amplitude: Int) {
+        if (amplitude == 0) return
+        val vibrator = if (Build.VERSION.SDK_INT >= 31) {
+            context.getSystemService(VibratorManager::class.java).defaultVibrator
+        } else {
+            context.getSystemService(Vibrator::class.java)
+        }
+        runCatching {
+            if (Build.VERSION.SDK_INT >= 26) {
+                val effectAmplitude = if (amplitude == VibrationEffect.DEFAULT_AMPLITUDE) {
+                    VibrationEffect.DEFAULT_AMPLITUDE
+                } else {
+                    amplitude.coerceIn(1, 255)
+                }
+                vibrator.vibrate(VibrationEffect.createOneShot(milliseconds.coerceIn(1L, 100L), effectAmplitude))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(milliseconds.coerceIn(1L, 100L))
+            }
+        }
     }
 
     private fun requestFocusIfMusicPlaying() { if (music?.isPlaying == true) requestFocus() }

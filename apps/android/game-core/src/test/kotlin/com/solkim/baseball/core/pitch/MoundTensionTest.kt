@@ -3,6 +3,7 @@ package com.solkim.baseball.core.pitch
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class MoundTensionTest {
@@ -101,5 +102,50 @@ class MoundTensionTest {
     @Test
     fun hapticsOffRemovesTensionJitter() {
         assertEquals(0.0, MoundMeterDisturbance.offset(0.1, 1.0, listOf(0.0), false, false, 3UL), 1e-9)
+    }
+
+    @Test
+    fun heartbeatAudioFollowsSoundToggleAndScalesWithComposure() {
+        assertTrue(MoundHeartbeatSettings.heartbeatAudioEnabled(true))
+        assertFalse(MoundHeartbeatSettings.heartbeatAudioEnabled(false))
+        val full = MoundHeartbeatAudio.voices(1.0).map { it.gain }
+        val composed = MoundHeartbeatAudio.voices(0.08).map { it.gain }
+        assertEquals(2, full.size)
+        assertEquals(0.040, full[0], 1e-9)
+        assertEquals(0.027, full[1], 1e-9)
+        assertEquals(0.16, MoundHeartbeatAudio.voices(1.0)[1].delay, 1e-9)
+        assertEquals(full[0] * 0.08, composed[0], 1e-9)
+        assertEquals(full[1] * 0.08, composed[1], 1e-9)
+        val irregular = MoundHeartbeatAudio.voices(1.0, irregular = true).map { it.gain }
+        assertEquals(full[0] * 1.08, irregular[0], 1e-9)
+        assertEquals(full[1] * 1.08, irregular[1], 1e-9)
+    }
+
+    @Test
+    fun heartbeatPcmIsSilentWithoutTensionAndRendersLubDub() {
+        assertTrue(MoundHeartbeatAudio.renderPcm(0.0).isEmpty())
+        val pcm = MoundHeartbeatAudio.renderPcm(1.0)
+        assertTrue(pcm.size >= (0.29 * MoundHeartbeatAudio.SAMPLE_RATE).toInt())
+        assertTrue(pcm.any { abs(it.toInt()) > 100 })
+        val dubStart = (0.16 * MoundHeartbeatAudio.SAMPLE_RATE).toInt()
+        val beforeDub = pcm.take(dubStart - 8).maxOf { abs(it.toInt()) }
+        val atDub = pcm.drop(dubStart).take(MoundHeartbeatAudio.SAMPLE_RATE / 50).maxOf { abs(it.toInt()) }
+        assertTrue(beforeDub > 0)
+        assertTrue(atDub > 0)
+    }
+
+    @Test
+    fun heartbeatTimelineEntryThenBurstMatchesCadence() {
+        val low = MoundHeartbeatTimeline.beats(0.10, 7UL, includeEntry = true, burstCount = 4)
+        assertEquals(3, low.size)
+        assertEquals(0.0, low[0].time, 1e-9)
+        assertEquals(MoundHeartbeatCadence.forTension(0.10).cycleInterval, low[1].time, 1e-9)
+        val medium = MoundHeartbeatTimeline.beats(0.45, 11UL, includeEntry = true, burstCount = 1)
+        assertEquals(3 + 2, medium.size)
+        val climax = MoundHeartbeatTimeline.beats(0.90, 3UL, includeEntry = false, adverseEpisode = true, burstCount = 2)
+        assertEquals(4 + 4, climax.size)
+        assertEquals(1, climax.take(4).count { it.isIrregular })
+        assertTrue(climax.drop(4).none { it.isIrregular })
+        assertTrue(MoundHeartbeatTimeline.beats(0.0, 1UL, burstCount = 2).isEmpty())
     }
 }

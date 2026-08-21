@@ -149,6 +149,7 @@ public object MoundTensionModel {
 
 public object MoundHeartbeatSettings {
     public fun meterJitterEnabled(hapticsEnabled: Boolean): Boolean = hapticsEnabled
+    public fun heartbeatAudioEnabled(soundEnabled: Boolean): Boolean = soundEnabled
 }
 
 public data class MoundHeartbeatCadence(

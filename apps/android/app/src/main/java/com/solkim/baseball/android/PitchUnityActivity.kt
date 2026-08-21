@@ -149,8 +149,10 @@ public class PitchUnityActivity : ComponentActivity(), UnityBridgeCallbacks.List
                     fatigue = store.current.pro?.fatigue ?: store.current.highSchool?.run?.fatigue ?: 0,
                     reduceMotion = settings.reducedMotionEnabled,
                     hapticsEnabled = settings.hapticsEnabled,
+                    soundEnabled = settings.soundEnabled,
                     tension = moundTension(),
                     disturbanceSeed = moundSeed(),
+                    adverseEpisode = moundAdverseEpisode(),
                     onSelectPitch = { selectedPitchIndex = it },
                     onSelectZone = { selectedZone = it },
                     onDeliver = ::submitSelectedPitch,
@@ -645,9 +647,16 @@ public class PitchUnityActivity : ComponentActivity(), UnityBridgeCallbacks.List
             awakeningWires = hs?.run?.selectedAwakenings.orEmpty().map { it.wire },
             memoryWires = hs?.run?.let { emptyList() } ?: emptyList(),
         )
-        return MoundTensionModel.tension(
+        val raw = MoundTensionModel.tension(
             MoundTensionInput(official, leverage, runners, balls, strikes, outs, fatigue, threat, adverse, composure),
         )
+        return MoundTensionModel.entryTension(raw, official)
+    }
+
+    private fun moundAdverseEpisode(): Boolean {
+        val last = store.current.pro?.activePitch?.log?.entries?.lastOrNull()?.outcome
+            ?: store.current.highSchool?.activePitch?.log?.entries?.lastOrNull()?.outcome
+        return last in adverseOutcomes
     }
 
     private fun moundSeed(): ULong {
@@ -690,8 +699,10 @@ private fun PitchSessionOverlay(
     fatigue: Int,
     reduceMotion: Boolean,
     hapticsEnabled: Boolean,
+    soundEnabled: Boolean,
     tension: Double,
     disturbanceSeed: ULong,
+    adverseEpisode: Boolean,
     onSelectPitch: (Int) -> Unit,
     onSelectZone: (PitchZone) -> Unit,
     onDeliver: (PitchDelivery) -> Unit,
@@ -754,8 +765,10 @@ private fun PitchSessionOverlay(
                                 fatigue = fatigue,
                                 reduceMotion = reduceMotion,
                                 hapticsEnabled = hapticsEnabled,
+                                soundEnabled = soundEnabled,
                                 tension = tension,
                                 disturbanceSeed = disturbanceSeed,
+                                adverseEpisode = adverseEpisode,
                             )
                         }
                         OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = "투구를 일시정지하고 Compose로 돌아가기" }) {
