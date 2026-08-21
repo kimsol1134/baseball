@@ -173,7 +173,10 @@ public object ProJourneyCommandKernel {
     ): ProJourneyCommandResult {
         val commandHash = ProJourneyCommandCodec.commandHash(envelope.command)
         val next = when (val command = envelope.command) {
-            is ProJourneyCommand.Start -> state.copy(pendingContractMarket = ProJourneyKernel.rookieMarket(careerId, command.teamId, envelope.expectedRevision, 1, command.draftRound, command.overallPick, command.signingBonus))
+            is ProJourneyCommand.Start -> state.copy(
+                rulesVersion = if (state.contractHistory.isEmpty()) ProJourneyKernel.CURRENT_JOURNEY_RULES_VERSION else state.rulesVersion,
+                pendingContractMarket = ProJourneyKernel.rookieMarket(careerId, command.teamId, envelope.expectedRevision, 1, command.draftRound, command.overallPick, command.signingBonus),
+            )
             is ProJourneyCommand.AcceptContract -> accept(state, careerId, command)
             is ProJourneyCommand.ReviewSeason -> ProJourneyKernel.settle(state, careerId, command.season, command.teamId, command.salary, command.merchandise, command.fanDelta, command.legacyDelta, command.hallOfFameDelta, command.contractYearsBefore, command.contractYearsAfter, command.nextRoute)
             is ProJourneyCommand.AcknowledgeSettlement -> ProJourneyKernel.acknowledgeSettlement(state, command.settlementId)

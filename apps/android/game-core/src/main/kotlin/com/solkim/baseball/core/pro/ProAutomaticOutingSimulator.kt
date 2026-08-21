@@ -42,6 +42,7 @@ internal class ProAutomaticOutingSimulator(
         outsTarget: Int,
         pitchCap: Int,
         baseSeed: ULong,
+        batterOffset: Int = 0,
     ): Line {
         val rng = SplitMix64(baseSeed)
         val fielders = listOf(
@@ -71,9 +72,9 @@ internal class ProAutomaticOutingSimulator(
             val batter = BatterSnapshot(
                 id = "week-batter-$plateAppearanceIndex",
                 name = "상대 타선",
-                contact = (50 + rng.nextInt(9) - 4).coerceIn(20, 80),
-                discipline = (50 + rng.nextInt(7) - 3).coerceIn(20, 80),
-                power = (50 + rng.nextInt(9) - 4).coerceIn(20, 80),
+                contact = (50 + batterOffset + rng.nextInt(9) - 4).coerceIn(20, 80),
+                discipline = (50 + batterOffset + rng.nextInt(7) - 3).coerceIn(20, 80),
+                power = (50 + batterOffset + rng.nextInt(9) - 4).coerceIn(20, 80),
                 batSide = if (rng.nextInt(100) < 32) BatSide.LEFT else BatSide.RIGHT,
             )
             val hotZone = com.solkim.baseball.core.pitch.PitchZone(rng.nextInt(3), rng.nextInt(3))

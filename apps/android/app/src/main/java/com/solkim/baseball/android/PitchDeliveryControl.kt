@@ -1,5 +1,9 @@
 package com.solkim.baseball.android
 
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -26,19 +30,25 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.solkim.baseball.core.pitch.MoundHeartbeatPattern
+import com.solkim.baseball.core.pitch.MoundMeterDisturbance
 import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchReleaseMeter
+import com.solkim.baseball.design.BaseballColors
+import kotlin.math.PI
 import kotlin.math.hypot
+import kotlin.random.Random
 
 /**
  * 기본 투구 조작. 누르고 있다가 초록 구간에서 놓는다. 자동 릴리스는 접근성 경로다.
+ * 조준점은 스스로 흔들리고 손가락이 상쇄한다. 가만히 두면 만점이 아니다.
  */
 @Composable
 public fun PitchDeliveryControl(
@@ -46,6 +56,12 @@ public fun PitchDeliveryControl(
     enabled: Boolean,
     onDeliver: (PitchDelivery) -> Unit,
     modifier: Modifier = Modifier,
+    velocityTenthsKph: Int = 1_350,
+    fatigue: Int = 0,
+    reduceMotion: Boolean = false,
+    hapticsEnabled: Boolean = true,
+    tension: Double = 0.0,
+    disturbanceSeed: ULong = 0UL,
 ) {
     if (autoRelease) {
         Button(
@@ -62,58 +78,89 @@ public fun PitchDeliveryControl(
 
     val density = LocalDensity.current
     val aimRadiusPx = with(density) { PitchReleaseMeter.AIM_RADIUS_POINTS.toFloat().dp.toPx() }
+    val context = LocalContext.current
+    val vibrator = remember(context) { context.pitchVibrator() }
     var pressing by remember { mutableStateOf(false) }
     var meter by remember { mutableStateOf(0.0) }
-    var aim by remember { mutableStateOf(Offset.Zero) }
+    var drag by remember { mutableStateOf(Offset.Zero) }
+    var sway by remember { mutableStateOf(Offset.Zero) }
     var holdHint by remember { mutableStateOf(false) }
     var pressStartedAtNanos by remember { mutableStateOf(0L) }
+    var wasInSweetSpot by remember { mutableStateOf(false) }
+    var lastHint by remember { mutableStateOf<String?>(null) }
+    val sweep = PitchReleaseMeter.sweepSeconds(velocityTenthsKph, fatigue, reduceMotion)
+    val amplitude = PitchReleaseMeter.swayAmplitude(fatigue, reduceMotion)
+    val amplitudePx = with(density) { amplitude.toFloat().dp.toPx() }.toDouble()
 
-    LaunchedEffect(pressing) {
+    LaunchedEffect(pressing, sweep, amplitudePx, tension, disturbanceSeed, hapticsEnabled, reduceMotion) {
         if (!pressing) return@LaunchedEffect
+        val phases = DoubleArray(4) { Random.nextDouble(0.0, 2 * PI) }
+        val beats = if (tension > 0.0) MoundHeartbeatPattern.entry(tension).beats.map { it.offset } else emptyList()
         val start = withFrameNanos { it }
+        var last = start
         while (true) {
             val now = withFrameNanos { it }
-            meter = PitchReleaseMeter.phase((now - start) / 1_000_000_000.0)
+            val elapsed = ((now - start).coerceAtLeast(0L)) / 1_000_000_000.0
+            val delta = ((now - last).coerceAtLeast(0L)) / 1_000_000_000.0
+            last = now
+            val step = minOf(0.1, delta)
+            val base = PitchReleaseMeter.phase(elapsed, sweep)
+            meter = MoundMeterDisturbance.position(base, elapsed, tension, beats, hapticsEnabled, reduceMotion, disturbanceSeed)
+            val offset = PitchReleaseMeter.swayOffset(elapsed, amplitudePx, phases)
+            sway = Offset(offset.first.toFloat(), offset.second.toFloat())
+            val inSweet = kotlin.math.abs(meter - 0.5) <= 0.09
+            if (inSweet && !wasInSweetSpot && hapticsEnabled && !reduceMotion) {
+                vibrator.pulse(18)
+            }
+            wasInSweetSpot = inSweet
+            if (step < 0) break
         }
+    }
+
+    val aim = clampAim(sway + drag, aimRadiusPx)
+    val live = PitchReleaseMeter.delivery(meter, aim.x.toDouble(), aim.y.toDouble(), aimRadiusPx.toDouble())
+    val onTarget = hypot(aim.x.toDouble(), aim.y.toDouble()) <= with(density) { 14.dp.toPx() }
+    val inPerfect = pressing && live.isPerfectRelease
+    val inSweet = pressing && kotlin.math.abs(meter - 0.5) <= 0.09
+    val prompt = when {
+        !enabled -> "연출 준비 중"
+        pressing && onTarget && inPerfect -> "지금 놓으면 완벽합니다"
+        pressing && onTarget && inSweet -> "지금"
+        pressing && onTarget -> "미터를 기다리세요"
+        pressing -> "과녁에 맞춰 주세요"
+        holdHint -> "짧게 탭하면 던져지지 않습니다. 누르고 있다가 놓으세요."
+        lastHint != null -> lastHint!!
+        else -> "누르고 있다가 초록 지점에서 놓으세요"
     }
 
     Column(modifier) {
         Text(
-            if (!enabled) {
-                "연출 준비 중"
-            } else if (pressing) {
-                if (PitchReleaseMeter.delivery(meter, 0.0, 0.0).isPerfectRelease) {
-                    "지금 놓으면 완벽합니다"
-                } else {
-                    "초록 지점에 맞춰 놓으세요"
-                }
-            } else if (holdHint) {
-                "짧게 탭하면 던져지지 않습니다. 누르고 있다가 놓으세요."
-            } else {
-                "누르고 있다가 초록 지점에서 놓으세요"
-            },
+            prompt,
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
+            color = BaseballColors.fieldChalk,
             modifier = Modifier.semantics { contentDescription = "릴리스 타이밍 안내" },
         )
         Spacer(Modifier.height(10.dp))
-        ReleaseMeterBar(meter = meter, pressing = pressing)
+        ReleaseMeterBar(meter = meter, pressing = pressing, inPerfect = inPerfect)
         Spacer(Modifier.height(12.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(92.dp)
                 .background(
-                    if (pressing) Color(0xFFC8A96B).copy(alpha = 0.22f) else Color(0xFFC8A96B),
+                    if (pressing) BaseballColors.action.copy(alpha = 0.18f) else BaseballColors.action,
                     RoundedCornerShape(18.dp),
                 )
                 .semantics { contentDescription = "투구 슬라이더. 누르고 조준한 뒤 놓으면 던집니다." }
-                .pointerInput(enabled) {
+                .pointerInput(enabled, aimRadiusPx, hapticsEnabled, reduceMotion) {
                     if (!enabled) return@pointerInput
                     awaitEachGesture {
                         awaitFirstDown(requireUnconsumed = false)
                         holdHint = false
-                        aim = Offset.Zero
+                        lastHint = null
+                        drag = Offset.Zero
+                        sway = Offset.Zero
+                        wasInSweetSpot = false
                         pressStartedAtNanos = System.nanoTime()
                         pressing = true
                         var released = false
@@ -122,15 +169,7 @@ public fun PitchDeliveryControl(
                                 val event = awaitPointerEvent()
                                 val change = event.changes.firstOrNull() ?: break
                                 val delta = change.position - change.previousPosition
-                                val next = Offset(
-                                    (aim.x + delta.x).coerceIn(-aimRadiusPx, aimRadiusPx),
-                                    (aim.y + delta.y).coerceIn(-aimRadiusPx, aimRadiusPx),
-                                )
-                                if (hypot(next.x.toDouble(), next.y.toDouble()) <= aimRadiusPx) aim = next
-                                else {
-                                    val length = hypot(next.x.toDouble(), next.y.toDouble()).toFloat().coerceAtLeast(1f)
-                                    aim = Offset(next.x / length * aimRadiusPx, next.y / length * aimRadiusPx)
-                                }
+                                drag += delta
                                 change.consume()
                                 if (!change.pressed) released = true
                             }
@@ -139,17 +178,23 @@ public fun PitchDeliveryControl(
                             pressing = false
                             if (held < PitchReleaseMeter.MINIMUM_HOLD_SECONDS) {
                                 holdHint = true
-                                aim = Offset.Zero
+                                drag = Offset.Zero
+                                sway = Offset.Zero
                             } else {
-                                onDeliver(
-                                    PitchReleaseMeter.delivery(
-                                        meter,
-                                        aim.x.toDouble(),
-                                        aim.y.toDouble(),
-                                        aimRadiusPx.toDouble(),
-                                    ),
+                                val releasedAim = clampAim(sway + drag, aimRadiusPx)
+                                val scored = PitchReleaseMeter.delivery(
+                                    meter,
+                                    releasedAim.x.toDouble(),
+                                    releasedAim.y.toDouble(),
+                                    aimRadiusPx.toDouble(),
                                 )
-                                aim = Offset.Zero
+                                if (hapticsEnabled && !reduceMotion) {
+                                    vibrator.pulse(if (scored.isPerfectRelease) 42 else 12)
+                                }
+                                lastHint = PitchReleaseMeter.coachingHint(scored)
+                                onDeliver(scored)
+                                drag = Offset.Zero
+                                sway = Offset.Zero
                             }
                         }
                     }
@@ -159,18 +204,29 @@ public fun PitchDeliveryControl(
             if (pressing) {
                 Canvas(Modifier.size(72.dp)) {
                     val center = Offset(size.width / 2f, size.height / 2f)
-                    drawCircle(Color(0xFFF4F1E8).copy(alpha = 0.35f), radius = 14.dp.toPx(), center = center, style = Stroke(2.dp.toPx()))
-                    drawCircle(Color(0xFFF4F1E8), radius = 7.dp.toPx(), center = center + aim)
+                    drawCircle(
+                        BaseballColors.fieldChalk.copy(alpha = 0.35f),
+                        radius = 15.dp.toPx(),
+                        center = center,
+                        style = Stroke(1.5.dp.toPx()),
+                    )
+                    drawCircle(BaseballColors.fieldChalk.copy(alpha = 0.5f), radius = 2.5.dp.toPx(), center = center)
+                    drawCircle(
+                        if (onTarget) BaseballColors.action else BaseballColors.fieldChalk,
+                        radius = 13.dp.toPx(),
+                        center = center + aim,
+                        style = Stroke(2.5.dp.toPx()),
+                    )
                 }
             } else {
-                Text("누르고 있다가 놓기", color = Color(0xFF101820), style = MaterialTheme.typography.titleMedium)
+                Text("누르고 있다가 놓기", color = BaseballColors.actionInk, style = MaterialTheme.typography.titleMedium)
             }
         }
     }
 }
 
 @Composable
-private fun ReleaseMeterBar(meter: Double, pressing: Boolean) {
+private fun ReleaseMeterBar(meter: Double, pressing: Boolean, inPerfect: Boolean) {
     val perfectWidth = (1_000 - PitchDelivery.PERFECT_RELEASE_THRESHOLD) / 1_000f
     Canvas(
         Modifier
@@ -180,27 +236,58 @@ private fun ReleaseMeterBar(meter: Double, pressing: Boolean) {
     ) {
         val width = size.width
         val height = size.height
-        drawRoundRect(Color(0xFF19242D), cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f))
+        drawRoundRect(BaseballColors.surfaceRaised, cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f))
         val sweet = width * 0.18f
         drawRoundRect(
-            Color(0xFFC8A96B).copy(alpha = 0.42f),
+            BaseballColors.action.copy(alpha = 0.42f),
             topLeft = Offset(width * 0.41f, 0f),
             size = androidx.compose.ui.geometry.Size(sweet, height),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f),
         )
         val perfect = (width * perfectWidth).coerceAtLeast(3f)
         drawRoundRect(
-            Color(0xFF8DB5A4),
+            BaseballColors.milestone,
             topLeft = Offset(width * (0.5f - perfectWidth / 2f), 0f),
             size = androidx.compose.ui.geometry.Size(perfect, height),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f),
         )
         val needleX = ((width - 6f) * meter.toFloat()).coerceIn(0f, width - 6f)
         drawRoundRect(
-            color = if (pressing && PitchReleaseMeter.delivery(meter, 0.0, 0.0).isPerfectRelease) Color(0xFF8DB5A4) else Color(0xFFC8A96B),
+            color = if (inPerfect) BaseballColors.milestone else if (pressing) BaseballColors.action else BaseballColors.border,
             topLeft = Offset(needleX, 0f),
             size = androidx.compose.ui.geometry.Size(6f, height),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(height / 2f, height / 2f),
         )
+    }
+}
+
+private fun clampAim(aim: Offset, radius: Float): Offset {
+    val length = hypot(aim.x.toDouble(), aim.y.toDouble()).toFloat()
+    if (length <= radius) return aim
+    val scale = radius / length.coerceAtLeast(1f)
+    return Offset(aim.x * scale, aim.y * scale)
+}
+
+private fun android.content.Context.pitchVibrator(): Vibrator? = try {
+    if (Build.VERSION.SDK_INT >= 31) {
+        getSystemService(VibratorManager::class.java)?.defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        getSystemService(Vibrator::class.java)
+    }
+} catch (_: Throwable) {
+    null
+}
+
+private fun Vibrator?.pulse(milliseconds: Long) {
+    val device = this ?: return
+    if (!device.hasVibrator()) return
+    runCatching {
+        if (Build.VERSION.SDK_INT >= 26) {
+            device.vibrate(VibrationEffect.createOneShot(milliseconds.coerceIn(1L, 80L), VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            device.vibrate(milliseconds.coerceIn(1L, 80L))
+        }
     }
 }

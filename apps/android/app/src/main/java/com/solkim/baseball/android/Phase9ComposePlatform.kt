@@ -158,6 +158,7 @@ private fun Phase9ShareSurface(
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("라이프 카드 공유", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text("카드 이미지와 한국어 글을 함께 기기의 공유 화면으로 보냅니다.", style = MaterialTheme.typography.bodyLarge)
+            selectedId?.let { LifeCardVisual(state, it) }
             state.highSchool?.archive.orEmpty().asReversed().forEach { record ->
                 OutlinedButton(
                     onClick = { onSelectedLifeCardCareerIdChanged(record.careerId) },

@@ -92,6 +92,7 @@ public object ProStateCodec {
         out.writeInt(state.importantGames); out.writeList(state.standings) { writeStanding(it) }; out.writeList(state.leaderboards) { writeLeaderboard(it) }; out.writeList(state.legacyCandidates) { writeLegacy(it) }; out.writeNullableString(state.selectedLegacyId)
         out.writeNullable(state.highSchoolArchiveSettlement) { writeSettlement(it) }; out.writeNullable(state.activePitch) { writePitchSession(it) }; out.writeNullable(state.lastPresentation) { writePresentation(it) }; out.writeNullable(state.lastSegmentProgress) { writeSegmentProgress(it) }; out.writeNullableInt(state.hallOfFameScore); out.writeStrings(state.news)
         out.writeList(state.commandReceipts) { writeReceipt(it) }; out.writeString(state.commitment)
+        out.writeInt(state.proRulesVersion)
     }
 
     private fun readState(input: DataInputStream, version: Int): ProState {
@@ -106,8 +107,9 @@ public object ProStateCodec {
         val importantGames = input.readInt(); val standings = input.readList { readStanding() }; val leaderboards = input.readList { readLeaderboard() }; val legacy = input.readList { readLegacy() }; val selectedLegacy = input.readNullableString()
         val settlement = input.readNullable { readSettlement() }; val activePitch = input.readNullable { readPitchSession() }; val presentation = input.readNullable { readPresentation() }; val lastSegment = input.readNullable { readSegmentProgress() }; val hof = input.readNullableInt(); val news = input.readStrings()
         val receipts = input.readList { readReceipt() }; val commitment = input.readString()
+        val proRulesVersion = if (input.available() >= 4) input.readInt() else 1
         if (input.available() != 0) fail("pro.state.trailing_bytes")
-        return ProState(careerId, revision, mode, source, legacyContext, activePreserved, seed, name, pitcher, team, entitlement, age, season, week, phase, level, role, rolePreference, managerTrust, catcherTrust, fatigue, injuryWeeks, serviceYears, military, contract, currentStats, currentLines, careerStats, ledgers, awards, milestones, decisions, pending, development, segment, trigger, rival, tensions, importantGames, standings, leaderboards, legacy, selectedLegacy, settlement, activePitch, presentation, lastSegment, hof, news, receipts, commitment)
+        return ProState(careerId, revision, mode, source, legacyContext, activePreserved, seed, name, pitcher, team, entitlement, age, season, week, phase, level, role, rolePreference, managerTrust, catcherTrust, fatigue, injuryWeeks, serviceYears, military, contract, currentStats, currentLines, careerStats, ledgers, awards, milestones, decisions, pending, development, segment, trigger, rival, tensions, importantGames, standings, leaderboards, legacy, selectedLegacy, settlement, activePitch, presentation, lastSegment, hof, news, receipts, commitment, proRulesVersion)
     }
 
     private fun DataOutputStream.writeTeam(value: ProTeam) { writeString(value.id); writeString(value.name); writeString(value.positionCompetitor); writeString(value.developmentPlan); writeInt(value.demand) }

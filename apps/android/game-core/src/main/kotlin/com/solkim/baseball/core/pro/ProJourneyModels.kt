@@ -360,7 +360,7 @@ public data class ProCareerJourneyState(
     ),
 ) {
     init {
-        require(rulesVersion >= 1) { "pro.journey.rules_version" }
+        require(rulesVersion in 1..ProJourneyKernel.CURRENT_JOURNEY_RULES_VERSION) { "pro.journey.rules_version" }
         require(reputation.fanSupport in 0..100) { "pro.journey.fan_support" }
         require(contractHistory.map { it.contractId }.distinct().size == contractHistory.size) { "pro.journey.contract_ids" }
         require(finances.transactions.map { it.id }.distinct().size == finances.transactions.size) { "pro.journey.transaction_ids" }

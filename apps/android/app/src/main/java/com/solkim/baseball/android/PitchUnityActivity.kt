@@ -51,6 +51,7 @@ import com.solkim.baseball.application.GameAggregateState
 import com.solkim.baseball.application.KotlinGameStore
 import com.solkim.baseball.application.Phase7VerticalController
 import com.solkim.baseball.application.PitchBoundary
+import com.solkim.baseball.application.PitchCareerKind
 import com.solkim.baseball.application.PitchPresentationFactory
 import com.solkim.baseball.bridge.PitchIpcCodec
 import com.solkim.baseball.bridge.PitchReentryPolicy
@@ -59,8 +60,13 @@ import com.solkim.baseball.bridge.ProtocolDecisionKind
 import com.solkim.baseball.bridge.UnityRuntimeHost
 import com.solkim.baseball.bridge.UnityRuntimeHostRegistry
 import com.solkim.baseball.bridge.UnityRuntimeUnavailableException
+import com.solkim.baseball.core.pitch.BaserunnerStateSnapshot
+import com.solkim.baseball.core.pitch.MoundComposureInput
+import com.solkim.baseball.core.pitch.MoundTensionInput
+import com.solkim.baseball.core.pitch.MoundTensionModel
 import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchKind
+import com.solkim.baseball.core.pitch.PitchOutcome
 import com.solkim.baseball.core.pitch.PitchZone
 import com.solkim.baseball.design.BaseballMigrationTheme
 import com.solkim.baseball.model.PitchAcknowledgementKind
@@ -131,13 +137,20 @@ public class PitchUnityActivity : ComponentActivity(), UnityBridgeCallbacks.List
         )
         overlay.setContent {
             BaseballMigrationTheme {
+                val settings = store.current.settings
                 PitchSessionOverlay(
                     status = status,
                     selectedPitchIndex = selectedPitchIndex,
                     selectedZone = selectedZone,
                     unityReady = unityReady,
                     resultReady = resultReady,
-                    autoRelease = store.current.settings.autoReleaseEnabled,
+                    autoRelease = settings.autoReleaseEnabled,
+                    velocityTenthsKph = selectedPitchVelocity(),
+                    fatigue = store.current.pro?.fatigue ?: store.current.highSchool?.run?.fatigue ?: 0,
+                    reduceMotion = settings.reducedMotionEnabled,
+                    hapticsEnabled = settings.hapticsEnabled,
+                    tension = moundTension(),
+                    disturbanceSeed = moundSeed(),
                     onSelectPitch = { selectedPitchIndex = it },
                     onSelectZone = { selectedZone = it },
                     onDeliver = ::submitSelectedPitch,
@@ -596,6 +609,67 @@ public class PitchUnityActivity : ComponentActivity(), UnityBridgeCallbacks.List
         }
     }
 
+    private fun moundTension(): Double {
+        val state = store.current
+        val pitch = state.pitch
+        val official = pitch != null && pitch.careerKind != PitchCareerKind.TUTORIAL && !pitch.challengeRun
+        val hs = state.highSchool
+        val pro = state.pro
+        val hsSession = hs?.activePitch
+        val proSession = pro?.activePitch
+        val runners = when {
+            proSession != null -> proSession.game.runners
+            hsSession != null -> BaserunnerStateSnapshot(
+                hsSession.game.firstOccupied,
+                hsSession.game.secondOccupied,
+                hsSession.game.thirdOccupied,
+                52,
+            )
+            else -> BaserunnerStateSnapshot.EMPTY
+        }
+        val leverage = proSession?.context?.leverage ?: hsSession?.context?.leverage ?: 500
+        val balls = proSession?.context?.balls ?: hsSession?.context?.balls ?: 0
+        val strikes = proSession?.context?.strikes ?: hsSession?.context?.strikes ?: 0
+        val outs = proSession?.context?.outs ?: hsSession?.context?.outs ?: 0
+        val fatigue = pro?.fatigue ?: hs?.run?.fatigue ?: 0
+        val batter = proSession?.batter
+        val threat = if (batter != null) MoundTensionModel.batterThreat(batter.contact, batter.discipline, batter.power) else 50
+        val adverse = when {
+            proSession != null -> proSession.log.entries.lastOrNull()?.outcome in adverseOutcomes
+            hsSession != null -> hsSession.log.entries.lastOrNull()?.outcome in adverseOutcomes
+            else -> false
+        }
+        val composure = MoundComposureInput(
+            command = pro?.pitcher?.command ?: hs?.run?.pitcher?.command ?: 0,
+            stamina = pro?.pitcher?.stamina ?: hs?.run?.pitcher?.stamina ?: 0,
+            awakeningWires = hs?.run?.selectedAwakenings.orEmpty().map { it.wire },
+            memoryWires = hs?.run?.let { emptyList() } ?: emptyList(),
+        )
+        return MoundTensionModel.tension(
+            MoundTensionInput(official, leverage, runners, balls, strikes, outs, fatigue, threat, adverse, composure),
+        )
+    }
+
+    private fun moundSeed(): ULong {
+        val pitch = store.current.pitch
+        return MoundTensionModel.seed(pitch?.gameId ?: pitch?.sessionId ?: "mound")
+    }
+
+    private val adverseOutcomes = setOf(
+        PitchOutcome.SINGLE,
+        PitchOutcome.DOUBLE,
+        PitchOutcome.TRIPLE,
+        PitchOutcome.HOME_RUN,
+        PitchOutcome.HIT_BY_PITCH,
+    )
+
+    private fun selectedPitchVelocity(): Int {
+        val kind = pitchTypeForIndex(selectedPitchIndex)
+        val profiles = store.current.pro?.pitcher?.pitchProfiles
+            ?: emptyList()
+        return profiles.firstOrNull { it.pitchType == kind }?.velocityTenthsKph ?: 1_350
+    }
+
     private fun platform(): com.solkim.baseball.platform.NativePhase9Platform = (application as BaseballApplication).platform
 
     private fun playbackSettings(): com.solkim.baseball.platform.NativePlaybackSettings {
@@ -612,6 +686,12 @@ private fun PitchSessionOverlay(
     unityReady: Boolean,
     resultReady: Boolean,
     autoRelease: Boolean,
+    velocityTenthsKph: Int,
+    fatigue: Int,
+    reduceMotion: Boolean,
+    hapticsEnabled: Boolean,
+    tension: Double,
+    disturbanceSeed: ULong,
     onSelectPitch: (Int) -> Unit,
     onSelectZone: (PitchZone) -> Unit,
     onDeliver: (PitchDelivery) -> Unit,
@@ -640,34 +720,42 @@ private fun PitchSessionOverlay(
                     }
                 }
                 Spacer(Modifier.height(180.dp))
-                Surface(color = ComposeColor(0xF0101820), shape = MaterialTheme.shapes.large) {
+                Surface(color = ComposeColor(0xE6050A15), shape = MaterialTheme.shapes.large) {
                     Column(
                         Modifier.fillMaxWidth().padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         if (resultReady) {
-                            Text("결과는 Kotlin save 이후 노출됩니다.", style = MaterialTheme.typography.titleMedium)
+                            Text("결과는 저장 뒤에 열립니다.", style = MaterialTheme.typography.titleMedium)
                             Button(onClick = onReplay, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = "동일 투구 exact replay" }) { Text("같은 투구 다시 재생") }
                             Button(onClick = onPostgame, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = "Postgame 결과 화면으로 이동" }) { Text("결과 화면으로") }
                         } else {
-                            Text("구종 선택", style = MaterialTheme.typography.titleMedium, color = ComposeColor.White)
-                            listOf("직구", "슬라이더", "커브", "체인지업").forEachIndexed { index, label ->
-                                val selected = selectedPitchIndex == index
-                                OutlinedButton(
-                                    onClick = { onSelectPitch(index) },
-                                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics {
-                                        role = Role.Button
-                                        contentDescription = "$label ${if (selected) "선택됨" else "선택 가능"}"
-                                        stateDescription = if (selected) "선택됨" else "선택되지 않음"
-                                    },
-                                ) { Text(if (selected) "✓ $label" else label, color = ComposeColor.White) }
+                            val kinds = listOf("직구", "슬라이더", "커브", "체인지업")
+                            Text("${kinds[selectedPitchIndex.coerceIn(0, 3)]} · ${velocityTenthsKph / 10}km/h", color = ComposeColor.White, style = MaterialTheme.typography.labelLarge)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                kinds.forEachIndexed { index, label ->
+                                    val selected = selectedPitchIndex == index
+                                    OutlinedButton(
+                                        onClick = { onSelectPitch(index) },
+                                        modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics {
+                                            role = Role.Button
+                                            contentDescription = "$label ${if (selected) "선택됨" else "선택 가능"}"
+                                            stateDescription = if (selected) "선택됨" else "선택되지 않음"
+                                        },
+                                    ) { Text(if (selected) "✓ $label" else label, color = ComposeColor.White, style = MaterialTheme.typography.labelMedium) }
+                                }
                             }
-                            Text("코스 선택", style = MaterialTheme.typography.titleMedium, color = ComposeColor.White)
                             ZonePicker(selectedZone, onSelectZone)
                             PitchDeliveryControl(
                                 autoRelease = autoRelease,
                                 enabled = unityReady,
                                 onDeliver = onDeliver,
+                                velocityTenthsKph = velocityTenthsKph,
+                                fatigue = fatigue,
+                                reduceMotion = reduceMotion,
+                                hapticsEnabled = hapticsEnabled,
+                                tension = tension,
+                                disturbanceSeed = disturbanceSeed,
                             )
                         }
                         OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = "투구를 일시정지하고 Compose로 돌아가기" }) {

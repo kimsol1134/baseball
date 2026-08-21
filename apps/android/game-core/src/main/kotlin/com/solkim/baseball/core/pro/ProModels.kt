@@ -126,7 +126,7 @@ public data class ProDevelopmentProgress(
     val stamina: Int = 0,
 ) {
     init {
-        require(stuff in 0..1 && command in 0..1 && movement in 0..1 && stamina in 0..1) { "development.progress" }
+        require(stuff in 0..8 && command in 0..8 && movement in 0..8 && stamina in 0..8) { "development.progress" }
     }
 
     public fun value(plan: ProWeekPlan): Int = when (plan) {
@@ -459,6 +459,8 @@ public data class ProState(
     val news: List<String>,
     val commandReceipts: List<ProCommandReceipt> = emptyList(),
     val commitment: String = "",
+    /** Live outing offset and weekly ticks. 1 = frozen, 4 = current iOS live rules. */
+    val proRulesVersion: Int = 1,
     /** Optional Wave 6 journey block. Legacy ProState callers and v1 saves remain nil. */
     val journeyState: ProCareerJourneyState? = null,
 )

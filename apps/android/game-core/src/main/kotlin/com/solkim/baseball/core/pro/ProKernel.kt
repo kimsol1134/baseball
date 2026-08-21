@@ -44,6 +44,21 @@ public class ProKernelException(public val code: String) : IllegalArgumentExcept
 public class ProKernel(
     private val pitch: PitchKernel = PitchKernel(),
 ) {
+    public companion object {
+        public const val CURRENT_RULES_VERSION: Int = 4
+
+        public fun developmentTicksRequired(ability: Int): Int = when {
+            ability < 55 -> 2
+            ability < 65 -> 3
+            ability < 73 -> 4
+            else -> 6
+        }
+
+        public fun liveOutingOffset(season: Int): Int = min(8, max(0, season - 1))
+
+        public fun usesLiveOutingRules(state: ProState): Boolean = state.proRulesVersion >= CURRENT_RULES_VERSION
+    }
+
     private val automaticOuting = ProAutomaticOutingSimulator(pitch)
 
     public fun startLinked(request: ProStartLinkedRequest): ProResult {
@@ -134,6 +149,7 @@ public class ProKernel(
                     outsTarget = roles.second,
                     pitchCap = roles.third,
                     baseSeed = baseSeed,
+                    batterOffset = if (usesLiveOutingRules(state)) liveOutingOffset(state.season) else 0,
                 )
                 outs += line.outs
                 strikeouts += line.strikeouts
@@ -225,7 +241,7 @@ public class ProKernel(
             }
         } else if (managerTrust >= 52) ProRole.STARTER else ProRole.LONG_RELIEF
         val role = state.rolePreference ?: assignedRole
-        val development = resolveDevelopment(state.pitcher, state.developmentProgress, plan, targetPitch, recovering)
+        val development = resolveDevelopment(state.pitcher, state.developmentProgress, plan, targetPitch, recovering, usesLiveOutingRules(state))
         val priorImportantGames = state.importantGames
         val trigger = if (nextWeek >= ProCatalog.WEEKS_PER_SEASON || lines.isEmpty()) null else importantGameTrigger(
             state, nextWeek, level, managerTrust, currentStats, skill, priorImportantGames,
@@ -581,13 +597,10 @@ public class ProKernel(
         val seed = seed(seedText)
         val stats = state.currentStats
         var awards = state.awards
-        if (stats.strikeouts >= 120) awards = awards.addUnique("시즌 ${state.season} 탈삼진상")
-        if (stats.runPerNinePermille < 3_000 && stats.games >= 20) awards = awards.addUnique("시즌 ${state.season} 최소 실점상")
-        val bb9 = if (stats.inningsOuts == 0) 9_990 else stats.walks * 27_000 / stats.inningsOuts
-        if (bb9 < 2_500 && stats.inningsOuts >= 180) awards = awards.addUnique("시즌 ${state.season} 정밀 제구상")
-        val h9 = if (stats.inningsOuts == 0) 9_990 else stats.hits * 27_000 / stats.inningsOuts
-        if (h9 < 8_500 && stats.inningsOuts >= 180) awards = awards.addUnique("시즌 ${state.season} 피안타 억제상")
-        if (stats.inningsOuts >= 360) awards = awards.addUnique("시즌 ${state.season} 이닝 책임상")
+        val honorVersion = if (usesLiveOutingRules(state)) 2 else 1
+        ProCareerRecognitionRules.awardContentIDs(stats, honorVersion).forEach { contentId ->
+            awards = awards.addUnique(ProCareerRecognitionRules.awardLabel(contentId, state.season))
+        }
         val milestones = state.milestones.addUnique("${state.season}시즌 완주")
         val ledger = ProSeasonLedger(
             season = state.season,
@@ -691,6 +704,7 @@ public class ProKernel(
             lastPresentation = null,
             news = news.take(30),
             commitment = "",
+            proRulesVersion = max(state.proRulesVersion, CURRENT_RULES_VERSION),
         )
         val next = base.copy(
             seasonTensions = seasonTensions(base),
@@ -901,6 +915,7 @@ public class ProKernel(
             add(state.highSchoolArchiveSettlement?.toString() ?: "-"); add(state.activePitch?.toString() ?: "-")
             add(state.hallOfFameScore?.toString() ?: "-"); add(state.news.joinToString("\u001f"))
             add(state.commandReceipts.joinToString(";") { it.toString() })
+            add("proRules:${state.proRulesVersion}")
             state.journeyState?.let { add("journey:v1:${ProJourneyStateCodec.canonicalToken(it)}") }
         }
         return StableHash.fnv1a64(values.joinToString("|"))
@@ -969,6 +984,7 @@ public class ProKernel(
             lastSegmentProgress = null,
             hallOfFameScore = null,
             news = listOf("신인 계약 제안 · ${team.name} · $identityName${if (draftEvaluation > 0) " · 평가 $draftEvaluation" else ""}"),
+            proRulesVersion = CURRENT_RULES_VERSION,
         )
         return signed(state)
     }
@@ -1120,7 +1136,14 @@ public class ProKernel(
 
     private data class DevelopmentResolution(val pitcher: PitcherSnapshot, val progress: ProDevelopmentProgress, val labels: List<String>)
 
-    private fun resolveDevelopment(pitcher: PitcherSnapshot, progress: ProDevelopmentProgress, plan: ProWeekPlan, target: PitchKind?, paused: Boolean): DevelopmentResolution {
+    private fun resolveDevelopment(
+        pitcher: PitcherSnapshot,
+        progress: ProDevelopmentProgress,
+        plan: ProWeekPlan,
+        target: PitchKind?,
+        paused: Boolean,
+        liveTicks: Boolean,
+    ): DevelopmentResolution {
         if (paused || plan == ProWeekPlan.RECOVER || plan == ProWeekPlan.EARN_TRUST) return DevelopmentResolution(pitcher, progress, emptyList())
         var value = pitcher
         var stuff = progress.stuff
@@ -1128,21 +1151,25 @@ public class ProKernel(
         var movement = progress.movement
         var stamina = progress.stamina
         val labels = mutableListOf<String>()
-        fun advance(current: Int, setter: (Int) -> Unit, focus: ProGrowthFocus, label: String, pitch: PitchKind? = null) {
-            if (current == 0) setter(1) else {
+        fun advance(current: Int, setter: (Int) -> Unit, ability: Int, focus: ProGrowthFocus, label: String, pitch: PitchKind? = null) {
+            val needed = if (liveTicks) developmentTicksRequired(ability) else 2
+            val nextTick = current + 1
+            if (nextTick >= needed) {
                 setter(0)
                 value = grow(value, focus, 1, pitch)
                 labels += "$label +1"
+            } else {
+                setter(nextTick)
             }
         }
         when (plan) {
-            ProWeekPlan.DEVELOP_STUFF -> advance(stuff, { stuff = it }, ProGrowthFocus.STUFF, "구위")
-            ProWeekPlan.REFINE_COMMAND -> advance(command, { command = it }, ProGrowthFocus.COMMAND, "제구")
-            ProWeekPlan.DEVELOP_MOVEMENT -> advance(movement, { movement = it }, ProGrowthFocus.MOVEMENT, "변화구", target)
-            ProWeekPlan.BUILD_STAMINA -> advance(stamina, { stamina = it }, ProGrowthFocus.STAMINA, "체력")
+            ProWeekPlan.DEVELOP_STUFF -> advance(stuff, { stuff = it }, pitcher.stuff, ProGrowthFocus.STUFF, "구위")
+            ProWeekPlan.REFINE_COMMAND -> advance(command, { command = it }, pitcher.command, ProGrowthFocus.COMMAND, "제구")
+            ProWeekPlan.DEVELOP_MOVEMENT -> advance(movement, { movement = it }, pitcher.movement, ProGrowthFocus.MOVEMENT, "변화구", target)
+            ProWeekPlan.BUILD_STAMINA -> advance(stamina, { stamina = it }, pitcher.stamina, ProGrowthFocus.STAMINA, "체력")
             ProWeekPlan.DEVELOP_WEAPON -> {
-                advance(stuff, { stuff = it }, ProGrowthFocus.STUFF, "구위")
-                advance(movement, { movement = it }, ProGrowthFocus.MOVEMENT, "변화구", target)
+                advance(stuff, { stuff = it }, pitcher.stuff, ProGrowthFocus.STUFF, "구위")
+                advance(movement, { movement = it }, pitcher.movement, ProGrowthFocus.MOVEMENT, "변화구", target)
             }
             else -> Unit
         }

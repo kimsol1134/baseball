@@ -9,6 +9,7 @@ import kotlin.math.min
 /** Pure Wave 6 rules. No UI-facing localized strings or implicit RNG are used here. */
 public object ProJourneyKernel {
     public const val JOURNEY_RULES_VERSION: Int = 1
+    public const val CURRENT_JOURNEY_RULES_VERSION: Int = 2
     public const val RETIRED_NUMBER_SEASONS: Int = 8
     public const val RETIRED_NUMBER_LEGACY: Int = 80
     public const val RETIRED_NUMBER_FAN: Int = 60
@@ -280,7 +281,10 @@ public object ProJourneyKernel {
         )
     }
 
-    public fun teamLegacy(record: ProTeamCareerRecord): Int = min(100, record.completedSeasons * 8 + record.awardCount * 5 + record.communityPoints)
+    public fun teamLegacy(record: ProTeamCareerRecord): Int = teamLegacy(record, 1)
+
+    public fun teamLegacy(record: ProTeamCareerRecord, rulesVersion: Int): Int =
+        ProTeamLegacyRules.score(record, rulesVersion)
 
     public fun merchandiseTier(fanSupport: Int): ProMerchandiseTier = when (fanSupport.coerceIn(0, 100)) {
         in 75..100 -> ProMerchandiseTier.ICON
@@ -292,7 +296,9 @@ public object ProJourneyKernel {
     public fun retirementPreview(state: ProCareerJourneyState, lastTeamId: String?): ProCareerRetirementProjection {
         val last = lastTeamId?.let { id -> state.teamRecords.firstOrNull { it.teamId == id } }
         val completed = state.goalHistory.filter { it.outcome == ProCareerGoalOutcome.COMPLETED }.map { it.ambition }.distinct()
-        val retiredNumber = last != null && last.completedSeasons >= RETIRED_NUMBER_SEASONS && teamLegacy(last) >= RETIRED_NUMBER_LEGACY && state.reputation.fanSupport >= RETIRED_NUMBER_FAN
+        val rules = state.rulesVersion
+        val lastLegacy = last?.let { teamLegacy(it, rules) } ?: 0
+        val retiredNumber = last != null && last.completedSeasons >= RETIRED_NUMBER_SEASONS && lastLegacy >= RETIRED_NUMBER_LEGACY && state.reputation.fanSupport >= RETIRED_NUMBER_FAN
         val honors = buildList {
             if (retiredNumber) add(ProRetirementHonor("retired-number:$lastTeamId", ProRetirementHonorKind.RETIRED_NUMBER, lastTeamId, null, null))
             if ((state.lastSettlement?.hallOfFameAfter ?: 0) >= 70) add(ProRetirementHonor("hof:$lastTeamId", ProRetirementHonorKind.HALL_OF_FAME, null, null, state.lastSettlement?.hallOfFameAfter?.toLong()))
@@ -303,10 +309,10 @@ public object ProJourneyKernel {
             finalScore = (state.lastSettlement?.hallOfFameAfter ?: 0) + state.reputation.fanSupport,
             lastTeamId = lastTeamId,
             lastTeamSeasons = last?.completedSeasons ?: 0,
-            lastTeamLegacy = last?.let(::teamLegacy) ?: 0,
+            lastTeamLegacy = lastLegacy,
             fanSupport = state.reputation.fanSupport,
             retiredNumberEligible = retiredNumber,
-            clubHallTeamIds = state.teamRecords.filter { it.completedSeasons >= 5 && teamLegacy(it) >= 40 }.map { it.teamId }.sorted(),
+            clubHallTeamIds = state.teamRecords.filter { it.completedSeasons >= 6 && teamLegacy(it, rules) >= 65 }.map { it.teamId }.sorted(),
             completedAmbitions = completed,
             careerEarnings = state.finances.careerEarnings,
             honors = honors,
@@ -354,6 +360,7 @@ public object ProJourneyKernel {
             )
         }
         return ProCareerJourneyState(
+            rulesVersion = JOURNEY_RULES_VERSION,
             teamRecords = records,
             contractHistory = listOfNotNull(contract),
             reputation = ProReputationState(fanSupport = fan),
