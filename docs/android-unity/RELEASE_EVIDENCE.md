@@ -102,6 +102,22 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
   versionCode 40 completed track, validate, commit을 원자적으로 완료했다. commit 직후 API 재조회도
   두 트랙의 versionCode 40/status completed를 확인했다. Play Console Alpha UI는 현재 v40
   `검토 중`이며 승인 전까지 v39를 선택한 테스터에게 계속 제공한다.
+- versionCode 40 승인 뒤 closed-test 물리기기들은 설치에 성공했지만 첫 실행 직후 Android의
+  `앱에 버그가 있어 앱을 종료했습니다` 복구 창을 표시했다. Play vitals는 당일 오전 11시까지만
+  집계되어 결과가 없었으므로 동일 v40 universal APK를 API 35/420dpi ARM64 에뮬레이터에 설치해
+  crash buffer를 확보했다. 첫 원인은 `FirebaseInitProvider`의
+  `The Crashlytics build ID is missing`, 다음 후보에서 확인한 두 번째 원인은 Amplitude 2.40.1의
+  `NoClassDefFoundError: okhttp3.Call$Factory`였다.
+- commit `898335ed7c430145e9afac16a950b32a59841bbc`는 앱 모듈에 공식 Crashlytics Gradle
+  plugin 3.0.7을 적용하고 OkHttp 4.12.0을 production runtime과 lock state에 포함한다. clean
+  production versionCode 41 AAB를 universal APK로 변환해 cold start한 결과 pid 유지,
+  `MainActivity` top-resumed, 실제 `첫 화면` Compose UI tree, Crashlytics 20.1.0 초기화,
+  crash buffer 0을 확인했다. AAB SHA-256은
+  `a6a89d67d98208f985410be0cdc0c2b6a42df3a118b759e2301160215780f999`다.
+- Android Publisher edit `17377488789413821413`에서 versionCode 41을 internal/Alpha에
+  업로드하고 두 completed track, validate, commit을 원자적으로 완료했다. Play Console Alpha는
+  현재 v41 `검토 중`이며 승인 전에는 시작 크래시가 있는 v40이 계속 제공되므로 외부 테스터에게
+  v41 제공 완료 전 재실행을 요청하지 않는다.
 
 - 앱/package 생성 완료: `야구 못하면 또 환생함` / `com.solkim.baseball.android`
 - 유료 상태, 대한민국 가격 `KRW 4,400`, 제품 세금 카테고리 `디지털 앱 판매`
