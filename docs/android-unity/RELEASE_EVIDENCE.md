@@ -89,6 +89,20 @@ font 200%, low-memory callback, foreground, crash/ANR·PII·runtime bridge scan�
 
 ## Play Console
 
+- 2026-08-22 closed-test 기기 풀에서 versionCode 39가 여러 Samsung 휴대전화에
+  `기기가 이 버전과 호환되지 않습니다`로 표시되는 증거를 확인했다. 원인은
+  `small/normal × 6 density`의 `<compatible-screens>`가 선언하지 않은 중간 밀도를
+  Play 비호환으로 처리한 것이었다. commit `07f449c40758b75fbba52786d407108436834a48`에서
+  이를 `supports-screens(anyDensity=true)`로 교체하고 source/release gate, Gradle unit suite,
+  debug APK 및 production 서명 AAB의 병합 manifest를 검증했다.
+- 같은 clean commit에서 만든 Compose versionCode 40 AAB SHA-256은
+  `0e776baf8031ab4da08fcc463bd2fb3d246b1af0510bf6f230cc5d4a903e528a`, upload certificate
+  SHA-256은 기존 pin `D0A8EC4FDCEC6F7F74BBEBCE747CB3D2FA308DB72CCA106D30AA2A782DAA445F`다.
+  Android Publisher edit `17263979401652351468`에서 AAB 업로드, internal/Alpha
+  versionCode 40 completed track, validate, commit을 원자적으로 완료했다. commit 직후 API 재조회도
+  두 트랙의 versionCode 40/status completed를 확인했다. Play Console Alpha UI는 현재 v40
+  `검토 중`이며 승인 전까지 v39를 선택한 테스터에게 계속 제공한다.
+
 - 앱/package 생성 완료: `야구 못하면 또 환생함` / `com.solkim.baseball.android`
 - 유료 상태, 대한민국 가격 `KRW 4,400`, 제품 세금 카테고리 `디지털 앱 판매`
 - Play가 App Bundle의 `16KB 지원`, min API 26, target SDK 36, ARM64, OpenGL ES 3.0을 확인
