@@ -132,23 +132,21 @@ for (const removed of [
   requireCondition(removedPermissions.includes(removed), `${removed} must be explicitly removed`);
 }
 requireCondition(!androidManifest.includes("<queries"), "broad package visibility is forbidden");
-const expectedScreenPairs = ["small", "normal"].flatMap((size) =>
-  ["ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"].map(
-    (density) => `${size}:${density}`,
-  ),
-).sort();
-const screenPairs = [...androidManifest.matchAll(/<screen\b([^>]*?)\/?\s*>/gs)]
-  .map((match) => {
-    const size = match[1].match(/android:screenSize="([^"]+)"/)?.[1];
-    const density = match[1].match(/android:screenDensity="([^"]+)"/)?.[1];
-    requireCondition(size && density, "compatible screen entry is missing size or density");
-    return `${size}:${density}`;
-  })
-  .sort();
 requireCondition(
-  JSON.stringify(screenPairs) === JSON.stringify(expectedScreenPairs),
-  `compatible-screens must exactly match smartphone size/density pairs: ${screenPairs.join(", ")}`,
+  !androidManifest.includes("<compatible-screens"),
+  "compatible-screens must not exclude intermediate handset densities",
 );
+const supportsScreens = androidManifest.match(/<supports-screens\b([^>]*?)\/?\s*>/s)?.[1] ?? "";
+for (const [attribute, expected] of Object.entries({
+  anyDensity: "true",
+  smallScreens: "true",
+  normalScreens: "true",
+  largeScreens: "false",
+  xlargeScreens: "false",
+})) {
+  const actual = supportsScreens.match(new RegExp(`android:${attribute}="([^"]+)"`))?.[1];
+  requireCondition(actual === expected, `supports-screens ${attribute} must be ${expected}`);
+}
 requireCondition(
   /android:name="com\.solkim\.baseball\.platform\.ShareFileProvider"/.test(androidManifest)
     && /android:authorities="\$\{applicationId\}\.baseball\.share"/.test(androidManifest)

@@ -128,8 +128,20 @@ const productLabel = readFileSync(resolve(root, "apps/android/app/src/main/res/v
 if (!productLabel.includes(">야구 못하면 또 환생함<")) {
   errors.push("product application label is not the Play store name");
 }
-if (!manifest.includes('android:icon="@mipmap/ic_launcher"') || !manifest.includes("<compatible-screens>")) {
-  errors.push("Play launcher icon or smartphone screen filter is missing");
+if (!manifest.includes('android:icon="@mipmap/ic_launcher"') || !manifest.includes("<supports-screens")) {
+  errors.push("Play launcher icon or handset screen support declaration is missing");
+}
+if (manifest.includes("<compatible-screens")) {
+  errors.push("compatible-screens must not exclude intermediate handset densities");
+}
+for (const marker of [
+  'android:anyDensity="true"',
+  'android:smallScreens="true"',
+  'android:normalScreens="true"',
+  'android:largeScreens="false"',
+  'android:xlargeScreens="false"',
+]) {
+  if (!manifest.includes(marker)) errors.push(`handset screen support marker missing: ${marker}`);
 }
 if (!manifest.includes('android:resizeableActivity="false"')) {
   errors.push("portrait-only resizeableActivity=false is not declared");

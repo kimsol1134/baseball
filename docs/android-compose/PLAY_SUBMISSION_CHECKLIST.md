@@ -11,7 +11,7 @@ Play에 있는 Unity `versionCode` 5보다 높고, 로컬 Phase 10 리허설 36�
 
 ## 이미 준비된 로컬 산출물
 
-- 제품 앱 이름, adaptive/monochrome 런처 아이콘, small/normal 화면 필터,
+- 제품 앱 이름, adaptive/monochrome 런처 아이콘, 중간 밀도를 차단하지 않는 휴대폰 화면 지원 선언,
   `resizeableActivity=false`, 광고 ID/위치 권한 제거, Analytics 기본 수집 off
 - 업로드 키·Firebase 설정·Amplitude 키를 저장소에 넣지 않는 RC 주입 경로
 - `npm run check:android:compose:release` 소스 게이트

@@ -47,13 +47,19 @@ for (const marker of [
   'android:icon="@mipmap/ic_launcher"',
   'android:roundIcon="@mipmap/ic_launcher_round"',
   'android:resizeableActivity="false"',
-  "<compatible-screens>",
-  'android:screenSize="small"',
-  'android:screenSize="normal"',
+  "<supports-screens",
+  'android:anyDensity="true"',
+  'android:smallScreens="true"',
+  'android:normalScreens="true"',
+  'android:largeScreens="false"',
+  'android:xlargeScreens="false"',
   "google_analytics_adid_collection_enabled",
   "firebase_analytics_collection_enabled",
 ]) {
   if (!manifest.includes(marker)) errors.push(`Play form-factor/privacy marker missing: ${marker}`);
+}
+if (manifest.includes("<compatible-screens")) {
+  errors.push("compatible-screens must not exclude intermediate handset densities");
 }
 if (manifest.includes("LEANBACK_LAUNCHER")) errors.push("TV launcher category is present");
 if (!appGradle.includes('applicationId = "com.solkim.baseball.android"')) {

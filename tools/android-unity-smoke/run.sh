@@ -445,40 +445,33 @@ while IFS= read -r apk_entry; do
       BASE_SCREEN_EVIDENCE="$evidence_dir/apk-compatible-screens.txt" node <<'NODE'
 const fs = require("node:fs");
 const xml = fs.readFileSync(process.env.BASE_MANIFEST_XML, "utf8");
-const expected = ["small", "normal"].flatMap((size) =>
-  ["ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"]
-    .map((density) => `${size}:${density}`)
-).sort();
-function normalizedScreenSize(value) {
-  // apkanalyzer may print either the enum ordinal (1/2) or Android's
-  // Configuration.SCREENLAYOUT_SIZE_* constants (200/300).
-  return ({ "1": "small", "2": "normal", "200": "small", "300": "normal" })[value]
-    ?? value ?? "missing";
-}
-function normalizedScreenDensity(value) {
-  return ({
-    "120": "ldpi", "160": "mdpi", "240": "hdpi", "320": "xhdpi",
-    "480": "xxhdpi", "640": "xxxhdpi",
-    "0x78": "ldpi", "0xa0": "mdpi", "0xf0": "hdpi", "0x140": "xhdpi",
-    "0x1e0": "xxhdpi", "0x280": "xxxhdpi",
-  })[(value ?? "").toLowerCase()] ?? value ?? "missing";
-}
-const pairs = [...xml.matchAll(/<screen\b[^>]*>/g)].map((match) => {
-  const size = match[0].match(/(?:android:)?screenSize\s*=\s*["']([^"']+)["']/)?.[1];
-  const density = match[0].match(/(?:android:)?screenDensity\s*=\s*["']([^"']+)["']/)?.[1];
-  return `${normalizedScreenSize(size)}:${normalizedScreenDensity(density)}`;
-}).sort();
-if (JSON.stringify(pairs) !== JSON.stringify(expected)) {
-  console.error(`compatible_screens=${pairs.join(",")}`);
+if (/<compatible-screens\b/.test(xml)) {
+  console.error("compatible_screens=forbidden");
   process.exit(1);
 }
+const supportsTag = xml.match(/<supports-screens\b[^>]*>/)?.[0] ?? "";
+const expected = {
+  anyDensity: "true",
+  smallScreens: "true",
+  normalScreens: "true",
+  largeScreens: "false",
+  xlargeScreens: "false",
+};
+for (const [attribute, value] of Object.entries(expected)) {
+  const actual = supportsTag.match(new RegExp(`(?:android:)?${attribute}\\s*=\\s*["']([^"']+)["']`))?.[1];
+  if (actual !== value) {
+    console.error(`supports_screens_${attribute}=${actual ?? "missing"}`);
+    process.exit(1);
+  }
+}
+const support = Object.entries(expected).map(([key, value]) => `${key}:${value}`).join(",");
 fs.writeFileSync(
   process.env.BASE_SCREEN_EVIDENCE,
-  `result=passed compatible_screens=${pairs.join(",")}\n`,
+  `result=passed supports_screens=${support}\n`,
 );
 NODE
     then
-      fail 'base-master APK compatible-screens가 스마트폰 허용 목록과 다릅니다.'
+      fail 'base-master APK 화면 지원 선언이 휴대폰 호환성 계약과 다릅니다.'
     fi
   fi
 

@@ -24,6 +24,11 @@
 | 폼 팩터 | small/normal 스마트폰, 세로, 태블릿/ChromeOS/TV/XR 제외 | AAB 업로드 완료; 지원 기기 CSV 검증 필요 |
 | Native page size | AAB `PAGE_ALIGNMENT_16K` + 실제 16KB ARM64 기기 실행 | production AAB의 API 35 16KB emulator 수직 루프 통과; 물리기기 대기 |
 
+2026-08-22 closed-test 실기기 풀에서 기존 `small/normal × 6 density`
+`<compatible-screens>`가 모든 설치를 차단하는 증거를 확인했다. Google Play가 선언되지 않은
+화면 밀도를 비호환으로 처리하므로 이 필터를 폐기하고 `supports-screens(anyDensity=true)`로
+교체한다. `minSdk 26`, `targetSdk 36`, 세로형 휴대폰 UI 의도는 유지한다.
+
 ## 외부 값
 
 비밀값은 이 문서에 기록하지 않는다.

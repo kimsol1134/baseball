@@ -341,36 +341,35 @@ if (!touchscreen || touchscreen.required !== "true") {
   fail("required touchscreen feature is missing");
 }
 
-const screens = [...xml.matchAll(/<screen\b[^>]*>/g)].map((match) => attributes(match[0]));
-function normalizedScreenSize(value) {
-  // bundletool may emit either ordinal labels or Android's screen-layout constants.
-  return ({ "1": "small", "2": "normal", "200": "small", "300": "normal" })[value]
-    ?? value ?? "missing";
+if (/<compatible-screens\b/.test(xml)) {
+  fail("compatible-screens must not exclude intermediate handset densities");
 }
-function normalizedScreenDensity(value) {
-  return ({
-    "120": "ldpi", "160": "mdpi", "240": "hdpi", "320": "xhdpi",
-    "480": "xxhdpi", "640": "xxxhdpi",
-    "0x78": "ldpi", "0xa0": "mdpi", "0xf0": "hdpi", "0x140": "xhdpi",
-    "0x1e0": "xxhdpi", "0x280": "xxxhdpi",
-  })[(value ?? "").toLowerCase()] ?? value ?? "missing";
+const supportsScreens = [...xml.matchAll(/<supports-screens\b[^>]*>/g)]
+  .map((match) => attributes(match[0]))[0];
+const expectedScreenSupport = {
+  anyDensity: "true",
+  smallScreens: "true",
+  normalScreens: "true",
+  largeScreens: "false",
+  xlargeScreens: "false",
+};
+if (!supportsScreens) {
+  fail("supports-screens declaration is missing");
 }
-const expectedScreenPairs = ["small", "normal"].flatMap((size) =>
-  ["ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"]
-    .map((density) => `${size}:${density}`)
-).sort();
-const screenPairs = screens
-  .map((value) => `${normalizedScreenSize(value.screenSize)}:${normalizedScreenDensity(value.screenDensity)}`)
-  .sort();
-if (JSON.stringify(screenPairs) !== JSON.stringify(expectedScreenPairs)) {
-  fail(`compatible screen filter differs: ${screenPairs.join(", ")}`);
+for (const [attribute, expected] of Object.entries(expectedScreenSupport)) {
+  if (supportsScreens[attribute] !== expected) {
+    fail(`supports-screens ${attribute} must be ${expected}`);
+  }
 }
+const screenSupport = Object.entries(expectedScreenSupport)
+  .map(([attribute, value]) => `${attribute}:${value}`)
+  .join(",");
 
 const evidence = [
   "result=passed",
   `package=${rootAttributes.package}`,
   `permissions=${permissions.join(",")}`,
-  `compatible_screens=${screenPairs.join(",")}`,
+  `supports_screens=${screenSupport}`,
   "allow_backup=false",
   "cleartext=false",
   "share_provider_exported=false",

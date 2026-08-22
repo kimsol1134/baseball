@@ -1145,13 +1145,19 @@ SDK manifest가 광고 ID 권한을 합쳐 넣지 못하도록 최종 manifest�
 
 - Activity portrait 고정, resizable/multi-window 동작을 manifest merge 결과에서 확인한다.
 - 터치스크린 필수, TV Leanback launcher 없음.
-- 사용자가 **스마트폰만**을 명시했으므로 Google Play 설치 필터에는 `<compatible-screens>`를 사용해 `small`과 `normal` 화면만 허용한다. 각 화면 크기에 `ldpi`, `mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi` 조합을 모두 선언한다. `large`와 `xlarge`는 선언하지 않는다.
-- 이 요소는 새 density/특이 기기를 과도하게 제외할 위험이 있으므로 첫 AAB 업로드 뒤 지원 기기 CSV를 내보내 대한민국 주요 스마트폰이 빠지지 않았는지 자동/수동 검토한다. 누락된 스마트폰 density 조합은 추가하되 large/xlarge를 열지 않는다.
-- Play Console Device Catalog에서도 남아 있는 태블릿, ChromeOS, Android XR, TV 모델을 필터링·수동 제외한다. 새 모델은 manifest 필터가 기본 방어선이다.
+- 스마트폰 화면 의도는 `<supports-screens>`의 `small/normal=true`, `large/xlarge=false`,
+  `anyDensity=true`로 표현한다. `<compatible-screens>`는 선언하지 않은 중간 밀도를 Play가
+  비호환으로 판정해 실제 스마트폰 설치를 막으므로 금지한다.
+- 첫 AAB 업로드 뒤 지원 기기 CSV를 내보내 대한민국 주요 스마트폰이 빠지지 않았는지
+  자동/수동 검토한다. 화면 밀도는 설치 필터로 제한하지 않는다.
+- Play Console Device Catalog에서도 남아 있는 태블릿, ChromeOS, Android XR, TV 모델을
+  필터링·수동 제외한다. manifest는 휴대폰 밀도를 과도하게 차단하지 않는다.
 - 접이식은 접힌 스마트폰 폭만 지원 대상으로 삼는다. 펼친 상태는 portrait letterbox/safe layout으로 망가지지 않게 하되 공식 지원 기기에서는 제외할 수 있다.
 - Play Console의 “지원 기기” CSV를 `RELEASE_EVIDENCE.md`에 링크하고, 태블릿이 남지 않았는지 검토한다.
 
-Android 16/API 36은 `smallestWidth >= 600dp`에서 orientation/resizable 제한을 무시할 수 있다. Play 배포는 위 필터로 막되, sideload/pre-launch에서 큰 화면으로 실행돼도 crash하지 않고 중앙의 최대 480dp portrait content column으로 안전하게 표시한다. 지원 기기 판정의 최종 권위는 AAB 업로드 뒤 Play가 내보낸 targeted-device CSV다.
+Android 16/API 36은 `smallestWidth >= 600dp`에서 orientation/resizable 제한을 무시할 수 있다.
+큰 화면으로 실행돼도 crash하지 않고 중앙의 최대 480dp portrait content column으로 안전하게
+표시한다. 지원 기기 판정의 최종 권위는 AAB 업로드 뒤 Play가 내보낸 targeted-device CSV다.
 
 ### 11.5 Android lifecycle
 

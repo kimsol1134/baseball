@@ -8,8 +8,8 @@
   `BASEBALL_FIRST_INTERACTIVE`를 명시적 timeout 안에 확인
 - HOME 이동 뒤 같은 process로 background→foreground warm resume
 - bundletool `PAGE_ALIGNMENT_16K`, 생성 APK `zipalign -P 16`, 모든 ARM64 `.so` ELF LOAD
-  16KB 정렬, `apkanalyzer` merged permission 허용 목록, `small/normal × 6 density`의 정확한
-  compatible-screens 집합과 기기 native page size 기록
+  16KB 정렬, `apkanalyzer` merged permission 허용 목록, 중간 화면 밀도를 차단하지 않는
+  `supports-screens(anyDensity=true)` 선언과 기기 native page size 기록
 - production smoke는 `build-manifest.json`·`checksums.sha256`·AAB SHA-256·현재 Git commit·
   production distribution·upload certificate pin을 함께 검증한다. 같은 이름의 임의 AAB나
   다른 commit의 산출물은 기기 증거로 채택하지 않는다.
