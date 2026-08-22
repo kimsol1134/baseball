@@ -29,6 +29,12 @@
 화면 밀도를 비호환으로 처리하므로 이 필터를 폐기하고 `supports-screens(anyDensity=true)`로
 교체한다. `minSdk 26`, `targetSdk 36`, 세로형 휴대폰 UI 의도는 유지한다.
 
+같은 날 versionCode 40의 첫 물리기기 실행에서 `FirebaseInitProvider`가
+`The Crashlytics build ID is missing`으로 앱 프로세스를 시작 전에 종료하는 증거를 확인했다.
+Firebase SDK 의존성만 추가하고 앱 모듈에 `com.google.firebase.crashlytics` Gradle 플러그인을
+적용하지 않은 것이 원인이므로 production 외부 SDK 경로에서 Google Services와 Crashlytics
+플러그인을 함께 적용한다. Crashlytics 수집 기본값 off와 사용자 동의 경계는 유지한다.
+
 ## 외부 값
 
 비밀값은 이 문서에 기록하지 않는다.

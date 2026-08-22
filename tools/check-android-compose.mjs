@@ -152,6 +152,9 @@ if (!appGradle.includes('applicationId = "com.solkim.baseball.android"')) {
 if (!appGradle.includes('applicationIdSuffix = ".compose.dev"')) {
   errors.push("debug fixture application ID suffix is not isolated");
 }
+if (!appGradle.includes('apply(plugin = "com.google.firebase.crashlytics")')) {
+  errors.push("production Firebase configuration must apply the Crashlytics Gradle plugin");
+}
 if (!appGradle.includes('NATIVE_AUTHORITY_MODE", "\\"nativeAuthoritative\\"')) {
   errors.push("release nativeAuthoritative mode is not explicit");
 }

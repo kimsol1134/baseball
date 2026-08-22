@@ -68,6 +68,10 @@ if (!appGradle.includes('applicationId = "com.solkim.baseball.android"')) {
 if (!appGradle.includes("BASEBALL_UPLOAD_KEYSTORE_PATH") || !appGradle.includes("phase11Distribution")) {
   errors.push("Play upload-key and production distribution inputs are not wired");
 }
+if (!appGradle.includes('alias(libs.plugins.firebase.crashlytics) apply false') ||
+    !appGradle.includes('apply(plugin = "com.google.firebase.crashlytics")')) {
+  errors.push("production Firebase configuration must generate the Crashlytics build ID");
+}
 if (appGradle.includes("google-services.json") || appGradle.includes('phase9AmplitudeApiKey = "')) {
   errors.push("production credentials are checked into the app build");
 }

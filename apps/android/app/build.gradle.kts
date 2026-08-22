@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.firebase.crashlytics) apply false
 }
 
 val phase9ExternalSdkEnabled = providers.gradleProperty("phase9ExternalSdks")
@@ -56,6 +57,7 @@ val phase10SigningConfigured = listOf(
 
 if (phase9ExternalSdkEnabled) {
     apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
 }
 
 android {
