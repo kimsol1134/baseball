@@ -35,6 +35,11 @@ Firebase SDK 의존성만 추가하고 앱 모듈에 `com.google.firebase.crashl
 적용하지 않은 것이 원인이므로 production 외부 SDK 경로에서 Google Services와 Crashlytics
 플러그인을 함께 적용한다. Crashlytics 수집 기본값 off와 사용자 동의 경계는 유지한다.
 
+플러그인 수정 production AAB의 업로드 전 에뮬레이터 첫 실행에서 Amplitude legacy SDK가
+`okhttp3.Call.Factory`를 찾지 못해 `NoClassDefFoundError`로 종료되는 두 번째 문제를 잡았다.
+Amplitude 2.40.1의 런타임 요구사항으로 OkHttp 4.12.0을 앱에 명시적으로 패키징하며, 이후
+후보는 Play 업로드 전에 production package 첫 실행과 crash buffer 0을 필수 확인한다.
+
 ## 외부 값
 
 비밀값은 이 문서에 기록하지 않는다.

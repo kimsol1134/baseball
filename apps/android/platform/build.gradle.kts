@@ -19,6 +19,7 @@ dependencies {
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
     implementation(libs.amplitude.android)
+    implementation(libs.okhttp)
     implementation(libs.play.review)
     testImplementation(kotlin("test"))
     testImplementation(libs.junit)

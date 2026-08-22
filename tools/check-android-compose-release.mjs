@@ -72,6 +72,10 @@ if (!appGradle.includes('alias(libs.plugins.firebase.crashlytics) apply false') 
     !appGradle.includes('apply(plugin = "com.google.firebase.crashlytics")')) {
   errors.push("production Firebase configuration must generate the Crashlytics build ID");
 }
+const platformGradle = read("apps/android/platform/build.gradle.kts");
+if (!platformGradle.includes("implementation(libs.okhttp)")) {
+  errors.push("Amplitude legacy SDK requires the OkHttp runtime in the packaged app");
+}
 if (appGradle.includes("google-services.json") || appGradle.includes('phase9AmplitudeApiKey = "')) {
   errors.push("production credentials are checked into the app build");
 }
