@@ -226,11 +226,12 @@ namespace Baseball.Core.HighSchool
 
     public sealed class CareerTrainingSnapshot
     {
-        public CareerTrainingSnapshot(int number, TrainingFocus focus, TrainingIntensity intensity, int growth, int fatigueChange, string feedback, int? metricBefore = null, int? metricAfter = null, int? fatigueBefore = null, int? fatigueAfter = null, bool? opportunityHit = null, TalentAbility? bloomedAbility = null, TalentGrade? bloomedGrade = null, bool? jackpot = null, PitchType? targetPitch = null)
-        { Number = number; Focus = focus; Intensity = intensity; Growth = growth; FatigueChange = fatigueChange; Feedback = feedback; MetricBefore = metricBefore; MetricAfter = metricAfter; FatigueBefore = fatigueBefore; FatigueAfter = fatigueAfter; OpportunityHit = opportunityHit; BloomedAbility = bloomedAbility; BloomedGrade = bloomedGrade; Jackpot = jackpot; TargetPitch = targetPitch; }
+        public CareerTrainingSnapshot(int number, TrainingFocus focus, TrainingIntensity intensity, int growth, int fatigueChange, string feedback, int? metricBefore = null, int? metricAfter = null, int? fatigueBefore = null, int? fatigueAfter = null, bool? opportunityHit = null, TalentAbility? bloomedAbility = null, TalentGrade? bloomedGrade = null, bool? jackpot = null, PitchType? targetPitch = null, int? masteryBefore = null, int? masteryAfter = null)
+        { Number = number; Focus = focus; Intensity = intensity; Growth = growth; FatigueChange = fatigueChange; Feedback = feedback; MetricBefore = metricBefore; MetricAfter = metricAfter; FatigueBefore = fatigueBefore; FatigueAfter = fatigueAfter; OpportunityHit = opportunityHit; BloomedAbility = bloomedAbility; BloomedGrade = bloomedGrade; Jackpot = jackpot; TargetPitch = targetPitch; MasteryBefore = masteryBefore; MasteryAfter = masteryAfter; }
         public int Number { get; } public TrainingFocus Focus { get; } public TrainingIntensity Intensity { get; } public int Growth { get; } public int FatigueChange { get; } public string Feedback { get; }
         public int? MetricBefore { get; } public int? MetricAfter { get; } public int? FatigueBefore { get; } public int? FatigueAfter { get; } public bool? OpportunityHit { get; }
         public TalentAbility? BloomedAbility { get; } public TalentGrade? BloomedGrade { get; } public bool? Jackpot { get; } public PitchType? TargetPitch { get; }
+        public int? MasteryBefore { get; } public int? MasteryAfter { get; }
     }
 
     public sealed class CareerTrainingBlockSnapshot
@@ -270,12 +271,13 @@ namespace Baseball.Core.HighSchool
 
     public sealed class CareerRelationshipResultSnapshot
     {
-        public CareerRelationshipResultSnapshot(int number, string category, string title, RelationshipResponse response, int trustBefore, int trustAfter, int fatigueBefore, int fatigueAfter, int fanInterestBefore, int fanInterestAfter, TrainingFocus? growthFocus, int? abilityBefore, int? abilityAfter, string feedback)
-        { Number = number; Category = category; Title = title; Response = response; TrustBefore = trustBefore; TrustAfter = trustAfter; FatigueBefore = fatigueBefore; FatigueAfter = fatigueAfter; FanInterestBefore = fanInterestBefore; FanInterestAfter = fanInterestAfter; GrowthFocus = growthFocus; AbilityBefore = abilityBefore; AbilityAfter = abilityAfter; Feedback = feedback; }
+        public CareerRelationshipResultSnapshot(int number, string category, string title, RelationshipResponse response, int trustBefore, int trustAfter, int fatigueBefore, int fatigueAfter, int fanInterestBefore, int fanInterestAfter, TrainingFocus? growthFocus, int? abilityBefore, int? abilityAfter, string feedback, int? masteryBefore = null, int? masteryAfter = null)
+        { Number = number; Category = category; Title = title; Response = response; TrustBefore = trustBefore; TrustAfter = trustAfter; FatigueBefore = fatigueBefore; FatigueAfter = fatigueAfter; FanInterestBefore = fanInterestBefore; FanInterestAfter = fanInterestAfter; GrowthFocus = growthFocus; AbilityBefore = abilityBefore; AbilityAfter = abilityAfter; Feedback = feedback; MasteryBefore = masteryBefore; MasteryAfter = masteryAfter; }
         public int Number { get; } public string Category { get; } public string Title { get; } public RelationshipResponse Response { get; }
         public int TrustBefore { get; } public int TrustAfter { get; } public int FatigueBefore { get; } public int FatigueAfter { get; }
         public int FanInterestBefore { get; } public int FanInterestAfter { get; } public TrainingFocus? GrowthFocus { get; }
         public int? AbilityBefore { get; } public int? AbilityAfter { get; } public string Feedback { get; }
+        public int? MasteryBefore { get; } public int? MasteryAfter { get; }
     }
 
     public sealed class CareerScheduleSnapshot

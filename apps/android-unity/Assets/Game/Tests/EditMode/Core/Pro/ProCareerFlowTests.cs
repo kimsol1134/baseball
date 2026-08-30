@@ -131,6 +131,11 @@ namespace Baseball.Core.Pro.Tests
                 else result = engine.PlanWeek(new PlanProWeekParams(result.NextSeed, result.Snapshot, ProWeekPlan.DevelopWeapon));
             }
             Assert.That(result.Snapshot.InjuryWeeks, Is.GreaterThan(0));
+            Assert.That(result.InjuryEvent, Is.Not.Null);
+            Assert.That(result.InjuryEvent.Cause, Is.EqualTo(ProInjuryCause.Overload));
+            Assert.That(result.InjuryEvent.EffectiveFatigue, Is.GreaterThan(72));
+            Assert.That(result.InjuryEvent.Pitches, Is.GreaterThan(0));
+            Assert.That(result.Events, Does.Contain("pro_injury_started"));
             var injuryWeeks = result.Snapshot.InjuryWeeks;
             var fatigue = result.Snapshot.Fatigue;
             result = engine.PlanWeek(new PlanProWeekParams(result.NextSeed, result.Snapshot, ProWeekPlan.Recover));

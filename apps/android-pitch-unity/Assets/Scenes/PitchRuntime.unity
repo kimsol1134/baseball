@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &703321496
+--- !u!1 &479994687
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,56 +127,46 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 703321497}
-  - component: {fileID: 703321499}
-  - component: {fileID: 703321498}
+  - component: {fileID: 479994689}
+  - component: {fileID: 479994688}
   m_Layer: 0
-  m_Name: PitchBridgeReceiver
+  m_Name: PitchRuntimeRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &703321497
+--- !u!114 &479994688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 479994687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b8f0b1872b64c9ab3c68ce3c9df8f11, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Baseball.PitchRuntime.PitchRuntimePersistence
+--- !u!4 &479994689
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 703321496}
+  m_GameObject: {fileID: 479994687}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1920548990}
+  m_Children:
+  - {fileID: 1281067981}
+  - {fileID: 2081681434}
+  - {fileID: 2110987970}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &703321498
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 703321496}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 16e67295537bb4ef0a8957757e13e17c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Baseball.PitchRuntime.PitchTrajectoryRenderer
---- !u!114 &703321499
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 703321496}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c8e14b8f458345038b66f2f6e3990bc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Baseball.PitchRuntime.PitchBridgeReceiver
---- !u!1 &765904906
+--- !u!1 &1281067980
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -184,8 +174,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 765904907}
-  - component: {fileID: 765904908}
+  - component: {fileID: 1281067981}
+  - component: {fileID: 1281067982}
   m_Layer: 0
   m_Name: PitchCamera
   m_TagString: Untagged
@@ -193,28 +183,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &765904907
+--- !u!4 &1281067981
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 765904906}
+  m_GameObject: {fileID: 1281067980}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0039472766, y: 0, z: 0, w: 0.99999225}
   m_LocalPosition: {x: 0, y: 1.15, z: -20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1920548990}
+  m_Father: {fileID: 479994689}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!20 &765904908
+--- !u!20 &1281067982
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 765904906}
+  m_GameObject: {fileID: 1281067980}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -259,7 +249,7 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!1 &923612869
+--- !u!1 &2081681433
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -267,8 +257,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 923612870}
-  - component: {fileID: 923612871}
+  - component: {fileID: 2081681434}
+  - component: {fileID: 2081681435}
   m_Layer: 0
   m_Name: PitchLight
   m_TagString: Untagged
@@ -276,28 +266,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &923612870
+--- !u!4 &2081681434
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 923612869}
+  m_GameObject: {fileID: 2081681433}
   serializedVersion: 2
   m_LocalRotation: {x: 0.29357788, y: -0.20642215, z: 0.06508465, w: 0.9311101}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1920548990}
+  m_Father: {fileID: 479994689}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!108 &923612871
+--- !u!108 &2081681435
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 923612869}
+  m_GameObject: {fileID: 2081681433}
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
@@ -356,7 +346,7 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!1 &1920548988
+--- !u!1 &2110987969
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -364,47 +354,57 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1920548990}
-  - component: {fileID: 1920548989}
+  - component: {fileID: 2110987970}
+  - component: {fileID: 2110987972}
+  - component: {fileID: 2110987971}
   m_Layer: 0
-  m_Name: PitchRuntimeRoot
+  m_Name: PitchBridgeReceiver
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1920548989
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1920548988}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b8f0b1872b64c9ab3c68ce3c9df8f11, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Baseball.PitchRuntime.PitchRuntimePersistence
---- !u!4 &1920548990
+--- !u!4 &2110987970
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1920548988}
+  m_GameObject: {fileID: 2110987969}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 765904907}
-  - {fileID: 923612870}
-  - {fileID: 703321497}
-  m_Father: {fileID: 0}
+  m_Children: []
+  m_Father: {fileID: 479994689}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2110987971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2110987969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16e67295537bb4ef0a8957757e13e17c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Baseball.PitchRuntime.PitchTrajectoryRenderer
+--- !u!114 &2110987972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2110987969}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c8e14b8f458345038b66f2f6e3990bc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Baseball.PitchRuntime.PitchBridgeReceiver
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1920548990}
+  - {fileID: 479994689}

@@ -391,11 +391,19 @@ namespace Baseball.Core.Pitching
             var target = TargetCoordinates(parameters.Call); var effect = PitchAbilityRules.Intensity(parameters.Call.Intensity);
             var profile = parameters.Pitcher.Profile(parameters.Call.PitchType);
             var command = PitchAbilityRules.CommandRating(parameters.Pitcher, profile);
-            var effective = Clamp(command * 10 - parameters.Context.Fatigue * 2 - effect.CommandPenalty, 100, 900);
+            // Level zero is an exact compatibility identity for shipped Swift/C# oracle
+            // fixtures. Only the new mastery track opts into the additional stamina relief.
+            var effectiveFatigue = parameters.Pitcher.EffectiveMastery.Stamina > 0
+                ? PitchAbilityRules.EffectiveFatigue(
+                    parameters.Context.Fatigue,
+                    parameters.Pitcher.Stamina,
+                    parameters.Pitcher.EffectiveMastery.Stamina)
+                : parameters.Context.Fatigue;
+            var effective = Clamp(command * 10 - effectiveFatigue * 2 - effect.CommandPenalty, 100, 900);
             var spread = Clamp(520 - effective / 2, 70, 470);
             var offsetX = generator.NextInt(spread * 2 + 1) - spread;
             var offsetY = generator.NextInt(spread * 2 + 1) - spread;
-            var wildChance = Clamp(8 + parameters.Context.Fatigue / 10 + (parameters.Call.Intensity == PitchIntensity.MaxEffort ? 2 : 0) -
+            var wildChance = Clamp(8 + effectiveFatigue / 10 + (parameters.Call.Intensity == PitchIntensity.MaxEffort ? 2 : 0) -
                 (command - 50) / 4, 3, 20);
             if (generator.NextInt(100) < wildChance)
             {
@@ -419,10 +427,12 @@ namespace Baseball.Core.Pitching
                 default: horizontal = 105; vertical = -45; break;
             }
             var rawVelocity = PitchAbilityRules.NominalVelocity(parameters.Pitcher, parameters.Call.PitchType,
-                parameters.Call.Intensity, parameters.Context.Fatigue) + generator.NextInt(21) - 10 +
+                parameters.Call.Intensity, effectiveFatigue) + generator.NextInt(21) - 10 +
                 releaseShift * 10 / 500 + (perfect ? 6 : 0);
             var velocity = Math.Min(PitchAbilityRules.MaximumExecutedVelocityTenthsKph, rawVelocity);
-            var movementScale = (profile == null ? parameters.Pitcher.Movement : profile.Movement) - 50;
+            var movementScale = MasteryEffectRules.AdjustedRating(
+                profile == null ? parameters.Pitcher.Movement : profile.Movement,
+                parameters.Pitcher.EffectiveMastery.Movement) - 50;
             var actualX = target.X + offsetX; var actualY = target.Y + offsetY;
             horizontal += movementScale * 2; vertical += movementScale * 2;
             var releaseSpeed = velocity / 36.0; const double drag = 0.0053;
@@ -485,10 +495,16 @@ namespace Baseball.Core.Pitching
                 return new Resolution(wasInZone ? PitchOutcome.CalledStrike : PitchOutcome.Ball, null);
             }
             var profile = parameters.Pitcher.Profile(parameters.Call.PitchType);
-            var difficulty = profile == null ? (parameters.Pitcher.Stuff - 50) * 6 + (parameters.Pitcher.Movement - 50) * 5 +
+            var effectiveStuff = MasteryEffectRules.AdjustedRating(parameters.Pitcher.Stuff, parameters.Pitcher.EffectiveMastery.Stuff);
+            var effectiveMovement = MasteryEffectRules.AdjustedRating(parameters.Pitcher.Movement, parameters.Pitcher.EffectiveMastery.Movement);
+            var effectiveProfileMovement = profile == null ? effectiveMovement :
+                MasteryEffectRules.AdjustedRating(profile.Movement, parameters.Pitcher.EffectiveMastery.Movement);
+            var effectiveWeakContact = profile == null ? 50 :
+                MasteryEffectRules.AdjustedRating(profile.WeakContact, parameters.Pitcher.EffectiveMastery.Movement);
+            var difficulty = profile == null ? (effectiveStuff - 50) * 6 + (effectiveMovement - 50) * 5 +
                 Math.Max(0, execution.ExecutionQuality - 500) / 2 :
-                (parameters.Pitcher.Stuff - 50) * 3 + (profile.Whiff - 50) * 3 + (parameters.Pitcher.Movement - 50) * 2 +
-                (profile.Movement - 50) * 2 + Math.Max(0, execution.ExecutionQuality - 500) / 2;
+                (effectiveStuff - 50) * 3 + (profile.Whiff - 50) * 3 + (effectiveMovement - 50) * 2 +
+                (effectiveProfileMovement - 50) * 2 + Math.Max(0, execution.ExecutionQuality - 500) / 2;
             var velocityEdge = Clamp((execution.VelocityTenthsKph - 1370) / 2, -80, 180);
             var speedGap = parameters.Context.PitchNumber > 1 && parameters.GameLog != null &&
                 parameters.GameLog.Entries.LastOrDefault() != null && parameters.GameLog.Entries.Last().VelocityTenthsKph.HasValue
@@ -505,7 +521,7 @@ namespace Baseball.Core.Pitching
             if (generator.NextInt(1000) < foulChance) return new Resolution(PitchOutcome.Foul, null);
             var contactQuality = Clamp(455 + (parameters.Batter.Power - 50) * 3 + (parameters.Batter.Contact - 50) * 2 +
                 (pitchMatched ? 90 : -70) + (zoneMatched ? 45 : -35) + (pitchMatched ? capped / 8 : 0) -
-                ((profile == null ? 50 : profile.WeakContact) - 50) * 2 - Math.Max(0, execution.ExecutionQuality - 500) / 3 +
+                (effectiveWeakContact - 50) * 2 - Math.Max(0, execution.ExecutionQuality - 500) / 3 +
                 scoutingQuality - Math.Max(0, execution.VelocityTenthsKph - 1400) / 5 - heightMatch / 2 + generator.NextInt(301) - 150, 0, 1000);
             var pull = PullShift(parameters.Batter.BatSide, landed.Column);
             var exitVelocity = Clamp(1000 + contactQuality * 3 / 4 + (parameters.Batter.Power - 50) * 6 + generator.NextInt(181) - 90, 700, 1900);
@@ -655,7 +671,10 @@ namespace Baseball.Core.Pitching
         {
             var profiles = pitcher.PitchProfiles == null ? "legacy" : string.Join(",", pitcher.PitchProfiles
                 .OrderBy(item => item.PitchType.Value(), StringComparer.Ordinal).Select(Canonical));
-            return string.Join(":", pitcher.Id, pitcher.Stuff, pitcher.Command, pitcher.Movement, pitcher.Stamina, profiles);
+            var canonical = string.Join(":", pitcher.Id, pitcher.Stuff, pitcher.Command, pitcher.Movement, pitcher.Stamina, profiles);
+            if (pitcher.Mastery != null)
+                canonical += ":mastery:" + string.Join(":", pitcher.Mastery.Stuff, pitcher.Mastery.Command, pitcher.Mastery.Movement, pitcher.Mastery.Stamina);
+            return canonical;
         }
         private static string Canonical(RivalMemorySnapshot memory)
         {

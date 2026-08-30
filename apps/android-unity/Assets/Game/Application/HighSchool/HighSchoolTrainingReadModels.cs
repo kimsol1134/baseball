@@ -19,7 +19,9 @@ namespace Baseball.Application.HighSchool
             bool jackpot,
             string targetPitch = null,
             string bloomedAbility = null,
-            string bloomedGrade = null)
+            string bloomedGrade = null,
+            int? masteryBefore = null,
+            int? masteryAfter = null)
         {
             Number = number;
             Focus = focus;
@@ -34,6 +36,8 @@ namespace Baseball.Application.HighSchool
             TargetPitch = targetPitch;
             BloomedAbility = bloomedAbility;
             BloomedGrade = bloomedGrade;
+            MasteryBefore = masteryBefore;
+            MasteryAfter = masteryAfter;
         }
 
         public int Number { get; }
@@ -51,6 +55,8 @@ namespace Baseball.Application.HighSchool
         public string BloomedAbility { get; }
         /// <summary>Stable TalentGrade wire captured with BloomedAbility.</summary>
         public string BloomedGrade { get; }
+        public int? MasteryBefore { get; }
+        public int? MasteryAfter { get; }
     }
 
 

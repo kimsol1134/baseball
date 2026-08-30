@@ -76,10 +76,16 @@ namespace Baseball.Core.Pitching
         public static PitchAbilityReadout Readout(PitcherSnapshot pitcher, PitchCall call, PlateAppearanceContext context)
         {
             var profile = pitcher.Profile(call.PitchType);
+            var fatigue = pitcher.EffectiveMastery.Stamina > 0
+                ? EffectiveFatigue(context.Fatigue, pitcher.Stamina, pitcher.EffectiveMastery.Stamina)
+                : context.Fatigue;
+            var movement = MasteryEffectRules.AdjustedRating(
+                profile == null ? pitcher.Movement : profile.Movement,
+                pitcher.EffectiveMastery.Movement);
             return new PitchAbilityReadout(call.PitchType, pitcher.Stuff, CommandRating(pitcher, profile),
-                profile == null ? pitcher.Movement : profile.Movement, pitcher.Stamina,
+                movement, pitcher.Stamina,
                 profile == null ? pitcher.Stuff : profile.Whiff, profile == null ? 50 : profile.WeakContact,
-                NominalVelocity(pitcher, call.PitchType, call.Intensity, context.Fatigue),
+                NominalVelocity(pitcher, call.PitchType, call.Intensity, fatigue),
                 FatigueCost(call.Intensity, profile));
         }
 
@@ -111,14 +117,19 @@ namespace Baseball.Core.Pitching
             }
         }
 
-        internal static int CommandRating(PitcherSnapshot pitcher, PitchProfileSnapshot profile) =>
-            profile == null ? pitcher.Command : (pitcher.Command * 4 + profile.Control * 4 + profile.Command * 2) / 10;
+        internal static int CommandRating(PitcherSnapshot pitcher, PitchProfileSnapshot profile)
+        {
+            var command = MasteryEffectRules.AdjustedRating(pitcher.Command, pitcher.EffectiveMastery.Command);
+            return profile == null ? command : (command * 4 + profile.Control * 4 + profile.Command * 2) / 10;
+        }
 
         internal static int NominalVelocity(PitcherSnapshot pitcher, PitchType type, PitchIntensity intensity, int fatigue)
         {
             var profile = pitcher.Profile(type);
             var baseVelocity = profile == null ? BaseVelocity(type) + (pitcher.Stuff - 50) * 4 : profile.VelocityTenthsKph;
-            var rawVelocity = baseVelocity + Intensity(intensity).VelocityBonusTenthsKph - fatigue;
+            var masteryVelocity = MasteryEffectRules.BonusForContribution(
+                Math.Max(0, pitcher.Stuff - 20), pitcher.EffectiveMastery.Stuff) / 8;
+            var rawVelocity = baseVelocity + masteryVelocity + Intensity(intensity).VelocityBonusTenthsKph - fatigue;
             var profileCeiling = MaximumProfileVelocity(type);
             var ceiling = intensity == PitchIntensity.Controlled ? profileCeiling - 20
                 : intensity == PitchIntensity.Normal ? profileCeiling
@@ -137,6 +148,15 @@ namespace Baseball.Core.Pitching
         }
 
         public static int ReducedFatigueCost(int current, int reduction) => current <= 0 ? 0 : Math.Max(1, current - Math.Max(0, reduction));
+
+        public static int EffectiveFatigue(int rawFatigue, int stamina, int mastery = 0)
+        {
+            var raw = Math.Min(100, Math.Max(0, rawFatigue));
+            var effectiveStamina = Math.Min(100, Math.Max(20,
+                20 + MasteryEffectRules.AdjustedContribution(Math.Min(60, Math.Max(0, stamina - 20)), mastery)));
+            var multiplier = 1250 - (effectiveStamina - 20) * 500 / 60;
+            return Math.Min(100, Math.Max(0, raw * multiplier / 1000));
+        }
 
         private static int BaseVelocity(PitchType type)
         {

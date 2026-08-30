@@ -306,7 +306,8 @@ namespace Baseball.Application.Pro
                 DevelopmentPitchChoices(state),
                 lastSegmentProgress,
                 state.InjuryWeeks,
-                recordBook);
+                recordBook,
+                result.InjuryEvent);
         }
 
         private ProCareerSnapshot Restore(ProCareerReadModel current)
@@ -704,7 +705,8 @@ namespace Baseball.Application.Pro
                 value.DevelopmentPitchChoices,
                 value.LastSegmentProgress,
                 value.InjuryWeeks,
-                value.RecordBook);
+                value.RecordBook,
+                value.InjuryEvent);
         }
 
         private static AppProCareerPhase Map(CoreProCareerPhase value)

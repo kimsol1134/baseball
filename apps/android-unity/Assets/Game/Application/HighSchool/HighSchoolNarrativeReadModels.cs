@@ -77,7 +77,9 @@ namespace Baseball.Application.HighSchool
             int fatigueAfter,
             int fanInterestBefore,
             int fanInterestAfter,
-            string feedback)
+            string feedback,
+            int? masteryBefore = null,
+            int? masteryAfter = null)
         {
             Number = number;
             Category = category;
@@ -90,6 +92,8 @@ namespace Baseball.Application.HighSchool
             FanInterestBefore = fanInterestBefore;
             FanInterestAfter = fanInterestAfter;
             Feedback = feedback;
+            MasteryBefore = masteryBefore;
+            MasteryAfter = masteryAfter;
         }
 
         public int Number { get; }
@@ -103,5 +107,7 @@ namespace Baseball.Application.HighSchool
         public int FanInterestBefore { get; }
         public int FanInterestAfter { get; }
         public string Feedback { get; }
+        public int? MasteryBefore { get; }
+        public int? MasteryAfter { get; }
     }
 }

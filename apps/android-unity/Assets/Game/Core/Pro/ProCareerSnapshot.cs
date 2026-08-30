@@ -35,6 +35,11 @@ namespace Baseball.Core.Pro
         public int? HallOfFameScore { get; internal set; }
         public string Commitment { get; internal set; }
         public int? BalanceVersion { get; internal set; }
+        /// <summary>
+        /// Schedule/fatigue/injury rules are independent from the pitch-balance migration.
+        /// Null is the legacy save path and must not be inferred from BalanceVersion.
+        /// </summary>
+        public int? ProRulesVersion { get; internal set; }
         public ProSeasonSegment? SeasonSegment { get; internal set; }
         public ProSeasonTrigger? SeasonTrigger { get; internal set; }
         public ProRivalBatter CurrentRival { get; internal set; }
@@ -76,6 +81,7 @@ namespace Baseball.Core.Pro
                 HallOfFameScore = HallOfFameScore,
                 Commitment = Commitment,
                 BalanceVersion = BalanceVersion,
+                ProRulesVersion = ProRulesVersion,
                 SeasonSegment = SeasonSegment,
                 SeasonTrigger = SeasonTrigger,
                 CurrentRival = CurrentRival,

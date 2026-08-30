@@ -140,6 +140,61 @@ namespace Baseball.Core.Domain
         public static bool operator !=(PitchZone left, PitchZone right) => !left.Equals(right);
     }
 
+    public sealed class AbilityMasterySnapshot : IEquatable<AbilityMasterySnapshot>
+    {
+        public const int TechnicalMaximum = int.MaxValue;
+
+        public AbilityMasterySnapshot(int stuff = 0, int command = 0, int movement = 0, int stamina = 0)
+        {
+            Stuff = Saturate(stuff); Command = Saturate(command); Movement = Saturate(movement); Stamina = Saturate(stamina);
+        }
+
+        public int Stuff { get; }
+        public int Command { get; }
+        public int Movement { get; }
+        public int Stamina { get; }
+
+        public int Value(TalentAbility ability)
+        {
+            switch (ability)
+            {
+                case TalentAbility.Stuff: return Stuff;
+                case TalentAbility.Command: return Command;
+                case TalentAbility.Movement: return Movement;
+                default: return Stamina;
+            }
+        }
+
+        public AbilityMasterySnapshot With(TalentAbility ability, int value)
+        {
+            switch (ability)
+            {
+                case TalentAbility.Stuff: return new AbilityMasterySnapshot(value, Command, Movement, Stamina);
+                case TalentAbility.Command: return new AbilityMasterySnapshot(Stuff, value, Movement, Stamina);
+                case TalentAbility.Movement: return new AbilityMasterySnapshot(Stuff, Command, value, Stamina);
+                default: return new AbilityMasterySnapshot(Stuff, Command, Movement, value);
+            }
+        }
+
+        public AbilityMasterySnapshot Add(TalentAbility ability, int points)
+        {
+            if (points <= 0) return this;
+            long next = Math.Min((long)TechnicalMaximum, (long)Value(ability) + points);
+            return With(ability, (int)next);
+        }
+
+        public bool Equals(AbilityMasterySnapshot other)
+        {
+            return other != null && Stuff == other.Stuff && Command == other.Command &&
+                Movement == other.Movement && Stamina == other.Stamina;
+        }
+
+        public override bool Equals(object obj) { return Equals(obj as AbilityMasterySnapshot); }
+        public override int GetHashCode() { return (((Stuff * 31) + Command) * 31 + Movement) * 31 + Stamina; }
+
+        private static int Saturate(int value) { return Math.Min(TechnicalMaximum, Math.Max(0, value)); }
+    }
+
     public sealed class PitcherSnapshot
     {
         public PitcherSnapshot(
@@ -150,7 +205,8 @@ namespace Baseball.Core.Domain
             int movement,
             int stamina,
             IReadOnlyList<PitchProfileSnapshot> pitchProfiles = null,
-            ThrowingHand throwingHand = ThrowingHand.Right)
+            ThrowingHand throwingHand = ThrowingHand.Right,
+            AbilityMasterySnapshot mastery = null)
         {
             Id = id;
             Name = name;
@@ -160,6 +216,7 @@ namespace Baseball.Core.Domain
             Stamina = stamina;
             PitchProfiles = pitchProfiles;
             ThrowingHand = throwingHand;
+            Mastery = mastery;
         }
 
         public string Id { get; }
@@ -170,10 +227,17 @@ namespace Baseball.Core.Domain
         public int Stamina { get; }
         public IReadOnlyList<PitchProfileSnapshot> PitchProfiles { get; }
         public ThrowingHand ThrowingHand { get; }
+        public AbilityMasterySnapshot Mastery { get; }
+        public AbilityMasterySnapshot EffectiveMastery { get { return Mastery ?? new AbilityMasterySnapshot(); } }
 
         public PitchProfileSnapshot Profile(PitchType pitchType)
         {
             return PitchProfiles == null ? null : PitchProfiles.FirstOrDefault(profile => profile.PitchType == pitchType);
+        }
+
+        public bool HasGameReadyProfile(PitchType pitchType)
+        {
+            return PitchProfiles == null || Profile(pitchType) != null;
         }
     }
 

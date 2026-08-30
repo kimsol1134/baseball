@@ -12,7 +12,7 @@ namespace Baseball.Core.HighSchool
     {
         public CareerSignatureLegacyEffect(int stuff=0,int command=0,int movement=0,int stamina=0){Stuff=stuff;Command=command;Movement=movement;Stamina=stamina;}
         public int Stuff{get;}public int Command{get;}public int Movement{get;}public int Stamina{get;}public int TotalRatingBonus=>Stuff+Command+Movement+Stamina;
-        public PitcherSnapshot Applying(PitcherSnapshot p)=>new PitcherSnapshot(p.Id,p.Name,B(p.Stuff+Stuff),B(p.Command+Command),B(p.Movement+Movement),B(p.Stamina+Stamina),p.PitchProfiles,p.ThrowingHand);
+        public PitcherSnapshot Applying(PitcherSnapshot p)=>new PitcherSnapshot(p.Id,p.Name,B(p.Stuff+Stuff),B(p.Command+Command),B(p.Movement+Movement),B(p.Stamina+Stamina),p.PitchProfiles,p.ThrowingHand,p.Mastery);
         private static int B(int x)=>Math.Min(80,Math.Max(20,x));
     }
     public sealed class CareerSignatureLegacyEvidence

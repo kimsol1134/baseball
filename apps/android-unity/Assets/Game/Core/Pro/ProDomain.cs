@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Baseball.Core.Domain;
 using Baseball.Core.HighSchool;
@@ -18,6 +19,66 @@ namespace Baseball.Core.Pro
     public enum ProSeasonDecisionType { ExtraBullpen, CatcherGamePlan, RoleMeeting, RecordChase, RivalAnalysis, SeasonFinale }
     public enum ProSeasonSegment { SpringCamp, Opening, FirstHalf, AllStarBreak, PennantRace, SeasonFinale }
     public enum ProSeasonTrigger { OpeningStatement, CallUpAudition, MajorDebut, RecordChase, RoleShowdown, StandingsRace }
+    public enum ProInjuryCause { Overload }
+
+    /// <summary>Structured explanation emitted only on the week an overload injury starts.</summary>
+    public sealed class ProInjuryEventSnapshot : IEquatable<ProInjuryEventSnapshot>
+    {
+        public ProInjuryEventSnapshot(
+            ProInjuryCause cause,
+            int season,
+            int week,
+            ProWeekPlan plan,
+            int rawFatigue,
+            int effectiveFatigue,
+            int pitches,
+            int recoveryWeeks,
+            string careerId = null,
+            ulong? revision = null)
+        {
+            Cause = cause;
+            Season = season;
+            Week = week;
+            Plan = plan;
+            RawFatigue = rawFatigue;
+            EffectiveFatigue = effectiveFatigue;
+            Pitches = pitches;
+            RecoveryWeeks = recoveryWeeks;
+            CareerId = careerId;
+            Revision = revision;
+        }
+
+        public ProInjuryCause Cause { get; }
+        public int Season { get; }
+        public int Week { get; }
+        public ProWeekPlan Plan { get; }
+        public int RawFatigue { get; }
+        public int EffectiveFatigue { get; }
+        public int Pitches { get; }
+        public int RecoveryWeeks { get; }
+        public string CareerId { get; }
+        public ulong? Revision { get; }
+        public string StableId
+        {
+            get
+            {
+                return "pro-injury-" + (CareerId ?? "unknown") + "-s" + Season + "-w" + Week +
+                    "-r" + (Revision.HasValue ? Revision.Value.ToString(CultureInfo.InvariantCulture) : "0") +
+                    "-" + Plan.Value();
+            }
+        }
+
+        public bool Equals(ProInjuryEventSnapshot other)
+        {
+            return other != null && Cause == other.Cause && Season == other.Season && Week == other.Week &&
+                Plan == other.Plan && RawFatigue == other.RawFatigue && EffectiveFatigue == other.EffectiveFatigue &&
+                Pitches == other.Pitches && RecoveryWeeks == other.RecoveryWeeks &&
+                string.Equals(CareerId, other.CareerId, StringComparison.Ordinal) && Revision == other.Revision;
+        }
+
+        public override bool Equals(object obj) { return Equals(obj as ProInjuryEventSnapshot); }
+        public override int GetHashCode() { return StableId.GetHashCode(); }
+    }
 
     public static class ProWire
     {
@@ -453,11 +514,12 @@ namespace Baseball.Core.Pro
 
     public sealed class ProCareerResult
     {
-        public ProCareerResult(ProCareerSnapshot snapshot, string nextSeed, IReadOnlyList<string> events)
-        { Snapshot = snapshot; NextSeed = nextSeed; Events = events.ToArray(); }
+        public ProCareerResult(ProCareerSnapshot snapshot, string nextSeed, IReadOnlyList<string> events, ProInjuryEventSnapshot injuryEvent = null)
+        { Snapshot = snapshot; NextSeed = nextSeed; Events = events.ToArray(); InjuryEvent = injuryEvent; }
         public ProCareerSnapshot Snapshot { get; }
         public string NextSeed { get; }
         public IReadOnlyList<string> Events { get; }
+        public ProInjuryEventSnapshot InjuryEvent { get; }
     }
 
     public sealed class ProSegmentAdvanceResult

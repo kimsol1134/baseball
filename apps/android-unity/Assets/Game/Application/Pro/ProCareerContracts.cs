@@ -438,7 +438,8 @@ namespace Baseball.Application.Pro
             IReadOnlyList<CareerChoiceReadModel> developmentPitchChoices = null,
             ProSegmentProgressReadModel lastSegmentProgress = null,
             int injuryWeeks = 0,
-            ProRecordBookReadModel recordBook = null)
+            ProRecordBookReadModel recordBook = null,
+            Baseball.Core.Pro.ProInjuryEventSnapshot injuryEvent = null)
         {
             ProCareerId = proCareerId;
             Origin = origin;
@@ -477,6 +478,7 @@ namespace Baseball.Application.Pro
             LastSegmentProgress = lastSegmentProgress;
             InjuryWeeks = Math.Max(0, injuryWeeks);
             RecordBook = recordBook;
+            InjuryEvent = injuryEvent;
         }
 
         public string ProCareerId { get; }
@@ -515,6 +517,8 @@ namespace Baseball.Application.Pro
         public IReadOnlyList<CareerChoiceReadModel> DevelopmentPitchChoices { get; }
         public ProSegmentProgressReadModel LastSegmentProgress { get; }
         public int InjuryWeeks { get; }
+        /// <summary>Structured result for the week an overload injury starts; null on old saves.</summary>
+        public Baseball.Core.Pro.ProInjuryEventSnapshot InjuryEvent { get; }
         /// <summary>
         /// Save-backed Record/League content. Null is an explicit unavailable marker for an old
         /// Application snapshot that has not yet passed through the current Core adapter.

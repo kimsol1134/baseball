@@ -509,7 +509,9 @@ namespace Baseball.Application.HighSchool
                         : null,
                     value.BloomedGrade.HasValue
                         ? TalentGradeWire(value.BloomedGrade.Value)
-                        : null);
+                        : null,
+                    value.MasteryBefore,
+                    value.MasteryAfter);
         }
 
         private static TrainingBlockResultReadModel TrainingBlock(CareerTrainingBlockSnapshot value)
@@ -548,7 +550,9 @@ namespace Baseball.Application.HighSchool
                     value.FatigueAfter,
                     value.FanInterestBefore,
                     value.FanInterestAfter,
-                    value.Feedback);
+                    value.Feedback,
+                    value.MasteryBefore,
+                    value.MasteryAfter);
         }
 
         private static PitcherRatingsReadModel Ratings(PitcherSnapshot value)

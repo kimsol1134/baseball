@@ -29,6 +29,8 @@ namespace Baseball.Core.Pro
     public sealed class ProCareerEngine
     {
         public static readonly IReadOnlyList<int> SeasonDecisionWeeks = new[] { 3, 6, 9, 12, 15, 18, 21 };
+        public const int CurrentRulesVersion = 4;
+        public const int AgencyRulesVersion = 3;
         public const int MaximumSeasonDecisions = 7;
         public const int DemotionTrust = 34;
         public static IReadOnlyList<DraftTeamSnapshot> ProTeams { get { return HighSchoolCareerEngine.Teams; } }
@@ -127,7 +129,7 @@ namespace Baseball.Core.Pro
             Seed(parameters.Seed);
             ValidateState(parameters.State);
             var state = parameters.State.Clone();
-            state.BalanceVersion = Math.Max(parameters.State.BalanceVersion ?? 1, 3);
+            state.BalanceVersion = Math.Max(parameters.State.BalanceVersion ?? 1, AgencyRulesVersion);
             Sign(state);
             return new ProCareerResult(state, parameters.Seed, new string[0]);
         }
@@ -169,6 +171,7 @@ namespace Baseball.Core.Pro
             var strikeouts = 0;
             var walks = 0;
             var runs = 0;
+            var pitches = 0;
             var newLines = new List<ProGameLine>();
             if (!resting)
             {
@@ -182,6 +185,7 @@ namespace Baseball.Core.Pro
                     strikeouts += line.Strikeouts;
                     walks += line.Walks;
                     runs += line.RunsAllowed;
+                    pitches += line.Pitches;
                     var support = LeagueBaseline.TeamRuns(ref rng);
                     var opponentRuns = line.RunsAllowed + LeagueBaseline.RestOfTeamRuns(Math.Max(0, 27 - line.Outs), ref rng);
                     var started = source.Role == ProRole.Starter;
@@ -214,7 +218,15 @@ namespace Baseball.Core.Pro
                 parameters.Plan == ProWeekPlan.BuildStamina ? 10 : 10;
             var fatigue = Clamp(source.Fatigue + fatigueDelta, 0, 100);
             var injuryRoll = rng.NextInt(100);
-            var newInjury = !recovering && injuryRoll < Math.Max(2, fatigue - 72)
+            var effectiveFatigue = PitchAbilityRules.EffectiveFatigue(
+                fatigue,
+                source.Pitcher.Stamina,
+                source.Pitcher.EffectiveMastery.Stamina);
+            // Healthy, low-fatigue weeks are safe. The old minimum-percent floor left a hidden
+            // two-percent injury roll even when the player managed workload well. Require a
+            // real outing as well, so recovery is an actionable answer to a high-fatigue state.
+            var injuryChancePercent = Math.Max(0, effectiveFatigue - 72);
+            var newInjury = !recovering && pitches > 0 && injuryRoll < injuryChancePercent
                 ? 2 + rng.NextInt(4)
                 : Math.Max(0, source.InjuryWeeks - 1);
             var performanceTrust = runs <= 2 ? 3 : runs == 3 ? 0 : runs <= 5 ? -3 : -6;
@@ -257,7 +269,8 @@ namespace Baseball.Core.Pro
             ProSeasonTrigger? trigger = nextWeek >= 24 ? (ProSeasonTrigger?)null : ImportantGameTrigger(source, nextWeek, level, trust, stats.Strikeouts, skill, priorImportantGames);
             var history = source.DecisionHistory ?? new ProDecisionRecord[0];
             var decisionsThisSeason = history.Count(record => record.Season == source.Season);
-            var shouldOpenDecision = nextWeek < 24 && (source.BalanceVersion ?? 1) >= 4 && SeasonDecisionWeeks.Contains(nextWeek) &&
+            var effectiveRulesVersion = source.ProRulesVersion ?? source.BalanceVersion ?? 1;
+            var shouldOpenDecision = nextWeek < 24 && effectiveRulesVersion >= AgencyRulesVersion && SeasonDecisionWeeks.Contains(nextWeek) &&
                 !trigger.HasValue && !recovering && newInjury == 0 && decisionsThisSeason < MaximumSeasonDecisions;
             var pendingDecision = shouldOpenDecision ? SeasonDecision(source, nextWeek) : null;
             var phase = nextWeek >= 24 ? ProCareerPhase.SeasonReview : trigger.HasValue ? ProCareerPhase.ImportantGame : pendingDecision != null ? ProCareerPhase.SeasonDecision : ProCareerPhase.WeeklyPlan;
@@ -268,6 +281,19 @@ namespace Baseball.Core.Pro
             var nextSegment = Segment(nextWeek);
             var news = source.News.ToList();
             var milestones = source.Milestones.ToArray();
+            var injuryEvent = newInjury > 0 && source.InjuryWeeks == 0
+                ? new ProInjuryEventSnapshot(
+                    ProInjuryCause.Overload,
+                    source.Season,
+                    nextWeek,
+                    parameters.Plan,
+                    fatigue,
+                    effectiveFatigue,
+                    pitches,
+                    newInjury,
+                    source.ProCareerId,
+                    source.Revision + 1)
+                : null;
             if (source.Week == 0)
             {
                 milestones = AddUnique("프로 첫 공식 등판", milestones);
@@ -290,7 +316,7 @@ namespace Baseball.Core.Pro
                 news.Insert(0, "감독 면담 뒤 다음 등판부터 " + roleName + " 역할을 맡습니다.");
             }
             AddCareerMarks(source, games, strikeouts, ref milestones);
-            if (newInjury > 0 && source.InjuryWeeks == 0) news.Insert(0, "과부하로 " + newInjury + "주 부상자 명단에 올랐습니다.");
+            if (injuryEvent != null) news.Insert(0, "과부하로 " + newInjury + "주 부상자 명단에 올랐습니다.");
             if (development.GrowthLabels.Count > 0) news.Insert(0, "주간 성장 완성 · " + string.Join(" · ", development.GrowthLabels));
             if (nextSegment != priorSegment) news.Insert(0, SegmentEntryNews(nextSegment));
             if (phase == ProCareerPhase.ImportantGame && trigger.HasValue) news.Insert(0, ImportantMomentHeadline(trigger.Value, rival, level));
@@ -316,8 +342,9 @@ namespace Baseball.Core.Pro
             state.PendingDecision = pendingDecision;
             state.DevelopmentProgress = development.Progress;
             var events = new List<string> { "pro_week_resolved", callUpGame ? "major_call_up" : "weekly_progress" };
+            if (injuryEvent != null) events.Add("pro_injury_started");
             if (phase == ProCareerPhase.SeasonDecision) events.Add("pro_season_decision_opened");
-            return Result(state, rng.Next().ToString(CultureInfo.InvariantCulture), events);
+            return Result(state, rng.Next().ToString(CultureInfo.InvariantCulture), events, injuryEvent);
         }
 
         public ProSegmentAdvanceResult AdvanceSegment(AdvanceProSegmentParams parameters)
@@ -511,7 +538,7 @@ namespace Baseball.Core.Pro
             var decline = age >= 33 ? 1 : 0;
             var pitcher = decline == 0 ? source.Pitcher : new PitcherSnapshot(source.Pitcher.Id, source.Pitcher.Name,
                 Clamp(source.Pitcher.Stuff - decline, 20, 80), source.Pitcher.Command, source.Pitcher.Movement,
-                Clamp(source.Pitcher.Stamina - decline, 20, 80), source.Pitcher.PitchProfiles, source.Pitcher.ThrowingHand);
+                Clamp(source.Pitcher.Stamina - decline, 20, 80), source.Pitcher.PitchProfiles, source.Pitcher.ThrowingHand, source.Pitcher.Mastery);
             var oldContract = source.Contract;
             var contract = new ProContractSnapshot(Math.Max(1, (oldContract == null ? 1 : oldContract.YearsRemaining) - 1),
                 Math.Max(oldContract == null ? 40000000 : oldContract.AnnualSalary, 40000000 + service * 50000000), source.Role);
@@ -540,6 +567,7 @@ namespace Baseball.Core.Pro
             state.CurrentRival = null;
             state.SeasonTensions = tensions;
             state.SeasonImportantGames = 0;
+            if (state.ProRulesVersion.HasValue) state.ProRulesVersion = CurrentRulesVersion;
             return Result(state, rng.Next().ToString(CultureInfo.InvariantCulture), new[] { "pro_offseason_resolved" });
         }
 
@@ -574,6 +602,9 @@ namespace Baseball.Core.Pro
                 state.CurrentStats.Strikeouts.ToString(CultureInfo.InvariantCulture),
                 state.CareerStats.Count.ToString(CultureInfo.InvariantCulture)
             };
+            if (state.Pitcher.Mastery != null)
+                values.Add("mastery:" + state.Pitcher.Mastery.Stuff + ":" + state.Pitcher.Mastery.Command + ":" +
+                    state.Pitcher.Mastery.Movement + ":" + state.Pitcher.Mastery.Stamina);
             if (state.BalanceVersion.HasValue) values.Add("balance_version:" + state.BalanceVersion.Value);
             if (state.DevelopmentProgress != null)
             {
@@ -771,19 +802,19 @@ namespace Baseball.Core.Pro
             {
                 if(focus==ProWeekPlan.DevelopStuff)
                 {
-                    if(stuff==0)stuff=1;else{stuff=0;value=PitcherGrowthRules.Grow(value,TrainingFocus.Velocity,1);labels.Add("구위 +1");}
+                    if(stuff==0)stuff=1;else{stuff=0;var receipt=PitcherGrowthRules.Advance(value,TrainingFocus.Velocity,1);value=receipt.Pitcher;AddGrowthLabels(receipt,"구위",labels);}
                 }
                 else if(focus==ProWeekPlan.RefineCommand)
                 {
-                    if(command==0)command=1;else{command=0;value=PitcherGrowthRules.Grow(value,TrainingFocus.Command,1);labels.Add("제구 +1");}
+                    if(command==0)command=1;else{command=0;var receipt=PitcherGrowthRules.Advance(value,TrainingFocus.Command,1);value=receipt.Pitcher;AddGrowthLabels(receipt,"제구",labels);}
                 }
                 else if(focus==ProWeekPlan.DevelopMovement)
                 {
-                    if(movement==0)movement=1;else{movement=0;value=PitcherGrowthRules.Grow(value,TrainingFocus.BreakingBall,1,targetPitch);labels.Add("변화구 +1");}
+                    if(movement==0)movement=1;else{movement=0;var receipt=PitcherGrowthRules.Advance(value,TrainingFocus.BreakingBall,1,targetPitch);value=receipt.Pitcher;AddGrowthLabels(receipt,"변화구",labels);}
                 }
                 else if(focus==ProWeekPlan.BuildStamina)
                 {
-                    if(stamina==0)stamina=1;else{stamina=0;value=PitcherGrowthRules.Grow(value,TrainingFocus.Stamina,1);labels.Add("체력 +1");}
+                    if(stamina==0)stamina=1;else{stamina=0;var receipt=PitcherGrowthRules.Advance(value,TrainingFocus.Stamina,1);value=receipt.Pitcher;AddGrowthLabels(receipt,"체력",labels);}
                 }
             };
             if(plan==ProWeekPlan.DevelopWeapon)
@@ -795,12 +826,18 @@ namespace Baseball.Core.Pro
             return new DevelopmentResolution(value,new ProDevelopmentProgress(stuff,command,movement,stamina),labels);
         }
 
+        private static void AddGrowthLabels(PitcherAdvancementReceipt receipt, string label, ICollection<string> labels)
+        {
+            if (receipt.BaseDelta > 0) labels.Add(label + " +" + receipt.BaseDelta);
+            if (receipt.MasteryDelta > 0) labels.Add(MasteryEffectRules.DisplayName(receipt.Ability) + " Lv." + receipt.MasteryAfter);
+        }
+
         private static PitcherSnapshot Apply(ProDecisionEffect effect, PitcherSnapshot pitcher)
         {
             return new PitcherSnapshot(pitcher.Id, pitcher.Name,
                 Clamp(pitcher.Stuff + effect.StuffDelta, 20, 80), Clamp(pitcher.Command + effect.CommandDelta, 20, 80),
                 Clamp(pitcher.Movement + effect.MovementDelta, 20, 80), Clamp(pitcher.Stamina + effect.StaminaDelta, 20, 80),
-                pitcher.PitchProfiles, pitcher.ThrowingHand);
+                pitcher.PitchProfiles, pitcher.ThrowingHand, pitcher.Mastery);
         }
 
         private static int HallOfFameScore(ProCareerSnapshot state)
@@ -926,8 +963,8 @@ namespace Baseball.Core.Pro
                 (effect.RoleTarget.HasValue ? effect.RoleTarget.Value.Value() : "-");
         }
 
-        private ProCareerResult Result(ProCareerSnapshot state, string nextSeed, IReadOnlyList<string> events)
-        { Sign(state); return new ProCareerResult(state, nextSeed, events); }
+        private ProCareerResult Result(ProCareerSnapshot state, string nextSeed, IReadOnlyList<string> events, ProInjuryEventSnapshot injuryEvent = null)
+        { Sign(state); return new ProCareerResult(state, nextSeed, events, injuryEvent); }
         private void Sign(ProCareerSnapshot state) { state.Commitment = Commitment(state); }
         private static ProCareerSnapshot Next(ProCareerSnapshot state) { var value = state.Clone(); value.Revision++; return value; }
         private static string[] AddUnique(string value, IReadOnlyList<string> values)

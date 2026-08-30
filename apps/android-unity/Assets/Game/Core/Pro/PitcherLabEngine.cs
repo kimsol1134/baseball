@@ -293,7 +293,7 @@ namespace Baseball.Core.Pro
                 Clamp(pitcher.Stuff + (focus == TrainingFocus.Velocity ? points : 0), 20, 80),
                 Clamp(pitcher.Command + (focus == TrainingFocus.Command || focus == TrainingFocus.GamePlanning ? points : 0), 20, 80),
                 Clamp(pitcher.Movement + (focus == TrainingFocus.BreakingBall ? points : 0), 20, 80),
-                Clamp(pitcher.Stamina + (focus == TrainingFocus.Stamina || focus == TrainingFocus.Recovery ? points : 0), 20, 80), profiles);
+                Clamp(pitcher.Stamina + (focus == TrainingFocus.Stamina || focus == TrainingFocus.Recovery ? points : 0), 20, 80), profiles, pitcher.ThrowingHand, pitcher.Mastery);
         }
         private static int Rating(PitcherSnapshot pitcher, TrainingFocus focus)
         { return focus == TrainingFocus.Velocity ? pitcher.Stuff : focus == TrainingFocus.BreakingBall ? pitcher.Movement : focus == TrainingFocus.Stamina || focus == TrainingFocus.Recovery ? pitcher.Stamina : pitcher.Command; }
