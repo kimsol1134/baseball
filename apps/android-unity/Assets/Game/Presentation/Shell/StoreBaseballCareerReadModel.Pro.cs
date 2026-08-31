@@ -155,15 +155,18 @@ namespace Baseball.Presentation.Shell
                         "팀 순위를 불러올 수 없음",
                         "이전 저장에는 현재 시즌 순위표가 보관되지 않았습니다.")
                 }
-                : standings.OrderBy(value => value.Rank).Select(value => new ScreenRowViewModel(
-                    "pro-season-team-" + value.Rank,
-                    value.Rank + "위 · " + value.TeamName,
-                    value.Wins + "승 " + value.Losses + "패 " + value.Draws + "무",
-                    (value.Rank == 1
-                        ? "현재 선두"
-                        : "선두와 " + value.GamesBehind.ToString("0.0", CultureInfo.InvariantCulture) +
-                          "경기 차") +
-                    (value.IsPlayerTeam ? " · 내 구단" : string.Empty))).ToArray();
+                : StandingsRowsWithAutumnCut(
+                    "pro-season-team-",
+                    standings.OrderBy(value => value.Rank),
+                    value => new ScreenRowViewModel(
+                        "pro-season-team-" + value.Rank,
+                        value.Rank + "위 · " + value.TeamName,
+                        value.Wins + "승 " + value.Losses + "패 " + value.Draws + "무",
+                        (value.Rank == 1
+                            ? "현재 선두"
+                            : "선두와 " + value.GamesBehind.ToString("0.0", CultureInfo.InvariantCulture) +
+                              "경기 차") +
+                        (value.IsPlayerTeam ? " · 내 구단" : string.Empty)));
             sections.Add(new ScreenSectionViewModel(
                 "pro-season-team",
                 "팀 결과",

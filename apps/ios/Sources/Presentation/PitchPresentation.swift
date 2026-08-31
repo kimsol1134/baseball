@@ -92,6 +92,10 @@ enum PitchPresentation {
             case .recordChase: return resolver.resolve(.scenarioProRecordTitle)
             case .standingsRace: return resolver.resolve(.scenarioProStandingsTitle)
             case .openingStatement: return resolver.resolve(.scenarioProOpeningTitle)
+            case .autumnWildCard: return resolver.resolve(.scenarioProAutumnWildCardTitle)
+            case .autumnSemifinal: return resolver.resolve(.scenarioProAutumnSemifinalTitle)
+            case .autumnPlayoff: return resolver.resolve(.scenarioProAutumnPlayoffTitle)
+            case .autumnFinal: return resolver.resolve(.scenarioProAutumnFinalTitle)
             }
         }
     }
@@ -114,6 +118,13 @@ enum PitchPresentation {
             case .standingsRace(let ahead):
                 return resolver.resolve(ahead ? .scenarioProStandingsAheadBody : .scenarioProStandingsBehindBody)
             case .openingStatement: return resolver.resolve(.scenarioProOpeningBody)
+            case .autumnWildCard: return resolver.resolve(.scenarioProAutumnWildCardBody)
+            case .autumnSemifinal(let ahead):
+                return resolver.resolve(ahead ? .scenarioProAutumnSemifinalBody : .scenarioProAutumnSemifinalBody)
+            case .autumnPlayoff(let ahead):
+                return resolver.resolve(ahead ? .scenarioProAutumnPlayoffBody : .scenarioProAutumnPlayoffBody)
+            case .autumnFinal(let ahead):
+                return resolver.resolve(ahead ? .scenarioProAutumnFinalBody : .scenarioProAutumnFinalBody)
             }
         }
     }

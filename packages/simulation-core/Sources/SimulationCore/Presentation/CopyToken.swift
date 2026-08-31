@@ -879,6 +879,7 @@ public extension CopyToken {
         [
             ProSeasonTrigger.openingStatement, .callUpAudition, .majorDebut,
             .recordChase, .roleShowdown, .standingsRace,
+            .autumnWildCard, .autumnSemifinal, .autumnPlayoff, .autumnFinal,
         ].map {
             PresentationCopyDescriptor(family: .proSeasonTrigger, rawValue: $0.rawValue, token: $0.displayCopyToken)
         },

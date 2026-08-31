@@ -48,6 +48,7 @@ namespace Baseball.Core.Pro
         public ProSeasonDecision PendingDecision { get; internal set; }
         public IReadOnlyList<ProDecisionRecord> DecisionHistory { get; internal set; }
         public ProDevelopmentProgress DevelopmentProgress { get; internal set; }
+        public ProPostseasonState Postseason { get; internal set; }
 
         internal ProCareerSnapshot Clone()
         {
@@ -89,7 +90,8 @@ namespace Baseball.Core.Pro
                 SeasonImportantGames = SeasonImportantGames,
                 PendingDecision = PendingDecision,
                 DecisionHistory = DecisionHistory == null ? null : DecisionHistory.ToArray(),
-                DevelopmentProgress = DevelopmentProgress
+                DevelopmentProgress = DevelopmentProgress,
+                Postseason = Postseason
             };
         }
     }

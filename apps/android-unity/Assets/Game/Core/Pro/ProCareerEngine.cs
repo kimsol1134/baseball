@@ -29,7 +29,7 @@ namespace Baseball.Core.Pro
     public sealed class ProCareerEngine
     {
         public static readonly IReadOnlyList<int> SeasonDecisionWeeks = new[] { 3, 6, 9, 12, 15, 18, 21 };
-        public const int CurrentRulesVersion = 4;
+        public const int CurrentRulesVersion = 6;
         public const int AgencyRulesVersion = 3;
         public const int MaximumSeasonDecisions = 7;
         public const int DemotionTrust = 34;
@@ -173,6 +173,16 @@ namespace Baseball.Core.Pro
             var runs = 0;
             var pitches = 0;
             var newLines = new List<ProGameLine>();
+            var rulesVersion = source.ProRulesVersion ?? 1;
+            var climate = rulesVersion >= 5
+                ? ProSeasonClimateRules.Climate(
+                    source.ProCareerId, source.Season, nextWeek,
+                    source.CurrentStats.Strikeouts, source.CurrentStats.InningsOuts)
+                : ProSeasonClimate.Even;
+            var batterOffset = rulesVersion >= 5
+                ? DifficultyScale.ProArc(source.Season, source.Level, skill, climate)
+                : rulesVersion >= 4 ? DifficultyScale.Pro(source.Season) : 0;
+            var callPolicy = rulesVersion >= 5 ? ProSeasonClimateRules.CallPolicy(climate) : AutoCallPolicy.Perfect;
             if (!resting)
             {
                 for (var outingIndex = 0; outingIndex < outings; outingIndex++)
@@ -180,7 +190,8 @@ namespace Baseball.Core.Pro
                     var weekSalt = unchecked((ulong)(nextWeek * 0x9E37));
                     var baseSeed = unchecked((rng.Next() ^ weekSalt) + (ulong)outingIndex);
                     var line = new AutoOutingSimulator().Simulate(
-                        source.Pitcher, source.Fatigue + outingIndex * 5, outsTarget, pitchCap, baseSeed);
+                        source.Pitcher, source.Fatigue + outingIndex * 5, outsTarget, pitchCap, baseSeed,
+                        batterOffset, callPolicy);
                     totalOuts += line.Outs;
                     strikeouts += line.Strikeouts;
                     walks += line.Walks;
@@ -266,14 +277,29 @@ namespace Baseball.Core.Pro
             var pitcher = development.Pitcher;
             var callUpGame = source.Level != level && level == ProLevel.Major;
             var priorImportantGames = source.SeasonImportantGames ?? 0;
+            ProPostseasonState postseason = source.Postseason;
             ProSeasonTrigger? trigger = nextWeek >= 24 ? (ProSeasonTrigger?)null : ImportantGameTrigger(source, nextWeek, level, trust, stats.Strikeouts, skill, priorImportantGames);
+            if (nextWeek >= 24 && rulesVersion >= 6)
+            {
+                var standingsState = Next(source);
+                standingsState.GameLines = (source.GameLines ?? new ProGameLine[0]).Concat(newLines).ToArray();
+                standingsState.Week = nextWeek;
+                postseason = ProPostseasonRules.PlayerPath(
+                    ProPostseasonRules.EvaluateEndOfSeason(standingsState),
+                    level,
+                    newInjury);
+                if (postseason.Result == ProPostseasonResult.InProgress && postseason.CurrentRound.HasValue)
+                    trigger = ProPostseasonRules.Trigger(postseason.CurrentRound.Value);
+            }
             var history = source.DecisionHistory ?? new ProDecisionRecord[0];
             var decisionsThisSeason = history.Count(record => record.Season == source.Season);
             var effectiveRulesVersion = source.ProRulesVersion ?? source.BalanceVersion ?? 1;
             var shouldOpenDecision = nextWeek < 24 && effectiveRulesVersion >= AgencyRulesVersion && SeasonDecisionWeeks.Contains(nextWeek) &&
                 !trigger.HasValue && !recovering && newInjury == 0 && decisionsThisSeason < MaximumSeasonDecisions;
             var pendingDecision = shouldOpenDecision ? SeasonDecision(source, nextWeek) : null;
-            var phase = nextWeek >= 24 ? ProCareerPhase.SeasonReview : trigger.HasValue ? ProCareerPhase.ImportantGame : pendingDecision != null ? ProCareerPhase.SeasonDecision : ProCareerPhase.WeeklyPlan;
+            var phase = nextWeek >= 24
+                ? (trigger.HasValue ? ProCareerPhase.ImportantGame : ProCareerPhase.SeasonReview)
+                : trigger.HasValue ? ProCareerPhase.ImportantGame : pendingDecision != null ? ProCareerPhase.SeasonDecision : ProCareerPhase.WeeklyPlan;
             var rival = trigger.HasValue ? RivalForGame(source, nextWeek, trigger.Value) : null;
             var importantGames = priorImportantGames + (phase == ProCareerPhase.ImportantGame ? 1 : 0);
             var tensions = source.SeasonTensions ?? SeasonTensions(source);
@@ -319,6 +345,17 @@ namespace Baseball.Core.Pro
             if (injuryEvent != null) news.Insert(0, "과부하로 " + newInjury + "주 부상자 명단에 올랐습니다.");
             if (development.GrowthLabels.Count > 0) news.Insert(0, "주간 성장 완성 · " + string.Join(" · ", development.GrowthLabels));
             if (nextSegment != priorSegment) news.Insert(0, SegmentEntryNews(nextSegment));
+            if (rulesVersion >= 5 && climate != ProSeasonClimate.Even)
+                news.Insert(0, ProSeasonClimateRules.NewsLine(climate, nextWeek));
+            if (nextWeek >= 24 && rulesVersion >= 6 && postseason != null)
+            {
+                if (postseason.Result == ProPostseasonResult.DidNotQualify)
+                    news.Insert(0, "정규시즌이 끝났습니다. 올해는 플레이오프에 들지 못했습니다.");
+                else if (postseason.Result == ProPostseasonResult.InProgress)
+                    news.Insert(0, ProPostseasonRules.QualificationNews(postseason.Seed));
+                else if (postseason.Result == ProPostseasonResult.Unavailable)
+                    news.Insert(0, ProPostseasonRules.UnavailableNews(level));
+            }
             if (phase == ProCareerPhase.ImportantGame && trigger.HasValue) news.Insert(0, ImportantMomentHeadline(trigger.Value, rival, level));
 
             var state = Next(source);
@@ -341,6 +378,7 @@ namespace Baseball.Core.Pro
             state.SeasonImportantGames = importantGames;
             state.PendingDecision = pendingDecision;
             state.DevelopmentProgress = development.Progress;
+            state.Postseason = postseason;
             var events = new List<string> { "pro_week_resolved", callUpGame ? "major_call_up" : "weekly_progress" };
             if (injuryEvent != null) events.Add("pro_injury_started");
             if (phase == ProCareerPhase.SeasonDecision) events.Add("pro_season_decision_opened");
@@ -409,6 +447,8 @@ namespace Baseball.Core.Pro
         public ProCareerResult ResolveImportantGame(ResolveProGameParams parameters)
         {
             Validate(parameters.State, ProCareerPhase.ImportantGame);
+            if (ProPostseasonRules.IsAutumn(parameters.State.SeasonTrigger))
+                return ResolveAutumnGame(parameters);
             var rng = new SplitMix64(Seed(parameters.Seed));
             var report = parameters.Report;
             var soundProcess = report.ActualDamage <= report.ExpectedDamage + 150 || report.RecommendationAccepted * 2 >= report.Pitches;
@@ -462,6 +502,61 @@ namespace Baseball.Core.Pro
             state.SeasonTrigger = null;
             state.CurrentRival = null;
             return Result(state, rng.Next().ToString(CultureInfo.InvariantCulture), new[] { "pro_important_game_resolved" });
+        }
+
+        private ProCareerResult ResolveAutumnGame(ResolveProGameParams parameters)
+        {
+            var rng = new SplitMix64(Seed(parameters.Seed));
+            var report = parameters.Report;
+            var current = parameters.State.Postseason ?? ProPostseasonRules.EvaluateEndOfSeason(parameters.State);
+            var support = report.TeamRuns ?? Math.Max(0, (report.ScoreDifferentialAtEntry ?? 0) + report.RunsAllowed + 1);
+            var opponent = report.RunsAllowed + Math.Max(0, -(report.ScoreDifferentialAtEntry ?? 0));
+            var won = support > opponent || (support == opponent && report.RunsAllowed <= 1);
+            var nextPostseason = ProPostseasonRules.Resolving(current, won);
+            var continues = nextPostseason.Result == ProPostseasonResult.InProgress && nextPostseason.CurrentRound.HasValue;
+            var nextTrigger = nextPostseason.CurrentRound.HasValue
+                ? ProPostseasonRules.Trigger(nextPostseason.CurrentRound.Value)
+                : (ProSeasonTrigger?)null;
+            var rival = nextTrigger.HasValue ? RivalForGame(parameters.State, parameters.State.Week, nextTrigger.Value) : null;
+            var soundProcess = report.ActualDamage <= report.ExpectedDamage + 150 || report.RecommendationAccepted * 2 >= report.Pitches;
+            var sequenceReward = (parameters.State.BalanceVersion ?? 1) >= 4 ? PitchSequenceMasteryRules.TrustReward(report.SequenceMasteryCount) : 0;
+            var trust = Clamp(parameters.State.ManagerTrust + report.Strikeouts * 2 - report.Walks * 2 - report.RunsAllowed * 3 + (soundProcess ? 2 : 0) + sequenceReward, 0, 100);
+            string headline;
+            switch (nextPostseason.Result)
+            {
+                case ProPostseasonResult.Champion:
+                    headline = "플레이오프 우승. 올해의 마지막 공이 남았습니다.";
+                    break;
+                case ProPostseasonResult.RunnerUp:
+                    headline = "결승에서 멈췄습니다. 가을은 여기까지입니다.";
+                    break;
+                case ProPostseasonResult.Eliminated:
+                    headline = ProPostseasonRules.EliminationNews(nextPostseason.CurrentRound);
+                    break;
+                case ProPostseasonResult.InProgress:
+                    headline = nextTrigger == ProSeasonTrigger.AutumnWildCard
+                        ? "와일드카드 2차전이 남았습니다."
+                        : (won ? "다음 라운드가 열립니다." : "가을이 이어집니다.");
+                    break;
+                default:
+                    headline = "가을이 닫혔습니다.";
+                    break;
+            }
+            var trustDelta = trust - parameters.State.ManagerTrust;
+            var trustLine = "가을 승부 · " + report.Strikeouts + "탈삼진 · " + report.Walks + "볼넷 · " + report.RunsAllowed + "실점 · 감독의 믿음 " + (trustDelta >= 0 ? "+" : string.Empty) + trustDelta + ".";
+            var state = Next(parameters.State);
+            state.Phase = continues ? ProCareerPhase.ImportantGame : ProCareerPhase.SeasonReview;
+            state.ManagerTrust = trust;
+            state.CatcherTrust = Clamp(parameters.State.CatcherTrust + (soundProcess ? 2 : -1) + sequenceReward, 0, 100);
+            state.SeasonTrigger = continues ? nextTrigger : null;
+            state.CurrentRival = continues ? rival : null;
+            state.Postseason = nextPostseason;
+            state.News = (new[] { headline, trustLine }).Concat(parameters.State.News).Take(30).ToArray();
+            rng.Next();
+            return Result(
+                state,
+                rng.Next().ToString(CultureInfo.InvariantCulture),
+                new[] { "pro_autumn_game_resolved", continues ? "pro_autumn_advanced" : "pro_autumn_finished" });
         }
 
         public ProCareerResult ReviewSeason(ProStateParams parameters)
@@ -738,6 +833,10 @@ namespace Baseball.Core.Pro
                 case ProSeasonTrigger.CallUpAudition: return "콜업이 눈앞입니다. " + foe + "를 막으면 1군 문이 열립니다.";
                 case ProSeasonTrigger.RecordChase: return "기록에 다가서는 등판. " + foe + "를 상대로 탈삼진을 쌓습니다.";
                 case ProSeasonTrigger.RoleShowdown: return foe + "와의 승부로 다음 역할이 갈립니다.";
+                case ProSeasonTrigger.AutumnWildCard: return "와일드카드. " + foe + "를 넘어야 준플레이오프가 열립니다.";
+                case ProSeasonTrigger.AutumnSemifinal: return "준플레이오프 한 판. " + foe + "와의 승부가 플레이오프를 가릅니다.";
+                case ProSeasonTrigger.AutumnPlayoff: return "플레이오프 한 판. " + foe + "를 넘어야 우승 결정전이 열립니다.";
+                case ProSeasonTrigger.AutumnFinal: return "우승 결정전 한 판. " + foe + " 앞에서 올해의 마지막 공을 던집니다.";
                 default: return "순위가 걸린 한 경기. " + foe + "를 넘어야 가을이 보입니다.";
             }
         }
@@ -854,7 +953,8 @@ namespace Baseball.Core.Pro
                 decisions / 12 +
                 qualitySeasons * 2 +
                 state.Awards.Count * 8 +
-                state.ServiceYears * 3,
+                state.ServiceYears * 3 +
+                (state.Postseason != null ? ProPostseasonRules.HofBonus(state.Postseason.Result) : 0),
                 0,
                 100);
         }

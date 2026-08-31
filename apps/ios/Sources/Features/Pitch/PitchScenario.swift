@@ -15,6 +15,10 @@ struct PitchScenario {
         case recordChase(ahead: Bool)
         case standingsRace(ahead: Bool)
         case openingStatement
+        case autumnWildCard
+        case autumnSemifinal(ahead: Bool)
+        case autumnPlayoff(ahead: Bool)
+        case autumnFinal(ahead: Bool)
     }
 
     enum PresentationContext: Sendable {
@@ -67,14 +71,37 @@ struct PitchScenario {
     // MARK: - 프로 커리어
 
     static func pro(state: ProCareerSnapshot) -> PitchScenario {
-        let situation = proSituation(for: state.seasonTrigger, season: state.season, week: state.week)
+        let situation = proSituation(
+            for: state.seasonTrigger,
+            season: state.season,
+            week: state.week,
+            postseason: state.postseason
+        )
         let catcherTrust = min(100, max(0, state.catcherTrust))
+        var offset = ProCareerEngine.liveBatterOffset(for: state)
+        if let trigger = state.seasonTrigger {
+            switch trigger {
+            case .autumnWildCard: offset += ProPostseasonRules.extraOffset(for: .wildCard)
+            case .autumnSemifinal: offset += ProPostseasonRules.extraOffset(for: .semifinal)
+            case .autumnPlayoff: offset += ProPostseasonRules.extraOffset(for: .playoff)
+            case .autumnFinal: offset += ProPostseasonRules.extraOffset(for: .final)
+            default: break
+            }
+        }
+        let batters: Int
+        switch state.seasonTrigger {
+        case .autumnWildCard: batters = ProPostseasonRules.maximumBatters(for: .wildCard)
+        case .autumnSemifinal: batters = ProPostseasonRules.maximumBatters(for: .semifinal)
+        case .autumnPlayoff: batters = ProPostseasonRules.maximumBatters(for: .playoff)
+        case .autumnFinal: batters = ProPostseasonRules.maximumBatters(for: .final)
+        default: batters = 4
+        }
         return PitchScenario(
             id: "pa-\(state.proCareerID)-\(state.season)-\(state.week)",
             pitcher: state.pitcher,
             // 프로도 시즌이 갈수록 리그가 자신에게 맞춰 온다.
             lineup: ProRivalBatterStats.lineup(rival: state.currentRival, teamID: state.team.id)
-                .map { DifficultyScale.scaled($0, by: DifficultyScale.pro(season: state.season)) },
+                .map { DifficultyScale.scaled($0, by: offset) },
             scouting: scoutingWithCatcherBond(
                 ProRivalBatterStats.scouting(for: state.currentRival),
                 catcherTrust: catcherTrust
@@ -95,7 +122,7 @@ struct PitchScenario {
             headline: situation.headline,
             detail: situation.detail,
             presentationContext: .pro(situation.moment),
-            maximumBatters: 4,
+            maximumBatters: batters,
             maximumPitches: nil,
             developmentRulesVersion: state.balanceVersion ?? 1
         )
@@ -118,7 +145,12 @@ struct PitchScenario {
     /// 점수 국면은 트리거마다 다르고, 기록·순위 승부는 시즌·주차에 따라 리드와 열세를
     /// 오간다. 예전에는 6종 전부 "리드 중"으로 고정이라 20시즌의 수많은 승부에 지고 있는
     /// 마운드가 한 번도 없었다.
-    private static func proSituation(for trigger: ProSeasonTrigger?, season: Int, week: Int) -> ProSituation {
+    private static func proSituation(
+        for trigger: ProSeasonTrigger?,
+        season: Int,
+        week: Int,
+        postseason: ProPostseasonState? = nil
+    ) -> ProSituation {
         let onSecond = BaserunnerStateSnapshot(firstOccupied: false, secondOccupied: true, thirdOccupied: false, leadRunnerSpeed: 52)
         let onFirst = BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: false, thirdOccupied: false, leadRunnerSpeed: 54)
         let corners = BaserunnerStateSnapshot(firstOccupied: true, secondOccupied: true, thirdOccupied: false, leadRunnerSpeed: 56)
@@ -139,6 +171,26 @@ struct PitchScenario {
             return leading
                 ? ProSituation(moment: .standingsRace(ahead: true), inning: 9, outs: 0, runners: corners, scoreDifferential: 1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 앞섬 · 무사 1·2루")
                 : ProSituation(moment: .standingsRace(ahead: false), inning: 9, outs: 0, runners: corners, scoreDifferential: -1, leverage: 950, headline: "순위 싸움의 마지막 이닝", detail: "한 점 뒤짐 · 무사 1·2루 — 더 내주면 역전의 문이 닫힌다")
+        case .autumnWildCard:
+            let deciding = (postseason?.gamesPlayed ?? 0) >= 1
+            let fourth = postseason?.seed == 4
+            let detail: String
+            if deciding {
+                detail = fourth
+                    ? "와일드카드 2차전 · 여기서 지면 가을이 끝난다"
+                    : "와일드카드 2차전 · 한 번 더 이기면 준플레이오프"
+            } else if fourth {
+                detail = "와일드카드 1차전 · 한 승이면 올라간다"
+            } else {
+                detail = "와일드카드 1차전 · 두 번을 이겨야 한다"
+            }
+            return ProSituation(moment: .autumnWildCard, inning: 9, outs: 0, runners: corners, scoreDifferential: leading ? 1 : -1, leverage: 960, headline: "와일드카드", detail: detail)
+        case .autumnSemifinal:
+            return ProSituation(moment: .autumnSemifinal(ahead: leading), inning: 8, outs: 0, runners: corners, scoreDifferential: leading ? 1 : -1, leverage: 970, headline: "준플레이오프 한 판", detail: leading ? "한 점 앞섬 · 무사 1·2루 · 한 판으로 다음이 갈린다" : "한 점 뒤짐 · 무사 1·2루 · 한 판으로 다음이 갈린다")
+        case .autumnPlayoff:
+            return ProSituation(moment: .autumnPlayoff(ahead: leading), inning: 8, outs: 0, runners: corners, scoreDifferential: leading ? 1 : -1, leverage: 980, headline: "플레이오프 한 판", detail: leading ? "한 점 앞섬 · 무사 1·2루 · 한 판으로 다음이 갈린다" : "한 점 뒤짐 · 무사 1·2루 · 한 판으로 다음이 갈린다")
+        case .autumnFinal:
+            return ProSituation(moment: .autumnFinal(ahead: leading), inning: 9, outs: 0, runners: corners, scoreDifferential: leading ? 1 : -1, leverage: 990, headline: "우승 결정전 한 판", detail: leading ? "한 점 앞섬 · 무사 1·2루 · 한 판으로 우승이 갈린다" : "한 점 뒤짐 · 무사 1·2루 · 한 판으로 우승이 갈린다")
         case .openingStatement, .none:
             return ProSituation(moment: .openingStatement, inning: 5, outs: 0, runners: onSecond, scoreDifferential: 1, leverage: 720, headline: "시즌 첫 승부처", detail: "한 점 앞섬 · 무사 2루")
         }
