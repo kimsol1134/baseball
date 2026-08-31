@@ -10062,9 +10062,9 @@
     },
     "pro.offseason.investment.benefit.pitch-lab" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The selected %@ progress starts at 1, accelerating the first growth. No ability rating rises immediately." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "選んだ%@の進行度を1から始め、最初の成長を早めます。能力値はすぐには上がりません。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선택한 %@ 진행률을 1로 시작해 첫 성장을 앞당깁니다. 능력치는 즉시 오르지 않습니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fills the selected %@ progress to at least 1, accelerating the first growth. Progress you already built is kept, and no ability rating rises immediately." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "選んだ%@の進行度を最低1まで満たし、最初の成長を早めます。すでに積んだ進行はそのまま維持され、能力値はすぐには上がりません。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선택한 %@ 진행률을 최소 1로 채워 첫 성장을 앞당깁니다. 이미 쌓인 진행은 그대로 유지되며, 능력치는 즉시 오르지 않습니다." } }
       }
     },
     "pro.offseason.investment.benefit.recovery-team" : {

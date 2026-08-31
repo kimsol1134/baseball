@@ -73,12 +73,15 @@ struct WeeklyPlanView: View {
         state: ProCareerSnapshot,
         resolver: GameCopyResolver
     ) -> String {
-        let current = state.developmentProgress?.value(for: plan) ?? 0
         let required = ProCareerEngine.developmentTicksRequired(
             for: plan,
             pitcher: state.pitcher,
             proRulesVersion: state.proRulesVersion
         ) ?? 2
+        // 노장 하락으로 능력 밴드가 내려가면 저장된 게이지가 새 임계값보다 클 수 있다.
+        // 엔진은 다음 해당 주에 정확히 +1을 주므로 "가득 참"이 사실이다 — 3/2처럼
+        // 분모를 넘는 표시는 사용자에게 계산이 꼬였다는 신호로만 읽힌다.
+        let current = min(state.developmentProgress?.value(for: plan) ?? 0, required)
         return resolver.resolve(
             .weeklyProgress,
             arguments: [.integer(current), .integer(required)]

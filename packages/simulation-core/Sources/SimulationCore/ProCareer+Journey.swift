@@ -1793,19 +1793,21 @@ extension ProCareerEngine {
         return result(updated, nextSeed: params.seed, events: ["pro_offseason_resolved", "pro_offseason_investment_selected"])
     }
 
+    /// 시즌 사이에도 게이지는 이월되므로, 투자가 이미 쌓인 진행(2~3틱)을 1로 덮어쓰면
+    /// 돈을 내고 성장이 늦어진다. 시딩은 "최소 1 보장"이다 — 더 쌓인 게이지는 그대로 둔다.
     private func seededDevelopmentProgress(
         _ progress: ProDevelopmentProgress,
         focus: ProDevelopmentFocus
     ) -> ProDevelopmentProgress {
         switch focus {
         case .stuff:
-            return .init(stuff: 1, command: progress.command, movement: progress.movement, stamina: progress.stamina)
+            return .init(stuff: max(1, progress.stuff), command: progress.command, movement: progress.movement, stamina: progress.stamina)
         case .command:
-            return .init(stuff: progress.stuff, command: 1, movement: progress.movement, stamina: progress.stamina)
+            return .init(stuff: progress.stuff, command: max(1, progress.command), movement: progress.movement, stamina: progress.stamina)
         case .movement:
-            return .init(stuff: progress.stuff, command: progress.command, movement: 1, stamina: progress.stamina)
+            return .init(stuff: progress.stuff, command: progress.command, movement: max(1, progress.movement), stamina: progress.stamina)
         case .stamina:
-            return .init(stuff: progress.stuff, command: progress.command, movement: progress.movement, stamina: 1)
+            return .init(stuff: progress.stuff, command: progress.command, movement: progress.movement, stamina: max(1, progress.stamina))
         }
     }
 

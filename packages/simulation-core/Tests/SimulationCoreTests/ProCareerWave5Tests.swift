@@ -320,6 +320,34 @@ final class ProCareerWave5Tests: XCTestCase {
         XCTAssertFalse(foundation.snapshot.journeyState?.finances.transactions.contains { $0.kind == .investment && $0.amount == 0 } == true)
     }
 
+    /// 게이지는 시즌 사이에도 이월된다. 투구 연구소 시딩이 이미 쌓인 진행을 1로 덮어쓰면
+    /// 돈을 낸 투자가 성장을 늦추는 역효과가 된다 — 시딩은 "최소 1 보장"이어야 한다.
+    func testPitchLabInvestmentPreservesExistingGaugeAndSeedsEmptyGauge() throws {
+        let accepted = try acceptRookie(try engine.start(startParams(seed: "550509")), ambition: .recordBook)
+        let base = try offseasonInvestmentState(accepted.snapshot)
+        let carried = try unsignedSnapshot(base) { object in
+            object["developmentProgress"] = ["stuff": 3, "command": 0, "movement": 2, "stamina": 0]
+        }
+        let preserved = try engine.chooseInvestment(.init(
+            seed: "550510",
+            state: carried,
+            expectedRevision: carried.revision,
+            investment: .pitchLab,
+            focus: .stuff
+        ))
+        XCTAssertEqual(preserved.snapshot.developmentProgress?.stuff, 3)
+        XCTAssertEqual(preserved.snapshot.developmentProgress?.movement, 2)
+
+        let seeded = try engine.chooseInvestment(.init(
+            seed: "550511",
+            state: base,
+            expectedRevision: base.revision,
+            investment: .pitchLab,
+            focus: .command
+        ))
+        XCTAssertEqual(seeded.snapshot.developmentProgress?.command, 1)
+    }
+
     func testInvestmentRejectsInsufficientFundsDuplicateNoneAndInvalidFocus() throws {
         let accepted = try acceptRookie(try engine.start(startParams(seed: "550506")), ambition: .recordBook)
         let state = try offseasonInvestmentState(accepted.snapshot, availableFunds: 20_000_000, includePriorInvestment: true)
