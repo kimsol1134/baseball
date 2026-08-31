@@ -42,33 +42,39 @@ struct OpeningView: View {
                     .frame(maxHeight: .infinity, alignment: .top)
                     .ignoresSafeArea(edges: .top)
 
-                VStack(alignment: .leading, spacing: 16) {
-                    GameCopyText(AppCopyKey.openingEyebrow).eyebrowStyle(BaseballTheme.action)
+                // 접근성 글자 크기에서는 소개 문구가 한 화면보다 길어진다. 배경 그림은
+                // 고정하되 콘텐츠만 스크롤시켜, 첫 실행의 유일한 진행 버튼이 화면 밖에서
+                // 잠기지 않게 한다. 보통 글자 크기에서는 minHeight가 기존 하단 정렬을 유지한다.
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        GameCopyText(AppCopyKey.openingEyebrow).eyebrowStyle(BaseballTheme.action)
 
-                    GameCopyText(.appTitle)
-                        .font(BaseballType.display)
-                        .foregroundStyle(BaseballTheme.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        GameCopyText(.appTitle)
+                            .font(BaseballType.display)
+                            .foregroundStyle(BaseballTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                    GameCopyText(AppCopyKey.openingSummary)
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        GameCopyText(AppCopyKey.openingSummary)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                    GameCopyText(AppCopyKey.openingDescription)
-                        .font(.subheadline)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        GameCopyText(AppCopyKey.openingDescription)
+                            .font(.subheadline)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
 
-                    PrimaryPill(
-                        title: copyResolver.resolve(AppCopyKey.openingStart),
-                        identifier: "hs.opening.start",
-                        action: onStart
-                    )
+                        PrimaryPill(
+                            title: copyResolver.resolve(AppCopyKey.openingStart),
+                            identifier: "hs.opening.start",
+                            action: onStart
+                        )
+                    }
+                    .padding(BaseballMetrics.gutter)
+                    .padding(.bottom, 8)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .bottomLeading)
                 }
-                .padding(BaseballMetrics.gutter)
-                .padding(.bottom, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .scrollIndicators(.hidden)
             }
         }
         .background(BaseballTheme.canvas)

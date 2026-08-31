@@ -21,6 +21,7 @@ struct SettingsView: View {
 
     @AppStorage(PitchControlPreferences.autoReleaseKey)
     private var autoRelease = PitchControlPreferences.defaultAutoRelease
+    @AppStorage(CopyDensity.storageKey) private var copyDensityRaw = CopyDensity.automatic.rawValue
     @AppStorage(DailyReminder.enabledKey) private var reminderOn = false
     @State private var audio = GameAudio.shared
     @State private var achievements = AchievementStore.shared
@@ -40,6 +41,22 @@ struct SettingsView: View {
                 // "손해가 없습니다"는 실측과 다르다 — 숙련된 제스처는 중립 릴리스보다 확실히
                 // 낫다(피출루 −0.048). 접근성 안내가 사실과 다르면 그게 더 나쁘다.
                 GameCopyText(AppCopyKey.settingsAutoReleaseFooter)
+            }
+
+            Section {
+                Picker(copyResolver.resolve(.settingsCopyDensity), selection: Binding(
+                    get: { CopyDensity(rawValue: copyDensityRaw) ?? .automatic },
+                    set: { copyDensityRaw = $0.rawValue }
+                )) {
+                    ForEach(CopyDensity.allCases) { density in
+                        Text(copyResolver.resolve(density.copyKey)).tag(density)
+                    }
+                }
+                .accessibilityIdentifier("settings.copyDensity")
+            } header: {
+                GameCopyText(MetaUICopyKey.settingsCopySectionTitle.gameCopyKey)
+            } footer: {
+                GameCopyText(MetaUICopyKey.settingsCopyDensityFooter.gameCopyKey)
             }
 
             Section {
@@ -176,6 +193,7 @@ struct SettingsView: View {
         UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
         LegacyDailyInningData.clear()
         ReviewPrompt.reset()
+        SeenContentStore.reset()
         // 연속 기록도 진행이다. 남기면 새 시작이 "12일 연속"에서 출발한다.
         for key in UserDefaults.standard.dictionaryRepresentation().keys
         where DailyStreak.allPlayKeyPrefixes.contains(where: key.hasPrefix) {

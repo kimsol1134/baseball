@@ -356,7 +356,10 @@ function validateInfoPlist() {
   if (!ja.CFBundleDisplayName) failures.push("ja InfoPlist.strings is missing CFBundleDisplayName");
   if (en.CFBundleDisplayName && koreanPattern.test(en.CFBundleDisplayName)) failures.push("English InfoPlist display name contains Korean");
   if (ja.CFBundleDisplayName && koreanPattern.test(ja.CFBundleDisplayName)) failures.push("Japanese InfoPlist display name contains Korean");
-  if (!existsSync(join(root, "apps/ios/Sources/ja.lproj/LaunchScreen.storyboard"))) failures.push("ja LaunchScreen.storyboard is missing");
+  const japaneseLaunchScreens = ["LaunchScreen.storyboard", "LaunchScreenV2.storyboard"];
+  if (!japaneseLaunchScreens.some((name) => existsSync(join(root, "apps/ios/Sources/ja.lproj", name)))) {
+    failures.push("ja LaunchScreen storyboard is missing");
+  }
   return failures;
 }
 

@@ -11,7 +11,8 @@ final class PitchSessionTests: XCTestCase {
         movement: Int = 40,
         stamina: Int = 40,
         fatigue: Int = 20,
-        catcherTrust: Int = 50
+        catcherTrust: Int = 50,
+        pitcher overridePitcher: PitcherSnapshot? = nil
     ) -> ProCareerSnapshot {
         let team = ProCareerEngine.proTeams[0]
         let rival = ProRivalBatter(
@@ -28,7 +29,7 @@ final class PitchSessionTests: XCTestCase {
             revision: 3,
             phase: .importantGame,
             identity: .defaultPitcher,
-            pitcher: PitcherSnapshot(id: "p-test", name: "테스트", stuff: stuff, command: command, movement: movement, stamina: stamina),
+            pitcher: overridePitcher ?? PitcherSnapshot(id: "p-test", name: "테스트", stuff: stuff, command: command, movement: movement, stamina: stamina),
             team: team,
             entitlement: AppEntitlement.paidApp(),
             age: 20,
@@ -101,6 +102,60 @@ final class PitchSessionTests: XCTestCase {
         XCTAssertNotNil(session.lastResult)
         XCTAssertEqual(session.pitches, 1)
         XCTAssertEqual(session.pitchLog.count, 1)
+    }
+
+    func testGameReadyDevelopmentPitchProducesProcessQualityReceipt() throws {
+        let base = PitcherPresetCatalog.all[0].pitcher
+        let selected = try PitchLearningRules.apply(
+            selection: .init(
+                readyBreakingPitches: [.slider, .changeup],
+                primaryPitch: .fourSeam,
+                learningPitch: .curveball
+            ),
+            to: base
+        )
+        let unlocked = try PitchLearningRules.advancing(
+            pitcher: selected.pitcher,
+            project: selected.project,
+            practiceCredits: 5
+        )
+        let session = PitchSession(state: snapshot(pitcher: unlocked.pitcher), seed: "60823")
+        session.start()
+        session.choosePitchType(.curveball)
+        session.throwPitch(delivery: .init(releaseAccuracy: 1_000, aimAccuracy: 1_000))
+
+        let receipt = try XCTUnwrap(session.report(scenarioNumber: 1).pitchLearningUses?.first)
+        XCTAssertEqual(receipt.pitchType, .curveball)
+        XCTAssertEqual(receipt.pitchesThrown, 1)
+        XCTAssertEqual(receipt.qualityUses, 1)
+    }
+
+    func testPitchLearningQualityUsesProcessNotOutcome() {
+        XCTAssertTrue(PitchSession.qualifiesPitchLearningUse(
+            deliveryScore: 65,
+            executionQuality: 100,
+            automaticRelease: false
+        ))
+        XCTAssertTrue(PitchSession.qualifiesPitchLearningUse(
+            deliveryScore: 10,
+            executionQuality: 650,
+            automaticRelease: false
+        ))
+        XCTAssertFalse(PitchSession.qualifiesPitchLearningUse(
+            deliveryScore: 64,
+            executionQuality: 649,
+            automaticRelease: false
+        ))
+        XCTAssertTrue(PitchSession.qualifiesPitchLearningUse(
+            deliveryScore: nil,
+            executionQuality: 600,
+            automaticRelease: true
+        ))
+        XCTAssertFalse(PitchSession.qualifiesPitchLearningUse(
+            deliveryScore: nil,
+            executionQuality: 599,
+            automaticRelease: true
+        ))
     }
 
     func testManualCallAutomaticallyHoldsUntilCatcherCallIsAccepted() throws {

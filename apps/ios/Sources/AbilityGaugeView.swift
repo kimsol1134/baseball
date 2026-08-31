@@ -1,8 +1,8 @@
 import SwiftUI
 import SimulationCore
 
-/// 20-80 능력 사다리의 단일 출처. 데스크톱 `apps/windows/src/ratingScale.ts`와 같은 눈금을 쓴다.
-enum RatingScale {
+/// 사용자에게 보여 주는 1–100 능력 눈금의 단일 출처. 저장·시뮬레이션은 여전히 20–80이다.
+enum AbilityDisplayScale {
     struct Step {
         let minimum: Int
         let label: String
@@ -20,6 +20,19 @@ enum RatingScale {
     ]
 
     static func clamp(_ value: Int) -> Int { min(80, max(20, value)) }
+
+    static func displayRating(_ internalRating: Int) -> Int {
+        let clamped = min(80, max(20, internalRating))
+        return max(1, min(100, ((clamped - 20) * 100 + 30) / 60))
+    }
+
+    static func displayDelta(before: Int, after: Int) -> Int {
+        displayRating(after) - displayRating(before)
+    }
+
+    static func displayCeiling(_ internalCeiling: Int) -> Int {
+        displayRating(internalCeiling)
+    }
 
     static func meaning(_ value: Int) -> String {
         for step in steps where value >= step.minimum { return step.label }
@@ -43,6 +56,9 @@ enum RatingScale {
         return BaseballTheme.textSecondary
     }
 }
+
+/// Source compatibility for existing presentation tests and legacy views.
+typealias RatingScale = AbilityDisplayScale
 
 struct AbilityGaugeView: View {
     let label: String
@@ -87,10 +103,10 @@ struct AbilityGaugeView: View {
                         .background(RatingScale.tone(talent.ceiling), in: Capsule())
                     Text(
                         verbatim: talent == .s
-                            ? copyResolver.resolve(.abilityNoCeiling)
+                            ? copyResolver.resolve(.abilityBaseComplete)
                             : copyResolver.resolve(
                                 .abilityCeiling,
-                                arguments: [.integer(talent.ceiling)]
+                                arguments: [.integer(AbilityDisplayScale.displayCeiling(talent.ceiling))]
                             )
                     )
                         .font(.caption2.weight(.semibold))
@@ -98,11 +114,11 @@ struct AbilityGaugeView: View {
                 }
                 Spacer()
                 if gained, let beforeValue {
-                    Text("\(beforeValue) → \(value)")
+                    Text("\(AbilityDisplayScale.displayRating(beforeValue)) → \(AbilityDisplayScale.displayRating(value))")
                         .font(BaseballType.scoreboard)
                         .foregroundStyle(BaseballTheme.action)
                 } else {
-                    Text("\(value)")
+                    Text("\(AbilityDisplayScale.displayRating(value))")
                         .font(BaseballType.scoreboard)
                         .foregroundStyle(BaseballTheme.textPrimary)
                 }
@@ -154,7 +170,7 @@ struct AbilityGaugeView: View {
         let talentText = talent.map {
             copyResolver.resolve(
                 .abilityAccessibilityTalent,
-                arguments: [.userText($0.label), .integer($0.ceiling)]
+                arguments: [.userText($0.label), .integer(AbilityDisplayScale.displayCeiling($0.ceiling))]
             )
         } ?? ""
         let meaning = MetaPresentation.ratingMeaning(value, resolver: copyResolver)
@@ -163,8 +179,8 @@ struct AbilityGaugeView: View {
                 .abilityAccessibilityGained,
                 arguments: [
                     .userText(label),
-                    .integer(beforeValue),
-                    .integer(value),
+                    .integer(AbilityDisplayScale.displayRating(beforeValue)),
+                    .integer(AbilityDisplayScale.displayRating(value)),
                     .userText(talentText),
                     .userText(meaning),
                 ]
@@ -174,7 +190,7 @@ struct AbilityGaugeView: View {
             .abilityAccessibility,
             arguments: [
                 .userText(label),
-                .integer(value),
+                .integer(AbilityDisplayScale.displayRating(value)),
                 .userText(talentText),
                 .userText(meaning),
             ]

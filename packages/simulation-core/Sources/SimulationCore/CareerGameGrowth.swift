@@ -110,15 +110,18 @@ public struct CareerGameGrowth: Codable, Equatable, Sendable {
         let bloomSentence = applied.bloomed.map {
             " \($0.label) 재능이 \(applied.talent.grade($0).label)로 만개했습니다."
         } ?? ""
-        let limitSentence = applied.allowed == 0 && applied.bloomed == nil
+        let growthPoints = talent.ceiling(selected.ability) >= 80 ? 1 : applied.allowed
+        let limitSentence = growthPoints == 0 && applied.bloomed == nil
             ? " 재능 한계에 닿아 능력치는 오르지 않았지만 압박이 남았습니다."
             : ""
         let title = applied.allowed > 0
             ? "경기 기반 성장 · \(selected.ability.label) +\(applied.allowed)"
+            : growthPoints > 0
+                ? "경기 기반 숙련 · \(MasteryEffectRules.displayName(for: selected.ability))"
             : "경기 기반 성장 · \(selected.ability.label) 한계 압박"
         return CareerGameGrowth(
             ability: selected.ability,
-            points: applied.allowed,
+            points: growthPoints,
             reason: selected.reason,
             title: title,
             detail: selected.evidence + bloomSentence + limitSentence,

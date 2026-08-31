@@ -11,6 +11,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: `${siteUrl}/en`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       // App Store 심사가 요구하는 개인정보 처리방침. 색인돼야 링크가 살아 있음이 확인된다.
       url: `${siteUrl}/privacy`,
       lastModified: new Date(),

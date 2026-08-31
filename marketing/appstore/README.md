@@ -80,6 +80,31 @@ Steam 스토어 초안(`docs/STEAM_STORE_PAGE_DRAFT.md`)을 재사용하되 다�
 - 무료 고교 커리어 · 프로 IAP 해금 문구 제거. **앱 구매 = 전체 이용**으로 통일한다.
 - 첫 3줄에 "한 구씩 직접 던지는 투수 육성"이 들어가야 한다. 접힌 설명에서 잘리는 지점이다.
 
+### 4-1. 1.2.4 메타데이터 갱신 (description / What's New만)
+
+1.2.4의 플레이어 대상 설명과 What's New 원문은 `tools/asc-metadata-1-2-4.mjs`에 고정한다.
+현재 ASC에 존재하는 `en-US`, `en-GB`, `en-AU`, `en-CA`, `ko`, `ja` 6개 현지화만 대상으로
+하며, 이 도구는 버전 생성·앱 정보·키워드·프로모션 텍스트·스크린샷·미리보기·빌드 연결·심사
+제출을 수행하지 않는다. 문안의 변경 이력은 `RELEASE_NOTES_1.2.4.md`에 보관한다.
+
+```bash
+# 네트워크 없이 길이·실존 명칭·1–100/숙련 표현을 검사
+node tools/asc-metadata-1-2-4.mjs check
+
+# ASC의 현재 버전 상태와 6개 현지화 원문을 읽기 전용으로 확인
+node tools/asc-metadata-1-2-4.mjs inspect
+
+# 버전이 PREPARE_FOR_SUBMISSION일 때만 description/whatsNew를 갱신
+node tools/asc-metadata-1-2-4.mjs apply
+
+# ASC에 저장된 두 필드가 원문과 정확히 일치하는지 확인
+node tools/asc-metadata-1-2-4.mjs verify
+```
+
+`apply` 전에 `inspect` 결과를 보관하고, 적용 후 `verify`를 실행한다. 일본어 바이너리
+지원·서명 IPA·빌드 연결·심사 제출은 이 메타데이터 작업의 범위가 아니며 별도 릴리스 체크리스트를
+따른다.
+
 ## 5. 제출 전 확인
 
 - [ ] 릴리스 구성 빌드 성공 (`-configuration Release`)

@@ -382,6 +382,7 @@ final class HighSchoolCareerStore {
         var fatigueChange: Int
         /// 오늘의 기회를 맞춰 던진 훈련인가.
         var opportunityHit: Bool
+        var pitchLearning: PitchLearningReceiptSnapshot? = nil
     }
 
     /// 결과 패널을 닫는다. 같은 자리에서 축하(성장·만개)까지 함께 소비한다 —
@@ -516,6 +517,8 @@ final class HighSchoolCareerStore {
         /// 직접 키운 능력이 실제 결과에서 살아난 공. 옛 영수증은 nil이다.
         var abilityMomentCount: Int? = nil
         var abilityMomentTypes: [String]? = nil
+        var manualDeliveryRate: Double? = nil
+        var pitchLearningCompletedAfterGame: Bool? = nil
         let targetBatters: Int
         let batters: Int
         let lifeNumber: Int

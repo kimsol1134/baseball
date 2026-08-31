@@ -8,6 +8,16 @@
   ],
   "$defs": {
     "rating": { "type": "integer", "minimum": 20, "maximum": 80 },
+    "mastery": {
+      "type": "object",
+      "properties": {
+        "stuff": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "command": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "movement": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "stamina": { "type": "integer", "minimum": 0, "maximum": 2147483647 }
+      },
+      "additionalProperties": false
+    },
     "zone": {
       "type": "object",
       "required": ["row", "column"],
@@ -29,7 +39,8 @@
         "movement": { "$ref": "#/$defs/rating" },
         "whiff": { "$ref": "#/$defs/rating" },
         "weakContact": { "$ref": "#/$defs/rating" },
-        "fatigueCost": { "type": "integer", "minimum": 0, "maximum": 3 }
+        "fatigueCost": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "availability": { "enum": ["locked", "game_ready"] }
       },
       "additionalProperties": false
     },
@@ -43,6 +54,7 @@
         "command": { "$ref": "#/$defs/rating" },
         "movement": { "$ref": "#/$defs/rating" },
         "stamina": { "$ref": "#/$defs/rating" },
+        "mastery": { "$ref": "#/$defs/mastery" },
         "pitchProfiles": {
           "type": "array",
           "minItems": 1,

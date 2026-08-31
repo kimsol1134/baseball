@@ -3,6 +3,7 @@ import type {
   GameStateSnapshot,
   PitchKernelResult,
   PitchOutcome,
+  PitchLearningUseReceipt,
   PitchPreparation,
   PitcherLabResult,
   PlateAppearanceContext,
@@ -27,6 +28,8 @@ export interface LabInningStats {
   expectedDamage: number;
   actualDamage: number;
   recommendationAccepted: number;
+  pitchLearningUses?: ReadonlyArray<PitchLearningUseReceipt>;
+  pitchLearningAwardedPlateAppearances?: ReadonlyArray<string>;
 }
 
 export interface PitcherLabAutosavePayload {

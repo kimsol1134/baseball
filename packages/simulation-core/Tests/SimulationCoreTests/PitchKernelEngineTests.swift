@@ -1341,6 +1341,39 @@ final class PitchKernelEngineTests: XCTestCase {
         }
     }
 
+    func testLockedLearningPitchIsNeitherRecommendedNorSubmittable() throws {
+        let repertoire = try PitchLearningRules.apply(
+            selection: .init(
+                readyBreakingPitches: [.slider, .changeup],
+                primaryPitch: .fourSeam,
+                learningPitch: .curveball
+            ),
+            to: PitcherPresetCatalog.all[0].pitcher
+        )
+        let params = makePrepareParams(seed: "8181", pitcher: repertoire.pitcher)
+        let preparation = try engine.preparePitch(params)
+        XCTAssertNotEqual(preparation.primaryRecommendation.call.pitchType, .curveball)
+        XCTAssertNotEqual(preparation.alternativeRecommendation.call.pitchType, .curveball)
+
+        XCTAssertThrowsError(try engine.submitPitch(SubmitPitchParams(
+            seed: params.seed,
+            pitcher: params.pitcher,
+            batter: params.batter,
+            scouting: params.scouting,
+            context: params.context,
+            preparationToken: preparation.preparationToken,
+            call: PitchCall(
+                pitchType: .curveball,
+                zone: PitchZone(row: 2, column: 1),
+                zoneIntent: .edge,
+                intensity: .normal
+            ),
+            rivalMemory: params.rivalMemory,
+            gameState: params.gameState,
+            gameLog: params.gameLog
+        )))
+    }
+
     func testEliteFastballNeverDisplaysFantasyVelocity() throws {
         let elite = PitcherSnapshot(
             id: "elite",

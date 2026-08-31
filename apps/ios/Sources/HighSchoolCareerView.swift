@@ -298,6 +298,10 @@ struct HighSchoolCareerView: View {
                         // 만개는 성장 축하보다 앞에 온다. 같은 훈련에서 둘 다 나면
                         // 먼저 읽어야 하는 것은 "벽이 열렸다"는 쪽이다.
                         Color.clear.frame(height: 0).id(Self.celebrationAnchor)
+                        if let armHealth = career.result?.armHealthReceipt {
+                            HighSchoolArmHealthResultCard(receipt: armHealth)
+                                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                        }
                         // 훈련 결과는 주 행동 바로 위의 전용 패널이 맡는다(`TrainingResultPanel`).
                         // 같은 성장·만개를 이 위쪽에도 중복 표시하면 결과가 두 군데로 갈라지므로,
                         // 훈련 영수증이 없는 관계·경기 성장만 이 흐름에 남긴다.
@@ -613,4 +617,3 @@ struct HighSchoolCareerView: View {
         }
     }
 }
-

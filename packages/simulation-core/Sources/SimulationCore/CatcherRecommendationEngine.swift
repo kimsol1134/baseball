@@ -128,7 +128,9 @@ public struct CatcherRecommendationEngine: Sendable {
         protectZone: Bool = false,
         lastPitchType: PitchType? = nil
     ) -> PitchType {
-        guard let profiles = pitcher.pitchProfiles, !profiles.isEmpty else { return desired }
+        guard let allProfiles = pitcher.pitchProfiles else { return desired }
+        let profiles = allProfiles.filter(\.isGameReady)
+        guard !profiles.isEmpty else { return desired }
 
         /// 약점을 찌를 때 얹어 주는 값. 이만큼 못 미치는 주무기라면 약점을 노린다.
         /// 90은 세 항목 합계(command+whiff+weakContact) 기준이라 항목당 30 차이에 해당한다.
@@ -159,7 +161,7 @@ public struct CatcherRecommendationEngine: Sendable {
         excluding primary: PitchType,
         legacyDesired: PitchType
     ) -> PitchType {
-        guard let profiles = pitcher.pitchProfiles else { return legacyDesired }
+        guard let profiles = pitcher.pitchProfiles?.filter(\.isGameReady) else { return legacyDesired }
         return profiles
             .filter { $0.pitchType != primary && $0.role != .development }
             .max { profileScore($0, pitcher: pitcher) < profileScore($1, pitcher: pitcher) }?

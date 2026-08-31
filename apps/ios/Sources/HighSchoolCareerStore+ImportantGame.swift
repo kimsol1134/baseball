@@ -113,6 +113,11 @@ extension HighSchoolCareerStore {
                     developmentRulesVersion: current.snapshot.balanceVersion ?? 1,
                     abilityMomentCount: session.abilityMomentCount,
                     abilityMomentTypes: session.abilityMomentIDs,
+                    manualDeliveryRate: report.pitches > 0
+                        ? Double(session.deliveryScores.count) / Double(report.pitches) : 0,
+                    pitchLearningCompletedAfterGame:
+                        current.snapshot.pitchLearningProject?.isCompleted == false
+                            && updated.snapshot.pitchLearningProject?.isCompleted == true,
                     targetBatters: session.scenario.maximumBatters,
                     batters: session.batterIndex + 1,
                     lifeNumber: updated.snapshot.lifeNumber,
@@ -150,7 +155,9 @@ extension HighSchoolCareerStore {
                 $0.pendingGameCompletion = completion
             }
             pitchSession = nil
-            pendingGains = gains
+            // 중요 경기 직전에 완성된 훈련 성장을 아직 확인하지 않았더라도 경기 정산이
+            // 그 영수증을 지우지 않는다. 경기에서 추가 성장했다면 같은 능력끼리 합친다.
+            pendingGains = MobileCareerStore.mergingGains(pendingGains, gains)
             if countsTowardWeeklyProgram { mirrorRetention(retention) }
             if let completedGoal {
                 lastSummary = "\(completedGoal.title) 완수. 삼진 \(completedGoal.progress)개 — 숙제는 끝났고, 다음은 욕심의 영역입니다."
@@ -268,6 +275,20 @@ extension HighSchoolCareerStore {
             DailyStreak.recordPlay(now: completion.completedAt)
         }
         GameAnalytics.logOnce(.activationFirstGame)
+        if let use = report.pitchLearningUses?.first {
+            GameAnalytics.logOnce(
+                .pitchLearningGameSummary,
+                scope: "\(completion.id):pitch-learning",
+                properties: [
+                    "pitch_id": use.pitchType.rawValue,
+                    "pitches_thrown": use.pitchesThrown,
+                    "quality_uses_gained": use.qualityUses,
+                    "completed_after_game": completion.pitchLearningCompletedAfterGame ?? false,
+                    "manual_delivery_rate": completion.manualDeliveryRate ?? 0,
+                    "mode": "high_school",
+                ]
+            )
+        }
         if let enteredPhase = completion.enteredPhase {
             GameAnalytics.logOnce(
                 .phaseEntered,

@@ -72,7 +72,7 @@ final class JapaneseLocalizationTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: info.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: launch.path))
         XCTAssertTrue(try String(contentsOf: info, encoding: .utf8).contains("野球がダメならまた転生"))
-        XCTAssertTrue(try String(contentsOf: launch, encoding: .utf8).contains("野球がダメなら"))
+        XCTAssertTrue(try String(contentsOf: launch, encoding: .utf8).contains("image=\"LaunchLogo\""))
     }
 
     func testLocalizedLaunchAndLoadingTitlesStayInSync() throws {
@@ -81,11 +81,19 @@ final class JapaneseLocalizationTests: XCTestCase {
         let englishLaunch = root.appendingPathComponent("apps/ios/Sources/en.lproj/LaunchScreenV2.storyboard")
         let appShell = root.appendingPathComponent("apps/ios/Sources/AppShell.swift")
         let info = root.appendingPathComponent("apps/ios/Sources/Info.plist")
+        let koreanLaunchLogo = root.appendingPathComponent(
+            "apps/ios/Sources/Assets.xcassets/LaunchLogo.imageset/Contents.json"
+        )
 
         XCTAssertTrue(FileManager.default.fileExists(atPath: koreanLaunch.path))
-        XCTAssertTrue(try String(contentsOf: koreanLaunch, encoding: .utf8).contains("야구 못하면 또&#10;환생함"))
-        XCTAssertTrue(try String(contentsOf: englishLaunch, encoding: .utf8).contains("MOUND&#10;REBORN"))
-        XCTAssertTrue(try String(contentsOf: appShell, encoding: .utf8).contains("GameCopyText(.appTitle)"))
+        let koreanLaunchSource = try String(contentsOf: koreanLaunch, encoding: .utf8)
+        XCTAssertTrue(
+            koreanLaunchSource.contains("야구 못하면 또&#10;환생함")
+                || (koreanLaunchSource.contains("image=\"LaunchLogo\"")
+                    && FileManager.default.fileExists(atPath: koreanLaunchLogo.path))
+        )
+        XCTAssertTrue(try String(contentsOf: englishLaunch, encoding: .utf8).contains("image=\"LaunchLogo\""))
+        XCTAssertTrue(try String(contentsOf: appShell, encoding: .utf8).contains("Image(\"LaunchLogo\")"))
         XCTAssertTrue(try String(contentsOf: info, encoding: .utf8).contains("LaunchScreenV2"))
 
         let entries = try catalogEntries()

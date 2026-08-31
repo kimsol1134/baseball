@@ -155,7 +155,7 @@ public object CSharpHighSchoolSnapshotCodec {
 
     private fun readPitcher(value: JsonValue.Obj): HighSchoolPitcher {
         value.requireKnown(
-            setOf("Id", "Name", "Stuff", "Command", "Movement", "Stamina", "PitchProfiles", "ThrowingHand"),
+            setOf("Id", "Name", "Stuff", "Command", "Movement", "Stamina", "PitchProfiles", "ThrowingHand", "Mastery"),
             "Pitcher",
         )
         val profiles = value.arrayOrEmpty("PitchProfiles").mapIndexed { index, item ->
@@ -174,6 +174,15 @@ public object CSharpHighSchoolSnapshotCodec {
                 "left" -> ThrowingHand.LEFT
                 else -> throw CSharpHighSchoolSnapshotCodecException("csharp.pitcher.hand")
             },
+            mastery = value.nullableObj("Mastery")?.let(::readMastery),
+        )
+    }
+
+    private fun readMastery(value: JsonValue.Obj): com.solkim.baseball.core.pitch.AbilityMasterySnapshot {
+        value.requireKnown(setOf("Stuff", "Command", "Movement", "Stamina"), "Mastery")
+        return com.solkim.baseball.core.pitch.AbilityMasterySnapshot(
+            stuff = value.int("Stuff"), command = value.int("Command"),
+            movement = value.int("Movement"), stamina = value.int("Stamina"),
         )
     }
 
@@ -348,7 +357,7 @@ public object CSharpHighSchoolSnapshotCodec {
             setOf(
                 "Number", "Focus", "Intensity", "Growth", "FatigueChange", "Feedback", "MetricBefore",
                 "MetricAfter", "FatigueBefore", "FatigueAfter", "OpportunityHit", "BloomedAbility",
-                "BloomedGrade", "Jackpot", "TargetPitch",
+                "BloomedGrade", "Jackpot", "TargetPitch", "MasteryBefore", "MasteryAfter",
             ),
             "LastTraining",
         )
@@ -360,6 +369,8 @@ public object CSharpHighSchoolSnapshotCodec {
             fatigueChange = value.int("FatigueChange"),
             opportunityHit = value.boolOrDefault("OpportunityHit", false),
             bloomed = value["BloomedAbility"] !is JsonValue.Null && value["BloomedAbility"] != null,
+            masteryBefore = value.intOrNull("MasteryBefore"),
+            masteryAfter = value.intOrNull("MasteryAfter"),
         )
     }
 
@@ -368,7 +379,7 @@ public object CSharpHighSchoolSnapshotCodec {
             setOf(
                 "Number", "Category", "Title", "Response", "TrustBefore", "TrustAfter", "FatigueBefore",
                 "FatigueAfter", "FanInterestBefore", "FanInterestAfter", "GrowthFocus", "AbilityBefore",
-                "AbilityAfter", "Feedback",
+                "AbilityAfter", "Feedback", "MasteryBefore", "MasteryAfter",
             ),
             "LastRelationship",
         )
@@ -384,6 +395,8 @@ public object CSharpHighSchoolSnapshotCodec {
             fanInterestBefore = value.int("FanInterestBefore"),
             fanInterestAfter = value.int("FanInterestAfter"),
             growthFocus = value.stringOrNull("GrowthFocus")?.let(::pascalFocus),
+            masteryBefore = value.intOrNull("MasteryBefore"),
+            masteryAfter = value.intOrNull("MasteryAfter"),
         )
     }
 

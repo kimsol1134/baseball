@@ -102,6 +102,66 @@ public data class PitchProfileSnapshot(
     val fatigueCost: Int,
 )
 
+/**
+ * Growth that continues after a stored 20–80 ability reaches its base ceiling.
+ *
+ * The gameplay contract intentionally has no design hard cap.  The signed 32-bit
+ * saturation is only a cross-platform wire/storage safety boundary and is never
+ * presented as a player-facing limit.
+ */
+public class AbilityMasterySnapshot(
+    stuff: Int = 0,
+    command: Int = 0,
+    movement: Int = 0,
+    stamina: Int = 0,
+) {
+    public companion object {
+        public const val TECHNICAL_MAXIMUM: Int = Int.MAX_VALUE
+        public val ZERO: AbilityMasterySnapshot = AbilityMasterySnapshot()
+        public const val technicalMaximum: Int = TECHNICAL_MAXIMUM
+        public val zero: AbilityMasterySnapshot = ZERO
+    }
+
+    public val stuff: Int = stuff.coerceIn(0, TECHNICAL_MAXIMUM)
+    public val command: Int = command.coerceIn(0, TECHNICAL_MAXIMUM)
+    public val movement: Int = movement.coerceIn(0, TECHNICAL_MAXIMUM)
+    public val stamina: Int = stamina.coerceIn(0, TECHNICAL_MAXIMUM)
+
+    public fun value(kind: PitchAbilityKind): Int = when (kind) {
+        PitchAbilityKind.POWER -> stuff
+        PitchAbilityKind.COMMAND -> command
+        PitchAbilityKind.MOVEMENT -> movement
+        PitchAbilityKind.STAMINA -> stamina
+    }
+
+    public fun valueFor(kind: PitchAbilityKind): Int = value(kind)
+
+    public fun withValue(kind: PitchAbilityKind, value: Int): AbilityMasterySnapshot = when (kind) {
+        PitchAbilityKind.POWER -> AbilityMasterySnapshot(value, command, movement, stamina)
+        PitchAbilityKind.COMMAND -> AbilityMasterySnapshot(stuff, value, movement, stamina)
+        PitchAbilityKind.MOVEMENT -> AbilityMasterySnapshot(stuff, command, value, stamina)
+        PitchAbilityKind.STAMINA -> AbilityMasterySnapshot(stuff, command, movement, value)
+    }
+
+    public fun replacing(kind: PitchAbilityKind, value: Int): AbilityMasterySnapshot = withValue(kind, value)
+
+    public fun add(kind: PitchAbilityKind, points: Int): AbilityMasterySnapshot {
+        if (points <= 0) return this
+        val next = minOf(TECHNICAL_MAXIMUM.toLong(), value(kind).toLong() + points.toLong()).toInt()
+        return withValue(kind, next)
+    }
+
+    public fun adding(points: Int, to: PitchAbilityKind): AbilityMasterySnapshot = add(to, points)
+
+    override fun equals(other: Any?): Boolean = other is AbilityMasterySnapshot
+        && stuff == other.stuff && command == other.command
+        && movement == other.movement && stamina == other.stamina
+
+    override fun hashCode(): Int = (((stuff * 31 + command) * 31 + movement) * 31 + stamina)
+
+    override fun toString(): String = "AbilityMasterySnapshot(stuff=$stuff, command=$command, movement=$movement, stamina=$stamina)"
+}
+
 public data class PitcherSnapshot(
     val id: String,
     val name: String,
@@ -111,9 +171,13 @@ public data class PitcherSnapshot(
     val stamina: Int,
     val pitchProfiles: List<PitchProfileSnapshot>? = null,
     val throwingHand: ThrowingHand = ThrowingHand.RIGHT,
+    /** Missing on old saves; readers use [effectiveMastery] as zero. */
+    val mastery: AbilityMasterySnapshot? = null,
 ) {
     public fun profile(pitchType: PitchKind): PitchProfileSnapshot? =
         pitchProfiles?.firstOrNull { it.pitchType == pitchType }
+
+    public val effectiveMastery: AbilityMasterySnapshot get() = mastery ?: AbilityMasterySnapshot.ZERO
 }
 
 public data class BatterSnapshot(
@@ -471,13 +535,19 @@ public object PitchAbilityRules {
             pitchType = call.pitchType,
             stuffRating = pitcher.stuff,
             commandRating = commandRating(pitcher, profile),
-            movementRating = profile?.let { (pitcher.movement + it.movement) / 2 } ?: pitcher.movement,
+            movementRating = profile?.let {
+                (MasteryEffectRules.adjustedRating(pitcher.movement, pitcher.effectiveMastery.movement) +
+                    MasteryEffectRules.adjustedRating(it.movement, pitcher.effectiveMastery.movement)) / 2
+            } ?: MasteryEffectRules.adjustedRating(pitcher.movement, pitcher.effectiveMastery.movement),
             staminaRating = pitcher.stamina,
             whiffRating = profile?.whiff ?: pitcher.stuff,
             weakContactRating = profile?.weakContact ?: 50,
-            nominalVelocityTenthsKph = nominalVelocity(pitcher, call.pitchType, call.intensity, context.fatigue),
+            nominalVelocityTenthsKph = nominalVelocity(
+                pitcher, call.pitchType, call.intensity, context.fatigue,
+                pitcher.effectiveMastery.stuff,
+            ),
             fatigueCost = fatigueCost(call.intensity, profile),
-            effectiveFatigue = effectiveFatigue(context.fatigue, pitcher.stamina),
+            effectiveFatigue = effectiveFatigue(context.fatigue, pitcher.stamina, pitcher.effectiveMastery.stamina),
             rawFatigue = context.fatigue,
         )
     }
@@ -513,19 +583,23 @@ public object PitchAbilityRules {
         PitchIntensity.MAX_EFFORT -> IntensityEffect(34, 130)
     }
 
-    internal fun commandRating(pitcher: PitcherSnapshot, profile: PitchProfileSnapshot?): Int =
-        profile?.let { (pitcher.command * 4 + it.control * 4 + it.command * 2) / 10 } ?: pitcher.command
+    internal fun commandRating(pitcher: PitcherSnapshot, profile: PitchProfileSnapshot?): Int {
+        val command = MasteryEffectRules.adjustedRating(pitcher.command, pitcher.effectiveMastery.command)
+        return profile?.let { (command * 4 + it.control * 4 + it.command * 2) / 10 } ?: command
+    }
 
     internal fun nominalVelocity(
         pitcher: PitcherSnapshot,
         type: PitchKind,
         intensity: PitchIntensity,
         fatigue: Int,
+        mastery: Int = 0,
     ): Int {
         val profile = pitcher.profile(type)
         val base = profile?.velocityTenthsKph ?: baseVelocity(type) + (pitcher.stuff - 50) * 2
-        val pressure = effectiveFatigue(fatigue, pitcher.stamina)
-        val raw = base + intensity(intensity).velocityBonusTenthsKph - pressure
+        val pressure = effectiveFatigue(fatigue, pitcher.stamina, pitcher.effectiveMastery.stamina)
+        val stuffContribution = MasteryEffectRules.bonusForContribution(max(0, pitcher.stuff - 20), mastery) / 8
+        val raw = base + stuffContribution + intensity(intensity).velocityBonusTenthsKph - pressure
         val ceiling = when (intensity) {
             PitchIntensity.CONTROLLED -> maximumProfileVelocity(type) - 20
             PitchIntensity.NORMAL -> maximumProfileVelocity(type)
@@ -534,9 +608,9 @@ public object PitchAbilityRules {
         return min(raw, ceiling)
     }
 
-    public fun effectiveFatigue(rawFatigue: Int, stamina: Int): Int {
+    public fun effectiveFatigue(rawFatigue: Int, stamina: Int, mastery: Int = 0): Int {
         val boundedRaw = min(100, max(0, rawFatigue))
-        val boundedStamina = min(80, max(20, stamina))
+        val boundedStamina = min(100, max(20, 20 + MasteryEffectRules.adjustedContribution(min(60, max(0, stamina - 20)), mastery)))
         val multiplierPermille = 1250 - (boundedStamina - 20) * 500 / 60
         return min(100, max(0, boundedRaw * multiplierPermille / 1000))
     }
@@ -1481,7 +1555,11 @@ public class PitchKernel {
         val effect = PitchAbilityRules.intensity(parameters.call.intensity)
         val profile = parameters.pitcher.profile(parameters.call.pitchType)
         val command = PitchAbilityRules.commandRating(parameters.pitcher, profile)
-        val fatiguePressure = PitchAbilityRules.effectiveFatigue(parameters.context.fatigue, parameters.pitcher.stamina)
+        val fatiguePressure = PitchAbilityRules.effectiveFatigue(
+            parameters.context.fatigue,
+            parameters.pitcher.stamina,
+            parameters.pitcher.effectiveMastery.stamina,
+        )
         val effective = clamp(command * 10 - fatiguePressure * 2 - effect.commandPenalty, 100, 900)
         val spread = clamp(520 - effective / 2, 70, 470)
         var offsetX = generator.nextInt(spread * 2 + 1) - spread
@@ -1512,10 +1590,19 @@ public class PitchKernel {
             PitchKind.CURVEBALL -> { horizontal = -65; vertical = -185 }
             PitchKind.CHANGEUP -> { horizontal = 105; vertical = -45 }
         }
-        val rawVelocity = PitchAbilityRules.nominalVelocity(parameters.pitcher, parameters.call.pitchType, parameters.call.intensity, parameters.context.fatigue) +
+        val rawVelocity = PitchAbilityRules.nominalVelocity(
+            parameters.pitcher,
+            parameters.call.pitchType,
+            parameters.call.intensity,
+            parameters.context.fatigue,
+            parameters.pitcher.effectiveMastery.stuff,
+        ) +
             generator.nextInt(21) - 10 + releaseShift * 10 / 500 + if (delivery?.isPerfectRelease == true) 6 else 0
         val velocity = min(PitchAbilityRules.MAXIMUM_EXECUTED_VELOCITY_TENTHS_KPH, rawVelocity)
-        val movementScale = (profile?.movement ?: parameters.pitcher.movement) - 50
+        val movementScale = MasteryEffectRules.adjustedRating(
+            profile?.movement ?: parameters.pitcher.movement,
+            parameters.pitcher.effectiveMastery.movement,
+        ) - 50
         val actualX = target.first + offsetX
         val actualY = target.second + offsetY
         horizontal += movementScale * 2
@@ -1595,18 +1682,24 @@ public class PitchKernel {
             return Resolution(if (wasInZone) PitchOutcome.CALLED_STRIKE else PitchOutcome.BALL, null)
         }
         val profile = parameters.pitcher.profile(parameters.call.pitchType)
+        val mastery = parameters.pitcher.effectiveMastery
+        val effectiveStuff = MasteryEffectRules.adjustedRating(parameters.pitcher.stuff, mastery.stuff)
+        val effectiveMovement = MasteryEffectRules.adjustedRating(parameters.pitcher.movement, mastery.movement)
+        val effectiveProfileMovement = profile?.let { MasteryEffectRules.adjustedRating(it.movement, mastery.movement) }
+            ?: effectiveMovement
+        val effectiveWeakContact = profile?.let { MasteryEffectRules.adjustedRating(it.weakContact, mastery.movement) } ?: 50
         val powerEdge = max(
             0,
-            parameters.pitcher.stuff - max(parameters.pitcher.command, max(parameters.pitcher.movement, parameters.pitcher.stamina)),
+            effectiveStuff - max(parameters.pitcher.command, max(effectiveMovement, parameters.pitcher.stamina)),
         )
         val fullPowerSpecialization = min(120, powerEdge * 30)
         val powerSpecialization = if (parameters.call.pitchType == PitchKind.FOUR_SEAM) fullPowerSpecialization else 0
         val difficulty = if (profile == null) {
-            (parameters.pitcher.stuff - 50) * 7 + (parameters.pitcher.movement - 50) * 6 +
+            (effectiveStuff - 50) * 7 + (effectiveMovement - 50) * 6 +
                 powerSpecialization + 30 + max(0, execution.executionQuality - 500) / 3
         } else {
-            (parameters.pitcher.stuff - 50) * 5 + (profile.whiff - 50) * 4 +
-                (parameters.pitcher.movement - 50) * 3 + (profile.movement - 50) * 3 +
+            (effectiveStuff - 50) * 5 + (profile.whiff - 50) * 4 +
+                (effectiveMovement - 50) * 3 + (effectiveProfileMovement - 50) * 3 +
                 powerSpecialization + 30 + max(0, execution.executionQuality - 500) / 3
         }
         val velocityEdge = clamp((execution.velocityTenthsKph - 1370) / 2, -80, 180)
@@ -1624,13 +1717,13 @@ public class PitchKernel {
             940,
         )
         if (generator.nextInt(1000) >= contactChance) return Resolution(PitchOutcome.SWINGING_STRIKE, null)
-        val foulChance = clamp(470 + ((profile?.movement ?: parameters.pitcher.movement) - parameters.batter.contact) * 3 + plan.bias.foul, 260, 620)
+        val foulChance = clamp(470 + (effectiveProfileMovement - parameters.batter.contact) * 3 + plan.bias.foul, 260, 620)
         if (generator.nextInt(1000) < foulChance) return Resolution(PitchOutcome.FOUL, null)
         val contactQuality = clamp(
             429 + (parameters.batter.power - 50) * 3 + (parameters.batter.contact - 50) * 2 + (if (pitchMatched) 90 else -70) +
                 (if (zoneMatched) 45 else -35) + (if (pitchMatched) capped / 8 else 0) -
-                ((profile?.weakContact ?: 50) - 50) * 2 - (parameters.pitcher.movement - 50) -
-                ((profile?.movement ?: parameters.pitcher.movement) - 50) - powerSpecialization / 2 -
+                (effectiveWeakContact - 50) * 2 - (effectiveMovement - 50) -
+                (effectiveProfileMovement - 50) - powerSpecialization / 2 -
                 max(0, execution.executionQuality - 500) / 5 + scoutingQuality -
                 max(0, execution.velocityTenthsKph - 1400) / 5 - heightMatch / 2 + generator.nextInt(301) - 150,
             0,

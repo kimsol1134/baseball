@@ -93,14 +93,18 @@ struct LifeCardView: View {
                         Text(copyResolver.resolve(AppCopyKey.conclusionLifeCardGrowthTitle))
                             .eyebrowStyle(BaseballTheme.action)
                         Spacer(minLength: 0)
-                        let delta = end.total - start.total
+                        let displayStartTotal = [start.stuff, start.command, start.movement, start.stamina]
+                            .map(AbilityDisplayScale.displayRating).reduce(0, +)
+                        let displayEndTotal = [end.stuff, end.command, end.movement, end.stamina]
+                            .map(AbilityDisplayScale.displayRating).reduce(0, +)
+                        let delta = displayEndTotal - displayStartTotal
                         // localization-safe: numeric
                         Text(delta > 0 ? "+\(delta)" : "\(delta)")
                             .font(.title3.weight(.black).monospacedDigit())
                             .foregroundStyle(delta > 0 ? BaseballTheme.action : BaseballTheme.textTertiary)
                         Text(copyResolver.resolve(
                             AppCopyKey.conclusionLifeCardGrowthTotal,
-                            arguments: [.integer(start.total), .integer(end.total)]
+                            arguments: [.integer(displayStartTotal), .integer(displayEndTotal)]
                         ))
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textTertiary)
@@ -370,8 +374,10 @@ struct LifeCardView: View {
     /// 한 줄짜리 성장 막대. 숫자 넉 줄보다 **길이**가 먼저 읽힌다 — 흐린 막대가
     /// 시작점이고, 그 위에 덧칠된 밝은 막대가 3년 동안 늘린 만큼이다.
     private func growth(_ title: GameCopyKey, _ start: Int, _ end: Int) -> some View {
-        let delta = end - start
-        let scale = 99.0
+        let displayStart = AbilityDisplayScale.displayRating(start)
+        let displayEnd = AbilityDisplayScale.displayRating(end)
+        let delta = displayEnd - displayStart
+        let scale = 100.0
         return HStack(spacing: 8) {
             Text(copyResolver.resolve(title))
                 .font(.caption2.weight(.bold))
@@ -384,16 +390,16 @@ struct LifeCardView: View {
                     // 시작 구간 — 물려받아 출발한 자리.
                     Capsule()
                         .fill(BaseballTheme.textTertiary.opacity(0.55))
-                        .frame(width: width * min(1, Double(start) / scale))
+                        .frame(width: width * min(1, Double(displayStart) / scale))
                     // 늘린 구간은 시작 위에서 이어 그린다. 겹치지 않게 시작만큼 밀어 둔다.
                     Capsule()
                         .fill(BaseballTheme.action)
                         .frame(width: width * min(1, Double(max(0, delta)) / scale))
-                        .offset(x: width * min(1, Double(start) / scale))
+                        .offset(x: width * min(1, Double(displayStart) / scale))
                 }
             }
             .frame(height: 10)
-            Text("\(end)")
+            Text("\(displayEnd)")
                 .font(.subheadline.weight(.heavy).monospacedDigit())
                 .foregroundStyle(BaseballTheme.textPrimary)
                 .frame(width: 26, alignment: .trailing)
@@ -414,7 +420,9 @@ struct LifeCardView: View {
         delta: Int
     ) -> String {
         let baseArguments: [LocalizedCopyArgument] = [
-            .userText(copyResolver.resolve(title)), .integer(start), .integer(end),
+            .userText(copyResolver.resolve(title)),
+            .integer(AbilityDisplayScale.displayRating(start)),
+            .integer(AbilityDisplayScale.displayRating(end)),
         ]
         if delta > 0 {
             return copyResolver.resolve(
@@ -502,7 +510,8 @@ enum LifeCardRenderer {
 /// 각인해 두고 "같은 판에 도전할 수 있는 입구"라고 적어 놓고는, 정작 그 입구를 열어 줄
 /// 문장을 함께 보내지 않고 있었다.
 enum LifeCardShareText {
-    static let storeURL = "https://apps.apple.com/kr/app/id6794754217"
+    /// Storefront-neutral so a shared card opens the viewer's App Store, not Korea.
+    static let storeURL = "https://apps.apple.com/app/id6794754217"
 
     static func body(for record: HighSchoolCareerStore.LifeRecord) -> String {
         body(for: record, resolver: GameCopyResolver())

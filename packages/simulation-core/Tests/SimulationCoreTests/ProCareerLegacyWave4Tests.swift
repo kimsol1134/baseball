@@ -72,7 +72,8 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
                 season: stats.season,
                 teamID: teamID,
                 stats: stats,
-                level: .major
+                level: .major,
+                rulesVersion: 1
             ).filter { $0.kind == .award }.map(\.contentID))
         }
 
@@ -283,7 +284,9 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
             object["proRulesVersion"] = ProCareerEngine.currentRulesVersion
         }
 
-        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 3)
+        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 4)
+        XCTAssertEqual(ProCareerEngine.agencyRulesVersion, 3)
+        XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 2)
         XCTAssertEqual(ProCareerEngine.hallOfFameFormulaVersion, 3)
         XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: legacyV1), 100, "v1 saves retain the frozen score formula")
         XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: legacyV2), 100, "v2 saves retain the frozen score formula")
@@ -291,7 +294,7 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
         XCTAssertNotEqual(legacyV2.commitment, current.commitment)
         XCTAssertEqual(try JSONDecoder().decode(ProCareerSnapshot.self, from: JSONEncoder().encode(legacyV1)), legacyV1)
         XCTAssertEqual(try JSONDecoder().decode(ProCareerSnapshot.self, from: JSONEncoder().encode(legacyV2)), legacyV2)
-        XCTAssertEqual(try engine.start(startParams(seed: "440408")).snapshot.proRulesVersion, 3)
+        XCTAssertEqual(try engine.start(startParams(seed: "440408")).snapshot.proRulesVersion, 4)
     }
 
     func testJourneyStandingDoesNotUsePreviousTeamGlobalFallback() throws {
@@ -324,6 +327,7 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
             let state = try unsignedSnapshot(accepted.snapshot) { object in
                 object["team"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(newTeam))
                 var journey = try XCTUnwrap(object["journeyState"] as? [String: Any])
+                journey["rulesVersion"] = 1
                 journey["teamRecords"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(records.sorted { $0.teamID < $1.teamID }))
                 var reputation = try XCTUnwrap(journey["reputation"] as? [String: Any])
                 reputation["fanSupport"] = fan

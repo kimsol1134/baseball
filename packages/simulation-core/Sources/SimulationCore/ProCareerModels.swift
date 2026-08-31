@@ -15,6 +15,55 @@ public enum ProCareerPhase: String, Codable, Sendable {
 
 public enum ProLevel: String, Codable, Sendable { case minor, major }
 public enum ProRole: String, Codable, Sendable { case starter, longRelief = "long_relief", setup, closer }
+
+public enum ProInjuryCause: String, Codable, Sendable {
+    case overload
+}
+
+/// Structured explanation for the week in which a pro injury starts.  The event is attached to
+/// the result, not inferred from the news feed, so clients can render it before any other weekly
+/// summary and restore it after an interrupted save.
+public struct ProInjuryEventSnapshot: Codable, Equatable, Sendable {
+    public let cause: ProInjuryCause
+    public let season: Int
+    public let week: Int
+    public let plan: ProWeekPlan
+    public let rawFatigue: Int
+    public let effectiveFatigue: Int
+    public let pitches: Int
+    public let recoveryWeeks: Int
+    public let careerID: String?
+    public let revision: UInt64?
+
+    public init(
+        cause: ProInjuryCause = .overload,
+        season: Int,
+        week: Int,
+        plan: ProWeekPlan,
+        rawFatigue: Int,
+        effectiveFatigue: Int,
+        pitches: Int,
+        recoveryWeeks: Int,
+        careerID: String? = nil,
+        revision: UInt64? = nil
+    ) {
+        self.cause = cause
+        self.season = season
+        self.week = week
+        self.plan = plan
+        self.rawFatigue = rawFatigue
+        self.effectiveFatigue = effectiveFatigue
+        self.pitches = pitches
+        self.recoveryWeeks = recoveryWeeks
+        self.careerID = careerID
+        self.revision = revision
+    }
+
+    public var stableID: String {
+        "pro-injury-\(careerID ?? "unknown")-s\(season)-w\(week)-r\(revision ?? 0)-\(plan.rawValue)"
+    }
+}
+
 public enum ProCareerStanding: String, Codable, Sendable {
     case prospect
     case roster
@@ -34,8 +83,8 @@ public enum ProWeekPlan: String, Codable, CaseIterable, Sendable {
 }
 public enum OffseasonDecision: String, Codable, Sendable { case continueCareer = "continue", militaryService = "military_service", freeAgency = "free_agency", retire }
 
-/// 프로 주간 훈련은 두 번의 반복이 +1로 이어진다. 달력의 홀짝이 아니라 플레이어가 고른
-/// 분야별 누적이므로, 어느 주에 시작해도 같은 약속을 지킨다.
+/// 프로 주간 훈련은 플레이어가 고른 분야별로 누적된다. 필요한 반복 횟수는 규칙 버전과
+/// 현재 능력에 따라 정해지므로 달력의 홀짝이나 직접 경기 여부에 영향을 받지 않는다.
 public struct ProDevelopmentProgress: Codable, Equatable, Sendable {
     public let stuff: Int
     public let command: Int
@@ -43,10 +92,10 @@ public struct ProDevelopmentProgress: Codable, Equatable, Sendable {
     public let stamina: Int
 
     public init(stuff: Int = 0, command: Int = 0, movement: Int = 0, stamina: Int = 0) {
-        self.stuff = min(1, max(0, stuff))
-        self.command = min(1, max(0, command))
-        self.movement = min(1, max(0, movement))
-        self.stamina = min(1, max(0, stamina))
+        self.stuff = min(8, max(0, stuff))
+        self.command = min(8, max(0, command))
+        self.movement = min(8, max(0, movement))
+        self.stamina = min(8, max(0, stamina))
     }
 
     public func value(for plan: ProWeekPlan) -> Int {
@@ -404,10 +453,13 @@ public final class ProCareerSnapshot: Codable, Equatable, Sendable {
     public let decisionHistory: [ProDecisionRecord]?
     /// nil이면 성장 게이지 도입 전 저장본이다.
     public let developmentProgress: ProDevelopmentProgress?
+    /// Nil is the legacy path where every stored profile remains available.
+    public let repertoireRulesVersion: Int?
+    public let pitchLearningProject: PitchLearningProjectSnapshot?
     /// The journey feature is one optional aggregate. A nil value is the frozen v1 save path.
     public let journeyState: ProCareerJourneyState?
-    public init(proCareerID: String, revision: UInt64, phase: ProCareerPhase, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, team: DraftTeamSnapshot, entitlement: ProEntitlementSnapshot, age: Int, season: Int, week: Int, level: ProLevel, role: ProRole, rolePreference: ProRole? = nil, managerTrust: Int, catcherTrust: Int, fatigue: Int, injuryWeeks: Int, serviceYears: Int, militaryCompleted: Bool, contract: ProContractSnapshot?, currentStats: ProSeasonStats, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats], awards: [String], milestones: [String], news: [String], hallOfFameScore: Int?, commitment: String, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger? = nil, currentRival: ProRivalBatter? = nil, seasonTensions: [ProSeasonTension]? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision? = nil, decisionHistory: [ProDecisionRecord]? = nil, developmentProgress: ProDevelopmentProgress? = nil, journeyState: ProCareerJourneyState? = nil) {
-        self.proCareerID = proCareerID; self.revision = revision; self.phase = phase; self.identity = identity; self.pitcher = pitcher; self.team = team; self.entitlement = entitlement; self.age = age; self.season = season; self.week = week; self.level = level; self.role = role; self.rolePreference = rolePreference; self.managerTrust = managerTrust; self.catcherTrust = catcherTrust; self.fatigue = fatigue; self.injuryWeeks = injuryWeeks; self.serviceYears = serviceYears; self.militaryCompleted = militaryCompleted; self.contract = contract; self.currentStats = currentStats; self.gameLines = gameLines; self.careerStats = careerStats; self.awards = awards; self.milestones = milestones; self.news = news; self.hallOfFameScore = hallOfFameScore; self.commitment = commitment; self.balanceVersion = balanceVersion; self.proRulesVersion = proRulesVersion; self.seasonSegment = seasonSegment; self.seasonTrigger = seasonTrigger; self.currentRival = currentRival; self.seasonTensions = seasonTensions; self.seasonImportantGames = seasonImportantGames; self.pendingDecision = pendingDecision; self.decisionHistory = decisionHistory; self.developmentProgress = developmentProgress; self.journeyState = journeyState
+    public init(proCareerID: String, revision: UInt64, phase: ProCareerPhase, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, team: DraftTeamSnapshot, entitlement: ProEntitlementSnapshot, age: Int, season: Int, week: Int, level: ProLevel, role: ProRole, rolePreference: ProRole? = nil, managerTrust: Int, catcherTrust: Int, fatigue: Int, injuryWeeks: Int, serviceYears: Int, militaryCompleted: Bool, contract: ProContractSnapshot?, currentStats: ProSeasonStats, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats], awards: [String], milestones: [String], news: [String], hallOfFameScore: Int?, commitment: String, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger? = nil, currentRival: ProRivalBatter? = nil, seasonTensions: [ProSeasonTension]? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision? = nil, decisionHistory: [ProDecisionRecord]? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int? = nil, pitchLearningProject: PitchLearningProjectSnapshot? = nil, journeyState: ProCareerJourneyState? = nil) {
+        self.proCareerID = proCareerID; self.revision = revision; self.phase = phase; self.identity = identity; self.pitcher = pitcher; self.team = team; self.entitlement = entitlement; self.age = age; self.season = season; self.week = week; self.level = level; self.role = role; self.rolePreference = rolePreference; self.managerTrust = managerTrust; self.catcherTrust = catcherTrust; self.fatigue = fatigue; self.injuryWeeks = injuryWeeks; self.serviceYears = serviceYears; self.militaryCompleted = militaryCompleted; self.contract = contract; self.currentStats = currentStats; self.gameLines = gameLines; self.careerStats = careerStats; self.awards = awards; self.milestones = milestones; self.news = news; self.hallOfFameScore = hallOfFameScore; self.commitment = commitment; self.balanceVersion = balanceVersion; self.proRulesVersion = proRulesVersion; self.seasonSegment = seasonSegment; self.seasonTrigger = seasonTrigger; self.currentRival = currentRival; self.seasonTensions = seasonTensions; self.seasonImportantGames = seasonImportantGames; self.pendingDecision = pendingDecision; self.decisionHistory = decisionHistory; self.developmentProgress = developmentProgress; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject; self.journeyState = journeyState
     }
 
     public static func == (lhs: ProCareerSnapshot, rhs: ProCareerSnapshot) -> Bool {
@@ -450,6 +502,8 @@ public final class ProCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.pendingDecision == rhs.pendingDecision
             && lhs.decisionHistory == rhs.decisionHistory
             && lhs.developmentProgress == rhs.developmentProgress
+            && lhs.repertoireRulesVersion == rhs.repertoireRulesVersion
+            && lhs.pitchLearningProject == rhs.pitchLearningProject
             && lhs.journeyState == rhs.journeyState
     }
 }
@@ -458,7 +512,23 @@ public struct ProCareerResult: Codable, Equatable, Sendable {
     public let snapshot: ProCareerSnapshot
     public let nextSeed: String
     public let events: [String]
-    public init(snapshot: ProCareerSnapshot, nextSeed: String, events: [String]) { self.snapshot = snapshot; self.nextSeed = nextSeed; self.events = events }
+    public let injuryEvent: ProInjuryEventSnapshot?
+
+    public init(snapshot: ProCareerSnapshot, nextSeed: String, events: [String]) {
+        self.init(snapshot: snapshot, nextSeed: nextSeed, events: events, injuryEvent: nil)
+    }
+
+    public init(
+        snapshot: ProCareerSnapshot,
+        nextSeed: String,
+        events: [String],
+        injuryEvent: ProInjuryEventSnapshot?
+    ) {
+        self.snapshot = snapshot
+        self.nextSeed = nextSeed
+        self.events = events
+        self.injuryEvent = injuryEvent
+    }
 }
 
 public struct StartProCareerParams: Codable, Equatable, Sendable {
@@ -468,8 +538,25 @@ public struct StartProCareerParams: Codable, Equatable, Sendable {
     public let draftResult: DraftResultSnapshot
     public let entitlement: ProEntitlementSnapshot
     public let sourceFanInterest: Int?
+    public let startingRepertoire: StartingRepertoireSelection?
+    public let repertoireRulesVersion: Int?
+    public let pitchLearningProject: PitchLearningProjectSnapshot?
     public init(seed: String, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, draftResult: DraftResultSnapshot, entitlement: ProEntitlementSnapshot, sourceFanInterest: Int? = nil) {
-        self.seed = seed; self.identity = identity; self.pitcher = pitcher; self.draftResult = draftResult; self.entitlement = entitlement; self.sourceFanInterest = sourceFanInterest
+        self.init(
+            seed: seed,
+            identity: identity,
+            pitcher: pitcher,
+            draftResult: draftResult,
+            entitlement: entitlement,
+            sourceFanInterest: sourceFanInterest,
+            startingRepertoire: nil,
+            repertoireRulesVersion: nil,
+            pitchLearningProject: nil
+        )
+    }
+
+    public init(seed: String, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, draftResult: DraftResultSnapshot, entitlement: ProEntitlementSnapshot, sourceFanInterest: Int?, startingRepertoire: StartingRepertoireSelection?, repertoireRulesVersion: Int?, pitchLearningProject: PitchLearningProjectSnapshot?) {
+        self.seed = seed; self.identity = identity; self.pitcher = pitcher; self.draftResult = draftResult; self.entitlement = entitlement; self.sourceFanInterest = sourceFanInterest; self.startingRepertoire = startingRepertoire; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject
     }
 }
 

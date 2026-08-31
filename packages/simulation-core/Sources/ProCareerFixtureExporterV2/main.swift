@@ -518,7 +518,7 @@ private func buildRows() throws -> [FixtureRow] {
     let projectionRecord = real.projectionState.journeyState?.teamRecords.first(where: { $0.teamID == real.projectionState.team.id })
     let projectionCanonical = [
         "inputKind=pure_rule_projection", "team=\(real.projectionState.team.id)",
-        "seasons=\(projectionRecord?.completedSeasons ?? 0)", "legacy=\(projectionRecord.map(ProTeamLegacyRules.score(record:)) ?? 0)",
+        "seasons=\(projectionRecord?.completedSeasons ?? 0)", "legacy=\(projectionRecord.map { ProTeamLegacyRules.score(record: $0, rulesVersion: real.projectionState.journeyState?.rulesVersion ?? 1) } ?? 0)",
         "hof=\(projection.finalScore)", "honors=\(projection.honors.map(\.kind.rawValue).joined(separator: ","))",
     ].joined(separator: "|")
     rows.append(row(
@@ -528,7 +528,7 @@ private func buildRows() throws -> [FixtureRow] {
             "inputKind": "pure_rule_projection",
             "teamID": real.projectionState.team.id,
             "teamSeasons": projectionRecord?.completedSeasons ?? NSNull(),
-            "teamLegacy": projectionRecord.map(ProTeamLegacyRules.score(record:)) ?? NSNull(),
+            "teamLegacy": projectionRecord.map { ProTeamLegacyRules.score(record: $0, rulesVersion: real.projectionState.journeyState?.rulesVersion ?? 1) } ?? NSNull(),
             "hallOfFameProjection": projection.finalScore,
             "retiredNumberEligible": projection.retiredNumberEligible,
             "clubHallTeamIDs": projection.clubHallTeamIDs,

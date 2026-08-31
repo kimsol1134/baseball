@@ -11,6 +11,7 @@ import com.solkim.baseball.core.pitch.PitchDelivery
 import com.solkim.baseball.core.pitch.PitchIntensity
 import com.solkim.baseball.core.pitch.PitchZone
 import com.solkim.baseball.core.pitch.ZoneIntent
+import com.solkim.baseball.core.pitch.AbilityMasterySnapshot
 import com.solkim.baseball.core.highschool.HighSchoolPerformance
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,7 +35,10 @@ class ProKernelTest {
         val changedLast = if (state.commitment.last() == '0') '1' else '0'
         val tampered = String(encoded).replace(state.commitment, state.commitment.dropLast(1) + changedLast)
         assertFailsWith<ProStateCodecException> { ProStateCodec.decode(tampered.toByteArray()) }
-        val future = String(encoded).replace("\"schemaVersion\":1", "\"schemaVersion\":2")
+        val future = String(encoded).replace(
+            "\"schemaVersion\":${ProStateCodec.SCHEMA_VERSION}",
+            "\"schemaVersion\":${ProStateCodec.SCHEMA_VERSION + 1}",
+        )
         assertFailsWith<ProStateCodecException> { ProStateCodec.decode(future.toByteArray()) }
         val linkedRequest = ProStartLinkedRequest(
             seed = "9", highSchoolCareerId = "hs-9", identityName = "연계투수", pitcher = ProCatalog.pitcherForPreset("power_prospect", "연계투수"),
@@ -48,6 +52,15 @@ class ProKernelTest {
         )
         val linked = kernel.startLinked(linkedRequest).state
         assertEquals(linked, ProStateCodec.decode(ProStateCodec.encode(linked)))
+
+        val masteredUnsigned = state.copy(
+            pitcher = state.pitcher.copy(
+                mastery = AbilityMasterySnapshot(stuff = 14, command = 2, movement = 9, stamina = 31),
+            ),
+            commitment = "",
+        )
+        val mastered = masteredUnsigned.copy(commitment = ProKernel().commitment(masteredUnsigned))
+        assertEquals(mastered, ProStateCodec.decode(ProStateCodec.encode(mastered)))
     }
 
     @Test
@@ -74,6 +87,16 @@ class ProKernelTest {
             seed = "10", highSchoolCareerId = "hs-10", identityName = "연계투수", pitcher = ProCatalog.pitcherForPreset("precision_commander", "연계투수"), teamId = ProCatalog.teams[1].id, draftEvaluation = 79,
         )))
         assertEquals(linkedEnvelope, ProCommandCodec.decode(ProCommandCodec.encode(linkedEnvelope)))
+        val masteredPitcher = ProCatalog.pitcherForPreset("power_prospect", "숙련투수").copy(
+            mastery = AbilityMasterySnapshot(stuff = 5, command = 6, movement = 7, stamina = 8),
+        )
+        val masteredEnvelope = ProCommandEnvelope(
+            commandId = "mastered", sessionId = "linked-session", expectedRevision = 0UL,
+            command = ProCommand.StartLinked(
+                ProStartLinkedRequest("12", "hs-12", "숙련투수", masteredPitcher, ProCatalog.teams.first().id, 79),
+            ),
+        )
+        assertEquals(masteredEnvelope, ProCommandCodec.decode(ProCommandCodec.encode(masteredEnvelope)))
     }
 
     @Test

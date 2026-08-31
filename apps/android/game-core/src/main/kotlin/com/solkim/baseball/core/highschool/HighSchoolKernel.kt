@@ -4,6 +4,7 @@ import com.solkim.baseball.core.SplitMix64
 import com.solkim.baseball.core.StableHash
 import com.solkim.baseball.core.pitch.PitchKind
 import com.solkim.baseball.core.pitch.PitchAbilityRules
+import com.solkim.baseball.core.pitch.AbilityMasterySnapshot
 import com.solkim.baseball.core.pitch.PitchProfileSnapshot
 import com.solkim.baseball.core.pitch.PitchUsageRole
 import com.solkim.baseball.core.pitch.ThrowingHand
@@ -44,7 +45,11 @@ public data class HighSchoolPitcher(
     /** The source profile is durable shadow state; Unity never receives this object. */
     val pitchProfiles: List<PitchProfileSnapshot> = emptyList(),
     val throwingHand: ThrowingHand = ThrowingHand.RIGHT,
-)
+    /** Missing on legacy saves; zero is supplied by the projection boundary. */
+    val mastery: AbilityMasterySnapshot? = null,
+) {
+    public val effectiveMastery: AbilityMasterySnapshot get() = mastery ?: AbilityMasterySnapshot.ZERO
+}
 
 public data class HighSchoolTrainingOpportunity(
     val focus: HighSchoolTrainingFocus,
@@ -91,6 +96,8 @@ public data class HighSchoolTrainingResult(
     val fatigueChange: Int,
     val opportunityHit: Boolean,
     val bloomed: Boolean,
+    val masteryBefore: Int? = null,
+    val masteryAfter: Int? = null,
 )
 
 /**
@@ -122,6 +129,8 @@ public data class HighSchoolRelationshipResult(
     val fanInterestBefore: Int,
     val fanInterestAfter: Int,
     val growthFocus: HighSchoolTrainingFocus?,
+    val masteryBefore: Int? = null,
+    val masteryAfter: Int? = null,
 )
 
 /** Source-shaped draft read model. All names and copy are the current fictional-world catalog. */
@@ -474,7 +483,30 @@ public class HighSchoolKernel {
         } else {
             TalentApplication(0, state.talent, false)
         }
-        val pitcher = grow(state.pitcher, focus, talentApplication.allowed, request.targetPitch)
+        // S talent reaches the stored 80 base ceiling but never discards a positive
+        // training point: the shared growth rule carries the overflow into mastery.
+        val growthPoints = if (rawGrowth > 0 && state.talent.grade(focus).ceiling >= 80) {
+            rawGrowth
+        } else {
+            talentApplication.allowed
+        }
+        val masteryBefore = state.pitcher.effectiveMastery.value(
+            when (focus) {
+                HighSchoolTrainingFocus.VELOCITY -> com.solkim.baseball.core.pitch.PitchAbilityKind.POWER
+                HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingFocus.GAME_PLANNING -> com.solkim.baseball.core.pitch.PitchAbilityKind.COMMAND
+                HighSchoolTrainingFocus.BREAKING_BALL -> com.solkim.baseball.core.pitch.PitchAbilityKind.MOVEMENT
+                HighSchoolTrainingFocus.STAMINA, HighSchoolTrainingFocus.RECOVERY -> com.solkim.baseball.core.pitch.PitchAbilityKind.STAMINA
+            },
+        )
+        val pitcher = grow(state.pitcher, focus, growthPoints, request.targetPitch)
+        val masteryAfter = pitcher.effectiveMastery.value(
+            when (focus) {
+                HighSchoolTrainingFocus.VELOCITY -> com.solkim.baseball.core.pitch.PitchAbilityKind.POWER
+                HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingFocus.GAME_PLANNING -> com.solkim.baseball.core.pitch.PitchAbilityKind.COMMAND
+                HighSchoolTrainingFocus.BREAKING_BALL -> com.solkim.baseball.core.pitch.PitchAbilityKind.MOVEMENT
+                HighSchoolTrainingFocus.STAMINA, HighSchoolTrainingFocus.RECOVERY -> com.solkim.baseball.core.pitch.PitchAbilityKind.STAMINA
+            },
+        )
         val baseFatigue = when (request.intensity) {
             HighSchoolTrainingIntensity.LIGHT -> 3
             HighSchoolTrainingIntensity.STANDARD -> 8
@@ -501,6 +533,8 @@ public class HighSchoolKernel {
             fatigueChange = fatigue - state.fatigue,
             opportunityHit = opportunityHit,
             bloomed = talentApplication.bloomed,
+            masteryBefore = if (masteryBefore != masteryAfter) masteryBefore else null,
+            masteryAfter = if (masteryBefore != masteryAfter) masteryAfter else null,
         )
         var next = state.copy(
             revision = state.revision + 1UL,
@@ -560,7 +594,25 @@ public class HighSchoolKernel {
         }
         val fanChange = if (impact.fanInterest > 0) impact.fanInterest + wind.fanInterestGainBonus else impact.fanInterest
         val fanInterest = clamp(state.fanInterest + fanChange, 0, 100)
-        val pitcher = impact.growthFocus?.let { grow(state.pitcher, it, 1) } ?: state.pitcher
+        var pitcher = state.pitcher
+        var talent = state.talent
+        var masteryFocus: com.solkim.baseball.core.pitch.PitchAbilityKind? = null
+        impact.growthFocus?.let { growthFocus ->
+            val ability = when (growthFocus) {
+                HighSchoolTrainingFocus.VELOCITY -> com.solkim.baseball.core.pitch.PitchAbilityKind.POWER
+                HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingFocus.GAME_PLANNING -> com.solkim.baseball.core.pitch.PitchAbilityKind.COMMAND
+                HighSchoolTrainingFocus.BREAKING_BALL -> com.solkim.baseball.core.pitch.PitchAbilityKind.MOVEMENT
+                HighSchoolTrainingFocus.STAMINA, HighSchoolTrainingFocus.RECOVERY -> com.solkim.baseball.core.pitch.PitchAbilityKind.STAMINA
+            }
+            val beforeRating = rating(growthFocus, state.pitcher)
+            val application = applyTalent(state.talent, growthFocus, beforeRating, 1)
+            val growthPoints = if (application.allowed > 0 || state.talent.grade(growthFocus).ceiling >= 80) 1 else 0
+            pitcher = grow(state.pitcher, growthFocus, growthPoints)
+            talent = application.talent
+            masteryFocus = ability
+        }
+        val masteryBefore = masteryFocus?.let { state.pitcher.effectiveMastery.value(it) }
+        val masteryAfter = masteryFocus?.let { pitcher.effectiveMastery.value(it) }
         val after = when (target) {
             HighSchoolRelationshipTarget.COACH -> manager
             HighSchoolRelationshipTarget.CATCHER -> catcher
@@ -577,6 +629,8 @@ public class HighSchoolKernel {
             fanInterestBefore = state.fanInterest,
             fanInterestAfter = fanInterest,
             growthFocus = impact.growthFocus,
+            masteryBefore = if (masteryBefore != masteryAfter) masteryBefore else null,
+            masteryAfter = if (masteryBefore != masteryAfter) masteryAfter else null,
         )
         val next = enterMilestone(
             state.copy(
@@ -593,6 +647,7 @@ public class HighSchoolKernel {
                 currentRelationshipTarget = null,
                 currentRelationshipCategory = null,
                 currentRelationshipEvent = null,
+                talent = talent,
                 recentRelationshipEventIds = (state.recentRelationshipEventIds + (state.currentRelationshipEvent?.id ?: "")).filter { it.isNotBlank() }.takeLast(8),
             ),
             seed,
@@ -1676,6 +1731,18 @@ public class HighSchoolKernel {
         targetPitch: PitchKind? = null,
     ): HighSchoolPitcher {
         if (points <= 0) return pitcher
+        val ability = when (focus) {
+            HighSchoolTrainingFocus.VELOCITY -> com.solkim.baseball.core.pitch.PitchAbilityKind.POWER
+            HighSchoolTrainingFocus.COMMAND, HighSchoolTrainingFocus.GAME_PLANNING -> com.solkim.baseball.core.pitch.PitchAbilityKind.COMMAND
+            HighSchoolTrainingFocus.BREAKING_BALL -> com.solkim.baseball.core.pitch.PitchAbilityKind.MOVEMENT
+            HighSchoolTrainingFocus.STAMINA, HighSchoolTrainingFocus.RECOVERY -> com.solkim.baseball.core.pitch.PitchAbilityKind.STAMINA
+        }
+        val before = rating(focus, pitcher)
+        val after = (before.toLong() + points.toLong()).coerceIn(20L, 80L).toInt()
+        val overflow = max(0, points - max(0, after - before))
+        val mastery = if (pitcher.mastery != null || overflow > 0) {
+            pitcher.mastery.orZero().add(ability, overflow)
+        } else null
         val normalizedTarget = targetPitch?.takeIf {
             focus == HighSchoolTrainingFocus.BREAKING_BALL &&
                 it != PitchKind.FOUR_SEAM &&
@@ -1710,8 +1777,11 @@ public class HighSchoolKernel {
             movement = clamp(pitcher.movement + if (focus == HighSchoolTrainingFocus.BREAKING_BALL) points else 0),
             stamina = clamp(pitcher.stamina + if (focus == HighSchoolTrainingFocus.STAMINA || focus == HighSchoolTrainingFocus.RECOVERY) points else 0),
             pitchProfiles = profiles,
+            mastery = mastery,
         )
     }
+
+    private fun AbilityMasterySnapshot?.orZero(): AbilityMasterySnapshot = this ?: AbilityMasterySnapshot.ZERO
 
     private fun tune(
         pitcher: HighSchoolPitcher,
@@ -1901,6 +1971,7 @@ public class HighSchoolKernel {
                 }
                 if (state.recentRelationshipEventIds.isNotEmpty()) add("recentRelationships:${state.recentRelationshipEventIds.joinToString(",")}")
                 if (echo != "none") add("rebirthEcho:$echo")
+                state.pitcher.mastery?.let { add("mastery:${it.stuff}:${it.command}:${it.movement}:${it.stamina}") }
             }.joinToString("|"),
         )
     }

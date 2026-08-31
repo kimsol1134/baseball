@@ -3,6 +3,54 @@ import SimulationCore
 
 // MARK: - 훈련 결과
 
+struct HighSchoolArmHealthResultCard: View {
+    let receipt: HighSchoolArmHealthReceipt
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var title: String {
+        HighSchoolPresentation.localizedArmHealth(receipt.healthAfter, resolver: copyResolver).label
+    }
+
+    private var cause: String {
+        switch receipt.cause {
+        case .outingLoad:
+            copyResolver.resolve(AppCopyKey.armHealthResultOuting, arguments: [
+                .integer(receipt.pitches),
+                .integer(receipt.fatigueBefore),
+                .integer(receipt.riskAfter - receipt.riskBefore),
+            ])
+        case .pushThrough:
+            copyResolver.resolve(AppCopyKey.armHealthResultPushThrough)
+        case .rehab:
+            copyResolver.resolve(AppCopyKey.armHealthResultRehab, arguments: [
+                .integer(max(0, receipt.riskBefore - receipt.riskAfter)),
+            ])
+        }
+    }
+
+    private var nextAction: String {
+        if receipt.recoveryRemaining > 0 {
+            return copyResolver.resolve(AppCopyKey.armHealthResultNextRecovery, arguments: [
+                .integer(receipt.recoveryRemaining),
+            ])
+        }
+        return copyResolver.resolve(AppCopyKey.armHealthResultNextManage)
+    }
+
+    var body: some View {
+        BaseballCard(title: title, tone: receipt.healthAfter == .warning ? .negative : .warning) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(verbatim: cause).font(.subheadline)
+                Text(verbatim: nextAction)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.warning)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("hs.armHealth.result")
+    }
+}
+
 /// 방금 끝난 훈련이 무엇을 남겼는지, 누른 자리에서 그대로 읽히는 카드.
 ///
 /// 목록의 **주 행동 바로 위**에 선다(`content` 참고). 화면 아래 고정 패널로도 만들어 봤지만
@@ -62,6 +110,24 @@ struct TrainingResultPanel: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let learning = receipt.pitchLearning {
+                GameCopyText(
+                    AppCopyKey.trainingResultPitchLearning,
+                    arguments: [
+                        .userText(PitchCopy.localized(learning.pitchType, resolver: copyResolver)),
+                        .integer(learning.practiceCreditsAfter - learning.practiceCreditsBefore),
+                        .integer(learning.practiceCreditsAfter),
+                        .integer(PitchLearningRules.maximumPracticeCredits),
+                    ]
+                )
+                .font(.footnote.weight(.semibold).monospacedDigit())
+                .foregroundStyle(
+                    learning.justCompleted || learning.justUnlockedForGames
+                        ? BaseballTheme.milestone : BaseballTheme.information
+                )
+                .accessibilityIdentifier("hs.training.result.pitchLearning")
             }
 
             Text(HighSchoolPresentation.localizedTrainingResultDetail(receipt, resolver: copyResolver))

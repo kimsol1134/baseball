@@ -304,6 +304,19 @@ public struct HighSchoolCareerEngine: Sendable {
         let worldRulesVersion = CareerRulesVersion.v2
         let wind = CareerWind.wind(careerID: careerID, rulesVersion: worldRulesVersion)
         var pitcher = renamed(params.identity.name, pitcher: applyCreation(params.creationAllocation, to: preset.pitcher), hand: params.identity.throwingHand)
+        if pitcher.mastery == nil {
+            pitcher = PitcherSnapshot(
+                id: pitcher.id,
+                name: pitcher.name,
+                stuff: pitcher.stuff,
+                command: pitcher.command,
+                movement: pitcher.movement,
+                stamina: pitcher.stamina,
+                pitchProfiles: pitcher.pitchProfiles,
+                throwingHand: pitcher.throwingHand,
+                mastery: .zero
+            )
+        }
         pitcher = applyInheritance(max(params.inheritedSoulTotal ?? params.inheritedSoulPoints, params.inheritedSoulPoints), domain: params.inheritedSoulDomain, memories: params.inheritedMemories, talent: &talent,
             rulesVersion: SoulInheritanceRulesVersion.resolve(storedValue: params.inheritanceRulesVersion),
             bonusPoints: boosts.contains(.headStart) ? 5 : 0, to: pitcher)
@@ -316,6 +329,21 @@ public struct HighSchoolCareerEngine: Sendable {
         )
         pitcher = masteryResult.pitcher
         talent = masteryResult.talent
+        let repertoireRulesVersion: Int?
+        let pitchLearningProject: PitchLearningProjectSnapshot?
+        if let selection = params.startingRepertoire {
+            let repertoire = try PitchLearningRules.apply(
+                selection: selection,
+                to: pitcher,
+                chapter: Self.chapters[0].number
+            )
+            pitcher = repertoire.pitcher
+            repertoireRulesVersion = PitchLearningRules.rulesVersion
+            pitchLearningProject = repertoire.project
+        } else {
+            repertoireRulesVersion = nil
+            pitchLearningProject = nil
+        }
         let rewardPermille = 1_000 + params.karmas.reduce(0) { $0 + $1.rewardPermille } + wind.rewardBonusPermille
         let memorySlots = (params.karmas.contains(.erasedMemory) ? 2 : 3) + (boosts.contains(.extraMemory) ? 1 : 0)
         let base = HighSchoolCareerSnapshot(
@@ -331,6 +359,8 @@ public struct HighSchoolCareerEngine: Sendable {
             news: (wind.newsLine.map { [$0] } ?? []) + Self.prologueNews(identity: params.identity, lifeNumber: params.lifeNumber, inheritedMemoryCount: params.inheritedMemories.count),
             fanInterest: wind.startingFanInterest,
             draftResult: nil, legacyOptions: [], selectedMemories: [], balanceVersion: PitcherPresetCatalog.balanceVersion,
+            repertoireRulesVersion: repertoireRulesVersion,
+            pitchLearningProject: pitchLearningProject,
             worldRulesVersion: worldRulesVersion.rawValue,
             armRisk: 0, injuryRecovery: 0, schedule: Self.makeSchedule(careerID: careerID),
             talent: talent,
@@ -564,6 +594,14 @@ public struct HighSchoolCareerEngine: Sendable {
               params.state.totalTrainingsCompleted < schedule.trainingTotal else {
             throw SimulationError.invalidPitcherLab("career training is out of order")
         }
+        if (params.state.injuryRecovery ?? 0) == 0, params.focus == .breakingBall {
+            try PitchLearningRules.validateTrainingTarget(
+                params.targetPitch,
+                pitcher: params.state.pitcher,
+                rulesVersion: params.state.repertoireRulesVersion,
+                project: params.state.pitchLearningProject
+            )
+        }
         let number = params.state.totalTrainingsCompleted + 1
         // 부상 회복 강제: 남은 재활 횟수가 있으면 무엇을 골랐든 회복 훈련으로 소비된다(성장 없음).
         let injuryRecovery = params.state.injuryRecovery ?? 0
@@ -622,11 +660,33 @@ public struct HighSchoolCareerEngine: Sendable {
                 points: rawGrowth
             )
             : (0, talentBefore, nil)
-        let pitcher = grow(
-            params.state.pitcher, focus: params.focus, points: growthSignal,
+        // A talent track that reaches the real 80 base ceiling keeps producing mastery. Lower
+        // talent walls still stop at their declared ceiling and do not mint hidden overflow.
+        let growthPoints = rawGrowth > 0 && talentBefore.ceiling(ability) >= 80
+            ? rawGrowth
+            : growthSignal
+        var pitcher = grow(
+            params.state.pitcher, focus: params.focus, points: growthPoints,
             balanceVersion: params.state.balanceVersion,
             targetPitch: params.targetPitch
         )
+        var pitchLearningProject = params.state.pitchLearningProject
+        var pitchLearningReceipt: PitchLearningReceiptSnapshot?
+        if !isRehab,
+           params.focus == .breakingBall,
+           let project = pitchLearningProject,
+           !project.isCompleted,
+           params.targetPitch == project.pitchType {
+            let learning = try PitchLearningRules.advancing(
+                pitcher: pitcher,
+                project: project,
+                practiceCredits: PitchLearningRules.practiceCredit(for: params.intensity),
+                chapter: params.state.chapter.number
+            )
+            pitcher = learning.pitcher
+            pitchLearningProject = learning.project
+            pitchLearningReceipt = learning.receipt
+        }
         let baseFatigueCost = params.intensity == .light ? 3 : params.intensity == .standard ? 8 : 15
         let fatigueCost = baseFatigueCost
             + (differentiatedTraining ? Self.trainingFatigueModifier(for: effectiveFocus) : 0)
@@ -653,9 +713,13 @@ public struct HighSchoolCareerEngine: Sendable {
         let metricBefore = rating(for: effectiveFocus, pitcher: params.state.pitcher)
         let metricAfter = rating(for: effectiveFocus, pitcher: pitcher)
         let growth = metricAfter - metricBefore
+        let masteryBefore = params.state.pitcher.effectiveMastery.value(for: ability)
+        let masteryAfter = pitcher.effectiveMastery.value(for: ability)
         let bloomedGrade = bloomed.map { talentAfter.grade($0) }
         let feedback = isRehab
             ? "재활 훈련으로 팔 상태를 회복합니다. 이번 훈련은 성장 없이 지나갑니다.\(nextInjuryRecovery > 0 ? " 남은 회복 \(nextInjuryRecovery)회." : " 다음 훈련부터 정상으로 돌아옵니다.")"
+            : masteryAfter > masteryBefore
+                ? "\(MasteryEffectRules.displayName(for: ability)) Lv.\(masteryAfter) — 100 이후에도 반복한 동작이 실전 감각으로 남았습니다."
             : bloomed.flatMap { ability in bloomedGrade.map { TalentRules.bloomHeadline(ability: ability, to: $0) } }
                 ?? blockedFeedback(
                     ability: ability, talent: talentAfter, growth: growth,
@@ -669,19 +733,38 @@ public struct HighSchoolCareerEngine: Sendable {
             fatigueBefore: params.state.fatigue, fatigueAfter: fatigue,
             opportunityHit: opportunityHit,
             bloomedAbility: bloomed, bloomedGrade: bloomedGrade,
-            jackpot: jackpot && baseGrowth > 0 && growth > 0)
+            jackpot: jackpot && baseGrowth > 0 && growth > 0,
+            pitchLearning: pitchLearningReceipt,
+            masteryBefore: masteryBefore != masteryAfter ? masteryBefore : nil,
+            masteryAfter: masteryBefore != masteryAfter ? masteryAfter : nil)
         let chapterCount = params.state.chapterTrainingCount + 1
         let phase: HighSchoolCareerPhase = chapterCount == chapterTrainings ? milestone(for: params.state.chapter.number, index: 0, schedule: schedule) : .training
         let optionState = replacing(params.state, pitcher: pitcher, fatigue: fatigue, lastTraining: training,
+            pitchLearningProject: pitchLearningProject,
             awakeningSparks: bloomed != nil ? min(6, (params.state.awakeningSparks ?? 0) + 1) : params.state.awakeningSparks)
         let options = phase == .awakening ? awakeningOptions(state: optionState, seed: seed) : []
-        let scenario = phase == .importantGame ? gameScenario(for: params.state, seed: seed) : nil
+        let scenario = phase == .importantGame ? gameScenario(for: optionState, seed: seed) : nil
         // 경고 상태가 이어지면 다음 관계 국면을 팔 상태 선택으로 대체한다(핵심 3슬롯은 보존).
         let armSignalAfter = Self.armHealthState(armRisk: nextArmRisk, injuryRecovery: nextInjuryRecovery)
+        let armHealthReceipt: HighSchoolArmHealthReceipt? = isRehab
+            ? HighSchoolArmHealthReceipt(
+                riskBefore: params.state.armRisk ?? 0,
+                riskAfter: nextArmRisk,
+                healthBefore: Self.armHealthState(
+                    armRisk: params.state.armRisk,
+                    injuryRecovery: params.state.injuryRecovery
+                ),
+                healthAfter: armSignalAfter,
+                pitches: 0,
+                fatigueBefore: params.state.fatigue,
+                cause: .rehab,
+                recoveryRemaining: max(0, nextInjuryRecovery)
+            )
+            : nil
         let relationshipEvent: CareerEventContent? = phase == .relationship
             ? (params.state.relationshipsCompleted >= Self.coreRelationshipCategories.count && armSignalAfter == .warning
                 ? armCareEvent()
-                : relationshipEvent(for: params.state, seed: seed))
+                : relationshipEvent(for: optionState, seed: seed))
             : nil
         let bloomNews = bloomed.flatMap { ability in
             bloomedGrade.map { ["\(ability.label) 재능이 만개했습니다 — \($0.label)"] }
@@ -694,12 +777,14 @@ public struct HighSchoolCareerEngine: Sendable {
                 ? ["\(number)번째 재활 훈련 · 팔 상태를 회복합니다."] + params.state.news
                 : bloomNews.map { $0 + params.state.news },
             armRisk: nextArmRisk, injuryRecovery: nextInjuryRecovery,
+            pitchLearningProject: pitchLearningProject,
             talent: talentAfter,
             // 재능 만개도 각성의 전조다 — 훈련장에서 몸이 먼저 깨어난다.
             awakeningSparks: bloomed != nil ? min(6, (params.state.awakeningSparks ?? 0) + 1) : params.state.awakeningSparks)
         return result(seed: seed, state: signed(next),
             event: isRehab ? "career_training_rehab" : "career_training_completed",
-            reasons: ["training.\(effectiveFocus.rawValue)"])
+            reasons: ["training.\(effectiveFocus.rawValue)"],
+            armHealth: armHealthReceipt)
     }
 
     public func resolveRelationship(_ params: ResolveCareerRelationshipParams) throws -> HighSchoolCareerResult {
@@ -727,19 +812,29 @@ public struct HighSchoolCareerEngine: Sendable {
         let talentBefore = params.state.talent ?? .unlimited
         var talentAfter = talentBefore
         var relationshipBloom: TalentAbility?
+        var relationshipMasteryBefore: Int?
+        var relationshipMasteryAfter: Int?
         let pitcher: PitcherSnapshot
         if let focus = impact.growthFocus {
             let ability = TalentAbility.from(focus)
+            let currentRating = rating(for: focus, pitcher: params.state.pitcher)
             let (allowed, updated, bloomed) = TalentRules.apply(
                 talent: talentBefore, ability: ability,
-                current: rating(for: focus, pitcher: params.state.pitcher), points: 1
+                current: currentRating, points: 1
             )
             talentAfter = updated
             relationshipBloom = bloomed
+            let growthPoints = talentBefore.ceiling(ability) >= 80 ? 1 : allowed
             pitcher = grow(
-                params.state.pitcher, focus: focus, points: allowed,
+                params.state.pitcher, focus: focus, points: growthPoints,
                 balanceVersion: params.state.balanceVersion
             )
+            let masteryFrom = params.state.pitcher.effectiveMastery.value(for: ability)
+            let masteryTo = pitcher.effectiveMastery.value(for: ability)
+            if masteryFrom != masteryTo {
+                relationshipMasteryBefore = masteryFrom
+                relationshipMasteryAfter = masteryTo
+            }
         } else {
             pitcher = params.state.pitcher
         }
@@ -770,7 +865,11 @@ public struct HighSchoolCareerEngine: Sendable {
             growthFocus: impact.growthFocus,
             abilityBefore: growthBefore,
             abilityAfter: growthAfter,
-            feedback: impact.outcome
+            feedback: relationshipMasteryAfter.map {
+                "(impact.outcome) \(MasteryEffectRules.displayName(for: TalentAbility.from(impact.growthFocus!))) Lv.\($0)"
+            } ?? impact.outcome,
+            masteryBefore: relationshipMasteryBefore,
+            masteryAfter: relationshipMasteryAfter
         )
         let nextBase = replacing(params.state, revision: params.state.revision + 1,
             pitcher: pitcher,
@@ -850,6 +949,16 @@ public struct HighSchoolCareerEngine: Sendable {
             fatigueBefore: state.fatigue, fatigueAfter: fatigueAfter,
             fanInterestBefore: state.fanInterest, fanInterestAfter: fanAfter,
             growthFocus: nil, abilityBefore: nil, abilityAfter: nil, feedback: outcome)
+        let armHealthReceipt = HighSchoolArmHealthReceipt(
+            riskBefore: priorRisk,
+            riskAfter: nextRisk,
+            healthBefore: Self.armHealthState(armRisk: state.armRisk, injuryRecovery: state.injuryRecovery),
+            healthAfter: Self.armHealthState(armRisk: nextRisk, injuryRecovery: nextInjuryRecovery),
+            pitches: 0,
+            fatigueBefore: state.fatigue,
+            cause: (response == .challenge ? .pushThrough : .rehab),
+            recoveryRemaining: max(0, nextInjuryRecovery)
+        )
         let nextBase = replacing(state, revision: state.revision + 1,
             relationshipsCompleted: state.relationshipsCompleted + 1,
             relationshipTrust: (managerAfter + catcherBefore + rivalBefore) / 3,
@@ -862,12 +971,14 @@ public struct HighSchoolCareerEngine: Sendable {
             let ended = replacing(nextBase, phase: .draft, awakeningOptions: [])
             return result(seed: seed, state: signed(ended),
                 event: "career_arm_injury_season_ending",
-                reasons: ["arm_care.\(response.rawValue)", "karma.no_last_chance"])
+                reasons: ["arm_care.\(response.rawValue)", "karma.no_last_chance"],
+                armHealth: armHealthReceipt)
         }
         let next = advanceMilestone(nextBase, seed: seed)
         return result(seed: seed, state: signed(next),
             event: injured ? "career_arm_injury" : "career_arm_care",
-            reasons: ["arm_care.\(response.rawValue)"])
+            reasons: ["arm_care.\(response.rawValue)"],
+            armHealth: armHealthReceipt)
     }
 
     public func recordImportantGame(_ params: RecordCareerGameParams) throws -> HighSchoolCareerResult {
@@ -897,6 +1008,18 @@ public struct HighSchoolCareerEngine: Sendable {
         let priorSignal = Self.armHealthState(armRisk: priorRisk, injuryRecovery: params.state.injuryRecovery)
         let nextSignal = Self.armHealthState(armRisk: nextRisk, injuryRecovery: params.state.injuryRecovery)
         let armNews = (nextSignal != priorSignal ? armSignalNews(nextSignal, pitches: params.report.pitches) : nil)
+        let armHealthReceipt: HighSchoolArmHealthReceipt? = nextRisk != priorRisk || nextSignal != priorSignal
+            ? HighSchoolArmHealthReceipt(
+                riskBefore: priorRisk,
+                riskAfter: nextRisk,
+                healthBefore: priorSignal,
+                healthAfter: nextSignal,
+                pitches: params.report.pitches,
+                fatigueBefore: params.state.fatigue,
+                cause: .outingLoad,
+                recoveryRemaining: max(0, params.state.injuryRecovery ?? 0)
+            )
+            : nil
 
         // 각성의 전조 — 호투가 몸을 깨운다. 무실점이나 삼진쇼는 +2, 판정(과정)이 좋았으면 +1.
         // 각성이 일정표의 선물이 아니라 시즌의 증명이 부르는 순간이 되게 하는 적립이다.
@@ -969,8 +1092,40 @@ public struct HighSchoolCareerEngine: Sendable {
         // 스태미나가 등판 피로 곡선을 정한다(60 기준 기존과 동일: 80→가볍고 30→무겁다).
         // 커널 검증만 받고 아무 데도 안 읽히던 능력치가 처음으로 마운드 위에서 일한다.
         let staminaScale = max(60, 140 - params.state.pitcher.stamina)
+        var nextPitcher = gameGrowth?.applying(to: params.state.pitcher) ?? params.state.pitcher
+        var nextLearningProject = params.state.pitchLearningProject
+        var learningNews: String?
+        var learningReason: String?
+        if let receipts = params.report.pitchLearningUses {
+            guard receipts.allSatisfy({
+                $0.pitchesThrown >= 0 && (0...2).contains($0.qualityUses)
+                    && $0.qualityUses <= $0.pitchesThrown
+            }) else {
+                throw SimulationError.invalidPitcherLab("career pitch learning game receipt is invalid")
+            }
+            if let project = nextLearningProject,
+               !project.isCompleted,
+               let use = receipts.first(where: { $0.pitchType == project.pitchType }),
+               use.qualityUses > 0 {
+                let learning = try PitchLearningRules.advancing(
+                    pitcher: nextPitcher,
+                    project: project,
+                    qualityUses: use.qualityUses,
+                    chapter: params.state.chapter.number
+                )
+                nextPitcher = learning.pitcher
+                nextLearningProject = learning.project
+                if learning.receipt.justCompleted {
+                    learningNews = "새 구종 완성 · 이제 보조 구종으로 승부합니다."
+                    learningReason = "pitch_learning.completed"
+                } else {
+                    learningNews = "개발 구종 실전 경험 · \(use.qualityUses)회 — 릴리스 감각을 쌓았습니다."
+                    learningReason = "pitch_learning.quality_use"
+                }
+            }
+        }
         let nextBase = replacing(params.state, revision: params.state.revision + 1,
-            pitcher: gameGrowth?.applying(to: params.state.pitcher),
+            pitcher: nextPitcher,
             relationshipTrust: masteryRelationshipTrust,
             managerTrust: masteryManagerTrust,
             catcherTrust: masteryCatcherTrust,
@@ -986,8 +1141,10 @@ public struct HighSchoolCareerEngine: Sendable {
             seasonLog: (params.state.seasonLog ?? []) + [playedLine],
             news: ([headline] + (callback.map { [$0] } ?? []) + (armNews.map { [$0] } ?? [])
                 + (sparkNews.map { [$0] } ?? []) + (masteryNews.map { [$0] } ?? [])
-                + (gameGrowthNews.map { [$0] } ?? []) + params.state.news),
+                + (gameGrowthNews.map { [$0] } ?? []) + (learningNews.map { [$0] } ?? [])
+                + params.state.news),
             fanInterest: interest, armRisk: nextRisk,
+            pitchLearningProject: nextLearningProject,
             talent: gameGrowth?.resultingTalent,
             awakeningSparks: sparks)
         let next = advanceMilestone(nextBase, seed: seed)
@@ -997,7 +1154,9 @@ public struct HighSchoolCareerEngine: Sendable {
             event: "career_important_game_completed",
             reasons: ["important_game.\(expected)"]
                 + (sequenceTrustReward > 0 ? ["pitch_sequence.mastery_trust"] : [])
-                + (gameGrowth.map { [$0.reasonCode] } ?? [])
+                + (learningReason.map { [$0] } ?? [])
+                + (gameGrowth.map { [$0.reasonCode] } ?? []),
+            armHealth: armHealthReceipt
         )
     }
 
@@ -1805,7 +1964,8 @@ public struct HighSchoolCareerEngine: Sendable {
         value = PitcherSnapshot(id: value.id, name: value.name, stuff: strongest == .velocity ? value.stuff : max(20, value.stuff - 2),
             command: strongest == .command ? value.command : max(20, value.command - 2),
             movement: strongest == .breakingBall ? value.movement : max(20, value.movement - 2),
-            stamina: max(20, value.stamina - 2), pitchProfiles: value.pitchProfiles, throwingHand: value.throwingHand)
+            stamina: max(20, value.stamina - 2), pitchProfiles: value.pitchProfiles,
+            throwingHand: value.throwingHand, mastery: value.mastery)
         return value
     }
 
@@ -2009,12 +2169,13 @@ public struct HighSchoolCareerEngine: Sendable {
                 movement: clamp(profile.movement + (matches ? profileMovement : 0), 20, 80),
                 whiff: clamp(profile.whiff + (matches ? whiff : 0), 20, 80),
                 weakContact: clamp(profile.weakContact + (matches ? weakContact : 0), 20, 80),
-                fatigueCost: clamp(profile.fatigueCost + (matches ? fatigueCost : 0), 0, 20))
+                fatigueCost: clamp(profile.fatigueCost + (matches ? fatigueCost : 0), 0, 20),
+                availability: profile.availability)
         }
         return PitcherSnapshot(id: pitcher.id, name: pitcher.name,
             stuff: clamp(pitcher.stuff + stuff, 20, 80), command: clamp(pitcher.command + command, 20, 80),
-            movement: clamp(pitcher.movement + movement, 20, 80), stamina: clamp(pitcher.stamina + stamina, 20, 80),
-            pitchProfiles: profiles, throwingHand: pitcher.throwingHand)
+                movement: clamp(pitcher.movement + movement, 20, 80), stamina: clamp(pitcher.stamina + stamina, 20, 80),
+            pitchProfiles: profiles, throwingHand: pitcher.throwingHand, mastery: pitcher.mastery)
     }
 
     private func grow(
@@ -2042,7 +2203,8 @@ public struct HighSchoolCareerEngine: Sendable {
                     movement: clamp(profile.movement + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
                     whiff: clamp(profile.whiff + (focus == .breakingBall && profile.pitchType != .fourSeam ? points : 0), 20, 80),
                     weakContact: profile.weakContact,
-                    fatigueCost: focus == .stamina ? max(1, profile.fatigueCost - points / 2) : profile.fatigueCost
+                    fatigueCost: focus == .stamina ? max(1, profile.fatigueCost - points / 2) : profile.fatigueCost,
+                    availability: profile.availability
                 )
             }
             return PitcherSnapshot(
@@ -2052,7 +2214,8 @@ public struct HighSchoolCareerEngine: Sendable {
                 movement: clamp(pitcher.movement + (focus == .breakingBall ? points : 0), 20, 80),
                 stamina: clamp(pitcher.stamina + (focus == .stamina || focus == .recovery ? points : 0), 20, 80),
                 pitchProfiles: profiles,
-                throwingHand: pitcher.throwingHand
+                throwingHand: pitcher.throwingHand,
+                mastery: Self.masteryAfterStoredGrowth(pitcher: pitcher, focus: focus, points: points)
             )
         }
         return PitcherGrowthRules.grow(
@@ -2070,6 +2233,29 @@ public struct HighSchoolCareerEngine: Sendable {
         case .breakingBall: return pitcher.movement
         case .stamina, .recovery: return pitcher.stamina
         }
+    }
+
+    private static func masteryAfterStoredGrowth(
+        pitcher: PitcherSnapshot,
+        focus: TrainingFocus,
+        points: Int
+    ) -> AbilityMasterySnapshot? {
+        let ability = TalentAbility.from(focus)
+        let before: Int = switch ability {
+        case .stuff: pitcher.stuff
+        case .command: pitcher.command
+        case .movement: pitcher.movement
+        case .stamina: pitcher.stamina
+        }
+        let after: Int = switch focus {
+        case .velocity: min(80, before + points)
+        case .command, .gamePlanning: min(80, before + points)
+        case .breakingBall: min(80, before + points)
+        case .stamina, .recovery: min(80, before + points)
+        }
+        let overflow = max(0, points - max(0, after - before))
+        guard pitcher.mastery != nil || overflow > 0 else { return nil }
+        return pitcher.effectiveMastery.adding(overflow, to: ability)
     }
 
     /// 한계에 막혔을 때는 그 사실을 말해 준다. 아무 말 없이 0이 뜨면 플레이어는 훈련이
@@ -2136,6 +2322,8 @@ public struct HighSchoolCareerEngine: Sendable {
         legacyOptions: [MemoryCardID]? = nil, selectedMemories: [MemoryCardID]? = nil,
         balanceVersion: Int? = nil, armRisk: Int? = nil, injuryRecovery: Int? = nil,
         worldRulesVersion: Int?? = nil,
+        repertoireRulesVersion: Int?? = nil,
+        pitchLearningProject: PitchLearningProjectSnapshot?? = nil,
         talent: TalentSnapshot? = nil,
         awakeningSparks: Int?? = nil,
         stateCommitment: String? = nil
@@ -2164,6 +2352,8 @@ public struct HighSchoolCareerEngine: Sendable {
             draftResult: draftResult ?? state.draftResult, legacyOptions: legacyOptions ?? state.legacyOptions,
             selectedMemories: selectedMemories ?? state.selectedMemories,
             balanceVersion: balanceVersion ?? state.balanceVersion,
+            repertoireRulesVersion: repertoireRulesVersion ?? state.repertoireRulesVersion,
+            pitchLearningProject: pitchLearningProject ?? state.pitchLearningProject,
             worldRulesVersion: worldRulesVersion ?? state.worldRulesVersion,
             armRisk: armRisk ?? state.armRisk, injuryRecovery: injuryRecovery ?? state.injuryRecovery,
             schedule: state.schedule,
@@ -2266,6 +2456,16 @@ public struct HighSchoolCareerEngine: Sendable {
         }
         if let balanceVersion = state.balanceVersion {
             canonical.append("balance_version:\(balanceVersion)")
+        }
+        if let mastery = state.pitcher.mastery {
+            canonical.append("mastery:\(mastery.stuff):\(mastery.command):\(mastery.movement):\(mastery.stamina)")
+        }
+        if let repertoireRulesVersion = state.repertoireRulesVersion,
+           let project = state.pitchLearningProject {
+            let ready = state.pitcher.gameReadyPitchTypes.map(\.rawValue).sorted().joined(separator: ",")
+            let primary = state.pitcher.pitchProfiles?.first(where: { $0.role == .primary })?.pitchType.rawValue ?? "none"
+            let profiles = PitchLearningRules.profileCommitmentToken(for: state.pitcher)
+            canonical.append("repertoire:v\(repertoireRulesVersion):\(primary):\(ready):\(project.commitmentToken):\(profiles)")
         }
         // Missing means shipped v1 and must retain the exact old canonical hash. Once a version is
         // stored, it is integrity-protected so a save cannot flip its world rules without detection.
@@ -2372,6 +2572,15 @@ public struct HighSchoolCareerEngine: Sendable {
         let worldRulesVersionIsValid = state.worldRulesVersion.map {
             CareerRulesVersion(rawValue: $0) != nil
         } ?? true
+        do {
+            try PitchLearningRules.validateState(
+                pitcher: state.pitcher,
+                rulesVersion: state.repertoireRulesVersion,
+                project: state.pitchLearningProject
+            )
+        } catch {
+            throw SimulationError.invalidPitcherLab("career repertoire state is invalid")
+        }
         guard state.stateCommitment == commitment(state),
               (0...16).contains(state.totalTrainingsCompleted), (0...6).contains(state.relationshipsCompleted),
               (0...100).contains(state.fatigue), (0...100).contains(state.relationshipTrust),
@@ -2394,14 +2603,31 @@ public struct HighSchoolCareerEngine: Sendable {
 
     private func renamed(_ name: String, pitcher: PitcherSnapshot, hand: ThrowingHand? = nil) -> PitcherSnapshot {
         PitcherSnapshot(id: pitcher.id, name: name, stuff: pitcher.stuff, command: pitcher.command,
-            movement: pitcher.movement, stamina: pitcher.stamina, pitchProfiles: pitcher.pitchProfiles, throwingHand: hand ?? pitcher.throwingHand)
+            movement: pitcher.movement, stamina: pitcher.stamina, pitchProfiles: pitcher.pitchProfiles,
+            throwingHand: hand ?? pitcher.throwingHand, mastery: pitcher.mastery)
     }
 
-    private func result(seed: UInt64, state: HighSchoolCareerSnapshot, event: String, reasons: [String] = []) -> HighSchoolCareerResult {
+    private func result(
+        seed: UInt64,
+        state: HighSchoolCareerSnapshot,
+        event: String,
+        reasons: [String] = [],
+        armHealth: HighSchoolArmHealthReceipt? = nil
+    ) -> HighSchoolCareerResult {
         var generator = SplitMix64(seed: seed ^ UInt64(state.revision) ^ 0x4556_454e_5400)
         let nextSeed = String(generator.next())
         let events = [HighSchoolCareerEvent(eventType: event, reasonCodes: reasons)]
-        let eventHash = StableHash.fnv1a64("\(state.careerID)|\(state.revision)|\(event)|\(nextSeed)|\(state.stateCommitment)")
-        return HighSchoolCareerResult(revision: state.revision, nextSeed: nextSeed, events: events, snapshot: state, eventHash: eventHash)
+        let healthToken = armHealth.map {
+            "|arm:\($0.riskBefore):\($0.riskAfter):\($0.healthBefore.rawValue):\($0.healthAfter.rawValue):\($0.pitches):\($0.fatigueBefore):\($0.cause.rawValue):\($0.recoveryRemaining)"
+        } ?? ""
+        let eventHash = StableHash.fnv1a64("\(state.careerID)|\(state.revision)|\(event)|\(nextSeed)|\(state.stateCommitment)\(healthToken)")
+        return HighSchoolCareerResult(
+            revision: state.revision,
+            nextSeed: nextSeed,
+            events: events,
+            snapshot: state,
+            eventHash: eventHash,
+            armHealth: armHealth
+        )
     }
 }

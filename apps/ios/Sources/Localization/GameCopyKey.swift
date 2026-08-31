@@ -350,6 +350,11 @@ public enum AppCopyKey {
 
     public static let trainingArmHealthRecovering = GameCopyKey.localizable("training.arm-health.guidance.recovering")
     public static let trainingArmHealthRisk = GameCopyKey.localizable("training.arm-health.guidance.risk")
+    public static let armHealthResultOuting = GameCopyKey.localizable("training.arm-health.result.outing")
+    public static let armHealthResultPushThrough = GameCopyKey.localizable("training.arm-health.result.push-through")
+    public static let armHealthResultRehab = GameCopyKey.localizable("training.arm-health.result.rehab")
+    public static let armHealthResultNextRecovery = GameCopyKey.localizable("training.arm-health.result.next.recovery")
+    public static let armHealthResultNextManage = GameCopyKey.localizable("training.arm-health.result.next.manage")
     public static let trainingOpportunityTitle = GameCopyKey.localizable("training.opportunity.title")
     public static let trainingPrompt = GameCopyKey.localizable("training.prompt")
     public static let trainingBadgeOpportunity = GameCopyKey.localizable("training.badge.opportunity")
@@ -360,12 +365,22 @@ public enum AppCopyKey {
     public static let trainingCommit = GameCopyKey.localizable("training.commit")
     public static let trainingRepeatTitle = GameCopyKey.localizable("training.repeat.title")
     public static let trainingRepeatStopExplanation = GameCopyKey.localizable("training.repeat.stop-explanation")
+    public static let trainingPitchLearningTitle = GameCopyKey.localizable("training.pitch-learning.title")
+    public static let trainingPitchLearningGrip = GameCopyKey.localizable("training.pitch-learning.grip")
+    public static let trainingPitchLearningBullpen = GameCopyKey.localizable("training.pitch-learning.bullpen")
+    public static let trainingPitchLearningLive = GameCopyKey.localizable("training.pitch-learning.live")
+    public static let trainingPitchLearningCompleted = GameCopyKey.localizable("training.pitch-learning.completed")
+    public static let trainingPitchLearningProgress = GameCopyKey.localizable("training.pitch-learning.progress")
 
     public static let trainingKeys: [GameCopyKey] = [
-        trainingArmHealthRecovering, trainingArmHealthRisk, trainingOpportunityTitle,
+        trainingArmHealthRecovering, trainingArmHealthRisk,
+        armHealthResultOuting, armHealthResultPushThrough, armHealthResultRehab,
+        armHealthResultNextRecovery, armHealthResultNextManage, trainingOpportunityTitle,
         trainingPrompt, trainingBadgeOpportunity, trainingBadgeSchoolStrength,
         trainingPitchPickerTitle, trainingIntensityTitle, trainingDoubleBonus,
         trainingCommit, trainingRepeatTitle, trainingRepeatStopExplanation,
+        trainingPitchLearningTitle, trainingPitchLearningGrip, trainingPitchLearningBullpen,
+        trainingPitchLearningLive, trainingPitchLearningCompleted, trainingPitchLearningProgress,
     ]
 
     public static let trainingResultTitleBloom = GameCopyKey.localizable("training.result.title.bloom")
@@ -379,12 +394,14 @@ public enum AppCopyKey {
     public static let trainingResultHeadlineNoGain = GameCopyKey.localizable("training.result.headline.no-gain")
     public static let trainingResultGainValue = GameCopyKey.localizable("training.result.gain.value")
     public static let trainingResultGainRow = GameCopyKey.localizable("training.result.gain.row")
+    public static let trainingResultPitchLearning = GameCopyKey.localizable("training.result.pitch-learning")
+    public static let pitchDevelopmentBadge = GameCopyKey.localizable("pitch.development-badge")
 
     public static let trainingResultKeys: [GameCopyKey] = [
         trainingResultTitleBloom, trainingResultTitleJackpot, trainingResultTitleGrowth,
         trainingResultTitleNoGrowth, trainingResultOpportunityBadge, trainingResultDismiss,
         trainingResultFatigueSteady, trainingResultFatigueChanged, trainingResultHeadlineNoGain,
-        trainingResultGainValue, trainingResultGainRow,
+        trainingResultGainValue, trainingResultGainRow, trainingResultPitchLearning, pitchDevelopmentBadge,
     ]
 
     public static let setupQuickRebirthTitle = GameCopyKey.localizable("setup.quick-rebirth.title")
@@ -426,6 +443,16 @@ public enum AppCopyKey {
     public static let setupRegionDescription = GameCopyKey.localizable("setup.region.description")
     public static let setupStyleTitle = GameCopyKey.localizable("setup.style.title")
     public static let setupStyleDescription = GameCopyKey.localizable("setup.style.description")
+    public static let setupRepertoireTitle = GameCopyKey.localizable("setup.repertoire.title")
+    public static let setupRepertoireDescription = GameCopyKey.localizable("setup.repertoire.description")
+    public static let setupRepertoireFourSeam = GameCopyKey.localizable("setup.repertoire.four-seam")
+    public static let setupRepertoireLearning = GameCopyKey.localizable("setup.repertoire.learning")
+    public static let setupRepertoireLearningHint = GameCopyKey.localizable("setup.repertoire.learning-hint")
+    public static let setupRepertoirePrimary = GameCopyKey.localizable("setup.repertoire.primary")
+    public static let setupRepertoirePrimaryHint = GameCopyKey.localizable("setup.repertoire.primary-hint")
+    public static let setupRepertoireSliderDetail = GameCopyKey.localizable("setup.repertoire.slider.detail")
+    public static let setupRepertoireCurveballDetail = GameCopyKey.localizable("setup.repertoire.curveball.detail")
+    public static let setupRepertoireChangeupDetail = GameCopyKey.localizable("setup.repertoire.changeup.detail")
     public static let setupHandicapTitle = GameCopyKey.localizable("setup.handicap.title")
     public static let setupDifficultyTitle = GameCopyKey.localizable("setup.difficulty.title")
     public static let setupChallengeTitle = GameCopyKey.localizable("setup.challenge.title")
@@ -703,6 +730,10 @@ public enum AppCopyKey {
         setupBoostHeadStartDetail, setupBoostTrainingRhythmTitle, setupBoostTrainingRhythmDetail,
         setupBoostCost,
         setupRegionTitle, setupRegionDescription, setupStyleTitle, setupStyleDescription,
+        setupRepertoireTitle, setupRepertoireDescription, setupRepertoireFourSeam,
+        setupRepertoireLearning, setupRepertoireLearningHint,
+        setupRepertoirePrimary, setupRepertoirePrimaryHint,
+        setupRepertoireSliderDetail, setupRepertoireCurveballDetail, setupRepertoireChangeupDetail,
         setupHandicapTitle, setupDifficultyTitle, setupChallengeTitle, setupChallengeDescription,
         setupLegacyTitle, setupLegacyDescription, setupSoulDomainTitle, setupSoulDomainRule,
         setupHandicapLabel, setupHandicapDescription, setupKarmaReward, setupSeedValidation, setupStartChallenge,

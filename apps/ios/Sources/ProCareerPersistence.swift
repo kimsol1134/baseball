@@ -5,18 +5,42 @@ import SimulationCore
 enum ProCareerPersistence {
     static let legacySchemaVersion = 2
     static let journeySchemaVersion = 3
+    static let repertoireSchemaVersion = 4
+    static let masterySchemaVersion = 5
+    static let currentSchemaVersion = masterySchemaVersion
 
     static func schemaVersion(for result: ProCareerResult) -> Int {
-        result.snapshot.journeyState == nil ? legacySchemaVersion : journeySchemaVersion
+        schemaVersion(for: ProCareerPersistedState(result: result))
+    }
+
+    /// The wrapper owns durable injury acknowledgement state, so schema selection must inspect
+    /// the whole record rather than only the latest engine result. Otherwise the first recovery
+    /// week would try to downgrade a v5 injury save after `result.injuryEvent` becomes nil.
+    static func schemaVersion(for state: ProCareerPersistedState) -> Int {
+        guard let result = state.result else { return currentSchemaVersion }
+        if result.snapshot.pitcher.mastery != nil
+            || result.injuryEvent != nil
+            || state.pendingInjuryEvent != nil
+            || state.acknowledgedInjuryEventID != nil {
+            return masterySchemaVersion
+        }
+        if result.snapshot.repertoireRulesVersion != nil { return repertoireSchemaVersion }
+        return result.snapshot.journeyState == nil ? legacySchemaVersion : journeySchemaVersion
     }
 
     static func decode(_ data: Data) -> ProCareerSaveRecord? {
         let decoder = JSONDecoder()
         if let record = try? decoder.decode(ProCareerSaveRecord.self, from: data) {
             let version = record.schemaVersion ?? 1
-            if (1...journeySchemaVersion).contains(version),
+            let hasMastery = record.result?.snapshot.pitcher.mastery != nil
+            let hasInjury = record.result?.injuryEvent != nil
+                || record.pendingInjuryEvent != nil
+                || record.acknowledgedInjuryEventID != nil
+            if (1...currentSchemaVersion).contains(version),
                record.result != nil || record.deletedRevision != nil,
-               !(version < journeySchemaVersion && record.result?.snapshot.journeyState != nil) {
+               !(version < journeySchemaVersion && record.result?.snapshot.journeyState != nil),
+               !(version < repertoireSchemaVersion && record.result?.snapshot.repertoireRulesVersion != nil),
+               !(version < masterySchemaVersion && (hasMastery || hasInjury)) {
                 return record
             }
         }
@@ -76,7 +100,9 @@ enum ProCareerPersistence {
             sourceHighSchoolCareerID: state.sourceHighSchoolCareerID,
             origin: state.careerOrigin,
             schemaVersion: schemaVersion,
-            syncRevision: syncRevision
+            syncRevision: syncRevision,
+            pendingInjuryEvent: state.pendingInjuryEvent,
+            acknowledgedInjuryEventID: state.acknowledgedInjuryEventID
         )
     }
 
@@ -86,6 +112,8 @@ enum ProCareerPersistence {
         deletedRevision: UInt64? = nil,
         sourceHighSchoolCareerID: String? = nil,
         origin: MobileCareerStore.ProCareerOrigin? = nil,
+        pendingInjuryEvent: ProInjuryEventSnapshot? = nil,
+        acknowledgedInjuryEventID: String? = nil,
         schemaVersion: Int,
         syncRevision: UInt64
     ) -> ProCareerSaveRecord {
@@ -95,7 +123,9 @@ enum ProCareerPersistence {
                 gameResume: gameResume,
                 sourceHighSchoolCareerID: sourceHighSchoolCareerID,
                 careerOrigin: origin,
-                syncedRevision: syncRevision
+                syncedRevision: syncRevision,
+                pendingInjuryEvent: pendingInjuryEvent,
+                acknowledgedInjuryEventID: acknowledgedInjuryEventID
             ),
             deletedRevision: deletedRevision,
             schemaVersion: schemaVersion,
@@ -109,7 +139,9 @@ enum ProCareerPersistence {
             gameResume: record.gameResume,
             sourceHighSchoolCareerID: record.sourceHighSchoolCareerID,
             careerOrigin: record.origin,
-            syncedRevision: record.effectiveRevision
+            syncedRevision: record.effectiveRevision,
+            pendingInjuryEvent: record.pendingInjuryEvent,
+            acknowledgedInjuryEventID: record.acknowledgedInjuryEventID
         )
     }
 }

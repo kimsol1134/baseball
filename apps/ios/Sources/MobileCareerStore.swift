@@ -11,7 +11,7 @@ final class MobileCareerStore {
     /// path from silently downgrading a journey save.
     static var legacySaveSchemaVersion: Int { ProCareerPersistence.legacySchemaVersion }
     static var journeySaveSchemaVersion: Int { ProCareerPersistence.journeySchemaVersion }
-    static var currentSaveSchemaVersion: Int { ProCareerPersistence.journeySchemaVersion }
+    static var currentSaveSchemaVersion: Int { ProCareerPersistence.currentSchemaVersion }
     static let unreadableSaveMessage = "저장 데이터는 남아 있지만 현재 버전에서 읽을 수 없습니다. 앱을 삭제하거나 새 커리어를 시작하지 말고 다시 불러오기를 눌러 주세요."
 
     enum ProCareerOrigin: String, Codable, Equatable {
@@ -75,6 +75,8 @@ final class MobileCareerStore {
     private var durableSourceHighSchoolCareerID: String?
     private var durableCareerOrigin: ProCareerOrigin?
     private var durableSyncedRevision: UInt64 = 0
+    private var durablePendingInjuryEvent: ProInjuryEventSnapshot?
+    private var durableAcknowledgedInjuryEventID: String?
 
     func capturePersisted() -> ProCareerPersistedState {
         ProCareerPersistedState(
@@ -82,7 +84,9 @@ final class MobileCareerStore {
             gameResume: durableGameResume,
             sourceHighSchoolCareerID: durableSourceHighSchoolCareerID,
             careerOrigin: durableCareerOrigin,
-            syncedRevision: durableSyncedRevision
+            syncedRevision: durableSyncedRevision,
+            pendingInjuryEvent: durablePendingInjuryEvent,
+            acknowledgedInjuryEventID: durableAcknowledgedInjuryEventID
         )
     }
 
@@ -98,6 +102,8 @@ final class MobileCareerStore {
         assign(&durableSourceHighSchoolCareerID, next.sourceHighSchoolCareerID)
         assign(&durableCareerOrigin, next.careerOrigin)
         assign(&durableSyncedRevision, next.syncedRevision)
+        assign(&durablePendingInjuryEvent, next.pendingInjuryEvent)
+        assign(&durableAcknowledgedInjuryEventID, next.acknowledgedInjuryEventID)
     }
 
     private func assign<T: Equatable>(_ storage: inout T, _ next: T) {
@@ -105,6 +111,7 @@ final class MobileCareerStore {
     }
 
     var result: ProCareerResult? { durableResult }
+    var pendingInjuryEvent: ProInjuryEventSnapshot? { durablePendingInjuryEvent }
     /// 주간 계획은 플레이어가 직접 고른다. 기본값을 두면 버튼을 누른 사실만으로
     /// "내 선택"처럼 보이고, 회복 뒤에도 같은 계획이 여러 주 반복될 수 있다.
     var selectedPlan: ProWeekPlan?
@@ -170,6 +177,7 @@ final class MobileCareerStore {
         switch outcome {
         case .live(let recoveredFromBackup):
             loadState = .ready
+            preferActiveLearningPitch()
             if recoveredFromBackup {
                 lastSummary = "현재 저장본을 읽지 못해 직전 정상 백업으로 복구했습니다."
                 feedbackCue = .success
@@ -184,7 +192,11 @@ final class MobileCareerStore {
 
     /// 유료앱에서는 앱 구매가 곧 이용 권한이므로 디버그/릴리스가 같은 경로를 탄다.
     @discardableResult
-    func startNewCareer(preset: PitcherPresetSnapshot, playerName: String) -> Bool {
+    func startNewCareer(
+        preset: PitcherPresetSnapshot,
+        playerName: String,
+        startingRepertoire: StartingRepertoireSelection? = nil
+    ) -> Bool {
         guard !isBlockedByUnreadableSave else { return false }
         let previous = capturePersisted()
         let previousSummary = lastSummary
@@ -197,6 +209,7 @@ final class MobileCareerStore {
                 preset: preset,
                 playerName: playerName,
                 seed: seed,
+                startingRepertoire: startingRepertoire,
                 engine: engine
             )
             updatePersisted {
@@ -204,6 +217,7 @@ final class MobileCareerStore {
                 $0.sourceHighSchoolCareerID = nil
                 $0.careerOrigin = .direct
             }
+            preferActiveLearningPitch()
             lastSummary = created.snapshot.phase == .contractOffer
                 ? "\(created.snapshot.team.name) 지명. 신인 계약 제안을 확인해 주세요."
                 : "\(created.snapshot.team.name) 입단. 2군에서 첫 시즌을 시작합니다."
@@ -217,6 +231,16 @@ final class MobileCareerStore {
                 feedbackTrigger = previousFeedbackTrigger
                 loadState = .failed("프로 커리어 시작을 저장하지 못했습니다. 저장 공간을 확인한 뒤 다시 시도해 주세요.")
                 return false
+            }
+            if let startingRepertoire {
+                GameAnalytics.log(.repertoireSelected, [
+                    "preset_id": preset.id,
+                    "ready_pitch_ids": startingRepertoire.readyBreakingPitches.map(\.rawValue).sorted().joined(separator: ","),
+                    "primary_pitch_id": startingRepertoire.primaryPitch.rawValue,
+                    "learning_pitch_id": startingRepertoire.learningPitch.rawValue,
+                    "life_number": 1,
+                    "used_recommended_default": startingRepertoire == PitchLearningRules.recommendedSelection(presetID: preset.id),
+                ])
             }
             return true
         } catch {
@@ -237,7 +261,9 @@ final class MobileCareerStore {
         pitcher: PitcherSnapshot,
         identity: PlayerIdentitySnapshot,
         sourceHighSchoolCareerID: String,
-        sourceFanInterest: Int? = nil
+        sourceFanInterest: Int? = nil,
+        repertoireRulesVersion: Int? = nil,
+        pitchLearningProject: PitchLearningProjectSnapshot? = nil
     ) -> Bool {
         guard !isBlockedByUnreadableSave else { return false }
         let previous = capturePersisted()
@@ -252,6 +278,8 @@ final class MobileCareerStore {
                 identity: identity,
                 seed: UInt64.random(in: 1...UInt64.max),
                 sourceFanInterest: sourceFanInterest,
+                repertoireRulesVersion: repertoireRulesVersion,
+                pitchLearningProject: pitchLearningProject,
                 engine: engine
             )
             updatePersisted {
@@ -259,6 +287,7 @@ final class MobileCareerStore {
                 $0.sourceHighSchoolCareerID = sourceHighSchoolCareerID
                 $0.careerOrigin = .highSchool
             }
+            preferActiveLearningPitch()
             lastSummary = created.snapshot.phase == .contractOffer
                 ? "\(created.snapshot.team.name) 지명. 신인 계약 제안을 확인해 주세요."
                 : "\(created.snapshot.team.name) 입단. 고교 3년의 능력을 그대로 안고 시작합니다."
@@ -284,6 +313,72 @@ final class MobileCareerStore {
             return false
         }
     }
+
+#if DEBUG
+    /// Stable UI-only state for validating the post-100 mastery and explainable injury surfaces.
+    /// Release builds do not compile this path and normal saves can never request it.
+    @discardableResult
+    func installReviewImprovementFixtureForUITesting() -> Bool {
+        do {
+            let preset = PitcherPresetCatalog.all[0]
+            let base = try CareerBootstrap.startCareer(
+                preset: preset,
+                playerName: "리뷰 검증 투수",
+                seed: 202_608_28,
+                startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id)
+            )
+            let data = try JSONEncoder().encode(base)
+            guard var object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  var snapshot = object["snapshot"] as? [String: Any],
+                  var pitcher = snapshot["pitcher"] as? [String: Any] else { return false }
+
+            pitcher["stuff"] = 80
+            pitcher["command"] = 80
+            pitcher["movement"] = 80
+            pitcher["stamina"] = 80
+            pitcher["mastery"] = ["stuff": 14, "command": 9, "movement": 11, "stamina": 7]
+            snapshot["pitcher"] = pitcher
+            snapshot["fatigue"] = 82
+            snapshot["injuryWeeks"] = 3
+            object["snapshot"] = snapshot
+
+            let event = ProInjuryEventSnapshot(
+                season: snapshot["season"] as? Int ?? 1,
+                week: max(1, snapshot["week"] as? Int ?? 1),
+                plan: .developStuff,
+                rawFatigue: 82,
+                effectiveFatigue: 86,
+                pitches: 91,
+                recoveryWeeks: 3,
+                careerID: snapshot["proCareerID"] as? String,
+                revision: (snapshot["revision"] as? NSNumber)?.uint64Value
+            )
+            object["injuryEvent"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(event))
+            let fixture = try JSONDecoder().decode(
+                ProCareerResult.self,
+                from: JSONSerialization.data(withJSONObject: object)
+            )
+            updatePersisted {
+                $0.result = fixture
+                $0.gameResume = nil
+                $0.sourceHighSchoolCareerID = nil
+                $0.careerOrigin = .direct
+                $0.pendingInjuryEvent = event
+                $0.acknowledgedInjuryEventID = nil
+            }
+            selectedPlan = nil
+            pendingGains = []
+            lastSummary = nil
+            feedbackCue = .setback
+            feedbackTrigger += 1
+            loadState = .ready
+            return save()
+        } catch {
+            loadState = .failed(error.localizedDescription)
+            return false
+        }
+    }
+#endif
 
     @discardableResult
     func deleteCareer() -> Bool {
@@ -346,6 +441,7 @@ final class MobileCareerStore {
         )) }
         if self.result?.snapshot.revision != beforeRevision {
             weekly.record(.proWeeksAdvanced)
+            logPitchLearningProgress(before: result.snapshot, after: self.result?.snapshot)
             // 회복은 한 주짜리 명령이다. 성공한 저장 이후에만 선택을 비워 다음 주의
             // 무음 미등판을 막는다. 저장 실패면 기존 선택도 그대로 남아 재시도할 수 있다.
             if selectedPlan == .recover { self.selectedPlan = nil }
@@ -360,7 +456,7 @@ final class MobileCareerStore {
     /// 멈추게** 한다 — 구간이 바뀌거나, 중요 경기가 잡히거나, 역할·소속이 움직이거나, 다치거나.
     func advanceSegment() {
         guard let result, let selectedPlan,
-              selectedPlan != .recover || (result.snapshot.proRulesVersion ?? 1) >= ProCareerEngine.currentRulesVersion else { return }
+              selectedPlan != .recover || ProCareerEngine.usesAgencyRules(result.snapshot) else { return }
         let beforeRevision = result.snapshot.revision
         var advancedWeeks = 0
         perform {
@@ -382,12 +478,13 @@ final class MobileCareerStore {
         }
         if self.result?.snapshot.revision != beforeRevision {
             weekly.record(.proWeeksAdvanced, amount: advancedWeeks)
+            logPitchLearningProgress(before: result.snapshot, after: self.result?.snapshot)
         }
     }
 
     func advanceBlock() {
         guard let result, let selectedPlan,
-              selectedPlan != .recover || (result.snapshot.proRulesVersion ?? 1) >= ProCareerEngine.currentRulesVersion else { return }
+              selectedPlan != .recover || ProCareerEngine.usesAgencyRules(result.snapshot) else { return }
         let beforeRevision = result.snapshot.revision
         var advancedWeeks = 0
         perform {
@@ -404,6 +501,7 @@ final class MobileCareerStore {
         }
         if self.result?.snapshot.revision != beforeRevision {
             weekly.record(.proWeeksAdvanced, amount: advancedWeeks)
+            logPitchLearningProgress(before: result.snapshot, after: self.result?.snapshot)
         }
     }
 
@@ -411,6 +509,30 @@ final class MobileCareerStore {
         selectedPlan == .developMovement || selectedPlan == .developWeapon
             ? selectedDevelopmentPitch
             : nil
+    }
+
+    private func preferActiveLearningPitch() {
+        if let project = result?.snapshot.pitchLearningProject, !project.isCompleted {
+            selectedDevelopmentPitch = project.pitchType
+        }
+    }
+
+    private func logPitchLearningProgress(
+        before: ProCareerSnapshot,
+        after: ProCareerSnapshot?
+    ) {
+        guard let beforeProject = before.pitchLearningProject,
+              let afterProject = after?.pitchLearningProject,
+              beforeProject != afterProject else { return }
+        GameAnalytics.log(.pitchLearningTrainingCompleted, [
+            "pitch_id": afterProject.pitchType.rawValue,
+            "stage_before": beforeProject.stage.rawValue,
+            "stage_after": afterProject.stage.rawValue,
+            "intensity_id": "pro_week",
+            "credits_gained": afterProject.practiceCredits - beforeProject.practiceCredits,
+            "just_game_ready": !beforeProject.isGameReady && afterProject.isGameReady,
+            "just_completed": !beforeProject.isCompleted && afterProject.isCompleted,
+        ])
     }
 
     // MARK: - 중요 경기
@@ -431,7 +553,8 @@ final class MobileCareerStore {
         let checkpointed = ProCareerResult(
             snapshot: result.snapshot,
             nextSeed: sessionSeed,
-            events: result.events
+            events: result.events,
+            injuryEvent: result.injuryEvent
         )
         // 저장이 끝나기 전에는 시드나 화면을 바꾸지 않는다. 실패 뒤 같은 버튼을 누르면
         // 아직 소비되지 않은 원래 시드로 정확히 한 번 다시 시도할 수 있다.
@@ -455,6 +578,7 @@ final class MobileCareerStore {
     /// 세션에서 실제로 누적된 리포트를 프로 커리어에 반영한다.
     func finishImportantGame() {
         guard let result, let session = pitchSession else { return }
+        let learningWasCompleted = result.snapshot.pitchLearningProject?.isCompleted ?? true
         let report = session.report(scenarioNumber: result.snapshot.week)
         let sequenceMasteryCount = session.sequenceMasteryCount
         let beforeRevision = result.snapshot.revision
@@ -481,6 +605,18 @@ final class MobileCareerStore {
             "runs": report.runsAllowed,
         ]) { _, modeSpecific in modeSpecific }
         GameAnalytics.log(.gameFinished, gameFinishedProperties)
+        if let use = report.pitchLearningUses?.first {
+            GameAnalytics.log(.pitchLearningGameSummary, [
+                "pitch_id": use.pitchType.rawValue,
+                "pitches_thrown": use.pitchesThrown,
+                "quality_uses_gained": use.qualityUses,
+                "completed_after_game": !learningWasCompleted
+                    && (self.result?.snapshot.pitchLearningProject?.isCompleted ?? false),
+                "manual_delivery_rate": report.pitches > 0
+                    ? Double(session.deliveryScores.count) / Double(report.pitches) : 0,
+                "mode": "pro",
+            ])
+        }
         GameAnalytics.recordCompletedGame()
         // 연속 일수는 모드를 가리지 않는다 — 프로 등판도 오늘 던진 것이다.
         DailyStreak.recordPlay()
@@ -764,6 +900,28 @@ final class MobileCareerStore {
         pendingGains = []
     }
 
+    /// Dismisses only the current-session explanation. The injury itself stays in the saved
+    /// career state; the acknowledgement ID prevents it from returning after relaunch.
+    func acknowledgeInjuryEvent() {
+        guard let event = durablePendingInjuryEvent, let result else { return }
+        guard persist(
+            result: result,
+            gameResume: gameResume,
+            pendingInjuryEvent: nil,
+            preservePendingInjuryEvent: false,
+            acknowledgedInjuryEventID: event.stableID
+        ) else { return }
+        updatePersisted {
+            $0.pendingInjuryEvent = nil
+            $0.acknowledgedInjuryEventID = event.stableID
+        }
+        GameAnalytics.log(.injuryResultAcknowledged, [
+            "mode": "pro",
+            "cause": event.cause.rawValue,
+            "recovery_weeks": event.recoveryWeeks,
+        ])
+    }
+
     /// 진행 중 등판의 타석 경계 스냅샷. 고교와 같은 문법 — 프로 20시즌의
     /// 몰입 최고점에서 전화 한 통에 이닝을 잃으면 안 된다.
     private var gameResume: PitchSession.ResumeState? { durableGameResume }
@@ -783,19 +941,29 @@ final class MobileCareerStore {
     /// 교체하므로 write 실패가 result/seed/resume/UI에 부분적으로 보이지 않는다.
     private func persist(
         result: ProCareerResult,
-        gameResume: PitchSession.ResumeState?
+        gameResume: PitchSession.ResumeState?,
+        pendingInjuryEvent: ProInjuryEventSnapshot? = nil,
+        preservePendingInjuryEvent: Bool = true,
+        acknowledgedInjuryEventID: String? = nil
     ) -> Bool {
         guard featureConfiguration.proCareerJourneyV1 || result.snapshot.journeyState == nil else {
             return false
         }
-        let schemaVersion = ProCareerPersistence.schemaVersion(for: result)
+        let existing = capturePersisted()
+        let candidateState = existing.drafting(result: result, gameResume: gameResume).withInjury(
+            pending: preservePendingInjuryEvent
+                ? (pendingInjuryEvent ?? existing.pendingInjuryEvent)
+                : pendingInjuryEvent,
+            acknowledgedID: acknowledgedInjuryEventID ?? existing.acknowledgedInjuryEventID
+        )
+        let schemaVersion = ProCareerPersistence.schemaVersion(for: candidateState)
         guard canWrite(schemaVersion: schemaVersion) else { return false }
         let candidateRevision = ProCareerPersistence.nextRevision(
             after: syncedRevision,
             atLeast: result.snapshot.revision
         )
         let record = ProCareerPersistence.record(
-            from: capturePersisted().drafting(result: result, gameResume: gameResume),
+            from: candidateState,
             schemaVersion: schemaVersion,
             syncRevision: candidateRevision
         )
@@ -885,6 +1053,10 @@ final class MobileCareerStore {
     }
 
     private func canWrite(schemaVersion: Int) -> Bool {
+        // An injected writer is a fully isolated persistence boundary used by unit tests and
+        // failure injection. Consulting the real default SaveSync beside it leaks unrelated
+        // device state into the test and can reject a perfectly valid candidate schema.
+        if saveWriter != nil { return true }
         guard let existingData = sync.read(
             revision: ProCareerPersistence.rawSchemaVersion,
             conflictPriority: { _ in 0 }
@@ -919,6 +1091,11 @@ final class MobileCareerStore {
         guard let decoded = record.result else { return .unavailable }
         var next = ProCareerPersistence.materialize(record)
         next.syncedRevision = max(durableSyncedRevision, next.syncedRevision)
+        if next.pendingInjuryEvent == nil,
+           let event = decoded.injuryEvent,
+           next.acknowledgedInjuryEventID != event.stableID {
+            next.pendingInjuryEvent = event
+        }
         var restored = decoded
         if featureConfiguration.proCareerJourneyV1,
            decoded.snapshot.journeyState == nil,
@@ -993,16 +1170,38 @@ final class MobileCareerStore {
             let updated = try action()
             let gains = Self.gains(before: before?.pitcher, after: updated.snapshot.pitcher)
             let nextSummary = summary ?? progressSummary(before: before, after: updated.snapshot)
-            let nextCue = cue ?? (gains.isEmpty ? .neutral : .growth)
+            let nextCue = cue ?? (updated.injuryEvent != nil
+                ? .setback
+                : gains.isEmpty ? .neutral : .growth)
             let nextResume = clearGameResumeOnSuccess ? nil : gameResume
-            guard persist(result: updated, gameResume: nextResume) else { return false }
+            let pendingForWrite = updated.injuryEvent ?? durablePendingInjuryEvent
+            guard persist(
+                result: updated,
+                gameResume: nextResume,
+                pendingInjuryEvent: pendingForWrite
+            ) else { return false }
 
             // 디스크가 후보 상태를 받아들인 뒤에만 관찰 상태와 외부 부수효과를 커밋한다.
             updatePersisted {
                 $0.result = updated
                 $0.gameResume = nextResume
+                $0.pendingInjuryEvent = pendingForWrite
             }
-            pendingGains = gains
+            if let injury = updated.injuryEvent {
+                let forecast = ProWeekHealthForecast.forecast(state: before ?? updated.snapshot, plan: injury.plan)
+                GameAnalytics.log(.injuryStarted, [
+                    "mode": "pro",
+                    "cause": injury.cause.rawValue,
+                    "recovery_weeks": injury.recoveryWeeks,
+                    "risk_band": forecast.band.rawValue,
+                    "plan": injury.plan.rawValue,
+                ])
+            }
+            Self.logMasteryChanges(before: before?.pitcher, after: updated.snapshot.pitcher, mode: "pro")
+            // 직접 경기처럼 이번 행동 자체에는 성장이 없어도, 직전 주간 훈련에서 아직
+            // 확인하지 않은 성장을 지우면 실제 능력 상승까지 사라진 것처럼 보인다.
+            // 사용자가 확인할 때까지 기존 영수증을 보존하고 같은 능력의 연속 성장은 합친다.
+            pendingGains = Self.mergingGains(pendingGains, gains)
             lastSummary = nextSummary
             feedbackCue = nextCue
             feedbackTrigger += 1
@@ -1026,6 +1225,54 @@ final class MobileCareerStore {
         ]
         return pairs.compactMap { ability, from, to in
             to > from ? AbilityGain(ability: ability, before: from, after: to) : nil
+        }
+    }
+
+    nonisolated static func mergingGains(
+        _ existing: [AbilityGain],
+        _ incoming: [AbilityGain]
+    ) -> [AbilityGain] {
+        var merged = existing
+        for gain in incoming {
+            if let index = merged.firstIndex(where: { $0.ability == gain.ability }) {
+                let previous = merged[index]
+                merged[index] = AbilityGain(
+                    ability: gain.ability,
+                    before: min(previous.before, gain.before),
+                    after: max(previous.after, gain.after)
+                )
+            } else {
+                merged.append(gain)
+            }
+        }
+        return merged.filter { $0.after > $0.before }
+    }
+
+    private static func logMasteryChanges(
+        before: PitcherSnapshot?,
+        after: PitcherSnapshot,
+        mode: String
+    ) {
+        guard let before else { return }
+        let beforeMastery = before.effectiveMastery
+        let afterMastery = after.effectiveMastery
+        for ability in TalentAbility.allCases {
+            let from = beforeMastery.value(for: ability)
+            let to = afterMastery.value(for: ability)
+            guard to > from else { continue }
+            GameAnalytics.log(.masteryGained, [
+                "ability": ability.rawValue,
+                "level_band": MasteryEffectRules.levelBand(to),
+                "source": "growth",
+                "mode": mode,
+            ])
+            if MasteryEffectRules.isMilestone(to) {
+                GameAnalytics.log(.masteryMilestone, [
+                    "ability": ability.rawValue,
+                    "milestone": to,
+                    "mode": mode,
+                ])
+            }
         }
     }
 

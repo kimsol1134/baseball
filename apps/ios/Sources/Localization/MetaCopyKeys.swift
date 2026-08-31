@@ -53,11 +53,30 @@ enum MetaUICopyKey: String, CaseIterable, Sendable {
     case abilityAccessibility = "meta.ability.accessibility"
     case abilityAccessibilityGained = "meta.ability.accessibility.gained"
     case abilityAccessibilityTalent = "meta.ability.accessibility.talent"
+    case abilityBaseComplete = "meta.ability.base-complete"
+    case masteryStuff = "meta.mastery.stuff"
+    case masteryCommand = "meta.mastery.command"
+    case masteryMovement = "meta.mastery.movement"
+    case masteryStamina = "meta.mastery.stamina"
+    case masteryLevel = "meta.mastery.level"
+    case masteryProgress = "meta.mastery.progress"
+    case masteryMeaning = "meta.mastery.meaning"
+    case masteryAccessibility = "meta.mastery.accessibility"
 
     case statTileCurrentAccessibility = "meta.stat-tile.accessibility.current"
     case statTileCurrentCaptionAccessibility = "meta.stat-tile.accessibility.current-caption"
     case statTileChangedAccessibility = "meta.stat-tile.accessibility.changed"
     case statTileChangedCaptionAccessibility = "meta.stat-tile.accessibility.changed-caption"
+    case settingsCopySectionTitle = "settings.copy.section-title"
+    case settingsCopyDensity = "settings.copy.density"
+    case settingsCopyDensityAutomatic = "settings.copy.density.automatic"
+    case settingsCopyDensityExpanded = "settings.copy.density.expanded"
+    case settingsCopyDensityCompact = "settings.copy.density.compact"
+    case settingsCopyDensityFooter = "settings.copy.density.footer"
+    case disclosureAccessibilityExpanded = "meta.disclosure.accessibility.expanded"
+    case disclosureAccessibilityCollapsed = "meta.disclosure.accessibility.collapsed"
+    case disclosureHintExpand = "meta.disclosure.hint.expand"
+    case disclosureHintCollapse = "meta.disclosure.hint.collapse"
 }
 
 extension MetaUICopyKey {
@@ -72,4 +91,14 @@ extension GameCopyResolver {
 
 extension AppCopyKey {
     static let metaKeys = MetaUICopyKey.allCases.map(\.gameCopyKey)
+}
+
+extension CopyDensity {
+    var copyKey: MetaUICopyKey {
+        switch self {
+        case .automatic: .settingsCopyDensityAutomatic
+        case .expanded: .settingsCopyDensityExpanded
+        case .compact: .settingsCopyDensityCompact
+        }
+    }
 }

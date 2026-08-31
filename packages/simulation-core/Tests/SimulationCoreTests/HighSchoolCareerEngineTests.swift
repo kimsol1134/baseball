@@ -1607,6 +1607,13 @@ extension HighSchoolCareerEngineTests {
         object.removeValue(forKey: "injuryRecovery")
         object.removeValue(forKey: "schedule")
         object.removeValue(forKey: "worldRulesVersion")
+        // The same legacy payload also predates post-80 mastery. Leaving an explicit zero
+        // mastery object in place while signing with the legacy commitment would describe a
+        // mixed-version save that no shipped build could have written.
+        if var pitcher = object["pitcher"] as? [String: Any] {
+            pitcher.removeValue(forKey: "mastery")
+            object["pitcher"] = pitcher
+        }
         object["stateCommitment"] = ""
         let unsignedData = try JSONSerialization.data(withJSONObject: object)
         let unsigned = try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: unsignedData)

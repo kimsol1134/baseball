@@ -18,8 +18,8 @@ import java.util.Base64
 /** Strict, deterministic, shadow-only Phase 4 snapshot wire. */
 public object HighSchoolPhase4StateCodec {
     public const val SCHEMA: String = "baseball-high-school-phase4-state-v1"
-    /** v2 profiles/hand; v3 sequence history; v4 tournament/prospect fields; v5 rich content/echo; v6 Meta ledgers; v7 training evidence. */
-    public const val SCHEMA_VERSION: Int = 7
+    /** v2 profiles/hand; v3 sequence history; v4 tournament/prospect fields; v5 rich content/echo; v6 Meta ledgers; v7 training evidence; v8 mastery. */
+    public const val SCHEMA_VERSION: Int = 8
     public const val MAX_BYTES: Int = 4 * 1024 * 1024
     private const val MAGIC: String = "P4M1"
     private val ROOT_FIELDS = setOf("schema", "schemaVersion", "payload", "stateCommitment")
@@ -32,7 +32,7 @@ public object HighSchoolPhase4StateCodec {
             data.writeString(MAGIC)
             data.writeInt(SCHEMA_VERSION)
             data.writeString(HighSchoolStateCodec.encode(state.run).toBase64())
-            data.writePitcher(state.startingPitcher, includeProfiles = true)
+            data.writePitcher(state.startingPitcher, includeProfiles = true, includeMastery = true)
             data.writeInheritance(state.inheritance)
             data.writeArchive(state.archive)
             data.writeStrings(state.achievements)
@@ -100,7 +100,7 @@ public object HighSchoolPhase4StateCodec {
         val payloadVersion = input.readInt()
         if (payloadVersion != rootVersion || payloadVersion !in 1..SCHEMA_VERSION) fail("payload.version")
         val run = HighSchoolStateCodec.decode(input.readString().fromBase64())
-        val starting = input.readPitcher(includeProfiles = payloadVersion >= 2)
+        val starting = input.readPitcher(includeProfiles = payloadVersion >= 2, includeMastery = payloadVersion >= 8)
         val inheritance = input.readInheritance()
         val archive = input.readArchive()
         val achievements = input.readStrings()
@@ -121,6 +121,7 @@ public object HighSchoolPhase4StateCodec {
         val challengeBackup = input.readNullable {
             readChallengeBackup(
                 includeProfiles = payloadVersion >= 2,
+                includeMastery = payloadVersion >= 8,
                 includeTournamentSchools = payloadVersion >= 4,
                 includeProspectTags = payloadVersion >= 4,
                 includeRichEcho = payloadVersion >= 5,
@@ -166,7 +167,7 @@ public object HighSchoolPhase4StateCodec {
         )
     }
 
-    private fun DataOutputStream.writePitcher(value: HighSchoolPitcher, includeProfiles: Boolean) {
+    private fun DataOutputStream.writePitcher(value: HighSchoolPitcher, includeProfiles: Boolean, includeMastery: Boolean = false) {
         writeString(value.id); writeString(value.name); writeInt(value.stuff); writeInt(value.command); writeInt(value.movement); writeInt(value.stamina)
         if (includeProfiles) {
             writeString(value.throwingHand.name.lowercase())
@@ -174,9 +175,10 @@ public object HighSchoolPhase4StateCodec {
                 writeString(it.pitchType.wire); writeString(it.role.wire); writeInt(it.velocityTenthsKph); writeInt(it.control)
                 writeInt(it.command); writeInt(it.movement); writeInt(it.whiff); writeInt(it.weakContact); writeInt(it.fatigueCost)
             }
+            if (includeMastery) writeNullable(value.mastery) { writeMastery(it) }
         }
     }
-    private fun DataInputStream.readPitcher(includeProfiles: Boolean): HighSchoolPitcher {
+    private fun DataInputStream.readPitcher(includeProfiles: Boolean, includeMastery: Boolean = false): HighSchoolPitcher {
         val id = readString(); val name = readString(); val stuff = readInt(); val command = readInt(); val movement = readInt(); val stamina = readInt()
         if (!includeProfiles) return HighSchoolPitcher(id, name, stuff, command, movement, stamina)
         val hand = throwingHand(readString())
@@ -185,8 +187,16 @@ public object HighSchoolPhase4StateCodec {
                 pitchKind(readString()), pitchRole(readString()), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(),
             )
         }
-        return HighSchoolPitcher(id, name, stuff, command, movement, stamina, profiles, hand)
+        val mastery = if (includeMastery) readNullable { readMastery() } else null
+        return HighSchoolPitcher(id, name, stuff, command, movement, stamina, profiles, hand, mastery)
     }
+
+    private fun DataOutputStream.writeMastery(value: com.solkim.baseball.core.pitch.AbilityMasterySnapshot) {
+        writeInt(value.stuff); writeInt(value.command); writeInt(value.movement); writeInt(value.stamina)
+    }
+
+    private fun DataInputStream.readMastery(): com.solkim.baseball.core.pitch.AbilityMasterySnapshot =
+        com.solkim.baseball.core.pitch.AbilityMasterySnapshot(readInt(), readInt(), readInt(), readInt())
 
     private fun DataOutputStream.writeInheritance(value: HighSchoolInheritanceState) {
         writeInt(value.nextLifeNumber); writeInt(value.soulPoints); writeInt(value.soulTotalEarned); writeInt(value.automaticSoulEarned)
@@ -434,7 +444,7 @@ public object HighSchoolPhase4StateCodec {
     )
 
     private fun DataOutputStream.writeChallengeBackup(value: HighSchoolChallengeBackup) {
-        writeString(HighSchoolStateCodec.encode(value.run).toBase64()); writePitcher(value.startingPitcher, includeProfiles = true); writeInheritance(value.inheritance); writeArchive(value.archive); writeStrings(value.achievements); writeStrings(value.unacknowledgedAchievements); writeWeekly(value.weekly, includeMetaFields = true); writeNullable(value.pledge) { writePledge(it) }; writeNullable(value.nextRunIntent) { writeNextRunIntent(it) }; writeNullableString(value.selectedSignatureLegacyId); writeNullable(value.returnPlan) { writeReturnPlan(it, includeMetaFields = true) }; writeNullable(value.rebirthEcho) { writeEcho(it) }; writeSeasonLog(value.seasonLog); writeTournaments(value.tournaments); writeProspects(value.prospectBoard); writeULong(value.completedGameCounter); writeStrings(value.completedGameReceipts); writeTrainingEvidence(value.trainingEvidence); writeString(value.selectedDayKey); writeBoolean(value.tutorial.started); writeBoolean(value.tutorial.completed); writeCommandReceipts(value.commandReceipts); writeULong(value.revision); writeNullable(value.lastPresentation) { writePresentation(it) }
+        writeString(HighSchoolStateCodec.encode(value.run).toBase64()); writePitcher(value.startingPitcher, includeProfiles = true, includeMastery = true); writeInheritance(value.inheritance); writeArchive(value.archive); writeStrings(value.achievements); writeStrings(value.unacknowledgedAchievements); writeWeekly(value.weekly, includeMetaFields = true); writeNullable(value.pledge) { writePledge(it) }; writeNullable(value.nextRunIntent) { writeNextRunIntent(it) }; writeNullableString(value.selectedSignatureLegacyId); writeNullable(value.returnPlan) { writeReturnPlan(it, includeMetaFields = true) }; writeNullable(value.rebirthEcho) { writeEcho(it) }; writeSeasonLog(value.seasonLog); writeTournaments(value.tournaments); writeProspects(value.prospectBoard); writeULong(value.completedGameCounter); writeStrings(value.completedGameReceipts); writeTrainingEvidence(value.trainingEvidence); writeString(value.selectedDayKey); writeBoolean(value.tutorial.started); writeBoolean(value.tutorial.completed); writeCommandReceipts(value.commandReceipts); writeULong(value.revision); writeNullable(value.lastPresentation) { writePresentation(it) }
     }
     private fun DataInputStream.readChallengeBackup(
         includeProfiles: Boolean,
@@ -443,9 +453,10 @@ public object HighSchoolPhase4StateCodec {
         includeRichEcho: Boolean,
         includeMetaFields: Boolean,
         includeTrainingEvidence: Boolean,
+        includeMastery: Boolean,
     ): HighSchoolChallengeBackup {
         val run = HighSchoolStateCodec.decode(readString().fromBase64())
-        val startingPitcher = readPitcher(includeProfiles)
+        val startingPitcher = readPitcher(includeProfiles, includeMastery)
         val inheritance = readInheritance()
         val archive = readArchive()
         val achievements = readStrings()

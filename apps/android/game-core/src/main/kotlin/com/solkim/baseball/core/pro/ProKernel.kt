@@ -45,7 +45,7 @@ public class ProKernel(
     private val pitch: PitchKernel = PitchKernel(),
 ) {
     public companion object {
-        public const val CURRENT_RULES_VERSION: Int = 4
+        public const val CURRENT_RULES_VERSION: Int = ProCatalog.RULES_VERSION
 
         public fun developmentTicksRequired(ability: Int): Int = when {
             ability < 55 -> 2
@@ -196,8 +196,16 @@ public class ProKernel(
         val fatigueDelta = if (recovering) -20 else trainingLoad + outingLoad - staminaRelief
         val fatigue = clamp(state.fatigue + fatigueDelta, 0, 100)
         val injuryRoll = rng.nextInt(100)
-        val fatiguePressure = PitchAbilityRules.effectiveFatigue(fatigue, state.pitcher.stamina)
-        val injuryWeeks = if (!recovering && injuryRoll < max(2, fatiguePressure - 72)) {
+        val fatiguePressure = PitchAbilityRules.effectiveFatigue(
+            rawFatigue = fatigue,
+            stamina = state.pitcher.stamina,
+            mastery = state.pitcher.effectiveMastery.stamina,
+        )
+        // A healthy, low-fatigue week is safe. The former minimum-percent floor left a hidden
+        // two-percent roll even when the player managed workload well. An overload
+        // event also requires a real outing so recovery is an actionable answer.
+        val injuryChancePercent = max(0, fatiguePressure - 72)
+        val injuryWeeks = if (!recovering && pitches > 0 && injuryRoll < injuryChancePercent) {
             2 + rng.nextInt(4)
         } else {
             max(0, state.injuryWeeks - 1)
@@ -261,6 +269,19 @@ public class ProKernel(
         val segment = ProCatalog.segment(nextWeek)
         val news = state.news.toMutableList()
         val milestones = state.milestones.toMutableList()
+        val injuryEvent = if (injuryWeeks > 0 && state.injuryWeeks == 0) {
+            ProInjuryEventSnapshot(
+                season = state.season,
+                week = nextWeek,
+                plan = plan,
+                rawFatigue = fatigue,
+                effectiveFatigue = fatiguePressure,
+                pitches = pitches,
+                recoveryWeeks = injuryWeeks,
+                careerId = state.careerId,
+                revision = state.revision + 1UL,
+            )
+        } else null
         if (state.week == 0) milestones.addUnique("프로 첫 공식 등판")
         news.add(0, if (state.week == 0) "프로 첫 공식 등판을 마쳤습니다. ${games}경기에서 ${strikeouts}개의 삼진을 잡았습니다." else "${nextWeek}주차 · ${games}경기 · ${strikeouts}K · ${walks}볼넷 · ${runsAllowed}실점")
         if (state.level != level) {
@@ -308,11 +329,12 @@ public class ProKernel(
         val events = buildList {
             add("pro_week_resolved")
             add(if (state.level != level && level == ProLevel.MAJOR) "major_call_up" else "weekly_progress")
+            if (injuryEvent != null) add("pro_injury_started")
             if (phase == ProCareerPhase.SEASON_DECISION) add("pro_season_decision_opened")
             if (phase == ProCareerPhase.IMPORTANT_GAME) add("pro_important_game_opened")
             if (phase == ProCareerPhase.SEASON_REVIEW) add("pro_season_review_opened")
         }
-        return result(updated, seed.nextSeed(rng.next()), events)
+        return result(updated, seed.nextSeed(rng.next()), events, injuryEvent = injuryEvent)
     }
 
     public fun advanceSegment(
@@ -898,8 +920,8 @@ public class ProKernel(
     public fun commitment(state: ProState): String {
         val values = buildList {
             add(state.careerId); add(state.revision.toString()); add(state.startMode.wire)
-            add(state.sourceHighSchoolCareerId ?: "-"); add(state.highSchoolLegacyContext?.toString() ?: "-"); add(state.activeHighSchoolPreserved.toString()); add(state.seed)
-            add(state.identityName); add(state.pitcher.toString()); add(state.team.toString()); add(state.entitlement.toString())
+            add(state.sourceHighSchoolCareerId ?: "-"); add(state.highSchoolLegacyContext?.let(::legacyContextCommitment) ?: "-"); add(state.activeHighSchoolPreserved.toString()); add(state.seed)
+            add(state.identityName); add(pitcherCommitment(state.pitcher)); add(state.team.toString()); add(state.entitlement.toString())
             addAll(listOf(state.pitcher.stuff, state.pitcher.command, state.pitcher.movement, state.pitcher.stamina).map(Int::toString))
             add(state.team.id); add(state.age.toString()); add(state.season.toString()); add(state.week.toString()); add(state.phase.wire)
             add(state.level.wire); add(state.role.wire); add(state.rolePreference?.wire ?: "-")
@@ -920,6 +942,13 @@ public class ProKernel(
         }
         return StableHash.fnv1a64(values.joinToString("|"))
     }
+
+    /** Keep the hash of pre-mastery saves stable while committing new mastery-bearing pitchers. */
+    private fun pitcherCommitment(value: PitcherSnapshot): String = value.mastery?.let { value.toString() }
+        ?: "PitcherSnapshot(id=${value.id}, name=${value.name}, stuff=${value.stuff}, command=${value.command}, movement=${value.movement}, stamina=${value.stamina}, pitchProfiles=${value.pitchProfiles}, throwingHand=${value.throwingHand})"
+
+    private fun legacyContextCommitment(value: ProHighSchoolLegacyContext): String =
+        "ProHighSchoolLegacyContext(startingPitcher=${pitcherCommitment(value.startingPitcher)}, highSchoolPitcher=${pitcherCommitment(value.highSchoolPitcher)}, performance=${value.performance}, selectedAwakenings=${value.selectedAwakenings}, managerTrust=${value.managerTrust}, catcherTrust=${value.catcherTrust}, rivalTrust=${value.rivalTrust})"
 
     private fun initialState(
         seedText: String,
@@ -1016,8 +1045,14 @@ public class ProKernel(
         return SeedValue(value.toULongOrNull() ?: throw ProKernelException("pro.seed_overflow"))
     }
 
-    private fun result(state: ProState, nextSeed: String, events: List<String>, preparation: PitchPreparation? = null, presentation: com.solkim.baseball.core.pitch.TrajectoryPresentationSnapshot? = null): ProResult =
-        ProResult(signed(state), nextSeed, events, preparation, presentation)
+    private fun result(
+        state: ProState,
+        nextSeed: String,
+        events: List<String>,
+        preparation: PitchPreparation? = null,
+        presentation: com.solkim.baseball.core.pitch.TrajectoryPresentationSnapshot? = null,
+        injuryEvent: ProInjuryEventSnapshot? = null,
+    ): ProResult = ProResult(signed(state), nextSeed, events, preparation, presentation, injuryEvent = injuryEvent)
 
     private fun validate(state: ProState, phase: ProCareerPhase) {
         require(state.phase == phase) { "pro.expected_phase:${phase.wire}:${state.phase.wire}" }
@@ -1180,6 +1215,23 @@ public class ProKernel(
 
     private fun grow(pitcher: PitcherSnapshot, focus: ProGrowthFocus, points: Int, target: PitchKind?): PitcherSnapshot {
         if (points <= 0) return pitcher
+        val ability = when (focus) {
+            ProGrowthFocus.STUFF -> com.solkim.baseball.core.pitch.PitchAbilityKind.POWER
+            ProGrowthFocus.COMMAND -> com.solkim.baseball.core.pitch.PitchAbilityKind.COMMAND
+            ProGrowthFocus.MOVEMENT -> com.solkim.baseball.core.pitch.PitchAbilityKind.MOVEMENT
+            ProGrowthFocus.STAMINA -> com.solkim.baseball.core.pitch.PitchAbilityKind.STAMINA
+        }
+        val before = when (focus) {
+            ProGrowthFocus.STUFF -> pitcher.stuff
+            ProGrowthFocus.COMMAND -> pitcher.command
+            ProGrowthFocus.MOVEMENT -> pitcher.movement
+            ProGrowthFocus.STAMINA -> pitcher.stamina
+        }
+        val after = (before.toLong() + points.toLong()).coerceIn(20L, 80L).toInt()
+        val overflow = max(0, points - max(0, after - before))
+        val mastery = if (pitcher.mastery != null || overflow > 0) {
+            (pitcher.mastery ?: com.solkim.baseball.core.pitch.AbilityMasterySnapshot.ZERO).add(ability, overflow)
+        } else null
         val profiles = pitcher.pitchProfiles?.map { profile ->
             val targetMovement = focus == ProGrowthFocus.MOVEMENT && profile.pitchType != PitchKind.FOUR_SEAM && (target == null || target == profile.pitchType)
             profile.copy(
@@ -1197,6 +1249,7 @@ public class ProKernel(
             movement = (pitcher.movement + if (focus == ProGrowthFocus.MOVEMENT) points else 0).coerceIn(20, 80),
             stamina = (pitcher.stamina + if (focus == ProGrowthFocus.STAMINA) points else 0).coerceIn(20, 80),
             pitchProfiles = profiles,
+            mastery = mastery,
         )
     }
 

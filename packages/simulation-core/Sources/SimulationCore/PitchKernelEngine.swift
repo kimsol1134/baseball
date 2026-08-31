@@ -677,9 +677,9 @@ public struct PitchKernelEngine: Sendable {
         guard isValidZone(call.zone) else {
             throw SimulationError.invalidZone(row: call.zone.row, column: call.zone.column)
         }
-        if pitcher.pitchProfiles != nil, pitcher.profile(for: call.pitchType) == nil {
+        if pitcher.pitchProfiles != nil, pitcher.gameReadyProfile(for: call.pitchType) == nil {
             throw SimulationError.invalidPitchProfile(
-                "\(call.pitchType.rawValue) is not in this pitcher's repertoire"
+                "\(call.pitchType.rawValue) is not game-ready in this pitcher's repertoire"
             )
         }
     }
@@ -905,7 +905,8 @@ public struct PitchKernelEngine: Sendable {
         let commandRating = PitchAbilityRules.commandRating(pitcher: params.pitcher, profile: profile)
         let fatiguePressure = PitchAbilityRules.effectiveFatigue(
             rawFatigue: params.context.fatigue,
-            stamina: params.pitcher.stamina
+            stamina: params.pitcher.stamina,
+            mastery: params.pitcher.effectiveMastery.stamina
         )
         let effectiveCommand = clamp(
             commandRating * 10 - fatiguePressure * 2 - intensityEffect.commandPenalty,
@@ -985,7 +986,8 @@ public struct PitchKernelEngine: Sendable {
             pitcher: params.pitcher,
             pitchType: params.call.pitchType,
             intensity: params.call.intensity,
-            fatigue: params.context.fatigue
+            fatigue: params.context.fatigue,
+            mastery: params.pitcher.effectiveMastery.stuff
         )
             + generator.nextInt(upperBound: 21) - 10
             // ±1.0 km/h from the release. Small, but it is the number the player watches after a
@@ -995,7 +997,18 @@ public struct PitchKernelEngine: Sendable {
             // number on screen right after the throw — the player sees the reward immediately.
             + (perfectRelease ? 6 : 0)
         let velocity = min(PitchAbilityRules.maximumExecutedVelocityTenthsKPH, rawVelocity)
-        let movementScale = (profile?.movement ?? params.pitcher.movement) - 50
+        let movementScale: Int
+        if let profile {
+            movementScale = MasteryEffectRules.adjustedRating(
+                profile.movement,
+                level: params.pitcher.effectiveMastery.movement
+            ) - 50
+        } else {
+            movementScale = MasteryEffectRules.adjustedRating(
+                params.pitcher.movement,
+                level: params.pitcher.effectiveMastery.movement
+            ) - 50
+        }
         let actualX = target.x + offsetX
         let actualY = target.y + offsetY
         let horizontalMovement = horizontalBreak + movementScale * 2
@@ -1156,6 +1169,21 @@ public struct PitchKernelEngine: Sendable {
         }
 
         let profile = params.pitcher.profile(for: params.call.pitchType)
+        let mastery = params.pitcher.effectiveMastery
+        let effectiveStuff = MasteryEffectRules.adjustedRating(
+            params.pitcher.stuff,
+            level: mastery.stuff
+        )
+        let effectiveMovement = MasteryEffectRules.adjustedRating(
+            params.pitcher.movement,
+            level: mastery.movement
+        )
+        let effectiveProfileMovement = profile.map {
+            MasteryEffectRules.adjustedRating($0.movement, level: mastery.movement)
+        }
+        let effectiveWeakContact = profile.map {
+            MasteryEffectRules.adjustedRating($0.weakContact, level: mastery.movement)
+        }
         // 강속구 원석은 낮은 제구·변화 프로필 때문에 기존 식에서 장점까지 상쇄됐다.
         // 절대 구위 보너스가 아니라 **다른 자기 능력보다 얼마나 구위에 특화됐는지**만
         // 보상한다. 그래서 균형형이 공짜 보너스를 받지 않고, 구위 몰입 회차는 실제로 포심
@@ -1163,8 +1191,12 @@ public struct PitchKernelEngine: Sendable {
         // 지배하므로, 포심을 선택했을 때만 강점을 얻는 명확한 전술적 대가를 둔다.
         let powerEdge = max(
             0,
-            params.pitcher.stuff
-                - max(params.pitcher.command, params.pitcher.movement, params.pitcher.stamina)
+            effectiveStuff
+                - max(
+                    PitchAbilityRules.commandRating(pitcher: params.pitcher, profile: profile),
+                    effectiveMovement,
+                    params.pitcher.stamina
+                )
         )
         // 시작 강속구형의 4점 우위만으로도 포심 정체성이 드러나고, 이후 격차가 커져도
         // 무한히 스케일하지 않도록 120에서 막는다.
@@ -1184,10 +1216,10 @@ public struct PitchKernelEngine: Sendable {
             // 프로필 구속에 종합 구위를 다시 더하던 중복 계산을 제거하면서 사라진
             // `(stuff - 50)`만 헛스윙 난도로 옮긴다. 화면 숫자는 현실적으로 유지하되,
             // 구위에 투자한 캐릭터의 탈삼진 정체성은 약해지지 않는다.
-            ratingDifficulty = (params.pitcher.stuff - 50) * 5
+            ratingDifficulty = (effectiveStuff - 50) * 5
                 + (profile.whiff - 50) * 4
-                + (params.pitcher.movement - 50) * 3
-                + (profile.movement - 50) * 3
+                + (effectiveMovement - 50) * 3
+                + ((effectiveProfileMovement ?? profile.movement) - 50) * 3
                 + powerSpecialization
                 // 잘 던진 공이 배트를 헛돌게 한다.
                 //
@@ -1198,8 +1230,8 @@ public struct PitchKernelEngine: Sendable {
                 // 역전은 제구 이득 자체가 아니라 강도 상수(`PitchAbilityRules`)로 잡는다.
                 + 30 + max(0, execution.executionQuality - 500) / 3
         } else {
-            ratingDifficulty = (params.pitcher.stuff - 50) * 7
-                + (params.pitcher.movement - 50) * 6
+            ratingDifficulty = (effectiveStuff - 50) * 7
+                + (effectiveMovement - 50) * 6
                 + powerSpecialization
                 + 30 + max(0, execution.executionQuality - 500) / 3
         }
@@ -1275,9 +1307,9 @@ public struct PitchKernelEngine: Sendable {
                 + (pitchMatched ? 90 : -70)
                 + (zoneMatched ? 45 : -35)
                 + (pitchMatched ? cappedAdaptation / 8 : 0)
-                - ((profile?.weakContact ?? 50) - 50) * 2
-                - (params.pitcher.movement - 50)
-                - ((profile?.movement ?? params.pitcher.movement) - 50)
+                - ((effectiveWeakContact ?? 50) - 50) * 2
+                - (effectiveMovement - 50)
+                - ((effectiveProfileMovement ?? effectiveMovement) - 50)
                 - powerSpecialization / 2
                 - max(0, execution.executionQuality - 500) / 5
                 + scoutingQuality
@@ -1721,19 +1753,23 @@ public struct PitchKernelEngine: Sendable {
             .sorted { $0.pitchType.rawValue < $1.pitchType.rawValue }
             .map { canonical(Optional($0)) }
             .joined(separator: ",") ?? "legacy"
-        return [
+        var values = [
             pitcher.id,
             String(pitcher.stuff),
             String(pitcher.command),
             String(pitcher.movement),
             String(pitcher.stamina),
             profiles
-        ].joined(separator: ":")
+        ]
+        if let mastery = pitcher.mastery {
+            values.append("mastery:\(mastery.stuff):\(mastery.command):\(mastery.movement):\(mastery.stamina)")
+        }
+        return values.joined(separator: ":")
     }
 
     private func canonical(_ profile: PitchProfileSnapshot?) -> String {
         guard let profile else { return "legacy" }
-        return [
+        var values = [
             profile.pitchType.rawValue,
             profile.role.rawValue,
             String(profile.velocityTenthsKPH),
@@ -1743,7 +1779,12 @@ public struct PitchKernelEngine: Sendable {
             String(profile.whiff),
             String(profile.weakContact),
             String(profile.fatigueCost)
-        ].joined(separator: ":")
+        ]
+        // Preserve legacy preparation/event tokens byte-for-byte when the old save has no key.
+        if let availability = profile.availability {
+            values.append("availability=\(availability.rawValue)")
+        }
+        return values.joined(separator: ":")
     }
 
     private func canonical(_ memory: RivalMemorySnapshot?) -> String {

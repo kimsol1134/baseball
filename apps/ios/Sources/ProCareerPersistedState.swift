@@ -8,6 +8,8 @@ struct ProCareerPersistedState: Equatable {
     var sourceHighSchoolCareerID: String? = nil
     var careerOrigin: MobileCareerStore.ProCareerOrigin? = nil
     var syncedRevision: UInt64 = 0
+    var pendingInjuryEvent: ProInjuryEventSnapshot? = nil
+    var acknowledgedInjuryEventID: String? = nil
 
     static let empty = ProCareerPersistedState()
 
@@ -19,5 +21,15 @@ struct ProCareerPersistedState: Equatable {
         draft.result = result
         draft.gameResume = gameResume
         return draft
+    }
+
+    func withInjury(
+        pending: ProInjuryEventSnapshot?,
+        acknowledgedID: String?
+    ) -> ProCareerPersistedState {
+        var next = self
+        next.pendingInjuryEvent = pending
+        next.acknowledgedInjuryEventID = acknowledgedID
+        return next
     }
 }

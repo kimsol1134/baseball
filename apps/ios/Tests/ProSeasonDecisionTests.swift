@@ -395,6 +395,12 @@ final class ProSeasonDecisionTests: XCTestCase {
             return shouldFail ? false : careerSync.write(data)
         })
         store.updatePersisted { $0.result = important }
+        let unacknowledgedGrowth = MobileCareerStore.AbilityGain(
+            ability: .movement,
+            before: important.snapshot.pitcher.movement - 1,
+            after: important.snapshot.pitcher.movement
+        )
+        store.pendingGains = [unacknowledgedGrowth]
         store.lastSummary = "등판 전 화면"
         store.loadState = .ready
 
@@ -456,6 +462,11 @@ final class ProSeasonDecisionTests: XCTestCase {
 
         XCTAssertNil(store.pitchSession)
         XCTAssertGreaterThan(store.state?.revision ?? 0, checkpointed.snapshot.revision)
+        XCTAssertEqual(
+            store.pendingGains,
+            [unacknowledgedGrowth],
+            "직접 경기 정산이 직전 훈련의 미확인 성장 영수증을 지우면 안 됩니다."
+        )
         XCTAssertEqual(events.filter { $0 == .gameFinished }.count, 1)
         let settled = store.result
         store.finishImportantGame()

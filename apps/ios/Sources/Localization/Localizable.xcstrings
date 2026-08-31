@@ -354,7 +354,7 @@
     "opening.eyebrow" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Three years of high school. One draft." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高校３年間。ドラフトは 1 つです。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高校3年間。ドラフトは一度きり。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교 3년, 한 번의 드래프트" } }
       }
     },
@@ -402,9 +402,9 @@
     },
     "prologue.ability.no-ceiling" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No ceiling" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "天井なし" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한계 없음" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Base ability complete" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基本能力完成" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 능력 완성" } }
       }
     },
     "prologue.ability.talent" : {
@@ -4218,7 +4218,7 @@
     "pitch.abort.game.confirm" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Forfeit Inning" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "没収イニング" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "イニングを捨てて中断" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "이닝을 버리고 중단한다" } }
       }
     },
@@ -4260,28 +4260,28 @@
     "pitch.action.abort" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Leave" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "休暇を取る" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "中断" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "중단" } }
       }
     },
     "pitch.badge.clutch" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "CLUTCH PITCH" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "クラッチ投球" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "勝負球" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "승부구" } }
       }
     },
     "pitch.badge.perfect-release" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "PERFECT RELEASE" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "完璧なリリース" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "パーフェクトリリース" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "퍼펙트 릴리스" } }
       }
     },
     "pitch.badge.sequence" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "SEQUENCE READ · %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "シーケンス読み取り · %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読み合い的中 · %@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "수싸움 적중 · %@" } }
       }
     },
@@ -4323,14 +4323,14 @@
     "pitch.build.stamina" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Stamina build synergy: effective fatigue is held to %lld." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "スタミナ 相乗効果を構築: 効果的な疲労は %lld に保持されます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "スタミナ型シナジー · 累積疲労を%lldに抑えています。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "이닝 소화형 시너지 · 누적 피로 %lld로 억제 중입니다." } }
       }
     },
     "pitch.coach.first" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "1. Hold to wind up, then release in the green center. Your catcher has already called the pitch and location." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1. 押し続けて巻き上げ、緑色の中央で放します。あなたの捕手はすでに投球とコースを呼び出しています。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "① 長押しでワインドアップ — メーターが中央の緑に来たら指を離そう。球種とコースは捕手が決めてある。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "① 길게 눌러 와인드업 — 미터가 가운데 초록에 올 때 떼자. 구종과 코스는 포수가 골라 뒀다." } }
       }
     },
@@ -4351,14 +4351,14 @@
     "pitch.coach.second" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "2. Do not show the same look twice. Change speed or location to disrupt the hitter's timing." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "2.同じ表情を二度見せないでください。速度や位置を変更して打者のタイミングを狂わせます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "② 同じ球を同じコースに続けない — 球種かコースを変えて打者の目を狂わせよう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "② 같은 곳에 두 번은 없다 — 구종이나 코스를 바꿔 타자의 눈을 흔들자." } }
       }
     },
     "pitch.feedback.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · Location execution %lld" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ · コース実行%lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ · コース精度 %lld" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · 코스 실행 %lld" } }
       }
     },
@@ -4379,14 +4379,14 @@
     "pitch.feedback.outcome.double" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The contact reached the gap for extra bases." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "接触は長打点に達した。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "長打を許した。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "장타를 허용했습니다." } }
       }
     },
     "pitch.feedback.outcome.foul" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The hitter barely stayed alive." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打者はかろうじて生き残った。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打者はかろうじてファウルで逃げた。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "타자가 간신히 걷어냈습니다." } }
       }
     },
@@ -4400,28 +4400,28 @@
     "pitch.feedback.outcome.home-run" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The hitter drove it out of the park." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打者はそれを公園の外に追い出した。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打球はスタンドに消えた。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "타구가 담장을 넘었습니다." } }
       }
     },
     "pitch.feedback.outcome.in-play-out" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The defense converted the contact into an out." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "守備側はその接触をアウトに変えた。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打球を守備がアウトにした。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "수비가 아웃으로 바꿨습니다." } }
       }
     },
     "pitch.feedback.outcome.single" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The ball found open grass." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ボールは開いた芝生を見つけた。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打球は野手の間を抜けた。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "빈 곳에 떨어졌습니다." } }
       }
     },
     "pitch.feedback.outcome.swinging-strike" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "You beat the bat." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたはバットを打ちました。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "バットが空を切った。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "방망이를 끌어냈습니다." } }
       }
     },
@@ -4449,7 +4449,7 @@
     "pitch.feedback.selection.poor" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Poor pitch choice" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "投球の選択が悪い" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球種選択ミス" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "나쁜 선택" } }
       }
     },
@@ -4463,56 +4463,56 @@
     "pitch.intent.chase.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Finish beyond the selected edge to earn a chase. It is more likely to miss for a ball." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "選択したエッジを超えてフィニッシュすると、チェイスを獲得できます。ボールを逃す可能性が高くなります。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "狙ったコースの外へ外して空振りを誘います。ボールになる確率は高めです。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "고른 코스 바깥으로 빼서 헛스윙을 노리는 대신 볼이 될 확률이 큽니다." } }
       }
     },
     "pitch.intent.chase.middle.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "From the middle target, this call finishes below the zone. It can earn a chase, but is more likely to be a ball." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "中央のターゲットから、このコールはゾーンの下で終了します。チェイスを稼ぐことはできますが、ボールになる可能性が高くなります。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "真ん中狙いからは低めに外れるボール球になります。空振りを誘えますが、ボールになる確率が高めです。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "한복판에서는 낮은 쪽으로 빼는 공이 됩니다. 헛스윙을 노리는 대신 볼이 될 확률이 큽니다." } }
       }
     },
     "pitch.intent.edge.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Paint the edge to disrupt timing, at the cost of a tougher target." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "より厳しいターゲットを犠牲にして、エッジをペイントしてタイミングを狂わせます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "コースぎりぎりを突いてタイミングを外しますが、制球の難度は上がります。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "경계를 노려 배트를 늦추지만 제구 난도가 높습니다." } }
       }
     },
     "pitch.intent.strike.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "More likely to land for a strike, but also easier to square up." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ストライクを狙って着地する可能性が高くなりますが、スクエアアップも容易になります。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ストライクになりやすい反面、痛打されるリスクも上がります。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "스트라이크 확률이 높고 맞을 위험도 함께 커집니다." } }
       }
     },
     "pitch.matchup.stats" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Contact %lld · Discipline %lld · Power %lld" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "連絡先 %lld · 規律 %lld · 電力 %lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ミート %lld · 選球眼 %lld · パワー %lld" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "공 맞히기 %lld · 볼 고르기 %lld · 장타력 %lld" } }
       }
     },
     "pitch.matchup.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "AT THE PLATE" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "アット・ザ・プレート" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打席" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "타석" } }
       }
     },
     "pitch.sequence.counter-read.detail" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "You broke the pattern the opposition had identified." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたは野党が特定したパターンを破りました。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "相手に読まれたパターンを断ち切り、結果につなげました。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "상대가 읽은 반복을 끊고 좋은 결과를 만들었습니다." } }
       }
     },
     "pitch.sequence.counter-read.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "COUNTERED THE READ" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "カウンターリード" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読みを逆手に取った" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "읽힘을 역이용했다" } }
       }
     },
@@ -4526,7 +4526,7 @@
     "pitch.sequence.expand.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "EXPANDED THE ZONE" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ゾーンを拡張しました" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "2ストライクからゾーンを広げた" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "2스트라이크 뒤 존을 넓혔다" } }
       }
     },
@@ -4540,7 +4540,7 @@
     "pitch.sequence.eye-level.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "CHANGED EYE LEVEL" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "アイレベルの変更" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "目線を変えた" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "눈높이를 바꿨다" } }
       }
     },
@@ -4554,7 +4554,7 @@
     "pitch.sequence.inside-outside.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "USED BOTH EDGES" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "両エッジを使用" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "内外角を使い分けた" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "양쪽을 썼다" } }
       }
     },
@@ -4568,7 +4568,7 @@
     "pitch.sequence.speed-ladder.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "CHANGED SPEEDS" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速度の変更" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "緩急で崩した" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "속도 차로 타이밍을 뺏었다" } }
       }
     },
@@ -4582,7 +4582,7 @@
     "pitch.sequence.steal-strike.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "STOLE A STRIKE" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ストライクを盗む" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "カウントを盗んだ" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "카운트를 훔쳤다" } }
       }
     },
@@ -4631,7 +4631,7 @@
     "pitch.trait.anchor.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "You hold your form with runners aboard." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ランナーを乗せたままフォームを維持します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "走者を背負っても崩れません。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "주자가 있을 때 흔들리지 않습니다" } }
       }
     },
@@ -4645,7 +4645,7 @@
     "pitch.trait.closer.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Your pitches play up with two strikes." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたの投球は 2 ストライクで終わります。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "2ストライクから球威が増します。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "2스트라이크에서 공이 무거워집니다" } }
       }
     },
@@ -4687,70 +4687,70 @@
     "pitch.zone.high-inside" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Up and in" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "上と中" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "内角高め" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "높은 몸쪽" } }
       }
     },
     "pitch.zone.high-middle" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Up" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "上へ" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高め" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "높은 가운데" } }
       }
     },
     "pitch.zone.high-outside" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Up and away" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "アップアンドアウェイ" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "外角高め" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "높은 바깥쪽" } }
       }
     },
     "pitch.zone.in" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "IN THE ZONE" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "イン・ザ・ゾーン" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ゾーン内" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "존 안" } }
       }
     },
     "pitch.zone.low-inside" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Down and in" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ダウンとイン" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "内角低め" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮은 몸쪽" } }
       }
     },
     "pitch.zone.low-middle" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Down" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ダウン" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "低め" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮은 가운데" } }
       }
     },
     "pitch.zone.low-outside" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Down and away" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ダウンアンドアウェー" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "外角低め" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮은 바깥쪽" } }
       }
     },
     "pitch.zone.middle-inside" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Inside" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "内部" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "内角" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "가운데 몸쪽" } }
       }
     },
     "pitch.zone.middle-middle" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Middle-middle" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "中中" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "真ん中" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "가운데" } }
       }
     },
     "pitch.zone.middle-outside" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Away" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "離れて" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "外角" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "가운데 바깥쪽" } }
       }
     },
@@ -4799,70 +4799,70 @@
     "pitch.adaptation.learning" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Picking it up" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "それを拾う" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読まれ始めている" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "읽어 가는 중" } }
       }
     },
     "pitch.adaptation.locked" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Locked on" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ロックオン" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "完全に読まれた" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "완전히 읽힘" } }
       }
     },
     "pitch.adaptation.no-data" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "No read yet" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "まだ読んでいません" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "まだ読まれていない" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "아직 못 읽음" } }
       }
     },
     "pitch.adaptation.pitch" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "They are sitting on the %@. Mix in another pitch." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "彼らは%@に座っています。別の投球を混ぜます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@が読まれています。他の球種を混ぜましょう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 반복이 읽히고 있습니다. 다른 구종을 섞어 보세요." } }
       }
     },
     "pitch.adaptation.pitch-and-zone" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "They have identified %@ at %@. Change either the pitch or the location." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "彼らは%@で%@を特定しました。投球または位置を変更します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@と%@の組み合わせが読まれています。どちらかを変えましょう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@와 %@ 반복이 읽혔습니다. 둘 중 하나를 바꾸세요." } }
       }
     },
     "pitch.adaptation.quiet" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The opposing bench is tracking your patterns." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "相手ベンチはあなたのパターンを追跡しています。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "相手ベンチが配球の傾向を探っています。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "상대 벤치가 반복을 살피고 있습니다." } }
       }
     },
     "pitch.adaptation.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "HITTER READ" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打者の読み取り" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打者の読み" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "타자가 내 공을 읽는 정도" } }
       }
     },
     "pitch.adaptation.watching" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Watching" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "見てる" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "様子見" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "지켜보는 중" } }
       }
     },
     "pitch.adaptation.zone" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "They are reading %@. Change the hitter's eye line." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "彼らは%@と読んでいます。打者の目線を変える。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@が読まれています。目線を変えましょう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 반복이 읽히고 있습니다. 시선을 바꿔 보세요." } }
       }
     },
     "pitch.analysis.actual-damage" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Actual Damage" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "実際のダメージ" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "実際の危険度" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "실제 위험" } }
       }
     },
@@ -4890,35 +4890,35 @@
     "pitch.analysis.confidence.developing" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Developing read" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "開発中の読み取り" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "データ蓄積中" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "쌓이는 중" } }
       }
     },
     "pitch.analysis.confidence.low" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Small sample" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "少量のサンプル" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "サンプル不足" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "표본이 적습니다" } }
       }
     },
     "pitch.analysis.confidence.reliable" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Reliable read" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "確実な読み取り" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "信頼できるデータ" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "믿을 만합니다" } }
       }
     },
     "pitch.analysis.expected-damage" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Expected Damage" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "予想されるダメージ" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "想定の危険度" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "예상 위험" } }
       }
     },
     "pitch.analysis.growth-signal" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Your development translated into better pitches in this outing." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたの成長は、今回の遠征でより良い投球につながりました。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "鍛えた能力がこの登板の好投につながりました。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "키운 능력이 이번 등판의 좋은 공으로 이어졌습니다." } }
       }
     },
@@ -4932,7 +4932,7 @@
     "pitch.analysis.pattern-warning" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Your mix became predictable. Change speed or location earlier next time." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ミックスが予測可能になりました。次回からは速度や位置を早めに変更してください。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "同じ配球が続きました。次の登板では早めに緩急やコースを変えましょう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "같은 배합이 반복됐습니다. 다음 등판에는 속도나 코스를 먼저 바꿔 보세요." } }
       }
     },
@@ -4960,21 +4960,21 @@
     "pitch.analysis.zone-rate" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Zone Rate" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ゾーンレート" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ゾーン率" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "존 통과" } }
       }
     },
     "pitch.auto-release.label" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Auto Release — tap once for a neutral delivery" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自動リリース — ニュートラル配信するには 1 回タップします" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自動リリース — タップ1回でニュートラルな投球" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동 릴리스 — 탭 한 번으로 중립 투구" } }
       }
     },
     "pitch.build.card.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "YOUR PITCH" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたの投球" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球種 · 自分の球" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "구종 · 내가 만든 공" } }
       }
     },
@@ -5002,14 +5002,14 @@
     "pitch.build.metric.stamina" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Stamina · Effective Fatigue" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "スタミナ · 効果的な疲労" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "スタミナ · 体感疲労" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "체력 · 체감 피로" } }
       }
     },
     "pitch.build.metric.velocity" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Baseline Velocity" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ベースライン速度" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基準球速" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "기준 구속" } }
       }
     },
@@ -5114,7 +5114,7 @@
     "pitch.runners.none" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "bases empty" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基地が空" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "走者なし" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "주자 없음" } }
       }
     },
@@ -5135,21 +5135,21 @@
     "pitch.scoreboard.accessibility.outing" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "This outing: %lld strikeouts, %lld walks, %lld runs" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この試合: %lld 三振、%lld 四球、%lld 走塁" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この登板: 三振%lld・四球%lld・失点%lld" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 등판 %lld탈삼진 %lld볼넷 %lld실점" } }
       }
     },
     "pitch.scoreboard.ahead" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Ahead by %lld" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この先%lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%lld点リード" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld점 앞섬" } }
       }
     },
     "pitch.scoreboard.behind" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Behind by %lld" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "後ろに%lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%lld点ビハインド" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld점 뒤짐" } }
       }
     },
@@ -5177,21 +5177,21 @@
     "pitch.scoreboard.tied" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Tied" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "縛られた" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "同点" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "동점" } }
       }
     },
     "pitch.selection.pitch.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "PITCH · YOUR ARSENAL" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "投球・あなたのアーセナル" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球種 · 持ち球" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "구종 · 내가 만든 공" } }
       }
     },
     "pitch.selection.plan.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "PLAN · EFFORT" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "計画・取り組み" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "狙い · 力配分" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "노림 · 힘 배분" } }
       }
     },
@@ -5205,28 +5205,28 @@
     "pitch.stakes.accessibility" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Game stakes: %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "試合の賭け金: %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この勝負の重要度: %@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 승부의 중요도, %@" } }
       }
     },
     "pitch.stakes.high" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "High leverage" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ハイレバレッジ" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "勝負どころ" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "승부처" } }
       }
     },
     "pitch.stakes.label" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "STAKES" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "賭け金" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "重要度" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "중요도" } }
       }
     },
     "pitch.stakes.maximum" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Everything rides on this" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "すべてはこれに乗っています" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ここで決まる" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "여기서 끝난다" } }
       }
     },
@@ -5240,7 +5240,7 @@
     "pitch.stakes.swing" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Momentum at stake" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "危機に瀕する勢い" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "流れを左右する場面" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "흐름이 갈린다" } }
       }
     },
@@ -5254,21 +5254,21 @@
     "pitch.stat.release-best" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Average across %lld manual pitches — your best yet." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%lld 手動投球全体の平均 - これまでの最高。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自分で投げた%lld球の平均 — 自己ベスト更新。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 던진 %lld구 평균 — 지금까지 가장 좋았습니다." } }
       }
     },
     "pitch.stat.release-compare" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Average across %lld manual pitches · Personal best %lld" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%lld マニュアル投球全体の平均 · 自己ベスト %lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自分で投げた%lld球の平均 · 自己ベスト %lld" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 던진 %lld구 평균 · 개인 최고 %lld" } }
       }
     },
     "pitch.stat.release-title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Release This Outing" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この登板をリリースする" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この登板のリリース" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "이번 등판 릴리스" } }
       }
     },
@@ -5282,14 +5282,14 @@
     "pitch.stat.top-velocity" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Top Velocity" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "トップベロシティ" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "最速" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "최고 구속" } }
       }
     },
     "pitch.stat.whiff-record" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "New single-outing whiff record. Your developed stuff is showing up." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "単走新記録空振り。あなたの開発した球威が現れています。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1登板での空振り新記録 — 鍛えた球威が形になっています。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 등판 최다 헛스윙 — 키운 구위가 손에 잡힙니다." } }
       }
     },
@@ -5303,7 +5303,7 @@
     "pitch.catcher.accept" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Take Catcher's Call" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "捕手のコールを受ける" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "サインを受け入れる" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수 사인 수락" } }
       }
     },
@@ -5338,21 +5338,21 @@
     "pitch.catcher.card.manual" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "YOUR PLAN · MANUAL CALL" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたの計画 · 手動通話" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自分の配球 · マニュアル" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 배합 · 직접 선택" } }
       }
     },
     "pitch.catcher.card.matches" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "YOUR PLAN · MATCHES THE CALL" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたの計画はニーズにマッチします" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自分の配球 · サインと一致" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 배합 · 사인과 일치" } }
       }
     },
     "pitch.catcher.card.synced" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "CATCHER CALL · SYNCED" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "捕手コール · 同期" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "捕手のサイン · 連動中" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수 사인 · 연동 중" } }
       }
     },
@@ -5366,28 +5366,28 @@
     "pitch.catcher.hold" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Hold My Call" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "電話を保留してください" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自分の配球を貫く" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "내 선택 유지" } }
       }
     },
     "pitch.catcher.hold.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Changing the call turns this on and carries your plan into the next pitch." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "通話を変更するとこれがオンになり、計画が次の投球に持ち込まれます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "配球を自分で変えるとオンになり、次の一球にも同じ配球を引き継ぎます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "직접 수정하면 자동으로 켜지고, 다음 공에도 같은 배합을 유지합니다." } }
       }
     },
     "pitch.catcher.proposal" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "CATCHER'S CALL" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "捕手ズコール" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "捕手のサイン" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수 제안" } }
       }
     },
     "pitch.catcher.primary" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan A · Attack the read" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プラン A · リードを攻撃する" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プランA · 読んだ弱点を突く" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "1안 · 읽은 약점 공략" } }
       }
     },
@@ -5401,28 +5401,28 @@
     "pitch.catcher.risk.walk" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Risk: miss the edge and fall behind" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リスク: エッジを逃して遅れを取る" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リスク: コースを外れてカウントを悪くする" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "위험: 코스를 벗어나 불리한 카운트" } }
       }
     },
     "pitch.catcher.risk.damage" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Risk: a strike can become hard contact" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リスク: 打撃は強い打球になる可能性があります" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リスク: ストライクが強い打球になる恐れ" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "위험: 스트라이크가 강한 타구로 연결" } }
       }
     },
     "pitch.catcher.risk.miss" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Risk: no chase means a clear ball" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リスク: ノーチェイスはクリアボールを意味します" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リスク: 振ってくれなければただのボール" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "위험: 타자가 참으면 그대로 볼" } }
       }
     },
     "pitch.catcher.reason.ahead" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Use the count advantage and make the hitter chase." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "カウント有利を生かして打者を追撃させる。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "カウント有利を生かしてボール球を振らせましょう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "유리한 카운트에서 존을 넓힙니다." } }
       }
     },
@@ -5443,7 +5443,7 @@
     "pitch.catcher.reason.double-play" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Keep it down and set up a double-play ball." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "抑えて併殺打を仕掛ける。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "低めに集めて併殺打を狙います。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮은 공으로 병살 타구를 노립니다." } }
       }
     },
@@ -5457,7 +5457,7 @@
     "pitch.catcher.reason.pattern" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "They have picked up the pattern. Show them a different look." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "彼らはそのパターンを掴んだのです。彼らに違う表情を見せてみましょう。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "配球を読まれています。違う球を見せましょう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "상대가 반복을 읽었습니다. 다른 배합을 보여 주세요." } }
       }
     },
@@ -5471,21 +5471,21 @@
     "pitch.catcher.reason.sac-fly" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Stay down to take away the sacrifice fly." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "下がって犠飛を奪う。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "犠飛を防ぐため低めを突きます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "뜬공을 막기 위해 낮은 코스로 갑니다." } }
       }
     },
     "pitch.catcher.reason.walk" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Get back over the plate and avoid the walk." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プレートを越えて戻り、四球を避けてください。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ゾーンに戻して四球を避けましょう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "볼넷을 피하고 존으로 돌아옵니다." } }
       }
     },
     "pitch.catcher.reason.weakness" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Attack the weakness in the scouting report." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "偵察レポートで弱点を攻撃します。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "分析で判明した弱点をすぐ突きます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "확인된 약점을 바로 공략합니다." } }
       }
     },
@@ -5499,14 +5499,14 @@
     "pitch.catcher.scout.avoid" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "AVOID · %@ at %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "避けてください · %@ で %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "避ける · %@ · %@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "피할 것 — %@ · %@" } }
       }
     },
     "pitch.catcher.scout.estimate" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Early read: the weakness appears to be %@ at %@." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "初期の情報: 弱点は %@ の %@ であるようです。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "推定段階: 弱点は%@・%@付近と見られます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "아직 추정입니다. 약점은 %@ · %@ 근처로 보입니다." } }
       }
     },
@@ -5520,7 +5520,7 @@
     "pitch.catcher.selected" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "YOUR PITCH" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "あなたの投球" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "今投げる球" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금 던질 공" } }
       }
     },
@@ -5583,14 +5583,14 @@
     "pitch.delivery.hold" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "HOLD TO WIND UP" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "長押しして巻き上げます" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "長押しでワインドアップ" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "길게 눌러 와인드업" } }
       }
     },
     "pitch.delivery.hold-longer" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Too quick — hold longer to fill the meter" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速すぎます - メーターを満たすまで長押しします" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "短すぎます — 長押しでメーターをためましょう" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "너무 짧아요 — 길게 눌러 미터를 채우세요" } }
       }
     },
@@ -5646,7 +5646,7 @@
     "pitch.delivery.verdict.excellent" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Excellent release" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "優れたリリース" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "見事なリリース" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "완벽한 릴리스" } }
       }
     },
@@ -5660,14 +5660,14 @@
     "pitch.delivery.verdict.missed" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The pitch got away from you" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "投球が君から離れていった" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "手元から抜けた" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "손에서 빠졌습니다" } }
       }
     },
     "pitch.delivery.verdict.okay" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Playable release" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プレイアブルリリース" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "まずまずのリリース" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "무난한 릴리스" } }
       }
     },
@@ -5681,7 +5681,7 @@
     "pitch.delivery.wait" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "WAIT FOR THE CENTER" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "センターを待ちます" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "タイミングを待つ" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "타이밍을 기다리세요" } }
       }
     },
@@ -5695,7 +5695,7 @@
     "pitch.drama.fielding" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Ball traveled %@. Fielded by the %@." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ボールは%@を移動しました。 %@ が担当。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打球は%@。%@が処理した。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "타구 %@, %@." } }
       }
     },
@@ -5772,91 +5772,91 @@
     "pitch.scenario.pro.call-up.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Down one · Runner on second · No outs. Hold the line and give the offense a chance." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "１ダウン・ランナー２塁・ノーアウト。ラインを維持して攻撃にチャンスを与えます。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1点ビハインド · 無死二塁 — ここで踏ん張れば反撃につながります。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 점 뒤짐 · 무사 2루 — 여기서 끊어야 반격이 산다" } }
       }
     },
     "pitch.scenario.pro.call-up.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "CALL-UP AUDITION" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "コールアップオーディション" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "一軍昇格を懸けた登板" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "콜업을 결정할 등판" } }
       }
     },
     "pitch.scenario.pro.debut.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Tie game · Runner on second · No outs" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "同点・ランナー二塁・ノーアウト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "同点 · 無死二塁" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "동점 · 무사 2루" } }
       }
     },
     "pitch.scenario.pro.debut.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "MAJOR-LEAGUE DEBUT" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "メジャーリーグデビュー" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "一軍デビュー登板" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "1군 데뷔 등판" } }
       }
     },
     "pitch.scenario.pro.opening.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Up one · Runner on second · No outs" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ワンアップ・ランナー二塁・ノーアウト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1点リード · 無死二塁" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 점 앞섬 · 무사 2루" } }
       }
     },
     "pitch.scenario.pro.opening.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "FIRST TEST OF THE SEASON" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "シーズン最初のテスト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "シーズン最初の勝負どころ" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "시즌 첫 승부처" } }
       }
     },
     "pitch.scenario.pro.record.ahead.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Up two · Runner on first · No outs" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "アップツー・ランナー1塁・ノーアウト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "2点リード · 無死一塁" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "두 점 앞섬 · 무사 1루" } }
       }
     },
     "pitch.scenario.pro.record.behind.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Down two · Runner on first · No outs. The record still counts, whatever the score." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ダウンツー・ランナー1塁・ノーアウト。スコアが何であれ、記録は依然として重要です。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "2点ビハインド · 無死一塁 — スコアに関係なく、記録は積み上がります。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "두 점 뒤짐 · 무사 1루 — 점수와 상관없이 기록은 쌓인다" } }
       }
     },
     "pitch.scenario.pro.record.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "CHASING THE MARK" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "マークを追う" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "記録の懸かった登板" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록이 걸린 등판" } }
       }
     },
     "pitch.scenario.pro.role.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Up one · Runner on first · No outs" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "１回アップ・ランナー１塁・ノーアウト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1点リード · 無死一塁" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 점 앞섬 · 무사 1루" } }
       }
     },
     "pitch.scenario.pro.role.title" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "ROLE ON THE LINE" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ライン上の役割" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "役割を懸けた登板" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "보직을 가를 등판" } }
       }
     },
     "pitch.scenario.pro.standings.ahead.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Up one · Runners on first and second · No outs" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ワンアップ · ランナー1、2塁 · ノーアウト" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1点リード · 無死一・二塁" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 점 앞섬 · 무사 1·2루" } }
       }
     },
     "pitch.scenario.pro.standings.behind.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Down one · Runners on first and second · No outs. Another run could shut the door." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ダウンワン・ランナー1、2塁・ノーアウト。もう一歩走ればドアが閉まってしまうかもしれない。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1点ビハインド · 無死一・二塁 — これ以上失点すれば逆転の芽が消えます。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 점 뒤짐 · 무사 1·2루 — 더 내주면 역전의 문이 닫힌다" } }
       }
     },
@@ -5870,7 +5870,7 @@
     "pitch.scenario.tutorial.body" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "This practice at-bat will not count in your record. Learn the motion and let it rip." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この練習打席は記録にはカウントされません。動きを学び、それをリッピングしましょう。" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "記録に残らない練習打席です。思い切って投げましょう。" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요." } }
       }
     },
@@ -5884,7 +5884,7 @@
     "pitch.settlement.next-lesson" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "A new sequence to build next outing" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の登板を構築するための新しいシーケンス" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の登板に生きる読み合い" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 등판의 수싸움" } }
       }
     },
@@ -5898,7 +5898,7 @@
     "pitch.settlement.sequence" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld sequence reads · %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%lld シーケンス読み取り · %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "読み合い的中 %lld回 · %@" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "수싸움 적중 %lld회 · %@" } }
       }
     },
@@ -6003,7 +6003,7 @@
     "pitch.build.compact" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · Movement %lld · Location %lld · Effective fatigue %lld" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ · 変化量 %lld · コース %lld · 効果的な疲労度 %lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ · 変化量 %lld · コース %lld · 体感疲労 %lld" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · 움직임 %lld · 코스 %lld · 체감 피로 %lld" } }
       }
     },
@@ -6513,9 +6513,9 @@
     },
     "pro.weekly.progress" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Progress %lld/2 · Complete twice for +1 rating" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "進行状況 %lld/2 · 2 回完了すると +1 評価" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 %lld/2 · 두 번 채우면 능력 +1" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Progress %lld/%lld · Fill the meter for +1 rating" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "進行状況 %lld/%lld · ゲージを満たすと能力 +1" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 %lld/%lld · 게이지를 채우면 능력 +1" } }
       }
     },
     "pro.weekly.plan.stuff.relief.title" : {
@@ -8333,9 +8333,9 @@
     },
     "meta.ability.no-ceiling" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No Ceiling" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "天井なし" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한계 없음" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Base ability complete" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基本能力完成" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 능력 완성" } }
       }
     },
     "meta.ability.ceiling" : {
@@ -8704,9 +8704,9 @@
     },
     "legacy.bloom.meaning.s" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "There is no ceiling left. How far this ability goes is up to you." } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "天井はもう残っていない。この能力がどこまで通用するかはあなた次第です。" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이제 한계가 없습니다. 어디까지 갈지는 당신에게 달렸습니다." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Base ability is complete. Continued work becomes mastery." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基本能力が完成しました。続けた練習は熟練になります。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 능력이 완성됐습니다. 계속한 훈련은 숙련으로 남습니다." } }
       }
     },
     "legacy.highlight.home-run.title" : {
@@ -10842,6 +10842,384 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Change the Setup First" } },
         "ja" : { "stringUnit" : { "state" : "translated", "value" : "まず設定を変更してください" } },
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정을 바꿔서 시작" } }
+      }
+    },
+    "meta.ability.base-complete" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Base ability complete" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基本能力完成" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 능력 완성" } }
+      }
+    },
+    "meta.disclosure.accessibility.collapsed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@, details collapsed" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@、詳細を閉じています" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@, 접혀 있음" } }
+      }
+    },
+    "meta.disclosure.accessibility.expanded" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@, details expanded" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@、詳細を表示中" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@, 자세히 펼쳐짐" } }
+      }
+    },
+    "meta.disclosure.hint.collapse" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hide details" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "詳細を閉じる" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "접기" } }
+      }
+    },
+    "meta.disclosure.hint.expand" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show details" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "詳細を表示" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자세히 보기" } }
+      }
+    },
+    "meta.mastery.accessibility" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ level %lld, next mastery %lld of %lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ レベル %lld、次の熟練 %lld / %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 레벨 %lld, 다음 숙련 %lld / %lld" } }
+      }
+    },
+    "meta.mastery.command" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Zone mastery" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "コース熟練" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "코스 숙련" } }
+      }
+    },
+    "meta.mastery.level" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Lv.%lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Lv.%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Lv.%lld" } }
+      }
+    },
+    "meta.mastery.meaning" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This track improves its part of the pitch formula by up to %lld‰." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "この熟練は投球式の担当部分を最大 %lld‰ 改善します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 숙련은 투구 공식의 담당 부분을 최대 %lld‰ 보정합니다." } }
+      }
+    },
+    "meta.mastery.movement" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Finishing-pitch mastery" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "決め球熟練" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "결정구 숙련" } }
+      }
+    },
+    "meta.mastery.progress" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next mastery %lld / %lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の熟練 %lld / %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 숙련 %lld / %lld" } }
+      }
+    },
+    "meta.mastery.stamina" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Innings mastery" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "イニング熟練" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이닝 숙련" } }
+      }
+    },
+    "meta.mastery.stuff" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Fastball mastery" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "速球熟練" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "강속구 숙련" } }
+      }
+    },
+    "pitch.development-badge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ · Developing" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ · 習得中" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ · 개발 중" } }
+      }
+    },
+    "pro.injury.result.acknowledge" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Got it" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "確認" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "확인" } }
+      }
+    },
+    "pro.injury.result.body" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Started in season %lld, week %lld. Official games pause while you recover." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%lldシーズン %lld週に発生。回復中は公式戦に出場しません。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld시즌 %lld주차에 발생했습니다. 회복하는 동안 공식 경기에 나가지 않습니다." } }
+      }
+    },
+    "pro.injury.result.evidence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Raw fatigue %lld · effective fatigue %lld · %lld pitches" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "素の疲労 %lld · 有効疲労 %lld · %lld球" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "원피로 %lld · 유효 피로 %lld · %lld구" } }
+      }
+    },
+    "pro.injury.result.next-action" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next: schedule recovery work." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の行動：回復日程を進めてください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 행동: 회복 일정을 진행하세요." } }
+      }
+    },
+    "pro.injury.result.plan" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Plan at onset: %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "発生時の計画：%@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "발생 당시 계획: %@" } }
+      }
+    },
+    "pro.injury.result.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Arm overload · %lld weeks recovery" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "腕の過負荷 · 回復 %lld週" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팔 과부하 · %lld주 회복" } }
+      }
+    },
+    "pro.journey.direction.legacy.hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Club hall is the years together. A retired number is the face of those years." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球団殿堂は共にした時間、永久欠番はその時間の象徴です。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구단 명예는 함께한 시간, 영구결번은 그 시간 위의 상징입니다." } }
+      }
+    },
+    "pro.retirement.preview.retired-number.hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tenure is not enough. Only seasons as this club's face fill the 80 legacy points." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "残留だけでは足りません。この球団の顔として投げたシーズンがレガシー80を満たします。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "잔류만으로는 부족합니다. 이 구단의 얼굴로 던진 시즌이 유산 80을 채워야 합니다." } }
+      }
+    },
+    "pro.weekly.injury-risk" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Injury risk %@ · effective fatigue %lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "負傷リスク %@ · 有効疲労 %lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "부상 위험 %@ · 유효 피로 %lld" } }
+      }
+    },
+    "pro.weekly.injury-risk.caution" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Caution" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "注意" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주의" } }
+      }
+    },
+    "pro.weekly.injury-risk.high" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "High" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高い" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "높음" } }
+      }
+    },
+    "pro.weekly.injury-risk.low" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Low" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "低い" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "낮음" } }
+      }
+    },
+    "settings.copy.density" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Detail level" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "詳しさ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설명 밀도" } }
+      }
+    },
+    "settings.copy.density.automatic" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Automatic — detailed once" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自動 — 最初だけ詳しく" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동 — 처음만 자세히" } }
+      }
+    },
+    "settings.copy.density.compact" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Compact" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "簡潔に" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "간단히" } }
+      }
+    },
+    "settings.copy.density.expanded" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Always detailed" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "常に詳しく" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "항상 자세히" } }
+      }
+    },
+    "settings.copy.density.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Important results and new unlocks always stay open." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "重要な結果と新しい解放は常に開いたままです。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "중요한 결과와 새 해금은 항상 펼쳐집니다." } }
+      }
+    },
+    "settings.copy.section-title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Explanation display" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "説明表示" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설명 표시" } }
+      }
+    },
+    "setup.repertoire.changeup.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Weak contact · opposite-hand weapon · modest early whiff" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "打ち損じ · 逆打席への武器 · 序盤の空振りは控えめ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "범타 · 반대손 타자 대응 · 초반 헛스윙은 낮음" } }
+      }
+    },
+    "setup.repertoire.curveball.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Speed separation · vertical drop · early command risk" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "緩急 · 縦の落差 · 習得初期は制球が不安定" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "속도 차 · 큰 낙차 · 초반 제구 위험" } }
+      }
+    },
+    "setup.repertoire.description" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start with three game-ready pitches. The fourth becomes the pitch you will learn through training and live use." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "実戦で使える3球種で始め、残る1球種を練習と実戦で習得します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "실전 구종 3개로 시작합니다. 남은 한 구종은 훈련과 실전으로 배웁니다." } }
+      }
+    },
+    "setup.repertoire.four-seam" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "BASE PITCH · ALWAYS READY" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "基本球種 · 最初から使用可能" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 구종 · 처음부터 사용" } }
+      }
+    },
+    "setup.repertoire.learning" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "PITCH TO LEARN" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "これから習得する球種" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고교에서 배울 구종" } }
+      }
+    },
+    "setup.repertoire.learning-hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This pitch stays out of official games until your bullpen work makes it ready." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ブルペン練習で仕上がるまで公式戦では使えません。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "불펜 반복이 끝날 때까지 공식 경기에서는 사용할 수 없습니다." } }
+      }
+    },
+    "setup.repertoire.primary" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "PRIMARY PITCH" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "主力球種" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주력 구종" } }
+      }
+    },
+    "setup.repertoire.primary-hint" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your catcher favors this pitch, but it receives no hidden outcome bonus." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "捕手が優先して組み立てますが、結果への隠し補正はありません。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "포수가 우선해서 배합하지만 결과에 숨은 보정은 없습니다." } }
+      }
+    },
+    "setup.repertoire.slider.detail" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Whiffs · two-strike finisher · punishes mistakes" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "空振り · 追い込みの決め球 · 甘い球は長打の危険" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "헛스윙 · 2스트라이크 결정구 · 몰리면 장타 위험" } }
+      }
+    },
+    "setup.repertoire.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Build your starting arsenal" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "最初の持ち球を決めよう" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "어떤 구종으로 시작할까요?" } }
+      }
+    },
+    "training.arm-health.result.next.manage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next: choose recovery work before pushing again." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の行動：再び無理をする前に回復練習を選んでください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 행동: 다시 무리하기 전에 회복 훈련을 선택하세요." } }
+      }
+    },
+    "training.arm-health.result.next.recovery" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next: complete %lld more rehab sessions." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "次の行動：残り %lld 回のリハビリを完了してください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다음 행동: 재활 훈련 %lld회를 더 마치세요." } }
+      }
+    },
+    "training.arm-health.result.outing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld pitches at pregame fatigue %lld raised arm load by %lld." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%lld球を投げ、試合前疲労 %lld で腕の負担が %lld 上がりました。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%lld구 투구와 경기 전 피로 %lld로 팔 부담이 %lld 올랐습니다." } }
+      }
+    },
+    "training.arm-health.result.push-through" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You pushed through an arm warning and suffered an injury." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "腕の警告後も登板を強行し、負傷しました。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "팔 상태 경고 뒤 등판을 강행해 부상을 입었습니다." } }
+      }
+    },
+    "training.arm-health.result.rehab" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Rehab reduced arm load by %lld." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リハビリで腕の負担が %lld 下がりました。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재활로 팔 부담이 %lld 줄었습니다." } }
+      }
+    },
+    "training.pitch-learning.bullpen" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bullpen repetition" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ブルペン反復" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "불펜 반복" } }
+      }
+    },
+    "training.pitch-learning.completed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Secondary pitch complete" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "補助球種として完成" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "보조 구종 완성" } }
+      }
+    },
+    "training.pitch-learning.grip" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Finding the grip" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "握りを探る" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "그립 탐색" } }
+      }
+    },
+    "training.pitch-learning.live" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ready for live testing" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "実戦テスト可能" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "실전 준비" } }
+      }
+    },
+    "training.pitch-learning.progress" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Practice %lld/%lld · Live adjustment %lld/%lld" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "練習 %lld/%lld · 実戦適応 %lld/%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "훈련 감각 %lld/%lld · 실전 적응 %lld/%lld" } }
+      }
+    },
+    "training.pitch-learning.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pitch research · %@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "球種研究 · %@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "구종 연구 · %@" } }
+      }
+    },
+    "training.result.pitch-learning" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ research +%lld · %lld/%lld total" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@研究 +%lld · 累計%lld/%lld" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 연구 +%lld · 누적 %lld/%lld" } }
       }
     }
   },

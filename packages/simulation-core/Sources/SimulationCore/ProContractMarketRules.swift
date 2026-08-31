@@ -976,7 +976,8 @@ public enum ProContractMarketRules {
             movement: clamp(pitcher.movement - decline, 20, 80),
             stamina: pitcher.stamina,
             pitchProfiles: pitcher.pitchProfiles,
-            throwingHand: pitcher.throwingHand
+            throwingHand: pitcher.throwingHand,
+            mastery: pitcher.mastery
         )
     }
 

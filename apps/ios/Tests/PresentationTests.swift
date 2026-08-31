@@ -88,6 +88,22 @@ final class PresentationTests: XCTestCase {
         XCTAssertTrue(MobileCareerStore.gains(before: nil, after: after).isEmpty)
     }
 
+    func testUnacknowledgedGainsSurviveNeutralActionsAndConsecutiveGrowthMerges() {
+        let existing = [MobileCareerStore.AbilityGain(ability: .stuff, before: 54, after: 55)]
+
+        XCTAssertEqual(MobileCareerStore.mergingGains(existing, []), existing)
+        XCTAssertEqual(
+            MobileCareerStore.mergingGains(existing, [
+                .init(ability: .stuff, before: 55, after: 56),
+                .init(ability: .command, before: 52, after: 53),
+            ]),
+            [
+                .init(ability: .stuff, before: 54, after: 56),
+                .init(ability: .command, before: 52, after: 53),
+            ]
+        )
+    }
+
     /// 평면 3D 시리즈는 4개씩 끊어 0.1cm 단위를 미터로 바꾼다.
     func testTrajectoryDecoding() {
         let series = [0, 100, 18_400, 1_800, 200, -50, 9_200, 1_100]

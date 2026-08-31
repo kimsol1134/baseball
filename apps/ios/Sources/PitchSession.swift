@@ -47,6 +47,11 @@ final class PitchSession {
     /// 이번 등판에서 **직접 던진** 공들의 릴리스 점수. 자동 릴리스(중립)는 세지 않는다 —
     /// 실력을 재는 자리에 실력이 개입하지 않은 공을 섞으면 평균이 거짓말을 한다.
     private(set) var deliveryScores: [Int] = []
+    /// Aggregated locally, then committed by the career engine with the inning report. Outcome is
+    /// deliberately irrelevant: only using the development pitch and executing it well count.
+    private(set) var pitchLearningPitches: [PitchType: Int] = [:]
+    private(set) var pitchLearningQualityUses: [PitchType: Int] = [:]
+    private(set) var pitchLearningAwardedPlateAppearances: Set<String> = []
 
     /// 이번 등판의 평균 릴리스. 직접 던진 공이 없으면 nil이다.
     var averageDeliveryScore: Int? {
@@ -222,6 +227,8 @@ final class PitchSession {
         /// 수동 릴리스 숙련 기록 도입 전 복구본은 nil이다. 자동 릴리스의 중립값은 애초에
         /// 이 배열에 들어오지 않으므로, 복구 뒤에도 실제로 손으로 던진 공만 평균에 남는다.
         var deliveryScores: [Int]? = nil
+        var pitchLearningUses: [PitchLearningUseReceipt]? = nil
+        var pitchLearningAwardedPlateAppearances: [String]? = nil
 
         /// PitchLogEntry의 Codable 거울. id(UUID)는 표시용이라 싣지 않는다.
         struct LogLine: Codable, Equatable {
@@ -265,7 +272,9 @@ final class PitchSession {
                                     sequenceMoment: $0.sequenceMoment, abilityMoment: $0.abilityMoment)
             },
             sequenceMoments: sequenceMoments,
-            deliveryScores: deliveryScores
+            deliveryScores: deliveryScores,
+            pitchLearningUses: pitchLearningReceipts,
+            pitchLearningAwardedPlateAppearances: Array(pitchLearningAwardedPlateAppearances).sorted()
         )
     }
 
@@ -293,7 +302,8 @@ final class PitchSession {
         if let pitchType = resume.selectedPitchType,
            let zone = resume.selectedZone,
            let intent = resume.selectedIntent,
-           let intensity = resume.selectedIntensity {
+           let intensity = resume.selectedIntensity,
+           repertoire.contains(pitchType) {
             selectedPitchType = pitchType
             selectedZone = zone
             selectedIntent = intent
@@ -311,6 +321,14 @@ final class PitchSession {
         }
         sequenceMoments = resume.sequenceMoments ?? pitchLog.compactMap(\.sequenceMoment)
         deliveryScores = resume.deliveryScores ?? []
+        let learningUses = resume.pitchLearningUses ?? []
+        pitchLearningPitches = Dictionary(
+            uniqueKeysWithValues: learningUses.map { ($0.pitchType, $0.pitchesThrown) }
+        )
+        pitchLearningQualityUses = Dictionary(
+            uniqueKeysWithValues: learningUses.map { ($0.pitchType, $0.qualityUses) }
+        )
+        pitchLearningAwardedPlateAppearances = Set(resume.pitchLearningAwardedPlateAppearances ?? [])
         if let lastLog = pitchLog.last {
             // An explicit nil means the last pitch did not earn a badge. Do not resurrect
             // an older moment merely because one exists earlier in the inning.
@@ -337,7 +355,7 @@ final class PitchSession {
     var batter: BatterSnapshot { scenario.lineup[min(batterIndex, scenario.lineup.count - 1)] }
     var pitcherName: String { scenario.pitcher.name }
     var repertoire: [PitchType] {
-        scenario.pitcher.pitchProfiles.map { $0.map(\.pitchType) } ?? PitchType.allCases
+        scenario.pitcher.gameReadyPitchTypes
     }
 
     var selectedAbilityReadout: PitchAbilityReadout {
@@ -404,7 +422,11 @@ final class PitchSession {
         prepare()
     }
 
-    func throwPitch(delivery: PitchDelivery? = nil) {
+    func throwPitch(
+        delivery: PitchDelivery? = nil,
+        automaticRelease: Bool = false,
+        countsForPitchLearning: Bool = true
+    ) {
         guard case .ready = stage, let preparation else { return }
         let call = selectedCall
         let abilityReadout = PitchAbilityRules.readout(
@@ -429,6 +451,14 @@ final class PitchSession {
             lastDelivery = delivery
             if let delivery, let score = DeliveryControl.score(delivery) {
                 deliveryScores.append(score)
+            }
+            if countsForPitchLearning {
+                recordPitchLearningUse(
+                    call: call,
+                    executionQuality: result.snapshot.execution.executionQuality,
+                    delivery: delivery,
+                    automaticRelease: automaticRelease
+                )
             }
             for achievement in AchievementRules.fromDelivery(delivery)
             where !bestDeliveryAchievements.contains(achievement) {
@@ -468,7 +498,11 @@ final class PitchSession {
                 selectedIntent = call.zoneIntent
                 selectedIntensity = call.intensity
             }
-            throwPitch(delivery: .neutral)
+            throwPitch(
+                delivery: .neutral,
+                automaticRelease: true,
+                countsForPitchLearning: false
+            )
         }
         return pitches - startingPitches
     }
@@ -508,8 +542,52 @@ final class PitchSession {
             scoreDifferentialAtEntry: scenario.scoreDifferential,
             sequenceMasteryCount: sequenceMasteryCount,
             hits: hitsAllowed,
-            homeRuns: homeRunsAllowed
+            homeRuns: homeRunsAllowed,
+            pitchLearningUses: pitchLearningReceipts.isEmpty ? nil : pitchLearningReceipts
         )
+    }
+
+    var pitchLearningReceipts: [PitchLearningUseReceipt] {
+        pitchLearningPitches.keys.sorted { $0.rawValue < $1.rawValue }.map { pitch in
+            PitchLearningUseReceipt(
+                pitchType: pitch,
+                pitchesThrown: pitchLearningPitches[pitch, default: 0],
+                qualityUses: pitchLearningQualityUses[pitch, default: 0]
+            )
+        }
+    }
+
+    private func recordPitchLearningUse(
+        call: PitchCall,
+        executionQuality: Int,
+        delivery: PitchDelivery?,
+        automaticRelease: Bool
+    ) {
+        guard let profile = pitcher.gameReadyProfile(for: call.pitchType),
+              profile.role == .development else { return }
+        pitchLearningPitches[call.pitchType, default: 0] += 1
+        guard pitchLearningQualityUses[call.pitchType, default: 0] < 2 else { return }
+        let token = "\(call.pitchType.rawValue)|\(context.plateAppearanceID)"
+        guard !pitchLearningAwardedPlateAppearances.contains(token) else { return }
+        let deliveryScore = delivery.flatMap(DeliveryControl.score)
+        let qualifies = Self.qualifiesPitchLearningUse(
+            deliveryScore: deliveryScore,
+            executionQuality: executionQuality,
+            automaticRelease: automaticRelease
+        )
+        guard qualifies else { return }
+        pitchLearningQualityUses[call.pitchType, default: 0] += 1
+        pitchLearningAwardedPlateAppearances.insert(token)
+    }
+
+    nonisolated static func qualifiesPitchLearningUse(
+        deliveryScore: Int?,
+        executionQuality: Int,
+        automaticRelease: Bool
+    ) -> Bool {
+        automaticRelease
+            ? executionQuality >= 600
+            : (deliveryScore ?? 0) >= 65 || executionQuality >= 650
     }
 
     // MARK: - 내부

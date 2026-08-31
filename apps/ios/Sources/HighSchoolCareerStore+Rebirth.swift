@@ -334,6 +334,8 @@ extension HighSchoolCareerStore {
                 careerHarshness: DifficultyLevel(rawValue: last.harshness) ?? .standard),
             karmas: last.karmas,
             soulDomain: last.soulDomain,
+            startingRepertoire: last.startingRepertoire
+                ?? PitchLearningRules.recommendedSelection(presetID: preset.id),
             entryPoint: entryPoint
         )
     }

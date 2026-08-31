@@ -176,7 +176,7 @@ enum HighSchoolPresentation {
                     .highSchoolSummaryRelationshipAbility,
                     arguments: [
                         .userText(resolver.resolve(focus.displayCopyToken)),
-                        .integer(after - before),
+                        .integer(AbilityDisplayScale.displayDelta(before: before, after: after)),
                     ]
                 )
             } else {
@@ -1031,7 +1031,7 @@ enum HighSchoolPresentation {
                 AppCopyKey.trainingResultGainValue,
                 arguments: [
                     .userText(resolver.resolve(gain.ability.displayCopyToken)),
-                    .integer(gain.after - gain.before),
+                    .integer(AbilityDisplayScale.displayDelta(before: gain.before, after: gain.after)),
                 ]
             )
         }.joined(separator: " · ")
@@ -1045,8 +1045,8 @@ enum HighSchoolPresentation {
             AppCopyKey.trainingResultGainRow,
             arguments: [
                 .userText(resolver.resolve(gain.ability.displayCopyToken)),
-                .integer(gain.before),
-                .integer(gain.after),
+                .integer(AbilityDisplayScale.displayRating(gain.before)),
+                .integer(AbilityDisplayScale.displayRating(gain.after)),
             ]
         )
     }
@@ -1060,7 +1060,7 @@ enum HighSchoolPresentation {
             arguments: [
                 .userText(resolver.resolve(bloom.ability.displayCopyToken)),
                 .userText(resolver.resolve(bloom.grade.displayCopyToken)),
-                .integer(bloom.grade.ceiling),
+                .integer(AbilityDisplayScale.displayCeiling(bloom.grade.ceiling)),
             ]
         )
     }

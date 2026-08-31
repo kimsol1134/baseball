@@ -4939,6 +4939,46 @@ body.reduce-motion :is(.gamecast-live-ball, .gamecast-actual, .gamecast-landing,
   background-size: cover;
 }
 
+.pro-injury-result {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  border: 1px solid color-mix(in srgb, var(--color-negative) 58%, transparent);
+}
+
+.pro-injury-result > span,
+.pro-injury-result > strong { color: var(--color-negative); }
+
+.pro-injury-result button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 8px 18px;
+}
+
+.pro-health-forecast {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--color-positive) 42%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-positive) 8%, transparent);
+}
+
+.pro-health-forecast.is-caution {
+  border-color: color-mix(in srgb, var(--color-milestone) 56%, transparent);
+  background: color-mix(in srgb, var(--color-milestone) 9%, transparent);
+}
+
+.pro-health-forecast.is-high {
+  border-color: color-mix(in srgb, var(--color-negative) 56%, transparent);
+  background: color-mix(in srgb, var(--color-negative) 9%, transparent);
+}
+
+.pro-health-forecast > strong { font-size: var(--font-size-label); }
+.pro-health-forecast > span,
+.pro-health-forecast > small { color: var(--color-text-secondary); }
+
 .career-intro {
   min-height: 250px;
   padding: clamp(24px, 4vw, 52px);
@@ -5057,6 +5097,40 @@ body.high-contrast :is(.career-offline-card, .core-unavailable-state) {
 .career-allocation {
   width: min(920px, 100%);
   justify-self: center;
+}
+
+.repertoire-setup,
+.repertoire-training {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.repertoire-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.repertoire-options button {
+  min-height: 52px;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  text-align: left;
+}
+
+.repertoire-options button.is-selected {
+  border-color: var(--color-selection);
+  background: color-mix(in srgb, var(--color-selection) 14%, var(--color-surface-raised));
+}
+
+.repertoire-options button span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-label);
 }
 
 .identity-grid {

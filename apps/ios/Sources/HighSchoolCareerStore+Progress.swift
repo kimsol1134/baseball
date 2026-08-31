@@ -76,6 +76,17 @@ extension HighSchoolCareerStore {
         }
         trainingReceipt = Self.receipt(training: after.lastTraining, gains: pendingGains,
                                        bloom: pendingBloom, fatigueAfter: after.fatigue, focus: focus)
+        if let learning = after.lastTraining?.pitchLearning {
+            GameAnalytics.log(.pitchLearningTrainingCompleted, [
+                "pitch_id": learning.pitchType.rawValue,
+                "stage_before": learning.stageBefore.rawValue,
+                "stage_after": learning.stageAfter.rawValue,
+                "intensity_id": intensity.rawValue,
+                "credits_gained": learning.practiceCreditsAfter - learning.practiceCreditsBefore,
+                "just_game_ready": learning.justUnlockedForGames,
+                "just_completed": learning.justCompleted,
+            ])
+        }
         if countsTowardWeeklyProgram {
             GameAnalytics.log(.careerTrainingCompleted, [
                 "life_number": after.lifeNumber,
@@ -104,6 +115,7 @@ extension HighSchoolCareerStore {
         // 묶음 전체의 피로 변화를 재려면 묶음이 시작될 때의 값이 필요하다. 마지막 한 번의
         // `fatigueBefore`를 쓰면 3회를 돌고도 마지막 1회분만 오른 것처럼 적힌다.
         let startingFatigue = result?.snapshot.fatigue ?? 0
+        let startingLearningProject = result?.snapshot.pitchLearningProject
         var completed = 0
 
         while completed < maximumSessions,
@@ -128,6 +140,13 @@ extension HighSchoolCareerStore {
         feedbackCue = growth > 0 ? .growth : .neutral
         feedbackTrigger += 1
         // 묶음 훈련은 마지막 한 번이 아니라 묶음 전체가 결과다.
+        let combinedLearningReceipt: PitchLearningReceiptSnapshot? = if let before = startingLearningProject,
+            let after = result?.snapshot.pitchLearningProject,
+            before != after {
+            PitchLearningReceiptSnapshot(before: before, after: after)
+        } else {
+            nil
+        }
         trainingReceipt = TrainingReceipt(
             focus: focus,
             headline: Self.gainHeadline(pendingGains),
@@ -139,7 +158,8 @@ extension HighSchoolCareerStore {
             bloom: pendingBloom,
             fatigueAfter: result?.snapshot.fatigue ?? 0,
             fatigueChange: (result?.snapshot.fatigue ?? 0) - startingFatigue,
-            opportunityHit: false
+            opportunityHit: false,
+            pitchLearning: combinedLearningReceipt
         )
     }
 
@@ -161,7 +181,8 @@ extension HighSchoolCareerStore {
             bloom: bloom,
             fatigueAfter: fatigueAfter,
             fatigueChange: training?.fatigueChange ?? 0,
-            opportunityHit: training?.opportunityHit ?? false
+            opportunityHit: training?.opportunityHit ?? false,
+            pitchLearning: training?.pitchLearning
         )
     }
 
@@ -169,7 +190,9 @@ extension HighSchoolCareerStore {
     static func gainHeadline(_ gains: [MobileCareerStore.AbilityGain]) -> String {
         let risen = gains.filter { $0.after > $0.before }
         guard !risen.isEmpty else { return "능력 변화 없음" }
-        return risen.map { "\($0.label) +\($0.after - $0.before)" }.joined(separator: " · ")
+        return risen.map {
+            "\($0.label) +\(AbilityDisplayScale.displayDelta(before: $0.before, after: $0.after))"
+        }.joined(separator: " · ")
     }
 
     func resolveRelationship(_ response: RelationshipResponse) {

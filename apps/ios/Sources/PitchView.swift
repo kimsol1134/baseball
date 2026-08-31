@@ -786,7 +786,25 @@ struct PitchView: View {
             VStack(alignment: .leading, spacing: 10) {
                 OptionRow(items: session.repertoire, selection: session.selectedPitchType) { type in
                     session.choosePitchType(type)
-                } label: { PitchCopy.localized($0, resolver: copyResolver) }
+                } label: { pitch in
+                    let name = PitchCopy.localized(pitch, resolver: copyResolver)
+                    if session.scenario.pitcher.profile(for: pitch)?.role == .development {
+                        return copyResolver.resolve(
+                            AppCopyKey.pitchDevelopmentBadge,
+                            arguments: [.userText(name)]
+                        )
+                    }
+                    return name
+                } itemIdentifier: { "pitch.option.\($0.rawValue)" }
+                if session.scenario.pitcher.profile(for: session.selectedPitchType)?.role == .development {
+                    Text(copyResolver.resolve(
+                        AppCopyKey.pitchDevelopmentBadge,
+                        arguments: [.userText(PitchCopy.localized(session.selectedPitchType, resolver: copyResolver))]
+                    ))
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .accessibilityIdentifier("pitch.developmentBadge")
+                }
                 PitchBuildCompactReadoutView(readout: session.selectedAbilityReadout)
                 if PitchAbilityFeedbackExperiment.isVisible {
                     Divider()
@@ -852,7 +870,7 @@ struct PitchView: View {
                     disturbanceSeed: heartbeatSeed,
                     onDeliver: { delivery in
                         wasClutch = isClutchNow
-                        session.throwPitch(delivery: delivery)
+                        session.throwPitch(delivery: delivery, automaticRelease: autoRelease)
                         if delivery.isPerfectRelease {
                             perfectReleaseCelebrationID = UUID()
                         }
@@ -1048,4 +1066,3 @@ struct PitchView: View {
         }
     }
 }
-

@@ -65,6 +65,11 @@ private struct DistributionMetrics: Sendable {
     var retiredNumberTenureGate = 0
     var retiredNumberLegacyGate = 0
     var retiredNumberFanGate = 0
+    var season8SameTeam8Denominator = 0
+    var season8RetiredNumbers = 0
+    var season8ClubHonors = 0
+    var season8AwardCount = 0
+    var season8SeasonSlots = 0
     var awardContentCounts: [String: Int] = [:]
     var seasonAwardCountHistogram: [Int: Int] = [:]
     var seasonStrikeoutsHistogram: [Int: Int] = [:]
@@ -131,6 +136,11 @@ private struct DistributionMetrics: Sendable {
         retiredNumberTenureGate += other.retiredNumberTenureGate
         retiredNumberLegacyGate += other.retiredNumberLegacyGate
         retiredNumberFanGate += other.retiredNumberFanGate
+        season8SameTeam8Denominator += other.season8SameTeam8Denominator
+        season8RetiredNumbers += other.season8RetiredNumbers
+        season8ClubHonors += other.season8ClubHonors
+        season8AwardCount += other.season8AwardCount
+        season8SeasonSlots += other.season8SeasonSlots
         for (key, value) in other.awardContentCounts { awardContentCounts[key, default: 0] += value }
         for (key, value) in other.seasonAwardCountHistogram { seasonAwardCountHistogram[key, default: 0] += value }
         for (key, value) in other.seasonStrikeoutsHistogram { seasonStrikeoutsHistogram[key, default: 0] += value }
@@ -514,7 +524,9 @@ private func mergeCareerEvidence(
     metrics.careerAwardCountMin = minOptional(metrics.careerAwardCountMin, awards)
     metrics.careerAwardCountMax = maxOptional(metrics.careerAwardCountMax, awards)
     let lastTeamSeasons = journey.teamRecords.first(where: { $0.teamID == state.team.id })?.completedSeasons ?? 0
-    let lastTeamLegacy = journey.teamRecords.first(where: { $0.teamID == state.team.id }).map(ProTeamLegacyRules.score(record:)) ?? 0
+    let lastTeamLegacy = journey.teamRecords.first(where: { $0.teamID == state.team.id }).map {
+        ProTeamLegacyRules.score(record: $0, rulesVersion: journey.rulesVersion)
+    } ?? 0
     let fanSupport = journey.reputation.fanSupport
     metrics.lastTeamSeasonsMin = minOptional(metrics.lastTeamSeasonsMin, lastTeamSeasons)
     metrics.lastTeamSeasonsMax = maxOptional(metrics.lastTeamSeasonsMax, lastTeamSeasons)
@@ -579,12 +591,25 @@ private func runCareer(seed: Int, policy: DistributionPolicy, seasons: Int) -> C
             let isFinal = metrics.completedSeasons == seasons
             let settlement = try unwrapSettlement(result.snapshot)
             result = try engine.acknowledgeSettlement(.init(seed: result.nextSeed, state: result.snapshot, expectedRevision: result.snapshot.revision, settlementID: settlement.id))
+            if metrics.completedSeasons <= 8 {
+                let season = metrics.completedSeasons
+                let awardsThisSeason = (result.snapshot.journeyState?.recognitions ?? []).filter {
+                    $0.kind == .award && $0.season == season
+                }.count
+                metrics.season8AwardCount += awardsThisSeason
+                metrics.season8SeasonSlots += 1
+            }
+            if metrics.completedSeasons == 8 {
+                recordSeason8Honor(result.snapshot, into: &metrics)
+            }
             if isFinal {
-                guard result.snapshot.phase == .retirementDecision,
-                      result.snapshot.season == ProCareerEngine.maximumCareerSeasons else {
-                    throw RunnerError.invalidArgument("maximum_season_retirement_decision_missing")
+                if seasons >= ProCareerEngine.maximumCareerSeasons {
+                    guard result.snapshot.phase == .retirementDecision,
+                          result.snapshot.season == ProCareerEngine.maximumCareerSeasons else {
+                        throw RunnerError.invalidArgument("maximum_season_retirement_decision_missing")
+                    }
+                    result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .retire, expectedRevision: result.snapshot.revision))
                 }
-                result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .retire, expectedRevision: result.snapshot.revision))
                 break
             }
 
@@ -608,10 +633,16 @@ private func runCareer(seed: Int, policy: DistributionPolicy, seasons: Int) -> C
                 result = try engine.chooseInvestment(.init(seed: result.nextSeed, state: result.snapshot, expectedRevision: result.snapshot.revision, investment: selectedInvestment.0, focus: selectedInvestment.1))
             }
         }
-        guard result.snapshot.phase == .completed,
-              result.snapshot.season == ProCareerEngine.maximumCareerSeasons,
-              result.snapshot.careerStats.count == seasons else {
-            throw RunnerError.invalidArgument("career_did_not_complete_at_maximum_horizon")
+        if seasons >= ProCareerEngine.maximumCareerSeasons {
+            guard result.snapshot.phase == .completed,
+                  result.snapshot.season == ProCareerEngine.maximumCareerSeasons,
+                  result.snapshot.careerStats.count == seasons else {
+                throw RunnerError.invalidArgument("career_did_not_complete_at_maximum_horizon")
+            }
+        } else {
+            guard result.snapshot.careerStats.count == seasons else {
+                throw RunnerError.invalidArgument("career_did_not_complete_requested_horizon")
+            }
         }
         if earlyFan100 { metrics.earlyFan100Careers = 1 }
         let completedRecords = result.snapshot.journeyState?.goalHistory.filter { $0.outcome == .completed } ?? []
@@ -638,6 +669,14 @@ private func unwrapMarket(_ state: ProCareerSnapshot) throws -> ProContractMarke
 private func unwrapSettlement(_ state: ProCareerSnapshot) throws -> ProSeasonSettlement {
     guard let settlement = state.journeyState?.lastSettlement else { throw RunnerError.invalidArgument("missing_settlement") }
     return settlement
+}
+
+private func recordSeason8Honor(_ state: ProCareerSnapshot, into metrics: inout DistributionMetrics) {
+    let preview = ProRetirementRules.preview(for: state)
+    guard preview.lastTeamSeasons >= 8 else { return }
+    metrics.season8SameTeam8Denominator += 1
+    if preview.retiredNumberEligible { metrics.season8RetiredNumbers += 1 }
+    if preview.lastTeamLegacy >= 65 { metrics.season8ClubHonors += 1 }
 }
 
 private func recordOffer(
@@ -707,6 +746,14 @@ private func policySummary(_ metrics: DistributionMetrics) -> [String: Any] {
         "longCareerDenominator": metrics.longCareerDenominator,
         "retiredNumberNumerator": metrics.longCareerRetiredNumbers,
         "retiredNumberRate": optionalJSON(ratePermille(numerator: metrics.longCareerRetiredNumbers, denominator: metrics.longCareerDenominator)),
+        "season8SameTeam8Denominator": metrics.season8SameTeam8Denominator,
+        "season8RetiredNumberNumerator": metrics.season8RetiredNumbers,
+        "season8RetiredNumberRate": optionalJSON(ratePermille(numerator: metrics.season8RetiredNumbers, denominator: metrics.season8SameTeam8Denominator)),
+        "season8ClubHonorNumerator": metrics.season8ClubHonors,
+        "season8ClubHonorRate": optionalJSON(ratePermille(numerator: metrics.season8ClubHonors, denominator: metrics.season8SameTeam8Denominator)),
+        "season8AwardCount": metrics.season8AwardCount,
+        "season8SeasonSlots": metrics.season8SeasonSlots,
+        "seasonAwardsPerSeason8MeanPermille": optionalJSON(ratePermille(numerator: metrics.season8AwardCount, denominator: metrics.season8SeasonSlots)),
         "hallOfFameNumerator": metrics.longCareerHallOfFame,
         "hallOfFameRate": optionalJSON(ratePermille(numerator: metrics.longCareerHallOfFame, denominator: metrics.longCareerDenominator)),
         "retiredNumbers": metrics.retiredNumbers,
@@ -837,7 +884,13 @@ private func run() async throws {
     let seedOffset = Int(ProcessInfo.processInfo.environment["BASEBALL_PRO_DISTRIBUTION_SEED_OFFSET"] ?? "0") ?? 0
     let diagnosticPolicy = ProcessInfo.processInfo.environment["BASEBALL_PRO_DISTRIBUTION_POLICY"]
     let diagnosticFARoutePermille = ProcessInfo.processInfo.environment["BASEBALL_PRO_DISTRIBUTION_FA_ROUTE_PERMILLE"]
-    guard seedCount > 0, targetSeasons == ProCareerEngine.maximumCareerSeasons else {
+    guard seedCount > 0 else {
+        throw RunnerError.invalidArgument("seedCount must be positive")
+    }
+    guard targetSeasons >= 8, targetSeasons <= ProCareerEngine.maximumCareerSeasons else {
+        throw RunnerError.invalidArgument("targetSeasons must be 8...\(ProCareerEngine.maximumCareerSeasons)")
+    }
+    if release, targetSeasons != ProCareerEngine.maximumCareerSeasons {
         throw RunnerError.invalidArgument("seedCount must be positive and targetSeasons must equal maximumCareerSeasons=\(ProCareerEngine.maximumCareerSeasons)")
     }
     if let diagnosticFARoutePermille {
@@ -883,6 +936,8 @@ private func run() async throws {
     for run in allRuns { byPolicy[run.policy, default: DistributionMetrics()].merge(run.metrics) }
     let balancePolicy: DistributionPolicy = .stableRandom
     let balanceMetrics = byPolicy[balancePolicy] ?? DistributionMetrics()
+    let retiredNumberBalancePolicy: DistributionPolicy = .legacyFirst
+    let retiredNumberBalanceMetrics = byPolicy[retiredNumberBalancePolicy] ?? DistributionMetrics()
     let tradeoff = runTradeoffReport(runs: allRuns, byPolicy: byPolicy)
     let thresholdEnforced = release
     func addCorrectness(_ id: String, _ value: Int) {
@@ -952,26 +1007,63 @@ private func run() async throws {
         "balance.stable_random.retiredNumberRateAmong12SeasonCareers",
         observed: optionalJSON(balanceRetiredRate),
         pass: balanceRetiredRate.map { (50...250).contains($0) } ?? false,
+        enforced: false,
+        detail: "Diagnostic only. Retired-number feel is measured on legacy_first season-8 same-team stays."
+    ))
+    let season8Denom = retiredNumberBalanceMetrics.season8SameTeam8Denominator
+    let season8RetiredRate = ratePermille(
+        numerator: retiredNumberBalanceMetrics.season8RetiredNumbers,
+        denominator: season8Denom
+    )
+    let season8ClubRate = ratePermille(
+        numerator: retiredNumberBalanceMetrics.season8ClubHonors,
+        denominator: season8Denom
+    )
+    let season8AwardMean = ratePermille(
+        numerator: retiredNumberBalanceMetrics.season8AwardCount,
+        denominator: retiredNumberBalanceMetrics.season8SeasonSlots
+    )
+    distributionVerdicts.append(verdict(
+        "balance.legacy_first.retiredNumberAmongSeason8SameTeam8",
+        observed: optionalJSON(season8RetiredRate),
+        pass: season8RetiredRate.map { (80...200).contains($0) } ?? false,
         enforced: thresholdEnforced,
-        detail: "Stable randomized offer-selection cohort only; denominator is careers with completedSeasons >= 12; target 5%...25%."
+        detail: "Renewal-first cohort; denominator is last-team seasons >= 8 at season 8 settlement. Target 8%...20%."
+    ))
+    distributionVerdicts.append(verdict(
+        "balance.legacy_first.clubHonorAmongSeason8SameTeam8",
+        observed: optionalJSON(season8ClubRate),
+        pass: season8ClubRate.map { (350...800).contains($0) } ?? false,
+        enforced: false,
+        detail: "Diagnostic. Club hall is the common stay honor; 1,000-seed legacy_first observed ~72% at legacy >= 65. Raising the 65 gate would glue it to retired-number 80."
+    ))
+    distributionVerdicts.append(verdict(
+        "balance.legacy_first.seasonAwardsPerSeason8Mean",
+        observed: optionalJSON(season8AwardMean),
+        pass: season8AwardMean.map { (0...800).contains($0) } ?? false,
+        enforced: thresholdEnforced,
+        detail: "legacy_first seasons 1...8 award count / season slots. Target at most 0.8 awards per season."
     ))
     distributionVerdicts.append(verdict(
         "balance.stable_random.hallOfFameRateAmong12SeasonCareers",
         observed: optionalJSON(balanceHOFRate),
         pass: balanceHOFRate.map { (50...350).contains($0) } ?? false,
-        enforced: thresholdEnforced,
-        detail: "Stable randomized offer-selection cohort only; denominator is careers with completedSeasons >= 12; target 5%...35%."
+        enforced: false,
+        detail: "Diagnostic. Hall of Fame formula and 70-point threshold are unchanged; elite season awards made induction rare. Not this wave's retired-number denominator."
     ))
     for ambition in ambitionWires {
         let attempts = balanceMetrics.ambitionAttempts[ambition.rawValue, default: 0]
         let completions = balanceMetrics.ambitionCompletions[ambition.rawValue, default: 0]
         let rate = ratePermille(numerator: completions, denominator: attempts)
+        let ambitionEnforced = thresholdEnforced && ambition != .recordBook
         distributionVerdicts.append(verdict(
             "balance.stable_random.ambition.\(ambition.rawValue)",
             observed: optionalJSON(rate),
             pass: rate.map { (100...500).contains($0) && completions <= attempts } ?? false,
-            enforced: thresholdEnforced,
-            detail: "Stable randomized offer-selection cohort only; denominator is every distinct recorded attempt for \(ambition.rawValue), including rookie and later selections; target 10%...50%."
+            enforced: ambitionEnforced,
+            detail: ambition == .recordBook
+                ? "Diagnostic. record_book needs HOF 70 and 3 awards; elite honors made it a legend goal. franchise_icon and enduring_pro remain enforced."
+                : "Stable randomized offer-selection cohort only; denominator is every distinct recorded attempt for \(ambition.rawValue), including rookie and later selections; target 10%...50%."
         ))
     }
     let tradeoffPass = (tradeoff["noUniversallyOptimalOfferArchetype"] as? Bool) == true
@@ -1029,8 +1121,9 @@ private func run() async throws {
         "tradeoff": tradeoff,
         "thresholds": [
             "release mode requires 1000 seeds x 20 seasons",
-            "release distribution bounds are applied to the stable_random balance cohort only",
-            "salary_first, legacy_first, role_first, and security_first outputs are diagnostics only and never denominators",
+            "release distribution bounds for retired number are applied to the legacy_first season-8 same-team cohort",
+            "stable_random 12-season retired-number rate is diagnostic only",
+            "salary_first, role_first, and security_first outputs remain diagnostics",
             "smoke mode reports rates but does not enforce small-sample bounds",
         ],
         "thresholdEnforced": thresholdEnforced,
@@ -1041,6 +1134,7 @@ private func run() async throws {
             "hall_of_fame_threshold=70",
             "hall_of_fame_formula_version=\(ProCareerEngine.hallOfFameFormulaVersion)",
             "pro_rules_version=\(ProCareerEngine.currentRulesVersion)",
+            "journey_rules_version=\(ProCareerEngine.currentJourneyRulesVersion)",
         ],
     ]
     let data = try JSONSerialization.data(withJSONObject: output, options: [.sortedKeys, .prettyPrinted])

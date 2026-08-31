@@ -42,6 +42,8 @@ struct BaseballApp: App {
     nonisolated static let draftedCareerFixtureLaunchArgument = "-uiTestDraftedCareerFixture"
     /// 미지명 직전 → 유산 → 환생을 실제 엔진 결과로 촬영하는 Debug 전용 픽스처.
     nonisolated static let undraftedCareerFixtureLaunchArgument = "-uiTestUndraftedCareerFixture"
+    /// 리뷰 개선 UI를 실제 시뮬레이터에서 검증하는 Debug 전용 프로 숙련·부상 픽스처.
+    nonisolated static let reviewImprovementFixtureLaunchArgument = "-uiTestReviewImprovementFixture"
 #endif
 
     @Environment(\.scenePhase) private var scenePhase
@@ -53,7 +55,7 @@ struct BaseballApp: App {
     @State private var previousReturnPlan = DailyReminder.storedPlan()
     /// 지난 세션이 있었을 때만 앱 안에 보여 줄 현재의 이어하기 한 가지.
     @State private var returnWelcomePlan: DailyReminder.Plan?
-    /// 시스템 Launch Screen 뒤에서도 현재 앱 언어의 제목을 최소 한 박자 보장한다.
+    /// 시스템 Launch Screen 뒤에도 같은 `LaunchLogo`를 한 박자 유지한다.
     /// 저장 복원이 아주 빨라도 이 화면이 사라지지 않아 오래된 시스템 스냅샷이 보이는 문제를
     /// 앱이 직접 덮어쓴다.
     @State private var isPresentingLocalizedLaunch = true
@@ -336,6 +338,8 @@ struct BaseballApp: App {
                             _ = highSchool.installDraftedCareerFixtureForUITesting()
                         } else if arguments.contains(Self.undraftedCareerFixtureLaunchArgument) {
                             _ = highSchool.installUndraftedDraftFixtureForUITesting()
+                        } else if arguments.contains(Self.reviewImprovementFixtureLaunchArgument) {
+                            _ = pro.installReviewImprovementFixtureForUITesting()
                         }
 #endif
                     } else if arguments.contains(Self.autoReleaseLaunchArgument) {

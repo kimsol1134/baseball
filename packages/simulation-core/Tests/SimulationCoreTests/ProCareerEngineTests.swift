@@ -5,6 +5,36 @@ import XCTest
 final class ProCareerEngineTests: XCTestCase {
     private let engine = ProCareerEngine()
 
+    func testDevelopmentProgressTargetsFollowAbilityAndSavedRulesVersion() {
+        let pitcher = PitcherSnapshot(
+            id: "progress-targets",
+            name: "진행 목표",
+            stuff: 54,
+            command: 55,
+            movement: 65,
+            stamina: 73
+        )
+
+        XCTAssertEqual(ProCareerEngine.developmentTicksRequired(
+            for: .developStuff, pitcher: pitcher, proRulesVersion: 4
+        ), 2)
+        XCTAssertEqual(ProCareerEngine.developmentTicksRequired(
+            for: .refineCommand, pitcher: pitcher, proRulesVersion: 4
+        ), 3)
+        XCTAssertEqual(ProCareerEngine.developmentTicksRequired(
+            for: .developMovement, pitcher: pitcher, proRulesVersion: 4
+        ), 4)
+        XCTAssertEqual(ProCareerEngine.developmentTicksRequired(
+            for: .buildStamina, pitcher: pitcher, proRulesVersion: 4
+        ), 6)
+        XCTAssertEqual(ProCareerEngine.developmentTicksRequired(
+            for: .buildStamina, pitcher: pitcher, proRulesVersion: 3
+        ), 2)
+        XCTAssertNil(ProCareerEngine.developmentTicksRequired(
+            for: .recover, pitcher: pitcher, proRulesVersion: 4
+        ))
+    }
+
     func testProDevelopmentUsesChosenAxisAndTwoSelectionProgressInsteadOfCalendarParity() throws {
         let preset = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "power_prospect" })
         func profiledStart(_ seed: String) throws -> ProCareerResult {
@@ -277,10 +307,13 @@ final class ProCareerEngineTests: XCTestCase {
             if applied.snapshot.phase == .importantGame { break }
             switch applied.snapshot.phase {
             case .weeklyPlan:
+                // This test isolates decision follow-up persistence. Keep the pitcher on the
+                // safe recovery path so the new explainable overload system does not correctly
+                // suppress the next direct matchup before the assertion can observe it.
                 applied = try engine.planWeek(.init(
                     seed: applied.nextSeed,
                     state: applied.snapshot,
-                    plan: .earnTrust
+                    plan: .recover
                 ))
             case .seasonDecision:
                 applied = try resolvePendingDecision(applied)

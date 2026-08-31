@@ -293,6 +293,7 @@ extension HighSchoolCareerStore {
         var harshness: String
         var karmas: [KarmaID]
         var soulDomain: SoulDomain?
+        var startingRepertoire: StartingRepertoireSelection?
     }
 
     var lastSetup: LastSetup? {
@@ -318,6 +319,7 @@ extension HighSchoolCareerStore {
         soulDomain: SoulDomain? = nil,
         soulBoosts: [SoulBoostID] = [],
         signatureLegacyID: CareerSignatureLegacyID? = nil,
+        startingRepertoire: StartingRepertoireSelection? = nil,
         seedOverride: String? = nil,
         challengeLifeNumber: Int? = nil,
         /// 어느 입구로 회차를 시작했는가(`setup_flow` / `quick_rebirth` / `recap`).
@@ -341,7 +343,8 @@ extension HighSchoolCareerStore {
         if isChallenge {} else {
         lastSetup = LastSetup(
             presetID: preset.id, playerName: playerName, region: region,
-            harshness: difficulty.careerHarshness.rawValue, karmas: karmas, soulDomain: soulDomain
+            harshness: difficulty.careerHarshness.rawValue, karmas: karmas, soulDomain: soulDomain,
+            startingRepertoire: startingRepertoire
         )
         }
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -430,7 +433,8 @@ extension HighSchoolCareerStore {
                     signatureLegacyID: equippedSignatureLegacyID,
                     inheritanceRulesVersion: isChallenge ? nil : carried.inheritanceRulesVersion,
                     rebirthEcho: isChallenge ? nil : rebirthEcho,
-                    lineageLoadout: lineageLoadout
+                    lineageLoadout: lineageLoadout,
+                    startingRepertoire: startingRepertoire
                 )
             )
             updatePersisted {
@@ -484,6 +488,16 @@ extension HighSchoolCareerStore {
                 return
             }
             if !isChallenge {
+                if let startingRepertoire {
+                    GameAnalytics.log(.repertoireSelected, [
+                        "preset_id": preset.id,
+                        "ready_pitch_ids": startingRepertoire.readyBreakingPitches.map(\.rawValue).sorted().joined(separator: ","),
+                        "primary_pitch_id": startingRepertoire.primaryPitch.rawValue,
+                        "learning_pitch_id": startingRepertoire.learningPitch.rawValue,
+                        "life_number": created.snapshot.lifeNumber,
+                        "used_recommended_default": startingRepertoire == PitchLearningRules.recommendedSelection(presetID: preset.id),
+                    ])
+                }
                 let reusedName = previousLife.map {
                     $0.playerName.trimmingCharacters(in: .whitespacesAndNewlines)
                         .localizedCaseInsensitiveCompare(name) == .orderedSame

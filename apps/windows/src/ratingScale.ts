@@ -1,4 +1,4 @@
-// 20-80 능력 사다리의 단일 출처. 의미 라벨(선수 카드)과 성장 카드의 "다음 목표"가 같은 눈금을 쓴다.
+// 저장 20-80 값을 사용자용 1-100 눈금으로 바꾸는 단일 출처.
 export interface RatingStep {
   min: number;
   label: string;
@@ -27,6 +27,18 @@ export function nextRatingStep(value: number): RatingStep | null {
 }
 
 export function ratingPositionPercent(value: number): number {
-  const clamped = Math.min(80, Math.max(20, value));
-  return ((clamped - 20) / 60) * 100;
+  return ((displayRating(value) - 1) / 99) * 100;
+}
+
+export function displayRating(internalRating: number): number {
+  const clamped = Math.min(80, Math.max(20, Math.trunc(internalRating)));
+  return Math.max(1, Math.min(100, Math.floor(((clamped - 20) * 100 + 30) / 60)));
+}
+
+export function displayDelta(before: number, after: number): number {
+  return displayRating(after) - displayRating(before);
+}
+
+export function displayCeiling(internalCeiling: number): number {
+  return displayRating(internalCeiling);
 }

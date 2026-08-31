@@ -60,6 +60,8 @@ enum CareerBootstrap {
         identity: PlayerIdentitySnapshot,
         seed: UInt64,
         sourceFanInterest: Int? = nil,
+        repertoireRulesVersion: Int? = nil,
+        pitchLearningProject: PitchLearningProjectSnapshot? = nil,
         engine: ProCareerEngine = ProCareerEngine()
     ) throws -> ProCareerResult {
         let started = try engine.start(
@@ -69,7 +71,10 @@ enum CareerBootstrap {
                 pitcher: pitcher,
                 draftResult: draft,
                 entitlement: AppEntitlement.paidApp(),
-                sourceFanInterest: sourceFanInterest
+                sourceFanInterest: sourceFanInterest,
+                startingRepertoire: nil,
+                repertoireRulesVersion: repertoireRulesVersion,
+                pitchLearningProject: pitchLearningProject
             )
         )
         return try legacyAutoSignIfNeeded(engine: engine, started: started)
@@ -80,6 +85,7 @@ enum CareerBootstrap {
         preset: PitcherPresetSnapshot,
         playerName: String,
         seed: UInt64,
+        startingRepertoire: StartingRepertoireSelection? = nil,
         engine: ProCareerEngine = ProCareerEngine()
     ) throws -> ProCareerResult {
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -111,7 +117,11 @@ enum CareerBootstrap {
                 identity: identity,
                 pitcher: pitcher,
                 draftResult: draft,
-                entitlement: AppEntitlement.paidApp()
+                entitlement: AppEntitlement.paidApp(),
+                sourceFanInterest: nil,
+                startingRepertoire: startingRepertoire,
+                repertoireRulesVersion: nil,
+                pitchLearningProject: nil
             )
         )
         return try legacyAutoSignIfNeeded(engine: engine, started: started)

@@ -965,6 +965,7 @@ struct OptionRow<Item: Hashable>: View {
     let selection: Item
     let onSelect: (Item) -> Void
     let label: (Item) -> String
+    let itemIdentifier: (Item) -> String
 
     /// 접근성 글자 크기에서는 가로 3분할이 "구종 이름 두 글자 + …"가 된다 —
     /// 결정부가 읽히지 않으면 게임이 잠긴다. AX 크기부터는 세로로 눕힌다(3차 패널 P1).
@@ -974,12 +975,14 @@ struct OptionRow<Item: Hashable>: View {
         items: [Item],
         selection: Item,
         onSelect: @escaping (Item) -> Void,
-        label: @escaping (Item) -> String
+        label: @escaping (Item) -> String,
+        itemIdentifier: @escaping (Item) -> String = { _ in "" }
     ) {
         self.items = items
         self.selection = selection
         self.onSelect = onSelect
         self.label = label
+        self.itemIdentifier = itemIdentifier
     }
 
     var body: some View {
@@ -1005,6 +1008,7 @@ struct OptionRow<Item: Hashable>: View {
                         .stroke(item == selection ? BaseballTheme.selection : BaseballTheme.border.opacity(0.6), lineWidth: item == selection ? 2 : 1)
                 }
                 .accessibilityAddTraits(item == selection ? .isSelected : [])
+                .accessibilityIdentifier(itemIdentifier(item))
             }
         }
     }

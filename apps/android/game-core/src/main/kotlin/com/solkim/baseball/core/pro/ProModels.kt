@@ -47,6 +47,27 @@ public enum class ProRole(public val wire: String) {
     CLOSER("closer"),
 }
 
+public enum class ProInjuryCause(public val wire: String) {
+    OVERLOAD("overload"),
+}
+
+/** Structured explanation emitted only on the week an overload injury starts. */
+public data class ProInjuryEventSnapshot(
+    val cause: ProInjuryCause = ProInjuryCause.OVERLOAD,
+    val season: Int,
+    val week: Int,
+    val plan: ProWeekPlan,
+    val rawFatigue: Int,
+    val effectiveFatigue: Int,
+    val pitches: Int,
+    val recoveryWeeks: Int,
+    val careerId: String? = null,
+    val revision: ULong? = null,
+) {
+    public val stableId: String
+        get() = "pro-injury-${careerId ?: "unknown"}-s$season-w$week-r${revision ?: 0UL}-${plan.wire}"
+}
+
 /** Six current choices. DEVELOP_WEAPON is retained only for pre-Phase-5 saves. */
 public enum class ProWeekPlan(public val wire: String) {
     DEVELOP_STUFF("develop_stuff"),
@@ -474,12 +495,14 @@ public data class ProResult(
     val preparation: PitchPreparation? = null,
     val presentation: TrajectoryPresentationSnapshot? = null,
     val segmentProgress: ProSegmentProgress? = null,
+    val injuryEvent: ProInjuryEventSnapshot? = null,
 )
 
 public data class ProDispatchResult(
     val state: ProState,
     val eventHash: String,
     val duplicate: Boolean,
+    val injuryEvent: ProInjuryEventSnapshot? = null,
 )
 
 /** Link helper: the Pro core reads the finished HS result but never mutates the active HS save. */
@@ -518,6 +541,7 @@ public fun HighSchoolState.toPitcherSnapshotForPro(): PitcherSnapshot = PitcherS
     stamina = pitcher.stamina,
     pitchProfiles = pitcher.pitchProfiles,
     throwingHand = pitcher.throwingHand,
+    mastery = pitcher.mastery,
 )
 
 public fun HighSchoolPitcher.toPitcherSnapshotForPro(): PitcherSnapshot = PitcherSnapshot(
@@ -529,4 +553,5 @@ public fun HighSchoolPitcher.toPitcherSnapshotForPro(): PitcherSnapshot = Pitche
     stamina = stamina,
     pitchProfiles = pitchProfiles,
     throwingHand = throwingHand,
+    mastery = mastery,
 )

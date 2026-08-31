@@ -8,6 +8,12 @@ struct CareerSetupView: View {
 
     @State private var playerName = ""
     @State private var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
+    @State private var learningPitch = PitchLearningRules.recommendedSelection(
+        presetID: PitcherPresetCatalog.all.first?.id ?? ""
+    ).learningPitch
+    @State private var primaryPitch = PitchLearningRules.recommendedSelection(
+        presetID: PitcherPresetCatalog.all.first?.id ?? ""
+    ).primaryPitch
     @FocusState private var nameFocused: Bool
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -19,6 +25,21 @@ struct CareerSetupView: View {
     private var suggestedName: String {
         selectedPreset.map { copyResolver.resolve($0.defaultPlayerNameCopyToken) }
             ?? copyResolver.resolve(.careerSetupNamePlaceholder)
+    }
+
+    private var startingRepertoire: StartingRepertoireSelection {
+        .init(
+            readyBreakingPitches: [PitchType.slider, .curveball, .changeup].filter { $0 != learningPitch },
+            primaryPitch: primaryPitch == learningPitch ? .fourSeam : primaryPitch,
+            learningPitch: learningPitch
+        )
+    }
+
+    private func selectPreset(_ preset: PitcherPresetSnapshot) {
+        selectedPresetID = preset.id
+        let recommended = PitchLearningRules.recommendedSelection(presetID: preset.id)
+        learningPitch = recommended.learningPitch
+        primaryPitch = recommended.primaryPitch
     }
 
     private var submittedPlayerName: String {
@@ -54,9 +75,14 @@ struct CareerSetupView: View {
                     PresetCard(
                         preset: preset,
                         selected: preset.id == selectedPresetID,
-                        onSelect: { selectedPresetID = preset.id }
+                        onSelect: { selectPreset(preset) }
                     )
                 }
+
+                DirectRepertoireCard(
+                    learningPitch: $learningPitch,
+                    primaryPitch: $primaryPitch
+                )
 
                 Text(verbatim: copyResolver.resolve(.careerSetupExplanation))
                     .font(.footnote)
@@ -69,7 +95,11 @@ struct CareerSetupView: View {
                 ) {
                     nameFocused = false
                     if let selectedPreset {
-                        career.startNewCareer(preset: selectedPreset, playerName: submittedPlayerName)
+                        career.startNewCareer(
+                            preset: selectedPreset,
+                            playerName: submittedPlayerName,
+                            startingRepertoire: startingRepertoire
+                        )
                     }
                 }
             }
@@ -77,6 +107,65 @@ struct CareerSetupView: View {
         }
         .background(BaseballTheme.canvas)
         .scrollDismissesKeyboard(.interactively)
+    }
+}
+
+private struct DirectRepertoireCard: View {
+    @Binding var learningPitch: PitchType
+    @Binding var primaryPitch: PitchType
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var ready: [PitchType] {
+        [PitchType.slider, .curveball, .changeup].filter { $0 != learningPitch }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            GameCopyText(AppCopyKey.setupRepertoireTitle).font(.headline)
+            GameCopyText(AppCopyKey.setupRepertoireDescription)
+                .font(.footnote)
+                .foregroundStyle(BaseballTheme.textSecondary)
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.setupRepertoireLearning)) {
+                HStack(spacing: 6) {
+                    ForEach([PitchType.slider, .curveball, .changeup], id: \.self) { pitch in
+                        Button {
+                            learningPitch = pitch
+                            if primaryPitch == pitch { primaryPitch = .fourSeam }
+                        } label: {
+                            Text(PitchCopy.localized(pitch, resolver: copyResolver))
+                                .font(.footnote.weight(.semibold))
+                                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        }
+                        .buttonStyle(.plain)
+                        .background(
+                            learningPitch == pitch ? BaseballTheme.milestone.opacity(0.2) : BaseballTheme.surfaceRaised,
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        .accessibilityIdentifier("pro.setup.pitch.\(pitch.rawValue)")
+                        .accessibilityAddTraits(learningPitch == pitch ? .isSelected : [])
+                    }
+                }
+            }
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.setupRepertoirePrimary)) {
+                HStack(spacing: 6) {
+                    ForEach([PitchType.fourSeam] + ready, id: \.self) { pitch in
+                        Button { primaryPitch = pitch } label: {
+                            Text(PitchCopy.localized(pitch, resolver: copyResolver))
+                                .font(.footnote.weight(.semibold))
+                                .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        }
+                        .buttonStyle(.plain)
+                        .background(
+                            primaryPitch == pitch ? BaseballTheme.selection.opacity(0.2) : BaseballTheme.surfaceRaised,
+                            in: RoundedRectangle(cornerRadius: 8)
+                        )
+                        .accessibilityIdentifier("pro.setup.primary.\(pitch.rawValue)")
+                        .accessibilityAddTraits(primaryPitch == pitch ? .isSelected : [])
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("pro.setup.repertoire")
     }
 }
 
@@ -172,4 +261,72 @@ private struct PresetCard: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
+}
+
+#Preview("구종 구성 · 추천 기본값") {
+    @Previewable @State var learningPitch: PitchType = .curveball
+    @Previewable @State var primaryPitch: PitchType = .fourSeam
+    ScrollView {
+        DirectRepertoireCard(
+            learningPitch: $learningPitch,
+            primaryPitch: $primaryPitch
+        )
+        .padding()
+    }
+    .background(BaseballTheme.canvas)
+}
+
+#Preview("구종 구성 · 변경 상태") {
+    @Previewable @State var learningPitch: PitchType = .slider
+    @Previewable @State var primaryPitch: PitchType = .curveball
+    DirectRepertoireCard(
+        learningPitch: $learningPitch,
+        primaryPitch: $primaryPitch
+    )
+    .padding()
+    .background(BaseballTheme.canvas)
+}
+
+#Preview("구종 구성 · 접근성 글자") {
+    @Previewable @State var learningPitch: PitchType = .changeup
+    @Previewable @State var primaryPitch: PitchType = .slider
+    ScrollView {
+        DirectRepertoireCard(
+            learningPitch: $learningPitch,
+            primaryPitch: $primaryPitch
+        )
+        .padding()
+    }
+    .environment(\.dynamicTypeSize, .accessibility3)
+    .background(BaseballTheme.canvas)
+}
+
+#Preview("Starting arsenal · English") {
+    @Previewable @State var learningPitch: PitchType = .curveball
+    @Previewable @State var primaryPitch: PitchType = .fourSeam
+    DirectRepertoireCard(
+        learningPitch: $learningPitch,
+        primaryPitch: $primaryPitch
+    )
+    .padding()
+    .environment(
+        \.gameCopyResolver,
+        GameCopyResolver(language: .english, policy: .releaseSafe)
+    )
+    .background(BaseballTheme.canvas)
+}
+
+#Preview("持ち球 · 日本語") {
+    @Previewable @State var learningPitch: PitchType = .changeup
+    @Previewable @State var primaryPitch: PitchType = .curveball
+    DirectRepertoireCard(
+        learningPitch: $learningPitch,
+        primaryPitch: $primaryPitch
+    )
+    .padding()
+    .environment(
+        \.gameCopyResolver,
+        GameCopyResolver(language: .japanese, policy: .releaseSafe)
+    )
+    .background(BaseballTheme.canvas)
 }

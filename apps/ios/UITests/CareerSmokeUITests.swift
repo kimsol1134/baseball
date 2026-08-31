@@ -872,6 +872,151 @@ final class CareerSmokeUITests: XCTestCase {
         )
     }
 
+    /// 구종 선택 → 잠금 확인 → 집중 훈련 2회 → 앱 재실행 → 개발 구종 수동 투구를
+    /// 한 흐름으로 걷는다. 코어 테스트와 달리 실제 SwiftUI 접근성 트리와 저장 복원을 검증한다.
+    func testRepertoireLearningUnlocksPersistsAndUsesManualDelivery() {
+        executionTimeAllowance = 600
+        let app = launch()
+
+        dismissOpening(app)
+        let next = app.buttons["hs.setup.next"]
+        let repertoire = app.descendants(matching: .any)
+            .matching(identifier: "setup.repertoire").firstMatch
+        var setupHops = 0
+        while !repertoire.exists, next.waitForExistence(timeout: 2), setupHops < 5 {
+            next.tap()
+            setupHops += 1
+        }
+        XCTAssertTrue(repertoire.waitForExistence(timeout: timeout), "구종 구성 단계가 없습니다.")
+        XCTAssertTrue(tapIfPresent(app.buttons["setup.pitch.slider"]), "슬라이더를 학습 구종으로 고를 수 없습니다.")
+        XCTAssertTrue(tapIfPresent(app.buttons["setup.pitch.primary.curveball"]), "커브를 주력 구종으로 고를 수 없습니다.")
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.start"]), "구종 구성 뒤 커리어를 시작할 수 없습니다.")
+
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.prologue.throw"]), "첫 불펜을 열 수 없습니다.")
+        XCTAssertFalse(app.buttons["pitch.option.slider"].exists, "잠긴 슬라이더가 첫 불펜에 노출됐습니다.")
+        XCTAssertTrue(app.buttons["pitch.option.four_seam"].exists, "기본 포심이 첫 불펜에 없습니다.")
+        XCTAssertTrue(playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true))
+
+        var intensiveTrainings = 0
+        var steps = 0
+        while intensiveTrainings < 2, steps < 140 {
+            steps += 1
+            if tapFirst(app, prefix: "hs.school.") { confirmSchool(app); continue }
+            if app.buttons["hs.training.commit"].exists {
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.breaking_ball"]))
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.intensity.intensive"]))
+                XCTAssertTrue(
+                    app.descendants(matching: .any)
+                        .matching(identifier: "hs.training.pitchLearning").firstMatch.exists,
+                    "구종 연구 카드가 훈련 화면에 없습니다."
+                )
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
+                XCTAssertTrue(
+                    app.descendants(matching: .any)
+                        .matching(identifier: "hs.training.result.pitchLearning").firstMatch
+                        .waitForExistence(timeout: timeout),
+                    "구종 연구 진전 영수증이 없습니다."
+                )
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.training.result.dismiss"]))
+                intensiveTrainings += 1
+                continue
+            }
+            if tapFirst(app, prefix: "hs.response.") { continue }
+            if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
+            if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
+            if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
+            if app.buttons["hs.game.start"].exists {
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.game.start"]))
+                XCTAssertFalse(
+                    app.buttons["pitch.option.slider"].exists,
+                    "두 번째 집중 훈련 전 잠긴 슬라이더가 공식 경기에 노출됐습니다."
+                )
+                XCTAssertTrue(playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true))
+                continue
+            }
+            XCTFail("구종 해금 전 진행 가능한 행동이 없습니다: \(visibleIdentifiers(app))")
+            return
+        }
+        XCTAssertEqual(intensiveTrainings, 2, "집중 훈련 2회를 완료하지 못했습니다.")
+
+        // 자동 릴리스 없이 다시 열어 저장 복원과 기본 투구 슬라이더를 함께 검증한다.
+        app.terminate()
+        app.launchArguments = [
+            "-baseball.audio.sound", "NO",
+            "-baseball.pitch.autoRelease", "NO",
+        ]
+        app.launch()
+
+        steps = 0
+        while !app.buttons["hs.game.start"].exists, steps < 140 {
+            steps += 1
+            if app.buttons["hs.training.commit"].exists {
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.focus.command"]))
+                XCTAssertTrue(tapIfPresent(app.buttons["hs.training.commit"]))
+                if app.buttons["hs.training.result.dismiss"].waitForExistence(timeout: timeout) {
+                    app.buttons["hs.training.result.dismiss"].tap()
+                }
+                continue
+            }
+            if tapFirst(app, prefix: "hs.response.") { continue }
+            if tapFirst(app, prefix: "hs.awakening.") { confirmAwakening(app); continue }
+            if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
+            if tapIfPresent(app.buttons["hs.prologue.continue"]) { continue }
+            // 각성 확정 직후 상태 저장과 다음 국면 렌더가 한 런루프 늦게 끝날 수 있다.
+            // 실패 메시지를 만드는 동안 이미 경기 버튼이 생기는 경합을 실제 결함으로
+            // 오인하지 않도록, 이 전환 경계에서만 짧게 기다린다.
+            if app.buttons["hs.game.start"].waitForExistence(timeout: 1) { continue }
+            XCTFail("복원 뒤 다음 공식 경기까지 진행할 수 없습니다: \(visibleIdentifiers(app))")
+            return
+        }
+
+        XCTAssertTrue(tapIfPresent(app.buttons["hs.game.start"]), "복원 뒤 공식 경기를 열 수 없습니다.")
+        let slider = app.buttons["pitch.option.slider"]
+        XCTAssertTrue(slider.waitForExistence(timeout: timeout), "해금된 슬라이더가 복원 뒤 경기에서 보이지 않습니다.")
+        XCTAssertTrue(tapIfPresent(slider), "개발 중 슬라이더를 선택할 수 없습니다.")
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(identifier: "pitch.developmentBadge").firstMatch.exists,
+            "개발 구종 배지가 없습니다."
+        )
+        let pad = windUpPad(app)
+        XCTAssertTrue(pad.waitForExistence(timeout: timeout), "기본 수동 투구 슬라이더가 없습니다.")
+        XCTAssertFalse(app.buttons["pitch.throw"].exists, "기본 설정이 자동 릴리스로 바뀌었습니다.")
+        XCTAssertTrue(bringIntoView(pad), "수동 투구 슬라이더를 화면에 올리지 못했습니다.")
+        pad.press(forDuration: 0.6, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.1)
+        XCTAssertTrue(
+            app.buttons["pitch.nextBatter"].waitForExistence(timeout: 1)
+                || app.buttons["pitch.finish"].exists
+                || windUpPad(app).exists,
+            "개발 구종을 수동 투구 슬라이더로 던진 뒤 승부가 진행되지 않았습니다."
+        )
+    }
+
+    /// 실행 전에 simctl content_size를 접근성 최대로 설정해 호출한다.
+    func testRepertoireSetupAtAccessibilityContentSizeKeepsEveryActionReachable() {
+        let app = launch()
+        dismissOpening(app)
+        let next = app.buttons["hs.setup.next"]
+        let repertoire = app.descendants(matching: .any)
+            .matching(identifier: "setup.repertoire").firstMatch
+        var hops = 0
+        while !repertoire.exists, next.waitForExistence(timeout: 2), hops < 5 {
+            next.tap()
+            hops += 1
+        }
+        XCTAssertTrue(repertoire.waitForExistence(timeout: timeout))
+        for identifier in [
+            "setup.pitch.slider", "setup.pitch.curveball", "setup.pitch.changeup",
+            "setup.pitch.primary.four_seam",
+        ] {
+            let action = app.buttons[identifier]
+            XCTAssertTrue(action.waitForExistence(timeout: timeout), "접근성 글자 크기에서 \(identifier)가 없습니다.")
+            XCTAssertTrue(bringIntoView(action), "접근성 글자 크기에서 \(identifier)를 누를 수 없습니다.")
+            XCTAssertGreaterThanOrEqual(action.frame.height, 44)
+        }
+        XCTAssertTrue(bringIntoView(app.buttons["hs.start"]), "접근성 글자 크기에서 시작 버튼에 닿지 못합니다.")
+    }
+
     /// 키운 능력이 지금 공에 어떻게 번역됐는지는 제품 화면에서 항상 보여야 한다.
     /// 상세 그리드는 QA 플래그에 남기고, 한 줄 요약은 기본 흐름을 늘리지 않는다.
     func testCompactPitchAbilityFeedbackIsVisibleWithoutDetailedExperimentFlag() {
@@ -1117,9 +1262,9 @@ final class CareerSmokeUITests: XCTestCase {
         )
     }
 
-    /// 와인드업 패드. 라벨만 갖고 있어 종류를 특정하지 않고 찾는다.
+    /// 와인드업 패드. 표시 언어가 바뀌어도 같은 제품 식별자로 찾는다.
     private func windUpPad(_ app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any).matching(identifier: "와인드업").firstMatch
+        app.descendants(matching: .any).matching(identifier: "pitch.windup").firstMatch
     }
 
     // MARK: - 보조
@@ -1257,14 +1402,15 @@ final class CareerSmokeUITests: XCTestCase {
         guard element.exists else { return false }
         if element.isHittable { return true }
         let app = XCUIApplication()
-        let scrollView = app.scrollViews.firstMatch
-        guard scrollView.waitForExistence(timeout: 1) else { return false }
+        // `firstMatch` can be an inner SwiftUI scroll container (for example a restored pitch
+        // card) that does not move the screen holding the target. App-level gestures hit the
+        // foreground vertical career/pitch scroll view and match how a player actually searches.
         for _ in 0..<attempts {
-            scrollView.swipeUp()
+            app.swipeUp()
             if element.isHittable { return true }
         }
         for _ in 0..<attempts {
-            scrollView.swipeDown()
+            app.swipeDown()
             if element.isHittable { return true }
         }
         return element.isHittable

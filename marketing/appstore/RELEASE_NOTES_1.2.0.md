@@ -56,6 +56,6 @@ The life you built one pitch at a time now belongs to you all the way to retirem
 
 ## 프로모션 텍스트 (170자 제한, 심사 없이 갱신 가능)
 
-- ko: `지명은 끝이 아니라 시작입니다. 계약서에 서명하고, 연봉을 받고, FA의 갈림길에 서고, 영구결번을 꿈꾸세요. 광고도 뽑기도 없이, 한 번의 구매로 투수의 인생 전부를 삽니다.`
-- en: `Draft day is just the beginning. Sign the contract, earn the salary, face free agency, chase a retired number. No ads, no gacha — one purchase, a whole pitcher's life.`
-- ja: `ドラフトは始まりにすぎません。契約にサインし、年俸を受け取り、FAの岐路に立ち、永久欠番を夢見る。広告もガチャもなし。一度の購入で投手の人生まるごと。`
+- ko: `마지막 한 구를 직접 던집니다. 구종·코스를 고르고 손 떼는 타이밍으로 제구가 갈립니다. 지명받지 못하면 다시 태어나 전 생의 한 가지를 남깁니다. 광고·뽑기·인앱 결제 없이, 한 번 사면 고교부터 은퇴까지 전부입니다.`
+- en: `You throw every important pitch. Pick the spot, time the release. Miss the draft, begin again with one thing from the last life. Pay once. No ads, gacha, or IAP.`
+- ja: `最後の一球も自分で投げる。球種とコースを選び、離すタイミングで制球が決まる。指名されなければまた転生し、前の人生を次の投手に残す。広告・ガチャ・追加課金なし。一度買えば高校から引退まで全部。`

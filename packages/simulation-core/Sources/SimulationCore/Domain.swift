@@ -19,6 +19,15 @@ public enum PitchUsageRole: String, Codable, CaseIterable, Sendable {
     case development
 }
 
+/// Whether a pitch can be selected in an official game.
+///
+/// `nil` on `PitchProfileSnapshot.availability` is deliberately interpreted as game-ready. Saves
+/// created before repertoire learning shipped have no availability key and must never lose a pitch.
+public enum PitchAvailability: String, Codable, CaseIterable, Sendable {
+    case locked
+    case gameReady = "game_ready"
+}
+
 /// Which side of the plate the batter hits from. `switchHitter` always takes the platoon-favored
 /// box (bats opposite the pitcher's hand). Defaults to `.right` on decode so pre-platoon saves and
 /// RPC payloads — which carry no `batSide` — load as a right-handed hitter unchanged.
@@ -38,6 +47,12 @@ public struct PitchProfileSnapshot: Codable, Equatable, Sendable {
     public let whiff: Int
     public let weakContact: Int
     public let fatigueCost: Int
+    /// Missing in legacy saves. Nil therefore means the pitch remains available exactly as before.
+    public let availability: PitchAvailability?
+
+    public var isGameReady: Bool {
+        availability == nil || availability == .gameReady
+    }
 
     public init(
         pitchType: PitchType,
@@ -48,7 +63,8 @@ public struct PitchProfileSnapshot: Codable, Equatable, Sendable {
         movement: Int,
         whiff: Int,
         weakContact: Int,
-        fatigueCost: Int
+        fatigueCost: Int,
+        availability: PitchAvailability? = nil
     ) {
         self.pitchType = pitchType
         self.role = role
@@ -59,6 +75,7 @@ public struct PitchProfileSnapshot: Codable, Equatable, Sendable {
         self.whiff = whiff
         self.weakContact = weakContact
         self.fatigueCost = fatigueCost
+        self.availability = availability
     }
 }
 
@@ -72,6 +89,84 @@ public struct PitchZone: Codable, Equatable, Sendable {
     }
 }
 
+/// Growth that has passed the visible 1–100 base-ability ladder.  Mastery is intentionally
+/// unbounded for game-design purposes: the persisted integer is only saturated at the signed
+/// 32-bit boundary so Swift, Kotlin/C#, and TypeScript can exchange it safely.
+public struct AbilityMasterySnapshot: Codable, Equatable, Sendable {
+    public static let technicalMaximum = Int32.max
+    public static let zero = AbilityMasterySnapshot()
+
+    public let stuff: Int
+    public let command: Int
+    public let movement: Int
+    public let stamina: Int
+
+    public init(stuff: Int = 0, command: Int = 0, movement: Int = 0, stamina: Int = 0) {
+        self.stuff = Self.saturate(stuff)
+        self.command = Self.saturate(command)
+        self.movement = Self.saturate(movement)
+        self.stamina = Self.saturate(stamina)
+    }
+
+    private enum CodingKeys: String, CodingKey { case stuff, command, movement, stamina }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let values = try [
+            container.decode(Int.self, forKey: .stuff),
+            container.decode(Int.self, forKey: .command),
+            container.decode(Int.self, forKey: .movement),
+            container.decode(Int.self, forKey: .stamina),
+        ]
+        guard values.allSatisfy({ (0...Int(Self.technicalMaximum)).contains($0) }) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .stuff,
+                in: container,
+                debugDescription: "mastery values must be within the unsigned game range"
+            )
+        }
+        self.init(stuff: values[0], command: values[1], movement: values[2], stamina: values[3])
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(stuff, forKey: .stuff)
+        try container.encode(command, forKey: .command)
+        try container.encode(movement, forKey: .movement)
+        try container.encode(stamina, forKey: .stamina)
+    }
+
+    public func value(for ability: TalentAbility) -> Int {
+        switch ability {
+        case .stuff: stuff
+        case .command: command
+        case .movement: movement
+        case .stamina: stamina
+        }
+    }
+
+    public func replacing(_ ability: TalentAbility, with value: Int) -> AbilityMasterySnapshot {
+        switch ability {
+        case .stuff: AbilityMasterySnapshot(stuff: value, command: command, movement: movement, stamina: stamina)
+        case .command: AbilityMasterySnapshot(stuff: stuff, command: value, movement: movement, stamina: stamina)
+        case .movement: AbilityMasterySnapshot(stuff: stuff, command: command, movement: value, stamina: stamina)
+        case .stamina: AbilityMasterySnapshot(stuff: stuff, command: command, movement: movement, stamina: value)
+        }
+    }
+
+    public func adding(_ points: Int, to ability: TalentAbility) -> AbilityMasterySnapshot {
+        guard points > 0 else { return self }
+        let current = Int64(value(for: ability))
+        let increment = min(Int64(Self.technicalMaximum), Int64(points))
+        let saturated = min(Int64(Self.technicalMaximum), current + increment)
+        return replacing(ability, with: Int(saturated))
+    }
+
+    private static func saturate(_ value: Int) -> Int {
+        min(Int(technicalMaximum), max(0, value))
+    }
+}
+
 public struct PitcherSnapshot: Codable, Equatable, Sendable {
     public let id: String
     public let name: String
@@ -80,6 +175,9 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
     public let movement: Int
     public let stamina: Int
     public let pitchProfiles: [PitchProfileSnapshot]?
+    /// Nil means a pre-mastery save. All readers treat nil as `.zero`; keeping the optional on the
+    /// wire lets old saves retain their exact shape until a real advancement is persisted.
+    public let mastery: AbilityMasterySnapshot?
     /// The arm the pitcher throws with. Drives only the left/right platoon read in `resolvePitch`
     /// and never the recommendation, plan, or preparation token. Defaults to `.right` on decode so
     /// saves/RPC payloads written before platoon existed keep resolving identically.
@@ -92,7 +190,8 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
         command: Int,
         movement: Int,
         stamina: Int,
-        throwingHand: ThrowingHand = .right
+        throwingHand: ThrowingHand = .right,
+        mastery: AbilityMasterySnapshot? = nil
     ) {
         self.init(
             id: id,
@@ -102,7 +201,31 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
             movement: movement,
             stamina: stamina,
             pitchProfiles: nil,
-            throwingHand: throwingHand
+            throwingHand: throwingHand,
+            mastery: mastery
+        )
+    }
+
+    /// ABI/source-compatible overload retained for callers compiled against the pre-mastery
+    /// package. Default arguments do not preserve Swift's old initializer symbol on their own.
+    public init(
+        id: String,
+        name: String,
+        stuff: Int,
+        command: Int,
+        movement: Int,
+        stamina: Int,
+        throwingHand: ThrowingHand
+    ) {
+        self.init(
+            id: id,
+            name: name,
+            stuff: stuff,
+            command: command,
+            movement: movement,
+            stamina: stamina,
+            throwingHand: throwingHand,
+            mastery: nil
         )
     }
 
@@ -114,7 +237,8 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
         movement: Int,
         stamina: Int,
         pitchProfiles: [PitchProfileSnapshot]?,
-        throwingHand: ThrowingHand = .right
+        throwingHand: ThrowingHand = .right,
+        mastery: AbilityMasterySnapshot? = nil
     ) {
         self.id = id
         self.name = name
@@ -124,10 +248,36 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
         self.stamina = stamina
         self.pitchProfiles = pitchProfiles
         self.throwingHand = throwingHand
+        self.mastery = mastery
+    }
+
+    /// ABI/source-compatible profile initializer retained for the same reason as the overload
+    /// above.
+    public init(
+        id: String,
+        name: String,
+        stuff: Int,
+        command: Int,
+        movement: Int,
+        stamina: Int,
+        pitchProfiles: [PitchProfileSnapshot]?,
+        throwingHand: ThrowingHand
+    ) {
+        self.init(
+            id: id,
+            name: name,
+            stuff: stuff,
+            command: command,
+            movement: movement,
+            stamina: stamina,
+            pitchProfiles: pitchProfiles,
+            throwingHand: throwingHand,
+            mastery: nil
+        )
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, stuff, command, movement, stamina, pitchProfiles, throwingHand
+        case id, name, stuff, command, movement, stamina, pitchProfiles, throwingHand, mastery
     }
 
     public init(from decoder: Decoder) throws {
@@ -140,10 +290,21 @@ public struct PitcherSnapshot: Codable, Equatable, Sendable {
         stamina = try container.decode(Int.self, forKey: .stamina)
         pitchProfiles = try container.decodeIfPresent([PitchProfileSnapshot].self, forKey: .pitchProfiles)
         throwingHand = try container.decodeIfPresent(ThrowingHand.self, forKey: .throwingHand) ?? .right
+        mastery = try container.decodeIfPresent(AbilityMasterySnapshot.self, forKey: .mastery)
     }
+
+    public var effectiveMastery: AbilityMasterySnapshot { mastery ?? .zero }
 
     public func profile(for pitchType: PitchType) -> PitchProfileSnapshot? {
         pitchProfiles?.first { $0.pitchType == pitchType }
+    }
+
+    public func gameReadyProfile(for pitchType: PitchType) -> PitchProfileSnapshot? {
+        profile(for: pitchType).flatMap { $0.isGameReady ? $0 : nil }
+    }
+
+    public var gameReadyPitchTypes: [PitchType] {
+        pitchProfiles?.filter(\.isGameReady).map(\.pitchType) ?? PitchType.allCases
     }
 }
 

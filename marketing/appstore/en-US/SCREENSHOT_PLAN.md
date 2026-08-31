@@ -7,10 +7,10 @@ The English media keeps the Korean product page's seven-step story and uses only
 | # | Headline | Supporting line | Real app state | Buyer question answered |
 |---:|---|---|---|---|
 | 1 | `ONE PITCH LEFT` | `Choose it. Throw it.` | Pitch result and strike zone | Do I actually make pitching decisions? |
-| 2 | `THREE YEARS. NO GUARANTEES.` | `Miss the cut. Your name goes uncalled.` | Undrafted result | Do my choices have real stakes? |
+| 2 | `HITTERS REMEMBER YOUR PATTERNS` | `They adjust. So must you.` | Pitch, location, and sign choice | Is pitching more than repeating the best option? |
 | 3 | `FAILURE STILL LEAVES SOMETHING` | `This career ends. The next one begins.` | Rebirth transition | What makes this career game different? |
 | 4 | `BUILT FROM THE CAREER YOU PLAYED` | `Carry one legacy into the next life.` | Signature legacy selection | Is rebirth more than a reset? |
-| 5 | `HITTERS REMEMBER YOUR PATTERNS` | `They adjust. So must you.` | Pitch, location, and sign choice | Is pitching more than repeating the best option? |
+| 5 | `THREE YEARS. NO GUARANTEES.` | `Miss the cut. Your name goes uncalled.` | Undrafted result | Do my choices have real stakes? |
 | 6 | `A NEW PLAYER. NOT A BLANK SLATE.` | `Your last failure becomes a head start.` | Next player's inherited opening state | Does progress survive between careers? |
 | 7 | `ANOTHER CAREER. ANOTHER DRAFT.` | `Will they call your name this time?` | Successful draft reveal | Is there a complete payoff to pursue? |
 
@@ -18,9 +18,11 @@ The English media keeps the Korean product page's seven-step story and uses only
 
 The first three assets must read as one compact promise even when a visitor sees nothing else:
 
-1. The player directly controls an important pitch.
-2. A three-year career can still end without a draft selection.
-3. Failure becomes useful progress through rebirth.
+1. A visible pitch / strike-zone result. Chart thumbnails must show baseball, not a title card.
+2. A second baseball-visible play or decision frame (pitch mix, location, or catcher signs). Not the dark undrafted silhouette.
+3. Rebirth. Failure becomes the next career's head start.
+
+The dark undrafted cinematic still is frame 5. It is a stake, not a first-impression thumbnail.
 
 The product name and screenshot story should therefore agree before the visitor reaches the longer description.
 

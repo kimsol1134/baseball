@@ -64,6 +64,11 @@ struct RetirementPreviewCard: View {
                     Label(copyResolver.resolve(.retirementPreviewRetiredNumberEligible), systemImage: "number.circle.fill")
                         .foregroundStyle(BaseballTheme.milestone)
                         .accessibilityIdentifier("pro.retirement.preview.retired-number.eligible")
+                } else {
+                    Text(copyResolver.resolve(.retirementPreviewRetiredNumberHint))
+                        .font(.caption)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .accessibilityIdentifier("pro.retirement.preview.retired-number.hint")
                 }
                 if !preview.clubHallTeamIDs.isEmpty {
                     Text(copyResolver.resolve(.retirementPreviewClubHall))

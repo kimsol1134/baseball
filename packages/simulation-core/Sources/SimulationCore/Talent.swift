@@ -226,17 +226,17 @@ public enum TalentRules {
 
     /// 만개 소식 한 줄.
     public static func bloomHeadline(ability: TalentAbility, to grade: TalentGrade) -> String {
-        "\(ability.label)의 한계가 열렸습니다 — 재능 \(grade.label). 지금까지 막혀 있던 자리가 \(grade.ceiling)까지 늘었습니다."
+        "\(ability.label)의 한계가 열렸습니다 — 재능 \(grade.label). 지금까지 막혀 있던 자리가 한 단계 늘었습니다."
     }
 
     /// 화면이 읽어 줄 재능 설명.
     public static func meaning(_ grade: TalentGrade) -> String {
         switch grade {
-        case .d: "지금은 \(grade.ceiling)에서 막힙니다. 계속 두드리면 가장 빨리 열립니다."
-        case .c: "\(grade.ceiling)까지. 조금만 더 밀면 열립니다."
-        case .b: "\(grade.ceiling)까지. 프로에서 통하는 수준입니다."
-        case .a: "\(grade.ceiling)까지. 리그 상위권에 닿습니다."
-        case .s: "한계가 없습니다."
+        case .d: "막혀 있던 길이 열렸습니다. 계속 훈련하면 가장 빠르게 다음 단계로 갑니다."
+        case .c: "계속된 훈련으로 더 높은 단계에 닿을 수 있습니다."
+        case .b: "좋은 재능이 더 멀리 열렸습니다. 프로 수준이 사정권에 들어왔습니다."
+        case .a: "최상급 잠재력이 열렸습니다. 이 능력은 대표 무기가 될 수 있습니다."
+        case .s: "기본 능력 100까지 완성됩니다. 이후에는 숙련으로 계속 성장합니다."
         }
     }
 }

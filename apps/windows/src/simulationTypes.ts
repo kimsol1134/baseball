@@ -39,9 +39,18 @@ export interface PitcherSnapshot {
   movement: number;
   stamina: number;
   pitchProfiles?: ReadonlyArray<PitchProfileSnapshot>;
+  mastery?: AbilityMasterySnapshot;
+}
+
+export interface AbilityMasterySnapshot {
+  stuff: number;
+  command: number;
+  movement: number;
+  stamina: number;
 }
 
 export type PitchUsageRole = "primary" | "secondary" | "development";
+export type PitchAvailability = "locked" | "game_ready";
 
 export interface PitchProfileSnapshot {
   pitchType: PitchType;
@@ -53,6 +62,36 @@ export interface PitchProfileSnapshot {
   whiff: number;
   weakContact: number;
   fatigueCost: number;
+  availability?: PitchAvailability;
+}
+
+export type PitchLearningStage = "grip" | "bullpen" | "live_trial" | "completed";
+export interface StartingRepertoireSelection {
+  readyBreakingPitches: ReadonlyArray<PitchType>;
+  primaryPitch: PitchType;
+  learningPitch: PitchType;
+}
+export interface PitchLearningProjectSnapshot {
+  pitchType: PitchType;
+  practiceCredits: number;
+  qualityUses: number;
+  stage: PitchLearningStage;
+  startedChapter?: number;
+  completedChapter?: number;
+}
+export interface PitchLearningReceiptSnapshot {
+  pitchType: PitchType;
+  stageBefore: PitchLearningStage;
+  stageAfter: PitchLearningStage;
+  practiceCreditsBefore: number;
+  practiceCreditsAfter: number;
+  justUnlockedForGames: boolean;
+  justCompleted: boolean;
+}
+export interface PitchLearningUseReceipt {
+  pitchType: PitchType;
+  pitchesThrown: number;
+  qualityUses: number;
 }
 
 export interface PitcherPresetSnapshot {
@@ -557,6 +596,13 @@ export interface ImportantInningReport {
   expectedDamage: number;
   actualDamage: number;
   recommendationAccepted: number;
+  outs?: number;
+  teamRuns?: number;
+  scoreDifferentialAtEntry?: number;
+  sequenceMasteryCount?: number;
+  hits?: number;
+  homeRuns?: number;
+  pitchLearningUses?: ReadonlyArray<PitchLearningUseReceipt>;
 }
 
 export interface LabPerformanceSnapshot extends Omit<ImportantInningReport, "scenarioNumber"> {
@@ -788,6 +834,7 @@ export interface CareerTrainingSnapshot {
   fatigueBefore?: number;
   fatigueAfter?: number;
   opportunityHit?: boolean;
+  pitchLearning?: PitchLearningReceiptSnapshot;
 }
 
 export interface CareerRelationshipResultSnapshot {
@@ -844,6 +891,8 @@ export interface HighSchoolCareerSnapshot {
   legacyOptions: ReadonlyArray<MemoryCardID>;
   selectedMemories: ReadonlyArray<MemoryCardID>;
   balanceVersion?: number;
+  repertoireRulesVersion?: number;
+  pitchLearningProject?: PitchLearningProjectSnapshot;
   /** 누적 팔 상태 위험(0–100). 옛 저장본은 없을 수 있어 0으로 읽는다. */
   armRisk?: number;
   schedule?: CareerScheduleSnapshot;
@@ -865,6 +914,20 @@ export interface HighSchoolCareerResult {
   events: ReadonlyArray<HighSchoolCareerEvent>;
   snapshot: HighSchoolCareerSnapshot;
   eventHash: string;
+  armHealth?: HighSchoolArmHealthReceipt;
+}
+
+export type HighSchoolArmHealthState = "normal" | "caution" | "warning" | "recovering";
+export type HighSchoolArmHealthCause = "outing_load" | "push_through" | "rehab";
+export interface HighSchoolArmHealthReceipt {
+  riskBefore: number;
+  riskAfter: number;
+  healthBefore: HighSchoolArmHealthState;
+  healthAfter: HighSchoolArmHealthState;
+  pitches: number;
+  fatigueBefore: number;
+  cause: HighSchoolArmHealthCause;
+  recoveryRemaining: number;
 }
 
 export interface StartHighSchoolCareerParams {
@@ -878,6 +941,7 @@ export interface StartHighSchoolCareerParams {
   identity: PlayerIdentitySnapshot;
   difficulty: CareerDifficultySnapshot;
   karmas: ReadonlyArray<KarmaID>;
+  startingRepertoire?: StartingRepertoireSelection;
 }
 
 export interface ChooseSchoolParams {
@@ -891,6 +955,7 @@ export interface CommitCareerTrainingParams {
   state: HighSchoolCareerSnapshot;
   focus: TrainingFocus;
   intensity: TrainingIntensity;
+  targetPitch?: PitchType;
 }
 
 export interface ResolveCareerRelationshipParams {
@@ -968,7 +1033,7 @@ export interface ProEntitlementSnapshot { productID: string; status: Entitlement
 export type ProCareerPhase = "contract_offer" | "weekly_plan" | "important_game" | "season_review" | "offseason_decision" | "retirement_decision" | "completed";
 export type ProLevel = "minor" | "major";
 export type ProRole = "starter" | "long_relief" | "setup" | "closer";
-export type ProWeekPlan = "develop_weapon" | "refine_command" | "build_stamina" | "recover" | "earn_trust";
+export type ProWeekPlan = "develop_stuff" | "develop_movement" | "develop_weapon" | "refine_command" | "build_stamina" | "recover" | "earn_trust";
 export type OffseasonDecision = "continue" | "military_service" | "free_agency" | "retire";
 export interface ProSeasonStats { season: number; teamID: string; games: number; starts: number; inningsOuts: number; strikeouts: number; walks: number; runsAllowed: number; wins: number; saves: number }
 export interface ProContractSnapshot { yearsRemaining: number; annualSalary: number; rolePromise: ProRole }
@@ -976,6 +1041,17 @@ export type ProSeasonSegment = "spring_camp" | "opening" | "first_half" | "all_s
 export type ProSeasonTrigger = "opening_statement" | "call_up_audition" | "major_debut" | "record_chase" | "role_showdown" | "standings_race";
 export interface ProRivalBatter { id: string; name: string; archetype: string; teamID: string; teamName: string; record: string; profile: string }
 export interface ProSeasonTension { kind: string; title: string; detail: string }
+export type ProWeekInjuryRiskBand = "low" | "caution" | "high";
+export interface ProWeekHealthForecast {
+  plan: ProWeekPlan;
+  role: ProRole;
+  expectedPitches: number;
+  currentFatigue: number;
+  expectedRawFatigue: number;
+  expectedEffectiveFatigue: number;
+  band: ProWeekInjuryRiskBand;
+  reason: string;
+}
 export interface ProCareerSnapshot {
   proCareerID: string; revision: number; phase: ProCareerPhase; identity: PlayerIdentitySnapshot; pitcher: PitcherSnapshot;
   team: DraftTeamSnapshot; entitlement: ProEntitlementSnapshot; age: number; season: number; week: number; level: ProLevel; role: ProRole;
@@ -984,10 +1060,29 @@ export interface ProCareerSnapshot {
   milestones: ReadonlyArray<string>; news: ReadonlyArray<string>; hallOfFameScore?: number; balanceVersion?: number; commitment: string;
   seasonSegment?: ProSeasonSegment; seasonTrigger?: ProSeasonTrigger; currentRival?: ProRivalBatter;
   seasonTensions?: ReadonlyArray<ProSeasonTension>; seasonImportantGames?: number;
+  repertoireRulesVersion?: number; pitchLearningProject?: PitchLearningProjectSnapshot;
 }
-export interface ProCareerResult { snapshot: ProCareerSnapshot; nextSeed: string; events: ReadonlyArray<string> }
-export interface StartProCareerParams { seed: string; identity: PlayerIdentitySnapshot; pitcher: PitcherSnapshot; draftResult: DraftResultSnapshot; entitlement: ProEntitlementSnapshot }
+export type ProInjuryCause = "overload";
+export interface ProInjuryEventSnapshot {
+  cause: ProInjuryCause;
+  season: number;
+  week: number;
+  plan: ProWeekPlan;
+  rawFatigue: number;
+  effectiveFatigue: number;
+  pitches: number;
+  recoveryWeeks: number;
+  careerID?: string;
+  revision?: number;
+}
+export interface ProCareerResult {
+  snapshot: ProCareerSnapshot;
+  nextSeed: string;
+  events: ReadonlyArray<string>;
+  injuryEvent?: ProInjuryEventSnapshot;
+}
+export interface StartProCareerParams { seed: string; identity: PlayerIdentitySnapshot; pitcher: PitcherSnapshot; draftResult: DraftResultSnapshot; entitlement: ProEntitlementSnapshot; startingRepertoire?: StartingRepertoireSelection; repertoireRulesVersion?: number; pitchLearningProject?: PitchLearningProjectSnapshot }
 export interface ProStateParams { seed: string; state: ProCareerSnapshot }
-export interface PlanProWeekParams extends ProStateParams { plan: ProWeekPlan }
+export interface PlanProWeekParams extends ProStateParams { plan: ProWeekPlan; targetPitch?: PitchType }
 export interface ResolveProGameParams extends ProStateParams { report: ImportantInningReport }
 export interface ProOffseasonParams extends ProStateParams { decision: OffseasonDecision }

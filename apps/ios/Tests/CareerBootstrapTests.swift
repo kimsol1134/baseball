@@ -35,6 +35,20 @@ final class CareerBootstrapTests: XCTestCase {
         XCTAssertEqual(result.snapshot.pitcher.name, "테스트")
     }
 
+    func testDirectCareerStartingRepertoireCreatesThreeReadyPitchesAndLearningProject() throws {
+        let selection = PitchLearningRules.recommendedSelection(presetID: preset.id)
+        let result = try CareerBootstrap.startCareer(
+            preset: preset,
+            playerName: "구종연구",
+            seed: 20_260_823,
+            startingRepertoire: selection
+        )
+        XCTAssertEqual(result.snapshot.repertoireRulesVersion, 1)
+        XCTAssertEqual(result.snapshot.pitchLearningProject?.pitchType, selection.learningPitch)
+        XCTAssertEqual(result.snapshot.pitcher.gameReadyPitchTypes.count, 3)
+        XCTAssertEqual(result.snapshot.pitcher.profile(for: selection.learningPitch)?.availability, .locked)
+    }
+
     /// Wave 0 characterization: the linked iOS bootstrap still signs the rookie contract
     /// before it exposes week one. This deliberately records the legacy path; it does not
     /// change the product flow.

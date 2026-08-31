@@ -89,7 +89,7 @@ final class PitchSituationTests: XCTestCase {
                 .init(label: "구위", before: 44, after: 46),
                 .init(label: "체력", before: 50, after: 51),
             ]),
-            "구위 +2 · 체력 +1"
+            "구위 +3 · 체력 +2"
         )
         XCTAssertEqual(HighSchoolCareerStore.gainHeadline([]), "능력 변화 없음")
         XCTAssertEqual(

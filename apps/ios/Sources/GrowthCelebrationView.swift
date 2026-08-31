@@ -37,13 +37,17 @@ struct GrowthCelebrationView: View {
             ForEach(gains) { gain in
                 StatTile(
                     label: copyResolver.resolve(gain.ability.displayCopyToken),
-                    value: "\(gain.after)",
-                    previousValue: "\(gain.before)",
+                    value: "\(AbilityDisplayScale.displayRating(gain.after))",
+                    previousValue: "\(AbilityDisplayScale.displayRating(gain.before))",
                     caption: RatingScale.nextStep(gain.after).map { step in
                         copyResolver.resolve(
                             .growthNextStep,
                             arguments: [
-                                .integer(step.minimum - gain.after),
+                                .integer(max(
+                                    0,
+                                    AbilityDisplayScale.displayRating(step.minimum)
+                                        - AbilityDisplayScale.displayRating(gain.after)
+                                )),
                                 .userText(MetaPresentation.ratingMeaning(step, resolver: copyResolver)),
                             ]
                         )

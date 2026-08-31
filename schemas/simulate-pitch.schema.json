@@ -41,6 +41,16 @@
   },
   "$defs": {
     "rating": { "type": "integer", "minimum": 20, "maximum": 80 },
+    "mastery": {
+      "type": "object",
+      "properties": {
+        "stuff": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "command": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "movement": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "stamina": { "type": "integer", "minimum": 0, "maximum": 2147483647 }
+      },
+      "additionalProperties": false
+    },
     "pitcher": {
       "type": "object",
       "required": ["id", "name", "stuff", "command", "movement", "stamina"],
@@ -50,7 +60,8 @@
         "stuff": { "$ref": "#/$defs/rating" },
         "command": { "$ref": "#/$defs/rating" },
         "movement": { "$ref": "#/$defs/rating" },
-        "stamina": { "$ref": "#/$defs/rating" }
+        "stamina": { "$ref": "#/$defs/rating" },
+        "mastery": { "$ref": "#/$defs/mastery" }
       },
       "additionalProperties": false
     },

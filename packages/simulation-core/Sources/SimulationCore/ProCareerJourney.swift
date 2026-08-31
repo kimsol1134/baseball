@@ -836,7 +836,8 @@ public enum ProRetirementRules {
         let lastRecord = ProTeamCareerRecordRules.record(teamID: lastTeamID, in: records)
         let fanSupport = journey?.reputation.fanSupport ?? 0
         let lastTeamSeasons = lastRecord?.completedSeasons ?? 0
-        let lastTeamLegacy = lastRecord.map(ProTeamLegacyRules.score(record:)) ?? 0
+        let rulesVersion = journey?.rulesVersion ?? 1
+        let lastTeamLegacy = lastRecord.map { ProTeamLegacyRules.score(record: $0, rulesVersion: rulesVersion) } ?? 0
         let retiredNumberEligible = lastRecord.map {
             $0.completedSeasons >= 8
                 && lastTeamLegacy >= 80
@@ -845,7 +846,7 @@ public enum ProRetirementRules {
         let clubHallTeamIDs = records
             .filter {
                 $0.completedSeasons >= 6
-                    && ProTeamLegacyRules.score(record: $0) >= 65
+                    && ProTeamLegacyRules.score(record: $0, rulesVersion: rulesVersion) >= 65
                     && (!retiredNumberEligible || $0.teamID != lastTeamID)
             }
             .map(\.teamID)
@@ -1089,31 +1090,39 @@ public enum ProLegacyRecognitionAdapter {
 }
 
 public enum ProCareerRecognitionRules {
+    public static func awardContentIDs(stats: ProSeasonStats, rulesVersion: Int) -> [String] {
+        var ids: [String] = []
+        let ra9 = stats.inningsOuts == 0 ? Int.max : stats.runsAllowed * 27_000 / stats.inningsOuts
+        let bb9 = stats.inningsOuts == 0 ? Int.max : stats.walks * 27_000 / stats.inningsOuts
+        let h9 = stats.inningsOuts == 0 ? Int.max : stats.hits * 27_000 / stats.inningsOuts
+        if rulesVersion >= 2 {
+            if stats.strikeouts >= 180 { ids.append("pro.award.strikeouts") }
+            if ra9 < 2_700, stats.games >= 20, stats.inningsOuts >= 360 {
+                ids.append("pro.award.run-prevention")
+            }
+            if bb9 < 1_800, stats.inningsOuts >= 360 { ids.append("pro.award.command") }
+            if h9 < 7_500, stats.inningsOuts >= 360 { ids.append("pro.award.hits") }
+            if stats.inningsOuts >= 486 { ids.append("pro.award.innings") }
+        } else {
+            if stats.strikeouts >= 120 { ids.append("pro.award.strikeouts") }
+            if ra9 < 3_000, stats.games >= 20 { ids.append("pro.award.run-prevention") }
+            if bb9 < 2_500, stats.inningsOuts >= 180 { ids.append("pro.award.command") }
+            if h9 < 8_500, stats.inningsOuts >= 180 { ids.append("pro.award.hits") }
+            if stats.inningsOuts >= 360 { ids.append("pro.award.innings") }
+        }
+        return ids
+    }
+
     public static func currentSeasonRecognitions(
         careerID: String,
         season: Int,
         teamID: String,
         stats: ProSeasonStats,
-        level: ProLevel
+        level: ProLevel,
+        rulesVersion: Int
     ) -> [ProCareerRecognition] {
-        var values: [ProCareerRecognition] = []
-        if stats.strikeouts >= 120 {
-            values.append(.init(careerID: careerID, kind: .award, contentID: "pro.award.strikeouts", season: season, teamID: teamID))
-        }
-        let ra9 = stats.inningsOuts == 0 ? Int.max : stats.runsAllowed * 27_000 / stats.inningsOuts
-        if ra9 < 3_000, stats.games >= 20 {
-            values.append(.init(careerID: careerID, kind: .award, contentID: "pro.award.run-prevention", season: season, teamID: teamID))
-        }
-        let bb9 = stats.inningsOuts == 0 ? Int.max : stats.walks * 27_000 / stats.inningsOuts
-        if bb9 < 2_500, stats.inningsOuts >= 180 {
-            values.append(.init(careerID: careerID, kind: .award, contentID: "pro.award.command", season: season, teamID: teamID))
-        }
-        let h9 = stats.inningsOuts == 0 ? Int.max : stats.hits * 27_000 / stats.inningsOuts
-        if h9 < 8_500, stats.inningsOuts >= 180 {
-            values.append(.init(careerID: careerID, kind: .award, contentID: "pro.award.hits", season: season, teamID: teamID))
-        }
-        if stats.inningsOuts >= 360 {
-            values.append(.init(careerID: careerID, kind: .award, contentID: "pro.award.innings", season: season, teamID: teamID))
+        var values: [ProCareerRecognition] = awardContentIDs(stats: stats, rulesVersion: rulesVersion).map {
+            .init(careerID: careerID, kind: .award, contentID: $0, season: season, teamID: teamID)
         }
         values.append(.init(careerID: careerID, kind: .milestone, contentID: "pro.milestone.season-complete", season: season, teamID: teamID))
         if level == .major {
@@ -1212,6 +1221,19 @@ public enum ProTeamCareerRecordRules {
     }
 
     public static func score(record: ProTeamCareerRecord) -> Int {
+        score(record: record, rulesVersion: 1)
+    }
+
+    public static func score(record: ProTeamCareerRecord, rulesVersion: Int) -> Int {
+        if rulesVersion >= 2 {
+            let tenure = min(20, max(0, record.completedSeasons) * 2)
+            let strikeouts = min(30, max(0, record.strikeouts) / 40)
+            let workload = min(18, max(0, record.inningsOuts) / 200)
+            let awards = min(20, max(0, record.awardCount) * 5)
+            let continuity = min(8, max(0, record.consecutiveSeasons))
+            let community = min(8, max(0, record.communityPoints))
+            return min(100, tenure + strikeouts + workload + awards + continuity + community)
+        }
         let tenure = min(40, max(0, record.completedSeasons) * 5)
         let strikeouts = min(25, max(0, record.strikeouts) / 40)
         let workload = min(15, max(0, record.inningsOuts) / 180)
@@ -1222,7 +1244,11 @@ public enum ProTeamCareerRecordRules {
     }
 
     public static func tier(record: ProTeamCareerRecord) -> ProTeamLegacyTier {
-        let score = score(record: record)
+        tier(record: record, rulesVersion: 1)
+    }
+
+    public static func tier(record: ProTeamCareerRecord, rulesVersion: Int) -> ProTeamLegacyTier {
+        let score = score(record: record, rulesVersion: rulesVersion)
         if score >= 80, record.completedSeasons >= 8 { return .retiredNumberCandidate }
         if score >= 65, record.completedSeasons >= 6 { return .clubSymbol }
         if score >= 50, record.completedSeasons >= 4 { return .clubAce }
@@ -1252,18 +1278,30 @@ public enum ProTeamLegacyRules {
     }
 
     public static func score(record: ProTeamCareerRecord) -> Int {
-        ProTeamCareerRecordRules.score(record: record)
+        score(record: record, rulesVersion: 1)
+    }
+
+    public static func score(record: ProTeamCareerRecord, rulesVersion: Int) -> Int {
+        ProTeamCareerRecordRules.score(record: record, rulesVersion: rulesVersion)
     }
 
     public static func tier(record: ProTeamCareerRecord) -> ProTeamLegacyTier {
-        ProTeamCareerRecordRules.tier(record: record)
+        tier(record: record, rulesVersion: 1)
+    }
+
+    public static func tier(record: ProTeamCareerRecord, rulesVersion: Int) -> ProTeamLegacyTier {
+        ProTeamCareerRecordRules.tier(record: record, rulesVersion: rulesVersion)
     }
 
     /// Returns the next tier's complete gate projection. Score-only consumers should use
     /// `nextThreshold(record:)` below; UI that explains progress must use this value so a
     /// satisfied score gate cannot hide a remaining completed-season gate.
     public static func nextTierProjection(record: ProTeamCareerRecord) -> Threshold? {
-        switch tier(record: record) {
+        nextTierProjection(record: record, rulesVersion: 1)
+    }
+
+    public static func nextTierProjection(record: ProTeamCareerRecord, rulesVersion: Int) -> Threshold? {
+        switch tier(record: record, rulesVersion: rulesVersion) {
         case .newFace:
             return .init(tier: .supportingPillar, minimumScore: 15, minimumCompletedSeasons: nil)
         case .supportingPillar:
@@ -1282,8 +1320,12 @@ public enum ProTeamLegacyRules {
     /// Backward-compatible score-only projection. It is never lower than the current score;
     /// callers that need to explain all gates should use `nextTierProjection(record:)`.
     public static func nextThreshold(record: ProTeamCareerRecord) -> Int? {
-        guard let projection = nextTierProjection(record: record) else { return nil }
-        return max(score(record: record), projection.minimumScore)
+        nextThreshold(record: record, rulesVersion: 1)
+    }
+
+    public static func nextThreshold(record: ProTeamCareerRecord, rulesVersion: Int) -> Int? {
+        guard let projection = nextTierProjection(record: record, rulesVersion: rulesVersion) else { return nil }
+        return max(score(record: record, rulesVersion: rulesVersion), projection.minimumScore)
     }
 }
 
@@ -1312,6 +1354,7 @@ public enum ProCareerGoalRules {
             recognitions: state.journeyState?.recognitions ?? [],
             existing: state.journeyState?.teamRecords ?? []
         )
+        let rulesVersion = state.journeyState?.rulesVersion ?? 1
         let record = goal.anchorTeamID.flatMap {
             ProTeamCareerRecordRules.record(teamID: $0, in: records)
         }
@@ -1320,7 +1363,7 @@ public enum ProCareerGoalRules {
         case .franchiseIcon:
             metrics = [
                 .init(kind: .anchorTeamSeasons, current: record?.completedSeasons ?? 0, target: 8),
-                .init(kind: .anchorTeamLegacy, current: record.map(ProTeamCareerRecordRules.score(record:)) ?? 0, target: 80),
+                .init(kind: .anchorTeamLegacy, current: record.map { ProTeamCareerRecordRules.score(record: $0, rulesVersion: rulesVersion) } ?? 0, target: 80),
             ]
         case .recordBook:
             metrics = [
@@ -1333,7 +1376,12 @@ public enum ProCareerGoalRules {
                 .init(kind: .majorServiceYears, current: state.serviceYears + (state.level == .major && currentSeasonCount(state) > 0 ? 1 : 0), target: 8),
             ]
         }
-        return .init(ambition: goal.ambition, metrics: metrics, completed: metrics.allSatisfy { $0.current >= $0.target })
+        let currentlyMeets = metrics.allSatisfy { $0.current >= $0.target }
+        return .init(
+            ambition: goal.ambition,
+            metrics: metrics,
+            completed: goal.completedSeason != nil || currentlyMeets
+        )
     }
 
     public static func awardCount(for state: ProCareerSnapshot) -> Int {

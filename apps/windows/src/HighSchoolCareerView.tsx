@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AbilityGauge, ratingTier } from "./AbilityGauge";
-import { abilityMeaning } from "./ratingScale";
+import { abilityMeaning, displayRating } from "./ratingScale";
 import { AccessibleModal } from "./AccessibleModal";
 import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
@@ -22,11 +22,34 @@ import type {
   KarmaID,
   PlayerIdentitySnapshot,
   PitcherPresetSnapshot,
+  PitchType,
   RelationshipResponse,
   SchoolID,
+  StartingRepertoireSelection,
   TrainingFocus,
   TrainingIntensity,
 } from "./simulationTypes";
+
+const BREAKING_PITCHES: ReadonlyArray<PitchType> = ["slider", "curveball", "changeup"];
+const PITCH_NAMES: Record<PitchType, string> = {
+  four_seam: "포심", slider: "슬라이더", curveball: "커브", changeup: "체인지업",
+};
+export function recommendedRepertoire(presetID: string): StartingRepertoireSelection {
+  if (presetID === "precision_commander") return { readyBreakingPitches: ["slider", "changeup"], primaryPitch: "changeup", learningPitch: "curveball" };
+  if (presetID === "breaking_ball_artist") return { readyBreakingPitches: ["slider", "curveball"], primaryPitch: "slider", learningPitch: "changeup" };
+  if (presetID === "innings_eater") return { readyBreakingPitches: ["curveball", "changeup"], primaryPitch: "four_seam", learningPitch: "slider" };
+  return { readyBreakingPitches: ["slider", "changeup"], primaryPitch: "four_seam", learningPitch: "curveball" };
+}
+export function repertoireWithLearningPitch(
+  current: StartingRepertoireSelection,
+  learningPitch: PitchType,
+): StartingRepertoireSelection {
+  return {
+    readyBreakingPitches: BREAKING_PITCHES.filter((pitch) => pitch !== learningPitch),
+    learningPitch,
+    primaryPitch: current.primaryPitch === learningPitch ? "four_seam" : current.primaryPitch,
+  };
+}
 
 const METRICS: ReadonlyArray<{ key: keyof CreationAllocationSnapshot; label: string }> = [
   { key: "stuff", label: "구위" }, { key: "command", label: "제구" },
@@ -454,7 +477,7 @@ interface CareerSetupProps {
   coreMessage: string;
   onRetryCore: () => void;
   onStart: (presetID: string, allocation: CreationAllocationSnapshot, identity: PlayerIdentitySnapshot,
-    difficulty: CareerDifficultySnapshot, karmas: ReadonlyArray<KarmaID>) => Promise<void>;
+    difficulty: CareerDifficultySnapshot, karmas: ReadonlyArray<KarmaID>, repertoire: StartingRepertoireSelection) => Promise<void>;
 }
 
 export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, onRetryCore, onStart }: CareerSetupProps) {
@@ -467,6 +490,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
   });
   const [karmas, setKarmas] = useState<ReadonlyArray<KarmaID>>([]);
   const effectivePresetID = presetID || presets[0]?.id || "";
+  const [repertoire, setRepertoire] = useState<StartingRepertoireSelection>(() => recommendedRepertoire(effectivePresetID));
   const selected = presets.find((preset) => preset.id === effectivePresetID);
   const spent = Object.values(allocation).reduce((sum, value) => sum + value, 0);
   useEffect(() => {
@@ -474,8 +498,11 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
   }, [selected, usesRecommendedName]);
   const selectPreset = (preset: PitcherPresetSnapshot) => {
     setPresetID(preset.id);
+    setRepertoire(recommendedRepertoire(preset.id));
     if (usesRecommendedName) setIdentity((current) => ({ ...current, name: preset.pitcher.name }));
   };
+  const chooseLearningPitch = (learningPitch: PitchType) => setRepertoire((current) =>
+    repertoireWithLearningPitch(current, learningPitch));
   const change = (key: keyof CreationAllocationSnapshot, delta: number) => setAllocation((current) => {
     const used = Object.values(current).reduce((sum, value) => sum + value, 0);
     const value = current[key] + delta;
@@ -498,7 +525,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
           <span>{preset.name}</span><strong>{preset.pitcher.name}</strong><p>{preset.tagline}</p><small>{preset.tradeoff}</small>
           <dl className="ds-scoreboard preset-statline" aria-label={`${preset.name} 기본 능력: ${METRICS.map((metric) => `${metric.label} ${preset.pitcher[metric.key]}`).join(", ")}`}>
             {METRICS.map((metric) => <div key={metric.key}><dt>{metric.label}</dt>
-              <dd data-tier={ratingTier(preset.pitcher[metric.key])}>{preset.pitcher[metric.key]}<i>/{presetPotential(preset, metric.key)}</i></dd>
+              <dd data-tier={ratingTier(preset.pitcher[metric.key])}>{displayRating(preset.pitcher[metric.key])}<i>/{displayRating(presetPotential(preset, metric.key))}</i></dd>
               <AbilityGauge compact label={metric.label} value={preset.pitcher[metric.key]}
                 lowerBound={preset.pitcher[metric.key]} upperBound={presetPotential(preset, metric.key)} /></div>)}
           </dl>
@@ -513,14 +540,31 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
         <div className="allocation-grid">{METRICS.map((metric) => {
           const finalRating = selected.pitcher[metric.key] + allocation[metric.key];
           const potential = Math.max(finalRating + 2, presetPotential(selected, metric.key));
-          return <div key={metric.key}><span>{metric.label}</span><small>기본 {selected.pitcher[metric.key]} · 추가 +{allocation[metric.key]}</small><div>
+          return <div key={metric.key}><span>{metric.label}</span><small>기본 {displayRating(selected.pitcher[metric.key])} · 추가 +{allocation[metric.key]}</small><div>
           <button type="button" aria-label={`${metric.label} 1 감소`} disabled={allocation[metric.key] === 0} onClick={() => change(metric.key, -1)}>−</button>
-          <strong aria-label={`${metric.label} 최종 ${selected.pitcher[metric.key] + allocation[metric.key]}`}>
-            {selected.pitcher[metric.key] + allocation[metric.key]}<small>+{allocation[metric.key]}</small>
+          <strong aria-label={`${metric.label} 최종 ${displayRating(selected.pitcher[metric.key] + allocation[metric.key])}`}>
+            {displayRating(selected.pitcher[metric.key] + allocation[metric.key])}<small>+{allocation[metric.key]}</small>
           </strong><button type="button" aria-label={`${metric.label} 1 증가`} disabled={spent >= 5 || allocation[metric.key] === 5} onClick={() => change(metric.key, 1)}>+</button>
         </div><AbilityGauge compact label={`${metric.label} 최종`} value={finalRating}
-          lowerBound={finalRating + 2} upperBound={potential} /><small>현재 {finalRating} · 잠재 {potential}</small></div>;
+        lowerBound={finalRating + 2} upperBound={potential} /><small>현재 {displayRating(finalRating)} · 잠재 {displayRating(potential)}</small></div>;
         })}</div>
+        <section className="repertoire-setup" aria-labelledby="repertoire-title">
+          <div><span className="eyebrow">구종 구성</span><h3 id="repertoire-title">실전 구종 3개와 배울 구종 1개</h3>
+            <p>포심은 기본입니다. 아래에서 고른 한 구종은 훈련으로 실전 준비를 마쳐야 사용할 수 있습니다.</p></div>
+          <div className="repertoire-options" role="group" aria-label="배울 구종">
+            {BREAKING_PITCHES.map((pitch) => <button key={pitch} type="button"
+              className={repertoire.learningPitch === pitch ? "is-selected" : undefined}
+              aria-pressed={repertoire.learningPitch === pitch} onClick={() => chooseLearningPitch(pitch)}>
+              <strong>{PITCH_NAMES[pitch]}</strong><span>{repertoire.learningPitch === pitch ? "고교에서 학습" : "처음부터 사용"}</span></button>)}
+          </div>
+          <div className="repertoire-options" role="group" aria-label="주력 구종">
+            {(["four_seam", ...repertoire.readyBreakingPitches] as ReadonlyArray<PitchType>).map((pitch) => <button key={pitch} type="button"
+              className={repertoire.primaryPitch === pitch ? "is-selected" : undefined}
+              aria-pressed={repertoire.primaryPitch === pitch}
+              onClick={() => setRepertoire((current) => ({ ...current, primaryPitch: pitch }))}>
+              <strong>{PITCH_NAMES[pitch]}</strong><span>{repertoire.primaryPitch === pitch ? "주력 구종" : "보조 구종"}</span></button>)}
+          </div>
+        </section>
         <div className="identity-grid"><label className="identity-name-field"><span>선수 이름</span><div><input value={identity.name} maxLength={12} autoComplete="off"
           onChange={(event) => { setIdentity({ ...identity, name: event.target.value }); setUsesRecommendedName(false); }} />
           <button type="button" disabled={usesRecommendedName && identity.name === selected.pitcher.name}
@@ -552,7 +596,7 @@ export function HighSchoolCareerSetup({ presets, isRunning, error, coreMessage, 
             <button key={karma.id} type="button" className={karmas.includes(karma.id) ? "is-selected" : undefined} aria-pressed={karmas.includes(karma.id)} onClick={() => toggleKarma(karma.id)}>
               <strong>{karma.title}</strong><span>{karma.copy}</span></button>)}</div></div>
         <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning || spent !== 5 || !identity.name.trim()}
-          onClick={() => void onStart(selected.id, allocation, { ...identity, name: identity.name.trim() }, difficulty, karmas)}>
+          onClick={() => void onStart(selected.id, allocation, { ...identity, name: identity.name.trim() }, difficulty, karmas, repertoire)}>
           {isRunning ? "선수 생성 중…" : "커리어 시작"}
         </button>{error ? <p className="error-message" role="alert">{error}</p> : null}
       </section> : null}
@@ -566,7 +610,7 @@ interface CareerViewProps {
   error?: string;
   onSchool: (schoolID: SchoolID) => Promise<void>;
   onCompletePrologue: () => Promise<void>;
-  onTraining: (focus: TrainingFocus, intensity: TrainingIntensity) => Promise<void>;
+  onTraining: (focus: TrainingFocus, intensity: TrainingIntensity, targetPitch?: PitchType) => Promise<void>;
   onRelationship: (response: RelationshipResponse) => Promise<void>;
   onImportantGame: () => Promise<void>;
   onAwakening: (awakening: AwakeningID) => Promise<void>;
@@ -591,6 +635,7 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
   const demoComplete = hasCompletedSteamDemo(demoMode, state.performance.importantGamesCompleted);
   const [focus, setFocus] = useState<TrainingFocus>(() => state.school?.strength ?? "command");
   const [intensity, setIntensity] = useState<TrainingIntensity>("standard");
+  const [targetPitch, setTargetPitch] = useState<PitchType>(() => state.pitchLearningProject?.pitchType ?? "slider");
   const [memories, setMemories] = useState<ReadonlyArray<MemoryCardID>>([]);
   const [draftRevealStage, setDraftRevealStage] = useState<number | null>(null);
   const [draftRevealDone, setDraftRevealDone] = useState(false);
@@ -625,8 +670,8 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
   const toggleMemory = (memory: MemoryCardID) => setMemories((current) => current.includes(memory)
     ? current.filter((item) => item !== memory)
     : current.length < state.memorySlots ? [...current, memory] : current);
-  const rating = (value: number) => state.difficulty.informationClarity === "relaxed" ? String(value)
-    : state.difficulty.informationClarity === "standard" ? `${Math.floor(value / 5) * 5}–${Math.floor(value / 5) * 5 + 4}`
+  const rating = (value: number) => state.difficulty.informationClarity === "relaxed" ? String(displayRating(value))
+    : state.difficulty.informationClarity === "standard" ? `${Math.max(1, displayRating(value) - 2)}–${Math.min(100, displayRating(value) + 2)}`
       : value >= 65 ? "상" : value >= 50 ? "중" : "하";
   const showHints = state.difficulty.interventionAssist !== "minimal";
   const managerTrust = state.managerTrust ?? state.relationshipTrust;
@@ -780,11 +825,12 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
           <div className="training-result-title"><span>훈련 {pendingTraining.number}회차 완료</span><h3 id="training-result-heading">{TRAININGS.find((option) => option.value === pendingTraining.focus)?.label ?? resultMetric.label} 결과</h3>{pendingTraining.opportunityHit ? <span className="ds-chip opp-hit-chip">기회 적중 · 성장 보너스</span> : null}</div>
           <GrowthCelebration label={resultMetric.label} before={resultCelebrationBefore} after={resultAfter} />
           <div className="ds-record-grid training-result-scoreboard">
-            <div><span>{resultMetric.label}</span><strong>{resultBefore === undefined ? <>현재 {resultAfter}</> : <>{resultBefore} <i aria-hidden="true">→</i> {resultAfter}</>}</strong>
+            <div><span>{resultMetric.label}</span><strong>{resultBefore === undefined ? <>현재 {displayRating(resultAfter)}</> : <>{displayRating(resultBefore)} <i aria-hidden="true">→</i> {displayRating(resultAfter)}</>}</strong>
               <AbilityGauge label={resultMetric.label} value={resultAfter} beforeValue={resultBefore} />
               <small className={pendingTraining.growth > 0 ? "is-positive" : "is-neutral"}>{pendingTraining.growth > 0 ? `+${pendingTraining.growth} 성장` : "이번에는 그대로"}</small></div>
             <div><span>피로</span><strong>{resultFatigueBefore} <i aria-hidden="true">→</i> {resultFatigueAfter}</strong><small className={pendingTraining.fatigueChange < 0 ? "is-positive" : pendingTraining.fatigueChange > 0 ? "is-warning" : "is-neutral"}>{pendingTraining.fatigueChange > 0 ? `+${pendingTraining.fatigueChange} 쌓임` : pendingTraining.fatigueChange < 0 ? `${-pendingTraining.fatigueChange} 회복` : "변화 없음"}</small></div>
           </div>
+          {pendingTraining.pitchLearning ? <p className="pitch-learning-receipt"><b>{PITCH_NAMES[pendingTraining.pitchLearning.pitchType]} 연구</b> +{pendingTraining.pitchLearning.practiceCreditsAfter - pendingTraining.pitchLearning.practiceCreditsBefore} · 누적 {pendingTraining.pitchLearning.practiceCreditsAfter}/9 · {pendingTraining.pitchLearning.stageAfter}</p> : null}
           <p>{resultFeedback}</p>
           <div className="training-result-next"><span>다음 일정</span><strong>{nextActionLabel}</strong><small>아래 버튼을 누르기 전에는 다음 선택으로 넘어가지 않습니다.</small></div>
           <button className="ds-button ds-button--primary lab-primary" type="button" onClick={acknowledgeTraining}>{nextActionLabel}</button>
@@ -836,11 +882,20 @@ export function HighSchoolCareerView({ result, isRunning, error, onSchool, onTra
             className={focus === option.value ? "is-selected" : undefined} onClick={() => setFocus(option.value)}>{state.trainingOpportunity?.focus === option.value ? <span className="ds-chip training-opp-chip">오늘의 기회</span> : null}<strong>{option.label}</strong><span>{option.copy}</span><small>{option.gameEffect}</small></button>)}</div>
           <div className="training-intensity-grid">{INTENSITIES.map((option) => <button key={option.value} type="button"
             className={intensity === option.value ? "is-selected" : undefined} aria-pressed={intensity === option.value} onClick={() => setIntensity(option.value)}><strong>{option.label}</strong><span>{option.copy}</span></button>)}</div>
+          {focus === "breaking_ball" ? <div className="repertoire-training" data-testid="pitch-learning-training">
+            {state.pitchLearningProject ? <p><b>구종 연구 · {PITCH_NAMES[state.pitchLearningProject.pitchType]}</b> · {state.pitchLearningProject.stage} · 훈련 {state.pitchLearningProject.practiceCredits}/9 · 실전 {state.pitchLearningProject.qualityUses}/2</p> : null}
+            <div className="repertoire-options" role="group" aria-label="집중할 변화구">
+              {(state.pitcher.pitchProfiles ?? []).filter((profile) => profile.pitchType !== "four_seam").map((profile) => <button
+                key={profile.pitchType} type="button" className={targetPitch === profile.pitchType ? "is-selected" : undefined}
+                aria-pressed={targetPitch === profile.pitchType} onClick={() => setTargetPitch(profile.pitchType)}>
+                <strong>{PITCH_NAMES[profile.pitchType]}</strong><span>{profile.availability === "locked" ? "연구 중" : "보유 구종"}</span></button>)}
+            </div>
+          </div> : null}
           <div className="training-preview" aria-live="polite"><div><span>선택한 훈련</span><strong>{selectedTraining.label} · {selectedIntensity.label}</strong></div>
             <div><span>능력치 성장 가능성</span><strong>{growthOutlook}{schoolBonus > 0 ? " · 학교 강점 적용" : ""}</strong></div>
             <div><span>훈련 뒤 예상 피로</span><strong>{state.fatigue} → {expectedFatigue.after} <small>({expectedFatigue.change >= 0 ? "+" : ""}{expectedFatigue.change})</small></strong></div>
             <p>성장 여부는 학교 지원, 현재 피로와 훈련 강도에 따라 달라집니다.</p></div>
-          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity)}>{isRunning ? "훈련 결과 계산 중…" : `${selectedTraining.label} 훈련 진행`}</button></> : null}
+          <button className="ds-button ds-button--primary lab-primary" type="button" disabled={isRunning} onClick={() => void onTraining(focus, intensity, focus === "breaking_ball" ? targetPitch : undefined)}>{isRunning ? "훈련 결과 계산 중…" : `${selectedTraining.label} 훈련 진행`}</button></> : null}
         {!hasPendingResult && state.phase === "relationship" ? <><div className="relationship-scene-heading"><div><span className="decision-speaker">{scene.speaker}</span><h3>{relationship.title}</h3></div><img src={relationshipArt} alt="" width="90" height="112" loading="lazy" decoding="async" /></div>
           {state.lifeNumber >= 2 && state.relationshipsCompleted === 0 ? <p className="relationship-life-echo">상대가 잠시 말을 멈추고 이쪽을 바라봅니다. “…이상하네. 처음 보는 폼인데, 어디서 본 것 같아.”</p> : null}
           <p className="relationship-quote">{scene.quote}</p>

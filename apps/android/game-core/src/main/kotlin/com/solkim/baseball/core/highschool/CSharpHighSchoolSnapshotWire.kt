@@ -257,6 +257,12 @@ public object CSharpHighSchoolSnapshotWire {
         "Stamina" to num(value.stamina),
         "PitchProfiles" to JsonValue.Arr(value.pitchProfiles.map(::writeProfile)),
         "ThrowingHand" to str(if (value.throwingHand == ThrowingHand.LEFT) "Left" else "Right"),
+        "Mastery" to (value.mastery?.let(::writeMastery) ?: JsonValue.Null),
+    )
+
+    private fun writeMastery(value: com.solkim.baseball.core.pitch.AbilityMasterySnapshot): JsonValue.Obj = obj(
+        "Stuff" to num(value.stuff), "Command" to num(value.command),
+        "Movement" to num(value.movement), "Stamina" to num(value.stamina),
     )
 
     private fun writeProfile(value: PitchProfileSnapshot): JsonValue.Obj = obj(

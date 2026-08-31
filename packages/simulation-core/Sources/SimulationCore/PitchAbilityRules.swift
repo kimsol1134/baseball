@@ -62,7 +62,11 @@ public enum PitchAbilityRules {
         context: PlateAppearanceContext
     ) -> PitchAbilityReadout {
         let profile = pitcher.profile(for: call.pitchType)
-        let fatigue = effectiveFatigue(rawFatigue: context.fatigue, stamina: pitcher.stamina)
+        let fatigue = effectiveFatigue(
+            rawFatigue: context.fatigue,
+            stamina: pitcher.stamina,
+            mastery: pitcher.effectiveMastery.stamina
+        )
         return PitchAbilityReadout(
             pitchType: call.pitchType,
             stuffRating: pitcher.stuff,
@@ -78,7 +82,8 @@ public enum PitchAbilityRules {
                 pitcher: pitcher,
                 pitchType: call.pitchType,
                 intensity: call.intensity,
-                fatigue: context.fatigue
+                fatigue: context.fatigue,
+                mastery: pitcher.effectiveMastery.stuff
             ),
             fatigueCost: fatigueCost(call.intensity, profile: profile),
             effectiveFatigue: fatigue,
@@ -190,16 +195,21 @@ public enum PitchAbilityRules {
         pitcher: PitcherSnapshot,
         profile: PitchProfileSnapshot?
     ) -> Int {
-        profile.map {
-            (pitcher.command * 4 + $0.control * 4 + $0.command * 2) / 10
-        } ?? pitcher.command
+        let masteryCommand = MasteryEffectRules.adjustedRating(
+            pitcher.command,
+            level: pitcher.effectiveMastery.command
+        )
+        return profile.map {
+            (masteryCommand * 4 + $0.control * 4 + $0.command * 2) / 10
+        } ?? masteryCommand
     }
 
     static func nominalVelocity(
         pitcher: PitcherSnapshot,
         pitchType: PitchType,
         intensity: PitchIntensity,
-        fatigue: Int
+        fatigue: Int,
+        mastery: Int = 0
     ) -> Int {
         let profile = pitcher.profile(for: pitchType)
         // 프로필 구속은 이미 구위 성장을 반영한 실제 기준값이다. 구위를 다시 더하면 같은
@@ -207,8 +217,18 @@ public enum PitchAbilityRules {
         // 종합 구위로 기준 구속을 보완한다.
         let base = profile?.velocityTenthsKPH
             ?? baseVelocityTenthsKPH(pitchType) + (pitcher.stuff - 50) * 2
-        let pressure = effectiveFatigue(rawFatigue: fatigue, stamina: pitcher.stamina)
-        let rawVelocity = base + intensityEffect(intensity).velocityBonusTenthsKPH - pressure
+        let pressure = effectiveFatigue(
+            rawFatigue: fatigue,
+            stamina: pitcher.stamina,
+            mastery: pitcher.effectiveMastery.stamina
+        )
+        // Mastery only improves the part of velocity that comes from the pitcher's own stuff;
+        // profile velocity remains a persisted 20–80-era value and is never written above its
+        // existing ceiling.
+        let stuffContribution = MasteryEffectRules.bonusForContribution(
+            max(0, pitcher.stuff - 20), level: mastery
+        ) / 8
+        let rawVelocity = base + stuffContribution + intensityEffect(intensity).velocityBonusTenthsKPH - pressure
         let profileCeiling = maximumProfileVelocityTenthsKPH(for: pitchType)
         let intensityCeiling: Int = switch intensity {
         case .controlled: profileCeiling - 20
@@ -220,9 +240,15 @@ public enum PitchAbilityRules {
 
     /// 체력 50을 중립으로 두고 원피로를 75~125%로 조정한다. 피로가 0이면 어떤 체력도
     /// 첫 공을 공짜로 강화하지 않으며, 체력의 가치는 긴 승부에서만 점점 드러난다.
-    public static func effectiveFatigue(rawFatigue: Int, stamina: Int) -> Int {
+    public static func effectiveFatigue(rawFatigue: Int, stamina: Int, mastery: Int = 0) -> Int {
         let boundedRaw = min(100, max(0, rawFatigue))
-        let boundedStamina = min(80, max(20, stamina))
+        let boundedStamina = min(
+            100,
+            max(20, 20 + MasteryEffectRules.adjustedContribution(
+                min(60, max(0, stamina - 20)),
+                level: mastery
+            ))
+        )
         let multiplierPermille = 1_250 - (boundedStamina - 20) * 500 / 60
         return min(100, max(0, boundedRaw * multiplierPermille / 1_000))
     }

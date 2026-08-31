@@ -273,6 +273,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertTrue(preview.contains(".accessibilityElement(children: .contain)"))
         XCTAssertTrue(preview.contains("pro.retirement.preview.score"))
         XCTAssertTrue(preview.contains("pro.retirement.preview.retired-number"))
+        XCTAssertTrue(preview.contains("pro.retirement.preview.retired-number.hint"))
         XCTAssertTrue(honors.contains(".accessibilityElement(children: .contain)"))
         XCTAssertTrue(honors.contains("pro.retirement.honor.\\(honor.id)"))
     }
@@ -522,6 +523,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertTrue(shell.contains("struct CareerDirectionCard: View"))
         XCTAssertTrue(shell.contains("accessibilityIdentifier(\"pro.careerDirection\")"))
         XCTAssertTrue(shell.contains("ProTeamLegacyRules.score(record:"))
+        XCTAssertTrue(shell.contains("pro.careerDirection.legacy.hint"))
         XCTAssertTrue(shell.contains("ProCareerEngine.hallOfFameProjection(for: state)"))
         XCTAssertTrue(shell.contains("ProCareerGoalRules.progress(state: state, goal: goal)"))
     }

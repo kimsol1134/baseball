@@ -152,8 +152,12 @@ struct TrainingCard: View {
         self.onCommitBlock = onCommitBlock
         _focus = State(initialValue: state.lastTraining?.focus ?? .command)
         _intensity = State(initialValue: state.lastTraining?.intensity ?? .standard)
-        _targetPitch = State(initialValue: state.pitcher.pitchProfiles?
-            .first(where: { $0.pitchType != .fourSeam })?.pitchType ?? .slider)
+        let activeProjectPitch = state.pitchLearningProject.flatMap {
+            $0.isCompleted ? nil : $0.pitchType
+        }
+        _targetPitch = State(initialValue: activeProjectPitch
+            ?? state.pitcher.pitchProfiles?.first(where: { $0.pitchType != .fourSeam })?.pitchType
+            ?? .slider)
     }
 
     /// 전망 계산용. 엔진은 상태가 없어서 화면이 하나 들고 있어도 된다.
@@ -173,6 +177,15 @@ struct TrainingCard: View {
     }
 
     private var selectedTarget: PitchType? { focus == .breakingBall ? targetPitch : nil }
+
+    private func learningStageKey(_ stage: PitchLearningStage) -> GameCopyKey {
+        switch stage {
+        case .grip: AppCopyKey.trainingPitchLearningGrip
+        case .bullpen: AppCopyKey.trainingPitchLearningBullpen
+        case .liveTrial: AppCopyKey.trainingPitchLearningLive
+        case .completed: AppCopyKey.trainingPitchLearningCompleted
+        }
+    }
 
     /// 전망을 말로 옮긴다. 확률 숫자가 아니라 구간만 말한다 — 판정의 무작위 폭은 그대로다.
     private func outlookCopy(resolver: GameCopyResolver) -> (text: String, tone: Color) {
@@ -299,6 +312,33 @@ struct TrainingCard: View {
 
             if focus == .breakingBall, !breakingBalls.isEmpty {
                 let title = copyResolver.resolve(AppCopyKey.trainingPitchPickerTitle)
+                if let project = state.pitchLearningProject {
+                    BaseballCard(
+                        title: copyResolver.resolve(
+                            AppCopyKey.trainingPitchLearningTitle,
+                            arguments: [.userText(PitchCopy.localized(project.pitchType, resolver: copyResolver))]
+                        ),
+                        tone: project.isCompleted ? .positive : .milestone
+                    ) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            GameCopyText(learningStageKey(project.stage))
+                                .font(.subheadline.weight(.bold))
+                            GameCopyText(
+                                AppCopyKey.trainingPitchLearningProgress,
+                                arguments: [
+                                    .integer(project.practiceCredits),
+                                    .integer(PitchLearningRules.maximumPracticeCredits),
+                                    .integer(project.qualityUses),
+                                    .integer(PitchLearningRules.requiredQualityUses),
+                                ]
+                            )
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                        .accessibilityIdentifier("hs.training.pitchLearning.stage")
+                    }
+                    .accessibilityIdentifier("hs.training.pitchLearning")
+                }
                 BaseballCard(title: title) {
                     targetPitchPicker(title: title)
                 }

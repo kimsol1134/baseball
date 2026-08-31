@@ -2,7 +2,7 @@ import Foundation
 
 /// 고교 세이브의 순수 코덱. 스토어 관찰 상태를 만지지 않는다.
 enum HighSchoolCareerPersistence {
-    static let currentSchemaVersion = 2
+    static let currentSchemaVersion = 4
 
     static func decode(_ data: Data) -> HighSchoolCareerSaveRecord? {
         guard let record = try? JSONDecoder().decode(HighSchoolCareerSaveRecord.self, from: data) else {
@@ -31,6 +31,18 @@ enum HighSchoolCareerPersistence {
 
     static func revision(_ data: Data) -> UInt64? {
         decode(data)?.effectiveRevision
+    }
+
+    /// Read only the outer marker so a v4 writer cannot replace a newer remote save it cannot
+    /// decode. This mirrors the pro raw-schema downgrade gate.
+    static func rawSchemaVersion(_ data: Data) -> UInt64? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        if let version = object["schemaVersion"] as? Int {
+            return version >= 0 ? UInt64(version) : nil
+        }
+        return object["snapshot"] != nil ? 1 : nil
     }
 
     /// 분리 회계 마이그레이션 — 총량 필드가 없는 옛 저장본은 잔액을 총량으로 승계한다.

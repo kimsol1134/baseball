@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { displayRating } from "./ratingScale";
 
 interface AbilityGaugeProps {
   label: string;
@@ -15,7 +16,7 @@ function clampRating(value: number) {
 }
 
 function ratingPosition(value: number) {
-  return (clampRating(value) - 20) / 60 * 100;
+  return (displayRating(clampRating(value)) - 1) / 99 * 100;
 }
 
 export function ratingTier(value: number) {
@@ -36,14 +37,14 @@ export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBou
   }, [current, gained, previous]);
   const tier = ratingTier(current);
   const currentText = beforeValue === undefined
-    ? `${label} ${displayValue ?? current}`
-    : `${label} ${clampRating(beforeValue)}에서 ${current}`;
+    ? `${label} ${displayValue ?? displayRating(current)}`
+    : `${label} ${displayRating(beforeValue)}에서 ${displayRating(current)}`;
   const hasRange = lowerBound !== undefined && upperBound !== undefined;
-  const valueText = hasRange ? `${currentText}, 성장 예상 ${clampRating(lowerBound)}에서 ${clampRating(upperBound)}` : currentText;
+  const valueText = hasRange ? `${currentText}, 성장 예상 ${displayRating(lowerBound)}에서 ${displayRating(upperBound)}` : currentText;
 
   if (hasRange) {
     return <div className={`ds-ability-gauge is-dual${compact ? " is-compact" : ""}`} data-tier={tier}
-      role="meter" aria-label={valueText} aria-valuemin={20} aria-valuemax={80} aria-valuenow={current}>
+      role="meter" aria-label={valueText} aria-valuemin={1} aria-valuemax={100} aria-valuenow={displayRating(current)}>
       <span className="ds-ability-gauge__row">{compact ? null : <small aria-hidden="true">현재</small>}
         <span className="ds-ability-gauge__track"><i style={{ width: `${ratingPosition(current)}%` }} /></span></span>
       <span className="ds-ability-gauge__row is-potential">{compact ? null : <small aria-hidden="true">잠재</small>}
@@ -51,7 +52,7 @@ export function AbilityGauge({ label, value, displayValue, beforeValue, lowerBou
     </div>;
   }
   return <div className={`ds-ability-gauge${compact ? " is-compact" : ""}${gained ? " is-gain" : ""}`} data-tier={tier}
-    role="meter" aria-label={valueText} aria-valuemin={20} aria-valuemax={80} aria-valuenow={current}>
+    role="meter" aria-label={valueText} aria-valuemin={1} aria-valuemax={100} aria-valuenow={displayRating(current)}>
     <i style={{ width: `${ratingPosition(animatedValue)}%` }} />
     {beforeValue === undefined ? null : <b style={{ left: `${ratingPosition(beforeValue)}%` }} aria-hidden="true" />}
   </div>;

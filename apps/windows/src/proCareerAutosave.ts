@@ -13,6 +13,8 @@ export interface ProCareerAutosavePayload {
   selectedPresetID: string;
   highSchoolCareer: HighSchoolCareerResult;
   proCareer: ProCareerResult;
+  /** Stable acknowledgement receipt; the injury result itself remains in proCareer. */
+  acknowledgedInjuryEventID?: string;
 }
 
 function checksum(value: string) {

@@ -276,6 +276,20 @@ enum ProCareerPresentation {
             break
         }
 
+        if raw == "새 구종 완성 · 이제 보조 구종으로 승부합니다."
+            || raw == "새 구종을 보조 구종으로 완성했습니다." {
+            return legacy("content.pro-news.pitch-learning.completed", resolver: resolver)
+        }
+        if raw == "구종 연구 진전 · 다음 공식 경기에서 개발 구종을 시험할 수 있습니다." {
+            return legacy("content.pro-news.pitch-learning.game-ready", resolver: resolver)
+        }
+        if let value = captures(raw, pattern: #"^구종 연구 진전 · 반복 감각 \+(\d+)$"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.pitch-learning.practice", [.integer(value)], resolver: resolver)
+        }
+        if let value = captures(raw, pattern: #"^개발 구종 실전 감각 \+(\d+)\.$"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.pitch-learning.live", [.integer(value)], resolver: resolver)
+        }
+
         if let values = captures(raw, pattern: #"^신인 계약 제안 · (.+) · (.+)$"#), values.count == 2 {
             let localizedTeam = leagueTeamName(values[0], resolver: resolver)
             return legacy(

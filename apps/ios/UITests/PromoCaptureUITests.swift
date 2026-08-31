@@ -231,4 +231,195 @@ final class PromoCaptureUITests: XCTestCase {
         mark("end")
         hold(1.5)
     }
+
+    /// 광고 히어로 컷. 투구 슬라이더를 보여 주고, 퍼펙트 릴리스로 던진 뒤 삼진이 날 때까지 반복한다.
+    /// `simctl io recordVideo`를 켠 채로 실행한다.
+    func testPerfectSliderStrikeoutForAd() {
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments([
+            "-uiTestResetCareer",
+            "-uiTestPromoCapture",
+            "-uiTestPerfectRelease",
+        ])
+        app.launch()
+        startedAt = Date()
+        mark("launch")
+
+        dismissOpening(app)
+        XCTAssertTrue(advanceSetup(app), "선수 만들기 화면이 열리지 않았습니다.")
+        hold(1.2)
+        app.buttons["hs.start"].tap()
+
+        let throwFirst = app.buttons["hs.prologue.throw"]
+        XCTAssertTrue(throwFirst.waitForExistence(timeout: timeout), "프롤로그가 열리지 않았습니다.")
+        hold(1.6)
+        mark("prologue")
+        throwFirst.tap()
+
+        let padQuery = app.descendants(matching: .any).matching(identifier: "pitch.windup")
+        XCTAssertTrue(padQuery.firstMatch.waitForExistence(timeout: timeout), "투구 슬라이더가 없습니다.")
+        hold(2.2)
+        mark("slider-visible")
+
+        var caughtStrikeout = false
+        for index in 0..<16 {
+            let pad = padQuery.firstMatch
+            guard pad.exists, pad.isHittable else { break }
+
+            mark("slider-press-\(index)")
+            pad.press(forDuration: 0.85, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.15)
+            mark("perfect-release-\(index)")
+            hold(1.8)
+
+            if app.staticTexts["삼진"].exists {
+                mark("strikeout")
+                hold(3.4)
+                caughtStrikeout = true
+                break
+            }
+            if app.staticTexts["루킹 스트라이크"].exists || app.staticTexts["헛스윙"].exists {
+                mark("strike-\(index)")
+                hold(1.4)
+            }
+
+            let nextBatter = app.buttons["pitch.nextBatter"]
+            if nextBatter.exists, nextBatter.isHittable {
+                mark("batter-done-\(index)")
+                hold(1.0)
+                nextBatter.tap()
+                hold(1.2)
+                continue
+            }
+            if app.buttons["pitch.finish"].exists { break }
+            hold(0.8)
+        }
+
+        if !caughtStrikeout {
+            mark("no-strikeout")
+            hold(1.5)
+        }
+        mark("end")
+        hold(1.0)
+    }
+
+    /// 촬영 언어. 빌드 세팅(BaseballCaptureLanguage)이 UITest 번들 Info.plist로 들어온다.
+    private var captureLanguage: String {
+        let bundled = Bundle(for: PromoCaptureUITests.self)
+            .object(forInfoDictionaryKey: "BaseballCaptureLanguage") as? String
+        return (bundled?.isEmpty == false ? bundled : nil)
+            ?? ProcessInfo.processInfo.environment["BASEBALL_CAPTURE_LANGUAGE"]
+            ?? "ko"
+    }
+
+    /// 삼진 스탬프(이닝 종료 삼진·연속 삼진에만 뜬다) 문구. legacy.highlight.strikeout.title.
+    private var strikeoutStampTexts: [String] {
+        switch captureLanguage {
+        case "en": ["STRIKEOUT"]
+        case "ja": ["三振"]
+        default: ["삼진"]
+        }
+    }
+
+    /// 스트라이크 판정 라벨. content.pitch-outcome.called_strike/swinging_strike.
+    private var strikeLabelTexts: [String] {
+        switch captureLanguage {
+        case "en": ["Called strike", "Swinging strike"]
+        case "ja": ["見逃しストライク", "空振り"]
+        default: ["루킹 스트라이크", "헛스윙"]
+        }
+    }
+
+    private func anyStaticText(_ app: XCUIApplication, _ candidates: [String]) -> Bool {
+        candidates.contains { app.staticTexts[$0].exists }
+    }
+
+    /// 앱스토어 P1 로컬라이즈 촬영. 이름 입력 → 구종 선택 → 첫 마운드 → 슬라이더 투구
+    /// (퍼펙트 릴리스) → 이닝 종료까지 P1 컷 길이만큼 각 화면에 머문다.
+    /// 삼진 비트를 확보해야 하므로 판정 라벨을 언어별로 감지해 마커를 남긴다 —
+    /// 최종 편집점은 여전히 마커와 프레임으로 찾는다.
+    /// `BASEBALL_CAPTURE_LANGUAGE=ja|en` 빌드 세팅과 `simctl io recordVideo`를 켠 채로 실행한다.
+    func testJourneyCaptureForAppPreview() {
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments([
+            "-uiTestResetCareer",
+            "-uiTestPromoCapture",
+            "-uiTestPerfectRelease",
+        ])
+        app.launch()
+        startedAt = Date()
+        mark("launch")
+
+        dismissOpening(app)
+
+        // P1 컷은 1/3(이름)과 3/3(구종)에서 머문다. 중간 페이지는 짧게 통과.
+        let start = app.buttons["hs.start"]
+        let next = app.buttons["hs.setup.next"]
+        XCTAssertTrue(
+            start.waitForExistence(timeout: timeout) || next.waitForExistence(timeout: timeout),
+            "선수 만들기 화면이 열리지 않았습니다."
+        )
+        mark("setup-name")
+        hold(3.6)
+        var hops = 0
+        while !start.exists, next.exists, hops < 6 {
+            next.tap()
+            hops += 1
+            if start.exists { break }
+            mark("setup-page-\(hops)")
+            hold(1.2)
+        }
+        XCTAssertTrue(start.waitForExistence(timeout: timeout), "구종 선택 화면이 열리지 않았습니다.")
+        mark("setup-pitch-select")
+        hold(3.6)
+        start.tap()
+
+        let throwFirst = app.buttons["hs.prologue.throw"]
+        XCTAssertTrue(throwFirst.waitForExistence(timeout: timeout), "프롤로그가 열리지 않았습니다.")
+        mark("prologue")
+        hold(3.0)
+        throwFirst.tap()
+
+        let padQuery = app.descendants(matching: .any).matching(identifier: "pitch.windup")
+        XCTAssertTrue(padQuery.firstMatch.waitForExistence(timeout: timeout), "투구 슬라이더가 없습니다.")
+        mark("slider-visible")
+        hold(1.6)
+
+        var sawStrikeout = false
+        for index in 0..<24 {
+            if app.buttons["pitch.finish"].exists {
+                mark("inning-finished")
+                hold(4.5)
+                break
+            }
+            let pad = padQuery.firstMatch
+            guard pad.exists, pad.isHittable else { break }
+            mark("pitch-press-\(index)")
+            pad.press(forDuration: 0.85, thenDragTo: pad, withVelocity: .slow, thenHoldForDuration: 0.15)
+            mark("pitch-release-\(index)")
+            hold(3.2)
+
+            // 삼진 감지. 스탬프(이닝 종료·연속 삼진)가 최우선, 스탬프 없이 타석이
+            // 스트라이크 판정으로 끝나도 삼진이다(다음 타자 버튼 + 스트라이크 라벨).
+            let nextBatter = app.buttons["pitch.nextBatter"]
+            if anyStaticText(app, strikeoutStampTexts) {
+                sawStrikeout = true
+                mark("strikeout-stamp-\(index)")
+                hold(1.6)
+            } else if nextBatter.exists, anyStaticText(app, strikeLabelTexts) {
+                sawStrikeout = true
+                mark("strikeout-plain-\(index)")
+                hold(1.2)
+            }
+
+            if nextBatter.exists, nextBatter.isHittable {
+                mark("batter-done-\(index)")
+                hold(1.2)
+                nextBatter.tap()
+                hold(1.0)
+            }
+        }
+        mark(sawStrikeout ? "journey-had-strikeout" : "journey-no-strikeout")
+        mark("end")
+        hold(1.0)
+    }
 }

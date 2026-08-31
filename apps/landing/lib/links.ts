@@ -1,8 +1,11 @@
 type LinkPlacement = "header" | "hero" | "detail" | "promise" | "final" | "mobile";
 
+export type StorefrontLocale = "ko" | "en";
+
 /// App Store 앱 페이지. 심사 통과 전에도 Apple ID가 정해져 있어 주소는 확정이다.
-const APP_STORE_ID = "6794754217";
-const DEFAULT_APP_STORE_URL = `https://apps.apple.com/kr/app/id${APP_STORE_ID}`;
+export const APP_STORE_ID = "6794754217";
+export const STOREFRONT_NEUTRAL_APP_STORE_URL = `https://apps.apple.com/app/id${APP_STORE_ID}`;
+export const KOREA_APP_STORE_URL = `https://apps.apple.com/kr/app/id${APP_STORE_ID}`;
 
 function trackedUrl(rawUrl: string, content: string, campaign: string) {
   try {
@@ -17,16 +20,34 @@ function trackedUrl(rawUrl: string, content: string, campaign: string) {
   }
 }
 
-export function appStoreUrl(placement: LinkPlacement) {
-  const base = process.env.NEXT_PUBLIC_APP_STORE_URL?.trim() || DEFAULT_APP_STORE_URL;
-  return trackedUrl(base, placement, "official_site");
+export function appStoreBaseUrl(locale: StorefrontLocale = "ko") {
+  if (locale === "en") {
+    return process.env.NEXT_PUBLIC_APP_STORE_URL_EN?.trim() || STOREFRONT_NEUTRAL_APP_STORE_URL;
+  }
+  return process.env.NEXT_PUBLIC_APP_STORE_URL?.trim() || KOREA_APP_STORE_URL;
+}
+
+export function appStoreUrl(placement: LinkPlacement, locale: StorefrontLocale = "ko") {
+  const campaign = locale === "en" ? "official_site_en" : "official_site";
+  return trackedUrl(appStoreBaseUrl(locale), placement, campaign);
 }
 
 /// 화면의 주 행동. 목적지는 언제나 App Store 앱 페이지다.
-export function primaryCta(placement: LinkPlacement, options?: { withPrice?: boolean }) {
+export function primaryCta(
+  placement: LinkPlacement,
+  options?: { withPrice?: boolean; locale?: StorefrontLocale },
+) {
+  const locale = options?.locale ?? "ko";
+  if (locale === "en") {
+    return {
+      href: appStoreUrl(placement, "en"),
+      label: options?.withPrice ? "Get on the App Store · $2.99" : "Get on the App Store",
+      external: true,
+    };
+  }
   return {
-    href: appStoreUrl(placement),
-    label: options?.withPrice ? "App Store에서 받기 · ₩3,300" : "App Store에서 받기",
+    href: appStoreUrl(placement, "ko"),
+    label: options?.withPrice ? "App Store에서 받기 · ₩4,400" : "App Store에서 받기",
     external: true,
   };
 }

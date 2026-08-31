@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { CareerNewsFeed } from "./CareerNewsFeed";
 import { CharacterProfile } from "./CharacterProfile";
-import type { OffseasonDecision, ProCareerResult, ProSeasonSegment, ProSeasonTrigger, ProWeekPlan } from "./simulationTypes";
+import { displayRating } from "./ratingScale";
+import { proInjuryEventID, proWeekHealthForecast } from "./proHealthForecast";
+import type { OffseasonDecision, PitchType, ProCareerResult, ProSeasonSegment, ProSeasonTrigger, ProWeekPlan } from "./simulationTypes";
 
 const PLANS: ReadonlyArray<{ id: ProWeekPlan; title: string; copy: string }> = [
-  { id: "develop_weapon", title: "결정구 훈련", copy: "변화구와 구위가 오르지만 피로가 쌓인다" },
+  { id: "develop_movement", title: "변화구 훈련", copy: "집중할 구종의 움직임과 실전 준비를 다듬는다" },
   { id: "refine_command", title: "코스 제구", copy: "볼넷을 줄이고 원하는 코스에 꾸준히 던지는 연습을 한다" },
   { id: "build_stamina", title: "긴 이닝 훈련", copy: "선발 체력을 키우지만 피로가 쌓인다" },
   { id: "recover", title: "회복", copy: "등판을 줄이고 피로와 부상을 회복한다" },
@@ -45,18 +47,21 @@ interface Props {
   isRunning: boolean;
   error?: string;
   onSign: () => Promise<void>;
-  onPlan: (plan: ProWeekPlan) => Promise<void>;
-  onPlanBlock: (plan: ProWeekPlan) => Promise<void>;
+  onPlan: (plan: ProWeekPlan, targetPitch?: PitchType) => Promise<void>;
+  onPlanBlock: (plan: ProWeekPlan, targetPitch?: PitchType) => Promise<void>;
   onGame: () => Promise<void>;
   onReview: () => Promise<void>;
   onOffseason: (decision: OffseasonDecision) => Promise<void>;
   onBack: () => void;
   onMilestoneFeedback: (cue?: "progress" | "growth" | "milestone") => void;
+  acknowledgedInjuryEventID?: string;
+  onAcknowledgeInjury: (eventID: string) => void;
 }
 
-export function ProCareerView({ result, isRunning, error, onSign, onPlan, onPlanBlock, onGame, onReview, onOffseason, onBack, onMilestoneFeedback }: Props) {
+export function ProCareerView({ result, isRunning, error, onSign, onPlan, onPlanBlock, onGame, onReview, onOffseason, onBack, onMilestoneFeedback, acknowledgedInjuryEventID, onAcknowledgeInjury }: Props) {
   const state = result.snapshot;
   const [plan, setPlan] = useState<ProWeekPlan>("earn_trust");
+  const [targetPitch, setTargetPitch] = useState<PitchType>(() => state.pitchLearningProject?.pitchType ?? "slider");
   // Runs allowed per nine innings (RA/9), not earned-run average — the sim does
   // not track earned runs, so this is labelled "9이닝당 실점", not "ERA".
   const runsPer9 = state.currentStats.inningsOuts === 0 ? "-.--" : (state.currentStats.runsAllowed * 27 / state.currentStats.inningsOuts).toFixed(2);
@@ -71,17 +76,38 @@ export function ProCareerView({ result, isRunning, error, onSign, onPlan, onPlan
     : gameTrigger ? TRIGGER_HEADLINES[gameTrigger]
     : state.level === "major" ? "1군에서 자리를 굳힐 승부"
     : state.managerTrust < 55 ? "다음 등판 기회를 따낼 경기" : "선발·불펜 역할을 결정할 경기";
+  const injury = result.injuryEvent;
+  const injuryID = injury ? proInjuryEventID(injury) : undefined;
+  const injuryAcknowledged = injuryID !== undefined && acknowledgedInjuryEventID === injuryID;
+  const healthForecast = state.phase === "weekly_plan" ? proWeekHealthForecast(state, plan) : undefined;
+  const riskBandLabel = healthForecast?.band === "high" ? "높음" : healthForecast?.band === "caution" ? "주의" : "낮음";
   // 1군 데뷔 화면에 처음 들어설 때 마일스톤 스팅어를 울린다. 단계 진입 기준이라 콜업이
   // 단주·3주 진행 중 어느 경로로 잡혔든, 저장을 다시 열어 데뷔전에 들어와도 한 번 재생된다.
   useEffect(() => {
     if (isMajorDebut) onMilestoneFeedback("milestone");
   }, [isMajorDebut, onMilestoneFeedback]);
   return <main className="career-shell pro-career-shell stage-layout" data-stage={stage} data-team={state.team.id} data-segment={segment}>
+    {injury && !injuryAcknowledged ? <section className="ds-card ds-card--warning pro-injury-result" role="alert">
+      <span>팔 과부하 · {injury.recoveryWeeks}주 회복</span>
+      <h2>이번 주 선택과 등판 뒤 부상이 시작됐습니다.</h2>
+      <p>시즌 {injury.season} · {injury.week}주차 · 원피로 {injury.rawFatigue} · 유효 피로 {injury.effectiveFatigue} · {injury.pitches}구</p>
+      <strong>다음 행동: 회복 일정을 진행하세요.</strong>
+      {injuryID ? <button type="button" onClick={() => onAcknowledgeInjury(injuryID)}>확인</button> : null}
+    </section> : null}
     <section className="career-hero"><div><p className="eyebrow">프로 커리어 · {state.season}시즌 · {SEGMENT_LABELS[segment]}</p><h2>{state.team.name} · {state.age}세</h2><p>{state.level === "major" ? "1군" : "2군"} {ROLE_LABELS[state.role]} · {state.week}/24주</p></div>
       <div className="career-vitals"><div><span>감독의 믿음</span><strong>{state.managerTrust}</strong></div><div><span>피로</span><strong>{state.fatigue}</strong></div><div><span>1군 등록</span><strong>{state.serviceYears}년</strong></div><button className="ds-chip" type="button" onClick={onBack}>고교 기록</button></div></section>
     <div className="career-grid">
       <section className="ds-card ds-player-card career-panel career-player"><div className="lab-card-heading"><span>시즌 기록</span><small>{state.level === "major" ? "1군" : "2군"}</small></div>
         <div className="ds-record-grid career-rating-grid"><div><span>경기</span><strong>{state.currentStats.games}</strong></div><div><span>선발</span><strong>{state.currentStats.starts}</strong></div><div><span>탈삼진</span><strong>{state.currentStats.strikeouts}</strong></div><div><span>9이닝당 실점</span><strong>{runsPer9}</strong></div></div>
+        <div className="ds-record-grid career-rating-grid pro-ability-grid">
+          {(["stuff", "command", "movement", "stamina"] as const).map((key) => <div key={key}><span>{key === "stuff" ? "구위" : key === "command" ? "제구" : key === "movement" ? "변화구" : "체력"}</span><strong>{displayRating(state.pitcher[key])}</strong><small>기본 능력</small></div>)}
+        </div>
+        {state.pitcher.mastery && Object.values(state.pitcher.mastery).some((level) => level > 0) ? <div className="pro-mastery-strip" aria-label="숙련">
+          {(["stuff", "command", "movement", "stamina"] as const).map((key) => {
+            const level = state.pitcher.mastery?.[key] ?? 0;
+            return level > 0 ? <span key={key}>{key === "stuff" ? "강속구" : key === "command" ? "코스" : key === "movement" ? "결정구" : "이닝"} 숙련 Lv.{level}</span> : null;
+          })}
+        </div> : null}
         <div className="career-personnel"><span>계약</span><strong>{state.contract ? `${state.contract.yearsRemaining}년 · ${Math.round(state.contract.annualSalary / 10_000)}만원` : "서명 전"}</strong><span>부상</span><strong>{state.injuryWeeks > 0 ? `${state.injuryWeeks}주 회복` : "정상"}</strong><span>통산</span><strong>{state.careerStats.length}시즌 · 수상 {state.awards.length}회</strong></div>
         {tensions.length > 0 ? <div className="pro-season-tensions"><span className="pro-tensions-heading">올해의 세 가지 긴장</span>{tensions.map((tension) => <div key={tension.kind} className="pro-tension" data-tension={tension.kind}><strong>{tension.title}</strong><small>{tension.detail}</small></div>)}</div> : null}
         <div className="pro-character-duo"><CharacterProfile label="같은 자리를 다투는 투수" title={state.team.positionCompetitor} record={state.team.competitorRecord} description={state.team.competitorProfile} /><CharacterProfile label="감독" title={state.team.proCoach} record={state.team.coachRecord} description={state.team.coachProfile} /></div>
@@ -89,7 +115,17 @@ export function ProCareerView({ result, isRunning, error, onSign, onPlan, onPlan
       </section>
       <section className="ds-card ds-card--raised career-panel career-decision"><div className="lab-card-heading"><span>지금 할 일</span><small>{state.phase === "weekly_plan" ? "이번 주" : state.phase === "important_game" ? "중요 경기" : state.phase === "season_review" ? "시즌 마무리" : state.phase === "offseason_decision" ? "오프시즌" : state.phase === "contract_offer" ? "신인 계약" : "커리어"}</small></div>
         {state.phase === "contract_offer" ? <div className="career-milestone"><span>신인 계약</span><h3>지명 구단과 첫 계약을 맺습니다.</h3><p>계약 뒤 2군 선발 경쟁부터 시작하며, 고교 기록과 구종은 그대로 이어집니다.</p><button className="ds-button ds-button--primary lab-primary" disabled={isRunning} onClick={() => void onSign()}>신인 계약 서명</button></div> : null}
-        {state.phase === "weekly_plan" ? <><h3>{isProDebut ? "프로 데뷔를 준비합니다." : `${state.week + 1}주차`}</h3><p>{isProDebut ? "첫 공식 등판 전, 훈련과 휴식 중 이번 주에 집중할 것을 고르세요." : `현재 피로 ${state.fatigue}, 감독의 믿음 ${state.managerTrust}. 이번 주에 할 훈련이나 휴식을 고르세요.`}</p><div className="career-training-grid">{PLANS.map((item) => <button key={item.id} className={plan === item.id ? "is-selected" : undefined} aria-pressed={plan === item.id} onClick={() => setPlan(item.id)}><strong>{item.title}</strong><span>{item.copy}</span></button>)}</div><div className="pro-plan-actions"><button className="ds-button ds-button--primary lab-primary" disabled={isRunning} onClick={() => void onPlan(plan)}>{isProDebut ? "데뷔 주간 시작" : "1주 진행"}</button><button type="button" disabled={isRunning || isProDebut} onClick={() => void onPlanBlock(plan)}>같은 훈련으로 3주 진행<small>{isProDebut ? "첫 공식 등판 뒤부터 사용할 수 있습니다" : "중요 경기가 잡히거나 역할이 바뀌면 자동으로 멈춥니다"}</small></button></div></> : null}
+        {state.phase === "weekly_plan" ? <><h3>{isProDebut ? "프로 데뷔를 준비합니다." : `${state.week + 1}주차`}</h3><p>{isProDebut ? "첫 공식 등판 전, 훈련과 휴식 중 이번 주에 집중할 것을 고르세요." : `현재 피로 ${state.fatigue}, 감독의 믿음 ${state.managerTrust}. 이번 주에 할 훈련이나 휴식을 고르세요.`}</p><div className="career-training-grid">{PLANS.map((item) => <button key={item.id} className={plan === item.id ? "is-selected" : undefined} aria-pressed={plan === item.id} onClick={() => setPlan(item.id)}><strong>{item.title}</strong><span>{item.copy}</span></button>)}</div>
+          {plan === "develop_movement" ? <div className="repertoire-training">
+            {state.pitchLearningProject ? <p><b>구종 연구 · {state.pitchLearningProject.pitchType}</b> · 훈련 {state.pitchLearningProject.practiceCredits}/9 · 실전 {state.pitchLearningProject.qualityUses}/2</p> : null}
+            <div className="repertoire-options">{(state.pitcher.pitchProfiles ?? []).filter((profile) => profile.pitchType !== "four_seam").map((profile) => <button key={profile.pitchType} type="button" className={targetPitch === profile.pitchType ? "is-selected" : undefined} aria-pressed={targetPitch === profile.pitchType} onClick={() => setTargetPitch(profile.pitchType)}><strong>{profile.pitchType}</strong><span>{profile.availability === "locked" ? "연구 중" : "보유 구종"}</span></button>)}</div>
+          </div> : null}
+          {healthForecast ? <aside className={`pro-health-forecast is-${healthForecast.band}`} aria-label={`부상 위험 ${riskBandLabel}`}>
+            <strong>부상 위험 {riskBandLabel}</strong>
+            <span>예상 피로 {healthForecast.expectedEffectiveFatigue} · 예정 투구 {healthForecast.expectedPitches}구</span>
+            <small>{healthForecast.reason}</small>
+          </aside> : null}
+          <div className="pro-plan-actions"><button className="ds-button ds-button--primary lab-primary" disabled={isRunning} onClick={() => void onPlan(plan, plan === "develop_movement" ? targetPitch : undefined)}>{isProDebut ? "데뷔 주간 시작" : "1주 진행"}</button><button type="button" disabled={isRunning || isProDebut} onClick={() => void onPlanBlock(plan, plan === "develop_movement" ? targetPitch : undefined)}>같은 훈련으로 3주 진행<small>{isProDebut ? "첫 공식 등판 뒤부터 사용할 수 있습니다" : "중요 경기가 잡히거나 역할이 바뀌면 자동으로 멈춥니다"}</small></button></div></> : null}
         {state.phase === "important_game" ? <div className={`career-milestone${isMajorDebut ? " major-debut-card" : ""}`}><span>{isMajorDebut ? "1군 데뷔전" : `${state.week}주차 중요 경기`}</span><h3>{gameHeadline}</h3>
           {isMajorDebut ? <div className="major-debut-sequence" aria-live="polite">
             <p>2군의 긴 겨울을 지나, 처음으로 가득 찬 관중석 앞에 섭니다.</p>

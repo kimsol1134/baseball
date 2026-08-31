@@ -145,7 +145,8 @@ public enum PitcherPresetCatalog {
                 movement: profile.movement,
                 whiff: profile.whiff,
                 weakContact: profile.weakContact,
-                fatigueCost: profile.fatigueCost
+                fatigueCost: profile.fatigueCost,
+                availability: profile.availability
             )
         }
         return PitcherPresetSnapshot(
@@ -291,7 +292,8 @@ public enum PitcherPresetCatalog {
                 movement: clamp(new.movement + current.movement - old.movement, 20, 80),
                 whiff: clamp(new.whiff + current.whiff - old.whiff, 20, 80),
                 weakContact: clamp(new.weakContact + current.weakContact - old.weakContact, 20, 80),
-                fatigueCost: clamp(new.fatigueCost + current.fatigueCost - old.fatigueCost, 0, 20)
+                fatigueCost: clamp(new.fatigueCost + current.fatigueCost - old.fatigueCost, 0, 20),
+                availability: current.availability
             )
         }
         return PitcherBalanceMigration(
@@ -302,7 +304,8 @@ public enum PitcherPresetCatalog {
                 movement: clamp(pitcher.movement + calibrated.movement - source.movement, 20, 80),
                 stamina: clamp(pitcher.stamina + calibrated.stamina - source.stamina, 20, 80),
                 pitchProfiles: profiles,
-                throwingHand: pitcher.throwingHand
+                throwingHand: pitcher.throwingHand,
+                mastery: pitcher.mastery
             ),
             ratingOffsets: offsets
         )

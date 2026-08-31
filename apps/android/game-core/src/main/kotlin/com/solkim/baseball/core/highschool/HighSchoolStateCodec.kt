@@ -205,11 +205,12 @@ public object HighSchoolStateCodec {
         "command" to num(value.command), "movement" to num(value.movement), "stamina" to num(value.stamina),
         "pitchProfiles" to array(value.pitchProfiles.map(::writePitchProfile)),
         "throwingHand" to str(value.throwingHand.name.lowercase()),
+        "mastery" to (value.mastery?.let(::writeMastery) ?: JsonValue.Null),
     )
 
     private fun readPitcher(value: JsonValue.Obj): HighSchoolPitcher {
         val baseFields = setOf("id", "name", "stuff", "command", "movement", "stamina")
-        val additiveFields = setOf("pitchProfiles", "throwingHand")
+        val additiveFields = setOf("pitchProfiles", "throwingHand", "mastery")
         val missing = baseFields - value.entries.keys
         val unknown = value.entries.keys - baseFields - additiveFields
         if (missing.isNotEmpty()) throw HighSchoolStateCodecException("pitcher.missing:${missing.sorted().joinToString(",")}")
@@ -230,9 +231,23 @@ public object HighSchoolStateCodec {
         } else {
             com.solkim.baseball.core.pitch.ThrowingHand.RIGHT
         }
+        val mastery = value.optionalObject("mastery")?.let(::readMastery)
         return HighSchoolPitcher(
             value.string("id"), value.string("name"), value.integer("stuff"), value.integer("command"),
-            value.integer("movement"), value.integer("stamina"), profiles, hand,
+            value.integer("movement"), value.integer("stamina"), profiles, hand, mastery,
+        )
+    }
+
+    private fun writeMastery(value: com.solkim.baseball.core.pitch.AbilityMasterySnapshot): JsonValue.Obj = obj(
+        "stuff" to num(value.stuff), "command" to num(value.command),
+        "movement" to num(value.movement), "stamina" to num(value.stamina),
+    )
+
+    private fun readMastery(value: JsonValue.Obj): com.solkim.baseball.core.pitch.AbilityMasterySnapshot {
+        value.requireExact(setOf("stuff", "command", "movement", "stamina"), "mastery")
+        return com.solkim.baseball.core.pitch.AbilityMasterySnapshot(
+            stuff = value.integer("stuff"), command = value.integer("command"),
+            movement = value.integer("movement"), stamina = value.integer("stamina"),
         )
     }
 
@@ -441,15 +456,18 @@ public object HighSchoolStateCodec {
         "number" to num(value.number), "focus" to str(value.focus.wire), "intensity" to str(value.intensity.wire),
         "growth" to num(value.growth), "fatigueChange" to num(value.fatigueChange),
         "opportunityHit" to bool(value.opportunityHit), "bloomed" to bool(value.bloomed),
+        "masteryBefore" to (value.masteryBefore?.let(::num) ?: JsonValue.Null),
+        "masteryAfter" to (value.masteryAfter?.let(::num) ?: JsonValue.Null),
     )
 
     private fun readTraining(value: JsonValue.Obj): HighSchoolTrainingResult {
-        value.requireExact(setOf("number", "focus", "intensity", "growth", "fatigueChange", "opportunityHit", "bloomed"), "lastTraining")
+        value.requireKnown(setOf("number", "focus", "intensity", "growth", "fatigueChange", "opportunityHit", "bloomed", "masteryBefore", "masteryAfter"), "lastTraining")
         return HighSchoolTrainingResult(
             value.integer("number"),
             enumValue(HighSchoolTrainingFocus.entries, value.string("focus"), "lastTraining.focus") { it.wire },
             enumValue(HighSchoolTrainingIntensity.entries, value.string("intensity"), "lastTraining.intensity") { it.wire },
             value.integer("growth"), value.integer("fatigueChange"), value.boolean("opportunityHit"), value.boolean("bloomed"),
+            value.optionalAdditiveInteger("masteryBefore"), value.optionalAdditiveInteger("masteryAfter"),
         )
     }
 
@@ -459,10 +477,12 @@ public object HighSchoolStateCodec {
         "fatigueBefore" to num(value.fatigueBefore), "fatigueAfter" to num(value.fatigueAfter),
         "fanInterestBefore" to num(value.fanInterestBefore), "fanInterestAfter" to num(value.fanInterestAfter),
         "growthFocus" to (value.growthFocus?.wire?.let(::str) ?: JsonValue.Null),
+        "masteryBefore" to (value.masteryBefore?.let(::num) ?: JsonValue.Null),
+        "masteryAfter" to (value.masteryAfter?.let(::num) ?: JsonValue.Null),
     )
 
     private fun readRelationship(value: JsonValue.Obj): HighSchoolRelationshipResult {
-        value.requireExact(setOf("number", "target", "response", "trustBefore", "trustAfter", "fatigueBefore", "fatigueAfter", "fanInterestBefore", "fanInterestAfter", "growthFocus"), "lastRelationship")
+        value.requireKnown(setOf("number", "target", "response", "trustBefore", "trustAfter", "fatigueBefore", "fatigueAfter", "fanInterestBefore", "fanInterestAfter", "growthFocus", "masteryBefore", "masteryAfter"), "lastRelationship")
         return HighSchoolRelationshipResult(
             value.integer("number"),
             enumValue(HighSchoolRelationshipTarget.entries, value.string("target"), "lastRelationship.target") { it.wire },
@@ -470,6 +490,7 @@ public object HighSchoolStateCodec {
             value.integer("trustBefore"), value.integer("trustAfter"), value.integer("fatigueBefore"), value.integer("fatigueAfter"),
             value.integer("fanInterestBefore"), value.integer("fanInterestAfter"),
             value.optionalString("growthFocus")?.let { wire -> enumValue(HighSchoolTrainingFocus.entries, wire, "lastRelationship.growthFocus") { it.wire } },
+            value.optionalAdditiveInteger("masteryBefore"), value.optionalAdditiveInteger("masteryAfter"),
         )
     }
 
@@ -617,6 +638,11 @@ public object HighSchoolStateCodec {
         val missing = expected - entries.keys
         val unknown = entries.keys - expected
         if (missing.isNotEmpty()) throw HighSchoolStateCodecException("$field.missing:${missing.sorted().joinToString(",")}")
+        if (unknown.isNotEmpty()) throw HighSchoolStateCodecException("$field.unknown:${unknown.sorted().joinToString(",")}")
+    }
+
+    private fun JsonValue.Obj.requireKnown(allowed: Set<String>, field: String) {
+        val unknown = entries.keys - allowed
         if (unknown.isNotEmpty()) throw HighSchoolStateCodecException("$field.unknown:${unknown.sorted().joinToString(",")}")
     }
 

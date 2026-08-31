@@ -47,7 +47,7 @@ struct HighSchoolSetupView: View {
 
     /// 설정 단계. 순서가 곧 화면 순서다.
     private enum Step: Int, CaseIterable {
-        case name, region, style, handicap
+        case name, region, style, repertoire, handicap
     }
 
     @State private var step: Step = .name
@@ -58,6 +58,12 @@ struct HighSchoolSetupView: View {
     @State private var isSystemSuggestedName = false
     @State private var selectedRegion = HighSchoolCareerEngine.regions.first ?? ""
     @State private var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
+    @State private var learningPitch = PitchLearningRules.recommendedSelection(
+        presetID: PitcherPresetCatalog.all.first?.id ?? ""
+    ).learningPitch
+    @State private var primaryPitch = PitchLearningRules.recommendedSelection(
+        presetID: PitcherPresetCatalog.all.first?.id ?? ""
+    ).primaryPitch
     @State private var selectedKarmas: Set<KarmaID> = []
     /// 계승한 야구혼을 어디에 붓는가. 2회차부터만 고른다.
     @State private var soulDomain: SoulDomain = .technique
@@ -115,6 +121,15 @@ struct HighSchoolSetupView: View {
     private var selectedPreset: PitcherPresetSnapshot? {
         presets.first { $0.id == selectedPresetID } ?? presets.first
     }
+    private var startingRepertoire: StartingRepertoireSelection {
+        let ready = [PitchType.slider, .curveball, .changeup].filter { $0 != learningPitch }
+        return StartingRepertoireSelection(
+            readyBreakingPitches: ready,
+            primaryPitch: ready.contains(primaryPitch) || primaryPitch == .fourSeam
+                ? primaryPitch : .fourSeam,
+            learningPitch: learningPitch
+        )
+    }
     /// 고교 회차 번호가 1이어도 direct Pro 은퇴 보너스가 있으면 이미 계승 자원을 가진
     /// 숙련 사용자다. 이 경우 상점을 숨기면 wallet-only로 분리한 프로 보상을 쓸 수 없다.
     private var isRebirth: Bool {
@@ -150,7 +165,7 @@ struct HighSchoolSetupView: View {
     /// 처음 켠 사람은 **다음 회차가 뭔지 아직 모른다.** "고르면 다음 회차 계승이 커집니다"가
     /// 읽히려면 한 번 끝까지 가 보고 계승을 겪어야 한다. Rogue Legacy도 첫 죽음 전까지
     /// 특성을 보여 주지 않는다.
-    private var steps: [Step] { isRebirth ? Step.allCases : [.name, .region, .style] }
+    private var steps: [Step] { isRebirth ? Step.allCases : [.name, .region, .style, .repertoire] }
     private var stepIndex: Int { steps.firstIndex(of: step) ?? 0 }
     private var isLastStep: Bool { stepIndex == steps.count - 1 }
 
@@ -216,6 +231,7 @@ struct HighSchoolSetupView: View {
                         case .name: nameStep
                         case .region: regionStep
                         case .style: styleStep
+                        case .repertoire: repertoireStep
                         case .handicap: handicapStep
                         }
                     }
@@ -234,6 +250,14 @@ struct HighSchoolSetupView: View {
         .onAppear { GameAnalytics.logOnce(.onboardingStarted) }
         .onAppear {
             nameFocused = Self.shouldAutoFocusName(isRebirth: isRebirth)
+            if isRebirth,
+               let last = career.lastSetup,
+               let previousRepertoire = last.startingRepertoire,
+               presets.contains(where: { $0.id == last.presetID }) {
+                selectedPresetID = last.presetID
+                learningPitch = previousRepertoire.learningPitch
+                primaryPitch = previousRepertoire.primaryPitch
+            }
             if selectedSignatureLegacyID == nil {
                 selectedSignatureLegacyID = career.inheritance.equippedSignatureLegacyID
             }
@@ -637,10 +661,125 @@ struct HighSchoolSetupView: View {
 
             ForEach(presets, id: \.id) { preset in
                 PresetRow(preset: preset, selected: preset.id == selectedPresetID) {
-                    selectedPresetID = preset.id
+                    selectPreset(preset)
                 }
             }
         }
+    }
+
+    private func selectPreset(_ preset: PitcherPresetSnapshot) {
+        selectedPresetID = preset.id
+        let recommended = PitchLearningRules.recommendedSelection(presetID: preset.id)
+        learningPitch = recommended.learningPitch
+        primaryPitch = recommended.primaryPitch
+    }
+
+    private func repertoireDetailKey(_ pitch: PitchType) -> GameCopyKey {
+        switch pitch {
+        case .slider: AppCopyKey.setupRepertoireSliderDetail
+        case .curveball: AppCopyKey.setupRepertoireCurveballDetail
+        case .changeup: AppCopyKey.setupRepertoireChangeupDetail
+        case .fourSeam: AppCopyKey.setupRepertoireFourSeam
+        }
+    }
+
+    // MARK: - 구종 구성
+
+    private var repertoireStep: some View {
+        VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            GameCopyText(AppCopyKey.setupRepertoireTitle)
+                .font(.title.bold())
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            GameCopyText(AppCopyKey.setupRepertoireDescription)
+                .font(.subheadline)
+                .foregroundStyle(BaseballTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.setupRepertoireFourSeam), tone: .raised) {
+                Text(PitchCopy.localized(.fourSeam, resolver: copyResolver))
+                    .font(.headline)
+                    .foregroundStyle(BaseballTheme.textPrimary)
+            }
+
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.setupRepertoireLearning)) {
+                VStack(alignment: .leading, spacing: 8) {
+                    GameCopyText(AppCopyKey.setupRepertoireLearningHint)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                    ForEach([PitchType.slider, .curveball, .changeup], id: \.self) { pitch in
+                        Button {
+                            learningPitch = pitch
+                            if primaryPitch == pitch { primaryPitch = .fourSeam }
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(PitchCopy.localized(pitch, resolver: copyResolver))
+                                        .font(.subheadline.weight(.bold))
+                                    GameCopyText(repertoireDetailKey(pitch))
+                                        .font(.caption)
+                                        .foregroundStyle(BaseballTheme.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    if let velocity = selectedPreset?.pitcher.profile(for: pitch)?.velocityTenthsKPH {
+                                        Text(GameFormatters.velocity(
+                                            tenthsKPH: velocity,
+                                            language: copyResolver.language
+                                        ))
+                                        .font(.caption2.monospacedDigit())
+                                        .foregroundStyle(BaseballTheme.textTertiary)
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: learningPitch == pitch ? "book.closed.fill" : "checkmark.circle.fill")
+                                    .foregroundStyle(learningPitch == pitch ? BaseballTheme.milestone : BaseballTheme.positive)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                            .padding(.horizontal, 12)
+                            .background(
+                                learningPitch == pitch ? BaseballTheme.milestone.opacity(0.14) : BaseballTheme.surfaceRaised,
+                                in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        .contentShape(Rectangle())
+                        .accessibilityIdentifier("setup.pitch.\(pitch.rawValue)")
+                        .accessibilityAddTraits(learningPitch == pitch ? .isSelected : [])
+                    }
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("setup.pitch.learning")
+
+            BaseballCard(title: copyResolver.resolve(AppCopyKey.setupRepertoirePrimary)) {
+                VStack(alignment: .leading, spacing: 8) {
+                    GameCopyText(AppCopyKey.setupRepertoirePrimaryHint)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                    ForEach([PitchType.fourSeam] + startingRepertoire.readyBreakingPitches, id: \.self) { pitch in
+                        Button { primaryPitch = pitch } label: {
+                            HStack {
+                                Text(PitchCopy.localized(pitch, resolver: copyResolver))
+                                    .font(.subheadline.weight(.bold))
+                                Spacer()
+                                Image(systemName: primaryPitch == pitch ? "star.circle.fill" : "circle")
+                                    .foregroundStyle(primaryPitch == pitch ? BaseballTheme.selection : BaseballTheme.border)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
+                        .contentShape(Rectangle())
+                        .accessibilityIdentifier("setup.pitch.primary.\(pitch.rawValue)")
+                        .accessibilityAddTraits(primaryPitch == pitch ? .isSelected : [])
+                    }
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("setup.pitch.primary")
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("setup.repertoire")
     }
 
     // MARK: - 4단계 난이도·핸디캡 (2회차부터)
@@ -861,6 +1000,7 @@ struct HighSchoolSetupView: View {
                         soulBoosts: isChallenge ? [] : Array(selectedBoosts).sorted { $0.rawValue < $1.rawValue },
                         signatureLegacyID: isChallenge ? nil : (selectedSignatureLegacyID
                             ?? career.inheritance.equippedSignatureLegacyID),
+                        startingRepertoire: startingRepertoire,
                         seedOverride: parsedChallenge?.seed ?? (normalizedSeedInput.isEmpty ? nil : normalizedSeedInput),
                         challengeLifeNumber: parsedChallenge?.lifeNumber
                     )

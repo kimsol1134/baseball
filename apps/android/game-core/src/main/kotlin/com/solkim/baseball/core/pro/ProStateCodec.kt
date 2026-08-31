@@ -40,7 +40,7 @@ import java.util.Base64
 /** Strict, signed, deterministic Pro snapshot wire. It is shadow-only in Phase 5. */
 public object ProStateCodec {
     public const val SCHEMA: String = ProWire.STATE_SCHEMA
-    public const val SCHEMA_VERSION: Int = ProWire.SCHEMA_VERSION
+    public const val SCHEMA_VERSION: Int = ProWire.STATE_SCHEMA_VERSION
     public const val MAX_BYTES: Int = 4 * 1024 * 1024
     private const val MAGIC: String = "PRM1"
     private val ROOT_FIELDS = setOf("schema", "schemaVersion", "payload", "stateCommitment")
@@ -69,7 +69,7 @@ public object ProStateCodec {
         if (!bytes.contentEquals(StrictJson.canonical(root).toByteArray(Charsets.UTF_8))) fail("pro.state.noncanonical")
         if (root.string("schema") != SCHEMA) fail("pro.state.schema")
         val version = root.integer("schemaVersion")
-        if (version != SCHEMA_VERSION) fail(if (version > SCHEMA_VERSION) "pro.state.future:$version" else "pro.state.migration:$version")
+        if (version !in 1..SCHEMA_VERSION) fail(if (version > SCHEMA_VERSION) "pro.state.future:$version" else "pro.state.migration:$version")
         val payload = decodeCanonicalBase64(root.string("payload"), "pro.state.payload")
         val state = try { DataInputStream(ByteArrayInputStream(payload)).use { readState(it, version) } }
         catch (error: ProStateCodecException) { throw error }
@@ -81,8 +81,8 @@ public object ProStateCodec {
 
     private fun writeState(out: DataOutputStream, state: ProState) {
         out.writeString(MAGIC); out.writeInt(SCHEMA_VERSION)
-        out.writeString(state.careerId); out.writeULong(state.revision); out.writeString(state.startMode.wire); out.writeNullableString(state.sourceHighSchoolCareerId); out.writeNullable(state.highSchoolLegacyContext) { writeLegacyContext(it) }
-        out.writeBoolean(state.activeHighSchoolPreserved); out.writeString(state.seed); out.writeString(state.identityName); out.writePitcher(state.pitcher)
+        out.writeString(state.careerId); out.writeULong(state.revision); out.writeString(state.startMode.wire); out.writeNullableString(state.sourceHighSchoolCareerId); out.writeNullable(state.highSchoolLegacyContext) { writeLegacyContext(it, includeMastery = true) }
+        out.writeBoolean(state.activeHighSchoolPreserved); out.writeString(state.seed); out.writeString(state.identityName); out.writePitcher(state.pitcher, includeMastery = true)
         out.writeTeam(state.team); out.writeEntitlement(state.entitlement)
         out.writeInt(state.age); out.writeInt(state.season); out.writeInt(state.week); out.writeString(state.phase.wire); out.writeString(state.level.wire); out.writeString(state.role.wire); out.writeNullableString(state.rolePreference?.wire)
         out.writeInt(state.managerTrust); out.writeInt(state.catcherTrust); out.writeInt(state.fatigue); out.writeInt(state.injuryWeeks); out.writeInt(state.serviceYears); out.writeBoolean(state.militaryCompleted); out.writeNullable(state.contract) { writeContract(it) }
@@ -97,8 +97,9 @@ public object ProStateCodec {
 
     private fun readState(input: DataInputStream, version: Int): ProState {
         if (input.readString() != MAGIC) fail("pro.state.magic")
-        if (input.readInt() != version || version != SCHEMA_VERSION) fail("pro.state.version")
-        val careerId = input.readString(); val revision = input.readULong(); val mode = startMode(input.readString()); val source = input.readNullableString(); val legacyContext = input.readNullable { readLegacyContext() }; val activePreserved = input.readBoolean(); val seed = input.readString(); val name = input.readString(); val pitcher = input.readPitcher(); val team = input.readTeam(); val entitlement = input.readEntitlement()
+        if (input.readInt() != version || version !in 1..SCHEMA_VERSION) fail("pro.state.version")
+        val includeMastery = version >= 2
+        val careerId = input.readString(); val revision = input.readULong(); val mode = startMode(input.readString()); val source = input.readNullableString(); val legacyContext = input.readNullable { readLegacyContext(includeMastery) }; val activePreserved = input.readBoolean(); val seed = input.readString(); val name = input.readString(); val pitcher = input.readPitcher(includeMastery); val team = input.readTeam(); val entitlement = input.readEntitlement()
         val age = input.readInt(); val season = input.readInt(); val week = input.readInt(); val phase = careerPhase(input.readString()); val level = level(input.readString()); val role = role(input.readString()); val rolePreference = input.readNullableString()?.let(::role)
         val managerTrust = input.readInt(); val catcherTrust = input.readInt(); val fatigue = input.readInt(); val injuryWeeks = input.readInt(); val serviceYears = input.readInt(); val military = input.readBoolean(); val contract = input.readNullable { readContract() }
         val currentStats = input.readStats(); val currentLines = input.readList { readGameLine() }; val careerStats = input.readList { readStats() }; val ledgers = input.readList { readLedger() }
@@ -116,24 +117,27 @@ public object ProStateCodec {
     private fun DataInputStream.readTeam(): ProTeam = ProTeam(readString(), readString(), readString(), readString(), readInt())
     private fun DataOutputStream.writeEntitlement(value: ProEntitlement) { writeBoolean(value.active); writeString(value.source); writeString(value.verifiedAt) }
     private fun DataInputStream.readEntitlement(): ProEntitlement = ProEntitlement(readBoolean(), readString(), readString())
-    private fun DataOutputStream.writePitcher(value: PitcherSnapshot) { writeString(value.id); writeString(value.name); writeInt(value.stuff); writeInt(value.command); writeInt(value.movement); writeInt(value.stamina); writeString(value.throwingHand.wire()); writeNullable(value.pitchProfiles) { writeList(it) { writeProfile(it) } } }
-    private fun DataInputStream.readPitcher(): PitcherSnapshot {
+    private fun DataOutputStream.writePitcher(value: PitcherSnapshot, includeMastery: Boolean = false) { writeString(value.id); writeString(value.name); writeInt(value.stuff); writeInt(value.command); writeInt(value.movement); writeInt(value.stamina); writeString(value.throwingHand.wire()); writeNullable(value.pitchProfiles) { writeList(it) { writeProfile(it) } }; if (includeMastery) writeNullable(value.mastery) { writeMastery(it) } }
+    private fun DataInputStream.readPitcher(includeMastery: Boolean = false): PitcherSnapshot {
         val id = readString(); val name = readString(); val stuff = readInt(); val command = readInt(); val movement = readInt(); val stamina = readInt(); val throwingHand = hand(readString()); val profiles = readNullable { readList { readProfile() } }
-        return PitcherSnapshot(id, name, stuff, command, movement, stamina, profiles, throwingHand)
+        val mastery = if (includeMastery) readNullable { readMastery() } else null
+        return PitcherSnapshot(id, name, stuff, command, movement, stamina, profiles, throwingHand, mastery)
     }
+    private fun DataOutputStream.writeMastery(value: com.solkim.baseball.core.pitch.AbilityMasterySnapshot) { writeInt(value.stuff); writeInt(value.command); writeInt(value.movement); writeInt(value.stamina) }
+    private fun DataInputStream.readMastery(): com.solkim.baseball.core.pitch.AbilityMasterySnapshot = com.solkim.baseball.core.pitch.AbilityMasterySnapshot(readInt(), readInt(), readInt(), readInt())
     private fun DataOutputStream.writeProfile(value: PitchProfileSnapshot) { writeString(value.pitchType.wire); writeString(value.role.wire); writeInt(value.velocityTenthsKph); writeInt(value.control); writeInt(value.command); writeInt(value.movement); writeInt(value.whiff); writeInt(value.weakContact); writeInt(value.fatigueCost) }
     private fun DataInputStream.readProfile(): PitchProfileSnapshot = PitchProfileSnapshot(pitchKind(readString()), pitchRole(readString()), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt())
     private fun DataOutputStream.writeContract(value: ProContract) { writeInt(value.yearsRemaining); writeInt(value.annualSalary); writeString(value.rolePromise.wire) }
     private fun DataInputStream.readContract(): ProContract = ProContract(readInt(), readInt(), role(readString()))
     private fun DataOutputStream.writeDevelopment(value: ProDevelopmentProgress) { writeInt(value.stuff); writeInt(value.command); writeInt(value.movement); writeInt(value.stamina) }
     private fun DataInputStream.readDevelopment(): ProDevelopmentProgress = ProDevelopmentProgress(readInt(), readInt(), readInt(), readInt())
-    private fun DataOutputStream.writeLegacyContext(value: ProHighSchoolLegacyContext) {
-        writePitcher(value.startingPitcher); writePitcher(value.highSchoolPitcher)
+    private fun DataOutputStream.writeLegacyContext(value: ProHighSchoolLegacyContext, includeMastery: Boolean = false) {
+        writePitcher(value.startingPitcher, includeMastery); writePitcher(value.highSchoolPitcher, includeMastery)
         writeInt(value.performance.importantGamesCompleted); writeInt(value.performance.pitches); writeInt(value.performance.strikeouts); writeInt(value.performance.walks); writeInt(value.performance.runsAllowed); writeInt(value.performance.expectedDamage); writeInt(value.performance.actualDamage); writeInt(value.performance.outs); writeInt(value.performance.hits)
         writeStrings(value.selectedAwakenings); writeInt(value.managerTrust); writeInt(value.catcherTrust); writeInt(value.rivalTrust)
     }
-    private fun DataInputStream.readLegacyContext(): ProHighSchoolLegacyContext = ProHighSchoolLegacyContext(
-        startingPitcher = readPitcher(), highSchoolPitcher = readPitcher(),
+    private fun DataInputStream.readLegacyContext(includeMastery: Boolean = false): ProHighSchoolLegacyContext = ProHighSchoolLegacyContext(
+        startingPitcher = readPitcher(includeMastery), highSchoolPitcher = readPitcher(includeMastery),
         performance = HighSchoolPerformance(readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt(), readInt()),
         selectedAwakenings = readStrings(), managerTrust = readInt(), catcherTrust = readInt(), rivalTrust = readInt(),
     )

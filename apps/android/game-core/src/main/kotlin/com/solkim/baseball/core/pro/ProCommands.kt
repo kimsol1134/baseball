@@ -17,6 +17,8 @@ import java.util.Base64
 public object ProWire {
     public const val STATE_SCHEMA: String = "baseball-pro-state-v1"
     public const val COMMAND_SCHEMA: String = "baseball-pro-command-v1"
+    /** Command envelopes and state payloads evolve independently. */
+    public const val STATE_SCHEMA_VERSION: Int = 2
     public const val SCHEMA_VERSION: Int = 1
     public const val MAX_COMMAND_ID_LENGTH: Int = 128
 }
@@ -181,7 +183,9 @@ public object ProCommandCodec {
         val profiles = value.pitchProfiles.orEmpty().joinToString(";") { profile ->
             pack(listOf(profile.pitchType.wire, profile.role.wire, profile.velocityTenthsKph.toString(), profile.control.toString(), profile.command.toString(), profile.movement.toString(), profile.whiff.toString(), profile.weakContact.toString(), profile.fatigueCost.toString()))
         }
-        return pack(listOf(value.id, value.name, value.stuff.toString(), value.command.toString(), value.movement.toString(), value.stamina.toString(), value.throwingHand.wire(), profiles))
+        val fields = listOf(value.id, value.name, value.stuff.toString(), value.command.toString(), value.movement.toString(), value.stamina.toString(), value.throwingHand.wire(), profiles).toMutableList()
+        value.mastery?.let { fields += pack(listOf(it.stuff.toString(), it.command.toString(), it.movement.toString(), it.stamina.toString())) }
+        return pack(fields)
     }
 
     private fun legacyContextWire(value: ProHighSchoolLegacyContext?): String = value?.let {
@@ -202,12 +206,20 @@ public object ProCommandCodec {
     }
 
     private fun readPitcher(value: String): com.solkim.baseball.core.pitch.PitcherSnapshot {
-        val fields = unpack(value, 8)
+        val fields = unpackValues(value)
+        if (fields.size !in 8..9) fail("pro.command.pitcher_payload_count")
         val profiles = if (fields[7].isEmpty()) null else fields[7].split(';').map { encoded ->
             val p = unpack(encoded, 9)
             com.solkim.baseball.core.pitch.PitchProfileSnapshot(pitchKind(p[0]), role(p[1]), p[2].int("pitcher.velocity"), p[3].int("pitcher.control"), p[4].int("pitcher.command"), p[5].int("pitcher.movement"), p[6].int("pitcher.whiff"), p[7].int("pitcher.weakContact"), p[8].int("pitcher.fatigue"))
         }
-        return com.solkim.baseball.core.pitch.PitcherSnapshot(fields[0], fields[1], fields[2].int("pitcher.stuff"), fields[3].int("pitcher.command"), fields[4].int("pitcher.movement"), fields[5].int("pitcher.stamina"), profiles, hand(fields[6]))
+        val mastery = fields.getOrNull(8)?.takeIf { it.isNotEmpty() }?.let { encoded ->
+            val values = unpack(encoded, 4)
+            com.solkim.baseball.core.pitch.AbilityMasterySnapshot(
+                values[0].int("pitcher.mastery.stuff"), values[1].int("pitcher.mastery.command"),
+                values[2].int("pitcher.mastery.movement"), values[3].int("pitcher.mastery.stamina"),
+            )
+        }
+        return com.solkim.baseball.core.pitch.PitcherSnapshot(fields[0], fields[1], fields[2].int("pitcher.stuff"), fields[3].int("pitcher.command"), fields[4].int("pitcher.movement"), fields[5].int("pitcher.stamina"), profiles, hand(fields[6]), mastery)
     }
 
     private fun pack(values: List<String>): String = "p5:" + values.joinToString(".") { Base64.getUrlEncoder().withoutPadding().encodeToString(it.toByteArray(Charsets.UTF_8)) }
@@ -310,7 +322,7 @@ public class ProCommandStore(
         val committed = unsigned.copy(commitment = ProKernel().commitment(unsigned))
         kernel.validateSavedState(committed)
         current = committed
-        return ProDispatchResult(committed, resultHash, duplicate = false)
+        return ProDispatchResult(committed, resultHash, duplicate = false, injuryEvent = result.injuryEvent)
     }
 
     private fun apply(state: ProState, command: ProCommand): ProResult = when (command) {

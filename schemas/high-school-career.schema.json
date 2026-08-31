@@ -9,6 +9,20 @@
     "nextSeed": { "type": "string", "pattern": "^[0-9]+$" },
     "events": { "type": "array", "items": { "type": "object" } },
     "eventHash": { "type": "string", "minLength": 1 },
+    "armHealth": {
+      "type": ["object", "null"],
+      "properties": {
+        "riskBefore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "riskAfter": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "healthBefore": { "enum": ["normal", "caution", "warning", "recovering"] },
+        "healthAfter": { "enum": ["normal", "caution", "warning", "recovering"] },
+        "pitches": { "type": "integer", "minimum": 0 },
+        "fatigueBefore": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "cause": { "enum": ["outing_load", "push_through", "rehab"] },
+        "recoveryRemaining": { "type": "integer", "minimum": 0, "maximum": 2 }
+      },
+      "additionalProperties": false
+    },
     "snapshot": {
       "type": "object",
       "required": ["careerID", "revision", "lifeNumber", "phase", "identity", "pitcher", "schoolOptions", "rival", "chapter", "chapterTrainingCount", "totalTrainingsCompleted", "milestoneIndex", "relationshipsCompleted", "relationshipTrust", "selectedAwakenings", "awakeningOptions", "fatigue", "performance", "news", "fanInterest", "legacyOptions", "selectedMemories", "stateCommitment"],
@@ -28,7 +42,22 @@
           },
           "additionalProperties": false
         },
-        "pitcher": { "type": "object" },
+        "pitcher": {
+          "type": "object",
+          "properties": {
+            "mastery": {
+              "type": "object",
+              "properties": {
+                "stuff": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+                "command": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+                "movement": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+                "stamina": { "type": "integer", "minimum": 0, "maximum": 2147483647 }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": true
+        },
         "schoolOptions": { "type": "array", "minItems": 4, "maxItems": 4 },
         "school": { "type": "object" },
         "rival": { "type": "object" },
@@ -49,6 +78,20 @@
         "draftResult": { "type": "object" },
         "legacyOptions": { "type": "array", "maxItems": 5 },
         "selectedMemories": { "type": "array", "maxItems": 3 },
+        "repertoireRulesVersion": { "type": "integer", "const": 1 },
+        "pitchLearningProject": {
+          "type": "object",
+          "required": ["pitchType", "practiceCredits", "qualityUses", "stage"],
+          "properties": {
+            "pitchType": { "enum": ["slider", "curveball", "changeup"] },
+            "practiceCredits": { "type": "integer", "minimum": 0, "maximum": 9 },
+            "qualityUses": { "type": "integer", "minimum": 0, "maximum": 2 },
+            "stage": { "enum": ["grip", "bullpen", "live_trial", "completed"] },
+            "startedChapter": { "type": "integer", "minimum": 1, "maximum": 8 },
+            "completedChapter": { "type": "integer", "minimum": 1, "maximum": 8 }
+          },
+          "additionalProperties": false
+        },
         "stateCommitment": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false

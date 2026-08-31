@@ -138,6 +138,43 @@ public enum ArmHealthState: String, Codable, CaseIterable, Sendable {
     case recovering
 }
 
+public enum HighSchoolArmHealthCause: String, Codable, CaseIterable, Sendable {
+    case outingLoad = "outing_load"
+    case pushThrough = "push_through"
+    case rehab
+}
+
+public struct HighSchoolArmHealthReceipt: Codable, Equatable, Sendable {
+    public let riskBefore: Int
+    public let riskAfter: Int
+    public let healthBefore: ArmHealthState
+    public let healthAfter: ArmHealthState
+    public let pitches: Int
+    public let fatigueBefore: Int
+    public let cause: HighSchoolArmHealthCause
+    public let recoveryRemaining: Int
+
+    public init(
+        riskBefore: Int,
+        riskAfter: Int,
+        healthBefore: ArmHealthState,
+        healthAfter: ArmHealthState,
+        pitches: Int,
+        fatigueBefore: Int,
+        cause: HighSchoolArmHealthCause,
+        recoveryRemaining: Int
+    ) {
+        self.riskBefore = riskBefore
+        self.riskAfter = riskAfter
+        self.healthBefore = healthBefore
+        self.healthAfter = healthAfter
+        self.pitches = pitches
+        self.fatigueBefore = fatigueBefore
+        self.cause = cause
+        self.recoveryRemaining = recoveryRemaining
+    }
+}
+
 public struct SchoolSnapshot: Codable, Equatable, Sendable {
     public let id: SchoolID
     public let name: String
@@ -390,6 +427,11 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
     /// 대성공 — 성장이 두 배로 붙은 훈련. 화면이 잭팟 연출을 띄우는 신호다.
     /// 옛 저장본은 nil이며 false로 읽는다.
     public let jackpot: Bool?
+    /// Optional so training receipts written before repertoire learning still decode unchanged.
+    public let pitchLearning: PitchLearningReceiptSnapshot?
+    /// Base ability can stay at 80 while this track advances. Optional keeps old receipts stable.
+    public let masteryBefore: Int?
+    public let masteryAfter: Int?
 
     public init(
         number: Int,
@@ -405,7 +447,10 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
         opportunityHit: Bool? = nil,
         bloomedAbility: TalentAbility? = nil,
         bloomedGrade: TalentGrade? = nil,
-        jackpot: Bool? = nil
+        jackpot: Bool? = nil,
+        pitchLearning: PitchLearningReceiptSnapshot? = nil,
+        masteryBefore: Int? = nil,
+        masteryAfter: Int? = nil
     ) {
         self.number = number
         self.focus = focus
@@ -421,6 +466,9 @@ public struct CareerTrainingSnapshot: Codable, Equatable, Sendable {
         self.bloomedAbility = bloomedAbility
         self.bloomedGrade = bloomedGrade
         self.jackpot = jackpot
+        self.pitchLearning = pitchLearning
+        self.masteryBefore = masteryBefore
+        self.masteryAfter = masteryAfter
     }
 }
 
@@ -438,12 +486,15 @@ public struct CareerRelationshipResultSnapshot: Codable, Equatable, Sendable {
     public let growthFocus: TrainingFocus?
     public let abilityBefore: Int?
     public let abilityAfter: Int?
+    public let masteryBefore: Int?
+    public let masteryAfter: Int?
     public let feedback: String
 
     public init(number: Int, category: String, title: String, response: RelationshipResponse,
         trustBefore: Int, trustAfter: Int, fatigueBefore: Int, fatigueAfter: Int,
         fanInterestBefore: Int, fanInterestAfter: Int, growthFocus: TrainingFocus?,
-        abilityBefore: Int?, abilityAfter: Int?, feedback: String) {
+        abilityBefore: Int?, abilityAfter: Int?, feedback: String,
+        masteryBefore: Int? = nil, masteryAfter: Int? = nil) {
         self.number = number
         self.category = category
         self.title = title
@@ -457,6 +508,8 @@ public struct CareerRelationshipResultSnapshot: Codable, Equatable, Sendable {
         self.growthFocus = growthFocus
         self.abilityBefore = abilityBefore
         self.abilityAfter = abilityAfter
+        self.masteryBefore = masteryBefore
+        self.masteryAfter = masteryAfter
         self.feedback = feedback
     }
 }
@@ -582,6 +635,9 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
     public let legacyOptions: [MemoryCardID]
     public let selectedMemories: [MemoryCardID]
     public let balanceVersion: Int?
+    /// Nil is the frozen legacy path where every stored pitch remains game-ready.
+    public let repertoireRulesVersion: Int?
+    public let pitchLearningProject: PitchLearningProjectSnapshot?
     /// 회차 세계 규칙 버전. 이 필드가 없는 구저장본은 v1 바람을 그대로 사용한다.
     /// 신규 회차는 v2를 명시해 콘텐츠 풀이 바뀌어도 진행 중 규칙이 움직이지 않는다.
     public let worldRulesVersion: Int?
@@ -659,6 +715,8 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         legacyOptions: [MemoryCardID],
         selectedMemories: [MemoryCardID],
         balanceVersion: Int? = nil,
+        repertoireRulesVersion: Int? = nil,
+        pitchLearningProject: PitchLearningProjectSnapshot? = nil,
         worldRulesVersion: Int? = nil,
         armRisk: Int? = nil,
         injuryRecovery: Int? = nil,
@@ -708,6 +766,8 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
         self.legacyOptions = legacyOptions
         self.selectedMemories = selectedMemories
         self.balanceVersion = balanceVersion
+        self.repertoireRulesVersion = repertoireRulesVersion
+        self.pitchLearningProject = pitchLearningProject
         self.worldRulesVersion = worldRulesVersion
         self.armRisk = armRisk
         self.injuryRecovery = injuryRecovery
@@ -760,6 +820,8 @@ public final class HighSchoolCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.legacyOptions == rhs.legacyOptions
             && lhs.selectedMemories == rhs.selectedMemories
             && lhs.balanceVersion == rhs.balanceVersion
+            && lhs.repertoireRulesVersion == rhs.repertoireRulesVersion
+            && lhs.pitchLearningProject == rhs.pitchLearningProject
             && lhs.worldRulesVersion == rhs.worldRulesVersion
             && lhs.armRisk == rhs.armRisk
             && lhs.injuryRecovery == rhs.injuryRecovery
@@ -902,7 +964,10 @@ public enum SoulInheritanceRulesVersion: Int, Codable, CaseIterable, Hashable, S
     }
 }
 
-public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
+/// Immutable reference payload. Swift 6.3 can miscompile destruction of this large nested Codable
+/// value when it is a struct (JSONEncoder then crashes in swift_retain). The career snapshots use
+/// the same final-class containment; manual equality preserves value semantics for tests/callers.
+public final class StartHighSchoolCareerParams: Codable, Equatable, Sendable {
     public let seed: String
     public let presetID: String
     public let lifeNumber: Int
@@ -926,8 +991,9 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
     /// 직전 삶에서 확인된 사실. 도전 모드와 첫 삶은 nil이다.
     public let rebirthEcho: RebirthEchoSnapshot?
     public let lineageLoadout: CareerLineageLoadout?
+    public let startingRepertoire: StartingRepertoireSelection?
 
-    public init(
+    public convenience init(
         seed: String,
         presetID: String,
         lifeNumber: Int = 1,
@@ -959,7 +1025,7 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         )
     }
 
-    public init(
+    public convenience init(
         seed: String,
         presetID: String,
         lifeNumber: Int = 1,
@@ -1008,7 +1074,8 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         signatureLegacyID: CareerSignatureLegacyID?,
         inheritanceRulesVersion: Int?,
         rebirthEcho: RebirthEchoSnapshot? = nil,
-        lineageLoadout: CareerLineageLoadout? = nil
+        lineageLoadout: CareerLineageLoadout? = nil,
+        startingRepertoire: StartingRepertoireSelection? = nil
     ) {
         self.seed = seed
         self.presetID = presetID
@@ -1026,6 +1093,27 @@ public struct StartHighSchoolCareerParams: Codable, Equatable, Sendable {
         self.inheritanceRulesVersion = inheritanceRulesVersion
         self.rebirthEcho = rebirthEcho
         self.lineageLoadout = lineageLoadout
+        self.startingRepertoire = startingRepertoire
+    }
+
+    public static func == (lhs: StartHighSchoolCareerParams, rhs: StartHighSchoolCareerParams) -> Bool {
+        lhs.seed == rhs.seed
+            && lhs.presetID == rhs.presetID
+            && lhs.lifeNumber == rhs.lifeNumber
+            && lhs.creationAllocation == rhs.creationAllocation
+            && lhs.inheritedSoulPoints == rhs.inheritedSoulPoints
+            && lhs.inheritedSoulDomain == rhs.inheritedSoulDomain
+            && lhs.inheritedMemories == rhs.inheritedMemories
+            && lhs.identity == rhs.identity
+            && lhs.difficulty == rhs.difficulty
+            && lhs.karmas == rhs.karmas
+            && lhs.soulBoosts == rhs.soulBoosts
+            && lhs.inheritedSoulTotal == rhs.inheritedSoulTotal
+            && lhs.signatureLegacyID == rhs.signatureLegacyID
+            && lhs.inheritanceRulesVersion == rhs.inheritanceRulesVersion
+            && lhs.rebirthEcho == rhs.rebirthEcho
+            && lhs.lineageLoadout == rhs.lineageLoadout
+            && lhs.startingRepertoire == rhs.startingRepertoire
     }
 }
 
@@ -1133,7 +1221,27 @@ public struct HighSchoolCareerResult: Codable, Equatable, Sendable {
     public let events: [HighSchoolCareerEvent]
     public let snapshot: HighSchoolCareerSnapshot
     public let eventHash: String
+    public let armHealth: HighSchoolArmHealthReceipt?
+
     public init(revision: UInt64, nextSeed: String, events: [HighSchoolCareerEvent], snapshot: HighSchoolCareerSnapshot, eventHash: String) {
-        self.revision = revision; self.nextSeed = nextSeed; self.events = events; self.snapshot = snapshot; self.eventHash = eventHash
+        self.init(revision: revision, nextSeed: nextSeed, events: events, snapshot: snapshot, eventHash: eventHash, armHealth: nil)
     }
+
+    public init(
+        revision: UInt64,
+        nextSeed: String,
+        events: [HighSchoolCareerEvent],
+        snapshot: HighSchoolCareerSnapshot,
+        eventHash: String,
+        armHealth: HighSchoolArmHealthReceipt?
+    ) {
+        self.revision = revision
+        self.nextSeed = nextSeed
+        self.events = events
+        self.snapshot = snapshot
+        self.eventHash = eventHash
+        self.armHealth = armHealth
+    }
+
+    public var armHealthReceipt: HighSchoolArmHealthReceipt? { armHealth }
 }

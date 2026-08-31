@@ -39,6 +39,10 @@ struct CareerFlowView: View {
             } else {
                 ScrollView {
                     VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                        if let injury = career.pendingInjuryEvent {
+                            ProInjuryResultCard(event: injury, onAcknowledge: career.acknowledgeInjuryEvent)
+                                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                        }
                         if !career.pendingGains.isEmpty {
                             GrowthCelebrationView(gains: career.pendingGains, onDismiss: career.acknowledgeGains)
                                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
@@ -129,4 +133,3 @@ struct CareerFlowView: View {
         }
     }
 }
-

@@ -146,7 +146,8 @@ public enum CareerLineageMasteryRules {
             movement: capped(pitcher.movement, bonus.movement, .movement),
             stamina: capped(pitcher.stamina, bonus.stamina, .stamina),
             pitchProfiles: pitcher.pitchProfiles,
-            throwingHand: pitcher.throwingHand
+            throwingHand: pitcher.throwingHand,
+            mastery: pitcher.mastery
         )
         return (updatedPitcher, updatedTalent, family == .battery ? 55 : 50)
     }
@@ -177,7 +178,8 @@ public struct CareerSignatureLegacyEffect: Codable, Equatable, Sendable {
             movement: Self.bounded(pitcher.movement + movement),
             stamina: Self.bounded(pitcher.stamina + stamina),
             pitchProfiles: pitcher.pitchProfiles,
-            throwingHand: pitcher.throwingHand
+            throwingHand: pitcher.throwingHand,
+            mastery: pitcher.mastery
         )
     }
 

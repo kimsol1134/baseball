@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AbilityGauge, ratingTier } from "./AbilityGauge";
 import { GrowthCelebration } from "./GrowthCelebration";
+import { displayRating } from "./ratingScale";
 import { readLabResultAcknowledgement, writeLabResultAcknowledgement } from "./labResultAcknowledgement";
 import { CoreUnavailableState } from "./CoreUnavailableState";
 import type {
@@ -422,7 +423,7 @@ export function PitcherLabView({
               <strong>{ratingValue(result, range.metric)}</strong>
               <AbilityGauge label={METRIC_LABELS[range.metric] ?? range.metric} value={range.current}
                 lowerBound={range.lowerBound} upperBound={range.upperBound} />
-              <small>{range.lowerBound}–{range.upperBound}</small>
+              <small>{displayRating(range.lowerBound)}–{displayRating(range.upperBound)}</small>
             </div>
           ))}
           <small className="rating-scale-note">포심 기준 {fourSeamVelocity(snapshot.pitcher)}</small>

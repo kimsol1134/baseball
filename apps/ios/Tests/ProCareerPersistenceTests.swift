@@ -18,6 +18,29 @@ final class ProCareerPersistenceTests: XCTestCase {
         XCTAssertEqual(ProCareerPersistence.nextRevision(after: .max, atLeast: 0), .max)
     }
 
+    func testRepertoireCareerUsesSchemaFourAndRoundTrips() throws {
+        let preset = PitcherPresetCatalog.all[0]
+        let selection = PitchLearningRules.recommendedSelection(presetID: preset.id)
+        let result = try CareerBootstrap.startCareer(
+            preset: preset,
+            playerName: "저장구종",
+            seed: 88_823,
+            startingRepertoire: selection
+        )
+        XCTAssertEqual(
+            ProCareerPersistence.schemaVersion(for: result),
+            ProCareerPersistence.repertoireSchemaVersion
+        )
+        let data = try XCTUnwrap(ProCareerPersistence.encode(.init(
+            result: result,
+            schemaVersion: ProCareerPersistence.repertoireSchemaVersion,
+            syncRevision: result.snapshot.revision
+        )))
+        let restored = try XCTUnwrap(ProCareerPersistence.decode(data))
+        XCTAssertEqual(restored.result?.snapshot.pitchLearningProject, result.snapshot.pitchLearningProject)
+        XCTAssertEqual(restored.result?.snapshot.pitcher, result.snapshot.pitcher)
+    }
+
     func testConflictPriorityPrefersExplicitTombstones() throws {
         let live = try fixtureResult()
         let liveData = try XCTUnwrap(ProCareerPersistence.encode(
@@ -60,6 +83,45 @@ final class ProCareerPersistenceTests: XCTestCase {
         XCTAssertEqual(restored.syncedRevision, 4)
         XCTAssertNil(record.gameResume)
         XCTAssertNil(record.deletedRevision)
+    }
+
+    func testInjuryWrapperKeepsSchemaFiveAfterEngineEventClears() throws {
+        let legacy = try resultWithoutMastery(fixtureResult())
+        let event = ProInjuryEventSnapshot(
+            season: 1,
+            week: 4,
+            plan: .developStuff,
+            rawFatigue: 82,
+            effectiveFatigue: 86,
+            pitches: 91,
+            recoveryWeeks: 3,
+            careerID: legacy.snapshot.proCareerID,
+            revision: legacy.snapshot.revision
+        )
+
+        var pending = ProCareerPersistedState(result: legacy)
+        pending.pendingInjuryEvent = event
+        XCTAssertEqual(
+            ProCareerPersistence.schemaVersion(for: pending),
+            ProCareerPersistence.masterySchemaVersion
+        )
+
+        pending.pendingInjuryEvent = nil
+        pending.acknowledgedInjuryEventID = event.stableID
+        XCTAssertEqual(
+            ProCareerPersistence.schemaVersion(for: pending),
+            ProCareerPersistence.masterySchemaVersion
+        )
+
+        let record = ProCareerPersistence.record(
+            from: pending,
+            schemaVersion: ProCareerPersistence.schemaVersion(for: pending),
+            syncRevision: 7
+        )
+        let encoded = try XCTUnwrap(ProCareerPersistence.encode(record))
+        let restored = try XCTUnwrap(ProCareerPersistence.decode(encoded))
+        XCTAssertEqual(restored.acknowledgedInjuryEventID, event.stableID)
+        XCTAssertEqual(restored.schemaVersion, ProCareerPersistence.masterySchemaVersion)
     }
 
     func testTombstoneUsesTheSameEmptyMappingAsDelete() {
@@ -132,5 +194,19 @@ final class ProCareerPersistenceTests: XCTestCase {
             ),
             entitlement: .init(status: .active, source: .development, verifiedAt: "2026-08-15")
         ))
+    }
+
+    private func resultWithoutMastery(_ result: ProCareerResult) throws -> ProCareerResult {
+        let data = try JSONEncoder().encode(result)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var snapshot = try XCTUnwrap(object["snapshot"] as? [String: Any])
+        var pitcher = try XCTUnwrap(snapshot["pitcher"] as? [String: Any])
+        pitcher.removeValue(forKey: "mastery")
+        snapshot["pitcher"] = pitcher
+        object["snapshot"] = snapshot
+        return try JSONDecoder().decode(
+            ProCareerResult.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
     }
 }

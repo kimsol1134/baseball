@@ -207,13 +207,23 @@ final class RPCServerTests: XCTestCase {
             id: .string("career-start"),
             method: "startHighSchoolCareer",
             params: try JSONValue.from(
-                StartHighSchoolCareerParams(seed: "20260723", presetID: "precision_commander")
+                StartHighSchoolCareerParams(
+                    seed: "20260723",
+                    presetID: "precision_commander",
+                    signatureLegacyID: nil,
+                    inheritanceRulesVersion: nil,
+                    startingRepertoire: PitchLearningRules.recommendedSelection(
+                        presetID: "precision_commander"
+                    )
+                )
             )
         )
         let startResponse = try decodeResponse(server.handle(line: try encodeRequest(startRequest)))
         let start = try XCTUnwrap(startResponse.result).decode(HighSchoolCareerResult.self)
         XCTAssertEqual(start.snapshot.phase, .prologue)
         XCTAssertEqual(start.snapshot.schoolOptions.count, 4)
+        XCTAssertEqual(start.snapshot.pitcher.gameReadyPitchTypes.count, 3)
+        XCTAssertEqual(start.snapshot.pitchLearningProject?.pitchType, .curveball)
 
         let prologueRequest = RPCRequest(
             id: .string("career-prologue"),

@@ -16,6 +16,10 @@ struct ProCareerSaveRecord: Codable {
     var schemaVersion: Int? = nil
     /// 커리어가 바뀌어 스냅숏 리비전이 0부터 다시 시작해도 iCloud에서는 계속 증가한다.
     var syncRevision: UInt64? = nil
+    /// A structured injury remains visible until the player acknowledges it, even after the next
+    /// recovery action replaces the transient `ProCareerResult`.
+    var pendingInjuryEvent: ProInjuryEventSnapshot? = nil
+    var acknowledgedInjuryEventID: String? = nil
 
     var effectiveRevision: UInt64 {
         max(syncRevision ?? 0, max(deletedRevision ?? 0, result?.snapshot.revision ?? 0))

@@ -17,6 +17,14 @@ struct InheritedStartComparisonCard: View {
         ]
     }
 
+    private var previousDisplayTotal: Int {
+        abilities.map { AbilityDisplayScale.displayRating($0.1) }.reduce(0, +)
+    }
+
+    private var currentDisplayTotal: Int {
+        abilities.map { AbilityDisplayScale.displayRating($0.2) }.reduce(0, +)
+    }
+
     private func signed(_ value: Int) -> String {
         value > 0 ? "+\(value)" : "\(value)"
     }
@@ -51,9 +59,9 @@ struct InheritedStartComparisonCard: View {
                     AppCopyKey.prologueInheritedStartJourney,
                     arguments: [
                         .userText(comparison.previousName),
-                        .integer(comparison.previous.total),
-                        .integer(comparison.current.total),
-                        .userText(signed(comparison.totalDelta)),
+                        .integer(previousDisplayTotal),
+                        .integer(currentDisplayTotal),
+                        .userText(signed(currentDisplayTotal - previousDisplayTotal)),
                     ]
                 ))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
@@ -66,7 +74,7 @@ struct InheritedStartComparisonCard: View {
                             Text(copyResolver.resolve(ability.0))
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(BaseballTheme.textTertiary)
-                            Text("\(ability.1) → \(ability.2)")
+                            Text("\(AbilityDisplayScale.displayRating(ability.1)) → \(AbilityDisplayScale.displayRating(ability.2))")
                                 .font(.caption.monospacedDigit().weight(.bold))
                                 .foregroundStyle(BaseballTheme.textPrimary)
                         }
@@ -302,10 +310,10 @@ struct PrologueAbilityGauge: View {
 
     private var ceilingText: String {
         talent == .s
-            ? copyResolver.resolve(AppCopyKey.prologueAbilityNoCeiling)
+            ? copyResolver.resolve(MetaUICopyKey.abilityBaseComplete)
             : copyResolver.resolve(
                 AppCopyKey.prologueAbilityCeiling,
-                arguments: [.integer(talent.ceiling)]
+                arguments: [.integer(AbilityDisplayScale.displayCeiling(talent.ceiling))]
             )
     }
 
@@ -341,7 +349,7 @@ struct PrologueAbilityGauge: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textTertiary)
                 Spacer()
-                Text(verbatim: "\(value)")
+                Text(verbatim: "\(AbilityDisplayScale.displayRating(value))")
                     .font(BaseballType.scoreboard)
                     .foregroundStyle(BaseballTheme.textPrimary)
             }
@@ -376,14 +384,14 @@ struct PrologueAbilityGauge: View {
                 ? copyResolver.resolve(
                     AppCopyKey.chapterReviewAbilityAccessibility,
                     arguments: [
-                        .userText(label), .integer(value), .userText(talent.label),
-                        .integer(talent.ceiling), .userText(meaning),
+                        .userText(label), .integer(AbilityDisplayScale.displayRating(value)), .userText(talent.label),
+                        .integer(AbilityDisplayScale.displayCeiling(talent.ceiling)), .userText(meaning),
                     ]
                 )
                 : copyResolver.resolve(
                     AppCopyKey.prologueAbilityAccessibility,
                     arguments: [
-                        .userText(label), .integer(value), .userText(talentText), .userText(ceilingText),
+                        .userText(label), .integer(AbilityDisplayScale.displayRating(value)), .userText(talentText), .userText(ceilingText),
                     ]
                 )
         )

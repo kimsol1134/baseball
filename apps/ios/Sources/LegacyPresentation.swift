@@ -213,7 +213,6 @@ enum LegacyPresentation {
     }
 
     static func bloomMeaning(_ grade: TalentGrade, resolver: GameCopyResolver) -> String {
-        guard resolver.language != .korean else { return TalentRules.meaning(grade) }
         let key: LegacyUICopyKey = switch grade {
         case .d: LegacyUICopyKey.bloomMeaningD
         case .c: LegacyUICopyKey.bloomMeaningC

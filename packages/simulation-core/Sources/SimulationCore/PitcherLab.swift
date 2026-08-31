@@ -235,6 +235,8 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
     public let hits: Int?
     /// 맞은 홈런 수. 구저장본은 nil이며 시즌 합계에는 0으로 더한다.
     public let homeRuns: Int?
+    /// Aggregated process-quality uses for an active development pitch. Missing means pre-feature.
+    public let pitchLearningUses: [PitchLearningUseReceipt]?
 
     public init(
         scenarioNumber: Int,
@@ -250,7 +252,8 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         scoreDifferentialAtEntry: Int? = nil,
         sequenceMasteryCount: Int? = nil,
         hits: Int? = nil,
-        homeRuns: Int? = nil
+        homeRuns: Int? = nil,
+        pitchLearningUses: [PitchLearningUseReceipt]? = nil
     ) {
         self.scenarioNumber = scenarioNumber
         self.pitches = pitches
@@ -266,6 +269,7 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         self.sequenceMasteryCount = sequenceMasteryCount
         self.hits = hits
         self.homeRuns = homeRuns
+        self.pitchLearningUses = pitchLearningUses
     }
 }
 
@@ -744,7 +748,8 @@ public struct PitcherLabEngine: Sendable {
             command: preset.pitcher.command,
             movement: preset.pitcher.movement,
             stamina: preset.pitcher.stamina,
-            pitchProfiles: preset.pitcher.pitchProfiles
+            pitchProfiles: preset.pitcher.pitchProfiles,
+            mastery: preset.pitcher.mastery
         )
         let createdPitcher = applyCreationAllocation(allocation, to: namedPitcher)
         let inheritedPitcher = applyInheritance(

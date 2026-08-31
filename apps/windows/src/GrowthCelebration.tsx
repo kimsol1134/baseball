@@ -1,4 +1,4 @@
-import { nextRatingStep, ratingPositionPercent, RATING_STEPS } from "./ratingScale";
+import { displayDelta, displayRating, nextRatingStep, ratingPositionPercent, RATING_STEPS } from "./ratingScale";
 
 interface GrowthCelebrationProps {
   label: string;
@@ -31,10 +31,10 @@ export function GrowthCelebration({ label, before, after, compact = false }: Gro
   if (gain <= 0) return null;
   const isMilestone = crossedGrowthMilestone(before, after);
   const next = nextRatingStep(after);
-  const remaining = next ? next.min - after : 0;
+  const remaining = next ? displayRating(next.min) - displayRating(after) : 0;
 
   return <div className={`growth-celebration${isMilestone ? " is-milestone" : " is-compact"}`}
-    aria-label={`${label} 능력치 상승, ${before}에서 ${after}, ${gain} 증가${next ? `, 다음 목표 ${next.label}까지 ${remaining}` : ""}`}>
+    aria-label={`${label} 능력치 상승, ${displayRating(before)}에서 ${displayRating(after)}, ${displayDelta(before, after)} 증가${next ? `, 다음 목표 ${next.label}까지 ${remaining}` : ""}`}>
     {isMilestone ? <div className="growth-celebration__burst" aria-hidden="true">
       {Array.from({ length: 8 }, (_, index) => <i key={index} />)}
     </div> : null}
@@ -44,7 +44,7 @@ export function GrowthCelebration({ label, before, after, compact = false }: Gro
         <strong>{label}</strong>
       </div>
       <div className="growth-celebration__score" aria-hidden="true">
-        <span>{before}</span><i>→</i><strong>{after}</strong><b>+{gain}</b>
+        <span>{displayRating(before)}</span><i>→</i><strong>{displayRating(after)}</strong><b>+{displayDelta(before, after)}</b>
       </div>
     </div>
     <div className="growth-ladder" aria-hidden="true">
@@ -55,15 +55,15 @@ export function GrowthCelebration({ label, before, after, compact = false }: Gro
         <span className="growth-ladder__marker" style={{ left: `${ratingPositionPercent(after)}%` }} />
       </div>
       <div className="growth-ladder__labels">
-        <span>20</span>
+        <span>1</span>
         {LADDER_TICKS.map((tick) => <span key={tick.value} className={`growth-ladder__tick${after >= tick.value ? " is-reached" : ""}`}
-          style={{ left: `${ratingPositionPercent(tick.value)}%` }}>{tick.value}{compact ? "" : ` ${tick.label}`}</span>)}
-        <span className="growth-ladder__end">80</span>
+          style={{ left: `${ratingPositionPercent(tick.value)}%` }}>{displayRating(tick.value)}{compact ? "" : ` ${tick.label}`}</span>)}
+        <span className="growth-ladder__end">100</span>
       </div>
     </div>
     <p className="growth-celebration__meaning">{growthMilestoneCopy(before, after)}</p>
     {next
-      ? <p className="growth-celebration__next">다음 목표 · <b>{next.label}({next.min})</b>까지 {remaining} 남았습니다</p>
+      ? <p className="growth-celebration__next">다음 목표 · <b>{next.label}({displayRating(next.min)})</b>까지 {remaining} 남았습니다</p>
       : <p className="growth-celebration__next">최고 단계에 올라 있습니다</p>}
   </div>;
 }

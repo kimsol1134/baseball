@@ -9,45 +9,59 @@ It describes the same game, save data, paid SKU, and fictional baseball world as
 |---|---|---:|
 | Name | `Mound Reborn: Baseball Career` | 29 / 30 |
 | Subtitle | `Pitch. Grow. Get Drafted.` | 25 / 30 |
-| Keywords | `pitcher,draft,simulation,rebirth,high school,rotation,bullpen,training,story,offline` | 84 / 100 |
+| Keywords | `pitcher,simulation,rebirth,high school,rookie,scout,ace,bullpen,rotation,legacy,timing,command` | 94 / 100 |
+
+Name and subtitle already cover `baseball`, `career`, `pitch`, `grow`, and `drafted`. The keyword field therefore spends its 100 characters on pitcher/career-adjacent stems that those fields do not already burn. Do not add real league, club, or player names.
 
 ### Promotional text
 
-Pitch through three years of high school, chase the draft, and carry one hard-earned legacy into your next career. Pay once. No ads or in-app purchases.
+You throw every important pitch. Pick the spot, time the release. Miss the draft, begin again with one thing from the last life. Pay once. No ads, gacha, or IAP.
 
 ### Description
 
 Call the pitch. Pick your spot. Finish the throw.
 
-Mound Reborn is a baseball career simulation where you develop a pitcher through three years of high school and fight to hear your name called on draft day. Every important at-bat puts the decisions in your hands: choose a pitch, read the hitter, aim for the zone, and live with the result.
-
-Getting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, the time you invested does not disappear. Choose a memory or legacy from that player, begin again with a new prospect, and turn the last career's failure into the next one's head start.
+Mound Reborn is a baseball career built around pitching: develop a player through three years of high school and fight to hear your name called on draft day. Choose a pitch, read the hitter, aim for the zone, time the release, and live with the result.
 
 BUILD A PITCHER
-Train your velocity, command, movement, stamina, and pitch mix across a complete high-school career.
+Train velocity, command, movement, stamina, and your pitch mix across a complete high-school career. A direct pitch slider puts every important throw in your hands.
 
 THINK THROUGH EVERY AT-BAT
-Mix pitches and locations while hitters learn your patterns and adjust to what you have shown them.
+Mix pitches and locations while hitters learn your patterns and adjust to what you have shown them. The catcher offers a reasoned call; follow it or change the plan. Replay the pitch path and result after every delivery.
+
+SEE THE RISK, THEN CHOOSE
+Fatigue and workload matter. If an injury happens, see its cause, recovery time, and next step right away so you can choose what to do next.
+
+KEEP THE STORY MOVING
+Career scenes and repeated explanations open with context the first time. Once you know them, they become a compact, readable summary that you can expand whenever you want the full story.
+
+READ YOUR GROWTH
+Ability ratings use a familiar 1–100 scale, so a new player can understand the board at a glance. When a rating reaches its base cap, development continues through separate mastery levels and effects—not an endless ability number.
 
 CHASE THE DRAFT
-Face the pressure of decisive games, scouting judgments, and a draft outcome earned by the career you played.
-
-LEAVE SOMETHING BEHIND
-Carry selected memories and signature legacies across rebirths. A new player is never quite a blank slate.
+Getting drafted is never guaranteed. A bad outing, mounting fatigue, or one choice under pressure can change the path of a career. If your run ends, choose a memory or legacy from that player, begin again with a new prospect, and turn the last career’s failure into the next one’s head start.
 
 GO BEYOND HIGH SCHOOL
-If you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement.
-
-YOUR CAREER, YOUR STORY
-Relationships, regional atmosphere, career milestones, and the choices you made become part of an enduring player chronicle.
+If you are drafted, continue into a professional career with roles, contracts, call-ups, seasons, records, and retirement. Relationships, regional atmosphere, and your choices become part of an enduring player chronicle.
 
 - Premium game: pay once
-- No ads
-- No in-app purchases
+- No ads, in-app purchases, or gacha
 - Playable offline
 - English, Korean, and Japanese
 
-Mound Reborn takes place in an original fictional baseball world inspired by the regional culture and atmosphere of Korean baseball. It is not affiliated with any real league, club, school, or player.
+Mound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.
+
+## Version 1.2.4
+
+### What’s New
+
+This update makes every decision easier to read.
+
+• See an injury’s cause, recovery time, and next step right away.
+• Repeated story moments and explanations collapse into a compact summary after the first read, and can be expanded whenever you want the detail.
+• Ability ratings now use a familiar 1–100 scale. After the base cap, separate mastery levels and effects keep development moving without turning ratings into endless numbers.
+
+Your next pitch—and your next career—are easier to follow.
 
 ## Version 1.1.2
 

@@ -26,17 +26,20 @@ enum AppTab: Hashable, CaseIterable, Identifiable {
     }
 }
 
-/// 시스템 Launch Screen 다음에 이어지는, 언어가 확정된 앱 초기 로딩 화면.
+/// 시스템 Launch Screen 다음에 이어지는 앱 초기 로딩 화면.
 ///
-/// iOS가 보관한 예전 Launch Screen 스냅샷과 달리 현재 앱 언어의 String Catalog를 직접
-/// 해석하므로 한국어 실행에서는 반드시 정식 한국어 제목이 보인다.
+/// 제목 글자("Mound Reborn" / 본문 타이포)를 다시 그리지 않는다. 이미 로고에
+/// "야구 못하면 또 환생함"이 들어 있으므로 그 이미지만 중심에 둔다.
 struct AppLoadingView: View {
+    @Environment(\.gameCopyResolver) private var copyResolver
+
     var body: some View {
         VStack(spacing: 20) {
-            GameCopyText(.appTitle)
-                .font(BaseballType.display)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(BaseballTheme.textPrimary)
+            Image("LaunchLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 240, height: 240)
+                .accessibilityLabel(copyResolver.resolve(.appTitle))
                 .accessibilityIdentifier("app.loading.title")
 
             ProgressView()
@@ -267,7 +270,9 @@ struct AppShell: View {
                                 pitcher: pitcher,
                                 identity: identity,
                                 sourceHighSchoolCareerID: sourceHighSchoolCareerID,
-                                sourceFanInterest: highSchool.state?.fanInterest
+                                sourceFanInterest: highSchool.state?.fanInterest,
+                                repertoireRulesVersion: highSchool.state?.repertoireRulesVersion,
+                                pitchLearningProject: highSchool.state?.pitchLearningProject
                             ) else {
                                 selection = .highSchool
                                 return
@@ -733,8 +738,23 @@ private struct ProCareerTabs: View {
     let career: MobileCareerStore
     let retiresIntoSignatureLegacy: Bool
     let onStartNewPlayer: () -> Void
-    @State private var showsToday = true
+    @State private var showsToday: Bool
     @Environment(\.gameCopyResolver) private var copyResolver
+
+    init(
+        career: MobileCareerStore,
+        retiresIntoSignatureLegacy: Bool,
+        onStartNewPlayer: @escaping () -> Void
+    ) {
+        self.career = career
+        self.retiresIntoSignatureLegacy = retiresIntoSignatureLegacy
+        self.onStartNewPlayer = onStartNewPlayer
+#if DEBUG
+        _showsToday = State(initialValue: !ProcessInfo.processInfo.arguments.contains("-uiTestOpenProWeek"))
+#else
+        _showsToday = State(initialValue: true)
+#endif
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1118,8 +1138,9 @@ struct CareerDirectionCard: View {
         if let journey = state.journeyState {
             let records = ProCareerPresentation.teamRecords(for: state)
             let record = ProTeamCareerRecordRules.record(teamID: state.team.id, in: records)
-            let legacyScore = record.map(ProTeamLegacyRules.score(record:)) ?? 0
-            let tier = record.map(ProTeamLegacyRules.tier(record:))
+            let rulesVersion = journey.rulesVersion
+            let legacyScore = record.map { ProTeamLegacyRules.score(record: $0, rulesVersion: rulesVersion) } ?? 0
+            let tier = record.map { ProTeamLegacyRules.tier(record: $0, rulesVersion: rulesVersion) }
             BaseballCard(title: copyResolver.resolve(.directionTitle), tone: .raised) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(verbatim: copyResolver.resolve(.directionContract, arguments: contractText(for: state, resolver: copyResolver)))
@@ -1134,7 +1155,7 @@ struct CareerDirectionCard: View {
                         Text(verbatim: copyResolver.resolve(.directionNoGoal))
                     }
                     if let tier {
-                        if let record, let next = ProTeamLegacyRules.nextTierProjection(record: record) {
+                        if let record, let next = ProTeamLegacyRules.nextTierProjection(record: record, rulesVersion: rulesVersion) {
                             Text(verbatim: legacyProgressText(
                                 record: record,
                                 score: legacyScore,
@@ -1148,6 +1169,10 @@ struct CareerDirectionCard: View {
                                 arguments: [.userText(copyResolver.resolve(tierKey(tier))), .integer(legacyScore)]
                             ))
                         }
+                        Text(verbatim: copyResolver.resolve(.directionLegacyHint))
+                            .font(.caption)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("pro.careerDirection.legacy.hint")
                     }
                     Text(verbatim: copyResolver.resolve(
                         .directionHOF,

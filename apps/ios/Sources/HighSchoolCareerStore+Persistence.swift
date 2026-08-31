@@ -45,6 +45,9 @@ extension HighSchoolCareerStore {
             ?? retentionOverride ?? candidateResult.map { current in
             retentionEnvelope(for: current.snapshot, rivalLedger: rivalLedger)
         }
+        guard canWrite(schemaVersion: HighSchoolCareerPersistence.currentSchemaVersion) else {
+            return false
+        }
         let draft = capturePersisted().drafting(
             result: candidateResult,
             gameResume: candidateGameResume,
@@ -66,6 +69,17 @@ extension HighSchoolCareerStore {
         }
         updatePersisted { $0.savedRevision = candidateRevision }
         return true
+    }
+
+    private func canWrite(schemaVersion: Int) -> Bool {
+        guard let existingData = sync.read(
+            revision: HighSchoolCareerPersistence.rawSchemaVersion,
+            conflictPriority: { _ in 0 }
+        ),
+        let existingVersion = HighSchoolCareerPersistence.rawSchemaVersion(existingData) else {
+            return true
+        }
+        return existingVersion <= UInt64(schemaVersion)
     }
 
     /// 다른 기기에서 진행이 올라왔을 때 다시 읽는다.

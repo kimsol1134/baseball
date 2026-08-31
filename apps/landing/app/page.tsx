@@ -145,6 +145,9 @@ export default function HomePage() {
             <a href="#career">커리어</a>
             <a href="#screens">화면</a>
             <a href="#faq">FAQ</a>
+            <a href="/en" hrefLang="en" lang="en">
+              English
+            </a>
           </nav>
           <PrimaryCta className="header-cta" placement="header" />
         </div>
@@ -187,7 +190,7 @@ export default function HomePage() {
                 </a>
               </div>
               <p className="release-status">
-                App Store에서 ₩3,300. 한 번 구매로 끝이고, 그 뒤로 결제할 것이 없습니다.
+                App Store에서 ₩4,400. 한 번 구매로 끝이고, 그 뒤로 결제할 것이 없습니다.
               </p>
               <ul className="release-facts" aria-label="게임과 출시 정보">
                 <li>iPhone · iOS 17+</li>

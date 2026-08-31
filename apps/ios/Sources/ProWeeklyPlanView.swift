@@ -1,6 +1,17 @@
 import SwiftUI
 import SimulationCore
 
+private extension TalentAbility {
+    var masteryPlan: ProWeekPlan {
+        switch self {
+        case .stuff: .developStuff
+        case .command: .refineCommand
+        case .movement: .developMovement
+        case .stamina: .buildStamina
+        }
+    }
+}
+
 struct WeeklyPlanView: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
@@ -11,6 +22,7 @@ struct WeeklyPlanView: View {
         let title: String
         let effect: String
         let cost: String
+        let risk: String
         let symbol: String
     }
 
@@ -56,13 +68,21 @@ struct WeeklyPlanView: View {
         }
     }
 
-    private static func progressText(
+    static func progressText(
         _ plan: ProWeekPlan,
         state: ProCareerSnapshot,
         resolver: GameCopyResolver
     ) -> String {
         let current = state.developmentProgress?.value(for: plan) ?? 0
-        return resolver.resolve(.weeklyProgress, arguments: [.integer(current)])
+        let required = ProCareerEngine.developmentTicksRequired(
+            for: plan,
+            pitcher: state.pitcher,
+            proRulesVersion: state.proRulesVersion
+        ) ?? 2
+        return resolver.resolve(
+            .weeklyProgress,
+            arguments: [.integer(current), .integer(required)]
+        )
     }
 
     /// 구위와 변화구를 분리해 이번 선수가 어떤 무기를 완성하는지 선택하게 한다.
@@ -70,6 +90,18 @@ struct WeeklyPlanView: View {
     private static func plans(for state: ProCareerSnapshot, resolver: GameCopyResolver) -> [PlanCopy] {
         let reliefRole = state.role != .starter
         let veteran = state.season >= 9
+        func risk(_ plan: ProWeekPlan) -> String {
+            let forecast = ProWeekHealthForecast.forecast(state: state, plan: plan)
+            let bandKey: ProUICopyKey = switch forecast.band {
+            case .low: .weeklyInjuryRiskLow
+            case .caution: .weeklyInjuryRiskCaution
+            case .high: .weeklyInjuryRiskHigh
+            }
+            return resolver.resolve(.weeklyInjuryRisk, arguments: [
+                .userText(resolver.resolve(bandKey)),
+                .integer(forecast.expectedEffectiveFatigue),
+            ])
+        }
         return [
             PlanCopy(
                 plan: .developStuff,
@@ -78,6 +110,7 @@ struct WeeklyPlanView: View {
                     .userText(progressText(.developStuff, state: state, resolver: resolver)),
                 ]),
                 cost: resolver.resolve(.weeklyDevelopStuffCost),
+                risk: risk(.developStuff),
                 symbol: "flame"
             ),
             PlanCopy(
@@ -87,6 +120,7 @@ struct WeeklyPlanView: View {
                     .userText(progressText(.developMovement, state: state, resolver: resolver)),
                 ]),
                 cost: resolver.resolve(.weeklyDevelopMovementCost),
+                risk: risk(.developMovement),
                 symbol: "hurricane"
             ),
             PlanCopy(
@@ -96,6 +130,7 @@ struct WeeklyPlanView: View {
                     .userText(progressText(.refineCommand, state: state, resolver: resolver)),
                 ]),
                 cost: resolver.resolve(.weeklyCommandCost),
+                risk: risk(.refineCommand),
                 symbol: "scope"
             ),
             PlanCopy(
@@ -105,21 +140,23 @@ struct WeeklyPlanView: View {
                     .userText(progressText(.buildStamina, state: state, resolver: resolver)),
                 ]),
                 cost: resolver.resolve(.weeklyStaminaCost),
+                risk: risk(.buildStamina),
                 symbol: "figure.run"
             ),
             PlanCopy(
                 plan: .recover,
                 title: resolver.resolve(veteran ? .weeklyRecoveryVeteranTitle : .weeklyRecoveryTitle),
                 effect: resolver.resolve(
-                    (state.proRulesVersion ?? 1) >= ProCareerEngine.currentRulesVersion
+                    ProCareerEngine.usesAgencyRules(state)
                         ? .weeklyRecoveryAgencyEffect
                         : .weeklyRecoveryEffect
                 ),
                 cost: resolver.resolve(
-                    (state.proRulesVersion ?? 1) >= ProCareerEngine.currentRulesVersion
+                    ProCareerEngine.usesAgencyRules(state)
                         ? .weeklyRecoveryAgencyCost
                         : .weeklyRecoveryCost
                 ),
+                risk: risk(.recover),
                 symbol: "bed.double"
             ),
             PlanCopy(
@@ -127,6 +164,7 @@ struct WeeklyPlanView: View {
                 title: resolver.resolve(state.level == .minor ? .weeklyTrustMinorTitle : reliefRole ? .weeklyTrustReliefTitle : .weeklyTrustStarterTitle),
                 effect: resolver.resolve(.weeklyTrustEffect),
                 cost: resolver.resolve(.weeklyTrustCost),
+                risk: risk(.earnTrust),
                 symbol: "person.2"
             ),
         ]
@@ -157,52 +195,87 @@ struct WeeklyPlanView: View {
                 Metric(title: copyResolver.resolve(.weeklyRole), value: copyResolver.resolve(state.role.displayCopyToken))
             }
 
+            let mastery = state.pitcher.effectiveMastery
+            ForEach(TalentAbility.allCases, id: \.rawValue) { ability in
+                let level = mastery.value(for: ability)
+                let baseInternalRating: Int = {
+                    switch ability {
+                    case .stuff: state.pitcher.stuff
+                    case .command: state.pitcher.command
+                    case .movement: state.pitcher.movement
+                    case .stamina: state.pitcher.stamina
+                    }
+                }()
+                MasteryGaugeView(
+                    ability: ability,
+                    baseInternalRating: baseInternalRating,
+                    level: level,
+                    progress: state.developmentProgress?.value(for: ability.masteryPlan) ?? 0,
+                    required: 6
+                )
+            }
+
             let identity = PitcherBuildRules.identity(for: state.pitcher)
             BaseballCard(title: copyResolver.resolve(
                 .weeklyBlueprint,
                 arguments: [.userText(ProCareerPresentation.buildLabel(identity, resolver: copyResolver))]
             ), tone: .raised) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver)).font(.footnote)
-                    Text(ProCareerPresentation.buildTradeoff(identity, resolver: copyResolver))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.warning)
-                    if let rolePreference = state.rolePreference {
-                        Label(
-                            copyResolver.resolve(
-                                .weeklyRolePromise,
-                                arguments: [.userText(copyResolver.resolve(rolePreference.displayCopyToken))]
-                            ),
-                            systemImage: "checkmark.seal.fill"
-                        )
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.positive)
+                ProgressiveDisclosure(
+                    contentID: "pro.weekly.blueprint.v1",
+                    title: ProCareerPresentation.buildLabel(identity, resolver: copyResolver),
+                    summary: ProCareerPresentation.buildStrength(identity, resolver: copyResolver)
+                ) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver)).font(.footnote)
+                        Text(ProCareerPresentation.buildTradeoff(identity, resolver: copyResolver))
+                            .font(.footnote)
+                            .foregroundStyle(BaseballTheme.warning)
+                        if let rolePreference = state.rolePreference {
+                            Label(
+                                copyResolver.resolve(
+                                    .weeklyRolePromise,
+                                    arguments: [.userText(copyResolver.resolve(rolePreference.displayCopyToken))]
+                                ),
+                                systemImage: "checkmark.seal.fill"
+                            )
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.positive)
+                        }
                     }
                 }
             }
 
             let standing = ProCareerEngine.careerStanding(for: state)
             BaseballCard(title: copyResolver.resolve(.weeklyStandingTitle), tone: .milestone) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Label(
-                        Self.standingLabel(standing, resolver: copyResolver),
-                        systemImage: standing == .clubSymbol ? "star.circle.fill" : "shield.lefthalf.filled"
-                    )
-                    .font(.headline)
-                    .foregroundStyle(BaseballTheme.milestone)
-                    Text(copyResolver.resolve(.weeklyStandingSchedule, arguments: [
+                ProgressiveDisclosure(
+                    contentID: "pro.weekly.standing.v1",
+                    title: Self.standingLabel(standing, resolver: copyResolver),
+                    summary: copyResolver.resolve(.weeklyStandingSchedule, arguments: [
                         .userText(copyResolver.resolve(state.role.displayCopyToken)),
                         .integer(ProCareerEngine.expectedRemainingOutings(for: state)),
-                    ]))
-                    .font(.footnote.monospacedDigit())
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    if state.age >= 33 {
-                        Text(copyResolver.resolve(.weeklyStandingVeteran))
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.positive)
+                    ])
+                ) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Label(
+                            Self.standingLabel(standing, resolver: copyResolver),
+                            systemImage: standing == .clubSymbol ? "star.circle.fill" : "shield.lefthalf.filled"
+                        )
+                        .font(.headline)
+                        .foregroundStyle(BaseballTheme.milestone)
+                        Text(copyResolver.resolve(.weeklyStandingSchedule, arguments: [
+                            .userText(copyResolver.resolve(state.role.displayCopyToken)),
+                            .integer(ProCareerEngine.expectedRemainingOutings(for: state)),
+                        ]))
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        if state.age >= 33 {
+                            Text(copyResolver.resolve(.weeklyStandingVeteran))
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(BaseballTheme.positive)
+                        }
                     }
+                    .accessibilityElement(children: .combine)
                 }
-                .accessibilityElement(children: .combine)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -242,6 +315,27 @@ struct WeeklyPlanView: View {
                     .map(\.pitchType)
                     .filter { $0 != .fourSeam }
                 if !breakingBalls.isEmpty {
+                    if let project = state.pitchLearningProject {
+                        BaseballCard(
+                            title: copyResolver.resolve(
+                                AppCopyKey.trainingPitchLearningTitle,
+                                arguments: [.userText(PitchCopy.localized(project.pitchType, resolver: copyResolver))]
+                            ),
+                            tone: project.isCompleted ? .positive : .milestone
+                        ) {
+                            GameCopyText(
+                                AppCopyKey.trainingPitchLearningProgress,
+                                arguments: [
+                                    .integer(project.practiceCredits),
+                                    .integer(PitchLearningRules.maximumPracticeCredits),
+                                    .integer(project.qualityUses),
+                                    .integer(PitchLearningRules.requiredQualityUses),
+                                ]
+                            )
+                            .font(.footnote.monospacedDigit())
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                    }
                     Picker(copyResolver.resolve(.weeklyDevelopmentPitch), selection: Binding(
                         get: { career.selectedDevelopmentPitch },
                         set: { career.selectedDevelopmentPitch = $0 }
@@ -268,7 +362,7 @@ struct WeeklyPlanView: View {
                     ))
                         .font(.subheadline.weight(.semibold))
                     Text(copyResolver.resolve(
-                        career.selectedPlan == .recover && (state.proRulesVersion ?? 1) < ProCareerEngine.currentRulesVersion
+                        career.selectedPlan == .recover && !ProCareerEngine.usesAgencyRules(state)
                             ? .weeklyRecoverySingleWeek
                             : .weeklyAdvanceStop
                     ))
@@ -281,7 +375,7 @@ struct WeeklyPlanView: View {
             .disabled(
                 career.selectedPlan == nil
                     || (career.selectedPlan == .recover
-                        && (state.proRulesVersion ?? 1) < ProCareerEngine.currentRulesVersion)
+                        && !ProCareerEngine.usesAgencyRules(state))
             )
             .frame(minHeight: BaseballMetrics.minimumTapTarget)
             .accessibilityIdentifier("pro.advanceSegment")
@@ -319,6 +413,9 @@ struct WeeklyPlanView: View {
                         Text(copy.effect).font(.footnote).foregroundStyle(BaseballTheme.positive)
                         // localization-safe: resolved-copy
                         Text(copy.cost).font(.footnote).foregroundStyle(BaseballTheme.warning)
+                        Text(copy.risk)
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(copy.risk.contains("높음") || copy.risk.contains("High") || copy.risk.contains("高") ? BaseballTheme.warning : BaseballTheme.textSecondary)
                     }
                     Spacer()
                     Image(systemName: selected ? "checkmark.circle.fill" : "circle")
@@ -342,4 +439,3 @@ struct WeeklyPlanView: View {
         }
     }
 }
-

@@ -61,6 +61,8 @@ import { AvatarFace } from "./AvatarFace";
 import { resetAllProgress } from "./progressReset";
 import { includesProCareer, releaseEditionFromEnvironment } from "./releaseEdition";
 import { getAppStorage } from "./cloudStorage";
+import { displayRating } from "./ratingScale";
+import { proInjuryEventID } from "./proHealthForecast";
 import {
   createAnonymousDiagnosticPackage,
   downloadTextFile,
@@ -106,6 +108,7 @@ import type {
   SelectionQuality,
   SoulDomain,
   SchoolID,
+  StartingRepertoireSelection,
   ExtendedPitchOutcome,
   TrainingFocus,
   TrainingIntensity,
@@ -307,13 +310,14 @@ const EMPTY_LAB_INNING_STATS: LabInningStats = {
 };
 
 function StatRow({ label, value }: { label: string; value: number }) {
+  const displayed = displayRating(value);
   return (
     <div className="stat-row">
       <span>{label}</span>
       <div className="stat-track" aria-hidden="true">
-        <span style={{ width: `${((value - 20) / 60) * 100}%` }} />
+        <span style={{ width: `${((displayed - 1) / 99) * 100}%` }} />
       </div>
-      <strong>{value}</strong>
+      <strong>{displayed}</strong>
     </div>
   );
 }
@@ -500,6 +504,7 @@ export function App() {
   const [previousLifeResult, setPreviousLifeResult] = useState<PitcherLabResult>();
   const [careerResult, setCareerResult] = useState<HighSchoolCareerResult>();
   const [proResult, setProResult] = useState<ProCareerResult>();
+  const [acknowledgedProInjuryEventID, setAcknowledgedProInjuryEventID] = useState<string>();
   const [proVisible, setProVisible] = useState(false);
   const [labInningStats, setLabInningStats] = useState<LabInningStats>(EMPTY_LAB_INNING_STATS);
   const [error, setError] = useState<string>();
@@ -522,6 +527,7 @@ export function App() {
   const gameCastWasOpen = useRef(false);
   const pitchDecisionStartedAt = useRef(performance.now());
   const pitchInteractionCount = useRef(0);
+  const learningQualityPlateAppearances = useRef(new Set<string>());
   const careerDecisionStartedAt = useRef(performance.now());
   const proDecisionStartedAt = useRef(performance.now());
   const lastCareerTelemetryRevision = useRef<number | undefined>(undefined);
@@ -592,9 +598,15 @@ export function App() {
         const savedPreset = availablePresets.find((preset) => preset.id === saved.selectedPresetID);
         if (!savedPreset) throw new Error("저장된 프로 커리어의 투수 프리셋을 찾을 수 없습니다.");
         const normalizedCareer = await normalizeRegionalSchools({ seed: saved.highSchoolCareer.nextSeed, state: saved.highSchoolCareer.snapshot });
-        const normalizedPro = await normalizeProCareerBalance({ seed: saved.proCareer.nextSeed, state: saved.proCareer.snapshot });
+        const normalizedProResult = await normalizeProCareerBalance({ seed: saved.proCareer.nextSeed, state: saved.proCareer.snapshot });
+        // Normalization is a state-only compatibility command, so carry the saved result event
+        // across it. Otherwise a process restart between an injury result and acknowledgement
+        // would silently drop the only explanation card.
+        const normalizedPro = normalizedProResult.injuryEvent || !saved.proCareer.injuryEvent
+          ? normalizedProResult
+          : { ...normalizedProResult, injuryEvent: saved.proCareer.injuryEvent };
         setPresets(availablePresets); setSelectedPresetID(saved.selectedPresetID); setCareerResult(normalizedCareer);
-        setProResult(normalizedPro); setProVisible(true); setScreenMode("lab"); setExperienceMode("career");
+        setProResult(normalizedPro); setAcknowledgedProInjuryEventID(saved.acknowledgedInjuryEventID); setProVisible(true); setScreenMode("lab"); setExperienceMode("career");
         setSaveNotice(restoredPro.source === "backup" ? "손상된 프로 저장 대신 마지막 정상 백업을 복구했습니다." : "프로 커리어 자동 저장에서 이어서 시작했습니다.");
         setCoreStatus({ state: "online", health }); return;
       }
@@ -615,6 +627,7 @@ export function App() {
         setGameState(saved.gameState);
         setGameLog(saved.gameLog);
         setCareerResult(normalizedCareer);
+        setAcknowledgedProInjuryEventID(undefined);
         setLabInningStats(saved.inningStats);
         setScreenMode(!careerBalanceChanged && saved.screenMode === "pitch" && saved.preparation ? "pitch" : "lab");
         setExperienceMode("career");
@@ -675,6 +688,7 @@ export function App() {
       setLabResult(undefined);
       setPreviousLifeResult(undefined);
       setCareerResult(undefined);
+      setAcknowledgedProInjuryEventID(undefined);
       setLabInningStats(EMPTY_LAB_INNING_STATS);
       setScreenMode("lab");
       setExperienceMode("career");
@@ -870,10 +884,10 @@ export function App() {
   useEffect(() => {
     if (coreStatus.state !== "online" || !proResult || !careerResult || !selectedPresetID) return;
     try {
-      saveProCareer(appStorage, { format: "BaseballProCareerAutosave", schemaVersion: 1, savedAt: new Date().toISOString(), selectedPresetID, highSchoolCareer: careerResult, proCareer: proResult });
+      saveProCareer(appStorage, { format: "BaseballProCareerAutosave", schemaVersion: 1, savedAt: new Date().toISOString(), selectedPresetID, highSchoolCareer: careerResult, proCareer: proResult, acknowledgedInjuryEventID: acknowledgedProInjuryEventID });
       setSaveNotice("프로 커리어 자동 저장 완료");
     } catch (caught) { setSaveNotice(caught instanceof Error ? `프로 자동 저장 실패 · ${caught.message}` : "프로 자동 저장 실패"); }
-  }, [careerResult, coreStatus.state, proResult, selectedPresetID]);
+  }, [acknowledgedProInjuryEventID, careerResult, coreStatus.state, proResult, selectedPresetID]);
 
   const handleNewExperiment = useCallback(() => {
     if (!window.confirm("현재 선수의 훈련 기록을 지우고 새 선수를 만들까요?")) return;
@@ -946,6 +960,13 @@ export function App() {
         || (experienceMode === "career" && proResult?.snapshot.phase === "important_game" && proVisible)
       )) {
         const latestEntry = result.gameLog.entries[result.gameLog.entries.length - 1];
+        const learningProject = proVisible
+          ? proResult?.snapshot.pitchLearningProject
+          : careerResult?.snapshot.pitchLearningProject;
+        const developmentProfile = pitcher.pitchProfiles?.find((profile) =>
+          profile.pitchType === submittedCall.pitchType
+            && profile.role === "development"
+            && profile.availability !== "locked");
         setLabInningStats((current) => ({
           pitches: current.pitches + 1,
           strikeouts: current.strikeouts + (result.snapshot.result === "strikeout" ? 1 : 0),
@@ -954,6 +975,30 @@ export function App() {
           expectedDamage: current.expectedDamage + (latestEntry?.expectedDamage ?? 0),
           actualDamage: current.actualDamage + (latestEntry?.actualDamage ?? 0),
           recommendationAccepted: current.recommendationAccepted + (result.snapshot.recommendationAccepted ? 1 : 0),
+          pitchLearningUses: learningProject?.pitchType === submittedCall.pitchType && developmentProfile
+            ? (() => {
+                const previous = current.pitchLearningUses?.find((item) => item.pitchType === submittedCall.pitchType);
+                const token = `${submittedCall.pitchType}|${context.plateAppearanceID}`;
+                const persistedAwards = current.pitchLearningAwardedPlateAppearances ?? [];
+                const earnsQuality = result.snapshot.execution.executionQuality >= 600
+                  && !persistedAwards.includes(token)
+                  && !learningQualityPlateAppearances.current.has(token)
+                  && (previous?.qualityUses ?? 0) < 2;
+                if (earnsQuality) learningQualityPlateAppearances.current.add(token);
+                return [{
+                  pitchType: submittedCall.pitchType,
+                  pitchesThrown: (previous?.pitchesThrown ?? 0) + 1,
+                  qualityUses: (previous?.qualityUses ?? 0) + (earnsQuality ? 1 : 0),
+                }];
+              })()
+            : current.pitchLearningUses,
+          pitchLearningAwardedPlateAppearances: (() => {
+            const token = `${submittedCall.pitchType}|${context.plateAppearanceID}`;
+            return learningQualityPlateAppearances.current.has(token)
+              && !(current.pitchLearningAwardedPlateAppearances ?? []).includes(token)
+              ? [...(current.pitchLearningAwardedPlateAppearances ?? []), token]
+              : current.pitchLearningAwardedPlateAppearances;
+          })(),
         }));
       }
     } catch (caught) {
@@ -977,7 +1022,7 @@ export function App() {
     } finally {
       setIsRunning(false);
     }
-  }, [activeBatter, analyticsOptIn, applyRecommendation, careerResult?.snapshot.phase, context, experienceMode, feedback, gameLog, gameState, hapticsEnabled, intensity, labResult?.snapshot.phase, pitchType, pitcher, preparation, proResult?.snapshot.phase, proVisible, rivalMemory, screenMode, seed, soundEnabled, zone, zoneIntent]);
+  }, [activeBatter, analyticsOptIn, applyRecommendation, careerResult?.snapshot.phase, careerResult?.snapshot.pitchLearningProject, context, experienceMode, feedback, gameLog, gameState, hapticsEnabled, intensity, labResult?.snapshot.phase, pitchType, pitcher, preparation, proResult?.snapshot.phase, proResult?.snapshot.pitchLearningProject, proVisible, rivalMemory, screenMode, seed, soundEnabled, zone, zoneIntent]);
 
   const handleNewPlateAppearance = useCallback(async () => {
     if (!pitcher) return;
@@ -1200,6 +1245,7 @@ export function App() {
       setLastResult(undefined);
       setHistory([]);
       setLabInningStats(EMPTY_LAB_INNING_STATS);
+      learningQualityPlateAppearances.current.clear();
       applyRecommendation(nextPreparation.primaryRecommendation);
       setScreenMode("pitch");
     } catch (caught) {
@@ -1247,7 +1293,8 @@ export function App() {
   }, []);
 
   const handleStartCareer = useCallback(async (presetID: string, creationAllocation: CreationAllocationSnapshot,
-    identity: PlayerIdentitySnapshot, difficulty: CareerDifficultySnapshot, karmas: ReadonlyArray<KarmaID>) => {
+    identity: PlayerIdentitySnapshot, difficulty: CareerDifficultySnapshot, karmas: ReadonlyArray<KarmaID>,
+    startingRepertoire: StartingRepertoireSelection) => {
     await runCareerAction(() => startHighSchoolCareer({
       seed: "20260723",
       presetID,
@@ -1258,6 +1305,7 @@ export function App() {
       identity,
       difficulty,
       karmas,
+      startingRepertoire,
     }));
     setSelectedPresetID(presetID);
     setExperienceMode("career");
@@ -1273,9 +1321,9 @@ export function App() {
     await runCareerAction(() => chooseSchool({ seed: careerResult.nextSeed, state: careerResult.snapshot, schoolID }));
   }, [careerResult, runCareerAction]);
 
-  const handleCareerTraining = useCallback(async (focus: TrainingFocus, trainingIntensity: TrainingIntensity) => {
+  const handleCareerTraining = useCallback(async (focus: TrainingFocus, trainingIntensity: TrainingIntensity, targetPitch?: PitchType) => {
     if (!careerResult) return;
-    await runCareerAction(() => commitCareerTraining({ seed: careerResult.nextSeed, state: careerResult.snapshot, focus, intensity: trainingIntensity }));
+    await runCareerAction(() => commitCareerTraining({ seed: careerResult.nextSeed, state: careerResult.snapshot, focus, intensity: trainingIntensity, targetPitch }));
   }, [careerResult, runCareerAction]);
 
   const handleCareerRelationship = useCallback(async (response: RelationshipResponse) => {
@@ -1367,6 +1415,7 @@ export function App() {
       setLastResult(undefined);
       setHistory([]);
       setLabInningStats(EMPTY_LAB_INNING_STATS);
+      learningQualityPlateAppearances.current.clear();
       applyRecommendation(nextPreparation.primaryRecommendation);
       setScreenMode("pitch");
     } catch (caught) {
@@ -1398,6 +1447,14 @@ export function App() {
 
   const handleNextCareerLife = useCallback(async () => {
     if (!careerResult || !selectedPresetID || careerResult.snapshot.selectedMemories.length !== careerResult.snapshot.memorySlots) return;
+    const learningPitch = careerResult.snapshot.pitchLearningProject?.pitchType ?? "curveball";
+    const previousPrimary = careerResult.snapshot.pitcher.pitchProfiles?.find((profile) => profile.role === "primary")?.pitchType ?? "four_seam";
+    const startingRepertoire: StartingRepertoireSelection = {
+      readyBreakingPitches: (["slider", "curveball", "changeup"] as ReadonlyArray<PitchType>)
+        .filter((pitch) => pitch !== learningPitch),
+      primaryPitch: previousPrimary === learningPitch ? "four_seam" : previousPrimary,
+      learningPitch,
+    };
     await runCareerAction(() => startHighSchoolCareer({
       seed: careerResult.nextSeed,
       presetID: selectedPresetID,
@@ -1409,6 +1466,7 @@ export function App() {
       identity: careerResult.snapshot.identity,
       difficulty: careerResult.snapshot.difficulty,
       karmas: careerResult.snapshot.karmas,
+      startingRepertoire,
     }));
     setRivalMemory(undefined);
     setGameLog(INITIAL_GAME_LOG);
@@ -1426,6 +1484,7 @@ export function App() {
     clearProCareer(appStorage);
     setCareerResult(undefined);
     setProResult(undefined);
+    setAcknowledgedProInjuryEventID(undefined);
     setProVisible(false);
     setScreenMode("lab");
     setRivalMemory(undefined);
@@ -1462,17 +1521,21 @@ export function App() {
         status: "active",
         source: releaseEdition === "steam_full" ? "purchase" : "development",
         verifiedAt: new Date().toISOString(),
-      } }));
+      }, repertoireRulesVersion: careerResult.snapshot.repertoireRulesVersion,
+      pitchLearningProject: careerResult.snapshot.pitchLearningProject }));
   }, [bundledProAccess, careerResult, proResult, releaseEdition, runProAction]);
   const handleSignPro = useCallback(async () => { if (proResult) await runProAction(() => signProContract({ seed: proResult.nextSeed, state: proResult.snapshot })); }, [proResult, runProAction]);
-  const handlePlanPro = useCallback(async (plan: ProWeekPlan) => { if (proResult) await runProAction(() => planProWeek({ seed: proResult.nextSeed, state: proResult.snapshot, plan })); }, [proResult, runProAction]);
-  const handlePlanProBlock = useCallback(async (plan: ProWeekPlan) => {
+  const handleAcknowledgeProInjury = useCallback((eventID: string) => {
+    setAcknowledgedProInjuryEventID(eventID);
+  }, []);
+  const handlePlanPro = useCallback(async (plan: ProWeekPlan, targetPitch?: PitchType) => { if (proResult) await runProAction(() => planProWeek({ seed: proResult.nextSeed, state: proResult.snapshot, plan, targetPitch })); }, [proResult, runProAction]);
+  const handlePlanProBlock = useCallback(async (plan: ProWeekPlan, targetPitch?: PitchType) => {
     if (!proResult) return;
     setIsRunning(true); setError(undefined);
     try {
       let current = proResult;
       for (let index = 0; index < 3 && current.snapshot.phase === "weekly_plan"; index += 1) {
-        current = await planProWeek({ seed: current.nextSeed, state: current.snapshot, plan });
+        current = await planProWeek({ seed: current.nextSeed, state: current.snapshot, plan, targetPitch });
       }
       setProResult(current);
       // 1군 콜업(major_call_up) 스팅어는 ProCareerView가 데뷔 단계 진입에서 한 번 울린다.
@@ -1522,6 +1585,7 @@ export function App() {
       setLastResult(undefined);
       setHistory([]);
       setLabInningStats(EMPTY_LAB_INNING_STATS);
+      learningQualityPlateAppearances.current.clear();
       applyRecommendation(nextPreparation.primaryRecommendation);
       setScreenMode("pitch");
     } catch (caught) {
@@ -1643,6 +1707,7 @@ export function App() {
         </header>
         {saveNotice ? <div className="save-notice" role="status">{saveNotice}</div> : null}
         {proVisible && proResult ? <ProCareerView result={proResult} isRunning={isRunning} error={error} onSign={handleSignPro} onPlan={handlePlanPro} onPlanBlock={handlePlanProBlock}
+          acknowledgedInjuryEventID={acknowledgedProInjuryEventID} onAcknowledgeInjury={handleAcknowledgeProInjury}
           onGame={handleProGame} onReview={handleReviewPro} onOffseason={handleProOffseason} onBack={() => setProVisible(false)} onMilestoneFeedback={handleMilestoneFeedback} />
         : careerResult ? <HighSchoolCareerView key={careerResult.snapshot.careerID} result={careerResult} isRunning={isRunning} error={error}
           showTutorial={!tutorialDismissed && careerResult.snapshot.lifeNumber === 1} onDismissTutorial={dismissTutorial}
@@ -1912,14 +1977,17 @@ export function App() {
             <fieldset className="choice-group">
               <legend>1. 구종</legend>
               <div className="pitch-options">
-                {PITCH_OPTIONS.map((option) => {
+                {PITCH_OPTIONS.filter((option) => !pitcher?.pitchProfiles
+                  || pitcher.pitchProfiles.some((candidate) => candidate.pitchType === option.value
+                    && candidate.availability !== "locked")).map((option) => {
                   const profile = pitcher?.pitchProfiles?.find(
-                    (candidate) => candidate.pitchType === option.value,
+                    (candidate) => candidate.pitchType === option.value
+                      && candidate.availability !== "locked",
                   );
                   return (
                     <button key={option.value} type="button" className={pitchType === option.value ? "is-selected" : undefined}
-                      disabled={!profile} aria-pressed={pitchType === option.value} onClick={() => { pitchInteractionCount.current += 1; setPitchType(option.value); }}>
-                      <strong>{option.label}</strong><span>{pitchHint(profile)}</span>
+                      disabled={Boolean(pitcher?.pitchProfiles) && !profile} aria-pressed={pitchType === option.value} onClick={() => { pitchInteractionCount.current += 1; setPitchType(option.value); }}>
+                      <strong>{option.label}{profile?.role === "development" ? " · 개발 중" : ""}</strong><span>{pitchHint(profile)}</span>
                     </button>
                   );
                 })}

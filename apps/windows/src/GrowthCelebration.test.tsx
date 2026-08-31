@@ -7,8 +7,8 @@ describe("GrowthCelebration", () => {
     const markup = renderToStaticMarkup(<GrowthCelebration label="구위" before={64} after={65} />);
 
     expect(markup).toContain("등급 돌파!");
-    expect(markup).toContain("구위 능력치 상승, 64에서 65, 1 증가");
-    expect(markup).toContain("+1");
+    expect(markup).toContain("구위 능력치 상승, 73에서 75, 2 증가");
+    expect(markup).toContain("+2");
   });
 
   it("calls out crossing a meaningful rating tier", () => {

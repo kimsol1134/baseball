@@ -63,6 +63,55 @@ public enum PitcherBuildRules {
     }
 }
 
+/// A changed pitch-profile pair in a growth receipt.  Keeping the before/after values here lets
+/// presentation code distinguish a real profile change from a base-ability cap.
+public struct PitchProfileAdvancement: Codable, Equatable, Sendable {
+    public let pitchType: PitchType
+    public let before: PitchProfileSnapshot
+    public let after: PitchProfileSnapshot
+
+    public init(pitchType: PitchType, before: PitchProfileSnapshot, after: PitchProfileSnapshot) {
+        self.pitchType = pitchType
+        self.before = before
+        self.after = after
+    }
+}
+
+/// The complete result of one positive growth event.  `baseAfter` is capped at the internal
+/// 20–80 storage contract; overflow is converted to the matching mastery track instead of being
+/// silently discarded.
+public struct PitcherAdvancementReceipt: Codable, Equatable, Sendable {
+    public let pitcher: PitcherSnapshot
+    public let ability: TalentAbility
+    public let baseBefore: Int
+    public let baseAfter: Int
+    public let masteryBefore: Int
+    public let masteryAfter: Int
+    public let profileChanges: [PitchProfileAdvancement]
+
+    public init(
+        pitcher: PitcherSnapshot,
+        ability: TalentAbility,
+        baseBefore: Int,
+        baseAfter: Int,
+        masteryBefore: Int,
+        masteryAfter: Int,
+        profileChanges: [PitchProfileAdvancement] = []
+    ) {
+        self.pitcher = pitcher
+        self.ability = ability
+        self.baseBefore = baseBefore
+        self.baseAfter = baseAfter
+        self.masteryBefore = masteryBefore
+        self.masteryAfter = masteryAfter
+        self.profileChanges = profileChanges
+    }
+
+    public var baseDelta: Int { baseAfter - baseBefore }
+    public var masteryDelta: Int { masteryAfter - masteryBefore }
+    public var gainedMastery: Bool { masteryAfter > masteryBefore }
+}
+
 /// 고교 훈련·프로 주간 성장·중요 경기 성장이 함께 사용하는 단일 성장 규칙.
 public enum PitcherGrowthRules {
     /// 변화구 훈련에서 지정할 수 있는 실제 보유 변화구. nil이면 예전 저장·호출과 같이 모든
@@ -78,7 +127,7 @@ public enum PitcherGrowthRules {
         return target
     }
 
-    public static func grow(
+    private static func applyStoredGrowth(
         _ pitcher: PitcherSnapshot,
         focus: TrainingFocus,
         points: Int,
@@ -86,6 +135,7 @@ public enum PitcherGrowthRules {
         promoteDevelopmentPitch: Bool = true
     ) -> PitcherSnapshot {
         guard points > 0 else { return pitcher }
+        let points = min(points, Int(AbilityMasterySnapshot.technicalMaximum))
         let breakingTarget = normalizedBreakingBallTarget(targetPitch, pitcher: pitcher)
         let profiles = pitcher.pitchProfiles?.map { profile in
             let isBreakingTarget = focus == .breakingBall
@@ -116,7 +166,10 @@ public enum PitcherGrowthRules {
             let fatigueCost = focus == .stamina
                 ? PitchAbilityRules.reducedFatigueCost(profile.fatigueCost, by: points / 2)
                 : profile.fatigueCost
+            // New repertoire saves use an explicit learning project. Only legacy profiles (whose
+            // availability key is absent) keep the old implicit stat-threshold promotion.
             let role: PitchUsageRole = promoteDevelopmentPitch
+                && profile.availability == nil
                 && profile.role == .development
                 && command + whiff + profile.weakContact >= 150
                 ? .secondary
@@ -130,7 +183,8 @@ public enum PitcherGrowthRules {
                 movement: movement,
                 whiff: whiff,
                 weakContact: profile.weakContact,
-                fatigueCost: fatigueCost
+                fatigueCost: fatigueCost,
+                availability: profile.availability
             )
         }
         return PitcherSnapshot(
@@ -147,8 +201,150 @@ public enum PitcherGrowthRules {
                 20, 80
             ),
             pitchProfiles: profiles,
-            throwingHand: pitcher.throwingHand
+            throwingHand: pitcher.throwingHand,
+            mastery: pitcher.mastery
         )
+    }
+
+    /// Applies positive growth while preserving every point after the 80 base-ability ceiling as
+    /// mastery.  The returned receipt is the only source presentation code should use for a
+    /// before/after label.
+    public static func advance(
+        _ pitcher: PitcherSnapshot,
+        focus: TrainingFocus,
+        points: Int,
+        targetPitch: PitchType? = nil,
+        promoteDevelopmentPitch: Bool = true
+    ) -> PitcherAdvancementReceipt {
+        let ability = TalentAbility.from(focus)
+        let baseBefore = value(for: ability, pitcher: pitcher)
+        let masteryBefore = pitcher.effectiveMastery.value(for: ability)
+        guard points > 0 else {
+            return PitcherAdvancementReceipt(
+                pitcher: pitcher,
+                ability: ability,
+                baseBefore: baseBefore,
+                baseAfter: baseBefore,
+                masteryBefore: masteryBefore,
+                masteryAfter: masteryBefore
+            )
+        }
+
+        let stored = applyStoredGrowth(
+            pitcher,
+            focus: focus,
+            points: points,
+            targetPitch: targetPitch,
+            promoteDevelopmentPitch: promoteDevelopmentPitch
+        )
+        let baseAfter = value(for: ability, pitcher: stored)
+        let appliedToBase = max(0, baseAfter - baseBefore)
+        let overflow = max(0, points - appliedToBase)
+        let masteryAfter = pitcher.effectiveMastery.adding(overflow, to: ability).value(for: ability)
+        let persistedMastery: AbilityMasterySnapshot? = (pitcher.mastery != nil || overflow > 0)
+            ? pitcher.effectiveMastery.replacing(ability, with: masteryAfter)
+            : nil
+        let updated = PitcherSnapshot(
+            id: stored.id,
+            name: stored.name,
+            stuff: stored.stuff,
+            command: stored.command,
+            movement: stored.movement,
+            stamina: stored.stamina,
+            pitchProfiles: stored.pitchProfiles,
+            throwingHand: stored.throwingHand,
+            mastery: persistedMastery
+        )
+        let profileChanges: [PitchProfileAdvancement] = zip(
+            pitcher.pitchProfiles ?? [],
+            updated.pitchProfiles ?? []
+        ).compactMap { pair in
+            let before = pair.0
+            let after = pair.1
+            guard before != after else { return nil }
+            return PitchProfileAdvancement(pitchType: after.pitchType, before: before, after: after)
+        }
+        return PitcherAdvancementReceipt(
+            pitcher: updated,
+            ability: ability,
+            baseBefore: baseBefore,
+            baseAfter: baseAfter,
+            masteryBefore: masteryBefore,
+            masteryAfter: masteryAfter,
+            profileChanges: profileChanges
+        )
+    }
+
+    public static func advance(
+        pitcher: PitcherSnapshot,
+        focus: TrainingFocus,
+        points: Int,
+        targetPitch: PitchType? = nil,
+        promoteDevelopmentPitch: Bool = true
+    ) -> PitcherAdvancementReceipt {
+        advance(
+            pitcher,
+            focus: focus,
+            points: points,
+            targetPitch: targetPitch,
+            promoteDevelopmentPitch: promoteDevelopmentPitch
+        )
+    }
+
+    public static func advance(
+        pitcher: PitcherSnapshot,
+        ability: TalentAbility,
+        points: Int,
+        targetPitch: PitchType? = nil,
+        promoteDevelopmentPitch: Bool = true
+    ) -> PitcherAdvancementReceipt {
+        advance(
+            pitcher,
+            ability: ability,
+            points: points,
+            targetPitch: targetPitch,
+            promoteDevelopmentPitch: promoteDevelopmentPitch
+        )
+    }
+
+    public static func advance(
+        _ pitcher: PitcherSnapshot,
+        ability: TalentAbility,
+        points: Int,
+        targetPitch: PitchType? = nil,
+        promoteDevelopmentPitch: Bool = true
+    ) -> PitcherAdvancementReceipt {
+        let focus: TrainingFocus = switch ability {
+        case .stuff: .velocity
+        case .command: .command
+        case .movement: .breakingBall
+        case .stamina: .stamina
+        }
+        return advance(
+            pitcher,
+            focus: focus,
+            points: points,
+            targetPitch: targetPitch,
+            promoteDevelopmentPitch: promoteDevelopmentPitch
+        )
+    }
+
+    /// Compatibility wrapper retained for existing callers.  New result/presentation code should
+    /// call `advance` and inspect the receipt instead of inferring whether a cap was hit.
+    public static func grow(
+        _ pitcher: PitcherSnapshot,
+        focus: TrainingFocus,
+        points: Int,
+        targetPitch: PitchType? = nil,
+        promoteDevelopmentPitch: Bool = true
+    ) -> PitcherSnapshot {
+        advance(
+            pitcher,
+            focus: focus,
+            points: points,
+            targetPitch: targetPitch,
+            promoteDevelopmentPitch: promoteDevelopmentPitch
+        ).pitcher
     }
 
     public static func grow(
@@ -164,6 +360,15 @@ public enum PitcherGrowthRules {
         case .stamina: .stamina
         }
         return grow(pitcher, focus: focus, points: points, targetPitch: targetPitch)
+    }
+
+    private static func value(for ability: TalentAbility, pitcher: PitcherSnapshot) -> Int {
+        switch ability {
+        case .stuff: pitcher.stuff
+        case .command: pitcher.command
+        case .movement: pitcher.movement
+        case .stamina: pitcher.stamina
+        }
     }
 
     private static func bounded(_ value: Int, _ lower: Int, _ upper: Int) -> Int {

@@ -518,7 +518,7 @@ struct BloomCelebrationView: View {
             Text(
                 verbatim: copyResolver.resolve(
                     .bloomCeiling,
-                    arguments: [.integer(grade.ceiling)]
+                    arguments: [.integer(AbilityDisplayScale.displayCeiling(grade.ceiling))]
                 )
             )
                 .font(.subheadline.weight(.semibold))
@@ -564,7 +564,7 @@ struct BloomCelebrationView: View {
                 arguments: [
                     .userText(copyResolver.resolve(ability.displayCopyToken)),
                     .userText(copyResolver.resolve(grade.displayCopyToken)),
-                    .integer(grade.ceiling),
+                    .integer(AbilityDisplayScale.displayCeiling(grade.ceiling)),
                 ]
             )
         )

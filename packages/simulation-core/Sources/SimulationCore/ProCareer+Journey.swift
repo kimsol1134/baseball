@@ -473,7 +473,8 @@ extension ProCareerEngine {
             season: state.season,
             teamID: state.team.id,
             stats: state.currentStats,
-            level: state.level
+            level: state.level,
+            rulesVersion: journey.rulesVersion
         ) + newlyReachedCareerMilestoneRecognitions(
             state: state,
             completedCareerStats: completedCareerStats
@@ -505,13 +506,21 @@ extension ProCareerEngine {
 
         let beforeRecord = currentTeamRecord(for: beforeState, journey: journeyBefore, careerStats: state.careerStats)
         let afterRecord = currentTeamRecord(for: afterState, journey: journeyAfterRecords, careerStats: completedCareerStats)
-        let teamLegacyBefore = beforeRecord.map(ProTeamLegacyRules.score(record:)) ?? 0
-        let teamLegacyAfter = afterRecord.map(ProTeamLegacyRules.score(record:)) ?? 0
+        let teamLegacyBefore = beforeRecord.map { ProTeamLegacyRules.score(record: $0, rulesVersion: journey.rulesVersion) } ?? 0
+        let teamLegacyAfter = afterRecord.map { ProTeamLegacyRules.score(record: $0, rulesVersion: journey.rulesVersion) } ?? 0
         let hallOfFameBefore = Self.hallOfFameProjection(for: beforeState)
         let hallOfFameAfter = Self.hallOfFameProjection(for: afterState)
 
         let goalBefore = journey.activeGoal.map { ProCareerGoalRules.progress(state: beforeState, goal: $0) }
-        let goalAfter = journey.activeGoal.map { ProCareerGoalRules.progress(state: afterState, goal: $0) }
+        let rawGoalAfter = journey.activeGoal.map { ProCareerGoalRules.progress(state: afterState, goal: $0) }
+        // A later gap year or a return after free agency can reset consecutive-season
+        // continuity and drop the live score. A goal that already met its bar this
+        // settlement must not un-complete.
+        let goalAfter: ProCareerGoalProgress? = {
+            guard let before = goalBefore, let after = rawGoalAfter else { return rawGoalAfter }
+            if before.completed && !after.completed { return before }
+            return after
+        }()
         let goalCompleted = goalBefore?.completed == false && goalAfter?.completed == true
         // A completed ambition is closed into history at the same settlement boundary as its
         // reward. Keep the completed snapshot until the next contract choice so activeGoal is
@@ -861,7 +870,9 @@ extension ProCareerEngine {
     }
 
     func validateJourneyState(_ state: ProCareerSnapshot, journey: ProCareerJourneyState) throws {
-        guard journey.rulesVersion == 1 else { throw SimulationError.invalidProCareer("unsupported journey rules version") }
+        guard (1...ProCareerEngine.currentJourneyRulesVersion).contains(journey.rulesVersion) else {
+            throw SimulationError.invalidProCareer("unsupported journey rules version")
+        }
         guard (0...100).contains(journey.reputation.fanSupport) else { throw SimulationError.invalidProCareer("fan support out of range") }
         guard journey.reputation.endorsementSeasons == Array(Set(journey.reputation.endorsementSeasons)).sorted(),
               journey.reputation.endorsementSeasons.allSatisfy({ $0 >= 1 }) else {
@@ -1757,6 +1768,7 @@ extension ProCareerEngine {
             injuryWeeks: 0,
             currentStats: ProSeasonStats(season: nextSeason, teamID: params.state.team.id),
             gameLines: [],
+            proRulesVersion: Self.currentRulesVersion,
             seasonSegment: .springCamp,
             seasonTrigger: .some(nil),
             currentRival: .some(nil),
@@ -1888,6 +1900,7 @@ extension ProCareerEngine {
                 injuryWeeks: 0,
                 currentStats: ProSeasonStats(season: nextSeason, teamID: params.state.team.id),
                 gameLines: [],
+                proRulesVersion: Self.currentRulesVersion,
                 seasonSegment: .springCamp,
                 seasonTrigger: .some(nil),
                 currentRival: .some(nil),

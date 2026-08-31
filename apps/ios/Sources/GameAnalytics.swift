@@ -194,6 +194,16 @@ enum GameAnalytics {
         case careerTrainingCompleted = "career_training_completed"
         /// 직접 던진 과정이 능력치 성장으로 실제 반영된 시점.
         case gameGrowthApplied = "game_growth_applied"
+        case repertoireSelected = "repertoire_selected"
+        case pitchLearningTrainingCompleted = "pitch_learning_training_completed"
+        case pitchLearningGameSummary = "pitch_learning_game_summary"
+        case injuryRiskShown = "injury_risk_shown"
+        case injuryStarted = "injury_started"
+        case injuryResultAcknowledged = "injury_result_acknowledged"
+        case masteryGained = "mastery_gained"
+        case masteryMilestone = "mastery_milestone"
+        case copyDetailToggled = "copy_detail_toggled"
+        case copyDensityChanged = "copy_density_changed"
 
         // MARK: - 이탈 지점을 보기 위한 계측 (2026-08 Amplitude 분석)
         //
