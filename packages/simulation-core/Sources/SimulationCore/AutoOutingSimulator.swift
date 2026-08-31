@@ -34,12 +34,15 @@ public struct AutoOutingSimulator: Sendable {
 
     /// - Parameter batterOffset: 상대 타선의 세 능력치(컨택·선구·장타) 기준선 보정.
     ///   프로 리그 평균이 0이고, 고교는 음수를 준다. 이 인자 하나로 리그 수준을 표현한다.
+    /// - Parameter callPolicy: `.perfect`는 기존과 같은 시드 스트림을 유지한다.
+    ///   다른 정책만 타석당 한 번 추가 난수를 쓴다.
     public func simulate(
         pitcher: PitcherSnapshot,
         startingFatigue: Int,
         outsTarget: Int,
         pitchCap: Int,
         batterOffset: Int = 0,
+        callPolicy: AutoCallPolicy = .perfect,
         baseSeed: UInt64
     ) -> Line {
         let engine = PitchKernelEngine()
@@ -111,12 +114,22 @@ public struct AutoOutingSimulator: Sendable {
                 seed: seed, pitcher: pitcher, batter: batter, scouting: scouting,
                 context: context, rivalMemory: paMemory, gameState: gameState, gameLog: gameLog
             )) else { break }
+            let missThisPA: Bool
+            if callPolicy == .perfect {
+                missThisPA = false
+            } else {
+                let threshold = callPolicy == .slump ? 35 : 18
+                missThisPA = rng.nextInt(upperBound: 100) < threshold
+            }
             let outsBefore = (inningState.inning - 1) * 3 + inningState.outs
             while true {
+                let call = missThisPA
+                    ? preparation.alternativeRecommendation.call
+                    : preparation.primaryRecommendation.call
                 guard let result = try? engine.submitPitch(SubmitPitchParams(
                     seed: seed, pitcher: pitcher, batter: batter, scouting: scouting,
                     context: context, preparationToken: preparation.preparationToken,
-                    call: preparation.primaryRecommendation.call,
+                    call: call,
                     rivalMemory: paMemory, gameState: gameState, gameLog: gameLog
                 )) else { return line }
                 paMemory = result.rivalMemory
