@@ -451,7 +451,11 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertEqual(cloud.data(forKey: sync.key), invalidData)
     }
 
-    func testJourneyDeletionTombstoneBlocksLegacySchemaWrite() throws {
+    /// 쓰기 게이트는 "이 빌드가 해석하지 못하는 세대"만 지킨다. 같은 빌드가 이해하는
+    /// journey 묘비는 낮은 스키마를 스탬프하는 다음 커리어가 덮을 수 있어야 한다 —
+    /// 후보 스탬프끼리 비교하던 예전 게이트는 v5 묘비 뒤의 새 커리어(v4) 진입을 영구히
+    /// 막았다(2026-08-30 "저장공간" 리뷰의 진행 불가).
+    func testUnderstoodJourneyTombstoneDoesNotBlockNextCareerWrite() throws {
         let cloud = JourneyWave1MemoryRemoteStore()
         let sync = SaveSync(key: "wave1-tombstone-gate-\(UUID().uuidString).json", store: cloud)
         sync.clear()
@@ -467,12 +471,34 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         let tombstone = try JSONDecoder().decode(MobileCareerStore.ProSaveRecord.self, from: tombstoneData)
         XCTAssertEqual(tombstone.schemaVersion, MobileCareerStore.journeySaveSchemaVersion)
         XCTAssertNil(tombstone.result)
+        let tombstoneRevision = try XCTUnwrap(tombstone.deletedRevision ?? tombstone.syncRevision)
 
         let legacyStore = MobileCareerStore(sync: sync, configuration: .legacyTests)
         legacyStore.restoreOrCreateCareer()
         XCTAssertEqual(legacyStore.loadState, .needsSetup)
-        XCTAssertFalse(legacyStore.startNewCareer(preset: preset, playerName: "구버전 덮어쓰기"))
-        XCTAssertEqual(cloud.data(forKey: sync.key), tombstoneData)
+        XCTAssertTrue(legacyStore.startNewCareer(preset: preset, playerName: "다음 커리어"))
+        let saved = try XCTUnwrap(ProCareerPersistence.decode(try XCTUnwrap(cloud.data(forKey: sync.key))))
+        XCTAssertNotNil(saved.result)
+        XCTAssertGreaterThan(saved.effectiveRevision, tombstoneRevision)
+    }
+
+    /// 미래 빌드가 남긴(이 빌드가 해석하지 못하는) 레코드는 여전히 어떤 쓰기도 덮지 못한다.
+    func testFutureSchemaRecordStillBlocksEveryWrite() throws {
+        let cloud = JourneyWave1MemoryRemoteStore()
+        let sync = SaveSync(key: "wave1-future-gate-\(UUID().uuidString).json", store: cloud)
+        sync.clear()
+        defer { sync.clear() }
+
+        let futureData = try XCTUnwrap(#"{"schemaVersion":\#(ProCareerPersistence.currentSchemaVersion + 1),"syncRevision":99}"#.data(using: .utf8))
+        XCTAssertTrue(sync.write(futureData))
+
+        let store = MobileCareerStore(sync: sync, configuration: .journeyV1Tests)
+        let journeyResult = try journeyFixture()
+        store.updatePersisted { $0.result = journeyResult }
+        store.loadState = .ready
+        XCTAssertFalse(store.save())
+        XCTAssertFalse(store.deleteCareer())
+        XCTAssertEqual(cloud.data(forKey: sync.key), futureData)
     }
 
     func testEnabledRestoreLeavesCompletedLegacySaveUntouched() throws {

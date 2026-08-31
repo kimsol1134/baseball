@@ -2,6 +2,15 @@ import XCTest
 import SimulationCore
 @testable import BaseballIOS
 
+private final class ProPersistenceMemoryRemoteStore: SaveSyncRemoteStoring {
+    private(set) var values: [String: Data] = [:]
+
+    func data(forKey key: String) -> Data? { values[key] }
+    func set(_ value: Any?, forKey key: String) { values[key] = value as? Data }
+    func removeObject(forKey key: String) { values.removeValue(forKey: key) }
+    @discardableResult func synchronize() -> Bool { true }
+}
+
 final class ProCareerPersistenceTests: XCTestCase {
     func testDecodeAcceptsLegacyRawResult() throws {
         let result = try fixtureResult()
@@ -167,6 +176,76 @@ final class ProCareerPersistenceTests: XCTestCase {
         XCTAssertEqual(store.sourceHighSchoolCareerID, "hs-source")
         XCTAssertEqual(store.careerOrigin, .highSchool)
         XCTAssertEqual(store.capturePersisted(), captured)
+    }
+
+    /// 2026-08-30 "저장공간" 리뷰의 교착 A. 부상 확인은 durable이라 라이브 저장이 v5인데,
+    /// 묘비 후보는 부상 wrapper 필드를 못 보고 v4로 계산됐다. 스탬프끼리 비교하던 예전
+    /// 게이트는 이 묘비 쓰기를 영구 거절해 은퇴 정리(다음 선수 진행)가 막혔다.
+    @MainActor
+    func testDeleteCareerSucceedsAfterDurableInjuryAcknowledgement() throws {
+        let cloud = ProPersistenceMemoryRemoteStore()
+        let sync = SaveSync(key: "pro-injury-ack-delete-\(UUID().uuidString).json", store: cloud)
+        sync.clear()
+        defer { sync.clear() }
+
+        let store = MobileCareerStore(sync: sync)
+        let legacy = try resultWithoutMastery(fixtureResult())
+        let event = ProInjuryEventSnapshot(
+            season: 1,
+            week: 4,
+            plan: .developStuff,
+            rawFatigue: 82,
+            effectiveFatigue: 86,
+            pitches: 91,
+            recoveryWeeks: 3,
+            careerID: legacy.snapshot.proCareerID,
+            revision: legacy.snapshot.revision
+        )
+        store.updatePersisted {
+            $0.result = legacy
+            $0.acknowledgedInjuryEventID = event.stableID
+        }
+        store.loadState = .ready
+        XCTAssertTrue(store.save())
+        let live = try XCTUnwrap(ProCareerPersistence.decode(try XCTUnwrap(cloud.data(forKey: sync.key))))
+        XCTAssertEqual(live.schemaVersion, ProCareerPersistence.masterySchemaVersion)
+
+        XCTAssertTrue(store.deleteCareer())
+        XCTAssertEqual(store.loadState, .needsSetup)
+        let tombstone = try XCTUnwrap(ProCareerPersistence.decode(try XCTUnwrap(cloud.data(forKey: sync.key))))
+        XCTAssertNil(tombstone.result)
+        XCTAssertNotNil(tombstone.deletedRevision)
+    }
+
+    /// 2026-08-30 "저장공간" 리뷰의 교착 B. 마스터리·부상 세대 커리어를 지운 v5 묘비가
+    /// 남으면, mastery 없이 시작하는 다음 커리어(v4)의 진입 저장이 예전 게이트에서 영구
+    /// 실패했다. 묘비는 iCloud에도 남아 앱 재설치로도 풀리지 않았다.
+    @MainActor
+    func testStartNewCareerSucceedsOverMasteryGenerationTombstone() throws {
+        let cloud = ProPersistenceMemoryRemoteStore()
+        let sync = SaveSync(key: "pro-mastery-tombstone-entry-\(UUID().uuidString).json", store: cloud)
+        sync.clear()
+        defer { sync.clear() }
+
+        var empty = ProCareerPersistedState.empty
+        empty.syncedRevision = 12
+        let tombstoneData = try XCTUnwrap(ProCareerPersistence.encode(
+            ProCareerPersistence.record(
+                from: empty,
+                deletedRevision: 12,
+                schemaVersion: ProCareerPersistence.masterySchemaVersion,
+                syncRevision: 12
+            )
+        ))
+        XCTAssertTrue(sync.write(tombstoneData))
+
+        let store = MobileCareerStore(sync: sync)
+        store.restoreOrCreateCareer()
+        XCTAssertEqual(store.loadState, .needsSetup)
+        XCTAssertTrue(store.startNewCareer(preset: PitcherPresetCatalog.all[0], playerName: "다음 회차"))
+        let saved = try XCTUnwrap(ProCareerPersistence.decode(try XCTUnwrap(cloud.data(forKey: sync.key))))
+        XCTAssertNotNil(saved.result)
+        XCTAssertGreaterThan(saved.effectiveRevision, 12)
     }
 
     private func fixtureResult() throws -> ProCareerResult {

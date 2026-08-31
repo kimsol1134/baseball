@@ -399,7 +399,7 @@ final class MobileCareerStore {
         )
         var tombstoneState = ProCareerPersistedState.empty
         tombstoneState.syncedRevision = tombstone
-        guard canWrite(schemaVersion: tombstoneSchemaVersion),
+        guard canWrite(),
               let data = ProCareerPersistence.encode(
             ProCareerPersistence.record(
                 from: tombstoneState,
@@ -957,7 +957,7 @@ final class MobileCareerStore {
             acknowledgedID: acknowledgedInjuryEventID ?? existing.acknowledgedInjuryEventID
         )
         let schemaVersion = ProCareerPersistence.schemaVersion(for: candidateState)
-        guard canWrite(schemaVersion: schemaVersion) else { return false }
+        guard canWrite() else { return false }
         let candidateRevision = ProCareerPersistence.nextRevision(
             after: syncedRevision,
             atLeast: result.snapshot.revision
@@ -1052,7 +1052,12 @@ final class MobileCareerStore {
         }
     }
 
-    private func canWrite(schemaVersion: Int) -> Bool {
+    /// 이 빌드가 해석하지 못하는 더 새로운 세대의 저장만 보호한다. 후보 레코드의 스탬프는
+    /// 하위 호환용 "최소 필요 버전"이라 기존 저장보다 낮을 수 있다 — 스탬프끼리 비교하면
+    /// 부상 확인이 durable로 남은 v5 라이브 저장을 v4 묘비가 못 덮고(은퇴 정리 불가),
+    /// v5 묘비를 mastery 없는 새 커리어(v4)가 못 덮는다(다음 프로 진입 불가). 두 교착 모두
+    /// "저장 공간을 확인" 문구로 표면화되어 실제 여유 공간과 무관하게 진행이 막힌다.
+    private func canWrite() -> Bool {
         // An injected writer is a fully isolated persistence boundary used by unit tests and
         // failure injection. Consulting the real default SaveSync beside it leaks unrelated
         // device state into the test and can reject a perfectly valid candidate schema.
@@ -1064,7 +1069,7 @@ final class MobileCareerStore {
         let existingVersion = ProCareerPersistence.rawSchemaVersion(existingData) else {
             return true
         }
-        return existingVersion <= UInt64(schemaVersion)
+        return existingVersion <= UInt64(ProCareerPersistence.currentSchemaVersion)
     }
 
     private func restore() -> RestoreOutcome {
