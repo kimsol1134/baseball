@@ -10,7 +10,7 @@ struct BaseballApp: App {
         // 덮어쓰지 않으므로 자동 릴리스를 직접 켠 사용자는 그대로 유지된다.
         PitchControlPreferences.registerDefaults()
         // 분석은 설정이 있을 때만 켜진다 — 없으면 이 호출은 무동작이다.
-        GameAnalytics.configure()
+        CareerTelemetry.configure()
 
 #if DEBUG
         let proConfiguration = ProcessInfo.processInfo.arguments.contains(
@@ -72,7 +72,7 @@ struct BaseballApp: App {
     /// 그 가설을 집계로 바꾼다.
     private func logSessionEnd() {
         let minutes = Int(Date().timeIntervalSince(sessionStartedAt) / 60)
-        let currentGames = GameAnalytics.completedGameCount()
+        let currentGames = CareerTelemetry.completedGameCount()
         let isReturnEligible = DailyReminder.ReturnPlanEligibility.isEligible(
             completedGameCount: currentGames
         )
@@ -84,7 +84,7 @@ struct BaseballApp: App {
             )
             returnPlan = prepared
             let returnProperties = DailyReminder.analyticsProperties(prepared)
-            GameAnalytics.logOnce(
+            CareerTelemetry.logOnce(
                 .returnPlanEligible,
                 scope: prepared.receiptID ?? "legacy",
                 properties: returnProperties
@@ -108,7 +108,7 @@ struct BaseballApp: App {
                 plan: returnPlan, completedGameCount: currentGames
             )
         ) { _, current in current }
-        GameAnalytics.log(.sessionEnded, sessionProperties)
+        CareerTelemetry.log(.sessionEnded, sessionProperties)
         // 사용자가 떠나는 바로 그 상태가 내일의 문장이어야 한다. 앱을 다시 열 때까지
         // 바뀌지 않는 로컬 계획이라 서버·개인정보 없이도 구체적인 이어하기가 된다.
         DailyReminder.refresh(plan: returnPlan)
@@ -322,7 +322,7 @@ struct BaseballApp: App {
                         pro.restoreOrCreateCareer()
                         _ = highSchool.deleteCareer()
                         _ = pro.deleteCareer()
-                        GameAnalytics.resetCompletedGameCountForUITesting()
+                        CareerTelemetry.resetCompletedGameCountForUITesting()
                         DailyReminder.resetForUITesting()
                         // `previousReturnPlan`은 App 초기화 때 이미 읽힌 값이라 defaults만 지워서는
                         // 이번 화면에 남는다. 메모리 사본도 같은 원자적 초기화에 포함한다.
@@ -348,7 +348,7 @@ struct BaseballApp: App {
                     }
                     highSchool.restoreOrCreate()
                     pro.restoreOrCreateCareer()
-                    sessionStartedGames = GameAnalytics.completedGameCount()
+                    sessionStartedGames = CareerTelemetry.completedGameCount()
                     GameAudio.shared.start()
                     AchievementStore.shared.authenticate()
                     CareerSaveSync.prime()
@@ -356,15 +356,15 @@ struct BaseballApp: App {
                     // 한다 — 늦게 붙으면 앱을 깨운 그 알림의 응답이 사라진다.
                     NotificationRouter.shared.register()
                     let hasCompletedGame = DailyReminder.ReturnPlanEligibility.isEligible(
-                        completedGameCount: GameAnalytics.completedGameCount()
+                        completedGameCount: CareerTelemetry.completedGameCount()
                     )
                     if hasCompletedGame, let coldStart = DailyReminder.nextDayOpenProperties(
                         previousReturnPlan, launchType: "cold"
                     ), let scope = DailyReminder.nextDayOpenScope(properties: coldStart) {
-                        GameAnalytics.logOnce(
+                        CareerTelemetry.logOnce(
                             .returnPlanNextDayOpen, scope: scope, properties: coldStart
                         )
-                        GameAnalytics.logOnce(
+                        CareerTelemetry.logOnce(
                             .returnPlanColdStart, scope: scope, properties: coldStart
                         )
                     }
@@ -405,12 +405,12 @@ struct BaseballApp: App {
                         if previous == .background {
                             let storedPlan = DailyReminder.storedPlan()
                             let hasCompletedGame = DailyReminder.ReturnPlanEligibility.isEligible(
-                                completedGameCount: GameAnalytics.completedGameCount()
+                                completedGameCount: CareerTelemetry.completedGameCount()
                             )
                             if hasCompletedGame, let warmOpen = DailyReminder.nextDayOpenProperties(
                                 storedPlan, launchType: "warm"
                             ), let scope = DailyReminder.nextDayOpenScope(properties: warmOpen) {
-                                GameAnalytics.logOnce(
+                                CareerTelemetry.logOnce(
                                     .returnPlanNextDayOpen, scope: scope, properties: warmOpen
                                 )
                             }
@@ -429,7 +429,7 @@ struct BaseballApp: App {
                                 DailyReminder.refresh(plan: nil)
                             }
                             sessionStartedAt = Date()
-                            sessionStartedGames = GameAnalytics.completedGameCount()
+                            sessionStartedGames = CareerTelemetry.completedGameCount()
                         }
                     } else {
                         highSchool.save()

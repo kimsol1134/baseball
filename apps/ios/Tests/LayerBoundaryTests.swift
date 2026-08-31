@@ -28,17 +28,27 @@ final class LayerBoundaryTests: XCTestCase {
         XCTAssertFalse(source.contains("MasteryEffectRules."), "views must use CareerDisplayRules")
         XCTAssertFalse(source.contains("PitchAbilityRules."), "views must use CareerDisplayRules")
         XCTAssertFalse(source.contains("HighSchoolCareerEngine("))
+        XCTAssertFalse(source.contains("HighSchoolCareerEngine."))
         XCTAssertFalse(source.contains("ProCareerEngine."))
         XCTAssertFalse(source.contains("import BaseballIOSPersistence"), "views must not import Persistence")
         XCTAssertFalse(
             source.replacingOccurrences(of: "CareerSaveSync.", with: "").contains("SaveSync."),
             "views must use CareerSaveSync"
         )
+        XCTAssertFalse(source.contains("GameAnalytics."), "views must use CareerTelemetry")
+        XCTAssertFalse(
+            source.replacingOccurrences(of: "CareerReviewPrompt.", with: "").contains("ReviewPrompt."),
+            "views must use CareerReviewPrompt"
+        )
+        XCTAssertFalse(source.contains("HighSchoolCareerStore.PlayerBondMemory"))
+        XCTAssertFalse(source.contains("HighSchoolCareerStore.InheritedStartComparison"))
+        XCTAssertFalse(source.contains("HighSchoolCareerStore.LoadState"))
     }
 
     func testPresentationDoesNotCreateCareerEngines() throws {
         let source = try IOSSourceScan.readAll(try files(under: "apps/ios/Sources/Presentation", suffix: ".swift"))
         XCTAssertFalse(source.contains("HighSchoolCareerEngine("))
+        XCTAssertFalse(source.contains("HighSchoolCareerEngine."))
         XCTAssertFalse(source.contains("ProCareerEngine."))
         XCTAssertFalse(source.contains("PitchLearningRules."))
         XCTAssertFalse(source.contains("PitcherBuildRules."))
@@ -58,6 +68,10 @@ final class LayerBoundaryTests: XCTestCase {
             }
         let source = try IOSSourceScan.readAll(paths)
         XCTAssertFalse(source.contains("GameAnalytics."), "stores must use CareerTelemetry")
+        XCTAssertFalse(
+            source.replacingOccurrences(of: "CareerReviewPrompt.", with: "").contains("ReviewPrompt."),
+            "stores must use CareerReviewPrompt"
+        )
         XCTAssertFalse(source.contains("DailyStreak."), "stores must use CareerPlayClock")
         XCTAssertFalse(source.contains("SaveSync."), "stores must use CareerSaveSync")
     }

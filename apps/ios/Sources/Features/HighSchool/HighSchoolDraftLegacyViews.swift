@@ -191,7 +191,7 @@ struct LegacyCard: View {
                 }
                 .onViewportExposure {
                     guard career.prepareSignatureLegacyCandidates() else { return }
-                    GameAnalytics.logOnce(
+                    CareerTelemetry.logOnce(
                         .signatureLegacyOptionsSeen,
                         scope: "signature-options:\(state.careerID)",
                         properties: [

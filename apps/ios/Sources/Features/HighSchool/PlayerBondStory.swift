@@ -94,7 +94,7 @@ struct PlayerHeartlinePresentation: Equatable {
 enum PlayerBondStory {
     static func preferredBondMemoryKind(
         for branch: PlayerHeartlineBranch
-    ) -> HighSchoolCareerStore.PlayerBondMemory.Kind {
+    ) -> PlayerBondMemory.Kind {
         switch branch {
         case .injuryRecovery, .armWarning, .fatigueWarning:
             return .healthChoice
@@ -317,7 +317,7 @@ enum PlayerBondStory {
 
     static func strongestBondMemory(
         in record: LifeRecord
-    ) -> HighSchoolCareerStore.PlayerBondMemory? {
+    ) -> PlayerBondMemory? {
         (record.bondMemories ?? [])
             .filter {
                 RelationshipPresentationCatalog.eventDescriptor(
@@ -335,7 +335,7 @@ enum PlayerBondStory {
     }
 
     private static func bondFarewellFragment(
-        _ memory: HighSchoolCareerStore.PlayerBondMemory
+        _ memory: PlayerBondMemory
     ) -> String {
         let person = memory.subjectName?.trimmingCharacters(in: .whitespacesAndNewlines)
         switch memory.kind {
@@ -377,7 +377,7 @@ enum PlayerBondStory {
 struct PlayerHeartCard: View {
     let state: HighSchoolCareerSnapshot
     let presentation: PlayerHeartlinePresentation
-    let bondMemories: [HighSchoolCareerStore.PlayerBondMemory]
+    let bondMemories: [PlayerBondMemory]
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -454,7 +454,7 @@ struct PlayerHeartCard: View {
             .accessibilityIdentifier("hs.playerHeart")
         }
         .onAppear {
-            GameAnalytics.logOnce(
+            CareerTelemetry.logOnce(
                 .playerHeartlineSeen,
                 scope: Self.analyticsScope(
                     careerID: state.careerID,
@@ -520,23 +520,23 @@ struct PlayerLegacyQuote: View {
 /// Structured recall shared by the living player's heart card, farewell, archive, and next-life
 /// letter. Event and choice labels are resolved from stable IDs in the active language.
 struct PlayerBondMemoryList: View {
-    let memories: [HighSchoolCareerStore.PlayerBondMemory]
+    let memories: [PlayerBondMemory]
     let surface: PlayerBondMemorySurface
     let lifeNumber: Int
-    var preferredKind: HighSchoolCareerStore.PlayerBondMemory.Kind? = nil
+    var preferredKind: PlayerBondMemory.Kind? = nil
     var limit: Int? = nil
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
-    private var visibleMemories: [HighSchoolCareerStore.PlayerBondMemory] {
+    private var visibleMemories: [PlayerBondMemory] {
         Self.displayMemories(memories, preferredKind: preferredKind, limit: limit)
     }
 
     static func displayMemories(
-        _ memories: [HighSchoolCareerStore.PlayerBondMemory],
-        preferredKind: HighSchoolCareerStore.PlayerBondMemory.Kind? = nil,
+        _ memories: [PlayerBondMemory],
+        preferredKind: PlayerBondMemory.Kind? = nil,
         limit: Int? = nil
-    ) -> [HighSchoolCareerStore.PlayerBondMemory] {
+    ) -> [PlayerBondMemory] {
         var ordered = PlayerBondMemory.normalized(memories)
             .filter {
                 RelationshipPresentationCatalog.eventDescriptor(
@@ -552,7 +552,7 @@ struct PlayerBondMemoryList: View {
         return limit.map { Array(ordered.prefix($0)) } ?? ordered
     }
 
-    private func kindTitle(_ kind: HighSchoolCareerStore.PlayerBondMemory.Kind) -> String {
+    private func kindTitle(_ kind: PlayerBondMemory.Kind) -> String {
         switch kind {
         case .personality: copyResolver.resolve(.bondMemoryKindPersonality)
         case .healthChoice: copyResolver.resolve(.bondMemoryKindHealth)
@@ -560,7 +560,7 @@ struct PlayerBondMemoryList: View {
         }
     }
 
-    private func eventTitle(_ memory: HighSchoolCareerStore.PlayerBondMemory) -> String {
+    private func eventTitle(_ memory: PlayerBondMemory) -> String {
         let descriptor = RelationshipPresentationCatalog.eventDescriptor(
             eventID: memory.eventID,
             categoryID: memory.eventCategory
@@ -568,7 +568,7 @@ struct PlayerBondMemoryList: View {
         return copyResolver.resolve(descriptor.titleToken)
     }
 
-    private func choiceTitle(_ memory: HighSchoolCareerStore.PlayerBondMemory) -> String {
+    private func choiceTitle(_ memory: PlayerBondMemory) -> String {
         let event = CareerEventContent(
             id: memory.eventID,
             title: memory.eventTitle,
@@ -611,7 +611,7 @@ struct PlayerBondMemoryList: View {
                             .foregroundStyle(BaseballTheme.textTertiary)
                     }
                     .onAppear {
-                        GameAnalytics.logOnce(
+                        CareerTelemetry.logOnce(
                             .bondMemoryRecalled,
                             scope: "bond-memory:\(memory.id):\(surface.rawValue):\(lifeNumber)",
                             properties: [
@@ -735,7 +735,7 @@ struct PreviousPlayerLetterCard: View {
             .accessibilityIdentifier("hs.previousPlayerLetter")
         }
         .onAppear {
-            GameAnalytics.logOnce(
+            CareerTelemetry.logOnce(
                 .playerLegacySeen,
                 scope: "next_life:\(record.careerID ?? "life-\(record.lifeNumber)")",
                 properties: [

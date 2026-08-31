@@ -194,7 +194,7 @@ enum ProspectRankingPresentation {
     }
 
     static func localizedForecastBand(
-        _ forecast: HighSchoolCareerEngine.DraftForecastSnapshot,
+        _ forecast: DraftForecastSnapshot,
         resolver: GameCopyResolver
     ) -> String {
         guard let presentation = forecast.presentation,
@@ -207,7 +207,7 @@ enum ProspectRankingPresentation {
     }
 
     static func localizedForecastTeam(
-        _ forecast: HighSchoolCareerEngine.DraftForecastSnapshot,
+        _ forecast: DraftForecastSnapshot,
         resolver: GameCopyResolver
     ) -> String {
         guard let presentation = forecast.presentation,
@@ -222,7 +222,7 @@ enum ProspectRankingPresentation {
     }
 
     static func forecastDetailArguments(
-        _ forecast: HighSchoolCareerEngine.DraftForecastSnapshot,
+        _ forecast: DraftForecastSnapshot,
         resolver: GameCopyResolver
     ) -> [LocalizedCopyArgument] {
         let team = localizedForecastTeam(forecast, resolver: resolver)

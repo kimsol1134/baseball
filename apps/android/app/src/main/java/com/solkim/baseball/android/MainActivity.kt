@@ -38,8 +38,8 @@ import com.solkim.baseball.platform.NativeReminderPlan
 import com.solkim.baseball.platform.StableNotificationToken
 import com.solkim.baseball.platform.NativeAudioResources
 import com.solkim.baseball.model.Hashing
-import com.solkim.baseball.core.highschool.HighSchoolReturnDestination
-import com.solkim.baseball.core.highschool.HighSchoolReturnPlanRules
+import com.solkim.baseball.application.HighSchoolDisplayRules
+import com.solkim.baseball.application.HighSchoolReturnDestination
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -458,7 +458,7 @@ public class MainActivity : ComponentActivity() {
         val developmentRulesVersion = plan.developmentRulesVersion ?: return
         if (plan.receiptId.isBlank() || variant !in setOf("holdout", "guided")) return
         val returnDay = commandContext.clock.today().toString()
-        val dayGap = HighSchoolReturnPlanRules.dayGap(savedDay, returnDay) ?: return
+        val dayGap = HighSchoolDisplayRules.returnPlanDayGap(savedDay, returnDay) ?: return
         if (dayGap < 1) return
         val properties = buildList {
             add("destination" to plan.destination.wire)
@@ -502,11 +502,11 @@ public class MainActivity : ComponentActivity() {
 
     private fun scheduleSavedReturnPlan() {
         val plan = (application as BaseballApplication).gameStore.current.highSchool?.returnPlan ?: return
-        if (plan.dismissed || plan.destination == com.solkim.baseball.core.highschool.HighSchoolReturnDestination.DAILY_INNING) return
+        if (plan.dismissed || plan.destination == HighSchoolReturnDestination.DAILY_INNING) return
         val destination = when (plan.destination) {
-            com.solkim.baseball.core.highschool.HighSchoolReturnDestination.HIGH_SCHOOL -> NotificationDestination.HIGH_SCHOOL
-            com.solkim.baseball.core.highschool.HighSchoolReturnDestination.PRO -> NotificationDestination.PRO
-            com.solkim.baseball.core.highschool.HighSchoolReturnDestination.DAILY_INNING -> return
+            HighSchoolReturnDestination.HIGH_SCHOOL -> NotificationDestination.HIGH_SCHOOL
+            HighSchoolReturnDestination.PRO -> NotificationDestination.PRO
+            HighSchoolReturnDestination.DAILY_INNING -> return
         }
         val savedDay = runCatching { LocalDate.parse(plan.savedDayKey ?: plan.createdDayKey) }.getOrElse { commandContext.clock.today() }
         val trigger = savedDay.plusDays(1).atTime(LocalTime.of(9, 0)).atZone(ZoneId.of("Asia/Seoul")).toInstant().toEpochMilli()

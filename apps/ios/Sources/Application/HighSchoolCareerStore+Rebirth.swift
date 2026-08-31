@@ -285,7 +285,7 @@ extension HighSchoolCareerStore {
             ])
             AchievementStore.shared.record(AchievementRules.fromHighSchool(completed.snapshot))
             AchievementStore.shared.record(AchievementRules.fromArchive(nextArchive))
-            if deservesReview, ReviewPrompt.shouldAsk(.goodRecap) {
+            if deservesReview, CareerReviewPrompt.shouldAsk(.goodRecap) {
                 reviewMoment += 1
             }
         } catch {

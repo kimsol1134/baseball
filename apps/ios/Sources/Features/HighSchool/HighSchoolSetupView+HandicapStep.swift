@@ -169,7 +169,7 @@ extension HighSchoolSetupView {
                     .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 ForEach(KarmaID.allCases, id: \.self) { karma in
-                    // 코어가 카르마를 2개까지만 받는다(HighSchoolCareerEngine.start). 3개를 보내면
+                    // 코어가 카르마를 2개까지만 받는다. 3개를 보내면
                     // 커리어 생성이 실패하고, 그 화면의 유일한 버튼이 진행 삭제다 — 여기서 막는다.
                     KarmaRow(
                         karma: karma,

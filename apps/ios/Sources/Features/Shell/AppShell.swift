@@ -73,7 +73,7 @@ struct AppShell: View {
     /// 유산 접기 실패를 사용자에게 보일 유형으로 나눈다. 고교 스토어가 실패 메시지를
     /// 남겼다면 그 원인(저장 실패)을 그대로 보여 주고, 아니면 연결이 깨진 저장이다.
     static func legacyHandoffIssue(
-        highSchoolLoadState: HighSchoolCareerStore.LoadState
+        highSchoolLoadState: CareerLoadState
     ) -> LegacyHandoffIssue {
         if case .failed(let message) = highSchoolLoadState { return .saveFailed(message) }
         return .linkageBroken
@@ -295,7 +295,7 @@ struct AppShell: View {
                             // 드래프트 이후의 **정상 분기**다. 이 계측이 없으면 대시보드에서
                             // "드래프트를 봤는데 환생하지 않은 사람"이 전부 이탈로 잡힌다 —
                             // 실제로는 프로로 넘어간 사람이 섞여 있다(2026-08 분석의 맹점).
-                            GameAnalytics.log(.proCareerStarted, [
+                            CareerTelemetry.log(.proCareerStarted, [
                                 "round": draft.round ?? 0,
                                 "evaluation": draft.evaluationScore,
                                 "life_number": highSchool.state?.lifeNumber ?? 0,
@@ -476,7 +476,7 @@ struct AppShell: View {
                     // 조용히 돌아가면 사용자는 "버튼이 안 눌린다"로만 느낀다. 원인을
                     // 알리고, 연결이 깨진 저장에는 야구혼만 남기는 출구를 제안한다.
                     let issue = Self.legacyHandoffIssue(highSchoolLoadState: highSchool.loadState)
-                    GameAnalytics.log(.legacyHandoffFailed, [
+                    CareerTelemetry.log(.legacyHandoffFailed, [
                         "reason": issue.analyticsReason,
                         "links_current_high_school": linksToCurrentHighSchool,
                     ])
@@ -485,7 +485,7 @@ struct AppShell: View {
                 }
                 guard pro.deleteCareer() else {
                     // deleteCareer가 배너로 재시도를 안내한다. 여기서는 빈도만 잰다.
-                    GameAnalytics.log(.legacyHandoffFailed, ["reason": "cleanup_save_failed"])
+                    CareerTelemetry.log(.legacyHandoffFailed, ["reason": "cleanup_save_failed"])
                     return
                 }
                 selection = .highSchool
@@ -583,19 +583,19 @@ private struct ReturnWelcomeCard: View {
             guard !exposureLogged else { return }
             exposureLogged = true
             onShown()
-            GameAnalytics.log(.returnPlanShown, DailyReminder.analyticsProperties(plan))
+            CareerTelemetry.log(.returnPlanShown, DailyReminder.analyticsProperties(plan))
         }
         .accessibilityElement(children: .contain)
     }
 
     private func continueTapped() {
-        GameAnalytics.log(.returnPlanTapped, DailyReminder.analyticsProperties(plan))
+        CareerTelemetry.log(.returnPlanTapped, DailyReminder.analyticsProperties(plan))
         DailyReminder.markWelcomeHandled(plan)
         onContinue()
     }
 
     private func dismissTapped() {
-        GameAnalytics.log(.returnPlanDismissed, DailyReminder.analyticsProperties(plan))
+        CareerTelemetry.log(.returnPlanDismissed, DailyReminder.analyticsProperties(plan))
         DailyReminder.markWelcomeHandled(plan)
         onDismiss()
     }
@@ -627,7 +627,7 @@ private struct ReturnWelcomeCard: View {
 private struct ProLockedView: View {
     let pro: MobileCareerStore
     let hasFinishedALife: Bool
-    var forecast: HighSchoolCareerEngine.DraftForecastSnapshot?
+    var forecast: DraftForecastSnapshot?
     var remainingChapters: Int?
     @State private var showsSetup = false
     @Environment(\.gameCopyResolver) private var copyResolver
@@ -720,7 +720,7 @@ private struct ProLockedView: View {
     }
 
     private func forecastArguments(
-        forecast: HighSchoolCareerEngine.DraftForecastSnapshot,
+        forecast: DraftForecastSnapshot,
         remainingChapters: Int?
     ) -> [LocalizedCopyArgument] {
         var arguments: [LocalizedCopyArgument] = [

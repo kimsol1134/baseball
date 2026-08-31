@@ -39,4 +39,10 @@ enum CareerDisplayRules {
     nonisolated static func masteryBonusPermille(level: Int) -> Int {
         MasteryEffectRules.bonusPermille(level: level)
     }
+
+    nonisolated static func relationshipTarget(
+        forEventCategory category: String
+    ) -> RelationshipTarget {
+        HighSchoolCareerEngine.relationshipTarget(forEventCategory: category)
+    }
 }

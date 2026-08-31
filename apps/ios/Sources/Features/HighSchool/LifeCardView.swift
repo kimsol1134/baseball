@@ -603,12 +603,12 @@ struct LifeCardShareButton: View {
                 ),
                 onTapped: {
                     let properties: [String: Any] = ["life_number": record.lifeNumber]
-                    GameAnalytics.log(.lifeCardShareTapped, properties)
+                    CareerTelemetry.log(.lifeCardShareTapped, properties)
                     // One-version dashboard compatibility. This legacy event is removed after 1.0.2.
-                    GameAnalytics.log(.lifeCardShared, properties)
+                    CareerTelemetry.log(.lifeCardShared, properties)
                 },
                 onFinished: { finish in
-                    GameAnalytics.logShareFinish(finish, ["life_number": record.lifeNumber])
+                    CareerTelemetry.logShareFinish(finish, ["life_number": record.lifeNumber])
                 }
             ) {
                 Label(

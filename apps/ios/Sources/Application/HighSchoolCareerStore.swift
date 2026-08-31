@@ -27,12 +27,8 @@ final class HighSchoolCareerStore {
     typealias AbilityGain = BaseballIOSDomain.AbilityGain
     typealias FeedbackCue = BaseballIOSDomain.FeedbackCue
 
-    enum LoadState: Equatable {
-        case loading
-        case needsSetup
-        case ready
-        case failed(String)
-    }
+    typealias LoadState = CareerLoadState
+    typealias InheritedStartComparison = BaseballIOSDomain.InheritedStartComparison
 
     nonisolated static func normalizedBondMemories(
         _ memories: [PlayerBondMemory]
@@ -45,23 +41,6 @@ final class HighSchoolCareerStore {
         to memories: [PlayerBondMemory]
     ) -> [PlayerBondMemory] {
         PlayerBondMemory.appending(memory, to: memories)
-    }
-
-    struct InheritedStartComparison: Equatable {
-        struct Source: Equatable, Identifiable {
-            let id: String
-            let ratingDelta: Int
-            let signatureLegacyID: CareerSignatureLegacyID?
-        }
-
-        let previousName: String
-        let careerID: String
-        let previous: LifeRecord.AbilityLine
-        let current: LifeRecord.AbilityLine
-        let sources: [Source]
-
-        var totalDelta: Int { current.total - previous.total }
-        var inheritedRatingDelta: Int { sources.reduce(0) { $0 + $1.ratingDelta } }
     }
 
     var loadState: LoadState = .loading

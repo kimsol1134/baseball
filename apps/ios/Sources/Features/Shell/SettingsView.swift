@@ -193,7 +193,7 @@ struct SettingsView: View {
         // 새 회차의 첫 신기록·첫 별점 순간이 이미 소모돼 있다.
         UserDefaults.standard.removeObject(forKey: "baseball.bestVelocityTenths")
         LegacyDailyInningData.clear()
-        ReviewPrompt.reset()
+        CareerReviewPrompt.reset()
         SeenContentStore.reset()
         // 연속 기록도 진행이다. 남기면 새 시작이 "12일 연속"에서 출발한다.
         for key in UserDefaults.standard.dictionaryRepresentation().keys

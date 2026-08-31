@@ -256,7 +256,7 @@ final class PlayerBondStoryTests: XCTestCase {
     }
 
     func testBondMemoryRoundTripsThroughLiveSaveAndLifeRecord() throws {
-        let memory = HighSchoolCareerStore.PlayerBondMemory(
+        let memory = PlayerBondMemory(
             kind: .trustMilestone,
             eventID: "evt-catcher-sign",
             eventCategory: "catcher",
@@ -297,10 +297,10 @@ final class PlayerBondStoryTests: XCTestCase {
 
     func testBondMemoriesKeepOnlyTheFirstMomentOfEachKindAndNeverExceedThree() {
         func memory(
-            _ kind: HighSchoolCareerStore.PlayerBondMemory.Kind,
+            _ kind: PlayerBondMemory.Kind,
             chapter: Int
-        ) -> HighSchoolCareerStore.PlayerBondMemory {
-            HighSchoolCareerStore.PlayerBondMemory(
+        ) -> PlayerBondMemory {
+            PlayerBondMemory(
                 kind: kind,
                 eventID: "event-\(chapter)",
                 eventCategory: kind == .healthChoice ? "health" : "catcher",
@@ -349,7 +349,7 @@ final class PlayerBondStoryTests: XCTestCase {
     }
 
     func testBondMemoryDisplayPrefersMeaningfulKnownEventAndHidesRawUnknownData() {
-        let unknown = HighSchoolCareerStore.PlayerBondMemory(
+        let unknown = PlayerBondMemory(
             kind: .trustMilestone,
             eventID: "future-event-from-newer-save",
             eventCategory: "future-category",
@@ -360,7 +360,7 @@ final class PlayerBondStoryTests: XCTestCase {
             trustBefore: 68,
             trustAfter: 74
         )
-        let personality = HighSchoolCareerStore.PlayerBondMemory(
+        let personality = PlayerBondMemory(
             kind: .personality,
             eventID: "evt-coach-role",
             eventCategory: "coach",
@@ -371,7 +371,7 @@ final class PlayerBondStoryTests: XCTestCase {
             trustBefore: 50,
             trustAfter: 56
         )
-        let health = HighSchoolCareerStore.PlayerBondMemory(
+        let health = PlayerBondMemory(
             kind: .healthChoice,
             eventID: "evt-recovery-day",
             eventCategory: "health",

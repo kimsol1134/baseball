@@ -166,7 +166,7 @@ struct TrainingCard: View {
         state.school?.strength == focus && state.trainingOpportunity?.focus == focus
     }
 
-    private var outlook: HighSchoolCareerEngine.TrainingGrowthOutlook {
+    private var outlook: TrainingGrowthOutlook {
         HighSchoolCareerStore.trainingOutlook(state: state, focus: focus, intensity: intensity)
     }
 

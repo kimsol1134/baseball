@@ -255,7 +255,7 @@ extension HighSchoolCareerStore {
         )
         guard let kind else { return nil }
 
-        let target = HighSchoolCareerEngine.relationshipTarget(forEventCategory: event.category)
+        let target = CareerDisplayRules.relationshipTarget(forEventCategory: event.category)
         let subjectName: String? = switch target {
         case .coach: before.school?.coachName
         case .catcher: before.school?.catcherName

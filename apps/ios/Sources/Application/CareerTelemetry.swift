@@ -31,6 +31,39 @@ enum CareerTelemetry {
     static func stableID() -> String {
         GameAnalytics.stableID()
     }
+
+    static func configure() {
+        GameAnalytics.configure()
+    }
+
+    static func completedGameCount(defaults: UserDefaults = .standard) -> Int {
+        GameAnalytics.completedGameCount(defaults: defaults)
+    }
+
+    static func resetCompletedGameCountForUITesting(defaults: UserDefaults = .standard) {
+        GameAnalytics.resetCompletedGameCountForUITesting(defaults: defaults)
+    }
+
+    static func logShareFinish(_ finish: ShareFinish, _ properties: [String: Any] = [:]) {
+        GameAnalytics.logShareFinish(finish, properties)
+    }
+}
+
+@MainActor
+enum CareerReviewPrompt {
+    typealias Reason = ReviewPrompt.Reason
+
+    static func shouldAsk(
+        _ reason: Reason,
+        now: Date = Date(),
+        defaults: UserDefaults = .standard
+    ) -> Bool {
+        ReviewPrompt.shouldAsk(reason, now: now, defaults: defaults)
+    }
+
+    static func reset(defaults: UserDefaults = .standard) {
+        ReviewPrompt.reset(defaults: defaults)
+    }
 }
 
 enum CareerPlayClock {

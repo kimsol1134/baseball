@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import com.solkim.baseball.core.portrait.AvatarRole
+import com.solkim.baseball.application.AvatarRole
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -62,8 +62,10 @@ import com.solkim.baseball.application.Phase8ScreenId
 import com.solkim.baseball.application.Phase8ScreenModel
 import com.solkim.baseball.application.Phase8ScreenProjection
 import com.solkim.baseball.application.Phase8Payloads
-import com.solkim.baseball.core.highschool.HighSchoolContentCatalog
-import com.solkim.baseball.core.highschool.HighSchoolWindRules
+import com.solkim.baseball.application.HighSchoolDisplayRules
+import com.solkim.baseball.application.HighSchoolDraftOutcome
+import com.solkim.baseball.application.HighSchoolReturnDestination
+import com.solkim.baseball.application.HighSchoolReturnPlan
 import com.solkim.baseball.platform.NotificationPermissionTruth
 import com.solkim.baseball.platform.ReminderOfferPolicy
 
@@ -364,13 +366,13 @@ private fun Phase9ViewportCards(
                     eventName = "career_wind_seen",
                     scope = "career:${run.careerId}",
                     properties = listOf(
-                        "wind_id" to HighSchoolWindRules.idFor(run.careerId),
-                        "rules_version" to HighSchoolWindRules.RULES_VERSION.toString(),
+                        "wind_id" to HighSchoolDisplayRules.windIdFor(run.careerId),
+                        "rules_version" to HighSchoolDisplayRules.windRulesVersion.toString(),
                     ),
                 ),
                 onExposed = onExposed,
             ) {
-                Phase8ReadOnlyRow("이번 생의 바람", windLabel(HighSchoolWindRules.idFor(run.careerId)), "이번 생의 흐름은 같은 규칙으로 끝까지 이어집니다.")
+                Phase8ReadOnlyRow("이번 생의 바람", windLabel(HighSchoolDisplayRules.windIdFor(run.careerId)), "이번 생의 흐름은 같은 규칙으로 끝까지 이어집니다.")
             }
         } else Unit
         Phase8ScreenId.P007_RELATIONSHIP -> run?.currentRelationshipEvent?.let { event ->
@@ -397,7 +399,7 @@ private fun Phase9ViewportCards(
                         scope = "legacy-options:${run.careerId}",
                         properties = listOf(
                             "life_number" to run.lifeNumber.toString(),
-                            "drafted" to (run.draftResult?.outcome == com.solkim.baseball.core.highschool.HighSchoolDraftOutcome.DRAFTED).toString(),
+                            "drafted" to (run.draftResult?.outcome == HighSchoolDraftOutcome.DRAFTED).toString(),
                             "includes_pro_career" to (state.pro?.careerStats?.isNotEmpty() == true).toString(),
                             "option_ids" to run.legacyOptions.joinToString(","),
                         ),
@@ -570,7 +572,7 @@ private fun windLabel(id: String): String = when (id) {
 }
 
 private fun returnPlanExposureProperties(
-    plan: com.solkim.baseball.core.highschool.HighSchoolReturnPlan,
+    plan: HighSchoolReturnPlan,
     returnDayKey: String,
 ): List<Pair<String, String>> = buildList {
     add("destination" to plan.destination.wire)
@@ -581,15 +583,12 @@ private fun returnPlanExposureProperties(
     val savedDay = plan.savedDayKey ?: plan.createdDayKey
     add("saved_day_key" to savedDay)
     add("return_day_key" to returnDayKey)
-    com.solkim.baseball.core.highschool.HighSchoolReturnPlanRules.dayGap(savedDay, returnDayKey)?.let { add("day_gap" to it.toString()) }
+    HighSchoolDisplayRules.returnPlanDayGap(savedDay, returnDayKey)?.let { add("day_gap" to it.toString()) }
     plan.developmentRulesVersion?.let { add("development_rules_version" to it.toString()) }
 }
 
-private fun com.solkim.baseball.core.highschool.HighSchoolReturnDestination.labelForProduct(): String = when (this) {
-    com.solkim.baseball.core.highschool.HighSchoolReturnDestination.HIGH_SCHOOL -> "고교 커리어"
-    com.solkim.baseball.core.highschool.HighSchoolReturnDestination.PRO -> "프로 커리어"
-    com.solkim.baseball.core.highschool.HighSchoolReturnDestination.DAILY_INNING -> "현재 커리어"
-}
+private fun HighSchoolReturnDestination.labelForProduct(): String =
+    HighSchoolDisplayRules.returnDestinationProductLabel(this)
 
 @Composable
 private fun Phase8SetupFields(
@@ -601,10 +600,10 @@ private fun Phase8SetupFields(
     val setupAction = model.actions.single { it.id == "startHighSchool" }
     var name by rememberSaveable(model.id.wire) { mutableStateOf("") }
     var region by rememberSaveable(model.id.wire + ":region") {
-        mutableStateOf(HighSchoolContentCatalog.regions.first())
+        mutableStateOf(HighSchoolDisplayRules.regions.first())
     }
     var presetId by rememberSaveable(model.id.wire + ":preset") {
-        mutableStateOf(HighSchoolContentCatalog.presets.first().id)
+        mutableStateOf(HighSchoolDisplayRules.presets.first().id)
     }
     var regionMenuExpanded by rememberSaveable { mutableStateOf(false) }
 
@@ -634,7 +633,7 @@ private fun Phase8SetupFields(
             expanded = regionMenuExpanded,
             onDismissRequest = { regionMenuExpanded = false },
         ) {
-            HighSchoolContentCatalog.regions.forEach { option ->
+            HighSchoolDisplayRules.regions.forEach { option ->
                 DropdownMenuItem(
                     text = { Text(option) },
                     onClick = {
@@ -646,7 +645,7 @@ private fun Phase8SetupFields(
         }
     }
     Text("성장 방식", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-    HighSchoolContentCatalog.presets.forEach { preset ->
+    HighSchoolDisplayRules.presets.forEach { preset ->
         val selected = preset.id == presetId
         OutlinedButton(
             onClick = { presetId = preset.id },
@@ -662,7 +661,7 @@ private fun Phase8SetupFields(
             }
         }
     }
-    val valid = setupAction.enabled && name.trim().isNotBlank() && region in HighSchoolContentCatalog.regions
+    val valid = setupAction.enabled && name.trim().isNotBlank() && region in HighSchoolDisplayRules.regions
     Button(
         onClick = {
             val command = Phase8Payloads.startHighSchool(state, name, region, presetId, commandContext)

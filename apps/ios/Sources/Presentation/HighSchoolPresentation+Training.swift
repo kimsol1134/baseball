@@ -70,7 +70,7 @@ extension HighSchoolPresentation {
     }
 
     static func localizedOutlook(
-        _ outlook: HighSchoolCareerEngine.TrainingGrowthOutlook,
+        _ outlook: TrainingGrowthOutlook,
         resolver: GameCopyResolver
     ) -> String {
         resolver.resolve(outlook.detailCopyToken)

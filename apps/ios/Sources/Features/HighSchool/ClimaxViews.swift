@@ -129,8 +129,8 @@ struct DraftRevealView: View {
                     action: {
                         guard stage == .revealed else { return skipToReveal() }
                         // 지명 확정 스탬프를 닫는 순간은 이 게임의 감정 최고점이다.
-                        // 물어도 되는지(이유 소진·간격·UI 테스트)는 ReviewPrompt가 판단한다.
-                        if drafted, ReviewPrompt.shouldAsk(.drafted) {
+                        // 물어도 되는지(이유 소진·간격·UI 테스트)는 리뷰 관문이 판단한다.
+                        if drafted, CareerReviewPrompt.shouldAsk(.drafted) {
                             requestReview()
                         }
                         onFinish()

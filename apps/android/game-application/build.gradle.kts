@@ -6,7 +6,7 @@ kotlin { jvmToolchain(17) }
 
 dependencies {
     api(project(":game-model"))
-    implementation(project(":game-core"))
+    api(project(":game-core"))
     implementation(project(":game-persistence"))
     implementation(project(":unity-bridge"))
     implementation(libs.kotlinx.coroutines.core)

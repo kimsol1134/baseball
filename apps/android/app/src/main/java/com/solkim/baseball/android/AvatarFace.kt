@@ -14,8 +14,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.solkim.baseball.core.portrait.AvatarParts
-import com.solkim.baseball.core.portrait.AvatarRole
+import com.solkim.baseball.application.AvatarParts
+import com.solkim.baseball.application.AvatarRole
 import com.solkim.baseball.design.BaseballColors
 
 @Composable

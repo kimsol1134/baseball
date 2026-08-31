@@ -128,7 +128,7 @@ extension HighSchoolPresentation {
         wind: CareerWind,
         resolver: GameCopyResolver
     ) -> String? {
-        let target = HighSchoolCareerEngine.relationshipTarget(forEventCategory: category)
+        let target = CareerDisplayRules.relationshipTarget(forEventCategory: category)
         let descriptor = RelationshipPresentationCatalog.windDescriptor(for: wind, target: target)
         guard !descriptor.effectTokens.isEmpty else { return nil }
         let title = resolver.resolve(descriptor.careerWind.titleToken)

@@ -16,7 +16,7 @@ extension HighSchoolCareerStore {
         state: HighSchoolCareerSnapshot,
         focus: TrainingFocus,
         intensity: TrainingIntensity
-    ) -> HighSchoolCareerEngine.TrainingGrowthOutlook {
+    ) -> TrainingGrowthOutlook {
         engine.trainingOutlook(state: state, focus: focus, intensity: intensity)
     }
 
@@ -24,15 +24,15 @@ extension HighSchoolCareerStore {
         state: HighSchoolCareerSnapshot,
         focus: TrainingFocus,
         intensity: TrainingIntensity
-    ) -> HighSchoolCareerEngine.TrainingGrowthOutlook {
+    ) -> TrainingGrowthOutlook {
         HighSchoolCareerEngine().trainingOutlook(state: state, focus: focus, intensity: intensity)
     }
 
-    nonisolated static func draftForecast(state: HighSchoolCareerSnapshot) -> HighSchoolCareerEngine.DraftForecastSnapshot {
+    nonisolated static func draftForecast(state: HighSchoolCareerSnapshot) -> DraftForecastSnapshot {
         HighSchoolCareerEngine.draftForecast(state: state)
     }
 
-    var draftForecast: HighSchoolCareerEngine.DraftForecastSnapshot? {
+    var draftForecast: DraftForecastSnapshot? {
         state.map(Self.draftForecast(state:))
     }
 

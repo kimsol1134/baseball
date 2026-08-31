@@ -248,7 +248,7 @@ struct HighSchoolSetupView: View {
         }
         .background(BaseballTheme.canvas)
         .scrollDismissesKeyboard(.interactively)
-        .onAppear { GameAnalytics.logOnce(.onboardingStarted) }
+        .onAppear { CareerTelemetry.logOnce(.onboardingStarted) }
         .onAppear {
             nameFocused = Self.shouldAutoFocusName(isRebirth: isRebirth)
             if isRebirth,

@@ -200,7 +200,7 @@ struct RelationshipCard: View {
         .onAppear {
             guard let event, event.category == "rebirth" else { return }
             let recent = state.rebirthEcho?.recentEventIDs?.contains(event.id) == true
-            GameAnalytics.logOnce(
+            CareerTelemetry.logOnce(
                 .rebirthEchoSeen,
                 scope: "rebirth-echo:\(state.careerID):\(event.id):\(state.relationshipsCompleted)",
                 properties: [

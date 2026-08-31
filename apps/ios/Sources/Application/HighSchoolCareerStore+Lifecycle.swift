@@ -570,7 +570,7 @@ extension HighSchoolCareerStore {
                     weekly.record(.nextRunStarted)
                 }
                 // 3회차를 시작한다 = 환생 루프를 스스로 두 번 돌았다.
-                if carried.lifeNumber >= 3, ReviewPrompt.shouldAsk(.thirdLife) {
+                if carried.lifeNumber >= 3, CareerReviewPrompt.shouldAsk(.thirdLife) {
                     reviewMoment += 1
                 }
                 AchievementStore.shared.record(AchievementRules.fromLifeNumber(carried.lifeNumber))

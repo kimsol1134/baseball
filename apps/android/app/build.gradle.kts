@@ -133,7 +133,6 @@ tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }.co
 dependencies {
     implementation(project(":design-system"))
     implementation(project(":game-application"))
-    implementation(project(":game-core"))
     implementation(project(":game-model"))
     implementation(project(":unity-bridge"))
     implementation(project(":unity-runtime"))

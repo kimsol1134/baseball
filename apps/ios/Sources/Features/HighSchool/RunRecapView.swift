@@ -391,7 +391,7 @@ struct RunRecapView: View {
             stampCount: stamps.count
         ) else { return }
         legacyExposureLogged = true
-        GameAnalytics.logOnce(
+        CareerTelemetry.logOnce(
             .playerLegacySeen,
             scope: "recap:\(recap.record.careerID ?? "life-\(recap.record.lifeNumber)")",
             properties: [
@@ -406,7 +406,7 @@ struct RunRecapView: View {
     private func continueFromRecap(entryPath: String, action: () -> Void) {
         guard !continueTapped else { return }
         continueTapped = true
-        GameAnalytics.log(
+        CareerTelemetry.log(
             .recapContinueTapped,
             Self.continueAnalyticsProperties(
                 lifeNumber: recap.record.lifeNumber,

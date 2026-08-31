@@ -221,7 +221,7 @@ struct LifeArchiveSection: View {
         }
         .onAppear {
             guard !records.isEmpty else { return }
-            GameAnalytics.logOnce(
+            CareerTelemetry.logOnce(
                 .lineageArchiveOpened,
                 scope: "lineage-archive:\(records.count):\(records.map(\.lifeNumber).max() ?? 0)",
                 properties: [
@@ -650,7 +650,7 @@ private struct LifeArchiveRow: View {
     }
 
     private func logLegacySeen() {
-        GameAnalytics.logOnce(
+        CareerTelemetry.logOnce(
             .playerLegacySeen,
             scope: "archive:\(record.careerID ?? "life-\(record.lifeNumber)")",
             properties: [
@@ -729,11 +729,11 @@ struct LifeShareButton: View {
                     ),
                     onTapped: {
                         let properties: [String: Any] = ["life_number": record.lifeNumber]
-                        GameAnalytics.log(.lifeCardShareTapped, properties)
-                        GameAnalytics.log(.lifeCardShared, properties)
+                        CareerTelemetry.log(.lifeCardShareTapped, properties)
+                        CareerTelemetry.log(.lifeCardShared, properties)
                     },
                     onFinished: { finish in
-                        GameAnalytics.logShareFinish(finish, ["life_number": record.lifeNumber])
+                        CareerTelemetry.logShareFinish(finish, ["life_number": record.lifeNumber])
                     }
                 ) {
                     Label {

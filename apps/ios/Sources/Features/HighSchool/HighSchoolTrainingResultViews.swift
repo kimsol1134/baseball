@@ -203,7 +203,7 @@ struct ReminderNudgeCard: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text(verbatim: accessibility))
         .onAppear {
-            GameAnalytics.logOnce(.reminderOfferShown, ["source": "after_first_game"])
+            CareerTelemetry.logOnce(.reminderOfferShown, ["source": "after_first_game"])
         }
     }
 }

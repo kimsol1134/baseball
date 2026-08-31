@@ -168,7 +168,7 @@ struct WeeklyProgramView: View {
                 }
                 .accessibilityIdentifier("weekly.program")
                 .onAppear {
-                    GameAnalytics.log(.weeklyProgramOpened, Self.openedProperties(program: program))
+                    CareerTelemetry.log(.weeklyProgramOpened, Self.openedProperties(program: program))
                 }
             }
 

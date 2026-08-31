@@ -5,7 +5,7 @@ import BaseballIOSDomain
 // MARK: - 단계 카드
 
 struct InheritedStartComparisonCard: View {
-    let comparison: HighSchoolCareerStore.InheritedStartComparison
+    let comparison: InheritedStartComparison
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -30,7 +30,7 @@ struct InheritedStartComparisonCard: View {
         value > 0 ? "+\(value)" : "\(value)"
     }
 
-    private func sourceTitle(_ source: HighSchoolCareerStore.InheritedStartComparison.Source) -> String {
+    private func sourceTitle(_ source: InheritedStartComparison.Source) -> String {
         switch source.id {
         case "soul":
             copyResolver.resolve(AppCopyKey.prologueInheritedStartSoul)
@@ -106,7 +106,7 @@ struct InheritedStartComparisonCard: View {
             .accessibilityIdentifier("hs.prologue.inheritedStartComparison")
         }
         .onAppear {
-            GameAnalytics.logOnce(
+            CareerTelemetry.logOnce(
                 .inheritedStartComparisonSeen,
                 scope: "inherited-start:\(comparison.careerID)",
                 properties: [
@@ -116,7 +116,7 @@ struct InheritedStartComparisonCard: View {
                     "source_count": comparison.sources.count,
                 ]
             )
-            GameAnalytics.logOnce(
+            CareerTelemetry.logOnce(
                 .lineageComparisonSeen,
                 scope: "lineage-comparison:\(comparison.careerID)",
                 properties: [
@@ -276,7 +276,7 @@ struct PrologueCard: View {
         }
         .onAppear {
             let wind = state.careerWind
-            GameAnalytics.logOnce(
+            CareerTelemetry.logOnce(
                 .careerWindSeen,
                 scope: state.careerID,
                 properties: [

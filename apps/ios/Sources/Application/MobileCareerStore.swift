@@ -22,13 +22,7 @@ final class MobileCareerStore {
     typealias ProSaveRecord = ProCareerSaveRecord
     typealias RestoreOutcome = ProCareerRestoreOutcome
 
-    enum LoadState: Equatable {
-        case loading
-        /// 저장된 커리어가 없다. 선수 유형을 고르는 화면으로 간다.
-        case needsSetup
-        case ready
-        case failed(String)
-    }
+    typealias LoadState = CareerLoadState
 
     var loadState: LoadState = .loading
     /// 내구 필드는 하나씩 둔다. 한 가방에 넣으면 리비전만 바뀌어도 `result`를 보는
