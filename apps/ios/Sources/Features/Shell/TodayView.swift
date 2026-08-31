@@ -1,0 +1,307 @@
+import SwiftUI
+import SimulationCore
+import BaseballIOSDomain
+
+struct TodayView: View {
+    let career: MobileCareerStore
+
+    var body: some View {
+        Group {
+            if let state = career.state {
+                TodayDashboard(state: state)
+            } else {
+                ContentUnavailableView {
+                    Label {
+                        GameCopyText(AppCopyKey.careerUnavailable)
+                    } icon: {
+                        Image(systemName: "baseball")
+                    }
+                }
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
+        .background(BaseballTheme.canvas)
+    }
+}
+
+private struct TodayDashboard: View {
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                KeyArtHeader(
+                    // 1군 데뷔와 은퇴는 커리어에 한 번뿐이라 전용 그림을 준다.
+                    art: state.phase == .completed ? .retirement
+                        : state.level == .major ? .majorDebut : .stadiumNight,
+                    eyebrow: copyResolver.resolve(
+                        AppCopyKey.proSeasonHeader,
+                        arguments: [
+                            .integer(state.season),
+                            .integer(state.week),
+                            .userText(Self.segmentText(state.seasonSegment, resolver: copyResolver)),
+                        ]
+                    ),
+                    title: copyResolver.resolve(
+                        AppCopyKey.proDashboardTitle,
+                        arguments: [
+                            .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
+                            .userText(copyResolver.resolve(state.level.displayCopyToken)),
+                            .userText(copyResolver.resolve(state.role.displayCopyToken)),
+                        ]
+                    ),
+                    accent: BaseballTheme.teamDecoration(state.team.id)
+                )
+
+                SeasonArcBar(segment: state.seasonSegment, week: state.week)
+
+                HStack(spacing: 10) {
+                    // 프로가 된 그 얼굴 — 고교 대시보드와 같은 자리, 자란 모습이다.
+                    PortraitView(seed: state.identity.portraitSeed, role: .player, size: 46, playerStage: .pro)
+                    Metric(
+                        title: copyResolver.resolve(AppCopyKey.proFatigueLabel),
+                        value: "\(state.fatigue)",
+                        tone: state.fatigue >= 70 ? .warning : .standard
+                    )
+                    Metric(
+                        title: copyResolver.resolve(AppCopyKey.proManagerTrustLabel),
+                        value: "\(state.managerTrust)",
+                        tone: state.managerTrust >= 60 ? .positive : .standard
+                    )
+                    Metric(
+                        title: copyResolver.resolve(AppCopyKey.proInjuryLabel),
+                        value: state.injuryWeeks > 0
+                            ? copyResolver.resolve(AppCopyKey.proInjuryWeeks, arguments: [.integer(state.injuryWeeks)])
+                            : copyResolver.resolve(AppCopyKey.proInjuryNormal),
+                        tone: state.injuryWeeks > 0 ? .negative : .standard
+                    )
+                }
+
+                if state.journeyState != nil {
+                    CareerDirectionCard(state: state)
+                }
+
+                BaseballCard(title: copyResolver.resolve(AppCopyKey.proNextActionTitle), tone: .raised) {
+                    GameCopyText(Self.actionKey(state.phase)).font(.body.weight(.semibold))
+                }
+
+                if let tensions = state.seasonTensions, !tensions.isEmpty {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proTensionsTitle)) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(Array(tensions.enumerated()), id: \.offset) { _, tension in
+                                let tensionCopy = ProCareerPresentation.tension(
+                                    tension,
+                                    state: state,
+                                    resolver: copyResolver
+                                )
+                                VStack(alignment: .leading, spacing: 2) {
+                                    // localization-safe: resolved-copy
+                                    Text(tensionCopy.title).font(.subheadline.weight(.semibold))
+                                    // localization-safe: resolved-copy
+                                    Text(tensionCopy.detail)
+                                        .font(.footnote)
+                                        .foregroundStyle(BaseballTheme.textSecondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityElement(children: .combine)
+                            }
+                        }
+                    }
+                }
+
+                if let rival = state.currentRival {
+                    let rivalCopy = ProCareerPresentation.rival(rival, resolver: copyResolver)
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proRivalTitle), tone: .warning) {
+                        HStack(spacing: 10) {
+                            // 고교 라이벌 카드와 같은 문법 — 상대에게 얼굴이 있어야 승부다.
+                            PortraitView(seed: rival.name, role: .rival, size: 46)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("\(rivalCopy.name) · \(rivalCopy.teamName)").font(.headline)
+                                // localization-safe: resolved-copy
+                                Text(rivalCopy.archetype)
+                                    .font(.subheadline)
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                                // localization-safe: resolved-copy
+                                Text(rivalCopy.record)
+                                    .font(.footnote.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.textSecondary)
+                            }
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+
+                if let milestone = state.milestones.last {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proMilestoneTitle), tone: .milestone) {
+                        Label {
+                            Text(ProCareerPresentation.milestone(milestone, resolver: copyResolver))
+                        } icon: {
+                            Image(systemName: "star.fill")
+                        }
+                        .foregroundStyle(BaseballTheme.milestone)
+                    }
+                }
+
+                // 3주를 한 번에 건너뛰어도(`advanceBlock`) 그 사이의 등판이 여기 남는다.
+                // 예전에는 뉴스 한 줄로 증발해서 시즌이 통째로 기억에 남지 않았다.
+                if let line = state.gameLines?.last {
+                    BaseballCard(title: copyResolver.resolve(AppCopyKey.proLatestOutingTitle)) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if line.played {
+                                GameCopyText(AppCopyKey.proDirectOuting).eyebrowStyle(BaseballTheme.action)
+                            }
+                            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                                // localization-safe: numeric
+                                Text(GameLineFormat.score(line))
+                                    .font(BaseballType.scoreboard)
+                                    .foregroundStyle(BaseballTheme.textPrimary)
+                                if let decisionKey = Self.decisionKey(line.decision) {
+                                    GameCopyText(decisionKey)
+                                        .font(.headline.weight(.heavy))
+                                        .foregroundStyle(GameLineFormat.decisionTone(line.decision))
+                                }
+                                Spacer()
+                                GameCopyText(
+                                    AppCopyKey.proOutingWeek,
+                                    arguments: [.integer(line.week)]
+                                )
+                                    .font(.footnote.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.textTertiary)
+                            }
+                            GameCopyText(
+                                Self.outingSummaryKey(line),
+                                arguments: Self.outingSummaryArguments(line, language: copyResolver.language)
+                            )
+                                .font(.subheadline.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(Self.outingAccessibility(
+                            line,
+                            resolver: copyResolver
+                        ))
+                        .accessibilityIdentifier("today.lastOuting")
+                    }
+                }
+
+                BaseballCard(title: copyResolver.resolve(AppCopyKey.proLatestNewsTitle)) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(state.news.prefix(3).enumerated()), id: \.offset) { _, item in
+                            Text(ProCareerPresentation.news(item, state: state, resolver: copyResolver))
+                                .font(.subheadline)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+            }
+            .padding(BaseballMetrics.gutter)
+        }
+        .background(BaseballTheme.canvas)
+        // 고교 화면과 같은 이유 — 내비게이션 바가 없어 스크롤한 본문이 시계와 겹친다.
+        .topStatusScrim()
+    }
+
+    private static func segmentText(
+        _ segment: ProSeasonSegment?,
+        resolver: GameCopyResolver
+    ) -> String {
+        guard let segment else {
+            return resolver.resolve(AppCopyKey.proSegmentPreparation)
+        }
+        return resolver.resolve(segment.displayCopyToken)
+    }
+
+    static func segmentLabel(_ segment: ProSeasonSegment?) -> String {
+        segmentText(
+            segment,
+            resolver: GameCopyResolver(language: .korean, policy: .releaseSafe)
+        )
+    }
+
+    private static func actionKey(_ phase: ProCareerPhase) -> GameCopyKey {
+        // "커리어 탭"은 존재하지 않는다 — 탭 바에는 고교/프로/기록/설정뿐이고, 실제로는
+        // 프로 화면 위의 "이번 주" 세그먼트다. 없는 곳을 가리키면 처음 온 사람이 길을 잃는다.
+        switch phase {
+        case .weeklyPlan: AppCopyKey.proActionWeeklyPlan
+        case .importantGame: AppCopyKey.proActionImportantGame
+        case .seasonReview: AppCopyKey.proActionSeasonReview
+        case .seasonSettlement: ProUICopyKey.actionSeasonSettlement.gameCopyKey
+        case .offseasonDecision: AppCopyKey.proActionOffseasonDecision
+        default: AppCopyKey.proActionDefault
+        }
+    }
+
+    static func actionText(_ phase: ProCareerPhase) -> String {
+        GameCopyResolver(language: .korean, policy: .releaseSafe).resolve(actionKey(phase))
+    }
+
+    private static func outingRoleKey(_ line: ProGameLine) -> GameCopyKey {
+        line.started ? AppCopyKey.proRoleStarter : AppCopyKey.proRoleReliever
+    }
+
+    private static func outingSummaryKey(_ line: ProGameLine) -> GameCopyKey {
+        line.hits == nil ? AppCopyKey.proOutingSummary : AppCopyKey.proOutingSummaryHits
+    }
+
+    private static func outingSummaryArguments(
+        _ line: ProGameLine,
+        language: AppLanguage
+    ) -> [LocalizedCopyArgument] {
+        let role = GameCopyResolver(language: language, policy: .releaseSafe)
+            .resolve(outingRoleKey(line))
+        let innings = GameFormatters.innings(outs: line.outs, language: language)
+        var arguments: [LocalizedCopyArgument] = [
+            .userText(role),
+            .userText(innings),
+        ]
+        if let hits = line.hits {
+            arguments.append(.integer(hits))
+        }
+        arguments.append(contentsOf: [
+            .integer(line.strikeouts),
+            .integer(line.walks),
+            .integer(line.runsAllowed),
+        ])
+        return arguments
+    }
+
+    private static func decisionKey(_ decision: PitchingDecision) -> GameCopyKey? {
+        switch decision {
+        case .win: AppCopyKey.proDecisionWin
+        case .loss: AppCopyKey.proDecisionLoss
+        case .save: AppCopyKey.proDecisionSave
+        case .noDecision: nil
+        }
+    }
+
+    private static func outingAccessibility(
+        _ line: ProGameLine,
+        resolver: GameCopyResolver
+    ) -> String {
+        let role = resolver.resolve(outingRoleKey(line))
+        let innings = GameFormatters.innings(outs: line.outs, language: resolver.language)
+        var arguments: [LocalizedCopyArgument] = [
+            .integer(line.week),
+            .userText(role),
+            .userText(innings),
+            .userText(resolver.resolve(
+                outingSummaryKey(line),
+                arguments: outingSummaryArguments(line, language: resolver.language)
+            )),
+            .integer(line.teamRuns),
+            .integer(line.opponentRuns),
+        ]
+        if let decisionKey = decisionKey(line.decision) {
+            arguments.append(.userText(resolver.resolve(decisionKey)))
+        }
+        let key: GameCopyKey
+        switch (decisionKey(line.decision), line.played) {
+        case (nil, false): key = AppCopyKey.proOutingAccessibility
+        case (nil, true): key = AppCopyKey.proOutingAccessibilityPlayed
+        case (.some, false): key = AppCopyKey.proOutingAccessibilityDecision
+        case (.some, true): key = AppCopyKey.proOutingAccessibilityDecisionPlayed
+        }
+        return resolver.resolve(key, arguments: arguments)
+    }
+}

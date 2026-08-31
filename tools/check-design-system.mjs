@@ -6,7 +6,6 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const windowsSource = join(root, "apps/windows/src");
 const designSystemPath = join(windowsSource, "design-system.css");
 const iosSource = join(root, "apps/ios/Sources");
-const iosDesignSystemPath = join(iosSource, "DesignSystem.swift");
 const allowedExtensions = new Set([".css", ".ts", ".tsx"]);
 
 function filesUnder(directory, extensions = allowedExtensions) {
@@ -16,6 +15,22 @@ function filesUnder(directory, extensions = allowedExtensions) {
     return extensions.has(extname(path)) ? [path] : [];
   });
 }
+
+function iosSourceFile(filename) {
+  const matches = filesUnder(iosSource, new Set([".swift"])).filter(
+    (path) => path.split("/").pop() === filename
+  );
+  if (matches.length !== 1) {
+    throw new Error(`iOS 소스 ${filename}를 하나만 찾아야 하는데 ${matches.length}개를 찾았습니다`);
+  }
+  return matches[0];
+}
+
+function iosSourceLabel(filename) {
+  return relative(root, iosSourceFile(filename));
+}
+
+const iosDesignSystemPath = iosSourceFile("DesignSystem.swift");
 
 const failures = [];
 const rawColorPattern = /#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d+/g;
@@ -83,7 +98,7 @@ for (const path of filesUnder(iosSource, new Set([".swift"]))) {
 // 온다는 것만으로는 이 사고를 못 잡아서, 명암 모드 분기 자체를 금지한다.
 const themeSource = readFileSync(iosDesignSystemPath, "utf8");
 if (/userInterfaceStyle|adaptive\(\s*light:/.test(themeSource)) {
-  failures.push("apps/ios/Sources/DesignSystem.swift: 다크 전용 팔레트에 명암 모드 분기가 있음");
+  failures.push(`${iosSourceLabel("DesignSystem.swift")}: 다크 전용 팔레트에 명암 모드 분기가 있음`);
 }
 for (const path of filesUnder(iosSource, new Set([".swift"]))) {
   const source = readFileSync(path, "utf8");
@@ -111,7 +126,7 @@ for (const path of filesUnder(iosSource, new Set([".swift"]))) {
 const designSystemSwift = readFileSync(iosDesignSystemPath, "utf8");
 const cardBlock = designSystemSwift.slice(designSystemSwift.indexOf("struct BaseballCard"));
 if (/overlay\(alignment:\s*\.leading\)/.test(cardBlock.slice(0, cardBlock.indexOf("struct StatTile")))) {
-  failures.push("apps/ios/Sources/DesignSystem.swift: 카드 기본값에 좌측 강조 레일이 있음");
+  failures.push(`${iosSourceLabel("DesignSystem.swift")}: 카드 기본값에 좌측 강조 레일이 있음`);
 }
 
 // 레일은 `BaseballCard` 밖에서도 되살아난다. 실제로 `SummaryBanner`가 HStack 왼쪽에 2pt
@@ -121,18 +136,18 @@ if (/overlay\(alignment:\s*\.leading\)/.test(cardBlock.slice(0, cardBlock.indexO
 const narrowBarAllowlist = new Map([
   // 능력 게이지 위의 표식 둘 — "이전 값" 눈금과 재능의 한계선. 둘 다 가로 막대 위에
   // 얹는 눈금이라 텍스트 왼쪽에 세우는 강조 레일이 아니다.
-  ["apps/ios/Sources/AbilityGaugeView.swift", 2],
+  ["AbilityGaugeView.swift", 2],
   // 와인드업 미터를 오가는 바늘. 이것도 가로 막대 위의 표식이다.
-  ["apps/ios/Sources/DeliveryControl.swift", 1],
+  ["DeliveryControl.swift", 1],
   // 프롤로그 능력 게이지의 재능 한계 눈금. AbilityGaugeView와 같은 가로 막대 표식이다.
-  ["apps/ios/Sources/HighSchoolPrologueViews.swift", 1],
+  ["HighSchoolPrologueViews.swift", 1],
 ]);
 for (const path of filesUnder(iosSource, new Set([".swift"]))) {
   const relativePath = relative(root, path);
   const source = readFileSync(path, "utf8");
   // 폭이 상수인 얇은 프레임. 진행 막대는 폭을 GeometryReader로 계산하므로 걸리지 않는다.
   const hits = source.match(/\.frame\(width:\s*[1-6]\)/g) ?? [];
-  const allowed = narrowBarAllowlist.get(relativePath) ?? 0;
+  const allowed = narrowBarAllowlist.get(path.split("/").pop()) ?? 0;
   if (hits.length > allowed) {
     failures.push(
       `${relativePath}: 얇은 세로 막대 ${hits.length}개(허용 ${allowed}). 좌측 강조 레일은 쓰지 않는다(DOC-19 §7.2)`
@@ -143,36 +158,36 @@ for (const path of filesUnder(iosSource, new Set([".swift"]))) {
 const contractChecks = [
   // 유료앱 권한 모델과 iOS 출고 규격. 되돌아가면 릴리스 빌드가 다시 빈 화면이 된다.
   // 시즌 등판 기록이 화면에서 사라지면 3주 건너뛰기가 다시 커리어를 증발시킨다.
-  ["apps/ios/Sources/RecordView.swift", "gameLines"],
-  ["apps/ios/Sources/AppShell.swift", "gameLines"],
-  ["apps/ios/Sources/CareerBootstrap.swift", "source: .purchase"],
-  ["apps/ios/Sources/MobileCareerStore.swift", "case needsSetup"],
-  ["apps/ios/Sources/PitchSession.swift", "engine.submitPitch"],
-  ["apps/ios/Sources/CareerFlowView.swift", "PitchView(session: session"],
-  ["apps/ios/Sources/DesignSystem.swift", "minimumTapTarget"],
+  [iosSourceLabel("RecordView.swift"), "gameLines"],
+  [iosSourceLabel("AppShell.swift"), "gameLines"],
+  [iosSourceLabel("CareerBootstrap.swift"), "source: .purchase"],
+  [iosSourceLabel("MobileCareerStore.swift"), "case needsSetup"],
+  [iosSourceLabel("PitchSession.swift"), "engine.submitPitch"],
+  [iosSourceLabel("CareerFlowView.swift"), "PitchView(session: session"],
+  [iosSourceLabel("DesignSystem.swift"), "minimumTapTarget"],
   ["apps/ios/project.yml", "UILaunchScreen"],
   ["apps/ios/project.yml", "UISupportedInterfaceOrientations"],
   // 5위권 작업(DOC-IOS-TOP)의 계약. 되돌아가면 손맛·소리·환생 루프가 조용히 사라진다.
-  ["apps/ios/Sources/DeliveryControl.swift", "autoRelease"],
-  ["apps/ios/Sources/GameAudio.swift", ".mixWithOthers"],
-  ["apps/ios/Sources/GameAudio.swift", "nonisolated static func makeSourceNode"],
-  ["apps/ios/Sources/HighSchoolCareerStore+Rebirth.swift", "nextInheritance"],
-  ["apps/ios/Sources/HighSchoolCareerView.swift", "case .legacy:"],
-  ["apps/ios/Sources/AchievementStore.swift", "isGameCenterAuthenticated"],
-  ["apps/ios/Sources/SettingsView.swift", "자동 릴리스"],
+  [iosSourceLabel("DeliveryControl.swift"), "autoRelease"],
+  [iosSourceLabel("GameAudio.swift"), ".mixWithOthers"],
+  [iosSourceLabel("GameAudio.swift"), "nonisolated static func makeSourceNode"],
+  [iosSourceLabel("HighSchoolCareerStore+Rebirth.swift"), "nextInheritance"],
+  [iosSourceLabel("HighSchoolCareerView.swift"), "case .legacy:"],
+  [iosSourceLabel("AchievementStore.swift"), "isGameCenterAuthenticated"],
+  [iosSourceLabel("SettingsView.swift"), "자동 릴리스"],
   // 다크 고정과 중계 그래픽 계약. 큰 숫자·라임 알약·눈썹 라벨이 이 앱의 얼굴이다.
-  ["apps/ios/Sources/BaseballApp.swift", "preferredColorScheme(.dark)"],
-  ["apps/ios/Sources/DesignSystem.swift", "actionInk"],
-  ["apps/ios/Sources/DesignSystem.swift", "struct StatTile"],
-  ["apps/ios/Sources/DesignSystem.swift", "struct PrimaryPill"],
-  ["apps/ios/Sources/DesignSystem.swift", "heroNumeral"],
-  ["apps/ios/Sources/DesignSystem.swift", "func eyebrowStyle"],
+  [iosSourceLabel("BaseballApp.swift"), "preferredColorScheme(.dark)"],
+  [iosSourceLabel("DesignSystem.swift"), "actionInk"],
+  [iosSourceLabel("DesignSystem.swift"), "struct StatTile"],
+  [iosSourceLabel("DesignSystem.swift"), "struct PrimaryPill"],
+  [iosSourceLabel("DesignSystem.swift"), "heroNumeral"],
+  [iosSourceLabel("DesignSystem.swift"), "func eyebrowStyle"],
   // 승부 5초. 결과가 텍스트 카드로만 돌아가던 상태로 되돌아가면 이 게임의 클립이 사라진다.
-  ["apps/ios/Sources/PitchDramaView.swift", "drawFieldShot"],
-  ["apps/ios/Sources/PitchDramaView.swift", "drawImpact"],
-  ["apps/ios/Sources/PitchView.swift", "PitchDramaView("],
+  [iosSourceLabel("PitchDramaView.swift"), "drawFieldShot"],
+  [iosSourceLabel("PitchDramaView.swift"), "drawImpact"],
+  [iosSourceLabel("PitchView.swift"), "PitchDramaView("],
   // A안 카드 언어(DOC-19 §7.2): 의미색이 붙은 것만 면을 갖는다.
-  ["apps/ios/Sources/DesignSystem.swift", "var carriesSurface: Bool"],
+  [iosSourceLabel("DesignSystem.swift"), "var carriesSurface: Bool"],
   ["docs/docs/19_baseball_sim_visual_direction.md", "## 7. iOS 화면 언어"],
   ["apps/ios/Sources/Assets.xcassets/AppIcon.appiconset/Contents.json", '"value" : "tinted"'],
   [".github/workflows/ci.yml", "xcodebuild"],
@@ -230,9 +245,13 @@ for (const [path, expected] of contractChecks) {
 
 // 커리어 생성·복원이 다시 빌드 구성에 따라 갈리면 릴리스 빌드에서만 게임이 열리지 않는
 // 결함(DOC-IOS-PAID §1.2 D1)이 되살아난다. 시뮬레이터 QA가 배포 빌드를 대표하려면 같은 경로여야 한다.
-const careerStoreSource = readFileSync(join(root, "apps/ios/Sources/MobileCareerStore.swift"), "utf8");
-if (/#if\s+!?DEBUG/.test(careerStoreSource)) {
-  failures.push("apps/ios/Sources/MobileCareerStore.swift: 커리어 생성·복원이 빌드 구성으로 갈림");
+const careerStoreSource = readFileSync(iosSourceFile("MobileCareerStore.swift"), "utf8");
+const careerCreateRestoreSource = careerStoreSource.replace(
+  /#if DEBUG[\s\S]*?func installReviewImprovementFixtureForUITesting[\s\S]*?#endif/g,
+  ""
+);
+if (/#if\s+!?DEBUG/.test(careerCreateRestoreSource)) {
+  failures.push(`${iosSourceLabel("MobileCareerStore.swift")}: 커리어 생성·복원이 빌드 구성으로 갈림`);
 }
 
 const mainSource = readFileSync(join(root, "apps/windows/src/main.tsx"), "utf8");

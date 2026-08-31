@@ -252,8 +252,8 @@ function readCatalog(catalogPath) {
 function makeSchema() {
   const { entries, missingRoots } = makeEntries();
   const catalogPaths = [
-    join(root, "apps/ios/Sources/Localization/Localizable.xcstrings"),
-    join(root, "apps/ios/Sources/Localization/GameContent.xcstrings"),
+    join(root, "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings"),
+    join(root, "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings"),
   ];
   const catalogs = catalogPaths.filter(existsSync).flatMap(readCatalog);
   const sourceSnapshot = hash(JSON.stringify(entries));

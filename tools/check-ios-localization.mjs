@@ -348,9 +348,9 @@ function validateCatalogs(schema) {
 
 function validateInfoPlist() {
   const failures = [];
-  const ko = parseInfoPlistStrings(join(root, "apps/ios/Sources/Localization/ko.lproj/InfoPlist.strings"));
-  const en = parseInfoPlistStrings(join(root, "apps/ios/Sources/Localization/en.lproj/InfoPlist.strings"));
-  const ja = parseInfoPlistStrings(join(root, "apps/ios/Sources/Localization/ja.lproj/InfoPlist.strings"));
+  const ko = parseInfoPlistStrings(join(root, "apps/ios/Sources/Presentation/Localization/ko.lproj/InfoPlist.strings"));
+  const en = parseInfoPlistStrings(join(root, "apps/ios/Sources/Presentation/Localization/en.lproj/InfoPlist.strings"));
+  const ja = parseInfoPlistStrings(join(root, "apps/ios/Sources/Presentation/Localization/ja.lproj/InfoPlist.strings"));
   if (!ko.CFBundleDisplayName) failures.push("ko InfoPlist.strings is missing CFBundleDisplayName");
   if (!en.CFBundleDisplayName) failures.push("en InfoPlist.strings is missing CFBundleDisplayName");
   if (!ja.CFBundleDisplayName) failures.push("ja InfoPlist.strings is missing CFBundleDisplayName");
