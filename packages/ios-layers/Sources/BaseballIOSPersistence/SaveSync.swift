@@ -1,8 +1,9 @@
 import Foundation
+import BaseballIOSDomain
 
 /// SaveSync의 원격 거울 경계. 운영에서는 iCloud KVS를 그대로 쓰고, 테스트에서는
 /// entitlement가 필요 없는 메모리 저장소를 주입한다.
-protocol SaveSyncRemoteStoring: AnyObject {
+public protocol SaveSyncRemoteStoring: AnyObject {
     func data(forKey key: String) -> Data?
     func set(_ value: Any?, forKey key: String)
     func removeObject(forKey key: String)
@@ -22,14 +23,14 @@ extension NSUbiquitousKeyValueStore: SaveSyncRemoteStoring {}
 ///
 /// 충돌은 `revision`이 큰 쪽이 이긴다. 로컬에는 직전 두 세대도 함께 남겨, 현재 파일과
 /// iCloud 사본을 모두 읽지 못하더라도 마지막 정상 세이브로 자동 복구한다.
-struct SaveSync {
-    enum ReadSource: Equatable {
+public struct SaveSync {
+    public enum ReadSource: Equatable {
         case local
         case remote
         case backup
     }
 
-    enum RecoveryRead: Equatable {
+    public enum RecoveryRead: Equatable {
         /// 로컬·iCloud·백업 어디에도 저장 바이트가 없다.
         case missing
         /// 리비전을 해석할 수 있는 정상 후보다.
@@ -40,11 +41,11 @@ struct SaveSync {
     }
 
     /// 저장 파일 이름이자 iCloud 키.
-    let key: String
+    public let key: String
 
     private let store: any SaveSyncRemoteStoring
 
-    init(
+    public init(
         key: String,
         store: any SaveSyncRemoteStoring = NSUbiquitousKeyValueStore.default
     ) {
@@ -81,7 +82,7 @@ struct SaveSync {
 
     /// 현재 로컬 파일을 두 세대까지 보존한 뒤 새 값을 원자적으로 쓰고 iCloud에도 올린다.
     @discardableResult
-    func write(_ data: Data) -> Bool {
+    public func write(_ data: Data) -> Bool {
         do {
             if let current = try? Data(contentsOf: fileURL), current != data {
                 try preserveAsNewestBackup(current)
@@ -95,7 +96,7 @@ struct SaveSync {
         return true
     }
 
-    func clear() {
+    public func clear() {
         try? FileManager.default.removeItem(at: fileURL)
         discardRecoveryCopies()
         store.removeObject(forKey: key)
@@ -103,7 +104,7 @@ struct SaveSync {
     }
 
     /// 명시적 전체 삭제가 성공한 뒤 옛 세대가 다시 살아나지 않게 복구용 사본만 지운다.
-    func discardRecoveryCopies() {
+    public func discardRecoveryCopies() {
         for url in backupURLs + [unreadableLocalURL, unreadableRemoteURL] {
             try? FileManager.default.removeItem(at: url)
         }
@@ -116,7 +117,7 @@ struct SaveSync {
     /// - Parameter revision: 저장된 데이터에서 리비전을 뽑는 함수. 뽑지 못하면 그 후보는 진다.
     /// - Parameter conflictPriority: 같은 리비전에서 삭제 묘비처럼 반드시 이겨야 하는
     ///   의미 우선순위. 같은 우선순위끼리는 raw data의 사전순으로 결정론적으로 수렴한다.
-    func read(
+    public func read(
         revision: (Data) -> UInt64?,
         conflictPriority: (Data) -> Int = { _ in 0 }
     ) -> Data? {
@@ -129,7 +130,7 @@ struct SaveSync {
     /// 로컬·iCloud·두 백업을 한 번에 판정한다. `revision`을 뽑을 수 없는 후보는 손상 또는
     /// 미지원 스키마로 보고 승자 후보에서 제외한다. 정상 후보가 있으면 가장 높은 리비전을
     /// 현재 로컬과 iCloud에 되심되, 덮기 전 읽을 수 없던 원본은 별도 복구 사본으로 보존한다.
-    func readRecovering(
+    public func readRecovering(
         revision: (Data) -> UInt64?,
         conflictPriority: (Data) -> Int = { _ in 0 }
     ) -> RecoveryRead {
@@ -196,7 +197,7 @@ struct SaveSync {
     /// A decodable revision always beats an undecodable candidate. Equal revisions first use the
     /// caller's semantic priority (tombstone > live), then choose the lexicographically greater
     /// byte sequence. The final tie-break is independent of device or read direction.
-    static func preferredData(
+    public static func preferredData(
         local: Data,
         remote: Data,
         revision: (Data) -> UInt64?,
@@ -225,7 +226,7 @@ struct SaveSync {
     }
 
     /// 다른 기기에서 진행이 올라왔을 때 알림을 받는다. 화면이 이 신호로 상태를 다시 읽는다.
-    static func observeRemoteChanges(
+    public static func observeRemoteChanges(
         _ handler: @escaping @MainActor @Sendable () -> Void
     ) -> NSObjectProtocol {
         NotificationCenter.default.addObserver(
@@ -238,7 +239,7 @@ struct SaveSync {
     }
 
     /// 앱 시작 때 한 번 호출해 iCloud 쪽 최신값을 끌어온다.
-    static func prime() {
+    public static func prime() {
         NSUbiquitousKeyValueStore.default.synchronize()
     }
 }

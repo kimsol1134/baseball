@@ -3,7 +3,7 @@ import Foundation
 /// 알 수 없는 원소를 통과시키기 위한 자리 표시자. 값은 쓰지 않는다.
 private struct AnyCodableSkip: Codable {}
 
-enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
+public enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
     /// 유일하게 **하루 안에 끝낼 수 없는** 목표.
     ///
     /// 예전 후보 8종은 전부 한 세션에 채워졌다 — 실제로 첫 회차 드래프트가 끝나는 시점에
@@ -20,7 +20,7 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
     case sequenceMasteryTriggered = "sequence_mastery_triggered"
     case proWeeksAdvanced = "pro_weeks_advanced"
 
-    var title: String {
+    public var title: String {
         switch self {
         case .playedOnTwoDays: "서로 다른 두 날에 던지기"
         case .dailyInningCompleted: "종료된 이전 목표"
@@ -34,7 +34,7 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    var nextAction: String {
+    public var nextAction: String {
         switch self {
         case .playedOnTwoDays: "오늘 한 경기, 다른 날 한 경기. 고교·프로 어느 쪽이든 됩니다."
         case .dailyInningCompleted: "기능 종료로 완료 처리된 목표입니다."
@@ -48,7 +48,7 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    var defaultTarget: Int {
+    public var defaultTarget: Int {
         switch self {
         case .dailyInningCompleted, .nextRunStarted, .pledgeSelected, .differentSchoolSelected: 1
         case .playedOnTwoDays: 2
@@ -58,11 +58,11 @@ enum WeeklyTaskKind: String, Codable, CaseIterable, Sendable {
     }
 }
 
-struct WeeklyTask: Codable, Equatable, Identifiable, Sendable {
-    let id: String
-    let kind: WeeklyTaskKind
-    let target: Int
-    var progress: Int
+public struct WeeklyTask: Codable, Equatable, Identifiable, Sendable {
+    public let id: String
+    public let kind: WeeklyTaskKind
+    public let target: Int
+    public var progress: Int
 
     /// 모르는 목표 종류를 만나면 **그 항목만** 버린다.
     ///
@@ -70,7 +70,7 @@ struct WeeklyTask: Codable, Equatable, Identifiable, Sendable {
     /// 다른 기기는 `SaveRecord` 디코딩이 통째로 실패해 **주간 노트·누적 스탬프·처리
     /// 영수증 원장·revision을 전부 잃는다.** 영수증 원장이 비면 같은 행동이 두 번
     /// 반영될 수도 있다. 목표 종류는 앞으로도 계속 늘 것이므로 이번 한 번의 문제가 아니다.
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         target = try container.decode(Int.self, forKey: .target)
@@ -82,31 +82,31 @@ struct WeeklyTask: Codable, Equatable, Identifiable, Sendable {
         kind = known
     }
 
-    init(id: String, kind: WeeklyTaskKind, target: Int, progress: Int) {
+    public init(id: String, kind: WeeklyTaskKind, target: Int, progress: Int) {
         self.id = id
         self.kind = kind
         self.target = target
         self.progress = progress
     }
 
-    var isCompleted: Bool { progress >= target }
-    var boundedProgress: Int { min(target, max(0, progress)) }
+    public var isCompleted: Bool { progress >= target }
+    public var boundedProgress: Int { min(target, max(0, progress)) }
 }
 
 /// 모르는 목표 종류를 만났다는 신호. 보드 디코딩이 이 항목만 건너뛰게 한다.
-enum WeeklyTaskDecodingError: Error {
+public enum WeeklyTaskDecodingError: Error {
     case unknownKind(String)
 }
 
-struct WeeklyProgram: Codable, Equatable, Sendable {
-    let weekKey: String
-    var tasks: [WeeklyTask]
-    var completedTaskIDs: Set<String>
-    var claimed: Bool
+public struct WeeklyProgram: Codable, Equatable, Sendable {
+    public let weekKey: String
+    public var tasks: [WeeklyTask]
+    public var completedTaskIDs: Set<String>
+    public var claimed: Bool
 
     /// 알 수 없는 항목은 빼고 나머지는 살린다. 보드가 세 칸이 아니게 되더라도
     /// **스탬프·영수증·revision을 지키는 쪽**이 언제나 낫다.
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         weekKey = try container.decode(String.self, forKey: .weekKey)
         completedTaskIDs = try container.decode(Set<String>.self, forKey: .completedTaskIDs)
@@ -124,30 +124,30 @@ struct WeeklyProgram: Codable, Equatable, Sendable {
         tasks = decoded
     }
 
-    init(weekKey: String, tasks: [WeeklyTask], completedTaskIDs: Set<String>, claimed: Bool) {
+    public init(weekKey: String, tasks: [WeeklyTask], completedTaskIDs: Set<String>, claimed: Bool) {
         self.weekKey = weekKey
         self.tasks = tasks
         self.completedTaskIDs = completedTaskIDs
         self.claimed = claimed
     }
 
-    var completedCount: Int { tasks.filter { completedTaskIDs.contains($0.id) }.count }
-    var isRewardReady: Bool { completedCount >= 2 }
-    var isPerfect: Bool { completedCount == tasks.count && !tasks.isEmpty }
+    public var completedCount: Int { tasks.filter { completedTaskIDs.contains($0.id) }.count }
+    public var isRewardReady: Bool { completedCount >= 2 }
+    public var isPerfect: Bool { completedCount == tasks.count && !tasks.isEmpty }
 
-    var soleRemainingTask: WeeklyTask? {
+    public var soleRemainingTask: WeeklyTask? {
         let remaining = tasks.filter { !completedTaskIDs.contains($0.id) }
         return remaining.count == 1 ? remaining[0] : nil
     }
 
     /// 보상까지 하나만 더 필요한 순간에 직접 안내할 행동.
-    var nextRewardTask: WeeklyTask? {
+    public var nextRewardTask: WeeklyTask? {
         guard completedCount == 1 else { return nil }
         return tasks.first { !completedTaskIDs.contains($0.id) }
     }
 
     @discardableResult
-    mutating func record(_ kind: WeeklyTaskKind, amount: Int = 1) -> Bool {
+    public mutating func record(_ kind: WeeklyTaskKind, amount: Int = 1) -> Bool {
         guard amount > 0, let index = tasks.firstIndex(where: { $0.kind == kind }) else { return false }
         let wasCompleted = tasks[index].isCompleted
         tasks[index].progress = min(tasks[index].target, tasks[index].progress + amount)
@@ -155,7 +155,7 @@ struct WeeklyProgram: Codable, Equatable, Sendable {
         return !wasCompleted && tasks[index].isCompleted
     }
 
-    mutating func claimStamp(now: Date) -> WeeklyProgramStamp? {
+    public mutating func claimStamp(now: Date) -> WeeklyProgramStamp? {
         guard isRewardReady, !claimed else { return nil }
         claimed = true
         return WeeklyProgramStamp(
@@ -165,25 +165,25 @@ struct WeeklyProgram: Codable, Equatable, Sendable {
     }
 }
 
-struct WeeklyProgramEligibility: Codable, Equatable, Sendable {
-    let hasHighSchoolCareer: Bool
+public struct WeeklyProgramEligibility: Codable, Equatable, Sendable {
+    public let hasHighSchoolCareer: Bool
     /// 지금 보드가 요구하는 두 경기를 실제 남은 일정에서 치를 수 있는가.
-    let remainingImportantGames: Int
+    public let remainingImportantGames: Int
     /// 8장 완결 전까지 실제로 넘길 수 있는 이야기 장 수.
-    let remainingChapterAdvances: Int
-    let canStartNextRun: Bool
-    let canSelectPledge: Bool
-    let canChooseDifferentSchool: Bool
-    let hasProCareer: Bool
+    public let remainingChapterAdvances: Int
+    public let canStartNextRun: Bool
+    public let canSelectPledge: Bool
+    public let canChooseDifferentSchool: Bool
+    public let hasProCareer: Bool
 
-    var signature: String {
+    public var signature: String {
         let flags = [hasHighSchoolCareer, canStartNextRun, canSelectPledge,
                      canChooseDifferentSchool, hasProCareer]
             .map { $0 ? "1" : "0" }.joined()
         return "\(flags)|g\(max(0, remainingImportantGames))|c\(max(0, remainingChapterAdvances))"
     }
 
-    init(
+    public init(
         hasHighSchoolCareer: Bool,
         remainingImportantGames: Int,
         remainingChapterAdvances: Int,
@@ -203,42 +203,61 @@ struct WeeklyProgramEligibility: Codable, Equatable, Sendable {
 
 }
 
-struct WeeklyProgramStamp: Codable, Equatable, Identifiable, Sendable {
-    var id: String { "weekly-\(weekKey)" }
-    let weekKey: String
-    let completedTaskCount: Int
-    let perfect: Bool
-    let earnedAt: Date
+public struct WeeklyProgramStamp: Codable, Equatable, Identifiable, Sendable {
+    public var id: String { "weekly-\(weekKey)" }
+    public let weekKey: String
+    public let completedTaskCount: Int
+    public let perfect: Bool
+    public let earnedAt: Date
+
+    public init(weekKey: String, completedTaskCount: Int, perfect: Bool, earnedAt: Date) {
+        self.weekKey = weekKey
+        self.completedTaskCount = completedTaskCount
+        self.perfect = perfect
+        self.earnedAt = earnedAt
+    }
 }
 
-struct WeeklyProgramReward: Equatable, Sendable {
-    let id: String
-    let weekKey: String
-    let soulPoints: Int
+public struct WeeklyProgramReward: Equatable, Sendable {
+    public let id: String
+    public let weekKey: String
+    public let soulPoints: Int
 
-    static func reward(for weekKey: String) -> WeeklyProgramReward {
+    public init(id: String, weekKey: String, soulPoints: Int) {
+        self.id = id
+        self.weekKey = weekKey
+        self.soulPoints = soulPoints
+    }
+
+    public static func reward(for weekKey: String) -> WeeklyProgramReward {
         WeeklyProgramReward(id: "weekly-\(weekKey)", weekKey: weekKey, soulPoints: 15)
     }
 }
 
 /// 주간 보상이 4주 획득 경제에서 차지하는 몫을 정수로 재현한다. 대표 회차의 실제
 /// `nextInheritance` 보상과 함께 테스트해 최초 25점이 가드레일을 넘는지 판단한다.
-struct WeeklyEconomyProjection: Equatable {
-    let weeks: Int
-    let ordinaryRunSoulPerWeek: Int
-    let weeklyReward: Int
+public struct WeeklyEconomyProjection: Equatable {
+    public let weeks: Int
+    public let ordinaryRunSoulPerWeek: Int
+    public let weeklyReward: Int
 
-    var ordinarySoul: Int { max(0, weeks) * max(0, ordinaryRunSoulPerWeek) }
-    var weeklySoul: Int { max(0, weeks) * max(0, weeklyReward) }
-    var totalSoul: Int { ordinarySoul + weeklySoul }
-    var weeklySharePermille: Int {
+    public init(weeks: Int, ordinaryRunSoulPerWeek: Int, weeklyReward: Int) {
+        self.weeks = weeks
+        self.ordinaryRunSoulPerWeek = ordinaryRunSoulPerWeek
+        self.weeklyReward = weeklyReward
+    }
+
+    public var ordinarySoul: Int { max(0, weeks) * max(0, ordinaryRunSoulPerWeek) }
+    public var weeklySoul: Int { max(0, weeks) * max(0, weeklyReward) }
+    public var totalSoul: Int { ordinarySoul + weeklySoul }
+    public var weeklySharePermille: Int {
         guard totalSoul > 0 else { return 0 }
         return weeklySoul * 1_000 / totalSoul
     }
 }
 
-enum WeeklyProgramRules {
-    static func make(
+public enum WeeklyProgramRules {
+    public static func make(
         weekKey: String,
         stableUserID: String,
         eligibility: WeeklyProgramEligibility
@@ -267,7 +286,7 @@ enum WeeklyProgramRules {
     /// that became impossible are replaced, using the same stable ranking as initial generation.
     /// Retired unfinished goals are replaced first. If no replacement exists, they are excused so
     /// an update cannot leave the player with an impossible contract.
-    static func reconciling(
+    public static func reconciling(
         _ existing: WeeklyProgram,
         stableUserID: String,
         eligibility: WeeklyProgramEligibility
@@ -340,7 +359,7 @@ enum WeeklyProgramRules {
         }
     }
 
-    static func eligibleKinds(_ eligibility: WeeklyProgramEligibility) -> [WeeklyTaskKind] {
+    public static func eligibleKinds(_ eligibility: WeeklyProgramEligibility) -> [WeeklyTaskKind] {
         var result: [WeeklyTaskKind] = []
         if eligibility.hasHighSchoolCareer {
             if eligibility.remainingImportantGames >= WeeklyTaskKind.importantGamesCompleted.defaultTarget {

@@ -1,12 +1,12 @@
 import Foundation
 import SimulationCore
 
-enum RunPledgeTier: String, Codable, CaseIterable {
+public enum RunPledgeTier: String, Codable, CaseIterable {
     case safe
     case bold
     case legendary
 
-    var rewardPermille: Int {
+    public var rewardPermille: Int {
         switch self {
         case .safe: 100
         case .bold: 200
@@ -14,7 +14,7 @@ enum RunPledgeTier: String, Codable, CaseIterable {
         }
     }
 
-    var title: String {
+    public var title: String {
         switch self {
         case .safe: "안전"
         case .bold: "도전"
@@ -23,16 +23,16 @@ enum RunPledgeTier: String, Codable, CaseIterable {
     }
 }
 
-struct RunPledgeProgress: Equatable {
-    let current: Int
-    let target: Int
-    let achieved: Bool
-    let line: String
+public struct RunPledgeProgress: Equatable {
+    public let current: Int
+    public let target: Int
+    public let achieved: Bool
+    public let line: String
     /// Compound predicates can supply the least-complete condition explicitly. Without this,
     /// a four-game goal with badly missed control/health would incorrectly look 99.9% complete.
-    let unachievedRatioPermille: Int?
+    public let unachievedRatioPermille: Int?
 
-    init(
+    public init(
         current: Int,
         target: Int,
         achieved: Bool,
@@ -46,7 +46,7 @@ struct RunPledgeProgress: Equatable {
         self.unachievedRatioPermille = unachievedRatioPermille
     }
 
-    var ratioPermille: Int {
+    public var ratioPermille: Int {
         guard target > 0 else { return achieved ? 1_000 : 0 }
         // Some pledges have a second condition that is not represented by the
         // numeric numerator (for example, four games *and* a walk limit). Keep
@@ -60,30 +60,41 @@ struct RunPledgeProgress: Equatable {
     }
 
     /// Event properties named `ratio` use the analytics-standard normalized 0...1 range.
-    var ratio: Double { Double(ratioPermille) / 1_000 }
+    public var ratio: Double { Double(ratioPermille) / 1_000 }
 }
 
-struct RunPledgeContext {
-    let state: HighSchoolCareerSnapshot
-    let rivalLedger: HighSchoolCareerStore.RivalLedger
+public struct RunPledgeContext {
+    public let state: HighSchoolCareerSnapshot
+    public let rivalLedger: RivalLedger
+
+    public init(state: HighSchoolCareerSnapshot, rivalLedger: RivalLedger) {
+        self.state = state
+        self.rivalLedger = rivalLedger
+    }
 }
 
-struct NextRunIntent: Codable, Equatable {
-    let pledgeID: String
-    let sourceLifeNumber: Int
-    let reason: String
+public struct NextRunIntent: Codable, Equatable {
+    public let pledgeID: String
+    public let sourceLifeNumber: Int
+    public let reason: String
+
+    public init(pledgeID: String, sourceLifeNumber: Int, reason: String) {
+        self.pledgeID = pledgeID
+        self.sourceLifeNumber = sourceLifeNumber
+        self.reason = reason
+    }
 }
 
 /// Player-facing strategy families used by the awakening pledge. Every awakening belongs to
 /// exactly one family, so choosing across families is a visible, steerable goal rather than a
 /// duplicate of an outing-stat pledge.
-enum RunPledgeAwakeningFamily: String, CaseIterable {
+public enum RunPledgeAwakeningFamily: String, CaseIterable {
     case body
     case command
     case breaking
     case game
 
-    var title: String {
+    public var title: String {
         switch self {
         case .body: "힘·체력"
         case .command: "제구"
@@ -94,28 +105,28 @@ enum RunPledgeAwakeningFamily: String, CaseIterable {
 }
 
 /// A run pledge is behavior plus presentation. Only its stable `id` is persisted.
-struct RunPledge: Identifiable, Equatable {
-    let id: String
-    let tier: RunPledgeTier
-    let title: String
-    let detail: String
-    let rewardPermille: Int
-    let eligibility: (HighSchoolCareerSnapshot) -> Bool
-    let progress: (RunPledgeContext) -> RunPledgeProgress
+public struct RunPledge: Identifiable, Equatable {
+    public let id: String
+    public let tier: RunPledgeTier
+    public let title: String
+    public let detail: String
+    public let rewardPermille: Int
+    public let eligibility: (HighSchoolCareerSnapshot) -> Bool
+    public let progress: (RunPledgeContext) -> RunPledgeProgress
 
-    static func == (lhs: RunPledge, rhs: RunPledge) -> Bool { lhs.id == rhs.id }
+    public static func == (lhs: RunPledge, rhs: RunPledge) -> Bool { lhs.id == rhs.id }
 
     /// Computed to avoid sharing closure-bearing values across concurrency domains.
     /// IDs and rules are constants, so each evaluation is still deterministic.
-    static let legacyRulesVersion = 1
-    static let currentRulesVersion = 2
+    public static let legacyRulesVersion = 1
+    public static let currentRulesVersion = 2
     /// An intent stores a stable ID but the next player always chooses from the newest catalog.
     /// Keep its reason version-neutral so an old 40-K contract never sits under a new 5-K title.
-    static let retryIntentReason = "지난 고교 3년에서 아쉽게 놓친 목표입니다."
+    public static let retryIntentReason = "지난 고교 3년에서 아쉽게 놓친 목표입니다."
 
     /// The selectable v2 catalog. Older in-progress saves are resolved through `legacyV1` below;
     /// stable IDs alone must never silently rewrite a promise already made to the player.
-    static var all: [RunPledge] { [
+    public static var all: [RunPledge] { [
         make("get_drafted", .safe, "이름이 불린다", "드래프트에서 이름이 불린다.") { context in
             let achieved = context.state.draftResult?.outcome == .drafted
             return .init(current: achieved ? 1 : 0, target: 1, achieved: achieved,
@@ -190,7 +201,7 @@ struct RunPledge: Identifiable, Equatable {
 
     /// Frozen launch contracts. These four IDs shipped before tiers and calibration existed;
     /// their 150‰ reward and predicates remain authoritative for an already active v1 save.
-    static var legacyV1: [RunPledge] { [
+    public static var legacyV1: [RunPledge] { [
         make("strikeout_master", .bold, "시즌 40탈삼진", "3년 동안 직접 잡는 탈삼진 40개.", rewardPermille: 150) { context in
             let value = context.state.performance.strikeouts
             return .init(current: value, target: 40, achieved: value >= 40, line: "탈삼진 \(value)/40")
@@ -217,13 +228,13 @@ struct RunPledge: Identifiable, Equatable {
         },
     ] }
 
-    static func pledge(id: String, rulesVersion: Int = currentRulesVersion) -> RunPledge? {
+    public static func pledge(id: String, rulesVersion: Int = currentRulesVersion) -> RunPledge? {
         let catalog = rulesVersion <= legacyRulesVersion ? legacyV1 : all
         return catalog.first { $0.id == id }
     }
 
     /// Exactly three stable options: prior intent first, then safe/build-aligned/stretch coverage.
-    static func options(
+    public static func options(
         careerID: String,
         state: HighSchoolCareerSnapshot,
         intent: NextRunIntent? = nil
@@ -256,7 +267,7 @@ struct RunPledge: Identifiable, Equatable {
     }
 
     /// Compatibility overload for older call sites; new UI should supply the state.
-    static func options(careerID: String) -> [RunPledge] {
+    public static func options(careerID: String) -> [RunPledge] {
         var generator = SplitMix64(seed: seedValue("\(careerID)|pledge-legacy-options"))
         var pool = Array(all.prefix(4))
         for index in pool.indices.reversed() where index > 0 {
@@ -265,17 +276,17 @@ struct RunPledge: Identifiable, Equatable {
         return Array(pool.prefix(3))
     }
 
-    func progress(in context: RunPledgeContext) -> RunPledgeProgress { progress(context) }
+    public func progress(in context: RunPledgeContext) -> RunPledgeProgress { progress(context) }
 
-    func achieved(state: HighSchoolCareerSnapshot, rivalLedger: HighSchoolCareerStore.RivalLedger = .init()) -> Bool {
+    public func achieved(state: HighSchoolCareerSnapshot, rivalLedger: RivalLedger = .init()) -> Bool {
         progress(.init(state: state, rivalLedger: rivalLedger)).achieved
     }
 
-    func progressLine(state: HighSchoolCareerSnapshot, rivalLedger: HighSchoolCareerStore.RivalLedger = .init()) -> String {
+    public func progressLine(state: HighSchoolCareerSnapshot, rivalLedger: RivalLedger = .init()) -> String {
         progress(.init(state: state, rivalLedger: rivalLedger)).line
     }
 
-    func alignmentReason(state: HighSchoolCareerSnapshot) -> String {
+    public func alignmentReason(state: HighSchoolCareerSnapshot) -> String {
         if Self.buildAlignedIDs(state: state).contains(id) {
             switch id {
             case "iron_control", "iron_control_five":
@@ -305,7 +316,7 @@ struct RunPledge: Identifiable, Equatable {
         }
     }
 
-    func accessibilityLabel(
+    public func accessibilityLabel(
         progressLine: String,
         carried: Bool = false,
         status: String? = nil
@@ -315,7 +326,7 @@ struct RunPledge: Identifiable, Equatable {
         return "\(prefix)\(tier.title) 목표, \(title), \(progressLine)\(statusText), 보상 계승 포인트 \(rewardPermille / 10)퍼센트 추가"
     }
 
-    func accessibilityLabel(
+    public func accessibilityLabel(
         progress: RunPledgeProgress,
         carried: Bool = false,
         status: String? = nil
@@ -367,7 +378,7 @@ struct RunPledge: Identifiable, Equatable {
         (state.seasonLog ?? []).filter { $0.played && $0.runsAllowed == 0 }.count
     }
 
-    static func awakeningFamily(for awakening: AwakeningID) -> RunPledgeAwakeningFamily {
+    public static func awakeningFamily(for awakening: AwakeningID) -> RunPledgeAwakeningFamily {
         switch awakening {
         case .explosiveFastball, .risingFourSeam, .ironArm, .lateInningReserve:
             .body
@@ -385,7 +396,7 @@ struct RunPledge: Identifiable, Equatable {
         return min(1_000, max(0, current) * 1_000 / target)
     }
 
-    static func buildAlignedIDs(state: HighSchoolCareerSnapshot) -> Set<String> {
+    public static func buildAlignedIDs(state: HighSchoolCareerSnapshot) -> Set<String> {
         let ratings: [(Int, Set<String>)] = [
             (state.pitcher.command, ["iron_control", "iron_control_five", "evaluation_sixty_five"]),
             (max(state.pitcher.stuff, state.pitcher.movement), ["strikeout_master", "clean_games", "evaluation_seventy_five"]),
