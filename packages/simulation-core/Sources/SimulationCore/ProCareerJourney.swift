@@ -422,6 +422,7 @@ public enum ProDevelopmentFocus: String, Codable, CaseIterable, Sendable {
 public enum ProSeasonBenefitKind: String, Codable, Sendable {
     case developmentHeadStart = "development_head_start"
     case injuryMitigation = "injury_mitigation"
+    case climateStabilization = "climate_stabilization"
 }
 
 public struct ProSeasonBenefit: Codable, Equatable, Sendable {
@@ -480,6 +481,8 @@ public struct ProSeasonSettlement: Codable, Equatable, Identifiable, Sendable {
     public let goalProgressAfter: ProCareerGoalProgress?
     public let goalCompleted: Bool
     public let nextRoute: ProSettlementNextRoute
+    public let arcTitleID: String?
+    public let arcSummaryID: String?
 
     public init(
         id: String,
@@ -507,7 +510,9 @@ public struct ProSeasonSettlement: Codable, Equatable, Identifiable, Sendable {
         goalProgressBefore: ProCareerGoalProgress? = nil,
         goalProgressAfter: ProCareerGoalProgress? = nil,
         goalCompleted: Bool = false,
-        nextRoute: ProSettlementNextRoute
+        nextRoute: ProSettlementNextRoute,
+        arcTitleID: String? = nil,
+        arcSummaryID: String? = nil
     ) {
         self.id = id
         self.season = season
@@ -535,6 +540,8 @@ public struct ProSeasonSettlement: Codable, Equatable, Identifiable, Sendable {
         self.goalProgressAfter = goalProgressAfter
         self.goalCompleted = goalCompleted
         self.nextRoute = nextRoute
+        self.arcTitleID = arcTitleID
+        self.arcSummaryID = arcSummaryID
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -543,6 +550,7 @@ public struct ProSeasonSettlement: Codable, Equatable, Identifiable, Sendable {
         case teamLegacyBefore, teamLegacyAfter, hallOfFameBefore, hallOfFameAfter
         case contractYearsBefore, contractYearsAfter, contractExpectation, contractExpectationActual
         case contractExpectationMet, goalProgressBefore, goalProgressAfter, goalCompleted, nextRoute
+        case arcTitleID, arcSummaryID
     }
 
     public init(from decoder: Decoder) throws {
@@ -575,7 +583,9 @@ public struct ProSeasonSettlement: Codable, Equatable, Identifiable, Sendable {
             goalProgressBefore: try container.decodeIfPresent(ProCareerGoalProgress.self, forKey: .goalProgressBefore),
             goalProgressAfter: try container.decodeIfPresent(ProCareerGoalProgress.self, forKey: .goalProgressAfter),
             goalCompleted: try container.decodeIfPresent(Bool.self, forKey: .goalCompleted) ?? false,
-            nextRoute: try container.decode(ProSettlementNextRoute.self, forKey: .nextRoute)
+            nextRoute: try container.decode(ProSettlementNextRoute.self, forKey: .nextRoute),
+            arcTitleID: try container.decodeIfPresent(String.self, forKey: .arcTitleID),
+            arcSummaryID: try container.decodeIfPresent(String.self, forKey: .arcSummaryID)
         )
     }
 }
@@ -716,6 +726,8 @@ public struct ProCareerJourneyState: Codable, Equatable, Sendable {
     public let offseasonTransition: ProOffseasonTransition?
     public let retirementHonors: [ProRetirementHonor]
     public let migration: ProJourneyMigration
+    /// v5 노화 갈림길에서 회복 연도를 고르면 true. 다음 오프시즌 하락만 완화한다.
+    public let recoveryYearPending: Bool?
 
     public init(
         rulesVersion: Int = 1,
@@ -738,7 +750,8 @@ public struct ProCareerJourneyState: Codable, Equatable, Sendable {
             financeStartsSeason: 1,
             unassignedLegacyAwards: 0,
             financeNoticePending: false
-        )
+        ),
+        recoveryYearPending: Bool? = nil
     ) {
         self.rulesVersion = rulesVersion
         self.activeGoal = activeGoal
@@ -755,6 +768,7 @@ public struct ProCareerJourneyState: Codable, Equatable, Sendable {
         self.offseasonTransition = offseasonTransition
         self.retirementHonors = retirementHonors
         self.migration = migration
+        self.recoveryYearPending = recoveryYearPending
     }
 }
 
@@ -1474,8 +1488,14 @@ public enum ProCareerJourneyRules {
         } else {
             values.append("benefit:none")
         }
+        if journey.recoveryYearPending == true {
+            values.append("recovery_year:1")
+        }
         if let settlement = journey.lastSettlement {
             values.append("settlement:\(settlement.id):\(settlement.season):\(settlement.teamID):stats:\(statsToken(settlement.stats)):awards:\(settlement.newAwardIDs.sorted().joined(separator: ",")):milestones:\(settlement.newMilestoneIDs.sorted().joined(separator: ",")):salary:\(settlement.salaryIncome):merch:\(settlement.merchandiseIncome):fan:\(settlement.fanBefore):\(settlement.fanAfter):legacy:\(settlement.teamLegacyBefore):\(settlement.teamLegacyAfter):hof:\(settlement.hallOfFameBefore):\(settlement.hallOfFameAfter):contract:\(settlement.contractYearsBefore):\(settlement.contractYearsAfter):expectation:\(expectationToken(settlement.contractExpectation)):\(settlement.contractExpectationActual.map(String.init) ?? "none"):\(settlement.contractExpectationMet.map { $0 ? "1" : "0" } ?? "none"):goal-before:\(progressToken(settlement.goalProgressBefore)):goal-after:\(progressToken(settlement.goalProgressAfter)):goal-completed:\(settlement.goalCompleted ? 1 : 0):next:\(settlement.nextRoute.rawValue)")
+            if let arcTitleID = settlement.arcTitleID {
+                values.append("settlement-arc:\(arcTitleID):\(settlement.arcSummaryID ?? "none")")
+            }
             // These fields were appended in Wave 5. Keep the old token intact for legacy
             // settlements so old signed snapshots remain readable, while signing new values
             // makes the stored fan explanation and merchandise tier tamper-evident.

@@ -446,6 +446,7 @@ final class PresentationCopyTokenTests: XCTestCase {
             rawValues: [
                 "extra_bullpen", "catcher_game_plan", "role_meeting", "record_chase",
                 "rival_analysis", "season_finale", "media_opportunity",
+                "form_crisis", "aging_crossroads",
             ]
         )
         assertFamily(
@@ -457,6 +458,7 @@ final class PresentationCopyTokenTests: XCTestCase {
             rawValues: [
                 "opening_statement", "call_up_audition", "major_debut", "record_chase",
                 "role_showdown", "standings_race",
+                "autumn_wild_card", "autumn_semifinal", "autumn_playoff", "autumn_final",
             ]
         )
     }

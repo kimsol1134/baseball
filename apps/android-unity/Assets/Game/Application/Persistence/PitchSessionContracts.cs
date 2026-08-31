@@ -423,8 +423,10 @@ namespace Baseball.Application.Persistence
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (state.Phase != Baseball.Core.Pro.ProCareerPhase.ImportantGame)
                 throw new InvalidOperationException("pitch.pro_not_ready");
-            var situation = ProSituation.For(state.SeasonTrigger, state.Season, state.Week);
-            var scale = DifficultyScale.Pro(state.Season);
+            var situation = ProSituation.For(state.SeasonTrigger, state.Season, state.Week, state.Postseason);
+            var autumnRound = AutumnRound(state.SeasonTrigger);
+            var scale = DifficultyScale.Pro(state.Season)
+                + (autumnRound.HasValue ? ProPostseasonRules.ExtraOffset(autumnRound.Value) : 0);
             var rival = state.CurrentRival;
             var first = Scale(new BatterSnapshot(
                 rival?.Id ?? "pro-rival-" + state.Season,
@@ -437,6 +439,9 @@ namespace Baseball.Application.Persistence
                 5,
                 scale)).ToArray();
             var catcherTrust = Clamp(state.CatcherTrust, 0, 100);
+            var batters = autumnRound.HasValue
+                ? ProPostseasonRules.MaximumBatters(autumnRound.Value)
+                : 4;
             return new PitchScenarioReadModel(
                 PitchScenarioReadModel.CurrentSchemaVersion,
                 "pa-" + state.ProCareerId + "-" + state.Season + "-" + state.Week,
@@ -461,7 +466,7 @@ namespace Baseball.Application.Persistence
                 situation.ScoreDifferential,
                 situation.Leverage,
                 Clamp(state.Fatigue, 0, 100),
-                4,
+                batters,
                 maximumPitches: 48,
                 developmentRulesVersion: state.BalanceVersion ?? 1);
         }
@@ -580,6 +585,15 @@ namespace Baseball.Application.Persistence
         private static int Clamp(int value, int minimum, int maximum) =>
             Math.Min(maximum, Math.Max(minimum, value));
 
+        private static ProAutumnRound? AutumnRound(ProSeasonTrigger? trigger)
+        {
+            if (trigger == ProSeasonTrigger.AutumnWildCard) return ProAutumnRound.WildCard;
+            if (trigger == ProSeasonTrigger.AutumnSemifinal) return ProAutumnRound.Semifinal;
+            if (trigger == ProSeasonTrigger.AutumnPlayoff) return ProAutumnRound.Playoff;
+            if (trigger == ProSeasonTrigger.AutumnFinal) return ProAutumnRound.Final;
+            return null;
+        }
+
         private sealed class ProSituation
         {
             private ProSituation(int inning, int outs, BaserunnerStateSnapshot runners, int scoreDifferential, int leverage, string headline, string detail)
@@ -592,7 +606,7 @@ namespace Baseball.Application.Persistence
             public string Headline { get; }
             public string Detail { get; }
 
-            public static ProSituation For(ProSeasonTrigger? trigger, int season, int week)
+            public static ProSituation For(ProSeasonTrigger? trigger, int season, int week, ProPostseasonState postseason = null)
             {
                 var second = new BaserunnerStateSnapshot(false, true, false, 52);
                 var first = new BaserunnerStateSnapshot(true, false, false, 54);
@@ -605,6 +619,17 @@ namespace Baseball.Application.Persistence
                     case ProSeasonTrigger.RoleShowdown: return new ProSituation(8, 0, first, 1, 900, "보직을 가를 등판", "한 점 앞섬 · 무사 1루");
                     case ProSeasonTrigger.RecordChase: return new ProSituation(7, 0, first, leading ? 2 : -2, 700, "기록이 걸린 등판", leading ? "두 점 앞섬 · 무사 1루" : "두 점 뒤짐 · 무사 1루");
                     case ProSeasonTrigger.StandingsRace: return new ProSituation(9, 0, corners, leading ? 1 : -1, 950, "순위 싸움의 마지막 이닝", leading ? "한 점 앞섬 · 무사 1·2루" : "한 점 뒤짐 · 무사 1·2루");
+                    case ProSeasonTrigger.AutumnWildCard:
+                        var deciding = postseason != null && postseason.GamesPlayed >= 1;
+                        var fourth = postseason != null && postseason.Seed == 4;
+                        string wildDetail;
+                        if (deciding) wildDetail = fourth ? "와일드카드 2차전 · 여기서 지면 가을이 끝난다" : "와일드카드 2차전 · 한 번 더 이기면 준플레이오프";
+                        else if (fourth) wildDetail = "와일드카드 1차전 · 한 승이면 올라간다";
+                        else wildDetail = "와일드카드 1차전 · 두 번을 이겨야 한다";
+                        return new ProSituation(9, 0, corners, leading ? 1 : -1, 960, "와일드카드", wildDetail);
+                    case ProSeasonTrigger.AutumnSemifinal: return new ProSituation(8, 0, corners, leading ? 1 : -1, 970, "준플레이오프 한 판", leading ? "한 점 앞섬 · 무사 1·2루 · 한 판으로 다음이 갈린다" : "한 점 뒤짐 · 무사 1·2루 · 한 판으로 다음이 갈린다");
+                    case ProSeasonTrigger.AutumnPlayoff: return new ProSituation(8, 0, corners, leading ? 1 : -1, 980, "플레이오프 한 판", leading ? "한 점 앞섬 · 무사 1·2루 · 한 판으로 다음이 갈린다" : "한 점 뒤짐 · 무사 1·2루 · 한 판으로 다음이 갈린다");
+                    case ProSeasonTrigger.AutumnFinal: return new ProSituation(9, 0, corners, leading ? 1 : -1, 990, "우승 결정전 한 판", leading ? "한 점 앞섬 · 무사 1·2루 · 한 판으로 우승이 갈린다" : "한 점 뒤짐 · 무사 1·2루 · 한 판으로 우승이 갈린다");
                     default: return new ProSituation(5, 0, second, 1, 720, "시즌 첫 승부처", "한 점 앞섬 · 무사 2루");
                 }
             }

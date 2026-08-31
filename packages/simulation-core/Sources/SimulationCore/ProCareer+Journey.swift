@@ -24,7 +24,8 @@ extension ProCareerEngine {
         settlementAcknowledged: Bool? = nil,
         offseasonTransition: ProOffseasonTransition?? = nil,
         retirementHonors: [ProRetirementHonor]? = nil,
-        migration: ProJourneyMigration? = nil
+        migration: ProJourneyMigration? = nil,
+        recoveryYearPending: Bool?? = nil
     ) -> ProCareerJourneyState {
         ProCareerJourneyState(
             rulesVersion: rulesVersion ?? journey.rulesVersion,
@@ -41,7 +42,8 @@ extension ProCareerEngine {
             settlementAcknowledged: settlementAcknowledged ?? journey.settlementAcknowledged,
             offseasonTransition: offseasonTransition ?? journey.offseasonTransition,
             retirementHonors: retirementHonors ?? journey.retirementHonors,
-            migration: migration ?? journey.migration
+            migration: migration ?? journey.migration,
+            recoveryYearPending: recoveryYearPending ?? journey.recoveryYearPending
         )
     }
 
@@ -77,6 +79,19 @@ extension ProCareerEngine {
         var values = records.filter { $0.contractID != record.contractID }
         values.append(record)
         return values.sorted { $0.contractID < $1.contractID }
+    }
+
+    func autumnRecognitions(state: ProCareerSnapshot) -> [ProCareerRecognition] {
+        guard let postseason = state.postseason else { return [] }
+        return ProPostseasonRules.recognitionIDs(for: postseason).map {
+            ProCareerRecognition(
+                careerID: state.proCareerID,
+                kind: $0 == "pro.autumn.champion" ? .award : .milestone,
+                contentID: $0,
+                season: state.season,
+                teamID: state.team.id
+            )
+        }
     }
 
     func mergeGoalRecord(
@@ -478,7 +493,7 @@ extension ProCareerEngine {
         ) + newlyReachedCareerMilestoneRecognitions(
             state: state,
             completedCareerStats: completedCareerStats
-        )
+        ) + autumnRecognitions(state: state)
         let baseRecognitionMerge = mergeRecognitions(typedAdditions, into: journey.recognitions)
         let completedRecords = ProTeamCareerRecordRules.backfill(
             careerStats: completedCareerStats,
@@ -661,7 +676,19 @@ extension ProCareerEngine {
             goalProgressBefore: goalBefore,
             goalProgressAfter: goalAfter,
             goalCompleted: goalCompleted,
-            nextRoute: nextRoute
+            nextRoute: nextRoute,
+            arcTitleID: ProSeasonArcRules.contentID(
+                for: ProSeasonArcRules.title(
+                    gameLines: state.gameLines ?? [],
+                    postseason: state.postseason
+                )
+            ),
+            arcSummaryID: ProSeasonArcRules.contentID(
+                for: ProSeasonArcRules.title(
+                    gameLines: state.gameLines ?? [],
+                    postseason: state.postseason
+                )
+            )
         )
         let nextJourney = replacingJourney(
             journey,
@@ -897,6 +924,8 @@ extension ProCareerEngine {
                 benefit.focus != nil && benefit.remainingCharges == 1
             case .injuryMitigation:
                 benefit.focus == nil && benefit.remainingCharges == 1
+            case .climateStabilization:
+                benefit.focus == nil && (1...2).contains(benefit.remainingCharges)
             }
             guard validBenefit else {
                 throw SimulationError.invalidProCareer("invalid season benefit")
@@ -1669,7 +1698,9 @@ extension ProCareerEngine {
         }
         let pitcher = ProContractMarketRules.projectedPitcher(
             for: params.state.pitcher,
-            effectiveAge: nextAge
+            effectiveAge: nextAge,
+            proRulesVersion: params.state.proRulesVersion,
+            recoveryYear: journey.recoveryYearPending == true
         )
 
         var transactions = journey.finances.transactions
@@ -1784,8 +1815,10 @@ extension ProCareerEngine {
                 finances: finances,
                 activeSeasonBenefit: .some(activeBenefit),
                 settlementAcknowledged: true,
-                offseasonTransition: .some(nil)
-            ))
+                offseasonTransition: .some(nil),
+                recoveryYearPending: .some(nil)
+            )),
+            postseason: .some(nil)
         )
         let tensions = seasonTensions(for: base)
         let updated = replacing(base, seasonTensions: tensions)

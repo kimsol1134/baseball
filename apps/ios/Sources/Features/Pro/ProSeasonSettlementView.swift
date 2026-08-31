@@ -15,7 +15,10 @@ struct ProSeasonSettlementView: View {
                 KeyArtHeader(
                     art: .stadiumNight,
                     eyebrow: copyResolver.resolve(.journeySettlementEyebrow),
-                    title: copyResolver.resolve(.journeySettlementTitle, arguments: [.integer(settlement.season)]),
+                    title: copyResolver.resolve(
+                        Self.arcTitleKey(settlement.arcTitleID) ?? .journeySettlementTitle,
+                        arguments: [.integer(settlement.season)]
+                    ),
                     accent: BaseballTheme.milestone
                 )
 
@@ -153,6 +156,22 @@ struct ProSeasonSettlementView: View {
 
     private func signed(_ value: Int) -> String {
         value >= 0 ? "+\(value)" : String(value)
+    }
+
+    private static func arcTitleKey(_ id: String?) -> ProUICopyKey? {
+        switch id {
+        case "pro.arc.first_half_ace": .journeyArcFirstHalfAce
+        case "pro.arc.dominant": .journeyArcDominant
+        case "pro.arc.long_tunnel": .journeyArcLongTunnel
+        case "pro.arc.late_recovery": .journeyArcLateRecovery
+        case "pro.arc.autumn_door_closed": .journeyArcAutumnDoorClosed
+        case "pro.arc.autumn_champion": .journeyArcAutumnChampion
+        case "pro.arc.autumn_runner_up": .journeyArcAutumnRunnerUp
+        case "pro.arc.autumn_eliminated": .journeyArcAutumnEliminated
+        case "pro.arc.autumn_unavailable": .journeyArcAutumnUnavailable
+        case "pro.arc.quiet": .journeyArcQuiet
+        default: nil
+        }
     }
 
     private func nextRouteText(_ route: ProSettlementNextRoute) -> String {

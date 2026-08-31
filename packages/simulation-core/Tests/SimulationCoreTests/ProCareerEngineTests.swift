@@ -134,20 +134,31 @@ final class ProCareerEngineTests: XCTestCase {
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
         // 시즌 시작 시 "올해의 세 가지 긴장"이 결정론적으로 생성돼 노출된다.
         XCTAssertEqual(result.snapshot.seasonTensions?.count, 3)
-        var importantWeeks: [Int] = []
+        var regularWeeks: [Int] = []
+        var autumnWeeks: [Int] = []
         var seenTriggers: Set<ProSeasonTrigger> = []
         while result.snapshot.phase != .seasonReview {
             // 구간 라벨은 매 주차 스냅숏에 노출된다.
             XCTAssertNotNil(result.snapshot.seasonSegment)
             if result.snapshot.phase == .importantGame {
-                importantWeeks.append(result.snapshot.week)
+                let trigger = try XCTUnwrap(result.snapshot.seasonTrigger)
+                if ProPostseasonRules.isAutumn(trigger) {
+                    autumnWeeks.append(result.snapshot.week)
+                } else {
+                    regularWeeks.append(result.snapshot.week)
+                }
                 let rival = try XCTUnwrap(result.snapshot.currentRival, "중요 경기에는 라이벌 타자가 있어야 한다")
                 XCTAssertNotEqual(rival.teamID, result.snapshot.team.id, "라이벌은 상대 구단 소속이어야 한다")
-                seenTriggers.insert(try XCTUnwrap(result.snapshot.seasonTrigger))
+                seenTriggers.insert(trigger)
                 result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report(result.snapshot.week)))
-                // 경기 해소 뒤 라이벌/트리거는 정리된다.
-                XCTAssertNil(result.snapshot.currentRival)
-                XCTAssertNil(result.snapshot.seasonTrigger)
+                // 정규 승부와 끝난 가을은 정리된다. 다음 라운드가 남으면 라이벌이 유지된다.
+                if result.snapshot.phase != .importantGame || !ProPostseasonRules.isAutumn(result.snapshot.seasonTrigger) {
+                    XCTAssertNil(result.snapshot.currentRival)
+                    XCTAssertNil(result.snapshot.seasonTrigger)
+                } else {
+                    XCTAssertNotNil(result.snapshot.currentRival)
+                    XCTAssertNotNil(result.snapshot.seasonTrigger)
+                }
             } else if result.snapshot.phase == .seasonDecision {
                 result = try resolvePendingDecision(result)
             } else {
@@ -155,9 +166,9 @@ final class ProCareerEngineTests: XCTestCase {
             }
         }
         // 옛 고정 주차 집합과 정확히 일치하지 않는다.
-        XCTAssertNotEqual(Set(importantWeeks), Set([3, 7, 12, 18, 23]))
-        // 대표 장면만 남겨 한 시즌의 직접 승부를 세 번 이하로 압축한다.
-        XCTAssertTrue((2...3).contains(importantWeeks.count), "시즌 중요 경기 \(importantWeeks.count)회는 2~3 범위를 벗어난다")
+        XCTAssertNotEqual(Set(regularWeeks + autumnWeeks), Set([3, 7, 12, 18, 23]))
+        XCTAssertTrue((1...2).contains(regularWeeks.count), "정규 중요 경기 \(regularWeeks.count)회는 1~2 범위를 벗어난다")
+        XCTAssertLessThanOrEqual(autumnWeeks.count, ProPostseasonRules.maximumPlayerPathGames, "플레이오프 경로는 \(ProPostseasonRules.maximumPlayerPathGames)경기 이하여야 한다")
         XCTAssertGreaterThanOrEqual(seenTriggers.count, 2, "서로 다른 트리거가 섞여야 한다")
         XCTAssertTrue(result.snapshot.milestones.contains("프로 첫 공식 등판"))
         XCTAssertTrue(result.snapshot.milestones.contains("1군 콜업"))
@@ -167,10 +178,15 @@ final class ProCareerEngineTests: XCTestCase {
         var result = try engine.start(startParams(seed: "31"))
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
         for season in 1...5 {
-            var count = 0
+            var regularCount = 0
+            var autumnCount = 0
             while result.snapshot.phase != .seasonReview {
                 if result.snapshot.phase == .importantGame {
-                    count += 1
+                    if ProPostseasonRules.isAutumn(result.snapshot.seasonTrigger) {
+                        autumnCount += 1
+                    } else {
+                        regularCount += 1
+                    }
                     result = try engine.resolveImportantGame(.init(seed: result.nextSeed, state: result.snapshot, report: report(result.snapshot.week)))
                 } else if result.snapshot.phase == .seasonDecision {
                     result = try resolvePendingDecision(result)
@@ -179,7 +195,8 @@ final class ProCareerEngineTests: XCTestCase {
                     result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: plan))
                 }
             }
-            XCTAssertTrue((2...3).contains(count), "시즌 \(season) 중요 경기 \(count)회는 2~3 범위를 벗어난다")
+            XCTAssertTrue((1...2).contains(regularCount), "시즌 \(season) 정규 중요 경기 \(regularCount)회는 1~2 범위를 벗어난다")
+            XCTAssertLessThanOrEqual(autumnCount, ProPostseasonRules.maximumPlayerPathGames, "시즌 \(season) 가을 장면 \(autumnCount)회는 \(ProPostseasonRules.maximumPlayerPathGames)를 넘는다")
             result = try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
             result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: .continueCareer))
         }
@@ -317,6 +334,9 @@ final class ProCareerEngineTests: XCTestCase {
                 ))
             case .seasonDecision:
                 applied = try resolvePendingDecision(applied)
+            case .seasonReview:
+                XCTFail("시즌 결말 승부 없이 결산에 들어갔습니다.")
+                return
             default:
                 XCTFail("다음 직접 승부 전에 예기치 않은 단계 \(applied.snapshot.phase)")
                 return
@@ -471,7 +491,12 @@ final class ProCareerEngineTests: XCTestCase {
             XCTAssertEqual(Set(types).count, ProCareerEngine.maximumSeasonDecisions)
             typesAcrossRuns.formUnion(types)
         }
-        XCTAssertEqual(typesAcrossRuns, Set(ProSeasonDecisionType.allCases.filter { $0 != .mediaOpportunity }))
+        // 슬럼프·노화 사건은 기본 회전 밖에 있다. 카탈로그 결합은 여섯 종류만 본다.
+        let rotationTypes: Set<ProSeasonDecisionType> = [
+            .extraBullpen, .catcherGamePlan, .roleMeeting,
+            .recordChase, .rivalAnalysis, .seasonFinale,
+        ]
+        XCTAssertEqual(typesAcrossRuns, rotationTypes)
     }
 
     func testScheduledDecisionStopsWeeklyAdvanceAndAppliesOnlyConfirmedChoice() throws {
@@ -1284,8 +1309,9 @@ final class ProCareerEngineTests: XCTestCase {
             case .weeklyPlan:
                 if result.snapshot.level == .major { reachedMajor = true }
                 if reachedMajor, result.snapshot.level == .minor { demoted = true }
-                // 1군에 올라가기 전에는 믿음을 쌓고, 올라간 뒤에는 방치한다.
-                let plan: ProWeekPlan = reachedMajor ? .developWeapon : .earnTrust
+                // 1군에 올라가기 전에는 믿음을 쌓고, 올라간 뒤에는 주간 보정을 쌓지 않는다.
+                // developWeapon은 성장과 함께 잘 던진 주의 믿음을 되살리므로 방치가 아니다.
+                let plan: ProWeekPlan = reachedMajor ? .recover : .earnTrust
                 result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: plan))
             case .importantGame:
                 let report: ImportantInningReport = reachedMajor

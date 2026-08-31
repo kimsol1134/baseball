@@ -120,6 +120,8 @@ public enum ProSeasonDecisionType: String, Codable, CaseIterable, Sendable {
     case rivalAnalysis = "rival_analysis"
     case seasonFinale = "season_finale"
     case mediaOpportunity = "media_opportunity"
+    case formCrisis = "form_crisis"
+    case agingCrossroads = "aging_crossroads"
 
     /// The complete decision type catalog. Media is selected by its fixed-slot rule rather than
     /// by the legacy six-type rotation, but remains part of the closed enum for Codable and copy
@@ -127,6 +129,7 @@ public enum ProSeasonDecisionType: String, Codable, CaseIterable, Sendable {
     public static let allCases: [ProSeasonDecisionType] = [
         .extraBullpen, .catcherGamePlan, .roleMeeting,
         .recordChase, .rivalAnalysis, .seasonFinale, .mediaOpportunity,
+        .formCrisis, .agingCrossroads,
     ]
 }
 
@@ -292,6 +295,10 @@ public enum ProSeasonTrigger: String, Codable, Sendable {
     case recordChase = "record_chase"
     case roleShowdown = "role_showdown"
     case standingsRace = "standings_race"
+    case autumnWildCard = "autumn_wild_card"
+    case autumnSemifinal = "autumn_semifinal"
+    case autumnPlayoff = "autumn_playoff"
+    case autumnFinal = "autumn_final"
 }
 
 /// 중요 경기에서 상대하는 라이벌 타자. 구단·시즌·트리거로 풀에서 결정론적으로 선택된다.
@@ -458,8 +465,10 @@ public final class ProCareerSnapshot: Codable, Equatable, Sendable {
     public let pitchLearningProject: PitchLearningProjectSnapshot?
     /// The journey feature is one optional aggregate. A nil value is the frozen v1 save path.
     public let journeyState: ProCareerJourneyState?
-    public init(proCareerID: String, revision: UInt64, phase: ProCareerPhase, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, team: DraftTeamSnapshot, entitlement: ProEntitlementSnapshot, age: Int, season: Int, week: Int, level: ProLevel, role: ProRole, rolePreference: ProRole? = nil, managerTrust: Int, catcherTrust: Int, fatigue: Int, injuryWeeks: Int, serviceYears: Int, militaryCompleted: Bool, contract: ProContractSnapshot?, currentStats: ProSeasonStats, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats], awards: [String], milestones: [String], news: [String], hallOfFameScore: Int?, commitment: String, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger? = nil, currentRival: ProRivalBatter? = nil, seasonTensions: [ProSeasonTension]? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision? = nil, decisionHistory: [ProDecisionRecord]? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int? = nil, pitchLearningProject: PitchLearningProjectSnapshot? = nil, journeyState: ProCareerJourneyState? = nil) {
-        self.proCareerID = proCareerID; self.revision = revision; self.phase = phase; self.identity = identity; self.pitcher = pitcher; self.team = team; self.entitlement = entitlement; self.age = age; self.season = season; self.week = week; self.level = level; self.role = role; self.rolePreference = rolePreference; self.managerTrust = managerTrust; self.catcherTrust = catcherTrust; self.fatigue = fatigue; self.injuryWeeks = injuryWeeks; self.serviceYears = serviceYears; self.militaryCompleted = militaryCompleted; self.contract = contract; self.currentStats = currentStats; self.gameLines = gameLines; self.careerStats = careerStats; self.awards = awards; self.milestones = milestones; self.news = news; self.hallOfFameScore = hallOfFameScore; self.commitment = commitment; self.balanceVersion = balanceVersion; self.proRulesVersion = proRulesVersion; self.seasonSegment = seasonSegment; self.seasonTrigger = seasonTrigger; self.currentRival = currentRival; self.seasonTensions = seasonTensions; self.seasonImportantGames = seasonImportantGames; self.pendingDecision = pendingDecision; self.decisionHistory = decisionHistory; self.developmentProgress = developmentProgress; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject; self.journeyState = journeyState
+    /// v6 가을야구. 키가 없는 구세이브는 nil.
+    public let postseason: ProPostseasonState?
+    public init(proCareerID: String, revision: UInt64, phase: ProCareerPhase, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, team: DraftTeamSnapshot, entitlement: ProEntitlementSnapshot, age: Int, season: Int, week: Int, level: ProLevel, role: ProRole, rolePreference: ProRole? = nil, managerTrust: Int, catcherTrust: Int, fatigue: Int, injuryWeeks: Int, serviceYears: Int, militaryCompleted: Bool, contract: ProContractSnapshot?, currentStats: ProSeasonStats, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats], awards: [String], milestones: [String], news: [String], hallOfFameScore: Int?, commitment: String, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger? = nil, currentRival: ProRivalBatter? = nil, seasonTensions: [ProSeasonTension]? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision? = nil, decisionHistory: [ProDecisionRecord]? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int? = nil, pitchLearningProject: PitchLearningProjectSnapshot? = nil, journeyState: ProCareerJourneyState? = nil, postseason: ProPostseasonState? = nil) {
+        self.proCareerID = proCareerID; self.revision = revision; self.phase = phase; self.identity = identity; self.pitcher = pitcher; self.team = team; self.entitlement = entitlement; self.age = age; self.season = season; self.week = week; self.level = level; self.role = role; self.rolePreference = rolePreference; self.managerTrust = managerTrust; self.catcherTrust = catcherTrust; self.fatigue = fatigue; self.injuryWeeks = injuryWeeks; self.serviceYears = serviceYears; self.militaryCompleted = militaryCompleted; self.contract = contract; self.currentStats = currentStats; self.gameLines = gameLines; self.careerStats = careerStats; self.awards = awards; self.milestones = milestones; self.news = news; self.hallOfFameScore = hallOfFameScore; self.commitment = commitment; self.balanceVersion = balanceVersion; self.proRulesVersion = proRulesVersion; self.seasonSegment = seasonSegment; self.seasonTrigger = seasonTrigger; self.currentRival = currentRival; self.seasonTensions = seasonTensions; self.seasonImportantGames = seasonImportantGames; self.pendingDecision = pendingDecision; self.decisionHistory = decisionHistory; self.developmentProgress = developmentProgress; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject; self.journeyState = journeyState; self.postseason = postseason
     }
 
     public static func == (lhs: ProCareerSnapshot, rhs: ProCareerSnapshot) -> Bool {
@@ -505,6 +514,7 @@ public final class ProCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.repertoireRulesVersion == rhs.repertoireRulesVersion
             && lhs.pitchLearningProject == rhs.pitchLearningProject
             && lhs.journeyState == rhs.journeyState
+            && lhs.postseason == rhs.postseason
     }
 }
 

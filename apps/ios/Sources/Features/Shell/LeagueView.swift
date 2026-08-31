@@ -139,6 +139,14 @@ struct StandingsCard: View {
 
                 let all = rows
                 ForEach(Array(all.enumerated()), id: \.element.id) { index, row in
+                    if index == ProPostseasonRules.qualificationCut {
+                        Text(copyResolver.resolve(.leagueAutumnCut))
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 6)
+                            .accessibilityIdentifier("league.autumn.cut")
+                    }
                     let mine = row.teamID == myTeamID
                     let localizedTeam = ProCareerPresentation.leagueTeamName(
                         row.teamName,

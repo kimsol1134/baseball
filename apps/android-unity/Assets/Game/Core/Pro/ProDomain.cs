@@ -16,9 +16,9 @@ namespace Baseball.Core.Pro
     // compatibility-only; new choice surfaces expose DevelopStuff and DevelopMovement separately.
     public enum ProWeekPlan { DevelopWeapon, RefineCommand, BuildStamina, Recover, EarnTrust, DevelopStuff, DevelopMovement }
     public enum OffseasonDecision { ContinueCareer, MilitaryService, FreeAgency, Retire }
-    public enum ProSeasonDecisionType { ExtraBullpen, CatcherGamePlan, RoleMeeting, RecordChase, RivalAnalysis, SeasonFinale }
+    public enum ProSeasonDecisionType { ExtraBullpen, CatcherGamePlan, RoleMeeting, RecordChase, RivalAnalysis, SeasonFinale, MediaOpportunity, FormCrisis, AgingCrossroads }
     public enum ProSeasonSegment { SpringCamp, Opening, FirstHalf, AllStarBreak, PennantRace, SeasonFinale }
-    public enum ProSeasonTrigger { OpeningStatement, CallUpAudition, MajorDebut, RecordChase, RoleShowdown, StandingsRace }
+    public enum ProSeasonTrigger { OpeningStatement, CallUpAudition, MajorDebut, RecordChase, RoleShowdown, StandingsRace, AutumnWildCard, AutumnSemifinal, AutumnFinal, AutumnPlayoff }
     public enum ProInjuryCause { Overload }
 
     /// <summary>Structured explanation emitted only on the week an overload injury starts.</summary>
@@ -130,6 +130,9 @@ namespace Baseball.Core.Pro
                 case ProSeasonDecisionType.RoleMeeting: return "role_meeting";
                 case ProSeasonDecisionType.RecordChase: return "record_chase";
                 case ProSeasonDecisionType.RivalAnalysis: return "rival_analysis";
+                case ProSeasonDecisionType.MediaOpportunity: return "media_opportunity";
+                case ProSeasonDecisionType.FormCrisis: return "form_crisis";
+                case ProSeasonDecisionType.AgingCrossroads: return "aging_crossroads";
                 default: return "season_finale";
             }
         }
@@ -154,6 +157,11 @@ namespace Baseball.Core.Pro
                 case ProSeasonTrigger.MajorDebut: return "major_debut";
                 case ProSeasonTrigger.RecordChase: return "record_chase";
                 case ProSeasonTrigger.RoleShowdown: return "role_showdown";
+                case ProSeasonTrigger.StandingsRace: return "standings_race";
+                case ProSeasonTrigger.AutumnWildCard: return "autumn_wild_card";
+                case ProSeasonTrigger.AutumnSemifinal: return "autumn_semifinal";
+                case ProSeasonTrigger.AutumnPlayoff: return "autumn_playoff";
+                case ProSeasonTrigger.AutumnFinal: return "autumn_final";
                 default: return "standings_race";
             }
         }

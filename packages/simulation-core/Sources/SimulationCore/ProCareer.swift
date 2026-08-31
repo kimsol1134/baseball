@@ -458,6 +458,11 @@ public struct ProCareerEngine: Sendable {
         }
         var weekLine = WeeklyOutingLine()
         var newGameLines: [ProGameLine] = []
+        let weekClimate = Self.liveClimate(for: state, week: nextWeek)
+        let weekOffset = Self.liveBatterOffset(for: state, week: nextWeek)
+        let weekCallPolicy: AutoCallPolicy = Self.usesCareerArcRules(state)
+            ? ProSeasonClimateRules.callPolicy(for: weekClimate ?? .even)
+            : .perfect
         if !restingWeek {
             for outingIndex in 0..<outings {
                 let outingLine = simulateWeeklyOuting(
@@ -465,9 +470,8 @@ public struct ProCareerEngine: Sendable {
                     startingFatigue: state.fatigue + outingIndex * 5,
                     outsTarget: outsTargetPerOuting,
                     pitchCap: pitchCapPerOuting,
-                    batterOffset: Self.usesRetiredNumberLiveRules(state)
-                        ? DifficultyScale.pro(season: state.season)
-                        : 0,
+                    batterOffset: weekOffset,
+                    callPolicy: weekCallPolicy,
                     baseSeed: rng.next() ^ UInt64(bitPattern: Int64(nextWeek &* 0x9E37)) &+ UInt64(outingIndex)
                 )
                 weekLine.outs += outingLine.outs
@@ -623,7 +627,7 @@ public struct ProCareerEngine: Sendable {
             project: state.pitchLearningProject,
             plan: params.plan,
             targetPitch: params.targetPitch,
-            paused: recovering,
+            paused: recovering || state.journeyState?.recoveryYearPending == true,
             proRulesVersion: state.proRulesVersion
         )
         let pitcher = development.pitcher
@@ -631,8 +635,24 @@ public struct ProCareerEngine: Sendable {
         let priorImportantGames = state.seasonImportantGames ?? 0
         // 직접 승부는 그 주의 예정 등판 하나를 대표한다. 회복·부상으로 실제 등판이
         // 하나도 없는 주에 승부처를 열면 resolve 단계에서 별도 보너스 경기가 생긴다.
-        let trigger: ProSeasonTrigger? = nextWeek >= 24 || newGameLines.isEmpty || newInjury > 0 ? nil
+        let regularTrigger: ProSeasonTrigger? = nextWeek >= 24 || newGameLines.isEmpty || newInjury > 0 ? nil
             : importantGameTrigger(state: state, nextWeek: nextWeek, newLevel: level, newTrust: trust, seasonStats: stats, skill: skill, priorImportantGames: priorImportantGames)
+        let endOfSeasonPostseason: ProPostseasonState? = nextWeek >= 24 && Self.usesAutumnRules(state)
+            ? ProPostseasonRules.playerPath(
+                from: ProPostseasonRules.evaluateEndOfSeason(
+                    replacing(state, week: nextWeek, currentStats: stats, gameLines: (state.gameLines ?? []) + newGameLines)
+                ),
+                level: level,
+                injuryWeeks: newInjury
+            )
+            : nil
+        let autumnTrigger: ProSeasonTrigger? = {
+            guard let postseason = endOfSeasonPostseason,
+                  postseason.result == .inProgress,
+                  let round = postseason.currentRound else { return nil }
+            return ProPostseasonRules.trigger(for: round)
+        }()
+        let trigger = autumnTrigger ?? regularTrigger
         let decisionsThisSeason = (state.decisionHistory ?? []).count { $0.season == state.season }
         // 중요 경기와 부상은 화면상 더 급한 사건이다. 해당 주의 갈림길은 뒤로 미루거나
         // 중복 노출하지 않고 건너뛴다. 시즌의 세 막에서 한 번씩만 멈춰, 선택이 체크리스트가
@@ -645,14 +665,18 @@ public struct ProCareerEngine: Sendable {
             && newInjury == 0
             && decisionsThisSeason < Self.maximumSeasonDecisions
         let pendingDecision: ProSeasonDecision? = shouldOpenDecision
-            ? seasonDecision(for: state, week: nextWeek)
+            ? seasonDecision(for: state, week: nextWeek, climate: weekClimate, trust: trust, level: level)
             : nil
-        let phase: ProCareerPhase = nextWeek >= 24 ? .seasonReview
-            : trigger != nil ? .importantGame
-            : pendingDecision != nil ? .seasonDecision
-            : .weeklyPlan
+        let phase: ProCareerPhase = {
+            if nextWeek >= 24 {
+                return autumnTrigger != nil ? .importantGame : .seasonReview
+            }
+            if trigger != nil { return .importantGame }
+            if pendingDecision != nil { return .seasonDecision }
+            return .weeklyPlan
+        }()
         let rival: ProRivalBatter? = trigger.map { rivalForGame(state, week: nextWeek, trigger: $0) }
-        let importantGames = priorImportantGames + (phase == .importantGame ? 1 : 0)
+        let importantGames = priorImportantGames + (phase == .importantGame && autumnTrigger == nil ? 1 : 0)
         let seasonTensionsValue = state.seasonTensions ?? seasonTensions(for: state)
         let priorSegment = state.seasonSegment ?? segment(forWeek: state.week)
         let nextSegment = segment(forWeek: nextWeek)
@@ -716,6 +740,21 @@ public struct ProCareerEngine: Sendable {
             news.insert(line, at: 0)
         }
         if nextSegment != priorSegment { news.insert(segmentEntryNews(nextSegment), at: 0) }
+        if Self.usesCareerArcRules(state), let weekClimate, weekClimate != .even {
+            news.insert(ProSeasonClimateRules.newsLine(for: weekClimate, week: nextWeek), at: 0)
+        }
+        if let endOfSeasonPostseason {
+            switch endOfSeasonPostseason.result {
+            case .didNotQualify:
+                news.insert("정규시즌이 끝났습니다. 올해는 플레이오프에 들지 못했습니다.", at: 0)
+            case .inProgress:
+                news.insert(ProPostseasonRules.qualificationNews(for: endOfSeasonPostseason.seed), at: 0)
+            case .unavailable:
+                news.insert(ProPostseasonRules.unavailableNews(level: level), at: 0)
+            default:
+                break
+            }
+        }
         if phase == .importantGame, let trigger {
             news.insert(importantMomentHeadline(
                 trigger: trigger,
@@ -725,13 +764,25 @@ public struct ProCareerEngine: Sendable {
                 build: PitcherBuildRules.identity(for: pitcher)
             ), at: 0)
         }
-        let journeyStateAfterInjury: ProCareerJourneyState?? = injuryMitigationConsumed
-            ? .some(replacingJourney(
-                state.journeyState!,
-                activeSeasonBenefit: .some(nil)
-            ))
-            : nil
-        let updated = replacing(state, revision: state.revision + 1, phase: phase, pitcher: pitcher, week: nextWeek, level: level, role: role, managerTrust: trust, fatigue: fatigue, injuryWeeks: newInjury, currentStats: stats, gameLines: (state.gameLines ?? []) + newGameLines, milestones: milestones, news: Array(news.prefix(30)), seasonSegment: nextSegment, seasonTrigger: trigger, currentRival: rival, seasonTensions: seasonTensionsValue, seasonImportantGames: importantGames, pendingDecision: pendingDecision, developmentProgress: development.progress, pitchLearningProject: development.pitchLearningProject, journeyState: journeyStateAfterInjury)
+        var nextJourney = state.journeyState
+        if injuryMitigationConsumed, let journey = nextJourney {
+            nextJourney = replacingJourney(journey, activeSeasonBenefit: .some(nil))
+        } else if Self.usesCareerArcRules(state),
+                  let journey = nextJourney,
+                  journey.activeSeasonBenefit?.kind == .climateStabilization,
+                  let charges = journey.activeSeasonBenefit?.remainingCharges,
+                  charges > 0 {
+            let remaining = charges - 1
+            nextJourney = replacingJourney(
+                journey,
+                activeSeasonBenefit: remaining > 0
+                    ? .some(ProSeasonBenefit(kind: .climateStabilization, focus: nil, remainingCharges: remaining))
+                    : .some(nil)
+            )
+        }
+        let journeyOverride: ProCareerJourneyState?? = nextJourney == state.journeyState ? nil : nextJourney.map { .some($0) }
+        let postseasonOverride: ProPostseasonState?? = endOfSeasonPostseason.map { .some($0) }
+        let updated = replacing(state, revision: state.revision + 1, phase: phase, pitcher: pitcher, week: nextWeek, level: level, role: role, managerTrust: trust, fatigue: fatigue, injuryWeeks: newInjury, currentStats: stats, gameLines: (state.gameLines ?? []) + newGameLines, milestones: milestones, news: Array(news.prefix(30)), seasonSegment: nextSegment, seasonTrigger: trigger, currentRival: rival, seasonTensions: seasonTensionsValue, seasonImportantGames: importantGames, pendingDecision: pendingDecision, developmentProgress: development.progress, pitchLearningProject: development.pitchLearningProject, journeyState: journeyOverride, postseason: postseasonOverride)
         var events = ["pro_week_resolved", callUpGame ? "major_call_up" : "weekly_progress"]
         if injuryEvent != nil { events.append("pro_injury_started") }
         if phase == .seasonDecision { events.append("pro_season_decision_opened") }
@@ -862,9 +913,18 @@ public struct ProCareerEngine: Sendable {
         let catcherTrust = clamp(state.catcherTrust + effect.catcherTrustDelta, 0, 100)
         let fatigue = clamp(state.fatigue + effect.fatigueDelta, 0, 100)
         let role = effect.roleTarget ?? state.role
-        let rolePreference = pending.type == .roleMeeting
-            ? (effect.roleTarget ?? state.role)
+        let rolePreference = (pending.type == .roleMeeting || pending.type == .formCrisis || pending.type == .agingCrossroads)
+            ? (effect.roleTarget ?? state.rolePreference)
             : state.rolePreference
+        if pending.type == .formCrisis, choice.id.hasSuffix(".recover"), let journey = nextJourney ?? state.journeyState {
+            nextJourney = replacingJourney(
+                journey,
+                activeSeasonBenefit: .some(ProSeasonBenefit(kind: .climateStabilization, focus: nil, remainingCharges: 2))
+            )
+        }
+        if pending.type == .agingCrossroads, choice.id.hasSuffix(".recovery_year"), let journey = nextJourney ?? state.journeyState {
+            nextJourney = replacingJourney(journey, recoveryYearPending: .some(true))
+        }
         let record = ProDecisionRecord(
             decisionID: pending.id,
             type: pending.type,
@@ -927,6 +987,9 @@ public struct ProCareerEngine: Sendable {
 
     public func resolveImportantGame(_ params: ResolveProGameParams) throws -> ProCareerResult {
         try validate(params.state, phase: .importantGame)
+        if ProPostseasonRules.isAutumn(params.state.seasonTrigger) {
+            return try resolveAutumnGame(params)
+        }
         var rng = try generator(params.seed)
         let report = params.report
         let soundProcess = report.actualDamage <= report.expectedDamage + 150 || report.recommendationAccepted * 2 >= report.pitches
@@ -1109,6 +1172,105 @@ public struct ProCareerEngine: Sendable {
         return result(updated, nextSeed: String(rng.next()), events: ["pro_important_game_resolved"] + (learningEvent.map { [$0] } ?? []))
     }
 
+    /// 가을 장면은 정규시즌 24주 밖에 있으므로 통산 이닝에 합치지 않는다.
+    /// 감독의 믿음과 시즌 선택 회수는 직접 승부와 같은 공식을 쓴다. 이닝만 빼면
+    /// 가을이 기록 밖의 무위험 연출이 된다.
+    private func resolveAutumnGame(_ params: ResolveProGameParams) throws -> ProCareerResult {
+        var rng = try generator(params.seed)
+        let report = params.report
+        let current = params.state.postseason ?? ProPostseasonRules.evaluateEndOfSeason(params.state)
+        let support = report.teamRuns ?? max(0, (report.scoreDifferentialAtEntry ?? 0) + report.runsAllowed + 1)
+        let opponent = report.runsAllowed + max(0, -(report.scoreDifferentialAtEntry ?? 0))
+        let won = support > opponent || (support == opponent && report.runsAllowed <= 1)
+        let nextPostseason = ProPostseasonRules.resolving(current, won: won)
+        let nextRound = nextPostseason.currentRound
+        let continues = nextPostseason.result == .inProgress && nextRound != nil
+        let nextTrigger = nextRound.map { ProPostseasonRules.trigger(for: $0) }
+        let rival = nextTrigger.map { rivalForGame(params.state, week: params.state.week, trigger: $0) }
+        let soundProcess = report.actualDamage <= report.expectedDamage + 150 || report.recommendationAccepted * 2 >= report.pitches
+        let sequenceTrustReward = (params.state.balanceVersion ?? 1) >= 4
+            ? PitchSequenceMasteryRules.trustReward(for: report.sequenceMasteryCount)
+            : 0
+        let usesAgencyRules = Self.usesAgencyRules(params.state)
+        let decisionHistory = params.state.decisionHistory ?? []
+        let unresolvedIndices = decisionHistory.indices.filter {
+            usesAgencyRules
+                && decisionHistory[$0].season == params.state.season
+                && decisionHistory[$0].followUpResolvedWeek == nil
+        }
+        let followUpRecords = unresolvedIndices.map { decisionHistory[$0] }
+        let followUpReward = followUpRecords.count * (soundProcess ? 2 : -1)
+        let trust = clamp(
+            params.state.managerTrust
+                + report.strikeouts * 2
+                - report.walks * 2
+                - report.runsAllowed * 3
+                + (soundProcess ? 2 : 0)
+                + sequenceTrustReward
+                + followUpReward,
+            0,
+            100
+        )
+        var resolvedHistory = decisionHistory
+        for index in unresolvedIndices {
+            let record = resolvedHistory[index]
+            resolvedHistory[index] = ProDecisionRecord(
+                decisionID: record.decisionID,
+                type: record.type,
+                season: record.season,
+                week: record.week,
+                choiceID: record.choiceID,
+                choiceTitle: record.choiceTitle,
+                effect: record.effect,
+                journeyEffect: record.journeyEffect,
+                followUpResolvedWeek: params.state.week
+            )
+        }
+        let trustDelta = trust - params.state.managerTrust
+        let followUpEvaluation: String
+        if followUpRecords.isEmpty {
+            followUpEvaluation = ""
+        } else {
+            let choices = followUpRecords.map { "‘\($0.choiceTitle)’" }.joined(separator: ", ")
+            followUpEvaluation = " 지난 선택 \(choices)이 이번 준비로 이어져 감독의 믿음 \(followUpReward >= 0 ? "+" : "")\(followUpReward)."
+        }
+        let headline: String
+        switch nextPostseason.result {
+        case .champion:
+            headline = "플레이오프 우승. 올해의 마지막 공이 남았습니다."
+        case .runnerUp:
+            headline = "결승에서 멈췄습니다. 가을은 여기까지입니다."
+        case .eliminated:
+            headline = ProPostseasonRules.eliminationNews(for: nextPostseason.currentRound)
+        case .inProgress:
+            headline = nextTrigger == .autumnWildCard
+                ? "와일드카드 2차전이 남았습니다."
+                : (won ? "다음 라운드가 열립니다." : "가을이 이어집니다.")
+        case .didNotQualify, .unavailable:
+            headline = "가을이 닫혔습니다."
+        }
+        let trustLine = "가을 승부 · \(report.strikeouts)탈삼진 · \(report.walks)볼넷 · \(report.runsAllowed)실점 · 감독의 믿음 \(trustDelta >= 0 ? "+" : "")\(trustDelta).\(followUpEvaluation)"
+        let phase: ProCareerPhase = continues ? .importantGame : .seasonReview
+        let updated = replacing(
+            params.state,
+            revision: params.state.revision + 1,
+            phase: phase,
+            managerTrust: trust,
+            catcherTrust: clamp(params.state.catcherTrust + (soundProcess ? 2 : -1) + sequenceTrustReward, 0, 100),
+            news: Array(([headline, trustLine] + params.state.news).prefix(30)),
+            seasonTrigger: .some(continues ? nextTrigger : nil),
+            currentRival: .some(continues ? rival : nil),
+            decisionHistory: resolvedHistory,
+            postseason: .some(nextPostseason)
+        )
+        _ = rng.next()
+        return result(
+            updated,
+            nextSeed: String(rng.next()),
+            events: ["pro_autumn_game_resolved", continues ? "pro_autumn_advanced" : "pro_autumn_finished"]
+        )
+    }
+
     public func reviewSeason(_ params: ProStateParams) throws -> ProCareerResult {
         if let journey = params.state.journeyState {
             if params.state.phase == .seasonSettlement, journey.lastSettlement != nil {
@@ -1212,8 +1374,13 @@ public struct ProCareerEngine: Sendable {
             news.insert("FA 계약: \(team.name)과 새 도전을 시작합니다.", at: 0)
         }
         let season = state.season + 1
-        let decline = age >= 33 ? 1 : 0
-        let pitcher = decline == 0 ? state.pitcher : PitcherSnapshot(id: state.pitcher.id, name: state.pitcher.name, stuff: clamp(state.pitcher.stuff - decline, 20, 80), command: state.pitcher.command, movement: clamp(state.pitcher.movement - decline, 20, 80), stamina: clamp(state.pitcher.stamina - decline, 20, 80), pitchProfiles: state.pitcher.pitchProfiles, throwingHand: state.pitcher.throwingHand, mastery: state.pitcher.mastery)
+        let recoveryYear = state.journeyState?.recoveryYearPending == true
+        let pitcher = ProContractMarketRules.projectedPitcher(
+            for: state.pitcher,
+            effectiveAge: age,
+            proRulesVersion: Self.currentRulesVersion,
+            recoveryYear: recoveryYear
+        )
         let contract = ProContractSnapshot(yearsRemaining: max(1, (state.contract?.yearsRemaining ?? 1) - 1), annualSalary: max(state.contract?.annualSalary ?? 40_000_000, 40_000_000 + service * 50_000_000), rolePromise: state.role)
         let clearedDecision: ProSeasonDecision? = nil
         let clearedRolePreference: ProRole? = nil
@@ -1225,7 +1392,8 @@ public struct ProCareerEngine: Sendable {
         let tensions = seasonTensions(for: baseAdvanced)
         let clearedRival: ProRivalBatter? = nil
         let clearedTrigger: ProSeasonTrigger? = nil
-        let updated = replacing(baseAdvanced, news: Array(([tensionHeadline(tensions)] + baseAdvanced.news).prefix(30)), seasonSegment: .springCamp, seasonTrigger: clearedTrigger, currentRival: clearedRival, seasonTensions: tensions, seasonImportantGames: 0)
+        let declineNews = age >= 33 ? ["\(age)세 · 전성기가 기울며 구위가 한 단계 떨어졌습니다."] : []
+        let updated = replacing(baseAdvanced, news: Array((declineNews + [tensionHeadline(tensions)] + baseAdvanced.news).prefix(30)), seasonSegment: .springCamp, seasonTrigger: clearedTrigger, currentRival: clearedRival, seasonTensions: tensions, seasonImportantGames: 0, postseason: .some(nil))
         return result(updated, nextSeed: String(rng.next()), events: ["pro_offseason_resolved"])
     }
 
@@ -1234,10 +1402,14 @@ public struct ProCareerEngine: Sendable {
     public static let maximumCareerSeasons = 20
     /// Live schedule/fatigue/agency rules. New careers start here. Offseason may raise an
     /// in-progress save to this value without rewriting already stored season records.
-    public static let currentRulesVersion = 4
+    public static let currentRulesVersion = 6
     /// First version that owns the agency weekly-plan and important-game contracts.
     /// Must stay below `currentRulesVersion` so a version bump cannot turn agency off.
     public static let agencyRulesVersion = 3
+    /// Season climate, skill tracking, imperfect auto calls, visible aging.
+    public static let careerArcRulesVersion = 5
+    /// Highlight autumn series after the 24-week regular season.
+    public static let autumnRulesVersion = 6
     /// Journey scoring/awards/retired-number content. New careers only; never raised in offseason.
     public static let currentJourneyRulesVersion = 2
 
@@ -1247,6 +1419,42 @@ public struct ProCareerEngine: Sendable {
 
     public static func usesRetiredNumberLiveRules(_ state: ProCareerSnapshot) -> Bool {
         (state.proRulesVersion ?? 1) >= 4
+    }
+
+    public static func usesCareerArcRules(_ state: ProCareerSnapshot) -> Bool {
+        (state.proRulesVersion ?? 1) >= careerArcRulesVersion
+    }
+
+    public static func usesAutumnRules(_ state: ProCareerSnapshot) -> Bool {
+        (state.proRulesVersion ?? 1) >= autumnRulesVersion
+    }
+
+    public static func liveClimate(for state: ProCareerSnapshot, week: Int? = nil) -> ProSeasonClimate? {
+        guard usesCareerArcRules(state) else { return nil }
+        let stabilize = state.journeyState?.activeSeasonBenefit?.kind == .climateStabilization
+            ? (state.journeyState?.activeSeasonBenefit?.remainingCharges ?? 0)
+            : 0
+        return ProSeasonClimateRules.climate(
+            careerID: state.proCareerID,
+            season: state.season,
+            week: week ?? max(1, state.week),
+            strikeouts: state.currentStats.strikeouts,
+            inningsOuts: state.currentStats.inningsOuts,
+            stabilizeCharges: stabilize
+        )
+    }
+
+    public static func liveBatterOffset(for state: ProCareerSnapshot, week: Int? = nil) -> Int {
+        let skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
+        if usesCareerArcRules(state), let climate = liveClimate(for: state, week: week) {
+            return DifficultyScale.proArc(
+                season: state.season,
+                level: state.level,
+                skill: skill,
+                climate: climate
+            )
+        }
+        return usesRetiredNumberLiveRules(state) ? DifficultyScale.pro(season: state.season) : 0
     }
 
     public static func journeyRulesVersion(for state: ProCareerSnapshot) -> Int {
@@ -1373,8 +1581,27 @@ public struct ProCareerEngine: Sendable {
     /// 같은 커리어·시즌·주차에는 상태나 진행 시드와 무관하게 같은 세 선택지를 만든다.
     /// 세 슬롯을 여섯 종류 위에서 회전시켜 시즌마다 다른 조합을 만나게 한다. 한 시즌에
     /// 전부 보여 주지 않는 것이 다음 선수로 다시 시작할 이유가 된다.
-    func seasonDecision(for state: ProCareerSnapshot, week: Int) -> ProSeasonDecision? {
+    func seasonDecision(
+        for state: ProCareerSnapshot,
+        week: Int,
+        climate: ProSeasonClimate? = nil,
+        trust: Int? = nil,
+        level _: ProLevel? = nil
+    ) -> ProSeasonDecision? {
         guard let slot = Self.seasonDecisionWeeks.firstIndex(of: week) else { return nil }
+        if Self.usesCareerArcRules(state) {
+            let history = state.decisionHistory ?? []
+            let hadFormCrisis = history.contains { $0.season == state.season && $0.type == .formCrisis }
+            if !hadFormCrisis,
+               climate == .slump,
+               (trust ?? state.managerTrust) < 55 {
+                return makeDecision(type: .formCrisis, state: state, week: week)
+            }
+            let hadAging = history.contains { $0.season == state.season && $0.type == .agingCrossroads }
+            if !hadAging, week == 20, state.age >= 32 {
+                return makeDecision(type: .agingCrossroads, state: state, week: week)
+            }
+        }
         let mediaSlot = Self.mediaOpportunityWeek(proCareerID: state.proCareerID, season: state.season)
         let hasMediaThisSeason = (state.decisionHistory ?? []).contains {
             $0.season == state.season && $0.type == .mediaOpportunity
@@ -1402,6 +1629,14 @@ public struct ProCareerEngine: Sendable {
         ]
         let offset = Int(hashInt("\(state.proCareerID)|season\(state.season)|season-decisions") % UInt64(types.count))
         let type = types[(offset + slot) % types.count]
+        return makeDecision(type: type, state: state, week: week)
+    }
+
+    private func makeDecision(
+        type: ProSeasonDecisionType,
+        state: ProCareerSnapshot,
+        week: Int
+    ) -> ProSeasonDecision {
         let content = decisionContent(type)
         return ProSeasonDecision(
             id: "season-\(state.season)-week-\(week)-\(type.rawValue)",
@@ -1505,6 +1740,26 @@ public struct ProCareerEngine: Sendable {
                         .init(fatigueDelta: -4),
                         journeyEffect: .init()
                     ),
+                ]
+            )
+        case .formCrisis:
+            return (
+                "슬럼프 갈림길",
+                "최근 등판이 흔들리고 감독의 믿음도 얇아졌습니다. 남은 주를 어떻게 버티겠습니까.",
+                [
+                    choice(type, "recover", "회복 주를 택한다", "다음 이틀을 평온하게 만들고 몸을 낮춥니다.", .init(managerTrustDelta: -2, fatigueDelta: -16)),
+                    choice(type, "push_through", "밀어붙인다", "피로를 감수하고 선발 자리를 지킵니다.", .init(managerTrustDelta: 3, fatigueDelta: 12)),
+                    choice(type, "move_bullpen", "구원으로 몸을 낮춘다", "짧은 이닝으로 슬럼프 피해를 줄입니다.", .init(managerTrustDelta: 1, fatigueDelta: -8, roleTarget: .longRelief)),
+                ]
+            )
+        case .agingCrossroads:
+            return (
+                "전성기가 기울고 있다",
+                "몸이 예전 같지 않습니다. 다음 시즌을 어떤 자세로 맞겠습니까.",
+                [
+                    choice(type, "keep_starter", "선발을 지킨다", "하락을 감수하고 로테이션에 남습니다.", .init(staminaDelta: 1, managerTrustDelta: 2, fatigueDelta: 6, roleTarget: .starter)),
+                    choice(type, "move_bullpen", "불펜으로 옮긴다", "짧은 승부로 몸을 아끼며 남습니다.", .init(commandDelta: 1, fatigueDelta: -8, roleTarget: .longRelief)),
+                    choice(type, "recovery_year", "회복 연도를 택한다", "성장을 멈추고 하락을 한 단계 줄입니다.", .init(managerTrustDelta: -2, fatigueDelta: -16)),
                 ]
             )
         }
@@ -1754,6 +2009,7 @@ public struct ProCareerEngine: Sendable {
         outsTarget: Int,
         pitchCap: Int,
         batterOffset: Int = 0,
+        callPolicy: AutoCallPolicy = .perfect,
         baseSeed: UInt64
     ) -> WeeklyOutingLine {
         let line = AutoOutingSimulator().simulate(
@@ -1762,6 +2018,7 @@ public struct ProCareerEngine: Sendable {
             outsTarget: outsTarget,
             pitchCap: pitchCap,
             batterOffset: batterOffset,
+            callPolicy: callPolicy,
             baseSeed: baseSeed
         )
         var weekly = WeeklyOutingLine()
@@ -1820,6 +2077,9 @@ public struct ProCareerEngine: Sendable {
         }
         if let journey = s.journeyState {
             values.append("journey:v1:\(ProCareerJourneyRules.canonicalToken(journey))")
+        }
+        if let postseason = s.postseason {
+            values.append("postseason:\(postseason.seed):\(postseason.currentRound?.rawValue ?? "none"):\(postseason.result.rawValue):\(postseason.gamesPlayed)")
         }
         return StableHash.fnv1a64(values.joined(separator: "|"))
     }
@@ -1897,7 +2157,10 @@ public struct ProCareerEngine: Sendable {
             seasons: seasons,
             awardCount: ProCareerGoalRules.awardCount(for: state),
             serviceYears: serviceYears,
-            rulesVersion: state.proRulesVersion ?? 1
+            rulesVersion: state.proRulesVersion ?? 1,
+            autumnBonus: Self.usesAutumnRules(state)
+                ? ProPostseasonRules.hofBonus(for: state.postseason?.result ?? .didNotQualify)
+                : 0
         )
     }
 
@@ -1906,7 +2169,10 @@ public struct ProCareerEngine: Sendable {
             seasons: state.careerStats,
             awardCount: ProCareerGoalRules.awardCount(for: state),
             serviceYears: state.serviceYears,
-            rulesVersion: state.proRulesVersion ?? 1
+            rulesVersion: state.proRulesVersion ?? 1,
+            autumnBonus: Self.usesAutumnRules(state)
+                ? ProPostseasonRules.hofBonus(for: state.postseason?.result ?? .didNotQualify)
+                : 0
         )
     }
 
@@ -1920,7 +2186,8 @@ public struct ProCareerEngine: Sendable {
         seasons: [ProSeasonStats],
         awardCount: Int,
         serviceYears: Int,
-        rulesVersion: Int
+        rulesVersion: Int,
+        autumnBonus: Int = 0
     ) -> Int {
         let strikeouts = seasons.reduce(0) { $0 + $1.strikeouts }
         let outs = seasons.reduce(0) { $0 + $1.inningsOuts }
@@ -1961,6 +2228,7 @@ public struct ProCareerEngine: Sendable {
                 + decisionContribution
                 + qualityContribution
                 + awardContribution
+                + max(0, autumnBonus)
         ))
     }
 
@@ -2038,9 +2306,11 @@ public struct ProCareerEngine: Sendable {
     /// 모든 시즌에서 최대 3회의 대표 장면을 직접 던진다. 직접 승부는 예정 등판 하나를
     /// 대체하므로 베테랑의 기록을 부풀리지 않으면서도 끝까지 같은 플레이 권한을 보장한다.
     private func importantGameTrigger(state: ProCareerSnapshot, nextWeek: Int, newLevel: ProLevel, newTrust: Int, seasonStats: ProSeasonStats, skill: Int, priorImportantGames: Int) -> ProSeasonTrigger? {
-        let maximum = Self.usesAgencyRules(state)
-            ? Self.maximumImportantGames(for: state.season)
-            : (state.season >= 9 ? 2 : 3)
+        let maximum = Self.usesAutumnRules(state)
+            ? 2
+            : Self.usesAgencyRules(state)
+                ? Self.maximumImportantGames(for: state.season)
+                : (state.season >= 9 ? 2 : 3)
         guard priorImportantGames < maximum else { return nil }
         let seg = segment(forWeek: nextWeek)
         // 1군 데뷔는 고유한 장면이지만, 시즌 마지막 한 자리는 결말 승부를 위해 남긴다.
@@ -2051,7 +2321,11 @@ public struct ProCareerEngine: Sendable {
         // 앵커 ① 개막 무대 — 개막 구간의 시즌별 흔들리는 한 주.
         if seg == .opening && nextWeek == anchorWeek(state, salt: "opening", range: 2...4) { return .openingStatement }
         // 앵커 ② 시즌 종반 순위 승부 — 시즌 결말 구간의 시즌별 흔들리는 한 주.
-        if seg == .seasonFinale && nextWeek == anchorWeek(state, salt: "finale", range: 21...23) { return .standingsRace }
+        // 가을은 정규 예산 밖의 별도 장면이다. 4~7위만 결말을 열면 개막 뒤에 선택이
+        // 쌓여도 회수할 직접 승부가 사라지므로, 남은 정규 자리는 시즌 결말로 남긴다.
+        if seg == .seasonFinale && nextWeek == anchorWeek(state, salt: "finale", range: 21...23) {
+            return .standingsRace
+        }
         // 남은 상황 트리거가 마지막 슬롯까지 소비하면 시즌 결말이 사라진다. 대표 장면 수를
         // 줄인 대신 시작과 끝의 리듬은 모든 시즌에서 보장한다.
         guard priorImportantGames < maximum - 1 else { return nil }
@@ -2115,6 +2389,10 @@ public struct ProCareerEngine: Sendable {
             return "\(objective)에 다가서는 등판. \(foe)를 상대로 자신의 투구를 증명합니다."
         case .roleShowdown: return "\(foe)와의 승부로 다음 역할이 갈립니다."
         case .standingsRace: return "순위가 걸린 한 경기. \(foe)를 넘어야 가을이 보입니다."
+        case .autumnWildCard: return "와일드카드. \(foe)를 넘어야 준플레이오프가 열립니다."
+        case .autumnSemifinal: return "준플레이오프 한 판. \(foe)와의 승부가 플레이오프를 가릅니다."
+        case .autumnPlayoff: return "플레이오프 한 판. \(foe)를 넘어야 우승 결정전이 열립니다."
+        case .autumnFinal: return "우승 결정전 한 판. \(foe) 앞에서 올해의 마지막 공을 던집니다."
         }
     }
 
@@ -2312,7 +2590,7 @@ public struct ProCareerEngine: Sendable {
     }
     func clamp(_ value: Int, _ low: Int, _ high: Int) -> Int { min(high, max(low, value)) }
 
-    func replacing(_ s: ProCareerSnapshot, revision: UInt64? = nil, phase: ProCareerPhase? = nil, pitcher: PitcherSnapshot? = nil, team: DraftTeamSnapshot? = nil, age: Int? = nil, season: Int? = nil, week: Int? = nil, level: ProLevel? = nil, role: ProRole? = nil, rolePreference: ProRole?? = nil, managerTrust: Int? = nil, catcherTrust: Int? = nil, fatigue: Int? = nil, injuryWeeks: Int? = nil, serviceYears: Int? = nil, militaryCompleted: Bool? = nil, contract: ProContractSnapshot?? = nil, currentStats: ProSeasonStats? = nil, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats]? = nil, awards: [String]? = nil, milestones: [String]? = nil, news: [String]? = nil, hallOfFameScore: Int?? = nil, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, commitment: String? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger?? = nil, currentRival: ProRivalBatter?? = nil, seasonTensions: [ProSeasonTension]?? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision?? = nil, decisionHistory: [ProDecisionRecord]?? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int?? = nil, pitchLearningProject: PitchLearningProjectSnapshot?? = nil, journeyState: ProCareerJourneyState?? = nil) -> ProCareerSnapshot {
-        ProCareerSnapshot(proCareerID: s.proCareerID, revision: revision ?? s.revision, phase: phase ?? s.phase, identity: s.identity, pitcher: pitcher ?? s.pitcher, team: team ?? s.team, entitlement: s.entitlement, age: age ?? s.age, season: season ?? s.season, week: week ?? s.week, level: level ?? s.level, role: role ?? s.role, rolePreference: rolePreference ?? s.rolePreference, managerTrust: managerTrust ?? s.managerTrust, catcherTrust: catcherTrust ?? s.catcherTrust, fatigue: fatigue ?? s.fatigue, injuryWeeks: injuryWeeks ?? s.injuryWeeks, serviceYears: serviceYears ?? s.serviceYears, militaryCompleted: militaryCompleted ?? s.militaryCompleted, contract: contract ?? s.contract, currentStats: currentStats ?? s.currentStats, gameLines: gameLines ?? s.gameLines, careerStats: careerStats ?? s.careerStats, awards: awards ?? s.awards, milestones: milestones ?? s.milestones, news: news ?? s.news, hallOfFameScore: hallOfFameScore ?? s.hallOfFameScore, commitment: commitment ?? "", balanceVersion: balanceVersion ?? s.balanceVersion, proRulesVersion: proRulesVersion ?? s.proRulesVersion, seasonSegment: seasonSegment ?? s.seasonSegment, seasonTrigger: seasonTrigger ?? s.seasonTrigger, currentRival: currentRival ?? s.currentRival, seasonTensions: seasonTensions ?? s.seasonTensions, seasonImportantGames: seasonImportantGames ?? s.seasonImportantGames, pendingDecision: pendingDecision ?? s.pendingDecision, decisionHistory: decisionHistory ?? s.decisionHistory, developmentProgress: developmentProgress ?? s.developmentProgress, repertoireRulesVersion: repertoireRulesVersion ?? s.repertoireRulesVersion, pitchLearningProject: pitchLearningProject ?? s.pitchLearningProject, journeyState: journeyState ?? s.journeyState)
+    func replacing(_ s: ProCareerSnapshot, revision: UInt64? = nil, phase: ProCareerPhase? = nil, pitcher: PitcherSnapshot? = nil, team: DraftTeamSnapshot? = nil, age: Int? = nil, season: Int? = nil, week: Int? = nil, level: ProLevel? = nil, role: ProRole? = nil, rolePreference: ProRole?? = nil, managerTrust: Int? = nil, catcherTrust: Int? = nil, fatigue: Int? = nil, injuryWeeks: Int? = nil, serviceYears: Int? = nil, militaryCompleted: Bool? = nil, contract: ProContractSnapshot?? = nil, currentStats: ProSeasonStats? = nil, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats]? = nil, awards: [String]? = nil, milestones: [String]? = nil, news: [String]? = nil, hallOfFameScore: Int?? = nil, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, commitment: String? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger?? = nil, currentRival: ProRivalBatter?? = nil, seasonTensions: [ProSeasonTension]?? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision?? = nil, decisionHistory: [ProDecisionRecord]?? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int?? = nil, pitchLearningProject: PitchLearningProjectSnapshot?? = nil, journeyState: ProCareerJourneyState?? = nil, postseason: ProPostseasonState?? = nil) -> ProCareerSnapshot {
+        ProCareerSnapshot(proCareerID: s.proCareerID, revision: revision ?? s.revision, phase: phase ?? s.phase, identity: s.identity, pitcher: pitcher ?? s.pitcher, team: team ?? s.team, entitlement: s.entitlement, age: age ?? s.age, season: season ?? s.season, week: week ?? s.week, level: level ?? s.level, role: role ?? s.role, rolePreference: rolePreference ?? s.rolePreference, managerTrust: managerTrust ?? s.managerTrust, catcherTrust: catcherTrust ?? s.catcherTrust, fatigue: fatigue ?? s.fatigue, injuryWeeks: injuryWeeks ?? s.injuryWeeks, serviceYears: serviceYears ?? s.serviceYears, militaryCompleted: militaryCompleted ?? s.militaryCompleted, contract: contract ?? s.contract, currentStats: currentStats ?? s.currentStats, gameLines: gameLines ?? s.gameLines, careerStats: careerStats ?? s.careerStats, awards: awards ?? s.awards, milestones: milestones ?? s.milestones, news: news ?? s.news, hallOfFameScore: hallOfFameScore ?? s.hallOfFameScore, commitment: commitment ?? "", balanceVersion: balanceVersion ?? s.balanceVersion, proRulesVersion: proRulesVersion ?? s.proRulesVersion, seasonSegment: seasonSegment ?? s.seasonSegment, seasonTrigger: seasonTrigger ?? s.seasonTrigger, currentRival: currentRival ?? s.currentRival, seasonTensions: seasonTensions ?? s.seasonTensions, seasonImportantGames: seasonImportantGames ?? s.seasonImportantGames, pendingDecision: pendingDecision ?? s.pendingDecision, decisionHistory: decisionHistory ?? s.decisionHistory, developmentProgress: developmentProgress ?? s.developmentProgress, repertoireRulesVersion: repertoireRulesVersion ?? s.repertoireRulesVersion, pitchLearningProject: pitchLearningProject ?? s.pitchLearningProject, journeyState: journeyState ?? s.journeyState, postseason: postseason ?? s.postseason)
     }
 }

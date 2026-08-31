@@ -284,7 +284,7 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
             object["proRulesVersion"] = ProCareerEngine.currentRulesVersion
         }
 
-        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 4)
+        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 6)
         XCTAssertEqual(ProCareerEngine.agencyRulesVersion, 3)
         XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 2)
         XCTAssertEqual(ProCareerEngine.hallOfFameFormulaVersion, 3)
@@ -294,7 +294,7 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
         XCTAssertNotEqual(legacyV2.commitment, current.commitment)
         XCTAssertEqual(try JSONDecoder().decode(ProCareerSnapshot.self, from: JSONEncoder().encode(legacyV1)), legacyV1)
         XCTAssertEqual(try JSONDecoder().decode(ProCareerSnapshot.self, from: JSONEncoder().encode(legacyV2)), legacyV2)
-        XCTAssertEqual(try engine.start(startParams(seed: "440408")).snapshot.proRulesVersion, 4)
+        XCTAssertEqual(try engine.start(startParams(seed: "440408")).snapshot.proRulesVersion, 6)
     }
 
     func testJourneyStandingDoesNotUsePreviousTeamGlobalFallback() throws {

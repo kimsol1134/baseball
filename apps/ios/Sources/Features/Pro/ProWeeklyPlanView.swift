@@ -199,6 +199,20 @@ struct WeeklyPlanView: View {
                 Metric(title: copyResolver.resolve(.weeklyRole), value: copyResolver.resolve(state.role.displayCopyToken))
             }
 
+            if let climate = ProCareerEngine.liveClimate(for: state) {
+                let key: ProUICopyKey = switch climate {
+                case .hot: .weeklyClimateHot
+                case .even: .weeklyClimateEven
+                case .slump: .weeklyClimateSlump
+                case .adapted: .weeklyClimateAdapted
+                }
+                Text(copyResolver.resolve(key))
+                    .font(.footnote.weight(climate == .slump || climate == .adapted ? .semibold : .regular))
+                    .foregroundStyle(climate == .slump ? BaseballTheme.warning : BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("pro.weekly.climate")
+            }
+
             let mastery = state.pitcher.effectiveMastery
             ForEach(TalentAbility.allCases, id: \.rawValue) { ability in
                 let level = mastery.value(for: ability)

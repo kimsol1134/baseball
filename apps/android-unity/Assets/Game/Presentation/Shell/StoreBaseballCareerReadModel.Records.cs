@@ -7,6 +7,7 @@ using Baseball.Application.Meta;
 using Baseball.Application.Persistence;
 using Baseball.Application.Pro;
 using Baseball.Core.HighSchool;
+using Baseball.Core.Pro;
 using Baseball.Presentation.Common;
 using Baseball.Presentation.Pitch;
 
@@ -174,14 +175,17 @@ namespace Baseball.Presentation.Shell
                         "records-current-pro-standings",
                         "현재 가상 프로 순위",
                         ScreenSectionTone.Plain,
-                        state.Pro.LeagueStandings.Select(entry => new ScreenRowViewModel(
-                            "records-current-pro-team-" + entry.Rank,
-                            entry.Rank + "위 · " + entry.TeamName,
-                            entry.Wins + "승 " + entry.Losses + "패 " + entry.Draws + "무",
-                            (entry.Rank == 1
-                                ? "선두"
-                                : "선두와 " + entry.GamesBehind.ToString("0.0") + "경기 차") +
-                            (entry.IsPlayerTeam ? " · 내 구단" : string.Empty))).ToArray()));
+                        StandingsRowsWithAutumnCut(
+                            "records-current-pro-team-",
+                            state.Pro.LeagueStandings,
+                            entry => new ScreenRowViewModel(
+                                "records-current-pro-team-" + entry.Rank,
+                                entry.Rank + "위 · " + entry.TeamName,
+                                entry.Wins + "승 " + entry.Losses + "패 " + entry.Draws + "무",
+                                (entry.Rank == 1
+                                    ? "선두"
+                                    : "선두와 " + entry.GamesBehind.ToString("0.0") + "경기 차") +
+                                (entry.IsPlayerTeam ? " · 내 구단" : string.Empty)))));
                 if (state.Pro.LeaguePitchers.Count > 0)
                     result.Add(new ScreenSectionViewModel(
                         "records-current-pro-leaders",
@@ -463,17 +467,40 @@ namespace Baseball.Presentation.Shell
             ? value.Value.ToString("0.000", CultureInfo.InvariantCulture)
             : "기록 없음";
 
+        private static ScreenRowViewModel[] StandingsRowsWithAutumnCut(
+            string idPrefix,
+            IEnumerable<LeagueStandingReadModel> standings,
+            Func<LeagueStandingReadModel, ScreenRowViewModel> row)
+        {
+            var result = new List<ScreenRowViewModel>();
+            foreach (var entry in standings)
+            {
+                if (entry.Rank == ProPostseasonRules.QualificationCut + 1)
+                {
+                    result.Add(new ScreenRowViewModel(
+                        idPrefix + "autumn-cut",
+                        "플레이오프 진출선",
+                        "5위까지 가을에 올라갑니다."));
+                }
+                result.Add(row(entry));
+            }
+            return result.ToArray();
+        }
+
         private static IReadOnlyList<ScreenSectionViewModel> LeagueSections(GameSaveAggregate state)
         {
             var result = new List<ScreenSectionViewModel>();
             if (state.Pro?.LeagueStandings?.Count > 0)
                 result.Add(new ScreenSectionViewModel("league-standings", "가상 프로 리그 순위", ScreenSectionTone.Plain,
-                    state.Pro.LeagueStandings.Select(entry => new ScreenRowViewModel(
-                        "league-team-" + entry.Rank,
-                        entry.Rank + "위 · " + entry.TeamName,
-                        entry.Wins + "승 " + entry.Losses + "패 " + entry.Draws + "무",
-                        (entry.Rank == 1 ? "선두" : "선두와 " + entry.GamesBehind.ToString("0.0") + "경기 차") +
-                            (entry.IsPlayerTeam ? " · 내 구단" : string.Empty))).ToArray()));
+                    StandingsRowsWithAutumnCut(
+                        "league-team-",
+                        state.Pro.LeagueStandings,
+                        entry => new ScreenRowViewModel(
+                            "league-team-" + entry.Rank,
+                            entry.Rank + "위 · " + entry.TeamName,
+                            entry.Wins + "승 " + entry.Losses + "패 " + entry.Draws + "무",
+                            (entry.Rank == 1 ? "선두" : "선두와 " + entry.GamesBehind.ToString("0.0") + "경기 차") +
+                                (entry.IsPlayerTeam ? " · 내 구단" : string.Empty)))));
             if (state.Pro?.LeaguePitchers?.Count > 0)
                 result.Add(new ScreenSectionViewModel("league-pitchers", "투수 순위", ScreenSectionTone.Plain,
                     state.Pro.LeaguePitchers.Select(entry => new ScreenRowViewModel(

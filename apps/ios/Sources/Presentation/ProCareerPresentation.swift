@@ -225,6 +225,8 @@ enum ProCareerPresentation {
             (#"^시즌 (\d+) 정밀 제구상$"#, "content.pro-award.command"),
             (#"^시즌 (\d+) 피안타 억제상$"#, "content.pro-award.hit-prevention"),
             (#"^시즌 (\d+) 이닝 책임상$"#, "content.pro-award.innings"),
+            (#"^시즌 (\d+) 가을 왕중전 우승$"#, "content.pro-award.autumn-champion"),
+            (#"^시즌 (\d+) 플레이오프 우승$"#, "content.pro-award.autumn-champion"),
         ]
         for (pattern, key) in patterns {
             if let value = captures(raw, pattern: pattern)?.first.flatMap(Int.init) {
@@ -268,6 +270,50 @@ enum ProCareerPresentation {
             return legacy("content.pro-news.segment.pennant-race", resolver: resolver)
         case "시즌 막바지, 마지막 순위 싸움이 남았습니다.":
             return legacy("content.pro-news.segment.finale", resolver: resolver)
+        case "가을 왕중전 우승. 올해의 마지막 공이 남았습니다.",
+             "플레이오프 우승. 올해의 마지막 공이 남았습니다.":
+            return legacy("content.pro-news.autumn.champion", resolver: resolver)
+        case "결승에서 멈췄습니다. 가을은 여기까지입니다.":
+            return legacy("content.pro-news.autumn.runner-up", resolver: resolver)
+        case "가을 왕중전에서 탈락했습니다.":
+            return legacy("content.pro-news.autumn.eliminated", resolver: resolver)
+        case "다음 라운드가 열립니다.":
+            return legacy("content.pro-news.autumn.advanced", resolver: resolver)
+        case "와일드카드 2차전이 남았습니다.":
+            return legacy("content.pro-news.autumn.wild-card-game-two", resolver: resolver)
+        case "정규시즌 1위입니다. 우승 결정전 한 판이 남았습니다.",
+             "정규시즌 1위입니다. 우승 결정전에서 기다립니다.":
+            return legacy("content.pro-news.autumn.seed-1", resolver: resolver)
+        case "정규시즌 2위입니다. 플레이오프 한 판부터 올라갑니다.",
+             "정규시즌 2위입니다. 플레이오프부터 올라갑니다.":
+            return legacy("content.pro-news.autumn.seed-2", resolver: resolver)
+        case "정규시즌 3위입니다. 준플레이오프 한 판부터 시작합니다.",
+             "정규시즌 3위입니다. 준플레이오프부터 시작합니다.":
+            return legacy("content.pro-news.autumn.seed-3", resolver: resolver)
+        case "정규시즌 4위입니다. 와일드카드에서 한 승이면 올라갑니다.":
+            return legacy("content.pro-news.autumn.seed-4", resolver: resolver)
+        case "정규시즌 5위입니다. 와일드카드에서 두 번을 이겨야 합니다.":
+            return legacy("content.pro-news.autumn.seed-5", resolver: resolver)
+        case "정규시즌이 끝났습니다. 올해는 플레이오프에 들지 못했습니다.",
+             "정규시즌이 끝났습니다. 올해는 가을 왕중전에 들지 못했습니다.":
+            return legacy("content.pro-news.autumn.did-not-qualify", resolver: resolver)
+        case "플레이오프가 열립니다.",
+             "정규시즌 5위 안에 들었습니다. 플레이오프가 열립니다.":
+            return legacy("content.pro-news.autumn.opens", resolver: resolver)
+        case "구단은 가을에 올랐지만 2군이라 마운드에 서지 못했습니다.":
+            return legacy("content.pro-news.autumn.unavailable-minor", resolver: resolver)
+        case "구단은 가을에 올랐지만 부상으로 마운드에 서지 못했습니다.":
+            return legacy("content.pro-news.autumn.unavailable-injury", resolver: resolver)
+        case "와일드카드에서 탈락했습니다.":
+            return legacy("content.pro-news.autumn.eliminated-wild-card", resolver: resolver)
+        case "준플레이오프에서 탈락했습니다.":
+            return legacy("content.pro-news.autumn.eliminated-semifinal", resolver: resolver)
+        case "플레이오프에서 탈락했습니다.":
+            return legacy("content.pro-news.autumn.eliminated-playoff", resolver: resolver)
+        case "가을이 이어집니다.":
+            return legacy("content.pro-news.autumn.continues", resolver: resolver)
+        case "가을이 닫혔습니다.":
+            return legacy("content.pro-news.autumn.closed", resolver: resolver)
         default:
             break
         }
@@ -284,6 +330,21 @@ enum ProCareerPresentation {
         }
         if let value = captures(raw, pattern: #"^개발 구종 실전 감각 \+(\d+)\.$"#)?.first.flatMap(Int.init) {
             return legacy("content.pro-news.pitch-learning.live", [.integer(value)], resolver: resolver)
+        }
+        if let week = captures(raw, pattern: #"^(\d+)주차 · 상대 타선이 흔들린다"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.climate.hot", [.integer(week)], resolver: resolver)
+        }
+        if let week = captures(raw, pattern: #"^(\d+)주차 · 리그는 평이하다"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.climate.even", [.integer(week)], resolver: resolver)
+        }
+        if let week = captures(raw, pattern: #"^(\d+)주차 · 타선이 직구를 기다리기 시작했다"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.climate.slump", [.integer(week)], resolver: resolver)
+        }
+        if let week = captures(raw, pattern: #"^(\d+)주차 · 상대 벤치가 내 구종 순서를 읽고 있다"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.climate.adapted", [.integer(week)], resolver: resolver)
+        }
+        if let age = captures(raw, pattern: #"^(\d+)세 · 전성기가 기울며 구위가 한 단계 떨어졌습니다\.$"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.aging.decline", [.integer(age)], resolver: resolver)
         }
 
         if let values = captures(raw, pattern: #"^신인 계약 제안 · (.+) · (.+)$"#), values.count == 2 {
