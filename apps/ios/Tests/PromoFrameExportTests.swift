@@ -2,6 +2,7 @@ import XCTest
 import SwiftUI
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 홍보 영상용 프레임 시퀀스 내보내기.
 ///

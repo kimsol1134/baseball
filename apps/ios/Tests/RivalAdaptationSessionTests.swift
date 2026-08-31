@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// **같은 공을 반복하면 읽힌다** — 이 게임이 스토어에서 파는 약속이 실제 승부에서 성립하는가.
 ///

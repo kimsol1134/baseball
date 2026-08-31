@@ -1,6 +1,7 @@
 import XCTest
 import AVFoundation
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 심판 콜이 **목소리처럼 들리는가**를 신호로 확인한다.
 ///

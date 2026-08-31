@@ -1,5 +1,6 @@
 import XCTest
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 별점 관문의 규칙을 고정한다. 시스템이 연 3회만 실제로 띄우므로,
 /// "이유 하나는 한 번만 · 요청 사이 24시간"이 깨지면 리뷰 창을 낭비한다.

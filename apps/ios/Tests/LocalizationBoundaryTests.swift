@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 final class LocalizationBoundaryTests: XCTestCase {
     func testCoreTokenResolvesThroughSemanticKeyAndTypedValues() {
@@ -64,7 +65,15 @@ final class LocalizationBoundaryTests: XCTestCase {
         XCTAssertTrue(importantBlock.contains("localizedImportantGameRivalAccessibility"))
         XCTAssertTrue(importantBlock.contains("Text(verbatim:"))
 
-        let presentationSource = try IOSSourceScan.read("apps/ios/Sources/HighSchoolPresentation.swift")
+        let presentationSource = try IOSSourceScan.readAll([
+            "apps/ios/Sources/Presentation/HighSchoolPresentation.swift",
+            "apps/ios/Sources/Presentation/HighSchoolPresentation+Labels.swift",
+            "apps/ios/Sources/Presentation/HighSchoolPresentation+ChapterReview.swift",
+            "apps/ios/Sources/Presentation/HighSchoolPresentation+ImportantGame.swift",
+            "apps/ios/Sources/Presentation/HighSchoolPresentation+Training.swift",
+            "apps/ios/Sources/Presentation/HighSchoolPresentation+Awakening.swift",
+            "apps/ios/Sources/Presentation/HighSchoolPresentation+Drama.swift",
+        ])
         for key in [
             "AppCopyKey.importantGameOpponentTitle",
             "AppCopyKey.importantGameFinalShowdownTitle",
@@ -232,7 +241,7 @@ final class LocalizationBoundaryTests: XCTestCase {
 
         let appShell = try IOSSourceScan.typeBody(
             "ProLockedView",
-            in: "apps/ios/Sources/AppShell.swift"
+            in: "apps/ios/Sources/Features/Shell/AppShell.swift"
         )
         XCTAssertTrue(appShell.contains("ProspectRankingPresentation.localizedForecastBand"))
         XCTAssertTrue(appShell.contains("ProspectRankingPresentation.localizedForecastTeam"))

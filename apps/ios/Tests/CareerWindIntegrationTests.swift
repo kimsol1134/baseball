@@ -2,6 +2,7 @@ import Foundation
 import SimulationCore
 import XCTest
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 @MainActor
 final class CareerWindIntegrationTests: XCTestCase {

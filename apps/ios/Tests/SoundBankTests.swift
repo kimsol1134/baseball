@@ -1,6 +1,7 @@
 import XCTest
 import AVFoundation
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 번들 음원이 실제로 실려서 읽히는지 본다.
 ///

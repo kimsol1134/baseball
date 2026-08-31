@@ -1,5 +1,6 @@
 import XCTest
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 final class CareerPacingTests: XCTestCase {
     func testEightInternalChaptersReadAsFourPlayerFacingActs() {

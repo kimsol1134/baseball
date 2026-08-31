@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 리텐션 훅(연속 기록·복귀 알림)의 순수 판정.
 ///
@@ -302,7 +303,7 @@ final class RetentionHookTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         let source = try String(
-            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/DailyReminder.swift"),
+            contentsOf: repositoryRoot.appendingPathComponent("apps/ios/Sources/Platform/DailyReminder.swift"),
             encoding: .utf8
         )
         let start = try XCTUnwrap(source.range(of: "final class NotificationRouter"))

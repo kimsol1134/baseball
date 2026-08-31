@@ -1,6 +1,7 @@
 import XCTest
 import AVFoundation
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 홍보 영상의 소리를 게임의 합성기로 직접 뽑는다.
 ///

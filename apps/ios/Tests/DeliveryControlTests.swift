@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 제스처 → 투구 품질 변환. 이 앱의 최고 자산인데 자동 테스트가 하나도 없었다.
 ///

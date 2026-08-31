@@ -2,6 +2,7 @@ import Foundation
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 final class ScopedPresentationLocalizationTests: XCTestCase {
     private struct CatalogEntry {
@@ -215,7 +216,7 @@ final class ScopedPresentationLocalizationTests: XCTestCase {
             .deletingLastPathComponent()
         var result: [String: CatalogEntry] = [:]
         for filename in ["GameContent.xcstrings", "Localizable.xcstrings"] {
-            let url = root.appendingPathComponent("apps/ios/Sources/Localization/\(filename)")
+            let url = root.appendingPathComponent("apps/ios/Sources/Presentation/Localization/\(filename)")
             let object = try JSONSerialization.jsonObject(with: Data(contentsOf: url))
             let rootObject = try XCTUnwrap(object as? [String: Any])
             let strings = try XCTUnwrap(rootObject["strings"] as? [String: Any])

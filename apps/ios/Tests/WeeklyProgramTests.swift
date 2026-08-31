@@ -2,6 +2,8 @@ import Foundation
 import SimulationCore
 import XCTest
 @testable import BaseballIOS
+import BaseballIOSDomain
+import BaseballIOSPersistence
 
 @MainActor
 final class WeeklyProgramTests: XCTestCase {

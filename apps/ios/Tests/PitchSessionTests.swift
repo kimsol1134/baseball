@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 중요 경기가 실제 시뮬레이션인지 확인한다. 이전 구현은 선택지별 고정 성적을 돌려줬다(계획 문서 D2).
 @MainActor
@@ -836,6 +837,14 @@ final class PitchSessionTests: XCTestCase {
             holdCall: false,
             pitchLog: log,
             sequenceMoments: log.compactMap(\.sequenceMoment)
+        )
+    }
+
+    func testDeliveryScoringIgnoresNeutralAndAveragesManualAxes() {
+        XCTAssertNil(PitchDeliveryScoring.score(.neutral))
+        XCTAssertEqual(
+            PitchDeliveryScoring.score(PitchDelivery(releaseAccuracy: 900, aimAccuracy: 700)),
+            800
         )
     }
 }

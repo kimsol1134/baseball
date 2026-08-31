@@ -1,6 +1,8 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
+import BaseballIOSPersistence
 
 private final class ProPersistenceMemoryRemoteStore: SaveSyncRemoteStoring {
     private(set) var values: [String: Data] = [:]

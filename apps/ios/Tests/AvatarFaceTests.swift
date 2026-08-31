@@ -1,5 +1,6 @@
 import XCTest
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 같은 이름은 언제나 같은 얼굴이어야 한다.
 ///

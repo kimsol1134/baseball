@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 승부 화면이 "지금 어떤 상황인가"를 말하는 두 규칙 — 상황 한 마디와 긴장도.
 @MainActor

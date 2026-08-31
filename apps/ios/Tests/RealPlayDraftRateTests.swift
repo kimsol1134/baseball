@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 실플레이 지명률 — **실제 투구 커널을 통과한** 3년의 결과.
 ///

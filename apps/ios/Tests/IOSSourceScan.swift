@@ -1,4 +1,5 @@
 import Foundation
+import BaseballIOSDomain
 
 enum IOSSourceScan {
     enum ScanError: Error, LocalizedError {
@@ -24,10 +25,40 @@ enum IOSSourceScan {
     }
 
     static func read(_ relativePath: String, from filePath: StaticString = #filePath) throws -> String {
-        try String(
-            contentsOf: repositoryRoot(from: filePath).appendingPathComponent(relativePath),
-            encoding: .utf8
+        try String(contentsOf: resolve(relativePath, from: filePath), encoding: .utf8)
+    }
+
+    static func resolve(_ relativePath: String, from filePath: StaticString = #filePath) -> URL {
+        let root = repositoryRoot(from: filePath)
+        let exact = root.appendingPathComponent(relativePath)
+        if FileManager.default.fileExists(atPath: exact.path) {
+            return exact
+        }
+        let name = URL(fileURLWithPath: relativePath).lastPathComponent
+        let searchRoots = [
+            root.appendingPathComponent("apps/ios/Sources"),
+            root.appendingPathComponent("packages/ios-layers/Sources"),
+        ]
+        for directory in searchRoots {
+            if let found = firstFile(named: name, under: directory) {
+                return found
+            }
+        }
+        return exact
+    }
+
+    private static func firstFile(named name: String, under directory: URL) -> URL? {
+        let enumerator = FileManager.default.enumerator(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
         )
+        while let url = enumerator?.nextObject() as? URL {
+            if url.lastPathComponent == name {
+                return url
+            }
+        }
+        return nil
     }
 
     static func readAll(_ relativePaths: [String], from filePath: StaticString = #filePath) throws -> String {

@@ -2,6 +2,7 @@ import XCTest
 import SwiftUI
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 승부 장면은 애니메이션 중간이 본체다. 정지 상태만 보면 스윙도 임팩트도 확인할 수 없으므로
 /// 진행도를 고정해 프레임을 직접 렌더한다. `BASEBALL_DRAMA_DIR`이 있으면 PNG로도 남긴다.

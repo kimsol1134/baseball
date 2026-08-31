@@ -2,6 +2,7 @@ import Foundation
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 final class PitchLocalizationTests: XCTestCase {
     private struct CatalogEntry {
@@ -189,7 +190,7 @@ final class PitchLocalizationTests: XCTestCase {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         let url = repositoryRoot
-            .appendingPathComponent("apps/ios/Sources/Localization/\(name).xcstrings")
+            .appendingPathComponent("apps/ios/Sources/Presentation/Localization/\(name).xcstrings")
         let object = try JSONSerialization.jsonObject(with: Data(contentsOf: url))
         let root = try XCTUnwrap(object as? [String: Any])
         let strings = try XCTUnwrap(root["strings"] as? [String: Any])

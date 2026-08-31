@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 성장 게이지 표시 회귀. 옛 빌드가 "현재 %lld/2"로 분모를 하드코딩해 2/2·3/2가 보였고
 /// (2026-08-31 사용자 제보), 노장 하락으로 밴드가 내려가면 두-인자 문구에서도 저장된

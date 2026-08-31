@@ -1,6 +1,8 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
+import BaseballIOSPersistence
 
 /// 손맛·소리·업적·환생 계승의 순수 판정을 지킨다. 모두 엔진/Game Center 없이 돈다.
 final class RetentionTests: XCTestCase {

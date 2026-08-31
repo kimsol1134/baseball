@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 등판 기록 행의 문구. 한 번 틀리면 시즌 내내 틀린 채로 남는 자리라 표로 못 박는다.
 final class GameLineFormatTests: XCTestCase {

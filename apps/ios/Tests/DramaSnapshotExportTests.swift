@@ -2,6 +2,7 @@ import XCTest
 import SwiftUI
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 승부 장면을 PNG로 떨어뜨려 눈으로 확인하기 위한 내보내기.
 ///

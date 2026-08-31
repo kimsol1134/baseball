@@ -1,5 +1,6 @@
 import XCTest
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// The share button sends `LifeCardShareText.body` as a text item. That body is the
 /// only path from a shared card back to the App Store, so the URL must not pin Korea.

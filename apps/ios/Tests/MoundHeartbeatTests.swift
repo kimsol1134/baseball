@@ -1,6 +1,7 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 @MainActor
 final class MoundHeartbeatTests: XCTestCase {

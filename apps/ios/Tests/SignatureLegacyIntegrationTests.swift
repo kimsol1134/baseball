@@ -2,6 +2,8 @@ import Foundation
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
+import BaseballIOSPersistence
 
 @MainActor
 final class SignatureLegacyIntegrationTests: XCTestCase {

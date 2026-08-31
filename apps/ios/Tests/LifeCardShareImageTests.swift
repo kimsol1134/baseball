@@ -2,6 +2,7 @@ import XCTest
 import SimulationCore
 import SwiftUI
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 공유되는 **그 이미지**를 실제 경로(`LifeCardRenderer`)로 뽑아 파일로 남긴다.
 ///

@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 final class JapaneseLocalizationTests: XCTestCase {
     private struct Entry {
@@ -67,7 +68,7 @@ final class JapaneseLocalizationTests: XCTestCase {
 
     func testJapaneseInfoPlistAndLaunchScreenResourcesExist() throws {
         let root = repositoryRoot()
-        let info = root.appendingPathComponent("apps/ios/Sources/Localization/ja.lproj/InfoPlist.strings")
+        let info = root.appendingPathComponent("apps/ios/Sources/Presentation/Localization/ja.lproj/InfoPlist.strings")
         let launch = root.appendingPathComponent("apps/ios/Sources/ja.lproj/LaunchScreenV2.storyboard")
         XCTAssertTrue(FileManager.default.fileExists(atPath: info.path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: launch.path))
@@ -79,7 +80,7 @@ final class JapaneseLocalizationTests: XCTestCase {
         let root = repositoryRoot()
         let koreanLaunch = root.appendingPathComponent("apps/ios/Sources/ko.lproj/LaunchScreenV2.storyboard")
         let englishLaunch = root.appendingPathComponent("apps/ios/Sources/en.lproj/LaunchScreenV2.storyboard")
-        let appShell = root.appendingPathComponent("apps/ios/Sources/AppShell.swift")
+        let appShell = root.appendingPathComponent("apps/ios/Sources/Features/Shell/AppShell.swift")
         let info = root.appendingPathComponent("apps/ios/Sources/Info.plist")
         let koreanLaunchLogo = root.appendingPathComponent(
             "apps/ios/Sources/Assets.xcassets/LaunchLogo.imageset/Contents.json"
@@ -106,8 +107,8 @@ final class JapaneseLocalizationTests: XCTestCase {
     private func catalogEntries() throws -> [Entry] {
         let root = repositoryRoot()
         let paths = [
-            "apps/ios/Sources/Localization/Localizable.xcstrings",
-            "apps/ios/Sources/Localization/GameContent.xcstrings",
+            "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+            "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
         ]
         var entries: [Entry] = []
         for path in paths {

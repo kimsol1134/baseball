@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 @MainActor
 final class ProCareerContractWave3Tests: XCTestCase {
@@ -40,12 +41,17 @@ final class ProCareerContractWave3Tests: XCTestCase {
     }
 
     func testStoreLogsContractAnalyticsOnlyAfterPersistenceWithLowCardinalityFields() throws {
-        let source = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/MobileCareerStore.swift"),
-            encoding: .utf8
-        )
+        let source = try IOSSourceScan.readAll([
+            "apps/ios/Sources/Application/MobileCareerStore.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Lifecycle.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Week.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+ImportantGame.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Season.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Persistence.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Queries.swift",
+        ])
         let acceptedRange = try XCTUnwrap(source.range(of: "let accepted = perform"))
-        let analyticsRange = try XCTUnwrap(source.range(of: "GameAnalytics.log(.proContractSigned"))
+        let analyticsRange = try XCTUnwrap(source.range(of: "CareerTelemetry.log(.proContractSigned"))
         XCTAssertLessThan(acceptedRange.lowerBound, analyticsRange.lowerBound)
         XCTAssertTrue(source.contains("\"market_kind\""))
         XCTAssertTrue(source.contains("\"offer_kind\""))
@@ -59,7 +65,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
     }
 
     func testWave3LocalizedKeysHaveKoreanEnglishJapaneseParity() throws {
-        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Localization/Localizable.xcstrings")
+        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any]
         )
@@ -114,13 +120,18 @@ final class ProCareerContractWave3Tests: XCTestCase {
         ] {
             XCTAssertTrue(flow.contains(identifier), identifier)
         }
-        XCTAssertTrue(flow.contains("ProFinanceRules.investmentCost(for: investment)"))
+        XCTAssertTrue(flow.contains("CareerDisplayRules.investmentCost(for: investment)"))
         XCTAssertTrue(flow.contains("journeySettlementMerchandiseTier"))
 
-        let store = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/MobileCareerStore.swift"),
-            encoding: .utf8
-        )
+        let store = try IOSSourceScan.readAll([
+            "apps/ios/Sources/Application/MobileCareerStore.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Lifecycle.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Week.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+ImportantGame.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Season.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Persistence.swift",
+            "apps/ios/Sources/Application/MobileCareerStore+Queries.swift",
+        ])
         XCTAssertTrue(store.contains("investment: investment"))
         XCTAssertTrue(store.contains("focus: focus"))
         XCTAssertTrue(store.contains("proOffseasonInvestmentSelected"))
@@ -128,7 +139,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
         XCTAssertTrue(store.contains("funds_band"))
         XCTAssertFalse(store.contains("annual_salary"))
 
-        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Localization/GameContent.xcstrings")
+        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/GameContent.xcstrings")
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any]
         )
@@ -168,7 +179,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
             "apps/ios/Sources/CareerFlowChrome.swift",
         ])
         let presentation = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/ProCareerPresentation.swift"),
+            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/ProCareerPresentation.swift"),
             encoding: .utf8
         )
 
@@ -210,7 +221,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
     }
 
     func testWave5BenefitAndImmediateTimingCatalogsAreExplicitInKoEnJa() throws {
-        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Localization/Localizable.xcstrings")
+        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any]
         )

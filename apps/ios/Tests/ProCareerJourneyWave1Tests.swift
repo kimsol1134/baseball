@@ -2,6 +2,8 @@ import Foundation
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
+import BaseballIOSPersistence
 
 private final class JourneyWave1MemoryRemoteStore: SaveSyncRemoteStoring {
     private(set) var values: [String: Data] = [:]
@@ -24,7 +26,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertFalse(AppFeatureConfiguration.legacyTests.proCareerJourneyV1)
 
         let appSource = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/BaseballApp.swift"),
+            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/Features/Shell/BaseballApp.swift"),
             encoding: .utf8
         )
         XCTAssertTrue(appSource.contains("#if DEBUG"))
@@ -212,7 +214,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
     func testWave2ContractCopyHasKoreanEnglishJapaneseParity() throws {
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(
-                with: Data(contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/Localization/Localizable.xcstrings"))
+                with: Data(contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings"))
             ) as? [String: Any]
         )
         let strings = try XCTUnwrap(object["strings"] as? [String: Any])
@@ -236,7 +238,9 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
 
     func testWave4ViewsConsumeSharedProjectionsAndExposeStableAccessibilityIDs() throws {
         let sourceFiles = try IOSSourceScan.readAll([
-            "apps/ios/Sources/AppShell.swift",
+            "apps/ios/Sources/Features/Shell/AppShell.swift",
+            "apps/ios/Sources/Features/Shell/TodayView.swift",
+            "apps/ios/Sources/Features/Shell/CareerDirectionCard.swift",
             "apps/ios/Sources/CareerFlowView.swift",
             "apps/ios/Sources/RecordView.swift",
             "apps/ios/Sources/ProRetirementViews.swift",
@@ -244,7 +248,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         ])
         XCTAssertTrue(sourceFiles.contains("ProCareerGoalMetricsView"))
         XCTAssertTrue(sourceFiles.contains("ProCareerPresentation.teamRecords(for: state)"))
-        XCTAssertTrue(sourceFiles.contains("ProCareerEngine.retirementPreview(for: state)"))
+        XCTAssertTrue(sourceFiles.contains("MobileCareerStore.retirementPreview(for: state)"))
         XCTAssertTrue(sourceFiles.contains("RetirementHonorsCard"))
         XCTAssertTrue(sourceFiles.contains("pro.careerDirection.toggle"))
         XCTAssertTrue(sourceFiles.contains("pro.careerDirection.records"))
@@ -279,7 +283,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
     }
 
     func testWave4CopyHasKoreanEnglishJapaneseParityAndProjectionLanguage() throws {
-        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Localization/Localizable.xcstrings")
+        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any])
         let strings = try XCTUnwrap(object["strings"] as? [String: Any])
         let prefixes = [
@@ -532,12 +536,11 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
     }
 
     func testWave1SwiftUISurfacesHaveStableAccessibilityRootsAndStoredProjectionInputs() throws {
-        let root = repositoryRoot()
         let flow = try IOSSourceScan.read("apps/ios/Sources/ProSeasonSettlementView.swift")
-        let shell = try String(
-            contentsOf: root.appendingPathComponent("apps/ios/Sources/AppShell.swift"),
-            encoding: .utf8
-        )
+        let shell = try IOSSourceScan.readAll([
+            "apps/ios/Sources/Features/Shell/AppShell.swift",
+            "apps/ios/Sources/Features/Shell/CareerDirectionCard.swift",
+        ])
 
         XCTAssertTrue(flow.contains("struct ProSeasonSettlementView: View"))
         XCTAssertTrue(flow.contains("accessibilityIdentifier(\"pro.seasonSettlement\")"))
@@ -548,14 +551,16 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
 
         XCTAssertTrue(shell.contains("struct CareerDirectionCard: View"))
         XCTAssertTrue(shell.contains("accessibilityIdentifier(\"pro.careerDirection\")"))
-        XCTAssertTrue(shell.contains("ProTeamLegacyRules.score(record:"))
+        XCTAssertTrue(shell.contains("MobileCareerStore.teamLegacyProjection("))
         XCTAssertTrue(shell.contains("pro.careerDirection.legacy.hint"))
-        XCTAssertTrue(shell.contains("ProCareerEngine.hallOfFameProjection(for: state)"))
-        XCTAssertTrue(shell.contains("ProCareerGoalRules.progress(state: state, goal: goal)"))
+        XCTAssertTrue(shell.contains("MobileCareerStore.hallOfFameProjection(for: state)"))
+        XCTAssertTrue(shell.contains("MobileCareerStore.goalProgress(state: state, goal: goal)"))
+        XCTAssertFalse(shell.contains("ProTeamLegacyRules."), "direction card must read store projections")
+        XCTAssertFalse(shell.contains("ProCareerGoalRules."), "direction card must read store projections")
     }
 
     func testWave1CopyKeysHaveKoreanEnglishJapaneseParityAndNoRealClubCopy() throws {
-        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Localization/Localizable.xcstrings")
+        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any]
         )

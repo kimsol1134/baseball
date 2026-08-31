@@ -2,6 +2,7 @@ import SwiftUI
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 라이벌 파생·능력 사다리·궤적 좌표 디코딩처럼 화면이 기대는 순수 변환을 지킨다.
 final class PresentationTests: XCTestCase {

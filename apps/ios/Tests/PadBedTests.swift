@@ -1,6 +1,7 @@
 import XCTest
 import AVFoundation
 @testable import BaseballIOS
+import BaseballIOSDomain
 
 /// 메뉴 음악 패드가 "음악처럼" 존재하는지 신호로 확인한다.
 final class PadBedTests: XCTestCase {

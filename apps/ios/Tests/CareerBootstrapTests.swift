@@ -1,6 +1,8 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
+import BaseballIOSPersistence
 
 private final class CareerBootstrapMemoryRemoteStore: SaveSyncRemoteStoring {
     private var values: [String: Data] = [:]
@@ -141,11 +143,7 @@ final class CareerBootstrapTests: XCTestCase {
     /// Wave 0 characterization: the season-review branch is still a single generic action card,
     /// so no salary/fan/team-legacy settlement is exposed by the current UI.
     func testWave0SeasonReviewUIIsTheCurrentPlainActionCard() throws {
-        let sourceURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appendingPathComponent("Sources/CareerFlowView.swift")
-        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let source = try IOSSourceScan.read("apps/ios/Sources/CareerFlowView.swift")
         let start = try XCTUnwrap(source.range(of: "case .seasonReview:"))
         let remainder = source[start.upperBound...]
         let end = try XCTUnwrap(remainder.range(of: "case .offseasonDecision:"))

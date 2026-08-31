@@ -1,6 +1,8 @@
 import XCTest
 import SimulationCore
 @testable import BaseballIOS
+import BaseballIOSDomain
+import BaseballIOSPersistence
 
 final class HighSchoolCareerPersistenceTests: XCTestCase {
     func testDecodeRejectsFutureSchemaButRawCodableStillReadsIt() throws {
