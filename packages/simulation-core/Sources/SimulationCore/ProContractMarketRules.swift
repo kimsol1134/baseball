@@ -965,8 +965,21 @@ public enum ProContractMarketRules {
         return state.currentStats
     }
 
-    public static func projectedPitcher(for pitcher: PitcherSnapshot, effectiveAge: Int) -> PitcherSnapshot {
-        let decline = effectiveAge >= 33 ? 1 : 0
+    public static func projectedPitcher(
+        for pitcher: PitcherSnapshot,
+        effectiveAge: Int,
+        proRulesVersion: Int? = nil,
+        recoveryYear: Bool = false
+    ) -> PitcherSnapshot {
+        let usesArc = (proRulesVersion ?? 1) >= ProCareerEngine.careerArcRulesVersion
+        let decline: Int
+        if effectiveAge < 33 {
+            decline = 0
+        } else if usesArc, effectiveAge >= 35 {
+            decline = recoveryYear ? 1 : 2
+        } else {
+            decline = 1
+        }
         guard decline > 0 else { return pitcher }
         return PitcherSnapshot(
             id: pitcher.id,

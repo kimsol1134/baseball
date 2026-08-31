@@ -32,6 +32,10 @@ public enum DifficultyScale {
     public static let rebirthCeiling = 4
     /// 프로에서 시즌이 지나며 세지는 폭의 상한.
     public static let seasonCeiling = 8
+    /// 1군 고능력치 투수를 리그가 따라오는 폭의 상한.
+    public static let trackingCeiling = 6
+    /// 시즌 계단 + 추적 + 온도를 합친 상한. 벽을 만들지 않되 후반 무쌍은 막는다.
+    public static let arcCeiling = 14
 
     /// 고교 상대의 능력 보정.
     ///
@@ -48,6 +52,24 @@ public enum DifficultyScale {
     /// 프로 상대의 능력 보정. 시즌이 갈수록 리그가 자신에게 맞춰 온다.
     public static func pro(season: Int) -> Int {
         min(seasonCeiling, max(0, season - 1))
+    }
+
+    /// v5 프로 아크. 초반은 기존 시즌 계단만 두고, 5년차 1군부터 능력치를 추적한다.
+    public static func trackingBonus(season: Int, level: ProLevel, skill: Int) -> Int {
+        guard season >= 5, level == .major else { return 0 }
+        return min(trackingCeiling, max(0, (skill - 58) / 3))
+    }
+
+    public static func proArc(
+        season: Int,
+        level: ProLevel,
+        skill: Int,
+        climate: ProSeasonClimate
+    ) -> Int {
+        let combined = pro(season: season)
+            + trackingBonus(season: season, level: level, skill: skill)
+            + ProSeasonClimateRules.offset(for: climate)
+        return min(arcCeiling, max(-2, combined))
     }
 
     /// 세 능력에 보정을 더한 타자. 20~80 눈금을 벗어나지 않는다.

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Baseball.Core.Domain;
+using Baseball.Core.Pro;
 using NUnit.Framework;
 
 namespace Baseball.Core.HighSchool.Tests
@@ -61,6 +62,8 @@ namespace Baseball.Core.HighSchool.Tests
             Assert.That(DifficultyScale.HighSchool(1, 1), Is.Zero);
             Assert.That(DifficultyScale.HighSchool(8, 3), Is.EqualTo(7));
             Assert.That(DifficultyScale.Pro(20), Is.EqualTo(8));
+            Assert.That(DifficultyScale.TrackingBonus(1, ProLevel.Major, 70), Is.Zero);
+            Assert.That(DifficultyScale.ProArc(8, ProLevel.Major, 70, ProSeasonClimate.Even), Is.GreaterThan(DifficultyScale.Pro(8)));
             Assert.That(LeagueBaseline.TeamRunsPerGamePermille.Sum(), Is.EqualTo(1000));
             Assert.That(LeagueBaseline.HighSchoolRunsPerGamePermille.Sum(), Is.EqualTo(1000));
             Assert.That(DecisionRules.Decide(true, false, 12, 1, 5, 2), Is.EqualTo(PitchingDecision.NoDecision));

@@ -33,7 +33,8 @@ namespace Baseball.Core.Pro
             int outsTarget,
             int pitchCap,
             ulong baseSeed,
-            int batterOffset = 0)
+            int batterOffset = 0,
+            AutoCallPolicy callPolicy = AutoCallPolicy.Perfect)
         {
             var engine = new PitchKernelEngine();
             var rng = new SplitMix64(baseSeed);
@@ -86,12 +87,18 @@ namespace Baseball.Core.Pro
                 var preparation = engine.PreparePitch(new PreparePitchParams(
                     seed, pitcher, batter, scouting, context, plateAppearanceMemory, gameState, gameLog));
                 var outsBefore = (inningState.Inning - 1) * 3 + inningState.Outs;
+                var missThisPa = false;
+                if (callPolicy != AutoCallPolicy.Perfect)
+                    missThisPa = rng.NextInt(100) < (callPolicy == AutoCallPolicy.Slump ? 35 : 18);
 
                 while (true)
                 {
+                    var call = missThisPa
+                        ? preparation.AlternativeRecommendation.Call
+                        : preparation.PrimaryRecommendation.Call;
                     var result = engine.SubmitPitch(new SubmitPitchParams(
                         seed, pitcher, batter, scouting, context, preparation.PreparationToken,
-                        preparation.PrimaryRecommendation.Call, plateAppearanceMemory, gameState, gameLog));
+                        call, plateAppearanceMemory, gameState, gameLog));
                     plateAppearanceMemory = result.RivalMemory;
                     benchMemory = result.RivalMemory;
                     gameState = result.GameState;
