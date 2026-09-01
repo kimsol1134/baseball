@@ -228,6 +228,12 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
     /// 코어가 팀 득점을 독립적으로 뽑으면 무실점으로 막고도 2:5 패배를 통보받는다.
     /// 등판 시점의 점수 차를 받아 최종 스코어를 거기서 파생시킨다.
     public let scoreDifferentialAtEntry: Int?
+    /// 직접 등판이 시작된 이닝과 당시 아웃. 포스트시즌에서 남은 경기 구간을 별도로
+    /// 시뮬레이션하기 위한 선택 필드다. 이전 리포트는 nil로 계속 읽힌다.
+    public let inningAtEntry: Int?
+    public let outsAtEntry: Int?
+    /// 같은 포스트시즌 상대 벤치가 다음 경기에도 이어서 사용할 투구 관찰 기록.
+    public let rivalMemory: RivalMemorySnapshot?
     /// 결과 확률과 분리된 수싸움 적중 횟수. Wave 3 이전 리포트에는 없으므로 optional이다.
     public let sequenceMasteryCount: Int?
     /// 맞은 안타 수. WHIP·피안타 같은 야구다운 지표를 카드와 기록에 적으려면 필요하다.
@@ -250,6 +256,9 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         outs: Int? = nil,
         teamRuns: Int? = nil,
         scoreDifferentialAtEntry: Int? = nil,
+        inningAtEntry: Int? = nil,
+        outsAtEntry: Int? = nil,
+        rivalMemory: RivalMemorySnapshot? = nil,
         sequenceMasteryCount: Int? = nil,
         hits: Int? = nil,
         homeRuns: Int? = nil,
@@ -266,6 +275,9 @@ public struct ImportantInningReport: Codable, Equatable, Sendable {
         self.outs = outs
         self.teamRuns = teamRuns
         self.scoreDifferentialAtEntry = scoreDifferentialAtEntry
+        self.inningAtEntry = inningAtEntry
+        self.outsAtEntry = outsAtEntry
+        self.rivalMemory = rivalMemory
         self.sequenceMasteryCount = sequenceMasteryCount
         self.hits = hits
         self.homeRuns = homeRuns

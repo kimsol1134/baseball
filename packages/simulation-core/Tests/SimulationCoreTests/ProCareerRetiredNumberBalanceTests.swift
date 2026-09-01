@@ -7,9 +7,9 @@ final class ProCareerRetiredNumberBalanceTests: XCTestCase {
     func testNewCareerUsesJourneyRulesVersion2AndProRulesVersion4() throws {
         let started = try engine.start(startParams(seed: "820001"))
         XCTAssertEqual(started.snapshot.journeyState?.rulesVersion, 2)
-        XCTAssertEqual(started.snapshot.proRulesVersion, 6)
+        XCTAssertEqual(started.snapshot.proRulesVersion, 7)
         XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 2)
-        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 6)
+        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 7)
         XCTAssertTrue(ProCareerEngine.usesAgencyRules(started.snapshot))
         XCTAssertTrue(ProCareerEngine.usesRetiredNumberLiveRules(started.snapshot))
     }

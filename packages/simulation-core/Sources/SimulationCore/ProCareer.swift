@@ -637,15 +637,23 @@ public struct ProCareerEngine: Sendable {
         // 하나도 없는 주에 승부처를 열면 resolve 단계에서 별도 보너스 경기가 생긴다.
         let regularTrigger: ProSeasonTrigger? = nextWeek >= 24 || newGameLines.isEmpty || newInjury > 0 ? nil
             : importantGameTrigger(state: state, nextWeek: nextWeek, newLevel: level, newTrust: trust, seasonStats: stats, skill: skill, priorImportantGames: priorImportantGames)
-        let endOfSeasonPostseason: ProPostseasonState? = nextWeek >= 24 && Self.usesAutumnRules(state)
-            ? ProPostseasonRules.playerPath(
-                from: ProPostseasonRules.evaluateEndOfSeason(
-                    replacing(state, week: nextWeek, currentStats: stats, gameLines: (state.gameLines ?? []) + newGameLines)
-                ),
+        let postseasonEvaluationState = replacing(
+            state,
+            week: nextWeek,
+            currentStats: stats,
+            gameLines: (state.gameLines ?? []) + newGameLines
+        )
+        let endOfSeasonPostseason: ProPostseasonState? = {
+            guard nextWeek >= 24, Self.usesAutumnRules(state) else { return nil }
+            let evaluated = ProPostseasonRules.playerPath(
+                from: ProPostseasonRules.evaluateEndOfSeason(postseasonEvaluationState),
                 level: level,
                 injuryWeeks: newInjury
             )
-            : nil
+            return Self.usesFinalSeriesRules(state)
+                ? ProPostseasonRules.preparingSeries(evaluated, state: postseasonEvaluationState)
+                : evaluated
+        }()
         let autumnTrigger: ProSeasonTrigger? = {
             guard let postseason = endOfSeasonPostseason,
                   postseason.result == .inProgress,
@@ -675,7 +683,12 @@ public struct ProCareerEngine: Sendable {
             if pendingDecision != nil { return .seasonDecision }
             return .weeklyPlan
         }()
-        let rival: ProRivalBatter? = trigger.map { rivalForGame(state, week: nextWeek, trigger: $0) }
+        let rival: ProRivalBatter? = trigger.map { trigger in
+            if let opponentID = endOfSeasonPostseason?.series?.opponentTeamID {
+                return rivalForGame(state, week: nextWeek, trigger: trigger, opponentTeamID: opponentID)
+            }
+            return rivalForGame(state, week: nextWeek, trigger: trigger)
+        }
         let importantGames = priorImportantGames + (phase == .importantGame && autumnTrigger == nil ? 1 : 0)
         let seasonTensionsValue = state.seasonTensions ?? seasonTensions(for: state)
         let priorSegment = state.seasonSegment ?? segment(forWeek: state.week)
@@ -1178,15 +1191,74 @@ public struct ProCareerEngine: Sendable {
     private func resolveAutumnGame(_ params: ResolveProGameParams) throws -> ProCareerResult {
         var rng = try generator(params.seed)
         let report = params.report
-        let current = params.state.postseason ?? ProPostseasonRules.evaluateEndOfSeason(params.state)
+        let rawPostseason = params.state.postseason ?? ProPostseasonRules.evaluateEndOfSeason(params.state)
+        let usesSeriesRules = Self.usesFinalSeriesRules(params.state)
+        let current = usesSeriesRules
+            ? ProPostseasonRules.preparingSeries(rawPostseason, state: params.state)
+            : rawPostseason
         let support = report.teamRuns ?? max(0, (report.scoreDifferentialAtEntry ?? 0) + report.runsAllowed + 1)
         let opponent = report.runsAllowed + max(0, -(report.scoreDifferentialAtEntry ?? 0))
-        let won = support > opponent || (support == opponent && report.runsAllowed <= 1)
-        let nextPostseason = ProPostseasonRules.resolving(current, won: won)
+        let legacyWon = support > opponent || (support == opponent && report.runsAllowed <= 1)
+        let strengthEdge = ProPostseasonRules.teamStrengthEdgePermille(params.state)
+        let resolvedGame = usesSeriesRules
+            ? resolvePostseasonGame(
+                state: params.state,
+                report: report,
+                strengthEdgePermille: strengthEdge,
+                using: &rng
+            )
+            : nil
+        let won = resolvedGame?.won ?? legacyWon
+        var automaticSummaries: [String] = []
+        var automaticGames = 0
+        let nextPostseason: ProPostseasonState
+        if usesSeriesRules {
+            guard let game = resolvedGame else {
+                throw SimulationError.invalidProCareer("postseason remainder game was not resolved")
+            }
+            let gameNumber = current.series?.nextGameNumber ?? 1
+            let played = ProPostseasonRules.resolvingSeriesGame(
+                current,
+                won: game.won,
+                directlyPlayed: true,
+                pitches: report.pitches,
+                outs: report.outs,
+                runsAllowed: report.runsAllowed,
+                teamRuns: game.teamRuns,
+                opponentRuns: game.opponentRuns,
+                rivalMemory: report.rivalMemory
+            )
+            let prepared = played.result == .inProgress
+                ? ProPostseasonRules.preparingSeries(played, state: params.state)
+                : played
+            let simulated = simulatePostseasonTeamGames(
+                from: prepared,
+                careerState: params.state,
+                role: params.state.role,
+                strengthEdgePermille: strengthEdge,
+                forceCurrentGame: false,
+                using: &rng
+            )
+            nextPostseason = simulated.state
+            let directSummary = current.currentRound == .final
+                ? "우승 결정전 \(gameNumber)차전 잔여 경기 진행 · \(game.teamRuns)-\(game.opponentRuns) \(game.won ? "승" : "패")"
+                : "가을 직접 등판 뒤 잔여 경기 진행 · \(game.teamRuns)-\(game.opponentRuns) \(game.won ? "승" : "패")"
+            automaticSummaries = [directSummary] + simulated.summaries
+            automaticGames = simulated.count
+        } else {
+            nextPostseason = ProPostseasonRules.resolving(current, won: won)
+        }
         let nextRound = nextPostseason.currentRound
         let continues = nextPostseason.result == .inProgress && nextRound != nil
         let nextTrigger = nextRound.map { ProPostseasonRules.trigger(for: $0) }
-        let rival = nextTrigger.map { rivalForGame(params.state, week: params.state.week, trigger: $0) }
+        let rival = nextTrigger.map { trigger in
+            rivalForGame(
+                params.state,
+                week: params.state.week,
+                trigger: trigger,
+                opponentTeamID: nextPostseason.series?.opponentTeamID
+            )
+        }
         let soundProcess = report.actualDamage <= report.expectedDamage + 150 || report.recommendationAccepted * 2 >= report.pitches
         let sequenceTrustReward = (params.state.balanceVersion ?? 1) >= 4
             ? PitchSequenceMasteryRules.trustReward(for: report.sequenceMasteryCount)
@@ -1243,21 +1315,39 @@ public struct ProCareerEngine: Sendable {
         case .eliminated:
             headline = ProPostseasonRules.eliminationNews(for: nextPostseason.currentRound)
         case .inProgress:
-            headline = nextTrigger == .autumnWildCard
-                ? "와일드카드 2차전이 남았습니다."
-                : (won ? "다음 라운드가 열립니다." : "가을이 이어집니다.")
+            if usesSeriesRules, let series = nextPostseason.series {
+                let roundTitle: String = switch nextPostseason.currentRound {
+                case .wildCard: "와일드카드"
+                case .semifinal: "준플레이오프"
+                case .playoff: "플레이오프"
+                case .final: "우승 결정전"
+                case nil: "가을 시리즈"
+                }
+                headline = "\(roundTitle) \(series.nextGameNumber)차전이 남았습니다. 시리즈 \(series.playerWins)-\(series.opponentWins)."
+            } else {
+                headline = nextTrigger == .autumnWildCard
+                    ? "와일드카드 2차전이 남았습니다."
+                    : (won ? "다음 라운드가 열립니다." : "가을이 이어집니다.")
+            }
         case .didNotQualify, .unavailable:
             headline = "가을이 닫혔습니다."
         }
         let trustLine = "가을 승부 · \(report.strikeouts)탈삼진 · \(report.walks)볼넷 · \(report.runsAllowed)실점 · 감독의 믿음 \(trustDelta >= 0 ? "+" : "")\(trustDelta).\(followUpEvaluation)"
         let phase: ProCareerPhase = continues ? .importantGame : .seasonReview
+        let appearanceLoad = usesSeriesRules ? max(1, (report.pitches + 14) / 15) : 0
+        let postseasonFatigue = clamp(
+            params.state.fatigue + appearanceLoad - automaticGames * 4,
+            0,
+            100
+        )
         let updated = replacing(
             params.state,
             revision: params.state.revision + 1,
             phase: phase,
             managerTrust: trust,
             catcherTrust: clamp(params.state.catcherTrust + (soundProcess ? 2 : -1) + sequenceTrustReward, 0, 100),
-            news: Array(([headline, trustLine] + params.state.news).prefix(30)),
+            fatigue: postseasonFatigue,
+            news: Array(([headline] + automaticSummaries + [trustLine] + params.state.news).prefix(30)),
             seasonTrigger: .some(continues ? nextTrigger : nil),
             currentRival: .some(continues ? rival : nil),
             decisionHistory: resolvedHistory,
@@ -1267,8 +1357,251 @@ public struct ProCareerEngine: Sendable {
         return result(
             updated,
             nextSeed: String(rng.next()),
-            events: ["pro_autumn_game_resolved", continues ? "pro_autumn_advanced" : "pro_autumn_finished"]
+            events: ["pro_autumn_game_resolved"]
+                + (automaticGames > 0 ? ["pro_autumn_team_game_simulated"] : [])
+                + [continues ? "pro_autumn_advanced" : "pro_autumn_finished"]
         )
+    }
+
+    public func choosePostseasonAvailability(
+        _ params: ChooseProPostseasonAvailabilityParams
+    ) throws -> ProCareerResult {
+        try validate(params.state, phase: .importantGame)
+        guard Self.usesFinalSeriesRules(params.state),
+              let postseason = params.state.postseason,
+              postseason.currentRound != nil,
+              postseason.result == .inProgress,
+              ProPostseasonRules.requiresAvailabilityDecision(postseason, role: params.state.role) else {
+            throw SimulationError.invalidProCareer("postseason availability decision is not pending")
+        }
+        var rng = try generator(params.seed)
+        switch params.choice {
+        case .pitchAgain:
+            let selected = ProPostseasonRules.choosingAvailability(postseason, choice: .pitchAgain)
+            let pitches = postseason.series?.lastAppearancePitches ?? 0
+            let penalty = ProPostseasonRules.consecutiveAppearanceFatiguePenalty(
+                role: params.state.role,
+                lastAppearancePitches: pitches
+            )
+            let updated = replacing(
+                params.state,
+                revision: params.state.revision + 1,
+                fatigue: clamp(params.state.fatigue + penalty, 0, 100),
+                news: Array((["연투를 택했습니다. 다음 경기에도 마운드에 오릅니다."] + params.state.news).prefix(30)),
+                postseason: .some(selected)
+            )
+            return result(
+                updated,
+                nextSeed: String(rng.next()),
+                events: ["pro_autumn_availability_pitch_again"]
+            )
+
+        case .restForDecider:
+            let simulated = simulatePostseasonTeamGames(
+                from: postseason,
+                careerState: params.state,
+                role: params.state.role,
+                strengthEdgePermille: ProPostseasonRules.teamStrengthEdgePermille(params.state),
+                forceCurrentGame: true,
+                using: &rng
+            )
+            let continues = simulated.state.result == .inProgress
+            let trigger: ProSeasonTrigger? = continues
+                ? simulated.state.currentRound.map { ProPostseasonRules.trigger(for: $0) }
+                : nil
+            let rival = continues
+                ? trigger.map { trigger in
+                    rivalForGame(
+                        params.state,
+                        week: params.state.week,
+                        trigger: trigger,
+                        opponentTeamID: simulated.state.series?.opponentTeamID
+                    )
+                }
+                : nil
+            let headline: String
+            switch simulated.state.result {
+            case .champion: headline = "플레이오프 우승. 올해의 마지막 공이 남았습니다."
+            case .runnerUp: headline = "결승에서 멈췄습니다. 가을은 여기까지입니다."
+            case .inProgress:
+                let series = simulated.state.series
+                let roundTitle: String = switch simulated.state.currentRound {
+                case .wildCard: "와일드카드"
+                case .semifinal: "준플레이오프"
+                case .playoff: "플레이오프"
+                case .final: "우승 결정전"
+                case nil: "가을 시리즈"
+                }
+                headline = "한 경기를 쉬었습니다. \(roundTitle) \(series?.nextGameNumber ?? 1)차전을 준비합니다."
+            case .eliminated, .didNotQualify, .unavailable:
+                headline = "가을이 닫혔습니다."
+            }
+            let updated = replacing(
+                params.state,
+                revision: params.state.revision + 1,
+                phase: continues ? .importantGame : .seasonReview,
+                fatigue: clamp(params.state.fatigue - 12, 0, 100),
+                news: Array(([headline] + simulated.summaries + params.state.news).prefix(30)),
+                seasonTrigger: .some(trigger),
+                currentRival: .some(rival),
+                postseason: .some(simulated.state)
+            )
+            return result(
+                updated,
+                nextSeed: String(rng.next()),
+                events: ["pro_autumn_availability_rest"]
+                    + (simulated.count > 0 ? ["pro_autumn_team_game_simulated"] : [])
+                    + [continues ? "pro_autumn_advanced" : "pro_autumn_finished"]
+            )
+        }
+    }
+
+    private func simulatePostseasonTeamGames(
+        from initial: ProPostseasonState,
+        careerState: ProCareerSnapshot,
+        role: ProRole,
+        strengthEdgePermille: Int,
+        forceCurrentGame: Bool,
+        using rng: inout SplitMix64
+    ) -> (state: ProPostseasonState, summaries: [String], count: Int) {
+        var state = initial
+        var summaries: [String] = []
+        var force = forceCurrentGame
+        while state.result == .inProgress
+            && (force || !ProPostseasonRules.shouldDirectlyPlayNextGame(state, role: role)) {
+            force = false
+            var teamRuns = LeagueBaseline.teamRuns(using: &rng)
+            var opponentRuns = LeagueBaseline.teamRuns(using: &rng)
+            let liveStrengthEdge = ProPostseasonRules.teamStrengthEdgePermille(
+                careerState,
+                opponentTeamID: state.series?.opponentTeamID
+            )
+            applyPostseasonStrength(
+                state.series?.opponentTeamID == nil ? strengthEdgePermille : liveStrengthEdge,
+                teamRuns: &teamRuns,
+                opponentRuns: &opponentRuns,
+                using: &rng
+            )
+            if teamRuns == opponentRuns {
+                if rng.nextInt(upperBound: 2) == 0 { teamRuns += 1 } else { opponentRuns += 1 }
+            }
+            let won = teamRuns > opponentRuns
+            let gameNumber = state.series?.nextGameNumber ?? 1
+            state = ProPostseasonRules.resolvingSeriesGame(
+                state,
+                won: won,
+                directlyPlayed: false,
+                teamRuns: teamRuns,
+                opponentRuns: opponentRuns
+            )
+            if state.result == .inProgress {
+                state = ProPostseasonRules.preparingSeries(state, state: careerState)
+            }
+            summaries.append(
+                "우승 결정전 \(gameNumber)차전 자동 진행 · \(teamRuns)-\(opponentRuns) \(won ? "승" : "패")"
+            )
+        }
+        return (state, summaries, summaries.count)
+    }
+
+    private func resolvePostseasonGame(
+        state: ProCareerSnapshot,
+        report: ImportantInningReport,
+        strengthEdgePermille: Int,
+        using rng: inout SplitMix64
+    ) -> (teamRuns: Int, opponentRuns: Int, won: Bool) {
+        let inning = min(9, max(1, report.inningAtEntry ?? postseasonEntryInning(state)))
+        let entryOuts = min(2, max(0, report.outsAtEntry ?? 0))
+        let directOuts = min(27, max(0, report.outs ?? 0))
+        let differential = report.scoreDifferentialAtEntry ?? 0
+
+        // 등판 전까지의 절대 점수는 화면에 없으므로, 진행된 이닝 비율만큼 리그 득점
+        // 분포를 축소해 만든다. 점수 차는 화면에 보인 값을 그대로 보존한다.
+        var opponentAtEntry = LeagueBaseline.teamRuns(using: &rng) * max(0, inning - 1) / 9
+        var teamAtEntry = opponentAtEntry + differential
+        if let reportedTeamRuns = report.teamRuns {
+            teamAtEntry = max(0, reportedTeamRuns)
+            if report.scoreDifferentialAtEntry != nil {
+                opponentAtEntry = max(0, teamAtEntry - differential)
+            }
+        }
+        if teamAtEntry < 0 {
+            opponentAtEntry += -teamAtEntry
+            teamAtEntry = 0
+        }
+
+        var teamRuns = max(0, teamAtEntry)
+        var opponentRuns = max(0, opponentAtEntry) + report.runsAllowed
+        let opponentOutsRemaining = max(
+            0,
+            (10 - inning) * 3 - entryOuts - directOuts
+        )
+        if opponentOutsRemaining > 0 {
+            opponentRuns += LeagueBaseline.restOfTeamRuns(
+                outsCovered: opponentOutsRemaining,
+                using: &rng
+            )
+        }
+
+        let teamOutsRemaining = max(0, (10 - inning) * 3)
+        let gameAlreadyEnded = inning == 9
+            && opponentOutsRemaining == 0
+            && teamRuns > opponentRuns
+        if report.teamRuns == nil, teamOutsRemaining > 0, !gameAlreadyEnded {
+            teamRuns += LeagueBaseline.restOfTeamRuns(
+                outsCovered: teamOutsRemaining,
+                using: &rng
+            )
+        }
+
+        applyPostseasonStrength(
+            strengthEdgePermille,
+            teamRuns: &teamRuns,
+            opponentRuns: &opponentRuns,
+            using: &rng
+        )
+
+        // 동점이면 최대 세 번의 연장 한 이닝을 진행하고, 그래도 같으면 마지막 한 점을
+        // 결정론적으로 배정한다. 포스트시즌 경기에는 무승부가 없다.
+        for _ in 0..<3 where teamRuns == opponentRuns {
+            teamRuns += LeagueBaseline.restOfTeamRuns(outsCovered: 3, using: &rng)
+            opponentRuns += LeagueBaseline.restOfTeamRuns(outsCovered: 3, using: &rng)
+        }
+        if teamRuns == opponentRuns {
+            if rng.nextInt(upperBound: 2) == 0 { teamRuns += 1 } else { opponentRuns += 1 }
+        }
+        return (teamRuns, opponentRuns, teamRuns > opponentRuns)
+    }
+
+    private func applyPostseasonStrength(
+        _ edgePermille: Int,
+        teamRuns: inout Int,
+        opponentRuns: inout Int,
+        using rng: inout SplitMix64
+    ) {
+        let edge = min(180, max(-180, edgePermille))
+        guard edge != 0 else { return }
+        let roll = rng.nextInt(upperBound: 1_000)
+        if edge > 0, roll < edge {
+            teamRuns += 1
+        } else if edge < 0, roll < -edge {
+            opponentRuns += 1
+        }
+    }
+
+    private func postseasonEntryInning(_ state: ProCareerSnapshot) -> Int {
+        switch state.seasonTrigger {
+        case .autumnWildCard: return 9
+        case .autumnSemifinal, .autumnPlayoff: return 8
+        case .autumnFinal:
+            switch state.role {
+            case .starter: return 6
+            case .longRelief: return 5
+            case .setup: return 8
+            case .closer: return 9
+            }
+        default: return 7
+        }
     }
 
     public func reviewSeason(_ params: ProStateParams) throws -> ProCareerResult {
@@ -1318,7 +1651,8 @@ public struct ProCareerEngine: Sendable {
         let phase: ProCareerPhase = state.season >= Self.maximumCareerSeasons
             ? .retirementDecision : .offseasonDecision
         let news = ["시즌 \(state.season) 종료 · \(state.currentStats.games)경기 · \(state.currentStats.strikeouts)K · 9이닝당 실점 \(String(format: "%.2f", Double(runsPer9Permille) / 1000))"] + state.news
-        let updated = replacing(state, revision: state.revision + 1, phase: phase, careerStats: state.careerStats + [state.currentStats], awards: awards, milestones: milestones, news: Array(news.prefix(30)))
+        let archivedStats = state.currentStats.archivingPostseason(state.postseason?.gameHistory)
+        let updated = replacing(state, revision: state.revision + 1, phase: phase, careerStats: state.careerStats + [archivedStats], awards: awards, milestones: milestones, news: Array(news.prefix(30)))
         return result(updated, nextSeed: String(rng.next()), events: ["pro_season_reviewed"])
     }
 
@@ -1402,7 +1736,7 @@ public struct ProCareerEngine: Sendable {
     public static let maximumCareerSeasons = 20
     /// Live schedule/fatigue/agency rules. New careers start here. Offseason may raise an
     /// in-progress save to this value without rewriting already stored season records.
-    public static let currentRulesVersion = 6
+    public static let currentRulesVersion = 7
     /// First version that owns the agency weekly-plan and important-game contracts.
     /// Must stay below `currentRulesVersion` so a version bump cannot turn agency off.
     public static let agencyRulesVersion = 3
@@ -1410,6 +1744,8 @@ public struct ProCareerEngine: Sendable {
     public static let careerArcRulesVersion = 5
     /// Highlight autumn series after the 24-week regular season.
     public static let autumnRulesVersion = 6
+    /// Compressed best-of-five final with role-aware direct appearances and bullpen availability.
+    public static let finalSeriesRulesVersion = 7
     /// Journey scoring/awards/retired-number content. New careers only; never raised in offseason.
     public static let currentJourneyRulesVersion = 2
 
@@ -1427,6 +1763,10 @@ public struct ProCareerEngine: Sendable {
 
     public static func usesAutumnRules(_ state: ProCareerSnapshot) -> Bool {
         (state.proRulesVersion ?? 1) >= autumnRulesVersion
+    }
+
+    public static func usesFinalSeriesRules(_ state: ProCareerSnapshot) -> Bool {
+        (state.proRulesVersion ?? 1) >= finalSeriesRulesVersion
     }
 
     public static func liveClimate(for state: ProCareerSnapshot, week: Int? = nil) -> ProSeasonClimate? {
@@ -1915,6 +2255,25 @@ public struct ProCareerEngine: Sendable {
         if let journey = state.journeyState {
             try validateJourneyState(state, journey: journey)
         }
+        if let postseason = state.postseason,
+           !ProPostseasonRules.isValidSeriesState(postseason) {
+            throw SimulationError.invalidProCareer("postseason series state is invalid")
+        }
+        if let postseason = state.postseason,
+           !ProPostseasonRules.isValidGameHistory(postseason) {
+            throw SimulationError.invalidProCareer("postseason game history is invalid")
+        }
+        if let postseason = state.postseason,
+           !ProPostseasonRules.isValidSeriesRivalMemory(postseason, pitcherID: state.pitcher.id) {
+            throw SimulationError.invalidProCareer("postseason rival memory is invalid")
+        }
+        if let postseason = state.postseason,
+           let decision = postseason.series?.availabilityDecision {
+            guard decision == .pitchAgain,
+                  ProPostseasonRules.isConsecutiveAppearanceSituation(postseason, role: state.role) else {
+                throw SimulationError.invalidProCareer("postseason availability choice is invalid")
+            }
+        }
         do {
             try PitchLearningRules.validateState(
                 pitcher: state.pitcher,
@@ -2080,8 +2439,66 @@ public struct ProCareerEngine: Sendable {
         }
         if let postseason = s.postseason {
             values.append("postseason:\(postseason.seed):\(postseason.currentRound?.rawValue ?? "none"):\(postseason.result.rawValue):\(postseason.gamesPlayed)")
+            if let series = postseason.series {
+                values.append(
+                    "postseason_series:\(series.round?.rawValue ?? "none"):\(series.opponentTeamID ?? "none"):\(series.playerWinsRequired.map(String.init) ?? "none"):\(series.opponentWinsRequired.map(String.init) ?? "none"):\(series.playerWins):\(series.opponentWins):\(series.nextGameNumber):\(series.totalDirectAppearances):\(series.lastAppearancePitches.map(String.init) ?? "none"):\(series.lastAppearanceGameNumber.map(String.init) ?? "none"):\(series.availabilityDecision?.rawValue ?? "none")"
+                )
+                if let lines = series.gameLines {
+                    let token = lines.map(postseasonGameCommitment).joined(separator: ";")
+                    values.append("postseason_games:\(lines.count):\(StableHash.fnv1a64(token))")
+                }
+                if let memory = series.rivalMemory {
+                    values.append("postseason_rival_memory:\(StableHash.fnv1a64(rivalMemoryCommitment(memory)))")
+                }
+            }
+            if let history = postseason.gameHistory {
+                let token = history.map(postseasonGameCommitment).joined(separator: ";")
+                values.append("postseason_history:\(history.count):\(StableHash.fnv1a64(token))")
+            }
         }
         return StableHash.fnv1a64(values.joined(separator: "|"))
+    }
+
+#if DEBUG
+    /// Debug UI fixtures only. Release builds cannot manufacture signed career snapshots.
+    public func resignFixtureForTesting(_ state: ProCareerSnapshot) -> ProCareerSnapshot {
+        replacing(state, commitment: commitment(state))
+    }
+#endif
+
+    private func postseasonGameCommitment(_ line: ProPostseasonGameLine) -> String {
+        let values = [
+            line.round?.rawValue ?? "none",
+            String(line.gameNumber),
+            String(line.teamRuns),
+            String(line.opponentRuns),
+            line.directlyPlayed ? "1" : "0",
+            line.playerPitches.map(String.init) ?? "-1",
+            line.playerOuts.map(String.init) ?? "-1",
+            line.playerRunsAllowed.map(String.init) ?? "-1",
+        ]
+        return values.joined(separator: ",")
+    }
+
+    private func rivalMemoryCommitment(_ memory: RivalMemorySnapshot) -> String {
+        let observations = memory.recentObservations.map { observation in
+            [
+                observation.pitchType.rawValue,
+                String(observation.zone.row),
+                String(observation.zone.column),
+                observation.zoneIntent.rawValue,
+                String(observation.balls),
+                String(observation.strikes),
+                observation.outcome.rawValue,
+            ].joined(separator: ":")
+        }.joined(separator: ",")
+        return [
+            memory.matchupID,
+            String(memory.revision),
+            String(memory.plateAppearancesSeen),
+            String(memory.totalPitchesSeen),
+            observations,
+        ].joined(separator: "|")
     }
 
     private func decisionCommitment(_ decision: ProSeasonDecision) -> String {
@@ -2404,8 +2821,16 @@ public struct ProCareerEngine: Sendable {
     }
 
     /// 중요 경기 상대 라이벌 타자를 구단·시즌·주차·트리거로 결정론 선택한다. 자기 구단 소속은 건너뛴다.
-    private func rivalForGame(_ state: ProCareerSnapshot, week: Int, trigger: ProSeasonTrigger) -> ProRivalBatter {
-        let pool = Self.rivalBatters
+    private func rivalForGame(
+        _ state: ProCareerSnapshot,
+        week: Int,
+        trigger: ProSeasonTrigger,
+        opponentTeamID: String? = nil
+    ) -> ProRivalBatter {
+        let matched = opponentTeamID.map { opponentID in
+            Self.rivalBatters.filter { $0.teamID == opponentID }
+        } ?? []
+        let pool = matched.isEmpty ? Self.rivalBatters : matched
         let value = hashInt("\(state.team.id)|season\(state.season)|week\(week)|\(trigger.rawValue)")
         var index = Int(value % UInt64(pool.count))
         if pool[index].teamID == state.team.id { index = (index + 1) % pool.count }

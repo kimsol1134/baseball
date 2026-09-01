@@ -344,8 +344,10 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
     /// 기존 저장본에는 이 값이 없으므로 기본값 0으로 디코드된다.
     public let losses: Int
     public let saves: Int
-    public init(season: Int, teamID: String, games: Int = 0, starts: Int = 0, inningsOuts: Int = 0, strikeouts: Int = 0, walks: Int = 0, runsAllowed: Int = 0, hits: Int = 0, homeRuns: Int = 0, pitches: Int = 0, wins: Int = 0, losses: Int = 0, saves: Int = 0) {
-        self.season = season; self.teamID = teamID; self.games = games; self.starts = starts; self.inningsOuts = inningsOuts; self.strikeouts = strikeouts; self.walks = walks; self.runsAllowed = runsAllowed; self.hits = hits; self.homeRuns = homeRuns; self.pitches = pitches; self.wins = wins; self.losses = losses; self.saves = saves
+    /// 해당 시즌의 포스트시즌 경기 원장. 구저장본과 진출 실패 시즌은 nil이다.
+    public let postseasonGames: [ProPostseasonGameLine]?
+    public init(season: Int, teamID: String, games: Int = 0, starts: Int = 0, inningsOuts: Int = 0, strikeouts: Int = 0, walks: Int = 0, runsAllowed: Int = 0, hits: Int = 0, homeRuns: Int = 0, pitches: Int = 0, wins: Int = 0, losses: Int = 0, saves: Int = 0, postseasonGames: [ProPostseasonGameLine]? = nil) {
+        self.season = season; self.teamID = teamID; self.games = games; self.starts = starts; self.inningsOuts = inningsOuts; self.strikeouts = strikeouts; self.walks = walks; self.runsAllowed = runsAllowed; self.hits = hits; self.homeRuns = homeRuns; self.pitches = pitches; self.wins = wins; self.losses = losses; self.saves = saves; self.postseasonGames = postseasonGames
     }
 
     /// 없는 키는 0으로 읽는다.
@@ -369,6 +371,27 @@ public struct ProSeasonStats: Codable, Equatable, Sendable {
         wins = try container.decodeIfPresent(Int.self, forKey: .wins) ?? 0
         losses = try container.decodeIfPresent(Int.self, forKey: .losses) ?? 0
         saves = try container.decodeIfPresent(Int.self, forKey: .saves) ?? 0
+        postseasonGames = try container.decodeIfPresent([ProPostseasonGameLine].self, forKey: .postseasonGames)
+    }
+
+    public func archivingPostseason(_ games: [ProPostseasonGameLine]?) -> ProSeasonStats {
+        ProSeasonStats(
+            season: season,
+            teamID: teamID,
+            games: self.games,
+            starts: starts,
+            inningsOuts: inningsOuts,
+            strikeouts: strikeouts,
+            walks: walks,
+            runsAllowed: runsAllowed,
+            hits: hits,
+            homeRuns: homeRuns,
+            pitches: pitches,
+            wins: wins,
+            losses: losses,
+            saves: saves,
+            postseasonGames: games?.isEmpty == false ? games : nil
+        )
     }
 }
 
@@ -584,6 +607,21 @@ public struct PlanProWeekParams: Codable, Equatable, Sendable {
 public struct ResolveProGameParams: Codable, Equatable, Sendable {
     public let seed: String; public let state: ProCareerSnapshot; public let report: ImportantInningReport
     public init(seed: String, state: ProCareerSnapshot, report: ImportantInningReport) { self.seed = seed; self.state = state; self.report = report }
+}
+public struct ChooseProPostseasonAvailabilityParams: Codable, Equatable, Sendable {
+    public let seed: String
+    public let state: ProCareerSnapshot
+    public let choice: ProPostseasonAvailabilityChoice
+
+    public init(
+        seed: String,
+        state: ProCareerSnapshot,
+        choice: ProPostseasonAvailabilityChoice
+    ) {
+        self.seed = seed
+        self.state = state
+        self.choice = choice
+    }
 }
 /// 확인 화면이 보고 있던 결정과 선택지를 함께 보내 stale 적용을 막는다.
 public struct ApplyProSeasonDecisionParams: Codable, Equatable, Sendable {

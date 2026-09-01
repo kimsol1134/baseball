@@ -482,7 +482,8 @@ extension ProCareerEngine {
             recognitions: journey.recognitions,
             existing: journey.teamRecords
         )
-        let completedCareerStats = state.careerStats + [state.currentStats]
+        let archivedStats = state.currentStats.archivingPostseason(state.postseason?.gameHistory)
+        let completedCareerStats = state.careerStats + [archivedStats]
         let typedAdditions = ProCareerRecognitionRules.currentSeasonRecognitions(
             careerID: state.proCareerID,
             season: state.season,
