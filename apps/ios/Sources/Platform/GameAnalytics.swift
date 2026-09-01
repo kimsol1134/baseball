@@ -163,6 +163,14 @@ enum GameAnalytics {
         case weeklyProgramCompleted = "weekly_program_completed"
         /// 프로 시즌 중 3주 단위 결정을 확정한 시점.
         case proSeasonDecisionSelected = "pro_season_decision_selected"
+        /// 포스트시즌 불펜이 연투 또는 휴식을 저장 성공으로 확정한 시점.
+        case postseasonAvailabilitySelected = "postseason_availability_selected"
+        /// 직접 등판 또는 자동 진행 뒤 포스트시즌 한 경기의 최종 점수가 확정된 시점.
+        case postseasonGameResolved = "postseason_game_resolved"
+        /// 우승·준우승·라운드 탈락으로 포스트시즌이 끝난 시점.
+        case postseasonCompleted = "postseason_completed"
+        /// 진행 중인 포스트시즌 직접 등판을 포기한 시점.
+        case postseasonDirectAbandoned = "postseason_direct_abandoned"
         /// 오프시즌 투자 선택이 저장 성공으로 확정된 시점.
         case proOffseasonInvestmentSelected = "pro_offseason_investment_selected"
         /// 미디어 기회 선택과 출연 효과가 저장 성공으로 확정된 시점.

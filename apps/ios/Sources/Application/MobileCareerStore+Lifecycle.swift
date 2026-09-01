@@ -162,6 +162,108 @@ extension MobileCareerStore {
     }
 
 #if DEBUG
+    /// 포스트시즌 전력·전적·연투·타자 적응 UI를 긴 커리어 진행 없이 검증한다.
+    @discardableResult
+    func installPostseasonFixtureForUITesting() -> Bool {
+        do {
+            let preset = PitcherPresetCatalog.all[2]
+            let base = try CareerBootstrap.startCareer(
+                preset: preset,
+                playerName: "가을 필승조",
+                seed: 202_609_01,
+                startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
+                engine: engine
+            )
+            let opponent = ProCareerEngine.proTeams.first { $0.id != base.snapshot.team.id }
+                ?? ProCareerEngine.proTeams[1]
+            let rival = ProRivalBatter(
+                id: "ui-postseason-rival",
+                name: "서가람",
+                archetype: "가을 중심 타자",
+                teamID: opponent.id,
+                teamName: opponent.name,
+                record: "시리즈 2홈런",
+                profile: "앞 경기에서 반복된 슬라이더를 기다립니다."
+            )
+            let history: [ProPostseasonGameLine] = [
+                .init(round: .final, gameNumber: 1, teamRuns: 4, opponentRuns: 2, directlyPlayed: true, playerPitches: 14, playerOuts: 3, playerRunsAllowed: 0),
+                .init(round: .final, gameNumber: 2, teamRuns: 2, opponentRuns: 5, directlyPlayed: false),
+                .init(round: .final, gameNumber: 3, teamRuns: 3, opponentRuns: 1, directlyPlayed: true, playerPitches: 17, playerOuts: 3, playerRunsAllowed: 0),
+                .init(round: .final, gameNumber: 4, teamRuns: 1, opponentRuns: 3, directlyPlayed: true, playerPitches: 18, playerOuts: 3, playerRunsAllowed: 1),
+            ]
+            let memory = RivalMemorySnapshot(
+                matchupID: "\(base.snapshot.pitcher.id):bench:\(opponent.id)",
+                revision: 6,
+                plateAppearancesSeen: 3,
+                totalPitchesSeen: 6,
+                recentObservations: [
+                    .init(pitchType: .slider, zone: .init(row: 2, column: 2), zoneIntent: .chase, balls: 1, strikes: 2, outcome: .swingingStrike),
+                    .init(pitchType: .slider, zone: .init(row: 2, column: 2), zoneIntent: .chase, balls: 0, strikes: 2, outcome: .ball),
+                    .init(pitchType: .fourSeam, zone: .init(row: 0, column: 0), zoneIntent: .strike, balls: 0, strikes: 0, outcome: .foul),
+                ]
+            )
+            let postseason = ProPostseasonState(
+                seed: 1,
+                currentRound: .final,
+                result: .inProgress,
+                gamesPlayed: 4,
+                series: .init(
+                    round: .final,
+                    opponentTeamID: opponent.id,
+                    playerWinsRequired: 3,
+                    opponentWinsRequired: 3,
+                    playerWins: 2,
+                    opponentWins: 2,
+                    nextGameNumber: 5,
+                    totalDirectAppearances: 3,
+                    lastAppearancePitches: 18,
+                    lastAppearanceGameNumber: 4,
+                    gameLines: history,
+                    rivalMemory: memory
+                ),
+                gameHistory: history
+            )
+
+            var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(base.snapshot)) as! [String: Any]
+            object["phase"] = ProCareerPhase.importantGame.rawValue
+            object["week"] = 24
+            object["level"] = ProLevel.major.rawValue
+            object["role"] = ProRole.setup.rawValue
+            object["fatigue"] = 78
+            object["proRulesVersion"] = 7
+            object["seasonTrigger"] = ProSeasonTrigger.autumnFinal.rawValue
+            object["currentRival"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(rival))
+            object["postseason"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(postseason))
+            object.removeValue(forKey: "journeyState")
+            let decoded = try JSONDecoder().decode(
+                ProCareerSnapshot.self,
+                from: JSONSerialization.data(withJSONObject: object)
+            )
+            let signed = engine.resignFixtureForTesting(decoded)
+            let fixture = ProCareerResult(
+                snapshot: signed,
+                nextSeed: "2026090101",
+                events: ["ui_postseason_fixture"]
+            )
+            updatePersisted {
+                $0.result = fixture
+                $0.gameResume = nil
+                $0.sourceHighSchoolCareerID = nil
+                $0.careerOrigin = .direct
+            }
+            selectedPlan = nil
+            pendingGains = []
+            lastSummary = nil
+            feedbackCue = .neutral
+            feedbackTrigger += 1
+            loadState = .ready
+            return save()
+        } catch {
+            loadState = .failed(error.localizedDescription)
+            return false
+        }
+    }
+
     /// Stable UI-only state for validating the post-100 mastery and explainable injury surfaces.
     /// Release builds do not compile this path and normal saves can never request it.
     @discardableResult

@@ -338,7 +338,8 @@ final class PitchSession {
     func start() {
         guard preparation == nil else { return }
         // 등판 하나가 곧 하나의 매치업이다. 시나리오 id를 벤치 식별자로 쓴다.
-        rivalMemory = RivalMemoryEngine().benchMemory(pitcher: pitcher, benchID: scenario.id)
+        rivalMemory = scenario.initialRivalMemory
+            ?? RivalMemoryEngine().benchMemory(pitcher: pitcher, benchID: scenario.id)
         prepare()
     }
 
@@ -483,6 +484,9 @@ final class PitchSession {
             outs: outsRecorded,
             // 절대 점수 배분은 코어의 일이다. 화면은 등판 시점의 점수 차만 알려 준다.
             scoreDifferentialAtEntry: scenario.scoreDifferential,
+            inningAtEntry: scenario.inning,
+            outsAtEntry: scenario.outs,
+            rivalMemory: rivalMemory,
             sequenceMasteryCount: sequenceMasteryCount,
             hits: hitsAllowed,
             homeRuns: homeRunsAllowed,

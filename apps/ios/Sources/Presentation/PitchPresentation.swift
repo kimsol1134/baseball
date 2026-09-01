@@ -92,10 +92,25 @@ enum PitchPresentation {
             case .recordChase: return resolver.resolve(.scenarioProRecordTitle)
             case .standingsRace: return resolver.resolve(.scenarioProStandingsTitle)
             case .openingStatement: return resolver.resolve(.scenarioProOpeningTitle)
-            case .autumnWildCard: return resolver.resolve(.scenarioProAutumnWildCardTitle)
-            case .autumnSemifinal: return resolver.resolve(.scenarioProAutumnSemifinalTitle)
-            case .autumnPlayoff: return resolver.resolve(.scenarioProAutumnPlayoffTitle)
-            case .autumnFinal: return resolver.resolve(.scenarioProAutumnFinalTitle)
+            case .autumnWildCard(let game, let wins, let losses, let usesSeriesRules):
+                return usesSeriesRules
+                    ? resolver.resolve(.scenarioProAutumnWildCardSeriesTitle, arguments: [.integer(game), .integer(wins), .integer(losses)])
+                    : resolver.resolve(.scenarioProAutumnWildCardTitle)
+            case .autumnSemifinal(_, let game, let wins, let losses, let usesSeriesRules):
+                return usesSeriesRules
+                    ? resolver.resolve(.scenarioProAutumnSemifinalSeriesTitle, arguments: [.integer(game), .integer(wins), .integer(losses)])
+                    : resolver.resolve(.scenarioProAutumnSemifinalTitle)
+            case .autumnPlayoff(_, let game, let wins, let losses, let usesSeriesRules):
+                return usesSeriesRules
+                    ? resolver.resolve(.scenarioProAutumnPlayoffSeriesTitle, arguments: [.integer(game), .integer(wins), .integer(losses)])
+                    : resolver.resolve(.scenarioProAutumnPlayoffTitle)
+            case .autumnFinal(_, _, let gameNumber, let playerWins, let opponentWins, let usesSeriesRules):
+                return usesSeriesRules
+                    ? resolver.resolve(
+                        .scenarioProAutumnFinalSeriesTitle,
+                        arguments: [.integer(gameNumber), .integer(playerWins), .integer(opponentWins)]
+                    )
+                    : resolver.resolve(.scenarioProAutumnFinalTitle)
             }
         }
     }
@@ -118,13 +133,22 @@ enum PitchPresentation {
             case .standingsRace(let ahead):
                 return resolver.resolve(ahead ? .scenarioProStandingsAheadBody : .scenarioProStandingsBehindBody)
             case .openingStatement: return resolver.resolve(.scenarioProOpeningBody)
-            case .autumnWildCard: return resolver.resolve(.scenarioProAutumnWildCardBody)
-            case .autumnSemifinal(let ahead):
-                return resolver.resolve(ahead ? .scenarioProAutumnSemifinalBody : .scenarioProAutumnSemifinalBody)
-            case .autumnPlayoff(let ahead):
-                return resolver.resolve(ahead ? .scenarioProAutumnPlayoffBody : .scenarioProAutumnPlayoffBody)
-            case .autumnFinal(let ahead):
-                return resolver.resolve(ahead ? .scenarioProAutumnFinalBody : .scenarioProAutumnFinalBody)
+            case .autumnWildCard(_, _, _, let usesSeriesRules):
+                return resolver.resolve(usesSeriesRules ? .scenarioProAutumnWildCardSeriesBody : .scenarioProAutumnWildCardBody)
+            case .autumnSemifinal(let ahead, _, _, _, let usesSeriesRules):
+                return resolver.resolve(usesSeriesRules ? .scenarioProAutumnSemifinalSeriesBody : (ahead ? .scenarioProAutumnSemifinalBody : .scenarioProAutumnSemifinalBody))
+            case .autumnPlayoff(let ahead, _, _, _, let usesSeriesRules):
+                return resolver.resolve(usesSeriesRules ? .scenarioProAutumnPlayoffSeriesBody : (ahead ? .scenarioProAutumnPlayoffBody : .scenarioProAutumnPlayoffBody))
+            case .autumnFinal(let ahead, let role, _, _, _, let usesSeriesRules):
+                guard usesSeriesRules else {
+                    return resolver.resolve(ahead ? .scenarioProAutumnFinalBody : .scenarioProAutumnFinalBody)
+                }
+                switch role {
+                case .starter: return resolver.resolve(.scenarioProAutumnFinalStarterBody)
+                case .longRelief: return resolver.resolve(.scenarioProAutumnFinalLongReliefBody)
+                case .setup: return resolver.resolve(.scenarioProAutumnFinalSetupBody)
+                case .closer: return resolver.resolve(.scenarioProAutumnFinalCloserBody)
+                }
             }
         }
     }

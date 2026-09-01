@@ -423,6 +423,22 @@ private struct RecordBoard: View {
                                         .foregroundStyle(BaseballTheme.textSecondary)
                                 }
                                 .accessibilityElement(children: .combine)
+                                if let postseason = season.postseasonGames, !postseason.isEmpty {
+                                    let wins = postseason.count { $0.won }
+                                    let direct = postseason.count { $0.directlyPlayed }
+                                    Text(copyResolver.resolve(
+                                        .careerPostseasonLine,
+                                        arguments: [
+                                            .integer(postseason.count),
+                                            .integer(wins),
+                                            .integer(postseason.count - wins),
+                                            .integer(direct),
+                                        ]
+                                    ))
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(BaseballTheme.milestone)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                }
                             }
                         }
                     }

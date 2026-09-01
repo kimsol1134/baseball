@@ -83,6 +83,32 @@ final class CareerSmokeUITests: XCTestCase {
         return app
     }
 
+    func testPostseasonFixtureShowsSeriesChoiceAndFinale() {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-uiTestProCareerJourneyV1",
+            "-uiTestOpenProWeek",
+            "-uiTestPostseasonFixture",
+            "-baseball.audio.sound", "NO",
+            "-AppleLanguages", "(ko)",
+            "-AppleLocale", "ko_KR",
+        ]
+        app.launch()
+        XCTAssertTrue(app.descendants(matching: .any)["pro.postseason.series"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.descendants(matching: .any)["pro.postseason.history"].exists)
+        let rest = app.descendants(matching: .any)["pro.postseason.availability.rest_for_decider"]
+        for _ in 0..<6 where !rest.exists || !rest.isHittable { app.swipeUp() }
+        XCTAssertTrue(rest.waitForExistence(timeout: timeout))
+        XCTAssertTrue(rest.isHittable)
+        rest.tap()
+        let confirm = app.buttons["pro.postseason.availability.confirm"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: timeout))
+        confirm.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["pro.postseason.finale"].waitForExistence(timeout: timeout))
+    }
+
     func testJapaneseBinaryRunsFromOpeningThroughPrologueWithoutHangulFallback() {
         let app = launch(language: "ja")
 

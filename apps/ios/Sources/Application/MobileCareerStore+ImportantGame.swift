@@ -6,7 +6,7 @@ import BaseballIOSPersistence
 
 extension MobileCareerStore {
     func beginImportantGame() {
-        guard let result, result.snapshot.phase == .importantGame else { return }
+        guard let result, Self.canBeginImportantGame(result.snapshot) else { return }
         guard pitchSession == nil else { return }
         // **등판을 시작하는 순간 시드를 넘기고 저장한다.**
         //
@@ -36,6 +36,47 @@ extension MobileCareerStore {
         pitchSession = session
     }
 
+    nonisolated static func canBeginImportantGame(_ state: ProCareerSnapshot) -> Bool {
+        guard state.phase == .importantGame else { return false }
+        guard ProCareerEngine.usesFinalSeriesRules(state),
+              let postseason = state.postseason,
+              postseason.currentRound != nil else { return true }
+        return ProPostseasonRules.canStartDirectAppearance(postseason, role: state.role)
+    }
+
+    func choosePostseasonAvailability(_ choice: ProPostseasonAvailabilityChoice) {
+        guard let result else { return }
+        let before = result.snapshot
+        let didApply = perform(
+            summary: choice == .pitchAgain
+                ? "연투를 선택했습니다. 추가 피로를 반영했습니다."
+                : "한 경기를 쉬고 다음 등판을 준비합니다.",
+            cue: choice == .pitchAgain ? .setback : .neutral
+        ) {
+            try engine.choosePostseasonAvailability(.init(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                choice: choice
+            ))
+        }
+        guard didApply, let after = self.result?.snapshot else { return }
+        CareerTelemetry.log(.postseasonAvailabilitySelected, [
+            "choice": choice.rawValue,
+            "round": before.postseason?.currentRound?.rawValue ?? "none",
+            "game_number": before.postseason?.series?.nextGameNumber ?? 0,
+            "player_wins": before.postseason?.series?.playerWins ?? 0,
+            "opponent_wins": before.postseason?.series?.opponentWins ?? 0,
+            "stakes": before.postseason.map(ProPostseasonRules.stakes)?.rawValue ?? "standard",
+            "fatigue_before": before.fatigue,
+            "fatigue_after": after.fatigue,
+            "strength_band": Self.postseasonStrengthBand(before),
+        ])
+        if choice == .restForDecider,
+           let line = after.postseason?.gameHistory?.last {
+            Self.logPostseasonGame(line, state: after)
+        }
+    }
+
     /// 시드를 한 칸 굴린다. 코어와 같은 SplitMix64를 쓴다.
     nonisolated static func advanced(_ seed: String) -> String {
         var generator = SplitMix64(seed: UInt64(seed) ?? 0x9E37_79B9_7F4A_7C15)
@@ -49,6 +90,7 @@ extension MobileCareerStore {
         let report = session.report(scenarioNumber: result.snapshot.week)
         let sequenceMasteryCount = session.sequenceMasteryCount
         let beforeRevision = result.snapshot.revision
+        let beforeState = result.snapshot
         let summary = Self.importantGameSummary(report)
         let didSettle = perform(
             summary: summary,
@@ -72,6 +114,12 @@ extension MobileCareerStore {
             "runs": report.runsAllowed,
         ]) { _, modeSpecific in modeSpecific }
         CareerTelemetry.log(.gameFinished, gameFinishedProperties)
+        if let line = self.result?.snapshot.postseason?.gameHistory?.last,
+           line.directlyPlayed,
+           (self.result?.snapshot.postseason?.gameHistory?.count ?? 0)
+                > (beforeState.postseason?.gameHistory?.count ?? 0) {
+            Self.logPostseasonGame(line, state: self.result?.snapshot ?? beforeState)
+        }
         if let use = report.pitchLearningUses?.first {
             CareerTelemetry.log(.pitchLearningGameSummary, [
                 "pitch_id": use.pitchType.rawValue,
@@ -104,6 +152,7 @@ extension MobileCareerStore {
     @discardableResult
     func abandonImportantGame() -> Bool {
         guard let result, pitchSession != nil else { return false }
+        let abandonedPitches = pitchSession?.report(scenarioNumber: result.snapshot.week).pitches ?? 0
         // 완료 정산과 같은 원칙이다. resume 제거가 디스크에 내려가기 전에 화면 세션을
         // 지우면 저장 실패 뒤에도 사용자가 던진 이닝을 다시 열 수 없다.
         guard persist(result: result, gameResume: nil) else { return false }
@@ -112,6 +161,45 @@ extension MobileCareerStore {
         lastSummary = "등판을 중단했습니다. 다음 마운드는 새 이닝입니다."
         feedbackCue = .setback
         feedbackTrigger += 1
+        if ProPostseasonRules.isAutumn(result.snapshot.seasonTrigger) {
+            CareerTelemetry.log(.postseasonDirectAbandoned, [
+                "round": result.snapshot.postseason?.currentRound?.rawValue ?? "none",
+                "game_number": result.snapshot.postseason?.series?.nextGameNumber ?? 0,
+                "pitches": abandonedPitches,
+            ])
+        }
         return true
+    }
+
+    nonisolated static func postseasonStrengthBand(_ state: ProCareerSnapshot) -> String {
+        let edge = ProPostseasonRules.teamStrengthEdgePermille(state)
+        if edge > 25 { return "advantage" }
+        if edge < -25 { return "disadvantage" }
+        return "even"
+    }
+
+    private static func logPostseasonGame(
+        _ line: ProPostseasonGameLine,
+        state: ProCareerSnapshot
+    ) {
+        CareerTelemetry.log(.postseasonGameResolved, [
+            "round": line.round?.rawValue ?? "none",
+            "game_number": line.gameNumber,
+            "direct": line.directlyPlayed,
+            "won": line.won,
+            "team_runs": line.teamRuns,
+            "opponent_runs": line.opponentRuns,
+            "player_runs": line.playerRunsAllowed ?? -1,
+            "player_pitches": line.playerPitches ?? -1,
+            "strength_band": postseasonStrengthBand(state),
+        ])
+        if let postseason = state.postseason, postseason.result != .inProgress {
+            CareerTelemetry.log(.postseasonCompleted, [
+                "result": postseason.result.rawValue,
+                "seed": postseason.seed,
+                "games": postseason.gamesPlayed,
+                "direct_appearances": postseason.gameHistory?.count { $0.directlyPlayed } ?? 0,
+            ])
+        }
     }
 }

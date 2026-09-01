@@ -121,6 +121,10 @@ enum ProCareerPresentation {
             return legacy("content.pro-summary.rookie-offer", [.userText(team)], resolver: resolver)
         case "등판을 중단했습니다. 다음 마운드는 새 이닝입니다.":
             return legacy("content.pro-summary.outing-abandoned", resolver: resolver)
+        case "연투를 선택했습니다. 추가 피로를 반영했습니다.":
+            return resolver.resolve(.postseasonAvailabilityPitchSummary)
+        case "한 경기를 쉬고 다음 등판을 준비합니다.":
+            return resolver.resolve(.postseasonAvailabilityRestSummary)
         case "시즌 기록을 통산 기록에 확정했습니다.":
             return legacy("content.pro-summary.season-recorded", resolver: resolver)
         case "계약을 확정했습니다.":
@@ -245,6 +249,77 @@ enum ProCareerPresentation {
             return resolver.resolve(.gameContent(mediaKey))
         }
         guard resolver.language != .korean else { return raw }
+        if raw == "연투를 택했습니다. 다음 경기에도 마운드에 오릅니다." {
+            return resolver.resolve(.postseasonNewsPitchAgain)
+        }
+        if let game = captures(
+            raw,
+            pattern: #"^한 경기를 쉬었습니다\. 우승 결정전 (\d+)차전을 준비합니다\.$"#
+        )?.first.flatMap(Int.init) {
+            return resolver.resolve(.postseasonNewsRested, arguments: [.integer(game)])
+        }
+        if let values = captures(
+            raw,
+            pattern: #"^한 경기를 쉬었습니다\. (와일드카드|준플레이오프|플레이오프|우승 결정전) (\d+)차전을 준비합니다\.$"#
+        ), values.count == 2, let game = Int(values[1]) {
+            return resolver.resolve(
+                .postseasonNewsRoundRested,
+                arguments: [.userText(localizedPostseasonRound(values[0], resolver: resolver)), .integer(game)]
+            )
+        }
+        if let values = captures(
+            raw,
+            pattern: #"^우승 결정전 (\d+)차전이 남았습니다\. 시리즈 (\d+)-(\d+)\.$"#
+        ), values.count == 3,
+           let game = Int(values[0]), let wins = Int(values[1]), let losses = Int(values[2]) {
+            return resolver.resolve(
+                .postseasonNewsSeriesContinues,
+                arguments: [.integer(game), .integer(wins), .integer(losses)]
+            )
+        }
+        if let values = captures(
+            raw,
+            pattern: #"^(와일드카드|준플레이오프|플레이오프|우승 결정전) (\d+)차전이 남았습니다\. 시리즈 (\d+)-(\d+)\.$"#
+        ), values.count == 4,
+           let game = Int(values[1]), let wins = Int(values[2]), let losses = Int(values[3]) {
+            return resolver.resolve(
+                .postseasonNewsRoundContinues,
+                arguments: [
+                    .userText(localizedPostseasonRound(values[0], resolver: resolver)),
+                    .integer(game), .integer(wins), .integer(losses),
+                ]
+            )
+        }
+        if let values = captures(
+            raw,
+            pattern: #"^우승 결정전 (\d+)차전 자동 진행 · (\d+)-(\d+) (승|패)$"#
+        ), values.count == 4,
+           let game = Int(values[0]), let teamRuns = Int(values[1]), let opponentRuns = Int(values[2]) {
+            return resolver.resolve(
+                values[3] == "승" ? .postseasonNewsAutomaticWin : .postseasonNewsAutomaticLoss,
+                arguments: [.integer(game), .integer(teamRuns), .integer(opponentRuns)]
+            )
+        }
+        if let values = captures(
+            raw,
+            pattern: #"^우승 결정전 (\d+)차전 잔여 경기 진행 · (\d+)-(\d+) (승|패)$"#
+        ), values.count == 4,
+           let game = Int(values[0]), let teamRuns = Int(values[1]), let opponentRuns = Int(values[2]) {
+            return resolver.resolve(
+                values[3] == "승" ? .postseasonNewsDirectWin : .postseasonNewsDirectLoss,
+                arguments: [.integer(game), .integer(teamRuns), .integer(opponentRuns)]
+            )
+        }
+        if let values = captures(
+            raw,
+            pattern: #"^가을 직접 등판 뒤 잔여 경기 진행 · (\d+)-(\d+) (승|패)$"#
+        ), values.count == 3,
+           let teamRuns = Int(values[0]), let opponentRuns = Int(values[1]) {
+            return resolver.resolve(
+                values[2] == "승" ? .postseasonNewsRemainderWin : .postseasonNewsRemainderLoss,
+                arguments: [.integer(teamRuns), .integer(opponentRuns)]
+            )
+        }
         switch raw {
         case "명예의 전당 헌액이 확정됐습니다.":
             return legacy("content.pro-news.retirement.hall-of-fame", resolver: resolver)
@@ -443,6 +518,20 @@ enum ProCareerPresentation {
 
         // A legacy sentence can be unknown after a future core update. Never leak it into English.
         return GameCopyResolver.unavailableText
+    }
+
+    private static func localizedPostseasonRound(
+        _ raw: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        let key: ProUICopyKey = switch raw {
+        case "와일드카드": .postseasonRoundWildCard
+        case "준플레이오프": .postseasonRoundSemifinal
+        case "플레이오프": .postseasonRoundPlayoff
+        case "우승 결정전": .postseasonRoundFinal
+        default: .postseasonRoundUnknown
+        }
+        return resolver.resolve(key)
     }
 
     private static func mediaNewsKey(_ raw: String) -> String? {

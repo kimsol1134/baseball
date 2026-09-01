@@ -35772,6 +35772,564 @@
           }
         }
       }
+    },
+    "pitch.scenario.pro.autumn.final.series.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Championship Game %lld · Series %lld-%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "優勝決定戦 第%lld戦・シリーズ %lld-%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "우승 결정전 %lld차전 · 시리즈 %lld-%lld"
+          }
+        }
+      }
+    },
+    "pitch.scenario.pro.autumn.final.series.starter.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The starter's final test arrives in the sixth. Keep the game in your hands."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先発として最後の山場は6回。試合の主導権を守り抜く。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선발의 마지막 고비는 6회다. 경기의 주도권을 지킨다."
+          }
+        }
+      }
+    },
+    "pitch.scenario.pro.autumn.final.series.long-relief.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The starter is out early. Carry the middle innings and keep the series alive."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "先発が早く降りた。中盤をつなぎ、シリーズを生かす。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선발이 일찍 내려갔다. 중반을 이어 시리즈를 살린다."
+          }
+        }
+      }
+    },
+    "pitch.scenario.pro.autumn.final.series.setup.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The heart of the order is waiting in the eighth. Deliver the game to the ninth."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8回、相手の中軸が待つ。試合を9回へつなぐ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8회, 상대 중심 타선이 기다린다. 경기를 9회로 넘긴다."
+          }
+        }
+      }
+    },
+    "pitch.scenario.pro.autumn.final.series.closer.body": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Three outs remain. Protect the one-run lead and close this championship game."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "残りは三つのアウト。一点のリードを守り、この試合を締める。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남은 것은 아웃 세 개. 한 점의 리드를 지켜 경기를 닫는다."
+          }
+        }
+      }
+    },
+    "pro.postseason.series.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Championship Series" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "優勝決定シリーズ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승 결정전 시리즈" } }
+      }
+    },
+    "pro.postseason.series.wild-card.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Wild Card Series" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ワイルドカードシリーズ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "와일드카드 시리즈" } }
+      }
+    },
+    "pro.postseason.series.semifinal.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Semifinal Series" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "準プレーオフシリーズ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "준플레이오프 시리즈" } }
+      }
+    },
+    "pro.postseason.series.playoff.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Playoff Series" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "プレーオフシリーズ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "플레이오프 시리즈" } }
+      }
+    },
+    "pro.postseason.series.score": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Series" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "シリーズ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "시리즈" } }
+      }
+    },
+    "pro.postseason.series.next-game": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Next game" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "次の試合" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "다음 경기" } }
+      }
+    },
+    "pro.postseason.series.appearances": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Direct outings" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "直接登板" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "직접 등판" } }
+      }
+    },
+    "pro.postseason.series.last-pitches": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Last outing · %lld pitches" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "前回登板・%lld球" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "직전 등판 · %lld구" } }
+      }
+    },
+    "pro.postseason.series.last-game.win": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Game %lld · %lld-%lld win" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "第%lld戦・%lld-%lldで勝利" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "%lld차전 · %lld-%lld 승" } }
+      }
+    },
+    "pro.postseason.series.last-game.loss": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Game %lld · %lld-%lld loss" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "第%lld戦・%lld-%lldで敗戦" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "%lld차전 · %lld-%lld 패" } }
+      }
+    },
+    "pro.postseason.series.last-appearance": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your outing · %lld pitches · %lld runs allowed" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "自分の登板・%lld球・%lld失点" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "내 등판 · %lld구 · %lld실점" } }
+      }
+    },
+    "pro.postseason.series.strength.advantage": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Regular-season edge · slight advantage in simulated play" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "レギュラーシーズン戦力で優位・自動進行でわずかに有利" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "정규시즌 전력 우세 · 자동 진행에 소폭 유리" } }
+      }
+    },
+    "pro.postseason.series.strength.even": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Regular-season strength · evenly matched" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "レギュラーシーズン戦力・互角" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "정규시즌 전력 · 대등한 흐름" } }
+      }
+    },
+    "pro.postseason.series.strength.disadvantage": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Regular-season gap · slight disadvantage in simulated play" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "レギュラーシーズン戦力で劣勢・自動進行でわずかに不利" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "정규시즌 전력 열세 · 자동 진행에 소폭 불리" } }
+      }
+    },
+    "pro.postseason.availability.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Take the Mound Again?" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "もう一度マウンドへ？" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "다시 마운드에 오를까?" } }
+      }
+    },
+    "pro.postseason.availability.body": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You threw %lld pitches in the previous game. The bullpen is asking whether you can go again." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "前の試合で%lld球を投げた。ブルペンから連投できるか確認が入る。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "직전 경기에서 %lld구를 던졌다. 불펜에서 연투가 가능한지 묻는다." } }
+      }
+    },
+    "pro.postseason.availability.body.clinch": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You threw %lld pitches last game. A win now clinches the series, even if you rest." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "前の試合で%lld球を投げた。休んでも、チームが勝てばシリーズ突破が決まる。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "직전 경기에서 %lld구를 던졌다. 쉬더라도 팀이 이기면 시리즈가 끝난다." } }
+      }
+    },
+    "pro.postseason.availability.body.elimination": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You threw %lld pitches last game. If you rest and the team loses, your season ends without another outing." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "前の試合で%lld球を投げた。休んでチームが負ければ、次の登板なくシーズンが終わる。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "직전 경기에서 %lld구를 던졌다. 쉬고 팀이 지면 다음 등판 없이 시즌이 끝난다." } }
+      }
+    },
+    "pro.postseason.availability.body.winner-take-all": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You threw %lld pitches last game. This game decides the series; resting may end your season or clinch it from the bench." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "前の試合で%lld球を投げた。この試合でシリーズが決まり、休めばベンチで進出か敗退を迎える。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "직전 경기에서 %lld구를 던졌다. 이번 경기가 시리즈를 끝내며, 쉬면 벤치에서 진출이나 탈락을 맞는다." } }
+      }
+    },
+    "pro.postseason.availability.pitch.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pitch Again" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "連投する" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "연투한다" } }
+      }
+    },
+    "pro.postseason.availability.pitch.detail": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Play the next game directly. Fatigue rises by %lld." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "次の試合を直接プレイする。疲労が%lld増える。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "다음 경기를 직접 던진다. 피로가 %lld 오른다." } }
+      }
+    },
+    "pro.postseason.availability.rest.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Rest for the Decider" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "決戦に備えて休む" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "결정전을 위해 쉰다" } }
+      }
+    },
+    "pro.postseason.availability.rest.detail": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Simulate this game and recover 12 fatigue for the next opportunity." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この試合は自動進行し、次の登板に向けて疲労を12回復する。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이번 경기는 자동 진행하고 다음 등판을 위해 피로 12를 회복한다." } }
+      }
+    },
+    "pro.postseason.availability.rest.detail.clinch": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Simulate this game and recover 12 fatigue. A team win may clinch before you pitch again." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この試合は自動進行し、疲労を12回復する。チームが勝てば次の登板前に突破が決まる。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이번 경기는 자동 진행하고 피로 12를 회복한다. 팀이 이기면 다음 등판 전에 시리즈가 끝날 수 있다." } }
+      }
+    },
+    "pro.postseason.availability.rest.detail.elimination": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Simulate this game and recover 12 fatigue. A loss ends the season, so another outing is not guaranteed." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この試合は自動進行し、疲労を12回復する。負ければシーズン終了で、次の登板は保証されない。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이번 경기는 자동 진행하고 피로 12를 회복한다. 패하면 시즌이 끝나 다음 등판은 보장되지 않는다." } }
+      }
+    },
+    "pro.postseason.availability.risk.manageable": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Projected fatigue %lld · manageable arm load" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "予想疲労 %lld・対応可能な負荷" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "예상 피로 %lld · 감당 가능한 팔 부담" } }
+      }
+    },
+    "pro.postseason.availability.risk.elevated": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Projected fatigue %lld · command and recovery are at risk" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "予想疲労 %lld・制球と回復にリスク" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "예상 피로 %lld · 제구와 회복 위험 상승" } }
+      }
+    },
+    "pro.postseason.availability.risk.severe": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Projected fatigue %lld · severe overload risk" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "予想疲労 %lld・深刻な過負荷リスク" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "예상 피로 %lld · 심각한 과부하 위험" } }
+      }
+    },
+    "pro.postseason.availability.committed": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You committed to pitching again. The added fatigue is already reflected." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "連投を選んだ。追加の疲労はすでに反映されている。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "연투를 선택했다. 추가 피로가 이미 반영됐다." } }
+      }
+    },
+    "pro.postseason.availability.pitch.summary": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You chose to pitch again. The added fatigue has been applied." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "連投を選んだ。追加の疲労が反映された。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "연투를 선택했습니다. 추가 피로를 반영했습니다." } }
+      }
+    },
+    "pro.postseason.availability.rest.summary": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You rested for one game and prepared for the next outing." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一試合休み、次の登板に備えた。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "한 경기를 쉬고 다음 등판을 준비합니다." } }
+      }
+    },
+    "pro.postseason.news.pitch-again": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You chose to pitch again and will take the mound in the next game." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "連投を選び、次の試合もマウンドに上がる。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "연투를 택했습니다. 다음 경기에도 마운드에 오릅니다." } }
+      }
+    },
+    "pro.postseason.news.rested": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You rested for one game and prepare for Championship Game %lld." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一試合休み、優勝決定戦第%lld戦に備える。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "한 경기를 쉬었습니다. 우승 결정전 %lld차전을 준비합니다." } }
+      }
+    },
+    "pro.postseason.news.series-continues": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Championship Game %lld is next. The series stands at %lld-%lld." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "次は優勝決定戦第%lld戦。シリーズは%lld-%lld。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승 결정전 %lld차전이 남았습니다. 시리즈 %lld-%lld." } }
+      }
+    },
+    "pro.postseason.news.automatic-win": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Championship Game %lld simulated · %lld-%lld win" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "優勝決定戦第%lld戦を自動進行・%lld-%lldで勝利" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승 결정전 %lld차전 자동 진행 · %lld-%lld 승" } }
+      }
+    },
+    "pro.postseason.news.automatic-loss": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Championship Game %lld simulated · %lld-%lld loss" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "優勝決定戦第%lld戦を自動進行・%lld-%lldで敗戦" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승 결정전 %lld차전 자동 진행 · %lld-%lld 패" } }
+      }
+    },
+    "pro.postseason.news.direct-win": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Championship Game %lld continued after your outing · %lld-%lld win" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "登板後も優勝決定戦第%lld戦を進行・%lld-%lldで勝利" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승 결정전 %lld차전 잔여 경기 진행 · %lld-%lld 승" } }
+      }
+    },
+    "pro.postseason.news.direct-loss": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Championship Game %lld continued after your outing · %lld-%lld loss" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "登板後も優勝決定戦第%lld戦を進行・%lld-%lldで敗戦" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승 결정전 %lld차전 잔여 경기 진행 · %lld-%lld 패" } }
+      }
+    },
+    "pro.postseason.news.remainder-win": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The game continued after your postseason outing · %lld-%lld win" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ポストシーズン登板後も試合を進行・%lld-%lldで勝利" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "가을 직접 등판 뒤 잔여 경기 진행 · %lld-%lld 승" } }
+      }
+    },
+    "pro.postseason.news.remainder-loss": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The game continued after your postseason outing · %lld-%lld loss" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ポストシーズン登板後も試合を進行・%lld-%lldで敗戦" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "가을 직접 등판 뒤 잔여 경기 진행 · %lld-%lld 패" } }
+      }
+    },
+    "pitch.scenario.pro.autumn.wild-card.series.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Wild Card Game %lld · Series %lld-%lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ワイルドカード第%lld戦・シリーズ %lld-%lld" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "와일드카드 %lld차전 · 시리즈 %lld-%lld" } }
+      }
+    },
+    "pitch.scenario.pro.autumn.wild-card.series.body": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your outing moves one game in the series. The remaining innings continue after you leave." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この登板がシリーズの一試合を動かす。降板後も残りのイニングは続く。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이번 등판이 시리즈 한 경기를 움직인다. 내려간 뒤에도 남은 이닝은 계속된다." } }
+      }
+    },
+    "pitch.scenario.pro.autumn.semifinal.series.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Semifinal Game %lld · Series %lld-%lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "準プレーオフ第%lld戦・シリーズ %lld-%lld" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "준플레이오프 %lld차전 · 시리즈 %lld-%lld" } }
+      }
+    },
+    "pitch.scenario.pro.autumn.semifinal.series.body": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Hold this leverage point, then let the rest of the game decide the series score." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "この勝負所を抑え、残りの試合でシリーズの一勝を決める。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 승부처를 막고 남은 경기에서 시리즈의 한 승을 결정한다." } }
+      }
+    },
+    "pitch.scenario.pro.autumn.playoff.series.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Playoff Game %lld · Series %lld-%lld" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "プレーオフ第%lld戦・シリーズ %lld-%lld" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "플레이오프 %lld차전 · 시리즈 %lld-%lld" } }
+      }
+    },
+    "pitch.scenario.pro.autumn.playoff.series.body": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This is one appearance inside the game, not the whole result. Protect the moment in front of you." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "これは試合全体ではなく、一つの登板だ。目の前の勝負を守る。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이 등판은 경기 전체가 아니라 한 구간이다. 눈앞의 승부를 지킨다." } }
+      }
+    },
+    "pro.postseason.history.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Postseason Games" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ポストシーズン試合記録" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "포스트시즌 경기 기록" } }
+      }
+    },
+    "pro.postseason.history.direct": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Direct outing" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "直接登板" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "직접 등판" } }
+      }
+    },
+    "pro.postseason.history.automatic": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Simulated" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "自動進行" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "자동 진행" } }
+      }
+    },
+    "pro.postseason.round.wild-card": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Wild Card" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ワイルドカード" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "와일드카드" } }
+      }
+    },
+    "pro.postseason.round.semifinal": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Semifinal" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "準プレーオフ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "준플레이오프" } }
+      }
+    },
+    "pro.postseason.round.playoff": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Playoff" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "プレーオフ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "플레이오프" } }
+      }
+    },
+    "pro.postseason.round.final": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Championship" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "優勝決定戦" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승 결정전" } }
+      }
+    },
+    "pro.postseason.round.unknown": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Postseason" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ポストシーズン" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "포스트시즌" } }
+      }
+    },
+    "pro.postseason.finale.eyebrow": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Postseason Complete" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ポストシーズン終了" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "포스트시즌 종료" } }
+      }
+    },
+    "pro.postseason.finale.champion.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Champions" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "優勝" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승" } }
+      }
+    },
+    "pro.postseason.finale.champion.body": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Every direct outing, rest decision, and simulated inning now forms the path to the title." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "直接登板、休養の判断、自動進行の一イニングまで、すべてが優勝への道になった。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "직접 등판과 휴식 선택, 자동 진행된 이닝까지 모두 우승으로 이어졌다." } }
+      }
+    },
+    "pro.postseason.finale.runner-up.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "One Step Short" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "あと一歩" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "마지막 문턱에서" } }
+      }
+    },
+    "pro.postseason.finale.runner-up.body": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The title slipped away, but every postseason game remains in your career record." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "優勝には届かなかったが、すべての試合がキャリア記録に残る。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "우승에는 닿지 못했지만 모든 포스트시즌 경기가 커리어 기록으로 남는다." } }
+      }
+    },
+    "pro.postseason.finale.eliminated.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The Run Ends Here" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ここで敗退" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "가을은 여기까지" } }
+      }
+    },
+    "pro.postseason.finale.eliminated.body": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Review where the series turned and carry that memory into the next season." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "シリーズの分岐点を振り返り、その記憶を次のシーズンへ持っていく。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "시리즈가 갈린 순간을 돌아보고 그 기억을 다음 시즌으로 가져간다." } }
+      }
+    },
+    "record.pro.career-postseason-line": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Postseason %lld games · %lld-%lld · %lld direct outings" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "ポストシーズン %lld試合・%lld勝%lld敗・直接登板%lld回" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "포스트시즌 %lld경기 · %lld승 %lld패 · 직접 등판 %lld회" } }
+      }
+    },
+    "pro.postseason.news.round-continues": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "%@ Game %lld is next. The series stands at %lld-%lld." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "次は%@第%lld戦。シリーズは%lld-%lld。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "%@ %lld차전이 남았습니다. 시리즈 %lld-%lld." } }
+      }
+    },
+    "pro.postseason.news.round-rested": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "You rested for one game and prepare for %@ Game %lld." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "一試合休み、%@第%lld戦に備える。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "한 경기를 쉬었습니다. %@ %lld차전을 준비합니다." } }
+      }
     }
   },
   "version": "1.0"

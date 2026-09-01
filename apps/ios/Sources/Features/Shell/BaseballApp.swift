@@ -45,6 +45,8 @@ struct BaseballApp: App {
     nonisolated static let undraftedCareerFixtureLaunchArgument = "-uiTestUndraftedCareerFixture"
     /// 리뷰 개선 UI를 실제 시뮬레이터에서 검증하는 Debug 전용 프로 숙련·부상 픽스처.
     nonisolated static let reviewImprovementFixtureLaunchArgument = "-uiTestReviewImprovementFixture"
+    /// 포스트시즌 2승 2패·필승조 연투 선택을 바로 여는 Debug 전용 픽스처.
+    nonisolated static let postseasonFixtureLaunchArgument = "-uiTestPostseasonFixture"
 #endif
 
     @Environment(\.scenePhase) private var scenePhase
@@ -341,6 +343,8 @@ struct BaseballApp: App {
                             _ = highSchool.installUndraftedDraftFixtureForUITesting()
                         } else if arguments.contains(Self.reviewImprovementFixtureLaunchArgument) {
                             _ = pro.installReviewImprovementFixtureForUITesting()
+                        } else if arguments.contains(Self.postseasonFixtureLaunchArgument) {
+                            _ = pro.installPostseasonFixtureForUITesting()
                         }
 #endif
                     } else if arguments.contains(Self.autoReleaseLaunchArgument) {

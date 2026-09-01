@@ -13,6 +13,10 @@ final class PitchSessionTests: XCTestCase {
         stamina: Int = 40,
         fatigue: Int = 20,
         catcherTrust: Int = 50,
+        role: ProRole = .setup,
+        seasonTrigger: ProSeasonTrigger? = .callUpAudition,
+        postseason: ProPostseasonState? = nil,
+        proRulesVersion: Int? = nil,
         pitcher overridePitcher: PitcherSnapshot? = nil
     ) -> ProCareerSnapshot {
         let team = ProCareerEngine.proTeams[0]
@@ -37,7 +41,7 @@ final class PitchSessionTests: XCTestCase {
             season: 1,
             week: 8,
             level: .minor,
-            role: .setup,
+            role: role,
             managerTrust: 50,
             catcherTrust: catcherTrust,
             fatigue: fatigue,
@@ -53,11 +57,13 @@ final class PitchSessionTests: XCTestCase {
             hallOfFameScore: nil,
             commitment: "",
             balanceVersion: PitcherPresetCatalog.balanceVersion,
+            proRulesVersion: proRulesVersion,
             seasonSegment: .firstHalf,
-            seasonTrigger: .callUpAudition,
+            seasonTrigger: seasonTrigger,
             currentRival: rival,
             seasonTensions: [],
-            seasonImportantGames: 0
+            seasonImportantGames: 0,
+            postseason: postseason
         )
     }
 
@@ -223,6 +229,206 @@ final class PitchSessionTests: XCTestCase {
         XCTAssertEqual(low.lineup, high.lineup)
         XCTAssertEqual(low.scouting.reliability, 20)
         XCTAssertEqual(high.scouting.reliability, 70)
+    }
+
+    func testV7ChampionshipScenarioUsesBullpenRoleLengthsAndSeriesStakes() {
+        let postseason = ProPostseasonState(
+            seed: 1,
+            currentRound: .final,
+            result: .inProgress,
+            gamesPlayed: 2,
+            series: .init(
+                playerWins: 1,
+                opponentWins: 1,
+                nextGameNumber: 3,
+                totalDirectAppearances: 1,
+                lastAppearancePitches: 14
+            )
+        )
+        let longRelief = PitchScenario.pro(state: snapshot(
+            role: .longRelief,
+            seasonTrigger: .autumnFinal,
+            postseason: postseason,
+            proRulesVersion: 7
+        ))
+        let setup = PitchScenario.pro(state: snapshot(
+            role: .setup,
+            seasonTrigger: .autumnFinal,
+            postseason: postseason,
+            proRulesVersion: 7
+        ))
+        let closer = PitchScenario.pro(state: snapshot(
+            role: .closer,
+            seasonTrigger: .autumnFinal,
+            postseason: postseason,
+            proRulesVersion: 7
+        ))
+
+        XCTAssertEqual(longRelief.maximumBatters, 6)
+        XCTAssertEqual(longRelief.inning, 5)
+        XCTAssertEqual(setup.maximumBatters, 4)
+        XCTAssertEqual(setup.inning, 8)
+        XCTAssertEqual(closer.maximumBatters, 3)
+        XCTAssertEqual(closer.inning, 9)
+        XCTAssertEqual(closer.scoreDifferential, 1)
+        XCTAssertTrue(closer.id.hasSuffix("final-3"))
+        XCTAssertTrue(closer.headline.contains("3차전"))
+        XCTAssertTrue(closer.headline.contains("1-1"))
+    }
+
+    func testBullpenCannotBeginConsecutiveFinalBeforeAvailabilityChoice() {
+        let awaiting = ProPostseasonState(
+            seed: 1,
+            currentRound: .final,
+            result: .inProgress,
+            gamesPlayed: 1,
+            series: .init(
+                playerWins: 1,
+                opponentWins: 0,
+                nextGameNumber: 2,
+                totalDirectAppearances: 1,
+                lastAppearancePitches: 16,
+                lastAppearanceGameNumber: 1
+            )
+        )
+        let blocked = snapshot(
+            role: .setup,
+            seasonTrigger: .autumnFinal,
+            postseason: awaiting,
+            proRulesVersion: 7
+        )
+        XCTAssertFalse(MobileCareerStore.canBeginImportantGame(blocked))
+
+        let committedPostseason = ProPostseasonRules.choosingAvailability(
+            awaiting,
+            choice: .pitchAgain
+        )
+        let committed = snapshot(
+            role: .setup,
+            seasonTrigger: .autumnFinal,
+            postseason: committedPostseason,
+            proRulesVersion: 7
+        )
+        XCTAssertTrue(MobileCareerStore.canBeginImportantGame(committed))
+    }
+
+    func testPostseasonSessionCarriesOpponentBenchMemoryAcrossGames() {
+        let memory = RivalMemorySnapshot(
+            matchupID: "p-test:bench:series-opponent",
+            revision: 2,
+            plateAppearancesSeen: 1,
+            totalPitchesSeen: 1,
+            recentObservations: [
+                .init(
+                    pitchType: .slider,
+                    zone: .init(row: 2, column: 2),
+                    zoneIntent: .chase,
+                    balls: 1,
+                    strikes: 2,
+                    outcome: .swingingStrike
+                )
+            ]
+        )
+        let postseason = ProPostseasonState(
+            seed: 1,
+            currentRound: .final,
+            result: .inProgress,
+            gamesPlayed: 1,
+            series: .init(
+                round: .final,
+                opponentTeamID: "opponent",
+                playerWinsRequired: 3,
+                opponentWinsRequired: 3,
+                playerWins: 1,
+                opponentWins: 0,
+                nextGameNumber: 2,
+                totalDirectAppearances: 1,
+                rivalMemory: memory
+            )
+        )
+        let session = PitchSession(state: snapshot(
+            role: .setup,
+            seasonTrigger: .autumnFinal,
+            postseason: postseason,
+            proRulesVersion: 7
+        ), seed: "818181")
+        session.start()
+        XCTAssertEqual(session.rivalMemory, memory)
+        XCTAssertEqual(session.report(scenarioNumber: 24).rivalMemory, memory)
+    }
+
+    func testPostseasonUITestFixtureRestChoiceReachesFinaleState() {
+        let store = MobileCareerStore(
+            saveWriter: { _ in true },
+            configuration: .journeyV1Tests
+        )
+        XCTAssertTrue(store.installPostseasonFixtureForUITesting())
+        XCTAssertEqual(store.state?.phase, .importantGame)
+        XCTAssertEqual(store.state?.postseason.map(ProPostseasonRules.stakes), .winnerTakeAll)
+        store.choosePostseasonAvailability(.restForDecider)
+        XCTAssertEqual(store.state?.phase, .seasonReview)
+        XCTAssertTrue(
+            store.state?.postseason?.result == .champion
+                || store.state?.postseason?.result == .runnerUp
+        )
+        XCTAssertEqual(store.state?.postseason?.gameHistory?.count, 5)
+    }
+
+    func testPostseasonRestChoiceEmitsDecisionGameAndCompletionAnalytics() {
+        var events: [GameAnalytics.Event] = []
+        GameAnalytics.eventSinkForTesting = { event, _ in events.append(event) }
+        defer { GameAnalytics.eventSinkForTesting = nil }
+        let store = MobileCareerStore(
+            saveWriter: { _ in true },
+            configuration: .journeyV1Tests
+        )
+        XCTAssertTrue(store.installPostseasonFixtureForUITesting())
+        store.choosePostseasonAvailability(.restForDecider)
+        XCTAssertTrue(events.contains(.postseasonAvailabilitySelected))
+        XCTAssertTrue(events.contains(.postseasonGameResolved))
+        XCTAssertTrue(events.contains(.postseasonCompleted))
+    }
+
+    func testPostseasonAvailabilityNewsAndSummariesAreLocalized() {
+        let english = GameCopyResolver(language: .english, policy: .releaseSafe)
+        let japanese = GameCopyResolver(language: .japanese, policy: .releaseSafe)
+
+        XCTAssertEqual(
+            ProCareerPresentation.news(
+                "우승 결정전 3차전이 남았습니다. 시리즈 1-1.",
+                resolver: english
+            ),
+            "Championship Game 3 is next. The series stands at 1-1."
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news(
+                "우승 결정전 2차전 자동 진행 · 4-2 승",
+                resolver: japanese
+            ),
+            "優勝決定戦第2戦を自動進行・4-2で勝利"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news(
+                "우승 결정전 1차전 잔여 경기 진행 · 3-4 패",
+                resolver: english
+            ),
+            "Championship Game 1 continued after your outing · 3-4 loss"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news(
+                "가을 직접 등판 뒤 잔여 경기 진행 · 5-3 승",
+                resolver: english
+            ),
+            "The game continued after your postseason outing · 5-3 win"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.storeSummary(
+                "연투를 선택했습니다. 추가 피로를 반영했습니다.",
+                state: snapshot(),
+                resolver: english
+            ),
+            "You chose to pitch again. The added fatigue has been applied."
+        )
     }
 
     func testHeldManualCallSurvivesResumeCheckpoint() {
@@ -502,6 +708,8 @@ final class PitchSessionTests: XCTestCase {
         }
         XCTAssertEqual(session.report(scenarioNumber: 8).pitches, session.pitchLog.count)
         XCTAssertEqual(session.report(scenarioNumber: 8).scenarioNumber, 8)
+        XCTAssertEqual(session.report(scenarioNumber: 8).inningAtEntry, 7)
+        XCTAssertEqual(session.report(scenarioNumber: 8).outsAtEntry, 0)
     }
 
     /// 타자가 바뀌면 직전 결과가 사라져야 한다.

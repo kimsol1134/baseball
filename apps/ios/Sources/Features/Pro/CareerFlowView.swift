@@ -95,15 +95,26 @@ struct CareerFlowView: View {
                                     .stallWatchdog("pro_season_decision_missing", threshold: 1)
                                 }
                             case .importantGame:
-                                ImportantGameIntro(state: state, onStart: career.beginImportantGame)
-                            case .seasonReview:
-                                ActionCard(
-                                    title: copyResolver.resolve(.seasonReviewTitle),
-                                    copy: copyResolver.resolve(.seasonReviewBody),
-                                    button: copyResolver.resolve(.seasonReviewAction),
-                                    identifier: "pro.seasonReview.confirm",
-                                    action: career.reviewSeason
+                                ImportantGameIntro(
+                                    state: state,
+                                    onStart: career.beginImportantGame,
+                                    onAvailabilityDecision: career.choosePostseasonAvailability
                                 )
+                            case .seasonReview:
+                                if let postseason = state.postseason,
+                                   postseason.result != .inProgress,
+                                   postseason.result != .didNotQualify,
+                                   postseason.result != .unavailable {
+                                    ProPostseasonFinaleView(state: state, onReview: career.reviewSeason)
+                                } else {
+                                    ActionCard(
+                                        title: copyResolver.resolve(.seasonReviewTitle),
+                                        copy: copyResolver.resolve(.seasonReviewBody),
+                                        button: copyResolver.resolve(.seasonReviewAction),
+                                        identifier: "pro.seasonReview.confirm",
+                                        action: career.reviewSeason
+                                    )
+                                }
                             case .offseasonDecision:
                                 OffseasonView(career: career, state: state)
                             case .retirementDecision:
