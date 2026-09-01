@@ -13,9 +13,10 @@ struct RetirementDecisionView: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: .retirement,
-                eyebrow: copyResolver.resolve(
-                    .retirementEyebrow,
-                    arguments: [.integer(state.age), .integer(state.careerStats.count)]
+                eyebrow: ProRetirementCopy.eyebrow(
+                    age: state.age,
+                    seasons: state.careerStats.count,
+                    resolver: copyResolver
                 ),
                 title: copyResolver.resolve(.retirementDecisionTitle),
                 accent: BaseballTheme.milestone
@@ -37,7 +38,7 @@ struct RetirementDecisionView: View {
                 .accessibilityIdentifier("pro.retire.confirm")
             Button(copyResolver.resolve(.retirementConfirmCancel)) {}
         } message: {
-            Text(copyResolver.resolve(.retirementConfirmMessage, arguments: [.integer(state.careerStats.count)]))
+            Text(verbatim: ProRetirementCopy.confirmMessage(seasons: state.careerStats.count, resolver: copyResolver))
         }
     }
 }
@@ -53,12 +54,14 @@ struct RetirementPreviewCard: View {
     var body: some View {
         BaseballCard(title: copyResolver.resolve(.retirementPreviewTitle), tone: .raised) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(copyResolver.resolve(.retirementPreviewScore, arguments: [.integer(preview.finalScore)]))
+                Text(verbatim: ProRetirementCopy.previewScore(preview.finalScore, resolver: copyResolver))
                     .font(.headline.monospacedDigit())
                     .accessibilityIdentifier("pro.retirement.preview.score")
-                Text(copyResolver.resolve(
-                    .retirementPreviewRetiredNumber,
-                    arguments: [.integer(preview.lastTeamSeasons), .integer(preview.lastTeamLegacy), .integer(preview.fanSupport)]
+                Text(verbatim: ProRetirementCopy.previewRetiredNumber(
+                    lastTeamSeasons: preview.lastTeamSeasons,
+                    lastTeamLegacy: preview.lastTeamLegacy,
+                    fanSupport: preview.fanSupport,
+                    resolver: copyResolver
                 ))
                 .accessibilityIdentifier("pro.retirement.preview.retired-number")
                 if preview.retiredNumberEligible {
@@ -107,7 +110,7 @@ struct RetiredView: View {
             KeyArtHeader(
                 art: .retirement,
                 eyebrow: copyResolver.resolve(.retiredEyebrow),
-                title: copyResolver.resolve(.retiredTitle, arguments: [.userText(state.identity.name)]),
+                title: ProRetirementCopy.retiredTitle(name: state.identity.name, resolver: copyResolver),
                 accent: BaseballTheme.milestone
             )
 
@@ -117,15 +120,10 @@ struct RetiredView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     // localization-safe: user-input
                     Text(verbatim: state.identity.name).font(.headline)
-                    Text(verbatim: copyResolver.resolve(
-                        .retiredIdentityLine,
-                        arguments: [
-                            .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
-                            .userText(copyResolver.resolve(
-                                .offseasonSeasons,
-                                arguments: [.integer(state.careerStats.count)]
-                            )),
-                        ]
+                    Text(verbatim: ProRetirementCopy.identityLine(
+                        teamName: ProCareerPresentation.teamName(state.team, resolver: copyResolver),
+                        seasons: state.careerStats.count,
+                        resolver: copyResolver
                     ))
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
@@ -135,7 +133,7 @@ struct RetiredView: View {
 
             if let score = state.hallOfFameScore {
                 BaseballCard(title: copyResolver.resolve(.retiredHallOfFame), tone: .milestone) {
-                    Text(verbatim: copyResolver.resolve(.retirementFinalScore, arguments: [.integer(score)]))
+                    Text(verbatim: ProRetirementCopy.finalScore(score, resolver: copyResolver))
                         .font(BaseballType.heroNumeral)
                         .foregroundStyle(BaseballTheme.milestone)
                         .accessibilityIdentifier("pro.retirement.final.score")
@@ -164,9 +162,9 @@ struct RetiredView: View {
                 ))
                     .font(.subheadline)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(verbatim: copyResolver.resolve(
-                    .retiredSoulPoints,
-                    arguments: [.integer(HighSchoolCareerStore.proSoulBonus(for: state))]
+                Text(verbatim: ProRetirementCopy.soulPoints(
+                    HighSchoolCareerStore.proSoulBonus(for: state),
+                    resolver: copyResolver
                 ))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
@@ -224,9 +222,10 @@ struct RetiredView: View {
                 .accessibilityIdentifier("pro.newPlayer.confirm")
             Button(copyResolver.resolve(.retiredConfirmCancel)) {}
         } message: {
-            Text(verbatim: copyResolver.resolve(
-                retiresIntoSignatureLegacy ? .retiredLegacyConfirmMessage : .retiredSoulConfirmMessage,
-                arguments: [.userText(state.identity.name)]
+            Text(verbatim: ProRetirementCopy.confirmNewPlayer(
+                name: state.identity.name,
+                isLegacy: retiresIntoSignatureLegacy,
+                resolver: copyResolver
             ))
         }
     }
@@ -260,14 +259,23 @@ struct RetirementHonorsCard: View {
     private func value(for honor: ProRetirementHonor) -> String {
         switch honor.kind {
         case .hallOfFame:
-            return copyResolver.resolve(.retirementHonorScore, arguments: [.integer(Int(clamping: honor.value ?? 0))])
+            return ProRetirementCopy.honorScore(Int(clamping: honor.value ?? 0), resolver: copyResolver)
         case .retiredNumber, .clubHall:
-            return copyResolver.resolve(.retirementHonorTeam, arguments: [.userText(ProCareerPresentation.teamName(honor.teamID ?? "", resolver: copyResolver))])
+            return ProRetirementCopy.honorTeam(
+                ProCareerPresentation.teamName(honor.teamID ?? "", resolver: copyResolver),
+                resolver: copyResolver
+            )
         case .ambitionCompleted:
             let ambition = honor.referenceID.flatMap(ProCareerAmbition.init(rawValue:))
-            return copyResolver.resolve(.retirementHonorValue, arguments: [.userText(ambition.map { ProCareerPresentation.goalTitle($0, resolver: copyResolver) } ?? GameCopyResolver.unavailableText)])
+            return ProRetirementCopy.honorValue(
+                ambition.map { ProCareerPresentation.goalTitle($0, resolver: copyResolver) } ?? GameCopyResolver.unavailableText,
+                resolver: copyResolver
+            )
         case .careerEarnings:
-            return copyResolver.resolve(.retirementHonorValue, arguments: [.userText(GameFormatters.krw(Int(clamping: honor.value ?? 0), language: copyResolver.language))])
+            return ProRetirementCopy.honorValue(
+                GameFormatters.krw(Int(clamping: honor.value ?? 0), language: copyResolver.language),
+                resolver: copyResolver
+            )
         }
     }
 }

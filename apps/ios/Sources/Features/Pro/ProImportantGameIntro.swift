@@ -173,15 +173,9 @@ struct ImportantGameIntro: View {
             .foregroundStyle(BaseballTheme.textSecondary)
             if let lastGame = series.gameLines?.last {
                 Label(
-                    copyResolver.resolve(
-                        lastGame.won
-                            ? .postseasonSeriesLastGameWin
-                            : .postseasonSeriesLastGameLoss,
-                        arguments: [
-                            .integer(lastGame.gameNumber),
-                            .integer(lastGame.teamRuns),
-                            .integer(lastGame.opponentRuns),
-                        ]
+                    ProImportantGameCopy.seriesLastGame(
+                        lastGame,
+                        resolver: copyResolver
                     ),
                     systemImage: lastGame.won ? "checkmark.circle.fill" : "xmark.circle.fill"
                 )
@@ -190,19 +184,17 @@ struct ImportantGameIntro: View {
                 if lastGame.directlyPlayed,
                    let pitches = lastGame.playerPitches,
                    let runs = lastGame.playerRunsAllowed {
-                    Text(verbatim: copyResolver.resolve(
-                        .postseasonSeriesLastAppearance,
-                        arguments: [.integer(pitches), .integer(runs)]
+                    Text(verbatim: ProImportantGameCopy.seriesLastAppearance(
+                        pitches: pitches,
+                        runs: runs,
+                        resolver: copyResolver
                     ))
                     .font(.caption)
                     .foregroundStyle(BaseballTheme.textSecondary)
                 }
             } else if let pitches = series.lastAppearancePitches {
                 Label(
-                    copyResolver.resolve(
-                        .postseasonSeriesLastPitches,
-                        arguments: [.integer(pitches)]
-                    ),
+                    ProImportantGameCopy.seriesLastPitches(pitches, resolver: copyResolver),
                     systemImage: "baseball.fill"
                 )
                 .font(.caption)
@@ -222,9 +214,10 @@ struct ImportantGameIntro: View {
         let projectedFatigue = min(100, state.fatigue + penalty)
         let armRisk = ProPostseasonRules.armRisk(projectedFatigue: projectedFatigue)
         BaseballCard(title: copyResolver.resolve(.postseasonAvailabilityTitle), tone: .raised) {
-            Text(copyResolver.resolve(
-                availabilityBodyKey(postseason),
-                arguments: [.integer(pitches)]
+            Text(verbatim: ProImportantGameCopy.availabilityBody(
+                key: availabilityBodyKey(postseason),
+                pitches: pitches,
+                resolver: copyResolver
             ))
             .font(.footnote)
             .foregroundStyle(BaseballTheme.textSecondary)
@@ -233,14 +226,18 @@ struct ImportantGameIntro: View {
             availabilityButton(
                 choice: .pitchAgain,
                 title: copyResolver.resolve(.postseasonAvailabilityPitchTitle),
-                detail: copyResolver.resolve(
-                    .postseasonAvailabilityPitchDetail,
-                    arguments: [.integer(penalty)]
+                detail: ProImportantGameCopy.availabilityPitchDetail(
+                    penalty: penalty,
+                    resolver: copyResolver
                 ),
                 symbol: "flame.fill"
             )
             Label(
-                copyResolver.resolve(armRiskKey(armRisk), arguments: [.integer(projectedFatigue)]),
+                ProImportantGameCopy.availabilityRisk(
+                    key: armRiskKey(armRisk),
+                    projectedFatigue: projectedFatigue,
+                    resolver: copyResolver
+                ),
                 systemImage: armRisk == .severe ? "exclamationmark.triangle.fill" : "heart.text.square"
             )
             .font(.caption.weight(.semibold))
@@ -308,9 +305,9 @@ struct ImportantGameIntro: View {
             role: state.role,
             lastAppearancePitches: pitches
         )
-        return copyResolver.resolve(
-            .postseasonAvailabilityPitchDetail,
-            arguments: [.integer(penalty)]
+        return ProImportantGameCopy.availabilityPitchDetail(
+            penalty: penalty,
+            resolver: copyResolver
         )
     }
 

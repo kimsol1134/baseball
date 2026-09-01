@@ -28,26 +28,25 @@ struct ProInjuryResultCard: View {
     }
 
     var body: some View {
-        BaseballCard(title: copyResolver.resolve(
-            .injuryResultTitle,
-            arguments: [.integer(event.recoveryWeeks)]
+        BaseballCard(title: ProInjuryCopy.title(
+            recoveryWeeks: event.recoveryWeeks,
+            resolver: copyResolver
         ), tone: .warning) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(copyResolver.resolve(.injuryResultBody, arguments: [
-                    .integer(event.season),
-                    .integer(event.week),
-                ]))
-                .font(.headline)
-                Text(copyResolver.resolve(
-                    .injuryResultPlan,
-                    arguments: [.userText(planLabel)]
+                Text(verbatim: ProInjuryCopy.body(
+                    season: event.season,
+                    week: event.week,
+                    resolver: copyResolver
                 ))
+                .font(.headline)
+                Text(verbatim: ProInjuryCopy.plan(planLabel, resolver: copyResolver))
                 .font(.footnote.weight(.semibold))
-                Text(copyResolver.resolve(.injuryResultEvidence, arguments: [
-                    .integer(event.rawFatigue),
-                    .integer(event.effectiveFatigue),
-                    .integer(event.pitches),
-                ]))
+                Text(verbatim: ProInjuryCopy.evidence(
+                    rawFatigue: event.rawFatigue,
+                    effectiveFatigue: event.effectiveFatigue,
+                    pitches: event.pitches,
+                    resolver: copyResolver
+                ))
                 .font(.footnote.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
                 Text(copyResolver.resolve(.injuryResultNextAction))

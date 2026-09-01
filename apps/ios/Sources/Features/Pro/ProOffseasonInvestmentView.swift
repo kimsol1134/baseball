@@ -29,13 +29,13 @@ struct ProOffseasonInvestmentView: View {
 
             BaseballCard(title: copyResolver.resolve(.offseasonInvestmentBody), tone: .raised) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(copyResolver.resolve(
-                        .offseasonInvestmentDetail,
-                        arguments: [.integer(state.season + 1)]
+                    Text(verbatim: ProOffseasonCopy.investmentDetail(
+                        nextSeason: state.season + 1,
+                        resolver: copyResolver
                     ))
-                    Text(copyResolver.resolve(
-                        .offseasonInvestmentFunds,
-                        arguments: [.userText(GameFormatters.krw(Int(clamping: availableFunds), language: copyResolver.language))]
+                    Text(verbatim: ProOffseasonCopy.investmentFunds(
+                        available: availableFunds,
+                        resolver: copyResolver
                     ))
                     .font(.headline.monospacedDigit())
                     .foregroundStyle(BaseballTheme.information)
@@ -92,12 +92,10 @@ struct ProOffseasonInvestmentView: View {
             Button(copyResolver.resolve(.offseasonInvestmentConfirmCancel), role: .cancel) { }
         } message: {
             if let selectedInvestment {
-                Text(copyResolver.resolve(
-                    .offseasonInvestmentConfirmMessage,
-                    arguments: [
-                        .userText(choiceTitle(selectedInvestment)),
-                        .userText(benefitText(selectedInvestment)),
-                    ]
+                Text(verbatim: ProOffseasonCopy.investmentConfirmMessage(
+                    choice: choiceTitle(selectedInvestment),
+                    benefit: benefitText(selectedInvestment),
+                    resolver: copyResolver
                 ))
             }
         }
@@ -113,29 +111,20 @@ struct ProOffseasonInvestmentView: View {
             VStack(alignment: .leading, spacing: 7) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     // localization-safe: resolved-copy
-                    Text(choiceTitle(investment))
+                    Text(verbatim: choiceTitle(investment))
                         .font(.headline)
                     Spacer(minLength: 8)
-                    Text(GameFormatters.krw(Int(clamping: cost), language: copyResolver.language))
+                    Text(verbatim: GameFormatters.krw(Int(clamping: cost), language: copyResolver.language))
                         .font(.subheadline.weight(.semibold).monospacedDigit())
                         .foregroundStyle(affordable ? BaseballTheme.information : BaseballTheme.textTertiary)
                 }
-                Text(copyResolver.resolve(
-                    .offseasonInvestmentCost,
-                    arguments: [.userText(GameFormatters.krw(Int(clamping: cost), language: copyResolver.language))]
-                ))
+                Text(verbatim: ProOffseasonCopy.investmentCost(amount: cost, resolver: copyResolver))
                 .font(.footnote)
                 .foregroundStyle(BaseballTheme.textSecondary)
-                Text(copyResolver.resolve(
-                    .offseasonInvestmentBenefit,
-                    arguments: [.userText(benefitText(investment))]
-                ))
+                Text(verbatim: ProOffseasonCopy.investmentBenefit(benefitText(investment), resolver: copyResolver))
                 .font(.footnote)
                 .foregroundStyle(BaseballTheme.textSecondary)
-                Text(copyResolver.resolve(
-                    .offseasonInvestmentDuration,
-                    arguments: [.userText(durationText(investment))]
-                ))
+                Text(verbatim: ProOffseasonCopy.investmentDuration(durationText(investment), resolver: copyResolver))
                 .font(.caption)
                 .foregroundStyle(BaseballTheme.textTertiary)
                 if !affordable {
@@ -186,9 +175,9 @@ struct ProOffseasonInvestmentView: View {
     private func benefitText(_ investment: ProOffseasonInvestment) -> String {
         switch investment {
         case .pitchLab:
-            return copyResolver.resolve(
-                .offseasonInvestmentPitchLabBenefit,
-                arguments: [.userText(focusTitle(selectedFocus))]
+            return ProOffseasonCopy.pitchLabBenefit(
+                focusTitle: focusTitle(selectedFocus),
+                resolver: copyResolver
             )
         case .recoveryTeam:
             return copyResolver.resolve(.offseasonInvestmentRecoveryTeamBenefit)

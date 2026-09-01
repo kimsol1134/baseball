@@ -1,0 +1,548 @@
+import Foundation
+import SimulationCore
+import BaseballIOSDomain
+
+/// 프로 Features 화면이 `resolve(..., arguments:)`를 직접 부르지 않게 하는 문구 조립.
+/// 카탈로그 placeholder와 인자의 맞춤은 여기만 고치면 된다.
+enum ProSeasonSettlementCopy {
+    /// 아크 제목은 완결 문장이라 시즌 번호를 넣지 않는다. 기본 제목만 `%lld시즌 결산`이다.
+    static func title(
+        arcTitleID: String?,
+        season: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        if let key = arcTitleKey(arcTitleID) {
+            return resolver.resolve(key)
+        }
+        return resolver.resolve(.journeySettlementTitle, arguments: [.integer(season)])
+    }
+
+    static func arcTitleKey(_ id: String?) -> ProUICopyKey? {
+        switch id {
+        case "pro.arc.first_half_ace": .journeyArcFirstHalfAce
+        case "pro.arc.dominant": .journeyArcDominant
+        case "pro.arc.long_tunnel": .journeyArcLongTunnel
+        case "pro.arc.late_recovery": .journeyArcLateRecovery
+        case "pro.arc.autumn_door_closed": .journeyArcAutumnDoorClosed
+        case "pro.arc.autumn_champion": .journeyArcAutumnChampion
+        case "pro.arc.autumn_runner_up": .journeyArcAutumnRunnerUp
+        case "pro.arc.autumn_eliminated": .journeyArcAutumnEliminated
+        case "pro.arc.autumn_unavailable": .journeyArcAutumnUnavailable
+        case "pro.arc.quiet": .journeyArcQuiet
+        default: nil
+        }
+    }
+
+    static func stats(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .journeySettlementStats,
+            arguments: [
+                .integer(settlement.stats.games),
+                .userText(GameFormatters.innings(outs: settlement.stats.inningsOuts, language: resolver.language)),
+                .integer(settlement.stats.strikeouts),
+            ]
+        )
+    }
+
+    static func legacy(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .journeySettlementLegacy,
+            arguments: [.integer(settlement.teamLegacyBefore), .integer(settlement.teamLegacyAfter)]
+        )
+    }
+
+    static func hallOfFame(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .journeySettlementHOF,
+            arguments: [.integer(settlement.hallOfFameBefore), .integer(settlement.hallOfFameAfter)]
+        )
+    }
+
+    static func contract(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .journeySettlementContract,
+            arguments: [.integer(settlement.contractYearsBefore), .integer(settlement.contractYearsAfter)]
+        )
+    }
+
+    static func nextRoute(_ route: ProSettlementNextRoute, resolver: GameCopyResolver) -> String {
+        let label: String = switch route {
+        case .underContract: resolver.resolve(.journeySettlementNextUnderContract)
+        case .renewalMarket: resolver.resolve(.journeySettlementNextRenewal)
+        case .freeAgencyEligible: resolver.resolve(.journeySettlementNextFreeAgency)
+        case .forcedRetirement: resolver.resolve(.journeySettlementNextRetirement)
+        }
+        return resolver.resolve(.journeySettlementNext, arguments: [.userText(label)])
+    }
+
+    static func salary(amount: Int64, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .journeySettlementSalary,
+            arguments: [.userText(GameFormatters.krw(Int(clamping: amount), language: resolver.language))]
+        )
+    }
+
+    static func fan(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .journeySettlementFan,
+            arguments: [.integer(settlement.fanBefore), .integer(settlement.fanAfter)]
+        )
+    }
+
+    static func fanDelta(_ value: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .journeySettlementFanDelta,
+            arguments: [.userText(value >= 0 ? "+\(value)" : String(value))]
+        )
+    }
+
+    static func merchandise(amount: Int64, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .journeySettlementMerchandise,
+            arguments: [.userText(GameFormatters.krw(Int(clamping: amount), language: resolver.language))]
+        )
+    }
+
+    static func merchandiseTier(_ tierName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.journeySettlementMerchandiseTier, arguments: [.userText(tierName)])
+    }
+}
+
+enum ProContractCopy {
+    static func team(_ name: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.contractOfferTeam, arguments: [.userText(name)])
+    }
+
+    static func draftRound(_ round: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.contractOfferDraftRound, arguments: [.integer(round)])
+    }
+
+    static func draftPick(_ pick: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.contractOfferDraftPick, arguments: [.integer(pick)])
+    }
+
+    static func duration(years: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.contractOfferDuration, arguments: [.integer(years)])
+    }
+
+    static func rolePromise(_ roleName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.contractOfferRolePromise, arguments: [.userText(roleName)])
+    }
+
+    static func expectation(
+        kindName: String,
+        target: Int,
+        difficultyName: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .contractOfferExpectation,
+            arguments: [.userText(kindName), .integer(target), .userText(difficultyName)]
+        )
+    }
+
+    static func outlook(_ name: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.contractOfferOutlookLine, arguments: [.userText(name)])
+    }
+
+    static func legacyImpact(_ impact: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.contractOfferLegacyImpact, arguments: [.userText(impact)])
+    }
+
+    static func remaining(years: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.contractOfferRemaining, arguments: [.integer(years)])
+    }
+
+    static func confirmation(
+        teamName: String,
+        years: Int,
+        isTransfer: Bool,
+        resolver: GameCopyResolver
+    ) -> String {
+        let arguments: [LocalizedCopyArgument] = [.userText(teamName), .integer(years)]
+        return resolver.resolve(
+            isTransfer ? .contractOfferConfirmTransferMessage : .contractOfferConfirmMessage,
+            arguments: arguments
+        )
+    }
+}
+
+enum ProWeeklyCopy {
+    static func progress(
+        _ plan: ProWeekPlan,
+        state: ProCareerSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        let required = MobileCareerStore.developmentTicksRequired(
+            for: plan,
+            pitcher: state.pitcher,
+            proRulesVersion: state.proRulesVersion
+        ) ?? 2
+        // 노장 하락으로 능력 밴드가 내려가면 저장된 게이지가 새 임계값보다 클 수 있다.
+        let current = min(state.developmentProgress?.value(for: plan) ?? 0, required)
+        return resolver.resolve(
+            .weeklyProgress,
+            arguments: [.integer(current), .integer(required)]
+        )
+    }
+
+    static func injuryRisk(forecast: ProWeekHealthForecast, resolver: GameCopyResolver) -> String {
+        let bandKey: ProUICopyKey = switch forecast.band {
+        case .low: .weeklyInjuryRiskLow
+        case .caution: .weeklyInjuryRiskCaution
+        case .high: .weeklyInjuryRiskHigh
+        }
+        return resolver.resolve(.weeklyInjuryRisk, arguments: [
+            .userText(resolver.resolve(bandKey)),
+            .integer(forecast.expectedEffectiveFatigue),
+        ])
+    }
+
+    static func developStuffEffect(progress: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyDevelopStuffEffect, arguments: [.userText(progress)])
+    }
+
+    static func developMovementEffect(progress: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyDevelopMovementEffect, arguments: [.userText(progress)])
+    }
+
+    static func commandEffect(progress: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyCommandEffect, arguments: [.userText(progress)])
+    }
+
+    static func staminaEffect(progress: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyStaminaEffect, arguments: [.userText(progress)])
+    }
+
+    static func blueprint(_ buildLabel: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyBlueprint, arguments: [.userText(buildLabel)])
+    }
+
+    static func rolePromise(_ roleName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyRolePromise, arguments: [.userText(roleName)])
+    }
+
+    static func standingSchedule(roleName: String, remainingOutings: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .weeklyStandingSchedule,
+            arguments: [.userText(roleName), .integer(remainingOutings)]
+        )
+    }
+
+    static func routine(arcName: String, roleName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyRoutine, arguments: [.userText(arcName), .userText(roleName)])
+    }
+
+    static func pitchLearningTitle(_ pitchName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(AppCopyKey.trainingPitchLearningTitle, arguments: [.userText(pitchName)])
+    }
+
+    static func pitchLearningProgress(
+        practiceCredits: Int,
+        qualityUses: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            AppCopyKey.trainingPitchLearningProgress,
+            arguments: [
+                .integer(practiceCredits),
+                .integer(CareerDisplayRules.pitchLearningPracticeCap),
+                .integer(qualityUses),
+                .integer(CareerDisplayRules.pitchLearningQualityUses),
+            ]
+        )
+    }
+
+    static func planUntil(_ segmentName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(AppCopyKey.proWeeklyPlanUntil, arguments: [.userText(segmentName)])
+    }
+}
+
+enum ProOffseasonCopy {
+    static func openMarketServiceLocked(service: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonOpenMarketServiceLocked, arguments: [.integer(service)])
+    }
+
+    static func eyebrow(season: Int, age: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonEyebrow, arguments: [.integer(season), .integer(age)])
+    }
+
+    static func years(_ service: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonYears, arguments: [.integer(service)])
+    }
+
+    static func seasons(_ count: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonSeasons, arguments: [.integer(count)])
+    }
+
+    static func renewalDetail(teamName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonRenewalDetail, arguments: [.userText(teamName)])
+    }
+
+    static func activeContractDetail(teamName: String, years: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .offseasonActiveContractDetail,
+            arguments: [.userText(teamName), .integer(years)]
+        )
+    }
+
+    static func continueDetail(teamName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonContinueDetail, arguments: [.userText(teamName)])
+    }
+
+    static func confirmRetireMessage(seasons: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonConfirmRetireMessage, arguments: [.integer(seasons)])
+    }
+
+    static func confirmMilitaryMessage(ageAfter: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonConfirmMilitaryMessage, arguments: [.integer(ageAfter)])
+    }
+
+    static func confirmContinueMessage(teamName: String, nextSeason: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .offseasonConfirmContinueMessage,
+            arguments: [.userText(teamName), .integer(nextSeason)]
+        )
+    }
+
+    static func investmentDetail(nextSeason: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonInvestmentDetail, arguments: [.integer(nextSeason)])
+    }
+
+    static func investmentFunds(available: Int64, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .offseasonInvestmentFunds,
+            arguments: [.userText(GameFormatters.krw(Int(clamping: available), language: resolver.language))]
+        )
+    }
+
+    static func investmentCost(amount: Int64, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .offseasonInvestmentCost,
+            arguments: [.userText(GameFormatters.krw(Int(clamping: amount), language: resolver.language))]
+        )
+    }
+
+    static func investmentBenefit(_ benefit: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonInvestmentBenefit, arguments: [.userText(benefit)])
+    }
+
+    static func investmentDuration(_ duration: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonInvestmentDuration, arguments: [.userText(duration)])
+    }
+
+    static func investmentConfirmMessage(choice: String, benefit: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .offseasonInvestmentConfirmMessage,
+            arguments: [.userText(choice), .userText(benefit)]
+        )
+    }
+
+    static func pitchLabBenefit(focusTitle: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonInvestmentPitchLabBenefit, arguments: [.userText(focusTitle)])
+    }
+}
+
+enum ProInjuryCopy {
+    static func title(recoveryWeeks: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.injuryResultTitle, arguments: [.integer(recoveryWeeks)])
+    }
+
+    static func body(season: Int, week: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.injuryResultBody, arguments: [.integer(season), .integer(week)])
+    }
+
+    static func plan(_ planLabel: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.injuryResultPlan, arguments: [.userText(planLabel)])
+    }
+
+    static func evidence(
+        rawFatigue: Int,
+        effectiveFatigue: Int,
+        pitches: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .injuryResultEvidence,
+            arguments: [.integer(rawFatigue), .integer(effectiveFatigue), .integer(pitches)]
+        )
+    }
+}
+
+enum ProRetirementCopy {
+    static func eyebrow(age: Int, seasons: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retirementEyebrow, arguments: [.integer(age), .integer(seasons)])
+    }
+
+    static func confirmMessage(seasons: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retirementConfirmMessage, arguments: [.integer(seasons)])
+    }
+
+    static func previewScore(_ score: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retirementPreviewScore, arguments: [.integer(score)])
+    }
+
+    static func previewRetiredNumber(
+        lastTeamSeasons: Int,
+        lastTeamLegacy: Int,
+        fanSupport: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .retirementPreviewRetiredNumber,
+            arguments: [.integer(lastTeamSeasons), .integer(lastTeamLegacy), .integer(fanSupport)]
+        )
+    }
+
+    static func retiredTitle(name: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retiredTitle, arguments: [.userText(name)])
+    }
+
+    static func identityLine(teamName: String, seasons: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .retiredIdentityLine,
+            arguments: [
+                .userText(teamName),
+                .userText(Self.seasons(seasons, resolver: resolver)),
+            ]
+        )
+    }
+
+    static func seasons(_ count: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.offseasonSeasons, arguments: [.integer(count)])
+    }
+
+    static func finalScore(_ score: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retirementFinalScore, arguments: [.integer(score)])
+    }
+
+    static func soulPoints(_ points: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retiredSoulPoints, arguments: [.integer(points)])
+    }
+
+    static func confirmNewPlayer(name: String, isLegacy: Bool, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            isLegacy ? .retiredLegacyConfirmMessage : .retiredSoulConfirmMessage,
+            arguments: [.userText(name)]
+        )
+    }
+
+    static func honorScore(_ score: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retirementHonorScore, arguments: [.integer(score)])
+    }
+
+    static func honorTeam(_ teamName: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retirementHonorTeam, arguments: [.userText(teamName)])
+    }
+
+    static func honorValue(_ value: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.retirementHonorValue, arguments: [.userText(value)])
+    }
+}
+
+enum ProDecisionCopy {
+    static func eyebrow(season: Int, week: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.decisionEyebrow, arguments: [.integer(season), .integer(week)])
+    }
+
+    static func confirmMessage(
+        detail: String,
+        effect: String,
+        timing: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .decisionConfirmMessage,
+            arguments: [.userText(detail), .userText(effect), .userText(timing)]
+        )
+    }
+
+    static func accessibilityLabel(
+        for choice: ProSeasonDecisionChoice,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            ProUICopyKey.decisionAccessibility,
+            arguments: [
+                .userText(ProCareerPresentation.choiceTitle(choice, resolver: resolver)),
+                .userText(ProCareerPresentation.choiceDetail(choice, resolver: resolver)),
+                .userText(ProCareerPresentation.combinedEffect(
+                    choice.effect,
+                    journeyEffect: choice.journeyEffect,
+                    resolver: resolver
+                )),
+                .userText(ProCareerPresentation.decisionTiming(for: choice, resolver: resolver)),
+            ]
+        )
+    }
+
+    static func summaryLine(
+        season: Int,
+        week: Int,
+        effect: String,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .summaryDecisionLine,
+            arguments: [.integer(season), .integer(week), .userText(effect)]
+        )
+    }
+}
+
+enum ProImportantGameCopy {
+    static func eyebrow(season: Int, week: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.importantEyebrow, arguments: [.integer(season), .integer(week)])
+    }
+
+    static func seriesLastGame(
+        _ line: ProPostseasonGameLine,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            line.won ? .postseasonSeriesLastGameWin : .postseasonSeriesLastGameLoss,
+            arguments: [
+                .integer(line.gameNumber),
+                .integer(line.teamRuns),
+                .integer(line.opponentRuns),
+            ]
+        )
+    }
+
+    static func seriesLastAppearance(
+        pitches: Int,
+        runs: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .postseasonSeriesLastAppearance,
+            arguments: [.integer(pitches), .integer(runs)]
+        )
+    }
+
+    static func seriesLastPitches(_ pitches: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.postseasonSeriesLastPitches, arguments: [.integer(pitches)])
+    }
+
+    static func availabilityBody(
+        key: ProUICopyKey,
+        pitches: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(key, arguments: [.integer(pitches)])
+    }
+
+    static func availabilityPitchDetail(
+        penalty: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(.postseasonAvailabilityPitchDetail, arguments: [.integer(penalty)])
+    }
+
+    static func availabilityRisk(
+        key: ProUICopyKey,
+        projectedFatigue: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(key, arguments: [.integer(projectedFatigue)])
+    }
+}
