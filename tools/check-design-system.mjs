@@ -159,9 +159,12 @@ const contractChecks = [
   // 유료앱 권한 모델과 iOS 출고 규격. 되돌아가면 릴리스 빌드가 다시 빈 화면이 된다.
   // 시즌 등판 기록이 화면에서 사라지면 3주 건너뛰기가 다시 커리어를 증발시킨다.
   [iosSourceLabel("RecordView.swift"), "gameLines"],
-  [iosSourceLabel("AppShell.swift"), "gameLines"],
+  // 셸은 기록 화면을 연결하고, 기록 데이터는 RecordView가 스토어에서 읽는다.
+  [iosSourceLabel("AppShell.swift"), "RecordView("],
   [iosSourceLabel("CareerBootstrap.swift"), "source: .purchase"],
-  [iosSourceLabel("MobileCareerStore.swift"), "case needsSetup"],
+  // 로딩 상태는 Domain으로 이동했다. 공통 상태의 정의와 스토어 연결을 함께 검사한다.
+  ["packages/ios-layers/Sources/BaseballIOSDomain/CareerDisplayTypes.swift", "case needsSetup"],
+  [iosSourceLabel("MobileCareerStore.swift"), "typealias LoadState = CareerLoadState"],
   [iosSourceLabel("PitchSession.swift"), "engine.submitPitch"],
   [iosSourceLabel("CareerFlowView.swift"), "PitchView(session: session"],
   [iosSourceLabel("DesignSystem.swift"), "minimumTapTarget"],
