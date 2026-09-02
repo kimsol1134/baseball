@@ -22,7 +22,11 @@ final class PitchSession {
         case failed(String)
     }
 
-    private let engine = PitchKernelEngine()
+    private let engine = PitchKernelEngine(
+        recommendationEngine: CatcherRecommendationEngine(
+            rules: CatcherSignRules(version: CatcherSignRules.livePlayVersion)
+        )
+    )
     let scenario: PitchScenario
 
     private(set) var stage: Stage = .ready

@@ -67450,6 +67450,50 @@
       "status": "ui_verified"
     },
     {
+      "key": "pitch.catcher.reason.change-eye-level",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "눈높이를 바꿔 다른 코스를 보여 줍니다.",
+      "en": "Change the eye level and show a different height.",
+      "ja": "目線の高さを変えて別のコースを見せます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pitch.catcher.reason.chase-zone",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "유리한 카운트에서 존을 넓혀 유인구를 던집니다.",
+      "en": "With two strikes, expand the zone and make them chase.",
+      "ja": "ツーストライクからゾーンを広げて空振りを誘います。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pitch.catcher.reason.read-pressure",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "상대가 구종을 읽고 있습니다. 앉기 전에 배합을 바꿉니다.",
+      "en": "They are reading the pitch. Mix it up before they sit on it.",
+      "ja": "球種を読まれています。座る前に配球を変えましょう。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pitch.catcher.reason.setup-offspeed",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "직구로 타이밍을 빼 두었으니 체인지업으로 갑니다.",
+      "en": "The fastball set the timing. Now bury the changeup.",
+      "ja": "直球でタイミングをずらしたので、ここでチェンジアップです。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "pitch.catcher.risk.damage",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "위험: 스트라이크가 강한 타구로 연결",

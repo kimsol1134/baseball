@@ -371,6 +371,10 @@ enum PitchPresentation {
         let key: PitchUICopyKey
         if codes.contains("rival.pattern_detected") { key = .catcherReasonPattern }
         else if codes.contains("sequence.avoid_repeat") { key = .catcherReasonRepeat }
+        else if codes.contains("rival.read_pressure") { key = .catcherReasonReadPressure }
+        else if codes.contains("sequence.setup_offspeed") { key = .catcherReasonSetupOffspeed }
+        else if codes.contains("sequence.change_eye_level") { key = .catcherReasonChangeEyeLevel }
+        else if codes.contains("situation.chase_zone") { key = .catcherReasonChaseZone }
         else if codes.contains("scouting.pitch_weakness") { key = .catcherReasonWeakness }
         else if codes.contains("count.avoid_walk") { key = .catcherReasonWalk }
         else if codes.contains("count.pitcher_behind") { key = .catcherReasonBehind }

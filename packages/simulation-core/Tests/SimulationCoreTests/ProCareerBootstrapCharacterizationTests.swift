@@ -153,7 +153,12 @@ final class ProCareerBootstrapCharacterizationTests: XCTestCase {
             identity: .defaultPitcher,
             pitcher: PitcherPresetCatalog.all.first { $0.id == "power_prospect" }!.pitcher,
             draftResult: drafted(team: selectedTeam),
-            entitlement: activeEntitlement()
+            entitlement: activeEntitlement(),
+            sourceFanInterest: nil,
+            startingRepertoire: nil,
+            repertoireRulesVersion: nil,
+            pitchLearningProject: nil,
+            proRulesVersion: 8
         ))
         return try engine.signContract(.init(seed: started.nextSeed, state: started.snapshot))
     }
@@ -407,7 +412,12 @@ private enum Wave0BaselineGenerator {
                 identity: .defaultPitcher,
                 pitcher: pitcher,
                 draftResult: drafted(team: team),
-                entitlement: activeEntitlement()
+                entitlement: activeEntitlement(),
+                sourceFanInterest: nil,
+                startingRepertoire: nil,
+                repertoireRulesVersion: nil,
+                pitchLearningProject: nil,
+                proRulesVersion: 8
             ))
             let startNextSeed = started.nextSeed
             let signed = try engine.signContract(.init(seed: started.nextSeed, state: started.snapshot))
@@ -561,7 +571,12 @@ private enum Wave0BaselineGenerator {
             identity: .defaultPitcher,
             pitcher: pitcher,
             draftResult: drafted(team: team),
-            entitlement: activeEntitlement()
+            entitlement: activeEntitlement(),
+            sourceFanInterest: nil,
+            startingRepertoire: nil,
+            repertoireRulesVersion: nil,
+            pitchLearningProject: nil,
+            proRulesVersion: 8
         ))
         let start = result.snapshot
         let startNextSeed = result.nextSeed

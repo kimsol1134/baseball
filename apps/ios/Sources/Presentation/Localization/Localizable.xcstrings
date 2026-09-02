@@ -17425,6 +17425,94 @@
         }
       }
     },
+    "pitch.catcher.reason.change-eye-level": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the eye level and show a different height."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目線の高さを変えて別のコースを見せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "눈높이를 바꿔 다른 코스를 보여 줍니다."
+          }
+        }
+      }
+    },
+    "pitch.catcher.reason.chase-zone": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With two strikes, expand the zone and make them chase."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ツーストライクからゾーンを広げて空振りを誘います。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "유리한 카운트에서 존을 넓혀 유인구를 던집니다."
+          }
+        }
+      }
+    },
+    "pitch.catcher.reason.read-pressure": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They are reading the pitch. Mix it up before they sit on it."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球種を読まれています。座る前に配球を変えましょう。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "상대가 구종을 읽고 있습니다. 앉기 전에 배합을 바꿉니다."
+          }
+        }
+      }
+    },
+    "pitch.catcher.reason.setup-offspeed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The fastball set the timing. Now bury the changeup."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直球でタイミングをずらしたので、ここでチェンジアップです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "직구로 타이밍을 빼 두었으니 체인지업으로 갑니다."
+          }
+        }
+      }
+    },
     "pitch.catcher.scout": {
       "localizations": {
         "en": {

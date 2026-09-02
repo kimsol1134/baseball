@@ -88,7 +88,8 @@ public struct PitchKernelEngine: Sendable {
             adaptation: adaptation,
             reliability: read.reliability,
             gameState: params.gameState,
-            lastPitch: params.gameLog?.entries.last
+            lastPitch: params.gameLog?.entries.last,
+            rivalMemory: params.rivalMemory
         )
         let token = preparationToken(
             params: params,
@@ -172,7 +173,8 @@ public struct PitchKernelEngine: Sendable {
             adaptation: adaptation,
             reliability: read.reliability,
             gameState: params.gameState,
-            lastPitch: params.gameLog?.entries.last
+            lastPitch: params.gameLog?.entries.last,
+            rivalMemory: params.rivalMemory
         )
         let expectedToken = preparationToken(
             params: prepareParams,
@@ -866,24 +868,26 @@ public struct PitchKernelEngine: Sendable {
         primary: CatcherRecommendation,
         alternative: CatcherRecommendation
     ) -> String {
-        StableHash.fnv1a64(
-            [
-                "pitch-preparation-v1",
-                params.seed,
-                params.context.plateAppearanceID,
-                String(params.context.revision),
-                String(params.context.pitchNumber),
-                String(params.context.balls),
-                String(params.context.strikes),
-                canonical(params.pitcher),
-                canonical(params.rivalMemory),
-                canonical(params.gameState),
-                canonical(params.gameLog),
-                planCommitment,
-                canonical(primary.call),
-                canonical(alternative.call)
-            ].joined(separator: "|")
-        )
+        let tokenParts = [
+            "pitch-preparation-v1",
+            params.seed,
+            params.context.plateAppearanceID,
+            String(params.context.revision),
+            String(params.context.pitchNumber),
+            String(params.context.balls),
+            String(params.context.strikes),
+            canonical(params.pitcher),
+            canonical(params.rivalMemory),
+            canonical(params.gameState),
+            canonical(params.gameLog),
+            planCommitment,
+            canonical(primary.call),
+            canonical(alternative.call)
+        ]
+        let versionedParts = recommendationEngine.rules.version == CatcherSignRules.fixtureSafeVersion
+            ? tokenParts
+            : tokenParts + ["catcher-sign:\(recommendationEngine.rules.version)"]
+        return StableHash.fnv1a64(versionedParts.joined(separator: "|"))
     }
 
     private func executePitch(
@@ -1547,6 +1551,14 @@ public struct PitchKernelEngine: Sendable {
             baseReason = "라이벌이 반복 구종을 읽고 있어 \(zoneName) \(pitchName)으로 패턴을 바꿉니다."
         } else if recommendation.reasonCodes.contains("sequence.avoid_repeat") {
             baseReason = "방금 그 공에 타이밍이 맞았습니다. \(zoneName) \(pitchName)으로 바꿉니다."
+        } else if recommendation.reasonCodes.contains("rival.read_pressure") {
+            baseReason = "상대가 구종을 읽고 있어 \(zoneName) \(pitchName)으로 압박을 풉니다."
+        } else if recommendation.reasonCodes.contains("sequence.setup_offspeed") {
+            baseReason = "직구로 타이밍을 빼 둔 뒤 \(zoneName) \(pitchName)으로 결정구를 갑니다."
+        } else if recommendation.reasonCodes.contains("sequence.change_eye_level") {
+            baseReason = "눈높이를 바꿔 \(zoneName) \(pitchName)으로 갑니다."
+        } else if recommendation.reasonCodes.contains("situation.chase_zone") {
+            baseReason = "유리한 카운트에서 \(zoneName) \(pitchName)으로 유인구를 던집니다."
         } else if recommendation.reasonCodes.contains("scouting.pitch_weakness") {
             baseReason = "타자의 약점인 \(zoneName) \(pitchName)\(pitchObjectParticle(recommendation.call.pitchType)) \(intent)\(directionParticle(intent)) 공략합니다."
         } else {

@@ -485,7 +485,8 @@ public struct ProCareerEngine: Sendable {
                     pitchCap: pitchCapPerOuting,
                     batterOffset: weekOffset,
                     callPolicy: weekCallPolicy,
-                    baseSeed: rng.next() ^ UInt64(bitPattern: Int64(nextWeek &* 0x9E37)) &+ UInt64(outingIndex)
+                    baseSeed: rng.next() ^ UInt64(bitPattern: Int64(nextWeek &* 0x9E37)) &+ UInt64(outingIndex),
+                    diverseScouting: Self.usesWeeklyDecisionRules(state)
                 )
                 weekLine.outs += outingLine.outs
                 weekLine.strikeouts += outingLine.strikeouts
@@ -2945,7 +2946,8 @@ public struct ProCareerEngine: Sendable {
         pitchCap: Int,
         batterOffset: Int = 0,
         callPolicy: AutoCallPolicy = .perfect,
-        baseSeed: UInt64
+        baseSeed: UInt64,
+        diverseScouting: Bool = false
     ) -> WeeklyOutingLine {
         let line = AutoOutingSimulator().simulate(
             pitcher: pitcher,
@@ -2954,7 +2956,8 @@ public struct ProCareerEngine: Sendable {
             pitchCap: pitchCap,
             batterOffset: batterOffset,
             callPolicy: callPolicy,
-            baseSeed: baseSeed
+            baseSeed: baseSeed,
+            diverseScouting: diverseScouting
         )
         var weekly = WeeklyOutingLine()
         weekly.outs = line.outs
