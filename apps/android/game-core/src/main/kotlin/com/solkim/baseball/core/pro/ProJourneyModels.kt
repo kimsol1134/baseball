@@ -208,6 +208,7 @@ public enum class ProDevelopmentFocus(public val wire: String) {
 public enum class ProSeasonBenefitKind(public val wire: String) {
     DEVELOPMENT_HEAD_START("development_head_start"),
     INJURY_MITIGATION("injury_mitigation"),
+    CLIMATE_STABILIZATION("climate_stabilization"),
 }
 
 public data class ProSeasonBenefit(
