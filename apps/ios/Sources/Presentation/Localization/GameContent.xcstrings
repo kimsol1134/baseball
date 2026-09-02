@@ -94,19 +94,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reach the draft with a player carrying two handicaps."
+            "value": "Reach the draft carrying two handicaps."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "2 つのハンディキャップを背負ったプレーヤーでドラフトに参加します。"
+            "value": "ハンディキャップを2つ背負ってドラフトまで行く。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "핸디캡 두 개를 안고 키운 선수로 드래프트까지 갑니다."
+            "value": "핸디캡 둘을 안고 드래프트까지 간다."
           }
         }
       }
@@ -4104,7 +4104,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼はその年齢であんなに投げるの？彼が記入すると何が起こるでしょうか？"
+            "value": "あの年であんな球を投げるの？体ができたらどうなるんだ？"
           }
         },
         "ko": {
@@ -4456,7 +4456,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 失点は許される...本当の試練は、彼が次回どう答えるかだ。"
+            "value": "%lld失点…次の試合でどう返すかが本当の試験だ"
           }
         },
         "ko": {
@@ -4676,7 +4676,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球威はそこにあるけど、 %lld 四球が問題です。 制球 それが今の質問のすべてです。"
+            "value": "球はいいけど四球%lld個はちょっと…制球が固まるかが鍵だな"
           }
         },
         "ko": {
@@ -4742,7 +4742,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ (%@) はラフなストレッチの後、回転からバンプしました。彼はリセットが必要なようだ。"
+            "value": "%@（%@）、不振の末に先発から外れた。立て直しが必要に見える。"
           }
         },
         "ko": {
@@ -4764,7 +4764,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ (%@) は 1 試合で %lld 奪三振を記録し、同僚の中で最高記録に迫っています。"
+            "value": "%@（%@）が1試合%lld奪三振——同年代の最高記録に迫った。"
           }
         },
         "ko": {
@@ -4786,7 +4786,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ (%@) 春以降、%lld km/h が追加されました。誰もが彼が冬の間に何をしたか知りたがっている。"
+            "value": "%@（%@）の球速が春より%lldkm/h上がった。冬に何をしたのか皆が気にしている。"
           }
         },
         "ko": {
@@ -9180,19 +9180,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A season turning point that opens a big ability jump. Every gain comes with a tradeoff."
+            "value": "A season fork that opens a big ability jump. Every gain has a cost."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "その季節の分かれ道で能力が大きく開く選択です。得るものと失うものが一緒に来ます。"
+            "value": "シーズンの分かれ道で能力が大きく開く選択。得る分だけ失うものもある。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "한 시즌의 갈림길에서 능력이 크게 열리는 선택입니다. 얻는 것과 잃는 것이 함께 옵니다."
+            "value": "시즌 갈림길에서 능력이 크게 열리는 선택. 얻는 만큼 잃는 것도 있다."
           }
         }
       }
@@ -9224,19 +9224,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The mindset this pitcher leaves behind. It colors the next run's start and story."
+            "value": "The mindset this pitcher leaves behind. It carries into the next run's start and story."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この投手が残す心の持ち方です。次の回の始まりと物語に残ります。"
+            "value": "この投手が残した心構え。次の回の始まりと物語に残る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 선수가 남긴 마음가짐입니다. 다음 회차의 시작 힘과 이야기에 남습니다."
+            "value": "이 선수가 남긴 마음가짐. 다음 회차의 시작과 이야기에 남는다."
           }
         }
       }
@@ -9268,19 +9268,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How well you and the catcher work as a battery. It helps command and game-calling."
+            "value": "How well you and the catcher click. It helps command and pitch calls."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "バッテリーとしてどれだけ噛み合うかです。制球と配球に効きます。"
+            "value": "捕手とどれだけ噛み合うか。制球と配球に効く。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "배터리로 얼마나 맞춰 던지는지입니다. 제구와 승부 판단에 붙습니다."
+            "value": "포수와 얼마나 잘 맞는지. 제구와 승부 판단에 보탬이 된다."
           }
         }
       }
@@ -9312,19 +9312,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How badly the club wants you right now, shown as high, moderate, or low."
+            "value": "How much the club wants you right now: high, moderate, or low."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今この選手をどれだけ欲しいかです。高い・普通・低いで示されます。"
+            "value": "球団が今この選手をどれだけ欲しがっているか。高い・普通・低いで表示。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "지금 이 선수를 얼마나 원하는지입니다. 높음·보통·낮음으로 표시됩니다."
+            "value": "구단이 지금 이 선수를 얼마나 원하는지. 높음·보통·낮음으로 표시."
           }
         }
       }
@@ -9356,19 +9356,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The ability to put the ball where you want, scored 0–100. Better command cuts walks."
+            "value": "Putting the ball where you want (0–100). Higher means fewer walks."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "狙った場所に投げる力です。0から100までで、四球を減らします。"
+            "value": "狙った所に投げる力（0〜100）。高いほど四球が減る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "원하는 곳에 공을 넣는 힘입니다. 0에서 100까지이며, 볼넷을 줄입니다."
+            "value": "원하는 곳에 공을 넣는 힘(0~100). 높을수록 볼넷이 준다."
           }
         }
       }
@@ -9400,19 +9400,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Earned runs per nine innings. Lower is better run prevention."
+            "value": "Earned runs per nine innings. Lower is better."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "9イニングあたりの自責点です。低いほど失点をよく抑えています。"
+            "value": "9イニングあたりの自責点。低いほど良い。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "9이닝당 자책점입니다. 낮을수록 실점을 잘 막았다는 뜻입니다."
+            "value": "9이닝당 자책점. 낮을수록 좋다."
           }
         }
       }
@@ -9444,19 +9444,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How worn down the arm is. High fatigue shakes command and raises injury risk."
+            "value": "How worn down the body is. High fatigue shakes command and raises injury risk."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "体の消耗です。高いほど制球が揺れ、故障の危険も増えます。"
+            "value": "体の消耗度。高いと制球が乱れ、故障の危険が増す。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "몸이 얼마나 지쳤는지입니다. 높을수록 제구가 흔들리고 부상 위험이 커집니다."
+            "value": "몸이 얼마나 지쳤는지. 높으면 제구가 흔들리고 부상 위험이 커진다."
           }
         }
       }
@@ -9488,19 +9488,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Strikeouts per nine innings. Higher means stuff and movement beat hitters more often."
+            "value": "Strikeouts per nine innings. Higher means your stuff and breaking balls are beating hitters."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "9イニングあたりの奪三振です。高いほど球威と変化球が打者を上回っています。"
+            "value": "9イニングあたりの奪三振。高いほど球威と変化球が打者に勝っている。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "9이닝당 삼진입니다. 높을수록 구위와 변화구가 타자를 이겼다는 뜻입니다."
+            "value": "9이닝당 탈삼진. 높을수록 구위와 변화구가 타자를 이긴 것."
           }
         }
       }
@@ -9532,19 +9532,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Power passed from one pitcher to the next, through a signature legacy and memories."
+            "value": "What one pitcher leaves the next: a signature legacy and memories."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前の投手が次の投手に残す力です。代表遺産と記憶でつながります。"
+            "value": "前の投手が次の投手に残す力。代表遺産と記憶でつながる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "지난 선수가 다음 선수에게 남기는 힘입니다. 대표 유산과 기억으로 이어집니다."
+            "value": "앞 선수가 다음 선수에게 남기는 힘. 대표 유산과 기억으로 이어진다."
           }
         }
       }
@@ -9576,19 +9576,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How willing the manager is to use you. It shapes your role and top-level innings."
+            "value": "How willing the manager is to use you. It decides role and first-team innings."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "監督がこの投手をどれだけ使いたいかです。役割と一軍出場に影響します。"
+            "value": "監督がこの投手をどれだけ使いたいか。役割と一軍出場を左右する。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "감독이 이 투수를 얼마나 쓰려 하는지입니다. 보직과 1군 출전에 영향을 줍니다."
+            "value": "감독이 이 투수를 얼마나 쓰려 하는지. 보직과 1군 출전을 좌우한다."
           }
         }
       }
@@ -9598,7 +9598,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manager faith"
+            "value": "Manager trust"
           }
         },
         "ja": {
@@ -9620,19 +9620,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Depth built by repeating the same skill. Higher mastery makes the same rating play better."
+            "value": "Depth from grinding the same skill. Higher levels make the same rating play better."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "同じ能力を長く磨いて積んだ深さです。レベルが上がると同じ数値がより生きます。"
+            "value": "同じ能力を長く磨いて積んだ深さ。レベルが上がると同じ数値がより生きる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "같은 능력을 오래 갈아 쌓은 깊이입니다. 레벨이 오르면 같은 수치가 더 잘 나옵니다."
+            "value": "같은 능력을 오래 갈아 쌓은 깊이. 레벨이 오르면 같은 수치도 더 잘 나온다."
           }
         }
       }
@@ -9664,19 +9664,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gold treats military service as complete. If it was already done, fan support rises further."
+            "value": "Gold counts as military service done. If it was already done, fan support rises further."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "金メダルを取ると兵役を終えた扱いになります。すでに終えていればファンの支持がさらに上がります。"
+            "value": "金メダルで兵役を終えた扱いになる。すでに終えていればファンの支持がさらに上がる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "금메달을 따면 군 복무를 마친 것으로 처리됩니다. 이미 복무를 마쳤다면 팬의 지지가 더 오릅니다."
+            "value": "금메달이면 군 복무를 마친 것으로 친다. 이미 마쳤다면 팬 지지가 더 오른다."
           }
         }
       }
@@ -9708,19 +9708,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How sharply the ball breaks or drops, scored 0–100."
+            "value": "How much the ball breaks and drops (0–100)."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ボールがどれだけ曲がり落ちるかです。0から100までです。"
+            "value": "ボールがどれだけ曲がり落ちるか（0〜100）。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "공이 얼마나 꺾이고 떨어지는지입니다. 0에서 100까지입니다."
+            "value": "공이 얼마나 꺾이고 떨어지는지(0~100)."
           }
         }
       }
@@ -9752,19 +9752,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A postseason invitation to a fictional national tournament. Accepting leads to group games and a final."
+            "value": "A postseason call-up to a fictional national tournament. Accept, and group games and a final follow."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シーズン後に仮想の代表大会へ呼ばれる知らせです。受ければグループ戦と決勝が続きます。"
+            "value": "シーズン後、架空の代表大会に選ばれた知らせ。受ければグループ戦と決勝が続く。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시즌을 마친 뒤 가상 국가대표 대회에 뽑히는 통보입니다. 수락하면 조별 경기와 결승이 이어집니다."
+            "value": "시즌 뒤 가상 국가대표 대회에 뽑혔다는 통보. 수락하면 조별 경기와 결승이 이어진다."
           }
         }
       }
@@ -9796,19 +9796,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "An offseason space to shape pitches and build mastery before live innings."
+            "value": "An offseason space to shape pitches and build mastery before real innings."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球種を整え熟練を積むオフシーズンの場です。実戦の前に感覚を上げます。"
+            "value": "球種を磨き熟練を積むオフシーズンの場。実戦前に感覚を上げる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "구종을 다듬고 숙련을 쌓는 오프시즌 공간입니다. 실전 전에 감각을 올립니다."
+            "value": "구종을 다듬고 숙련을 쌓는 오프시즌 공간. 실전 전에 감각을 올린다."
           }
         }
       }
@@ -9840,19 +9840,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Splitting pitchers by batter handedness. Used when the opposite-side matchup is a problem."
+            "value": "Using pitchers by batter handedness. Called on when the opposite-hand matchup is bad."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "打者の左右に合わせて投手を分ける運用です。逆方向の勝負が不利なときに出します。"
+            "value": "打者の左右に合わせて投手を使い分ける運用。逆手の勝負が不利なときに出す。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타자의 좌우에 맞춰 투수를 나누어 쓰는 운용입니다. 반대손 승부에 불리할 때 꺼냅니다."
+            "value": "타자 좌우에 맞춰 투수를 나눠 쓰는 운용. 반대손 승부가 불리할 때 꺼낸다."
           }
         }
       }
@@ -9884,19 +9884,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A start of at least six innings with three earned runs or fewer. A stability mark for starters."
+            "value": "A start of six-plus innings with three earned runs or fewer. The steadiness mark for starters."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "先発が6イニング以上、自責3点以下に抑えた登板です。先発の安定指標です。"
+            "value": "先発が6回以上、自責3点以下で抑えた登板。先発の安定指標。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "선발이 6이닝 이상, 자책 3점 이하로 막은 등판입니다. 로테이션 투수의 안정 지표입니다."
+            "value": "선발이 6이닝 이상, 자책 3점 이하로 막은 등판. 선발의 안정 지표."
           }
         }
       }
@@ -9928,19 +9928,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your outing job. Starters cover long innings, middle relief bridges, closers finish."
+            "value": "Your job on the mound. Starters go long, middle relief bridges, closers get the last outs."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "登板の役割です。先発は長いイニング、中継ぎはつなぎ、抑えは最後のアウトを担います。"
+            "value": "登板の役割。先発は長いイニング、中継ぎはつなぎ、抑えは最後のアウト。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "등판 역할입니다. 선발은 긴 이닝, 중간은 연결, 마무리는 마지막 아웃을 책임집니다."
+            "value": "등판 역할. 선발은 긴 이닝, 중간은 연결, 마무리는 마지막 아웃."
           }
         }
       }
@@ -9972,19 +9972,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A midseason fork. Effects apply now, and some choices leave a result a few weeks later."
+            "value": "A midseason fork. Effects apply now, and some choices leave a result weeks later."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シーズン途中で止まる分かれ道です。選んだ効果はすぐ適用され、いくつかは数週間後に結果が残ります。"
+            "value": "シーズン途中の分かれ道。効果はすぐ適用され、選択によっては数週間後に結果が残る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시즌 중간에 멈추는 갈림길입니다. 고른 효과는 바로 적용되고, 어떤 선택은 몇 주 뒤에 결과가 남습니다."
+            "value": "시즌 중간의 갈림길. 효과는 바로 적용되고, 어떤 선택은 몇 주 뒤에 결과가 남는다."
           }
         }
       }
@@ -10016,19 +10016,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Money paid up front when you sign, separate from annual salary."
+            "value": "Money paid up front at signing, separate from salary."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "契約を結ぶときに先に受け取るお金です。年俸とは別に口座に入ります。"
+            "value": "契約時に先に受け取るお金。年俸とは別。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "계약을 맺을 때 먼저 받는 돈입니다. 연봉과 별도로 통장에 들어옵니다."
+            "value": "계약할 때 먼저 받는 돈. 연봉과는 별도다."
           }
         }
       }
@@ -10060,19 +10060,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "How long you can last, scored 0–100. Starters need more of it."
+            "value": "How long you last (0–100). Starters need more of it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "長いイニングを耐える力です。0から100までで、先発により多く必要です。"
+            "value": "長いイニングを耐える力（0〜100）。先発ほど多く要る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "긴 이닝을 버티는 힘입니다. 0에서 100까지이며, 선발에 더 많이 필요합니다."
+            "value": "긴 이닝을 버티는 힘(0~100). 선발일수록 많이 필요하다."
           }
         }
       }
@@ -10104,19 +10104,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pitch power, scored 0–100. Higher stuff means more whiffs and a livelier fastball."
+            "value": "Pitch power (0–100). Higher means more whiffs and livelier velocity."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ボールの力です。0から100までで、高いほど空振りが増え直球が生きます。"
+            "value": "球の力（0〜100）。高いほど空振りが増え、球速が生きる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "공의 힘입니다. 0에서 100까지이며, 높을수록 헛스윙이 늘고 구속이 살아납니다."
+            "value": "공의 힘(0~100). 높을수록 헛스윙이 늘고 구속이 산다."
           }
         }
       }
@@ -10148,19 +10148,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A ceiling that ordinary training cannot cross yet. Awakening or a rare growth burst can open it."
+            "value": "A ceiling training alone can't cross yet. An awakening or a big growth success opens it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "普通の訓練ではすぐ越えにくい上限です。覚醒や大成功で開きます。"
+            "value": "訓練だけではすぐ越えられない上限。覚醒か成長の大成功で開く。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "훈련으로 당장 넘기 어려운 상한입니다. 각성이나 성장 대성공으로 열립니다."
+            "value": "훈련만으론 당장 못 넘는 상한. 각성이나 성장 대성공으로 열린다."
           }
         }
       }
@@ -10192,19 +10192,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Baserunners allowed per inning — hits plus walks, divided by innings. Lower is better."
+            "value": "Baserunners per inning: hits plus walks, divided by innings. Lower is better."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "イニングあたりの出塁許可です。安打と四球をイニングで割ります。低いほど良いです。"
+            "value": "イニングあたりの出塁許容。（安打＋四球）÷イニング。低いほど良い。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이닝당 출루 허용입니다. 안타와 볼넷을 합쳐 이닝으로 나눕니다. 낮을수록 좋습니다."
+            "value": "이닝당 출루 허용. (안타+볼넷)÷이닝. 낮을수록 좋다."
           }
         }
       }
@@ -10280,19 +10280,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stay with the same club to close in on franchise icon."
+            "value": "Stay with one club season after season to become its icon."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "同じチームでシーズンを重ね、球団の象徴に近づきます。"
+            "value": "同じチームでシーズンを重ねるほど球団の象徴に近づく。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "같은 팀에서 시즌을 이어 한 구단의 상징에 다가갑니다."
+            "value": "한 팀에서 시즌을 이어 갈수록 구단의 상징에 가까워진다."
           }
         }
       }
@@ -11144,7 +11144,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "8試合までスコアレス試合。彼らのエースは瞬きしていない。最初のミスで負けます。"
+            "value": "8回まで0の行進。相手のエースも譲らない。先にミスした方が負ける。"
           }
         },
         "ko": {
@@ -11188,7 +11188,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "先発捕手はファウルボールを指に引っ掛けて退場した。ブルペンでバックアップと仕事をしたのは一度だけだ。"
+            "value": "正捕手がファウルを指に受けて交代。控え捕手とはブルペンで一度合わせただけだ。"
           }
         },
         "ko": {
@@ -11320,7 +11320,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この回に３点を奪い、試合を同点にした。また満塁となる。ここでさらにギブアップすると、試合は振り切ってしまう。"
+            "value": "この回だけで3点を失い同点。再び満塁。ここでさらに失えば試合が傾く。"
           }
         },
         "ko": {
@@ -11408,7 +11408,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この日の第２試合。走り終えましたが、先ほど使った腕がまだ重く感じます。"
+            "value": "今日2試合目。1点ビハインド、昼の試合で投げた腕がまだ重い。"
           }
         },
         "ko": {
@@ -11496,7 +11496,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "7回にあなたの速球は一歩を外されました。自分が耐えられる投球を選択してください。"
+            "value": "7回、速球が落ちてきた。どの球で凌ぐか決めなければならない。"
           }
         },
         "ko": {
@@ -11540,7 +11540,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "無人でランナーが二、三塁になった状態で引き継ぎます。ランはあなたに請求されませんが、試合はあなたの手の中にあります。"
+            "value": "前の投手が残した無死二、三塁を引き継いで上がる。ここで入る点は自分の記録にはならないが、試合は自分の手にある。"
           }
         },
         "ko": {
@@ -11804,7 +11804,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この野原には明かりがなく、太陽が山の向こうに落ちてきています。審判は今日がこの回が最後だと言いました。同点の場合は、明日からやり直します。"
+            "value": "照明のない球場、日が山の向こうに沈みかけている。審判はこの回が今日最後だと告げた。同点なら明日、最初からやり直しだ。"
           }
         },
         "ko": {
@@ -12024,7 +12024,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ライバル校の遠征で、6回に失点。スタンドはマウンドをブーイングに包まれる。ボールを見るためにはノイズを消す必要があります。"
+            "value": "ライバル校での遠征、1点ビハインドの6回。マウンドに立つたびスタンドがブーイングで覆う。音を消さなければ球が見えない。"
           }
         },
         "ko": {
@@ -12068,7 +12068,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "同点6回に中堅打者が打席に入り、前回の投球順序を思い出した。"
+            "value": "同点の6回、前の試合の配球順を覚えているクリーンアップが打席に入る。"
           }
         },
         "ko": {
@@ -12288,7 +12288,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "二塁走者は打者に何かをチップしているように見える。彼らが兆候を破った場合、これはコースよりも神経が試されることになります。"
+            "value": "相手の二塁走者が打者に何かを伝えている気配。サインが読まれているなら、ここからはコースより度胸の勝負だ。"
           }
         },
         "ko": {
@@ -12332,7 +12332,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今日は彼らの4番打者と3度目の対戦です。彼らは最初の2打席からのすべての投球を覚えている。同じシーケンスはもう機能しません。"
+            "value": "今日3度目の対戦となる相手の4番。前の2打席の球を全部覚えているはずだ。同じ順番はもう通じない。"
           }
         },
         "ko": {
@@ -14334,7 +14334,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1試合あたり4失点が許される――打者たちは打撃練習に来たと冗談を言う。"
+            "value": "1試合4失点——相手打者が打撃練習に来ている、という嘲り。"
           }
         },
         "ko": {
@@ -14378,7 +14378,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 四球がゼロの試合 — ゾーンを外すものは何もありません。"
+            "value": "%lld試合で四球0——ゾーンを外れる球がない。"
           }
         },
         "ko": {
@@ -14466,7 +14466,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld キャリア三振 — 2 ストライクで観客が立ち上がりました。"
+            "value": "通算%lld奪三振——2ストライクで観客が立ち上がる。"
           }
         },
         "ko": {
@@ -14554,7 +14554,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld キャリア三振 — 相手の打線はその名前だけで緊張する。"
+            "value": "通算%lld奪三振——相手打線がその名前だけで揺れる。"
           }
         },
         "ko": {
@@ -14598,7 +14598,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 試合あたり 6 つ以上の三振 - ほとんどのアウトを片腕で処理します。"
+            "value": "1試合6奪三振以上——アウトの大半を一人で取る。"
           }
         },
         "ko": {
@@ -14774,7 +14774,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 試合あたり 3 四球 — 冗談は、投手ですらそれがどこへ行くか分からないということです。"
+            "value": "1試合四球3個——本人もどこへ行くか分からない、というからかい。"
           }
         },
         "ko": {
@@ -14818,7 +14818,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "全て完了しました %lld 高校公式戦、マウンドから降りることを拒否する腕。"
+            "value": "高校公式戦%lld試合を全て投げ切った——マウンドを降りない肩。"
           }
         },
         "ko": {
@@ -14862,7 +14862,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 連続無得点試合 — まだ失点は許されない。"
+            "value": "%lld試合連続無失点——まだ1点も与えていない。"
           }
         },
         "ko": {
@@ -15214,7 +15214,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "決して後退しません。大事な試合で強打者相手に初速が上がるタイプ。"
+            "value": "引き方を知らない。大きな試合、大きな打者の前で球速が上がるタイプ。"
           }
         },
         "ko": {
@@ -15258,7 +15258,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "その瞬間に試合のどちら側が必要かを知っている。あらゆるクラブハウスにフィットし、機能します。"
+            "value": "場面に合った顔を出せる。どのクラブハウスに置いても役目を果たすタイプ。"
           }
         },
         "ko": {
@@ -15302,7 +15302,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "感情ではなく証拠を持って答えましょう。打者とのチェスの試合をデザインするのに十分賢い。"
+            "value": "感情を抜いて根拠で答える。打者との駆け引きを自分で組み立てられる頭。"
           }
         },
         "ko": {
@@ -16710,7 +16710,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今日は、ボールの前で私の腕を見てください。次の試合でも団結して戦いたいと思います。"
+            "value": "今日は球より先に、私の腕を見てほしい。次の試合も一緒に立ちたいから。"
           }
         },
         "ko": {
@@ -16754,7 +16754,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "どの球種を獲得するかよりも、どのような投手になるかを選択するのに役立ちます。"
+            "value": "どんな球を持つかより、どんな投手になるかを一緒に選んでください。"
           }
         },
         "ko": {
@@ -16798,7 +16798,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "少し時間を取って、私がどれだけ遠くまで来たのかを振り返ってください。私たちも次の答えを一緒に見つけていきたいです。"
+            "value": "ここまで来た私を、一度振り返ってください。次の物語でも一緒に答えを探したいです。"
           }
         },
         "ko": {
@@ -16842,7 +16842,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼らは私の名前を呼びました。 3年間をかけてどこまでやれるか試してみるよ。"
+            "value": "名前が呼ばれました。私たちの3年間も連れて、もっと遠くへ行ってみます。"
           }
         },
         "ko": {
@@ -16974,7 +16974,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "少し疲れました。あなたが私がいつ休むかを決めるのを手伝ってくれれば、私は再び自分の力を見つけることができます。"
+            "value": "少し疲れました。休む日まで一緒に選んでくれれば、また力が出ます。"
           }
         },
         "ko": {
@@ -17062,7 +17062,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼らは私の名前を呼びました。 3年間をかけてどこまでやれるか試してみるよ。"
+            "value": "名前が呼ばれました。私たちの3年間も連れて、もっと遠くへ行ってみます。"
           }
         },
         "ko": {
@@ -17150,7 +17150,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "それぞれの状況で見つけた答えと選んだ思い出が、次の選手の始球式に引き継がれる。"
+            "value": "場面ごとに見つけた答えと、私が選んだ記憶は、次の選手の初球につながります。"
           }
         },
         "ko": {
@@ -17172,7 +17172,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "私の選択の背後にあるすべての理由と私が選択した思い出は、次の選手の始球式に引き継がれます。"
+            "value": "毎回その球を選んだ理由と、私が選んだ記憶は、次の選手の初球につながります。"
           }
         },
         "ko": {
@@ -17194,7 +17194,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "自分が選んだ思い出は次の選手の始球式に引き継がれる。"
+            "value": "私が選んだ記憶は、次の選手の初球につながります。"
           }
         },
         "ko": {
@@ -17238,7 +17238,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "私が築いた静かな日々、選んだ思い出は次の選手の始球式に引き継がれる。"
+            "value": "黙って積み重ねた日々と、私が選んだ記憶は、次の選手の初球につながります。"
           }
         },
         "ko": {
@@ -17628,19 +17628,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose three awakenings from three different strategy families."
+            "value": "Pick three awakenings, each from a different strategy family."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3 つの異なる戦略ファミリーから 3 つの覚醒を選択します。"
+            "value": "覚醒3回を、それぞれ別の戦略系統から選ぶ。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "각성 세 번을 고르고 서로 다른 전략 계열 세 가지를 모은다."
+            "value": "각성 셋을 서로 다른 전략 계열에서 고른다."
           }
         }
       }
@@ -17892,19 +17892,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pitch four official high-school games and finish with fatigue at 78 or lower and no arm warning."
+            "value": "Four official high-school games, fatigue 78 or lower, no arm warning."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校公式戦4試合に登板し、疲労度78以下で腕警告なしで終了。"
+            "value": "高校公式戦4試合、疲労78以下、腕警告なしで完走。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고교 공식 경기 네 번을 치르고 피로를 78 이하로 남긴 채 팔 경고 없이 완주한다."
+            "value": "고교 공식전 4경기, 피로 78 이하, 팔 경고 없이 완주."
           }
         }
       }
@@ -17936,19 +17936,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pitch at least four games and record 6 career strikeouts without a walk."
+            "value": "Pitch 4+ games yourself, 6 career strikeouts, zero walks."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "少なくとも4試合に登板し、無四球で通算6奪三振を記録する。"
+            "value": "自分で4試合以上登板、無四球で通算6奪三振。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "직접 등판 4경기 이상, 볼넷 없이 통산 6탈삼진을 만든다."
+            "value": "직접 등판 4경기 이상, 볼넷 없이 통산 6탈삼진."
           }
         }
       }
@@ -17980,19 +17980,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pitch at least four games and record 4 career strikeouts without a walk."
+            "value": "Pitch 4+ games yourself, 4 career strikeouts, zero walks."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "少なくとも4試合に登板し、無四球でキャリア通算4奪三振を記録する。"
+            "value": "自分で4試合以上登板、無四球で通算4奪三振。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "직접 등판 4경기 이상, 볼넷 없이 통산 4탈삼진을 만든다."
+            "value": "직접 등판 4경기 이상, 볼넷 없이 통산 4탈삼진."
           }
         }
       }
@@ -18838,19 +18838,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You get one extra start over the next three weeks, with more fatigue and manager faith."
+            "value": "One extra start over the next 3 weeks. Fatigue and manager trust both rise."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "これから3週間で先発が1試合増え、疲労と監督の信頼が一緒に動きます。"
+            "value": "今後3週間で先発が1試合増える。疲労も監督の信頼も上がる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "앞으로 3주 동안 선발 등판이 1경기 늘고 피로와 감독의 믿음이 함께 움직입니다."
+            "value": "3주간 선발 등판 1경기 추가. 피로도, 감독의 믿음도 오른다."
           }
         }
       }
@@ -19322,19 +19322,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Workload stays the same, but manager faith dips."
+            "value": "Workload stays the same, but manager trust dips."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "体は変えませんが、監督の信頼は少し下がります。"
+            "value": "負担はそのまま。監督の信頼は少し下がる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "몸은 그대로 두지만 감독의 믿음이 조금 줄어듭니다."
+            "value": "몸은 그대로, 감독의 믿음은 조금 준다."
           }
         }
       }
@@ -19388,19 +19388,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Training stays sharp, but catcher rapport slips."
+            "value": "Training stays sharp. Catcher rapport slips a little."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "訓練効率は守りますが、捕手との呼吸は少し遠のきます。"
+            "value": "訓練効率は守る。代わりに捕手との呼吸が少し遠のく。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "훈련 효율은 지키지만 포수와의 호흡이 조금 멀어집니다."
+            "value": "훈련 효율은 지킨다. 대신 포수 호흡이 조금 멀어진다."
           }
         }
       }
@@ -19696,19 +19696,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Earn the manager's trust and accept the fatigue."
+            "value": "Accept the fatigue and earn manager trust."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "監督の信頼を勝ち取り、疲れを受け入れる。"
+            "value": "疲労を引き受けて監督の信頼を得る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "감독의 믿음을 얻는 대신 피로를 감수합니다."
+            "value": "피로를 감수하고 감독의 믿음을 얻는다."
           }
         }
       }
@@ -20092,19 +20092,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You keep pitching, but manager faith falls further."
+            "value": "You keep pitching, but manager trust falls further."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "登板は続けますが、監督の信頼はさらに下がります。"
+            "value": "登板は守るが、監督の信頼はさらに下がる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "등판은 유지하지만 감독의 믿음이 더 깎입니다."
+            "value": "등판은 지키지만 감독의 믿음이 더 깎인다."
           }
         }
       }
@@ -20246,19 +20246,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Catcher rapport and movement rise, but training efficiency drops for three weeks."
+            "value": "Catcher rapport and movement rise. Training efficiency drops for 3 weeks."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "捕手との呼吸と変化球は上がりますが、3週間の訓練効率は下がります。"
+            "value": "捕手との呼吸と変化球が上がる。代わりに3週間、訓練効率が落ちる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "포수와의 호흡과 변화구는 오르지만 3주 훈련 효율이 줄어듭니다."
+            "value": "포수 호흡과 변화구가 오른다. 대신 3주간 훈련 효율이 준다."
           }
         }
       }
@@ -20466,13 +20466,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recent outings have slipped, and the manager's trust is thinning. How will you ride out the remaining weeks?"
+            "value": "Recent outings have slipped and manager trust is thin. How will you get through the remaining weeks?"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "最近の登板が揺れ、監督の信頼も薄くなっている。残りの週をどう耐えるか。"
+            "value": "最近の登板が揺れ、監督の信頼も薄い。残りの週をどう耐えるか。"
           }
         },
         "ko": {
@@ -20554,13 +20554,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Decide where to spend your film-room time before the next matchup."
+            "value": "Decide where to spend your analysis time before the next matchup."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次の対戦までに、映画室の時間をどこで過ごすかを決めてください。"
+            "value": "次の対戦に向け、分析の時間をどこに使うか決める。"
           }
         },
         "ko": {
@@ -21588,19 +21588,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Age %lld · The peak is tilting, and stuff dropped a step."
+            "value": "Age %lld · Stuff dropped a step. The peak is fading."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld歳 · 全盛期が傾き、球威が一段落ちた。"
+            "value": "%lld歳 · 球威が一段落ちた。全盛期が傾く。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld세 · 전성기가 기울며 구위가 한 단계 떨어졌습니다."
+            "value": "%lld세 · 구위가 한 단계 떨어졌다. 전성기가 기운다."
           }
         }
       }
@@ -21698,19 +21698,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The regular season is over. This year did not reach the playoffs."
+            "value": "Regular season over. No playoffs this year."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レギュラーシーズンが終わった。今年はプレーオフに届かなかった。"
+            "value": "レギュラーシーズン終了。今年はプレーオフなし。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "정규시즌이 끝났습니다. 올해는 플레이오프에 들지 못했습니다."
+            "value": "정규시즌 종료. 올해 플레이오프는 없다."
           }
         }
       }
@@ -21852,19 +21852,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Regular-season first place. One championship game remains."
+            "value": "Regular season: 1st. One game for the title."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レギュラーシーズン1位。優勝決定戦は一試合だ。"
+            "value": "レギュラーシーズン1位。優勝決定戦の一戦を残すのみ。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "정규시즌 1위입니다. 우승 결정전 한 판이 남았습니다."
+            "value": "정규시즌 1위. 우승 결정전 한 판만 남았다."
           }
         }
       }
@@ -21874,19 +21874,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Regular-season second place. One playoff game is next."
+            "value": "Regular season: 2nd. Start from one playoff game."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レギュラーシーズン2位。プレーオフは一試合から。"
+            "value": "レギュラーシーズン2位。プレーオフ一戦から上がる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "정규시즌 2위입니다. 플레이오프 한 판부터 올라갑니다."
+            "value": "정규시즌 2위. 플레이오프 한 판부터 올라간다."
           }
         }
       }
@@ -21896,19 +21896,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Regular-season third place. One semi-playoff game starts here."
+            "value": "Regular season: 3rd. Start from one semi-playoff game."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レギュラーシーズン3位。準プレーオフは一試合から。"
+            "value": "レギュラーシーズン3位。準プレーオフ一戦から始まる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "정규시즌 3위입니다. 준플레이오프 한 판부터 시작합니다."
+            "value": "정규시즌 3위. 준플레이오프 한 판부터 시작한다."
           }
         }
       }
@@ -21918,19 +21918,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Regular-season fourth place. One wild-card win is enough."
+            "value": "Regular season: 4th. One wild-card win moves you on."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レギュラーシーズン4位。ワイルドカードは1勝で上がれる。"
+            "value": "レギュラーシーズン4位。ワイルドカード1勝で上がれる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "정규시즌 4위입니다. 와일드카드에서 한 승이면 올라갑니다."
+            "value": "정규시즌 4위. 와일드카드 한 승이면 올라간다."
           }
         }
       }
@@ -21940,19 +21940,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Regular-season fifth place. Win the wild card twice."
+            "value": "Regular season: 5th. Two wild-card wins needed."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "レギュラーシーズン5位。ワイルドカードは2勝が必要だ。"
+            "value": "レギュラーシーズン5位。ワイルドカードで2勝が要る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "정규시즌 5위입니다. 와일드카드에서 두 번을 이겨야 합니다."
+            "value": "정규시즌 5위. 와일드카드에서 두 번 이겨야 한다."
           }
         }
       }
@@ -21962,19 +21962,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The club reached autumn, but injury kept you off the mound."
+            "value": "The team made the postseason. Injury kept you off the mound."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球団は秋に進んだが、怪我のためマウンドには立てなかった。"
+            "value": "チームは秋に進んだが、怪我でマウンドには立てなかった。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "구단은 가을에 올랐지만 부상으로 마운드에 서지 못했습니다."
+            "value": "팀은 가을야구에 갔지만, 부상으로 마운드엔 서지 못했다."
           }
         }
       }
@@ -21984,19 +21984,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The club reached autumn, but the minors kept you off the mound."
+            "value": "The team made the postseason. You were in the minors, off the mound."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球団は秋に進んだが、2軍のためマウンドには立てなかった。"
+            "value": "チームは秋に進んだが、二軍のためマウンドには立てなかった。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "구단은 가을에 올랐지만 2군이라 마운드에 서지 못했습니다."
+            "value": "팀은 가을야구에 갔지만, 2군이라 마운드엔 서지 못했다."
           }
         }
       }
@@ -22028,19 +22028,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your development-league record and the manager's trust earned you a place on the top-level roster."
+            "value": "Called up. Your minor-league record and manager trust earned it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "育成リーグでの成績と監督の信頼により、あなたはトップレベルの名簿に載りました。"
+            "value": "一軍合流。二軍の成績と監督の信頼がつかんだ席だ。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "2군 기록과 감독의 믿음을 쌓아 1군 출전 명단에 합류했습니다."
+            "value": "1군 합류. 2군 기록과 감독의 믿음이 만든 자리다."
           }
         }
       }
@@ -22248,19 +22248,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A run of missed opportunities sends you back to the development league. You must build your case again."
+            "value": "Sent down. Outings dried up. Build the record again."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "チャンスを逃し続けると、育成リーグに戻されてしまいます。ケースを再度作成する必要があります。"
+            "value": "二軍降格。最近登板が続かなかった。成績を積み直す。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "최근 등판이 이어지지 않아 2군으로 내려갑니다. 기록을 다시 쌓아야 합니다."
+            "value": "2군행. 최근 등판이 이어지지 않았다. 기록을 다시 쌓아야 한다."
           }
         }
       }
@@ -22270,19 +22270,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your first official pro appearance is complete: %1$lld games and %2$lld strikeouts."
+            "value": "First official pro outing done. %1$lld games, %2$lld strikeouts."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "初めての公式プロ登板が完了しました。 %1$lld 試合と %2$lld 三振。"
+            "value": "プロ初の公式登板を終えた。%1$lld試合 %2$lld奪三振。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로 첫 공식 등판을 마쳤습니다. %1$lld경기에서 %2$lld개의 삼진을 잡았습니다."
+            "value": "프로 첫 공식 등판 완료. %1$lld경기 %2$lld탈삼진."
           }
         }
       }
@@ -22380,19 +22380,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You declined the national call. Fan support dipped a little."
+            "value": "Declined the national call. Fans cooled a little."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "代表招集を辞退しました。ファンの視線が少し冷めました。"
+            "value": "代表招集を辞退。ファンの視線が少し冷めた。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "국가대표 소집을 사양했습니다. 팬의 시선이 조금 식었습니다."
+            "value": "국가대표 소집 거절. 팬 시선이 조금 식었다."
           }
         }
       }
@@ -22512,19 +22512,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pitch research advanced — the development pitch is ready for an official game."
+            "value": "Pitch research advanced · The new pitch is ready for the next official game."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球種研究が進み、公式戦で試せるようになりました。"
+            "value": "球種研究が前進 · 次の公式戦で開発中の球種を試せる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "구종 연구 진전 · 다음 공식 경기에서 개발 구종을 시험할 수 있습니다."
+            "value": "구종 연구 진전 · 다음 공식 경기에서 개발 구종을 시험할 수 있다."
           }
         }
       }
@@ -22578,19 +22578,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Season %1$lld shone brightest: %2$lld games and %3$lld strikeouts."
+            "value": "Best season: %1$lld · %2$lld games, %3$lld strikeouts"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "季節 %1$lld 最も明るく輝いた： %2$lld 試合と %3$lld 三振。"
+            "value": "最高のシーズンは%1$lld · %2$lld試合 %3$lld奪三振"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "가장 빛난 해는 %1$lld시즌 — %2$lld경기에서 %3$lld개의 탈삼진을 잡았습니다."
+            "value": "최고의 해는 %1$lld시즌 · %2$lld경기 %3$lld탈삼진"
           }
         }
       }
@@ -22754,19 +22754,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The role request was declined. Stuff and catcher trust missed the closer bar."
+            "value": "Role request denied. Stuff and catcher rapport fall short of the closer bar."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "役割希望は見送られました。球威と捕手との呼吸が抑えの基準に届きませんでした。"
+            "value": "役割希望は却下。球威と捕手との呼吸が抑えの基準に届かない。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "보직 지원이 거절되었습니다. 구위와 포수와의 호흡이 마무리 기준에 미치지 않습니다."
+            "value": "보직 지원 거절. 구위와 포수 호흡이 마무리 기준에 못 미친다."
           }
         }
       }
@@ -22776,19 +22776,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The role request was declined. Stamina and manager faith missed the starter bar."
+            "value": "Role request denied. Stamina and manager trust fall short of the starter bar."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "役割希望は見送られました。体力と監督の信頼が先発の基準に届きませんでした。"
+            "value": "役割希望は却下。体力と監督の信頼が先発の基準に届かない。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "보직 지원이 거절되었습니다. 체력과 감독의 믿음이 선발 기준에 미치지 않습니다."
+            "value": "보직 지원 거절. 체력과 감독의 믿음이 선발 기준에 못 미친다."
           }
         }
       }
@@ -22798,19 +22798,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You signed your rookie contract. The competition for a development-league rotation spot begins now."
+            "value": "Rookie contract signed. The minor-league rotation battle begins."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "新人契約にサインしました。育成リーグのローテーション枠を巡る争いが今始まる。"
+            "value": "新人契約にサイン。二軍の先発争いが始まる。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "신인 계약에 서명했습니다. 2군 선발 경쟁이 시작됩니다."
+            "value": "신인 계약 완료. 2군 선발 경쟁 시작."
           }
         }
       }
@@ -22864,19 +22864,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "It is the All-Star break. Recover now and prepare for the second half."
+            "value": "All-Star break. Recover and get ready for the second half."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "オールスターブレイクです。今からしっかり回復して後半に備えましょう。"
+            "value": "オールスター休み。体を整え、後半戦に備える。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "올스타 휴식기입니다. 몸을 추스르고 후반기를 준비합니다."
+            "value": "올스타 휴식기. 몸을 추스르고 후반기를 준비한다."
           }
         }
       }
@@ -22908,19 +22908,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The first-half race is underway. Find your rhythm for the long season."
+            "value": "First-half race begins. Find a rhythm for the long season."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前半戦が進行中。長いシーズンに向けて自分のリズムを見つけてください。"
+            "value": "前半戦のレース開始。長いシーズンのリズムをつかむ。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "전반기 레이스에 들어섰습니다. 긴 시즌의 리듬을 잡습니다."
+            "value": "전반기 레이스 시작. 긴 시즌의 리듬을 잡을 때다."
           }
         }
       }
@@ -22930,19 +22930,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Opening series has begun. It is time to make your first impression."
+            "value": "Opening series. Time to make a first impression."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "オープニングシリーズが始まりました。あなたの第一印象を決める時が来ました。"
+            "value": "開幕シリーズ。第一印象を残す時だ。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "개막 시리즈가 시작됐습니다. 첫인상을 남길 시간입니다."
+            "value": "개막 시리즈. 첫인상을 남길 시간이다."
           }
         }
       }
@@ -22952,19 +22952,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The pennant race is heating up. Every game carries more weight."
+            "value": "The pennant race is on. Every game weighs more."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ペナントレースが熱くなっています。どの試合も重みが増します。"
+            "value": "順位争いが熱い。一試合の重みが違う。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "순위 경쟁이 뜨거워집니다. 한 경기의 무게가 커집니다."
+            "value": "순위 싸움이 뜨겁다. 한 경기의 무게가 다르다."
           }
         }
       }
@@ -23084,19 +23084,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "He lifts low pitches over the right-field wall and never misses a mistake inside."
+            "value": "Lifts low pitches over the right-field wall. Never misses a mistake inside."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "低めの球を右翼の壁を越えて飛ばし、内角のミスも見逃さない。"
+            "value": "低めをすくい上げて右翼席へ運ぶ。内角の失投は逃さない。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "낮게 깔린 공을 퍼올려 우측 담장을 넘깁니다. 몸쪽 실투 한 개를 놓치지 않습니다."
+            "value": "낮은 공을 퍼올려 우측 담장을 넘긴다. 몸쪽 실투는 놓치지 않는다."
           }
         }
       }
@@ -23172,19 +23172,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "His reach covers the outer edge, and he can drive a high pitch without dropping the barrel."
+            "value": "Long reach covers the outer edge. Drives high pitches as they come."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "リーチはアウターエッジをカバーしており、バレルを落とさずに高い投球を打ち出すことができる。"
+            "value": "長いリーチで外角までカバー。高めもそのまま打ち返す。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "긴 리치로 바깥쪽까지 커버합니다. 높은 공을 그대로 받아넘깁니다."
+            "value": "긴 리치로 바깥쪽까지 커버한다. 높은 공도 그대로 받아넘긴다."
           }
         }
       }
@@ -23260,19 +23260,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "His quick bat turns on pitches inside. He shows his plan from the first pitch."
+            "value": "Quick bat turns on inside pitches. Shows his plan from the first pitch."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼の素早いバットは内角の球を狙います。初球から構想を示した。"
+            "value": "速いバットで内角を引っ張る。初球から狙いを隠さない。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "빠른 배트로 안쪽 공을 끌어당깁니다. 초구부터 노림수를 숨기지 않습니다."
+            "value": "빠른 배트로 몸쪽 공을 당겨친다. 초구부터 노림수를 숨기지 않는다."
           }
         }
       }
@@ -23348,19 +23348,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "He will not chase outside the zone and has no fear of a full-count battle."
+            "value": "Won't chase out of the zone. Not afraid of a full count."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ゾーン外を追わず、フルカウント戦も恐れない。"
+            "value": "ゾーン外には手を出さない。フルカウント勝負を恐れない。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "존을 벗어난 공에는 손이 나가지 않습니다. 풀카운트 승부를 두려워하지 않습니다."
+            "value": "존 밖 공엔 손이 안 나간다. 풀카운트 승부를 두려워하지 않는다."
           }
         }
       }
@@ -23436,19 +23436,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "He hunts the left-center gap for extra bases and handles breaking-ball timing well."
+            "value": "Hunts the left-center gap for extra bases. Times breaking balls well."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "左中間のギャップを狙って長打を作ります。変化球のタイミングに強いタイプです。"
+            "value": "左中間を狙って長打を作る。変化球のタイミングに強い。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "좌중간 갭을 노려 장타를 만듭니다. 변화구 타이밍에 강합니다."
+            "value": "좌중간 갭을 노려 장타를 만든다. 변화구 타이밍에 강하다."
           }
         }
       }
@@ -23524,19 +23524,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "He extends at-bats with fouls and waits for the put-away pitch. He puts far more balls in play than he strikes out."
+            "value": "Fouls off pitches, then hits the put-away pitch. Puts the ball in play more than he strikes out."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼はファウルで打席を延ばし、投球を待ちます。彼は三振よりもはるかに多くのボールをプレーに入れている。"
+            "value": "ファウルで粘って決め球を打ち返す。三振よりインプレーが多い。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "파울로 승부를 늘리다 결정구를 받아칩니다. 삼진보다 인플레이 타구가 많습니다."
+            "value": "파울로 승부를 끌다 결정구를 받아친다. 삼진보다 인플레이 타구가 많다."
           }
         }
       }
@@ -23612,19 +23612,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "His swing gets firmer with runners aboard. He is a bad-ball hitter who covers a wide zone."
+            "value": "Swing gets firmer with runners on. A bad-ball hitter who covers a wide zone."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "走者を乗せるとスイングはさらにしっかりする。彼はワイドゾーンをカバーする悪打者だ。"
+            "value": "走者が出るとスイングが締まる。広いゾーンを打つバッドボールヒッター。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "주자가 있을 때 스윙이 더 단단해집니다. 넓은 존을 커버하는 배드볼 히터입니다."
+            "value": "주자가 나가면 스윙이 더 단단해진다. 넓은 존을 커버하는 배드볼 히터."
           }
         }
       }
@@ -23700,19 +23700,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "He shortens up, then immediately looks for the next base. One mistake can become a run."
+            "value": "Shortens up and takes the next base right away. A mistake is a run."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼は短くなり、すぐに次の塁を探します。一つのミスが失点になることもある。"
+            "value": "短く叩いてすぐ次の塁を狙う。失投はそのまま失点。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "짧게 끊어치고 곧바로 다음 베이스를 노립니다. 실투가 곧 실점입니다."
+            "value": "짧게 끊어치고 바로 다음 베이스를 노린다. 실투가 곧 실점이다."
           }
         }
       }
@@ -23788,19 +23788,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "His swing stays short even when behind. He waits on pitches away and drives them the other way."
+            "value": "Swing stays full even behind in the count. Waits on the outside pitch and goes the other way."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼のスイングはビハインドでも短いままだ。彼は投球を離れて待ち、彼らを逆方向に追いやる。"
+            "value": "追い込まれてもスイングが小さくならない。外角を待って流し打つ。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "카운트가 몰려도 스윙이 짧아지지 않습니다. 바깥쪽 승부를 기다렸다 밀어칩니다."
+            "value": "카운트가 몰려도 스윙이 짧아지지 않는다. 바깥쪽을 기다렸다 밀어친다."
           }
         }
       }
@@ -23876,19 +23876,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "There is no obvious weak spot. He can square up any pitch type."
+            "value": "No obvious weak spot. Squares up any pitch."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "明らかな弱点はありません。彼はどんな球種でも対応できる。"
+            "value": "はっきりした弱点コースがない。どの球種も芯で捉える。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "약점 코스가 뚜렷하지 않습니다. 어떤 구종이든 중심에 맞힙니다."
+            "value": "뚜렷한 약점 코스가 없다. 어떤 구종이든 중심에 맞힌다."
           }
         }
       }
@@ -24690,19 +24690,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You made the top-level roster. A spotlight outing is already waiting."
+            "value": "Called up. A spotlight outing is next."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "トップレベルの名簿を作りました。スポットライトを浴びる登板がすでに待っています。"
+            "value": "一軍合流。注目の登板がすぐ続く。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "1군 출전 명단에 합류했습니다. 다음 주목받는 등판이 바로 이어집니다."
+            "value": "1군 합류. 주목받는 등판이 바로 이어진다."
           }
         }
       }
@@ -25064,19 +25064,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Work the edges with precision and keep unnecessary runners off base."
+            "value": "Work the edges and keep free runners off base."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "エッジを正確に加工し、不要なランナーを塁から遠ざけます。"
+            "value": "コース勝負で無駄な走者を出さない。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "정교한 코스 승부로 불필요한 주자를 내보내지 않습니다."
+            "value": "코스 승부로 불필요한 주자를 내보내지 않는다."
           }
         }
       }
@@ -25152,19 +25152,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Overpower hitters with your fastball and chase a full-season strikeout mark."
+            "value": "Overpower hitters and chase a single-season strikeout mark."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "速球で打者を圧倒し、フルシーズンの三振マークを追いましょう。"
+            "value": "速球で圧倒し、シーズン奪三振記録に挑む。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "빠른 공으로 타자를 압도해 한 시즌 탈삼진 기록에 도전합니다."
+            "value": "빠른 공으로 압도해 한 시즌 탈삼진 기록에 도전한다."
           }
         }
       }
@@ -25196,19 +25196,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hold your stuff late and take responsibility for every out in your assignment."
+            "value": "Hold your stuff late and finish every out you're given."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "仕事を遅くまで保留し、課題のすべての結果に責任を持ちます。"
+            "value": "終盤も球威を保ち、任されたアウトを最後まで取り切る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "후반에도 구위를 지키며 맡은 아웃카운트를 끝까지 책임집니다."
+            "value": "후반에도 구위를 지키고 맡은 아웃카운트를 끝까지 책임진다."
           }
         }
       }
@@ -25240,19 +25240,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@'s %2$@ will meet you on the mound again and again this season."
+            "value": "%1$@'s %2$@. You'll face him again and again this season."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@の%2$@は今シーズン、何度もマウンドでお会いしましょう。"
+            "value": "%1$@の%2$@。今季は何度もマウンドで対峙する。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@의 %2$@. 올 시즌 몇 번이고 마운드에서 마주칩니다."
+            "value": "%1$@의 %2$@. 올 시즌 몇 번이고 마운드에서 마주친다."
           }
         }
       }
@@ -25570,7 +25570,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "After your final middle-school tournament at %@, your mind was preparing for the next inning before your shoulder had caught up. A high school offer has arrived."
+            "value": "After your final middle-school tournament at %@, your mind was preparing for the next inning before your shoulder had caught up. Four high schools have sent offers."
           }
         },
         "ja": {
@@ -29316,7 +29316,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「今なら、目を閉じていてもあなたの 変化球 を捕まえることができます。%@ があなたの手から離れた瞬間に、どこに落ちるかわかります。」"
+            "value": "「もう%@の変化球は目をつぶっても捕れる。手を離れた瞬間にどこへ落ちるか見えるから。」"
           }
         },
         "ko": {
@@ -29514,7 +29514,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "学んだことのないグリップが手に定着します。試してみると、本当に壊れてしまいます。"
+            "value": "習ったことのないグリップが自然と手に収まる。投げてみると、本当に曲がる。"
           }
         },
         "ko": {
@@ -29536,7 +29536,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "学んだことのないグリップが手に定着します。試してみると、本当に壊れてしまいます。"
+            "value": "習ったことのないグリップが自然と手に収まる。投げてみると、本当に曲がる。"
           }
         },
         "ko": {
@@ -29558,7 +29558,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "学んだことのないグリップが手に定着します。試してみると、本当に壊れてしまいます。"
+            "value": "習ったことのないグリップが自然と手に収まる。投げてみると、本当に曲がる。"
           }
         },
         "ko": {
@@ -29712,7 +29712,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "“%@、打者は投球が来ることを知っていても、それを見逃してしまう可能性があります。必要なのはゾーンへの道だけだ。」"
+            "value": "「%@、今のは打者が分かっていても届かない。ストライクで入る道さえ見つければいい。」"
           }
         },
         "ko": {
@@ -29734,7 +29734,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「よく壊れますが、私のミットではなくあなたの足に着地します。それは試合では言えません。」"
+            "value": "「よく曲がるけど、ミットじゃなくて足元に落ちる。試合では要求できない。」"
           }
         },
         "ko": {
@@ -29756,7 +29756,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「このグリップはより壊れやすく、古いグリップはターゲットに到達します。どちらを先に救いますか?」"
+            "value": "「このグリップは大きく曲がる。元のは狙った所に来る。どっちを先に生かす？」"
           }
         },
         "ko": {
@@ -29910,7 +29910,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、あなたの速球が流れると、次の球も流れます。今日は 1 つのバッテリー シーケンスを構築しましょう。」"
+            "value": "「%@、直球が生きれば次の球も生きる。今日はバッテリーの配球を一つ作ろう。」"
           }
         },
         "ko": {
@@ -29932,7 +29932,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「私はあなたの速球の後の変化球をまだ拾うことができません。それがあなたの手から離れてから初めてそれを見ることができます。」"
+            "value": "「直球の次の変化球はまだ捕れない。手を離れてからやっと見える。」"
           }
         },
         "ko": {
@@ -30108,7 +30108,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、そのグリップを見せてください。代わりに私のスライダーを教えて差し上げます。このチームが生き残るためには、私たち二人とも改善する必要があります。」"
+            "value": "「%@、そのグリップ見せてよ。代わりに俺のスライダーの握り教える。二人とも伸びないとチームが持たない。」"
           }
         },
         "ko": {
@@ -30152,7 +30152,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「あの新しい 変化球 グリップ…一度見せてもらえますか？ 1枠を争っているが、まだまだ学びたい」。"
+            "value": "「その新しい変化球の握り…一度だけ見せてくれる？先発の座は奪い合う仲だけど、それでも学びたくて。」"
           }
         },
         "ko": {
@@ -30306,7 +30306,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「次の試合では、あなたにはもっと深く進んでもらいたいのです、%@。みんながあなたを頼りにしています。」"
+            "value": "「次の試合は%@に長く投げてもらわないと。みんなそう思ってる。」"
           }
         },
         "ko": {
@@ -30328,7 +30328,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「次の試合で長いイニングを戦ってもらえますか？今どこにいるのか分からないので聞いています。」"
+            "value": "「次の試合、長いイニング…任せられる？最近のお前がどうなのか分からなくて聞いてる。」"
           }
         },
         "ko": {
@@ -30350,7 +30350,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「次の試合で長いイニングをやってもいいですか？それが多すぎるならそう言ってください。そのほうがチームのためになります。」"
+            "value": "「次の試合、長いイニング頼める？無理なら無理って言え。その方がチームのためだ。」"
           }
         },
         "ko": {
@@ -30504,7 +30504,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「最近、振り切る球が良くなりましたね、%@。見てみたいです。」"
+            "value": "「最近、%@が首を振った後の球の方がいい。お前が見てるものを俺も見たい。」"
           }
         },
         "ko": {
@@ -30526,7 +30526,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「あらゆる兆候を振り切るつもりなら、試合全体を自分でコールしてください。…なぜ私は打席の後ろにいるのですか？」"
+            "value": "「そんなにサインを拒むなら、マウンドで全部一人で決めろ。…俺は何のために座ってるんだ？」"
           }
         },
         "ko": {
@@ -30548,7 +30548,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「あなたは私の気配を振り払い続けています。何か見落としているのでしょうか？」"
+            "value": "「最近、俺のサインをやたら拒むだろ。俺が見落としてることがあるのか？」"
           }
         },
         "ko": {
@@ -30702,7 +30702,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「今日は 3 つの変更すべてがうまくいきました。私はあなたの提案を誰よりもよく知っています、%@」"
+            "value": "「三回変えたの、今日は全部当たった。%@の球はもう俺が一番よく分かってる。」"
           }
         },
         "ko": {
@@ -30724,7 +30724,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「それは 3 つのバツ印です。…すべてを変えるつもりなら、なぜわざわざバッテリーとして働く必要がありますか?」"
+            "value": "「またサインが三回変わった。…これじゃ、なんで俺とバッテリー組むんだ？」"
           }
         },
         "ko": {
@@ -30746,7 +30746,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「今日は標識を3回変えました。何を見逃したでしょうか？」"
+            "value": "「今日はサインが三回も変わった。俺が見逃したのは何だった？」"
           }
         },
         "ko": {
@@ -30900,7 +30900,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「一日かけて、 %@。あなたが無理をしすぎていることを知ってあなたを送り出すとしたら、それは私の責任です。」"
+            "value": "「一日休め。%@が無理してると分かってて出したら、それは俺の責任だ。」"
           }
         },
         "ko": {
@@ -30922,7 +30922,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「今日は座っていますね。自分の気持ちを隠す投手は信用できません」。"
+            "value": "「今日は外す。体の状態を隠す選手は、長くは信じられない。」"
           }
         },
         "ko": {
@@ -30944,7 +30944,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「あなたはこの登板をサボっています。最近あなたの腕は他の人よりも一歩遅れています。」"
+            "value": "「今回の登板は休め。最近は腕が体より遅れて来てる。」"
           }
         },
         "ko": {
@@ -31098,7 +31098,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「最後のトレーニングはあなたのものです、%@。私は 3 年間あなたを見てきました。あなたの判断を信頼するときが来ました。」"
+            "value": "「最後の練習は%@、お前に任せる。三年見てきた。そろそろお前の判断を信じてもいい頃だ。」"
           }
         },
         "ko": {
@@ -31120,7 +31120,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「これが最後のトレーニングです。…まだ私があなたのために選ばなければなりませんか？もしあなたが自分で選ぶことができなければ、プロボールはさらに難しくなるでしょう。」"
+            "value": "「最後の練習だ。…まだ俺が決めてやらなきゃいけないのか。自分で選べなきゃ、プロではもっと迷うぞ。」"
           }
         },
         "ko": {
@@ -31142,7 +31142,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「あなたは最後のトレーニングを選択しました。まだ足りないものは何ですか?」"
+            "value": "「最後の練習はお前が決めろ。今一番足りないのは何だ？」"
           }
         },
         "ko": {
@@ -31318,7 +31318,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「先発投手はまだ先のことだ。ブルペンからスタートする。…理由を尋ねるのではなく、もっと球を投げてもいいのに。」"
+            "value": "「先発はまだ早い。ブルペンから始めろ。…理由を問う暇があったら、もう一球投げてみろ。」"
           }
         },
         "ko": {
@@ -31340,7 +31340,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「あなたは次のトーナメントでブルペンから先発することになります。遅いイニングにはあなたが必要です。」"
+            "value": "「次の大会はブルペンから始める。試合の後半を任せる。」"
           }
         },
         "ko": {
@@ -31516,7 +31516,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「打者が一歩踏み出すと、すべての投球がハンドスパンで外れてしまったら、ブルペンのミットを打つ意味がありません。」"
+            "value": "「ブルペンのミットに当てて何になる。打者が立てばまた一つ分外れるのに。」"
           }
         },
         "ko": {
@@ -31538,7 +31538,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「打者が立った瞬間に前足が開く。ボールの前に目を向けましょう」。"
+            "value": "「打者が立った瞬間に前足が早く開く。球じゃなく、まず目線を直そう。」"
           }
         },
         "ko": {
@@ -31890,7 +31890,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、時々、フィールドが記事よりも遅れて移動することがあります。もう 1 回開始すると、ボードを変更する理由が得られる可能性があります。」"
+            "value": "「%@、記事より現場が遅れて動く時もある。次の登板があれば、評価を変える根拠ができる。」"
           }
         },
         "ko": {
@@ -31934,7 +31934,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「予測ではあなたは2ラウンド上回っていました。私たちはあなたの最後の3試合での指揮をより重視しています。」"
+            "value": "「予想順位は二ラウンド上だったな。うちは直近三試合の制球をもっと重く見る。」"
           }
         },
         "ko": {
@@ -32088,7 +32088,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、私たちは皆さんの最も得意なことを消さずに 1 年目をデザインしました。それを組み合わせてみましょう。」"
+            "value": "「%@選手、今の長所を消さない範囲で一年目を設計しました。一緒に合わせていきましょう。」"
           }
         },
         "ko": {
@@ -32132,7 +32132,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「ファーストシーズンプランは、まず体を作り、ちょっとした登板から始めます。皆さんのご意見もお待ちしています。」"
+            "value": "「一年目はまず体を作り、短いイニングから始める計画です。本人の考えも聞きたい。」"
           }
         },
         "ko": {
@@ -32286,7 +32286,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、あなたの試験は遠征と重なっています。あなたならきっと乗り越えられると思いますので、この話は短くします。ほんの数日です。」"
+            "value": "「%@、試験と遠征が重なったな。自分でやれるのは分かってるから長くは言わない。数日だけだ。」"
           }
         },
         "ko": {
@@ -32330,7 +32330,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「試験と遠征が重なっています。本を読むにも数日は必要です。…野球はまだここにあります。」"
+            "value": "「試験と遠征が重なったな。球と同じくらい、本も数日は握れ。…野球は逃げない。」"
           }
         },
         "ko": {
@@ -32682,7 +32682,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "リリース前はミットが近くに見えた。この動議はもう借用されませんでした。それは私のものでした。"
+            "value": "リリースの前からミットが近く見えた。もうこの動きは借り物の感覚じゃない、自分のものだった。"
           }
         },
         "ko": {
@@ -32704,7 +32704,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "追いかける度に消えてしまうモーションが試合初登場。ボールの仕上がりは却下するにはあまりにも異なっていた。"
+            "value": "練習で掴もうとするほど逃げていた動きが、試合で先に出た。偶然で済ませるには球の切れが違った。"
           }
         },
         "ko": {
@@ -32880,7 +32880,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ラジオには、私の前世からの正確な順序でお気に入りのタイトルがリストされています。結末を知っている本がまた開いた。"
+            "value": "ラジオが今年の優勝候補を、前の人生と同じ順で読み上げる。結末を知っている本が、また最初の章を開いた。"
           }
         },
         "ko": {
@@ -32902,7 +32902,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ラジオには、私の前世からの正確な順序でお気に入りのタイトルがリストされています。結末を知っている本がまた開いた。"
+            "value": "ラジオが今年の優勝候補を、前の人生と同じ順で読み上げる。結末を知っている本が、また最初の章を開いた。"
           }
         },
         "ko": {
@@ -32924,7 +32924,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ラジオには、私の前世からの正確な順序でお気に入りのタイトルがリストされています。結末を知っている本がまた開いた。"
+            "value": "ラジオが今年の優勝候補を、前の人生と同じ順で読み上げる。結末を知っている本が、また最初の章を開いた。"
           }
         },
         "ko": {
@@ -33078,7 +33078,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "新しい手袋は最初から手のひらに向かって柔らかく折り畳まれます。これは、私が前世で何百回も閉じた角度とまったく同じです。"
+            "value": "新しいグローブが最初から手のひらの内側へ柔らかく折れる。前の人生で何百回も閉じた、まさにその角度だ。"
           }
         },
         "ko": {
@@ -33100,7 +33100,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "新しい手袋は最初から手のひらに向かって柔らかく折り畳まれます。これは、私が前世で何百回も閉じた角度とまったく同じです。"
+            "value": "新しいグローブが最初から手のひらの内側へ柔らかく折れる。前の人生で何百回も閉じた、まさにその角度だ。"
           }
         },
         "ko": {
@@ -33122,7 +33122,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "新しい手袋は最初から手のひらに向かって柔らかく折り畳まれます。これは、私が前世で何百回も閉じた角度とまったく同じです。"
+            "value": "新しいグローブが最初から手のひらの内側へ柔らかく折れる。前の人生で何百回も閉じた、まさにその角度だ。"
           }
         },
         "ko": {
@@ -33320,7 +33320,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「二度見してしまいました。よかったら、なぜ同じ場所を押すのですか？一緒にトレーナーのところに来てください。」"
+            "value": "「二回見た。平気なら、なんで同じ所ばかり押すの？一緒にトレーナーの所へ行こう。」"
           }
         },
         "ko": {
@@ -33716,7 +33716,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「満塁で、私はゴロが欲しかったが、あなたは空振りを望んでいた。次は私たちが選択します。」"
+            "value": "「満塁の初球、俺はゴロが欲しくて、お前は空振りを狙った。次は一つに決めよう。」"
           }
         },
         "ko": {
@@ -33930,19 +33930,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Leave the farewell in the feel of the ball, even if regret returns with it."
+            "value": "Leave the farewell in the feel of the ball. Regret may come back with it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "たとえ悔しさが戻ってきたとしても、別れはボールの感触に残しておこう。"
+            "value": "別れをボールの感触に残す。未練も一緒に戻ってくるかもしれない"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "작별을 공의 감촉으로 남기되 미련까지 함께 돌아올 수 있다"
+            "value": "작별을 공의 감촉으로 남긴다. 미련도 같이 돌아올 수 있다"
           }
         }
       }
@@ -34068,7 +34068,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前世で最後まで隣で投げたチームメイトが、今度はユニホームを脱いだ。 「私はこれで終わりです。あなたは投げ続けます」。"
+            "value": "前の人生で最後まで一緒に投げた仲間が、今度はユニホームを脱いだ。「今回はここまでにする。お前は投げ続けろ」"
           }
         },
         "ko": {
@@ -34090,7 +34090,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前世で最後まで隣で投げたチームメイトが、今度はユニホームを脱いだ。 「私はこれで終わりです。あなたは投げ続けます」。"
+            "value": "前の人生で最後まで一緒に投げた仲間が、今度はユニホームを脱いだ。「今回はここまでにする。お前は投げ続けろ」"
           }
         },
         "ko": {
@@ -34112,7 +34112,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前世で最後まで隣で投げたチームメイトが、今度はユニホームを脱いだ。 「私はこれで終わりです。あなたは投げ続けます」。"
+            "value": "前の人生で最後まで一緒に投げた仲間が、今度はユニホームを脱いだ。「今回はここまでにする。お前は投げ続けろ」"
           }
         },
         "ko": {
@@ -34266,7 +34266,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、たった 2 フレームです。あなたの体は今日もそれらを見つけることができます。」"
+            "value": "「%@、差はたった2フレームだ。お前の体なら今日中に取り戻せる」"
           }
         },
         "ko": {
@@ -34288,7 +34288,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「気分は大丈夫だと言えますが、カメラはリリースが早いことを示しています。ハイミスは今後も続くでしょう。」"
+            "value": "「本人が大丈夫だと言っても、映像では手が先に出ている。このままだと高めに抜け続けるぞ」"
           }
         },
         "ko": {
@@ -34464,7 +34464,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今週は前回腕が折れた週です。何も痛くないのに、その場所が気になって仕方がありません。"
+            "value": "前回、腕が壊れたのと同じ週だ。痛くはないのに、あの場所がずっと気になる。"
           }
         },
         "ko": {
@@ -34486,7 +34486,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今週は前回腕が折れた週です。何も痛くないのに、その場所が気になって仕方がありません。"
+            "value": "前回、腕が壊れたのと同じ週だ。痛くはないのに、あの場所がずっと気になる。"
           }
         },
         "ko": {
@@ -34508,7 +34508,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今週は前回腕が折れた週です。何も痛くないのに、その場所が気になって仕方がありません。"
+            "value": "前回、腕が壊れたのと同じ週だ。痛くはないのに、あの場所がずっと気になる。"
           }
         },
         "ko": {
@@ -34656,13 +34656,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "“Today’s broadcast is built around you, %@. Just throw like you always do; the story will take care of itself.”"
+            "value": "“Today we're building around you, %@. Throw like always and the shots take care of themselves.”"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「今日の放送はあなたを中心に構成されています、%@。いつものように投げるだけで、ストーリーは自動的に処理されます。」"
+            "value": "「今日は%@を中心に撮る。いつも通りやれば、絵は勝手についてくる」"
           }
         },
         "ko": {
@@ -34684,7 +34684,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「今日はブルペンからカメラがあなたを監視しています。それが気になるなら、それはそういうことです」"
+            "value": "「今日はブルペンからカメラがつく。気になるなら仕方ないが」"
           }
         },
         "ko": {
@@ -34700,13 +34700,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "“We will get some shots from the bullpen. Throw like you always do. …That is the hardest thing, is it not?”"
+            "value": "“We'll get some shots from the bullpen. Throw like always. …Which is the hardest part, right?”"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「ブルペンから何本か打ちます。いつものように投げます。…それが一番難しいですよね」。"
+            "value": "「今日はブルペンから少し撮らせてもらう。いつも通り投げて。…いつも通りが一番難しいだろ？」"
           }
         },
         "ko": {
@@ -34854,13 +34854,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "“The old-school signs still feel natural. But let us use what makes you comfortable, %@. I can adjust.”"
+            "value": "“The signs from my old school still feel natural. But let us use what makes you comfortable, %@. I can adjust.”"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「昔ながらの標識はまだ自然に感じられます。しかし、快適なものを使用しましょう。%@ 調整できます。」"
+            "value": "「前の学校のサインの方が手に馴染んでる。でも%@がやりやすい方でいこう。俺が合わせる」"
           }
         },
         "ko": {
@@ -34882,7 +34882,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「私たちは母校でこれらの標識を使用していました。…とにかくすべてを呼び出すつもりなら、何でも使ってください。」"
+            "value": "「前の学校ではこのサインを使ってた。…どうせ全部お前が決めるなら、何でもいいけど」"
           }
         },
         "ko": {
@@ -34904,7 +34904,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「この看板は母校で使っていました。次の試合で試してみませんか？」"
+            "value": "「前の学校ではこのサインを使ってた。うちも次の試合から変えてみない？」"
           }
         },
         "ko": {
@@ -35256,7 +35256,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「試合を見ました。よく頑張りました。…ドラフト後もプレーし続けるんですよね？何を選んでも、ちゃんと食べてください」"
+            "value": "「試合、見たよ。よくやってた。…ドラフトが終わっても続けるんだろ？何をするにしても、ご飯はちゃんと食べなさい」"
           }
         },
         "ko": {
@@ -35278,7 +35278,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「最近電話してないね。…ドラフト後は何を考えているの？」"
+            "value": "「最近、連絡がないね。…ドラフトが終わったら、どうするつもりなの」"
           }
         },
         "ko": {
@@ -35300,7 +35300,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「ドラフト後もプレーを続けるつもりですよね？…まだ答えなくても大丈夫です。ちゃんと食べていますか？」"
+            "value": "「ドラフトが終わっても続けるんだろ？…いや、返事はゆっくりでいい。ご飯はちゃんと食べてるの」"
           }
         },
         "ko": {
@@ -35322,7 +35322,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "滑らかなボールを考慮しながら打者のタイミングを奪います。"
+            "value": "打者のタイミングを奪う分、濡れたボールの滑りも計算に入れる"
           }
         },
         "ko": {
@@ -35454,7 +35454,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、手はまだ冷たいですよね？低めにセットします。初球は一緒にキャッチしましょう。」"
+            "value": "「%@、手はまだ冷たいだろ？低めに構えてやる。初球から一緒に取ろう」"
           }
         },
         "ko": {
@@ -35476,7 +35476,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「腕が冷たいのに全力で開きたいのですか？今決めてください。二度と私を振り落とさないでください。」"
+            "value": "「腕が冷えてるのに初球から強く行くのか？またサインを変えるな、今決めろ」"
           }
         },
         "ko": {
@@ -35498,7 +35498,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「準備球は５球しかない。一番早く手元に戻ってくる球で開幕させよう」。"
+            "value": "「ブルペンで5球しか投げられない。初球は一番早く手に馴染む球でいこう」"
           }
         },
         "ko": {
@@ -35652,7 +35652,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、今日休めば、明日は良い投球を20回セーブできる。あなたなら違いがわかると信じています。」"
+            "value": "「%@、今日休めば次のブルペンの20球が生きる。その違いがわかる選手だと信じている」"
           }
         },
         "ko": {
@@ -35674,7 +35674,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「隣で誰が投げていても、それが誰の腕なのかは変わりません。今日ボールを拾えば、明日はもっと重く感じるでしょう。」"
+            "value": "「隣で誰が投げていようと、お前の腕はお前の腕だ。今日また握れば、明日から球が重くなる」"
           }
         },
         "ko": {
@@ -35718,7 +35718,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "記憶を利用してエンディングを変更し、次のヒットがさらに深くなることがわかっています。"
+            "value": "記憶を使って結末を変える。ただ、また打たれれば傷は深くなる"
           }
         },
         "ko": {
@@ -35850,7 +35850,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前世での得点の瞬間の緊張感が戻ってきた。何も知らずに捕手は決め球をコールした。 「ほら。どうですか？」"
+            "value": "前の人生で失点した瞬間に似た緊張が戻ってきた。捕手は何も知らずに決め球のサインを出す。「ここ、どうだ？」"
           }
         },
         "ko": {
@@ -35872,7 +35872,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前世での得点の瞬間の緊張感が戻ってきた。何も知らずに捕手は決め球をコールした。 「ほら。どうですか？」"
+            "value": "前の人生で失点した瞬間に似た緊張が戻ってきた。捕手は何も知らずに決め球のサインを出す。「ここ、どうだ？」"
           }
         },
         "ko": {
@@ -35894,7 +35894,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "前世での得点の瞬間の緊張感が戻ってきた。何も知らずに捕手は決め球をコールした。 「ほら。どうですか？」"
+            "value": "前の人生で失点した瞬間に似た緊張が戻ってきた。捕手は何も知らずに決め球のサインを出す。「ここ、どうだ？」"
           }
         },
         "ko": {
@@ -36048,7 +36048,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼は箱から私を研究します。 「私たちはどこかで顔を合わせたことがあるだろうか？」"
+            "value": "打席の彼がじっと見てくる。「俺たち…どこかでやり合ったことあるか？」"
           }
         },
         "ko": {
@@ -36070,7 +36070,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼は箱から私を研究します。 「私たちはどこかで顔を合わせたことがあるだろうか？」"
+            "value": "打席の彼がじっと見てくる。「俺たち…どこかでやり合ったことあるか？」"
           }
         },
         "ko": {
@@ -36092,7 +36092,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼は箱から私を研究します。 「私たちはどこかで顔を合わせたことがあるだろうか？」"
+            "value": "打席の彼がじっと見てくる。「俺たち…どこかでやり合ったことあるか？」"
           }
         },
         "ko": {
@@ -36246,7 +36246,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼は握り直し、静かに話す。 「%@。これが最後だ。最高の投球を持ってきてください。そうすれば、私たちもそれを忘れることはありません。」"
+            "value": "打席に入った彼がバットを握り直し、低く言う。「%@。最後だな。一番いい球で来い。勝っても負けても、それなら残る」"
           }
         },
         "ko": {
@@ -36268,7 +36268,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "捕手ミットを見ずに笑みを浮かべた。 「とにかく、あなたはそこに投げます。私はあなたのことを知っています。」"
+            "value": "打席の彼は捕手のミットも見ずに笑う。「どうせそこに来るんだろ。全部わかってる」"
           }
         },
         "ko": {
@@ -36290,7 +36290,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "彼は前の試合と同じ場所にバットを向けた。 「あのコーナーをもう一度試してください。」"
+            "value": "打席に入った彼が、前の試合と同じコースをバットの先で指す。「もう一回ここに投げてみろよ」"
           }
         },
         "ko": {
@@ -36444,7 +36444,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「次の始球式を当ててほしいですか、%@？…いいえ、むしろ自分の目で見てみたいです。」"
+            "value": "「%@の次の初球、何を投げるか当ててやろうか。…いや、あれは自分の目で見た方がいいな」"
           }
         },
         "ko": {
@@ -36642,7 +36642,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@。私はついにあなたの最高のフォーシームに追いつきました。…それを達成するのに3年かかりました。」スマイリーがクリップを閉じました。"
+            "value": "「%@。高めのフォーシーム、やっと捉えた。…これ一つ捉えるのに3年かかったけどな」動画の最後に笑顔のマークがついていた。"
           }
         },
         "ko": {
@@ -37302,7 +37302,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "セッション後半の制球も公開しながら上位を追いかけます。"
+            "value": "最高球速を狙うが、力が落ちた後の制球も一緒に見られる"
           }
         },
         "ko": {
@@ -37456,7 +37456,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「レーダーの読み取り以外にも書くべきことはたくさんあります。配信を繰り返すことができるかどうか注目しています。」"
+            "value": "「スコアボードの数字以外にも書くことは多い。同じフォームでもう一度投げられるか、見せてもらう」"
           }
         },
         "ko": {
@@ -37874,7 +37874,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「私たちは選択する必要があります。個人の仕事を増やすか、全員が早退するかです。沈黙しても責任は取り除かれません。」"
+            "value": "「自主練を増やすか、全員で早く切り上げるか決めないと。黙ってる人も責任は同じだ」"
           }
         },
         "ko": {
@@ -37896,7 +37896,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "同じ沈黙に直面しなければならないかもしれないことを知っているので、逃げることを拒否してください。"
+            "value": "逃げはしない。ただ同じ沈黙が来たら、正面から耐えるしかない"
           }
         },
         "ko": {
@@ -38028,7 +38028,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "放送が入った瞬間、名前を呼ばれなかった部屋の空気が戻ってくる。第一次選考はまだ始まっていません。"
+            "value": "中継画面がつくと、最後まで名前を呼ばれなかった部屋の空気が先に戻ってきた。まだ一巡目も始まっていない。"
           }
         },
         "ko": {
@@ -38050,7 +38050,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "放送が入った瞬間、名前を呼ばれなかった部屋の空気が戻ってくる。第一次選考はまだ始まっていません。"
+            "value": "中継画面がつくと、最後まで名前を呼ばれなかった部屋の空気が先に戻ってきた。まだ一巡目も始まっていない。"
           }
         },
         "ko": {
@@ -38072,7 +38072,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "放送が入った瞬間、名前を呼ばれなかった部屋の空気が戻ってくる。第一次選考はまだ始まっていません。"
+            "value": "中継画面がつくと、最後まで名前を呼ばれなかった部屋の空気が先に戻ってきた。まだ一巡目も始まっていない。"
           }
         },
         "ko": {
@@ -38248,7 +38248,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "最終的な名前が通りました。部屋には光る放送と3年分の数字だけが残った。"
+            "value": "最後の名前まで過ぎた。部屋には消えない中継画面と、3年分の数字だけが残った。"
           }
         },
         "ko": {
@@ -38270,7 +38270,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "電話は来なかった。スコアブックを開いたとき、支配した日よりも復帰した日が目立ちました。"
+            "value": "電話は来なかった。スコアブックを開くと、よく投げた日より、もう一度投げた日が先に目に入った。"
           }
         },
         "ko": {
@@ -38578,7 +38578,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "出産が硬くならないように、冬の間ずっと同じ腕の動かし方を保ちます。"
+            "value": "冬の間ずっと同じ腕の軌道を保ち、投球フォームが固まるのを防ぐ"
           }
         },
         "ko": {
@@ -38622,7 +38622,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "「%@、あなたの体は力を加える準備ができています。しかし、この簡単な腕の動きも資産です。選択するのはあなたです。」"
+            "value": "「%@、体は力を受け入れる準備ができている。ただ、今の柔らかい腕の軌道も財産だ。お前が選べ」"
           }
         },
         "ko": {
@@ -45750,7 +45750,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校でもプロでも、今日はある試合に投げ、別の日に別の試合に投げます。"
+            "value": "今日1試合、別の日に1試合。高校でもプロでも可。"
           }
         },
         "ko": {
@@ -45788,19 +45788,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose your goal for the three high-school years before selecting a school."
+            "value": "Set your three-year high-school goal before picking a school."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校3年間の目標を決めてから学校を選びましょう。"
+            "value": "学校を選ぶ前に、高校3年間の目標を決めましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "학교를 고르기 전에 고교 3년의 목표를 정하면 됩니다."
+            "value": "학교를 고르기 전, 고교 3년의 목표를 정하세요."
           }
         }
       }

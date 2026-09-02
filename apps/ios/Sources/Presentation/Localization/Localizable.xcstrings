@@ -1750,7 +1750,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このプレイヤーは %lld を獲得しました。次のマークでそのマークを打ち破ってください。"
+            "value": "今回の選手は %lld 点。次の選手でこの記録を超えよう。"
           }
         },
         "ko": {
@@ -1920,19 +1920,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Round %lld: drafted by %@. Three years answered."
+            "value": "Round %lld, drafted by %@. Three years paid off."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld ラウンド: %@ によってドラフトされました。 3年が答えた。"
+            "value": "%lld ラウンド、%@ が指名。3年間が報われた。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "드래프트 %lld라운드 %@ 지명. 3년이 응답받았습니다."
+            "value": "드래프트 %lld라운드, %@ 지명. 3년이 보답받았습니다."
           }
         }
       }
@@ -2096,19 +2096,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Personality changed — “%@.” People aren't fixed."
+            "value": "Personality changed — “%@.” People change."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "人格が変更されました — 「%@」。人は固定されていません。"
+            "value": "性格が変わった — 「%@」。人は変わるものだ。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "성격이 달라졌습니다 — '%@'. 사람은 고정된 값이 아닙니다."
+            "value": "성격이 달라졌습니다 — '%@'. 사람은 변하는 법입니다."
           }
         }
       }
@@ -2514,19 +2514,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Three years end here. Choose what this player leaves for the next one."
+            "value": "Three years end here. Choose what to leave the next player."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ここで3年間が終わります。このプレイヤーが次のプレイヤーに何を残すかを選択してください。"
+            "value": "3年間はここで終わり。次の選手に残すものを選んでください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "3년은 여기서 끝납니다. 새 선수에게 무엇을 남길지 고르게 됩니다."
+            "value": "3년은 여기서 끝. 새 선수에게 남길 것을 고르세요."
           }
         }
       }
@@ -2998,19 +2998,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Give up the pro path and start a new player. You'll choose what to leave behind."
+            "value": "Skip the pro path and start a new player. Choose what to leave behind."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プロの道を諦めて新しいプレーヤーを始める。何を残すかはあなたが選ぶことになります。"
+            "value": "プロを諦めて新しい選手で始めます。残す記憶を選んでください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르게 됩니다."
+            "value": "프로를 포기하고 새 선수로 시작합니다. 남길 기억을 고르세요."
           }
         }
       }
@@ -3064,19 +3064,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This ends the story without starting a pro career. The draft result will be lost and cannot be undone."
+            "value": "Ends this player's story without a pro career. The draft pick is lost for good."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "これではプロとしてのキャリアをスタートさせずに物語が終わってしまいます。ドラフト結果は失われ、元に戻すことはできません。"
+            "value": "プロ入りせずにこの選手の物語を終えます。指名は消え、元に戻せません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로 커리어를 시작하지 않고 이 선수의 이야기를 끝냅니다. 지명은 사라지고 되돌릴 수 없습니다."
+            "value": "프로 커리어 없이 이 선수의 이야기를 끝냅니다. 지명은 사라지고 되돌릴 수 없습니다."
           }
         }
       }
@@ -3114,7 +3114,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "そのうちの 1 つが次のプレイヤーに渡されます。選択はプロの話の後に来る。"
+            "value": "このうち1つが次の選手に受け継がれます。選ぶのはプロ編を終えた後です。"
           }
         },
         "ko": {
@@ -3174,19 +3174,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This player's high-school story will close and cannot be reopened. Only the chosen legacy passes directly to the next player."
+            "value": "The high-school years close for good. Only the chosen legacy passes to the next player."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このプレイヤーの高校時代のストーリーは終了し、再開することはできません。選択されたレガシーのみが次のプレイヤーに直接渡されます。"
+            "value": "高校3年間が閉じ、元に戻せません。選んだ遺産1つだけが次の選手に受け継がれます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 선수의 고교 3년이 닫히고 되돌릴 수 없습니다. 고른 대표 유산 하나만 새 선수에게 직접 이어집니다."
+            "value": "고교 3년이 닫히고 되돌릴 수 없습니다. 고른 유산 하나만 새 선수에게 이어집니다."
           }
         }
       }
@@ -3416,19 +3416,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ stayed at %3$lld, unchanged from %2$lld."
+            "value": "%1$@ unchanged from %2$lld to %3$lld."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ は %2$lld から変わらず、%3$lld のままでした。"
+            "value": "%1$@ は %2$lld から %3$lld、変化なし。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ %2$lld에서 %3$lld로 변화 없습니다."
+            "value": "%1$@ %2$lld에서 %3$lld, 변화 없음."
           }
         }
       }
@@ -3444,7 +3444,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ は、%2$lld から %3$lld に増加し、%4$lld まで増加しました。"
+            "value": "%1$@ は %2$lld から %3$lld へ、%4$lld 上昇。"
           }
         },
         "ko": {
@@ -4192,7 +4192,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このプレーヤーは機能アップデート前に開始されました。それらのルールに基づいて選択された記憶だけが先に進みます。"
+            "value": "アップデート前に始めた選手です。当時のルールで選んだ記憶だけが次の選手に受け継がれます。"
           }
         },
         "ko": {
@@ -4236,7 +4236,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このプレーヤーは機能アップデート前に開始されました。そのランからルールに従って思い出を選択してください。"
+            "value": "アップデート前に始めた選手です。当時のルールで記憶を選びます。"
           }
         },
         "ko": {
@@ -4318,19 +4318,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "When this player's pro career ends, you'll review the high-school years and career line together, then choose a legacy for the next player."
+            "value": "After the pro career, review the high-school years and career line, then choose a legacy for the next player."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このプレーヤーのプロとしてのキャリアが終わったら、高校時代とキャリアラインを一緒に見直し、次のプレーヤーへの遺産を選択します。"
+            "value": "プロ引退後、高校時代と通算成績を振り返り、次の選手に残す遺産を選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 선수의 프로 커리어를 마치면 고교 시절과 통산 기록을 함께 돌아보고, 다음 선수에게 남길 대표 유산을 고릅니다."
+            "value": "프로 커리어를 마치면 고교 시절과 통산 기록을 돌아보고, 다음 선수에게 남길 유산을 고릅니다."
           }
         }
       }
@@ -4522,7 +4522,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld メモリと %lld 継承ポイントから始めます。"
+            "value": "記憶 %lld 枚 · 継承ポイント %lld を携えて開始。"
           }
         },
         "ko": {
@@ -4544,7 +4544,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld メモリと %lld 継承ポイントから始めます。"
+            "value": "記憶 %lld 枚 · 継承ポイント %lld を携えて開始。"
           }
         },
         "ko": {
@@ -4956,19 +4956,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Three legacies emerge from the abilities you built and the games you actually pitched."
+            "value": "Three legacies, built from the abilities you raised and the games you pitched."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "あなたが築き上げた能力と実際に投げた試合から、3 つの遺産が生まれます。"
+            "value": "育てた能力と試合成績から、遺産が3つ生まれました。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "직접 키운 능력과 실제 경기 기록으로 세 가지 유산이 만들어졌습니다."
+            "value": "키운 능력과 경기 기록으로 유산 세 가지가 만들어졌습니다."
           }
         }
       }
@@ -5616,19 +5616,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your RA9 and FIP are close. The results match the quality of your pitching."
+            "value": "RA9 and FIP are close. Results match the pitching."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "RA9 と FIP は近いです。結果はあなたの投球の質と一致します。"
+            "value": "失点と FIP が近い。成績は内容通りです。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "실점과 FIP가 비슷합니다. 지금 성적이 내용 그대로라는 뜻입니다."
+            "value": "실점과 FIP가 비슷합니다. 성적이 내용 그대로입니다."
           }
         }
       }
@@ -5638,19 +5638,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your RA9 is below your FIP. Defense and luck have helped, so results may slip if the process stays the same."
+            "value": "RA9 below FIP. Defense and luck helped, so results may slip."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "RA9 は FIP を下回っています。防御と運が助けになったので、プロセスが同じままだと結果がずれる可能性があります。"
+            "value": "失点が FIP より低い。守備と運に助けられた分、内容が同じなら成績は落ちるかも。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "실점이 FIP보다 낮습니다. 수비와 운이 도왔다는 뜻이라, 내용이 그대로면 성적은 나빠질 수 있습니다."
+            "value": "실점이 FIP보다 낮습니다. 수비와 운이 도왔으니, 내용이 그대로면 성적은 내려갈 수 있습니다."
           }
         }
       }
@@ -5660,19 +5660,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your RA9 is above your FIP. Defense and luck have worked against you, so the same process could produce better results."
+            "value": "RA9 above FIP. Defense and luck hurt you, so the same pitching should play better."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "RA9 は FIP を上回っています。防御と運があなたに不利に働いたため、同じプロセスでより良い結果が得られる可能性があります。"
+            "value": "失点が FIP より高い。守備と運に泣いた分、同じ内容なら成績は上がる余地あり。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "실점이 FIP보다 높습니다. 수비와 운이 불리하게 작용했다는 뜻이라, 같은 내용이면 성적이 좋아질 여지가 있습니다."
+            "value": "실점이 FIP보다 높습니다. 수비와 운이 불리했으니, 같은 내용이면 성적은 좋아질 여지가 있습니다."
           }
         }
       }
@@ -5682,19 +5682,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The sample is still small. These metrics begin to settle after 10 innings."
+            "value": "Small sample. Metrics start to mean something past 10 innings."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "サンプルはまだ少ないです。これらの指標は 10 イニング後に落ち着き始めます。"
+            "value": "サンプルがまだ少ない。10 イニングを超えると指標に意味が出ます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "표본이 아직 적습니다. 10이닝을 넘기면 지표가 의미를 갖기 시작합니다."
+            "value": "표본이 아직 적습니다. 10이닝을 넘기면 지표가 의미를 갖습니다."
           }
         }
       }
@@ -6144,19 +6144,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Single-player record: %1$lld strikeouts by Player %2$lld. Records are made to be broken."
+            "value": "Most strikeouts by one player: %1$lld (Player %2$lld). Records are made to be broken."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シングルプレーヤーの記録: %1$lld プレーヤーによる奪三振数 %2$lld。記録は破られるために作られる。"
+            "value": "1人の最多奪三振 %1$lld（%2$lld 人目の選手）— 記録は破るためにある。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "한 선수 최다 탈삼진 %1$lld (%2$lld번째 선수) — 역대 기록은 깨라고 있는 것입니다."
+            "value": "한 선수 최다 탈삼진 %1$lld (%2$lld번째 선수) — 기록은 깨라고 있는 겁니다."
           }
         }
       }
@@ -6298,19 +6298,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$lld strikeouts until %2$lld career K—every player's record lasts forever."
+            "value": "Next milestone %2$lld career K, %1$lld to go—every player's record keeps building."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%2$lld キャリア K までの%1$lld 奪三振 - すべてのプレーヤーの記録は永久に続きます。"
+            "value": "通算 %2$lld 奪三振まであと %1$lld — 全選手の記録は積み上がり続ける。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "통산 탈삼진 %2$lld까지 %1$lld개 — 모든 선수의 기록은 영원히 쌓입니다."
+            "value": "통산 탈삼진 %2$lld까지 %1$lld개 — 모든 선수의 기록은 계속 쌓입니다."
           }
         }
       }
@@ -7178,19 +7178,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A strong talent has opened farther. The next tier is within reach."
+            "value": "A strong talent opened further. The next tier is in reach."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "強力な才能がさらなる飛躍を遂げた。次の階層は手の届くところにあります。"
+            "value": "良い才能がさらに開いた。次の段階が射程に入った。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "좋은 재능이 더 멀리 열렸습니다. 다음 단계가 사정권에 들어왔습니다."
+            "value": "좋은 재능이 더 열렸습니다. 다음 단계가 사정권입니다."
           }
         }
       }
@@ -7200,19 +7200,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This ability can now reach a new level with continued work."
+            "value": "Keep training and this ability reaches a higher tier."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この能力は、継続的に取り組むことで新たなレベルに到達できるようになりました。"
+            "value": "練習を続ければ、この能力はさらに上の段階に届く。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 능력이 계속된 훈련으로 더 높은 단계에 닿을 수 있게 됐습니다."
+            "value": "훈련을 이어 가면 이 능력이 더 높은 단계에 닿습니다."
           }
         }
       }
@@ -8894,19 +8894,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This fits a run built around managing your current arm load."
+            "value": "A goal built around managing arm load to the finish."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "これは、現在の腕の負荷を管理することを中心に構築されたランニングに適合します。"
+            "value": "腕の負担を管理しながら完走する目標です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "현재 팔 부담을 관리하며 완주하는 데 맞춘 목표입니다."
+            "value": "팔 부담을 관리하며 완주하는 목표입니다."
           }
         }
       }
@@ -8982,19 +8982,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A safe goal you can finish with any current build."
+            "value": "A safe goal any build can finish."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "現在のどのビルドでも完了できる安全な目標です。"
+            "value": "どんな能力構成でも完走できる安全な目標です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "현재 능력 구성과 무관하게 완주를 노리는 안전 목표입니다."
+            "value": "어떤 능력 구성으로도 완주할 수 있는 안전 목표입니다."
           }
         }
       }
@@ -9114,19 +9114,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose one and we will revisit it after three years. Complete it to give your next player a stronger start."
+            "value": "Pick one. We check it after three years. Succeed and the next player starts stronger."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "どれか 1 つを選択してください。3 年後に再検討します。それを完了すると、次のプレイヤーがより強力なスタートを切ることができます。"
+            "value": "1つ選ぶと3年後に振り返ります。達成すれば次の選手の出発が強くなります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "하나를 고르면 3년을 마칠 때 돌아봅니다. 이루면 새 선수가 더 강하게 시작됩니다."
+            "value": "하나 고르면 3년 뒤 돌아봅니다. 이루면 새 선수 출발이 강해집니다."
           }
         }
       }
@@ -9136,19 +9136,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose one and we will revisit it after three high-school years. Harder tiers award more Legacy Points."
+            "value": "Pick one. We check it after three high-school years. Higher tiers pay more Legacy Points."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "どれか 1 つを選んでください。高校 3 年間後に再検討します。レベルが高くなるほど、より多くのレガシー ポイントが獲得できます。"
+            "value": "1つ選ぶと高校3年後に振り返ります。等級が高いほど継承ポイントが増えます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "하나를 고르면 고교 3년을 마칠 때 돌아봅니다. 등급에 따라 계승 포인트를 더 얻습니다."
+            "value": "하나 고르면 고교 3년 뒤 돌아봅니다. 등급이 높을수록 계승 포인트가 큽니다."
           }
         }
       }
@@ -9796,19 +9796,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "These points came from your last player's career. Earn more to buy new rules for the next player in the Legacy Shop."
+            "value": "Points left by your last player. Save up and buy rules for the next player in the Legacy Shop."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "これらのポイントは、最後のプレーヤーのキャリアから得られたものです。さらに稼いで、レガシーショップで次のプレイヤーのために新しいルールを購入しましょう。"
+            "value": "前の選手が残したポイント。貯めて継承ショップで次の選手のルールを買います。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이전 선수의 커리어가 남긴 포인트입니다. 더 쌓이면 계승 상점에서 새 선수의 규칙을 살 수 있습니다."
+            "value": "지난 선수가 남긴 포인트. 모아서 계승 상점에서 새 선수의 규칙을 삽니다."
           }
         }
       }
@@ -10346,19 +10346,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Game Center is not connected. Your achievements remain safely stored on this device."
+            "value": "Game Center not connected. Achievements stay on this device."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ゲームセンターが接続されていません。あなたの成果はこのデバイスに安全に保存されます。"
+            "value": "Game Center未接続。達成記録はこの端末に残ります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Game Center에 연결되지 않았습니다. 달성 기록은 이 기기에 그대로 남습니다."
+            "value": "Game Center 미연결. 달성 기록은 이 기기에 남습니다."
           }
         }
       }
@@ -10456,19 +10456,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your type only sets your starting abilities and pitch mix. Weekly training choices and game results shape everything after that."
+            "value": "Your type only sets starting abilities and pitches. After that, weekly training and game results decide."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "あなたのタイプは、初期能力と投球ミックスを設定するだけです。毎週のトレーニングの選択と試合の結果が、その後のすべてを形作ります。"
+            "value": "タイプが決めるのは初期能力と球種だけ。その後は毎週の練習と勝負の結果で分かれます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "유형은 시작 능력과 구종 구성만 정합니다. 이후 성장은 매주 고르는 훈련과 승부 결과로 갈립니다."
+            "value": "유형은 시작 능력과 구종만 정합니다. 그 뒤는 매주 고르는 훈련과 승부 결과가 가릅니다."
           }
         }
       }
@@ -11050,19 +11050,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This track improves its part of the pitch formula by up to %lld‰."
+            "value": "Adjusts its part of the pitch formula by up to %lld‰."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この熟練は投球式の担当部分を最大 %lld‰ 改善します。"
+            "value": "投球式の担当部分を最大 %lld‰ 補正。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 숙련은 투구 공식의 담당 부분을 최대 %lld‰ 보정합니다."
+            "value": "투구 공식에서 맡은 부분을 최대 %lld‰ 보정."
           }
         }
       }
@@ -11270,19 +11270,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Finish any two of the three and the stamp is yours. Missed weeks and unfinished goals carry no penalty."
+            "value": "Two of three earns the stamp. No penalty for misses."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3 つのうち 2 つを終えればスタンプが押されます。逃した週や残った目標にペナルティはありません。"
+            "value": "3つ中2つでスタンプ。逃してもペナルティなし。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "세 가지 중 두 가지만 마치면 도장이 찍힙니다. 놓친 주나 남은 목표에 벌점은 없어요."
+            "value": "셋 중 둘이면 도장. 놓쳐도 벌점 없음."
           }
         }
       }
@@ -11732,19 +11732,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You won't pitch every game. You take the mound only when your choices can change the outcome."
+            "value": "You don't pitch every game. You take the mound only when the outcome is on the line."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "毎試合投げるわけではありません。自分の選択が結果を変える可能性がある場合にのみマウンドに上がります。"
+            "value": "毎試合は投げません。結果が分かれる場面だけマウンドに上がります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "모든 경기를 던지지 않습니다. 결과를 바꿀 수 있는 순간에만 마운드에 오릅니다."
+            "value": "매 경기 던지진 않습니다. 결과가 갈리는 순간에만 마운드에 오릅니다."
           }
         }
       }
@@ -11974,19 +11974,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This inning will be discarded. Your next appearance will begin with a fresh inning."
+            "value": "This inning is discarded. Your next outing starts a fresh inning."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この回は破棄となります。次回の出場は新たなイニングから始まります。"
+            "value": "この回は消えます。次のマウンドは新しいイニングから。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "지금까지 던진 이 이닝은 사라집니다. 다음 마운드는 새 이닝입니다."
+            "value": "이 이닝은 사라집니다. 다음 마운드는 새 이닝부터."
           }
         }
       }
@@ -12260,19 +12260,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "They are sitting on the %@. Mix in another pitch."
+            "value": "They're sitting on the %@. Mix in another pitch."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@が読まれています。他の球種を混ぜましょう。"
+            "value": "%@の繰り返しが読まれた。他の球種を混ぜよう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ 반복이 읽히고 있습니다. 다른 구종을 섞어 보세요."
+            "value": "%@ 반복이 읽혔다. 다른 구종을 섞자."
           }
         }
       }
@@ -12282,19 +12282,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "They have identified %@ at %@. Change either the pitch or the location."
+            "value": "They've read %@ at %@. Change one of them."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@と%@の組み合わせが読まれています。どちらかを変えましょう。"
+            "value": "%@と%@の組み合わせが読まれた。どちらかを変えよう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@와 %@ 반복이 읽혔습니다. 둘 중 하나를 바꾸세요."
+            "value": "%@와 %@ 조합이 읽혔다. 하나는 바꾸자."
           }
         }
       }
@@ -12612,19 +12612,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your mix became predictable. Change speed or location earlier next time."
+            "value": "Your mix got predictable. Next outing, change speed or location sooner."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "同じ配球が続きました。次の登板では早めに緩急やコースを変えましょう。"
+            "value": "同じ配球が続いた。次の登板では緩急かコースを早めに変えよう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "같은 배합이 반복됐습니다. 다음 등판에는 속도나 코스를 먼저 바꿔 보세요."
+            "value": "같은 배합이 반복됐다. 다음 등판엔 완급이나 코스를 먼저 바꾸자."
           }
         }
       }
@@ -13140,19 +13140,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stamina build synergy: effective fatigue is held to %lld."
+            "value": "Stamina build synergy · cumulative fatigue held to %lld"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "スタミナ型シナジー · 累積疲労を%lldに抑えています。"
+            "value": "イニング消化型シナジー · 累積疲労を%lldに抑制"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이닝 소화형 시너지 · 누적 피로 %lld로 억제 중입니다."
+            "value": "이닝 소화형 시너지 · 누적 피로 %lld로 억제"
           }
         }
       }
@@ -13646,19 +13646,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "They are reading the pitch. Mix it up before they sit on it."
+            "value": "They're reading the pitch. Change the mix before they sit on it."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球種を読まれています。座る前に配球を変えましょう。"
+            "value": "球種が読まれている。座る前に配球を変える。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "상대가 구종을 읽고 있습니다. 앉기 전에 배합을 바꿉니다."
+            "value": "구종이 읽힌다. 앉기 전에 배합을 바꾼다."
           }
         }
       }
@@ -13888,19 +13888,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Early read: the weakness appears to be %@ at %@."
+            "value": "Still a guess. Weakness looks like %@ at %@."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "推定段階: 弱点は%@・%@付近と見られます。"
+            "value": "まだ推定。弱点は%@・%@付近。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "아직 추정입니다. 약점은 %@ · %@ 근처로 보입니다."
+            "value": "아직 추정. 약점은 %@ · %@ 근처."
           }
         }
       }
@@ -14042,19 +14042,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hold to wind up, drag to steady the target, then release to pitch. Turn on Auto Release to pitch with one activation."
+            "value": "Hold to wind up, drag to aim, release to pitch. Turn on Auto Release in Settings to pitch with one tap."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "押し続けて巻き上げ、ドラッグしてターゲットを安定させ、放すと投球になります。自動リリースをオンにすると、1 回のアクティベーションで投球できます。"
+            "value": "長押しでワインドアップ、ドラッグで狙い、離すと投球。設定で自動リリースをオンにすれば1タップで投げられます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "길게 눌러 와인드업하고, 끌어서 조준한 뒤 떼면 던집니다. 설정에서 자동 릴리스를 켜면 탭 한 번으로 던집니다."
+            "value": "길게 눌러 와인드업, 끌어서 조준, 떼면 투구. 설정에서 자동 릴리스를 켜면 탭 한 번으로 던집니다."
           }
         }
       }
@@ -15318,19 +15318,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Finish beyond the selected edge to earn a chase. It is more likely to miss for a ball."
+            "value": "Finishes outside the chosen spot. Goes for a chase, but often ends up a ball."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "狙ったコースの外へ外して空振りを誘います。ボールになる確率は高めです。"
+            "value": "狙ったコースの外へ外す。空振り狙いだがボールになりやすい。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고른 코스 바깥으로 빼서 헛스윙을 노리는 대신 볼이 될 확률이 큽니다."
+            "value": "고른 코스 바깥으로 뺀다. 헛스윙을 노리지만 볼이 되기 쉽다."
           }
         }
       }
@@ -15340,19 +15340,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "From the middle target, this call finishes below the zone. It can earn a chase, but is more likely to be a ball."
+            "value": "From the middle, it drops below the zone. Goes for a chase, but often ends up a ball."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "真ん中狙いからは低めに外れるボール球になります。空振りを誘えますが、ボールになる確率が高めです。"
+            "value": "真ん中狙いからは低めに外す。空振り狙いだがボールになりやすい。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "한복판에서는 낮은 쪽으로 빼는 공이 됩니다. 헛스윙을 노리는 대신 볼이 될 확률이 큽니다."
+            "value": "한복판에서는 낮은 쪽으로 뺀다. 헛스윙을 노리지만 볼이 되기 쉽다."
           }
         }
       }
@@ -15824,19 +15824,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This is one appearance inside the game, not the whole result. Protect the moment in front of you."
+            "value": "You own one stretch, not the whole game. Protect the matchup in front of you."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "これは試合全体ではなく、一つの登板だ。目の前の勝負を守る。"
+            "value": "試合全体ではなく一区間を任される。目の前の勝負だけ守る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 등판은 경기 전체가 아니라 한 구간이다. 눈앞의 승부를 지킨다."
+            "value": "경기 전체가 아니라 한 구간을 맡는다. 눈앞의 승부만 지킨다."
           }
         }
       }
@@ -15912,19 +15912,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hold this leverage point, then let the rest of the game decide the series score."
+            "value": "Hold this spot. The rest of the game decides the series win."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この勝負所を抑え、残りの試合でシリーズの一勝を決める。"
+            "value": "この勝負所を抑える。シリーズの一勝は残りの試合が決める。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 승부처를 막고 남은 경기에서 시리즈의 한 승을 결정한다."
+            "value": "이 승부처를 막는다. 시리즈의 한 승은 남은 경기가 정한다."
           }
         }
       }
@@ -16704,19 +16704,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "With two strikes, you expanded beyond the zone and earned the result."
+            "value": "With two strikes, expanding the zone paid off."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "２ストライクでゾーンを超えて結果をもたらした。"
+            "value": "2ストライク後、ゾーン外への誘いが効いた。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "2스트라이크 뒤 존 밖으로 유인해 좋은 결과를 만들었습니다."
+            "value": "2스트라이크 뒤 존 밖으로 유인한 게 통했다."
           }
         }
       }
@@ -16880,19 +16880,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You landed an unexpected pitch for a strike."
+            "value": "An unexpected pitch stole the first strike."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "予想外の投球でストライクを取りましたね。"
+            "value": "予想外の球で先にストライクを取った。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타자가 예상하지 못한 공으로 스트라이크를 먼저 잡았습니다."
+            "value": "예상 밖의 공으로 스트라이크를 먼저 잡았다."
           }
         }
       }
@@ -17232,19 +17232,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Average across %lld manual pitches — your best yet."
+            "value": "Average over %lld manual pitches — your best yet."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "自分で投げた%lld球の平均 — 自己ベスト更新。"
+            "value": "自分で投げた%lld球の平均 — 自己ベスト。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "직접 던진 %lld구 평균 — 지금까지 가장 좋았습니다."
+            "value": "직접 던진 %lld구 평균 — 지금까지 최고."
           }
         }
       }
@@ -18244,19 +18244,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your outing is set. Start the showdown under 'This Week'."
+            "value": "Outing set. Start the matchup under 'This Week' above."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "登板予定が決まりました。「今週」から勝負を始めましょう。"
+            "value": "登板確定。上の「今週」から勝負を始めてください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "등판이 잡혔습니다. 위의 '이번 주'에서 승부를 시작하세요."
+            "value": "등판 확정. 위 '이번 주'에서 승부를 시작하세요."
           }
         }
       }
@@ -18926,19 +18926,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Accept %@ for %lld years? Career totals stay, but the new team's standing starts over."
+            "value": "Sign with %@ for %lld years? Career totals stay, but your standing in the club starts from zero."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ と %lld 年契約を結びますか？通算記録は残りますが、新チームの積み上げはゼロから始まります。"
+            "value": "%@ と %lld 年契約しますか？通算記録は残り、チーム内の立場はゼロから積み上げます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@와 %lld년 계약을 맺을까요? 통산 기록은 남지만 새 팀의 위상은 처음부터 쌓습니다."
+            "value": "%@와 %lld년 계약할까요? 통산 기록은 남고, 팀 내 입지는 처음부터 쌓습니다."
           }
         }
       }
@@ -19036,19 +19036,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The club declined. Fan support dipped."
+            "value": "The club said no. Fan support dipped a little."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球団が要求を断りました。ファン支持が少し下がりました。"
+            "value": "球団が断りました。ファン支持が少し下がりました。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "구단이 요구를 거절했습니다. 팬 지지가 조금 줄었습니다."
+            "value": "구단이 거절했습니다. 팬 지지가 조금 줄었습니다."
           }
         }
       }
@@ -19432,19 +19432,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pick one direction before you sign. None is recommended over another."
+            "value": "Pick one direction before signing. There is no right answer."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "サインする前に方向を1つ選びます。おすすめはありません。"
+            "value": "サイン前に方向を1つ選んでください。正解はありません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "서명하기 전에 방향 하나를 고르세요. 특정 선택을 추천하지 않습니다."
+            "value": "서명 전에 방향 하나를 고르세요. 정답은 없습니다."
           }
         }
       }
@@ -20180,7 +20180,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manager's trust"
+            "value": "Manager trust"
           }
         },
         "ja": {
@@ -20730,19 +20730,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The next direct matchup will reveal how this choice shaped your preparation."
+            "value": "You'll see this choice's effect in your next direct matchup."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次の直接対決では、この選択があなたの準備をどのように形作ったかが明らかになるでしょう。"
+            "value": "この選択の影響は次の直接対決で分かります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 직접 승부에서 이 선택이 준비에 남긴 영향을 확인합니다."
+            "value": "이 선택의 영향은 다음 직접 승부에서 드러납니다."
           }
         }
       }
@@ -20906,19 +20906,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Once confirmed, this decision cannot be undone. Auto-advance will never skip it."
+            "value": "Once confirmed, there is no undo. Auto-advance never skips this decision."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "一度確認すると、この決定を取り消すことはできません。自動進行ではスキップされません。"
+            "value": "確認後は戻せません。自動進行でもこの決定は飛ばしません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "확인한 뒤에는 되돌릴 수 없습니다. 자동 진행도 이 결정을 건너뛰지 않습니다."
+            "value": "확인하면 되돌릴 수 없습니다. 자동 진행도 이 결정은 건너뛰지 않습니다."
           }
         }
       }
@@ -21764,7 +21764,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This week's decision couldn't be loaded. You can skip it and move on to the next schedule."
+            "value": "This week's decision couldn't load. You may skip it and move to the next schedule."
           }
         },
         "ja": {
@@ -21776,7 +21776,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이번 주 결정을 불러오지 못했습니다. 결정 없이 다음 일정으로 넘어갈 수 있습니다."
+            "value": "이번 주 결정을 불러오지 못했습니다. 결정 없이 다음 일정으로 넘어가도 됩니다."
           }
         }
       }
@@ -21808,19 +21808,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You will pitch one ball at a time. Choose the pitch, location, intent, and effort; every result is decided in the moment."
+            "value": "You throw every pitch. Pitch, location, intent, and effort decide each result on the spot."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "一度に1球ずつ投げます。投球、コース、意図、労力を選択します。すべての結果はその瞬間に決まります。"
+            "value": "1球ずつ自分で投げます。球種・コース・狙い・力配分で結果がその場で決まります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "한 구씩 직접 던집니다. 구종·코스·노림·힘 배분을 고르면 결과가 그때그때 갈립니다."
+            "value": "한 구씩 직접 던집니다. 구종·코스·노림·힘 배분에 따라 결과가 그 자리에서 갈립니다."
           }
         }
       }
@@ -21918,7 +21918,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manager Trust"
+            "value": "Manager trust"
           }
         },
         "ja": {
@@ -22094,19 +22094,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Started in season %lld, week %lld. Official games pause while you recover."
+            "value": "Season %lld, week %lld. No official games until you recover."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lldシーズン %lld週に発生。回復中は公式戦に出場しません。"
+            "value": "%lldシーズン %lld週に発生。回復まで公式戦には出ません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld시즌 %lld주차에 발생했습니다. 회복하는 동안 공식 경기에 나가지 않습니다."
+            "value": "%lld시즌 %lld주차 발생. 회복할 때까지 공식 경기에 나가지 않습니다."
           }
         }
       }
@@ -22122,13 +22122,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "素の疲労 %lld · 有効疲労 %lld · %lld球"
+            "value": "元の疲労 %lld · 実効疲労 %lld · %lld球"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "원피로 %lld · 유효 피로 %lld · %lld구"
+            "value": "원피로 %lld · 실제 피로 %lld · %lld구"
           }
         }
       }
@@ -22556,19 +22556,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Club hall is the years together. A retired number is the face of those years."
+            "value": "Club honors are the years together. A retired number is their symbol."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "球団殿堂は共にした時間、永久欠番はその時間の象徴です。"
+            "value": "球団殿堂は共にした時間、永久欠番はその象徴です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "구단 명예는 함께한 시간, 영구결번은 그 시간 위의 상징입니다."
+            "value": "구단 명예는 함께한 시간, 영구결번은 그 시간의 상징입니다."
           }
         }
       }
@@ -23062,19 +23062,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This retired player's pro record belongs to a different life than the high-school career in progress. Keep only the Legacy Points and clear the pro record to start the next player."
+            "value": "This retired player's pro record doesn't match the high-school run in progress. Keep the Legacy Points, clear the pro record, and start the next player."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "引退した選手のプロ記録は、進行中の高校の人生とは別の人生のものです。レガシーポイントだけを残してプロ記録を整理すると、次の選手を始められます。"
+            "value": "引退選手のプロ記録が進行中の高校の周回と異なり、そのまま繋げません。継承ポイントだけ残してプロ記録を整理すると次の選手を始められます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "은퇴한 선수의 프로 기록이 지금 진행 중인 고교 회차와 달라 그대로 연결할 수 없습니다. 계승 포인트 보상만 남기고 프로 기록을 정리하면 다음 선수를 시작할 수 있습니다."
+            "value": "은퇴 선수의 프로 기록이 진행 중인 고교 회차와 달라 그대로 잇지 못합니다. 계승 포인트만 남기고 프로 기록을 정리하면 다음 선수를 시작합니다."
           }
         }
       }
@@ -23304,19 +23304,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Spend three years in High School, clear the draft, and enter the pros with the abilities you built."
+            "value": "Play three high-school years, clear the draft, and enter the pros with the abilities you built."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校3年間を過ごし、ドラフトを突破し、培った実力を活かしてプロ入り。"
+            "value": "高校3年を過ごしドラフトを通過すれば、その能力のままプロに入ります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고교 탭에서 3년을 보내고 드래프트를 통과하면, 그때의 능력을 그대로 안고 프로에 들어갑니다."
+            "value": "고교 3년을 보내고 드래프트를 통과하면 그 능력 그대로 프로에 들어갑니다."
           }
         }
       }
@@ -23370,19 +23370,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "If you skip ahead, the draft result is generated from your seed. You won't carry growth or memories from high school."
+            "value": "Skipping sets the draft result from your seed. No growth or memories from high school."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "先にスキップすると、シードからドラフト結果が生成されます。高校時代の成長や思い出は持ち越せません。"
+            "value": "スキップするとドラフト結果はシードで決まります。高校3年の成長と記憶はありません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "건너뛰면 지명 결과가 시드에서 만들어집니다. 고교 3년의 성장과 기억은 없습니다."
+            "value": "건너뛰면 지명 결과가 시드로 정해집니다. 고교 3년의 성장과 기억은 없습니다."
           }
         }
       }
@@ -23392,19 +23392,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Finish one three-year high school career to unlock the option to skip ahead."
+            "value": "Finish one three-year high-school run to unlock skipping."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3 年間の高校生活を終えて、スキップして先に進むオプションのロックを解除します。"
+            "value": "高校3年を一度終えるとスキップが開きます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고교 3년을 한 번 마치면 고교를 건너뛰는 길도 열립니다."
+            "value": "고교 3년을 한 번 마치면 건너뛰기가 열립니다."
           }
         }
       }
@@ -23458,19 +23458,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your season put you on the national radar. Accept and you play three group games, then a live final."
+            "value": "Your season caught the national team's eye. Accept to play three group games, then pitch the final yourself."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今シーズンの投球が代表のレーダーに入りました。受ければグループ3試合のあと、決勝は直接登板します。"
+            "value": "今季の成績が代表のレーダーに入りました。受ければグループ3試合の後、決勝は自分で投げます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시즌을 마친 투구가 대표팀 레이더에 걸렸습니다. 수락하면 조별 3경기를 치른 뒤, 결승은 직접 등판합니다."
+            "value": "시즌 성적이 대표팀 레이더에 걸렸습니다. 수락하면 조별 3경기를 치르고 결승은 직접 등판합니다."
           }
         }
       }
@@ -23502,19 +23502,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cost: extra spring-camp fatigue, heavier if the final runs long, plus one injury check."
+            "value": "Cost: you start next spring camp carrying fatigue. More pitches in the final means more, plus one injury check."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "代償: 次のスプリングキャンプ開始の疲労が残り、決勝で多く投げるとさらに重くなります。負傷判定も1回あります。"
+            "value": "代償: 次のスプリングキャンプを疲労を抱えて始めます。決勝で多く投げるほど重く、負傷判定も1回あります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "대가: 다음 스프링캠프 시작 피로가 남고, 결승에서 많이 던지면 더 무거워집니다. 부상 판정도 한 번 있습니다."
+            "value": "대가: 다음 스프링캠프를 피로를 안고 시작합니다. 결승에서 많이 던질수록 무겁고, 부상 판정도 한 번 있습니다."
           }
         }
       }
@@ -24184,19 +24184,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You will open the market to compare offers. Choosing one is not an instant transfer; career totals stay and a new team's standing starts over only after acceptance."
+            "value": "Open the market and compare offers. Choosing isn't an instant transfer. After you accept, career totals stay and your standing in the club starts from zero."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "市場を開いてオファーを比較します。選択しても即時移籍ではありません。通算記録は残り、受諾後に新チームの積み上げが始まります。"
+            "value": "市場を開いてオファーを比較します。選んでもすぐ移籍はしません。受諾後は通算記録が残り、チーム内の立場はゼロから積み上げます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시장을 열고 제안을 비교합니다. 선택해도 즉시 이적하지 않으며, 수락 후에만 통산 기록을 유지한 채 새 팀의 위상을 처음부터 쌓습니다."
+            "value": "시장을 열고 제안을 비교합니다. 골라도 바로 이적하지 않습니다. 수락하면 통산 기록은 남고 팀 내 입지는 처음부터 쌓습니다."
           }
         }
       }
@@ -24470,19 +24470,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open the market and compare offers. Choosing one is not an instant transfer."
+            "value": "Open the market and compare offers. Choosing isn't an instant transfer."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "市場を開いてオファーを比較します。選択しても即時移籍にはなりません。"
+            "value": "市場を開いてオファーを比較します。選んでもすぐ移籍はしません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시장을 열고 제안을 비교합니다. 선택해도 즉시 이적하지 않습니다."
+            "value": "시장을 열고 제안을 비교합니다. 골라도 바로 이적하지 않습니다."
           }
         }
       }
@@ -25306,19 +25306,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Step away for two seasons. You return two years older, with future seasons intact."
+            "value": "Step away for two seasons. You come back two years older, with the seasons ahead intact."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "2シーズン離れてください。未来の季節をそのままに、2 歳年をとって戻ってきます。"
+            "value": "2シーズン離れて戻ります。年齢は2つ上がりますが、その後のシーズンは丸ごと残ります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "두 시즌을 비우고 돌아옵니다. 나이가 두 살 늘지만 이후 시즌이 온전해집니다."
+            "value": "두 시즌을 비우고 돌아옵니다. 나이는 두 살 늘지만 이후 시즌은 온전합니다."
           }
         }
       }
@@ -25416,19 +25416,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Compare open-market offers. Choosing one is not an instant transfer."
+            "value": "Compare open-market offers. Choosing isn't an instant transfer."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "オープン市場のオファーを比較します。選択しても即時移籍にはなりません。"
+            "value": "オープン市場のオファーを比較します。選んでもすぐ移籍はしません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "오픈 시장 제안을 비교합니다. 선택해도 즉시 이적하지 않습니다."
+            "value": "오픈 시장 제안을 비교합니다. 골라도 바로 이적하지 않습니다."
           }
         }
       }
@@ -25438,19 +25438,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The open market requires 6 years of top-level service. You have %lld."
+            "value": "Open market needs 6 years of top-level service. You're at %lld."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "オープン市場にはトップレベルで6年必要です。現在は%lld年です。"
+            "value": "オープン市場は一軍登録6年から。現在%lld年。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "오픈 시장에는 1군 등록 6년이 필요합니다. 지금 %lld년입니다."
+            "value": "오픈 시장은 1군 등록 6년부터. 지금 %lld년."
           }
         }
       }
@@ -25482,19 +25482,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ has a renewal market ready. Compare both offers before you sign."
+            "value": "%@ has opened renewal talks. Compare both offers before signing."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ の再契約市場が開いています。サインする前に2つのオファーを比較してください。"
+            "value": "%@ の再契約市場が開きました。サイン前に2つのオファーを比べてください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@의 재계약 시장이 열렸습니다. 서명 전에 두 제안을 비교하세요."
+            "value": "%@ 재계약 시장이 열렸습니다. 서명 전에 두 제안을 비교하세요."
           }
         }
       }
@@ -25504,19 +25504,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "End your career here. Your final record and Hall of Fame score will be locked in."
+            "value": "End your career here. Career record and Hall of Fame score lock in."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ここでキャリアを終わらせてください。あなたの最終記録と殿堂入りスコアは固定されます。"
+            "value": "ここでキャリアを終えます。通算記録と殿堂スコアが確定。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "여기서 커리어를 마칩니다. 통산 기록과 명예의 전당 점수가 확정됩니다."
+            "value": "여기서 커리어를 마칩니다. 통산 기록과 명예의 전당 점수 확정."
           }
         }
       }
@@ -25988,19 +25988,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Every direct outing, rest decision, and simulated inning now forms the path to the title."
+            "value": "Every outing, every rest, every simulated inning led here: the title."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "直接登板、休養の判断、自動進行の一イニングまで、すべてが優勝への道になった。"
+            "value": "直接登板も、休養も、自動進行のイニングも、すべて優勝につながった。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "직접 등판과 휴식 선택, 자동 진행된 이닝까지 모두 우승으로 이어졌다."
+            "value": "직접 등판도, 휴식도, 자동 진행된 이닝도 모두 우승으로 이어졌다."
           }
         }
       }
@@ -26098,19 +26098,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The title slipped away, but every postseason game remains in your career record."
+            "value": "The title got away. Every postseason game still counts in your career record."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "優勝には届かなかったが、すべての試合がキャリア記録に残る。"
+            "value": "優勝には届かなかった。それでもポストシーズンの全試合がキャリア記録に残る。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "우승에는 닿지 못했지만 모든 포스트시즌 경기가 커리어 기록으로 남는다."
+            "value": "우승엔 닿지 못했다. 그래도 포스트시즌 경기는 전부 커리어 기록에 남는다."
           }
         }
       }
@@ -27000,19 +27000,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your growth and career record—from high school through retirement—will reveal three Signature Legacies. You choose one to pass directly to the next player."
+            "value": "Three Signature Legacies come from the abilities and record you built from high school to retirement. Pass one to the next player."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校時代から退職までのあなたの成長とキャリアの記録から、3 つの特徴的な遺産が明らかになります。次のプレイヤーに直接渡すものを選択します。"
+            "value": "高校から引退まで育てた能力と通算記録から代表遺産を3つ見つけます。1つを次の選手に残します。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고교 시절부터 은퇴까지 직접 키운 능력과 통산 기록으로 대표 유산 세 가지를 찾습니다. 그중 하나를 다음 선수에게 직접 남길 수 있습니다."
+            "value": "고교부터 은퇴까지 키운 능력과 통산 기록에서 대표 유산 세 가지를 찾습니다. 하나를 다음 선수에게 남깁니다."
           }
         }
       }
@@ -27044,19 +27044,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Close %@'s pro career and continue to the Signature Legacy selection."
+            "value": "Close %@'s pro career and go to Signature Legacy selection."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ のプロキャリアを終了し、シグネチャーレガシーの選択に進みます。"
+            "value": "%@ のプロキャリアを閉じ、代表遺産の選択に進みます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@의 프로 커리어를 닫고, 대표 유산을 고르는 화면으로 이동합니다."
+            "value": "%@의 프로 커리어를 닫고 대표 유산 선택으로 넘어갑니다."
           }
         }
       }
@@ -27088,19 +27088,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "After the pro record is safely stored, choose one Signature Legacy for the next player."
+            "value": "After the pro record is saved, pick one Signature Legacy for the next player."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プロの記録が安全に保存されたら、次のプレーヤーのためにシグネチャー レガシーを 1 つ選択します。"
+            "value": "プロ記録を保存した後、次の選手に残す代表遺産を1つ選びます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로 기록을 안전하게 저장한 뒤, 다음 선수에게 남길 대표 유산 하나를 고릅니다."
+            "value": "프로 기록을 저장한 뒤 다음 선수에게 남길 대표 유산 하나를 고릅니다."
           }
         }
       }
@@ -27198,19 +27198,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A pro career started outside the high-school path becomes Legacy Points. Spend them on the current high-school player or the next player's inheritance shop."
+            "value": "A pro record that skipped high school becomes Legacy Points. Spend them in the Legacy Shop for the current or next high-school player."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "高校卒業後に始めたプロのキャリアはレガシーポイントとなります。それらを現在の高校生プレイヤーまたは次のプレイヤーの継承ショップに費やします。"
+            "value": "高校をスキップしたプロ記録は継承ポイントになります。進行中または次の高校選手の継承ショップで使います。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "고교를 건너뛰고 시작한 프로 기록은 계승 포인트로 남습니다. 진행 중인 고교 선수나 다음 고교 선수의 계승 상점에서 사용할 수 있습니다."
+            "value": "고교를 건너뛴 프로 기록은 계승 포인트로 남습니다. 진행 중인 고교 선수나 다음 선수의 계승 상점에서 씁니다."
           }
         }
       }
@@ -27286,19 +27286,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "After the pro record is safely stored, return to the existing high-school career."
+            "value": "After the pro record is saved, return to the high-school run in progress."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プロの記録が安全に保管されたら、既存の高校のキャリアに戻ります。"
+            "value": "プロ記録を保存した後、進行中の高校に戻ります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프로 기록을 안전하게 저장한 뒤 기존 고교 진행으로 돌아갑니다."
+            "value": "프로 기록을 저장한 뒤 진행 중인 고교로 돌아갑니다."
           }
         }
       }
@@ -27462,19 +27462,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "There is no next season. Lock in your career record and take off the uniform."
+            "value": "No next season. Lock in the career record and hang up the uniform."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次のシーズンはありません。キャリアの記録を締めくくり、ユニフォームを脱ぎましょう。"
+            "value": "次のシーズンはありません。通算記録を確定し、ユニフォームを脱ぎます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "더 이상 다음 시즌은 없습니다. 통산 기록을 확정하고 유니폼을 벗습니다."
+            "value": "다음 시즌은 없습니다. 통산 기록을 확정하고 유니폼을 벗습니다."
           }
         }
       }
@@ -27924,19 +27924,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose your outing role for this season. Outlook uses your current ability and trust."
+            "value": "Choose your role for this season. The outlook is based on current ability and manager trust."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今シーズンの登板役割を選びます。見通しは今の能力と信頼が基準です。"
+            "value": "今シーズンの役割を選びます。見通しは今の能力と監督の信頼が基準です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이번 시즌 등판 보직을 고릅니다. 수락 전망은 지금 능력과 믿음을 기준으로 합니다."
+            "value": "이번 시즌 보직을 고릅니다. 수락 전망은 지금 능력과 감독의 믿음 기준입니다."
           }
         }
       }
@@ -28100,13 +28100,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stamina %lld, manager faith %lld — starter is likely"
+            "value": "Stamina %lld, manager trust %lld — starter likely"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "体力 %lld、監督の信頼 %lld — 先発が有力"
+            "value": "体力 %lld、監督の信頼 %lld — 先発有力"
           }
         },
         "ko": {
@@ -30438,13 +30438,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "負傷リスク %@ · 有効疲労 %lld"
+            "value": "負傷リスク %@ · 実効疲労 %lld"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "부상 위험 %@ · 유효 피로 %lld"
+            "value": "부상 위험 %@ · 실제 피로 %lld"
           }
         }
       }
@@ -30542,7 +30542,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manager Trust"
+            "value": "Manager trust"
           }
         },
         "ja": {
@@ -31026,13 +31026,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Builds the manager's trust."
+            "value": "Builds manager trust."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "監督の信頼を築きます。"
+            "value": "監督の信頼が上がります"
           }
         },
         "ko": {
@@ -31488,19 +31488,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ role · about %2$lld scheduled appearances remaining. Direct moments are included in those games."
+            "value": "%1$@ role · about %2$lld appearances left. Direct matchups are included."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@役・%2$lld登板予定残りについて。それらの試合には直接的な瞬間が含まれています。"
+            "value": "%1$@役・残り登板予定 約%2$lld回。直接対決もこの中に含みます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ 보직 · 남은 예정 등판 약 %2$lld회. 직접 승부도 이 경기 수 안에 포함됩니다."
+            "value": "%1$@ 보직 · 남은 예정 등판 약 %2$lld회. 직접 승부도 이 안에 포함."
           }
         }
       }
@@ -31510,19 +31510,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your Place in the Club"
+            "value": "Standing in the club"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "クラブ内でのあなたの居場所"
+            "value": "チーム内の立場"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "구단에서 쌓은 자리"
+            "value": "팀 내 입지"
           }
         }
       }
@@ -31532,19 +31532,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your recent performance and health—not age alone—decide your usage."
+            "value": "Age alone won't cost you your spot. Recent results and health decide your next outing."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "年齢だけではなく、最近のパフォーマンスと健康状態が使用量を決定します。"
+            "value": "年齢だけで居場所は失いません。最近の成績と体の状態が次の登板を決めます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "나이만으로 자리를 빼앗기지 않습니다. 최근 성적과 몸 상태로 다음 등판을 정합니다."
+            "value": "나이만으로 자리를 잃진 않습니다. 최근 성적과 몸 상태가 다음 등판을 정합니다."
           }
         }
       }
@@ -32940,19 +32940,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No games yet. Your first official high-school appearance will begin the log."
+            "value": "No games yet. The log starts with your first official high-school game."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "まだ試合記録はありません。高校公式戦での初登板から記録が始まります。"
+            "value": "まだ試合がありません。高校公式戦の初登板からここに積み上がります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "아직 치른 경기가 없습니다. 첫 고교 공식 경기를 던지면 여기에 쌓입니다."
+            "value": "아직 경기가 없습니다. 첫 고교 공식 경기부터 여기에 쌓입니다."
           }
         }
       }
@@ -33226,19 +33226,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your first appearance starts this record. Strikeouts, walks, and runs come first; deeper metrics such as WHIP and FIP become more reliable with every inning."
+            "value": "Your first outing starts this record. From strikeouts, walks, and runs to WHIP and FIP, it gets sharper the more you pitch."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "初登板から記録が始まります。まずは奪三振・四球・失点を確認しましょう。WHIPやFIPなどの指標は、投球回が増えるほど信頼できる値になります。"
+            "value": "初登板からここに積み上がります。奪三振・四球・失点からWHIP・FIPまで、投げるほど正確になります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "첫 등판을 던지면 여기에 쌓입니다. 탈삼진·볼넷·실점부터 WHIP·FIP 같은 세부 지표까지, 던진 만큼 정확해집니다."
+            "value": "첫 등판부터 여기에 쌓입니다. 탈삼진·볼넷·실점부터 WHIP·FIP까지, 던질수록 정확해집니다."
           }
         }
       }
@@ -33974,19 +33974,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use the next training session to raise an ability you built yourself."
+            "value": "Use the next training to push a built ability one step higher."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次回のトレーニングセッションで、自分で構築した能力を高めてください。"
+            "value": "次の練習で育てた能力をもう一段上げましょう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 훈련으로 직접 키운 능력을 한 단계 더 올려 보세요."
+            "value": "다음 훈련으로 키운 능력을 한 단계 더 올리세요."
           }
         }
       }
@@ -34568,19 +34568,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Turning off haptics removes the release meter's pressure wobble. Sound never stops other apps' music and follows the Ring/Silent switch."
+            "value": "Turning off haptics removes the release meter's pressure wobble. Sound won't stop other apps' music and follows the Ring/Silent switch."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ハプティクスをオフにすると、勝負の緊張によるリリースメーターの揺れがなくなります。サウンドは他のアプリの音楽を止めず、サイレントスイッチに従います。"
+            "value": "ハプティクスをオフにすると緊張によるリリースメーターの揺れがなくなります。サウンドは他のアプリの音楽を止めず、サイレントスイッチに従います。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "진동을 끄면 승부 긴장에 따른 릴리스 미터 흔들림이 사라져요. 소리는 다른 앱 음악을 멈추지 않고 무음 스위치를 따릅니다."
+            "value": "진동을 끄면 긴장에 따른 릴리스 미터 흔들림이 사라집니다. 소리는 다른 앱 음악을 멈추지 않고 무음 스위치를 따릅니다."
           }
         }
       }
@@ -34700,19 +34700,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Turn this on if timing gestures are hard. Every pitch uses a mid release, so you give up the perfect-timing bonus."
+            "value": "Turn on if timing is hard. Every pitch uses a mid release, so there's no perfect-timing bonus."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "タイミング操作が難しければオンに。毎球中央リリースになる代わりに、完璧なタイミングの利点はなくなります。"
+            "value": "タイミングが難しければオンに。毎球中央リリースになる代わりに、完璧なタイミングの利点はありません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타이밍 제스처가 어려우면 켜세요. 늘 중간 릴리스로 던지는 대신, 완벽한 타이밍의 이점은 없어요."
+            "value": "타이밍이 어려우면 켜세요. 늘 중간 릴리스로 던지는 대신, 완벽한 타이밍의 이점은 없습니다."
           }
         }
       }
@@ -35184,19 +35184,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "At 7:30 PM each evening, we'll remind you of this player's next goal. Reminders stop automatically if you don't return for a few days."
+            "value": "A reminder of this player's next goal at 7:30 PM daily. It stops on its own if you don't open the app for a few days."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "毎晩午後 7 時 30 分に、このプレーヤーの次の目標をお知らせします。数日間戻らない場合、リマインダーは自動的に停止します。"
+            "value": "毎晩7時30分に現在の選手の次の目標をお知らせします。数日開かないと自動で止まります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "매일 저녁 7시 30분, 현재 선수의 다음 목표를 알려 드립니다. 며칠 동안 열지 않으면 저절로 멈춥니다."
+            "value": "매일 저녁 7시 30분에 현재 선수의 다음 목표를 알립니다. 며칠 열지 않으면 저절로 멈춥니다."
           }
         }
       }
@@ -36312,7 +36312,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "コーチの信頼を勝ち取るのはさらに難しい。"
+            "value": "監督の信頼を得にくくなります。"
           }
         },
         "ko": {
@@ -38792,19 +38792,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Next: choose recovery work before pushing again."
+            "value": "Next: pick recovery work before pushing again."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次の行動：再び無理をする前に回復練習を選んでください。"
+            "value": "次: また無理をする前に回復練習を選んでください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 행동: 다시 무리하기 전에 회복 훈련을 선택하세요."
+            "value": "다음: 다시 무리하기 전에 회복 훈련을 고르세요."
           }
         }
       }
@@ -38836,19 +38836,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld pitches at pregame fatigue %lld raised arm load by %lld."
+            "value": "%lld pitches at pregame fatigue %lld: arm load up %lld."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld球を投げ、試合前疲労 %lld で腕の負担が %lld 上がりました。"
+            "value": "%lld球・試合前疲労 %lld で腕の負担 %lld 上昇。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld구 투구와 경기 전 피로 %lld로 팔 부담이 %lld 올랐습니다."
+            "value": "%lld구·경기 전 피로 %lld로 팔 부담 %lld 상승."
           }
         }
       }
@@ -39210,19 +39210,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "It stops automatically before dialogue, awakenings, official games, or high fatigue."
+            "value": "Stops on its own before dialogue, awakenings, official games, or high fatigue."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "会話、覚醒、公式戦、または疲労度が高い前に自動的に停止します。"
+            "value": "会話・覚醒・公式戦・高い疲労の前で自動的に止まります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "대화·각성·공식 경기 또는 높은 피로 앞에서 자동으로 멈춥니다."
+            "value": "대화·각성·공식 경기·높은 피로 앞에서 자동으로 멈춥니다."
           }
         }
       }
@@ -40882,19 +40882,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The next node in that branch opens · %lld awakenings left"
+            "value": "Next node in this branch opens · %lld awakenings left"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "選んだ枝の次の節が開きます · 残り覚醒 %lld 回"
+            "value": "選んだ枝の次の節が開く · 残り覚醒 %lld 回"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "찍은 갈래의 다음 가지가 열립니다 · 남은 각성 %lld번"
+            "value": "고른 갈래의 다음 가지가 열림 · 남은 각성 %lld번"
           }
         }
       }
