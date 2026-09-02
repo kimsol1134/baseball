@@ -221,6 +221,17 @@ public enum AppCopyKey {
         challengeEndCloseHint, challengeEndOutcomeDrafted, challengeEndOutcomeUndrafted,
     ]
 
+    public static let challengeLinkBanner = GameCopyKey.localizable("app.challenge-link.banner")
+    public static let challengeLinkApplied = GameCopyKey.localizable("app.challenge-link.applied")
+    public static let challengeLinkInvalid = GameCopyKey.localizable("app.challenge-link.invalid")
+    public static let challengeLinkShareText = GameCopyKey.localizable("app.challenge-link.share-text")
+    public static let challengeLinkShareAction = GameCopyKey.localizable("app.challenge-link.share-action")
+
+    public static let challengeLinkKeys: [GameCopyKey] = [
+        challengeLinkBanner, challengeLinkApplied, challengeLinkInvalid,
+        challengeLinkShareText, challengeLinkShareAction,
+    ]
+
     public static let importantGameOpponentTitle = GameCopyKey.localizable("content.important-game.opponent.title")
     public static let importantGameFinalShowdownTitle = GameCopyKey.localizable("content.important-game.final-showdown.title")
     public static let importantGameFinalShowdownBody = GameCopyKey.localizable("content.important-game.final-showdown.body")
@@ -821,7 +832,7 @@ public enum AppCopyKey {
         proSegmentSeasonFinale, proSegmentPreparation, proActionWeeklyPlan,
         proActionImportantGame, proActionSeasonReview, proActionOffseasonDecision, proActionDefault,
         proWeeklyPlanUntil,
-    ] + communityBuzzKeys + prospectRankingKeys + reminderNudgeKeys + challengeEndKeys + schoolSelectionKeys + chapterHeaderKeys
+    ] + communityBuzzKeys + prospectRankingKeys + reminderNudgeKeys + challengeEndKeys + challengeLinkKeys + schoolSelectionKeys + chapterHeaderKeys
         + chapterReviewKeys + tournamentKeys + chapterGoalKeys
         + trainingKeys + trainingResultKeys + highSchoolSetupKeys + importantGameKeys + awakeningKeys
         + highSchoolConclusionKeys + pitchKeys + proFlowKeys + recordKeys + metaKeys + legacyKeys

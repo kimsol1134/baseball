@@ -65,6 +65,9 @@ struct BaseballApp: App {
     /// 이번 세션이 언제 시작됐는가. 세션 깊이(분·진행)를 재는 데만 쓴다.
     @State private var sessionStartedAt = Date()
     @State private var sessionStartedGames = 0
+    /// 링크로 받은 도전. 시작 화면이 열려 있으면 시드 입력에 넣고, 커리어 진행 중이면 배너만 띄운다.
+    @State private var pendingChallenge: ChallengeLink.Pending?
+    @State private var challengeLinkInvalid = false
 
     /// 세션이 끝날 때 깊이를 남긴다.
     ///
@@ -288,7 +291,9 @@ struct BaseballApp: App {
                     highSchool: highSchool,
                     pro: pro,
                     returnWelcomePlan: returnWelcomePlan,
-                    onDismissReturnWelcome: { returnWelcomePlan = nil }
+                    onDismissReturnWelcome: { returnWelcomePlan = nil },
+                    pendingChallenge: $pendingChallenge,
+                    challengeLinkInvalid: $challengeLinkInvalid
                 )
 
                 if isPresentingLocalizedLaunch {
@@ -406,6 +411,14 @@ struct BaseballApp: App {
                         pro.reloadFromSync()
                     }
                 }
+                .onOpenURL { url in
+                    handleChallengeURL(url)
+                }
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                    if let url = activity.webpageURL {
+                        handleChallengeURL(url)
+                    }
+                }
                 .onChange(of: scenePhase) { previous, phase in
                     if phase == .active {
                         GameAudio.shared.start()
@@ -457,5 +470,24 @@ struct BaseballApp: App {
                     }
                 }
         }
+    }
+
+    private var isHighSchoolTabVisible: Bool { pro.loadState != .ready }
+
+    private func handleChallengeURL(_ url: URL) {
+        let opened = ChallengeLinkSession.handleOpen(
+            url: url,
+            highSchoolNeedsSetup: highSchool.loadState == .needsSetup,
+            highSchoolTabVisible: isHighSchoolTabVisible,
+            existing: pendingChallenge
+        )
+        if let source = opened.source {
+            CareerTelemetry.log(.challengeLinkOpened, [
+                "source": source.rawValue,
+                "valid": opened.valid,
+            ])
+        }
+        pendingChallenge = opened.pending
+        challengeLinkInvalid = opened.invalid
     }
 }

@@ -39,6 +39,8 @@
 | `return_plan_tapped` | 앱 복귀 상단 카드 | 위와 동일 | 카드에서 문구와 일치하는 고교·프로·오늘의 이닝 화면으로 이동한 시점 |
 | `return_plan_dismissed` | 앱 복귀 상단 카드 | 위와 동일 | 카드를 닫은 시점. 반복 노출 피로의 가드레일 |
 | `session_ended` | 앱 백그라운드 전환 | `minutes`, `life_number`, `games`, `important_games_total`, `act_number`, `lives_finished`, `return_eligible`, `return_destination`, `return_reason`, `plan_receipt`, `experiment_id`, `variant`, `development_rules_version` | `games`는 이번 세션에서 실제 완료한 고교·프로·일일 경기 수이고, 고교 회차 누적은 `important_games_total`로 분리. 첫 실제 경기 전에는 `return_eligible=false`, `experiment_id=none`, `variant=ineligible`이며 새 계획을 만들지 않는다 |
+| `challenge_link_opened` | BaseballApp onOpenURL / browsingWeb | `source`(`scheme`/`universal`), `valid` | 시드 도전 링크로 앱이 열린 시점. 원시 시드는 보내지 않는다 |
+| `challenge_link_shared` | 고교 시작 화면 공유 버튼 | `life_number` | 도전 링크를 시스템 공유 시트에 올린 시점 |
 
 야구혼 속성에서 `soul_total`은 이번 선수 능력에 스며들 수 있는 자동 누적, `soul_wallet`은 구매 뒤 남은 지갑, `soul_lifetime_earned`는 프로 보상을 포함한 평생 획득량이다. 프로 보상은 지갑과 평생 획득량만 올리고 자동 누적에는 더하지 않는다.
 

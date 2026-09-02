@@ -6,6 +6,7 @@ import BaseballIOSDomain
 /// 고교 커리어 10단계 화면. 게임 제목("야구 못하면 또 환생함")의 본편이다.
 struct HighSchoolCareerView: View {
     let career: HighSchoolCareerStore
+    @Binding var pendingChallenge: ChallengeLink.Pending?
     /// 지명을 받고 프로로 넘어갈 때 호출된다.
     let onEnterPro: (DraftResultSnapshot, PitcherSnapshot, PlayerIdentitySnapshot) -> Void
     /// 이 회차로 프로에 이미 진출했는가. 은퇴 뒤 돌아왔을 때 다시 들어가지 못하게 한다.
@@ -79,7 +80,10 @@ struct HighSchoolCareerView: View {
                 if career.inheritance.lifeNumber == 1, !openingDismissed {
                     OpeningView { openingDismissed = true }
                 } else {
-                    HighSchoolSetupView(career: career)
+                    HighSchoolSetupView(
+                        career: career,
+                        pendingChallenge: $pendingChallenge
+                    )
                 }
             case .failed(let message):
                 ContentUnavailableView {

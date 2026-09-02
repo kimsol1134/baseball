@@ -61301,6 +61301,61 @@
       "status": "ui_verified"
     },
     {
+      "key": "app.challenge-link.applied",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "도전 모드가 입력되었습니다. 같은 시드로 기록 없는 도전을 엽니다.",
+      "en": "Challenge mode is ready. You'll open the same seed with no inheritance.",
+      "ja": "チャレンジモードが入力されました。同じシードで記録のない挑戦を開きます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "app.challenge-link.banner",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "현재 커리어를 마치고 새 선수로 시작할 때 적용합니다.",
+      "en": "This challenge will apply when you finish the current career and start a new player.",
+      "ja": "今のキャリアを終えて新しい選手を始めるときに適用します。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "app.challenge-link.invalid",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "도전 링크를 읽지 못했습니다. 코드를 확인해 주세요.",
+      "en": "This challenge link could not be read. Check the code and try again.",
+      "ja": "チャレンジリンクを読み取れませんでした。コードを確認してください。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "app.challenge-link.share-action",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "도전 링크 공유",
+      "en": "Share challenge link",
+      "ja": "チャレンジリンクを共有",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "app.challenge-link.share-text",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "같은 시드로 나보다 잘 키워 봐 · 코드 %@",
+      "en": "Raise a player on my seed — and beat me. Code %@",
+      "ja": "同じシードで、私よりうまく育ててみて · コード %@",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "app.tab.high-school",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "고교",

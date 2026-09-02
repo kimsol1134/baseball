@@ -67,6 +67,13 @@ extension HighSchoolSetupView {
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
             } else if let challenge = parsedChallenge {
+                if pendingChallenge?.token == "\(challenge.seed)-\(challenge.lifeNumber)" {
+                    GameCopyText(AppCopyKey.challengeLinkApplied)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("app.challenge-link.applied")
+                }
                 GameCopyText(
                     AppCopyKey.setupSeedChallengeSummary,
                     arguments: [.integer(challenge.lifeNumber)]
@@ -82,6 +89,42 @@ extension HighSchoolSetupView {
                     .font(.caption2)
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let share = shareableChallenge,
+               let copy = ChallengeLink.shareText(seed: share.seed, life: share.life) {
+                let text = copyResolver.resolve(
+                    AppCopyKey.challengeLinkShareText,
+                    arguments: [.userText(copy.token)]
+                )
+                let items = ChallengeLinkSession.shareItems(
+                    seed: share.seed,
+                    life: share.life,
+                    host: ChallengeLink.host(from: Bundle.main.infoDictionary),
+                    resolvedText: text
+                )
+                ActivityShareButton(
+                    items: items,
+                    subject: copyResolver.resolve(AppCopyKey.challengeLinkShareAction),
+                    onTapped: {
+                        CareerTelemetry.log(.challengeLinkShared, [
+                            "life_number": share.life,
+                        ])
+                    },
+                    onFinished: { _ in }
+                ) {
+                    Label {
+                        GameCopyText(AppCopyKey.challengeLinkShareAction)
+                    } icon: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(BaseballTheme.action)
+                .disabled(items.isEmpty)
+                .accessibilityIdentifier("hs.setup.shareChallengeLink")
             }
 
             if isRebirth, parsedChallenge == nil {

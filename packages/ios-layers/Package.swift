@@ -30,6 +30,12 @@ let package = Package(
             ]
         ),
         .testTarget(
+            name: "BaseballIOSDomainTests",
+            dependencies: [
+                "BaseballIOSDomain"
+            ]
+        ),
+        .testTarget(
             name: "BaseballIOSPersistenceTests",
             dependencies: [
                 "BaseballIOSPersistence",

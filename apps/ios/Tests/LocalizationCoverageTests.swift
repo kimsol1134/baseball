@@ -1460,6 +1460,38 @@ final class LocalizationCoverageTests: XCTestCase {
         )
     }
 
+    func testChallengeLinkCatalogHasKoreanEnglishJapaneseParity() throws {
+        let expectedKorean: [GameCopyKey: String] = [
+            AppCopyKey.challengeLinkBanner: "현재 커리어를 마치고 새 선수로 시작할 때 적용합니다.",
+            AppCopyKey.challengeLinkApplied: "도전 모드가 입력되었습니다. 같은 시드로 기록 없는 도전을 엽니다.",
+            AppCopyKey.challengeLinkInvalid: "도전 링크를 읽지 못했습니다. 코드를 확인해 주세요.",
+            AppCopyKey.challengeLinkShareText: "같은 시드로 나보다 잘 키워 봐 · 코드 %@",
+            AppCopyKey.challengeLinkShareAction: "도전 링크 공유",
+        ]
+        XCTAssertEqual(Set(expectedKorean.keys), Set(AppCopyKey.challengeLinkKeys))
+        let entries = try localizableEntries()
+        let japanese = try localizableJapanese()
+        for key in AppCopyKey.challengeLinkKeys {
+            let entry = try XCTUnwrap(entries[key.rawValue], key.rawValue)
+            XCTAssertEqual(entry.korean, expectedKorean[key], key.rawValue)
+            XCTAssertFalse(entry.english.isEmpty, key.rawValue)
+            assertNoHangul(entry.english, key.rawValue)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: entry.korean),
+                GameCopyResolver.placeholderKinds(in: entry.english),
+                key.rawValue
+            )
+            let ja = try XCTUnwrap(japanese[key.rawValue], key.rawValue)
+            XCTAssertFalse(ja.isEmpty, key.rawValue)
+            assertNoHangul(ja, key.rawValue)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: entry.korean),
+                GameCopyResolver.placeholderKinds(in: ja),
+                key.rawValue
+            )
+        }
+    }
+
     func testBoundedCardsMissingEnglishCopyUseReleaseSafeNeutralFallbacks() throws {
         let allEntries = try allLocalizationEntries()
         let koreanCatalog = Dictionary(uniqueKeysWithValues: allEntries.map { ($0.key, $0.value.korean) })
