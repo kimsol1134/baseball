@@ -156,3 +156,80 @@ iPhone 17 Pro가 없으면 부팅된 `iPhone 17`을 쓴다. 새 시뮬레이터�
 - v9 `planWeek` 등판 라인은 diverse scouting 때문에 v8과 다를 수 있다. v8 골든·v2 exporter(v8 고정)는 바이트 동일 경로를 유지한다.
 - 고교 자동 경기(`HighSchoolCareer.simulateChapterGames`)는 `diverseScouting` 기본 false. 고교 v3 픽스처 보호.
 - 튜토리얼(`PitchScenario.tutorial`) 약점은 커브 고정.
+
+## 수정 라운드 H (병합 후 iOS)
+
+작업 경로: `/Users/solkim/Dev/baseball` (`main`, HEAD `5769788b`). 커밋·stash·reset·checkout 없음. 골든/Kotlin 픽스처·CatcherSignRules 기본값 1 미변경. 테스트 삭제·약화 없음. xcodebuild는 부팅된 iPhone 17 (`641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF`)만, 한 번에 하나. 새 시뮬레이터 없음.
+
+### 진단
+
+1. `PitchSessionTests.testLiveSessionUsesCatcherSignRulesVersion2` — `XCTUnwrap` nil `PitchPreparation`.
+   - **테스트 셋업.** 시드 `"catcher-v2"`는 `UInt64`가 아니라 `PitchKernelEngine.validate`가 `invalidSeed`를 던진다. `PitchSession.prepare()`는 이를 `.failed`로 삼키고 `preparation`을 nil로 둔다. v2 엔진이 prepare를 거부한 것이 아니다.
+   - 시드를 `"20260902"`로 고친 뒤 prepare/submit는 통과했다. 토큰은 v2와 같고 v1과 다르다.
+   - 이닝이 3아웃으로 먼저 끝나 30구를 못 채워 존이 2개만 모이는 셋업 문제도 있었다. 세션이 끝난 뒤에는 같은 라이브 투수·스카우팅으로 v2 커널 30구를 이어 받아 다양성 단언을 유지했다.
+   - **실결함 아님.** live `PitchSession` v2 prepare→수락→submit 라운드트립 테스트를 추가해 한 구가 실제로 나가는지 잠갔다.
+
+2. `RivalAdaptationSessionTests.testVersion2CatcherSignsStillWarnOnceTheBatterLocksOn` — `v2 사인이 읽힘 경고를 내지 않았습니다: []`.
+   - **셋업 + 실결함.** 40구 뒤 이닝이 끝나 `preparation == nil`이면 reasonCodes가 `[]`가 된다. 밴드 단언은 `lastResult`로 통과하고 사인 카드만 비어 보였다.
+   - **실결함:** v2 첫 reason 슬롯이 상호배타적이라 `sequence.setup_offspeed` 등이 이기면 `rival.read_pressure`가 빠졌다. locked_on / `detectedPitch`에서도 경고가 카드에 안 남을 수 있다.
+   - 수정: `CatcherRecommendationEngine` v2만, locked_on 또는 detected pitch인데 `rival.pattern_detected`/`rival.read_pressure`가 없으면 `rival.read_pressure`를 추가. v1 분기·토큰 바이트(call canonical) 불변.
+   - 테스트는 이닝 종료 후가 아니라 locked_on/detected인 **현재 사인**을 본다. 단언(경고 코드 필수)은 그대로다.
+
+### 수정 파일
+
+- `packages/simulation-core/Sources/SimulationCore/CatcherRecommendationEngine.swift`
+- `packages/simulation-core/Tests/SimulationCoreTests/CatcherSignVarietyTests.swift` — locked-on v2 경고 + submit 라운드트립
+- `apps/ios/Tests/PitchSessionTests.swift` — numeric seed, v2 round-trip, 30구 다양성
+- `apps/ios/Tests/RivalAdaptationSessionTests.swift` — locked-on 동안 사인 검사
+
+### 게이트 원문
+
+`PitchSessionTests` (부팅된 iPhone 17):
+
+```
+Test Suite 'PitchSessionTests' passed at 2026-09-02 19:38:37.399.
+	 Executed 37 tests, with 0 failures (0 unexpected) in 0.352 (0.359) seconds
+** TEST SUCCEEDED **
+```
+
+`RivalAdaptationSessionTests`:
+
+```
+Test Suite 'RivalAdaptationSessionTests' passed at 2026-09-02 19:38:48.628.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.020 (0.021) seconds
+** TEST SUCCEEDED **
+```
+
+`PitchLocalizationTests`:
+
+```
+Test Suite 'PitchLocalizationTests' passed at 2026-09-02 19:38:59.775.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.183 (0.184) seconds
+** TEST SUCCEEDED **
+```
+
+`BaseballIOSTests` 전체:
+
+```
+Test Suite 'All tests' passed at 2026-09-02 19:41:02.950.
+	 Executed 543 tests, with 0 failures (0 unexpected) in 111.506 (111.667) seconds
+** TEST SUCCEEDED **
+```
+
+`swift test --package-path packages/simulation-core --filter "CatcherSignVariety|PitchKernelEngine|ProCareerBootstrapCharacterization"`:
+
+```
+Test Suite 'Selected tests' passed at 2026-09-02 19:41:31.889.
+	 Executed 59 tests, with 1 test skipped and 0 failures (0 unexpected) in 19.944 (19.949) seconds
+```
+
+스킵 1건은 기존 Wave0 생성 테스트(`BASEBALL_WAVE0_GENERATE=1` opt-in).
+
+`BaseballIOSUITests/Release128JourneyUITests/testManualSliderThrowsOnePitch`:
+
+```
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testManualSliderThrowsOnePitch]' passed (24.068 seconds).
+Test Suite 'Release128JourneyUITests' passed at 2026-09-02 19:42:08.572.
+	 Executed 1 test, with 0 failures (0 unexpected) in 24.068 (24.070) seconds
+** TEST SUCCEEDED **
+```

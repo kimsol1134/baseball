@@ -1056,6 +1056,26 @@ final class PitchSessionTests: XCTestCase {
         )
     }
 
+    func testLiveSessionRoundTripsPrepareAcceptAndSubmitUnderVersion2() throws {
+        let session = PitchSession(state: snapshot(), seed: "20260902")
+        session.start()
+        if case .failed(let message) = session.stage {
+            XCTFail("v2 prepare failed: \(message)")
+            return
+        }
+        let preparation = try XCTUnwrap(session.preparation)
+        XCTAssertFalse(preparation.preparationToken.isEmpty)
+        session.acceptCatcherRecommendation()
+        XCTAssertEqual(session.selectedPitchType, preparation.primaryRecommendation.call.pitchType)
+        XCTAssertEqual(session.selectedZone, preparation.primaryRecommendation.call.zone)
+        session.throwPitch(delivery: .neutral)
+        XCTAssertNotNil(session.lastResult)
+        XCTAssertEqual(session.pitches, 1)
+        if case .failed(let message) = session.stage {
+            XCTFail("v2 submit failed: \(message)")
+        }
+    }
+
     func testLiveSessionUsesCatcherSignRulesVersion2() throws {
         let v1 = PitchKernelEngine()
         let v2 = PitchKernelEngine(
@@ -1066,9 +1086,13 @@ final class PitchSessionTests: XCTestCase {
         let pitcher = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "precision_commander" }?.pitcher)
         let session = PitchSession(
             state: snapshot(pitcher: pitcher),
-            seed: "catcher-v2"
+            seed: "20260902"
         )
         session.start()
+        if case .failed(let message) = session.stage {
+            XCTFail("v2 prepare failed: \(message)")
+            return
+        }
         let preparation = try XCTUnwrap(session.preparation)
         let params = PreparePitchParams(
             seed: session.seed,
@@ -1088,7 +1112,9 @@ final class PitchSessionTests: XCTestCase {
         var zones = Set<PitchZone>()
         var types = Set<PitchType>()
         var thrown = 0
-        while thrown < 30 {
+        var steps = 0
+        while thrown < 30, steps < 80 {
+            steps += 1
             switch session.stage {
             case .ready:
                 session.acceptCatcherRecommendation()
@@ -1097,14 +1123,112 @@ final class PitchSessionTests: XCTestCase {
                     types.insert(call.pitchType)
                 }
                 session.throwPitch(delivery: .neutral)
+                if case .failed(let message) = session.stage {
+                    XCTFail("v2 submit failed after \(thrown) pitches: \(message)")
+                    return
+                }
                 thrown += 1
             case .betweenBatters:
                 session.advanceToNextBatter()
-            case .finished, .failed:
-                thrown = 30
+            case .failed(let message):
+                XCTFail("v2 session failed after \(thrown) pitches: \(message)")
+                return
+            case .finished:
+                steps = 80
             }
         }
-        XCTAssertGreaterThanOrEqual(zones.count, 3, "session zones: \(zones)")
+        XCTAssertGreaterThan(thrown, 0)
+
+        // PitchSession is one inning, so 3 outs can cut the sample short of 30.
+        // Keep accepting v2 signs on the same live pitcher/scouting until 30.
+        var seed = "20260902"
+        var rivalMemory: RivalMemorySnapshot?
+        var gameLog = GameLogSnapshot(gameID: "catcher-v2-seq", revision: 0, totalPitches: 0, entries: [])
+        var gameState = GameStateSnapshot(
+            defense: session.gameState.defense,
+            park: session.gameState.park,
+            runners: .empty,
+            runsAllowed: 0,
+            inningState: InningStateSnapshot(inning: 1, half: .top, outs: 0)
+        )
+        var paIndex = 0
+        while thrown < 30 {
+            paIndex += 1
+            gameState = GameStateSnapshot(
+                defense: gameState.defense,
+                park: gameState.park,
+                runners: .empty,
+                runsAllowed: gameState.runsAllowed,
+                inningState: InningStateSnapshot(inning: 1, half: .top, outs: 0)
+            )
+            var context = PlateAppearanceContext(
+                plateAppearanceID: "catcher-v2-pa-\(paIndex)",
+                revision: 0,
+                inning: 1,
+                outs: 0,
+                balls: 0,
+                strikes: 0,
+                pitchNumber: 1,
+                scoreDifferential: 0,
+                leverage: 500,
+                fatigue: 12
+            )
+            var preparation = try v2.preparePitch(
+                PreparePitchParams(
+                    seed: seed,
+                    pitcher: session.scenario.pitcher,
+                    batter: session.scenario.lineup[0],
+                    scouting: session.scouting,
+                    context: context,
+                    rivalMemory: rivalMemory,
+                    gameState: gameState,
+                    gameLog: gameLog
+                )
+            )
+            while thrown < 30 {
+                let call = preparation.primaryRecommendation.call
+                zones.insert(call.zone)
+                types.insert(call.pitchType)
+                let result = try v2.submitPitch(
+                    SubmitPitchParams(
+                        seed: seed,
+                        pitcher: session.scenario.pitcher,
+                        batter: session.scenario.lineup[0],
+                        scouting: session.scouting,
+                        context: context,
+                        preparationToken: preparation.preparationToken,
+                        call: call,
+                        rivalMemory: rivalMemory,
+                        gameState: gameState,
+                        gameLog: gameLog
+                    )
+                )
+                thrown += 1
+                rivalMemory = result.rivalMemory
+                gameLog = result.gameLog
+                gameState = result.gameState
+                seed = result.nextSeed
+                if result.snapshot.ended { break }
+                context = PlateAppearanceContext(
+                    plateAppearanceID: context.plateAppearanceID,
+                    revision: result.revision,
+                    inning: 1,
+                    outs: 0,
+                    balls: result.snapshot.balls,
+                    strikes: result.snapshot.strikes,
+                    pitchNumber: context.pitchNumber + 1,
+                    scoreDifferential: 0,
+                    leverage: 500,
+                    fatigue: result.snapshot.fatigueAfterPitch
+                )
+                guard let next = result.nextPreparation else { break }
+                preparation = next
+            }
+            if UInt64(seed) == nil {
+                seed = String(2_026_090_200 + thrown + paIndex)
+            }
+        }
+        XCTAssertGreaterThanOrEqual(zones.count, 3, "session zones: \(zones) pitches: \(thrown)")
         XCTAssertGreaterThanOrEqual(types.count, 2, "session pitches: \(types)")
     }
 }

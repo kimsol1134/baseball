@@ -99,6 +99,16 @@ public struct CatcherRecommendationEngine: Sendable {
                 ? "scouting.pitch_weakness"
                 : "arsenal.best_available"
         ]
+        // v2: locked-on / detected pitch still warn even if sequencing won the first slot.
+        if rules.usesVariety {
+            let lockedOn = adaptation?.band == .lockedOn
+            let detected = adaptation?.detectedPitch != nil
+            if (lockedOn || detected),
+               !reasonCodes.contains("rival.pattern_detected"),
+               !reasonCodes.contains("rival.read_pressure") {
+                reasonCodes.append("rival.read_pressure")
+            }
+        }
         if zonePick.chase {
             reasonCodes.append("situation.chase_zone")
         } else if zonePick.changedEyeLevel {

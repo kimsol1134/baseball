@@ -43,6 +43,25 @@ final class CatcherSignVarietyTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(v2.pitches.count, 3, "v2 pitches: \(v2.pitches)")
     }
 
+    func testVersion2LockedOnRecommendationStillEmitsReadWarning() throws {
+        let v2 = liveEngine()
+        let v1 = PitchKernelEngine()
+        let locked = lockedOnParams(seed: "20260904")
+        let v2Prepared = try v2.preparePitch(locked)
+        XCTAssertEqual(v2Prepared.rivalAdaptation.band, .lockedOn)
+        XCTAssertNotNil(v2Prepared.rivalAdaptation.detectedPitch)
+        let v2Codes = v2Prepared.primaryRecommendation.reasonCodes
+        XCTAssertTrue(
+            v2Codes.contains("rival.pattern_detected") || v2Codes.contains("rival.read_pressure"),
+            "v2 locked-on codes: \(v2Codes)"
+        )
+        let submitted = try v2.submitPitch(makeSubmitParams(preparation: v2Prepared, params: locked))
+        XCTAssertFalse(submitted.events.isEmpty)
+
+        let v1Prepared = try v1.preparePitch(locked)
+        XCTAssertEqual(v1Prepared.rivalAdaptation.band, .lockedOn)
+    }
+
     func testDiverseScoutingDefaultMatchesOmittingTheFlag() {
         let pitcher = PitcherPresetCatalog.all[0].pitcher
         let seed: UInt64 = 4_204_204
@@ -145,6 +164,41 @@ final class CatcherSignVarietyTests: XCTestCase {
                 leverage: 600,
                 fatigue: 12
             )
+        )
+    }
+
+    private func lockedOnParams(seed: String) -> PreparePitchParams {
+        let base = makePrepareParams(seed: seed)
+        let memoryEngine = RivalMemoryEngine()
+        var memory: RivalMemorySnapshot? = memoryEngine.benchMemory(
+            pitcher: base.pitcher,
+            benchID: "catcher-variety-lock"
+        )
+        for index in 0..<24 {
+            memory = memoryEngine.record(
+                memory,
+                pitcher: base.pitcher,
+                batter: base.batter,
+                context: base.context,
+                call: PitchCall(
+                    pitchType: .fourSeam,
+                    zone: PitchZone(row: 1, column: 0),
+                    zoneIntent: .strike,
+                    intensity: .normal
+                ),
+                outcome: .calledStrike,
+                plateAppearanceEnded: index % 5 == 4
+            )
+        }
+        return PreparePitchParams(
+            seed: base.seed,
+            pitcher: base.pitcher,
+            batter: base.batter,
+            scouting: base.scouting,
+            context: base.context,
+            rivalMemory: memory,
+            gameState: base.gameState,
+            gameLog: base.gameLog
         )
     }
 

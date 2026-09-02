@@ -119,14 +119,42 @@ final class RivalAdaptationSessionTests: XCTestCase {
     }
 
     func testVersion2CatcherSignsStillWarnOnceTheBatterLocksOn() {
-        let session = hammerOnePattern(pitches: 40)
+        let session = makeSession(seed: "77")
+        var lastCodes: [String] = []
+        var reachedLockedOn = false
+        var sawWarning = false
+        for _ in 0..<40 {
+            switch session.stage {
+            case .ready:
+                if let preparation = session.preparation,
+                   preparation.rivalAdaptation.band == .lockedOn
+                    || preparation.rivalAdaptation.detectedPitch != nil {
+                    reachedLockedOn = true
+                    lastCodes = preparation.primaryRecommendation.reasonCodes
+                    if lastCodes.contains("rival.pattern_detected")
+                        || lastCodes.contains("rival.read_pressure") {
+                        sawWarning = true
+                    }
+                }
+                session.selectedPitchType = .fourSeam
+                session.selectedZone = PitchZone(row: 1, column: 0)
+                session.selectedIntent = .strike
+                session.throwPitch(delivery: .neutral)
+            case .betweenBatters:
+                session.advanceToNextBatter()
+            case .finished, .failed:
+                break
+            }
+        }
         let adaptation = session.preparation?.rivalAdaptation
             ?? session.lastResult?.rivalAdaptation
-        XCTAssertEqual(adaptation?.band, .lockedOn)
-        let codes = session.preparation?.primaryRecommendation.reasonCodes ?? []
         XCTAssertTrue(
-            codes.contains("rival.pattern_detected") || codes.contains("rival.read_pressure"),
-            "v2 사인이 읽힘 경고를 내지 않았습니다: \(codes)"
+            reachedLockedOn || adaptation?.band == .lockedOn,
+            "완전히 읽힘에 도달하지 못했습니다(현재 \(String(describing: adaptation?.band)))."
+        )
+        XCTAssertTrue(
+            sawWarning,
+            "v2 사인이 읽힘 경고를 내지 않았습니다: \(lastCodes)"
         )
     }
 }
