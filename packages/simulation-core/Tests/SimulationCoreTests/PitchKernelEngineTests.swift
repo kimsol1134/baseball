@@ -1509,6 +1509,132 @@ final class PitchKernelEngineTests: XCTestCase {
         XCTAssertGreaterThan(artistWhiffs, inningsEaterWhiffs)
     }
 
+    func testVersion2AcceptedRecommendationHitRateStaysNearVersion1AndSpreadsCalls() throws {
+        let pitcher = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "precision_commander" }?.pitcher)
+        let v1 = try acceptedRecommendationSample(engine: engine, pitcher: pitcher, plateAppearances: 200)
+        let v2Engine = PitchKernelEngine(
+            recommendationEngine: CatcherRecommendationEngine(
+                rules: CatcherSignRules(version: CatcherSignRules.livePlayVersion)
+            )
+        )
+        let v2 = try acceptedRecommendationSample(engine: v2Engine, pitcher: pitcher, plateAppearances: 200)
+        let v1Rate = Double(v1.hits) / Double(v1.plateAppearances)
+        let v2Rate = Double(v2.hits) / Double(v2.plateAppearances)
+        XCTAssertEqual(
+            v2Rate,
+            v1Rate,
+            accuracy: 0.04,
+            "v1 hit rate \(v1Rate) v2 hit rate \(v2Rate) hits \(v1.hits)/\(v2.hits)"
+        )
+        XCTAssertGreaterThanOrEqual(v2.zones.count, 5, "v2 zones: \(v2.zones)")
+        XCTAssertGreaterThanOrEqual(v2.pitches.count, 3, "v2 pitches: \(v2.pitches)")
+    }
+
+    private struct AcceptedSample {
+        var hits = 0
+        var plateAppearances = 0
+        var zones = Set<PitchZone>()
+        var pitches = Set<PitchType>()
+    }
+
+    private func acceptedRecommendationSample(
+        engine: PitchKernelEngine,
+        pitcher: PitcherSnapshot,
+        plateAppearances: Int
+    ) throws -> AcceptedSample {
+        let scouting = BatterScoutingSnapshot(
+            hotZone: PitchZone(row: 1, column: 1),
+            coldZone: PitchZone(row: 2, column: 0),
+            pitchStrength: .fourSeam,
+            pitchWeakness: .slider,
+            chaseTendency: 48
+        )
+        var sample = AcceptedSample()
+        var seed = "101"
+        for paIndex in 1...plateAppearances {
+            let batter = BatterSnapshot(
+                id: "batter-\(paIndex)",
+                name: "상대",
+                contact: 56,
+                discipline: 52,
+                power: 58
+            )
+            var context = PlateAppearanceContext(
+                plateAppearanceID: "pa-\(paIndex)",
+                revision: 0,
+                inning: 1,
+                outs: 0,
+                balls: 0,
+                strikes: 0,
+                pitchNumber: 1,
+                scoreDifferential: 0,
+                leverage: 500,
+                fatigue: 12
+            )
+            var rivalMemory: RivalMemorySnapshot?
+            var gameState = gameState(defense: 50, hitFactor: 1_000, homeRunFactor: 1_000)
+            var gameLog = GameLogSnapshot(gameID: "stat-\(paIndex)", revision: 0, totalPitches: 0, entries: [])
+            var preparation = try engine.preparePitch(
+                PreparePitchParams(
+                    seed: seed,
+                    pitcher: pitcher,
+                    batter: batter,
+                    scouting: scouting,
+                    context: context,
+                    rivalMemory: rivalMemory,
+                    gameState: gameState,
+                    gameLog: gameLog
+                )
+            )
+            while true {
+                sample.zones.insert(preparation.primaryRecommendation.call.zone)
+                sample.pitches.insert(preparation.primaryRecommendation.call.pitchType)
+                let result = try engine.submitPitch(
+                    SubmitPitchParams(
+                        seed: seed,
+                        pitcher: pitcher,
+                        batter: batter,
+                        scouting: scouting,
+                        context: context,
+                        preparationToken: preparation.preparationToken,
+                        call: preparation.primaryRecommendation.call,
+                        rivalMemory: rivalMemory,
+                        gameState: gameState,
+                        gameLog: gameLog
+                    )
+                )
+                rivalMemory = result.rivalMemory
+                gameState = result.gameState
+                gameLog = result.gameLog
+                if result.snapshot.ended {
+                    if result.snapshot.result == .hit { sample.hits += 1 }
+                    sample.plateAppearances += 1
+                    seed = result.nextSeed
+                    break
+                }
+                seed = result.nextSeed
+                context = PlateAppearanceContext(
+                    plateAppearanceID: context.plateAppearanceID,
+                    revision: result.revision,
+                    inning: result.gameState.inningState?.inning ?? context.inning,
+                    outs: result.gameState.inningState?.outs ?? context.outs,
+                    balls: result.snapshot.balls,
+                    strikes: result.snapshot.strikes,
+                    pitchNumber: context.pitchNumber + 1,
+                    scoreDifferential: context.scoreDifferential,
+                    leverage: context.leverage,
+                    fatigue: result.snapshot.fatigueAfterPitch
+                )
+                guard let next = result.nextPreparation else {
+                    sample.plateAppearances += 1
+                    break
+                }
+                preparation = next
+            }
+        }
+        return sample
+    }
+
     private func submitPresetPitch(
         seed: Int,
         pitcher: PitcherSnapshot,

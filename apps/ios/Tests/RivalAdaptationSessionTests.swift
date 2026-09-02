@@ -117,4 +117,16 @@ final class RivalAdaptationSessionTests: XCTestCase {
             ?? hammerOnePattern(pitches: 40).lastResult?.rivalAdaptation.level ?? 0
         XCTAssertLessThan(mixed, repeated, "섞어 던진 쪽이 더 읽혔습니다 — 위계가 뒤집혔습니다.")
     }
+
+    func testVersion2CatcherSignsStillWarnOnceTheBatterLocksOn() {
+        let session = hammerOnePattern(pitches: 40)
+        let adaptation = session.preparation?.rivalAdaptation
+            ?? session.lastResult?.rivalAdaptation
+        XCTAssertEqual(adaptation?.band, .lockedOn)
+        let codes = session.preparation?.primaryRecommendation.reasonCodes ?? []
+        XCTAssertTrue(
+            codes.contains("rival.pattern_detected") || codes.contains("rival.read_pressure"),
+            "v2 사인이 읽힘 경고를 내지 않았습니다: \(codes)"
+        )
+    }
 }

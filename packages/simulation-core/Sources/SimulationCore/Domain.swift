@@ -1,6 +1,6 @@
 import Foundation
 
-public enum PitchType: String, Codable, CaseIterable, Sendable {
+public enum PitchType: String, Codable, CaseIterable, Hashable, Sendable {
     case fourSeam = "four_seam"
     case slider
     case curveball
@@ -79,7 +79,7 @@ public struct PitchProfileSnapshot: Codable, Equatable, Sendable {
     }
 }
 
-public struct PitchZone: Codable, Equatable, Sendable {
+public struct PitchZone: Codable, Equatable, Hashable, Sendable {
     public let row: Int
     public let column: Int
 

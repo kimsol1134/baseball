@@ -89,16 +89,19 @@ enum ProRivalBatterStats {
 
     /// 아키타입에서 스카우팅 리포트의 진짜 값을 파생한다. 화면에 보이는 것은 코어가 이 값을
     /// 신뢰도만큼 흐린 추정치이므로(ScoutingEstimate), 여기 값이 곧 정답이 되지는 않는다.
-    static func scouting(for rival: ProRivalBatter?) -> BatterScoutingSnapshot {
+    static func scouting(for rival: ProRivalBatter?, season: Int = 1) -> BatterScoutingSnapshot {
         let archetype = rival?.archetype ?? ""
         let powerHitter = ["거포", "홈런", "파워"].contains { archetype.contains($0) }
-        let contactHitter = ["컨택", "교타", "정확", "무결점"].contains { archetype.contains($0) }
         let patient = ["선구안", "출루"].contains { archetype.contains($0) }
+        let profile = BatterScoutingProfileRules.profile(
+            archetype: BatterScoutingProfileRules.archetype(from: archetype),
+            seedToken: "\(rival?.id ?? "pro-opponent-cleanup")|\(season)"
+        )
         return BatterScoutingSnapshot(
-            hotZone: powerHitter ? PitchZone(row: 1, column: 1) : PitchZone(row: 1, column: 0),
-            coldZone: powerHitter ? PitchZone(row: 2, column: 2) : PitchZone(row: 0, column: 2),
-            pitchStrength: contactHitter ? .slider : .fourSeam,
-            pitchWeakness: powerHitter ? .changeup : .curveball,
+            hotZone: profile.hotZone,
+            coldZone: profile.coldZone,
+            pitchStrength: profile.pitchStrength,
+            pitchWeakness: profile.pitchWeakness,
             chaseTendency: patient ? 32 : (powerHitter ? 58 : 47),
             // 프로 중요 경기는 처음 만나는 상대다. 관측이 쌓이면서 확신이 올라가는 편이
             // 정답을 그냥 알려 주는 것보다 승부를 만든다(ScoutingEstimate).

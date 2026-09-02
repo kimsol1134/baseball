@@ -133,7 +133,7 @@ struct PitchScenario {
             lineup: ProRivalBatterStats.lineup(rival: state.currentRival, teamID: state.team.id)
                 .map { DifficultyScale.scaled($0, by: offset) },
             scouting: scoutingWithCatcherBond(
-                ProRivalBatterStats.scouting(for: state.currentRival),
+                ProRivalBatterStats.scouting(for: state.currentRival, season: state.season),
                 catcherTrust: catcherTrust
             ),
             catcherTrust: catcherTrust,

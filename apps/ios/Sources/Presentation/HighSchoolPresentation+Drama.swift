@@ -64,18 +64,21 @@ extension HighSchoolPresentation {
 
     /// 라이벌 스카우팅. 정보 명료도가 낮은 회차일수록 처음의 확신이 낮다.
     static func scouting(rival: RivalSnapshot, clarity: DifficultyLevel) -> BatterScoutingSnapshot {
-        let powerHitter = rival.power >= 55
         let baseline: Int
         switch clarity {
         case .relaxed: baseline = 100
         case .standard: baseline = 45
         case .challenging: baseline = 22
         }
+        let profile = BatterScoutingProfileRules.profile(
+            archetype: BatterScoutingProfileRules.archetype(from: rival.archetype),
+            seedToken: rival.id
+        )
         return BatterScoutingSnapshot(
-            hotZone: powerHitter ? PitchZone(row: 1, column: 1) : PitchZone(row: 1, column: 0),
-            coldZone: powerHitter ? PitchZone(row: 2, column: 2) : PitchZone(row: 0, column: 2),
-            pitchStrength: rival.contact >= 55 ? .slider : .fourSeam,
-            pitchWeakness: powerHitter ? .changeup : .curveball,
+            hotZone: profile.hotZone,
+            coldZone: profile.coldZone,
+            pitchStrength: profile.pitchStrength,
+            pitchWeakness: profile.pitchWeakness,
             chaseTendency: min(80, max(20, 50 - (rival.discipline - 50))),
             reliability: baseline
         )

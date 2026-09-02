@@ -1055,4 +1055,56 @@ final class PitchSessionTests: XCTestCase {
             800
         )
     }
+
+    func testLiveSessionUsesCatcherSignRulesVersion2() throws {
+        let v1 = PitchKernelEngine()
+        let v2 = PitchKernelEngine(
+            recommendationEngine: CatcherRecommendationEngine(
+                rules: CatcherSignRules(version: CatcherSignRules.livePlayVersion)
+            )
+        )
+        let pitcher = try XCTUnwrap(PitcherPresetCatalog.all.first { $0.id == "precision_commander" }?.pitcher)
+        let session = PitchSession(
+            state: snapshot(pitcher: pitcher),
+            seed: "catcher-v2"
+        )
+        session.start()
+        let preparation = try XCTUnwrap(session.preparation)
+        let params = PreparePitchParams(
+            seed: session.seed,
+            pitcher: session.scenario.pitcher,
+            batter: session.batter,
+            scouting: session.scouting,
+            context: session.context,
+            rivalMemory: session.rivalMemory,
+            gameState: session.gameState,
+            gameLog: session.gameLog
+        )
+        let v2Prepared = try v2.preparePitch(params)
+        let v1Prepared = try v1.preparePitch(params)
+        XCTAssertEqual(preparation.preparationToken, v2Prepared.preparationToken)
+        XCTAssertNotEqual(preparation.preparationToken, v1Prepared.preparationToken)
+
+        var zones = Set<PitchZone>()
+        var types = Set<PitchType>()
+        var thrown = 0
+        while thrown < 30 {
+            switch session.stage {
+            case .ready:
+                session.acceptCatcherRecommendation()
+                if let call = session.preparation?.primaryRecommendation.call {
+                    zones.insert(call.zone)
+                    types.insert(call.pitchType)
+                }
+                session.throwPitch(delivery: .neutral)
+                thrown += 1
+            case .betweenBatters:
+                session.advanceToNextBatter()
+            case .finished, .failed:
+                thrown = 30
+            }
+        }
+        XCTAssertGreaterThanOrEqual(zones.count, 3, "session zones: \(zones)")
+        XCTAssertGreaterThanOrEqual(types.count, 2, "session pitches: \(types)")
+    }
 }

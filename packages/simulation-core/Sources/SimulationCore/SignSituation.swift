@@ -55,6 +55,37 @@ struct SignSituation {
         }
     }
 
+    /// 카운트가 요구하는 의도 존. 유인구면 콜드존을 더 빼고, 스트라이크면 한복판 쪽으로 당긴다.
+    func intentZone(from coldZone: PitchZone, protectZone: Bool, twoStrikes: Bool) -> PitchZone {
+        switch zoneIntent(protectZone: protectZone, twoStrikes: twoStrikes) {
+        case .strike:
+            if count == .mustThrowStrike {
+                return PitchZone(row: 1, column: 1)
+            }
+            return PitchZone(row: pullInward(coldZone.row), column: pullInward(coldZone.column))
+        case .edge:
+            return coldZone
+        case .chase:
+            if coldZone.row == 2 {
+                return PitchZone(row: 2, column: coldZone.column == 2 ? 0 : 2)
+            }
+            return PitchZone(row: min(2, coldZone.row + 1), column: coldZone.column)
+        }
+    }
+
+    /// 직전 구의 대각 반대. 한복판은 대칭점이 자기 자신이라 높은 바깥쪽으로 민다.
+    static func diagonalOpposite(of zone: PitchZone) -> PitchZone {
+        let mirrored = PitchZone(row: 2 - zone.row, column: 2 - zone.column)
+        if mirrored == zone {
+            return PitchZone(row: 0, column: 2)
+        }
+        return mirrored
+    }
+
+    func diagonalOpposite(of zone: PitchZone) -> PitchZone {
+        Self.diagonalOpposite(of: zone)
+    }
+
     /// 약점 코스를 상황에 맞게 민다. `coldZone`이 기준점이라 스카우팅의 가치는 유지된다.
     ///
     /// 존은 3×3이고 row 0이 높은 쪽, row 2가 낮은 쪽이다.

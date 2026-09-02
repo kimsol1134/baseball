@@ -130,7 +130,9 @@ final class PitchLocalizationTests: XCTestCase {
             intensity: .normal
         )
         let reasonCodes = [
-            "rival.pattern_detected", "sequence.avoid_repeat", "scouting.pitch_weakness",
+            "rival.pattern_detected", "sequence.avoid_repeat", "rival.read_pressure",
+            "sequence.setup_offspeed", "sequence.change_eye_level", "situation.chase_zone",
+            "scouting.pitch_weakness",
             "count.avoid_walk", "count.pitcher_behind", "count.pitcher_ahead",
             "count.first_pitch", "runners.double_play_setup",
             "runners.suppress_sacrifice_fly", "future.reason",

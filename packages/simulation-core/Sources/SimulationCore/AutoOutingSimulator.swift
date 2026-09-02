@@ -43,6 +43,9 @@ public struct AutoOutingSimulator: Sendable {
     ///   프로 리그 평균이 0이고, 고교는 음수를 준다. 이 인자 하나로 리그 수준을 표현한다.
     /// - Parameter callPolicy: `.perfect`는 기존과 같은 시드 스트림을 유지한다.
     ///   다른 정책만 타석당 한 번 추가 난수를 쓴다.
+    /// - Parameter diverseScouting: 약점·존을 아키타입 해시 표로 펼친다. 기본값은 false라
+    ///   v8 커리어와 픽스처 경로의 RNG 소비가 그대로다. 기존 `nextInt` 호출은 켠 뒤에도
+    ///   같은 순서·횟수로 나간다.
     public func simulate(
         pitcher: PitcherSnapshot,
         startingFatigue: Int,
@@ -50,7 +53,8 @@ public struct AutoOutingSimulator: Sendable {
         pitchCap: Int,
         batterOffset: Int = 0,
         callPolicy: AutoCallPolicy = .perfect,
-        baseSeed: UInt64
+        baseSeed: UInt64,
+        diverseScouting: Bool = false
     ) -> Line {
         let engine = PitchKernelEngine()
         var rng = SplitMix64(seed: baseSeed)
@@ -89,14 +93,38 @@ public struct AutoOutingSimulator: Sendable {
             // 높아지는 원인이었다.
             let hotZone = PitchZone(row: rng.nextInt(upperBound: 3), column: rng.nextInt(upperBound: 3))
             let coldZone = PitchZone(row: 2 - hotZone.row, column: 2 - hotZone.column)
-            let scouting = BatterScoutingSnapshot(
-                hotZone: hotZone,
-                // 한가운데가 강점이면 대칭점도 한가운데다. 그때만 낮은 바깥쪽으로 민다.
-                coldZone: coldZone == hotZone ? PitchZone(row: 2, column: 0) : coldZone,
-                pitchStrength: .fourSeam,
-                pitchWeakness: rng.nextInt(upperBound: 2) == 0 ? .slider : .changeup,
-                chaseTendency: clamp(48 + rng.nextInt(upperBound: 9) - 4, 20, 80)
-            )
+            let weaknessDraw = rng.nextInt(upperBound: 2)
+            let chaseTendency = clamp(48 + rng.nextInt(upperBound: 9) - 4, 20, 80)
+            let scouting: BatterScoutingSnapshot
+            if diverseScouting {
+                let seedToken = "\(batter.id)|\(baseSeed)"
+                let archetypes = BatterScoutingArchetype.allCases
+                let archetype = archetypes[
+                    Int(StableHash.fnv1a64Value(seedToken + "|archetype") % UInt64(archetypes.count))
+                ]
+                let profile = BatterScoutingProfileRules.profile(
+                    archetype: archetype,
+                    seedToken: seedToken
+                )
+                let mixedWeakness: [PitchType] = [.slider, .changeup, .curveball, .fourSeam]
+                let hashBit = Int(StableHash.fnv1a64Value(seedToken + "|mix") % 2)
+                scouting = BatterScoutingSnapshot(
+                    hotZone: profile.hotZone,
+                    coldZone: profile.coldZone,
+                    pitchStrength: profile.pitchStrength,
+                    pitchWeakness: mixedWeakness[weaknessDraw + hashBit * 2],
+                    chaseTendency: chaseTendency
+                )
+            } else {
+                scouting = BatterScoutingSnapshot(
+                    hotZone: hotZone,
+                    // 한가운데가 강점이면 대칭점도 한가운데다. 그때만 낮은 바깥쪽으로 민다.
+                    coldZone: coldZone == hotZone ? PitchZone(row: 2, column: 0) : coldZone,
+                    pitchStrength: .fourSeam,
+                    pitchWeakness: weaknessDraw == 0 ? .slider : .changeup,
+                    chaseTendency: chaseTendency
+                )
+            }
             var gameState = GameStateSnapshot(
                 defense: DefenseSnapshot(infield: 50, outfield: 50, arm: 50, fielders: fielders),
                 park: ParkSnapshot(id: "league-week-park", name: "리그 구장", hitFactor: 1_000, homeRunFactor: 1_000),
