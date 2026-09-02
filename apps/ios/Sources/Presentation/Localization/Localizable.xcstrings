@@ -89,6 +89,116 @@
         }
       }
     },
+    "app.challenge-link.applied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Challenge mode is ready. You'll open the same seed with no inheritance."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チャレンジモードが入力されました。同じシードで記録のない挑戦を開きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "도전 모드가 입력되었습니다. 같은 시드로 기록 없는 도전을 엽니다."
+          }
+        }
+      }
+    },
+    "app.challenge-link.banner": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This challenge will apply when you finish the current career and start a new player."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今のキャリアを終えて新しい選手を始めるときに適用します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 커리어를 마치고 새 선수로 시작할 때 적용합니다."
+          }
+        }
+      }
+    },
+    "app.challenge-link.invalid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This challenge link could not be read. Check the code and try again."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チャレンジリンクを読み取れませんでした。コードを確認してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "도전 링크를 읽지 못했습니다. 코드를 확인해 주세요."
+          }
+        }
+      }
+    },
+    "app.challenge-link.share-action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share challenge link"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チャレンジリンクを共有"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "도전 링크 공유"
+          }
+        }
+      }
+    },
+    "app.challenge-link.share-text": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise a player on my seed — and beat me. Code %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同じシードで、私よりうまく育ててみて · コード %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "같은 시드로 나보다 잘 키워 봐 · 코드 %@"
+          }
+        }
+      }
+    },
     "app.tab.high-school": {
       "localizations": {
         "en": {

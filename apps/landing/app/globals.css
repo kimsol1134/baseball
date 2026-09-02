@@ -2800,3 +2800,56 @@ img {
   background: var(--canvas);
   object-fit: cover;
 }
+
+.challenge-page {
+  min-height: 100dvh;
+  padding: 28px 20px 64px;
+}
+
+.challenge-header {
+  width: min(100%, 720px);
+  margin: 0 auto 36px;
+}
+
+.challenge-card {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 32px 28px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.challenge-card h1 {
+  margin: 10px 0 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+
+.challenge-token {
+  margin: 24px 0 0;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--surface-raised);
+  color: var(--brand);
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  word-break: break-all;
+}
+
+.challenge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.challenge-store-id {
+  margin: 18px 0 0;
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
+}

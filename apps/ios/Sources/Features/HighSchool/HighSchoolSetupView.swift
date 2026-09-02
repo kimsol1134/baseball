@@ -14,6 +14,7 @@ import BaseballIOSDomain
 /// 첫 회차는 세 단계(이름 → 지역 → 투수 유형), 2회차부터 네 단계(+ 난이도·핸디캡)다.
 struct HighSchoolSetupView: View {
     let career: HighSchoolCareerStore
+    @Binding var pendingChallenge: ChallengeLink.Pending?
 
     @Environment(\.gameCopyResolver) var copyResolver
 
@@ -204,10 +205,14 @@ struct HighSchoolSetupView: View {
 
     /// "시드-회차" 토큰이면 challenge 모드다. 카드의 각인과 같은 형식이다.
     var parsedChallenge: (seed: String, lifeNumber: Int)? {
-        let parts = normalizedSeedInput.split(separator: "-")
-        guard parts.count == 2, UInt64(parts[0]) != nil,
-              let life = Int(parts[1]), (1...999).contains(life) else { return nil }
-        return (String(parts[0]), life)
+        guard let parsed = ChallengeLink.parseToken(normalizedSeedInput) else { return nil }
+        return (parsed.seed, parsed.life)
+    }
+
+    var shareableChallenge: (seed: String, life: Int)? {
+        if let challenge = parsedChallenge { return (challenge.seed, challenge.lifeNumber) }
+        guard UInt64(normalizedSeedInput) != nil else { return nil }
+        return (normalizedSeedInput, career.inheritance.lifeNumber)
     }
 
     /// 시드 입력의 인라인 오류. 시작 버튼이 이 값으로 잠긴다 — 오타가 커널
@@ -252,6 +257,7 @@ struct HighSchoolSetupView: View {
         .scrollDismissesKeyboard(.interactively)
         .onAppear { CareerTelemetry.logOnce(.onboardingStarted) }
         .onAppear {
+            applyPendingChallenge()
             nameFocused = Self.shouldAutoFocusName(isRebirth: isRebirth)
             if isRebirth,
                let last = career.lastSetup,
@@ -266,6 +272,14 @@ struct HighSchoolSetupView: View {
             }
         }
         .animation(.snappy, value: step)
+        .onChange(of: pendingChallenge) { _, _ in
+            applyPendingChallenge()
+        }
+    }
+
+    func applyPendingChallenge() {
+        guard let pending = pendingChallenge else { return }
+        seedInput = ChallengeLinkSession.seedInput(from: pending)
     }
 
     // MARK: - 머리
@@ -316,6 +330,9 @@ struct HighSchoolSetupView: View {
                     nameFocused = false
                     guard let selectedPreset, seedFieldError == nil else { return }
                     let isChallenge = parsedChallenge != nil
+                    pendingChallenge = ChallengeLinkSession.consumePendingOnCareerStart(
+                        pending: pendingChallenge
+                    )
                     career.startCareer(
                         preset: selectedPreset,
                         playerName: Self.submittedPlayerName(

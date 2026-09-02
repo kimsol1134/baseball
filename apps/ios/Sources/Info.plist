@@ -28,7 +28,19 @@
 				<string>com.solkim.baseball.ios</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>yagurebirth.challenge</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>yagurebirth</string>
+			</array>
+		</dict>
 	</array>
+	<key>CHALLENGE_LINK_HOST</key>
+	<string>$(CHALLENGE_LINK_HOST)</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>

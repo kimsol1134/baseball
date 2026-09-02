@@ -261,6 +261,10 @@ enum GameAnalytics {
         case returnPlanNextDayOpen = "return_plan_next_day_open"
         /// 세션 종료(백그라운드 전환). `games`로 세션 깊이를 잰다.
         case sessionEnded = "session_ended"
+        /// 시드 도전 링크로 앱이 열린 시점. `source`는 scheme|universal, `valid`는 토큰 검증.
+        case challengeLinkOpened = "challenge_link_opened"
+        /// 시작 화면에서 도전 링크를 시스템 공유 시트에 올린 시점. 원시 시드는 보내지 않는다.
+        case challengeLinkShared = "challenge_link_shared"
 
         // MARK: - 검은 화면·진행 불가 감시 (2026-08 리뷰 대응)
         //

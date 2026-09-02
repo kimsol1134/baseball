@@ -95,10 +95,13 @@ struct AppShell: View {
     var weekly: WeeklyProgramStore = .shared
     var returnWelcomePlan: DailyReminder.Plan?
     var onDismissReturnWelcome: () -> Void = {}
+    @Binding var pendingChallenge: ChallengeLink.Pending?
+    @Binding var challengeLinkInvalid: Bool
     @State private var selection: AppTab = .highSchool
     @State private var returnPlanHighSchoolRevision: UInt64?
     @State private var returnPlanProRevision: UInt64?
     @State private var legacyHandoffIssue: LegacyHandoffIssue?
+    @State private var dismissedDeferredChallengeBanner = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
     /// 제거 전 배포가 남긴 링크도 빈 화면으로 보내지 않는다.
@@ -134,6 +137,69 @@ struct AppShell: View {
     ) -> Bool {
         guard isReady, let currentCareerID else { return false }
         return currentCareerID != previousCareerID
+    }
+
+    private var showsChallengeDeferBanner: Bool {
+        ChallengeLink.shouldShowDeferredBanner(
+            hasPending: pendingChallenge != nil,
+            setupScreenOpen: ChallengeLink.setupScreenOpen(
+                highSchoolNeedsSetup: highSchool.loadState == .needsSetup,
+                highSchoolTabVisible: showsHighSchool
+            ),
+            loadSettled: highSchool.loadState != .loading && pro.loadState != .loading
+        )
+    }
+
+    @ViewBuilder private var challengeLinkBanners: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if challengeLinkInvalid {
+                challengeBanner(
+                    key: AppCopyKey.challengeLinkInvalid,
+                    identifier: "app.challenge-link.invalid"
+                ) {
+                    challengeLinkInvalid = false
+                }
+            } else if showsChallengeDeferBanner, !dismissedDeferredChallengeBanner {
+                challengeBanner(
+                    key: AppCopyKey.challengeLinkBanner,
+                    identifier: "app.challenge-link.banner"
+                ) {
+                    dismissedDeferredChallengeBanner = true
+                }
+            }
+        }
+        .padding(.horizontal, BaseballMetrics.gutter)
+        .padding(.top, 8)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func challengeBanner(
+        key: GameCopyKey,
+        identifier: String,
+        dismiss: @escaping () -> Void
+    ) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            GameCopyText(key)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            Button(action: dismiss) {
+                Image(systemName: "xmark")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .frame(width: BaseballMetrics.minimumTapTarget, height: BaseballMetrics.minimumTapTarget)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(copyResolver.resolve(.actionClose))
+        }
+        .padding(12)
+        .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
+        .overlay {
+            RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
+                .stroke(BaseballTheme.border, lineWidth: 1)
+        }
+        .accessibilityIdentifier(identifier)
     }
 
     /// 프로에 입단하면 고교 탭을 숨긴다.
@@ -270,6 +336,7 @@ struct AppShell: View {
                 NavigationStack {
                     HighSchoolCareerView(
                         career: highSchool,
+                        pendingChallenge: $pendingChallenge,
                         onEnterPro: { draft, pitcher, identity in
                             let previousCareerID = pro.state?.proCareerID
                             guard let sourceHighSchoolCareerID = highSchool.state?.careerID else { return }
@@ -353,6 +420,14 @@ struct AppShell: View {
                     Label(copyResolver.resolve(AppTab.settings.titleKey), systemImage: AppTab.settings.icon)
                 }
                 .tag(AppTab.settings)
+        }
+        .overlay(alignment: .top) {
+            if challengeLinkInvalid || (showsChallengeDeferBanner && !dismissedDeferredChallengeBanner) {
+                challengeLinkBanners
+            }
+        }
+        .onChange(of: pendingChallenge) { _, _ in
+            dismissedDeferredChallengeBanner = false
         }
         .environment(\.appTabSelection, $selection)
         .tint(BaseballTheme.action)
