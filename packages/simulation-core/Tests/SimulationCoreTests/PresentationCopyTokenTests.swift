@@ -425,7 +425,7 @@ final class PresentationCopyTokenTests: XCTestCase {
             rawValues: [
                 "contract_offer", "weekly_plan", "season_decision", "important_game",
                 "season_review", "season_settlement", "offseason_decision", "offseason_investment",
-                "retirement_decision", "completed",
+                "retirement_decision", "national_team_call", "national_tournament", "completed",
             ]
         )
         assertFamily(.proLevel, rawValues: ["minor", "major"])
@@ -460,6 +460,7 @@ final class PresentationCopyTokenTests: XCTestCase {
                 "opening_statement", "call_up_audition", "major_debut", "record_chase",
                 "role_showdown", "standings_race",
                 "autumn_wild_card", "autumn_semifinal", "autumn_playoff", "autumn_final",
+                "national_final",
             ]
         )
     }

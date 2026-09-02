@@ -2641,11 +2641,11 @@ final class LocalizationCoverageTests: XCTestCase {
     }
 
     func testGlossaryCatalogHasKoreanEnglishJapaneseParity() throws {
-        XCTAssertEqual(GlossaryCatalog.terms.count, 20)
-        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 20)
+        XCTAssertEqual(GlossaryCatalog.terms.count, 22)
+        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 22)
         let entries = try gameContentEntries()
         let expectedKeys = Set(GlossaryCatalog.terms.flatMap { [$0.nameKey, $0.definitionKey] })
-        XCTAssertEqual(expectedKeys.count, 40)
+        XCTAssertEqual(expectedKeys.count, 44)
         let glossaryKeys = Set(entries.keys.filter { $0.hasPrefix("content.glossary.") })
         XCTAssertEqual(glossaryKeys, expectedKeys)
 

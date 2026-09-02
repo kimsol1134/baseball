@@ -80,6 +80,26 @@ enum CareerDisplayRules {
         ProRoleRequestRules.isAlreadyAssigned(requested, state: state)
     }
 
+    nonisolated static func shouldOfferNationalTeamCall(_ state: ProCareerSnapshot) -> Bool {
+        ProNationalTeamRules.shouldOfferCall(state)
+    }
+
+    nonisolated static func nationalFinalBatterOffset() -> Int {
+        ProNationalTeamRules.finalBatterOffset
+    }
+
+    nonisolated static func nationalOpponentNameKey(_ opponentID: String) -> String {
+        "content.national-team.opponent.\(opponentID)"
+    }
+
+    nonisolated static func nationalTeamMarketScore(_ state: ProCareerSnapshot) -> Int {
+        ProNationalTeamRules.marketScore(for: state)
+    }
+
+    nonisolated static func nationalTeamFanSupport(_ state: ProCareerSnapshot) -> Int {
+        state.journeyState?.reputation.fanSupport ?? 0
+    }
+
     nonisolated static func goalBoard(for state: ProCareerSnapshot) -> ProCareerGoalBoard {
         ProCareerGoalBoardRules.board(state: state)
     }

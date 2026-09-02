@@ -45298,6 +45298,402 @@
           }
         }
       }
+    },
+    "content.national-team.tournament.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transpacific Invitational"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "環太平洋招待大会"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "환태평양 초청 대회"
+          }
+        }
+      }
+    },
+    "content.national-team.opponent.east-coast": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "East Coast Union"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "東海沿岸連合"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "동해 연안 연합"
+          }
+        }
+      }
+    },
+    "content.national-team.opponent.southwest-isles": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Southwest Isles"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "西南列島代表"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "서남 열도 대표"
+          }
+        }
+      }
+    },
+    "content.national-team.opponent.northern-plains": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Northern Plains"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "北方平原代表"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "북방 평원 대표"
+          }
+        }
+      }
+    },
+    "content.national-team.opponent.south-harbor": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "South Harbor Union"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "南海港連合"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남해 항구 연합"
+          }
+        }
+      }
+    },
+    "content.pro-news.national-team.declined": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You declined the national call. Fan support dipped a little."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代表招集を辞退しました。ファンの視線が少し冷めました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "국가대표 소집을 사양했습니다. 팬의 시선이 조금 식었습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.national-team.gold": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You won gold at the Transpacific Invitational."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "環太平洋招待大会で金メダルを獲得しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "환태평양 초청 대회에서 금메달을 목에 걸었습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.national-team.silver": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You reached the Transpacific Invitational final."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "環太平洋招待大会の決勝まで進みました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "환태평양 초청 대회 결승까지 올랐습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.national-team.bronze": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You took bronze at the Transpacific Invitational."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "環太平洋招待大会で銅メダルを獲得しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "환태평양 초청 대회에서 동메달을 따냈습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.national-team.group-exit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Transpacific Invitational ended in the group stage."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "環太平洋招待大会はグループリーグで終わりました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "환태평양 초청 대회 조별 리그에서 멈췄습니다."
+          }
+        }
+      }
+    },
+    "content.pro-news.national-team.overseas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overseas scouts started watching this tournament."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "海外リーグのスカウトが今大会の投球に注目し始めました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "해외 리그 스카우트가 이번 대회 투구를 주목하기 시작했습니다."
+          }
+        }
+      }
+    },
+    "content.glossary.national-team-call.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "National-team call"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代表招集"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "국가대표 소집"
+          }
+        }
+      }
+    },
+    "content.glossary.national-team-call.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A postseason invitation to a fictional national tournament. Accepting leads to group games and a final."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "シーズン後に仮想の代表大会へ呼ばれる知らせです。受ければグループ戦と決勝が続きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시즌을 마친 뒤 가상 국가대표 대회에 뽑히는 통보입니다. 수락하면 조별 경기와 결승이 이어집니다."
+          }
+        }
+      }
+    },
+    "content.glossary.military-exemption.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Service exemption"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "兵役免除"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "병역 면제"
+          }
+        }
+      }
+    },
+    "content.glossary.military-exemption.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gold treats military service as complete. If it was already done, fan support rises further."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "金メダルを取ると兵役を終えた扱いになります。すでに終えていればファンの支持がさらに上がります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "금메달을 따면 군 복무를 마친 것으로 처리됩니다. 이미 복무를 마쳤다면 팬의 지지가 더 오릅니다."
+          }
+        }
+      }
+    },
+    "content.pro-career-phase.national_team_call.label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "National-team call"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代表招集"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "국가대표 소집"
+          }
+        }
+      }
+    },
+    "content.pro-career-phase.national_tournament.label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "National tournament"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代表大会"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "국가대표 대회"
+          }
+        }
+      }
+    },
+    "content.pro-season-trigger.national_final.label": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "National final"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代表決勝"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "국가대표 결승"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -111,6 +111,8 @@ enum PitchPresentation {
                         arguments: [.integer(gameNumber), .integer(playerWins), .integer(opponentWins)]
                     )
                     : resolver.resolve(.scenarioProAutumnFinalTitle)
+            case .nationalFinal:
+                return resolver.resolve(.importantNationalFinalTitle)
             }
         }
     }
@@ -149,6 +151,8 @@ enum PitchPresentation {
                 case .setup: return resolver.resolve(.scenarioProAutumnFinalSetupBody)
                 case .closer: return resolver.resolve(.scenarioProAutumnFinalCloserBody)
                 }
+            case .nationalFinal:
+                return resolver.resolve(.importantNationalFinalBody)
             }
         }
     }

@@ -10,6 +10,8 @@ public enum ProCareerPhase: String, Codable, Sendable {
     case offseasonDecision = "offseason_decision"
     case offseasonInvestment = "offseason_investment"
     case retirementDecision = "retirement_decision"
+    case nationalTeamCall = "national_team_call"
+    case nationalTournament = "national_tournament"
     case completed
 }
 
@@ -507,6 +509,7 @@ public enum ProSeasonTrigger: String, Codable, Sendable {
     case autumnSemifinal = "autumn_semifinal"
     case autumnPlayoff = "autumn_playoff"
     case autumnFinal = "autumn_final"
+    case nationalFinal = "national_final"
 }
 
 /// 중요 경기에서 상대하는 라이벌 타자. 구단·시즌·트리거로 풀에서 결정론적으로 선택된다.
@@ -704,8 +707,14 @@ public final class ProCareerSnapshot: Codable, Equatable, Sendable {
     public let resolvedFollowUps: [ProDecisionFollowUp]?
     /// v9 spring-camp role request. Missing on legacy saves; decodeIfPresent keeps v8 bytes.
     public let roleRequest: ProRoleRequestState?
-    public init(proCareerID: String, revision: UInt64, phase: ProCareerPhase, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, team: DraftTeamSnapshot, entitlement: ProEntitlementSnapshot, age: Int, season: Int, week: Int, level: ProLevel, role: ProRole, rolePreference: ProRole? = nil, managerTrust: Int, catcherTrust: Int, fatigue: Int, injuryWeeks: Int, serviceYears: Int, militaryCompleted: Bool, contract: ProContractSnapshot?, currentStats: ProSeasonStats, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats], awards: [String], milestones: [String], news: [String], hallOfFameScore: Int?, commitment: String, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger? = nil, currentRival: ProRivalBatter? = nil, seasonTensions: [ProSeasonTension]? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision? = nil, decisionHistory: [ProDecisionRecord]? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int? = nil, pitchLearningProject: PitchLearningProjectSnapshot? = nil, journeyState: ProCareerJourneyState? = nil, postseason: ProPostseasonState? = nil, activeDecisionModifiers: [ProDecisionModifier]? = nil, resolvedFollowUps: [ProDecisionFollowUp]? = nil, roleRequest: ProRoleRequestState? = nil) {
-        self.proCareerID = proCareerID; self.revision = revision; self.phase = phase; self.identity = identity; self.pitcher = pitcher; self.team = team; self.entitlement = entitlement; self.age = age; self.season = season; self.week = week; self.level = level; self.role = role; self.rolePreference = rolePreference; self.managerTrust = managerTrust; self.catcherTrust = catcherTrust; self.fatigue = fatigue; self.injuryWeeks = injuryWeeks; self.serviceYears = serviceYears; self.militaryCompleted = militaryCompleted; self.contract = contract; self.currentStats = currentStats; self.gameLines = gameLines; self.careerStats = careerStats; self.awards = awards; self.milestones = milestones; self.news = news; self.hallOfFameScore = hallOfFameScore; self.commitment = commitment; self.balanceVersion = balanceVersion; self.proRulesVersion = proRulesVersion; self.seasonSegment = seasonSegment; self.seasonTrigger = seasonTrigger; self.currentRival = currentRival; self.seasonTensions = seasonTensions; self.seasonImportantGames = seasonImportantGames; self.pendingDecision = pendingDecision; self.decisionHistory = decisionHistory; self.developmentProgress = developmentProgress; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject; self.journeyState = journeyState; self.postseason = postseason; self.activeDecisionModifiers = activeDecisionModifiers; self.resolvedFollowUps = resolvedFollowUps; self.roleRequest = roleRequest
+    /// v10 national-team tournament in progress. Missing on saves that never entered a call.
+    public let nationalTournament: ProNationalTournamentState?
+    /// v10 finished national-team appearances. Missing on saves that never played one.
+    public let nationalTeamHistory: [ProNationalTeamRecord]?
+    /// v10 spring-camp load left by a finished tournament. Cleared when the next season starts.
+    public let nationalTeamCarry: ProNationalTeamCarryState?
+    public init(proCareerID: String, revision: UInt64, phase: ProCareerPhase, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, team: DraftTeamSnapshot, entitlement: ProEntitlementSnapshot, age: Int, season: Int, week: Int, level: ProLevel, role: ProRole, rolePreference: ProRole? = nil, managerTrust: Int, catcherTrust: Int, fatigue: Int, injuryWeeks: Int, serviceYears: Int, militaryCompleted: Bool, contract: ProContractSnapshot?, currentStats: ProSeasonStats, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats], awards: [String], milestones: [String], news: [String], hallOfFameScore: Int?, commitment: String, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger? = nil, currentRival: ProRivalBatter? = nil, seasonTensions: [ProSeasonTension]? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision? = nil, decisionHistory: [ProDecisionRecord]? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int? = nil, pitchLearningProject: PitchLearningProjectSnapshot? = nil, journeyState: ProCareerJourneyState? = nil, postseason: ProPostseasonState? = nil, activeDecisionModifiers: [ProDecisionModifier]? = nil, resolvedFollowUps: [ProDecisionFollowUp]? = nil, roleRequest: ProRoleRequestState? = nil, nationalTournament: ProNationalTournamentState? = nil, nationalTeamHistory: [ProNationalTeamRecord]? = nil, nationalTeamCarry: ProNationalTeamCarryState? = nil) {
+        self.proCareerID = proCareerID; self.revision = revision; self.phase = phase; self.identity = identity; self.pitcher = pitcher; self.team = team; self.entitlement = entitlement; self.age = age; self.season = season; self.week = week; self.level = level; self.role = role; self.rolePreference = rolePreference; self.managerTrust = managerTrust; self.catcherTrust = catcherTrust; self.fatigue = fatigue; self.injuryWeeks = injuryWeeks; self.serviceYears = serviceYears; self.militaryCompleted = militaryCompleted; self.contract = contract; self.currentStats = currentStats; self.gameLines = gameLines; self.careerStats = careerStats; self.awards = awards; self.milestones = milestones; self.news = news; self.hallOfFameScore = hallOfFameScore; self.commitment = commitment; self.balanceVersion = balanceVersion; self.proRulesVersion = proRulesVersion; self.seasonSegment = seasonSegment; self.seasonTrigger = seasonTrigger; self.currentRival = currentRival; self.seasonTensions = seasonTensions; self.seasonImportantGames = seasonImportantGames; self.pendingDecision = pendingDecision; self.decisionHistory = decisionHistory; self.developmentProgress = developmentProgress; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject; self.journeyState = journeyState; self.postseason = postseason; self.activeDecisionModifiers = activeDecisionModifiers; self.resolvedFollowUps = resolvedFollowUps; self.roleRequest = roleRequest; self.nationalTournament = nationalTournament; self.nationalTeamHistory = nationalTeamHistory; self.nationalTeamCarry = nationalTeamCarry
     }
 
     public static func == (lhs: ProCareerSnapshot, rhs: ProCareerSnapshot) -> Bool {
@@ -755,6 +764,9 @@ public final class ProCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.activeDecisionModifiers == rhs.activeDecisionModifiers
             && lhs.resolvedFollowUps == rhs.resolvedFollowUps
             && lhs.roleRequest == rhs.roleRequest
+            && lhs.nationalTournament == rhs.nationalTournament
+            && lhs.nationalTeamHistory == rhs.nationalTeamHistory
+            && lhs.nationalTeamCarry == rhs.nationalTeamCarry
     }
 }
 
@@ -882,6 +894,35 @@ public struct RequestProRoleParams: Codable, Equatable, Sendable {
         self.seed = seed
         self.state = state
         self.requested = requested
+    }
+}
+public struct RespondNationalTeamCallParams: Codable, Equatable, Sendable {
+    public let seed: String
+    public let state: ProCareerSnapshot
+    public let accepted: Bool
+
+    public init(seed: String, state: ProCareerSnapshot, accepted: Bool) {
+        self.seed = seed
+        self.state = state
+        self.accepted = accepted
+    }
+}
+public struct StartNationalFinalParams: Codable, Equatable, Sendable {
+    public let seed: String
+    public let state: ProCareerSnapshot
+
+    public init(seed: String, state: ProCareerSnapshot) {
+        self.seed = seed
+        self.state = state
+    }
+}
+public struct AcknowledgeNationalTeamResultParams: Codable, Equatable, Sendable {
+    public let seed: String
+    public let state: ProCareerSnapshot
+
+    public init(seed: String, state: ProCareerSnapshot) {
+        self.seed = seed
+        self.state = state
     }
 }
 public struct AcceptProContractParams: Codable, Equatable, Sendable {

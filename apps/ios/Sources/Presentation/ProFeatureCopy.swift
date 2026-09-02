@@ -639,3 +639,19 @@ enum ProImportantGameCopy {
         resolver.resolve(key, arguments: [.integer(projectedFatigue)])
     }
 }
+
+enum ProNationalTeamCopy {
+    static func resultTitle(
+        _ result: ProNationalTournamentResult?,
+        resolver: GameCopyResolver
+    ) -> String {
+        let key: ProUICopyKey = switch result {
+        case .gold: .nationalResultGold
+        case .silver: .nationalResultSilver
+        case .bronze: .nationalResultBronze
+        case .groupExit: .nationalResultGroupExit
+        case .none: .nationalResultGroupExit
+        }
+        return resolver.resolve(key)
+    }
+}

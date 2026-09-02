@@ -40,6 +40,8 @@ public enum GlossaryCatalog {
         .init(id: "platoon"),
         .init(id: "pitcher-lab"),
         .init(id: "season-decision"),
+        .init(id: "national-team-call"),
+        .init(id: "military-exemption"),
     ]
 
     public static func term(id: String) -> GlossaryTerm? {

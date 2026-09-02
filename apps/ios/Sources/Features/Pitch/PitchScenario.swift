@@ -26,6 +26,7 @@ struct PitchScenario {
             opponentWins: Int,
             usesSeriesRules: Bool
         )
+        case nationalFinal
     }
 
     enum PresentationContext: Sendable {
@@ -97,6 +98,7 @@ struct PitchScenario {
             case .autumnSemifinal: offset += ProPostseasonRules.extraOffset(for: .semifinal)
             case .autumnPlayoff: offset += ProPostseasonRules.extraOffset(for: .playoff)
             case .autumnFinal: offset += ProPostseasonRules.extraOffset(for: .final)
+            case .nationalFinal: offset += CareerDisplayRules.nationalFinalBatterOffset()
             default: break
             }
         }
@@ -118,6 +120,8 @@ struct PitchScenario {
             batters = usesFinalSeriesRules
                 ? ProPostseasonRules.finalMaximumBatters(for: state.role)
                 : ProPostseasonRules.maximumBatters(for: .final)
+        case .nationalFinal:
+            batters = ProPostseasonRules.maximumBatters(for: .final)
         default: batters = 4
         }
         let scenarioID: String = if usesFinalSeriesRules,
@@ -299,6 +303,17 @@ struct PitchScenario {
                 }
             }
             return ProSituation(moment: .autumnFinal(ahead: leading, role: role, gameNumber: 1, playerWins: 0, opponentWins: 0, usesSeriesRules: false), inning: 9, outs: 0, runners: corners, scoreDifferential: leading ? 1 : -1, leverage: 990, headline: "우승 결정전 한 판", detail: leading ? "한 점 앞섬 · 무사 1·2루 · 한 판으로 우승이 갈린다" : "한 점 뒤짐 · 무사 1·2루 · 한 판으로 우승이 갈린다")
+        case .nationalFinal:
+            return ProSituation(
+                moment: .nationalFinal,
+                inning: 9,
+                outs: 0,
+                runners: corners,
+                scoreDifferential: leading ? 1 : -1,
+                leverage: 990,
+                headline: "환태평양 초청 대회 결승",
+                detail: leading ? "한 점 앞섬 · 무사 1·2루 · 이 이닝이 금메달을 가른다" : "한 점 뒤짐 · 무사 1·2루 · 이 이닝이 금메달을 가른다"
+            )
         case .openingStatement, .none:
             return ProSituation(moment: .openingStatement, inning: 5, outs: 0, runners: onSecond, scoreDifferential: 1, leverage: 720, headline: "시즌 첫 승부처", detail: "한 점 앞섬 · 무사 2루")
         }

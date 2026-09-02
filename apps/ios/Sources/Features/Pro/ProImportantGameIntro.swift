@@ -28,11 +28,7 @@ struct ImportantGameIntro: View {
                     week: state.week,
                     resolver: copyResolver
                 ),
-                title: state.level == .major
-                    ? copyResolver.resolve(.importantMajorTitle)
-                    : state.managerTrust < 55
-                        ? copyResolver.resolve(.importantMinorOpportunityTitle)
-                        : copyResolver.resolve(.importantMinorRoleTitle),
+                title: introTitle,
                 accent: BaseballTheme.milestone
             )
 
@@ -85,7 +81,11 @@ struct ImportantGameIntro: View {
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Text(copyResolver.resolve(.importantBody))
+                    Text(copyResolver.resolve(
+                        state.seasonTrigger == .nationalFinal
+                            ? .importantNationalFinalBody
+                            : .importantBody
+                    ))
                         .font(.footnote)
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
@@ -122,7 +122,19 @@ struct ImportantGameIntro: View {
         }
     }
 
+    private var introTitle: String {
+        if state.seasonTrigger == .nationalFinal {
+            return copyResolver.resolve(.importantNationalFinalTitle)
+        }
+        return state.level == .major
+            ? copyResolver.resolve(.importantMajorTitle)
+            : state.managerTrust < 55
+                ? copyResolver.resolve(.importantMinorOpportunityTitle)
+                : copyResolver.resolve(.importantMinorRoleTitle)
+    }
+
     private var postseasonSeriesState: ProPostseasonState? {
+        if state.seasonTrigger == .nationalFinal { return nil }
         guard CareerDisplayRules.usesFinalSeriesRules(state),
               let postseason = state.postseason,
               postseason.currentRound != nil else { return nil }

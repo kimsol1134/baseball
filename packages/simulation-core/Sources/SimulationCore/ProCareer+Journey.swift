@@ -702,7 +702,8 @@ extension ProCareerEngine {
             reputation: ProReputationState(
                 fanSupport: fanAfter,
                 lastMerchandiseTier: financeResult.tier,
-                endorsementSeasons: journey.reputation.endorsementSeasons
+                endorsementSeasons: journey.reputation.endorsementSeasons,
+                overseasInterest: journey.reputation.overseasInterest
             ),
             finances: financeResult.finance,
             activeSeasonBenefit: .some(nil),
@@ -1320,16 +1321,21 @@ extension ProCareerEngine {
         }
         let activePhases: Set<ProCareerPhase> = [.weeklyPlan, .seasonDecision, .importantGame, .seasonReview]
         if activePhases.contains(state.phase) {
+            let nationalFinalOffseason = state.phase == .importantGame && state.seasonTrigger == .nationalFinal
+            if !nationalFinalOffseason {
             guard !state.careerStats.contains(where: {
                 $0.season == state.season && $0.teamID == state.currentStats.teamID
             }) else {
                 throw SimulationError.invalidProCareer("active journey phase already contains current season")
             }
+            }
             guard let contract = state.contract else {
                 throw SimulationError.invalidProCareer("missing_contract")
             }
-            guard contract.yearsRemaining >= 1 else {
-                throw SimulationError.invalidProCareer("expired_contract")
+            if !nationalFinalOffseason {
+                guard contract.yearsRemaining >= 1 else {
+                    throw SimulationError.invalidProCareer("expired_contract")
+                }
             }
             guard let contractID = contract.id,
                   contract.teamID == state.team.id,
@@ -1663,10 +1669,30 @@ extension ProCareerEngine {
                           honor.value == journey.finances.careerEarnings else {
                         throw SimulationError.invalidProCareer("invalid earnings honor")
                     }
+                case .nationalGold:
+                    guard honor.teamID == nil, honor.referenceID == nil,
+                          honor.value == Int64(ProNationalTeamRules.goldCount(in: state.nationalTeamHistory)),
+                          (honor.value ?? 0) > 0 else {
+                        throw SimulationError.invalidProCareer("invalid national gold honor")
+                    }
                 }
             }
         case .seasonReview, .weeklyPlan, .seasonDecision, .importantGame:
             break
+        case .nationalTeamCall:
+            guard journey.settlementAcknowledged,
+                  journey.pendingContractMarket == nil,
+                  journey.offseasonTransition == nil,
+                  ProNationalTeamRules.shouldOfferCall(state) else {
+                throw SimulationError.invalidProCareer("national team call is not valid")
+            }
+        case .nationalTournament:
+            guard journey.settlementAcknowledged,
+                  journey.pendingContractMarket == nil,
+                  journey.offseasonTransition == nil,
+                  state.nationalTournament != nil else {
+                throw SimulationError.invalidProCareer("national tournament state is missing")
+            }
         }
         if state.phase != .seasonSettlement && state.phase != .contractOffer {
             guard journey.settlementAcknowledged else {
@@ -1792,8 +1818,10 @@ extension ProCareerEngine {
         let reputation = ProReputationState(
             fanSupport: fanSupport,
             lastMerchandiseTier: journey.reputation.lastMerchandiseTier,
-            endorsementSeasons: journey.reputation.endorsementSeasons
+            endorsementSeasons: journey.reputation.endorsementSeasons,
+            overseasInterest: journey.reputation.overseasInterest
         )
+        let opening = nextSeasonOpeningLoad(params.state)
         let base = replacing(
             params.state,
             revision: params.state.revision + 1,
@@ -1804,8 +1832,8 @@ extension ProCareerEngine {
             week: 0,
             role: contract.rolePromise,
             rolePreference: .some(contract.rolePromise),
-            fatigue: 0,
-            injuryWeeks: 0,
+            fatigue: opening.fatigue,
+            injuryWeeks: opening.injuryWeeks,
             currentStats: ProSeasonStats(season: nextSeason, teamID: params.state.team.id),
             gameLines: [],
             proRulesVersion: Self.currentRulesVersion,
@@ -1830,7 +1858,8 @@ extension ProCareerEngine {
             postseason: .some(nil),
             activeDecisionModifiers: .some(nil),
             resolvedFollowUps: .some(nil),
-            roleRequest: .some(nil)
+            roleRequest: .some(nil),
+            nationalTeamCarry: .some(nil)
         )
         let tensions = seasonTensions(for: base)
         let updated = replacing(base, seasonTensions: tensions)
@@ -1934,6 +1963,7 @@ extension ProCareerEngine {
            let contract = params.state.contract,
            contract.yearsRemaining >= 1 {
             let nextSeason = params.state.season + 1
+            let opening = nextSeasonOpeningLoad(params.state)
             let nextState = replacing(
                 params.state,
                 revision: params.state.revision + 1,
@@ -1943,8 +1973,8 @@ extension ProCareerEngine {
                 week: 0,
                 role: contract.rolePromise,
                 rolePreference: .some(contract.rolePromise),
-                fatigue: 0,
-                injuryWeeks: 0,
+                fatigue: opening.fatigue,
+                injuryWeeks: opening.injuryWeeks,
                 currentStats: ProSeasonStats(season: nextSeason, teamID: params.state.team.id),
                 gameLines: [],
                 proRulesVersion: Self.currentRulesVersion,
@@ -1962,7 +1992,8 @@ extension ProCareerEngine {
                 )),
                 activeDecisionModifiers: .some(nil),
                 resolvedFollowUps: .some(nil),
-                roleRequest: .some(nil)
+                roleRequest: .some(nil),
+                nationalTeamCarry: .some(nil)
             )
             let tensions = seasonTensions(for: nextState)
             return result(replacing(nextState, seasonTensions: tensions), nextSeed: params.seed, events: ["pro_offseason_resolved"])
@@ -2016,7 +2047,8 @@ extension ProCareerEngine {
             reputation: ProReputationState(
                 fanSupport: fanAfter,
                 lastMerchandiseTier: journey.reputation.lastMerchandiseTier,
-                endorsementSeasons: journey.reputation.endorsementSeasons
+                endorsementSeasons: journey.reputation.endorsementSeasons,
+                overseasInterest: journey.reputation.overseasInterest
             ),
             settlementAcknowledged: true,
             offseasonTransition: .some(transition)

@@ -61,6 +61,7 @@ enum ProCareerPresentation {
         case .clubHall: .retirementHonorClubHall
         case .ambitionCompleted: .retirementHonorAmbition
         case .careerEarnings: .retirementHonorEarnings
+        case .nationalGold: .retirementHonorNationalGold
         }
         return resolver.resolve(key)
     }
@@ -337,7 +338,8 @@ enum ProCareerPresentation {
         if let mediaKey = mediaNewsKey(raw) {
             return resolver.resolve(.gameContent(mediaKey))
         }
-        if raw.hasPrefix("content.pro-news.role-request.") {
+        if raw.hasPrefix("content.pro-news.role-request.")
+            || raw.hasPrefix("content.pro-news.national-team.") {
             return resolver.resolve(.gameContent(raw))
         }
         guard resolver.language != .korean else { return raw }
