@@ -36,6 +36,11 @@ const localizable = {
     "Challenge code %@-%lld",
     "チャレンジコード %@-%lld"
   ),
+  "share.card.body.link": entry(
+    "도전 링크 %@",
+    "Challenge link %@",
+    "チャレンジリンク %@"
+  ),
   "share.card.summary.retirement": entry(
     "%@, 프로 %lld시즌 은퇴",
     "%@, retired after %lld pro seasons",
