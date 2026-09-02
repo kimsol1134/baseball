@@ -444,6 +444,10 @@ public enum AppCopyKey {
     public static let setupRegionDescription = GameCopyKey.localizable("setup.region.description")
     public static let setupStyleTitle = GameCopyKey.localizable("setup.style.title")
     public static let setupStyleDescription = GameCopyKey.localizable("setup.style.description")
+    public static let setupHandTitle = GameCopyKey.localizable("setup.hand.title")
+    public static let setupHandDetail = GameCopyKey.localizable("setup.hand.detail")
+    public static let handLeft = GameCopyKey.localizable("player.hand.left")
+    public static let handRight = GameCopyKey.localizable("player.hand.right")
     public static let setupRepertoireTitle = GameCopyKey.localizable("setup.repertoire.title")
     public static let setupRepertoireDescription = GameCopyKey.localizable("setup.repertoire.description")
     public static let setupRepertoireFourSeam = GameCopyKey.localizable("setup.repertoire.four-seam")
@@ -731,6 +735,7 @@ public enum AppCopyKey {
         setupBoostHeadStartDetail, setupBoostTrainingRhythmTitle, setupBoostTrainingRhythmDetail,
         setupBoostCost,
         setupRegionTitle, setupRegionDescription, setupStyleTitle, setupStyleDescription,
+        setupHandTitle, setupHandDetail, handLeft, handRight,
         setupRepertoireTitle, setupRepertoireDescription, setupRepertoireFourSeam,
         setupRepertoireLearning, setupRepertoireLearningHint,
         setupRepertoirePrimary, setupRepertoirePrimaryHint,

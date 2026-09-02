@@ -58,6 +58,8 @@ struct RecordView: View {
                         AchievementsLinkCard()
                     }
                     .padding(BaseballMetrics.gutter)
+                    .padding(.bottom, 28)
+                    .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
                 }
                 .background(BaseballTheme.canvas)
             } else if weekly.program != nil || !weekly.stamps.isEmpty {
@@ -69,6 +71,8 @@ struct RecordView: View {
                         )
                     }
                     .padding(BaseballMetrics.gutter)
+                    .padding(.bottom, 28)
+                    .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
                 }
             } else {
                 ContentUnavailableView(copyResolver.resolve(.empty), systemImage: "chart.bar")
@@ -177,6 +181,12 @@ private struct HighSchoolRecordBoard: View {
 
                 BaseballCard(title: copyResolver.resolve(.currentAbility)) {
                     VStack(alignment: .leading, spacing: 10) {
+                        // "주인공 어느 손 투수인가요?" — 게임 안에 답이 없어서 리뷰로 물어봤다.
+                        Text(copyResolver.resolve(
+                            state.pitcher.throwingHand == .left ? AppCopyKey.handLeft : AppCopyKey.handRight
+                        ))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textSecondary)
                         AbilityGaugeView(label: copyResolver.resolve(.stuff), value: state.pitcher.stuff)
                         AbilityGaugeView(label: copyResolver.resolve(.command), value: state.pitcher.command)
                         AbilityGaugeView(label: copyResolver.resolve(.movement), value: state.pitcher.movement)
@@ -257,6 +267,8 @@ private struct HighSchoolRecordBoard: View {
                 }
             }
             .padding(BaseballMetrics.gutter)
+            .padding(.bottom, 28)
+            .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
         }
         .background(BaseballTheme.canvas)
     }
@@ -356,6 +368,11 @@ private struct RecordBoard: View {
                     arguments: [.userText(ProCareerPresentation.buildLabel(identity, resolver: copyResolver))]
                 )) {
                     VStack(alignment: .leading, spacing: 10) {
+                        Text(copyResolver.resolve(
+                            state.pitcher.throwingHand == .left ? AppCopyKey.handLeft : AppCopyKey.handRight
+                        ))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textSecondary)
                         AbilityGaugeView(label: copyResolver.resolve(.stuff), value: state.pitcher.stuff)
                         AbilityGaugeView(label: copyResolver.resolve(.command), value: state.pitcher.command)
                         AbilityGaugeView(label: copyResolver.resolve(.movement), value: state.pitcher.movement)
@@ -438,6 +455,19 @@ private struct RecordBoard: View {
                                     .font(.caption.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.milestone)
                                     .frame(maxWidth: .infinity, alignment: .trailing)
+                                    // 직접 던진 가을 경기는 박스스코어를 한 줄씩 남긴다.
+                                    // 이전에는 승패 집계만 남아 "플레이오프에서 던진
+                                    // 경기 기록이 어디에도 없다"는 구멍이 있었다.
+                                    ForEach(postseason.filter(\.directlyPlayed)) { game in
+                                        if let line = ProCareerPresentation.postseasonDirectLine(
+                                            game, resolver: copyResolver
+                                        ) {
+                                            Text(verbatim: line)
+                                                .font(.caption.monospacedDigit())
+                                                .foregroundStyle(BaseballTheme.textSecondary)
+                                                .frame(maxWidth: .infinity, alignment: .trailing)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -490,6 +520,8 @@ private struct RecordBoard: View {
                 }
             }
             .padding(BaseballMetrics.gutter)
+            .padding(.bottom, 28)
+            .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
         }
         .background(BaseballTheme.canvas)
     }

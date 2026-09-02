@@ -645,7 +645,12 @@ public struct SelectLegacyParams: Codable, Equatable, Sendable {
     }
 }
 
-public struct PitcherLabEvent: Codable, Equatable, Sendable {
+/// final class 박싱: 중첩 스냅숏을 가진 값 타입 배열은 Swift 6.3의 `outlined destroy`
+/// 경로에서 오버릴리즈를 낸다. 전체 스위트에서 `RPCServerTests`의 훈련 왕복이
+/// `outlined destroy of [PitcherLabEvent]`로 SIGBUS(10) 하던 이유다.
+/// 모든 프로퍼티가 `let`이고 엔진은 새 이벤트를 만들기만 하므로 JSON 모양과
+/// 값 의미론은 그대로다.
+public final class PitcherLabEvent: Codable, Equatable, Sendable {
     public let eventType: String
     public let sequence: Int
     public let training: TrainingSessionSnapshot?
@@ -685,6 +690,21 @@ public struct PitcherLabEvent: Codable, Equatable, Sendable {
         self.scouting = scouting
         self.legacy = legacy
         self.reasonCodes = reasonCodes
+    }
+
+    public static func == (lhs: PitcherLabEvent, rhs: PitcherLabEvent) -> Bool {
+        lhs.eventType == rhs.eventType
+            && lhs.sequence == rhs.sequence
+            && lhs.training == rhs.training
+            && lhs.importantInning == rhs.importantInning
+            && lhs.relationshipChoice == rhs.relationshipChoice
+            && lhs.catcherTrustBefore == rhs.catcherTrustBefore
+            && lhs.catcherTrustAfter == rhs.catcherTrustAfter
+            && lhs.catcherTrustChangeApplied == rhs.catcherTrustChangeApplied
+            && lhs.awakening == rhs.awakening
+            && lhs.scouting == rhs.scouting
+            && lhs.legacy == rhs.legacy
+            && lhs.reasonCodes == rhs.reasonCodes
     }
 }
 

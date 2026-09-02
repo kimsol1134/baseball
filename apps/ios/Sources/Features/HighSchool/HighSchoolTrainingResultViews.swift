@@ -59,9 +59,13 @@ struct HighSchoolArmHealthResultCard: View {
 /// 버튼을 못 찾고 회차가 그 자리에서 멈췄다. 흐름 안의 카드면 결과와 다음 행동이 세로로
 /// 이어져, 스크롤 없이 읽고 그대로 다음 훈련을 누른다.
 ///
+/// 국면이 관계·토너먼트로 바뀐 뒤에는 `compact`로 한 줄만 남긴다. 전체 카드가 다음
+/// 선택의 위를 계속 덮지 않게 하려는 것이다. 닫기 버튼은 어느 쪽이든 유지한다.
+///
 /// 성장이 0인 훈련도 여기 뜬다. 안 오른 것도 결과이고, 아무것도 안 뜨는 것이 가장 나쁘다.
 struct TrainingResultPanel: View {
     let receipt: TrainingReceipt
+    var compact: Bool = false
     let onDismiss: () -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -96,21 +100,23 @@ struct TrainingResultPanel: View {
 
             // 오른 값이 주인공이다. 큰 글자 한 줄이면 스치듯 봐도 읽힌다.
             Text(HighSchoolPresentation.localizedTrainingResultHeadline(receipt, resolver: copyResolver))
-                .font(BaseballType.scoreboard)
+                .font(compact ? .title3.weight(.heavy) : BaseballType.scoreboard)
                 .foregroundStyle(grew ? accent : BaseballTheme.textSecondary)
                 .accessibilityIdentifier("hs.training.result.headline")
 
-            ForEach(receipt.gains.filter { $0.after > $0.before }) { gain in
-                Text(HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver))
-                    .font(.footnote.monospacedDigit())
-                    .foregroundStyle(BaseballTheme.textSecondary)
-            }
+            if !compact {
+                ForEach(receipt.gains.filter { $0.after > $0.before }) { gain in
+                    Text(HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver))
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                }
 
-            if let bloom = receipt.bloom {
-                Text(HighSchoolPresentation.localizedTrainingResultBloom(bloom, resolver: copyResolver))
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.milestone)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let bloom = receipt.bloom {
+                    Text(HighSchoolPresentation.localizedTrainingResultBloom(bloom, resolver: copyResolver))
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             if let learning = receipt.pitchLearning {
@@ -131,20 +137,22 @@ struct TrainingResultPanel: View {
                 .accessibilityIdentifier("hs.training.result.pitchLearning")
             }
 
-            Text(HighSchoolPresentation.localizedTrainingResultDetail(receipt, resolver: copyResolver))
-                .font(.footnote)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if !compact {
+                Text(HighSchoolPresentation.localizedTrainingResultDetail(receipt, resolver: copyResolver))
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            // 피로는 훈련의 가격이다. 결과와 같은 자리에서 보여야 다음 강도를 고를 수 있다.
-            HStack(spacing: 6) {
-                Image(systemName: "battery.50").font(.caption2)
-                Text(HighSchoolPresentation.localizedTrainingFatigue(receipt, resolver: copyResolver))
-                    .font(.caption.monospacedDigit().weight(.semibold))
+                // 피로는 훈련의 가격이다. 결과와 같은 자리에서 보여야 다음 강도를 고를 수 있다.
+                HStack(spacing: 6) {
+                    Image(systemName: "battery.50").font(.caption2)
+                    Text(HighSchoolPresentation.localizedTrainingFatigue(receipt, resolver: copyResolver))
+                        .font(.caption.monospacedDigit().weight(.semibold))
+                }
+                .foregroundStyle(receipt.fatigueAfter >= 70 ? BaseballTheme.warning : BaseballTheme.textTertiary)
             }
-            .foregroundStyle(receipt.fatigueAfter >= 70 ? BaseballTheme.warning : BaseballTheme.textTertiary)
         }
-        .padding(BaseballMetrics.gutter)
+        .padding(compact ? 10 : BaseballMetrics.gutter)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             (receipt.bloom != nil || receipt.jackpot

@@ -64,11 +64,13 @@ final class ProSeasonDecisionTests: XCTestCase {
         store.updatePersisted { $0.result = pendingResult }
         store.loadState = .ready
 
-        XCTAssertEqual(decision.choices.count, 3)
+        XCTAssertGreaterThanOrEqual(decision.choices.count, 2)
+        XCTAssertLessThanOrEqual(decision.choices.count, 3)
+        let resolver = GameCopyResolver(language: .korean, policy: .releaseSafe)
         for choice in decision.choices {
             let label = ProSeasonDecisionView.accessibilityLabel(for: choice)
-            XCTAssertTrue(label.contains(choice.title))
-            XCTAssertTrue(label.contains(choice.detail))
+            XCTAssertTrue(label.contains(ProCareerPresentation.choiceTitle(choice, resolver: resolver)))
+            XCTAssertTrue(label.contains(ProCareerPresentation.choiceDetail(choice, resolver: resolver)))
             XCTAssertTrue(label.contains(choice.effect.summary))
         }
 
@@ -109,7 +111,8 @@ final class ProSeasonDecisionTests: XCTestCase {
         XCTAssertEqual(store.state?.decisionHistory?.last?.effect, choice.effect)
         let record = try XCTUnwrap(store.state?.decisionHistory?.last)
         let recordLabel = ProDecisionHistoryCard.accessibilityLabel(for: record)
-        XCTAssertTrue(recordLabel.contains(choice.title))
+        let resolver = GameCopyResolver(language: .korean, policy: .releaseSafe)
+        XCTAssertTrue(recordLabel.contains(ProCareerPresentation.choiceTitle(choice, resolver: resolver)))
         XCTAssertTrue(recordLabel.contains(choice.effect.summary))
 
         let properties = MobileCareerStore.decisionAnalyticsProperties(decision: decision, choice: choice)
@@ -117,11 +120,90 @@ final class ProSeasonDecisionTests: XCTestCase {
         XCTAssertEqual(properties["choice_id"] as? String, choice.id)
         XCTAssertEqual(properties["season"] as? Int, decision.season)
         XCTAssertEqual(properties["week"] as? Int, decision.week)
+        XCTAssertEqual(properties["decision_type"] as? String, decision.type.rawValue)
         XCTAssertEqual(GameAnalytics.Event.proSeasonDecisionSelected.rawValue, "pro_season_decision_selected")
+        XCTAssertEqual(GameAnalytics.Event.proWeeklyDecisionFollowUpShown.rawValue, "pro_weekly_decision_followup_shown")
 
         let revision = store.state?.revision
         store.applySeasonDecision(decisionID: decision.id, choiceID: choice.id)
         XCTAssertEqual(store.state?.revision, revision, "확인 콜백이 반복돼도 같은 결정을 다시 적용하면 안 됩니다.")
+    }
+
+    func testWeeklyDecisionSnapshotNewsLocalizesForEnglishAndJapanese() throws {
+        let english = GameCopyResolver(language: .english, policy: .releaseSafe)
+        let japanese = GameCopyResolver(language: .japanese, policy: .releaseSafe)
+        let korean = GameCopyResolver(language: .korean, policy: .releaseSafe)
+        let state = try firstDecision(seed: 8_407).snapshot
+
+        XCTAssertEqual(
+            ProCareerPresentation.news("시즌 결정 · 3주차", resolver: korean),
+            "시즌 결정 · 3주차"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news("시즌 결정 · 3주차", resolver: english),
+            "Season decision · week 3"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news("시즌 결정 · 3주차", resolver: japanese),
+            "シーズン決定 · 第3週"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.storeSummary("시즌 결정 · 9주차", state: state, resolver: english),
+            "Season decision · week 9"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news(
+                "결정 결과 · 등판 간격 · QS 2 · 실점 5",
+                resolver: english
+            ),
+            "Decision result · shorter rest · QS 2 · 5 runs"
+        )
+        let followUp = ProDecisionFollowUp(
+            decisionID: "rotation_push.week3",
+            type: .rotationPush,
+            season: 1,
+            week: 6,
+            summaryKey: "content.pro-decision.followup.rotation_push",
+            qualityStarts: 2,
+            runsAllowed: 8
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.followUpSummary(followUp, resolver: korean),
+            "등판 간격 단축의 3주가 끝났습니다. · QS 2 · 실점 8"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.followUpSummary(followUp, resolver: english),
+            "The shorter-rest window is over. · QS 2 · R 8"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.followUpSummary(followUp, resolver: japanese),
+            "登板間隔短縮の3週間が終わりました。 · QS 2 · 失点 8"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news(
+                "결정 결과 · 신구종 실전 · 제구 회복 +3",
+                resolver: japanese
+            ),
+            "決断の結果 · 新球種実戦 · 制球の回復 +3"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news(
+                "결정 결과 · 2군 재정비 · 복귀 · 감독의 믿음 +4",
+                resolver: english
+            ),
+            "Decision result · farm reset · return · manager faith +4"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news(
+                "결정 결과 · 베테랑 조언 · 성장 구위 +1 · 제구 -2 · 변화구 0",
+                resolver: english
+            ),
+            "Decision result · veteran advice · stuff +1 · command -2 · movement +0"
+        )
+        XCTAssertEqual(
+            ProCareerPresentation.news("결정 결과", resolver: japanese),
+            "決断の結果"
+        )
     }
 
     func testPendingDecisionSaveResumeReturnsToIdenticalDecisionScreen() throws {
@@ -172,7 +254,7 @@ final class ProSeasonDecisionTests: XCTestCase {
         XCTAssertEqual(store.state?.phase, .seasonDecision)
         XCTAssertNotNil(store.state?.pendingDecision)
         XCTAssertEqual(store.state?.decisionHistory?.count ?? 0, beforeDecision.snapshot.decisionHistory?.count ?? 0)
-        XCTAssertTrue(ProCareerEngine.seasonDecisionWeeks.contains(store.state?.week ?? -1))
+        XCTAssertTrue(ProCareerEngine.decisionWeeks(for: store.state!).contains(store.state?.week ?? -1))
     }
 
     func testAgencyRecoveryCanBatchAdvanceWithoutSilentlySkippingAppearances() throws {

@@ -972,6 +972,30 @@ public enum ProContractMarketRules {
         recoveryYear: Bool = false
     ) -> PitcherSnapshot {
         let usesArc = (proRulesVersion ?? 1) >= ProCareerEngine.careerArcRulesVersion
+        let usesChallenge = (proRulesVersion ?? 1) >= ProCareerEngine.careerChallengeRulesVersion
+        if usesChallenge {
+            // v8: 에이징이 커리어 아크를 만든다. 이전 규칙은 33세(시즌 15+)까지 어떤
+            // 하락도 없고 command·stamina는 영원히 그대로여서, 시즌 1~14가 굴곡 없는
+            // 단조 상승이었다("선수생활에 굴곡이 있어야 재밌을듯" 리뷰). 31세부터 구위·
+            // 변화구가 완만히, 34세부터 가파르게 내려가고 제구·체력도 함께 기운다.
+            // 회복 시즌 투자(recoveryYear)는 하락을 한 단계 줄인다.
+            let primary: Int = effectiveAge < 31 ? 0 : effectiveAge < 34 ? 1 : 2
+            let secondary: Int = effectiveAge < 34 ? 0 : 1
+            let primaryDecline = recoveryYear ? max(0, primary - 1) : primary
+            let secondaryDecline = recoveryYear ? 0 : secondary
+            guard primaryDecline > 0 || secondaryDecline > 0 else { return pitcher }
+            return PitcherSnapshot(
+                id: pitcher.id,
+                name: pitcher.name,
+                stuff: clamp(pitcher.stuff - primaryDecline, 20, 80),
+                command: clamp(pitcher.command - secondaryDecline, 20, 80),
+                movement: clamp(pitcher.movement - primaryDecline, 20, 80),
+                stamina: clamp(pitcher.stamina - secondaryDecline, 20, 80),
+                pitchProfiles: pitcher.pitchProfiles,
+                throwingHand: pitcher.throwingHand,
+                mastery: pitcher.mastery
+            )
+        }
         let decline: Int
         if effectiveAge < 33 {
             decline = 0

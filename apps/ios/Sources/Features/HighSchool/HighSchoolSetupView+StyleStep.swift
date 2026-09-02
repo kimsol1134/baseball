@@ -20,6 +20,27 @@ extension HighSchoolSetupView {
                     selectPreset(preset)
                 }
             }
+
+            // 투구 손. 플래툰 판정(같은 손 타자 상대 우위)이 실제로 이 값을 읽는다 —
+            // "주인공 어느 손 투수인가요? 설정도 할 수 있었으면" 리뷰에 대한 응답.
+            VStack(alignment: .leading, spacing: 6) {
+                GameCopyText(AppCopyKey.setupHandTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textPrimary)
+                Picker(
+                    copyResolver.resolve(AppCopyKey.setupHandTitle),
+                    selection: $throwingHand
+                ) {
+                    Text(copyResolver.resolve(AppCopyKey.handRight)).tag(ThrowingHand.right)
+                    Text(copyResolver.resolve(AppCopyKey.handLeft)).tag(ThrowingHand.left)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("hs.setup.throwingHand")
+                GameCopyText(AppCopyKey.setupHandDetail)
+                    .font(.caption)
+                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

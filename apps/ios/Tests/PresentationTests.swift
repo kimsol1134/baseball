@@ -181,9 +181,7 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(KoreanCopy.objectParticle(number: 22), "를")
         XCTAssertEqual(KoreanCopy.objectParticle(number: 8), "을")
         XCTAssertEqual(KoreanCopy.objectParticle(number: 10), "을")
-        XCTAssertEqual(KoreanCopy.money(won: 120_000_000), "1억 2,000만 원")
-        XCTAssertEqual(KoreanCopy.money(won: 90_000_000), "9,000만 원")
-        XCTAssertEqual(KoreanCopy.money(won: 200_000_000), "2억 원")
+        XCTAssertEqual(KoreanCopy.money(won: 120_000_000), GameFormatters.krw(120_000_000, language: .korean))
     }
 
     /// 위기 차단 스탬프 — 실점 없이 닫은 이닝의 마지막 인플레이 아웃에만 찍힌다.

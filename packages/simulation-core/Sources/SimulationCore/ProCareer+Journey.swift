@@ -1481,12 +1481,13 @@ extension ProCareerEngine {
                 throw SimulationError.invalidProCareer("settlement recognition IDs are not canonical")
             }
             let recognitionsByID = Dictionary(uniqueKeysWithValues: journey.recognitions.map { ($0.id, $0) })
+            // 팀 기록에 넣는 5종 수상만 허용하면 가을 우승(`pro.autumn.champion`)처럼
+            // 같은 시즌·구단에 실제로 쌓인 시즌 수상이 결산 확인에서 거부된다.
             guard awardIDs.allSatisfy({ id in
                 guard let recognition = recognitionsByID[id] else { return false }
                 return recognition.kind == .award
                     && recognition.season == settlement.season
                     && recognition.teamID == settlement.teamID
-                    && ProTeamCareerRecordRules.isRecognizedTeamAward(recognition)
             }), milestoneIDs.allSatisfy({ id in
                 guard let recognition = recognitionsByID[id] else { return false }
                 return recognition.kind == .milestone
@@ -1550,12 +1551,19 @@ extension ProCareerEngine {
                     throw SimulationError.invalidProCareer("settlement goal progress is incomplete")
                 }
                 let expected = ProCareerGoalRules.expectedMetrics(for: before.ambition)
+                let alreadyLocked = before.completed
                 guard before.metrics.map(\.kind) == expected.map(\.kind),
                       after.metrics.map(\.kind) == expected.map(\.kind),
                       before.metrics.map(\.target) == expected.map(\.target),
                       after.metrics.map(\.target) == expected.map(\.target),
-                      before.completed == before.metrics.allSatisfy({ $0.current >= $0.target }),
-                      after.completed == after.metrics.allSatisfy({ $0.current >= $0.target }) else {
+                      ProCareerGoalRules.settlementMetricsAreConsistent(
+                        before,
+                        allowingLockedDip: alreadyLocked
+                      ),
+                      ProCareerGoalRules.settlementMetricsAreConsistent(
+                        after,
+                        allowingLockedDip: alreadyLocked && after.completed
+                      ) else {
                     throw SimulationError.invalidProCareer("settlement goal metrics are malformed")
                 }
                 let completionRecognitionID = "recognition:\(state.proCareerID):\(settlement.season):milestone:pro.ambition.\(after.ambition.rawValue).completed"
@@ -1819,7 +1827,10 @@ extension ProCareerEngine {
                 offseasonTransition: .some(nil),
                 recoveryYearPending: .some(nil)
             )),
-            postseason: .some(nil)
+            postseason: .some(nil),
+            activeDecisionModifiers: .some(nil),
+            resolvedFollowUps: .some(nil),
+            roleRequest: .some(nil)
         )
         let tensions = seasonTensions(for: base)
         let updated = replacing(base, seasonTensions: tensions)
@@ -1948,7 +1959,10 @@ extension ProCareerEngine {
                     pendingContractMarket: .some(nil),
                     settlementAcknowledged: true,
                     offseasonTransition: .some(nil)
-                ))
+                )),
+                activeDecisionModifiers: .some(nil),
+                resolvedFollowUps: .some(nil),
+                roleRequest: .some(nil)
             )
             let tensions = seasonTensions(for: nextState)
             return result(replacing(nextState, seasonTensions: tensions), nextSeed: params.seed, events: ["pro_offseason_resolved"])
@@ -2048,4 +2062,3 @@ public extension ProCareerEngine {
         try migrateLegacyJourney(params)
     }
 }
-

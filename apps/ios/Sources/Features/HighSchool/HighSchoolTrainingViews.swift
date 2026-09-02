@@ -242,6 +242,7 @@ struct TrainingCard: View {
         TrainingFocusOptionButton(
             option: option,
             title: HighSchoolPresentation.localized(option, resolver: copyResolver),
+            growthSummary: HighSchoolPresentation.localizedFocusMetric(option, resolver: copyResolver),
             detail: HighSchoolPresentation.localizedFocusDetail(option, resolver: copyResolver),
             windEffect: windEffect(for: option, resolver: copyResolver),
             opportunityBadge: copyResolver.resolve(AppCopyKey.trainingBadgeOpportunity),
@@ -392,6 +393,7 @@ struct TrainingCard: View {
 struct TrainingFocusOptionButton: View {
     let option: TrainingFocus
     let title: String
+    let growthSummary: String
     let detail: String
     let windEffect: String?
     let opportunityBadge: String
@@ -399,71 +401,90 @@ struct TrainingFocusOptionButton: View {
     let isOpportunity: Bool
     let isSchoolStrength: Bool
     @Binding var selection: TrainingFocus
+    @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
 
     private var isSelected: Bool { selection == option }
+    private var hidesDetail: Bool { (CopyDensity(rawValue: densityRaw) ?? .automatic) == .compact }
 
     var body: some View {
-        Button { selection = option } label: {
-            HStack(spacing: 12) {
-                Image(systemName: HighSchoolPresentation.focusSymbol(option))
-                    .font(.title3)
-                    .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.textSecondary)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        // localization-safe: resolved-copy
-                        Text(title).font(.subheadline.weight(.bold))
-                        if isOpportunity {
+        VStack(alignment: .leading, spacing: 2) {
+            Button { selection = option } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: HighSchoolPresentation.focusSymbol(option))
+                        .font(.title3)
+                        .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.textSecondary)
+                        .frame(width: 28)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
                             // localization-safe: resolved-copy
-                            Text(opportunityBadge)
-                                .font(.caption2.weight(.bold))
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(BaseballTheme.milestone.opacity(0.25), in: Capsule())
-                                .foregroundStyle(BaseballTheme.milestone)
-                        }
-                        // 학교 특기는 3년 내내 붙는 상수 보너스다. 기회와 특기가
-                        // 겹치는 턴을 알아보는 것이 훈련의 실제 결정이라 함께 표시한다.
-                        if isSchoolStrength {
-                            // localization-safe: resolved-copy
-                            Text(schoolStrengthBadge)
-                                .font(.caption2.weight(.bold))
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(BaseballTheme.action.opacity(0.25), in: Capsule())
-                            .foregroundStyle(BaseballTheme.action)
+                            Text(title).font(.subheadline.weight(.bold))
+                            if isOpportunity {
+                                // localization-safe: resolved-copy
+                                Text(opportunityBadge)
+                                    .font(.caption2.weight(.bold))
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(BaseballTheme.milestone.opacity(0.25), in: Capsule())
+                                    .foregroundStyle(BaseballTheme.milestone)
+                            }
+                            // 학교 특기는 3년 내내 붙는 상수 보너스다. 기회와 특기가
+                            // 겹치는 턴을 알아보는 것이 훈련의 실제 결정이라 함께 표시한다.
+                            if isSchoolStrength {
+                                // localization-safe: resolved-copy
+                                Text(schoolStrengthBadge)
+                                    .font(.caption2.weight(.bold))
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(BaseballTheme.action.opacity(0.25), in: Capsule())
+                                .foregroundStyle(BaseballTheme.action)
+                            }
                         }
                     }
-                    // localization-safe: resolved-copy
-                    Text(detail)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                    if let windEffect {
-                        // localization-safe: resolved-copy
-                        Text(windEffect)
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.information)
-                    }
+                    Spacer()
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.border)
                 }
-                Spacer()
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? BaseballTheme.selection : BaseballTheme.border)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
-            .background(
-                isSelected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
-                in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                    .stroke(
-                        isSelected ? BaseballTheme.selection : BaseballTheme.border,
-                        lineWidth: isSelected ? 2 : 1
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("hs.focus.\(option.rawValue)")
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+            VStack(alignment: .leading, spacing: 2) {
+                GlossaryText(
+                    text: growthSummary,
+                    font: .footnote.weight(.semibold),
+                    color: BaseballTheme.positive
+                )
+                .accessibilityIdentifier("hs.focus.effect.\(option.rawValue)")
+                if !hidesDetail {
+                    GlossaryText(
+                        text: detail,
+                        font: .footnote,
+                        color: BaseballTheme.textSecondary
                     )
+                }
+                if let windEffect {
+                    GlossaryText(
+                        text: windEffect,
+                        font: .caption.monospacedDigit(),
+                        color: BaseballTheme.information
+                    )
+                }
             }
+            .padding(.leading, 40)
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("hs.focus.\(option.rawValue)")
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+        .background(
+            isSelected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
+            in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                .stroke(
+                    isSelected ? BaseballTheme.selection : BaseballTheme.border,
+                    lineWidth: isSelected ? 2 : 1
+                )
+        }
     }
 }
 

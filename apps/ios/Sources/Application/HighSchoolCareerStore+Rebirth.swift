@@ -338,6 +338,7 @@ extension HighSchoolCareerStore {
             soulDomain: last.soulDomain,
             startingRepertoire: last.startingRepertoire
                 ?? PitchLearningRules.recommendedSelection(presetID: preset.id),
+            throwingHand: last.throwingHand,
             entryPoint: entryPoint
         )
     }

@@ -1109,7 +1109,18 @@ public enum ProCareerRecognitionRules {
         let ra9 = stats.inningsOuts == 0 ? Int.max : stats.runsAllowed * 27_000 / stats.inningsOuts
         let bb9 = stats.inningsOuts == 0 ? Int.max : stats.walks * 27_000 / stats.inningsOuts
         let h9 = stats.inningsOuts == 0 ? Int.max : stats.hits * 27_000 / stats.inningsOuts
-        if rulesVersion >= 2 {
+        if rulesVersion >= 3 {
+            // v2 문턱은 초말 전환 아웃이 유실되던 시절(이닝 ~1/6 과소집계, 비율 지표
+            // 과대평가)에 맞춰져 있었다. 집계 수정 후 같은 문턱의 수상 빈도가 2.4배로
+            // 뛰어 영구결번률이 밴드(8~20%)를 넘었다 — 실측 지표 기준으로 되돌린다.
+            if stats.strikeouts >= 180 { ids.append("pro.award.strikeouts") }
+            if ra9 < 2_400, stats.games >= 20, stats.inningsOuts >= 380 {
+                ids.append("pro.award.run-prevention")
+            }
+            if bb9 < 1_500, stats.inningsOuts >= 380 { ids.append("pro.award.command") }
+            if h9 < 6_800, stats.inningsOuts >= 380 { ids.append("pro.award.hits") }
+            if stats.inningsOuts >= 540 { ids.append("pro.award.innings") }
+        } else if rulesVersion >= 2 {
             if stats.strikeouts >= 180 { ids.append("pro.award.strikeouts") }
             if ra9 < 2_700, stats.games >= 20, stats.inningsOuts >= 360 {
                 ids.append("pro.award.run-prevention")
@@ -1396,6 +1407,20 @@ public enum ProCareerGoalRules {
             metrics: metrics,
             completed: goal.completedSeason != nil || currentlyMeets
         )
+    }
+
+    /// Settlement snapshots keep `completed` locked once an ambition is done. A later
+    /// gap year or free-agency return can drop the live score, so a locked completion
+    /// may show currents below target. A first completion still has to meet every bar.
+    public static func settlementMetricsAreConsistent(
+        _ progress: ProCareerGoalProgress,
+        allowingLockedDip: Bool
+    ) -> Bool {
+        let meets = progress.metrics.allSatisfy { $0.current >= $0.target }
+        if progress.completed {
+            return meets || allowingLockedDip
+        }
+        return !meets
     }
 
     public static func awardCount(for state: ProCareerSnapshot) -> Int {

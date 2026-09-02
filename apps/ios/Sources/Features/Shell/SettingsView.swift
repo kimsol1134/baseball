@@ -61,6 +61,17 @@ struct SettingsView: View {
             }
 
             Section {
+                NavigationLink {
+                    GlossaryListView()
+                } label: {
+                    GameCopyText(MetaUICopyKey.settingsGlossaryTitle.gameCopyKey)
+                }
+                .accessibilityIdentifier("settings.glossary")
+            } footer: {
+                GameCopyText(MetaUICopyKey.settingsGlossaryFooter.gameCopyKey)
+            }
+
+            Section {
                 Toggle(copyResolver.resolve(.settingsAudioSound), isOn: Binding(get: { audio.soundEnabled }, set: { audio.soundEnabled = $0 }))
                 Toggle(copyResolver.resolve(AppCopyKey.settingsMusic), isOn: Binding(get: { audio.musicEnabled }, set: { audio.musicEnabled = $0 }))
                 Toggle(copyResolver.resolve(AppCopyKey.settingsHaptics), isOn: Binding(get: { audio.hapticsEnabled }, set: { audio.hapticsEnabled = $0 }))

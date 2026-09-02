@@ -92,6 +92,64 @@ final class LocalizationCoverageTests: XCTestCase {
         XCTAssertFalse(resolver.resolve(.actionClose).contains("닫기"))
     }
 
+    func testPostseasonFinaleContinueControlExistsInEveryLanguage() throws {
+        let localizable = try localizableEntries()
+        let japanese = try localizableJapanese()
+        let keys = [
+            ProUICopyKey.seasonReviewAction.rawValue,
+            ProUICopyKey.postseasonFinaleEyebrow.rawValue,
+            ProUICopyKey.postseasonFinaleChampionTitle.rawValue,
+            ProUICopyKey.postseasonFinaleChampionBody.rawValue,
+            ProUICopyKey.postseasonFinaleRunnerUpTitle.rawValue,
+            ProUICopyKey.postseasonFinaleRunnerUpBody.rawValue,
+            ProUICopyKey.postseasonFinaleEliminatedTitle.rawValue,
+            ProUICopyKey.postseasonFinaleEliminatedBody.rawValue,
+        ]
+        var catalogs: [AppLanguage: [String: String]] = [.korean: [:], .english: [:], .japanese: [:]]
+        for key in keys {
+            let entry = try XCTUnwrap(localizable[key], key)
+            let ja = try XCTUnwrap(japanese[key], key)
+            XCTAssertFalse(entry.korean.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            XCTAssertFalse(entry.english.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            XCTAssertFalse(ja.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            XCTAssertNil(
+                koreanPattern.firstMatch(in: entry.english, range: NSRange(entry.english.startIndex..., in: entry.english)),
+                key
+            )
+            XCTAssertNil(
+                koreanPattern.firstMatch(in: ja, range: NSRange(ja.startIndex..., in: ja)),
+                key
+            )
+            catalogs[.korean]?[key] = entry.korean
+            catalogs[.english]?[key] = entry.english
+            catalogs[.japanese]?[key] = ja
+        }
+
+        for language in AppLanguage.allCases {
+            let resolver = GameCopyResolver(language: language, catalog: catalogs, policy: .releaseSafe)
+            let action = resolver.resolve(ProUICopyKey.seasonReviewAction)
+            XCTAssertFalse(action.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "\(language)")
+            XCTAssertNotEqual(action, GameCopyResolver.unavailableText, "\(language)")
+        }
+
+        let finale = try IOSSourceScan.typeBody(
+            "ProPostseasonFinaleView",
+            in: "apps/ios/Sources/Features/Pro/ProImportantGameIntro.swift"
+        )
+        XCTAssertTrue(finale.contains("identifier: \"pro.seasonReview.confirm\""))
+        XCTAssertTrue(finale.contains(".accessibilityElement(children: .contain)"))
+        XCTAssertTrue(finale.contains(".accessibilityIdentifier(\"pro.postseason.finale\")"))
+        XCTAssertFalse(finale.contains("if copyResolver.language"))
+        XCTAssertFalse(finale.contains("GameCopyResolver.unavailableText"))
+        let pill = try XCTUnwrap(finale.range(of: "PrimaryPill("))
+        let ident = try XCTUnwrap(finale.range(of: "identifier: \"pro.seasonReview.confirm\""))
+        XCTAssertLessThan(pill.lowerBound, ident.lowerBound)
+        XCTAssertFalse(
+            finale[pill.lowerBound..<ident.lowerBound].contains("if "),
+            "finale continue PrimaryPill must not be gated on a missing Japanese key"
+        )
+    }
+
     func testP4BatchEnglishNeverFallsBackToKorean() {
         let resolver = GameCopyResolver(
             language: .english,
@@ -1628,7 +1686,7 @@ final class LocalizationCoverageTests: XCTestCase {
             (.proRole, ["선발", "긴 이닝 구원", "필승조", "마무리"]),
             (.proWeekPlan, ["구위 개발", "변화구 개발", "무기 개발", "제구 다듬기", "체력 만들기", "회복", "신뢰 쌓기"]),
             (.offseasonDecision, ["현재 구단에 남는다", "군 복무를 다녀온다", "FA를 신청한다", "은퇴한다"]),
-            (.proSeasonDecisionType, ["추가 불펜", "포수와 경기 계획", "역할 면담", "기록 추격", "라이벌 분석", "시즌 막바지", "미디어 기회", "슬럼프 갈림길", "전성기 갈림길"]),
+            (.proSeasonDecisionType, ["추가 불펜", "포수와 경기 계획", "역할 면담", "기록 추격", "라이벌 분석", "시즌 막바지", "미디어 기회", "슬럼프 갈림길", "전성기 갈림길", "등판 간격 단축", "신구종 실전 투입", "2군 재정비", "베테랑 조언"]),
             (.proSeasonSegment, ["스프링캠프", "개막", "전반기", "올스타 휴식기", "순위 싸움", "시즌 막바지"]),
             (.proSeasonTrigger, ["개막 선언", "콜업 오디션", "1군 데뷔", "기록 추격", "보직 승부", "순위 경쟁", "와일드카드", "준플레이오프", "플레이오프", "우승 결정전"]),
         ]
@@ -2256,6 +2314,8 @@ final class LocalizationCoverageTests: XCTestCase {
         XCTAssertTrue(chapterBlock.contains("chapterCopy.titleToken"))
         XCTAssertTrue(chapterBlock.contains("chapterCopy.seasonToken"))
 
+        // 원문 필드 금지만 본다. 관계 국면에서 카드를 접는 동작은
+        // HighSchoolTrainingResultLayoutTests가 지킨다.
         let resultBlock = try IOSSourceScan.typeBody(
             "TrainingResultPanel",
             in: "apps/ios/Sources/HighSchoolTrainingResultViews.swift"
@@ -2580,6 +2640,40 @@ final class LocalizationCoverageTests: XCTestCase {
         )
     }
 
+    func testGlossaryCatalogHasKoreanEnglishJapaneseParity() throws {
+        XCTAssertEqual(GlossaryCatalog.terms.count, 20)
+        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 20)
+        let entries = try gameContentEntries()
+        let expectedKeys = Set(GlossaryCatalog.terms.flatMap { [$0.nameKey, $0.definitionKey] })
+        XCTAssertEqual(expectedKeys.count, 40)
+        let glossaryKeys = Set(entries.keys.filter { $0.hasPrefix("content.glossary.") })
+        XCTAssertEqual(glossaryKeys, expectedKeys)
+
+        let japanese = try gameContentJapanese()
+        for term in GlossaryCatalog.terms {
+            let name = try XCTUnwrap(entries[term.nameKey], term.nameKey)
+            let definition = try XCTUnwrap(entries[term.definitionKey], term.definitionKey)
+            XCTAssertFalse(name.korean.isEmpty, term.nameKey)
+            XCTAssertFalse(name.english.isEmpty, term.nameKey)
+            XCTAssertFalse(definition.korean.isEmpty, term.definitionKey)
+            XCTAssertFalse(definition.english.isEmpty, term.definitionKey)
+            assertNoHangul(name.english, term.nameKey)
+            assertNoHangul(definition.english, term.definitionKey)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: name.korean),
+                GameCopyResolver.placeholderKinds(in: name.english),
+                term.nameKey
+            )
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: definition.korean),
+                GameCopyResolver.placeholderKinds(in: definition.english),
+                term.definitionKey
+            )
+            XCTAssertFalse(try XCTUnwrap(japanese[term.nameKey]).isEmpty, term.nameKey)
+            XCTAssertFalse(try XCTUnwrap(japanese[term.definitionKey]).isEmpty, term.definitionKey)
+        }
+    }
+
     private func gameContentEntries() throws -> [String: CatalogEntry] {
         let repositoryRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -2601,6 +2695,48 @@ final class LocalizationCoverageTests: XCTestCase {
                 continue
             }
             result[key] = CatalogEntry(korean: korean, english: english)
+        }
+        return result
+    }
+
+    private func gameContentJapanese() throws -> [String: String] {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let url = repositoryRoot
+            .appendingPathComponent("apps/ios/Sources/Presentation/Localization/GameContent.xcstrings")
+        let object = try JSONSerialization.jsonObject(with: Data(contentsOf: url))
+        let root = try XCTUnwrap(object as? [String: Any])
+        let strings = try XCTUnwrap(root["strings"] as? [String: Any])
+        var result: [String: String] = [:]
+        for (key, rawValue) in strings {
+            guard let value = rawValue as? [String: Any],
+                  let localizations = value["localizations"] as? [String: Any],
+                  let japanese = Self.stringUnitValue(localizations["ja"]) else { continue }
+            result[key] = japanese
+        }
+        return result
+    }
+
+    private func localizableJapanese() throws -> [String: String] {
+        let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let url = repositoryRoot
+            .appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
+        let object = try JSONSerialization.jsonObject(with: Data(contentsOf: url))
+        let root = try XCTUnwrap(object as? [String: Any])
+        let strings = try XCTUnwrap(root["strings"] as? [String: Any])
+        var result: [String: String] = [:]
+        for (key, rawValue) in strings {
+            guard let value = rawValue as? [String: Any],
+                  let localizations = value["localizations"] as? [String: Any],
+                  let japanese = Self.stringUnitValue(localizations["ja"]) else { continue }
+            result[key] = japanese
         }
         return result
     }
@@ -2640,6 +2776,10 @@ final class LocalizationCoverageTests: XCTestCase {
 
     private func expectedHighSchoolSetupKoreanCopy() -> [GameCopyKey: String] {
         [
+            AppCopyKey.setupHandTitle: "투구 손",
+            AppCopyKey.setupHandDetail: "같은 손 타자를 상대할 때 유리합니다. 상대 타선 구성에 따라 그 빈도가 달라집니다.",
+            AppCopyKey.handLeft: "좌완",
+            AppCopyKey.handRight: "우완",
             AppCopyKey.setupQuickRebirthTitle: "바로 환생",
             AppCopyKey.setupQuickRebirthSummary: "%@ · %@ · 지난 선수와 같은 설정",
             AppCopyKey.setupQuickRebirthAction: "같은 설정으로 다시 태어나기",

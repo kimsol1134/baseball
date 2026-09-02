@@ -54,7 +54,7 @@ final class CareerBootstrapTests: XCTestCase {
     /// Wave 0 characterization: the linked iOS bootstrap still signs the rookie contract
     /// before it exposes week one. This deliberately records the legacy path; it does not
     /// change the product flow.
-    func testWave0RookieStartAutomaticallySignsBeforeWeekOne() throws {
+    func testRookieStartAutomaticallySignsBeforeWeekOne() throws {
         let result = try CareerBootstrap.startCareer(preset: preset, playerName: "웨이브0투수", seed: 20_260_814)
         XCTAssertEqual(result.snapshot.phase, .weeklyPlan)
         XCTAssertEqual(result.snapshot.week, 0)
@@ -112,7 +112,7 @@ final class CareerBootstrapTests: XCTestCase {
     /// Wave 0 characterization: store review persists only the existing core review result;
     /// there is no salary, fan-support, or team-legacy settlement object yet.
     @MainActor
-    func testWave0SeasonReviewStoreHasNoSalaryFanOrTeamLegacySettlement() throws {
+    func testLegacySeasonReviewStoreHasNoSalaryFanOrTeamLegacySettlement() throws {
         let review = try seasonReviewFixture()
         let contractBefore = review.snapshot.contract
         let sync = SaveSync(
@@ -142,7 +142,7 @@ final class CareerBootstrapTests: XCTestCase {
 
     /// Wave 0 characterization: the season-review branch is still a single generic action card,
     /// so no salary/fan/team-legacy settlement is exposed by the current UI.
-    func testWave0SeasonReviewUIIsTheCurrentPlainActionCard() throws {
+    func testLegacySeasonReviewUIIsTheCurrentPlainActionCard() throws {
         let source = try IOSSourceScan.read("apps/ios/Sources/CareerFlowView.swift")
         let start = try XCTUnwrap(source.range(of: "case .seasonReview:"))
         let remainder = source[start.upperBound...]

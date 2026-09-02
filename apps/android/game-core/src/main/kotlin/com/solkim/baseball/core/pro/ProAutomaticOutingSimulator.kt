@@ -99,7 +99,9 @@ internal class ProAutomaticOutingSimulator(
             )
             if (benchMemory == null) benchMemory = RivalMemorySnapshot("${pitcher.id}:bench:outing", 0UL, 0, 0, emptyList())
             var memory = benchMemory
-            val outsBefore = (inning.inning - 1) * 3 + inning.outs
+            // 초말을 포함한 절대 아웃 수. 초가 끝나면 같은 회의 말(아웃 0)로 넘어가므로,
+            // 초말을 무시하면 초의 세 번째 아웃이 통째로 사라진다.
+            val outsBefore = absoluteOuts(inning)
             var context = PlateAppearanceContext(
                 plateAppearanceId = "week-pa-$plateAppearanceIndex",
                 revision = 0UL,
@@ -142,7 +144,7 @@ internal class ProAutomaticOutingSimulator(
                     runsOnBoard = result.gameState.runsAllowed
                     inning = result.gameState.inningState ?: inning
                     runners = result.gameState.runners
-                    outsTotal += max(0, (inning.inning - 1) * 3 + inning.outs - outsBefore)
+                    outsTotal += max(0, absoluteOuts(inning) - outsBefore)
                     break
                 }
                 seedText = result.nextSeed
@@ -165,4 +167,7 @@ internal class ProAutomaticOutingSimulator(
         val edge = max(0, pitcher.stamina - maxOf(pitcher.stuff, pitcher.command, pitcher.movement))
         return if (edge > 0) minOf(3, maxOf(1, (edge + 2) / 3)) else 0
     }
+
+    private fun absoluteOuts(state: InningStateSnapshot): Int =
+        (state.inning - 1) * 6 + (if (state.half == HalfInning.BOTTOM) 3 else 0) + state.outs
 }

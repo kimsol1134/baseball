@@ -31,7 +31,11 @@ struct ProSeasonSettlementView: View {
 
                 BaseballCard(title: copyResolver.resolve(.directionTitle)) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(verbatim: ProSeasonSettlementCopy.legacy(settlement, resolver: copyResolver))
+                        Text(verbatim: ProSeasonSettlementCopy.legacy(
+                            before: settlement.teamLegacyBefore,
+                            after: settlement.teamLegacyAfter,
+                            resolver: copyResolver
+                        ))
                         if let goalProgress = settlement.goalProgressAfter {
                             Text(verbatim: ProCareerPresentation.goalTitle(goalProgress.ambition, resolver: copyResolver))
                                 .font(.subheadline.weight(.semibold))

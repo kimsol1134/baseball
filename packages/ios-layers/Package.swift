@@ -5,6 +5,7 @@ import PackageDescription
 let package = Package(
     name: "BaseballIOSLayers",
     platforms: [
+        .macOS(.v13),
         .iOS(.v17)
     ],
     products: [
@@ -24,6 +25,14 @@ let package = Package(
         .target(
             name: "BaseballIOSPersistence",
             dependencies: [
+                "BaseballIOSDomain",
+                .product(name: "SimulationCore", package: "simulation-core")
+            ]
+        ),
+        .testTarget(
+            name: "BaseballIOSPersistenceTests",
+            dependencies: [
+                "BaseballIOSPersistence",
                 "BaseballIOSDomain",
                 .product(name: "SimulationCore", package: "simulation-core")
             ]

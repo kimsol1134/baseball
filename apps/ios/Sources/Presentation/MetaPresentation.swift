@@ -23,16 +23,38 @@ enum MetaPresentation {
         return resolver.resolve(.gameContent("content.weekly-task.\(kind.rawValue).next-action"))
     }
 
-    static func ratingMeaning(_ value: Int, resolver: GameCopyResolver) -> String {
-        resolver.resolve(ratingMeaningKey(value))
+    static func ratingMeaning(
+        _ value: Int,
+        context: GrowthStageContext = .highSchool,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(ratingMeaningKey(value, context: context))
     }
 
-    static func ratingMeaning(_ step: RatingScale.Step, resolver: GameCopyResolver) -> String {
-        resolver.resolve(ratingMeaningKey(step.minimum))
+    static func ratingMeaning(
+        _ step: RatingScale.Step,
+        context: GrowthStageContext = .highSchool,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(ratingMeaningKey(step.minimum, context: context))
     }
 
-    private static func ratingMeaningKey(_ value: Int) -> GameCopyKey {
-        switch RatingScale.steps.first(where: { value >= $0.minimum })?.minimum {
+    static func ratingMeaningKey(_ value: Int, context: GrowthStageContext) -> GameCopyKey {
+        let minimum = RatingScale.steps.first(where: { value >= $0.minimum })?.minimum
+        if context == .pro {
+            return switch minimum {
+            case 75: MetaUICopyKey.growthMeaningBest.gameCopyKey
+            case 65: MetaUICopyKey.growthMeaningProTop.gameCopyKey
+            case 55: MetaUICopyKey.growthMeaningAbovePro.gameCopyKey
+            case 50: MetaUICopyKey.growthMeaningProAverage.gameCopyKey
+            case 47: MetaUICopyKey.growthMeaningRotation.gameCopyKey
+            case 43: MetaUICopyKey.growthMeaningCallUp.gameCopyKey
+            case 38: MetaUICopyKey.growthMeaningRole.gameCopyKey
+            case 33: MetaUICopyKey.growthMeaningFarm.gameCopyKey
+            default: MetaUICopyKey.growthMeaningAdjusting.gameCopyKey
+            }
+        }
+        return switch minimum {
         case 75: AppCopyKey.prologueAbilityMeaningBest
         case 65: AppCopyKey.prologueAbilityMeaningProTop
         case 55: AppCopyKey.prologueAbilityMeaningAbovePro

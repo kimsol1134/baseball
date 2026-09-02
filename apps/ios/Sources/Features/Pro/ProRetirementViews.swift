@@ -284,10 +284,11 @@ struct CareerTotals: View {
     let state: ProCareerSnapshot
     @Environment(\.gameCopyResolver) private var copyResolver
 
-    private var totals: (games: Int, outs: Int, strikeouts: Int, wins: Int, losses: Int, saves: Int, runs: Int) {
-        state.careerStats.reduce((0, 0, 0, 0, 0, 0, 0)) {
+    private var totals: (games: Int, outs: Int, strikeouts: Int, wins: Int, losses: Int, saves: Int, runs: Int, hits: Int, walks: Int) {
+        state.careerStats.reduce((0, 0, 0, 0, 0, 0, 0, 0, 0)) {
             ($0.0 + $1.games, $0.1 + $1.inningsOuts, $0.2 + $1.strikeouts,
-             $0.3 + $1.wins, $0.4 + $1.losses, $0.5 + $1.saves, $0.6 + $1.runsAllowed)
+             $0.3 + $1.wins, $0.4 + $1.losses, $0.5 + $1.saves, $0.6 + $1.runsAllowed,
+             $0.7 + $1.hits, $0.8 + $1.walks)
         }
     }
 
@@ -309,6 +310,17 @@ struct CareerTotals: View {
                         value: GameFormatters.ra9(runsAllowed: totals.runs, outs: totals.outs, language: copyResolver.language)
                     )
                     Metric(title: copyResolver.resolve(.totalsSeasons), value: "\(state.careerStats.count)")
+                }
+                // 피안타·볼넷·WHIP. "13년차인데 통산 피안타가 없다"는 리뷰 — 기록 자체는
+                // 쌓이고 있었지만 보여 주는 화면이 없었다. 피안타는 2026-08 중순부터
+                // 기록되므로 그 전 시즌 몫은 빠질 수 있다.
+                HStack(spacing: 10) {
+                    Metric(title: copyResolver.resolve(.totalsHits), value: "\(totals.hits)")
+                    Metric(title: copyResolver.resolve(.totalsWalks), value: "\(totals.walks)")
+                    Metric(
+                        title: copyResolver.resolve(.totalsWHIP),
+                        value: GameFormatters.whip(hits: totals.hits, walks: totals.walks, outs: totals.outs, language: copyResolver.language)
+                    )
                 }
             }
         }

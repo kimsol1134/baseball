@@ -70,7 +70,9 @@ final class DraftConclusionPresentationTests: XCTestCase {
     func testPresentationLookupCannotChangeDraftPhaseSeedHashCommitmentOrJSON() throws {
         let engine = HighSchoolCareerEngine()
         let beforeDraft = try reachDraft(engine, seed: "20260723")
-        let beforeJSON = try JSONEncoder().encode(beforeDraft.snapshot)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let beforeJSON = try encoder.encode(beforeDraft.snapshot)
 
         _ = DraftConclusionPresentationCatalog.semanticKeys
         _ = DraftConclusionPresentationCatalog.teamFieldDescriptors.map(\.token)
@@ -78,7 +80,7 @@ final class DraftConclusionPresentationTests: XCTestCase {
         _ = DraftConclusionPresentationCatalog.signatureLegacyDescriptors.map(\.evidenceToken)
 
         let first = try engine.resolveDraft(.init(seed: beforeDraft.nextSeed, state: beforeDraft.snapshot))
-        let afterJSON = try JSONEncoder().encode(beforeDraft.snapshot)
+        let afterJSON = try encoder.encode(beforeDraft.snapshot)
         let second = try engine.resolveDraft(.init(seed: beforeDraft.nextSeed, state: beforeDraft.snapshot))
 
         XCTAssertEqual(beforeJSON, afterJSON)

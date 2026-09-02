@@ -22,7 +22,7 @@ struct OffseasonView: View {
         if state.journeyState != nil && journeyContractActive {
             return copyResolver.resolve(.offseasonActiveContractOpenMarketLocked)
         }
-        return copyResolver.resolve(.offseasonOpenMarketServiceLocked, arguments: [.integer(service)])
+        return ProOffseasonCopy.openMarketServiceLocked(service: service, resolver: copyResolver)
     }
 
     private func decisionLabel(_ decision: OffseasonDecision) -> String {
@@ -33,9 +33,10 @@ struct OffseasonView: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: .stadiumNight,
-                eyebrow: copyResolver.resolve(
-                    .offseasonEyebrow,
-                    arguments: [.integer(state.season), .integer(state.age)]
+                eyebrow: ProOffseasonCopy.eyebrow(
+                    season: state.season,
+                    age: state.age,
+                    resolver: copyResolver
                 ),
                 title: copyResolver.resolve(.offseasonTitle)
             )
@@ -43,7 +44,7 @@ struct OffseasonView: View {
             HStack(spacing: 10) {
                 Metric(
                     title: copyResolver.resolve(.offseasonService),
-                    value: copyResolver.resolve(.offseasonYears, arguments: [.integer(service)]),
+                    value: ProOffseasonCopy.years(service, resolver: copyResolver),
                     tone: freeAgencyReady ? .positive : .standard
                 )
                 Metric(
@@ -54,7 +55,7 @@ struct OffseasonView: View {
                 )
                 Metric(
                     title: copyResolver.resolve(.offseasonCareer),
-                    value: copyResolver.resolve(.offseasonSeasons, arguments: [.integer(state.careerStats.count)])
+                    value: ProOffseasonCopy.seasons(state.careerStats.count, resolver: copyResolver)
                 )
             }
 
@@ -68,7 +69,7 @@ struct OffseasonView: View {
                     Text(
                         journeyContractExpired
                             ? copyResolver.resolve(.offseasonContractExpired)
-                            : copyResolver.resolve(.contractOfferRemaining, arguments: [.integer(journeyContractYears)])
+                            : ProContractCopy.remaining(years: journeyContractYears, resolver: copyResolver)
                     )
                         .font(.subheadline)
                         .foregroundStyle(BaseballTheme.textSecondary)
@@ -83,21 +84,19 @@ struct OffseasonView: View {
                     ? copyResolver.resolve(.offseasonRenewalChoice)
                     : decisionLabel(.continueCareer),
                 detail: journeyContractExpired
-                    ? copyResolver.resolve(
-                        .offseasonRenewalDetail,
-                        arguments: [.userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver))]
+                    ? ProOffseasonCopy.renewalDetail(
+                        teamName: ProCareerPresentation.teamName(state.team, resolver: copyResolver),
+                        resolver: copyResolver
                     )
                     : journeyContractActive
-                        ? copyResolver.resolve(
-                            .offseasonActiveContractDetail,
-                            arguments: [
-                                .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
-                                .integer(journeyContractYears ?? 0),
-                            ]
+                        ? ProOffseasonCopy.activeContractDetail(
+                            teamName: ProCareerPresentation.teamName(state.team, resolver: copyResolver),
+                            years: journeyContractYears ?? 0,
+                            resolver: copyResolver
                         )
-                        : copyResolver.resolve(
-                            .offseasonContinueDetail,
-                            arguments: [.userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver))]
+                        : ProOffseasonCopy.continueDetail(
+                            teamName: ProCareerPresentation.teamName(state.team, resolver: copyResolver),
+                            resolver: copyResolver
                         ),
                 symbol: "arrow.forward.circle",
                 enabled: true,
@@ -172,18 +171,16 @@ struct OffseasonView: View {
     private var confirmMessage: String {
         switch pending {
         case .retire:
-            copyResolver.resolve(.offseasonConfirmRetireMessage, arguments: [.integer(state.careerStats.count)])
+            ProOffseasonCopy.confirmRetireMessage(seasons: state.careerStats.count, resolver: copyResolver)
         case .militaryService:
-            copyResolver.resolve(.offseasonConfirmMilitaryMessage, arguments: [.integer(state.age + 2)])
+            ProOffseasonCopy.confirmMilitaryMessage(ageAfter: state.age + 2, resolver: copyResolver)
         case .freeAgency:
             copyResolver.resolve(.offseasonConfirmFreeAgencyMessage)
         default:
-            copyResolver.resolve(
-                .offseasonConfirmContinueMessage,
-                arguments: [
-                    .userText(ProCareerPresentation.teamName(state.team, resolver: copyResolver)),
-                    .integer(state.season + 1),
-                ]
+            ProOffseasonCopy.confirmContinueMessage(
+                teamName: ProCareerPresentation.teamName(state.team, resolver: copyResolver),
+                nextSeason: state.season + 1,
+                resolver: copyResolver
             )
         }
     }

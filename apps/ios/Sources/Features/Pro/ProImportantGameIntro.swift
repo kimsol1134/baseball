@@ -23,9 +23,10 @@ struct ImportantGameIntro: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
                 art: state.level == .major ? .proStadiumTunnel : .stadiumNight,
-                eyebrow: copyResolver.resolve(
-                    .importantEyebrow,
-                    arguments: [.integer(state.season), .integer(state.week)]
+                eyebrow: ProImportantGameCopy.eyebrow(
+                    season: state.season,
+                    week: state.week,
+                    resolver: copyResolver
                 ),
                 title: state.level == .major
                     ? copyResolver.resolve(.importantMajorTitle)
@@ -122,7 +123,7 @@ struct ImportantGameIntro: View {
     }
 
     private var postseasonSeriesState: ProPostseasonState? {
-        guard ProCareerEngine.usesFinalSeriesRules(state),
+        guard CareerDisplayRules.usesFinalSeriesRules(state),
               let postseason = state.postseason,
               postseason.currentRound != nil else { return nil }
         return postseason
@@ -418,6 +419,7 @@ struct ProPostseasonFinaleView: View {
                 action: onReview
             )
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pro.postseason.finale")
     }
 

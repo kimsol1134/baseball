@@ -45,4 +45,38 @@ enum CareerDisplayRules {
     ) -> RelationshipTarget {
         HighSchoolCareerEngine.relationshipTarget(forEventCategory: category)
     }
+
+    nonisolated static func usesFinalSeriesRules(_ state: ProCareerSnapshot) -> Bool {
+        ProCareerEngine.usesFinalSeriesRules(state)
+    }
+
+    nonisolated static func liveClimate(for state: ProCareerSnapshot) -> ProSeasonClimate? {
+        ProCareerEngine.liveClimate(for: state)
+    }
+
+    nonisolated static func liveBatterOffset(for state: ProCareerSnapshot) -> Int {
+        ProCareerEngine.liveBatterOffset(for: state)
+    }
+
+    nonisolated static func shouldOfferRoleRequest(_ state: ProCareerSnapshot) -> Bool {
+        ProRoleRequestRules.shouldOffer(state)
+    }
+
+    nonisolated static var roleRequestRoles: [ProRole] {
+        ProRoleRequestRules.requestableRoles
+    }
+
+    nonisolated static func roleRequestEvaluation(
+        state: ProCareerSnapshot,
+        requested: ProRole
+    ) -> ProRoleRequestEvaluation {
+        ProRoleRequestRules.evaluate(state: state, requested: requested)
+    }
+
+    nonisolated static func isAlreadyAssignedRole(
+        _ requested: ProRole,
+        state: ProCareerSnapshot
+    ) -> Bool {
+        ProRoleRequestRules.isAlreadyAssigned(requested, state: state)
+    }
 }

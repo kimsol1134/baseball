@@ -1159,6 +1159,16 @@ final class CareerSignatureLegacyTests: XCTestCase {
         if let balanceVersion = state.balanceVersion {
             canonical.append("balance_version:\(balanceVersion)")
         }
+        if let mastery = state.pitcher.mastery {
+            canonical.append("mastery:\(mastery.stuff):\(mastery.command):\(mastery.movement):\(mastery.stamina)")
+        }
+        if let repertoireRulesVersion = state.repertoireRulesVersion,
+           let project = state.pitchLearningProject {
+            let ready = state.pitcher.gameReadyPitchTypes.map(\.rawValue).sorted().joined(separator: ",")
+            let primary = state.pitcher.pitchProfiles?.first(where: { $0.role == .primary })?.pitchType.rawValue ?? "none"
+            let profiles = PitchLearningRules.profileCommitmentToken(for: state.pitcher)
+            canonical.append("repertoire:v\(repertoireRulesVersion):\(primary):\(ready):\(project.commitmentToken):\(profiles)")
+        }
         if let worldRulesVersion = state.worldRulesVersion {
             canonical.append("world_rules_version:\(worldRulesVersion)")
         }
@@ -1171,6 +1181,12 @@ final class CareerSignatureLegacyTests: XCTestCase {
         }
         if let soulBoosts = state.soulBoosts, !soulBoosts.isEmpty {
             canonical.append("soul_boosts:\(soulBoosts.joined(separator: ","))")
+        }
+        if let rebirthEcho = state.rebirthEcho {
+            canonical.append("rebirth_echo:\(rebirthEcho.commitmentToken)")
+        }
+        if let loadout = state.lineageLoadout {
+            canonical.append("lineage_loadout:\(loadout.rulesVersion):\(loadout.legacyID.rawValue):\(loadout.masteryRank):\(loadout.contributions):\(loadout.sourceLifeNumber.map(String.init) ?? "none")")
         }
         if let schedule = state.schedule {
             canonical.append("schedule:\(schedule.commitmentToken)")

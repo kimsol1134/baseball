@@ -80,16 +80,17 @@ struct PitchScenario {
     // MARK: - 프로 커리어
 
     static func pro(state: ProCareerSnapshot) -> PitchScenario {
+        let usesFinalSeriesRules = CareerDisplayRules.usesFinalSeriesRules(state)
         let situation = proSituation(
             for: state.seasonTrigger,
             season: state.season,
             week: state.week,
             postseason: state.postseason,
             role: state.role,
-            usesFinalSeriesRules: ProCareerEngine.usesFinalSeriesRules(state)
+            usesFinalSeriesRules: usesFinalSeriesRules
         )
         let catcherTrust = min(100, max(0, state.catcherTrust))
-        var offset = ProCareerEngine.liveBatterOffset(for: state)
+        var offset = CareerDisplayRules.liveBatterOffset(for: state)
         if let trigger = state.seasonTrigger {
             switch trigger {
             case .autumnWildCard: offset += ProPostseasonRules.extraOffset(for: .wildCard)
@@ -102,24 +103,24 @@ struct PitchScenario {
         let batters: Int
         switch state.seasonTrigger {
         case .autumnWildCard:
-            batters = ProCareerEngine.usesFinalSeriesRules(state)
+            batters = usesFinalSeriesRules
                 ? ProPostseasonRules.maximumBatters(for: state.role, round: .wildCard)
                 : ProPostseasonRules.maximumBatters(for: .wildCard)
         case .autumnSemifinal:
-            batters = ProCareerEngine.usesFinalSeriesRules(state)
+            batters = usesFinalSeriesRules
                 ? ProPostseasonRules.maximumBatters(for: state.role, round: .semifinal)
                 : ProPostseasonRules.maximumBatters(for: .semifinal)
         case .autumnPlayoff:
-            batters = ProCareerEngine.usesFinalSeriesRules(state)
+            batters = usesFinalSeriesRules
                 ? ProPostseasonRules.maximumBatters(for: state.role, round: .playoff)
                 : ProPostseasonRules.maximumBatters(for: .playoff)
         case .autumnFinal:
-            batters = ProCareerEngine.usesFinalSeriesRules(state)
+            batters = usesFinalSeriesRules
                 ? ProPostseasonRules.finalMaximumBatters(for: state.role)
                 : ProPostseasonRules.maximumBatters(for: .final)
         default: batters = 4
         }
-        let scenarioID: String = if ProCareerEngine.usesFinalSeriesRules(state),
+        let scenarioID: String = if usesFinalSeriesRules,
             let round = state.postseason?.currentRound {
             "pa-\(state.proCareerID)-\(state.season)-\(state.week)-\(round.rawValue)-\(state.postseason?.series?.nextGameNumber ?? 1)"
         } else {

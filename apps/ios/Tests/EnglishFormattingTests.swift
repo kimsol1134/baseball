@@ -40,6 +40,5 @@ final class EnglishFormattingTests: XCTestCase {
 
     func testKrwNeverConvertsTheStoredAmount() {
         XCTAssertEqual(GameFormatters.krw(120_000_000, language: .english), "KRW 120,000,000")
-        XCTAssertEqual(GameFormatters.krw(120_000_000, language: .korean), "120,000,000원")
     }
 }

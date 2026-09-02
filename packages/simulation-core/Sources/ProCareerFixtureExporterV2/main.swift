@@ -56,7 +56,11 @@ private func start(seed: String, sourceFanInterest: Int? = nil, journeyEnabled: 
         pitcher: pitcher,
         draftResult: draft(team: team),
         entitlement: activeEntitlement(),
-        sourceFanInterest: sourceFanInterest
+        sourceFanInterest: sourceFanInterest,
+        startingRepertoire: nil,
+        repertoireRulesVersion: nil,
+        pitchLearningProject: nil,
+        proRulesVersion: 8
     ))
 }
 
@@ -478,21 +482,36 @@ private func buildRows() throws -> [FixtureRow] {
         hashReason: "SHA-256(UTF-8(inputCanonical)) and SHA-256(UTF-8(outputCanonical)); pure rules projection from canonical market inputs, not an engine signature"
     ))
 
-    let mediaStarted = try start(seed: "620010", sourceFanInterest: 30)
-    var mediaTrace = ["start:620010:preset=power_prospect"]
-    var mediaOffers: [String] = []
-    let mediaRookie = try accept(mediaStarted, engine: engine, ambition: .recordBook, trace: &mediaTrace, selectedOffers: &mediaOffers)
-    let mediaSeason1 = try playUntilSeasonReview(mediaRookie, engine: engine, report: { ordinaryReport(for: $0, salt: 10) }, trace: &mediaTrace)
-    let mediaSettlement1 = try unwrapSettlement(mediaSeason1.snapshot)
-    let mediaAcknowledged1 = try engine.acknowledgeSettlement(.init(seed: mediaSeason1.nextSeed, state: mediaSeason1.snapshot, expectedRevision: mediaSeason1.snapshot.revision, settlementID: mediaSettlement1.id))
-    mediaTrace.append("acknowledge_settlement:\(mediaSettlement1.id)")
-    let mediaTransition = try engine.chooseOffseason(.init(seed: mediaAcknowledged1.nextSeed, state: mediaAcknowledged1.snapshot, decision: .continueCareer, expectedRevision: mediaAcknowledged1.snapshot.revision))
-    mediaTrace.append("choose_offseason:continue")
-    let mediaInvested = try engine.chooseInvestment(.init(seed: mediaTransition.nextSeed, state: mediaTransition.snapshot, expectedRevision: mediaTransition.snapshot.revision, investment: .fanFoundation))
-    mediaTrace.append("choose_investment:fan_foundation")
-    let mediaReviewed = try playUntilSeasonReview(mediaInvested, engine: engine, report: { ordinaryReport(for: $0, salt: 11) }, trace: &mediaTrace, preferMediaChoice: true)
-    let mediaRecord = mediaReviewed.snapshot.decisionHistory?.last(where: { $0.type == .mediaOpportunity })
-    let endorsement = mediaReviewed.snapshot.journeyState?.finances.transactions.last(where: { $0.kind == .endorsement })
+    // 미디어 결정은 시즌 2의 결정 주차에 팬 지지 35 이상이어야 뜬다. 시즌 1의 주간
+    // 결과가 규칙 수정으로 달라지면 특정 시드가 조건을 못 채울 수 있으므로, 조건을
+    // 만족하는 첫 시드를 앞에서부터 찾는다 — 찾은 시드는 input 문자열에 그대로 남아
+    // 픽스처는 여전히 결정적이다.
+    var mediaSeed = 620010
+    var mediaReviewed: ProCareerResult
+    var mediaRecord: ProDecisionRecord?
+    var endorsement: ProFinanceTransaction?
+    while true {
+        let mediaStarted = try start(seed: String(mediaSeed), sourceFanInterest: 30)
+        var mediaTrace = ["start:\(mediaSeed):preset=power_prospect"]
+        var mediaOffers: [String] = []
+        let mediaRookie = try accept(mediaStarted, engine: engine, ambition: .recordBook, trace: &mediaTrace, selectedOffers: &mediaOffers)
+        let mediaSeason1 = try playUntilSeasonReview(mediaRookie, engine: engine, report: { ordinaryReport(for: $0, salt: 10) }, trace: &mediaTrace)
+        let mediaSettlement1 = try unwrapSettlement(mediaSeason1.snapshot)
+        let mediaAcknowledged1 = try engine.acknowledgeSettlement(.init(seed: mediaSeason1.nextSeed, state: mediaSeason1.snapshot, expectedRevision: mediaSeason1.snapshot.revision, settlementID: mediaSettlement1.id))
+        mediaTrace.append("acknowledge_settlement:\(mediaSettlement1.id)")
+        let mediaTransition = try engine.chooseOffseason(.init(seed: mediaAcknowledged1.nextSeed, state: mediaAcknowledged1.snapshot, decision: .continueCareer, expectedRevision: mediaAcknowledged1.snapshot.revision))
+        mediaTrace.append("choose_offseason:continue")
+        let mediaInvested = try engine.chooseInvestment(.init(seed: mediaTransition.nextSeed, state: mediaTransition.snapshot, expectedRevision: mediaTransition.snapshot.revision, investment: .fanFoundation))
+        mediaTrace.append("choose_investment:fan_foundation")
+        mediaReviewed = try playUntilSeasonReview(mediaInvested, engine: engine, report: { ordinaryReport(for: $0, salt: 11) }, trace: &mediaTrace, preferMediaChoice: true)
+        mediaRecord = mediaReviewed.snapshot.decisionHistory?.last(where: { $0.type == .mediaOpportunity })
+        endorsement = mediaReviewed.snapshot.journeyState?.finances.transactions.last(where: { $0.kind == .endorsement })
+        if mediaRecord != nil, endorsement != nil { break }
+        mediaSeed += 1
+        if mediaSeed > 620060 {
+            throw NSError(domain: "ProFixtureV2", code: 36, userInfo: [NSLocalizedDescriptionKey: "no seed in 620010...620060 produces a season-2 media decision"])
+        }
+    }
     let mediaCanonical = [
         "mediaDecision=\(mediaRecord?.decisionID ?? "none")", "mediaChoice=\(mediaRecord?.choiceID ?? "none")",
         "endorsement=\(endorsement?.id ?? "none")", "amount=\(endorsement?.amount ?? 0)",
@@ -500,7 +519,7 @@ private func buildRows() throws -> [FixtureRow] {
     ].joined(separator: "|")
     rows.append(row(
         "fan_finance_media",
-        input: "commands=start(seed=620010)|accept_contract(record_book)|season_1|acknowledge|offseason=continue|investment=fan_foundation|season_2|media_choice=stable_first_if_present",
+        input: "commands=start(seed=\(mediaSeed))|accept_contract(record_book)|season_1|acknowledge|offseason=continue|investment=fan_foundation|season_2|media_choice=stable_first_if_present",
         output: [
             "mediaObserved": mediaRecord != nil,
             "mediaDecisionID": mediaRecord?.decisionID ?? NSNull(),

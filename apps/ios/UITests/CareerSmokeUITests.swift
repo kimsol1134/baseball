@@ -12,7 +12,31 @@ final class CareerSmokeUITests: XCTestCase {
 
     override func setUp() {
         continueAfterFailure = false
+        journeyCopyLocale = .japanese
+        stopAfterFirstSettlement = false
     }
+
+    private enum JourneyCopyLocale {
+        case korean
+        case japanese
+
+        var weekTabLabel: String {
+            switch self {
+            case .korean: "이번 주"
+            case .japanese: "今週"
+            }
+        }
+
+        var settlementAcknowledge: String {
+            switch self {
+            case .korean: "결산 확인"
+            case .japanese: "決算を確認"
+            }
+        }
+    }
+
+    private var journeyCopyLocale: JourneyCopyLocale = .japanese
+    private var stopAfterFirstSettlement = false
 
     /// 선수 만들기가 단계형이라 마지막 단계에 닿아야 `hs.start`가 나온다.
     /// 첫 회차는 이름 → 투수 유형 두 단계, 2회차부터 난이도·핸디캡이 하나 더 붙는다.
@@ -54,6 +78,7 @@ final class CareerSmokeUITests: XCTestCase {
         pitchAbilityFeedback: Bool = false,
         draftedCareerFixture: Bool = false,
         journeyEnabled: Bool = false,
+        openProWeek: Bool = false,
         language: String? = nil
     ) -> XCUIApplication {
         let app = XCUIApplication()
@@ -75,8 +100,14 @@ final class CareerSmokeUITests: XCTestCase {
         if journeyEnabled {
             launchArguments.append("-uiTestProCareerJourneyV1")
         }
+        if openProWeek {
+            launchArguments.append("-uiTestOpenProWeek")
+        }
         if language == "ja" {
             launchArguments += ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        }
+        if language == "ko" {
+            launchArguments += ["-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR"]
         }
         app.launchArguments = launchArguments
         app.launch()
@@ -107,6 +138,61 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(confirm.waitForExistence(timeout: timeout))
         confirm.tap()
         XCTAssertTrue(app.descendants(matching: .any)["pro.postseason.finale"].waitForExistence(timeout: timeout))
+        assertFinaleContinueControl(app, language: "ko")
+    }
+
+    func testJapanesePostseasonFixtureShowsFinaleContinueControl() {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-uiTestProCareerJourneyV1",
+            "-uiTestOpenProWeek",
+            "-uiTestPostseasonFixture",
+            "-baseball.audio.sound", "NO",
+            "-AppleLanguages", "(ja)",
+            "-AppleLocale", "ja_JP",
+        ]
+        app.launch()
+        for tab in ["プロ", "Pro", "프로"] where app.tabBars.buttons[tab].waitForExistence(timeout: 2) {
+            app.tabBars.buttons[tab].tap()
+            break
+        }
+        let tabs = app.segmentedControls.firstMatch
+        if tabs.waitForExistence(timeout: timeout) {
+            let week = tabs.buttons.element(boundBy: 1)
+            if week.exists, !week.isSelected { week.tap() }
+        }
+        let series = app.descendants(matching: .any)["pro.postseason.series"]
+        if !series.waitForExistence(timeout: 20) {
+            writeQAScreenshot(app, name: "ja-finale-series-missing.png")
+            XCTFail("日本語のシリーズ画面が開きません。見えるボタン: \(visibleIdentifiers(app))")
+            return
+        }
+        let rest = app.descendants(matching: .any)["pro.postseason.availability.rest_for_decider"]
+        for _ in 0..<6 where !rest.exists || !rest.isHittable { app.swipeUp() }
+        XCTAssertTrue(
+            rest.waitForExistence(timeout: timeout),
+            "休養の選択がありません。見えるボタン: \(visibleIdentifiers(app))"
+        )
+        XCTAssertTrue(bringIntoView(rest), "休養の選択に届きません。")
+        rest.tap()
+        let confirm = app.buttons["pro.postseason.availability.confirm"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: timeout), "シリーズ確認が開きません。")
+        confirm.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["pro.postseason.finale"].waitForExistence(timeout: timeout),
+            "日本語のポストシーズン終了画面が開きません。見えるボタン: \(visibleIdentifiers(app))"
+        )
+        let continueControl = assertFinaleContinueControl(app, language: "ja")
+        writeQAScreenshot(app, name: "ja-finale.png")
+        XCTAssertTrue(tapIfPresent(continueControl) || tapIdentified(app, "pro.seasonReview.confirm"))
+        XCTAssertTrue(
+            identified(app, "pro.postseason.finale").waitForNonExistence(timeout: timeout)
+                || identified(app, "pro.seasonSettlement").waitForExistence(timeout: timeout)
+                || app.buttons["pro.settlement.acknowledge"].waitForExistence(timeout: 2),
+            "終了画面の続行を押しても次の局面に進めません。見えるボタン: \(visibleIdentifiers(app))"
+        )
     }
 
     func testJapaneseBinaryRunsFromOpeningThroughPrologueWithoutHangulFallback() {
@@ -367,6 +453,63 @@ final class CareerSmokeUITests: XCTestCase {
         )
     }
 
+    /// 결과를 닫지 않은 채 국면이 바뀌면, 접힌 카드가 관계 선택을 가리지 않아야 한다.
+    /// 관계가 안 열리면 레이아웃을 검증하지 못한 것이므로 빠져나가지 않는다.
+    func testTrainingResultDoesNotBlockRelationshipChoices() {
+        let app = launch()
+
+        dismissOpening(app)
+        XCTAssertTrue(completeSetup(app), "고교 시작 화면이 열리지 않았습니다.")
+        XCTAssertTrue(
+            tapIfPresent(app.buttons["hs.prologue.continue"]),
+            "프롤로그를 지나 학교 선택으로 갈 수 없습니다."
+        )
+        XCTAssertTrue(tapFirst(app, prefix: "hs.school."), "학교를 선택할 수 없습니다.")
+        confirmSchool(app)
+
+        let commit = app.buttons["hs.training.commit"]
+        XCTAssertTrue(commit.waitForExistence(timeout: timeout), "첫 훈련 화면이 열리지 않았습니다.")
+
+        let response = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "hs.response.")
+        ).firstMatch
+        var trains = 0
+        var steps = 0
+        while steps < 24, !response.exists {
+            steps += 1
+            if tapFirst(app, prefix: "hs.awakening.") {
+                confirmAwakening(app)
+                continue
+            }
+            if tapIfPresent(app.buttons["hs.chapter.continue"]) { continue }
+            if app.buttons["hs.game.start"].exists {
+                tapIfPresent(app.buttons["hs.game.start"])
+                _ = playInning(app, capturePitchResult: false, usesFastForwardWhenAvailable: true)
+                continue
+            }
+            let action = app.buttons["hs.training.commitBlock"].exists
+                ? app.buttons["hs.training.commitBlock"] : commit
+            guard action.exists else { break }
+            XCTAssertTrue(tapIfPresent(action), "훈련 버튼을 누를 수 없습니다.")
+            trains += 1
+            assertTrainingResultIsImmediatelyUsable(app)
+        }
+
+        XCTAssertGreaterThan(trains, 0, "훈련을 한 번도 완료하지 못했습니다.")
+        XCTAssertTrue(
+            response.exists,
+            "관계 국면이 \(trains)번 훈련 안에 열리지 않았습니다. 버튼: \(visibleIdentifiers(app))"
+        )
+        XCTAssertTrue(
+            app.buttons["hs.training.result.dismiss"].exists,
+            "관계 국면에서도 결과 닫기는 남아야 합니다."
+        )
+        XCTAssertTrue(
+            bringIntoView(response),
+            "접히지 않은 훈련 결과가 관계 선택을 가리고 있습니다. 버튼: \(visibleIdentifiers(app))"
+        )
+    }
+
     /// 드래프트를 통과했다면 프로 커리어가 그 결과로 열려야 한다.
     func testJapaneseDraftedRunCompletesProCareerJourneyAtMaximumHorizon() throws {
         // 프로 20시즌을 실제 UI로 완주하므로 일반 스모크의 기본 제한보다 오래 걸린다.
@@ -442,6 +585,47 @@ final class CareerSmokeUITests: XCTestCase {
         XCTAssertTrue(evidence.finalHonorsReached, "최종 은퇴 명예와 새 선수 경계에 도달하지 못했습니다.")
     }
 
+    /// CI 기본 종주. 한국어 신인 계약 뒤 첫 시즌 결산이 크래시 없이 열리는지만 본다.
+    /// 20시즌 일본어 완주는 수동/장기 워크플로에 둔다.
+    func testKoreanProCareerReachesFirstSettlement() throws {
+        executionTimeAllowance = 900
+        journeyCopyLocale = .korean
+        stopAfterFirstSettlement = true
+
+        let app = launch(
+            draftedCareerFixture: true,
+            journeyEnabled: true,
+            openProWeek: true,
+            language: "ko"
+        )
+        let enterPro = app.buttons["hs.enterPro"]
+        XCTAssertTrue(
+            enterPro.waitForExistence(timeout: timeout),
+            "지명 완료 픽스처에서 프로 진입 버튼이 열리지 않았습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
+        XCTAssertTrue(bringIntoView(enterPro), "프로 진입 버튼을 화면에 올리지 못했습니다.")
+        enterPro.tap()
+
+        let proTabs = app.segmentedControls.firstMatch
+        XCTAssertTrue(
+            proTabs.waitForExistence(timeout: timeout),
+            "프로 커리어 화면이 열리지 않았습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
+        let thisWeek = proTabs.buttons.element(boundBy: 1)
+        XCTAssertTrue(thisWeek.exists, "프로의 이번 주 화면 선택지가 없습니다.")
+        XCTAssertEqual(thisWeek.label, journeyCopyLocale.weekTabLabel)
+        if !thisWeek.isSelected { thisWeek.tap() }
+
+        let evidence = try XCTUnwrap(
+            finishProCareer(app),
+            "한국어 프로 첫 시즌 결산까지 화면 흐름을 완료하지 못했습니다."
+        )
+        XCTAssertTrue(evidence.rookieContractSeen, "신인 계약 화면을 보지 못했습니다.")
+        XCTAssertTrue(evidence.rookieContractSigned, "신인 계약을 실제로 서명하지 못했습니다.")
+        XCTAssertEqual(evidence.settlementsSeen, 1, "첫 시즌 결산만 보면 됩니다.")
+        XCTAssertEqual(evidence.settlementsAcknowledged, 1, "첫 결산을 확인으로 닫아야 합니다.")
+    }
+
     /// 프로는 구간 진행을 사용하되, 시즌 갈림길과 중요 경기는 실제 화면에서 직접 처리한다.
     /// 코어 완주 테스트만으로는 화면의 누락 국면·빈 화면·확인창 연결 단절을 잡을 수 없다.
     private struct ProJourneyEvidence {
@@ -467,6 +651,10 @@ final class CareerSmokeUITests: XCTestCase {
         while steps < 1_200 {
             steps += 1
 
+            if tapIfPresent(app.buttons["pro.injury.result.acknowledge"]) {
+                continue
+            }
+
             if app.buttons["pro.newPlayer"].exists {
                 capture(app, name: "11-pro-retired")
                 let honors = identified(app, "pro.retirement.honors")
@@ -487,6 +675,9 @@ final class CareerSmokeUITests: XCTestCase {
 
             if identified(app, "pro.seasonSettlement").exists {
                 guard handleSettlement(app, evidence: &evidence) else { return nil }
+                if stopAfterFirstSettlement, evidence.settlementsAcknowledged >= 1 {
+                    return evidence
+                }
                 continue
             }
 
@@ -512,6 +703,10 @@ final class CareerSmokeUITests: XCTestCase {
                 continue
             }
 
+            if handlePostseasonAvailabilityIfPresent(app) {
+                continue
+            }
+
             if app.buttons["pro.game.start"].exists {
                 guard tapIfPresent(app.buttons["pro.game.start"]) else {
                     return stopProJourney(app, "중요 경기 시작 action을 누를 수 없습니다.")
@@ -523,7 +718,7 @@ final class CareerSmokeUITests: XCTestCase {
             }
 
             if app.buttons["pro.seasonReview.confirm"].exists {
-                guard tapIfPresent(app.buttons["pro.seasonReview.confirm"]) else {
+                guard tapSeasonReviewConfirm(app) else {
                     return stopProJourney(app, "시즌 리뷰 확인 action을 누를 수 없습니다.")
                 }
                 continue
@@ -576,7 +771,7 @@ final class CareerSmokeUITests: XCTestCase {
             // never used as the selector.
             let tabs = app.segmentedControls.firstMatch
             let week = tabs.buttons.element(boundBy: 1)
-            if tabs.exists, week.exists, week.label == "今週", !week.isSelected {
+            if tabs.exists, week.exists, week.label == journeyCopyLocale.weekTabLabel, !week.isSelected {
                 week.tap()
                 continue
             }
@@ -586,6 +781,8 @@ final class CareerSmokeUITests: XCTestCase {
             if app.buttons["pro.advanceSegment"].exists
                 || app.buttons["pro.game.start"].exists
                 || app.buttons["pro.seasonReview.confirm"].exists
+                || app.buttons["pro.newPlayer"].exists
+                || app.buttons["pro.injury.result.acknowledge"].exists
                 || identified(app, "pro.seasonSettlement").exists
                 || identified(app, "pro.offseasonInvestment").exists { continue }
             return stopProJourney(app, "프로 여정의 어느 phase에서도 진행 가능한 stable action을 찾지 못했습니다.")
@@ -602,7 +799,9 @@ final class CareerSmokeUITests: XCTestCase {
             failProJourney(app, "계약 offer 화면이 stable root로 열리지 않았습니다.")
             return false
         }
-        assertVisibleCopyContainsNoHangul(app, context: "Japanese contract offer")
+        if journeyCopyLocale == .japanese {
+            assertVisibleCopyContainsNoHangul(app, context: "Japanese contract offer")
+        }
         for suffix in ["duration", "annualSalary", "role", "expectation", "legacy"] {
             let identifier = "pro.contractOffer.offer.0.\(suffix)"
             guard identified(app, identifier).waitForExistence(timeout: timeout) else {
@@ -613,6 +812,13 @@ final class CareerSmokeUITests: XCTestCase {
         }
 
         if identified(app, "pro.contractOffer.ambition.required").exists {
+            let laterOffer = app.buttons["pro.contractOffer.offer.0"]
+            if laterOffer.exists {
+                XCTAssertFalse(
+                    laterOffer.isEnabled,
+                    "장기 목표를 고르기 전에는 후속 계약 확인창을 열 수 없어야 합니다."
+                )
+            }
             let ambitionIDs = [
                 "pro.contractOffer.ambition.franchise_icon",
                 "pro.contractOffer.ambition.record_book",
@@ -626,6 +832,12 @@ final class CareerSmokeUITests: XCTestCase {
                 return false
             }
             ambition.tap()
+            if laterOffer.exists {
+                XCTAssertTrue(
+                    laterOffer.isEnabled,
+                    "장기 목표를 고른 뒤에는 후속 계약 제안이 활성화되어야 합니다."
+                )
+            }
         }
 
         let rookieSign = app.buttons["pro.contractOffer.sign"]
@@ -686,7 +898,9 @@ final class CareerSmokeUITests: XCTestCase {
         evidence: inout ProJourneyEvidence
     ) -> Bool {
         evidence.settlementsSeen += 1
-        assertVisibleCopyContainsNoHangul(app, context: "Japanese season settlement")
+        if journeyCopyLocale == .japanese {
+            assertVisibleCopyContainsNoHangul(app, context: "Japanese season settlement")
+        }
         for identifier in [
             "pro.seasonSettlement",
             "pro.settlement.goal.metrics",
@@ -703,7 +917,7 @@ final class CareerSmokeUITests: XCTestCase {
             failProJourney(app, "persisted settlement acknowledge action이 없습니다.")
             return false
         }
-        XCTAssertEqual(acknowledge.label, "決算を確認")
+        XCTAssertEqual(acknowledge.label, journeyCopyLocale.settlementAcknowledge)
         acknowledge.tap()
         evidence.settlementsAcknowledged += 1
         guard identified(app, "pro.seasonSettlement").waitForNonExistence(timeout: timeout) else {
@@ -1501,6 +1715,114 @@ final class CareerSmokeUITests: XCTestCase {
 
     private func identified(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
+    @discardableResult
+    private func assertFinaleContinueControl(
+        _ app: XCUIApplication,
+        language: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> XCUIElement {
+        let finale = identified(app, "pro.postseason.finale")
+        XCTAssertTrue(
+            finale.waitForExistence(timeout: timeout),
+            "\(language) 포스트시즌 종료 화면이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))",
+            file: file,
+            line: line
+        )
+        for _ in 0..<8 {
+            let confirm = identified(app, "pro.seasonReview.confirm")
+            if confirm.exists, confirm.isHittable { break }
+            app.swipeUp()
+        }
+        let confirm = identified(app, "pro.seasonReview.confirm")
+        XCTAssertTrue(
+            confirm.waitForExistence(timeout: timeout),
+            "\(language) 종료 화면에 시즌 리뷰 확인 컨트롤이 없습니다. 보이는 버튼: \(visibleIdentifiers(app))",
+            file: file,
+            line: line
+        )
+        XCTAssertTrue(
+            confirm.isEnabled,
+            "\(language) 종료 화면 확인 컨트롤이 비활성입니다. label=\(confirm.label)",
+            file: file,
+            line: line
+        )
+        XCTAssertFalse(
+            confirm.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            "\(language) 종료 화면 확인 라벨이 비어 있습니다.",
+            file: file,
+            line: line
+        )
+        XCTAssertNotEqual(
+            confirm.label,
+            "Text unavailable",
+            "\(language) 종료 화면 확인 문구가 결번입니다.",
+            file: file,
+            line: line
+        )
+        XCTAssertTrue(
+            bringIntoView(confirm),
+            "\(language) 종료 화면 확인 컨트롤이 탭 바에 가려 닿지 않습니다.",
+            file: file,
+            line: line
+        )
+        if language == "ja" {
+            XCTAssertNil(
+                confirm.label.range(of: "[가-힣ㄱ-ㅎㅏ-ㅣ]", options: .regularExpression),
+                "Japanese finale continue leaked Korean: \(confirm.label)",
+                file: file,
+                line: line
+            )
+        }
+        return confirm
+    }
+
+    @discardableResult
+    private func tapSeasonReviewConfirm(_ app: XCUIApplication) -> Bool {
+        if tapIfPresent(app.buttons["pro.seasonReview.confirm"]) { return true }
+        return tapIdentified(app, "pro.seasonReview.confirm")
+    }
+
+    @discardableResult
+    private func handlePostseasonAvailabilityIfPresent(_ app: XCUIApplication) -> Bool {
+        let rest = app.buttons["pro.postseason.availability.rest_for_decider"]
+        let pitch = app.buttons["pro.postseason.availability.pitch_again"]
+        let choice: XCUIElement
+        if rest.exists, rest.isEnabled {
+            choice = rest
+        } else if pitch.exists, pitch.isEnabled {
+            choice = pitch
+        } else {
+            return false
+        }
+        guard bringIntoView(choice) else { return false }
+        choice.tap()
+        let confirm = app.buttons.matching(identifier: "pro.postseason.availability.confirm").firstMatch
+        guard confirm.waitForExistence(timeout: timeout), tapIfPresent(confirm) else { return false }
+        return true
+    }
+
+    @discardableResult
+    private func tapIdentified(_ app: XCUIApplication, _ identifier: String) -> Bool {
+        if tapIfPresent(app.buttons[identifier]) { return true }
+        let any = identified(app, identifier)
+        guard any.exists, bringIntoView(any) else { return false }
+        any.tap()
+        return true
+    }
+
+    private func writeQAScreenshot(_ app: XCUIApplication, name: String) {
+        capture(app, name: name)
+        let url = URL(
+            fileURLWithPath: "/Users/solkim/Dev/baseball/apps/ios/releases/qa-1.2.8/fix-round/\(name)"
+        )
+        try? FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try? XCUIScreen.main.screenshot().pngRepresentation.write(to: url)
     }
 
     private func failProJourney(_ app: XCUIApplication, _ message: String) {

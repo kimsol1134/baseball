@@ -15,7 +15,7 @@ private final class JourneyWave1MemoryRemoteStore: SaveSyncRemoteStoring {
 }
 
 @MainActor
-final class ProCareerJourneyWave1Tests: XCTestCase {
+final class ProCareerJourneyStoreTests: XCTestCase {
     private var preset: PitcherPresetSnapshot { PitcherPresetCatalog.all[0] }
 
     // 2026-08-17 iOS 단독 선행 출시 결정: production이 journey를 켠다. 구버전 공개 빌드의
@@ -85,7 +85,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertNotNil(productionRecord.result?.snapshot.journeyState)
     }
 
-    func testWave2EnabledStartShowsAndPersistsRookieContractOfferSchema3() throws {
+    func testEnabledStartShowsAndPersistsRookieContractOffer() throws {
         var writes: [Data] = []
         let store = MobileCareerStore(
             saveWriter: { writes.append($0); return true },
@@ -107,7 +107,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertNil(record.result?.snapshot.contract)
     }
 
-    func testWave2StoreAcceptPersistsBeforePublishingAndFailureIsAtomic() throws {
+    func testStoreAcceptPersistsBeforePublishingAndFailureIsAtomic() throws {
         var writes: [Data] = []
         let store = MobileCareerStore(
             saveWriter: { writes.append($0); return true },
@@ -161,7 +161,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertEqual(failing.state?.journeyState?.finances.transactions.count, 0)
     }
 
-    func testWave2HighSchoolFanInterestReachesJourneyStart() throws {
+    func testHighSchoolFanInterestReachesJourneyStart() throws {
         let store = MobileCareerStore(
             saveWriter: { _ in true },
             configuration: .journeyV1Tests
@@ -187,11 +187,12 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertEqual(store.state?.journeyState?.reputation.fanSupport, 30)
     }
 
-    func testWave2OfferUIHasStableAccessibilityAndRetainsCurrentGoalByDefault() throws {
+    func testOfferUIHasStableAccessibilityAndRetainsCurrentGoalByDefault() throws {
         let flow = try IOSSourceScan.readAll([
             "apps/ios/Sources/CareerFlowView.swift",
             "apps/ios/Sources/ProContractOfferView.swift",
             "apps/ios/Sources/ProSeasonDecisionView.swift",
+            "apps/ios/Sources/Presentation/ProFeatureCopy.swift",
         ])
         XCTAssertTrue(flow.contains("struct ProContractOfferView: View"))
         XCTAssertTrue(flow.contains("case .contractOffer:"))
@@ -211,7 +212,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertTrue(flow.contains("contractOfferOutlookLine"))
     }
 
-    func testWave2ContractCopyHasKoreanEnglishJapaneseParity() throws {
+    func testContractCopyHasKoreanEnglishJapaneseParity() throws {
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(
                 with: Data(contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings"))
@@ -236,7 +237,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         }
     }
 
-    func testWave4ViewsConsumeSharedProjectionsAndExposeStableAccessibilityIDs() throws {
+    func testSettlementAndLegacyViewsExposeStableAccessibilityIDs() throws {
         let sourceFiles = try IOSSourceScan.readAll([
             "apps/ios/Sources/Features/Shell/AppShell.swift",
             "apps/ios/Sources/Features/Shell/TodayView.swift",
@@ -282,7 +283,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertTrue(honors.contains("pro.retirement.honor.\\(honor.id)"))
     }
 
-    func testWave4CopyHasKoreanEnglishJapaneseParityAndProjectionLanguage() throws {
+    func testSettlementCopyHasKoreanEnglishJapaneseParity() throws {
         let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any])
         let strings = try XCTUnwrap(object["strings"] as? [String: Any])
@@ -535,7 +536,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertEqual(cloud.data(forKey: sync.key), originalData)
     }
 
-    func testWave1SwiftUISurfacesHaveStableAccessibilityRootsAndStoredProjectionInputs() throws {
+    func testJourneySurfacesHaveStableAccessibilityRoots() throws {
         let flow = try IOSSourceScan.read("apps/ios/Sources/ProSeasonSettlementView.swift")
         let shell = try IOSSourceScan.readAll([
             "apps/ios/Sources/Features/Shell/AppShell.swift",
@@ -559,7 +560,7 @@ final class ProCareerJourneyWave1Tests: XCTestCase {
         XCTAssertFalse(shell.contains("ProCareerGoalRules."), "direction card must read store projections")
     }
 
-    func testWave1CopyKeysHaveKoreanEnglishJapaneseParityAndNoRealClubCopy() throws {
+    func testJourneyCopyKeysHaveLanguageParityAndNoRealClubCopy() throws {
         let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any]

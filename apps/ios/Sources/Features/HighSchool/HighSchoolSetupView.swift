@@ -59,6 +59,8 @@ struct HighSchoolSetupView: View {
     @State var isSystemSuggestedName = false
     @State var selectedRegion = HighSchoolCareerStore.regions.first ?? ""
     @State var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
+    /// 주인공의 투구 손. 커널의 플래툰 판정이 실제로 읽는 값이라 표기 이상의 선택이다.
+    @State var throwingHand: ThrowingHand = .right
     @State var learningPitch = CareerDisplayRules.recommendedRepertoire(
         presetID: PitcherPresetCatalog.all.first?.id ?? ""
     ).learningPitch
@@ -331,6 +333,7 @@ struct HighSchoolSetupView: View {
                         signatureLegacyID: isChallenge ? nil : (selectedSignatureLegacyID
                             ?? career.inheritance.equippedSignatureLegacyID),
                         startingRepertoire: startingRepertoire,
+                        throwingHand: throwingHand,
                         seedOverride: parsedChallenge?.seed ?? (normalizedSeedInput.isEmpty ? nil : normalizedSeedInput),
                         challengeLifeNumber: parsedChallenge?.lifeNumber
                     )

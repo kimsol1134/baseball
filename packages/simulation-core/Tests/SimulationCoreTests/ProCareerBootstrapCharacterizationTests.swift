@@ -5,7 +5,7 @@ import XCTest
 
 /// Wave 0 freezes the current contract/tenure behavior before any product state changes.
 /// These tests intentionally describe the legacy path; they are not a new product contract.
-final class ProCareerWave0CharacterizationTests: XCTestCase {
+final class ProCareerBootstrapCharacterizationTests: XCTestCase {
     private let engine = ProCareerEngine()
 
     func testWave0ContractNeverFallsBelowOneAcrossFiveSeasons() throws {
@@ -316,7 +316,7 @@ private enum Wave0BaselineGenerator {
     static let baselineID = "pro-career-depth-baseline-2026-08-14"
     static let seedCount = 1_000
     static let seasonsPerCareer = 20
-    static let generationCommand = "BASEBALL_WAVE0_GENERATE=1 swift test -c release --package-path packages/simulation-core --filter ProCareerWave0CharacterizationTests/testGenerateWave0BaselineEvidence"
+    static let generationCommand = "BASEBALL_WAVE0_GENERATE=1 swift test -c release --package-path packages/simulation-core --filter ProCareerBootstrapCharacterizationTests/testGenerateWave0BaselineEvidence"
     static let baselineDate = "2026-08-14"
     static let committedV1Fixture = "apps/android/game-core/src/test/resources/fixtures/swift-pro-career-oracle-v1.json"
 

@@ -16,6 +16,55 @@ public enum ProCareerPhase: String, Codable, Sendable {
 public enum ProLevel: String, Codable, Sendable { case minor, major }
 public enum ProRole: String, Codable, Sendable { case starter, longRelief = "long_relief", setup, closer }
 
+/// Spring-camp role request result. Stored only on v9 careers that actually requested.
+public enum ProRoleRequestOutcome: String, Codable, Sendable {
+    case accepted
+    case conditional
+    case rejected
+}
+
+public enum ProRoleRequestOutlook: String, Codable, Sendable {
+    case likely
+    case conditional
+    case difficult
+}
+
+public struct ProRoleRequestState: Codable, Equatable, Sendable {
+    public let requested: ProRole
+    public let outcome: ProRoleRequestOutcome
+    public let reviewWeek: Int
+    public let season: Int
+
+    public init(requested: ProRole, outcome: ProRoleRequestOutcome, reviewWeek: Int, season: Int) {
+        self.requested = requested
+        self.outcome = outcome
+        self.reviewWeek = reviewWeek
+        self.season = season
+    }
+}
+
+public struct ProRoleRequestEvaluation: Equatable, Sendable {
+    public let requested: ProRole
+    public let outcome: ProRoleRequestOutcome
+    public let outlook: ProRoleRequestOutlook
+    public let reviewWeek: Int
+    public let rejectionNewsKey: String?
+
+    public init(
+        requested: ProRole,
+        outcome: ProRoleRequestOutcome,
+        outlook: ProRoleRequestOutlook,
+        reviewWeek: Int,
+        rejectionNewsKey: String? = nil
+    ) {
+        self.requested = requested
+        self.outcome = outcome
+        self.outlook = outlook
+        self.reviewWeek = reviewWeek
+        self.rejectionNewsKey = rejectionNewsKey
+    }
+}
+
 public enum ProInjuryCause: String, Codable, Sendable {
     case overload
 }
@@ -122,6 +171,10 @@ public enum ProSeasonDecisionType: String, Codable, CaseIterable, Sendable {
     case mediaOpportunity = "media_opportunity"
     case formCrisis = "form_crisis"
     case agingCrossroads = "aging_crossroads"
+    case rotationPush = "rotation_push"
+    case newPitchTrial = "new_pitch_trial"
+    case farmReset = "farm_reset"
+    case veteranMentor = "veteran_mentor"
 
     /// The complete decision type catalog. Media is selected by its fixed-slot rule rather than
     /// by the legacy six-type rotation, but remains part of the closed enum for Codable and copy
@@ -130,7 +183,16 @@ public enum ProSeasonDecisionType: String, Codable, CaseIterable, Sendable {
         .extraBullpen, .catcherGamePlan, .roleMeeting,
         .recordChase, .rivalAnalysis, .seasonFinale, .mediaOpportunity,
         .formCrisis, .agingCrossroads,
+        .rotationPush, .newPitchTrial, .farmReset, .veteranMentor,
     ]
+
+    /// v9 weekly decisions present two tradeoff choices instead of the legacy three-choice sheet.
+    public var isWeeklyBinaryDecision: Bool {
+        switch self {
+        case .rotationPush, .newPitchTrial, .farmReset, .veteranMentor: true
+        default: false
+        }
+    }
 }
 
 /// 선택을 누르기 전에 그대로 공개할 수 있는 수치 변화다.
@@ -274,6 +336,152 @@ public struct ProDecisionRecord: Codable, Equatable, Identifiable, Sendable {
         self.effect = effect
         self.journeyEffect = journeyEffect
         self.followUpResolvedWeek = followUpResolvedWeek
+    }
+}
+
+/// Temporary effects from a weekly decision. Missing on legacy saves.
+public struct ProDecisionModifier: Codable, Equatable, Sendable {
+    public let decisionID: String
+    public let type: ProSeasonDecisionType
+    public let expiresWeek: Int
+    public let commandDelta: Int
+    public let trainingEfficiencyPermille: Int?
+    public let extraOutingChance: Int
+    /// Extra outings already consumed from `extraOutingChance` during this window.
+    /// Missing on early v9 saves; treat as 0.
+    public let extraOutingsGranted: Int?
+    public let suppressOutings: Bool
+    public let injuryPressureFloor: Int?
+    public let targetPitch: PitchType?
+    public let qualityStarts: Int
+    public let runsAllowed: Int
+    public let baselineStuff: Int
+    public let baselineCommand: Int
+    public let baselineMovement: Int
+    public let baselineStamina: Int
+    public let choiceID: String
+
+    public init(
+        decisionID: String,
+        type: ProSeasonDecisionType,
+        expiresWeek: Int,
+        commandDelta: Int = 0,
+        trainingEfficiencyPermille: Int? = nil,
+        extraOutingChance: Int = 0,
+        extraOutingsGranted: Int? = nil,
+        suppressOutings: Bool = false,
+        injuryPressureFloor: Int? = nil,
+        targetPitch: PitchType? = nil,
+        qualityStarts: Int = 0,
+        runsAllowed: Int = 0,
+        baselineStuff: Int = 0,
+        baselineCommand: Int = 0,
+        baselineMovement: Int = 0,
+        baselineStamina: Int = 0,
+        choiceID: String = ""
+    ) {
+        self.decisionID = decisionID
+        self.type = type
+        self.expiresWeek = expiresWeek
+        self.commandDelta = commandDelta
+        self.trainingEfficiencyPermille = trainingEfficiencyPermille
+        self.extraOutingChance = extraOutingChance
+        self.extraOutingsGranted = extraOutingsGranted
+        self.suppressOutings = suppressOutings
+        self.injuryPressureFloor = injuryPressureFloor
+        self.targetPitch = targetPitch
+        self.qualityStarts = qualityStarts
+        self.runsAllowed = runsAllowed
+        self.baselineStuff = baselineStuff
+        self.baselineCommand = baselineCommand
+        self.baselineMovement = baselineMovement
+        self.baselineStamina = baselineStamina
+        self.choiceID = choiceID
+    }
+
+    public func tracking(
+        qualityStarts: Int,
+        runsAllowed: Int,
+        extraOutingsGranted: Int? = nil
+    ) -> ProDecisionModifier {
+        ProDecisionModifier(
+            decisionID: decisionID,
+            type: type,
+            expiresWeek: expiresWeek,
+            commandDelta: commandDelta,
+            trainingEfficiencyPermille: trainingEfficiencyPermille,
+            extraOutingChance: extraOutingChance,
+            extraOutingsGranted: extraOutingsGranted ?? self.extraOutingsGranted,
+            suppressOutings: suppressOutings,
+            injuryPressureFloor: injuryPressureFloor,
+            targetPitch: targetPitch,
+            qualityStarts: qualityStarts,
+            runsAllowed: runsAllowed,
+            baselineStuff: baselineStuff,
+            baselineCommand: baselineCommand,
+            baselineMovement: baselineMovement,
+            baselineStamina: baselineStamina,
+            choiceID: choiceID
+        )
+    }
+
+    public func granting(extraOutings count: Int) -> ProDecisionModifier {
+        tracking(
+            qualityStarts: qualityStarts,
+            runsAllowed: runsAllowed,
+            extraOutingsGranted: (extraOutingsGranted ?? 0) + count
+        )
+    }
+}
+
+/// A weekly decision whose temporary effect has expired. Missing on legacy saves.
+public struct ProDecisionFollowUp: Codable, Equatable, Identifiable, Sendable {
+    public var id: String { "\(decisionID):\(week)" }
+    public let decisionID: String
+    public let type: ProSeasonDecisionType
+    public let season: Int
+    public let week: Int
+    public let summaryKey: String
+    public let qualityStarts: Int?
+    public let runsAllowed: Int?
+    public let commandRestored: Int?
+    public let managerTrustDelta: Int?
+    public let stuffDelta: Int?
+    public let commandDelta: Int?
+    public let movementDelta: Int?
+    public let staminaDelta: Int?
+    public let choiceID: String?
+
+    public init(
+        decisionID: String,
+        type: ProSeasonDecisionType,
+        season: Int,
+        week: Int,
+        summaryKey: String,
+        qualityStarts: Int? = nil,
+        runsAllowed: Int? = nil,
+        commandRestored: Int? = nil,
+        managerTrustDelta: Int? = nil,
+        stuffDelta: Int? = nil,
+        commandDelta: Int? = nil,
+        movementDelta: Int? = nil,
+        staminaDelta: Int? = nil,
+        choiceID: String? = nil
+    ) {
+        self.decisionID = decisionID
+        self.type = type
+        self.season = season
+        self.week = week
+        self.summaryKey = summaryKey
+        self.qualityStarts = qualityStarts
+        self.runsAllowed = runsAllowed
+        self.commandRestored = commandRestored
+        self.managerTrustDelta = managerTrustDelta
+        self.stuffDelta = stuffDelta
+        self.commandDelta = commandDelta
+        self.movementDelta = movementDelta
+        self.staminaDelta = staminaDelta
+        self.choiceID = choiceID
     }
 }
 
@@ -490,8 +698,14 @@ public final class ProCareerSnapshot: Codable, Equatable, Sendable {
     public let journeyState: ProCareerJourneyState?
     /// v6 가을야구. 키가 없는 구세이브는 nil.
     public let postseason: ProPostseasonState?
-    public init(proCareerID: String, revision: UInt64, phase: ProCareerPhase, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, team: DraftTeamSnapshot, entitlement: ProEntitlementSnapshot, age: Int, season: Int, week: Int, level: ProLevel, role: ProRole, rolePreference: ProRole? = nil, managerTrust: Int, catcherTrust: Int, fatigue: Int, injuryWeeks: Int, serviceYears: Int, militaryCompleted: Bool, contract: ProContractSnapshot?, currentStats: ProSeasonStats, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats], awards: [String], milestones: [String], news: [String], hallOfFameScore: Int?, commitment: String, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger? = nil, currentRival: ProRivalBatter? = nil, seasonTensions: [ProSeasonTension]? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision? = nil, decisionHistory: [ProDecisionRecord]? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int? = nil, pitchLearningProject: PitchLearningProjectSnapshot? = nil, journeyState: ProCareerJourneyState? = nil, postseason: ProPostseasonState? = nil) {
-        self.proCareerID = proCareerID; self.revision = revision; self.phase = phase; self.identity = identity; self.pitcher = pitcher; self.team = team; self.entitlement = entitlement; self.age = age; self.season = season; self.week = week; self.level = level; self.role = role; self.rolePreference = rolePreference; self.managerTrust = managerTrust; self.catcherTrust = catcherTrust; self.fatigue = fatigue; self.injuryWeeks = injuryWeeks; self.serviceYears = serviceYears; self.militaryCompleted = militaryCompleted; self.contract = contract; self.currentStats = currentStats; self.gameLines = gameLines; self.careerStats = careerStats; self.awards = awards; self.milestones = milestones; self.news = news; self.hallOfFameScore = hallOfFameScore; self.commitment = commitment; self.balanceVersion = balanceVersion; self.proRulesVersion = proRulesVersion; self.seasonSegment = seasonSegment; self.seasonTrigger = seasonTrigger; self.currentRival = currentRival; self.seasonTensions = seasonTensions; self.seasonImportantGames = seasonImportantGames; self.pendingDecision = pendingDecision; self.decisionHistory = decisionHistory; self.developmentProgress = developmentProgress; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject; self.journeyState = journeyState; self.postseason = postseason
+    /// v9 weekly decision temporary effects. Missing on legacy saves.
+    public let activeDecisionModifiers: [ProDecisionModifier]?
+    /// v9 weekly decision follow-up cards resolved this season. Missing on legacy saves.
+    public let resolvedFollowUps: [ProDecisionFollowUp]?
+    /// v9 spring-camp role request. Missing on legacy saves; decodeIfPresent keeps v8 bytes.
+    public let roleRequest: ProRoleRequestState?
+    public init(proCareerID: String, revision: UInt64, phase: ProCareerPhase, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, team: DraftTeamSnapshot, entitlement: ProEntitlementSnapshot, age: Int, season: Int, week: Int, level: ProLevel, role: ProRole, rolePreference: ProRole? = nil, managerTrust: Int, catcherTrust: Int, fatigue: Int, injuryWeeks: Int, serviceYears: Int, militaryCompleted: Bool, contract: ProContractSnapshot?, currentStats: ProSeasonStats, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats], awards: [String], milestones: [String], news: [String], hallOfFameScore: Int?, commitment: String, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger? = nil, currentRival: ProRivalBatter? = nil, seasonTensions: [ProSeasonTension]? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision? = nil, decisionHistory: [ProDecisionRecord]? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int? = nil, pitchLearningProject: PitchLearningProjectSnapshot? = nil, journeyState: ProCareerJourneyState? = nil, postseason: ProPostseasonState? = nil, activeDecisionModifiers: [ProDecisionModifier]? = nil, resolvedFollowUps: [ProDecisionFollowUp]? = nil, roleRequest: ProRoleRequestState? = nil) {
+        self.proCareerID = proCareerID; self.revision = revision; self.phase = phase; self.identity = identity; self.pitcher = pitcher; self.team = team; self.entitlement = entitlement; self.age = age; self.season = season; self.week = week; self.level = level; self.role = role; self.rolePreference = rolePreference; self.managerTrust = managerTrust; self.catcherTrust = catcherTrust; self.fatigue = fatigue; self.injuryWeeks = injuryWeeks; self.serviceYears = serviceYears; self.militaryCompleted = militaryCompleted; self.contract = contract; self.currentStats = currentStats; self.gameLines = gameLines; self.careerStats = careerStats; self.awards = awards; self.milestones = milestones; self.news = news; self.hallOfFameScore = hallOfFameScore; self.commitment = commitment; self.balanceVersion = balanceVersion; self.proRulesVersion = proRulesVersion; self.seasonSegment = seasonSegment; self.seasonTrigger = seasonTrigger; self.currentRival = currentRival; self.seasonTensions = seasonTensions; self.seasonImportantGames = seasonImportantGames; self.pendingDecision = pendingDecision; self.decisionHistory = decisionHistory; self.developmentProgress = developmentProgress; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject; self.journeyState = journeyState; self.postseason = postseason; self.activeDecisionModifiers = activeDecisionModifiers; self.resolvedFollowUps = resolvedFollowUps; self.roleRequest = roleRequest
     }
 
     public static func == (lhs: ProCareerSnapshot, rhs: ProCareerSnapshot) -> Bool {
@@ -538,6 +752,9 @@ public final class ProCareerSnapshot: Codable, Equatable, Sendable {
             && lhs.pitchLearningProject == rhs.pitchLearningProject
             && lhs.journeyState == rhs.journeyState
             && lhs.postseason == rhs.postseason
+            && lhs.activeDecisionModifiers == rhs.activeDecisionModifiers
+            && lhs.resolvedFollowUps == rhs.resolvedFollowUps
+            && lhs.roleRequest == rhs.roleRequest
     }
 }
 
@@ -574,6 +791,9 @@ public struct StartProCareerParams: Codable, Equatable, Sendable {
     public let startingRepertoire: StartingRepertoireSelection?
     public let repertoireRulesVersion: Int?
     public let pitchLearningProject: PitchLearningProjectSnapshot?
+    /// When set, stamps this rules version instead of `ProCareerEngine.currentRulesVersion`.
+    /// Golden fixture exporters pin v8 so regenerating oracles does not absorb weekly-decision rules.
+    public let proRulesVersion: Int?
     public init(seed: String, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, draftResult: DraftResultSnapshot, entitlement: ProEntitlementSnapshot, sourceFanInterest: Int? = nil) {
         self.init(
             seed: seed,
@@ -584,12 +804,28 @@ public struct StartProCareerParams: Codable, Equatable, Sendable {
             sourceFanInterest: sourceFanInterest,
             startingRepertoire: nil,
             repertoireRulesVersion: nil,
-            pitchLearningProject: nil
+            pitchLearningProject: nil,
+            proRulesVersion: nil
         )
     }
 
     public init(seed: String, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, draftResult: DraftResultSnapshot, entitlement: ProEntitlementSnapshot, sourceFanInterest: Int?, startingRepertoire: StartingRepertoireSelection?, repertoireRulesVersion: Int?, pitchLearningProject: PitchLearningProjectSnapshot?) {
-        self.seed = seed; self.identity = identity; self.pitcher = pitcher; self.draftResult = draftResult; self.entitlement = entitlement; self.sourceFanInterest = sourceFanInterest; self.startingRepertoire = startingRepertoire; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject
+        self.init(
+            seed: seed,
+            identity: identity,
+            pitcher: pitcher,
+            draftResult: draftResult,
+            entitlement: entitlement,
+            sourceFanInterest: sourceFanInterest,
+            startingRepertoire: startingRepertoire,
+            repertoireRulesVersion: repertoireRulesVersion,
+            pitchLearningProject: pitchLearningProject,
+            proRulesVersion: nil
+        )
+    }
+
+    public init(seed: String, identity: PlayerIdentitySnapshot, pitcher: PitcherSnapshot, draftResult: DraftResultSnapshot, entitlement: ProEntitlementSnapshot, sourceFanInterest: Int?, startingRepertoire: StartingRepertoireSelection?, repertoireRulesVersion: Int?, pitchLearningProject: PitchLearningProjectSnapshot?, proRulesVersion: Int?) {
+        self.seed = seed; self.identity = identity; self.pitcher = pitcher; self.draftResult = draftResult; self.entitlement = entitlement; self.sourceFanInterest = sourceFanInterest; self.startingRepertoire = startingRepertoire; self.repertoireRulesVersion = repertoireRulesVersion; self.pitchLearningProject = pitchLearningProject; self.proRulesVersion = proRulesVersion
     }
 }
 
@@ -635,6 +871,17 @@ public struct ApplyProSeasonDecisionParams: Codable, Equatable, Sendable {
         self.state = state
         self.decisionID = decisionID
         self.choiceID = choiceID
+    }
+}
+public struct RequestProRoleParams: Codable, Equatable, Sendable {
+    public let seed: String
+    public let state: ProCareerSnapshot
+    public let requested: ProRole
+
+    public init(seed: String, state: ProCareerSnapshot, requested: ProRole) {
+        self.seed = seed
+        self.state = state
+        self.requested = requested
     }
 }
 public struct AcceptProContractParams: Codable, Equatable, Sendable {

@@ -13,22 +13,8 @@ private final class ProPersistenceMemoryRemoteStore: SaveSyncRemoteStoring {
     @discardableResult func synchronize() -> Bool { true }
 }
 
+/// 스토어·부트스트랩이 코덱을 어떻게 쓰는지. 순수 코덱 회귀는 `packages/ios-layers`에 있다.
 final class ProCareerPersistenceTests: XCTestCase {
-    func testDecodeAcceptsLegacyRawResult() throws {
-        let result = try fixtureResult()
-        let data = try JSONEncoder().encode(result)
-        let record = try XCTUnwrap(ProCareerPersistence.decode(data))
-        XCTAssertEqual(record.result, result)
-        XCTAssertEqual(record.schemaVersion, 1)
-        XCTAssertEqual(record.syncRevision, result.snapshot.revision)
-    }
-
-    func testNextRevisionIsMonotonicAndHonorsMinimum() {
-        XCTAssertEqual(ProCareerPersistence.nextRevision(after: 3, atLeast: 0), 4)
-        XCTAssertEqual(ProCareerPersistence.nextRevision(after: 3, atLeast: 10), 10)
-        XCTAssertEqual(ProCareerPersistence.nextRevision(after: .max, atLeast: 0), .max)
-    }
-
     func testRepertoireCareerUsesSchemaFourAndRoundTrips() throws {
         let preset = PitcherPresetCatalog.all[0]
         let selection = PitchLearningRules.recommendedSelection(presetID: preset.id)
@@ -50,109 +36,6 @@ final class ProCareerPersistenceTests: XCTestCase {
         let restored = try XCTUnwrap(ProCareerPersistence.decode(data))
         XCTAssertEqual(restored.result?.snapshot.pitchLearningProject, result.snapshot.pitchLearningProject)
         XCTAssertEqual(restored.result?.snapshot.pitcher, result.snapshot.pitcher)
-    }
-
-    func testConflictPriorityPrefersExplicitTombstones() throws {
-        let live = try fixtureResult()
-        let liveData = try XCTUnwrap(ProCareerPersistence.encode(
-            ProCareerPersistence.record(
-                from: ProCareerPersistedState(result: live, syncedRevision: 1),
-                schemaVersion: ProCareerPersistence.legacySchemaVersion,
-                syncRevision: 1
-            )
-        ))
-        let tombstoneData = try XCTUnwrap(ProCareerPersistence.encode(
-            ProCareerPersistence.record(
-                from: ProCareerPersistedState(syncedRevision: 1),
-                deletedRevision: 1,
-                schemaVersion: ProCareerPersistence.legacySchemaVersion,
-                syncRevision: 1
-            )
-        ))
-        XCTAssertEqual(ProCareerPersistence.conflictPriority(liveData), 0)
-        XCTAssertEqual(ProCareerPersistence.conflictPriority(tombstoneData), 1)
-        XCTAssertEqual(ProCareerPersistence.conflictPriority(Data("not-json".utf8)), 0)
-        XCTAssertEqual(ProCareerPersistence.revision(tombstoneData), 1)
-    }
-
-    func testRecordAndMaterializeRoundTripDurableFields() throws {
-        let result = try fixtureResult()
-        var state = ProCareerPersistedState.empty
-        state.result = result
-        state.sourceHighSchoolCareerID = "hs-1"
-        state.careerOrigin = .highSchool
-        state.syncedRevision = 4
-        let record = ProCareerPersistence.record(
-            from: state,
-            schemaVersion: ProCareerPersistence.legacySchemaVersion,
-            syncRevision: 4
-        )
-        let restored = ProCareerPersistence.materialize(record)
-        XCTAssertEqual(restored.result, result)
-        XCTAssertEqual(restored.sourceHighSchoolCareerID, "hs-1")
-        XCTAssertEqual(restored.careerOrigin, .highSchool)
-        XCTAssertEqual(restored.syncedRevision, 4)
-        XCTAssertNil(record.gameResume)
-        XCTAssertNil(record.deletedRevision)
-    }
-
-    func testInjuryWrapperKeepsSchemaFiveAfterEngineEventClears() throws {
-        let legacy = try resultWithoutMastery(fixtureResult())
-        let event = ProInjuryEventSnapshot(
-            season: 1,
-            week: 4,
-            plan: .developStuff,
-            rawFatigue: 82,
-            effectiveFatigue: 86,
-            pitches: 91,
-            recoveryWeeks: 3,
-            careerID: legacy.snapshot.proCareerID,
-            revision: legacy.snapshot.revision
-        )
-
-        var pending = ProCareerPersistedState(result: legacy)
-        pending.pendingInjuryEvent = event
-        XCTAssertEqual(
-            ProCareerPersistence.schemaVersion(for: pending),
-            ProCareerPersistence.masterySchemaVersion
-        )
-
-        pending.pendingInjuryEvent = nil
-        pending.acknowledgedInjuryEventID = event.stableID
-        XCTAssertEqual(
-            ProCareerPersistence.schemaVersion(for: pending),
-            ProCareerPersistence.masterySchemaVersion
-        )
-
-        let record = ProCareerPersistence.record(
-            from: pending,
-            schemaVersion: ProCareerPersistence.schemaVersion(for: pending),
-            syncRevision: 7
-        )
-        let encoded = try XCTUnwrap(ProCareerPersistence.encode(record))
-        let restored = try XCTUnwrap(ProCareerPersistence.decode(encoded))
-        XCTAssertEqual(restored.acknowledgedInjuryEventID, event.stableID)
-        XCTAssertEqual(restored.schemaVersion, ProCareerPersistence.masterySchemaVersion)
-    }
-
-    func testTombstoneUsesTheSameEmptyMappingAsDelete() {
-        var empty = ProCareerPersistedState.empty
-        empty.syncedRevision = 9
-        let tombstone = ProCareerPersistence.record(
-            from: empty,
-            deletedRevision: 9,
-            schemaVersion: ProCareerPersistence.journeySchemaVersion,
-            syncRevision: 9
-        )
-        XCTAssertNil(tombstone.result)
-        XCTAssertNil(tombstone.sourceHighSchoolCareerID)
-        XCTAssertNil(tombstone.origin)
-        XCTAssertEqual(tombstone.deletedRevision, 9)
-        XCTAssertEqual(tombstone.syncRevision, 9)
-        let restored = ProCareerPersistence.materialize(tombstone)
-        XCTAssertNil(restored.result)
-        XCTAssertEqual(restored.syncedRevision, 9)
-        XCTAssertNil(restored.careerOrigin)
     }
 
     @MainActor

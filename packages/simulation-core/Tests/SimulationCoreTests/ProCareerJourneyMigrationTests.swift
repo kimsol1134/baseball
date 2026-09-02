@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SimulationCore
 
-final class ProCareerJourneyWave1Tests: XCTestCase {
+final class ProCareerJourneyMigrationTests: XCTestCase {
     private let legacy = ProCareerEngine()
     private let journey = ProCareerEngine(journeyEnabled: true)
 

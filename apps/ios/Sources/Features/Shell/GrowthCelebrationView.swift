@@ -3,10 +3,16 @@ import BaseballIOSDomain
 
 /// 능력이 올랐을 때만 나타나는 성장 카드. 올라간 값과 "다음 단계까지 얼마"를 함께 보여 줘서
 /// 숫자 증가가 무슨 뜻인지 사다리 위에서 읽히게 한다.
+enum GrowthStageContext {
+    case highSchool
+    case pro
+}
+
 struct GrowthCelebrationView: View {
     let gains: [AbilityGain]
     /// 대성공 훈련 — 성장이 두 배로 붙은 날. 조용한 축하 대신 잭팟 연출을 쓴다.
     var jackpot: Bool = false
+    var stageContext: GrowthStageContext = .highSchool
     let onDismiss: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -49,7 +55,11 @@ struct GrowthCelebrationView: View {
                                     AbilityDisplayScale.displayRating(step.minimum)
                                         - AbilityDisplayScale.displayRating(gain.after)
                                 )),
-                                .userText(MetaPresentation.ratingMeaning(step, resolver: copyResolver)),
+                                .userText(MetaPresentation.ratingMeaning(
+                                    step,
+                                    context: stageContext,
+                                    resolver: copyResolver
+                                )),
                             ]
                         )
                     },

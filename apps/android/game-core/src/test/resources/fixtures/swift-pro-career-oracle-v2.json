@@ -35,31 +35,31 @@
       "output" : {
         "nextSeeds" : [
           "14318719658853423272",
-          "4881151881845386773",
-          "4881151881845386773"
+          "18045422854354626552",
+          "18045422854354626552"
         ],
-        "semanticReplaySha256" : "a2fbb960dc7717817b9670be7b1cfe77d212989f335bd2e09c18b6d84cc664d1"
+        "semanticReplaySha256" : "f9d0dd7fd0ead29de599176b4a881eea2fa91ea5515631bff5932cbf75cb1812"
       },
-      "outputCanonical" : "rookie.nextSeed=14318719658853423272|reviewed.nextSeed=4881151881845386773|invested.nextSeed=4881151881845386773|rookie.phase=weekly_plan|settlement.id=settlement:pro-947b5913ab73d30e:1:busan_marines|investment.id=investment:pro-947b5913ab73d30e:2:pitch_lab",
-      "outputSha256" : "a2fbb960dc7717817b9670be7b1cfe77d212989f335bd2e09c18b6d84cc664d1"
+      "outputCanonical" : "rookie.nextSeed=14318719658853423272|reviewed.nextSeed=18045422854354626552|invested.nextSeed=18045422854354626552|rookie.phase=weekly_plan|settlement.id=settlement:pro-947b5913ab73d30e:1:busan_marines|investment.id=investment:pro-947b5913ab73d30e:2:pitch_lab",
+      "outputSha256" : "f9d0dd7fd0ead29de599176b4a881eea2fa91ea5515631bff5932cbf75cb1812"
     },
     {
       "caseID" : "fan_finance_media",
       "hashReason" : "SHA-256(UTF-8(inputCanonical)) and SHA-256(UTF-8(outputCanonical)); public command semantic fields are independently recomputable",
-      "inputCanonical" : "commands=start(seed=620010)|accept_contract(record_book)|season_1|acknowledge|offseason=continue|investment=fan_foundation|season_2|media_choice=stable_first_if_present",
-      "inputSha256" : "75c0a42285f1aa90a6e418f73394d7ec0417a22a27358c9d1051a765f6054f4d",
+      "inputCanonical" : "commands=start(seed=620060)|accept_contract(record_book)|season_1|acknowledge|offseason=continue|investment=fan_foundation|season_2|media_choice=stable_first_if_present",
+      "inputSha256" : "a53e374e91b43375f87156b2c1d9cb2224229ea8e8873b8c045d5d5fc70ae0f9",
       "output" : {
         "communityPoints" : 6,
         "endorsementAmount" : 10000000,
-        "endorsementTransactionID" : "endorsement:pro-f59aa8f0436434b7:2:season-2-week-20-media_opportunity",
-        "fanSupport" : 61,
+        "endorsementTransactionID" : "endorsement:pro-ab7126184308c026:2:season-2-week-6-media_opportunity",
+        "fanSupport" : 46,
         "mediaChoiceID" : "media_opportunity.fan_together_shoot",
-        "mediaDecisionID" : "season-2-week-20-media_opportunity",
+        "mediaDecisionID" : "season-2-week-6-media_opportunity",
         "mediaObserved" : true,
-        "nextSeed" : "15365977776902481063"
+        "nextSeed" : "13319230007892082985"
       },
-      "outputCanonical" : "mediaDecision=season-2-week-20-media_opportunity|mediaChoice=media_opportunity.fan_together_shoot|endorsement=endorsement:pro-f59aa8f0436434b7:2:season-2-week-20-media_opportunity|amount=10000000|fan=61",
-      "outputSha256" : "8bd48c6f61ccf43a3150e4748d093af98e5af2507537018be31ef7512172dc98"
+      "outputCanonical" : "mediaDecision=season-2-week-6-media_opportunity|mediaChoice=media_opportunity.fan_together_shoot|endorsement=endorsement:pro-ab7126184308c026:2:season-2-week-6-media_opportunity|amount=10000000|fan=46",
+      "outputSha256" : "42240af780727a4e4470c9af28473396a0c304904afe79341e26691fdc88c755"
     },
     {
       "caseID" : "free_agency_market",
@@ -82,8 +82,8 @@
           "daegu_forge"
         ]
       },
-      "outputCanonical" : "market:pro-947b5913ab73d30e:3:free_agency|free_agency|3|35|offer:market:pro-947b5913ab73d30e:3:free_agency:busan_marines:free_agent:busan_marines:3:270000000:-:free_agent:starter:balanced:major_roster:1:standard:1;offer:market:pro-947b5913ab73d30e:3:free_agency:seoul_comets:free_agent:seoul_comets:3:440000000:-:free_agent:long_relief:contender:major_roster:1:stretch:0;offer:market:pro-947b5913ab73d30e:3:free_agency:daegu_forge:free_agent:daegu_forge:2:220000000:-:free_agent:starter:opportunity:major_roster:1:accessible:0",
-      "outputSha256" : "6386fba77186675a932c2be8e632c0f157452c846aa1e6cb06825502909f9aed"
+      "outputCanonical" : "market:pro-947b5913ab73d30e:3:free_agency|free_agency|3|33|offer:market:pro-947b5913ab73d30e:3:free_agency:busan_marines:free_agent:busan_marines:3:270000000:-:free_agent:starter:balanced:major_roster:1:standard:1;offer:market:pro-947b5913ab73d30e:3:free_agency:seoul_comets:free_agent:seoul_comets:3:440000000:-:free_agent:long_relief:contender:major_roster:1:stretch:0;offer:market:pro-947b5913ab73d30e:3:free_agency:daegu_forge:free_agent:daegu_forge:2:220000000:-:free_agent:starter:opportunity:major_roster:1:accessible:0",
+      "outputSha256" : "a0926a7b1dc1897a14699fca8bef3c1de36335faf923b574ed6a0004303ea79e"
     },
     {
       "caseID" : "investment",
@@ -95,7 +95,7 @@
         "availableFunds" : 140000000,
         "developmentFocus" : 1,
         "investmentSeason" : 2,
-        "nextSeed" : "4881151881845386773",
+        "nextSeed" : "18045422854354626552",
         "phase" : "weekly_plan",
         "transactionID" : "investment:pro-947b5913ab73d30e:2:pitch_lab"
       },
@@ -111,7 +111,7 @@
         "financeNoticePending" : true,
         "financeStartsSeason" : 2,
         "initializedSeason" : 1,
-        "nextSeed" : "9900912160504891501",
+        "nextSeed" : "13419930658537326540",
         "phase" : "offseason_decision",
         "salaryTransactions" : 0,
         "source" : "legacy_safe_boundary",
@@ -131,22 +131,22 @@
         "commandCounts" : {
           "accept_contract" : 6,
           "acknowledge_settlement" : 20,
-          "apply_season_decision" : 45,
+          "apply_season_decision" : 51,
           "choose_investment" : 19,
           "choose_offseason" : 20,
           "plan_week" : 480,
-          "resolve_important_game" : 56,
+          "resolve_important_game" : 68,
           "review_season" : 20,
           "start" : 1
         },
-        "commandTraceSha256" : "e6505c82ef2aa7a786147dfe8ec9d85411f0ad36753675e1c5dc433dd1fb24f2",
+        "commandTraceSha256" : "3914cf2070a397c8c4c5dfc89686473093a2bd80969be1f583642ae2e1485291",
         "completedAmbitions" : [
           "enduring_pro",
           "franchise_icon"
         ],
         "completedSeasons" : 20,
         "fanSupport" : 100,
-        "hallOfFameScore" : 63,
+        "hallOfFameScore" : 41,
         "honorKinds" : [
           "retired_number",
           "ambition_completed",
@@ -180,11 +180,11 @@
             "kind" : "career_earnings",
             "referenceID" : null,
             "teamID" : null,
-            "value" : 9844500000
+            "value" : 5163500000
           }
         ],
         "inputKind" : "real_command_generated",
-        "lastTeamLegacy" : 100,
+        "lastTeamLegacy" : 94,
         "lastTeamSeasons" : 20,
         "phase" : "completed",
         "retiredNumberEligible" : true,
@@ -208,26 +208,26 @@
         ],
         "voluntaryRetirement" : false
       },
-      "outputCanonical" : "inputKind=real_command_generated|commands=accept_contract=6,acknowledge_settlement=20,apply_season_decision=45,choose_investment=19,choose_offseason=20,plan_week=480,resolve_important_game=56,review_season=20,start=1|completedSeasons=20|hof=63|team=20:100|ambitions=enduring_pro,franchise_icon|honors=honor:pro-08ebd032804ef49b:retired_number:seoul_comets,honor:pro-08ebd032804ef49b:ambition_completed:enduring_pro,honor:pro-08ebd032804ef49b:ambition_completed:franchise_icon,honor:pro-08ebd032804ef49b:career_earnings:none",
-      "outputSha256" : "b8aacb78da3ab547e6ee44b5dea23d279e19fc224cc60995871f04d80b600f40"
+      "outputCanonical" : "inputKind=real_command_generated|commands=accept_contract=6,acknowledge_settlement=20,apply_season_decision=51,choose_investment=19,choose_offseason=20,plan_week=480,resolve_important_game=68,review_season=20,start=1|completedSeasons=20|hof=41|team=20:94|ambitions=enduring_pro,franchise_icon|honors=honor:pro-08ebd032804ef49b:retired_number:seoul_comets,honor:pro-08ebd032804ef49b:ambition_completed:enduring_pro,honor:pro-08ebd032804ef49b:ambition_completed:franchise_icon,honor:pro-08ebd032804ef49b:career_earnings:none",
+      "outputSha256" : "c82e62267bae8933c87ebae2ad3cbdf4962ccee24804b3583ecd385d9dee3b0f"
     },
     {
       "caseID" : "renewal_market",
-      "hashReason" : "SHA-256(UTF-8(inputCanonical)) and SHA-256(UTF-8(outputCanonical)); pure rules projection from canonical market inputs, not an engine signature",
-      "inputCanonical" : "inputKind=pure_rules_projection|rules=makeRenewalMarket|marketScore=65|forSeason=next",
-      "inputSha256" : "f30e4468263431b7b907a00826443a2dbcb5b4e026e967db58a25fc36869ad86",
+      "hashReason" : "SHA-256(UTF-8(inputCanonical)) and SHA-256(UTF-8(outputCanonical)); persisted renewal market captured from public command output, not an engine signature",
+      "inputCanonical" : "inputKind=real_command_generated|start(seed=620050,preset=power_prospect,fan=30)|accept_rookie_contract|complete_three_seasons|acknowledge_settlement|choose_offseason(continue)|capture_first_renewal_market",
+      "inputSha256" : "11ffd824d59a917b6f193844b25c97bbc68c884d7a7091227e806f9a4224c889",
       "output" : {
         "canonicalRows" : [
-          "offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:renewal_long:3:110000000:starter:accessible",
-          "offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:prove_it:1:260000000:starter:stretch"
+          "offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:renewal_long:3:50000000:starter:accessible",
+          "offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:prove_it:1:100000000:starter:stretch"
         ],
-        "inputKind" : "pure_rules_projection",
+        "inputKind" : "real_command_generated",
         "kind" : "renewal",
         "marketID" : "market:pro-08ebd032804ef49b:4:renewal",
         "offerCount" : 2
       },
-      "outputCanonical" : "market:pro-08ebd032804ef49b:4:renewal|renewal|4|99|offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:renewal_long:seoul_comets:3:110000000:-:renewal_long:starter:balanced:major_roster:1:accessible:1;offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:prove_it:seoul_comets:1:260000000:-:prove_it:starter:opportunity:major_roster:1:stretch:1",
-      "outputSha256" : "5908e142ba749c3c56c9d5453ad372eb1c1b68615fe16a4af84979d961b680ee"
+      "outputCanonical" : "market:pro-08ebd032804ef49b:4:renewal|renewal|4|94|offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:renewal_long:seoul_comets:3:50000000:-:renewal_long:starter:balanced:major_roster:1:accessible:1;offer:market:pro-08ebd032804ef49b:4:renewal:seoul_comets:prove_it:seoul_comets:1:100000000:-:prove_it:starter:opportunity:major_roster:1:stretch:1",
+      "outputSha256" : "ce8a0d2da3c2885e02379f24463a9d9dde817f285e5360fca18e268fd241e1fa"
     },
     {
       "caseID" : "rookie_contract",
@@ -257,30 +257,27 @@
       "output" : {
         "contractYearsAfter" : 2,
         "contractYearsBefore" : 3,
-        "fanAfter" : 29,
+        "fanAfter" : 24,
         "fanBefore" : 20,
-        "fanDelta" : 9,
+        "fanDelta" : 4,
         "fanReasonIDs" : [
           "fan-reason:pro-947b5913ab73d30e:1:career_milestone:pro.milestone.career.strikeouts.100:0",
           "fan-reason:pro-947b5913ab73d30e:1:career_milestone:pro.milestone.career.strikeouts.50:1",
           "fan-reason:pro-947b5913ab73d30e:1:contract_expectation_missed:pro.fan.contract-expectation.missed:0",
-          "fan-reason:pro-947b5913ab73d30e:1:important_game_runs_allowed:pro.fan.important-game.runs-allowed:15",
-          "fan-reason:pro-947b5913ab73d30e:1:important_game_scoreless:pro.fan.important-game.scoreless:7",
-          "fan-reason:pro-947b5913ab73d30e:1:same_team_season:pro.fan.same-team-season:0",
-          "fan-reason:pro-947b5913ab73d30e:1:season_award:pro.award.strikeouts:0"
+          "fan-reason:pro-947b5913ab73d30e:1:same_team_season:pro.fan.same-team-season:0"
         ],
         "hallOfFameAfter" : 0,
         "hallOfFameBefore" : 0,
         "merchandiseIncome" : 10000000,
         "nextRoute" : "under_contract",
-        "nextSeed" : "4881151881845386773",
+        "nextSeed" : "18045422854354626552",
         "salaryIncome" : 60000000,
         "settlementID" : "settlement:pro-947b5913ab73d30e:1:busan_marines",
-        "teamLegacyAfter" : 14,
+        "teamLegacyAfter" : 6,
         "teamLegacyBefore" : 0
       },
-      "outputCanonical" : "id=settlement:pro-947b5913ab73d30e:1:busan_marines|season=1|team=busan_marines|salary=60000000|merchandise=10000000|fan=20->29|legacy=0->14|hof=0->0|route=under_contract",
-      "outputSha256" : "dc2c3800270b95601591243a2315474ad6490a51280c05bd09565115a1d26d22"
+      "outputCanonical" : "id=settlement:pro-947b5913ab73d30e:1:busan_marines|season=1|team=busan_marines|salary=60000000|merchandise=10000000|fan=20->24|legacy=0->6|hof=0->0|route=under_contract",
+      "outputSha256" : "548dfb58cbdb1c9eea749fb1b0692ba3ba95f594b24d12402d37c5a61d827c70"
     },
     {
       "caseID" : "team_legacy_ambition_honors",
@@ -301,11 +298,11 @@
         "inputKind" : "pure_rule_projection",
         "retiredNumberEligible" : false,
         "teamID" : "seoul_comets",
-        "teamLegacy" : 14,
+        "teamLegacy" : 5,
         "teamSeasons" : 1
       },
-      "outputCanonical" : "inputKind=pure_rule_projection|team=seoul_comets|seasons=1|legacy=14|hof=0|honors=career_earnings",
-      "outputSha256" : "d13c415b21ccc9720ca5e7b73cf5d9a2e1c6aca6f2cd0b2dd1c6fa376a37f348"
+      "outputCanonical" : "inputKind=pure_rule_projection|team=seoul_comets|seasons=1|legacy=5|hof=0|honors=career_earnings",
+      "outputSha256" : "8b1502524f739b2933781b95861491cdd7c13d8ba1c348f75443b23465cc6f18"
     }
   ],
   "fixtureSchema" : "baseball-pro-career-fixture-v2",
@@ -341,7 +338,7 @@
     "timezone" : "UTC"
   },
   "inputSha256" : "70ec6c6305350f07c9c4af316440bd30be7b9c00b6b3304a9cb6fdb967b4f83c",
-  "outputSha256" : "1f77b55e16093a7064f086d39fb7c50f837b635ec2392ed8758a3a297c297400",
+  "outputSha256" : "7605ad24de922e5811ec3f8709e464e2bc53d19eaec3353fe917766db17be61b",
   "sourceRevision" : "wave6-swift-semantic-oracle-2026-08-15",
   "sourceRuntime" : "swift"
 }

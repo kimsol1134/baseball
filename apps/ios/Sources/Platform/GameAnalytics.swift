@@ -163,6 +163,10 @@ enum GameAnalytics {
         case weeklyProgramCompleted = "weekly_program_completed"
         /// 프로 시즌 중 3주 단위 결정을 확정한 시점.
         case proSeasonDecisionSelected = "pro_season_decision_selected"
+        /// 3주 결정의 후속 결과 카드가 실제로 보인 시점.
+        case proWeeklyDecisionFollowUpShown = "pro_weekly_decision_followup_shown"
+        /// 스프링캠프 보직 지원을 확정한 시점.
+        case proRoleRequested = "pro_role_requested"
         /// 포스트시즌 불펜이 연투 또는 휴식을 저장 성공으로 확정한 시점.
         case postseasonAvailabilitySelected = "postseason_availability_selected"
         /// 직접 등판 또는 자동 진행 뒤 포스트시즌 한 경기의 최종 점수가 확정된 시점.

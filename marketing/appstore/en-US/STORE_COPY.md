@@ -51,6 +51,16 @@ If you are drafted, continue into a professional career with roles, contracts, c
 
 Mound Reborn takes place in an original fictional baseball world shaped by regional baseball culture and atmosphere. It is not affiliated with any real league, club, school, or player.
 
+## Version 1.2.5
+
+### What’s New
+
+Your next career is still yours to throw.
+
+This update makes the handoff after a finished season feel seamless. Weekly growth now stays true to what you see on the board, and training you choose in the pitcher lab keeps the growth you already earned.
+
+You still throw every important pitch.
+
 ## Version 1.2.4
 
 ### What’s New

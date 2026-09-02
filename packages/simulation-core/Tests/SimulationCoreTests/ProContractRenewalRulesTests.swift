@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SimulationCore
 
-final class ProCareerContractWave2Tests: XCTestCase {
+final class ProContractRenewalRulesTests: XCTestCase {
     private let engine = ProCareerEngine(journeyEnabled: true)
 
     func testJourneyStartCreatesDeterministicSingleRookieOfferWithoutConsumingMarketSeed() throws {

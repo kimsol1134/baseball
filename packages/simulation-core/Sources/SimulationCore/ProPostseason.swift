@@ -43,6 +43,12 @@ public struct ProPostseasonGameLine: Codable, Equatable, Sendable, Identifiable 
     public let playerPitches: Int?
     public let playerOuts: Int?
     public let playerRunsAllowed: Int?
+    /// 직접 등판의 나머지 박스스코어. 이 값들이 없어 "플레이오프에서 던진 경기의 투구
+    /// 기록이 어디에도 남지 않는다"는 구멍이 있었다. 구저장본은 nil로 계속 읽힌다.
+    public let playerStrikeouts: Int?
+    public let playerWalks: Int?
+    public let playerHits: Int?
+    public let playerStarted: Bool?
 
     public var id: String { "\(round?.rawValue ?? "unknown")-\(gameNumber)" }
     public var won: Bool { teamRuns > opponentRuns }
@@ -55,7 +61,11 @@ public struct ProPostseasonGameLine: Codable, Equatable, Sendable, Identifiable 
         directlyPlayed: Bool,
         playerPitches: Int? = nil,
         playerOuts: Int? = nil,
-        playerRunsAllowed: Int? = nil
+        playerRunsAllowed: Int? = nil,
+        playerStrikeouts: Int? = nil,
+        playerWalks: Int? = nil,
+        playerHits: Int? = nil,
+        playerStarted: Bool? = nil
     ) {
         self.round = round
         self.gameNumber = gameNumber
@@ -65,6 +75,10 @@ public struct ProPostseasonGameLine: Codable, Equatable, Sendable, Identifiable 
         self.playerPitches = playerPitches
         self.playerOuts = playerOuts
         self.playerRunsAllowed = playerRunsAllowed
+        self.playerStrikeouts = playerStrikeouts
+        self.playerWalks = playerWalks
+        self.playerHits = playerHits
+        self.playerStarted = playerStarted
     }
 }
 
@@ -486,7 +500,11 @@ public enum ProPostseasonRules {
         runsAllowed: Int? = nil,
         teamRuns: Int? = nil,
         opponentRuns: Int? = nil,
-        rivalMemory: RivalMemorySnapshot? = nil
+        rivalMemory: RivalMemorySnapshot? = nil,
+        strikeouts: Int? = nil,
+        walks: Int? = nil,
+        hits: Int? = nil,
+        started: Bool? = nil
     ) -> ProPostseasonState {
         resolvingSeriesGame(
             state,
@@ -497,7 +515,11 @@ public enum ProPostseasonRules {
             runsAllowed: runsAllowed,
             teamRuns: teamRuns,
             opponentRuns: opponentRuns,
-            rivalMemory: rivalMemory
+            rivalMemory: rivalMemory,
+            strikeouts: strikeouts,
+            walks: walks,
+            hits: hits,
+            started: started
         )
     }
 
@@ -510,7 +532,11 @@ public enum ProPostseasonRules {
         runsAllowed: Int? = nil,
         teamRuns: Int? = nil,
         opponentRuns: Int? = nil,
-        rivalMemory: RivalMemorySnapshot? = nil
+        rivalMemory: RivalMemorySnapshot? = nil,
+        strikeouts: Int? = nil,
+        walks: Int? = nil,
+        hits: Int? = nil,
+        started: Bool? = nil
     ) -> ProPostseasonState {
         precondition(state.result == .inProgress && state.currentRound != nil)
         let round = state.currentRound ?? .final
@@ -539,7 +565,11 @@ public enum ProPostseasonRules {
                 directlyPlayed: directlyPlayed,
                 playerPitches: directlyPlayed ? max(0, pitches ?? 0) : nil,
                 playerOuts: directlyPlayed ? max(0, outs ?? 0) : nil,
-                playerRunsAllowed: directlyPlayed ? max(0, runsAllowed ?? 0) : nil
+                playerRunsAllowed: directlyPlayed ? max(0, runsAllowed ?? 0) : nil,
+                playerStrikeouts: directlyPlayed ? strikeouts.map { max(0, $0) } : nil,
+                playerWalks: directlyPlayed ? walks.map { max(0, $0) } : nil,
+                playerHits: directlyPlayed ? hits.map { max(0, $0) } : nil,
+                playerStarted: directlyPlayed ? started : nil
             )
         } else {
             nil

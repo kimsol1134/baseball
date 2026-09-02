@@ -30,6 +30,8 @@ jobs:
           check-latest: true
       - name: Test simulation packages
         run: swift test --package-path packages/simulation-core --build-path .build/pro-career-depth-swift
+      - name: Test iOS persistence codecs
+        run: swift test --package-path packages/ios-layers --build-path .build/ios-layers-swift
       - name: Wave 4 pro-career gate
         run: npm run check:pro-career
 
@@ -89,6 +91,7 @@ jobs:
             -scheme BaseballIOS \
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
             -skip-testing:BaseballIOSUITests/PromoCaptureUITests \
+            -skip-testing:BaseballIOSUITests/CareerSmokeUITests/testJapaneseDraftedRunCompletesProCareerJourneyAtMaximumHorizon \
             -skip-testing:BaseballIOSUITests/CareerSmokeUITests/testHighSchoolCareerRunsThroughDraftAndRebirth \
             -skip-testing:BaseballIOSUITests/QACaptureUITests \
             -skip-testing:BaseballIOSTests/PromoFrameExportTests \

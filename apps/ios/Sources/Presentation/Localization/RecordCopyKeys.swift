@@ -39,6 +39,7 @@ enum RecordUICopyKey: String, CaseIterable, Sendable {
     case seasonOutings = "record.pro.season-outings"
     case careerSeasons = "record.pro.career-seasons"
     case careerPostseasonLine = "record.pro.career-postseason-line"
+    case careerPostseasonDirectLine = "record.pro.career-postseason-direct-line"
     case seasonLabel = "record.pro.season-label"
     case seasonLine = "record.pro.season-line"
     case awards = "record.pro.awards"

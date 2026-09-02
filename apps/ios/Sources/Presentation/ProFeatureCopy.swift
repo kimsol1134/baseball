@@ -44,11 +44,15 @@ enum ProSeasonSettlementCopy {
         )
     }
 
-    static func legacy(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
+    static func legacy(before: Int, after: Int, resolver: GameCopyResolver) -> String {
         resolver.resolve(
             .journeySettlementLegacy,
-            arguments: [.integer(settlement.teamLegacyBefore), .integer(settlement.teamLegacyAfter)]
+            arguments: [.integer(before), .integer(after)]
         )
+    }
+
+    static func legacy(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
+        legacy(before: settlement.teamLegacyBefore, after: settlement.teamLegacyAfter, resolver: resolver)
     }
 
     static func hallOfFame(_ settlement: ProSeasonSettlement, resolver: GameCopyResolver) -> String {
@@ -258,6 +262,68 @@ enum ProWeeklyCopy {
     }
 }
 
+enum ProRoleRequestCopy {
+    static func accessibilityID(for role: ProRole) -> String {
+        "pro.roleRequest.\(role.rawValue)"
+    }
+
+    static func outlook(_ outlook: ProRoleRequestOutlook, resolver: GameCopyResolver) -> String {
+        let key: ProUICopyKey = switch outlook {
+        case .likely: .roleRequestOutlookLikely
+        case .conditional: .roleRequestOutlookConditional
+        case .difficult: .roleRequestOutlookDifficult
+        }
+        return resolver.resolve(key)
+    }
+
+    static func condition(
+        role: ProRole,
+        evaluation: ProRoleRequestEvaluation,
+        state: ProCareerSnapshot,
+        resolver: GameCopyResolver
+    ) -> String {
+        if CareerDisplayRules.isAlreadyAssignedRole(role, state: state) {
+            return resolver.resolve(.roleRequestConditionAssigned)
+        }
+        switch evaluation.requested {
+        case .longRelief, .setup:
+            return resolver.resolve(.roleRequestConditionMiddle)
+        case .starter:
+            switch evaluation.outlook {
+            case .likely:
+                return resolver.resolve(.roleRequestConditionStarterLikely, arguments: [
+                    .integer(state.pitcher.stamina),
+                    .integer(state.managerTrust),
+                ])
+            case .conditional:
+                return resolver.resolve(.roleRequestConditionStarterConditional, arguments: [
+                    .integer(state.pitcher.stamina),
+                ])
+            case .difficult:
+                return resolver.resolve(.roleRequestConditionStarterDifficult, arguments: [
+                    .integer(state.pitcher.stamina),
+                ])
+            }
+        case .closer:
+            switch evaluation.outlook {
+            case .likely:
+                return resolver.resolve(.roleRequestConditionCloserLikely, arguments: [
+                    .integer(state.pitcher.stuff),
+                    .integer(state.catcherTrust),
+                ])
+            case .conditional:
+                return resolver.resolve(.roleRequestConditionCloserConditional, arguments: [
+                    .integer(state.pitcher.stuff),
+                ])
+            case .difficult:
+                return resolver.resolve(.roleRequestConditionCloserDifficult, arguments: [
+                    .integer(state.pitcher.stuff),
+                ])
+            }
+        }
+    }
+}
+
 enum ProOffseasonCopy {
     static func openMarketServiceLocked(service: Int, resolver: GameCopyResolver) -> String {
         resolver.resolve(.offseasonOpenMarketServiceLocked, arguments: [.integer(service)])
@@ -441,8 +507,16 @@ enum ProRetirementCopy {
 }
 
 enum ProDecisionCopy {
-    static func eyebrow(season: Int, week: Int, resolver: GameCopyResolver) -> String {
-        resolver.resolve(.decisionEyebrow, arguments: [.integer(season), .integer(week)])
+    static func eyebrow(
+        season: Int,
+        week: Int,
+        resolver: GameCopyResolver,
+        weekly: Bool = false
+    ) -> String {
+        if weekly {
+            return resolver.resolve(.decisionWeeklyEyebrow, arguments: [.integer(season), .integer(week)])
+        }
+        return resolver.resolve(.decisionEyebrow, arguments: [.integer(season), .integer(week)])
     }
 
     static func confirmMessage(

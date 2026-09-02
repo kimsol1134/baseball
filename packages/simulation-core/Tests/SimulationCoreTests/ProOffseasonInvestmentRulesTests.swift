@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SimulationCore
 
-final class ProCareerWave5Tests: XCTestCase {
+final class ProOffseasonInvestmentRulesTests: XCTestCase {
     private let engine = ProCareerEngine(journeyEnabled: true)
 
     func testSettlementFanReasonsManagerTrustMerchandiseAndRetry() throws {
@@ -12,18 +12,20 @@ final class ProCareerWave5Tests: XCTestCase {
             ProGameLine(season: 1, week: 5, outingNumber: 1, started: true, outs: 18, strikeouts: 6, walks: 0, runsAllowed: 0, pitches: 80, teamRuns: 3, opponentRuns: 0, decision: .win, played: true),
             ProGameLine(season: 1, week: 18, outingNumber: 2, started: true, outs: 18, strikeouts: 3, walks: 1, runsAllowed: 3, pitches: 82, teamRuns: 2, opponentRuns: 3, decision: .loss, played: true),
         ]
+        // 저니 v3 수상 문턱은 비율상 이닝 게이트가 380아웃이다(아웃 유실 수정 후 재기준).
+        // 시즌 수상 사유(+4 × 최대 2)를 계속 트리거하도록 이닝을 그 위로 둔다.
         let stats = ProSeasonStats(
             season: 1,
             teamID: teamID,
             games: 20,
             starts: 20,
-            inningsOuts: 360,
+            inningsOuts: 400,
             strikeouts: 120,
             walks: 0,
             runsAllowed: 0,
             hits: 0,
             homeRuns: 0,
-            pitches: 720,
+            pitches: 800,
             wins: 8,
             losses: 0,
             saves: 0
@@ -412,7 +414,11 @@ final class ProCareerWave5Tests: XCTestCase {
 
     func testMediaOpportunityUsesFixedEligibleSlotAndAtomicEffects() throws {
         let accepted = try acceptRookie(try engine.start(startParams(seed: "550512")), ambition: .recordBook)
-        let slot = ProCareerEngine.mediaOpportunityWeek(proCareerID: accepted.snapshot.proCareerID, season: accepted.snapshot.season)
+        let slot = ProCareerEngine.mediaOpportunityWeek(
+            proCareerID: accepted.snapshot.proCareerID,
+            season: accepted.snapshot.season,
+            proRulesVersion: accepted.snapshot.proRulesVersion
+        )
         let eligible = try unsignedSnapshot(accepted.snapshot) { object in
             object["phase"] = ProCareerPhase.seasonDecision.rawValue
             object["week"] = slot
@@ -450,7 +456,7 @@ final class ProCareerWave5Tests: XCTestCase {
         XCTAssertEqual(applied.snapshot.decisionHistory?.last?.journeyEffect, .init(income: 10_000_000, fanDelta: 10, communityDelta: 2))
         XCTAssertNil(applied.snapshot.pendingDecision)
 
-        XCTAssertTrue([6, 13, 20].contains(slot))
+        XCTAssertTrue(ProCareerEngine.decisionWeeks(for: accepted.snapshot).contains(slot))
         let duplicateApply = errorCode {
             _ = try engine.applySeasonDecision(.init(
                 seed: applied.nextSeed,
@@ -498,7 +504,7 @@ final class ProCareerWave5Tests: XCTestCase {
 
         let cappedDecisionState = try unsignedSnapshot(accepted.snapshot) { object in
             object["week"] = 5
-            let records = [3, 6, 9].enumerated().map { index, week in
+            let records = ProCareerEngine.decisionWeeks(for: accepted.snapshot).enumerated().map { index, week in
                 ProDecisionRecord(
                     decisionID: "legacy-decision-\(index)",
                     type: .extraBullpen,

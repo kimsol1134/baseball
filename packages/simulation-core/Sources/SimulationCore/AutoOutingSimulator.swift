@@ -32,6 +32,13 @@ public struct AutoOutingSimulator: Sendable {
         min(upper, max(lower, value))
     }
 
+    /// 회·초말·아웃을 한 줄의 절대 아웃 수로 편다. 초가 끝나면 같은 회의 말(아웃 0)로
+    /// 넘어가므로, 초말을 무시하면 초의 세 번째 아웃이 통째로 사라진다 — 경기당 이닝의
+    /// 약 1/6이 유실되어 "5.2이닝 19K" 같은 불가능한 기록의 원인이 됐다.
+    private func absoluteOuts(_ state: InningStateSnapshot) -> Int {
+        (state.inning - 1) * 6 + (state.half == .bottom ? 3 : 0) + state.outs
+    }
+
     /// - Parameter batterOffset: 상대 타선의 세 능력치(컨택·선구·장타) 기준선 보정.
     ///   프로 리그 평균이 0이고, 고교는 음수를 준다. 이 인자 하나로 리그 수준을 표현한다.
     /// - Parameter callPolicy: `.perfect`는 기존과 같은 시드 스트림을 유지한다.
@@ -121,7 +128,7 @@ public struct AutoOutingSimulator: Sendable {
                 let threshold = callPolicy == .slump ? 35 : 18
                 missThisPA = rng.nextInt(upperBound: 100) < threshold
             }
-            let outsBefore = (inningState.inning - 1) * 3 + inningState.outs
+            let outsBefore = absoluteOuts(inningState)
             while true {
                 let call = missThisPA
                     ? preparation.alternativeRecommendation.call
@@ -157,7 +164,7 @@ public struct AutoOutingSimulator: Sendable {
                     carriedGameLog = result.gameLog
                     inningState = result.gameState.inningState ?? inningState
                     runners = result.gameState.runners
-                    let outsAfter = (inningState.inning - 1) * 3 + inningState.outs
+                    let outsAfter = absoluteOuts(inningState)
                     line.outs += max(0, outsAfter - outsBefore)
                     break
                 }

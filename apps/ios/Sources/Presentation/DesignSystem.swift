@@ -154,7 +154,7 @@ enum BaseballMetrics {
     /// 실제로 드래프트를 통과한 완료 화면에서 마지막 버튼("N번째 선수로 다시 시작")과
     /// 선수의 속마음이 탭 바 뒤에 깔려 **스크롤 끝까지 내려도 닿을 수 없었다.**
     /// 탭 바 높이(49) + 떠 있는 여백 + 손가락이 닿을 여유를 합친 값이다.
-    static let floatingTabBarClearance: CGFloat = 96
+    static let floatingTabBarClearance: CGFloat = 120
 }
 
 enum BaseballCardTone {
@@ -377,7 +377,11 @@ enum KoreanCopy {
 
     /// 원화 표기 — "12,000만 원"이 아니라 "1억 2,000만 원"이라고 쓴다.
     static func money(won: Int) -> String {
-        let man = won / 10_000
+        let safe = max(0, won)
+        if safe < 10_000 {
+            return "\(formatted(safe))원"
+        }
+        let man = safe / 10_000
         let eok = man / 10_000
         let rest = man % 10_000
         if eok > 0 {

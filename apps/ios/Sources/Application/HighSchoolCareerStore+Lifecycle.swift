@@ -296,6 +296,8 @@ extension HighSchoolCareerStore {
         var karmas: [KarmaID]
         var soulDomain: SoulDomain?
         var startingRepertoire: StartingRepertoireSelection?
+        /// 투구 손. 이 필드가 없던 저장은 nil로 읽혀 프리셋 기본(우완)을 쓴다.
+        var throwingHand: ThrowingHand?
     }
 
     var lastSetup: LastSetup? {
@@ -322,6 +324,9 @@ extension HighSchoolCareerStore {
         soulBoosts: [SoulBoostID] = [],
         signatureLegacyID: CareerSignatureLegacyID? = nil,
         startingRepertoire: StartingRepertoireSelection? = nil,
+        /// 주인공의 투구 손. nil이면 프리셋 기본(우완). 커널의 플래툰 판정이 실제로
+        /// 이 값을 읽으므로 좌완은 표기가 아니라 실제 유불리를 만든다.
+        throwingHand: ThrowingHand? = nil,
         seedOverride: String? = nil,
         challengeLifeNumber: Int? = nil,
         /// 어느 입구로 회차를 시작했는가(`setup_flow` / `quick_rebirth` / `recap`).
@@ -346,7 +351,8 @@ extension HighSchoolCareerStore {
         lastSetup = LastSetup(
             presetID: preset.id, playerName: playerName, region: region,
             harshness: difficulty.careerHarshness.rawValue, karmas: karmas, soulDomain: soulDomain,
-            startingRepertoire: startingRepertoire
+            startingRepertoire: startingRepertoire,
+            throwingHand: throwingHand
         )
         }
         let trimmed = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -357,7 +363,7 @@ extension HighSchoolCareerStore {
         let lifeNumber = challengeLifeNumber ?? inheritance.lifeNumber
         let identity = PlayerIdentitySnapshot(
             name: name,
-            throwingHand: preset.pitcher.throwingHand,
+            throwingHand: throwingHand ?? preset.pitcher.throwingHand,
             bodyType: .balanced,
             // 코어가 모르는 지역이 오면 서울로 받는다 — 학교 이름이 조용히 서울로 바뀌는
             // 것보다, 여기서 한 번 거르는 쪽이 원인을 찾기 쉽다.

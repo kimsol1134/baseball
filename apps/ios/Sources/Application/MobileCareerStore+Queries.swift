@@ -74,8 +74,13 @@ extension MobileCareerStore {
         let outs = max(0, after.currentStats.inningsOuts - before.currentStats.inningsOuts)
         let fatigue = after.fatigue - before.fatigue
         let trust = after.managerTrust - before.managerTrust
+        let korean = GameCopyResolver(language: .korean, policy: .releaseSafe)
         var values = [
-            "\(before.week + 1)~\(after.week)주차",
+            ProCareerPresentation.weekSpanLabel(
+                beforeWeek: before.week,
+                afterWeek: after.week,
+                resolver: korean
+            ),
             "\(weeks)주",
             "\(games)경기(선발 \(starts))",
             Self.inningsText(outs),
@@ -120,6 +125,18 @@ extension MobileCareerStore {
 
     nonisolated static func usesAgencyRules(_ state: ProCareerSnapshot) -> Bool {
         ProCareerEngine.usesAgencyRules(state)
+    }
+
+    nonisolated static func usesFinalSeriesRules(_ state: ProCareerSnapshot) -> Bool {
+        CareerDisplayRules.usesFinalSeriesRules(state)
+    }
+
+    nonisolated static func liveClimate(for state: ProCareerSnapshot) -> ProSeasonClimate? {
+        CareerDisplayRules.liveClimate(for: state)
+    }
+
+    nonisolated static func liveBatterOffset(for state: ProCareerSnapshot) -> Int {
+        CareerDisplayRules.liveBatterOffset(for: state)
     }
 
     nonisolated static func careerStanding(for state: ProCareerSnapshot) -> ProCareerStanding {

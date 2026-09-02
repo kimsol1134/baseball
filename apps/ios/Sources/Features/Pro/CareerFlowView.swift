@@ -45,7 +45,11 @@ struct CareerFlowView: View {
                                 .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         }
                         if !career.pendingGains.isEmpty {
-                            GrowthCelebrationView(gains: career.pendingGains, onDismiss: career.acknowledgeGains)
+                            GrowthCelebrationView(
+                                gains: career.pendingGains,
+                                stageContext: .pro,
+                                onDismiss: career.acknowledgeGains
+                            )
                                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                         }
                         if let summary = career.lastSummary, career.pendingGains.isEmpty {
@@ -62,6 +66,7 @@ struct CareerFlowView: View {
 
                         if state.phase == .seasonSettlement, state.journeyState != nil {
                             ProSeasonSettlementView(career: career, state: state)
+                                .background(BaseballTheme.canvas)
                         } else {
                             switch state.phase {
                             case .contractOffer:
@@ -117,6 +122,7 @@ struct CareerFlowView: View {
                                 }
                             case .offseasonDecision:
                                 OffseasonView(career: career, state: state)
+                                    .background(BaseballTheme.canvas)
                             case .retirementDecision:
                                 RetirementDecisionView(career: career, state: state)
                             case .completed:

@@ -931,6 +931,58 @@ final class ProCareerAutumnTests: XCTestCase {
         }
     }
 
+    func testChampionSettlementCanBeAcknowledged() throws {
+        let engine = ProCareerEngine(journeyEnabled: true)
+        let started = try engine.start(startParams(seed: "992040"))
+        let accepted = try acceptRookie(engine, started)
+        let reviewed = try reachSeasonReview(accepted, engine: engine)
+        let history: [ProPostseasonGameLine] = [
+            .init(round: .final, gameNumber: 1, teamRuns: 4, opponentRuns: 2, directlyPlayed: true, playerPitches: 15, playerOuts: 3, playerRunsAllowed: 0),
+            .init(round: .final, gameNumber: 2, teamRuns: 3, opponentRuns: 1, directlyPlayed: false),
+            .init(round: .final, gameNumber: 3, teamRuns: 5, opponentRuns: 4, directlyPlayed: true, playerPitches: 18, playerOuts: 3, playerRunsAllowed: 1),
+        ]
+        let champion = ProPostseasonState(
+            seed: 1,
+            currentRound: .final,
+            result: .champion,
+            gamesPlayed: 3,
+            series: .init(
+                round: .final,
+                opponentTeamID: "opponent",
+                playerWinsRequired: 3,
+                opponentWinsRequired: 3,
+                playerWins: 3,
+                opponentWins: 0,
+                nextGameNumber: 4,
+                totalDirectAppearances: 2,
+                lastAppearancePitches: 18,
+                lastAppearanceGameNumber: 3,
+                gameLines: history
+            ),
+            gameHistory: history
+        )
+        let ready = try unsignedSnapshot(engine, reviewed.snapshot) { object in
+            object["postseason"] = try encodeValue(champion)
+        }
+        let settled = try engine.reviewSeason(.init(seed: reviewed.nextSeed, state: ready))
+        let settlement = try XCTUnwrap(settled.snapshot.journeyState?.lastSettlement)
+        XCTAssertEqual(settled.snapshot.careerStats.last?.postseasonGames, history)
+        let championID = "recognition:\(ready.proCareerID):\(ready.season):award:pro.autumn.champion"
+        XCTAssertTrue(settlement.newAwardIDs.contains(championID))
+        XCTAssertFalse(ProTeamCareerRecordRules.isRecognizedTeamAward(
+            try XCTUnwrap(settled.snapshot.journeyState?.recognitions.first { $0.id == championID })
+        ))
+
+        let acknowledged = try engine.acknowledgeSettlement(.init(
+            seed: settled.nextSeed,
+            state: settled.snapshot,
+            expectedRevision: settled.snapshot.revision,
+            settlementID: settlement.id
+        ))
+        XCTAssertEqual(acknowledged.snapshot.phase, .offseasonDecision)
+        XCTAssertTrue(acknowledged.snapshot.journeyState?.settlementAcknowledged == true)
+    }
+
     func testV5SaveDoesNotOpenAutumn() throws {
         let engine = ProCareerEngine(journeyEnabled: true)
         let started = try engine.start(startParams(seed: "992002"))
@@ -949,6 +1001,45 @@ final class ProCareerAutumnTests: XCTestCase {
                 || planned.snapshot.phase == .seasonDecision
                 || planned.snapshot.phase == .weeklyPlan
         )
+    }
+
+    private func reachSeasonReview(_ initial: ProCareerResult, engine: ProCareerEngine) throws -> ProCareerResult {
+        var result = initial
+        for _ in 0..<160 {
+            switch result.snapshot.phase {
+            case .weeklyPlan:
+                result = try engine.planWeek(.init(seed: result.nextSeed, state: result.snapshot, plan: .earnTrust))
+            case .seasonDecision:
+                let decision = try XCTUnwrap(result.snapshot.pendingDecision)
+                let choice = try XCTUnwrap(decision.choices.first)
+                result = try engine.applySeasonDecision(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    decisionID: decision.id,
+                    choiceID: choice.id
+                ))
+            case .importantGame:
+                result = try engine.resolveImportantGame(.init(
+                    seed: result.nextSeed,
+                    state: result.snapshot,
+                    report: .init(
+                        scenarioNumber: result.snapshot.week,
+                        pitches: 18,
+                        strikeouts: 2,
+                        walks: 0,
+                        runsAllowed: 0,
+                        expectedDamage: 400,
+                        actualDamage: 200,
+                        recommendationAccepted: 10
+                    )
+                ))
+            case .seasonReview:
+                return result
+            default:
+                throw SimulationError.invalidProCareer("fixture did not reach season review")
+            }
+        }
+        throw SimulationError.invalidProCareer("fixture exceeded season review bound")
     }
 
     private func startParams(seed: String) -> StartProCareerParams {

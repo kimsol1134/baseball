@@ -100,7 +100,7 @@ final class LocalizationBoundaryTests: XCTestCase {
         }
         XCTAssertTrue(reminderBlock.contains("AppCopyKey.reminderNudgeTitle"))
         XCTAssertTrue(reminderBlock.contains("AppCopyKey.reminderNudgeAccessibility"))
-        XCTAssertTrue(reminderBlock.contains("GameAnalytics.logOnce(.reminderOfferShown, [\"source\": \"after_first_game\"])") )
+        XCTAssertTrue(reminderBlock.contains("CareerTelemetry.logOnce(.reminderOfferShown, [\"source\": \"after_first_game\"])") )
 
         let challengeBlock = try IOSSourceScan.typeBody(
             "ChallengeEndCard",

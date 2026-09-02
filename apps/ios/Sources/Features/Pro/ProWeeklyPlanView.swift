@@ -163,6 +163,16 @@ struct WeeklyPlanView: View {
         ]
     }
 
+    private static func followUpSymbol(_ type: ProSeasonDecisionType) -> String {
+        switch type {
+        case .rotationPush: "clock.arrow.circlepath"
+        case .newPitchTrial: "baseball"
+        case .farmReset: "arrow.down.circle"
+        case .veteranMentor: "person.2"
+        default: "checkmark.seal"
+        }
+    }
+
     private static func recommendation(
         for state: ProCareerSnapshot,
         resolver: GameCopyResolver
@@ -182,13 +192,58 @@ struct WeeklyPlanView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+            Group {
+                if CareerDisplayRules.shouldOfferRoleRequest(state) {
+                    ProRoleRequestCard(career: career, state: state)
+                        .transition(.identity)
+                }
+            }
+            .animation(nil, value: state.roleRequest != nil)
+
+            ForEach(state.resolvedFollowUps ?? []) { followUp in
+                let seenID = "pro.decision.followup.\(followUp.type.rawValue).v1"
+                BaseballCard(
+                    title: copyResolver.resolve(.decisionFollowUpCardTitle),
+                    tone: .milestone
+                ) {
+                    ProgressiveDisclosure(
+                        contentID: seenID,
+                        title: copyResolver.resolve(followUp.type.displayCopyToken),
+                        summary: ProCareerPresentation.followUpSummary(followUp, resolver: copyResolver)
+                    ) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label(
+                                copyResolver.resolve(followUp.type.displayCopyToken),
+                                systemImage: Self.followUpSymbol(followUp.type)
+                            )
+                            .font(.headline)
+                            Text(ProCareerPresentation.followUpSummary(followUp, resolver: copyResolver))
+                                .font(.footnote)
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .accessibilityIdentifier("pro.weekly.decisionFollowUp.\(followUp.type.rawValue)")
+                .onAppear {
+                    CareerTelemetry.logOnce(
+                        .proWeeklyDecisionFollowUpShown,
+                        [
+                            "decision_type": followUp.type.rawValue,
+                            "season": followUp.season,
+                            "week": followUp.week,
+                        ]
+                    )
+                }
+            }
+
             HStack(spacing: 10) {
                 Metric(title: copyResolver.resolve(.weeklyFatigue), value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
                 Metric(title: copyResolver.resolve(.weeklyManagerTrust), value: "\(state.managerTrust)", tone: state.managerTrust >= 60 ? .positive : .standard)
                 Metric(title: copyResolver.resolve(.weeklyRole), value: copyResolver.resolve(state.role.displayCopyToken))
             }
 
-            if let climate = ProCareerEngine.liveClimate(for: state) {
+            if let climate = CareerDisplayRules.liveClimate(for: state) {
                 let key: ProUICopyKey = switch climate {
                 case .hot: .weeklyClimateHot
                 case .even: .weeklyClimateEven
@@ -391,13 +446,13 @@ struct WeeklyPlanView: View {
         let onSelect: () -> Void
 
         var body: some View {
-            Button(action: onSelect) {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: copy.symbol)
-                        .font(.title3)
-                        .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: copy.symbol)
+                    .font(.title3)
+                    .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 3) {
+                    Button(action: onSelect) {
                         HStack(spacing: 6) {
                             // localization-safe: resolved-copy
                             Text(verbatim: copy.title).font(.subheadline.weight(.bold))
@@ -410,41 +465,108 @@ struct WeeklyPlanView: View {
                                     .padding(.vertical, 2)
                                     .background(BaseballTheme.action, in: Capsule())
                             }
+                            Spacer()
+                            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.border)
                         }
-                        // localization-safe: resolved-copy
-                        Text(verbatim: copy.effect)
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.positive)
-                            .fixedSize(horizontal: false, vertical: true)
-                        // localization-safe: resolved-copy
-                        Text(verbatim: copy.cost)
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.warning)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(verbatim: copy.risk)
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(copy.risk.contains("높음") || copy.risk.contains("High") || copy.risk.contains("高") ? BaseballTheme.warning : BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
                     }
-                    Spacer()
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.border)
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-                .background(
-                    selected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
-                    in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
-                        .stroke(selected ? BaseballTheme.selection : BaseballTheme.border, lineWidth: selected ? 2 : 1)
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                    .accessibilityIdentifier("pro.plan.\(copy.plan.rawValue)")
+                    GlossaryText(
+                        text: copy.effect,
+                        font: .footnote,
+                        color: BaseballTheme.positive
+                    )
+                    // localization-safe: resolved-copy
+                    Text(verbatim: copy.cost)
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(verbatim: copy.risk)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(copy.risk.contains("높음") || copy.risk.contains("High") || copy.risk.contains("高") ? BaseballTheme.warning : BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(selected ? .isSelected : [])
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("pro.plan.\(copy.plan.rawValue)")
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+            .background(
+                selected ? BaseballTheme.selection.opacity(0.12) : BaseballTheme.surface,
+                in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                    .stroke(selected ? BaseballTheme.selection : BaseballTheme.border, lineWidth: selected ? 2 : 1)
+            }
+        }
+    }
+}
+
+private struct ProRoleRequestCard: View {
+    let career: MobileCareerStore
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.roleRequestTitle), tone: .milestone) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(verbatim: copyResolver.resolve(.roleRequestBody))
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(CareerDisplayRules.roleRequestRoles, id: \.rawValue) { role in
+                    let evaluation = CareerDisplayRules.roleRequestEvaluation(state: state, requested: role)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Button {
+                            career.requestRole(role)
+                        } label: {
+                            HStack {
+                                Text(verbatim: copyResolver.resolve(role.displayCopyToken))
+                                    .font(.subheadline.weight(.bold))
+                                Spacer()
+                                Text(verbatim: ProRoleRequestCopy.outlook(evaluation.outlook, resolver: copyResolver))
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(outlookColor(evaluation.outlook))
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        GlossaryText(
+                            text: ProRoleRequestCopy.condition(
+                                role: role,
+                                evaluation: evaluation,
+                                state: state,
+                                resolver: copyResolver
+                            ),
+                            font: .footnote,
+                            color: BaseballTheme.textSecondary
+                        )
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                    .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius)
+                            .stroke(BaseballTheme.border, lineWidth: 1)
+                    }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(ProRoleRequestCopy.accessibilityID(for: role))
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("pro.roleRequest")
+    }
+
+    private func outlookColor(_ outlook: ProRoleRequestOutlook) -> Color {
+        switch outlook {
+        case .likely: BaseballTheme.positive
+        case .conditional: BaseballTheme.warning
+        case .difficult: BaseballTheme.negative
         }
     }
 }

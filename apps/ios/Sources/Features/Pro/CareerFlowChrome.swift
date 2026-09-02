@@ -53,6 +53,11 @@ struct CareerSummary: View {
                     LabeledContent(copyResolver.resolve(.summaryRole), value: copyResolver.resolve(state.role.displayCopyToken))
                 }
                 Section(copyResolver.resolve(.summaryAbility)) {
+                    Text(copyResolver.resolve(
+                        state.pitcher.throwingHand == .left ? AppCopyKey.handLeft : AppCopyKey.handRight
+                    ))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textSecondary)
                     AbilityGaugeView(label: copyResolver.resolve(.summaryStuff), value: state.pitcher.stuff)
                     AbilityGaugeView(label: copyResolver.resolve(.summaryCommand), value: state.pitcher.command)
                     AbilityGaugeView(label: copyResolver.resolve(.summaryMovement), value: state.pitcher.movement)
@@ -73,17 +78,15 @@ struct CareerSummary: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(ProCareerPresentation.decisionRecordTitle(decision, resolver: copyResolver))
                                     .font(.subheadline.weight(.semibold))
-                                Text(copyResolver.resolve(
-                                    .summaryDecisionLine,
-                                    arguments: [
-                                        .integer(decision.season),
-                                        .integer(decision.week),
-                                        .userText(ProCareerPresentation.combinedEffect(
-                                            decision.effect,
-                                            journeyEffect: decision.journeyEffect,
-                                            resolver: copyResolver
-                                        )),
-                                    ]
+                                Text(ProDecisionCopy.summaryLine(
+                                    season: decision.season,
+                                    week: decision.week,
+                                    effect: ProCareerPresentation.combinedEffect(
+                                        decision.effect,
+                                        journeyEffect: decision.journeyEffect,
+                                        resolver: copyResolver
+                                    ),
+                                    resolver: copyResolver
                                 ))
                                     .font(.caption)
                                     .foregroundStyle(BaseballTheme.textSecondary)

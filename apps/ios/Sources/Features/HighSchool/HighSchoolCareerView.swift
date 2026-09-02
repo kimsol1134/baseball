@@ -27,6 +27,11 @@ struct HighSchoolCareerView: View {
     @Environment(\.requestReview) private var requestReview
     @Environment(\.gameCopyResolver) private var copyResolver
 
+    /// 훈련 국면이 아니면 결과 카드를 한 줄로 접는다. 관계·토너먼트 선택을 덮지 않기 위함이다.
+    static func trainingResultIsCompact(phase: HighSchoolCareerPhase) -> Bool {
+        phase != .training
+    }
+
     /// A chapter goal is only honest when the chapter gives the player an official game in
     /// which strikeouts can be earned. This mirrors the existing view condition as a pure policy.
     static func showsChapterGoal(
@@ -433,8 +438,11 @@ struct HighSchoolCareerView: View {
                         // 명시적 앵커로 이동하면, 국면이 바뀌어 카드 높이가 줄어도 결과와
                         // 다음 행동이 같은 흐름에 이어진다.
                         if let receipt = career.trainingReceipt {
-                            TrainingResultPanel(receipt: receipt,
-                                                onDismiss: career.acknowledgeTrainingReceipt)
+                            TrainingResultPanel(
+                                receipt: receipt,
+                                compact: Self.trainingResultIsCompact(phase: state.phase),
+                                onDismiss: career.acknowledgeTrainingReceipt
+                            )
                                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                                 .id(Self.trainingResultAnchor)
                         }

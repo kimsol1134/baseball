@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SimulationCore
 
-final class ProCareerContractWave3Tests: XCTestCase {
+final class ProContractMarketRulesTests: XCTestCase {
     private let engine = ProCareerEngine(journeyEnabled: true)
 
     func testMarketRulesUseIntegerWeightedScoreAndFulfillmentAdjustment() throws {

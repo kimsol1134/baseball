@@ -308,6 +308,12 @@ struct BaseballApp: App {
                         ? .hidden : .automatic
                 )
                 .environment(\.gameCopyResolver, GameCopyResolver())
+                // 조판 언어를 명시한다. 한국어에서 좁은 칸의 글이 단어 중간에서 꺾이던
+                // 문제("변화구"→"변화"/"구")의 iOS 쪽 대응 — Windows는 CSS
+                // `word-break: keep-all`로 이미 잡았다(98dc4994).
+                .typesettingLanguage(
+                    Locale.Language(identifier: GameCopyResolver().language.rawValue)
+                )
                 .task {
                     let minimumLaunchPresentation = Task {
                         try? await Task.sleep(for: .milliseconds(700))

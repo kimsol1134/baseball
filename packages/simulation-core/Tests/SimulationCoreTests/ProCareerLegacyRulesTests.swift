@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SimulationCore
 
-final class ProCareerLegacyWave4Tests: XCTestCase {
+final class ProCareerLegacyRulesTests: XCTestCase {
     private let engine = ProCareerEngine(journeyEnabled: true)
 
     func testTeamRecordsUseCurrentRunCanonicalOrderAndExactStatSums() {
@@ -284,9 +284,9 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
             object["proRulesVersion"] = ProCareerEngine.currentRulesVersion
         }
 
-        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 6)
+        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 9)
         XCTAssertEqual(ProCareerEngine.agencyRulesVersion, 3)
-        XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 2)
+        XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 3)
         XCTAssertEqual(ProCareerEngine.hallOfFameFormulaVersion, 3)
         XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: legacyV1), 100, "v1 saves retain the frozen score formula")
         XCTAssertEqual(ProCareerEngine.hallOfFameFinalScore(for: legacyV2), 100, "v2 saves retain the frozen score formula")
@@ -294,7 +294,7 @@ final class ProCareerLegacyWave4Tests: XCTestCase {
         XCTAssertNotEqual(legacyV2.commitment, current.commitment)
         XCTAssertEqual(try JSONDecoder().decode(ProCareerSnapshot.self, from: JSONEncoder().encode(legacyV1)), legacyV1)
         XCTAssertEqual(try JSONDecoder().decode(ProCareerSnapshot.self, from: JSONEncoder().encode(legacyV2)), legacyV2)
-        XCTAssertEqual(try engine.start(startParams(seed: "440408")).snapshot.proRulesVersion, 6)
+        XCTAssertEqual(try engine.start(startParams(seed: "440408")).snapshot.proRulesVersion, 9)
     }
 
     func testJourneyStandingDoesNotUsePreviousTeamGlobalFallback() throws {

@@ -5,6 +5,25 @@ import BaseballIOSDomain
 import BaseballIOSPersistence
 
 extension MobileCareerStore {
+    func requestRole(_ role: ProRole) {
+        guard let result, CareerDisplayRules.shouldOfferRoleRequest(result.snapshot) else { return }
+        let beforeRevision = result.snapshot.revision
+        let season = result.snapshot.season
+        perform(summary: nil, cue: .success) {
+            try engine.requestRole(.init(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                requested: role
+            ))
+        }
+        guard self.result?.snapshot.revision != beforeRevision else { return }
+        CareerTelemetry.log(.proRoleRequested, [
+            "requested": (role == .setup ? ProRole.longRelief : role).rawValue,
+            "outcome": self.result?.snapshot.roleRequest?.outcome.rawValue ?? "",
+            "season": season,
+        ])
+    }
+
     func applySeasonDecision(decisionID: String, choiceID: String) {
         guard let result,
               let decision = result.snapshot.pendingDecision,
@@ -27,7 +46,8 @@ extension MobileCareerStore {
               self.result?.snapshot.decisionHistory?.last?.decisionID == decision.id else { return }
         CareerTelemetry.log(.proSeasonDecisionSelected, Self.decisionAnalyticsProperties(
             decision: decision,
-            choice: choice
+            choice: choice,
+            cadence: ProCareerEngine.usesWeeklyDecisionRules(result.snapshot) ? "weekly3" : "legacy"
         ))
         if decision.type == .mediaOpportunity {
             CareerTelemetry.log(.proEndorsementSelected, Self.endorsementAnalyticsProperties(
@@ -58,13 +78,16 @@ extension MobileCareerStore {
 
     static func decisionAnalyticsProperties(
         decision: ProSeasonDecision,
-        choice: ProSeasonDecisionChoice
+        choice: ProSeasonDecisionChoice,
+        cadence: String = "legacy"
     ) -> [String: Any] {
         [
             "decision_id": decision.id,
             "choice_id": choice.id,
             "season": decision.season,
             "week": decision.week,
+            "cadence": cadence,
+            "decision_type": decision.type.rawValue,
         ]
     }
 

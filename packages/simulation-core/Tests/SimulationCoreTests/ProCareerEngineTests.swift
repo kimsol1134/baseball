@@ -309,7 +309,7 @@ final class ProCareerEngineTests: XCTestCase {
     }
 
     func testSeasonChoicesAreAllRecalledAtTheNextDirectMatchupAfterSaveResume() throws {
-        let pending = try firstDecision(seed: "314")
+        let pending = try firstDecision(seed: "314", proRulesVersion: 8)
         let firstDecision = try XCTUnwrap(pending.snapshot.pendingDecision)
         let firstChoice = firstDecision.choices[0]
         var applied = try engine.applySeasonDecision(.init(
@@ -463,12 +463,13 @@ final class ProCareerEngineTests: XCTestCase {
     func testSeasonDecisionCatalogIsDeterministicAndAlwaysShowsThreeExactChoices() throws {
         var result = try engine.start(startParams(seed: "610"))
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        let snapshot = try pinnedRulesVersion(result.snapshot, 8)
 
         let first = ProCareerEngine.seasonDecisionWeeks.compactMap {
-            engine.seasonDecision(for: result.snapshot, week: $0)
+            engine.seasonDecision(for: snapshot, week: $0)
         }
         let second = ProCareerEngine.seasonDecisionWeeks.compactMap {
-            engine.seasonDecision(for: result.snapshot, week: $0)
+            engine.seasonDecision(for: snapshot, week: $0)
         }
 
         XCTAssertEqual(first, second)
@@ -485,8 +486,9 @@ final class ProCareerEngineTests: XCTestCase {
         for seed in 610...619 {
             var other = try engine.start(startParams(seed: String(seed)))
             other = try engine.signContract(.init(seed: other.nextSeed, state: other.snapshot))
+            let otherSnapshot = try pinnedRulesVersion(other.snapshot, 8)
             let types = ProCareerEngine.seasonDecisionWeeks.compactMap {
-                engine.seasonDecision(for: other.snapshot, week: $0)?.type
+                engine.seasonDecision(for: otherSnapshot, week: $0)?.type
             }
             XCTAssertEqual(Set(types).count, ProCareerEngine.maximumSeasonDecisions)
             typesAcrossRuns.formUnion(types)
@@ -503,7 +505,7 @@ final class ProCareerEngineTests: XCTestCase {
         let pendingResult = try firstDecision(seed: "611")
         let pending = try XCTUnwrap(pendingResult.snapshot.pendingDecision)
         XCTAssertEqual(pendingResult.snapshot.phase, .seasonDecision)
-        XCTAssertTrue(ProCareerEngine.seasonDecisionWeeks.contains(pendingResult.snapshot.week))
+        XCTAssertTrue(ProCareerEngine.decisionWeeks(for: pendingResult.snapshot).contains(pendingResult.snapshot.week))
         XCTAssertEqual(pendingResult.snapshot.injuryWeeks, 0)
         XCTAssertNil(pendingResult.snapshot.seasonTrigger)
         XCTAssertNil(pendingResult.snapshot.currentRival)
@@ -895,6 +897,11 @@ final class ProCareerEngineTests: XCTestCase {
         XCTAssertEqual(ProCareerEngine.maximumSeasonDecisions, 3)
         var result = try engine.start(startParams(seed: "613"))
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
+        result = ProCareerResult(
+            snapshot: try pinnedRulesVersion(result.snapshot, 8),
+            nextSeed: result.nextSeed,
+            events: result.events
+        )
         var openedWeeks: [Int] = []
         while result.snapshot.phase != .seasonReview {
             switch result.snapshot.phase {
@@ -1072,13 +1079,14 @@ final class ProCareerEngineTests: XCTestCase {
             )
             XCTAssertTrue(
                 decisionsBySeason.values.allSatisfy {
-                    $0.count <= ProCareerEngine.maximumSeasonDecisions
+                    $0.count <= ProCareerEngine.maximumDecisions(for: completed.snapshot)
                 },
                 "시드 \(seedValue)"
             )
             XCTAssertTrue(
                 (completed.snapshot.decisionHistory ?? []).allSatisfy {
-                    ProCareerEngine.seasonDecisionWeeks.contains($0.week)
+                    ProCareerEngine.weeklySeasonDecisionWeeks.contains($0.week)
+                        || ProCareerEngine.seasonDecisionWeeks.contains($0.week)
                 },
                 "시드 \(seedValue)"
             )
@@ -1177,13 +1185,18 @@ final class ProCareerEngineTests: XCTestCase {
         return try engine.reviewSeason(.init(seed: result.nextSeed, state: result.snapshot))
     }
 
-    private func firstDecision(seed: String, pitcher: PitcherSnapshot? = nil) throws -> ProCareerResult {
+    private func firstDecision(seed: String, pitcher: PitcherSnapshot? = nil, proRulesVersion: Int? = nil) throws -> ProCareerResult {
         let params = StartProCareerParams(
             seed: seed,
             identity: .defaultPitcher,
             pitcher: pitcher ?? self.pitcher(),
             draftResult: drafted(),
-            entitlement: activeEntitlement()
+            entitlement: activeEntitlement(),
+            sourceFanInterest: nil,
+            startingRepertoire: nil,
+            repertoireRulesVersion: nil,
+            pitchLearningProject: nil,
+            proRulesVersion: proRulesVersion
         )
         var result = try engine.start(params)
         result = try engine.signContract(.init(seed: result.nextSeed, state: result.snapshot))
@@ -1250,6 +1263,23 @@ final class ProCareerEngineTests: XCTestCase {
     }
 
     private func clampedAbility(_ value: Int) -> Int { min(80, max(20, value)) }
+
+    private func pinnedRulesVersion(_ snapshot: ProCareerSnapshot, _ version: Int) throws -> ProCareerSnapshot {
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(snapshot)) as? [String: Any]
+        )
+        object["proRulesVersion"] = version
+        object["commitment"] = ""
+        let unsigned = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        object["commitment"] = engine.commitment(unsigned)
+        return try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+    }
 
     private func startParams(seed: String, entitlement: ProEntitlementSnapshot? = nil) -> StartProCareerParams {
         .init(seed: seed, identity: .defaultPitcher, pitcher: pitcher(), draftResult: drafted(), entitlement: entitlement ?? activeEntitlement())

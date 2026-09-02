@@ -69,10 +69,13 @@ public struct ProWeekHealthForecast: Codable, Equatable, Sendable {
             : (expectedPitches + 14) / 15
         let staminaRelief = max(0, (state.pitcher.stamina - 50) / 15)
         let expectedRaw = min(100, max(0, state.fatigue + trainingLoad + outingLoad - staminaRelief))
-        let expectedEffective = PitchAbilityRules.effectiveFatigue(
+        // 실제 부상 판정과 같은 압력 산식을 쓴다. 예보가 "낮음"인데 부상이 나오면
+        // UI가 거짓말이 된다.
+        let expectedEffective = ProCareerEngine.injuryPressure(
             rawFatigue: expectedRaw,
             stamina: state.pitcher.stamina,
-            mastery: state.pitcher.effectiveMastery.stamina
+            mastery: state.pitcher.effectiveMastery.stamina,
+            challengeRules: ProCareerEngine.usesChallengeRules(state)
         )
         let band: ProWeekInjuryRiskBand = switch expectedEffective {
         case ...72: .low

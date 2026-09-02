@@ -167,7 +167,10 @@ function outings(args) {
 const starter = outings(["--outings", "400"]);
 expect("선발 평균 이닝", starter.inningsPerGame, 4.6, 6.2);
 expect("선발 9이닝당 실점", starter.ra9, 2.6, 4.6);
-expect("선발 K/9", starter.k9, 8.0, 11.5);
+// 8.0~11.5 밴드는 초말 전환 아웃 유실(이닝 ~1/6 과소집계)로 부풀려진 K/9 위에서 잡은
+// 값이었다. 2026-09-02 아웃 집계 수정 후 같은 커널의 실측 K/9는 7.7 — 실제 리그
+// (KBO 7.5~8.5, MLB 8.5~9)와 맞는 수준이라 밴드를 실측 기준으로 재설정한다.
+expect("선발 K/9", starter.k9, 7.0, 10.5);
 expect("선발 BB/9", starter.bb9, 1.2, 3.2);
 expect("선발 승률", starter.winRate, 0.3, 0.62);
 expect("선발 노디시전 비율", starter.noDecisionRate, 0.1, 0.35);

@@ -6,10 +6,10 @@ final class ProCareerRetiredNumberBalanceTests: XCTestCase {
 
     func testNewCareerUsesJourneyRulesVersion2AndProRulesVersion4() throws {
         let started = try engine.start(startParams(seed: "820001"))
-        XCTAssertEqual(started.snapshot.journeyState?.rulesVersion, 2)
-        XCTAssertEqual(started.snapshot.proRulesVersion, 7)
-        XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 2)
-        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 7)
+        XCTAssertEqual(started.snapshot.journeyState?.rulesVersion, 3)
+        XCTAssertEqual(started.snapshot.proRulesVersion, 9)
+        XCTAssertEqual(ProCareerEngine.currentJourneyRulesVersion, 3)
+        XCTAssertEqual(ProCareerEngine.currentRulesVersion, 9)
         XCTAssertTrue(ProCareerEngine.usesAgencyRules(started.snapshot))
         XCTAssertTrue(ProCareerEngine.usesRetiredNumberLiveRules(started.snapshot))
     }
@@ -375,6 +375,80 @@ final class ProCareerRetiredNumberBalanceTests: XCTestCase {
         XCTAssertFalse(reviewed.snapshot.journeyState?.lastSettlement?.goalCompleted ?? true)
         XCTAssertEqual(reviewed.snapshot.journeyState?.lastSettlement?.goalProgressBefore?.completed, true)
         XCTAssertEqual(reviewed.snapshot.journeyState?.lastSettlement?.goalProgressAfter?.completed, true)
+    }
+
+    func testLockedCompleteGoalCanSettleAfterLiveScoreDrops() throws {
+        let accepted = try acceptRookie(try engine.start(startParams(seed: "820033")))
+        let teamID = accepted.snapshot.team.id
+        let careerID = accepted.snapshot.proCareerID
+        let activeGoal = try XCTUnwrap(accepted.snapshot.journeyState?.activeGoal)
+        let prior = (1...8).map {
+            ProSeasonStats(season: $0, teamID: teamID, games: 1, starts: 1, inningsOuts: 3, strikeouts: 0)
+        }
+        let current = ProSeasonStats(season: 10, teamID: teamID, games: 1, starts: 1, inningsOuts: 3, strikeouts: 0)
+        let completedGoal = ProCareerGoalState(
+            id: activeGoal.id,
+            ambition: activeGoal.ambition,
+            selectedSeason: activeGoal.selectedSeason,
+            anchorTeamID: activeGoal.anchorTeamID,
+            completedSeason: 8
+        )
+        let history = ProCareerGoalRecord(
+            id: completedGoal.id,
+            ambition: completedGoal.ambition,
+            selectedSeason: completedGoal.selectedSeason,
+            anchorTeamID: completedGoal.anchorTeamID,
+            completedSeason: 8,
+            endedSeason: 8,
+            outcome: .completed
+        )
+        let reward = ProCareerRecognition(
+            careerID: careerID,
+            kind: .milestone,
+            contentID: "pro.ambition.franchise_icon.completed",
+            season: 8,
+            teamID: teamID
+        )
+        let ready = try unsignedSnapshot(accepted.snapshot) { object in
+            object["phase"] = ProCareerPhase.seasonReview.rawValue
+            object["season"] = 10
+            object["week"] = 24
+            object["currentStats"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(current))
+            object["careerStats"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(prior))
+            var journey = try XCTUnwrap(object["journeyState"] as? [String: Any])
+            journey["rulesVersion"] = 2
+            journey["activeGoal"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(completedGoal))
+            journey["goalHistory"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode([history]))
+            journey["recognitions"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode([reward]))
+            journey["teamRecords"] = try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(ProTeamCareerRecordRules.backfill(careerStats: prior))
+            )
+            object["journeyState"] = journey
+        }
+        let live = ProCareerGoalRules.progress(
+            state: ready,
+            goal: try XCTUnwrap(ready.journeyState?.activeGoal)
+        )
+        XCTAssertTrue(live.completed)
+        XCTAssertFalse(live.metrics.allSatisfy { $0.current >= $0.target })
+
+        let reviewed = try engine.reviewSeason(.init(seed: "820034", state: ready))
+        XCTAssertEqual(reviewed.snapshot.phase, .seasonSettlement)
+        let settlement = try XCTUnwrap(reviewed.snapshot.journeyState?.lastSettlement)
+        XCTAssertEqual(settlement.goalProgressBefore?.completed, true)
+        XCTAssertEqual(settlement.goalProgressAfter?.completed, true)
+        XCTAssertFalse(settlement.goalCompleted)
+        XCTAssertFalse(
+            (settlement.goalProgressAfter?.metrics ?? []).allSatisfy { $0.current >= $0.target }
+        )
+
+        let acknowledged = try engine.acknowledgeSettlement(.init(
+            seed: reviewed.nextSeed,
+            state: reviewed.snapshot,
+            expectedRevision: reviewed.snapshot.revision,
+            settlementID: settlement.id
+        ))
+        XCTAssertNotEqual(acknowledged.snapshot.phase, .seasonSettlement)
     }
 
     func testReviewSeasonAndRecognitionsShareAwardIDs() {

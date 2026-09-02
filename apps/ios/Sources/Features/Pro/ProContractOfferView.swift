@@ -104,6 +104,7 @@ struct ProContractOfferView: View {
                     }
                 }
             }
+            .padding(.bottom, 28)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("pro.contractOffer")
             .task(id: market.id) {

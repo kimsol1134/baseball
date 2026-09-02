@@ -73,6 +73,9 @@ enum ProCareerPresentation {
         if decision.type == .mediaOpportunity {
             return resolver.resolve(.gameContent("content.pro-media-opportunity.detail"))
         }
+        if isContentKey(decision.detail) {
+            return resolver.resolve(.gameContent(decision.detail))
+        }
         guard resolver.language != .korean else { return decision.detail }
         return resolver.resolve(.gameContent("content.pro-decision.\(decision.type.rawValue).detail"))
     }
@@ -80,6 +83,9 @@ enum ProCareerPresentation {
     static func decisionTitle(_ decision: ProSeasonDecision, resolver: GameCopyResolver) -> String {
         if decision.type == .mediaOpportunity {
             return resolver.resolve(.gameContent("content.pro-media-opportunity.title"))
+        }
+        if isContentKey(decision.title) {
+            return resolver.resolve(.gameContent(decision.title))
         }
         if resolver.language == .korean { return decision.title }
         return resolver.resolve(decision.type.displayCopyToken)
@@ -89,7 +95,10 @@ enum ProCareerPresentation {
         for decision: ProSeasonDecision,
         resolver: GameCopyResolver
     ) -> String {
-        decision.type == .mediaOpportunity
+        if decision.type.isWeeklyBinaryDecision {
+            return resolver.resolve(.decisionFollowUpLater)
+        }
+        return decision.type == .mediaOpportunity
             ? resolver.resolve(.decisionImmediateEffect)
             : resolver.resolve(.decisionFollowUp)
     }
@@ -98,9 +107,86 @@ enum ProCareerPresentation {
         for choice: ProSeasonDecisionChoice,
         resolver: GameCopyResolver
     ) -> String {
-        choice.id.hasPrefix("media_opportunity.")
+        if choice.id.hasPrefix("rotation_push.")
+            || choice.id.hasPrefix("new_pitch_trial.")
+            || choice.id.hasPrefix("farm_reset.")
+            || choice.id.hasPrefix("veteran_mentor.") {
+            return resolver.resolve(.decisionFollowUpLater)
+        }
+        return choice.id.hasPrefix("media_opportunity.")
             ? resolver.resolve(.decisionImmediateEffect)
             : resolver.resolve(.decisionFollowUp)
+    }
+
+    static func choiceFollowUpLine(
+        _ choice: ProSeasonDecisionChoice,
+        resolver: GameCopyResolver
+    ) -> String? {
+        let suffix = ordinaryDecisionChoiceContentID(choice.id)
+        let key = "content.pro-decision.choice.\(suffix).follow-up"
+        guard GameCopyKey.isSemanticID(key) else { return nil }
+        let resolved = resolver.resolve(.gameContent(key))
+        return resolved == GameCopyResolver.unavailableText ? nil : resolved
+    }
+
+    static func followUpSummary(
+        _ followUp: ProDecisionFollowUp,
+        resolver: GameCopyResolver
+    ) -> String {
+        if isContentKey(followUp.summaryKey) {
+            var parts = [resolver.resolve(.gameContent(followUp.summaryKey))]
+            if let qualityStarts = followUp.qualityStarts {
+                parts.append("QS \(qualityStarts)")
+            }
+            if let runs = followUp.runsAllowed {
+                parts.append(resolver.resolve(.decisionFollowUpRuns, arguments: [.integer(runs)]))
+            }
+            if let restored = followUp.commandRestored, restored != 0 {
+                parts.append(resolver.resolve(
+                    restored > 0 ? .effectCommandGain : .effectCommandLoss,
+                    arguments: [.integer(abs(restored))]
+                ))
+            }
+            if let trust = followUp.managerTrustDelta, trust != 0 {
+                parts.append(resolver.resolve(
+                    trust > 0 ? .effectManagerGain : .effectManagerLoss,
+                    arguments: [.integer(abs(trust))]
+                ))
+            }
+            return parts.joined(separator: " · ")
+        }
+        return followUp.summaryKey
+    }
+
+    static func isContentKey(_ raw: String) -> Bool {
+        raw.hasPrefix("content.pro-decision.") || raw.hasPrefix("content.pro-media-opportunity.")
+    }
+
+    /// Week-range token for the weekly result banner. Spring camp and a single
+    /// completed week never render as `N~M` with start > end or a duplicated bound.
+    static func weekSpanLabel(
+        beforeWeek: Int,
+        afterWeek: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        if afterWeek <= 0 {
+            return resolver.resolve(.summaryWeekSpanSpringCamp)
+        }
+        if afterWeek <= beforeWeek {
+            return resolver.resolve(.summaryWeekSpanSingle, arguments: [.integer(afterWeek)])
+        }
+        let start = beforeWeek + 1
+        let end = afterWeek
+        if start > end {
+            return resolver.resolve(.summaryWeekSpanSingle, arguments: [.integer(end)])
+        }
+        if start == end {
+            return resolver.resolve(.summaryWeekSpanSingle, arguments: [.integer(end)])
+        }
+        return resolver.resolve(
+            .summaryWeekSpanRange,
+            arguments: [.integer(start), .integer(end)]
+        )
     }
 
     static func storeSummary(
@@ -169,6 +255,9 @@ enum ProCareerPresentation {
                 [.integer(week), .integer(trust), .integer(fatigue)],
                 resolver: resolver
             )
+        }
+        if let week = captures(raw, pattern: #"^시즌 결정 · (\d+)주차$"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.weekly-decision", [.integer(week)], resolver: resolver)
         }
         if let record = state.decisionHistory?.last, raw.contains(" — ") {
             return legacy(
@@ -247,6 +336,9 @@ enum ProCareerPresentation {
     ) -> String {
         if let mediaKey = mediaNewsKey(raw) {
             return resolver.resolve(.gameContent(mediaKey))
+        }
+        if raw.hasPrefix("content.pro-news.role-request.") {
+            return resolver.resolve(.gameContent(raw))
         }
         guard resolver.language != .korean else { return raw }
         if raw == "연투를 택했습니다. 다음 경기에도 마운드에 오릅니다." {
@@ -421,6 +513,48 @@ enum ProCareerPresentation {
         if let age = captures(raw, pattern: #"^(\d+)세 · 전성기가 기울며 구위가 한 단계 떨어졌습니다\.$"#)?.first.flatMap(Int.init) {
             return legacy("content.pro-news.aging.decline", [.integer(age)], resolver: resolver)
         }
+        if let week = captures(raw, pattern: #"^시즌 결정 · (\d+)주차$"#)?.first.flatMap(Int.init) {
+            return legacy("content.pro-news.weekly-decision", [.integer(week)], resolver: resolver)
+        }
+        if raw == "결정 결과" {
+            return legacy("content.pro-news.decision-followup.generic", resolver: resolver)
+        }
+        if raw.hasPrefix("결정 결과 · ") {
+            if let values = captures(
+                raw,
+                pattern: #"^결정 결과 · 등판 간격 · QS (\d+) · 실점 (\d+)$"#
+            ), values.count == 2, let qualityStarts = Int(values[0]), let runs = Int(values[1]) {
+                return legacy(
+                    "content.pro-news.decision-followup.rotation-push",
+                    [.integer(qualityStarts), .integer(runs)],
+                    resolver: resolver
+                )
+            }
+            if let restored = captures(
+                raw,
+                pattern: #"^결정 결과 · 신구종 실전 · 제구 회복 \+(\d+)$"#
+            )?.first.flatMap(Int.init) {
+                return legacy(
+                    "content.pro-news.decision-followup.new-pitch-trial",
+                    [.integer(restored)],
+                    resolver: resolver
+                )
+            }
+            if raw == "결정 결과 · 2군 재정비 · 복귀 · 감독의 믿음 +4" {
+                return legacy("content.pro-news.decision-followup.farm-reset", resolver: resolver)
+            }
+            if let values = captures(
+                raw,
+                pattern: #"^결정 결과 · 베테랑 조언 · 성장 구위 ([+-]?\d+) · 제구 ([+-]?\d+) · 변화구 ([+-]?\d+)$"#
+            ), values.count == 3,
+               let stuff = Int(values[0]), let command = Int(values[1]), let movement = Int(values[2]) {
+                return legacy(
+                    "content.pro-news.decision-followup.veteran-mentor",
+                    [.integer(stuff), .integer(command), .integer(movement)],
+                    resolver: resolver
+                )
+            }
+        }
 
         if let values = captures(raw, pattern: #"^신인 계약 제안 · (.+) · (.+)$"#), values.count == 2 {
             let localizedTeam = leagueTeamName(values[0], resolver: resolver)
@@ -546,6 +680,9 @@ enum ProCareerPresentation {
     }
 
     static func choiceTitle(_ choice: ProSeasonDecisionChoice, resolver: GameCopyResolver) -> String {
+        if isContentKey(choice.title) {
+            return resolver.resolve(.gameContent(choice.title))
+        }
         if choice.id.hasPrefix("media_opportunity.") {
             let suffix = String(choice.id.dropFirst("media_opportunity.".count))
             let contentSuffix = switch suffix {
@@ -563,6 +700,9 @@ enum ProCareerPresentation {
     }
 
     static func choiceDetail(_ choice: ProSeasonDecisionChoice, resolver: GameCopyResolver) -> String {
+        if isContentKey(choice.detail) {
+            return resolver.resolve(.gameContent(choice.detail))
+        }
         if choice.id.hasPrefix("media_opportunity.") {
             let suffix = String(choice.id.dropFirst("media_opportunity.".count))
             let contentSuffix = switch suffix {
@@ -580,6 +720,9 @@ enum ProCareerPresentation {
     }
 
     static func decisionRecordTitle(_ record: ProDecisionRecord, resolver: GameCopyResolver) -> String {
+        if isContentKey(record.choiceTitle) {
+            return resolver.resolve(.gameContent(record.choiceTitle))
+        }
         if record.type == .mediaOpportunity {
             let suffix = String(record.choiceID.dropFirst("media_opportunity.".count))
             let contentSuffix = switch suffix {
@@ -815,6 +958,40 @@ enum ProCareerPresentation {
             .integer(line.runsAllowed),
         ])
         return resolver.resolve(key, arguments: arguments)
+    }
+
+    /// 직접 던진 포스트시즌 경기의 한 줄 박스스코어. 이 표기가 생기기 전에는 플레이오프
+    /// 등판이 승패 집계 말고는 어디에도 남지 않았다. K·피안타가 없는 구저장본 라인은
+    /// nil을 돌려 요약 줄만 남긴다.
+    static func postseasonDirectLine(
+        _ game: ProPostseasonGameLine,
+        resolver: GameCopyResolver
+    ) -> String? {
+        guard game.directlyPlayed, let outs = game.playerOuts, let strikeouts = game.playerStrikeouts else {
+            return nil
+        }
+        let roundKey: ProUICopyKey = switch game.round {
+        case .wildCard: .postseasonRoundWildCard
+        case .semifinal: .postseasonRoundSemifinal
+        case .playoff: .postseasonRoundPlayoff
+        case .final: .postseasonRoundFinal
+        case nil: .postseasonRoundUnknown
+        }
+        let started = game.playerStarted ?? true
+        let resultKey: GameCopyKey = game.won ? AppCopyKey.proDecisionWin : AppCopyKey.proDecisionLoss
+        return resolver.resolve(
+            RecordUICopyKey.careerPostseasonDirectLine,
+            arguments: [
+                .userText(resolver.resolve(roundKey)),
+                .integer(game.gameNumber),
+                .userText(resolver.resolve(started ? AppCopyKey.proRoleStarter : AppCopyKey.proRoleReliever)),
+                .userText(GameFormatters.innings(outs: outs, language: resolver.language)),
+                .integer(strikeouts),
+                .integer(game.playerRunsAllowed ?? 0),
+                .userText("\(game.teamRuns):\(game.opponentRuns)"),
+                .userText(resolver.resolve(resultKey)),
+            ]
+        )
     }
 
     static func gameDecision(_ decision: PitchingDecision, resolver: GameCopyResolver) -> String? {

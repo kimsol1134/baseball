@@ -4,7 +4,7 @@ import XCTest
 import BaseballIOSDomain
 
 @MainActor
-final class ProCareerContractWave3Tests: XCTestCase {
+final class ProContractInvestmentSurfaceTests: XCTestCase {
     private func repositoryRoot() -> URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -25,7 +25,8 @@ final class ProCareerContractWave3Tests: XCTestCase {
         ])
 
         XCTAssertTrue(flow.contains("ForEach(Array(market.offers.enumerated()), id: \\.offset)"))
-        XCTAssertTrue(flow.contains("offerCard(offer, index: index, selectable: market.kind != .rookie)"))
+        XCTAssertTrue(flow.contains("selectable: market.kind != .rookie,"))
+        XCTAssertTrue(flow.contains("enabled: goalSelectionComplete"))
         XCTAssertTrue(flow.contains("if market.kind == .rookie, let offer"))
         XCTAssertTrue(flow.contains(".confirmationDialog("))
         XCTAssertTrue(flow.contains("career.acceptContract(\n                            marketID: market.id"))
@@ -35,9 +36,26 @@ final class ProCareerContractWave3Tests: XCTestCase {
         XCTAssertTrue(flow.contains("accessibilityIdentifier(\"\\(prefix).role\")"))
         XCTAssertTrue(flow.contains("accessibilityIdentifier(\"\\(prefix).expectation\")"))
         XCTAssertTrue(flow.contains("accessibilityIdentifier(\"\\(prefix).legacy\")"))
-        XCTAssertTrue(flow.contains("Career totals stay, but the new team's standing starts over") || flow.contains("contractOfferConfirmTransferMessage"))
+        XCTAssertTrue(
+            flow.contains("Career totals stay, but the new team's standing starts over")
+                || flow.contains("contractOfferConfirmTransferMessage")
+                || flow.contains("ProContractCopy.confirmation")
+        )
         XCTAssertTrue(flow.contains("case .offseasonInvestment:"))
         XCTAssertTrue(flow.contains("pro.offseasonInvestment.continue"))
+    }
+
+    func testRenewalRequiresGoalBeforeOfferAndKeepsConfirmationGuarded() throws {
+        let source = try IOSSourceScan.read("apps/ios/Sources/ProContractOfferView.swift")
+        let goalBeforeOffers = try XCTUnwrap(source.range(of: "if market.kind != .rookie {\n                    goalSelectionSection(market)"))
+        let offers = try XCTUnwrap(source.range(of: "ForEach(Array(market.offers.enumerated()), id: \\.offset)"))
+        XCTAssertLessThan(goalBeforeOffers.lowerBound, offers.lowerBound)
+
+        XCTAssertTrue(source.contains(".disabled(!enabled)"))
+        XCTAssertTrue(source.contains("guard enabled else { return }"))
+        XCTAssertTrue(source.contains("enabled ? .contractOfferReview : .contractOfferAmbitionRequired"))
+        XCTAssertTrue(source.contains(".disabled(!goalSelectionComplete)"))
+        XCTAssertTrue(source.contains("pendingOfferID = nil\n                selectedAmbition = nil"))
     }
 
     func testStoreLogsContractAnalyticsOnlyAfterPersistenceWithLowCardinalityFields() throws {
@@ -64,7 +82,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
         XCTAssertFalse(source.contains("\"team_name\""))
     }
 
-    func testWave3LocalizedKeysHaveKoreanEnglishJapaneseParity() throws {
+    func testContractLocalizedKeysHaveLanguageParity() throws {
         let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any]
@@ -101,7 +119,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
         }
     }
 
-    func testWave5InvestmentAccessibilityAndMediaContentContracts() throws {
+    func testInvestmentAccessibilityAndMediaContentContracts() throws {
         let flow = try IOSSourceScan.readAll([
             "apps/ios/Sources/CareerFlowView.swift",
             "apps/ios/Sources/ProContractOfferView.swift",
@@ -110,6 +128,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
             "apps/ios/Sources/ProSeasonDecisionView.swift",
             "apps/ios/Sources/ProOffseasonViews.swift",
             "apps/ios/Sources/CareerFlowChrome.swift",
+            "apps/ios/Sources/Presentation/ProFeatureCopy.swift",
         ])
         for identifier in [
             "pro.offseasonInvestment.choice.",
@@ -168,7 +187,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
         }
     }
 
-    func testWave5PresentationContractsExposeBenefitsAndKeepMoneyAfterCareerDirection() throws {
+    func testInvestmentPresentationExposesBenefitsAndKeepsMoney() throws {
         let flow = try IOSSourceScan.readAll([
             "apps/ios/Sources/CareerFlowView.swift",
             "apps/ios/Sources/ProContractOfferView.swift",
@@ -178,23 +197,23 @@ final class ProCareerContractWave3Tests: XCTestCase {
             "apps/ios/Sources/ProOffseasonViews.swift",
             "apps/ios/Sources/CareerFlowChrome.swift",
         ])
-        let presentation = try String(
-            contentsOf: repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/ProCareerPresentation.swift"),
-            encoding: .utf8
-        )
+        let presentation = try IOSSourceScan.readAll([
+            "apps/ios/Sources/Presentation/ProCareerPresentation.swift",
+            "apps/ios/Sources/Presentation/ProFeatureCopy.swift",
+        ])
 
-        XCTAssertTrue(flow.contains(".offseasonInvestmentPitchLabBenefit"))
+        XCTAssertTrue(presentation.contains(".offseasonInvestmentPitchLabBenefit"))
         XCTAssertTrue(flow.contains(".offseasonInvestmentRecoveryTeamBenefit"))
         XCTAssertTrue(presentation.contains("decision.type == .mediaOpportunity"))
         XCTAssertTrue(presentation.contains("resolver.resolve(.decisionImmediateEffect)"))
         XCTAssertTrue(presentation.contains("resolver.resolve(.decisionFollowUp)"))
         XCTAssertTrue(flow.contains("decisionTiming(for: decision, resolver: copyResolver)"))
-        XCTAssertTrue(flow.contains("decisionTiming(for: choice, resolver: resolver)"))
+        XCTAssertTrue(presentation.contains("decisionTiming(for: choice, resolver: resolver)"))
 
         let records = try XCTUnwrap(
             flow.range(of: "BaseballCard(title: ProCareerPresentation.teamName(state.team")
         )
-        let legacy = try XCTUnwrap(flow.range(of: ".journeySettlementLegacy"))
+        let legacy = try XCTUnwrap(flow.range(of: "ProSeasonSettlementCopy.legacy"))
         let goal = try XCTUnwrap(flow.range(of: "if let goalProgress = settlement.goalProgressAfter"))
         let salary = try XCTUnwrap(flow.range(of: "BaseballCard(title: copyResolver.resolve(.journeySettlementSalaryTitle)"))
         let merchandise = try XCTUnwrap(flow.range(of: "BaseballCard(title: copyResolver.resolve(.journeySettlementMerchandiseTitle)"))
@@ -220,7 +239,7 @@ final class ProCareerContractWave3Tests: XCTestCase {
         )
     }
 
-    func testWave5BenefitAndImmediateTimingCatalogsAreExplicitInKoEnJa() throws {
+    func testInvestmentBenefitCatalogsAreExplicitInKoEnJa() throws {
         let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/Localizable.xcstrings")
         let object = try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any]

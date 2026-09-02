@@ -104,7 +104,7 @@ public enum GameFormatters {
         let value = max(0, amount)
         let formatted = number(value, locale: locale(for: language))
         switch language {
-        case .korean: return "\(formatted)원"
+        case .korean: return KoreanCopy.money(won: value)
         case .english: return "KRW \(formatted)"
         case .japanese: return "\(formatted)ウォン"
         }

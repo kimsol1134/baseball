@@ -130,7 +130,9 @@ internal class HighSchoolAutomaticOutingSimulator(
                 benchMemory = RivalMemorySnapshot("${pitcher.id}:bench:outing", 0UL, 0, 0, emptyList())
             }
             var memory = benchMemory
-            val outsBefore = (inning.inning - 1) * 3 + inning.outs
+            // 초말을 포함한 절대 아웃 수. 초가 끝나면 같은 회의 말(아웃 0)로 넘어가므로,
+            // 초말을 무시하면 초의 세 번째 아웃이 통째로 사라진다.
+            val outsBefore = absoluteOuts(inning)
             var context = PlateAppearanceContext(
                 plateAppearanceId = "week-pa-$plateAppearanceIndex",
                 revision = 0UL,
@@ -169,7 +171,7 @@ internal class HighSchoolAutomaticOutingSimulator(
                     runsOnBoard = result.gameState.runsAllowed
                     inning = result.gameState.inningState ?: inning
                     runners = result.gameState.runners
-                    val outsAfter = (inning.inning - 1) * 3 + inning.outs
+                    val outsAfter = absoluteOuts(inning)
                     lineOuts += max(0, outsAfter - outsBefore)
                     carriedLog = result.gameLog
                     gameState = result.gameState
@@ -215,5 +217,8 @@ internal class HighSchoolAutomaticOutingSimulator(
         val byLife = minOf(4, maxOf(0, lifeNumber - 1) * 2)
         return byChapter + byLife
     }
+
+    private fun absoluteOuts(state: InningStateSnapshot): Int =
+        (state.inning - 1) * 6 + (if (state.half == HalfInning.BOTTOM) 3 else 0) + state.outs
 
 }

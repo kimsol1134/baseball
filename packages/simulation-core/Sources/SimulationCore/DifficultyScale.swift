@@ -36,6 +36,11 @@ public enum DifficultyScale {
     public static let trackingCeiling = 6
     /// 시즌 계단 + 추적 + 온도를 합친 상한. 벽을 만들지 않되 후반 무쌍은 막는다.
     public static let arcCeiling = 14
+    /// v8 도전 규칙의 추적 상한. 실측(리뷰 다수)에서 v5 상한 14로는 리그 평균이 ~64에서
+    /// 멈춰 80+ 선수의 후반 커리어가 무쌍이 됐다. 추적을 더 일찍(3년차), 더 가파르게 연다.
+    public static let challengeTrackingCeiling = 10
+    /// v8 도전 규칙의 합산 상한.
+    public static let challengeArcCeiling = 18
 
     /// 고교 상대의 능력 보정.
     ///
@@ -55,7 +60,12 @@ public enum DifficultyScale {
     }
 
     /// v5 프로 아크. 초반은 기존 시즌 계단만 두고, 5년차 1군부터 능력치를 추적한다.
-    public static func trackingBonus(season: Int, level: ProLevel, skill: Int) -> Int {
+    /// v8 도전 규칙은 3년차부터 더 가파르게 추적한다 — 리그가 스카우팅으로 따라온다.
+    public static func trackingBonus(season: Int, level: ProLevel, skill: Int, challenge: Bool = false) -> Int {
+        if challenge {
+            guard season >= 3, level == .major else { return 0 }
+            return min(challengeTrackingCeiling, max(0, (skill - 54) / 2))
+        }
         guard season >= 5, level == .major else { return 0 }
         return min(trackingCeiling, max(0, (skill - 58) / 3))
     }
@@ -64,12 +74,13 @@ public enum DifficultyScale {
         season: Int,
         level: ProLevel,
         skill: Int,
-        climate: ProSeasonClimate
+        climate: ProSeasonClimate,
+        challenge: Bool = false
     ) -> Int {
         let combined = pro(season: season)
-            + trackingBonus(season: season, level: level, skill: skill)
+            + trackingBonus(season: season, level: level, skill: skill, challenge: challenge)
             + ProSeasonClimateRules.offset(for: climate)
-        return min(arcCeiling, max(-2, combined))
+        return min(challenge ? challengeArcCeiling : arcCeiling, max(-2, combined))
     }
 
     /// 세 능력에 보정을 더한 타자. 20~80 눈금을 벗어나지 않는다.

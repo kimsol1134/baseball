@@ -177,8 +177,8 @@ extension MobileCareerStore {
             let opponent = ProCareerEngine.proTeams.first { $0.id != base.snapshot.team.id }
                 ?? ProCareerEngine.proTeams[1]
             let rival = ProRivalBatter(
-                id: "ui-postseason-rival",
-                name: "서가람",
+                id: "pro-rival-seoul",
+                name: "강도훈",
                 archetype: "가을 중심 타자",
                 teamID: opponent.id,
                 teamName: opponent.name,

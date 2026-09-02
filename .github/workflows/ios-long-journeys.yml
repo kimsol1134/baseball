@@ -1,0 +1,31 @@
+name: iOS long journeys
+
+# 한국어 고교 전체 종주와 일본어 20시즌은 기본 CI에 넣지 않는다.
+# UTC 15:00 = KST 00:00에 돌리고, 필요할 때는 수동으로도 돌린다.
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+jobs:
+  long-journeys:
+    name: Korean high-school and Japanese 20-season
+    runs-on: macos-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: apps/ios
+        run: xcodegen generate
+      - name: Run long UI journeys
+        working-directory: apps/ios
+        run: |
+          xcodebuild \
+            -project Baseball.xcodeproj \
+            -scheme BaseballIOS \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -only-testing:BaseballIOSUITests/CareerSmokeUITests/testHighSchoolCareerRunsThroughDraftAndRebirth \
+            -only-testing:BaseballIOSUITests/CareerSmokeUITests/testJapaneseDraftedRunCompletesProCareerJourneyAtMaximumHorizon \
+            test CODE_SIGNING_ALLOWED=NO

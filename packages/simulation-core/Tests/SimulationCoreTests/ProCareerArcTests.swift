@@ -77,9 +77,10 @@ final class ProCareerArcTests: XCTestCase {
     func testNewCareerUsesArcAndAutumnRules() throws {
         let engine = ProCareerEngine(journeyEnabled: true)
         let started = try engine.start(startParams(seed: "991001"))
-        XCTAssertEqual(started.snapshot.proRulesVersion, 7)
+        XCTAssertEqual(started.snapshot.proRulesVersion, 9)
         XCTAssertTrue(ProCareerEngine.usesCareerArcRules(started.snapshot))
         XCTAssertTrue(ProCareerEngine.usesAutumnRules(started.snapshot))
+        XCTAssertTrue(ProCareerEngine.usesChallengeRules(started.snapshot))
     }
 
     func testFormCrisisReplacesDecisionDuringSlump() throws {

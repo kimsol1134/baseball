@@ -89,7 +89,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         let params = StartHighSchoolCareerParams(seed: "20260813", presetID: "power_prospect")
         let engine = HighSchoolCareerEngine()
         let before = try engine.start(params)
-        let beforeSaveBytes = try JSONEncoder().encode(before.snapshot)
+        let beforeSaveBytes = try sortedEncoder().encode(before.snapshot)
 
         for descriptor in CopyToken.awakeningDescriptors {
             _ = descriptor.id.titleCopyToken
@@ -101,7 +101,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         }
 
         let after = try engine.start(params)
-        let afterSaveBytes = try JSONEncoder().encode(after.snapshot)
+        let afterSaveBytes = try sortedEncoder().encode(after.snapshot)
         XCTAssertEqual(before.snapshot, after.snapshot)
         XCTAssertEqual(
             try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: beforeSaveBytes),
@@ -447,6 +447,7 @@ final class PresentationCopyTokenTests: XCTestCase {
                 "extra_bullpen", "catcher_game_plan", "role_meeting", "record_chase",
                 "rival_analysis", "season_finale", "media_opportunity",
                 "form_crisis", "aging_crossroads",
+                "rotation_push", "new_pitch_trial", "farm_reset", "veteran_mentor",
             ]
         )
         assertFamily(
@@ -625,7 +626,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         let started = try HighSchoolCareerEngine().start(
             .init(seed: "20260813", presetID: "power_prospect", lifeNumber: 2)
         )
-        let beforeData = try JSONEncoder().encode(started.snapshot)
+        let beforeData = try sortedEncoder().encode(started.snapshot)
         let beforeSnapshot = started.snapshot
         let beforeNextSeed = started.nextSeed
         let beforeEventHash = started.eventHash
@@ -638,7 +639,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         }
         _ = ImportantGamePresentationCatalog.descriptor(for: "legacy-scenario")
 
-        XCTAssertEqual(try JSONEncoder().encode(started.snapshot), beforeData)
+        XCTAssertEqual(try sortedEncoder().encode(started.snapshot), beforeData)
         XCTAssertEqual(started.snapshot, beforeSnapshot)
         XCTAssertEqual(started.snapshot.stateCommitment, beforeCommitment)
         XCTAssertEqual(started.nextSeed, beforeNextSeed)
@@ -656,7 +657,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         let started = try engine.start(
             .init(seed: "20260813", presetID: "power_prospect", lifeNumber: 2)
         )
-        let beforeData = try JSONEncoder().encode(started.snapshot)
+        let beforeData = try sortedEncoder().encode(started.snapshot)
         let beforeSnapshot = started.snapshot
         let beforeNextSeed = started.nextSeed
         let beforeEventHash = started.eventHash
@@ -680,7 +681,7 @@ final class PresentationCopyTokenTests: XCTestCase {
             target: .catcher
         )
 
-        XCTAssertEqual(try JSONEncoder().encode(started.snapshot), beforeData)
+        XCTAssertEqual(try sortedEncoder().encode(started.snapshot), beforeData)
         XCTAssertEqual(started.snapshot, beforeSnapshot)
         XCTAssertEqual(started.nextSeed, beforeNextSeed)
         XCTAssertEqual(started.eventHash, beforeEventHash)
@@ -734,7 +735,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         let started = try HighSchoolCareerEngine().start(
             .init(seed: "20260725", presetID: "power_prospect")
         )
-        let encodedBeforePresentation = try JSONEncoder().encode(started.snapshot)
+        let encodedBeforePresentation = try sortedEncoder().encode(started.snapshot)
         _ = started.snapshot.currentGameScenario?.titleCopyToken
         _ = started.snapshot.currentRelationshipEvent?.summaryCopyToken
         let decoded = try JSONDecoder().decode(
@@ -949,7 +950,7 @@ final class PresentationCopyTokenTests: XCTestCase {
     func testProloguePresentationDescriptorsDoNotTouchSnapshotNewsSaveOrRNGInputs() throws {
         let engine = HighSchoolCareerEngine()
         let started = try engine.start(.init(seed: "20260813", presetID: "power_prospect", lifeNumber: 2))
-        let beforeData = try JSONEncoder().encode(started.snapshot)
+        let beforeData = try sortedEncoder().encode(started.snapshot)
         let beforeNews = started.snapshot.news
         let beforeWind = started.snapshot.careerWind
 
@@ -961,7 +962,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         _ = rngAfter.next()
         _ = rngBefore.next()
 
-        let afterData = try JSONEncoder().encode(started.snapshot)
+        let afterData = try sortedEncoder().encode(started.snapshot)
         XCTAssertEqual(
             try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: afterData),
             try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: beforeData)
@@ -1049,7 +1050,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         let started = try HighSchoolCareerEngine().start(
             .init(seed: "202608131234", presetID: "power_prospect")
         )
-        let beforeData = try JSONEncoder().encode(started.snapshot)
+        let beforeData = try sortedEncoder().encode(started.snapshot)
         let beforeCommitment = started.snapshot.stateCommitment
 
         _ = started.snapshot.chapter.copyDescriptor
@@ -1063,7 +1064,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         _ = TalentAbility.allCases.map(\.displayCopyToken)
         _ = TalentGrade.allCases.map(\.displayCopyToken)
 
-        let afterData = try JSONEncoder().encode(started.snapshot)
+        let afterData = try sortedEncoder().encode(started.snapshot)
         XCTAssertEqual(
             try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: beforeData),
             try JSONDecoder().decode(HighSchoolCareerSnapshot.self, from: afterData)
@@ -1147,7 +1148,7 @@ final class PresentationCopyTokenTests: XCTestCase {
         let started = try HighSchoolCareerEngine().start(
             .init(seed: "202608130813", presetID: "power_prospect")
         )
-        let beforeData = try JSONEncoder().encode(started.snapshot)
+        let beforeData = try sortedEncoder().encode(started.snapshot)
         let beforeCommitment = started.snapshot.stateCommitment
         let beforeHash = started.eventHash
 
@@ -1162,9 +1163,17 @@ final class PresentationCopyTokenTests: XCTestCase {
             }
         }
 
-        let afterData = try JSONEncoder().encode(started.snapshot)
+        let afterData = try sortedEncoder().encode(started.snapshot)
         XCTAssertEqual(beforeData, afterData)
         XCTAssertEqual(beforeCommitment, started.snapshot.stateCommitment)
         XCTAssertEqual(beforeHash, started.eventHash)
     }
+}
+
+/// JSONEncoder의 키 순서는 호출마다 달라질 수 있어(같은 스냅샷도 바이트가 다름),
+/// 바이트 동등 비교에는 정렬 키 인코더를 쓴다.
+private func sortedEncoder() -> JSONEncoder {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.sortedKeys]
+    return encoder
 }

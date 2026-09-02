@@ -201,6 +201,12 @@ final class QACaptureUITests: XCTestCase {
             }
 
             if app.buttons["hs.legacy.confirm"].exists {
+                let closeLife = app.buttons["확정하고 이 선수의 이야기를 닫는다"]
+                if closeLife.exists {
+                    capture("legacy-lock-in")
+                    tapIfPresent(closeLife)
+                    continue
+                }
                 capture("legacy-lifecard")
                 captureScrolled(app, "legacy-memories", swipes: 3)
                 selectRequiredLegacy(app)
@@ -209,6 +215,10 @@ final class QACaptureUITests: XCTestCase {
                     capture("legacy-stuck")
                     XCTFail("기억을 골랐는데도 확정할 수 없습니다.")
                     return
+                }
+                if closeLife.waitForExistence(timeout: 3) {
+                    capture("legacy-lock-in")
+                    tapIfPresent(closeLife)
                 }
                 continue
             }
@@ -307,6 +317,187 @@ final class QACaptureUITests: XCTestCase {
         }
         capture("step-budget-exhausted")
         XCTFail("\(maximumSteps)단계 안에 회차가 끝나지 않았습니다.")
+    }
+
+    /// 지명 픽스처에서 프로 입단 → 정규시즌 기후 → 가을 왕중왕전 → 최대 시즌 은퇴까지.
+    /// 고교 종주와 나눠, 이번 개선(기후·가을 4라운드)을 한국어 새 유저 화면으로 남긴다.
+    func testWalkKoreanProCareerAndCapture() {
+        executionTimeAllowance = 3_000
+
+        let app = XCUIApplication()
+        app.launchArguments = launchArguments(additional: [
+            "-uiTestDraftedCareerFixture",
+            "-uiTestProCareerJourneyV1",
+            "-uiTestOpenProWeek",
+            "-AppleLanguages", "(ko)",
+            "-AppleLocale", "ko_KR",
+        ])
+        app.launch()
+
+        let enterPro = app.buttons["hs.enterPro"]
+        XCTAssertTrue(enterPro.waitForExistence(timeout: timeout), "지명 완료에서 프로 진입 버튼이 없습니다.")
+        capture("pro-completion-drafted")
+        captureScrolled(app, "pro-completion-drafted-bottom", swipes: 3)
+        XCTAssertTrue(bringIntoView(enterPro), "프로 진입 버튼이 탭 바에 가려 있습니다.")
+        enterPro.tap()
+
+        let weekTab = app.segmentedControls.firstMatch.buttons["이번 주"]
+        XCTAssertTrue(
+            weekTab.waitForExistence(timeout: timeout) || app.buttons["pro.advanceSegment"].waitForExistence(timeout: timeout),
+            "프로 이번 주 화면이 열리지 않았습니다. 보이는 버튼: \(visibleIdentifiers(app))"
+        )
+        if weekTab.exists, !weekTab.isSelected { weekTab.tap() }
+        capture("pro-week-entered")
+        captureClimateIfPresent(app)
+
+        var steps = 0
+        var settlements = 0
+        var autumnGames = 0
+        var climates = 0
+        var injuries = 0
+        var reachedRetirement = false
+
+        while steps < 1_200 {
+            steps += 1
+
+            if app.buttons["pro.injury.result.acknowledge"].exists {
+                injuries += 1
+                capture("pro-injury", limit: 3)
+                tapIfPresent(app.buttons["pro.injury.result.acknowledge"])
+                continue
+            }
+
+            if app.buttons["pro.newPlayer"].exists {
+                capture("pro-retired-honors")
+                captureScrolled(app, "pro-retired-honors-bottom", swipes: 3)
+                reachedRetirement = true
+                break
+            }
+
+            if identified(app, "pro.contractOffer").exists {
+                capture("pro-contract", limit: 3)
+                captureScrolled(app, "pro-contract-bottom", swipes: 2, limit: 2)
+                handleKoreanContractOffer(app)
+                continue
+            }
+
+            if identified(app, "pro.seasonSettlement").exists {
+                settlements += 1
+                capture("pro-settlement", limit: 6)
+                captureScrolled(app, "pro-settlement-bottom", swipes: 3, limit: 4)
+                tapIfPresent(app.buttons["pro.settlement.acknowledge"])
+                continue
+            }
+
+            if identified(app, "pro.offseasonInvestment").exists {
+                capture("pro-investment", limit: 2)
+                if tapIfPresent(app.buttons["pro.offseasonInvestment.choice.none"]) {
+                    tapIfPresent(app.buttons["pro.offseasonInvestment.confirm"])
+                    let confirm = app.buttons.matching(identifier: "pro.offseasonInvestment.confirm.action")
+                    if confirm.count > 0 {
+                        tapIfPresent(confirm.element(boundBy: confirm.count - 1))
+                    }
+                }
+                continue
+            }
+
+            if identified(app, "pro.seasonDecision").exists {
+                capture("pro-season-decision", limit: 3)
+                let choices = app.buttons.matching(
+                    NSPredicate(format: "identifier BEGINSWITH %@", "pro.seasonDecision.choice.")
+                )
+                if choices.count > 0 {
+                    tapIfPresent(choices.element(boundBy: 0))
+                    let confirm = app.buttons.matching(identifier: "pro.seasonDecision.confirm")
+                    if confirm.count > 0 {
+                        tapIfPresent(confirm.element(boundBy: confirm.count - 1))
+                    }
+                }
+                continue
+            }
+
+            if app.buttons["pro.game.start"].exists {
+                if looksLikeAutumn(app) {
+                    autumnGames += 1
+                    capture("pro-autumn-intro", limit: 5)
+                    captureScrolled(app, "pro-autumn-intro-bottom", swipes: 2, limit: 3)
+                } else {
+                    capture("pro-game-intro", limit: 2)
+                }
+                tapIfPresent(app.buttons["pro.game.start"])
+                playInning(app, index: autumnGames > 0 ? 20 + autumnGames : 8)
+                continue
+            }
+
+            if app.buttons["pro.seasonReview.confirm"].exists {
+                capture("pro-season-review", limit: 3)
+                tapIfPresent(app.buttons["pro.seasonReview.confirm"])
+                continue
+            }
+
+            if app.buttons["pro.offseason.arrow.forward.circle"].exists {
+                capture("pro-offseason", limit: 2)
+                tapIfPresent(app.buttons["pro.offseason.arrow.forward.circle"])
+                let confirm = app.buttons.matching(identifier: "pro.offseason.confirm")
+                if confirm.count > 0 {
+                    tapIfPresent(confirm.element(boundBy: confirm.count - 1))
+                }
+                continue
+            }
+
+            if app.buttons["pro.retire"].exists, identified(app, "pro.retirement.preview").exists {
+                capture("pro-retirement-preview")
+                captureScrolled(app, "pro-retirement-preview-bottom", swipes: 3)
+                tapIfPresent(app.buttons["pro.retire"])
+                let confirm = app.buttons.matching(identifier: "pro.retire.confirm")
+                if confirm.count > 0 {
+                    tapIfPresent(confirm.element(boundBy: confirm.count - 1))
+                }
+                continue
+            }
+
+            if identified(app, "pro.weekly.climate").exists {
+                climates += 1
+                captureClimateIfPresent(app)
+            }
+
+            if identified(app, "pro.plan.required").exists
+                || (app.buttons["pro.advanceSegment"].exists && !app.buttons["pro.advanceSegment"].isEnabled) {
+                if !tapFirstWeeklyPlan(app) {
+                    capture("pro-plan-stuck")
+                    XCTFail("주간 계획을 고를 수 없습니다. \(visibleIdentifiers(app))")
+                    return
+                }
+                continue
+            }
+
+            if tapIfPresent(app.buttons["pro.advanceSegment"]) { continue }
+
+            let tabs = app.segmentedControls.firstMatch
+            let week = tabs.buttons["이번 주"]
+            if tabs.exists, week.exists, !week.isSelected {
+                week.tap()
+                continue
+            }
+
+            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+            if app.buttons["pro.advanceSegment"].exists
+                || app.buttons["pro.game.start"].exists
+                || app.buttons["pro.seasonReview.confirm"].exists
+                || identified(app, "pro.seasonSettlement").exists
+                || identified(app, "pro.offseasonInvestment").exists
+                || app.buttons["pro.injury.result.acknowledge"].exists {
+                continue
+            }
+            capture("pro-stuck")
+            XCTFail("프로 여정 \(steps)단계에서 막혔습니다. 결산 \(settlements), 가을 \(autumnGames). 버튼: \(visibleIdentifiers(app))")
+            return
+        }
+
+        XCTAssertTrue(reachedRetirement, "최대 시즌 은퇴 화면에 도달하지 못했습니다. 결산 \(settlements), 가을 \(autumnGames), 기후 \(climates), 부상 \(injuries)")
+        XCTAssertGreaterThanOrEqual(settlements, 1, "시즌 결산을 한 번도 보지 못했습니다.")
+        capture("pro-run-finished")
+        print("QA_PRO_SUMMARY settlements=\(settlements) autumn=\(autumnGames) climates=\(climates) injuries=\(injuries) steps=\(steps)")
     }
 
     /// App Store의 투구·릴리스 장면만 빠르게 다시 찍는다. 긴 3년 종주와 분리해 카피 수정 뒤
@@ -465,8 +656,12 @@ final class QACaptureUITests: XCTestCase {
         captureScrolled(app, "\(tag)-pitch-decision-bottom", swipes: 2, limit: 2)
 
         var pitches = 0
+        let fastForward = app.buttons["pitch.fastForwardBatter"]
         while !finish.exists, pitches < 120 {
-            if throwButton.exists, bringIntoView(throwButton) {
+            if index >= 8, fastForward.exists, bringIntoView(fastForward) {
+                fastForward.tap()
+                pitches += 1
+            } else if throwButton.exists, bringIntoView(throwButton) {
                 throwButton.tap()
                 pitches += 1
                 // 판정이 화면에 남아 있는 동안 찍는다. 요소 조회는 느리므로 촬영이 먼저다.
@@ -630,5 +825,61 @@ final class QACaptureUITests: XCTestCase {
         app.buttons.allElementsBoundByIndex.prefix(25).map { element in
             element.identifier.isEmpty ? "<\(element.label)>" : element.identifier
         }.joined(separator: ", ")
+    }
+
+    private func identified(_ app: XCUIApplication, _ identifier: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
+    private func captureClimateIfPresent(_ app: XCUIApplication) {
+        guard identified(app, "pro.weekly.climate").exists else { return }
+        capture("pro-weekly-climate", limit: 4)
+    }
+
+    private func looksLikeAutumn(_ app: XCUIApplication) -> Bool {
+        let markers = ["와일드카드", "준플레이오프", "플레이오프", "우승 결정전", "가을"]
+        return app.staticTexts.allElementsBoundByIndex.prefix(40).contains { element in
+            markers.contains { element.label.contains($0) }
+        }
+    }
+
+    @discardableResult
+    private func tapFirstWeeklyPlan(_ app: XCUIApplication) -> Bool {
+        let ids = [
+            "pro.plan.earnTrust",
+            "pro.plan.refineCommand",
+            "pro.plan.developStuff",
+            "pro.plan.buildStamina",
+            "pro.plan.developMovement",
+            "pro.plan.recover",
+        ]
+        guard let plan = ids.map({ app.buttons[$0] }).first(where: { $0.exists && $0.isEnabled }) else {
+            return false
+        }
+        return tapIfPresent(plan)
+    }
+
+    private func handleKoreanContractOffer(_ app: XCUIApplication) {
+        if identified(app, "pro.contractOffer.ambition.required").exists {
+            let ambitionIDs = [
+                "pro.contractOffer.ambition.franchise_icon",
+                "pro.contractOffer.ambition.record_book",
+                "pro.contractOffer.ambition.enduring_pro",
+            ]
+            if let ambition = ambitionIDs.map({ app.buttons[$0] }).first(where: { $0.exists && $0.isEnabled }) {
+                tapIfPresent(ambition)
+            }
+        }
+
+        if !tapIfPresent(app.buttons["pro.contractOffer.sign"]) {
+            let offerIDs = (0...2).map { "pro.contractOffer.offer.\($0)" }
+            if let offer = offerIDs.map({ app.buttons[$0] }).first(where: { $0.exists && $0.isEnabled }) {
+                tapIfPresent(offer)
+            }
+        }
+        let confirm = app.buttons.matching(identifier: "pro.contractOffer.confirm.accept")
+        if confirm.count > 0 {
+            tapIfPresent(confirm.element(boundBy: confirm.count - 1))
+        }
     }
 }

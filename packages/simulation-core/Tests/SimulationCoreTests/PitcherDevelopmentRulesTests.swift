@@ -96,6 +96,7 @@ final class PitcherDevelopmentRulesTests: XCTestCase {
         )
         let simulator = AutoOutingSimulator()
         var lowRuns = 0, highRuns = 0, lowWalks = 0, highWalks = 0
+        var lowOuts = 0, highOuts = 0
         for seed in 1...120 {
             let baseSeed = UInt64(seed) * 7_919
             let lowLine = simulator.simulate(
@@ -110,8 +111,14 @@ final class PitcherDevelopmentRulesTests: XCTestCase {
             highRuns += highLine.runsAllowed
             lowWalks += lowLine.walks
             highWalks += highLine.walks
+            lowOuts += lowLine.outs
+            highOuts += highLine.outs
         }
-        XCTAssertLessThan(highRuns, lowRuns)
-        XCTAssertLessThan(highWalks, lowWalks)
+        // 아웃 유실 수정 후 체력 특화는 확장 아웃까지 실제로 더 긴 이닝을 소화하므로
+        // 절대 총합이 아니라 비율(아웃당)로 비교해야 공정하다. 총합 비교는 더 많이
+        // 던졌다는 이유만으로 벌점을 준다.
+        XCTAssertGreaterThan(highOuts, lowOuts)
+        XCTAssertLessThan(highRuns * lowOuts, lowRuns * highOuts)
+        XCTAssertLessThan(highWalks * lowOuts, lowWalks * highOuts)
     }
 }
