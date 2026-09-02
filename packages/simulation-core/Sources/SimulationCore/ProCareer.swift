@@ -338,11 +338,7 @@ public struct ProCareerEngine: Sendable {
         }
         let preservesCurrentTeam = offer.teamID == params.state.team.id
         let fanSupport = preservesCurrentTeam ? journey.reputation.fanSupport : max(0, journey.reputation.fanSupport - 3)
-        let reputation = ProReputationState(
-            fanSupport: fanSupport,
-            lastMerchandiseTier: journey.reputation.lastMerchandiseTier,
-            endorsementSeasons: journey.reputation.endorsementSeasons
-        )
+        let reputation = copyingReputation(journey.reputation, fanSupport: fanSupport)
         let transition: ProOffseasonTransition?
         if isRookie {
             transition = nil
@@ -462,9 +458,11 @@ public struct ProCareerEngine: Sendable {
             throw SimulationError.invalidProCareer("stale_revision")
         }
         try validate(params.state, phase: .seasonSettlement)
-        let nextPhase: ProCareerPhase = settlement.nextRoute == .forcedRetirement
-            ? .retirementDecision
-            : .offseasonDecision
+        let nextPhase: ProCareerPhase = {
+            if settlement.nextRoute == .forcedRetirement { return .retirementDecision }
+            if ProNationalTeamRules.shouldOfferCall(params.state) { return .nationalTeamCall }
+            return .offseasonDecision
+        }()
         let nextMigration = ProJourneyMigration(
             source: journey.migration.source,
             initializedSeason: journey.migration.initializedSeason,
@@ -998,6 +996,83 @@ public struct ProCareerEngine: Sendable {
         return result(next, nextSeed: params.seed, events: ["pro_role_requested"])
     }
 
+    public func respondToNationalTeamCall(_ params: RespondNationalTeamCallParams) throws -> ProCareerResult {
+        _ = try generator(params.seed)
+        try validate(params.state, phase: .nationalTeamCall)
+        guard ProNationalTeamRules.shouldOfferCall(params.state) else {
+            throw SimulationError.invalidProCareer("국가대표 소집 대상이 아닙니다.")
+        }
+        guard let journey = params.state.journeyState else {
+            throw SimulationError.invalidProCareer("missing journey state")
+        }
+        if !params.accepted {
+            let fan = clamp(journey.reputation.fanSupport + ProNationalTeamRules.declineFanDelta, 0, 100)
+            let nextJourney = replacingJourney(
+                journey,
+                reputation: copyingReputation(journey.reputation, fanSupport: fan)
+            )
+            var news = params.state.news
+            news.insert("content.pro-news.national-team.declined", at: 0)
+            let next = replacing(
+                params.state,
+                revision: params.state.revision + 1,
+                phase: .offseasonDecision,
+                news: Array(news.prefix(30)),
+                journeyState: .some(nextJourney)
+            )
+            return result(next, nextSeed: params.seed, events: ["pro_national_team_called"])
+        }
+
+        let tournament = simulateNationalGroupStage(
+            state: params.state,
+            resumeSeed: params.seed
+        )
+        let next = replacing(
+            params.state,
+            revision: params.state.revision + 1,
+            phase: .nationalTournament,
+            nationalTournament: .some(tournament)
+        )
+        if tournament.result != nil {
+            return try finishNationalTournament(next, seed: params.seed, events: ["pro_national_team_called"])
+        }
+        return result(next, nextSeed: params.seed, events: ["pro_national_team_called"])
+    }
+
+    public func startNationalFinal(_ params: StartNationalFinalParams) throws -> ProCareerResult {
+        _ = try generator(params.seed)
+        try validate(params.state, phase: .nationalTournament)
+        guard let tournament = params.state.nationalTournament,
+              tournament.stage == .awaitingFinal,
+              tournament.result == nil else {
+            throw SimulationError.invalidProCareer("결승에 오를 수 없습니다.")
+        }
+        let next = replacing(
+            params.state,
+            revision: params.state.revision + 1,
+            phase: .importantGame,
+            seasonTrigger: .some(.nationalFinal)
+        )
+        return result(next, nextSeed: params.seed, events: ["pro_national_final_ready"])
+    }
+
+    public func acknowledgeNationalTeamResult(_ params: AcknowledgeNationalTeamResultParams) throws -> ProCareerResult {
+        _ = try generator(params.seed)
+        try validate(params.state, phase: .nationalTournament)
+        guard let tournament = params.state.nationalTournament, tournament.result != nil else {
+            throw SimulationError.invalidProCareer("대회 결과가 없습니다.")
+        }
+        let resume = tournament.resumeSeed
+        let next = replacing(
+            params.state,
+            revision: params.state.revision + 1,
+            phase: .offseasonDecision,
+            seasonTrigger: .some(nil),
+            nationalTournament: .some(nil)
+        )
+        return result(next, nextSeed: resume, events: ["pro_national_team_result_acknowledged"])
+    }
+
     /// 확인한 시즌 선택을 한 번만 적용한다.
     ///
     /// 결정 ID까지 다시 받는 이유는 확인 시트가 떠 있는 동안 상태가 바뀌었을 때 예전 선택을
@@ -1090,7 +1165,8 @@ public struct ProCareerEngine: Sendable {
             let reputation = ProReputationState(
                 fanSupport: clamp(journey.reputation.fanSupport + (journeyEffect?.fanDelta ?? 0), 0, 100),
                 lastMerchandiseTier: journey.reputation.lastMerchandiseTier,
-                endorsementSeasons: endorsementSeasons
+                endorsementSeasons: endorsementSeasons,
+                overseasInterest: journey.reputation.overseasInterest
             )
             let finance = ProFinanceState(
                 careerEarnings: journey.finances.careerEarnings + income,
@@ -1219,6 +1295,9 @@ public struct ProCareerEngine: Sendable {
 
     public func resolveImportantGame(_ params: ResolveProGameParams) throws -> ProCareerResult {
         try validate(params.state, phase: .importantGame)
+        if params.state.seasonTrigger == .nationalFinal {
+            return try resolveNationalFinal(params)
+        }
         if ProPostseasonRules.isAutumn(params.state.seasonTrigger) {
             return try resolveAutumnGame(params)
         }
@@ -1947,12 +2026,14 @@ public struct ProCareerEngine: Sendable {
         // 선발로 리셋됐다("왜 새 시즌엔 또 선발로 가는지" 리뷰). 새 계약의
         // rolePromise(state.role)와도 일치한다.
         let carriedRolePreference: ProRole? = state.role
-        let baseAdvanced = replacing(state, revision: state.revision + 1, phase: .weeklyPlan, pitcher: pitcher, team: team, age: age, season: season, week: 0, rolePreference: carriedRolePreference, fatigue: 0, injuryWeeks: 0, serviceYears: service, militaryCompleted: military, contract: contract, currentStats: ProSeasonStats(season: season, teamID: team.id),
+        let opening = nextSeasonOpeningLoad(state)
+        let baseAdvanced = replacing(state, revision: state.revision + 1, phase: .weeklyPlan, pitcher: pitcher, team: team, age: age, season: season, week: 0, rolePreference: carriedRolePreference, fatigue: opening.fatigue, injuryWeeks: opening.injuryWeeks, serviceYears: service, militaryCompleted: military, contract: contract, currentStats: ProSeasonStats(season: season, teamID: team.id),
             // 새 시즌은 빈 기록으로 시작한다. 안 비우면 20시즌 구원 투수가 천 행 넘게 들고
             // 다니고 등판 번호도 시즌을 넘어 계속 늘어난다. 지난 시즌은 careerStats가 맡는다.
             gameLines: [],
             news: Array(news.prefix(30)), proRulesVersion: Self.currentRulesVersion, pendingDecision: clearedDecision,
-            activeDecisionModifiers: .some(nil), resolvedFollowUps: .some(nil), roleRequest: .some(nil))
+            activeDecisionModifiers: .some(nil), resolvedFollowUps: .some(nil), roleRequest: .some(nil),
+            nationalTeamCarry: .some(nil))
         let tensions = seasonTensions(for: baseAdvanced)
         let clearedRival: ProRivalBatter? = nil
         let clearedTrigger: ProSeasonTrigger? = nil
@@ -3258,6 +3339,9 @@ public struct ProCareerEngine: Sendable {
             rulesVersion: state.proRulesVersion ?? 1,
             autumnBonus: Self.usesAutumnRules(state)
                 ? ProPostseasonRules.hofBonus(for: state.postseason?.result ?? .didNotQualify)
+                : 0,
+            nationalGoldBonus: Self.usesNationalTeamRules(state)
+                ? ProNationalTeamRules.goldCount(in: state.nationalTeamHistory) * ProNationalTeamRules.hofGoldBonus
                 : 0
         )
     }
@@ -3270,6 +3354,9 @@ public struct ProCareerEngine: Sendable {
             rulesVersion: state.proRulesVersion ?? 1,
             autumnBonus: Self.usesAutumnRules(state)
                 ? ProPostseasonRules.hofBonus(for: state.postseason?.result ?? .didNotQualify)
+                : 0,
+            nationalGoldBonus: Self.usesNationalTeamRules(state)
+                ? ProNationalTeamRules.goldCount(in: state.nationalTeamHistory) * ProNationalTeamRules.hofGoldBonus
                 : 0
         )
     }
@@ -3285,7 +3372,8 @@ public struct ProCareerEngine: Sendable {
         awardCount: Int,
         serviceYears: Int,
         rulesVersion: Int,
-        autumnBonus: Int = 0
+        autumnBonus: Int = 0,
+        nationalGoldBonus: Int = 0
     ) -> Int {
         let strikeouts = seasons.reduce(0) { $0 + $1.strikeouts }
         let outs = seasons.reduce(0) { $0 + $1.inningsOuts }
@@ -3327,6 +3415,7 @@ public struct ProCareerEngine: Sendable {
                 + qualityContribution
                 + awardContribution
                 + max(0, autumnBonus)
+                + max(0, nationalGoldBonus)
         ))
     }
 
@@ -3491,6 +3580,7 @@ public struct ProCareerEngine: Sendable {
         case .autumnSemifinal: return "준플레이오프 한 판. \(foe)와의 승부가 플레이오프를 가릅니다."
         case .autumnPlayoff: return "플레이오프 한 판. \(foe)를 넘어야 우승 결정전이 열립니다."
         case .autumnFinal: return "우승 결정전 한 판. \(foe) 앞에서 올해의 마지막 공을 던집니다."
+        case .nationalFinal: return "환태평양 초청 대회 결승. \(foe) 앞에서 금메달이 걸린 공을 던집니다."
         }
     }
 
@@ -3704,7 +3794,285 @@ public struct ProCareerEngine: Sendable {
     }
     func clamp(_ value: Int, _ low: Int, _ high: Int) -> Int { min(high, max(low, value)) }
 
-    func replacing(_ s: ProCareerSnapshot, revision: UInt64? = nil, phase: ProCareerPhase? = nil, pitcher: PitcherSnapshot? = nil, team: DraftTeamSnapshot? = nil, age: Int? = nil, season: Int? = nil, week: Int? = nil, level: ProLevel? = nil, role: ProRole? = nil, rolePreference: ProRole?? = nil, managerTrust: Int? = nil, catcherTrust: Int? = nil, fatigue: Int? = nil, injuryWeeks: Int? = nil, serviceYears: Int? = nil, militaryCompleted: Bool? = nil, contract: ProContractSnapshot?? = nil, currentStats: ProSeasonStats? = nil, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats]? = nil, awards: [String]? = nil, milestones: [String]? = nil, news: [String]? = nil, hallOfFameScore: Int?? = nil, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, commitment: String? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger?? = nil, currentRival: ProRivalBatter?? = nil, seasonTensions: [ProSeasonTension]?? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision?? = nil, decisionHistory: [ProDecisionRecord]?? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int?? = nil, pitchLearningProject: PitchLearningProjectSnapshot?? = nil, journeyState: ProCareerJourneyState?? = nil, postseason: ProPostseasonState?? = nil, activeDecisionModifiers: [ProDecisionModifier]?? = nil, resolvedFollowUps: [ProDecisionFollowUp]?? = nil, roleRequest: ProRoleRequestState?? = nil) -> ProCareerSnapshot {
-        ProCareerSnapshot(proCareerID: s.proCareerID, revision: revision ?? s.revision, phase: phase ?? s.phase, identity: s.identity, pitcher: pitcher ?? s.pitcher, team: team ?? s.team, entitlement: s.entitlement, age: age ?? s.age, season: season ?? s.season, week: week ?? s.week, level: level ?? s.level, role: role ?? s.role, rolePreference: rolePreference ?? s.rolePreference, managerTrust: managerTrust ?? s.managerTrust, catcherTrust: catcherTrust ?? s.catcherTrust, fatigue: fatigue ?? s.fatigue, injuryWeeks: injuryWeeks ?? s.injuryWeeks, serviceYears: serviceYears ?? s.serviceYears, militaryCompleted: militaryCompleted ?? s.militaryCompleted, contract: contract ?? s.contract, currentStats: currentStats ?? s.currentStats, gameLines: gameLines ?? s.gameLines, careerStats: careerStats ?? s.careerStats, awards: awards ?? s.awards, milestones: milestones ?? s.milestones, news: news ?? s.news, hallOfFameScore: hallOfFameScore ?? s.hallOfFameScore, commitment: commitment ?? "", balanceVersion: balanceVersion ?? s.balanceVersion, proRulesVersion: proRulesVersion ?? s.proRulesVersion, seasonSegment: seasonSegment ?? s.seasonSegment, seasonTrigger: seasonTrigger ?? s.seasonTrigger, currentRival: currentRival ?? s.currentRival, seasonTensions: seasonTensions ?? s.seasonTensions, seasonImportantGames: seasonImportantGames ?? s.seasonImportantGames, pendingDecision: pendingDecision ?? s.pendingDecision, decisionHistory: decisionHistory ?? s.decisionHistory, developmentProgress: developmentProgress ?? s.developmentProgress, repertoireRulesVersion: repertoireRulesVersion ?? s.repertoireRulesVersion, pitchLearningProject: pitchLearningProject ?? s.pitchLearningProject, journeyState: journeyState ?? s.journeyState, postseason: postseason ?? s.postseason, activeDecisionModifiers: activeDecisionModifiers ?? s.activeDecisionModifiers, resolvedFollowUps: resolvedFollowUps ?? s.resolvedFollowUps, roleRequest: roleRequest ?? s.roleRequest)
+    func copyingReputation(
+        _ reputation: ProReputationState,
+        fanSupport: Int? = nil,
+        overseasInterest: Bool?? = nil
+    ) -> ProReputationState {
+        ProReputationState(
+            fanSupport: fanSupport ?? reputation.fanSupport,
+            lastMerchandiseTier: reputation.lastMerchandiseTier,
+            endorsementSeasons: reputation.endorsementSeasons,
+            overseasInterest: overseasInterest ?? reputation.overseasInterest
+        )
+    }
+
+    func nextSeasonOpeningLoad(_ state: ProCareerSnapshot) -> (fatigue: Int, injuryWeeks: Int) {
+        guard let carry = state.nationalTeamCarry, carry.season == state.season else {
+            return (0, 0)
+        }
+        return (clamp(carry.fatigue, 0, 100), max(0, carry.injuryWeeks))
+    }
+
+    private func simulateNationalGroupStage(
+        state: ProCareerSnapshot,
+        resumeSeed: String
+    ) -> ProNationalTournamentState {
+        var rng = SplitMix64(seed: ProNationalTeamRules.derivedSeed(from: resumeSeed))
+        let groupOpponents = ProNationalTeamRules.groupOpponents()
+        var games: [ProNationalTournamentGameLine] = []
+        for (index, opponent) in groupOpponents.enumerated() {
+            let outing = simulateWeeklyOuting(
+                pitcher: state.pitcher,
+                startingFatigue: state.fatigue,
+                outsTarget: ProNationalTeamRules.groupOutsTarget,
+                pitchCap: ProNationalTeamRules.groupPitchCap,
+                batterOffset: opponent.batterOffset,
+                callPolicy: .perfect,
+                baseSeed: rng.next(),
+                diverseScouting: false
+            )
+            let support = LeagueBaseline.teamRuns(using: &rng)
+            let othersOuts = max(0, 27 - outing.outs)
+            let opponentRuns = outing.runsAllowed + LeagueBaseline.restOfTeamRuns(
+                outsCovered: othersOuts,
+                using: &rng
+            )
+            var teamRuns = support
+            if teamRuns == opponentRuns { teamRuns += 1 }
+            games.append(
+                ProNationalTournamentGameLine(
+                    opponentID: opponent.id,
+                    gameNumber: index + 1,
+                    teamRuns: teamRuns,
+                    opponentRuns: opponentRuns,
+                    directlyPlayed: false,
+                    playerPitches: outing.pitches,
+                    playerOuts: outing.outs,
+                    playerRunsAllowed: outing.runsAllowed,
+                    playerStrikeouts: outing.strikeouts,
+                    playerWalks: outing.walks,
+                    playerHits: outing.hits
+                )
+            )
+        }
+        let injuryChance = max(0, Self.injuryPressure(
+            rawFatigue: state.fatigue,
+            stamina: state.pitcher.stamina,
+            mastery: state.pitcher.effectiveMastery.stamina,
+            challengeRules: Self.usesChallengeRules(state)
+        ) - 72)
+        let injuryWeeks = rng.nextInt(upperBound: 100) < injuryChance
+            ? ProNationalTeamRules.injuryRecoveryMin + rng.nextInt(upperBound: ProNationalTeamRules.injuryRecoverySpan)
+            : 0
+        let qualified = games.filter(\.won).count >= ProNationalTeamRules.winsToFinal
+        let finalOpponent = ProNationalTeamRules.finalOpponent()
+        if qualified {
+            return ProNationalTournamentState(
+                seed: ProNationalTeamRules.derivedSeed(from: resumeSeed),
+                resumeSeed: resumeSeed,
+                startingFatigue: state.fatigue,
+                groupGames: games,
+                stage: .awaitingFinal,
+                finalOpponentID: finalOpponent.id,
+                fatigueCarry: ProNationalTeamRules.fatigueCarry,
+                injuryWeeks: injuryWeeks
+            )
+        }
+        let bronzeOpponent = groupOpponents.last ?? finalOpponent
+        let bronze = simulateWeeklyOuting(
+            pitcher: state.pitcher,
+            startingFatigue: state.fatigue,
+            outsTarget: ProNationalTeamRules.groupOutsTarget,
+            pitchCap: ProNationalTeamRules.groupPitchCap,
+            batterOffset: bronzeOpponent.batterOffset,
+            callPolicy: .perfect,
+            baseSeed: rng.next(),
+            diverseScouting: false
+        )
+        let bronzeSupport = LeagueBaseline.teamRuns(using: &rng)
+        let bronzeOthers = max(0, 27 - bronze.outs)
+        let bronzeOpponentRuns = bronze.runsAllowed + LeagueBaseline.restOfTeamRuns(
+            outsCovered: bronzeOthers,
+            using: &rng
+        )
+        var bronzeTeamRuns = bronzeSupport
+        if bronzeTeamRuns == bronzeOpponentRuns { bronzeTeamRuns += 1 }
+        let bronzeWon = bronzeTeamRuns > bronzeOpponentRuns
+        return ProNationalTournamentState(
+            seed: ProNationalTeamRules.derivedSeed(from: resumeSeed),
+            resumeSeed: resumeSeed,
+            startingFatigue: state.fatigue,
+            groupGames: games,
+            stage: .result,
+            finalOpponentID: finalOpponent.id,
+            finalLine: ProNationalTournamentGameLine(
+                opponentID: bronzeOpponent.id,
+                gameNumber: 4,
+                teamRuns: bronzeTeamRuns,
+                opponentRuns: bronzeOpponentRuns,
+                directlyPlayed: false,
+                playerPitches: bronze.pitches,
+                playerOuts: bronze.outs,
+                playerRunsAllowed: bronze.runsAllowed,
+                playerStrikeouts: bronze.strikeouts,
+                playerWalks: bronze.walks,
+                playerHits: bronze.hits
+            ),
+            result: bronzeWon ? .bronze : .groupExit,
+            fatigueCarry: ProNationalTeamRules.fatigueCarry,
+            injuryWeeks: injuryWeeks
+        )
+    }
+
+    private func resolveNationalFinal(_ params: ResolveProGameParams) throws -> ProCareerResult {
+        guard var tournament = params.state.nationalTournament,
+              tournament.stage == .awaitingFinal else {
+            throw SimulationError.invalidProCareer("결승 상태가 아닙니다.")
+        }
+        let report = params.report
+        let opponentRuns = report.runsAllowed
+        var teamRuns = report.teamRuns ?? (opponentRuns == 0 ? 1 : opponentRuns)
+        if teamRuns == opponentRuns { teamRuns += 1 }
+        let line = ProNationalTournamentGameLine(
+            opponentID: tournament.finalOpponentID,
+            gameNumber: 4,
+            teamRuns: teamRuns,
+            opponentRuns: opponentRuns,
+            directlyPlayed: true,
+            playerPitches: report.pitches,
+            playerOuts: report.outs,
+            playerRunsAllowed: report.runsAllowed,
+            playerStrikeouts: report.strikeouts,
+            playerWalks: report.walks,
+            playerHits: report.hits
+        )
+        tournament = ProNationalTournamentState(
+            seed: tournament.seed,
+            resumeSeed: tournament.resumeSeed,
+            startingFatigue: tournament.startingFatigue,
+            groupGames: tournament.groupGames,
+            stage: .result,
+            finalOpponentID: tournament.finalOpponentID,
+            finalLine: line,
+            result: line.won ? .gold : .silver,
+            fatigueCarry: ProNationalTeamRules.fatigueCarry(pitches: report.pitches),
+            injuryWeeks: tournament.injuryWeeks
+        )
+        let next = replacing(
+            params.state,
+            revision: params.state.revision + 1,
+            phase: .nationalTournament,
+            seasonTrigger: .some(nil),
+            nationalTournament: .some(tournament)
+        )
+        return try finishNationalTournament(next, seed: params.seed, events: ["pro_important_game_resolved"])
+    }
+
+    private func finishNationalTournament(
+        _ state: ProCareerSnapshot,
+        seed: String,
+        events: [String]
+    ) throws -> ProCareerResult {
+        guard let tournament = state.nationalTournament, let outcome = tournament.result else {
+            return result(state, nextSeed: seed, events: events)
+        }
+        guard let journey = state.journeyState else {
+            throw SimulationError.invalidProCareer("missing journey state")
+        }
+        let alreadyCompleted = state.militaryCompleted
+        let exempted = outcome == .gold && !alreadyCompleted
+        let fanDelta = ProNationalTeamRules.fanDelta(for: outcome, militaryCompleted: alreadyCompleted)
+        let fan = clamp(journey.reputation.fanSupport + fanDelta, 0, 100)
+        var recognitions = journey.recognitions
+        var milestones = state.milestones
+        var news = state.news
+        news.insert(ProNationalTeamRules.newsKey(for: outcome), at: 0)
+        if outcome == .gold {
+            recognitions.append(
+                ProCareerRecognition(
+                    careerID: state.proCareerID,
+                    kind: .award,
+                    contentID: "pro.award.national-gold",
+                    season: state.season
+                )
+            )
+            recognitions.append(
+                ProCareerRecognition(
+                    careerID: state.proCareerID,
+                    kind: .milestone,
+                    contentID: "pro.milestone.national.gold",
+                    season: state.season
+                )
+            )
+            milestones = addingUnique("pro.milestone.national.gold", to: milestones)
+            news.insert("content.pro-news.national-team.overseas", at: 0)
+        } else if outcome == .silver {
+            recognitions.append(
+                ProCareerRecognition(
+                    careerID: state.proCareerID,
+                    kind: .award,
+                    contentID: "pro.award.national-silver",
+                    season: state.season
+                )
+            )
+            news.insert("content.pro-news.national-team.overseas", at: 0)
+        }
+        let overseas = (outcome == .gold || outcome == .silver) ? true : journey.reputation.overseasInterest
+        let uniqueRecognitions = Dictionary(uniqueKeysWithValues: recognitions.map { ($0.id, $0) })
+            .values
+            .sorted { ProCareerJourneyRules.recognitionOrder($0, $1) }
+        let nextJourney = replacingJourney(
+            journey,
+            recognitions: uniqueRecognitions,
+            reputation: copyingReputation(
+                journey.reputation,
+                fanSupport: fan,
+                overseasInterest: .some(overseas)
+            )
+        )
+        var history = state.nationalTeamHistory ?? []
+        history.append(
+            ProNationalTeamRecord(
+                season: state.season,
+                result: outcome,
+                directGameLine: tournament.finalLine?.directlyPlayed == true ? tournament.finalLine : nil
+            )
+        )
+        let recorded = ProNationalTournamentState(
+            seed: tournament.seed,
+            resumeSeed: tournament.resumeSeed,
+            startingFatigue: tournament.startingFatigue,
+            groupGames: tournament.groupGames,
+            stage: .result,
+            finalOpponentID: tournament.finalOpponentID,
+            finalLine: tournament.finalLine,
+            result: outcome,
+            fatigueCarry: tournament.fatigueCarry,
+            injuryWeeks: tournament.injuryWeeks,
+            fanDelta: fanDelta,
+            exempted: exempted
+        )
+        let next = replacing(
+            state,
+            militaryCompleted: exempted ? true : nil,
+            milestones: milestones,
+            news: Array(news.prefix(30)),
+            journeyState: .some(nextJourney),
+            nationalTournament: .some(recorded),
+            nationalTeamHistory: history,
+            nationalTeamCarry: .some(
+                ProNationalTeamCarryState(
+                    season: state.season,
+                    fatigue: tournament.fatigueCarry,
+                    injuryWeeks: tournament.injuryWeeks
+                )
+            )
+        )
+        return result(next, nextSeed: seed, events: events + ["pro_national_team_result"])
+    }
+
+    func replacing(_ s: ProCareerSnapshot, revision: UInt64? = nil, phase: ProCareerPhase? = nil, pitcher: PitcherSnapshot? = nil, team: DraftTeamSnapshot? = nil, age: Int? = nil, season: Int? = nil, week: Int? = nil, level: ProLevel? = nil, role: ProRole? = nil, rolePreference: ProRole?? = nil, managerTrust: Int? = nil, catcherTrust: Int? = nil, fatigue: Int? = nil, injuryWeeks: Int? = nil, serviceYears: Int? = nil, militaryCompleted: Bool? = nil, contract: ProContractSnapshot?? = nil, currentStats: ProSeasonStats? = nil, gameLines: [ProGameLine]? = nil, careerStats: [ProSeasonStats]? = nil, awards: [String]? = nil, milestones: [String]? = nil, news: [String]? = nil, hallOfFameScore: Int?? = nil, balanceVersion: Int? = nil, proRulesVersion: Int? = nil, commitment: String? = nil, seasonSegment: ProSeasonSegment? = nil, seasonTrigger: ProSeasonTrigger?? = nil, currentRival: ProRivalBatter?? = nil, seasonTensions: [ProSeasonTension]?? = nil, seasonImportantGames: Int? = nil, pendingDecision: ProSeasonDecision?? = nil, decisionHistory: [ProDecisionRecord]?? = nil, developmentProgress: ProDevelopmentProgress? = nil, repertoireRulesVersion: Int?? = nil, pitchLearningProject: PitchLearningProjectSnapshot?? = nil, journeyState: ProCareerJourneyState?? = nil, postseason: ProPostseasonState?? = nil, activeDecisionModifiers: [ProDecisionModifier]?? = nil, resolvedFollowUps: [ProDecisionFollowUp]?? = nil, roleRequest: ProRoleRequestState?? = nil, nationalTournament: ProNationalTournamentState?? = nil, nationalTeamHistory: [ProNationalTeamRecord]?? = nil, nationalTeamCarry: ProNationalTeamCarryState?? = nil) -> ProCareerSnapshot {
+        ProCareerSnapshot(proCareerID: s.proCareerID, revision: revision ?? s.revision, phase: phase ?? s.phase, identity: s.identity, pitcher: pitcher ?? s.pitcher, team: team ?? s.team, entitlement: s.entitlement, age: age ?? s.age, season: season ?? s.season, week: week ?? s.week, level: level ?? s.level, role: role ?? s.role, rolePreference: rolePreference ?? s.rolePreference, managerTrust: managerTrust ?? s.managerTrust, catcherTrust: catcherTrust ?? s.catcherTrust, fatigue: fatigue ?? s.fatigue, injuryWeeks: injuryWeeks ?? s.injuryWeeks, serviceYears: serviceYears ?? s.serviceYears, militaryCompleted: militaryCompleted ?? s.militaryCompleted, contract: contract ?? s.contract, currentStats: currentStats ?? s.currentStats, gameLines: gameLines ?? s.gameLines, careerStats: careerStats ?? s.careerStats, awards: awards ?? s.awards, milestones: milestones ?? s.milestones, news: news ?? s.news, hallOfFameScore: hallOfFameScore ?? s.hallOfFameScore, commitment: commitment ?? "", balanceVersion: balanceVersion ?? s.balanceVersion, proRulesVersion: proRulesVersion ?? s.proRulesVersion, seasonSegment: seasonSegment ?? s.seasonSegment, seasonTrigger: seasonTrigger ?? s.seasonTrigger, currentRival: currentRival ?? s.currentRival, seasonTensions: seasonTensions ?? s.seasonTensions, seasonImportantGames: seasonImportantGames ?? s.seasonImportantGames, pendingDecision: pendingDecision ?? s.pendingDecision, decisionHistory: decisionHistory ?? s.decisionHistory, developmentProgress: developmentProgress ?? s.developmentProgress, repertoireRulesVersion: repertoireRulesVersion ?? s.repertoireRulesVersion, pitchLearningProject: pitchLearningProject ?? s.pitchLearningProject, journeyState: journeyState ?? s.journeyState, postseason: postseason ?? s.postseason, activeDecisionModifiers: activeDecisionModifiers ?? s.activeDecisionModifiers, resolvedFollowUps: resolvedFollowUps ?? s.resolvedFollowUps, roleRequest: roleRequest ?? s.roleRequest, nationalTournament: nationalTournament ?? s.nationalTournament, nationalTeamHistory: nationalTeamHistory ?? s.nationalTeamHistory, nationalTeamCarry: nationalTeamCarry ?? s.nationalTeamCarry)
     }
 }

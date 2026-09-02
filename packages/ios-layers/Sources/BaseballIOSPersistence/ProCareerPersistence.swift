@@ -8,7 +8,8 @@ public enum ProCareerPersistence {
     public static let journeySchemaVersion = 3
     public static let repertoireSchemaVersion = 4
     public static let masterySchemaVersion = 5
-    public static let currentSchemaVersion = masterySchemaVersion
+    public static let nationalTeamSchemaVersion = 6
+    public static let currentSchemaVersion = nationalTeamSchemaVersion
 
     public static func schemaVersion(for result: ProCareerResult) -> Int {
         schemaVersion(for: ProCareerPersistedState(result: result))
@@ -19,6 +20,9 @@ public enum ProCareerPersistence {
     /// week would try to downgrade a v5 injury save after `result.injuryEvent` becomes nil.
     public static func schemaVersion(for state: ProCareerPersistedState) -> Int {
         guard let result = state.result else { return currentSchemaVersion }
+        if hasNationalTeamState(result.snapshot) {
+            return nationalTeamSchemaVersion
+        }
         if result.snapshot.pitcher.mastery != nil
             || result.injuryEvent != nil
             || state.pendingInjuryEvent != nil
@@ -29,6 +33,17 @@ public enum ProCareerPersistence {
         return result.snapshot.journeyState == nil ? legacySchemaVersion : journeySchemaVersion
     }
 
+    /// Schema 6 is stamped only when a national-team phase or leftover tournament record exists.
+    /// A v10 career that never entered the tournament stays on schema 5.
+    public static func hasNationalTeamState(_ snapshot: ProCareerSnapshot) -> Bool {
+        snapshot.nationalTournament != nil
+            || (snapshot.nationalTeamHistory?.isEmpty == false)
+            || snapshot.nationalTeamCarry != nil
+            || snapshot.phase == .nationalTeamCall
+            || snapshot.phase == .nationalTournament
+            || snapshot.seasonTrigger == .nationalFinal
+    }
+
     public static func decode(_ data: Data) -> ProCareerSaveRecord? {
         let decoder = JSONDecoder()
         if let record = try? decoder.decode(ProCareerSaveRecord.self, from: data) {
@@ -37,11 +52,13 @@ public enum ProCareerPersistence {
             let hasInjury = record.result?.injuryEvent != nil
                 || record.pendingInjuryEvent != nil
                 || record.acknowledgedInjuryEventID != nil
+            let hasNationalTeam = record.result.map { hasNationalTeamState($0.snapshot) } ?? false
             if (1...currentSchemaVersion).contains(version),
                record.result != nil || record.deletedRevision != nil,
                !(version < journeySchemaVersion && record.result?.snapshot.journeyState != nil),
                !(version < repertoireSchemaVersion && record.result?.snapshot.repertoireRulesVersion != nil),
-               !(version < masterySchemaVersion && (hasMastery || hasInjury)) {
+               !(version < masterySchemaVersion && (hasMastery || hasInjury)),
+               !(version < nationalTeamSchemaVersion && hasNationalTeam) {
                 return record
             }
         }

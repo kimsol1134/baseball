@@ -332,6 +332,26 @@ private struct RecordBoard: View {
                     highSchool: highSchool
                 )
                 ProGoalBoardCard(state: state)
+                if let history = state.nationalTeamHistory, !history.isEmpty {
+                    BaseballCard(title: copyResolver.resolve(.nationalRecordTitle), tone: .milestone) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(Array(history.enumerated()), id: \.offset) { _, record in
+                                HStack {
+                                    Text("\(record.season)")
+                                        .font(.body.monospacedDigit())
+                                    Text(ProNationalTeamCopy.resultTitle(record.result, resolver: copyResolver))
+                                    Spacer()
+                                    if let line = record.directGameLine {
+                                        Text("\(line.teamRuns)-\(line.opponentRuns)")
+                                            .font(.footnote.monospacedDigit())
+                                            .foregroundStyle(BaseballTheme.textSecondary)
+                                    }
+                                }
+                                .accessibilityElement(children: .combine)
+                            }
+                        }
+                    }
+                }
                 if let decisions = state.decisionHistory, !decisions.isEmpty {
                     ProDecisionHistoryCard(decisions: decisions)
                 }

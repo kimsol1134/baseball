@@ -131,6 +131,10 @@ struct CareerFlowView: View {
                                     retiresIntoSignatureLegacy: retiresIntoSignatureLegacy,
                                     onStartNewPlayer: onStartNewPlayer
                                 )
+                            case .nationalTeamCall:
+                                ProNationalTeamCallView(career: career, state: state)
+                            case .nationalTournament:
+                                ProNationalTournamentView(career: career, state: state)
                             default:
                                 ContentUnavailableView(
                                     copyResolver.resolve(.scheduleComplete),

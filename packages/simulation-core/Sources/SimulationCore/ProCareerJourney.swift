@@ -299,15 +299,19 @@ public struct ProReputationState: Codable, Equatable, Sendable {
     public let fanSupport: Int
     public let lastMerchandiseTier: ProMerchandiseTier?
     public let endorsementSeasons: [Int]
+    /// v10 national-team hook. Missing on legacy saves; nil means no overseas interest yet.
+    public let overseasInterest: Bool?
 
     public init(
         fanSupport: Int = 0,
         lastMerchandiseTier: ProMerchandiseTier? = nil,
-        endorsementSeasons: [Int] = []
+        endorsementSeasons: [Int] = [],
+        overseasInterest: Bool? = nil
     ) {
         self.fanSupport = fanSupport
         self.lastMerchandiseTier = lastMerchandiseTier
         self.endorsementSeasons = endorsementSeasons
+        self.overseasInterest = overseasInterest
     }
 }
 
@@ -890,6 +894,7 @@ public enum ProRetirementHonorKind: String, Codable, Identifiable, Sendable {
     case clubHall = "club_hall"
     case ambitionCompleted = "ambition_completed"
     case careerEarnings = "career_earnings"
+    case nationalGold = "national_gold"
 
     public var id: String { rawValue }
 }
@@ -984,7 +989,8 @@ public enum ProRetirementRules {
             retiredNumberTeamID: retiredNumberEligible ? lastTeamID : nil,
             clubHallTeamIDs: clubHallTeamIDs,
             completedAmbitions: completedAmbitions,
-            careerEarnings: journey?.finances.careerEarnings ?? 0
+            careerEarnings: journey?.finances.careerEarnings ?? 0,
+            nationalGoldCount: ProNationalTeamRules.goldCount(in: state.nationalTeamHistory)
         )
         return ProRetirementPreview(
             finalScore: finalScore,
@@ -1037,7 +1043,8 @@ public enum ProRetirementRules {
         retiredNumberTeamID: String?,
         clubHallTeamIDs: [String],
         completedAmbitions: [ProCareerAmbition],
-        careerEarnings: Int64
+        careerEarnings: Int64,
+        nationalGoldCount: Int = 0
     ) -> [ProRetirementHonor] {
         var honors: [ProRetirementHonor] = []
         if finalScore >= 70 {
@@ -1083,6 +1090,15 @@ public enum ProRetirementRules {
             referenceID: nil,
             value: careerEarnings
         ))
+        if nationalGoldCount > 0 {
+            honors.append(ProRetirementHonor(
+                id: "honor:\(careerID):\(ProRetirementHonorKind.nationalGold.rawValue):none",
+                kind: .nationalGold,
+                teamID: nil,
+                referenceID: nil,
+                value: Int64(nationalGoldCount)
+            ))
+        }
         return honors
     }
 
@@ -1093,6 +1109,7 @@ public enum ProRetirementRules {
         case .clubHall: 2
         case .ambitionCompleted: 3
         case .careerEarnings: 4
+        case .nationalGold: 5
         }
     }
 }

@@ -42,6 +42,8 @@ public enum GlossaryCatalog {
         .init(id: "season-decision"),
         .init(id: "signing-bonus"),
         .init(id: "club-interest"),
+        .init(id: "national-team-call"),
+        .init(id: "military-exemption"),
     ]
 
     public static func term(id: String) -> GlossaryTerm? {

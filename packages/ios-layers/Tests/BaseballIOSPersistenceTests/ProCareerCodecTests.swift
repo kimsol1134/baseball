@@ -102,6 +102,46 @@ final class ProCareerCodecTests: XCTestCase {
         XCTAssertEqual(restored.schemaVersion, ProCareerPersistence.masterySchemaVersion)
     }
 
+    func testNationalTeamStateStampsSchemaSixAndPlainV10StaysFive() throws {
+        let live = try fixtureResult()
+        XCTAssertFalse(ProCareerPersistence.hasNationalTeamState(live.snapshot))
+        let withoutTournament = ProCareerPersistedState(result: live)
+        XCTAssertLessThan(
+            ProCareerPersistence.schemaVersion(for: withoutTournament),
+            ProCareerPersistence.nationalTeamSchemaVersion
+        )
+
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(live.snapshot)) as? [String: Any]
+        )
+        object["nationalTournament"] = try JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(
+                ProNationalTournamentState(
+                    seed: 1,
+                    resumeSeed: "1",
+                    startingFatigue: 10,
+                    groupGames: [],
+                    stage: .awaitingFinal,
+                    finalOpponentID: "east-coast",
+                    fatigueCarry: 15,
+                    injuryWeeks: 0
+                )
+            )
+        )
+        object["commitment"] = ""
+        let unsigned = try JSONDecoder().decode(
+            ProCareerSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+        let stamped = ProCareerResult(snapshot: unsigned, nextSeed: live.nextSeed, events: [])
+        XCTAssertTrue(ProCareerPersistence.hasNationalTeamState(stamped.snapshot))
+        XCTAssertEqual(
+            ProCareerPersistence.schemaVersion(for: ProCareerPersistedState(result: stamped)),
+            ProCareerPersistence.nationalTeamSchemaVersion
+        )
+        XCTAssertEqual(ProCareerPersistence.currentSchemaVersion, 6)
+    }
+
     func testTombstoneUsesTheSameEmptyMappingAsDelete() {
         var empty = ProCareerPersistedState.empty
         empty.syncedRevision = 9

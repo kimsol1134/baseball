@@ -276,6 +276,11 @@ struct RetirementHonorsCard: View {
                 GameFormatters.krw(Int(clamping: honor.value ?? 0), language: copyResolver.language),
                 resolver: copyResolver
             )
+        case .nationalGold:
+            return ProRetirementCopy.honorValue(
+                copyResolver.resolve(.retirementHonorNationalGold),
+                resolver: copyResolver
+            )
         }
     }
 }

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+      }
+      @font-face {
+        font-family: "Pretendard";
+        src: url("assets/fonts/Pretendard-ExtraBold.woff2") format("woff2");
+        font-weight: 800;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Pretendard";
+        src: url("assets/fonts/Pretendard-Black.woff2") format("woff2");
+        font-weight: 900;
+        font-style: normal;
+        font-display: block;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #070c0a;
+        color: #f1f4ee;
+        font-family: "Pretendard", sans-serif;
+        container-type: size;
+      }
+      .a2-viewport { position: absolute; inset: 0; overflow: hidden; }
+      .a2-zoom { position: absolute; inset: 0; will-change: transform; }
+      .a2-zoom video { width: 1080px; height: 1920px; display: block; }
+      .a2-zoom2 { position: absolute; inset: 0; will-change: transform; }
+      .a2-zoom2 img { width: 1080px; height: 1920px; object-fit: cover; object-position: center 45%; display: block; }
+      .a2-scrim { position: absolute; left: 0; top: 0; right: 0; height: 740px; background: linear-gradient(180deg, rgba(4, 8, 6, 0.94) 0%, rgba(4, 8, 6, 0.62) 60%, rgba(4, 8, 6, 0) 100%); }
+      .a2-dim { position: absolute; inset: 0; background: rgba(4, 8, 6, 0.66); opacity: 0; }
+      .a2-flash { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
+      .a2-chip { position: absolute; left: 50%; top: 96px; transform: translateX(-50%); margin: 0; background: #e8b24c; color: #111111; font-size: 36px; font-weight: 800; letter-spacing: 0.02em; padding: 14px 26px; white-space: nowrap; opacity: 0; }
+      .a2-hero1 { position: absolute; left: 60px; right: 60px; top: 200px; margin: 0; text-align: center; font-size: 76px; line-height: 1.06; font-weight: 900; letter-spacing: -0.03em; color: #f1f4ee; text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5); opacity: 0; }
+      .a2-l { position: absolute; left: 60px; right: 60px; margin: 0; text-align: center; font-size: 52px; font-weight: 900; letter-spacing: -0.01em; color: #e8b24c; text-shadow: 0 3px 18px rgba(0, 0, 0, 0.55); opacity: 0; }
+      .a2-l1 { top: 356px; }
+      .a2-l2 { top: 434px; }
+      .a2-l3 { top: 512px; }
+      .a2-l4 { top: 590px; }
+      .a2-l5 { top: 668px; }
+      .a2-slam { position: absolute; left: 60px; right: 60px; top: 430px; margin: 0; text-align: center; font-size: 190px; line-height: 1; font-weight: 900; letter-spacing: -0.03em; color: #e8b24c; text-shadow: 0 6px 32px rgba(0, 0, 0, 0.6); opacity: 0; }
+      .a2-sub { position: absolute; left: 60px; right: 60px; top: 660px; margin: 0; text-align: center; font-size: 56px; font-weight: 900; letter-spacing: -0.01em; color: #f1f4ee; text-shadow: 0 4px 22px rgba(0, 0, 0, 0.55); opacity: 0; }
+      .a2-endchip { position: absolute; left: 50%; top: 1150px; transform: translateX(-50%); margin: 0; background: #e8b24c; color: #111111; font-size: 42px; font-weight: 800; letter-spacing: 0.02em; padding: 18px 34px; white-space: nowrap; opacity: 0; }
+      .a2-endline1 { position: absolute; left: 60px; right: 60px; top: 1290px; margin: 0; text-align: center; font-size: 76px; line-height: 1.1; font-weight: 900; letter-spacing: -0.03em; color: #f1f4ee; opacity: 0; }
+      .a2-endline2 { position: absolute; left: 60px; right: 60px; top: 1420px; margin: 0; text-align: center; font-size: 104px; line-height: 1; font-weight: 900; letter-spacing: -0.03em; color: #e8b24c; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="a2-draft" data-start="0" data-width="1080" data-height="1920" data-duration="12.6">
+      <div class="a2-viewport">
+        <div class="a2-zoom">
+          <video id="a2-video" src="assets/clips/aroll-a2.mp4" data-start="0" data-duration="8.2" data-track-index="0" muted playsinline></video>
+        </div>
+        <div class="a2-zoom2">
+          <img id="a2-draft-img" src="assets/draft-success.png" alt="" data-start="8.2" data-duration="4.4" data-track-index="2">
+        </div>
+      </div>
+      <div id="a2-overlay" class="clip" data-start="0" data-duration="12.6" data-track-index="3">
+        <div class="a2-scrim"></div>
+        <div class="a2-dim"></div>
+        <div class="a2-flash"></div>
+        <p class="a2-chip">앱스토어 스포츠 게임앱 1위</p>
+        <h1 class="a2-hero1">3년 안에 지명받아야 함</h1>
+        <p class="a2-l a2-l1">이름 정하고</p>
+        <p class="a2-l a2-l2">지역 찍고</p>
+        <p class="a2-l a2-l3">강속구 원석 픽</p>
+        <p class="a2-l a2-l4">손으로 던져 키움</p>
+        <p class="a2-l a2-l5">삼진 쌓고</p>
+        <h1 class="a2-slam">지명됨</h1>
+        <p class="a2-sub">내가 키운 투수 맞음</p>
+        <p class="a2-endchip">앱스토어 스포츠 게임앱 1위</p>
+        <h1 class="a2-endline1">야구 못하면 또 환생함</h1>
+        <p class="a2-endline2">투수 키우기</p>
+      </div>
+      <!-- SFX -->
+      <audio id="a2-sfx-0" src="assets/sfx/whoosh-short.mp3" data-start="0.05" data-duration="0.57" data-track-index="20" data-volume="0.32"></audio>
+      <audio id="a2-sfx-1" src="assets/sfx/whoosh-short.mp3" data-start="1.55" data-duration="0.57" data-track-index="21" data-volume="0.26"></audio>
+      <audio id="a2-sfx-2" src="assets/sfx/whoosh-short.mp3" data-start="4.25" data-duration="0.57" data-track-index="22" data-volume="0.26"></audio>
+      <audio id="a2-sfx-3" src="assets/sfx/whoosh.mp3" data-start="5.65" data-duration="0.57" data-track-index="23" data-volume="0.3"></audio>
+      <audio id="a2-sfx-4" src="assets/sfx/riser.mp3" data-start="5.6" data-duration="2.6" data-track-index="24" data-volume="0.18"></audio>
+      <audio id="a2-sfx-5" src="assets/sfx/ping.mp3" data-start="6.55" data-duration="1.32" data-track-index="25" data-volume="0.35"></audio>
+      <audio id="a2-sfx-6" src="assets/sfx/impact-bass-1.mp3" data-start="8.25" data-duration="2.12" data-track-index="26" data-volume="0.48"></audio>
+      <audio id="a2-sfx-7" src="assets/sfx/chime.mp3" data-start="8.7" data-duration="2.5" data-track-index="27" data-volume="0.3"></audio>
+      <audio id="a2-sfx-8" src="assets/sfx/impact-bass-1.mp3" data-start="10.75" data-duration="1.85" data-track-index="28" data-volume="0.34"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      // journey push-ins
+      tl.fromTo(".a2-zoom", { scale: 1.02, transformOrigin: "50% 40%" }, { scale: 1.06, duration: 1.5, ease: "power1.inOut" }, 0);
+      tl.set(".a2-zoom", { scale: 1.02 }, 1.5);
+      tl.to(".a2-zoom", { scale: 1.06, duration: 2.7, ease: "power1.inOut" }, 1.52);
+      tl.set(".a2-zoom", { scale: 1.03 }, 4.2);
+      tl.to(".a2-zoom", { scale: 1.07, duration: 1.4, ease: "power1.inOut" }, 4.22);
+      // pitch punch-in
+      tl.set(".a2-zoom", { scale: 1.28, transformOrigin: "50% 86%" }, 5.6);
+      tl.to(".a2-zoom", { scale: 1.22, duration: 0.85, ease: "power1.out" }, 5.62);
+      tl.to(".a2-zoom", { scale: 1.0, duration: 0.26, ease: "power4.out" }, 6.52);
+      tl.to(".a2-zoom", { scale: 1.05, duration: 1.3, ease: "power1.inOut" }, 6.85);
+      // draft still slow zoom
+      tl.fromTo(".a2-zoom2", { scale: 1.04, transformOrigin: "50% 45%" }, { scale: 1.12, duration: 4.4, ease: "power1.inOut" }, 8.2);
+      // flash at draft reveal
+      tl.fromTo(".a2-flash", { opacity: 0 }, { opacity: 0.32, duration: 0.07, ease: "power1.in" }, 8.2);
+      tl.to(".a2-flash", { opacity: 0, duration: 0.24, ease: "power2.out" }, 8.29);
+      // texts
+      tl.fromTo(".a2-chip", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.28, ease: "power3.out" }, 0.12);
+      tl.fromTo(".a2-hero1", { opacity: 0, y: 24, scale: 1.12 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power4.out" }, 0.35);
+      tl.fromTo(".a2-l1", { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.24, ease: "power4.out" }, 0.75);
+      tl.fromTo(".a2-l2", { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.24, ease: "power4.out" }, 1.75);
+      tl.fromTo(".a2-l3", { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.24, ease: "power4.out" }, 2.5);
+      tl.fromTo(".a2-l4", { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.24, ease: "power4.out" }, 5.75);
+      tl.fromTo(".a2-l5", { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.24, ease: "power4.out" }, 7.0);
+      tl.to(".a2-l1", { opacity: 0.55, duration: 0.3 }, 1.75);
+      tl.to(".a2-l2", { opacity: 0.55, duration: 0.3 }, 2.5);
+      tl.to(".a2-l3", { opacity: 0.55, duration: 0.3 }, 5.75);
+      tl.to(".a2-l4", { opacity: 0.55, duration: 0.3 }, 7.0);
+      // clear before draft slam
+      tl.to(".a2-hero1", { opacity: 0, duration: 0.18, ease: "power2.in" }, 8.0);
+      tl.to(".a2-l1", { opacity: 0, duration: 0.18, ease: "power2.in" }, 8.0);
+      tl.to(".a2-l2", { opacity: 0, duration: 0.18, ease: "power2.in" }, 8.0);
+      tl.to(".a2-l3", { opacity: 0, duration: 0.18, ease: "power2.in" }, 8.0);
+      tl.to(".a2-l4", { opacity: 0, duration: 0.18, ease: "power2.in" }, 8.0);
+      tl.to(".a2-l5", { opacity: 0, duration: 0.18, ease: "power2.in" }, 8.0);
+      tl.to(".a2-chip", { opacity: 0, duration: 0.18, ease: "power2.in" }, 8.0);
+      // draft moment
+      tl.fromTo(".a2-slam", { opacity: 0, y: 34, scale: 1.28 }, { opacity: 1, y: 0, scale: 1, duration: 0.34, ease: "power4.out" }, 8.4);
+      tl.fromTo(".a2-sub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.26, ease: "power3.out" }, 9.5);
+      // endcard
+      tl.fromTo(".a2-dim", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, 10.7);
+      tl.fromTo(".a2-endchip", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.26, ease: "power3.out" }, 10.9);
+      tl.fromTo(".a2-endline1", { opacity: 0, y: 22, scale: 1.08 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 11.1);
+      tl.fromTo(".a2-endline2", { opacity: 0, y: 26, scale: 1.14 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power4.out" }, 11.4);
+      window.__timelines["a2-draft"] = tl;
+    </script>
+  </body>
+</html>

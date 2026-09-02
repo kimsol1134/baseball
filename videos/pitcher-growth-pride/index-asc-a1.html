@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=2340">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 2340px;
+        overflow: hidden;
+        background: #000;
+      }
+      @font-face {
+        font-family: "YeogiOttaeJalnan";
+        src: url("assets/fonts/YeogiOttaeJalnan.woff") format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "GMarketSans";
+        src: url("assets/fonts/GmarketSansMedium.woff") format("woff");
+        font-weight: 500;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "GMarketSans";
+        src: url("assets/fonts/GmarketSansBold.woff") format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: block;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 2340px;
+        overflow: hidden;
+        background: #070c0a;
+        color: #f1f4ee;
+        font-family: "GMarketSans", sans-serif;
+        container-type: size;
+      }
+      .v-viewport { position: absolute; inset: 0; overflow: hidden; }
+      .v-zoom { position: absolute; inset: 0; will-change: transform; }
+      .v-zoom video { width: 1080px; height: 2340px; display: block; }
+      .hk-glow { position: absolute; inset: 0; background: radial-gradient(ellipse 85% 55% at 50% 46%, rgba(46, 90, 58, 0.3) 0%, rgba(7, 12, 10, 0) 72%); opacity: 0; }
+      .hk-stack { position: absolute; left: 60px; right: 60px; top: 727px; display: flex; flex-direction: column; gap: 46px; text-align: center; }
+      .hk-line { margin: 0; font-family: "YeogiOttaeJalnan"; font-size: 92px; line-height: 1.08; font-weight: 400; letter-spacing: -0.01em; color: #f1f4ee; opacity: 0; }
+      .hk-line--accent { font-size: 112px; color: #e8b24c; }
+      .hk-q { position: absolute; left: 60px; right: 60px; top: 1063px; margin: 0; text-align: center; font-family: "YeogiOttaeJalnan"; font-size: 126px; line-height: 1.08; font-weight: 400; letter-spacing: -0.01em; color: #e8b24c; text-shadow: 0 6px 40px rgba(232, 178, 76, 0.25); opacity: 0; }
+      .topveil { position: absolute; left: 0; right: 0; top: 120px; height: 600px; background: radial-gradient(ellipse 74% 58% at 50% 46%, rgba(4, 8, 6, 0.66) 0%, rgba(4, 8, 6, 0) 74%); opacity: 0; }
+      .midveil { position: absolute; left: 0; right: 0; top: 640px; height: 560px; background: radial-gradient(ellipse 68% 58% at 50% 50%, rgba(4, 8, 6, 0.66) 0%, rgba(4, 8, 6, 0) 74%); opacity: 0; }
+      .gridveil { position: absolute; left: 0; right: 0; top: 1010px; height: 560px; background: radial-gradient(ellipse 70% 58% at 50% 50%, rgba(4, 8, 6, 0.66) 0%, rgba(4, 8, 6, 0) 74%); opacity: 0; }
+      .dim { position: absolute; inset: 0; background: rgba(4, 8, 6, 0.76); opacity: 0; }
+      .flash { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
+      .t { position: absolute; left: 60px; right: 60px; margin: 0; text-align: center; font-weight: 700; letter-spacing: -0.02em; text-shadow: 0 5px 28px rgba(0, 0, 0, 0.65); opacity: 0; }
+      .t-foul { top: 850px; font-size: 88px; line-height: 1; color: #e8b24c; }
+      .t-geulk { top: 830px; font-family: "YeogiOttaeJalnan"; font-size: 142px; line-height: 1.08; font-weight: 400; letter-spacing: -0.01em; color: #e8b24c; }
+      .t-hero { top: 1150px; font-size: 76px; line-height: 1.06; color: #f1f4ee; }
+      .t-punch { top: 1272px; font-family: "YeogiOttaeJalnan"; font-size: 118px; line-height: 1.08; font-weight: 400; letter-spacing: -0.01em; color: #e8b24c; }
+      .endline1 { position: absolute; left: 60px; right: 60px; top: 940px; margin: 0; text-align: center; font-family: "YeogiOttaeJalnan"; font-size: 82px; line-height: 1.14; font-weight: 400; letter-spacing: -0.01em; color: #f1f4ee; opacity: 0; }
+      .endline2 { position: absolute; left: 60px; right: 60px; top: 1180px; margin: 0; text-align: center; font-size: 112px; line-height: 1; font-weight: 700; letter-spacing: -0.02em; color: #e8b24c; opacity: 0; }
+      .hk-bg { position: absolute; inset: 0; background: #070C0A; opacity: 1; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="asc-a1" data-start="0" data-width="1080" data-height="2340" data-duration="16.08">
+      <div class="v-viewport">
+        <div class="v-zoom" data-layout-allow-overflow>
+          <video id="asc-a1-video" src="assets/clips/aroll-asc-a1.mp4" data-start="0" data-duration="16.08" data-track-index="0" muted playsinline></video>
+        </div>
+      </div>
+      <div id="asc-a1-overlay" class="clip" data-start="0" data-duration="16.08" data-track-index="1">
+        <div class="hk-bg"></div>
+        <div class="hk-glow"></div>
+        <div class="dim"></div>
+        <div class="topveil"></div>
+        <div class="midveil"></div>
+        <div class="gridveil"></div>
+        <div class="flash"></div>
+        <div class="hk-stack">
+          <p class="hk-line hk-l1">9회말 2아웃</p>
+          <p class="hk-line hk-l2">풀카운트</p>
+          <p class="hk-line hk-l3">주자 만루</p>
+          <p class="hk-line hk-line--accent hk-l4">1점차</p>
+        </div>
+        <h1 class="hk-q">마지막 공은?</h1>
+        <p class="t t-foul">풀카운트 유지</p>
+        <h1 class="t t-geulk">긁혔다</h1>
+        <p class="t t-hero">손끝에서 딱 떨어짐</p>
+        <p class="t t-punch">이 맛에 투수함</p>
+        <h1 class="endline1">야구 못하면 또 환생함</h1>
+        <p class="endline2">투수 키우기</p>
+      </div>
+      <!-- SFX -->
+      <audio id="asc-a1-sfx-00" src="assets/sfx/impact-bass-1.mp3" data-start="0.06" data-duration="2.12" data-track-index="20" data-volume="0.2"></audio>
+      <audio id="asc-a1-sfx-01" src="assets/sfx/impact-bass-1.mp3" data-start="0.50" data-duration="2.12" data-track-index="21" data-volume="0.26"></audio>
+      <audio id="asc-a1-sfx-02" src="assets/sfx/impact-bass-1.mp3" data-start="0.94" data-duration="2.12" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="asc-a1-sfx-03" src="assets/sfx/impact-bass-1.mp3" data-start="1.38" data-duration="2.12" data-track-index="23" data-volume="0.4"></audio>
+      <audio id="asc-a1-sfx-04" src="assets/sfx/ping.mp3" data-start="2.14" data-duration="1.32" data-track-index="24" data-volume="0.38"></audio>
+      <audio id="asc-a1-sfx-05" src="assets/sfx/whoosh-short.mp3" data-start="2.96" data-duration="0.57" data-track-index="25" data-volume="0.4"></audio>
+      <audio id="asc-a1-sfx-06" src="assets/sfx/impact-bass-1.mp3" data-start="3.88" data-duration="2.12" data-track-index="26" data-volume="0.4"></audio>
+      <audio id="asc-a1-sfx-07" src="assets/sfx/whoosh-short.mp3" data-start="5.92" data-duration="0.57" data-track-index="27" data-volume="0.34"></audio>
+      <audio id="asc-a1-sfx-08" src="assets/sfx/impact-bass-1.mp3" data-start="6.95" data-duration="2.12" data-track-index="28" data-volume="0.5"></audio>
+      <audio id="asc-a1-sfx-09" src="assets/sfx/ping.mp3" data-start="7.45" data-duration="1.32" data-track-index="29" data-volume="0.45"></audio>
+      <audio id="asc-a1-sfx-10" src="assets/sfx/whoosh-short.mp3" data-start="9.25" data-duration="0.57" data-track-index="30" data-volume="0.32"></audio>
+      <audio id="asc-a1-sfx-11" src="assets/sfx/impact-bass-1.mp3" data-start="10.14" data-duration="2.12" data-track-index="31" data-volume="0.45"></audio>
+      <audio id="asc-a1-sfx-12" src="assets/sfx/ping.mp3" data-start="10.75" data-duration="1.32" data-track-index="32" data-volume="0.3"></audio>
+      <audio id="asc-a1-sfx-13" src="assets/sfx/impact-bass-1.mp3" data-start="12.82" data-duration="2.12" data-track-index="33" data-volume="0.4"></audio>
+      <audio id="asc-a1-sfx-14" src="assets/sfx/chime.mp3" data-start="13.2" data-duration="2.5" data-track-index="34" data-volume="0.28"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      // F0 시나리오 훅 (0–3.0): 불투명 배경 + 타이포
+      tl.to(".hk-bg", { opacity: 0, duration: 0.1 }, 2.98);
+      tl.fromTo(".hk-glow", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0);
+      tl.to(".hk-glow", { opacity: 0, duration: 0.1 }, 2.95);
+      tl.fromTo(".hk-l1", { opacity: 0, y: 22, scale: 1.32 }, { opacity: 1, y: 0, scale: 1, duration: 0.22, ease: "power4.out" }, 0.06);
+      tl.fromTo(".hk-l2", { opacity: 0, y: 22, scale: 1.32 }, { opacity: 1, y: 0, scale: 1, duration: 0.22, ease: "power4.out" }, 0.50);
+      tl.fromTo(".hk-l3", { opacity: 0, y: 22, scale: 1.32 }, { opacity: 1, y: 0, scale: 1, duration: 0.22, ease: "power4.out" }, 0.94);
+      tl.fromTo(".hk-l4", { opacity: 0, y: 24, scale: 1.4 }, { opacity: 1, y: 0, scale: 1, duration: 0.24, ease: "power4.out" }, 1.38);
+      tl.to(".hk-stack", { opacity: 0, scale: 0.96, duration: 0.14, ease: "power2.in" }, 1.98);
+      tl.fromTo(".hk-q", { opacity: 0, scale: 1.45 }, { opacity: 1, scale: 1, duration: 0.26, ease: "power4.out" }, 2.14);
+      tl.to(".hk-q", { scale: 1.06, duration: 0.5, ease: "power1.inOut" }, 2.42);
+      tl.to(".hk-q", { opacity: 0, duration: 0.1, ease: "power2.in" }, 2.94);
+      // FB 파울 (3.0–5.9, 배지 3.92): HUD 은폐 줌 유지
+      tl.set(".v-zoom", { scale: 1.45, transformOrigin: "50% 88%" }, 0);
+      tl.to(".v-zoom", { scale: 1.36, duration: 0.85, ease: "power1.out" }, 3.02);
+      tl.to(".v-zoom", { scale: 1.38, duration: 0.26, ease: "power4.out" }, 3.92);
+      tl.to(".v-zoom", { scale: 1.44, duration: 1.72, ease: "power1.inOut" }, 4.18);
+      tl.fromTo(".flash", { opacity: 0 }, { opacity: 0.3, duration: 0.06, ease: "power1.in" }, 3.92);
+      tl.to(".flash", { opacity: 0, duration: 0.2, ease: "power2.out" }, 3.99);
+      tl.fromTo(".midveil", { opacity: 0 }, { opacity: 1, duration: 0.22, ease: "power1.out" }, 4.28);
+      tl.fromTo(".t-foul", { opacity: 0, y: 24, scale: 1.24 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 4.35);
+      tl.to(".t-foul", { opacity: 0, y: -14, duration: 0.18, ease: "power2.in" }, 5.7);
+      tl.to(".midveil", { opacity: 0, duration: 0.18, ease: "power2.in" }, 5.7);
+      // F1 페이오프 (5.9–9.23): 미터 클로즈업 → 정중앙 적중(6.99) → 배지(7.45)
+      tl.set(".v-zoom", { scale: 1.36, transformOrigin: "50% 100%" }, 5.9);
+      tl.to(".v-zoom", { scale: 2.4, duration: 0.3, ease: "power2.inOut" }, 6.18);
+      tl.to(".v-zoom", { scale: 1.35, duration: 0.28, ease: "power4.out" }, 7.45);
+      tl.to(".v-zoom", { scale: 1.42, duration: 1.4, ease: "power1.inOut" }, 7.8);
+      tl.to(".flash", { opacity: 0.34, duration: 0.07, ease: "power1.in" }, 7.45);
+      tl.to(".flash", { opacity: 0, duration: 0.22, ease: "power2.out" }, 7.53);
+      tl.fromTo(".midveil", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, 8.24);
+      tl.fromTo(".t-geulk", { opacity: 0, y: 26, scale: 1.28 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power4.out" }, 8.3);
+      tl.to(".t-geulk", { opacity: 0, duration: 0.16, ease: "power2.in" }, 9.12);
+      tl.to(".midveil", { opacity: 0, duration: 0.16, ease: "power2.in" }, 9.12);
+      // F2 헛스윙 (9.23–12.78, 배지 10.16)
+      tl.set(".v-zoom", { scale: 1.5, transformOrigin: "50% 86%" }, 9.23);
+      tl.to(".v-zoom", { scale: 1.4, duration: 0.75, ease: "power1.out" }, 9.25);
+      tl.to(".v-zoom", { scale: 1.42, duration: 0.28, ease: "power4.out" }, 10.16);
+      tl.to(".v-zoom", { scale: 1.5, duration: 2.3, ease: "power1.inOut" }, 10.5);
+      tl.to(".flash", { opacity: 0.3, duration: 0.06, ease: "power1.in" }, 10.16);
+      tl.to(".flash", { opacity: 0, duration: 0.2, ease: "power2.out" }, 10.24);
+      tl.fromTo(".gridveil", { opacity: 0 }, { opacity: 1, duration: 0.22, ease: "power1.out" }, 10.48);
+      tl.fromTo(".t-hero", { opacity: 0, y: 24, scale: 1.14 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 10.55);
+      tl.fromTo(".t-punch", { opacity: 0, y: 30, scale: 1.3 }, { opacity: 1, y: 0, scale: 1, duration: 0.32, ease: "power4.out" }, 10.9);
+      tl.to(".t-hero", { opacity: 0, duration: 0.18, ease: "power2.in" }, 12.6);
+      tl.to(".t-punch", { opacity: 0, duration: 0.18, ease: "power2.in" }, 12.6);
+      tl.to(".gridveil", { opacity: 0, duration: 0.18, ease: "power2.in" }, 12.6);
+      // F3 엔드카드 (12.78–16.08) — 순위 문구 없음
+      tl.set(".v-zoom", { scale: 1.55, transformOrigin: "50% 74%" }, 12.78);
+      tl.to(".v-zoom", { scale: 1.62, duration: 3.28, ease: "power1.inOut" }, 12.8);
+      tl.fromTo(".dim", { opacity: 0 }, { opacity: 1, duration: 0.28, ease: "power2.out" }, 12.78);
+      tl.fromTo(".endline1", { opacity: 0, y: 24, scale: 1.1 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 13.05);
+      tl.fromTo(".endline2", { opacity: 0, y: 28, scale: 1.16 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power4.out" }, 13.35);
+      window.__timelines["asc-a1"] = tl;
+    </script>
+  </body>
+</html>

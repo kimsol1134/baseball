@@ -38,6 +38,7 @@ extension MobileCareerStore {
 
     nonisolated static func canBeginImportantGame(_ state: ProCareerSnapshot) -> Bool {
         guard state.phase == .importantGame else { return false }
+        if state.seasonTrigger == .nationalFinal { return true }
         guard ProCareerEngine.usesFinalSeriesRules(state),
               let postseason = state.postseason,
               postseason.currentRound != nil else { return true }
@@ -119,6 +120,14 @@ extension MobileCareerStore {
            (self.result?.snapshot.postseason?.gameHistory?.count ?? 0)
                 > (beforeState.postseason?.gameHistory?.count ?? 0) {
             Self.logPostseasonGame(line, state: self.result?.snapshot ?? beforeState)
+        }
+        if beforeState.seasonTrigger == .nationalFinal,
+           let tournament = self.result?.snapshot.nationalTournament,
+           let outcome = tournament.result {
+            CareerTelemetry.log(.proNationalTeamResult, [
+                "result": outcome.rawValue,
+                "exempted": tournament.exempted,
+            ])
         }
         if let use = report.pitchLearningUses?.first {
             CareerTelemetry.log(.pitchLearningGameSummary, [

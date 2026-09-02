@@ -854,7 +854,7 @@ public extension CopyToken {
         [
             ProCareerPhase.contractOffer, .weeklyPlan, .seasonDecision, .importantGame,
             .seasonReview, .seasonSettlement, .offseasonDecision, .offseasonInvestment,
-            .retirementDecision, .completed,
+            .retirementDecision, .nationalTeamCall, .nationalTournament, .completed,
         ].map {
             PresentationCopyDescriptor(family: .proCareerPhase, rawValue: $0.rawValue, token: $0.displayCopyToken)
         },
@@ -880,6 +880,7 @@ public extension CopyToken {
             ProSeasonTrigger.openingStatement, .callUpAudition, .majorDebut,
             .recordChase, .roleShowdown, .standingsRace,
             .autumnWildCard, .autumnSemifinal, .autumnPlayoff, .autumnFinal,
+            .nationalFinal,
         ].map {
             PresentationCopyDescriptor(family: .proSeasonTrigger, rawValue: $0.rawValue, token: $0.displayCopyToken)
         },

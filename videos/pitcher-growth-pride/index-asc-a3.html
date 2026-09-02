@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=2340">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 2340px;
+        overflow: hidden;
+        background: #000;
+      }
+      @font-face {
+        font-family: "YeogiOttaeJalnan";
+        src: url("assets/fonts/YeogiOttaeJalnan.woff") format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "GMarketSans";
+        src: url("assets/fonts/GmarketSansMedium.woff") format("woff");
+        font-weight: 500;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "GMarketSans";
+        src: url("assets/fonts/GmarketSansBold.woff") format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: block;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 2340px;
+        overflow: hidden;
+        background: #070c0a;
+        color: #f1f4ee;
+        font-family: "GMarketSans", sans-serif;
+        container-type: size;
+      }
+      .v-viewport { position: absolute; inset: 0; overflow: hidden; }
+      .v-zoom { position: absolute; inset: 0; will-change: transform; }
+      .v-zoom video { width: 1080px; height: 2340px; display: block; }
+      .topveil { position: absolute; left: 0; right: 0; top: 130px; height: 620px; background: radial-gradient(ellipse 74% 58% at 50% 46%, rgba(4, 8, 6, 0.66) 0%, rgba(4, 8, 6, 0) 74%); opacity: 0; }
+      .gridveil { position: absolute; left: 0; right: 0; top: 1010px; height: 560px; background: radial-gradient(ellipse 70% 58% at 50% 50%, rgba(4, 8, 6, 0.66) 0%, rgba(4, 8, 6, 0) 74%); opacity: 0; }
+      .skydim { position: absolute; inset: 0; background: rgba(4, 8, 6, 0.85); opacity: 0; }
+      .dim { position: absolute; inset: 0; background: rgba(4, 8, 6, 0.76); opacity: 0; }
+      .flash { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
+      .t { position: absolute; left: 60px; right: 60px; margin: 0; text-align: center; font-family: "YeogiOttaeJalnan"; font-weight: 400; letter-spacing: -0.01em; text-shadow: 0 5px 28px rgba(0, 0, 0, 0.65); opacity: 0; }
+      .t1 { top: 500px; font-size: 84px; line-height: 1.08; color: #f1f4ee; }
+      .t2 { top: 361px; font-size: 88px; line-height: 1.08; color: #f1f4ee; }
+      .t3 { top: 349px; font-size: 106px; line-height: 1.08; color: #e8b24c; }
+      .t4 { top: 361px; font-size: 92px; line-height: 1.08; color: #f1f4ee; }
+      .t5 { top: 340px; font-size: 116px; line-height: 1.08; color: #e8b24c; }
+      .t6 { top: 1200px; font-size: 114px; line-height: 1.08; color: #e8b24c; }
+      .t7a { top: 990px; font-family: "GMarketSans"; font-size: 58px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em; color: #f1f4ee; }
+      .t7b { top: 1112px; font-size: 136px; line-height: 1.08; color: #e8b24c; text-shadow: 0 8px 44px rgba(232, 178, 76, 0.3), 0 5px 28px rgba(0, 0, 0, 0.65); }
+      .endline1 { position: absolute; left: 60px; right: 60px; top: 951px; margin: 0; text-align: center; font-family: "YeogiOttaeJalnan"; font-size: 82px; line-height: 1.14; font-weight: 400; letter-spacing: -0.01em; color: #f1f4ee; opacity: 0; }
+      .endline2 { position: absolute; left: 60px; right: 60px; top: 1231px; margin: 0; text-align: center; font-size: 112px; line-height: 1; font-weight: 700; letter-spacing: -0.02em; color: #e8b24c; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="asc-a3" data-start="0" data-width="1080" data-height="2340" data-duration="15.59">
+      <div class="v-viewport">
+        <div class="v-zoom" data-layout-allow-overflow>
+          <video id="asc-a3-video" src="assets/clips/aroll-asc-a3.mp4" data-start="0" data-duration="15.59" data-track-index="0" muted playsinline></video>
+        </div>
+      </div>
+      <div id="asc-a3-overlay" class="clip" data-start="0" data-duration="15.59" data-track-index="1">
+        <div class="skydim"></div>
+        <div class="dim"></div>
+        <div class="topveil"></div>
+        <div class="gridveil"></div>
+        <div class="flash"></div>
+        <p class="t t1">첫 인생, 패전투수</p>
+        <p class="t t2">드래프트 미지명</p>
+        <p class="t t3">그래서 환생</p>
+        <p class="t t4">유산 남기고</p>
+        <p class="t t5">또 환생</p>
+        <p class="t t6">헛스윙 삼진</p>
+        <p class="t t7a">환생 거듭한 끝에</p>
+        <p class="t t7b">명예의전당</p>
+        <h1 class="endline1">야구 못하면 또 환생함</h1>
+        <p class="endline2">투수 키우기</p>
+      </div>
+      <!-- SFX -->
+      <audio id="asc-a3-sfx-00" src="assets/sfx/impact-bass-1.mp3" data-start="0.45" data-duration="2.12" data-track-index="20" data-volume="0.35"></audio>
+      <audio id="asc-a3-sfx-01" src="assets/sfx/whoosh-short.mp3" data-start="2.02" data-duration="0.57" data-track-index="21" data-volume="0.3"></audio>
+      <audio id="asc-a3-sfx-02" src="assets/sfx/impact-bass-1.mp3" data-start="2.2" data-duration="2.12" data-track-index="22" data-volume="0.32"></audio>
+      <audio id="asc-a3-sfx-03" src="assets/sfx/whoosh-short.mp3" data-start="3.22" data-duration="0.57" data-track-index="23" data-volume="0.3"></audio>
+      <audio id="asc-a3-sfx-04" src="assets/sfx/ping.mp3" data-start="3.42" data-duration="1.32" data-track-index="24" data-volume="0.3"></audio>
+      <audio id="asc-a3-sfx-05" src="assets/sfx/whoosh-short.mp3" data-start="4.22" data-duration="0.57" data-track-index="25" data-volume="0.26"></audio>
+      <audio id="asc-a3-sfx-06" src="assets/sfx/whoosh-short.mp3" data-start="5.52" data-duration="0.57" data-track-index="26" data-volume="0.28"></audio>
+      <audio id="asc-a3-sfx-07" src="assets/sfx/ping.mp3" data-start="5.72" data-duration="1.32" data-track-index="27" data-volume="0.3"></audio>
+      <audio id="asc-a3-sfx-08" src="assets/sfx/whoosh.mp3" data-start="6.42" data-duration="0.57" data-track-index="28" data-volume="0.35"></audio>
+      <audio id="asc-a3-sfx-09" src="assets/sfx/impact-bass-1.mp3" data-start="7.05" data-duration="2.12" data-track-index="29" data-volume="0.5"></audio>
+      <audio id="asc-a3-sfx-10" src="assets/sfx/ping.mp3" data-start="7.7" data-duration="1.32" data-track-index="30" data-volume="0.45"></audio>
+      <audio id="asc-a3-sfx-11" src="assets/sfx/whoosh-short.mp3" data-start="8.21" data-duration="0.57" data-track-index="31" data-volume="0.3"></audio>
+      <audio id="asc-a3-sfx-12" src="assets/sfx/impact-bass-1.mp3" data-start="8.85" data-duration="2.12" data-track-index="32" data-volume="0.45"></audio>
+      <audio id="asc-a3-sfx-13" src="assets/sfx/riser.mp3" data-start="9.5" data-duration="2.0" data-track-index="33" data-volume="0.18"></audio>
+      <audio id="asc-a3-sfx-14" src="assets/sfx/impact-bass-1.mp3" data-start="10.28" data-duration="2.12" data-track-index="34" data-volume="0.45"></audio>
+      <audio id="asc-a3-sfx-15" src="assets/sfx/chime.mp3" data-start="10.38" data-duration="2.5" data-track-index="35" data-volume="0.3"></audio>
+      <audio id="asc-a3-sfx-16" src="assets/sfx/impact-bass-1.mp3" data-start="12.32" data-duration="2.12" data-track-index="36" data-volume="0.4"></audio>
+      <audio id="asc-a3-sfx-17" src="assets/sfx/chime.mp3" data-start="12.75" data-duration="2.5" data-track-index="37" data-volume="0.26"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      // s1 피홈런 (0–2.0)
+      tl.fromTo(".v-zoom", { scale: 1.18, transformOrigin: "50% 35%" }, { scale: 1.08, duration: 1.9, ease: "power1.out" }, 0);
+      // s2 드래프트 미지명 (2.0–3.2)
+      tl.set(".v-zoom", { scale: 1.06, transformOrigin: "50% 45%" }, 2.0);
+      tl.to(".v-zoom", { scale: 1.12, duration: 1.15, ease: "power1.inOut" }, 2.02);
+      // s3 환생 (3.2–4.2)
+      tl.set(".v-zoom", { scale: 1.12, transformOrigin: "50% 50%" }, 3.2);
+      tl.to(".v-zoom", { scale: 1.03, duration: 0.95, ease: "power1.out" }, 3.22);
+      // s4 유산 (4.2–5.5)
+      tl.set(".v-zoom", { scale: 1.04, transformOrigin: "50% 62%" }, 4.2);
+      tl.to(".v-zoom", { scale: 1.12, duration: 1.25, ease: "power1.inOut" }, 4.22);
+      // s5 또 환생 (5.5–6.4)
+      tl.set(".v-zoom", { scale: 1.15, transformOrigin: "50% 45%" }, 5.5);
+      tl.to(".v-zoom", { scale: 1.06, duration: 0.85, ease: "power1.out" }, 5.52);
+      // s6 미터 클로즈업 → 정중앙 적중(7.09) → 배지(7.70)
+      tl.set(".v-zoom", { scale: 1.24, transformOrigin: "50% 100%" }, 6.4);
+      tl.to(".v-zoom", { scale: 2.4, duration: 0.28, ease: "power2.inOut" }, 6.5);
+      tl.to(".v-zoom", { scale: 1.24, duration: 0.26, ease: "power4.out" }, 7.7);
+      tl.to(".v-zoom", { scale: 1.3, duration: 0.21, ease: "power1.inOut" }, 7.96);
+      // s7 헛스윙 (8.19–9.79, 배지 8.87)
+      tl.set(".v-zoom", { scale: 1.5, transformOrigin: "50% 86%" }, 8.19);
+      tl.to(".v-zoom", { scale: 1.42, duration: 0.6, ease: "power1.out" }, 8.21);
+      tl.to(".v-zoom", { scale: 1.26, duration: 0.26, ease: "power4.out" }, 8.87);
+      tl.to(".v-zoom", { scale: 1.34, duration: 0.64, ease: "power1.inOut" }, 9.13);
+      // s8 별하늘 명예의전당 (9.79–12.29)
+      tl.set(".v-zoom", { scale: 1.0, transformOrigin: "50% 40%" }, 9.79);
+      tl.to(".v-zoom", { scale: 1.08, duration: 2.48, ease: "power1.inOut" }, 9.81);
+      // s9 엔드카드 (12.29–15.59)
+      tl.set(".v-zoom", { scale: 1.55, transformOrigin: "50% 74%" }, 12.29);
+      tl.to(".v-zoom", { scale: 1.62, duration: 3.28, ease: "power1.inOut" }, 12.31);
+      // 플래시
+      tl.fromTo(".flash", { opacity: 0 }, { opacity: 0.28, duration: 0.06, ease: "power1.in" }, 3.2);
+      tl.to(".flash", { opacity: 0, duration: 0.2, ease: "power2.out" }, 3.27);
+      tl.to(".flash", { opacity: 0.28, duration: 0.06, ease: "power1.in" }, 5.5);
+      tl.to(".flash", { opacity: 0, duration: 0.2, ease: "power2.out" }, 5.57);
+      tl.to(".flash", { opacity: 0.34, duration: 0.07, ease: "power1.in" }, 7.7);
+      tl.to(".flash", { opacity: 0, duration: 0.22, ease: "power2.out" }, 7.78);
+      tl.to(".flash", { opacity: 0.3, duration: 0.06, ease: "power1.in" }, 8.87);
+      tl.to(".flash", { opacity: 0, duration: 0.2, ease: "power2.out" }, 8.95);
+      tl.to(".flash", { opacity: 0.3, duration: 0.07, ease: "power1.in" }, 10.26);
+      tl.to(".flash", { opacity: 0, duration: 0.24, ease: "power2.out" }, 10.34);
+      // 상단 베일
+      tl.fromTo(".topveil", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, 0.3);
+      tl.to(".topveil", { opacity: 0, duration: 0.25, ease: "power2.in" }, 6.2);
+      // 실패 훅
+      tl.fromTo(".t1", { opacity: 0, y: 24, scale: 1.24 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 0.45);
+      tl.to(".t1", { opacity: 0, y: -14, duration: 0.18, ease: "power2.in" }, 1.85);
+      tl.fromTo(".t2", { opacity: 0, y: 24, scale: 1.24 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 2.2);
+      tl.to(".t2", { opacity: 0, y: -14, duration: 0.18, ease: "power2.in" }, 3.05);
+      // 환생 루프
+      tl.fromTo(".t3", { opacity: 0, y: 26, scale: 1.3 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 3.4);
+      tl.to(".t3", { opacity: 0, y: -14, duration: 0.18, ease: "power2.in" }, 4.05);
+      tl.fromTo(".t4", { opacity: 0, y: 24, scale: 1.22 }, { opacity: 1, y: 0, scale: 1, duration: 0.26, ease: "power4.out" }, 4.4);
+      tl.to(".t4", { opacity: 0, y: -14, duration: 0.18, ease: "power2.in" }, 5.35);
+      tl.fromTo(".t5", { opacity: 0, y: 28, scale: 1.34 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 5.7);
+      tl.to(".t5", { opacity: 0, y: -14, duration: 0.18, ease: "power2.in" }, 6.25);
+      // 헛스윙 삼진
+      tl.fromTo(".gridveil", { opacity: 0 }, { opacity: 1, duration: 0.22, ease: "power1.out" }, 9.1);
+      tl.fromTo(".t6", { opacity: 0, y: 26, scale: 1.28 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 9.16);
+      tl.to(".t6", { opacity: 0, duration: 0.18, ease: "power2.in" }, 9.72);
+      tl.to(".gridveil", { opacity: 0, duration: 0.18, ease: "power2.in" }, 9.72);
+      // 명예의전당
+      tl.fromTo(".skydim", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, 9.82);
+      tl.to(".skydim", { opacity: 0, duration: 0.2, ease: "power2.in" }, 12.2);
+      tl.fromTo(".t7a", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.26, ease: "power3.out" }, 10.08);
+      tl.fromTo(".t7b", { opacity: 0, y: 32, scale: 1.34 }, { opacity: 1, y: 0, scale: 1, duration: 0.34, ease: "power4.out" }, 10.3);
+      tl.to(".t7a", { opacity: 0, duration: 0.18, ease: "power2.in" }, 12.12);
+      tl.to(".t7b", { opacity: 0, duration: 0.18, ease: "power2.in" }, 12.12);
+      // 엔드카드 — 순위 문구 없음
+      tl.fromTo(".dim", { opacity: 0 }, { opacity: 1, duration: 0.28, ease: "power2.out" }, 12.29);
+      tl.fromTo(".endline1", { opacity: 0, y: 24, scale: 1.1 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 12.55);
+      tl.fromTo(".endline2", { opacity: 0, y: 28, scale: 1.16 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power4.out" }, 12.85);
+      window.__timelines["asc-a3"] = tl;
+    </script>
+  </body>
+</html>

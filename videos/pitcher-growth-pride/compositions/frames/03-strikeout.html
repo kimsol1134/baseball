@@ -1,0 +1,51 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Pretendard";
+      src: url("assets/fonts/Pretendard-ExtraBold.woff2") format("woff2");
+      font-weight: 800;
+      font-style: normal;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "Pretendard";
+      src: url("assets/fonts/Pretendard-Black.woff2") format("woff2");
+      font-weight: 900;
+      font-style: normal;
+      font-display: block;
+    }
+    #f03-root {
+      position: absolute;
+      inset: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      color: #f1f4ee;
+      font-family: "Pretendard", sans-serif;
+      container-type: size;
+    }
+    .f03-flash { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
+    .f03-veil { position: absolute; left: 0; right: 0; top: 800px; height: 560px; background: radial-gradient(ellipse 70% 58% at 50% 50%, rgba(4, 8, 6, 0.68) 0%, rgba(4, 8, 6, 0) 74%); opacity: 0; }
+    .f03-hero { position: absolute; left: 60px; right: 60px; top: 936px; margin: 0; text-align: center; font-size: 76px; line-height: 1.06; font-weight: 900; letter-spacing: -0.03em; color: #f1f4ee; text-shadow: 0 4px 26px rgba(0, 0, 0, 0.6); opacity: 0; }
+    .f03-punch { position: absolute; left: 60px; right: 60px; top: 1058px; margin: 0; text-align: center; font-size: 126px; line-height: 1; font-weight: 900; letter-spacing: -0.03em; color: #e8b24c; text-shadow: 0 6px 30px rgba(0, 0, 0, 0.65); opacity: 0; }
+  </style>
+  <div data-hf-id="hf-fseg" id="f03-root" data-composition-id="03-strikeout" data-start="0" data-width="1080" data-height="1920" data-duration="3.55">
+    <div data-hf-id="hf-7vnp" id="f03-overlay" class="clip" data-start="0" data-duration="3.55" data-track-index="0">
+      <div data-hf-id="hf-20cs" class="f03-flash"></div>
+      <div data-hf-id="hf-czo4" class="f03-veil"></div>
+      <h1 data-hf-id="hf-qmg4" class="f03-hero">손끝에서 딱 떨어짐</h1>
+      <p data-hf-id="hf-7zgy" class="f03-punch">이 맛에 투수함</p>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo(".f03-flash", { opacity: 0 }, { opacity: 0.32, duration: 0.07, ease: "power1.in" }, 0.90);
+    tl.to(".f03-flash", { opacity: 0, duration: 0.22, ease: "power2.out" }, 0.98);
+    tl.fromTo(".f03-veil", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, 1.5);
+    tl.fromTo(".f03-hero", { opacity: 0, y: 24, scale: 1.14 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 1.58);
+    tl.fromTo(".f03-punch", { opacity: 0, y: 30, scale: 1.3 }, { opacity: 1, y: 0, scale: 1, duration: 0.32, ease: "power4.out" }, 1.92);
+    window.__timelines["03-strikeout"] = tl;
+  </script>
+</template>

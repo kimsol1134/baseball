@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=886, height=1920">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 886px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+      }
+      @font-face {
+        font-family: "YeogiOttaeJalnan";
+        src: url("assets/fonts/YeogiOttaeJalnan.woff") format("woff");
+        font-weight: 400;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "GMarketSans";
+        src: url("assets/fonts/GmarketSansMedium.woff") format("woff");
+        font-weight: 500;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "GMarketSans";
+        src: url("assets/fonts/GmarketSansBold.woff") format("woff");
+        font-weight: 700;
+        font-style: normal;
+        font-display: block;
+      }
+      #root {
+        position: relative;
+        width: 886px;
+        height: 1920px;
+        overflow: hidden;
+        background: #070c0a;
+        color: #f1f4ee;
+        font-family: "GMarketSans", sans-serif;
+        container-type: size;
+      }
+      .p1-viewport { position: absolute; inset: 0; overflow: hidden; }
+      .p1-zoom { position: absolute; inset: 0; will-change: transform; }
+      .p1-zoom video { width: 886px; height: 1920px; display: block; }
+      .p1-zoom2 { position: absolute; inset: 0; will-change: transform; }
+      .p1-zoom2 img { width: 886px; height: 1920px; object-fit: cover; object-position: center 40%; display: block; }
+      .p1-scrim { position: absolute; left: 0; top: 0; right: 0; height: 360px; background: linear-gradient(180deg, rgba(4, 8, 6, 0.9) 0%, rgba(4, 8, 6, 0.5) 60%, rgba(4, 8, 6, 0) 100%); }
+      .p1-dim { position: absolute; inset: 0; background: rgba(4, 8, 6, 0.64); opacity: 0; }
+      .p1-flash { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
+      .p1-cap { position: absolute; left: 52px; right: 52px; top: 118px; margin: 0; font-size: 54px; line-height: 1.16; font-weight: 700; letter-spacing: -0.02em; color: #f1f4ee; text-shadow: 0 4px 22px rgba(0, 0, 0, 0.55); opacity: 0; }
+      .p1-cap--hero { font-family: "YeogiOttaeJalnan"; font-size: 58px; line-height: 1.12; font-weight: 400; letter-spacing: -0.01em; }
+      .p1-endline1 { position: absolute; left: 50px; right: 50px; top: 780px; margin: 0; text-align: center; font-family: "YeogiOttaeJalnan"; font-size: 72px; line-height: 1.16; font-weight: 400; letter-spacing: -0.01em; color: #f1f4ee; opacity: 0; }
+      .p1-endline2 { position: absolute; left: 50px; right: 50px; top: 1010px; margin: 0; text-align: center; font-size: 102px; line-height: 1; font-weight: 700; letter-spacing: -0.02em; color: #e8b24c; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="p1-journey" data-start="0" data-width="886" data-height="1920" data-duration="25">
+      <div class="p1-viewport">
+        <div class="p1-zoom" data-layout-allow-overflow>
+          <video id="p1-video" src="assets/clips/aroll-p1.mp4" data-start="0" data-duration="20" data-track-index="0" muted playsinline></video>
+        </div>
+        <div class="p1-zoom2" data-layout-allow-overflow>
+          <img id="p1-end-img" src="assets/setup-fastball-ore.png" alt="" data-start="20" data-duration="5" data-track-index="2">
+        </div>
+      </div>
+      <div id="p1-overlay" class="clip" data-start="0" data-duration="25" data-track-index="3">
+        <div class="p1-scrim"></div>
+        <div class="p1-dim"></div>
+        <div class="p1-flash"></div>
+        <p class="p1-cap p1-cap1">3년 안에 프로 지명까지</p>
+        <p class="p1-cap p1-cap--hero p1-cap2">내 투수를 만든다</p>
+        <p class="p1-cap p1-cap3">첫 마운드</p>
+        <p class="p1-cap p1-cap--hero p1-cap4">슬라이더로 직접 던진다</p>
+        <p class="p1-cap p1-cap5">타이밍이 곧 구위</p>
+        <p class="p1-cap p1-cap--hero p1-cap6">손끝에서 삼진</p>
+        <p class="p1-cap p1-cap7">수비까지, 이닝을 끝낸다</p>
+        <h1 class="p1-endline1">야구 못하면 또 환생함</h1>
+        <p class="p1-endline2">투수 키우기</p>
+      </div>
+      <!-- SFX -->
+      <audio id="p1-sfx-0" src="assets/sfx/whoosh-short.mp3" data-start="0.05" data-duration="0.57" data-track-index="20" data-volume="0.3"></audio>
+      <audio id="p1-sfx-1" src="assets/sfx/whoosh-short.mp3" data-start="2.75" data-duration="0.57" data-track-index="21" data-volume="0.26"></audio>
+      <audio id="p1-sfx-2" src="assets/sfx/whoosh-short.mp3" data-start="5.75" data-duration="0.57" data-track-index="22" data-volume="0.26"></audio>
+      <audio id="p1-sfx-3" src="assets/sfx/whoosh.mp3" data-start="7.75" data-duration="0.57" data-track-index="23" data-volume="0.3"></audio>
+      <audio id="p1-sfx-4" src="assets/sfx/impact-bass-1.mp3" data-start="8.9" data-duration="2.12" data-track-index="24" data-volume="0.4"></audio>
+      <audio id="p1-sfx-5" src="assets/sfx/whoosh-short.mp3" data-start="10.25" data-duration="0.57" data-track-index="25" data-volume="0.26"></audio>
+      <audio id="p1-sfx-6" src="assets/sfx/ping.mp3" data-start="11.12" data-duration="1.32" data-track-index="26" data-volume="0.35"></audio>
+      <audio id="p1-sfx-7" src="assets/sfx/riser.mp3" data-start="13.1" data-duration="2.6" data-track-index="27" data-volume="0.16"></audio>
+      <audio id="p1-sfx-8" src="assets/sfx/impact-bass-1.mp3" data-start="14.0" data-duration="2.12" data-track-index="28" data-volume="0.45"></audio>
+      <audio id="p1-sfx-9" src="assets/sfx/whoosh-short.mp3" data-start="16.7" data-duration="0.57" data-track-index="29" data-volume="0.24"></audio>
+      <audio id="p1-sfx-10" src="assets/sfx/impact-bass-1.mp3" data-start="20.05" data-duration="2.12" data-track-index="30" data-volume="0.36"></audio>
+      <audio id="p1-sfx-11" src="assets/sfx/chime.mp3" data-start="20.5" data-duration="2.5" data-track-index="31" data-volume="0.26"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      // journey push-ins
+      tl.fromTo(".p1-zoom", { scale: 1.02, transformOrigin: "50% 40%" }, { scale: 1.06, duration: 2.7, ease: "power1.inOut" }, 0);
+      tl.set(".p1-zoom", { scale: 1.02 }, 2.7);
+      tl.to(".p1-zoom", { scale: 1.06, duration: 2.98, ease: "power1.inOut" }, 2.72);
+      tl.set(".p1-zoom", { scale: 1.03 }, 5.7);
+      tl.to(".p1-zoom", { scale: 1.07, duration: 2.0, ease: "power1.inOut" }, 5.72);
+      // pitch 1: looking strike (7.7-10.2, badge 8.95)
+      tl.set(".p1-zoom", { scale: 1.24, transformOrigin: "50% 86%" }, 7.7);
+      tl.to(".p1-zoom", { scale: 1.18, duration: 1.1, ease: "power1.out" }, 7.72);
+      tl.to(".p1-zoom", { scale: 1.0, duration: 0.28, ease: "power4.out" }, 8.88);
+      tl.to(".p1-zoom", { scale: 1.04, duration: 0.95, ease: "power1.inOut" }, 9.2);
+      // pitch 2: foul (10.2-13.1, badge 11.16)
+      tl.set(".p1-zoom", { scale: 1.24 }, 10.2);
+      tl.to(".p1-zoom", { scale: 1.18, duration: 0.85, ease: "power1.out" }, 10.22);
+      tl.to(".p1-zoom", { scale: 1.0, duration: 0.28, ease: "power4.out" }, 11.1);
+      tl.to(".p1-zoom", { scale: 1.04, duration: 1.6, ease: "power1.inOut" }, 11.45);
+      // pitch 3: whiff (13.1-16.67, badge 14.05)
+      tl.set(".p1-zoom", { scale: 1.26 }, 13.1);
+      tl.to(".p1-zoom", { scale: 1.2, duration: 0.85, ease: "power1.out" }, 13.12);
+      tl.to(".p1-zoom", { scale: 1.0, duration: 0.28, ease: "power4.out" }, 14.02);
+      tl.to(".p1-zoom", { scale: 1.05, duration: 2.25, ease: "power1.inOut" }, 14.38);
+      // inning end (16.67-20)
+      tl.set(".p1-zoom", { scale: 1.02, transformOrigin: "50% 45%" }, 16.67);
+      tl.to(".p1-zoom", { scale: 1.08, duration: 3.3, ease: "power1.inOut" }, 16.69);
+      // endcard still
+      tl.fromTo(".p1-zoom2", { scale: 1.04, transformOrigin: "50% 40%" }, { scale: 1.12, duration: 5, ease: "power1.inOut" }, 20);
+      // flashes at badges
+      tl.fromTo(".p1-flash", { opacity: 0 }, { opacity: 0.28, duration: 0.07, ease: "power1.in" }, 8.88);
+      tl.to(".p1-flash", { opacity: 0, duration: 0.22, ease: "power2.out" }, 8.97);
+      tl.to(".p1-flash", { opacity: 0.28, duration: 0.07, ease: "power1.in" }, 11.1);
+      tl.to(".p1-flash", { opacity: 0, duration: 0.22, ease: "power2.out" }, 11.19);
+      tl.to(".p1-flash", { opacity: 0.32, duration: 0.07, ease: "power1.in" }, 14.0);
+      tl.to(".p1-flash", { opacity: 0, duration: 0.24, ease: "power2.out" }, 14.09);
+      // captions (one visible at a time)
+      const caps = [
+        [".p1-cap1", 0.4, 2.5],
+        [".p1-cap2", 2.9, 5.5],
+        [".p1-cap3", 5.9, 7.5],
+        [".p1-cap4", 7.9, 10.0],
+        [".p1-cap5", 10.4, 12.9],
+        [".p1-cap6", 13.3, 16.4],
+        [".p1-cap7", 16.9, 19.6],
+      ];
+      for (const [sel, tin, tout] of caps) {
+        tl.fromTo(sel, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.28, ease: "power3.out" }, tin);
+        tl.to(sel, { opacity: 0, y: -14, duration: 0.22, ease: "power2.in" }, tout);
+      }
+      // endcard
+      tl.fromTo(".p1-dim", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, 20.1);
+      tl.fromTo(".p1-endline1", { opacity: 0, y: 24, scale: 1.1 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power4.out" }, 20.5);
+      tl.fromTo(".p1-endline2", { opacity: 0, y: 28, scale: 1.16 }, { opacity: 1, y: 0, scale: 1, duration: 0.32, ease: "power4.out" }, 20.9);
+      window.__timelines["p1-journey"] = tl;
+    </script>
+  </body>
+</html>

@@ -24,6 +24,49 @@ extension MobileCareerStore {
         ])
     }
 
+    func respondToNationalTeamCall(accepted: Bool) {
+        guard let result, result.snapshot.phase == .nationalTeamCall else { return }
+        let beforeRevision = result.snapshot.revision
+        perform(summary: nil, cue: accepted ? .success : .setback) {
+            try engine.respondToNationalTeamCall(.init(
+                seed: result.nextSeed,
+                state: result.snapshot,
+                accepted: accepted
+            ))
+        }
+        guard self.result?.snapshot.revision != beforeRevision else { return }
+        CareerTelemetry.log(.proNationalTeamCalled, [
+            "accepted": accepted,
+            "season": result.snapshot.season,
+        ])
+        if let outcome = self.result?.snapshot.nationalTournament?.result {
+            CareerTelemetry.log(.proNationalTeamResult, [
+                "result": outcome.rawValue,
+                "exempted": self.result?.snapshot.nationalTournament?.exempted ?? false,
+            ])
+        }
+    }
+
+    func startNationalFinal() {
+        guard let result, result.snapshot.phase == .nationalTournament else { return }
+        perform(summary: nil, cue: .success) {
+            try engine.startNationalFinal(.init(
+                seed: result.nextSeed,
+                state: result.snapshot
+            ))
+        }
+    }
+
+    func acknowledgeNationalTeamResult() {
+        guard let result, result.snapshot.phase == .nationalTournament else { return }
+        perform(summary: nil, cue: .success) {
+            try engine.acknowledgeNationalTeamResult(.init(
+                seed: result.nextSeed,
+                state: result.snapshot
+            ))
+        }
+    }
+
     func applySeasonDecision(decisionID: String, choiceID: String) {
         guard let result,
               let decision = result.snapshot.pendingDecision,

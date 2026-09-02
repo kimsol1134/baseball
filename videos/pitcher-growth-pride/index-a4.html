@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #000;
+      }
+      @font-face {
+        font-family: "Pretendard";
+        src: url("assets/fonts/Pretendard-ExtraBold.woff2") format("woff2");
+        font-weight: 800;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Pretendard";
+        src: url("assets/fonts/Pretendard-Black.woff2") format("woff2");
+        font-weight: 900;
+        font-style: normal;
+        font-display: block;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #070c0a;
+        color: #f1f4ee;
+        font-family: "Pretendard", sans-serif;
+        container-type: size;
+      }
+      .a4-viewport { position: absolute; inset: 0; overflow: hidden; }
+      .a4-zoom { position: absolute; inset: 0; will-change: transform; }
+      .a4-zoom video { width: 1080px; height: 1920px; display: block; }
+      .a4-scrim { position: absolute; left: 0; top: 0; right: 0; height: 560px; background: linear-gradient(180deg, rgba(4, 8, 6, 0.94) 0%, rgba(4, 8, 6, 0.6) 55%, rgba(4, 8, 6, 0) 100%); }
+      .a4-veil { position: absolute; left: 0; right: 0; top: 900px; height: 560px; background: radial-gradient(ellipse 70% 58% at 50% 50%, rgba(4, 8, 6, 0.66) 0%, rgba(4, 8, 6, 0) 74%); opacity: 0; }
+      .a4-dim { position: absolute; inset: 0; background: rgba(4, 8, 6, 0.68); opacity: 0; }
+      .a4-flash { position: absolute; inset: 0; background: #ffffff; opacity: 0; }
+      .a4-chip { position: absolute; left: 50%; top: 96px; transform: translateX(-50%); margin: 0; background: #e8b24c; color: #111111; font-size: 38px; font-weight: 800; letter-spacing: 0.02em; padding: 15px 28px; white-space: nowrap; opacity: 0; }
+      .a4-hero { position: absolute; left: 60px; right: 60px; top: 1052px; margin: 0; text-align: center; font-size: 148px; line-height: 1; font-weight: 900; letter-spacing: -0.03em; color: #e8b24c; text-shadow: 0 4px 28px rgba(0, 0, 0, 0.55); opacity: 0; }
+      .a4-sub { position: absolute; left: 60px; right: 60px; top: 1228px; margin: 0; text-align: center; font-size: 52px; font-weight: 900; letter-spacing: -0.01em; color: #f1f4ee; text-shadow: 0 4px 22px rgba(0, 0, 0, 0.5); opacity: 0; }
+      .a4-endchip { position: absolute; left: 50%; top: 620px; transform: translateX(-50%); margin: 0; background: #e8b24c; color: #111111; font-size: 42px; font-weight: 800; letter-spacing: 0.02em; padding: 18px 34px; white-space: nowrap; opacity: 0; }
+      .a4-endline1 { position: absolute; left: 60px; right: 60px; top: 780px; margin: 0; text-align: center; font-size: 92px; line-height: 1.1; font-weight: 900; letter-spacing: -0.03em; color: #f1f4ee; opacity: 0; }
+      .a4-endline2 { position: absolute; left: 60px; right: 60px; top: 1020px; margin: 0; text-align: center; font-size: 122px; line-height: 1; font-weight: 900; letter-spacing: -0.03em; color: #e8b24c; opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="a4-geulk" data-start="0" data-width="1080" data-height="1920" data-duration="9.2">
+      <div class="a4-viewport">
+        <div class="a4-zoom">
+          <video id="a4-video" src="assets/clips/aroll-a4.mp4" data-start="0" data-duration="9.2" data-track-index="0" muted playsinline></video>
+        </div>
+      </div>
+      <div id="a4-overlay" class="clip" data-start="0" data-duration="9.2" data-track-index="1">
+        <div class="a4-scrim"></div>
+        <div class="a4-veil"></div>
+        <div class="a4-dim"></div>
+        <div class="a4-flash"></div>
+        <p class="a4-chip">앱스토어 스포츠 게임앱 1위</p>
+        <h1 class="a4-hero">긁혔다</h1>
+        <p class="a4-sub">배트 끌어내서 삼진</p>
+        <p class="a4-endchip">앱스토어 스포츠 게임앱 1위</p>
+        <h1 class="a4-endline1">야구 못하면 또 환생함</h1>
+        <p class="a4-endline2">투수 키우기</p>
+      </div>
+      <!-- SFX -->
+      <audio id="a4-sfx-0" src="assets/sfx/whoosh-short.mp3" data-start="0.05" data-duration="0.57" data-track-index="20" data-volume="0.38"></audio>
+      <audio id="a4-sfx-1" src="assets/sfx/impact-bass-1.mp3" data-start="0.82" data-duration="2.12" data-track-index="21" data-volume="0.42"></audio>
+      <audio id="a4-sfx-2" src="assets/sfx/whoosh-short.mp3" data-start="1.85" data-duration="0.57" data-track-index="22" data-volume="0.3"></audio>
+      <audio id="a4-sfx-3" src="assets/sfx/ping.mp3" data-start="2.68" data-duration="1.32" data-track-index="23" data-volume="0.4"></audio>
+      <audio id="a4-sfx-4" src="assets/sfx/whoosh-short.mp3" data-start="4.15" data-duration="0.57" data-track-index="24" data-volume="0.3"></audio>
+      <audio id="a4-sfx-5" src="assets/sfx/impact-bass-1.mp3" data-start="5.02" data-duration="2.12" data-track-index="25" data-volume="0.46"></audio>
+      <audio id="a4-sfx-6" src="assets/sfx/ping.mp3" data-start="5.62" data-duration="1.32" data-track-index="26" data-volume="0.3"></audio>
+      <audio id="a4-sfx-7" src="assets/sfx/impact-bass-1.mp3" data-start="7.15" data-duration="2.05" data-track-index="27" data-volume="0.4"></audio>
+      <audio id="a4-sfx-8" src="assets/sfx/chime.mp3" data-start="7.55" data-duration="1.65" data-track-index="28" data-volume="0.26"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      // seg1: strike (0-1.8) — 배지 0.85
+      tl.fromTo(".a4-zoom", { scale: 1.3, transformOrigin: "50% 86%" }, { scale: 1.22, duration: 0.8, ease: "power1.out" }, 0);
+      tl.to(".a4-zoom", { scale: 1.0, duration: 0.26, ease: "power4.out" }, 0.84);
+      tl.to(".a4-zoom", { scale: 1.05, duration: 0.6, ease: "power1.inOut" }, 1.15);
+      // seg2: foul (1.8-4.1) — 배지 2.7
+      tl.set(".a4-zoom", { scale: 1.28 }, 1.8);
+      tl.to(".a4-zoom", { scale: 1.22, duration: 0.8, ease: "power1.out" }, 1.82);
+      tl.to(".a4-zoom", { scale: 1.0, duration: 0.26, ease: "power4.out" }, 2.68);
+      tl.to(".a4-zoom", { scale: 1.05, duration: 1.05, ease: "power1.inOut" }, 3.0);
+      // seg3: whiff (4.1-7.1) — 배지 5.05
+      tl.set(".a4-zoom", { scale: 1.3 }, 4.1);
+      tl.to(".a4-zoom", { scale: 1.22, duration: 0.85, ease: "power1.out" }, 4.12);
+      tl.to(".a4-zoom", { scale: 1.0, duration: 0.26, ease: "power4.out" }, 5.02);
+      tl.to(".a4-zoom", { scale: 1.06, duration: 1.75, ease: "power1.inOut" }, 5.32);
+      // seg4: endcard (7.1-9.2)
+      tl.set(".a4-zoom", { scale: 1.06, transformOrigin: "50% 45%" }, 7.1);
+      tl.to(".a4-zoom", { scale: 1.13, duration: 2.06, ease: "power1.inOut" }, 7.12);
+      // flashes
+      tl.fromTo(".a4-flash", { opacity: 0 }, { opacity: 0.3, duration: 0.06, ease: "power1.in" }, 0.82);
+      tl.to(".a4-flash", { opacity: 0, duration: 0.2, ease: "power2.out" }, 0.9);
+      tl.to(".a4-flash", { opacity: 0.3, duration: 0.06, ease: "power1.in" }, 2.66);
+      tl.to(".a4-flash", { opacity: 0, duration: 0.2, ease: "power2.out" }, 2.74);
+      tl.to(".a4-flash", { opacity: 0.34, duration: 0.06, ease: "power1.in" }, 5.0);
+      tl.to(".a4-flash", { opacity: 0, duration: 0.22, ease: "power2.out" }, 5.08);
+      // texts
+      tl.fromTo(".a4-chip", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.28, ease: "power3.out" }, 0.12);
+      tl.to(".a4-chip", { opacity: 0, duration: 0.2, ease: "power2.in" }, 6.85);
+      tl.fromTo(".a4-veil", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, 5.02);
+      tl.fromTo(".a4-hero", { opacity: 0, y: 30, scale: 1.24 }, { opacity: 1, y: 0, scale: 1, duration: 0.32, ease: "power4.out" }, 5.08);
+      tl.fromTo(".a4-sub", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.26, ease: "power3.out" }, 5.62);
+      tl.to(".a4-hero", { opacity: 0, duration: 0.2, ease: "power2.in" }, 6.85);
+      tl.to(".a4-veil", { opacity: 0, duration: 0.2, ease: "power2.in" }, 6.85);
+      tl.to(".a4-sub", { opacity: 0, duration: 0.2, ease: "power2.in" }, 6.85);
+      // endcard
+      tl.fromTo(".a4-dim", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" }, 7.1);
+      tl.fromTo(".a4-endchip", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.26, ease: "power3.out" }, 7.3);
+      tl.fromTo(".a4-endline1", { opacity: 0, y: 24, scale: 1.1 }, { opacity: 1, y: 0, scale: 1, duration: 0.28, ease: "power4.out" }, 7.5);
+      tl.fromTo(".a4-endline2", { opacity: 0, y: 28, scale: 1.16 }, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power4.out" }, 7.8);
+      window.__timelines["a4-geulk"] = tl;
+    </script>
+  </body>
+</html>
