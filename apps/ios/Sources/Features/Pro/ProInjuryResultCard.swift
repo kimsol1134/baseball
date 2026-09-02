@@ -40,17 +40,17 @@ struct ProInjuryResultCard: View {
                 ))
                 .font(.headline)
                 Text(verbatim: ProInjuryCopy.plan(planLabel, resolver: copyResolver))
-                .font(.footnote.weight(.semibold))
+                .font(BaseballType.detail.weight(.semibold))
                 Text(verbatim: ProInjuryCopy.evidence(
                     rawFatigue: event.rawFatigue,
                     effectiveFatigue: event.effectiveFatigue,
                     pitches: event.pitches,
                     resolver: copyResolver
                 ))
-                .font(.footnote.monospacedDigit())
+                .font(BaseballType.detail.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
                 Text(copyResolver.resolve(.injuryResultNextAction))
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .foregroundStyle(BaseballTheme.warning)
                 Button(copyResolver.resolve(.injuryResultAcknowledge), action: onAcknowledge)
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)

@@ -124,6 +124,22 @@ enum BaseballType {
     static let scoreboardLabel = Font.system(.caption2, design: .monospaced, weight: .semibold)
     /// 삼진 현수막의 K. 고정 포인트 크기를 쓰지 않고 Dynamic Type을 따른다.
     static let strikeoutMark = Font.system(.subheadline, design: .rounded, weight: .black)
+
+    // MARK: 읽는 글의 역할 (1.2.9 가독성 교정)
+    //
+    // 스토어 리뷰가 말한 "글씨가 많아 안 읽힌다"의 실체는 긴 문장이 아니라, 12~15pt 글이
+    // 행간 보정 없이 여러 층으로 쌓인 것이었다(폰트 호출의 90%가 caption·footnote·subheadline).
+    // 규칙은 셋이다. **사용자가 읽어야 하는 문장은 `prose` 아래로 내려가지 않는다.**
+    // `detail`은 효과·비용 같은 보조 한 줄의 하한이다. `annotation`은 라벨·단위·타임스탬프에만 쓴다.
+
+    /// 서사·설명 본문. HIG Body(17pt). 한글 권장 행간 150~160%는 `proseStyle()`이 붙인다.
+    static let prose = Font.body
+    /// 결과 한 줄(요약 리드). 훑는 독자가 이 줄만 봐도 상태를 알아야 한다.
+    static let proseLead = Font.body.weight(.semibold)
+    /// 효과·비용·보조 설명의 하한. HIG Subheadline(15pt).
+    static let detail = Font.subheadline
+    /// 눈썹·단위·타임스탬프처럼 읽지 않고 훑는 짧은 표기에만. 문장에는 쓰지 않는다.
+    static let annotation = Font.caption
 }
 
 extension View {
@@ -133,6 +149,134 @@ extension View {
             .textCase(.uppercase)
             .tracking(1.4)
             .foregroundStyle(color)
+    }
+
+    /// 읽는 본문. 17pt에 한글 행간(약 155%)과 살짝 좁힌 자간을 붙이고 세로로만 늘어나게 한다.
+    /// 시스템 기본 행간(약 130%)은 라틴 기준이라 한글 문단이 빽빽해 보인다.
+    func proseStyle(_ color: Color = BaseballTheme.textPrimary) -> some View {
+        font(BaseballType.prose)
+            .lineSpacing(BaseballMetrics.proseLineSpacing)
+            .kerning(-0.2)
+            .foregroundStyle(color)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// 결과 한 줄. 카드의 첫 줄이며 굵게 선다.
+    func proseLeadStyle(_ color: Color = BaseballTheme.textPrimary) -> some View {
+        font(BaseballType.proseLead)
+            .lineSpacing(BaseballMetrics.proseLineSpacing)
+            .kerning(-0.2)
+            .foregroundStyle(color)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// 효과·비용·보조 설명. 15pt에 행간 보정. 문장이 이보다 작아지면 안 된다.
+    func detailStyle(_ color: Color = BaseballTheme.textSecondary) -> some View {
+        font(BaseballType.detail)
+            .lineSpacing(BaseballMetrics.detailLineSpacing)
+            .foregroundStyle(color)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// 떠 있는 탭 바 뒤로 마지막 카드·경고가 숨지 않도록 스크롤 콘텐츠 아래를 비운다.
+    /// 화면마다 하드코딩된 `Spacer`·`padding(.bottom, 120)`을 이 한 줄로 통일한다.
+    func floatingTabBarClearance() -> some View {
+        safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
+    }
+}
+
+/// 이득·비용·위험을 문장 대신 보여 주는 작은 칩. "구위·포심 구속·헛스윙 성장 · 현재 0/4 ·
+/// 게이지를 채우면 능력 +1" 같은 네 줄짜리 효과 문장을 칩 셋으로 바꾸기 위한 부품이다.
+/// 색은 의미에만 쓴다 — 이득은 positive, 비용·경고는 warning, 중립은 textSecondary.
+struct EffectChip: View {
+    enum Tone { case gain, cost, neutral, risk }
+
+    let text: String
+    var tone: Tone = .neutral
+    var systemImage: String?
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.caption2.weight(.bold))
+            }
+            // localization-safe: resolved-copy
+            Text(text)
+                .font(.caption.weight(.semibold))
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+        .foregroundStyle(foreground)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(background, in: Capsule())
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private var foreground: Color {
+        switch tone {
+        case .gain: BaseballTheme.positive
+        case .cost: BaseballTheme.warning
+        case .risk: BaseballTheme.negative
+        case .neutral: BaseballTheme.textSecondary
+        }
+    }
+
+    private var background: Color {
+        switch tone {
+        case .gain: BaseballTheme.positiveSoft
+        case .cost: BaseballTheme.warningSoft
+        case .risk: BaseballTheme.negativeSoft
+        case .neutral: BaseballTheme.surfaceRaised
+        }
+    }
+}
+
+/// 칩을 줄바꿈하며 흘리는 컨테이너. 칩 3~5개가 한 줄에 안 들어가면 다음 줄로 내린다.
+struct EffectChipFlow<Content: View>: View {
+    var spacing: CGFloat = 6
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        FlowLayout(spacing: spacing) { content }
+    }
+}
+
+/// 가장 단순한 흐름 레이아웃. 칩·태그처럼 폭이 제각각인 작은 요소를 왼쪽 정렬로 흘린다.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, maxX: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > width {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+            maxX = max(maxX, x - spacing)
+        }
+        return CGSize(width: width == .infinity ? maxX : width, height: y + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
     }
 }
 
@@ -155,6 +299,10 @@ enum BaseballMetrics {
     /// 선수의 속마음이 탭 바 뒤에 깔려 **스크롤 끝까지 내려도 닿을 수 없었다.**
     /// 탭 바 높이(49) + 떠 있는 여백 + 손가락이 닿을 여유를 합친 값이다.
     static let floatingTabBarClearance: CGFloat = 120
+    /// 17pt 본문의 한글 행간 보정. 시스템 기본(약 22pt)에 6을 더해 약 155%가 된다.
+    static let proseLineSpacing: CGFloat = 6
+    /// 15pt 보조 설명의 행간 보정.
+    static let detailLineSpacing: CGFloat = 4
 }
 
 enum BaseballCardTone {
@@ -224,7 +372,9 @@ struct BaseballCard<Content: View>: View {
     /// 중립 정보. 상자 없이 눈썹과 괘선만.
     private var section: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(verbatim: title).eyebrowStyle(tone == .raised ? BaseballTheme.information : BaseballTheme.textTertiary)
+            // 눈썹 색은 하나다. raised에 청록을 주던 규칙은 화면당 색 의미를 5개로 늘려
+            // "링크"와 혼동됐다(1.2.9 가독성 교정). 청록은 용어 사전 링크에만 남긴다.
+            Text(verbatim: title).eyebrowStyle(BaseballTheme.textTertiary)
             content
             Rectangle()
                 .fill(BaseballTheme.border.opacity(0.45))
@@ -283,9 +433,7 @@ struct StatTile: View {
             if let caption {
                 // localization-safe: resolved-copy
                 Text(caption)
-                    .font(.caption)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

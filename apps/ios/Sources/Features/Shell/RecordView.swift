@@ -154,9 +154,7 @@ private struct HighSchoolRecordBoard: View {
                                 personality,
                                 resolver: copyResolver
                             ))
-                                .font(.footnote)
-                                .foregroundStyle(BaseballTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .detailStyle()
                             Text(copyResolver.resolve(
                                 .personalityTrait,
                                 arguments: [
@@ -170,11 +168,9 @@ private struct HighSchoolRecordBoard: View {
                                     )),
                                 ]
                             ))
-                                .font(.caption)
-                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .detailStyle()
                             Text(copyResolver.resolve(.personalityRule))
-                                .font(.caption2)
-                                .foregroundStyle(BaseballTheme.textTertiary)
+                                .detailStyle(BaseballTheme.textTertiary)
                         }
                     }
                 }
@@ -198,9 +194,7 @@ private struct HighSchoolRecordBoard: View {
                     // 0과 대시 12칸의 벽은 "내가 이해 못 하는 빈 표"다(QA P1-13).
                     BaseballCard(title: copyResolver.resolve(.statsEmptyTitle)) {
                         Text(copyResolver.resolve(.statsEmptyBody))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                     }
                 } else {
                 AdvancedStatsCard(
@@ -220,9 +214,7 @@ private struct HighSchoolRecordBoard: View {
                 if lines.isEmpty {
                     BaseballCard(title: copyResolver.resolve(.gameRecord)) {
                         Text(copyResolver.resolve(.gameRecordEmpty))
-                            .font(.subheadline)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                     }
                 } else {
                     GameLogSection(title: copyResolver.resolve(.highSchoolGames), lines: lines)
@@ -258,9 +250,7 @@ private struct HighSchoolRecordBoard: View {
                                     localizedNews(item),
                                     systemImage: "star.circle"
                                 )
-                                    .font(.subheadline)
-                                    .foregroundStyle(BaseballTheme.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                    .detailStyle()
                             }
                         }
                     }
@@ -343,7 +333,7 @@ private struct RecordBoard: View {
                                     Spacer()
                                     if let line = record.directGameLine {
                                         Text("\(line.teamRuns)-\(line.opponentRuns)")
-                                            .font(.footnote.monospacedDigit())
+                                            .font(BaseballType.annotation.monospacedDigit())
                                             .foregroundStyle(BaseballTheme.textSecondary)
                                     }
                                 }
@@ -399,8 +389,8 @@ private struct RecordBoard: View {
                         AbilityGaugeView(label: copyResolver.resolve(.movement), value: state.pitcher.movement)
                         AbilityGaugeView(label: copyResolver.resolve(.stamina), value: state.pitcher.stamina)
                         Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver))
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.positive)
+                            .detailStyle(BaseballTheme.positive)
+                            .fontWeight(.semibold)
                     }
                 }
 
@@ -599,10 +589,11 @@ struct ProGoalBoardCard: View {
             }
             GoalPermilleBar(permille: row.permille, completed: row.completed)
             if !row.hintKey.isEmpty {
-                Text(verbatim: ProWeeklyCopy.goalBoardHint(row, resolver: copyResolver))
-                    .font(.caption)
-                    .foregroundStyle(BaseballTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
+                // QS·ERA 같은 목표 용어는 밑줄로 사전에 잇는다.
+                GlossaryText(
+                    text: ProWeeklyCopy.goalBoardHint(row, resolver: copyResolver),
+                    color: BaseballTheme.textTertiary
+                )
             }
             if !row.subRows.isEmpty {
                 DisclosureGroup(isExpanded: expansion(row.id)) {
@@ -628,8 +619,8 @@ struct ProGoalBoardCard: View {
                     .padding(.top, 4)
                 } label: {
                     Text(verbatim: copyResolver.resolve(.goalBoardConditions))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.action)
+                        .font(BaseballType.detail.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textSecondary)
                 }
             }
         }
@@ -733,11 +724,9 @@ struct ProDecisionHistoryCard: View {
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(BaseballTheme.textTertiary)
                         Text(ProCareerPresentation.decisionRecordTitle(decision, resolver: copyResolver))
-                            .font(.subheadline.weight(.bold))
-                        Text(ProCareerPresentation.effect(decision.effect, resolver: copyResolver))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .font(BaseballType.detail.weight(.bold))
+                        // 효과 문장의 역할·계승·QS 같은 용어는 밑줄로 사전에 잇는다.
+                        GlossaryText(text: ProCareerPresentation.effect(decision.effect, resolver: copyResolver))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
@@ -801,7 +790,7 @@ private struct GameLogSection: View {
                     )) {
                         showsAll.toggle()
                     }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .foregroundStyle(BaseballTheme.information)
                     .padding(.top, 12)
                 }
@@ -820,11 +809,12 @@ private struct GameLogRow: View {
             // 직접 던진 경기는 이 화면에서 유일한 강조다. 자동으로 지나간 경기와 섞이면
             // "내가 만든 성적"이라는 감각이 사라진다.
             if line.played {
-                Text(copyResolver.resolve(.directOuting)).eyebrowStyle(BaseballTheme.action)
+                // 등판마다 눈썹을 세우면 화면당 눈썹 상한(2개)을 넘는다. 칩 하나로 표시한다.
+                EffectChip(text: copyResolver.resolve(.directOuting), tone: .gain, systemImage: "hand.raised.fill")
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(copyResolver.resolve(.week, arguments: [.integer(line.week)]))
-                    .font(.footnote.monospacedDigit())
+                    .font(BaseballType.annotation.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textTertiary)
                 Text(ProCareerPresentation.gameRole(line, resolver: copyResolver))
                     .font(.subheadline.weight(.semibold).monospacedDigit())
@@ -837,12 +827,12 @@ private struct GameLogRow: View {
                 if let decision = ProCareerPresentation.gameDecision(line.decision, resolver: copyResolver) {
                     // localization-safe: resolved-copy
                     Text(decision)
-                        .font(.footnote.weight(.heavy))
+                        .font(BaseballType.annotation.weight(.heavy))
                         .foregroundStyle(GameLineFormat.decisionTone(line.decision))
                 }
             }
             Text(ProCareerPresentation.gameSummary(line, resolver: copyResolver))
-                .font(.footnote.monospacedDigit())
+                .font(BaseballType.detail.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
         }
         .padding(.vertical, 10)
@@ -887,8 +877,8 @@ private struct ProspectRankingCard: View {
                                 resolver: copyResolver
                             )
                         ))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textTertiary)
+                            .detailStyle(BaseballTheme.textTertiary)
+                            .monospacedDigit()
                     }
                     .accessibilityIdentifier("record.draftForecast")
                     Rectangle().fill(BaseballTheme.border.opacity(0.3)).frame(height: 1)
@@ -910,7 +900,7 @@ private struct ProspectRankingCard: View {
                                 }
                                 VStack(alignment: .leading, spacing: 0) {
                                     Text(verbatim: entry.identityLine)
-                                        .font(.footnote.weight(entry.isPlayer ? .bold : .regular))
+                                        .font(BaseballType.annotation.weight(entry.isPlayer ? .bold : .regular))
                                         .foregroundStyle(entry.isPlayer ? BaseballTheme.action : BaseballTheme.textPrimary)
                                     Text(verbatim: entry.tag)
                                         .font(.caption2)
@@ -930,16 +920,13 @@ private struct ProspectRankingCard: View {
                             AppCopyKey.prospectRankingOutsideDetail,
                             arguments: [.integer(rank - ProspectRanking.boardSize)]
                         ))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                     }
                 }
                 .accessibilityIdentifier("record.prospectRanking")
             } else {
                 Text(verbatim: copyResolver.resolve(AppCopyKey.prospectRankingNoGames))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .detailStyle()
             }
         }
     }
@@ -957,8 +944,7 @@ struct AchievementsLinkCard: View {
             BaseballCard(title: copyResolver.resolve(.achievements)) {
                 HStack {
                     Text(copyResolver.resolve(.achievementsBody))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.caption)

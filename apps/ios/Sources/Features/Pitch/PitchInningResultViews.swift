@@ -12,11 +12,34 @@ struct PostgameAnalysisCard: View {
     var body: some View {
         BaseballCard(title: copyResolver.resolve(.analysisTitle)) {
             VStack(alignment: .leading, spacing: 12) {
+                // 결과 한 줄이 먼저(성장 신호 또는 패턴 경고), 표본 크기와 숫자는 그 아래.
+                let pattern = PitchPresentation.analysisPattern(analysis, resolver: copyResolver)
+                let growth = PitchPresentation.analysisGrowth(analysis, resolver: copyResolver)
+                if !growth.isEmpty {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(BaseballTheme.positive)
+                            .accessibilityHidden(true)
+                        Text(verbatim: growth).proseLeadStyle()
+                    }
+                }
+                if !pattern.isEmpty {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(BaseballTheme.warning)
+                            .accessibilityHidden(true)
+                        Text(verbatim: pattern)
+                            .proseLeadStyle()
+                    }
+                }
                 Text(verbatim: copyResolver.resolve(.analysisSample, arguments: [
                     .userText(PitchCopy.localized(analysis.confidence, resolver: copyResolver)),
                     .integer(analysis.sampleSize),
                 ]))
-                    .eyebrowStyle(BaseballTheme.textTertiary)
+                    .font(BaseballType.annotation.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textTertiary)
 
                 HStack(spacing: 10) {
                     Metric(title: copyResolver.resolve(.analysisZoneRate), value: PitchCopy.rate(analysis.zoneRate))
@@ -33,28 +56,13 @@ struct PostgameAnalysisCard: View {
                     )
                 }
 
-                let pattern = PitchPresentation.analysisPattern(analysis, resolver: copyResolver)
-                if !pattern.isEmpty {
-                    Text(verbatim: pattern)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.warning)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                let growth = PitchPresentation.analysisGrowth(analysis, resolver: copyResolver)
-                if !growth.isEmpty {
-                    Text(verbatim: growth)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.positive)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
                 if !analysis.pitchBreakdowns.isEmpty {
                     Divider()
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(analysis.pitchBreakdowns, id: \.pitchType) { breakdown in
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 Text(verbatim: PitchCopy.localized(breakdown.pitchType, resolver: copyResolver))
-                                    .font(.footnote.weight(.bold))
+                                    .font(BaseballType.detail.weight(.bold))
                                     .frame(width: 64, alignment: .leading)
                                 Spacer(minLength: 4)
                                 // 1구짜리 표본에 "0.0%"는 정보가 아니라 소음이다(QA P2-7).
@@ -69,7 +77,7 @@ struct PostgameAnalysisCard: View {
                                         .userText(PitchCopy.rate(breakdown.whiffRate)),
                                         .userText(PitchCopy.rate(breakdown.hardHitRate)),
                                      ]))
-                                    .font(.caption.monospacedDigit())
+                                    .font(BaseballType.annotation.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textSecondary)
                             }
                             .accessibilityElement(children: .combine)
@@ -182,10 +190,10 @@ struct InningSettlementCard: View {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(rewards.enumerated()), id: \.offset) { index, reward in
                     HStack(spacing: 8) {
+                        // 색은 아이콘에만. 획득 문장 전체를 칠하면 줄마다 다른 색 글씨가 된다.
                         Image(systemName: reward.icon).foregroundStyle(reward.tone)
                         Text(verbatim: reward.text)
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(reward.tone)
+                            .proseLeadStyle()
                         Spacer(minLength: 0)
                     }
                     .scaleEffect(index < revealed ? 1 : 0.7, anchor: .leading)

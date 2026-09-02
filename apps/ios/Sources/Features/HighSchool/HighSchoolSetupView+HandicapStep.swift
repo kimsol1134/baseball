@@ -15,7 +15,7 @@ extension HighSchoolSetupView {
                     ForEach(DifficultyLevel.allCases, id: \.self) { level in
                         Button { harshness = level } label: {
                             GameCopyText(Self.difficultyKey(level))
-                                .font(.footnote.weight(.semibold))
+                                .font(BaseballType.annotation.weight(.semibold))
                                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                         }
                         .buttonStyle(.plain)
@@ -37,9 +37,7 @@ extension HighSchoolSetupView {
             if parsedChallenge != nil {
                 BaseballCard(title: copyResolver.resolve(AppCopyKey.setupChallengeTitle), tone: .milestone) {
                     GameCopyText(AppCopyKey.setupChallengeDescription)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle()
                 }
             }
 
@@ -47,9 +45,7 @@ extension HighSchoolSetupView {
                 BaseballCard(title: copyResolver.resolve(AppCopyKey.setupLegacyTitle), tone: .milestone) {
                     VStack(alignment: .leading, spacing: 8) {
                         GameCopyText(AppCopyKey.setupLegacyDescription)
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                         ForEach(unlockedSignatureLegacies) { legacy in
                             let selected = (selectedSignatureLegacyID
                                             ?? career.inheritance.equippedSignatureLegacyID) == legacy.id
@@ -130,7 +126,7 @@ extension HighSchoolSetupView {
                             ForEach(SoulDomain.allCases, id: \.self) { domain in
                                 Button { soulDomain = domain } label: {
                                     GameCopyText(Self.domainKey(domain))
-                                        .font(.footnote.weight(.semibold))
+                                        .font(BaseballType.annotation.weight(.semibold))
                                         .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                                 }
                                 .buttonStyle(.plain)
@@ -165,9 +161,7 @@ extension HighSchoolSetupView {
                     AppCopyKey.setupHandicapDescription,
                     arguments: [.integer(rewardPermille / 10)]
                 )
-                    .font(.footnote)
-                    .foregroundStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle(rewardPermille > 0 ? BaseballTheme.milestone : BaseballTheme.textSecondary)
                 ForEach(KarmaID.allCases, id: \.self) { karma in
                     // 코어가 카르마를 2개까지만 받는다. 3개를 보내면
                     // 커리어 생성이 실패하고, 그 화면의 유일한 버튼이 진행 삭제다 — 여기서 막는다.

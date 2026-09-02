@@ -27,9 +27,7 @@ struct DraftCard: View {
                         Text(HighSchoolConclusionPresentation.localizedPersonalityScoutLine(
                             personality, resolver: copyResolver
                         ))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                     }
                 }
             }
@@ -128,7 +126,7 @@ struct LegacyCard: View {
                         Text(summary).font(.subheadline).fixedSize(horizontal: false, vertical: true)
                         // localization-safe: resolved-copy
                         Text(projected)
-                            .font(.footnote.weight(.semibold).monospacedDigit())
+                            .font(BaseballType.annotation.weight(.semibold).monospacedDigit())
                             .foregroundStyle(BaseballTheme.milestone)
                         if let firstSeasonGoal {
                             // localization-safe: resolved-copy
@@ -181,8 +179,7 @@ struct LegacyCard: View {
                                 .accessibilityIdentifier("hs.signatureLegacy.extraMemoryActive")
                         }
                         Text(copyResolver.resolve(AppCopyKey.conclusionSignatureDescription))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
                         Text(copyResolver.resolve(AppCopyKey.conclusionSignatureRemainder))
                             .font(.caption)
                             .foregroundStyle(BaseballTheme.textTertiary)
@@ -223,9 +220,7 @@ struct LegacyCard: View {
                                     .foregroundStyle(BaseballTheme.textPrimary)
                                 // localization-safe: resolved-copy
                                 Text(copy.detail)
-                                    .font(.footnote)
-                                    .foregroundStyle(BaseballTheme.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                    .detailStyle()
                                 // localization-safe: resolved-copy
                                 Text(copy.evidence)
                                     .font(.caption)
@@ -263,7 +258,7 @@ struct LegacyCard: View {
                 ), tone: .milestone) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(copyResolver.resolve(AppCopyKey.conclusionMemoryDescription))
-                            .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
                         // 구규칙은 정확히 memorySlots장을 요구한다. 부족한 채로 확정하면
                         // 오류가 나므로 화면에서 막고 남은 장수를 알려 준다.
                         if career.selectedMemories.count < state.memorySlots {
@@ -271,7 +266,7 @@ struct LegacyCard: View {
                                 AppCopyKey.conclusionMemoryMore,
                                 arguments: [.integer(state.memorySlots - career.selectedMemories.count)]
                             ))
-                                .font(.footnote.weight(.semibold))
+                                .font(BaseballType.detail.weight(.semibold))
                                 .foregroundStyle(BaseballTheme.warning)
                         }
                     }
@@ -290,8 +285,7 @@ struct LegacyCard: View {
                                 // localization-safe: resolved-copy
                                 Text(copy.title).font(.subheadline.weight(.bold))
                                 // localization-safe: resolved-copy
-                                Text(copy.detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                Text(copy.detail).detailStyle()
                             }
                             Spacer()
                         }
@@ -331,7 +325,7 @@ struct LegacyCard: View {
                         ? selectedSignatureLegacy == nil
                         : career.selectedMemories.count != state.memorySlots
                 )
-                .confirmationDialog(
+                .alert(
                     copyResolver.resolve(
                         career.usesSignatureLegacyRules
                             ? AppCopyKey.conclusionLegacyConfirmationTitle
@@ -340,8 +334,7 @@ struct LegacyCard: View {
                             ? [.userText(legacySubject)]
                             : [.integer(career.selectedMemories.count)]
                     ),
-                    isPresented: $confirmingLegacy,
-                    titleVisibility: .visible
+                    isPresented: $confirmingLegacy
                 ) {
                     Button(copyResolver.resolve(AppCopyKey.conclusionConfirmationConfirm)) {
                         career.confirmLegacy()
@@ -393,7 +386,7 @@ struct CompletionCard: View {
                                 .integer(career.inheritance.soulPoints),
                             ]
                         ))
-                            .font(.footnote.monospacedDigit())
+                            .font(BaseballType.annotation.monospacedDigit())
                             .foregroundStyle(BaseballTheme.milestone)
                     }
                 }
@@ -486,7 +479,7 @@ struct CompletionCard: View {
                                     ).title,
                                     systemImage: "seal.fill"
                                 )
-                                    .font(.footnote.weight(.semibold))
+                                    .font(BaseballType.annotation.weight(.semibold))
                                     .foregroundStyle(BaseballTheme.milestone)
                             }
                         }
@@ -557,9 +550,7 @@ struct CompletionCard: View {
                                          : AppCopyKey.conclusionBestEvaluationNextBody,
                                 arguments: [.integer(isRecord ? bestPast : thisRun)]
                             ))
-                                .font(.footnote)
-                                .foregroundStyle(BaseballTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .detailStyle()
                         }
                     }
                     .accessibilityIdentifier("hs.bestEvaluation")
@@ -598,10 +589,9 @@ struct CompletionCard: View {
                 .buttonStyle(.bordered)
                 .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 .accessibilityIdentifier("hs.rebirth")
-                .confirmationDialog(
+                .alert(
                     copyResolver.resolve(AppCopyKey.conclusionFoldConfirmationTitle),
-                    isPresented: $confirmingFold,
-                    titleVisibility: .visible
+                    isPresented: $confirmingFold
                 ) {
                     Button(copyResolver.resolve(AppCopyKey.conclusionFoldAction), role: .destructive) { career.openLegacy() }
                     // iOS 26 팝오버는 .cancel을 그리지 않는다 — 역할 없이 넣는다.

@@ -303,10 +303,8 @@ struct PitchView: View {
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(verbatim: PitchPresentation.scenarioDetail(session.scenario, resolver: copyResolver))
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                         .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("pitch.scenario")
@@ -315,16 +313,15 @@ struct PitchView: View {
                 // 탈출구 없는 전체 화면은 함정이다. 파기는 확인을 거친다.
                 if onAbort != nil {
                     Button(copyResolver.resolve(.abort)) { confirmingAbort = true }
-                        .font(.footnote.weight(.semibold))
+                        .font(BaseballType.detail.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textTertiary)
                         .frame(minHeight: BaseballMetrics.minimumTapTarget)
                         .accessibilityIdentifier("pitch.abort")
                 }
             }
-            .confirmationDialog(
+            .alert(
                 copyResolver.resolve(isPractice ? .abortPracticeTitle : .abortGameTitle),
-                isPresented: $confirmingAbort,
-                titleVisibility: .visible
+                isPresented: $confirmingAbort
             ) {
                 Button(copyResolver.resolve(isPractice ? .abortPracticeConfirm : .abortGameConfirm),
                        role: isPractice ? nil : .destructive) { onAbort?() }
@@ -340,8 +337,7 @@ struct PitchView: View {
             ScoreboardBar(session: session)
             // 코치 스트립은 스크롤 밖 고정이다. 스크롤 콘텐츠에 넣었더니 투구 직후
             // 자동 스크롤이 화면 밖으로 밀어내 3구 스크립트가 1행짜리가 됐다(3차 패널 P0).
-            if isPractice, session.stage == .ready,
-               session.pitches < 3 || (session.context.strikes >= 2 && session.pitches < 6) {
+            if isPractice, session.stage == .ready, showsCoachTip {
                 bullpenCoachStrip
             }
             // 던진 뒤 결과로 저절로 올라간다.
@@ -467,29 +463,35 @@ struct PitchView: View {
     /// 첫 불펜 3구 스크립트 — 공마다 코치가 할 일 하나를 짚는다.
     /// 첫 공의 진짜 난관은 구종이 아니라 릴리스 미터다(구종·코스는 포수가 골라 둔다) —
     /// 그래서 ①은 미터부터 가르친다.
+    private var currentCoachTip: PitchUICopyKey {
+        if session.pitches == 0 { return .coachFirst }
+        if session.context.strikes >= 2 { return .coachPutAway }
+        return .coachSecond
+    }
+
+    /// 코치 한 줄은 첫 등판의 첫 3구, 그리고 처음 보는 팁일 때만 뜬다. 같은 팁을 매 공
+    /// 위에 얹으면 배우는 문장이 아니라 배경이 된다(1.2.9 가독성 교정).
+    private var showsCoachTip: Bool {
+        session.pitches < 3 || !SeenContentStore.contains("pitch.coach.\(currentCoachTip.rawValue)")
+    }
+
     private var bullpenCoachStrip: some View {
-        let line: String
-        if session.pitches == 0 {
-            line = copyResolver.resolve(.coachFirst)
-        } else if session.context.strikes >= 2 {
-            line = copyResolver.resolve(.coachPutAway)
-        } else {
-            line = copyResolver.resolve(.coachSecond)
-        }
-        return HStack(alignment: .top, spacing: 8) {
-            Text(verbatim: copyResolver.resolve(.coachLabel))
-                .font(.caption.weight(.heavy))
-                .foregroundStyle(BaseballTheme.milestone)
-            Text(verbatim: line)
-                .font(.footnote)
-                .foregroundStyle(BaseballTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+        let tip = currentCoachTip
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "megaphone.fill")
+                .font(.caption)
+                .foregroundStyle(BaseballTheme.textTertiary)
+                .accessibilityHidden(true)
+            Text(verbatim: copyResolver.resolve(tip))
+                .detailStyle(BaseballTheme.textPrimary)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, BaseballMetrics.gutter)
         .padding(.vertical, 7)
         .background(BaseballTheme.surfaceRaised)
         .accessibilityIdentifier("pitch.coach")
+        .onAppear { SeenContentStore.markSeen("pitch.coach.\(tip.rawValue)") }
+        .onChange(of: tip) { _, next in SeenContentStore.markSeen("pitch.coach.\(next.rawValue)") }
     }
 
     private var matchupCard: some View {
@@ -508,7 +510,7 @@ struct PitchView: View {
                     .matchupStats,
                     arguments: [.integer(session.batter.contact), .integer(session.batter.discipline), .integer(session.batter.power)]
                 ))
-                    .font(.footnote.monospacedDigit())
+                    .font(BaseballType.detail.monospacedDigit())
                     .foregroundStyle(BaseballTheme.textSecondary)
                 // 시나리오 설명은 화면 맨 위 상황 머리글이 맡는다 — 같은 문장을 두 번 적으면
                 // 둘 다 안 읽힌다.
@@ -521,7 +523,7 @@ struct PitchView: View {
         switch session.stage {
         case .failed:
             BaseballCard(title: copyResolver.resolve(.stateFailedTitle), tone: .negative) {
-                Text(verbatim: copyResolver.resolve(.stateFailedBody)).font(.subheadline)
+                Text(verbatim: copyResolver.resolve(.stateFailedBody)).proseStyle()
             }
         case .finished:
             // 이닝을 끝낸 공도 장면부터 보여 준다.
@@ -534,7 +536,7 @@ struct PitchView: View {
         case .betweenBatters:
             lastPitchPanel
             BaseballCard(title: copyResolver.resolve(.statePlateEndedTitle), tone: .positive) {
-                Text(verbatim: copyResolver.resolve(.statePlateEndedBody)).font(.subheadline)
+                Text(verbatim: copyResolver.resolve(.statePlateEndedBody)).proseStyle()
             }
         case .ready:
             if let preparation = session.preparation {
@@ -549,8 +551,7 @@ struct PitchView: View {
                 // 오래 남으면 감시 이벤트로 신고한다.
                 ProgressView {
                     Text(verbatim: copyResolver.resolve(.statePreparing))
-                        .font(.subheadline)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                 }
                 .frame(maxWidth: .infinity)
                 .stallWatchdog("pitch_preparation_missing")
@@ -616,39 +617,44 @@ struct PitchView: View {
                     resolver: copyResolver
                 ), tone: tone(for: result.snapshot.outcome)) {
                     VStack(alignment: .leading, spacing: 6) {
+                        // 결과 한 줄이 먼저, 세부는 그 아래(1.2.9 가독성 교정 규칙 6).
+                        Text(verbatim: PitchPresentation.shortFeedback(result.snapshot, resolver: copyResolver))
+                            .proseLeadStyle()
+                        Text(verbatim: PitchPresentation.detailFeedback(result.snapshot, resolver: copyResolver))
+                            .detailStyle()
+                        // 릴리스 판정은 칩 하나로 — 문장 전체가 아니라 칩에만 의미색이 붙는다.
+                        if let verdict = session.lastDelivery.flatMap({ DeliveryControl.localizedVerdict($0, resolver: copyResolver) }) {
+                            EffectChip(text: verdict.text, tone: chipTone(for: verdict.tone))
+                        }
                         // 기질 특성 발동 — 보정은 전부 공개된다. 숨은 조작은 이 게임에 없다.
                         if session.lastTraitFired, let trait = session.trait {
-                            Text(verbatim: PitchPresentation.trait(trait, resolver: copyResolver))
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(BaseballTheme.milestone)
-                        }
-                        if let verdict = session.lastDelivery.flatMap({ DeliveryControl.localizedVerdict($0, resolver: copyResolver) }) {
-                            Text(verbatim: verdict.text)
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(verdict.tone.accent)
+                            Label(PitchPresentation.trait(trait, resolver: copyResolver), systemImage: "sparkle")
+                                .font(BaseballType.detail.weight(.semibold))
+                                .foregroundStyle(BaseballTheme.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         // 무엇을 놓쳤는지 짚어 준다. 평균 한 덩어리로는 다음 공에서
                         // 무엇을 고쳐야 하는지 알 수 없다.
                         if let hint = session.lastDelivery.flatMap({ DeliveryControl.localizedCoachingHint($0, resolver: copyResolver) }) {
                             Text(verbatim: hint)
-                                .font(.caption2)
-                                .foregroundStyle(BaseballTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .detailStyle()
                                 .accessibilityIdentifier("pitch.deliveryHint")
                         }
-                        Text(verbatim: PitchPresentation.shortFeedback(result.snapshot, resolver: copyResolver))
-                            .font(.subheadline.weight(.semibold))
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(verbatim: PitchPresentation.detailFeedback(result.snapshot, resolver: copyResolver))
-                            .font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
                         if let moment = session.lastAbilityMoment,
                            let readout = session.lastAbilityReadout {
-                            Label(PitchBuildCopy.localizedMoment(moment, readout: readout, resolver: copyResolver), systemImage: "sparkles")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(BaseballTheme.milestone)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("pitch.abilityMoment")
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Image(systemName: "sparkles")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(BaseballTheme.positive)
+                                    .accessibilityHidden(true)
+                                // localization-safe: resolved-copy
+                                Text(PitchBuildCopy.localizedMoment(moment, readout: readout, resolver: copyResolver))
+                                    .font(BaseballType.detail.weight(.semibold))
+                                    .foregroundStyle(BaseballTheme.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityIdentifier("pitch.abilityMoment")
                         }
                         if let moment = session.lastSequenceMoment {
                             VStack(alignment: .leading, spacing: 2) {
@@ -656,15 +662,13 @@ struct PitchView: View {
                                     .badgeSequence,
                                     arguments: [.userText(PitchPresentation.sequenceTitle(moment.tag, resolver: copyResolver))]
                                 ), systemImage: "brain.head.profile")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(BaseballTheme.information)
+                                    .font(BaseballType.detail.weight(.semibold))
+                                    .foregroundStyle(BaseballTheme.textPrimary)
                                 // 같은 유형은 첫 발동에만 이유를 풀어 말한다. 이후에는
                                 // 승부 장면의 짧은 배지만 남겨 투구 흐름을 끊지 않는다.
                                 if session.sequenceMoments.filter({ $0.tag == moment.tag }).count == 1 {
                                     Text(verbatim: PitchPresentation.sequenceDetail(moment.tag, resolver: copyResolver))
-                                        .font(.caption)
-                                        .foregroundStyle(BaseballTheme.textSecondary)
-                                        .fixedSize(horizontal: false, vertical: true)
+                                        .detailStyle()
                                 }
                             }
                             .accessibilityElement(children: .combine)
@@ -684,7 +688,8 @@ struct PitchView: View {
                                 Text(verbatim: session.pitchLog.last.map {
                                     PitchCopy.localized($0.call.pitchType, resolver: copyResolver)
                                 } ?? "")
-                                    .eyebrowStyle(BaseballTheme.textTertiary)
+                                    .font(BaseballType.annotation.weight(.semibold))
+                                    .foregroundStyle(BaseballTheme.textTertiary)
                                 Text(verbatim: copyResolver.resolve(inZone ? .zoneIn : .zoneOut))
                                     .font(BaseballType.scoreboard)
                                     .foregroundStyle(inZone ? BaseballTheme.positive : BaseballTheme.warning)
@@ -709,16 +714,14 @@ struct PitchView: View {
                 BaseballCard(title: copyResolver.resolve(.practiceReadyTitle), tone: .raised) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(verbatim: copyResolver.resolve(.practiceLesson))
-                            .font(.subheadline)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .proseStyle()
                         Text(verbatim: copyResolver.resolve(.practiceNotRecorded))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
                     }
                 }
                 if let onRetry {
                     Button(copyResolver.resolve(.practiceRetry)) { onRetry() }
-                        .font(.subheadline.weight(.semibold))
+                        .font(BaseballType.detail.weight(.semibold))
                         .foregroundStyle(BaseballTheme.action)
                         .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                         .background(BaseballTheme.actionSoft, in: RoundedRectangle(cornerRadius: 12))
@@ -742,8 +745,7 @@ struct PitchView: View {
                     Text(verbatim: copyResolver.resolve(
                         session.actualDamage <= session.expectedDamage + 150 ? .inningProcessGood : .inningProcessReview
                     ))
-                        .font(.subheadline)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                 }
             }
             if !isPractice, let analysis = session.lastResult?.postgameAnalysis {
@@ -755,23 +757,23 @@ struct PitchView: View {
                     // 등판 통산 순번으로 매기고, 타석 안 번호는 세부에 남는다.
                     ForEach(Array(session.pitchLog.enumerated()), id: \.element.id) { index, entry in
                         HStack(alignment: .top, spacing: 8) {
-                            Text("\(index + 1)").font(.caption.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary).frame(width: 18, alignment: .trailing)
+                            Text("\(index + 1)").font(BaseballType.annotation.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary).frame(width: 18, alignment: .trailing)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(verbatim:
                                     "\(PitchCopy.localized(entry.call.pitchType, resolver: copyResolver)) · "
                                         + "\(PitchCopy.localized(entry.call.zone, batSide: session.batter.batSide, resolver: copyResolver)) · "
                                         + "\(PitchCopy.localized(entry.outcome, resolver: copyResolver))"
                                 )
-                                    .font(.footnote.weight(.semibold))
+                                    .font(BaseballType.detail.weight(.semibold))
                                 Text(verbatim: PitchPresentation.shortFeedback(
                                     entry.outcome,
                                     legacy: entry.shortFeedback,
                                     resolver: copyResolver
-                                )).font(.caption).foregroundStyle(BaseballTheme.textSecondary)
+                                )).detailStyle()
                                 if let moment = entry.sequenceMoment {
                                     Label(PitchPresentation.sequenceTitle(moment.tag, resolver: copyResolver), systemImage: "brain.head.profile")
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(BaseballTheme.information)
+                                        .font(BaseballType.annotation.weight(.semibold))
+                                        .foregroundStyle(BaseballTheme.textSecondary)
                                 }
                             }
                         }
@@ -802,7 +804,7 @@ struct PitchView: View {
                         AppCopyKey.pitchDevelopmentBadge,
                         arguments: [.userText(PitchCopy.localized(session.selectedPitchType, resolver: copyResolver))]
                     ))
-                    .font(.caption2.weight(.bold))
+                    .font(BaseballType.annotation.weight(.bold))
                     .foregroundStyle(BaseballTheme.milestone)
                     .accessibilityIdentifier("pitch.developmentBadge")
                 }
@@ -846,9 +848,7 @@ struct PitchView: View {
                     zone: session.selectedZone,
                     resolver: copyResolver
                 ))
-                    .font(.caption)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
                 OptionRow(items: PitchIntensity.allCases, selection: session.selectedIntensity) { intensity in
                     session.chooseIntensity(intensity)
                 } label: { PitchCopy.localized($0, resolver: copyResolver) }
@@ -902,10 +902,9 @@ struct PitchView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(verbatim: copyResolver.resolve(.fastForwardTitle))
-                                .font(.subheadline.weight(.semibold))
+                                .font(BaseballType.detail.weight(.semibold))
                             Text(verbatim: copyResolver.resolve(.fastForwardBody))
-                                .font(.caption)
-                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .detailStyle()
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -938,8 +937,7 @@ struct PitchView: View {
                     .accessibilityIdentifier("pitch.outingStats")
                     if isWhiffRecord {
                         Text(verbatim: copyResolver.resolve(.statWhiffRecord))
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.milestone)
+                            .detailStyle(BaseballTheme.textPrimary)
                     }
                 }
                 if let records = outingRecords, let average = records.deliveryAverage {
@@ -947,7 +945,7 @@ struct PitchView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
                             Text(verbatim: copyResolver.resolve(.statReleaseTitle))
-                                .font(.caption)
+                                .font(BaseballType.annotation)
                                 .foregroundStyle(BaseballTheme.textTertiary)
                             Text("\(average)")
                                 .font(.title3.weight(.heavy).monospacedDigit())
@@ -965,8 +963,8 @@ struct PitchView: View {
                              : copyResolver.resolve(.statReleaseCompare, arguments: [
                                 .integer(session.deliveryScores.count), .integer(records.previousDeliveryBest),
                              ]))
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
+                            .monospacedDigit()
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityElement(children: .combine)
@@ -1007,8 +1005,18 @@ struct PitchView: View {
                 .foregroundStyle(highlight ? BaseballTheme.milestone : BaseballTheme.textPrimary)
             // localization-safe: resolved-copy
             Text(title)
-                .font(.caption2)
+                .font(BaseballType.annotation)
                 .foregroundStyle(BaseballTheme.textTertiary)
+        }
+    }
+
+    /// 릴리스 판정 톤을 칩 톤으로. 문장 전체를 색칠하지 않고 칩 하나에만 의미색을 둔다.
+    private func chipTone(for tone: BaseballCardTone) -> EffectChip.Tone {
+        switch tone {
+        case .milestone, .positive: .gain
+        case .warning: .cost
+        case .negative: .risk
+        case .standard, .raised: .neutral
         }
     }
 

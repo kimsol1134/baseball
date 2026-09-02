@@ -17,14 +17,13 @@ struct ProNationalTeamCallView: View {
             )
 
             BaseballCard(title: copyResolver.resolve(.nationalTeamCallConditionsTitle), tone: .milestone) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(copyResolver.resolve(.nationalTeamCallBody))
-                        .font(.subheadline)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(copyResolver.resolve(.nationalTeamCallCost))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 8) {
+                    // 소집·병역 면제 같은 용어는 사전 링크로 잇는다.
+                    GlossaryText(
+                        text: copyResolver.resolve(.nationalTeamCallBody),
+                        font: BaseballType.prose,
+                        color: BaseballTheme.textPrimary
+                    )
                     Text(
                         verbatim: ProNationalTeamCopy.callSummary(
                             marketScore: CareerDisplayRules.nationalTeamMarketScore(state),
@@ -32,8 +31,18 @@ struct ProNationalTeamCallView: View {
                             resolver: copyResolver
                         )
                     )
-                    .font(.footnote.monospacedDigit())
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .detailStyle()
+                    .monospacedDigit()
+                    // 대가는 비용이라 접지 않는다. 아이콘만 경고색.
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "exclamationmark.circle")
+                            .font(BaseballType.detail)
+                            .foregroundStyle(BaseballTheme.warning)
+                        GlossaryText(
+                            text: copyResolver.resolve(.nationalTeamCallCost),
+                            font: BaseballType.detail
+                        )
+                    }
                 }
             }
 
@@ -71,36 +80,38 @@ struct ProNationalTournamentView: View {
             )
 
             if let tournament = state.nationalTournament {
-                BaseballCard(title: copyResolver.resolve(.nationalTournamentGroupTitle)) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(tournament.groupGames) { line in
-                            HStack {
-                                Text(copyResolver.resolve(.gameContent(CareerDisplayRules.nationalOpponentNameKey(line.opponentID))))
-                                Spacer()
-                                Text("\(line.teamRuns)-\(line.opponentRuns)")
-                                    .font(.body.monospacedDigit().weight(.semibold))
-                                Text(copyResolver.resolve(line.won ? .nationalTournamentWin : .nationalTournamentLoss))
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(line.won ? BaseballTheme.positive : BaseballTheme.warning)
-                            }
-                            .accessibilityElement(children: .combine)
+                // 조별 경기 표. 눈썹 카드 대신 섹션 제목 하나.
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(verbatim: copyResolver.resolve(.nationalTournamentGroupTitle))
+                        .font(.headline)
+                    ForEach(tournament.groupGames) { line in
+                        HStack {
+                            Text(copyResolver.resolve(.gameContent(CareerDisplayRules.nationalOpponentNameKey(line.opponentID))))
+                                .font(BaseballType.detail)
+                            Spacer()
+                            // localization-safe: numeric
+                            Text(verbatim: "\(line.teamRuns)-\(line.opponentRuns)")
+                                .font(.body.monospacedDigit().weight(.semibold))
+                            Text(copyResolver.resolve(line.won ? .nationalTournamentWin : .nationalTournamentLoss))
+                                .font(BaseballType.annotation.weight(.bold))
+                                .foregroundStyle(line.won ? BaseballTheme.positive : BaseballTheme.warning)
                         }
-                        Text(
-                            verbatim: ProNationalTeamCopy.groupRecord(
-                                wins: tournament.groupWins,
-                                games: tournament.groupGames.count,
-                                resolver: copyResolver
-                            )
-                        )
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .accessibilityElement(children: .combine)
                     }
+                    Text(
+                        verbatim: ProNationalTeamCopy.groupRecord(
+                            wins: tournament.groupWins,
+                            games: tournament.groupGames.count,
+                            resolver: copyResolver
+                        )
+                    )
+                    .detailStyle()
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 if tournament.stage == .awaitingFinal {
                     Text(copyResolver.resolve(.nationalTournamentFinalReady))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                     PrimaryPill(
                         title: copyResolver.resolve(.nationalTournamentStartFinal),
                         identifier: "pro.nationalTeam.final.start"
@@ -131,12 +142,12 @@ struct ProNationalTeamResultCard: View {
     var body: some View {
         BaseballCard(title: copyResolver.resolve(.nationalTeamResultTitle), tone: .milestone) {
             VStack(alignment: .leading, spacing: 8) {
+                // 결과 한 줄 → 세부.
                 Text(verbatim: ProNationalTeamCopy.resultTitle(tournament.result, resolver: copyResolver))
-                    .font(.headline)
+                    .proseLeadStyle()
                 if tournament.exempted {
-                    Text(copyResolver.resolve(.nationalTeamResultExempted))
-                        .font(.subheadline)
-                        .foregroundStyle(BaseballTheme.positive)
+                    Label(copyResolver.resolve(.nationalTeamResultExempted), systemImage: "checkmark.seal.fill")
+                        .detailStyle(BaseballTheme.positive)
                 }
                 Text(
                     verbatim: ProNationalTeamCopy.resultFan(
@@ -144,8 +155,7 @@ struct ProNationalTeamResultCard: View {
                         resolver: copyResolver
                     )
                 )
-                .font(.footnote)
-                .foregroundStyle(BaseballTheme.textSecondary)
+                .detailStyle()
             }
         }
         .accessibilityIdentifier("pro.nationalTeam.result")

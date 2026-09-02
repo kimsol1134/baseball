@@ -22,18 +22,16 @@ struct RetirementDecisionView: View {
                 accent: BaseballTheme.milestone
             )
 
-            BaseballCard(title: copyResolver.resolve(.retirementHere), tone: .milestone) {
-                Text(copyResolver.resolve(.retirementDecisionBody))
-                    .font(.subheadline)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            // 마지막 한 문단은 눈썹 없이 본문으로 선다.
+            Text(copyResolver.resolve(.retirementDecisionBody))
+                .proseStyle()
 
             CareerTotals(state: state)
             RetirementPreviewCard(state: state)
 
             PrimaryPill(title: copyResolver.resolve(.retirementAction), identifier: "pro.retire") { confirming = true }
         }
-        .confirmationDialog(copyResolver.resolve(.retirementConfirmTitle), isPresented: $confirming, titleVisibility: .visible) {
+        .alert(copyResolver.resolve(.retirementConfirmTitle), isPresented: $confirming) {
             Button(copyResolver.resolve(.retirementConfirmAction), role: .destructive) { career.chooseOffseason(.retire) }
                 .accessibilityIdentifier("pro.retire.confirm")
             Button(copyResolver.resolve(.retirementConfirmCancel)) {}
@@ -55,7 +53,8 @@ struct RetirementPreviewCard: View {
         BaseballCard(title: copyResolver.resolve(.retirementPreviewTitle), tone: .raised) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(verbatim: ProRetirementCopy.previewScore(preview.finalScore, resolver: copyResolver))
-                    .font(.headline.monospacedDigit())
+                    .proseLeadStyle()
+                    .monospacedDigit()
                     .accessibilityIdentifier("pro.retirement.preview.score")
                 Text(verbatim: ProRetirementCopy.previewRetiredNumber(
                     lastTeamSeasons: preview.lastTeamSeasons,
@@ -63,33 +62,32 @@ struct RetirementPreviewCard: View {
                     fanSupport: preview.fanSupport,
                     resolver: copyResolver
                 ))
+                .detailStyle()
+                .monospacedDigit()
                 .accessibilityIdentifier("pro.retirement.preview.retired-number")
                 if preview.retiredNumberEligible {
                     Label(copyResolver.resolve(.retirementPreviewRetiredNumberEligible), systemImage: "number.circle.fill")
-                        .foregroundStyle(BaseballTheme.milestone)
+                        .detailStyle(BaseballTheme.milestone)
                         .accessibilityIdentifier("pro.retirement.preview.retired-number.eligible")
                 } else {
                     Text(copyResolver.resolve(.retirementPreviewRetiredNumberHint))
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                         .accessibilityIdentifier("pro.retirement.preview.retired-number.hint")
                 }
                 if !preview.clubHallTeamIDs.isEmpty {
                     Text(copyResolver.resolve(.retirementPreviewClubHall))
-                        .font(.subheadline.weight(.semibold))
+                        .proseLeadStyle()
                         .accessibilityIdentifier("pro.retirement.preview.club-hall")
                     ForEach(preview.clubHallTeamIDs, id: \.self) { teamID in
                         Label(
                             ProCareerPresentation.teamName(teamID, resolver: copyResolver),
                             systemImage: "building.columns"
                         )
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                         .accessibilityIdentifier("pro.retirement.preview.club-hall.\(teamID)")
                     }
                 }
             }
-            .font(.subheadline)
-            .fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pro.retirement.preview")
@@ -126,19 +124,20 @@ struct RetiredView: View {
                         seasons: state.careerStats.count,
                         resolver: copyResolver
                     ))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                 }
                 Spacer(minLength: 0)
             }
 
             if let score = state.hallOfFameScore {
-                BaseballCard(title: copyResolver.resolve(.retiredHallOfFame), tone: .milestone) {
-                    Text(verbatim: ProRetirementCopy.finalScore(score, resolver: copyResolver))
-                        .font(BaseballType.heroNumeral)
-                        .foregroundStyle(BaseballTheme.milestone)
-                        .accessibilityIdentifier("pro.retirement.final.score")
-                }
+                // 큰 숫자 하나면 타일이 맞다 — 눈썹 카드를 두르지 않는다.
+                StatTile(
+                    label: copyResolver.resolve(.retiredHallOfFame),
+                    value: "\(score)",
+                    tone: BaseballTheme.milestone
+                )
+                .accessibilityLabel(ProRetirementCopy.finalScore(score, resolver: copyResolver))
+                .accessibilityIdentifier("pro.retirement.final.score")
             }
 
             CareerTotals(state: state)
@@ -161,47 +160,53 @@ struct RetiredView: View {
 
             // 이 커리어가 다음 회차에 남기는 것. 프로의 시간이 환생 루프와 무관하면
             // 은퇴가 끝이 되지만, 야구혼으로 이어지면 은퇴가 다음 회차의 시작이 된다.
-            BaseballCard(
+            // 결과 한 줄(제목 + 계승 포인트) → 긴 설명은 접기. 눈썹 카드는 두르지 않는다.
+            ProgressiveDisclosure(
+                contentID: retiresIntoSignatureLegacy ? "pro.retired.legacy.v1" : "pro.retired.soul.v1",
                 title: retiresIntoSignatureLegacy
                     ? copyResolver.resolve(.retiredLegacyTitle) : copyResolver.resolve(.retiredSoulTitle),
-                tone: .milestone
-            ) {
-                Text(verbatim: copyResolver.resolve(
-                    retiresIntoSignatureLegacy ? .retiredLegacyBody : .retiredSoulBody
-                ))
-                    .font(.subheadline)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(verbatim: ProRetirementCopy.soulPoints(
+                summary: ProRetirementCopy.soulPoints(
                     HighSchoolCareerStore.proSoulBonus(for: state),
                     resolver: copyResolver
-                ))
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.milestone)
+                )
+            ) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(verbatim: ProRetirementCopy.soulPoints(
+                        HighSchoolCareerStore.proSoulBonus(for: state),
+                        resolver: copyResolver
+                    ))
+                    .proseLeadStyle(BaseballTheme.milestone)
+                    Text(verbatim: copyResolver.resolve(
+                        retiresIntoSignatureLegacy ? .retiredLegacyBody : .retiredSoulBody
+                    ))
+                    .proseStyle(BaseballTheme.textSecondary)
+                }
             }
 
             if !state.awards.isEmpty {
-                BaseballCard(title: copyResolver.resolve(.retiredAwards), tone: .milestone) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(state.awards, id: \.self) { award in
-                            Label(
-                                ProCareerPresentation.award(award, resolver: copyResolver),
-                                systemImage: "trophy.fill"
-                            )
-                            .foregroundStyle(BaseballTheme.milestone)
-                        }
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(verbatim: copyResolver.resolve(.retiredAwards))
+                        .font(.headline)
+                    ForEach(state.awards, id: \.self) { award in
+                        Label(
+                            ProCareerPresentation.award(award, resolver: copyResolver),
+                            systemImage: "trophy.fill"
+                        )
+                        .detailStyle(BaseballTheme.milestone)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            BaseballCard(title: copyResolver.resolve(.retiredRetrospective)) {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(Array(state.news.prefix(6).enumerated()), id: \.offset) { _, line in
-                        Text(verbatim: ProCareerPresentation.news(line, state: state, resolver: copyResolver))
-                            .font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+            VStack(alignment: .leading, spacing: 6) {
+                Text(verbatim: copyResolver.resolve(.retiredRetrospective))
+                    .font(.headline)
+                ForEach(Array(state.news.prefix(6).enumerated()), id: \.offset) { _, line in
+                    Text(verbatim: ProCareerPresentation.news(line, state: state, resolver: copyResolver))
+                        .detailStyle()
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             PrimaryPill(
                 title: retiresIntoSignatureLegacy
@@ -211,16 +216,13 @@ struct RetiredView: View {
             Text(verbatim: copyResolver.resolve(
                 retiresIntoSignatureLegacy ? .retiredLegacyFootnote : .retiredSoulFootnote
             ))
-                .font(.caption)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .detailStyle(BaseballTheme.textTertiary)
         }
-        .confirmationDialog(
+        .alert(
             copyResolver.resolve(
                 retiresIntoSignatureLegacy ? .retiredLegacyConfirmTitle : .retiredSoulConfirmTitle
             ),
-            isPresented: $confirming,
-            titleVisibility: .visible
+            isPresented: $confirming
         ) {
             Button(
                 copyResolver.resolve(
@@ -250,11 +252,9 @@ struct RetirementHonorsCard: View {
                 ForEach(honors) { honor in
                     VStack(alignment: .leading, spacing: 3) {
                         Text(verbatim: ProCareerPresentation.honorTitle(honor.kind, resolver: copyResolver))
-                            .font(.subheadline.weight(.semibold))
+                            .proseLeadStyle()
                         Text(verbatim: value(for: honor))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityIdentifier("pro.retirement.honor.\(honor.id)")
@@ -307,7 +307,10 @@ struct CareerTotals: View {
     }
 
     var body: some View {
-        BaseballCard(title: copyResolver.resolve(.totalsTitle)) {
+        // 통산 기록은 섹션 제목 하나 아래 숫자 타일 아홉 개. 눈썹은 타일 라벨이 맡는다.
+        VStack(alignment: .leading, spacing: 10) {
+            Text(verbatim: copyResolver.resolve(.totalsTitle))
+                .font(.headline)
             VStack(spacing: 10) {
                 HStack(spacing: 10) {
                     Metric(title: copyResolver.resolve(.totalsGames), value: "\(totals.games)")
@@ -338,5 +341,6 @@ struct CareerTotals: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

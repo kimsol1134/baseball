@@ -54,24 +54,21 @@ struct SchoolSelectionCard: View {
                     VStack(alignment: .leading, spacing: 6) {
                         GameCopyText(coreToken: copy.schoolNameToken).font(.headline)
                         GameCopyText(coreToken: copy.philosophyToken)
-                            .font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Label {
-                            GameCopyText(
+                            .proseStyle(BaseballTheme.textSecondary)
+                        EffectChip(
+                            text: copyResolver.resolve(
                                 AppCopyKey.schoolSelectionStrength,
                                 arguments: [.userText(resolvedStrength(for: school))]
-                            )
-                        } icon: {
-                            Image(systemName: "star.fill")
-                        }
-                            .font(.footnote).foregroundStyle(BaseballTheme.positive)
+                            ),
+                            tone: .gain, systemImage: "star.fill"
+                        )
                         Label {
                             GameCopyText(coreToken: copy.tradeoffToken)
                         } icon: {
                             Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(BaseballTheme.warning)
                         }
-                            .font(.footnote).foregroundStyle(BaseballTheme.warning)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                         Divider()
                         // 3년을 함께할 두 사람이다. 이름만 적혀 있으면 학교 선택이
                         // 스펙 비교표가 되고, 누구와 지낼지는 선택에 들어오지 않는다.
@@ -97,7 +94,7 @@ struct SchoolSelectionCard: View {
                 .accessibilityLabel(accessibilityLabel(for: school))
             }
         }
-        .confirmationDialog(
+        .alert(
             pending.map { school in
                 let copy = selectionCopy(for: school)
                 return copyResolver.resolve(
@@ -106,7 +103,6 @@ struct SchoolSelectionCard: View {
                 )
             } ?? "",
             isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
-            titleVisibility: .visible,
             presenting: pending
         ) { school in
             Button(copyResolver.resolve(AppCopyKey.schoolSelectionConfirmAction)) {
@@ -238,12 +234,62 @@ struct TrainingCard: View {
 
     /// SwiftUICore가 `ForEach`의 item closure를 다른 executor에서 호출하는 경로를
     /// 피한다. 각 행은 고정된 View로 만들고, actor-bound 상태는 Binding으로만 넘긴다.
+    /// 효과·비용·위험 칩. 네 줄짜리 효과 문장 대신 칩 셋으로 읽힌다(1.2.9 가독성 교정).
+    /// 피로 값은 현재 고른 강도 기준이라 강도를 바꾸면 여섯 카드의 칩이 함께 바뀐다.
+    private func effectChips(for option: TrainingFocus) -> [TrainingEffectChip] {
+        var chips: [TrainingEffectChip] = []
+        let fatigue = HighSchoolPresentation.trainingFatigueEstimate(
+            state: state, focus: option, intensity: intensity
+        )
+        if option == .recovery {
+            chips.append(TrainingEffectChip(
+                text: copyResolver.resolve(AppCopyKey.trainingChipFatigue, arguments: [.integer(fatigue)]),
+                tone: fatigue < 0 ? .gain : .cost, systemImage: "battery.100"
+            ))
+            chips.append(TrainingEffectChip(
+                text: copyResolver.resolve(AppCopyKey.trainingChipArmRecovery), tone: .gain, systemImage: nil
+            ))
+            chips.append(TrainingEffectChip(
+                text: copyResolver.resolve(AppCopyKey.trainingChipNoGrowth), tone: .neutral, systemImage: nil
+            ))
+            return chips
+        }
+        chips.append(TrainingEffectChip(
+            text: copyResolver.resolve(
+                AppCopyKey.trainingChipGain,
+                arguments: [.userText(HighSchoolPresentation.localizedFocusMetric(option, resolver: copyResolver))]
+            ),
+            tone: .gain, systemImage: nil
+        ))
+        chips.append(TrainingEffectChip(
+            text: copyResolver.resolve(AppCopyKey.trainingChipFatigue, arguments: [.integer(fatigue)]),
+            tone: fatigue > 0 ? .cost : .neutral, systemImage: "battery.50"
+        ))
+        switch HighSchoolPresentation.trainingArmRiskBand(focus: option, intensity: intensity) {
+        case .high:
+            chips.append(TrainingEffectChip(
+                text: copyResolver.resolve(AppCopyKey.trainingChipRiskHigh), tone: .risk, systemImage: "bandage"
+            ))
+        case .some:
+            chips.append(TrainingEffectChip(
+                text: copyResolver.resolve(AppCopyKey.trainingChipRiskSome), tone: .neutral, systemImage: "bandage"
+            ))
+        case .none:
+            break
+        }
+        return chips
+    }
+
     private func focusOptionButton(_ option: TrainingFocus) -> some View {
         TrainingFocusOptionButton(
             option: option,
             title: HighSchoolPresentation.localized(option, resolver: copyResolver),
             growthSummary: HighSchoolPresentation.localizedFocusMetric(option, resolver: copyResolver),
+            chips: effectChips(for: option),
             detail: HighSchoolPresentation.localizedFocusDetail(option, resolver: copyResolver),
+            tradeoff: HighSchoolPresentation.localizedFocusTradeoff(option, resolver: copyResolver),
+            detailTitle: copyResolver.resolve(AppCopyKey.trainingOptionDetailTitle),
+            detailSummary: copyResolver.resolve(AppCopyKey.trainingOptionDetailSummary),
             windEffect: windEffect(for: option, resolver: copyResolver),
             opportunityBadge: copyResolver.resolve(AppCopyKey.trainingBadgeOpportunity),
             schoolStrengthBadge: copyResolver.resolve(AppCopyKey.trainingBadgeSchoolStrength),
@@ -282,7 +328,7 @@ struct TrainingCard: View {
                             ? AppCopyKey.trainingArmHealthRecovering
                             : AppCopyKey.trainingArmHealthRisk
                     ))
-                        .font(.subheadline)
+                        .proseStyle()
                 }
             }
 
@@ -295,7 +341,7 @@ struct TrainingCard: View {
                     tone: .milestone
                 ) {
                     Text(HighSchoolPresentation.localizedOpportunityReason(opportunity, resolver: copyResolver))
-                        .font(.subheadline)
+                        .proseStyle()
                 }
             }
 
@@ -352,21 +398,15 @@ struct TrainingCard: View {
                     }
                     if doubleBonus {
                         Text(copyResolver.resolve(AppCopyKey.trainingDoubleBonus))
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.milestone)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle(BaseballTheme.textPrimary)
                     }
+                    // 성장 전망은 결과 한 줄이다. 문장 전체를 의미색으로 칠하지 않는다 —
+                    // 색 의미는 칩이 맡고, 여기서는 읽히는 크기와 행간이 먼저다.
                     let outlookPresentation = outlookCopy(resolver: copyResolver)
                     // localization-safe: resolved-copy
                     Text(outlookPresentation.text)
-                        .font(.footnote)
-                        .foregroundStyle(outlookPresentation.tone)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle(BaseballTheme.textPrimary)
                         .accessibilityIdentifier("hs.training.outlook")
-                    Text(HighSchoolPresentation.localizedFocusTradeoff(focus, resolver: copyResolver))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.warning)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
@@ -378,8 +418,8 @@ struct TrainingCard: View {
                     Text(copyResolver.resolve(AppCopyKey.trainingRepeatTitle))
                         .font(.subheadline.weight(.semibold))
                     Text(copyResolver.resolve(AppCopyKey.trainingRepeatStopExplanation))
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
+                        .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -390,21 +430,32 @@ struct TrainingCard: View {
     }
 }
 
+/// 훈련 카드 한 장의 효과 칩. 값은 이미 풀린 문구다.
+struct TrainingEffectChip: Identifiable {
+    let text: String
+    let tone: EffectChip.Tone
+    let systemImage: String?
+    var id: String { text }
+}
+
 struct TrainingFocusOptionButton: View {
     let option: TrainingFocus
     let title: String
+    /// 오르는 능력 이름. 칩의 첫 장이자 접근성 효과 라벨의 앵커다.
     let growthSummary: String
+    let chips: [TrainingEffectChip]
     let detail: String
+    let tradeoff: String
+    let detailTitle: String
+    let detailSummary: String
     let windEffect: String?
     let opportunityBadge: String
     let schoolStrengthBadge: String
     let isOpportunity: Bool
     let isSchoolStrength: Bool
     @Binding var selection: TrainingFocus
-    @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
 
     private var isSelected: Bool { selection == option }
-    private var hidesDetail: Bool { (CopyDensity(rawValue: densityRaw) ?? .automatic) == .compact }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -448,26 +499,40 @@ struct TrainingFocusOptionButton: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("hs.focus.\(option.rawValue)")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
-            VStack(alignment: .leading, spacing: 2) {
-                GlossaryText(
-                    text: growthSummary,
-                    font: .footnote.weight(.semibold),
-                    color: BaseballTheme.positive
-                )
-                .accessibilityIdentifier("hs.focus.effect.\(option.rawValue)")
-                if !hidesDetail {
-                    GlossaryText(
-                        text: detail,
-                        font: .footnote,
-                        color: BaseballTheme.textSecondary
-                    )
+            VStack(alignment: .leading, spacing: 6) {
+                // 효과 문장 대신 칩. 이득(구위 ▲)·비용(피로 +8)·위험(부상)이 한 줄에 선다.
+                EffectChipFlow {
+                    ForEach(chips) { chip in
+                        EffectChip(text: chip.text, tone: chip.tone, systemImage: chip.systemImage)
+                    }
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(Text(verbatim: chips.map(\.text).joined(separator: ", ")))
+                .accessibilityIdentifier("hs.focus.effect.\(option.rawValue)")
                 if let windEffect {
-                    GlossaryText(
-                        text: windEffect,
-                        font: .caption.monospacedDigit(),
-                        color: BaseballTheme.information
-                    )
+                    EffectChip(text: windEffect, tone: .neutral, systemImage: "wind")
+                }
+                // 긴 설명은 고른 카드에서만, 접어서. 여섯 장이 저마다 두 문장을 펼치면
+                // 정작 고를 수 있는 여섯 줄이 그 안에 묻힌다.
+                if isSelected {
+                    ProgressiveDisclosure(
+                        contentID: "hs.training.option.\(option.rawValue)",
+                        title: detailTitle,
+                        summary: detailSummary
+                    ) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            GlossaryText(
+                                text: detail,
+                                font: BaseballType.detail,
+                                color: BaseballTheme.textSecondary
+                            )
+                            GlossaryText(
+                                text: tradeoff,
+                                font: BaseballType.detail,
+                                color: BaseballTheme.textSecondary
+                            )
+                        }
+                    }
                 }
             }
             .padding(.leading, 40)
@@ -499,7 +564,7 @@ struct TrainingIntensityOptionButton: View {
         Button { selection = option } label: {
             // localization-safe: resolved-copy
             Text(title)
-                .font(.footnote.weight(.semibold))
+                .font(BaseballType.annotation.weight(.semibold))
                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
         }
         .buttonStyle(.plain)

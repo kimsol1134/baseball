@@ -55,7 +55,7 @@ struct LifeCardView: View {
                         .foregroundStyle(BaseballTheme.textPrimary)
                     // localization-safe: resolved-copy
                     Text(identityLine)
-                        .font(.footnote)
+                        .font(BaseballType.annotation)
                         .foregroundStyle(BaseballTheme.textSecondary)
                         // 카드가 빡빡해지면 SwiftUI가 이 줄부터 눌러 "…무…"로 끊는다.
                         // 학교·성격·바람은 이 선수가 누구였는지라 잘리면 안 된다.
@@ -153,7 +153,7 @@ struct LifeCardView: View {
                 Text(nicknames.map {
                     "'\(HighSchoolConclusionPresentation.localizedNicknameTitle($0, resolver: copyResolver))'"
                 }.joined(separator: "  "))
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.annotation.weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
                     .fixedSize(horizontal: false, vertical: true)
             }

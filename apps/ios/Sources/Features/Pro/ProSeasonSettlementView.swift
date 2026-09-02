@@ -5,7 +5,12 @@ import BaseballIOSDomain
 struct ProSeasonSettlementView: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
+    /// 시즌 리뷰 제목이 먼저 서고(Peak-End), 오른 능력은 그 아래에 온다.
+    /// CareerFlowView가 결산 국면에서는 성장 카드를 여기로 넘긴다.
+    var pendingGains: [AbilityGain] = []
+    var onAcknowledgeGains: () -> Void = {}
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var settlement: ProSeasonSettlement? { state.journeyState?.lastSettlement }
 
@@ -23,10 +28,20 @@ struct ProSeasonSettlementView: View {
                     accent: BaseballTheme.milestone
                 )
 
-                BaseballCard(title: ProCareerPresentation.teamName(state.team, resolver: copyResolver), tone: .positive) {
+                if !pendingGains.isEmpty {
+                    GrowthCelebrationView(
+                        gains: pendingGains,
+                        stageContext: .pro,
+                        onDismiss: onAcknowledgeGains
+                    )
+                    .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                }
+
+                // 구단과 시즌 성적. 눈썹은 구단 이름 하나, 본문은 성적 한 줄.
+                BaseballCard(title: ProCareerPresentation.teamName(state.team, resolver: copyResolver)) {
                     Text(verbatim: ProSeasonSettlementCopy.stats(settlement, resolver: copyResolver))
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle(BaseballTheme.textPrimary)
+                        .monospacedDigit()
                 }
 
                 BaseballCard(title: copyResolver.resolve(.directionTitle)) {
@@ -36,27 +51,58 @@ struct ProSeasonSettlementView: View {
                             after: settlement.teamLegacyAfter,
                             resolver: copyResolver
                         ))
+                        .detailStyle(BaseballTheme.textPrimary)
                         if let goalProgress = settlement.goalProgressAfter {
                             Text(verbatim: ProCareerPresentation.goalTitle(goalProgress.ambition, resolver: copyResolver))
-                                .font(.subheadline.weight(.semibold))
+                                .proseLeadStyle()
                             ProCareerGoalMetricsView(
                                 progress: goalProgress,
                                 identifierPrefix: "pro.settlement.goal"
                             )
                         }
                         Text(verbatim: ProSeasonSettlementCopy.hallOfFame(settlement, resolver: copyResolver))
+                            .detailStyle(BaseballTheme.textPrimary)
                         Text(verbatim: ProSeasonSettlementCopy.contract(settlement, resolver: copyResolver))
+                            .detailStyle(BaseballTheme.textPrimary)
                         if settlement.goalCompleted {
                             Label(copyResolver.resolve(.journeySettlementGoalCompleted), systemImage: "checkmark.seal.fill")
-                                .foregroundStyle(BaseballTheme.milestone)
+                                .proseLeadStyle(BaseballTheme.milestone)
                         }
                         Text(verbatim: ProSeasonSettlementCopy.nextRoute(settlement.nextRoute, resolver: copyResolver))
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
                     }
-                    .font(.subheadline)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .monospacedDigit()
                 }
 
+                // 팬 지지 변화: 결과 한 줄(제목·요약) → 이유는 접기.
+                ProgressiveDisclosure(
+                    contentID: "pro.settlement.fanReasons.v1",
+                    title: copyResolver.resolve(.journeySettlementFanReasons),
+                    summary: ProSeasonSettlementCopy.fan(settlement, resolver: copyResolver)
+                ) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(verbatim: ProSeasonSettlementCopy.fan(settlement, resolver: copyResolver))
+                            .detailStyle(BaseballTheme.textPrimary)
+                        Text(verbatim: ProSeasonSettlementCopy.fanDelta(settlement.fanDelta, resolver: copyResolver))
+                            .detailStyle()
+                        ForEach(settlement.fanReasons) { reason in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Text(verbatim: copyResolver.resolve(.gameContent("content.pro-fan-reason.\(reason.kind.rawValue)")))
+                                    .detailStyle()
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                // localization-safe: numeric
+                                Text(verbatim: signed(reason.delta))
+                                    .font(BaseballType.detail.weight(.semibold))
+                                    .monospacedDigit()
+                                    .foregroundStyle(reason.delta >= 0 ? BaseballTheme.positive : BaseballTheme.warning)
+                            }
+                        }
+                    }
+                    .monospacedDigit()
+                }
+                .accessibilityIdentifier("pro.settlement.fanReasons")
+
+                // 연봉·응원 상품 수익. 큰 숫자 하나에 보조 한 줄.
                 BaseballCard(title: copyResolver.resolve(.journeySettlementSalaryTitle), tone: .raised) {
                     Text(verbatim: GameFormatters.krw(safeInt(settlement.salaryIncome), language: copyResolver.language))
                         .font(BaseballType.statNumeral)
@@ -68,53 +114,30 @@ struct ProSeasonSettlementView: View {
                         ))
                 }
 
-                BaseballCard(title: copyResolver.resolve(.journeySettlementFanReasons), tone: .raised) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(verbatim: ProSeasonSettlementCopy.fan(settlement, resolver: copyResolver))
-                        Text(verbatim: ProSeasonSettlementCopy.fanDelta(settlement.fanDelta, resolver: copyResolver))
-                        ForEach(settlement.fanReasons) { reason in
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Text(verbatim: copyResolver.resolve(.gameContent("content.pro-fan-reason.\(reason.kind.rawValue)")))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                // localization-safe: numeric
-                                Text(verbatim: signed(reason.delta))
-                                    .monospacedDigit()
-                                    .foregroundStyle(reason.delta >= 0 ? BaseballTheme.positive : BaseballTheme.warning)
-                            }
-                            .font(.caption)
-                        }
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                }
-                .accessibilityIdentifier("pro.settlement.fanReasons")
-
                 BaseballCard(title: copyResolver.resolve(.journeySettlementMerchandiseTitle), tone: .raised) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(GameFormatters.krw(safeInt(settlement.merchandiseIncome), language: copyResolver.language))
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(verbatim: GameFormatters.krw(safeInt(settlement.merchandiseIncome), language: copyResolver.language))
                             .font(BaseballType.statNumeral)
+                            .foregroundStyle(BaseballTheme.textPrimary)
                             .monospacedDigit()
                             .accessibilityLabel(ProSeasonSettlementCopy.merchandise(
                                 amount: settlement.merchandiseIncome,
                                 resolver: copyResolver
                             ))
                         if let tier = settlement.merchandiseTier {
-                            Text(ProSeasonSettlementCopy.merchandiseTier(
+                            Text(verbatim: ProSeasonSettlementCopy.merchandiseTier(
                                 copyResolver.resolve(.gameContent("content.pro-merchandise-tier.\(tier.rawValue)")),
                                 resolver: copyResolver
                             ))
-                            .font(.subheadline)
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
                         }
                     }
-                    .fixedSize(horizontal: false, vertical: true)
                 }
                 .accessibilityIdentifier("pro.settlement.merchandise")
 
                 if state.journeyState?.migration.financeNoticePending == true {
                     Text(copyResolver.resolve(.journeySettlementMigrationNotice))
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle(BaseballTheme.textTertiary)
                 }
 
                 PrimaryPill(

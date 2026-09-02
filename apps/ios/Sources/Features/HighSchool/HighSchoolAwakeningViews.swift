@@ -33,7 +33,8 @@ struct AwakeningCard: View {
             beforeFirstGame: beforeFirstGame,
             resolver: copyResolver
         )
-        return (copy.text, copy.tone.accent)
+        // 스킵가 열린 회차만 본문색으로 세운다. 문장 전체를 의미색으로 칠하지 않는다.
+        return (copy.text, copy.tone == .milestone ? BaseballTheme.textPrimary : BaseballTheme.textSecondary)
     }
 
     var body: some View {
@@ -44,14 +45,17 @@ struct AwakeningCard: View {
                     total: Self.totalAwakenings,
                     resolver: copyResolver
                 ))
-                    .font(.subheadline.weight(.heavy))
-                    .foregroundStyle(BaseballTheme.milestone)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .proseLeadStyle()
                     .accessibilityIdentifier("hs.skillTree.progress")
-                Text(verbatim: copyResolver.resolve(AppCopyKey.awakeningGuide))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                // 읽는 법은 튜토리얼이다. 두 번째부터는 접혀 있어도 된다.
+                ProgressiveDisclosure(
+                    contentID: "hs.awakening.guide",
+                    title: copyResolver.resolve(AppCopyKey.awakeningGuideTitle),
+                    summary: copyResolver.resolve(AppCopyKey.awakeningGuideSummary)
+                ) {
+                    Text(verbatim: copyResolver.resolve(AppCopyKey.awakeningGuide))
+                        .detailStyle()
+                }
             } else {
                 // 회차당 세 번뿐인 순간 — 목록이 아니라 무대를 준다(QA P2-2).
                 KeyArtHeader(
@@ -65,23 +69,28 @@ struct AwakeningCard: View {
                     current: selected.count + 1,
                     resolver: copyResolver
                 ))
-                    .font(.subheadline.weight(.heavy))
-                    .foregroundStyle(BaseballTheme.milestone)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .proseLeadStyle()
                     .accessibilityIdentifier("hs.awakening.counter")
-                Text(verbatim: HighSchoolPresentation.localizedAwakeningSelectionGuidance(
-                    total: Self.totalAwakenings,
-                    selectedCount: selected.count,
-                    resolver: copyResolver
-                ))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                // 고르는 법(설명)은 접는다. 요약 한 줄에 남은 횟수만 남긴다.
+                ProgressiveDisclosure(
+                    contentID: "hs.awakening.selection.guidance",
+                    title: copyResolver.resolve(AppCopyKey.awakeningSelectionTitle),
+                    summary: copyResolver.resolve(
+                        AppCopyKey.awakeningSelectionSummary,
+                        arguments: [.integer(max(0, Self.totalAwakenings - selected.count - 1))]
+                    )
+                ) {
+                    Text(verbatim: HighSchoolPresentation.localizedAwakeningSelectionGuidance(
+                        total: Self.totalAwakenings,
+                        selectedCount: selected.count,
+                        resolver: copyResolver
+                    ))
+                        .detailStyle()
+                }
             }
+            // 스킵 가능 여부는 이번 선택의 조건이라 접지 않는다.
             Text(verbatim: sparkLine.text)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(sparkLine.tone)
-                .fixedSize(horizontal: false, vertical: true)
+                .detailStyle(sparkLine.tone)
 
             ForEach(AwakeningTree.Branch.allCases, id: \.self) { branch in
                 branchSection(branch)
@@ -89,7 +98,7 @@ struct AwakeningCard: View {
         }
         // 마지막 선택지가 탭바에 잘리지 않게 — 잘린 선택지는 없는 선택지다.
         .padding(.bottom, 24)
-        .confirmationDialog(
+        .alert(
             pending.map {
                 HighSchoolPresentation.localizedAwakeningConfirmationTitle(
                     $0,
@@ -97,7 +106,6 @@ struct AwakeningCard: View {
                 )
             } ?? "",
             isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
-            titleVisibility: .visible,
             presenting: pending
         ) { option in
             Button {
@@ -138,9 +146,7 @@ struct AwakeningCard: View {
                         branch,
                         resolver: copyResolver
                     ))
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle()
                     Spacer(minLength: 0)
                     if ownedCount > 0 {
                         Text(verbatim: HighSchoolPresentation.localizedAwakeningSelectedCount(
@@ -241,15 +247,11 @@ struct AwakeningCard: View {
                         node.id,
                         resolver: copyResolver
                     ))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle()
                 } else if let reason = lockReason(node) {
                     // 잠긴 이유는 그 자리에 적는다. "왜 못 누르지"가 남으면 트리가 벽이 된다.
                     Text(verbatim: reason)
-                        .font(.caption2)
-                        .foregroundStyle(BaseballTheme.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle(BaseballTheme.textTertiary)
                 }
             }
         }

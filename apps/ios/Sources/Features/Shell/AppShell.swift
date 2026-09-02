@@ -180,13 +180,12 @@ struct AppShell: View {
     ) -> some View {
         HStack(alignment: .top, spacing: 10) {
             GameCopyText(key)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(BaseballTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                .detailStyle(BaseballTheme.textPrimary)
+                .fontWeight(.semibold)
             Spacer(minLength: 8)
             Button(action: dismiss) {
                 Image(systemName: "xmark")
-                    .font(.footnote.weight(.bold))
+                    .font(BaseballType.annotation.weight(.bold))
                     .foregroundStyle(BaseballTheme.textSecondary)
                     .frame(width: BaseballMetrics.minimumTapTarget, height: BaseballMetrics.minimumTapTarget)
             }
@@ -435,10 +434,26 @@ struct AppShell: View {
         .background(BaseballTheme.canvas.ignoresSafeArea())
         .task {
 #if DEBUG
-            guard ProcessInfo.processInfo.environment["BASEBALL_UI_RETIRED_SHARE"] == "1" else { return }
+            let env = ProcessInfo.processInfo.environment
+            let draftShare = env["BASEBALL_UI_DRAFT_SHARE"] == "1"
+            let recordShare = env["BASEBALL_UI_RECORD_SHARE"] == "1"
+            let nationalShare = env["BASEBALL_UI_NATIONAL_SHARE"] == "1"
+            let retiredShare = env["BASEBALL_UI_RETIRED_SHARE"] == "1"
+            guard draftShare || recordShare || nationalShare || retiredShare else { return }
             try? await Task.sleep(nanoseconds: 800_000_000)
-            _ = pro.installRetiredShareFixtureForUITesting()
-            selection = .pro
+            if draftShare {
+                _ = highSchool.installDraftShareFixtureForUITesting()
+                selection = .highSchool
+            } else if recordShare {
+                _ = pro.installRecordShareFixtureForUITesting()
+                selection = .pro
+            } else if nationalShare {
+                _ = pro.installNationalShareFixtureForUITesting()
+                selection = .pro
+            } else {
+                _ = pro.installRetiredShareFixtureForUITesting()
+                selection = .pro
+            }
 #endif
         }
         .modifier(ReturnWelcomeInset(
@@ -664,9 +679,7 @@ private struct ReturnWelcomeCard: View {
                     legacyValue: plan.body,
                     englishFallback: .notificationReturnBody
                 ))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
                 PrimaryPill(
                     title: copyResolver.resolve(continueTitleKey(for: plan.destination)),
                     identifier: "return.plan.continue",
@@ -737,7 +750,7 @@ private struct ProLockedView: View {
                 )
                 BaseballCard(title: copyResolver.resolve(AppCopyKey.proLockedPathTitle), tone: .raised) {
                     GameCopyText(AppCopyKey.proLockedPathBody)
-                        .font(.subheadline)
+                        .proseStyle()
                 }
                 // 잠긴 문 아래가 빈 검정이면 잠금이 벌처럼 느껴진다. 같은 공간이
                 // "지금 평가가 당락선에서 몇 점 모자란가"를 말하면 목표판이 된다(QA P1-12 부분).
@@ -754,8 +767,8 @@ private struct ProLockedView: View {
                                 forecastCopyKey(for: remainingChapters),
                                 arguments: forecastArguments(forecast: forecast, remainingChapters: remainingChapters)
                             )
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(BaseballTheme.textSecondary)
+                                .detailStyle()
+                                .monospacedDigit()
                             GameCopyText(
                                 AppCopyKey.proLockedInterested,
                                 arguments: [
@@ -765,8 +778,7 @@ private struct ProLockedView: View {
                                     )),
                                 ]
                             )
-                                .font(.caption)
-                                .foregroundStyle(BaseballTheme.textTertiary)
+                                .detailStyle(BaseballTheme.textTertiary)
                         }
                     }
                 }
@@ -777,12 +789,10 @@ private struct ProLockedView: View {
                         .buttonStyle(.bordered)
                         .frame(minHeight: BaseballMetrics.minimumTapTarget)
                     GameCopyText(AppCopyKey.proLockedSkipDescription)
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                 } else {
                     GameCopyText(AppCopyKey.proLockedSkipLocked)
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textTertiary)
+                        .detailStyle(BaseballTheme.textTertiary)
                 }
             }
             .padding(BaseballMetrics.gutter)
@@ -846,7 +856,12 @@ private struct ProCareerTabs: View {
         self.retiresIntoSignatureLegacy = retiresIntoSignatureLegacy
         self.onStartNewPlayer = onStartNewPlayer
 #if DEBUG
-        _showsToday = State(initialValue: !ProcessInfo.processInfo.arguments.contains("-uiTestOpenProWeek"))
+        let env = ProcessInfo.processInfo.environment
+        let openWeek = ProcessInfo.processInfo.arguments.contains("-uiTestOpenProWeek")
+            || env["BASEBALL_UI_RECORD_SHARE"] == "1"
+            || env["BASEBALL_UI_NATIONAL_SHARE"] == "1"
+            || env["BASEBALL_UI_RETIRED_SHARE"] == "1"
+        _showsToday = State(initialValue: !openWeek)
 #else
         _showsToday = State(initialValue: true)
 #endif
@@ -904,12 +919,11 @@ private struct CareerFailureView: View {
             Button(copyResolver.resolve(AppCopyKey.errorReset), role: .destructive) {
                 confirmingReset = true
             }
-            .font(.footnote.weight(.semibold))
+            .font(BaseballType.detail.weight(.semibold))
             .accessibilityIdentifier("pro.restart")
-            .confirmationDialog(
+            .alert(
                 copyResolver.resolve(AppCopyKey.errorDeleteTitle),
-                isPresented: $confirmingReset,
-                titleVisibility: .visible
+                isPresented: $confirmingReset
             ) {
                 Button(copyResolver.resolve(AppCopyKey.errorDeleteAction), role: .destructive) {
                     _ = career.deleteCareer()

@@ -354,6 +354,14 @@ enum ProUICopyKey: String, CaseIterable, Sendable {
     case weeklyInjuryRiskLow = "pro.weekly.injury-risk.low"
     case weeklyInjuryRiskCaution = "pro.weekly.injury-risk.caution"
     case weeklyInjuryRiskHigh = "pro.weekly.injury-risk.high"
+    /// 1.2.9 가독성 교정 — 주간 상태 타일 아래 "이번 주 +3" 같은 변화 캡션.
+    case weeklyDeltaCaption = "pro.weekly.delta.caption"
+    /// 훈련 카드의 이득 칩("구위 ▲").
+    case weeklyGainChip = "pro.weekly.gain-chip"
+    /// 훈련 카드의 부상 위험 칩("부상 낮음").
+    case weeklyInjuryChip = "pro.weekly.injury-chip"
+    /// 훈련 카드 접힘 설명의 제목.
+    case weeklyOptionDetailTitle = "pro.weekly.option.detail-title"
     case injuryResultTitle = "pro.injury.result.title"
     case injuryResultBody = "pro.injury.result.body"
     case injuryResultPlan = "pro.injury.result.plan"

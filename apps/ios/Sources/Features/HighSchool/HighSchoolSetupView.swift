@@ -59,6 +59,10 @@ struct HighSchoolSetupView: View {
     /// preset's language-neutral default.
     @State var isSystemSuggestedName = false
     @State var selectedRegion = HighSchoolCareerStore.regions.first ?? ""
+    /// 지역 단계의 권역 탭. 도시가 바뀌면 그 도시의 권역으로 따라간다.
+    @State var selectedRegionGroup = HighSchoolSetupView.regionGroupID(
+        containing: HighSchoolCareerStore.regions.first ?? ""
+    )
     @State var selectedPresetID = PitcherPresetCatalog.all.first?.id ?? ""
     /// 주인공의 투구 손. 커널의 플래툰 판정이 실제로 읽는 값이라 표기 이상의 선택이다.
     @State var throwingHand: ThrowingHand = .right
@@ -105,8 +109,7 @@ struct HighSchoolSetupView: View {
                             .userText(Self.localizedRegionName(last.region, resolver: copyResolver)),
                         ]
                     )
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                     PrimaryPill(
                         title: copyResolver.resolve(AppCopyKey.setupQuickRebirthAction),
                         identifier: "hs.setup.quickRebirth"
@@ -287,6 +290,17 @@ struct HighSchoolSetupView: View {
     var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
+                // '뒤로'는 '다음' 캡슐 바로 아래 10pt에 있어서 '다음'을 노린 탭이 '뒤로'로
+                // 들어갔다(실주행에서 재현). 되돌리는 행동은 머리 왼쪽 관례 자리로 옮긴다.
+                if stepIndex > 0 {
+                    Button { back() } label: {
+                        Label(copyResolver.resolve(AppCopyKey.setupActionBack), systemImage: "chevron.left")
+                            .font(BaseballType.detail.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .frame(minHeight: BaseballMetrics.minimumTapTarget - 12)
+                    }
+                    .accessibilityIdentifier("hs.setup.back")
+                }
                 GameCopyText(
                     isRebirth ? AppCopyKey.setupProgressRebirth : AppCopyKey.setupProgressFirst,
                     arguments: isRebirth
@@ -361,13 +375,6 @@ struct HighSchoolSetupView: View {
                 PrimaryButton(title: copyResolver.resolve(AppCopyKey.setupActionNext), identifier: "hs.setup.next") { advance() }
             }
 
-            if stepIndex > 0 {
-                Button(copyResolver.resolve(AppCopyKey.setupActionBack)) { back() }
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .frame(minHeight: BaseballMetrics.minimumTapTarget)
-                    .accessibilityIdentifier("hs.setup.back")
-            }
         }
         .padding(BaseballMetrics.gutter)
         .safeAreaPadding(.bottom, 4)

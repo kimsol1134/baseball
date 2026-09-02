@@ -11270,19 +11270,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Complete any two of the three. Missed weeks and unfinished goals carry no penalty."
+            "value": "Finish any two of the three and the stamp is yours. Missed weeks and unfinished goals carry no penalty."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "3 つのうちいずれか 2 つを完了します。数週間の欠席や未達成の目標にはペナルティはありません。"
+            "value": "3 つのうち 2 つを終えればスタンプが押されます。逃した週や残った目標にペナルティはありません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "세 가지 중 두 가지만 마치면 됩니다. 놓친 주와 남은 목표에는 벌점이 없습니다."
+            "value": "세 가지 중 두 가지만 마치면 도장이 찍힙니다. 놓친 주나 남은 목표에 벌점은 없어요."
           }
         }
       }
@@ -13294,19 +13294,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "YOUR PLAN · MANUAL CALL"
+            "value": "YOUR PLAN"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "自分の配球 · マニュアル"
+            "value": "自分の配球"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "내 배합 · 직접 선택"
+            "value": "내 배합"
           }
         }
       }
@@ -13404,19 +13404,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Changing the call turns this on and carries your plan into the next pitch."
+            "value": "Carries your plan into the next pitch."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "配球を自分で変えるとオンになり、次の一球にも同じ配球を引き継ぎます。"
+            "value": "次の一球にも自分の配球を引き継ぎます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "직접 수정하면 자동으로 켜지고, 다음 공에도 같은 배합을 유지합니다."
+            "value": "다음 공에도 내 배합을 그대로 이어 갑니다."
           }
         }
       }
@@ -15274,19 +15274,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your pitch choices and locations created a strong process."
+            "value": "Good process on pitch choice and location."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "投球の選択と場所が強力なプロセスを生み出しました。"
+            "value": "球種とコースの選び方が良かった。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "구종과 코스를 고른 과정이 좋았다는 평가를 받습니다."
+            "value": "구종과 코스를 고른 과정이 좋았습니다."
           }
         }
       }
@@ -15296,19 +15296,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Whatever the result, your sequencing needs another look."
+            "value": "Result aside, the sequencing needs another look."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "結果が何であれ、シーケンスを再検討する必要があります。"
+            "value": "結果はさておき、配球の順番は要見直し。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "결과와 별개로 구종 순서를 다시 맞춰야 합니다."
+            "value": "결과와 별개로, 구종 순서는 다시 볼 것."
           }
         }
       }
@@ -16374,19 +16374,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This practice at-bat will not count in your record. Learn the motion and let it rip."
+            "value": "Practice at-bat, off the record. Let it rip."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "記録に残らない練習打席です。思い切って投げましょう。"
+            "value": "記録に残らない練習打席。思い切って投げよう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "기록에 남지 않는 연습 한 타석입니다. 마음껏 던져 보세요."
+            "value": "기록에 안 남는 연습 한 타석. 마음껏 던지세요."
           }
         }
       }
@@ -17430,19 +17430,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "That at-bat is over. Get ready for the next hitter."
+            "value": "At-bat over. Get set for the next hitter."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "その打席は終わった。次の打者に備えてください。"
+            "value": "打席終了。次の打者に備えよう。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타석이 끝났습니다. 다음 타자를 준비하세요."
+            "value": "타석 종료. 다음 타자를 준비하세요."
           }
         }
       }
@@ -20664,19 +20664,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ Effect: %2$@. %3$@ This decision cannot be undone."
+            "value": "%@\nThis cannot be undone."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ 効果: %2$@。 %3$@ この決定は取り消すことができません。"
+            "value": "%@\n取り消せません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ 효과: %2$@. %3$@ 이 선택은 되돌릴 수 없습니다."
+            "value": "%@\n되돌릴 수 없습니다."
           }
         }
       }
@@ -34568,19 +34568,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "If you turn off haptics, the release meter will no longer wobble with game pressure. The meter's normal movement and fatigue-based aim shake remain."
+            "value": "Turning off haptics removes the release meter's pressure wobble. Sound never stops other apps' music and follows the Ring/Silent switch."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ハプティクスをオフにすると、勝負の緊張によるリリースメーターの揺れがなくなります。メーターの基本的な動きと、疲労による照準のブレはそのまま残ります。"
+            "value": "ハプティクスをオフにすると、勝負の緊張によるリリースメーターの揺れがなくなります。サウンドは他のアプリの音楽を止めず、サイレントスイッチに従います。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "진동을 끄면 승부 긴장에 따른 릴리스 미터 흔들림도 사라집니다. 기본 미터 이동과 피로에 따른 조준 흔들림은 그대로입니다."
+            "value": "진동을 끄면 승부 긴장에 따른 릴리스 미터 흔들림이 사라져요. 소리는 다른 앱 음악을 멈추지 않고 무음 스위치를 따릅니다."
           }
         }
       }
@@ -34700,19 +34700,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Turn this on if timing gestures are difficult. Every pitch uses a steady mid-release, so you won't get stuck—but you give up the edge of perfect timing."
+            "value": "Turn this on if timing gestures are hard. Every pitch uses a mid release, so you give up the perfect-timing bonus."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "タイミング操作が難しい場合にオンにしてください。毎球安定した中央リリースになるため進行不能にはなりませんが、完璧なタイミングの追加効果は得られません。"
+            "value": "タイミング操作が難しければオンに。毎球中央リリースになる代わりに、完璧なタイミングの利点はなくなります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "타이밍 제스처가 어려우면 켜세요. 항상 안정된 중간 릴리스로 던지므로 진행이 막히는 일은 없습니다. 다만 완벽한 타이밍의 이점도 사라집니다."
+            "value": "타이밍 제스처가 어려우면 켜세요. 늘 중간 릴리스로 던지는 대신, 완벽한 타이밍의 이점은 없어요."
           }
         }
       }
@@ -40059,6 +40059,864 @@
           "stringUnit": {
             "state": "translated",
             "value": "병역 면제"
+          }
+        }
+      }
+    },
+    "settings.reading-size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Text size"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字サイズ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "글자 크기"
+          }
+        }
+      }
+    },
+    "settings.reading-size.standard": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "標準"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "표준"
+          }
+        }
+      }
+    },
+    "settings.reading-size.large": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大きく"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "크게"
+          }
+        }
+      }
+    },
+    "settings.reading-size.extra-large": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extra large"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "特大"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아주 크게"
+          }
+        }
+      }
+    },
+    "settings.reading-size.footer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never smaller than your device setting. The larger of the two wins."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端末の設定より小さくはなりません。大きい方に合わせます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기기 설정보다 작아지지는 않아요. 큰 쪽을 따릅니다."
+          }
+        }
+      }
+    },
+    "glossary.term.action": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の意味を見る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 뜻 보기"
+          }
+        }
+      }
+    },
+    "meta.weekly.rules.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How the notes work"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メモのルール"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "노트 규칙"
+          }
+        }
+      }
+    },
+    "meta.weekly.rules.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Two of three earns a stamp. No penalty for missing."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 つ中 2 つでスタンプ。逃してもペナルティなし。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "셋 중 둘이면 도장. 놓쳐도 벌점 없음."
+          }
+        }
+      }
+    },
+    "pitch.catcher.rationale.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Catcher's read"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "捕手の狙い"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포수의 생각"
+          }
+        }
+      }
+    },
+    "pitch.catcher.chip.confidence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Call confidence %lld%%"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サイン確信 %lld%%"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사인 확신 %lld%%"
+          }
+        }
+      }
+    },
+    "pitch.catcher.chip.trust": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Catcher trust %lld · %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "捕手との呼吸 %lld · %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포수 호흡 %lld · %@"
+          }
+        }
+      }
+    },
+    "pitch.build.chip.movement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movement %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "変化量 %lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "움직임 %lld"
+          }
+        }
+      }
+    },
+    "pitch.build.chip.command": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コース %lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "코스 %lld"
+          }
+        }
+      }
+    },
+    "pitch.build.chip.fatigue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effective fatigue %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "体感疲労 %lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "체감 피로 %lld"
+          }
+        }
+      }
+    },
+    "pro.weekly.injury-chip": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Injury %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "負傷 %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부상 %@"
+          }
+        }
+      }
+    },
+    "pro.weekly.gain-chip": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ▲"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ▲"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ▲"
+          }
+        }
+      }
+    },
+    "pro.weekly.delta.caption": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今週 %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 %@"
+          }
+        }
+      }
+    },
+    "pro.weekly.option.detail-title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Effect and cost"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "効果と負担"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "효과와 부담"
+          }
+        }
+      }
+    },
+    "training.chip.gain": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ▲"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ▲"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ▲"
+          }
+        }
+      }
+    },
+    "training.chip.fatigue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fatigue %+lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "疲労 %+lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "피로 %+lld"
+          }
+        }
+      }
+    },
+    "training.chip.arm-recovery": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arm recovery"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "腕の回復"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팔 상태 회복"
+          }
+        }
+      }
+    },
+    "training.chip.risk.high": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Injury risk: high"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "故障リスク 高"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부상 위험 높음"
+          }
+        }
+      }
+    },
+    "training.chip.risk.some": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Injury risk: some"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "故障リスク やや"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부상 위험 약간"
+          }
+        }
+      }
+    },
+    "training.chip.no-growth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No rating growth"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "能力成長なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "능력 성장 없음"
+          }
+        }
+      }
+    },
+    "training.option.detail.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳細"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자세히"
+          }
+        }
+      }
+    },
+    "training.option.detail.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What this training gives and costs."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このトレーニングの効果と代償。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 훈련의 효과와 대가."
+          }
+        }
+      }
+    },
+    "setup.region.group.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Area"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "地域圏"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "권역"
+          }
+        }
+      }
+    },
+    "setup.region.group.capital": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capital area"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首都圏"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "수도권"
+          }
+        }
+      }
+    },
+    "setup.region.group.chungcheong": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chungcheong"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "忠清"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "충청"
+          }
+        }
+      }
+    },
+    "setup.region.group.honam": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Honam"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "湖南"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "호남"
+          }
+        }
+      }
+    },
+    "setup.region.group.yeongnam": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeongnam"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "嶺南"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영남"
+          }
+        }
+      }
+    },
+    "setup.region.group.gangwon-jeju": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gangwon · Jeju"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "江原・済州"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "강원·제주"
+          }
+        }
+      }
+    },
+    "setup.inheritance.shop.guide.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About inheritance points"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "継承ポイントとは"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계승 포인트란"
+          }
+        }
+      }
+    },
+    "setup.inheritance.shop.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spend what the last player left on rules for this run."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の選手が残したポイントで、この3年のルールを買います。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이전 선수가 남긴 포인트로 이번 3년의 규칙을 삽니다."
+          }
+        }
+      }
+    },
+    "awakening.guide.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to read this"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "見方"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "읽는 법"
+          }
+        }
+      }
+    },
+    "awakening.guide.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checks are owned skills; ‘Next’ marks the next awakening's candidates."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チェックは所持スキル、「次」は次の覚醒の候補。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "체크는 보유 스킬, ‘다음’은 다음 각성의 후보."
+          }
+        }
+      }
+    },
+    "awakening.selection.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How choosing works"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選び方"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고르는 법"
+          }
+        }
+      }
+    },
+    "awakening.selection.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next node in that branch opens · %lld awakenings left"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選んだ枝の次の節が開きます · 残り覚醒 %lld 回"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "찍은 갈래의 다음 가지가 열립니다 · 남은 각성 %lld번"
+          }
+        }
+      }
+    },
+    "conclusion.signature.guide.summary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One passes on now; the rest stay in your discovered list."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選んだ1つはすぐ受け継がれ、残りは発見リストに残ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고른 하나는 바로 이어지고, 나머지는 발견 목록에 남습니다."
           }
         }
       }

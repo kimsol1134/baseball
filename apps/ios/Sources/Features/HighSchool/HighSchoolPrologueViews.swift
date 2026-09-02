@@ -65,9 +65,8 @@ struct InheritedStartComparisonCard: View {
                         .userText(signed(currentDisplayTotal - previousDisplayTotal)),
                     ]
                 ))
-                    .font(.subheadline.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(BaseballTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .proseLeadStyle()
+                    .monospacedDigit()
 
                 HStack(spacing: 8) {
                     ForEach(Array(abilities.enumerated()), id: \.offset) { _, ability in
@@ -88,8 +87,7 @@ struct InheritedStartComparisonCard: View {
                     AppCopyKey.prologueInheritedStartTotal,
                     arguments: [.userText(signed(comparison.inheritedRatingDelta))]
                 ))
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(BaseballTheme.milestone)
+                    .detailStyle(BaseballTheme.textPrimary)
 
                 ForEach(comparison.sources) { source in
                     Text(copyResolver.resolve(
@@ -99,8 +97,8 @@ struct InheritedStartComparisonCard: View {
                             .userText(signed(source.ratingDelta)),
                         ]
                     ))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
+                        .monospacedDigit()
                 }
             }
             .accessibilityIdentifier("hs.prologue.inheritedStartComparison")
@@ -158,60 +156,58 @@ struct PrologueCard: View {
         )
     }
 
+    /// 효과 문구의 부호로 칩 색을 정한다. 이득은 초록, 비용은 주황, 나머지는 회색.
+    static func windEffectTone(_ effect: String) -> EffectChip.Tone {
+        if effect.contains("+") { return .gain }
+        if effect.contains("-") || effect.contains("−") { return .cost }
+        return .neutral
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             BaseballCard(title: milestoneTitle, tone: .milestone) {
                 VStack(alignment: .leading, spacing: 8) {
                     if opener.variant == .firstLife {
                         Text(verbatim: copyResolver.resolve(AppCopyKey.prologueFirstLifeCoachQuote))
-                            .font(.subheadline)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .proseStyle()
                     }
                     Text(verbatim: copyResolver.resolve(opener, regionName: regionName))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle()
 
                     let windTitle = copyResolver.resolve(wind.titleToken)
                     let windDetail = copyResolver.resolve(wind.detailToken)
                     let effectCopy = wind.effectDescriptors.map { copyResolver.resolve($0.token) }
                     let neutralWindCopy = copyResolver.resolve(AppCopyKey.prologueWindNeutralExplanation)
                     Divider()
-                    BaseballCard(
-                        title: copyResolver.resolve(
+                    // 바람은 카드 속 카드가 아니라 굵은 한 줄 + 설명 한 줄 + 효과 칩이다.
+                    // 챕터 시작 화면에 눈썹이 넷 이상 늘어서던 원인 하나를 여기서 뺀다.
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(verbatim: copyResolver.resolve(
                             AppCopyKey.prologueWindHeading,
                             arguments: [.userText(windTitle)]
-                        ),
-                        tone: .raised
-                    ) {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(verbatim: windDetail)
-                                .font(.caption)
-                                .foregroundStyle(BaseballTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            ForEach(Array(effectCopy.enumerated()), id: \.offset) { _, effect in
-                                Text(verbatim: "· \(effect)")
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(BaseballTheme.information)
-                            }
-                            if effectCopy.isEmpty {
-                                Text(verbatim: neutralWindCopy)
-                                    .font(.caption)
-                                    .foregroundStyle(BaseballTheme.textTertiary)
+                        ))
+                            .proseLeadStyle()
+                        Text(verbatim: effectCopy.isEmpty ? neutralWindCopy : windDetail)
+                            .detailStyle()
+                        if !effectCopy.isEmpty {
+                            EffectChipFlow {
+                                ForEach(Array(effectCopy.enumerated()), id: \.offset) { _, effect in
+                                    EffectChip(text: effect, tone: Self.windEffectTone(effect), systemImage: "wind")
+                                }
                             }
                         }
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(
-                            copyResolver.resolve(
-                                AppCopyKey.prologueWindAccessibility,
-                                arguments: [
-                                    .userText(windTitle),
-                                    .userText(windDetail),
-                                    .userText(effectCopy.isEmpty ? neutralWindCopy : effectCopy.joined(separator: "; ")),
-                                ]
-                            )
-                        )
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        copyResolver.resolve(
+                            AppCopyKey.prologueWindAccessibility,
+                            arguments: [
+                                .userText(windTitle),
+                                .userText(windDetail),
+                                .userText(effectCopy.isEmpty ? neutralWindCopy : effectCopy.joined(separator: "; ")),
+                            ]
+                        )
+                    )
                     if !state.karmas.isEmpty {
                         Divider()
                         Text(verbatim: copyResolver.resolve(AppCopyKey.prologueHandicapHeading))
@@ -219,12 +215,11 @@ struct PrologueCard: View {
                             .foregroundStyle(BaseballTheme.warning)
                         ForEach(state.karmas, id: \.self) { karma in
                             let copy = karma.copyDescriptor
-                            VStack(alignment: .leading, spacing: 1) {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text(verbatim: copyResolver.resolve(copy.titleToken))
                                     .font(.subheadline.weight(.semibold))
                                 Text(verbatim: copyResolver.resolve(copy.detailToken))
-                                    .font(.caption)
-                                    .foregroundStyle(BaseballTheme.textSecondary)
+                                    .detailStyle()
                             }
                         }
                     }
@@ -242,7 +237,10 @@ struct PrologueCard: View {
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                 .accessibilityIdentifier("hs.prologue.continue")
-            BaseballCard(title: copyResolver.resolve(AppCopyKey.prologueCurrentPlayerTitle)) {
+            // 능력표는 눈썹 없이 제목 한 줄로. 이 화면의 눈썹은 첫 등교 카드 하나면 된다.
+            VStack(alignment: .leading, spacing: 10) {
+                Text(verbatim: copyResolver.resolve(AppCopyKey.prologueCurrentPlayerTitle))
+                    .font(.headline)
                 VStack(alignment: .leading, spacing: 10) {
                     // 재능 등급과 한계선을 함께 보여 준다. 이 회차가 어떤 투수인지가
                     // 시작 수치가 아니라 여기서 정해진다.
@@ -268,9 +266,7 @@ struct PrologueCard: View {
                         talent: talent.stamina
                     )
                     Text(verbatim: copyResolver.resolve(AppCopyKey.prologueAbilityExplanation))
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle()
                 }
             }
         }
@@ -339,7 +335,10 @@ struct PrologueAbilityGauge: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
-                Text(verbatim: label).eyebrowStyle(BaseballTheme.textTertiary)
+                // 게이지 라벨은 눈썹이 아니다 — 네 줄이 나란히 서면 눈썹이 넷 늘어난다.
+                Text(verbatim: label)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textSecondary)
                 Text(verbatim: talentText)
                     .font(.caption2.weight(.black))
                     .foregroundStyle(BaseballTheme.actionInk)
@@ -370,13 +369,10 @@ struct PrologueAbilityGauge: View {
             }
             .frame(height: 8)
             Text(verbatim: meaning)
-                .font(.caption)
-                .foregroundStyle(BaseballTheme.textSecondary)
+                .detailStyle()
             if value >= talent.ceiling, talent != .s {
                 Text(verbatim: copyResolver.resolve(AppCopyKey.prologueAbilityCeilingReached))
-                    .font(.caption)
-                    .foregroundStyle(BaseballTheme.warning)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
             }
         }
         .accessibilityElement(children: .ignore)

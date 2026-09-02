@@ -34,8 +34,7 @@ extension HighSchoolSetupView {
             BaseballCard(title: copyResolver.resolve(AppCopyKey.setupRepertoireLearning)) {
                 VStack(alignment: .leading, spacing: 8) {
                     GameCopyText(AppCopyKey.setupRepertoireLearningHint)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                     ForEach([PitchType.slider, .curveball, .changeup], id: \.self) { pitch in
                         Button {
                             learningPitch = pitch
@@ -83,8 +82,7 @@ extension HighSchoolSetupView {
             BaseballCard(title: copyResolver.resolve(AppCopyKey.setupRepertoirePrimary)) {
                 VStack(alignment: .leading, spacing: 8) {
                     GameCopyText(AppCopyKey.setupRepertoirePrimaryHint)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                     ForEach([PitchType.fourSeam] + startingRepertoire.readyBreakingPitches, id: \.self) { pitch in
                         Button { primaryPitch = pitch } label: {
                             HStack {

@@ -23,13 +23,12 @@ struct ChapterReviewCard: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             BaseballCard(title: title, tone: .milestone) {
                 VStack(alignment: .leading, spacing: 6) {
+                    // 결과 한 줄이 먼저, 숫자는 그 아래.
                     Text(verbatim: verdict)
-                        .font(.subheadline.weight(.semibold))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Divider()
+                        .proseLeadStyle()
                     Text(verbatim: statLine)
-                        .font(.footnote.monospacedDigit())
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
+                        .monospacedDigit()
                 }
             }
             // 성장 정산 — 훈련이 실제로 몸에 남긴 것. 없으면 없다고 적는다.
@@ -39,29 +38,25 @@ struct ChapterReviewCard: View {
                         trainingCount: trainingCount,
                         resolver: copyResolver
                     ))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                 } else {
-                    VStack(alignment: .leading, spacing: 5) {
-                        ForEach(gainRows) { row in
-                            HStack {
-                                Text(verbatim: row.label).font(.subheadline)
-                                Spacer()
-                                Text(verbatim: "+\(row.delta)")
-                                    .font(.subheadline.weight(.heavy).monospacedDigit())
-                                    .foregroundStyle(BaseballTheme.milestone)
+                    VStack(alignment: .leading, spacing: 6) {
+                        EffectChipFlow {
+                            ForEach(gainRows) { row in
+                                EffectChip(text: "\(row.label) +\(row.delta)", tone: .gain)
                             }
                         }
                         Text(verbatim: HighSchoolPresentation.localizedChapterReviewGrowthSummary(
                             trainingCount: trainingCount,
                             resolver: copyResolver
                         ))
-                            .font(.caption2)
-                            .foregroundStyle(BaseballTheme.textTertiary)
+                            .detailStyle()
                     }
                 }
             }
-            BaseballCard(title: abilitiesTitle) {
+            // 능력표는 눈썹 없이 제목 한 줄로 — 화면당 눈썹은 둘까지다.
+            VStack(alignment: .leading, spacing: 10) {
+                Text(verbatim: abilitiesTitle).font(.headline)
                 VStack(alignment: .leading, spacing: 10) {
                     // 장 정산은 "어디까지 갈 수 있나"를 다시 읽는 자리다. 재능(한계)이
                     // 빠지면 다음 장의 훈련 계획을 세울 근거가 사라진다.
@@ -97,8 +92,7 @@ struct ChapterReviewCard: View {
                 resolver: copyResolver
             ) {
                 Text(verbatim: rivalLine)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .detailStyle()
             }
             PrimaryButton(title: continueAction, identifier: "hs.chapter.continue", action: onContinue)
         }
@@ -170,8 +164,7 @@ struct TournamentCard: View {
                     }
                 }
                 Text(verbatim: nationalNote)
-                    .font(.caption2)
-                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .detailStyle()
             }
         }
         .accessibilityIdentifier("hs.tournament")
@@ -189,7 +182,7 @@ struct TournamentCard: View {
                 resolver: copyResolver
             )
         return Text(verbatim: displayName)
-            .font(.footnote.weight(rawName == playerSchoolName ? .bold : .regular))
+            .font(BaseballType.annotation.weight(rawName == playerSchoolName ? .bold : .regular))
             .foregroundStyle(rawName == playerSchoolName ? BaseballTheme.action : BaseballTheme.textSecondary)
     }
 }
@@ -214,22 +207,28 @@ struct ChapterGoalCard: View {
             targetStrikeouts: goal.targetStrikeouts,
             resolver: copyResolver
         )
-        BaseballCard(title: title, tone: done ? .positive : .raised) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(verbatim: detail)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 10) {
-                    ProgressView(value: Double(min(progress, goal.targetStrikeouts)),
-                                 total: Double(goal.targetStrikeouts))
-                        .tint(done ? BaseballTheme.positive : BaseballTheme.action)
-                    Text(verbatim: progressLabel)
-                        .font(.caption.weight(.bold).monospacedDigit())
-                        .foregroundStyle(done ? BaseballTheme.positive : BaseballTheme.textSecondary)
-                }
+        // 눈썹 없는 한 덩어리 — 숙제 이름이 굵은 첫 줄, 설명이 그 아래, 게이지가 마지막.
+        // 챕터 시작 화면에 눈썹이 넷 이상 늘어서던 원인 하나를 여기서 뺀다.
+        VStack(alignment: .leading, spacing: 8) {
+            Text(verbatim: title)
+                .proseLeadStyle()
+            Text(verbatim: detail)
+                .detailStyle()
+            HStack(spacing: 10) {
+                ProgressView(value: Double(min(progress, goal.targetStrikeouts)),
+                             total: Double(goal.targetStrikeouts))
+                    .tint(done ? BaseballTheme.positive : BaseballTheme.action)
+                Text(verbatim: progressLabel)
+                    .font(.caption.weight(.bold).monospacedDigit())
+                    .foregroundStyle(done ? BaseballTheme.positive : BaseballTheme.textSecondary)
             }
         }
+        .padding(BaseballMetrics.gutter)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            done ? BaseballTheme.positiveSoft : BaseballTheme.surface,
+            in: RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
+        )
         .accessibilityIdentifier("hs.chapterGoal")
     }
 }
@@ -270,14 +269,11 @@ struct CommunityBuzzCard: View {
                             .font(.caption2)
                             .foregroundStyle(BaseballTheme.textTertiary)
                         Text(verbatim: localized(line))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                     }
                 }
                 Text(verbatim: copyResolver.resolve(footnoteKey))
-                    .font(.caption2)
-                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .detailStyle(BaseballTheme.textTertiary)
             }
         }
         .accessibilityIdentifier("hs.buzz")
@@ -314,9 +310,7 @@ struct ChronicleCard: View {
                                 .foregroundStyle(BaseballTheme.textTertiary)
                             // localization-safe: resolved-copy
                             Text(localized.text)
-                                .font(.footnote)
-                                .foregroundStyle(BaseballTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .detailStyle()
                         }
                     }
                 }

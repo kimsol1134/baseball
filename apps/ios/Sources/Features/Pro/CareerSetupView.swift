@@ -86,8 +86,7 @@ struct CareerSetupView: View {
                 )
 
                 Text(verbatim: copyResolver.resolve(.careerSetupExplanation))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .detailStyle()
 
                 PrimaryPill(
                     title: copyResolver.resolve(.careerSetupAction),
@@ -124,8 +123,7 @@ private struct DirectRepertoireCard: View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             GameCopyText(AppCopyKey.setupRepertoireTitle).font(.headline)
             GameCopyText(AppCopyKey.setupRepertoireDescription)
-                .font(.footnote)
-                .foregroundStyle(BaseballTheme.textSecondary)
+                .detailStyle()
             BaseballCard(title: copyResolver.resolve(AppCopyKey.setupRepertoireLearning)) {
                 HStack(spacing: 6) {
                     ForEach([PitchType.slider, .curveball, .changeup], id: \.self) { pitch in
@@ -134,7 +132,7 @@ private struct DirectRepertoireCard: View {
                             if primaryPitch == pitch { primaryPitch = .fourSeam }
                         } label: {
                             Text(PitchCopy.localized(pitch, resolver: copyResolver))
-                                .font(.footnote.weight(.semibold))
+                                .font(BaseballType.annotation.weight(.semibold))
                                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                         }
                         .buttonStyle(.plain)
@@ -152,7 +150,7 @@ private struct DirectRepertoireCard: View {
                     ForEach([PitchType.fourSeam] + ready, id: \.self) { pitch in
                         Button { primaryPitch = pitch } label: {
                             Text(PitchCopy.localized(pitch, resolver: copyResolver))
-                                .font(.footnote.weight(.semibold))
+                                .font(BaseballType.annotation.weight(.semibold))
                                 .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                         }
                         .buttonStyle(.plain)
@@ -236,7 +234,7 @@ private struct PresetCard: View {
                 } icon: {
                     Image(systemName: "sparkles")
                 }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .foregroundStyle(BaseballTheme.positive)
                     .fixedSize(horizontal: false, vertical: true)
                 Label {
@@ -244,9 +242,7 @@ private struct PresetCard: View {
                 } icon: {
                     Image(systemName: "exclamationmark.triangle")
                 }
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.warning)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle(BaseballTheme.warning)
             }
             .padding(BaseballMetrics.gutter)
             .frame(maxWidth: .infinity, alignment: .leading)

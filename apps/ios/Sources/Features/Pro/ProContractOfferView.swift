@@ -50,32 +50,28 @@ struct ProContractOfferView: View {
 
                 if market.kind != .rookie {
                     Text(copyResolver.resolve(.contractOfferMarketCompare))
-                        .font(.subheadline)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle()
                         .accessibilityIdentifier("pro.contractOffer.market.compare")
                 }
 
                 if market.kind == .rookie {
-                    BaseballCard(
-                        title: ProContractCopy.team(
+                    // 지명 정보는 눈썹 카드 없이 리드 한 줄 + 보조 줄로.
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(verbatim: ProContractCopy.team(
                             ProCareerPresentation.teamName(state.team, resolver: copyResolver),
                             resolver: copyResolver
-                        ),
-                        tone: .raised
-                    ) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            if let round = market.draftRound {
-                                Text(verbatim: ProContractCopy.draftRound(round, resolver: copyResolver))
-                            }
-                            if let pick = market.overallPick {
-                                Text(verbatim: ProContractCopy.draftPick(pick, resolver: copyResolver))
-                            }
+                        ))
+                        .proseLeadStyle()
+                        if let round = market.draftRound {
+                            Text(verbatim: ProContractCopy.draftRound(round, resolver: copyResolver))
+                                .detailStyle()
                         }
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        if let pick = market.overallPick {
+                            Text(verbatim: ProContractCopy.draftPick(pick, resolver: copyResolver))
+                                .detailStyle()
+                        }
                     }
+                    .accessibilityElement(children: .combine)
                 }
 
                 if market.kind != .rookie {
@@ -97,12 +93,13 @@ struct ProContractOfferView: View {
                     if let counter = market.counterOffer,
                        offer.preservesTeamLegacy,
                        offer.teamID == state.team.id {
-                        Text(copyResolver.resolve(
-                            counter.accepted ? .contractOfferCounterAccepted : .contractOfferCounterRejected
-                        ))
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(counter.accepted ? BaseballTheme.information : BaseballTheme.warning)
-                        .fixedSize(horizontal: false, vertical: true)
+                        Label(
+                            copyResolver.resolve(
+                                counter.accepted ? .contractOfferCounterAccepted : .contractOfferCounterRejected
+                            ),
+                            systemImage: counter.accepted ? "checkmark.circle" : "xmark.circle"
+                        )
+                        .detailStyle(BaseballTheme.textPrimary)
                         .accessibilityIdentifier("pro.contractOffer.counter.result")
                     }
                 }
@@ -138,13 +135,12 @@ struct ProContractOfferView: View {
                 }
                 selectedAmbition = activeGoal.ambition
             }
-            .confirmationDialog(
+            .alert(
                 copyResolver.resolve(.contractOfferConfirmTitle),
                 isPresented: Binding(
                     get: { pendingOffer != nil },
                     set: { if !$0 { pendingOfferID = nil } }
-                ),
-                titleVisibility: .visible
+                )
             ) {
                 if let pendingOffer {
                     Button(copyResolver.resolve(.contractOfferConfirmAction)) {
@@ -229,9 +225,7 @@ struct ProContractOfferView: View {
             .accessibilityIdentifier(identifier)
             if case .unavailable(let reason) = availability {
                 Text(verbatim: ProContractCopy.counterUnavailable(reason, resolver: copyResolver))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.warning)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
                     .accessibilityIdentifier("pro.contractOffer.counter.unavailable.\(kind.rawValue)")
             }
         }
@@ -247,9 +241,7 @@ struct ProContractOfferView: View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(unique, id: \.rawValue) { reason in
                 Text(verbatim: ProContractCopy.counterUnavailable(reason, resolver: copyResolver))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.warning)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
             }
         }
         .accessibilityIdentifier("pro.contractOffer.counter.unavailable")
@@ -278,13 +270,13 @@ struct ProContractOfferView: View {
                     value: GameFormatters.krw(offer.annualSalary, language: copyResolver.language),
                     identifier: "\(prefix).annualSalary"
                 )
-                Text(ProContractCopy.rolePromise(
-                    copyResolver.resolve(offer.rolePromise.displayCopyToken),
-                    resolver: copyResolver
-                ))
-                .font(.subheadline)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                GlossaryText(
+                    text: ProContractCopy.rolePromise(
+                        copyResolver.resolve(offer.rolePromise.displayCopyToken),
+                        resolver: copyResolver
+                    ),
+                    font: BaseballType.detail
+                )
                 .accessibilityIdentifier("\(prefix).role")
                 contractValue(
                     title: copyResolver.resolve(.contractOfferGuaranteedSalary),
@@ -299,39 +291,37 @@ struct ProContractOfferView: View {
                     )
                 }
                 if let interest = offer.interest {
-                    Text(verbatim: ProContractCopy.interestLevel(interest.level, resolver: copyResolver))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.information)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("pro.contractOffer.interest.\(interest.level.rawValue)")
-                    Text(verbatim: ProContractCopy.interestReason(interest, resolver: copyResolver))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("\(prefix).interest.reason")
+                    // 구단 관심은 칩 하나로, 이유는 용어 링크가 붙은 보조 문장으로.
+                    EffectChip(
+                        text: ProContractCopy.interestLevel(interest.level, resolver: copyResolver),
+                        tone: interest.level == .hot ? .gain : .neutral,
+                        systemImage: "building.2"
+                    )
+                    .accessibilityIdentifier("pro.contractOffer.interest.\(interest.level.rawValue)")
+                    GlossaryText(
+                        text: ProContractCopy.interestReason(interest, resolver: copyResolver),
+                        font: BaseballType.detail
+                    )
+                    .accessibilityIdentifier("\(prefix).interest.reason")
                 }
-                Text(verbatim: ProContractCopy.expectation(
-                    kindName: expectationName(offer.expectation.kind),
-                    target: offer.expectation.target,
-                    difficultyName: difficultyName(offer.expectation.difficulty),
-                    resolver: copyResolver
-                ))
-                .font(.subheadline)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                GlossaryText(
+                    text: ProContractCopy.expectation(
+                        kindName: expectationName(offer.expectation.kind),
+                        target: offer.expectation.target,
+                        difficultyName: difficultyName(offer.expectation.difficulty),
+                        resolver: copyResolver
+                    ),
+                    font: BaseballType.detail
+                )
                 .accessibilityIdentifier("\(prefix).expectation")
                 Text(verbatim: ProContractCopy.outlook(outlookName(offer.outlook), resolver: copyResolver))
-                .font(.subheadline)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityLabel(copyResolver.resolve(.contractOfferOutlook))
+                    .detailStyle()
+                    .accessibilityLabel(copyResolver.resolve(.contractOfferOutlook))
                 Text(ProContractCopy.legacyImpact(
                     copyResolver.resolve(offer.preservesTeamLegacy ? .contractOfferLegacyPreserved : .contractOfferLegacyReset),
                     resolver: copyResolver
                 ))
-                .font(.subheadline)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .detailStyle()
                 .accessibilityIdentifier("\(prefix).legacy")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -360,32 +350,28 @@ struct ProContractOfferView: View {
 
     @ViewBuilder
     private func goalSelectionSection(_ market: ProContractMarket) -> some View {
-        BaseballCard(title: copyResolver.resolve(.contractOfferGoalTitle), tone: .milestone) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(copyResolver.resolve(.contractOfferGoalInstruction))
-                    .font(.subheadline)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        // 눈썹 카드 대신 섹션 제목 하나. 제안 카드의 구단 이름이 이 화면의 눈썹을 차지한다.
+        VStack(alignment: .leading, spacing: 10) {
+            Text(verbatim: copyResolver.resolve(.contractOfferGoalTitle))
+                .font(.headline)
+            Text(copyResolver.resolve(.contractOfferGoalInstruction))
+                .detailStyle()
 
-                if market.kind != .rookie && allAmbitionsCompleted {
-                    Text(copyResolver.resolve(.contractOfferAllAmbitionsComplete))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.milestone)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("pro.contractOffer.ambition.all-complete")
-                } else {
-                    ForEach(Self.ambitions, id: \.rawValue) { ambition in
-                        ambitionChoice(ambition, marketKind: market.kind)
-                    }
+            if market.kind != .rookie && allAmbitionsCompleted {
+                Text(copyResolver.resolve(.contractOfferAllAmbitionsComplete))
+                    .proseLeadStyle(BaseballTheme.milestone)
+                    .accessibilityIdentifier("pro.contractOffer.ambition.all-complete")
+            } else {
+                ForEach(Self.ambitions, id: \.rawValue) { ambition in
+                    ambitionChoice(ambition, marketKind: market.kind)
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
 
         if !goalSelectionComplete {
             Label(copyResolver.resolve(.contractOfferAmbitionRequired), systemImage: "hand.tap")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(BaseballTheme.information)
-                .fixedSize(horizontal: false, vertical: true)
+                .detailStyle()
                 .accessibilityIdentifier("pro.contractOffer.ambition.required")
         }
     }

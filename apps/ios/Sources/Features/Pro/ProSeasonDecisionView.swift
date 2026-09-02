@@ -36,8 +36,7 @@ struct ProSeasonDecisionView: View {
             if !(condensesNarrative && !narrativeExpanded) {
                 GlossaryText(
                     text: ProCareerPresentation.decisionDetail(decision, resolver: copyResolver),
-                    font: .subheadline,
-                    color: BaseballTheme.textSecondary
+                    font: BaseballType.prose
                 )
             }
             if condensesNarrative {
@@ -59,10 +58,17 @@ struct ProSeasonDecisionView: View {
                 .accessibilityIdentifier("pro.seasonDecision.narrativeToggle")
             }
 
+            // 효과가 언제 드러나는지는 선택지마다 같으므로 카드 밖에 한 번만 적는다.
+            // 3주 결정은 선택지별 후속 문장이 달라 카드 안에 남긴다.
+            if !decision.type.isWeeklyBinaryDecision {
+                Text(ProCareerPresentation.decisionTiming(for: decision, resolver: copyResolver))
+                    .detailStyle(BaseballTheme.textTertiary)
+            }
+
             ForEach(decision.choices) { choice in
-                VStack(alignment: .leading, spacing: 7) {
+                VStack(alignment: .leading, spacing: 8) {
                     Button { pendingChoice = choice } label: {
-                        VStack(alignment: .leading, spacing: 7) {
+                        VStack(alignment: .leading, spacing: 8) {
                             HStack(alignment: .firstTextBaseline) {
                                 Text(ProCareerPresentation.choiceTitle(choice, resolver: copyResolver))
                                     .font(.headline)
@@ -70,36 +76,35 @@ struct ProSeasonDecisionView: View {
                                 Image(systemName: "chevron.right.circle.fill")
                                     .foregroundStyle(BaseballTheme.selection)
                             }
-                            Label(ProCareerPresentation.combinedEffect(
+                            // 이득 칩과 비용 칩을 색으로 가른다. "구위 +1 · 피로 +12" 한 문장에
+                            // 섞여 있던 비용이 주황 칩으로 따로 선다.
+                            EffectChipFlow {
+                                ForEach(ProCareerPresentation.effectChips(
+                                    choice.effect,
+                                    journeyEffect: choice.journeyEffect,
+                                    resolver: copyResolver
+                                )) { chip in
+                                    EffectChip(text: chip.text, tone: chip.tone)
+                                }
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(Text(verbatim: ProCareerPresentation.combinedEffect(
                                 choice.effect,
                                 journeyEffect: choice.journeyEffect,
                                 resolver: copyResolver
-                            ), systemImage: "plusminus.circle")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(BaseballTheme.information)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("pro.seasonDecision.effect.\(choice.id)")
+                            )))
+                            .accessibilityIdentifier("pro.seasonDecision.effect.\(choice.id)")
                             if decision.type.isWeeklyBinaryDecision {
                                 Label(
                                     copyResolver.resolve(.decisionFollowUpImmediate),
                                     systemImage: "bolt.fill"
                                 )
-                                .font(.caption)
+                                .font(BaseballType.annotation)
                                 .foregroundStyle(BaseballTheme.textSecondary)
                                 if let later = ProCareerPresentation.choiceFollowUpLine(choice, resolver: copyResolver) {
                                     Label(later, systemImage: "arrow.turn.down.right")
-                                        .font(.caption)
-                                        .foregroundStyle(BaseballTheme.textSecondary)
-                                        .fixedSize(horizontal: false, vertical: true)
+                                        .detailStyle()
                                 }
-                            } else {
-                                Label(
-                                    ProCareerPresentation.decisionTiming(for: decision, resolver: copyResolver),
-                                    systemImage: decision.type == .mediaOpportunity ? "bolt.fill" : "arrow.turn.down.right"
-                                )
-                                    .font(.caption)
-                                    .foregroundStyle(BaseballTheme.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -112,8 +117,7 @@ struct ProSeasonDecisionView: View {
                     if !(condensesNarrative && !narrativeExpanded) {
                         GlossaryText(
                             text: ProCareerPresentation.choiceDetail(choice, resolver: copyResolver),
-                            font: .footnote,
-                            color: BaseballTheme.textSecondary
+                            font: BaseballType.detail
                         )
                     }
                 }
@@ -126,10 +130,15 @@ struct ProSeasonDecisionView: View {
                 }
             }
 
-            Label(copyResolver.resolve(.decisionWarning), systemImage: "exclamationmark.circle")
-                .font(.caption)
-                .foregroundStyle(BaseballTheme.warning)
-                .fixedSize(horizontal: false, vertical: true)
+            // 비가역 경고. 아이콘만 경고색, 문장은 읽는 글 색.
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "exclamationmark.circle")
+                    .font(BaseballType.detail)
+                    .foregroundStyle(BaseballTheme.warning)
+                Text(copyResolver.resolve(.decisionWarning))
+                    .detailStyle()
+            }
+            .accessibilityElement(children: .combine)
         }
         .padding(.bottom, 28)
         .accessibilityElement(children: .contain)
@@ -145,14 +154,15 @@ struct ProSeasonDecisionView: View {
             }
             SeenContentStore.markSeen(seenContentID)
         }
-        .confirmationDialog(
+        // confirmationDialog는 iOS 26에서 팝오버로 떠 취소가 안 보였고, 본문이 카드 내용을
+        // 전부 되풀이했다. 알럿은 제목(선택지) + 효과 한 줄 + 비가역 한 줄 + 취소 버튼으로 끝난다.
+        .alert(
             pendingChoice.map { ProCareerPresentation.choiceTitle($0, resolver: copyResolver) }
                 ?? copyResolver.resolve(.decisionConfirmTitle),
             isPresented: Binding(
                 get: { pendingChoice != nil },
                 set: { if !$0 { pendingChoice = nil } }
-            ),
-            titleVisibility: .visible
+            )
         ) {
             Button(copyResolver.resolve(.decisionConfirmAction)) {
                 guard let pendingChoice else { return }
@@ -184,4 +194,3 @@ struct ProSeasonDecisionView: View {
         ProDecisionCopy.accessibilityLabel(for: choice, resolver: resolver)
     }
 }
-

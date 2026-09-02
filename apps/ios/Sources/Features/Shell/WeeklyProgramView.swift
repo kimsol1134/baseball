@@ -25,7 +25,7 @@ struct WeeklyProgramSummaryRow: View {
                 Image(systemName: program.isRewardReady ? "seal.fill" : "book.closed.fill")
                     .foregroundStyle(program.isRewardReady ? BaseballTheme.milestone : BaseballTheme.information)
                 Text(verbatim: summary)
-                    .font(.footnote.weight(.bold))
+                    .font(BaseballType.detail.weight(.bold))
                 Spacer(minLength: 0)
                 Text(verbatim: status)
                     .font(.caption2.weight(.semibold))
@@ -69,10 +69,16 @@ struct WeeklyProgramView: View {
                     tone: program.isRewardReady ? .milestone : .raised
                 ) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(verbatim: copyResolver.resolve(.weeklyInstructions))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                        // 규칙 설명은 한 번 읽으면 충분하다. 두 번째부터는 접힌 요약 한 줄.
+                        ProgressiveDisclosure(
+                            contentID: "record.weekly-note.rules",
+                            title: copyResolver.resolve(.weeklyRulesTitle),
+                            summary: copyResolver.resolve(.weeklyRulesSummary),
+                            leadStyle: true
+                        ) {
+                            Text(verbatim: copyResolver.resolve(.weeklyInstructions))
+                                .detailStyle()
+                        }
 
                         ForEach(program.tasks) { task in
                             VStack(alignment: .leading, spacing: 5) {
@@ -115,9 +121,8 @@ struct WeeklyProgramView: View {
                             } icon: {
                                 Image(systemName: "arrow.forward.circle")
                             }
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(BaseballTheme.information)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .detailStyle(BaseballTheme.information)
+                                .fontWeight(.semibold)
                         } else if let remaining = program.soleRemainingTask, program.isRewardReady {
                             Label {
                                 Text(
@@ -131,9 +136,8 @@ struct WeeklyProgramView: View {
                             } icon: {
                                 Image(systemName: "star.circle")
                             }
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(BaseballTheme.milestone)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .detailStyle(BaseballTheme.milestone)
+                                .fontWeight(.semibold)
                         }
 
                         if let reward = store.claimableReward {

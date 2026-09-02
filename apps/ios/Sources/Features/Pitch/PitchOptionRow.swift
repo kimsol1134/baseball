@@ -36,7 +36,7 @@ struct OptionRow<Item: Hashable>: View {
                 } label: {
                     // localization-safe: resolved-copy
                     Text(label(item))
-                        .font(.footnote.weight(.semibold))
+                        .font(BaseballType.detail.weight(.semibold))
                         .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                         .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)

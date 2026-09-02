@@ -356,7 +356,7 @@ private struct LifeArchiveRow: View {
                         .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(BaseballTheme.textPrimary)
                     Text(verbatim: schoolName)
-                        .font(.footnote)
+                        .font(BaseballType.annotation)
                         .foregroundStyle(BaseballTheme.textSecondary)
                     Spacer(minLength: 0)
                     Text(verbatim: draftStatus)
@@ -426,11 +426,11 @@ private struct LifeArchiveRow: View {
                                 arguments: [.userText(titles)]
                             )
                         )
-                            .font(.footnote.weight(.semibold))
+                            .font(BaseballType.detail.weight(.semibold))
                             .foregroundStyle(BaseballTheme.milestone)
                     }
                     Text(verbatim: outcome)
-                        .font(.footnote.weight(.semibold))
+                        .font(BaseballType.detail.weight(.semibold))
                         .foregroundStyle(record.drafted ? BaseballTheme.positive : BaseballTheme.textSecondary)
                     Text(
                         verbatim: copyResolver.resolve(
@@ -441,7 +441,7 @@ private struct LifeArchiveRow: View {
                             ]
                         )
                     )
-                        .font(.footnote.monospacedDigit())
+                        .font(BaseballType.annotation.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                     if let signature = record.signatureLegacy {
                         let localizedSignature = HighSchoolConclusionPresentation.localizedSignature(
@@ -741,7 +741,7 @@ struct LifeShareButton: View {
                     } icon: {
                         Image(systemName: "square.and.arrow.up")
                     }
-                        .font(.footnote.weight(.semibold))
+                        .font(BaseballType.detail.weight(.semibold))
                         .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 }
                 .accessibilityIdentifier("record.share.\(record.lifeNumber)")
@@ -752,7 +752,7 @@ struct LifeShareButton: View {
                 } icon: {
                     Image(systemName: "square.and.arrow.up")
                 }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
             }

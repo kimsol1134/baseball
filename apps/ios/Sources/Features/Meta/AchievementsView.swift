@@ -27,8 +27,7 @@ struct AchievementsView: View {
             }
             if !store.isGameCenterAuthenticated {
                 Text(verbatim: copyResolver.resolve(.achievementsOffline))
-                    .font(.caption)
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .detailStyle()
             }
         }
     }
@@ -62,9 +61,7 @@ private struct AchievementRow: View {
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(unlocked ? BaseballTheme.textPrimary : BaseballTheme.textSecondary)
                 Text(verbatim: detail)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
             }
             Spacer()
         }
@@ -109,7 +106,7 @@ struct AchievementBanner: View {
                 Button(action: onDismiss) {
                     Text(verbatim: copyResolver.resolve(.achievementsDismiss))
                 }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
             }
             ForEach(achievements) { achievement in
@@ -121,7 +118,7 @@ struct AchievementBanner: View {
                         ]
                     )
                 )
-                .font(.subheadline)
+                .detailStyle(BaseballTheme.textPrimary)
             }
         }
         .padding(BaseballMetrics.gutter)

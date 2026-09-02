@@ -305,6 +305,8 @@ struct BaseballApp: App {
                 // 디자인 시스템은 다크 전용이다(design-system.css의 `color-scheme: dark`).
                 // 기기 설정을 따라가면 라이트 모드에서 "Midnight Dugout" 방향이 통째로 사라진다.
                 .preferredColorScheme(.dark)
+                // 설정의 "글자 크기". 시스템 Dynamic Type과 앱 설정 중 큰 쪽을 쓴다.
+                .readingSize()
                 .statusBarHidden(
                     ProcessInfo.processInfo.arguments.contains(Self.storeCaptureLaunchArgument)
                 )

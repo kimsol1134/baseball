@@ -106,7 +106,7 @@ struct RelationshipCard: View {
                             ArtThumb(assetName: "SceneArt-\(event.category)", size: 44, cornerRadius: 8)
                         }
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(verbatim: speaker).eyebrowStyle(BaseballTheme.information)
+                            Text(verbatim: speaker).eyebrowStyle(BaseballTheme.textTertiary)
                             if let visibleName {
                                 Text(verbatim: visibleName).font(.subheadline.weight(.bold))
                             }
@@ -120,14 +120,10 @@ struct RelationshipCard: View {
                     // 보이지 않아 같은 상황을 두 번 읽게 하지 않는다. 대사가 없는 옛
                     // 이벤트만 요약을 본문으로 쓴다.
                     Text(verbatim: scene.visibleLine)
-                        .font(.body)
-                        .foregroundStyle(BaseballTheme.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .proseStyle()
                     if let echoSource {
                         Text(verbatim: echoSource)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.information)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -143,14 +139,7 @@ struct RelationshipCard: View {
                 )))
             }
             if let windEffect {
-                Label {
-                    Text(verbatim: windEffect)
-                } icon: {
-                    Image(systemName: "wind")
-                }
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(BaseballTheme.information)
-                    .fixedSize(horizontal: false, vertical: true)
+                EffectChip(text: windEffect, tone: .neutral, systemImage: "wind")
             }
             GameCopyText(coreToken: .relationshipPrompt()).font(.headline)
             ForEach(RelationshipResponse.allCases, id: \.self) { response in
@@ -293,11 +282,10 @@ struct ImportantGameCard: View {
                 BaseballCard(title: title, tone: .milestone) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(verbatim: situation)
-                            .font(.subheadline.bold().monospacedDigit())
+                            .proseLeadStyle()
+                            .monospacedDigit()
                         Text(verbatim: narrative)
-                            .font(.subheadline)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .proseStyle(BaseballTheme.textSecondary)
                     }
                 }
                 .accessibilityElement(children: .ignore)
@@ -330,22 +318,20 @@ struct ImportantGameCard: View {
                     )))
                     if let rivalSignature {
                         Text(verbatim: rivalSignature)
-                            .font(.footnote.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
+                            .monospacedDigit()
                     }
                     // 쌓인 역사. 전적이 있어야 이 타석이 서사가 된다.
                     if let rivalMatchup {
                         Text(verbatim: rivalMatchup)
-                            .font(.footnote.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(BaseballTheme.milestone)
+                            .detailStyle(BaseballTheme.textPrimary)
+                            .monospacedDigit()
                     }
                     if isFinalShowdown {
                         Text(verbatim: HighSchoolPresentation.localizedImportantGameFinalShowdownBody(
                             resolver: copyResolver
                         ))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                     }
                 }
             }

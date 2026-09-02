@@ -47,7 +47,7 @@ extension HighSchoolSetupView {
                 } icon: {
                     Image(systemName: "wand.and.stars")
                 }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
             }
             .buttonStyle(.plain)
@@ -57,7 +57,7 @@ extension HighSchoolSetupView {
             // 시드로 시작 — 커뮤니티 도전("이 시드로 5회차 안에 지명?")의 입구.
             // 대부분은 안 쓰므로 눈에 띄지 않게 한 줄만.
             TextField(copyResolver.resolve(AppCopyKey.setupSeedPlaceholder), text: $seedInput)
-                .font(.footnote.monospaced())
+                .font(BaseballType.detail.monospaced())
                 .textFieldStyle(.roundedBorder)
                 .keyboardType(.numbersAndPunctuation)
                 .accessibilityIdentifier("hs.setup.seed")
@@ -118,7 +118,7 @@ extension HighSchoolSetupView {
                     } icon: {
                         Image(systemName: "square.and.arrow.up")
                     }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
                 }
                 .buttonStyle(.plain)
@@ -136,12 +136,19 @@ extension HighSchoolSetupView {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(height: 170)
+                    .overlay {
+                        // 캡션이 밝은 잔디 위에 놓여 대비가 무너졌다. 아래쪽만 캔버스색으로 눌러 준다.
+                        LinearGradient(
+                            colors: [BaseballTheme.canvas.opacity(0), BaseballTheme.canvas.opacity(0.85)],
+                            startPoint: .center,
+                            endPoint: .bottom
+                        )
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
                     .overlay(alignment: .bottomLeading) {
                         GameCopyText(AppCopyKey.setupStadiumCaption)
-                            .font(.caption)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .padding(10)
+                            .detailStyle(BaseballTheme.textPrimary)
+                            .padding(12)
                     }
                     .accessibilityHidden(true)
             }
@@ -213,8 +220,7 @@ extension HighSchoolSetupView {
                     }
                     if career.inheritance.memories.isEmpty, selectedSignatureLegacy == nil {
                         GameCopyText(AppCopyKey.setupInheritanceEmptyMemories)
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
                     } else if !career.inheritance.memories.isEmpty {
                         ForEach(career.inheritance.memories, id: \.self) { memory in
                             let copy = HighSchoolConclusionPresentation.localizedMemory(
@@ -224,7 +230,7 @@ extension HighSchoolSetupView {
                             HStack(spacing: 8) {
                                 ArtThumb(assetName: "MemoryArt-\(memory.rawValue)", size: 34, cornerRadius: 7)
                                 GameCopyText(verbatim: copy.title)
-                                    .font(.footnote)
+                                    .font(BaseballType.detail)
                                     .foregroundStyle(BaseballTheme.textSecondary)
                             }
                         }
@@ -235,7 +241,7 @@ extension HighSchoolSetupView {
                             AppCopyKey.setupInheritanceLegacy,
                             arguments: [.userText(legacy.title)]
                         )
-                            .font(.footnote.weight(.bold))
+                            .font(BaseballType.detail.weight(.bold))
                             .foregroundStyle(BaseballTheme.milestone)
                         GameCopyText(verbatim: Self.localizedSignatureLegacyEffectLine(legacy.effect, resolver: copyResolver))
                             .font(.caption.monospacedDigit())
@@ -262,9 +268,7 @@ extension HighSchoolSetupView {
         BaseballCard(title: copyResolver.resolve(AppCopyKey.setupInheritanceShopTitle), tone: .raised) {
             VStack(alignment: .leading, spacing: 8) {
                 GameCopyText(AppCopyKey.setupInheritanceShopDescription)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
                 ForEach(SoulBoostID.allCases, id: \.self) { boost in
                     let selected = selectedBoosts.contains(boost)
                     let affordable = selected || boost.cost <= remainingSoul
@@ -288,7 +292,7 @@ extension HighSchoolSetupView {
                                 AppCopyKey.setupBoostCost,
                                 arguments: [.integer(boost.cost)]
                             )
-                                .font(.footnote.weight(.bold).monospacedDigit())
+                                .font(BaseballType.annotation.weight(.bold).monospacedDigit())
                                 .foregroundStyle(affordable ? BaseballTheme.milestone : BaseballTheme.textTertiary)
                         }
                         .padding(10)

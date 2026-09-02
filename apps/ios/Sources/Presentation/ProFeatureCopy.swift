@@ -217,16 +217,78 @@ enum ProWeeklyCopy {
         )
     }
 
+    /// 게이지 숫자. 회복·신뢰처럼 게이지가 없는 계획은 nil.
+    static func progressValues(
+        _ plan: ProWeekPlan,
+        state: ProCareerSnapshot
+    ) -> (current: Int, required: Int)? {
+        switch plan {
+        case .developStuff, .developMovement, .refineCommand, .buildStamina:
+            break
+        default:
+            return nil
+        }
+        let required = MobileCareerStore.developmentTicksRequired(
+            for: plan,
+            pitcher: state.pitcher,
+            proRulesVersion: state.proRulesVersion
+        ) ?? 2
+        let current = min(state.developmentProgress?.value(for: plan) ?? 0, required)
+        return (current, max(1, required))
+    }
+
     static func injuryRisk(forecast: ProWeekHealthForecast, resolver: GameCopyResolver) -> String {
-        let bandKey: ProUICopyKey = switch forecast.band {
+        resolver.resolve(.weeklyInjuryRisk, arguments: [
+            .userText(injuryBandName(forecast.band, resolver: resolver)),
+            .integer(forecast.expectedEffectiveFatigue),
+        ])
+    }
+
+    static func injuryBandName(_ band: ProWeekInjuryRiskBand, resolver: GameCopyResolver) -> String {
+        let bandKey: ProUICopyKey = switch band {
         case .low: .weeklyInjuryRiskLow
         case .caution: .weeklyInjuryRiskCaution
         case .high: .weeklyInjuryRiskHigh
         }
-        return resolver.resolve(.weeklyInjuryRisk, arguments: [
-            .userText(resolver.resolve(bandKey)),
-            .integer(forecast.expectedEffectiveFatigue),
-        ])
+        return resolver.resolve(bandKey)
+    }
+
+    /// 부상 위험 칩 — "부상 낮음".
+    static func injuryChip(_ band: ProWeekInjuryRiskBand, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyInjuryChip, arguments: [.userText(injuryBandName(band, resolver: resolver))])
+    }
+
+    /// 이득 칩 — "구위 ▲".
+    static func gainChip(_ name: String, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.weeklyGainChip, arguments: [.userText(name)])
+    }
+
+    /// 이번 주 예상 피로 변화 칩 — 유효 피로와 현재 피로의 차이.
+    static func fatigueChip(delta: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            delta < 0 ? .effectFatigueLoss : .effectFatigueGain,
+            arguments: [.integer(abs(delta))]
+        )
+    }
+
+    /// 상태 타일 아래 변화 캡션 — "이번 주 +3".
+    static func deltaCaption(_ delta: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .weeklyDeltaCaption,
+            arguments: [.userText(delta >= 0 ? "+\(delta)" : "−\(abs(delta))")]
+        )
+    }
+
+    /// 이번 계획이 키우는 능력의 이름들. 칩 한 개당 이름 하나.
+    static func gainNames(_ plan: ProWeekPlan, resolver: GameCopyResolver) -> [String] {
+        switch plan {
+        case .developStuff: [resolver.resolve(TalentAbility.stuff.displayCopyToken)]
+        case .developMovement: [resolver.resolve(TalentAbility.movement.displayCopyToken)]
+        case .refineCommand: [resolver.resolve(TalentAbility.command.displayCopyToken)]
+        case .buildStamina: [resolver.resolve(TalentAbility.stamina.displayCopyToken)]
+        case .earnTrust: [resolver.resolve(ProUICopyKey.weeklyManagerTrust)]
+        default: []
+        }
     }
 
     static func developStuffEffect(progress: String, resolver: GameCopyResolver) -> String {
@@ -571,10 +633,10 @@ enum ProDecisionCopy {
         timing: String,
         resolver: GameCopyResolver
     ) -> String {
-        resolver.resolve(
-            .decisionConfirmMessage,
-            arguments: [.userText(detail), .userText(effect), .userText(timing)]
-        )
+        // 알럿 본문은 효과 한 줄과 비가역 안내만 싣는다(1.2.9). detail·timing은 카드에 이미 있어
+        // 여기서 되풀이하지 않는다 — 호출 계약은 그대로 두고 문구만 줄였다.
+        _ = (detail, timing)
+        return resolver.resolve(.decisionConfirmMessage, arguments: [.userText(effect)])
     }
 
     static func accessibilityLabel(

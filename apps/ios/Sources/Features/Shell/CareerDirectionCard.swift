@@ -47,8 +47,7 @@ struct CareerDirectionCard: View {
                             ))
                         }
                         Text(verbatim: copyResolver.resolve(.directionLegacyHint))
-                            .font(.caption)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle(BaseballTheme.textTertiary)
                             .accessibilityIdentifier("pro.careerDirection.legacy.hint")
                     }
                     Text(verbatim: copyResolver.resolve(
@@ -73,7 +72,7 @@ struct CareerDirectionCard: View {
                             copyResolver.resolve(isExpanded ? .directionCollapse : .directionExpand),
                             systemImage: isExpanded ? "chevron.up" : "chevron.down"
                         )
-                        .font(.footnote.weight(.semibold))
+                        .font(BaseballType.detail.weight(.semibold))
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(BaseballTheme.action)
@@ -89,9 +88,7 @@ struct CareerDirectionCard: View {
                         .accessibilityIdentifier("pro.careerDirection.records")
                     }
                 }
-                .font(.subheadline)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .detailStyle()
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("pro.careerDirection")
@@ -217,7 +214,7 @@ private struct CareerDirectionTeamRecordRow: View {
                 ]
             ))
             Text(verbatim: copyResolver.resolve(.directionRecordCommunity, arguments: [.integer(record.communityPoints)]))
-                .font(.caption)
+                .font(BaseballType.annotation)
                 .foregroundStyle(BaseballTheme.textTertiary)
         }
         .fixedSize(horizontal: false, vertical: true)

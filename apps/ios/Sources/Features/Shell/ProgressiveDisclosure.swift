@@ -10,6 +10,49 @@ enum CopyDensity: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// 앱 안 글자 크기. 시스템 Dynamic Type을 낮추지는 않고, 사용자가 고른 하한만 보장한다 —
+/// "글씨가 작아 안 읽힌다"는 리뷰에 기기 설정을 뒤지게 하지 않기 위한 세 단계다.
+enum ReadingSize: String, CaseIterable, Identifiable {
+    case standard
+    case large
+    case extraLarge
+
+    static let storageKey = "baseball.readingSize"
+    var id: String { rawValue }
+
+    /// 이 크기가 보장하는 Dynamic Type 하한. 표준은 시스템을 그대로 따른다.
+    var minimumDynamicTypeSize: DynamicTypeSize? {
+        switch self {
+        case .standard: nil
+        case .large: .xLarge
+        case .extraLarge: .xxxLarge
+        }
+    }
+}
+
+/// 시스템 크기와 앱 설정 중 큰 쪽을 적용한다. 시스템이 이미 더 크면 손대지 않는다.
+struct ReadingSizeModifier: ViewModifier {
+    @AppStorage(ReadingSize.storageKey) private var readingSizeRaw = ReadingSize.standard.rawValue
+    @Environment(\.dynamicTypeSize) private var systemSize
+
+    private var resolvedSize: DynamicTypeSize {
+        let preference = ReadingSize(rawValue: readingSizeRaw) ?? .standard
+        guard let minimum = preference.minimumDynamicTypeSize else { return systemSize }
+        return max(systemSize, minimum)
+    }
+
+    func body(content: Content) -> some View {
+        content.dynamicTypeSize(resolvedSize)
+    }
+}
+
+extension View {
+    /// 설정의 "글자 크기"를 앱 루트에 한 번 적용한다.
+    func readingSize() -> some View {
+        modifier(ReadingSizeModifier())
+    }
+}
+
 struct SeenContentStore {
     static let storageKey = "baseball.seenContent.v1"
 
@@ -40,6 +83,8 @@ struct ProgressiveDisclosure<Detail: View>: View {
     let title: String
     let summary: String
     let important: Bool
+    /// 카드 안에서 제목을 결과 한 줄(proseLead)로 세울 때 true. 기본은 섹션 제목(headline).
+    let leadStyle: Bool
     let detail: () -> Detail
 
     @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
@@ -54,12 +99,14 @@ struct ProgressiveDisclosure<Detail: View>: View {
         title: String,
         summary: String,
         important: Bool = false,
+        leadStyle: Bool = false,
         @ViewBuilder detail: @escaping () -> Detail
     ) {
         self.contentID = contentID
         self.title = title
         self.summary = summary
         self.important = important
+        self.leadStyle = leadStyle
         self.detail = detail
     }
 
@@ -69,11 +116,13 @@ struct ProgressiveDisclosure<Detail: View>: View {
                 .padding(.top, 4)
         } label: {
             VStack(alignment: .leading, spacing: 3) {
-                Text(verbatim: title).font(.headline)
+                if leadStyle {
+                    Text(verbatim: title).proseLeadStyle()
+                } else {
+                    Text(verbatim: title).font(.headline)
+                }
                 if !expanded || density == .compact {
-                    Text(verbatim: summary)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                    Text(verbatim: summary).detailStyle().multilineTextAlignment(.leading)
                 }
             }
         }

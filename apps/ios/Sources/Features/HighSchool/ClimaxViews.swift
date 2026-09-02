@@ -532,7 +532,7 @@ struct BloomCelebrationView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(BaseballTheme.milestone)
             Text(verbatim: LegacyPresentation.bloomMeaning(grade, resolver: copyResolver))
-                .font(.footnote)
+                .font(BaseballType.detail)
                 .foregroundStyle(BaseballTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 

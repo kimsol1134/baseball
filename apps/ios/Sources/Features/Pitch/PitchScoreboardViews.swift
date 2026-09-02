@@ -62,7 +62,7 @@ struct ScoreboardBar: View {
                     runners: session.gameState.runners,
                     language: copyResolver.language
                 ))
-                    .font(.footnote.weight(.heavy))
+                    .font(BaseballType.annotation.weight(.heavy))
                     // 스코어보드는 한 줄 고정이다. 긴 로케일·큰 글자에서 상황 문구가
                     // 옆 요소를 밀어 화면 밖으로 나가느니 줄여서라도 한 줄에 남긴다.
                     .lineLimit(1)
@@ -97,7 +97,7 @@ struct ScoreboardBar: View {
                         .integer(session.strikeouts), .integer(session.walks),
                         .integer(session.runsAllowed), .integer(session.pitches),
                     ]))
-                .font(.footnote.monospacedDigit())
+                .font(BaseballType.detail.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textTertiary)
             }
             // 삼진 현수막 — 고교야구 백스톱에 K가 한 장씩 걸리듯 쌓인다.
@@ -234,7 +234,7 @@ struct StakesBadge: View {
         VStack(alignment: .trailing, spacing: 2) {
             Text(verbatim: copyResolver.resolve(.stakesLabel)).font(.caption2.weight(.semibold)).foregroundStyle(BaseballTheme.textTertiary)
             Text(verbatim: Self.localizedLabel(leverage, resolver: copyResolver))
-                .font(.caption.weight(.heavy))
+                .font(BaseballType.annotation.weight(.heavy))
                 .foregroundStyle(tone)
             HStack(spacing: 3) {
                 ForEach(0..<3, id: \.self) { index in

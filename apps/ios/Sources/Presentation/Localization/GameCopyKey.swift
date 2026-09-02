@@ -787,6 +787,39 @@ public enum AppCopyKey {
         setupRegionGyeongnamFlavor, setupRegionJejuFlavor,
     ]
 
+    // 1.2.9 가독성 교정 — 고교 화면의 칩·접기·권역 문구.
+    public static let trainingChipGain = GameCopyKey.localizable("training.chip.gain")
+    public static let trainingChipFatigue = GameCopyKey.localizable("training.chip.fatigue")
+    public static let trainingChipArmRecovery = GameCopyKey.localizable("training.chip.arm-recovery")
+    public static let trainingChipRiskHigh = GameCopyKey.localizable("training.chip.risk.high")
+    public static let trainingChipRiskSome = GameCopyKey.localizable("training.chip.risk.some")
+    public static let trainingChipNoGrowth = GameCopyKey.localizable("training.chip.no-growth")
+    public static let trainingOptionDetailTitle = GameCopyKey.localizable("training.option.detail.title")
+    public static let trainingOptionDetailSummary = GameCopyKey.localizable("training.option.detail.summary")
+    public static let setupRegionGroupTitle = GameCopyKey.localizable("setup.region.group.title")
+    public static let setupRegionGroupCapital = GameCopyKey.localizable("setup.region.group.capital")
+    public static let setupRegionGroupChungcheong = GameCopyKey.localizable("setup.region.group.chungcheong")
+    public static let setupRegionGroupHonam = GameCopyKey.localizable("setup.region.group.honam")
+    public static let setupRegionGroupYeongnam = GameCopyKey.localizable("setup.region.group.yeongnam")
+    public static let setupRegionGroupGangwonJeju = GameCopyKey.localizable("setup.region.group.gangwon-jeju")
+    public static let setupInheritanceShopGuideTitle = GameCopyKey.localizable("setup.inheritance.shop.guide.title")
+    public static let setupInheritanceShopSummary = GameCopyKey.localizable("setup.inheritance.shop.summary")
+    public static let awakeningGuideTitle = GameCopyKey.localizable("awakening.guide.title")
+    public static let awakeningGuideSummary = GameCopyKey.localizable("awakening.guide.summary")
+    public static let awakeningSelectionTitle = GameCopyKey.localizable("awakening.selection.title")
+    public static let awakeningSelectionSummary = GameCopyKey.localizable("awakening.selection.summary")
+    public static let conclusionSignatureGuideSummary = GameCopyKey.localizable("conclusion.signature.guide.summary")
+
+    public static let readabilityKeys: [GameCopyKey] = [
+        trainingChipGain, trainingChipFatigue, trainingChipArmRecovery, trainingChipRiskHigh,
+        trainingChipRiskSome, trainingChipNoGrowth, trainingOptionDetailTitle,
+        trainingOptionDetailSummary, setupRegionGroupTitle, setupRegionGroupCapital,
+        setupRegionGroupChungcheong, setupRegionGroupHonam, setupRegionGroupYeongnam,
+        setupRegionGroupGangwonJeju, setupInheritanceShopGuideTitle, setupInheritanceShopSummary,
+        awakeningGuideTitle, awakeningGuideSummary, awakeningSelectionTitle,
+        awakeningSelectionSummary, conclusionSignatureGuideSummary,
+    ]
+
     public static let allCases: [GameCopyKey] = [
         tabHighSchool, tabPro, tabRecords, tabSettings,
         openingEyebrow, openingSummary, openingDescription, openingStart,
@@ -836,7 +869,7 @@ public enum AppCopyKey {
         + chapterReviewKeys + tournamentKeys + chapterGoalKeys
         + trainingKeys + trainingResultKeys + highSchoolSetupKeys + importantGameKeys + awakeningKeys
         + highSchoolConclusionKeys + pitchKeys + proFlowKeys + recordKeys + metaKeys + legacyKeys
-        + shareKeys
+        + shareKeys + readabilityKeys
 }
 
 public extension AppCopyKey {

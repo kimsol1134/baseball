@@ -60,20 +60,19 @@ struct OffseasonView: View {
             }
 
             if let journeyContractYears {
-                BaseballCard(
-                    title: journeyContractExpired
-                        ? copyResolver.resolve(.contractOfferExpired)
-                        : copyResolver.resolve(.contractOfferRemainingTitle),
-                    tone: journeyContractExpired ? .warning : .raised
-                ) {
-                    Text(
-                        journeyContractExpired
-                            ? copyResolver.resolve(.offseasonContractExpired)
-                            : ProContractCopy.remaining(years: journeyContractYears, resolver: copyResolver)
+                if journeyContractExpired {
+                    // 계약 만료는 상태가 바뀐 순간이라 경고 면을 갖는다.
+                    BaseballCard(title: copyResolver.resolve(.contractOfferExpired), tone: .warning) {
+                        Text(copyResolver.resolve(.offseasonContractExpired))
+                            .detailStyle(BaseballTheme.textPrimary)
+                    }
+                } else {
+                    // 남은 보장 시즌은 한 줄이면 충분하다 — 눈썹 카드를 두르지 않는다.
+                    Label(
+                        ProContractCopy.remaining(years: journeyContractYears, resolver: copyResolver),
+                        systemImage: "doc.text"
                     )
-                        .font(.subheadline)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    .proseLeadStyle()
                 }
             }
 
@@ -133,10 +132,9 @@ struct OffseasonView: View {
                 note: copyResolver.resolve(.offseasonIrreversible)
             ) { pending = .retire }
         }
-        .confirmationDialog(
+        .alert(
             confirmTitle,
-            isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
-            titleVisibility: .visible
+            isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } })
         ) {
             Button(confirmAction, role: pending == .retire ? .destructive : nil) {
                 if let pending { career.chooseOffseason(pending) }
@@ -201,16 +199,20 @@ struct OffseasonChoice: View {
                     .font(.title3)
                     .foregroundStyle(enabled ? BaseballTheme.selection : BaseballTheme.textTertiary)
                     .frame(width: 28)
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     // localization-safe: resolved-copy
                     Text(title).font(.subheadline.weight(.bold))
                     // localization-safe: resolved-copy
-                    Text(detail).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Text(detail).detailStyle()
                     if let note {
-                        // localization-safe: resolved-copy
-                        Text(note).font(.caption).foregroundStyle(BaseballTheme.warning)
-                            .fixedSize(horizontal: false, vertical: true)
+                        // 잠금·비가역 안내. 아이콘만 경고색, 문장은 읽는 글 색.
+                        HStack(alignment: .top, spacing: 4) {
+                            Image(systemName: "exclamationmark.circle")
+                                .font(BaseballType.detail)
+                                .foregroundStyle(BaseballTheme.warning)
+                            // localization-safe: resolved-copy
+                            Text(note).detailStyle()
+                        }
                     }
                 }
                 Spacer()

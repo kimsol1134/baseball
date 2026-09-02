@@ -26,6 +26,40 @@ extension HighSchoolPresentation {
         resolver.resolve(focus.metricCopyToken)
     }
 
+    /// 훈련 한 번의 피로 변화 추정(표시 전용). 코어의 훈련 규칙을 그대로 옮긴다 —
+    /// 기본 3/8/15에 초점 보정(밸런스 v4 이상)과 회차 바람 보정을 더하고, 회복 훈련은 18을 뺀다.
+    /// 재활·감독 개입 같은 예외 경로는 세지 않는다. 칩 한 장에 "피로 +17"을 적기 위한 값이다.
+    static func trainingFatigueEstimate(
+        state: HighSchoolCareerSnapshot,
+        focus: TrainingFocus,
+        intensity: TrainingIntensity
+    ) -> Int {
+        let base = intensity == .light ? 3 : intensity == .standard ? 8 : 15
+        let differentiated = (state.balanceVersion ?? 1) >= 4
+        let focusModifier: Int = switch focus {
+        case .velocity: 1
+        case .command: -2
+        case .gamePlanning: -1
+        case .breakingBall, .stamina, .recovery: 0
+        }
+        let rules = state.careerWind.rules
+        let cost = base + (differentiated ? focusModifier : 0) + rules.trainingFatigueModifier(for: focus)
+        let recovery = focus == .recovery ? rules.adjustedRecovery(18) : 0
+        return cost - recovery
+    }
+
+    enum TrainingArmRiskBand { case none, some, high }
+
+    /// 팔 위험 구간(표시 전용). 코어는 몰아붙이기에서만 팔 위험을 얹는다.
+    static func trainingArmRiskBand(focus: TrainingFocus, intensity: TrainingIntensity) -> TrainingArmRiskBand {
+        guard intensity == .intensive else { return .none }
+        return switch focus {
+        case .velocity: .high
+        case .breakingBall, .stamina: .some
+        case .command, .gamePlanning, .recovery: .none
+        }
+    }
+
     static func focusSymbol(_ focus: TrainingFocus) -> String {
         switch focus {
         case .velocity: "flame"

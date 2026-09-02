@@ -24,7 +24,7 @@ struct ResultBanner: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: symbol).foregroundStyle(tone.accent).font(.footnote)
+            Image(systemName: symbol).foregroundStyle(tone.accent).font(BaseballType.annotation)
             // localization-safe: resolved-copy
             Text(summary)
                 .font(.subheadline)

@@ -83,7 +83,7 @@ private struct TodayDashboard: View {
                 }
 
                 BaseballCard(title: copyResolver.resolve(AppCopyKey.proNextActionTitle), tone: .raised) {
-                    GameCopyText(Self.actionKey(state.phase)).font(.body.weight(.semibold))
+                    GameCopyText(Self.actionKey(state.phase)).proseLeadStyle()
                 }
 
                 if let tensions = state.seasonTensions, !tensions.isEmpty {
@@ -97,11 +97,10 @@ private struct TodayDashboard: View {
                                 )
                                 VStack(alignment: .leading, spacing: 2) {
                                     // localization-safe: resolved-copy
-                                    Text(tensionCopy.title).font(.subheadline.weight(.semibold))
+                                    Text(tensionCopy.title).font(BaseballType.detail.weight(.semibold))
                                     // localization-safe: resolved-copy
                                     Text(tensionCopy.detail)
-                                        .font(.footnote)
-                                        .foregroundStyle(BaseballTheme.textSecondary)
+                                        .detailStyle()
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .accessibilityElement(children: .combine)
@@ -124,7 +123,7 @@ private struct TodayDashboard: View {
                                     .foregroundStyle(BaseballTheme.textSecondary)
                                 // localization-safe: resolved-copy
                                 Text(rivalCopy.record)
-                                    .font(.footnote.monospacedDigit())
+                                    .font(BaseballType.annotation.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textSecondary)
                             }
                         }
@@ -166,7 +165,7 @@ private struct TodayDashboard: View {
                                     AppCopyKey.proOutingWeek,
                                     arguments: [.integer(line.week)]
                                 )
-                                    .font(.footnote.monospacedDigit())
+                                    .font(BaseballType.annotation.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textTertiary)
                             }
                             GameCopyText(
@@ -189,7 +188,7 @@ private struct TodayDashboard: View {
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(Array(state.news.prefix(3).enumerated()), id: \.offset) { _, item in
                             Text(ProCareerPresentation.news(item, state: state, resolver: copyResolver))
-                                .font(.subheadline)
+                                .detailStyle(BaseballTheme.textPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }

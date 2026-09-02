@@ -67,15 +67,9 @@ struct AdvancedStatsCard: View {
                 }
 
                 // 숫자만 있으면 읽는 사람이 기준을 모른다. 두 줄로 기준을 준다.
-                // localization-safe: resolved-copy
-                Text(interpretation)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(copyResolver.resolve(.leagueMethodNote))
-                    .font(.caption)
-                    .foregroundStyle(BaseballTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
+                // 용어(WHIP·ERA 등)는 밑줄로 사전에 연결한다.
+                GlossaryText(text: interpretation)
+                GlossaryText(text: copyResolver.resolve(.leagueMethodNote), color: BaseballTheme.textTertiary)
             }
         }
     }
@@ -159,7 +153,7 @@ struct StandingsCard: View {
                             .frame(width: 18, alignment: .trailing)
                         // localization-safe: resolved-copy
                         Text(localizedTeam)
-                            .font(.footnote.weight(mine ? .bold : .regular))
+                            .font(BaseballType.annotation.weight(mine ? .bold : .regular))
                             .foregroundStyle(mine ? BaseballTheme.action : BaseballTheme.textPrimary)
                             .lineLimit(1)
                         Spacer(minLength: 4)
@@ -251,7 +245,7 @@ struct PitcherLeaderboardCard: View {
                         VStack(alignment: .leading, spacing: 0) {
                             // localization-safe: resolved-copy
                             Text(localizedName)
-                                .font(.footnote.weight(row.isPlayer ? .bold : .regular))
+                                .font(BaseballType.annotation.weight(row.isPlayer ? .bold : .regular))
                                 .foregroundStyle(row.isPlayer ? BaseballTheme.action : BaseballTheme.textPrimary)
                             // localization-safe: resolved-copy
                             Text(localizedTeam)
@@ -261,7 +255,7 @@ struct PitcherLeaderboardCard: View {
                         Spacer(minLength: 4)
                         // localization-safe: numeric
                         Text(value(for: row))
-                            .font(.footnote.weight(.semibold).monospacedDigit())
+                            .font(BaseballType.annotation.weight(.semibold).monospacedDigit())
                             .foregroundStyle(BaseballTheme.textPrimary)
                         Text(copyResolver.resolve(
                             .leagueInningsValue,

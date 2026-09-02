@@ -34,17 +34,13 @@ struct MasteryGaugeView: View {
                 }
                 ProgressView(value: Double(min(required, max(0, progress))), total: Double(max(1, required)))
                     .tint(BaseballTheme.milestone)
+                // 진행도 한 줄만. "투구 공식의 담당 부분을 최대 N‰ 보정합니다"는 네 줄마다 반복되던
+                // 설명이라 화면에서 빼고 접근성 라벨과 용어 사전(숙련)에만 남긴다(1.2.9).
                 Text(verbatim: copyResolver.resolve(
                     .masteryProgress,
                     arguments: [.integer(min(required, max(0, progress))), .integer(max(1, required))]
                 ))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(BaseballTheme.textSecondary)
-                Text(verbatim: copyResolver.resolve(
-                    .masteryMeaning,
-                    arguments: [.integer(CareerDisplayRules.masteryBonusPermille(level: level))]
-                ))
-                .font(.caption)
+                .font(BaseballType.annotation.monospacedDigit())
                 .foregroundStyle(BaseballTheme.textSecondary)
             }
             .padding(.vertical, 4)

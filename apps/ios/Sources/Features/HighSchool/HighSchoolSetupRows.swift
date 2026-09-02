@@ -68,7 +68,7 @@ struct PresetRow: View {
                 } icon: {
                     Image(systemName: "sparkles")
                 }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .foregroundStyle(BaseballTheme.positive)
                     .fixedSize(horizontal: false, vertical: true)
                 Label {
@@ -76,9 +76,7 @@ struct PresetRow: View {
                 } icon: {
                     Image(systemName: "exclamationmark.triangle")
                 }
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.warning)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle(BaseballTheme.warning)
             }
             .padding(BaseballMetrics.gutter)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -117,9 +115,7 @@ struct KarmaRow: View {
                     let copy = HighSchoolSetupView.localizedKarmaCopy(karma, resolver: copyResolver)
                     GameCopyText(verbatim: copy.title).font(.subheadline.weight(.bold))
                     GameCopyText(verbatim: copy.detail)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle()
                 }
                 Spacer()
                 GameCopyText(

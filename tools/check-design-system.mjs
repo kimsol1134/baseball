@@ -93,6 +93,21 @@ for (const path of filesUnder(iosSource, new Set([".swift"]))) {
   }
 }
 
+// 읽는 글의 크기 하한(1.2.9 가독성 교정). 스토어 리뷰 "글씨가 많아 안 읽힌다"의 실체는
+// 12~15pt 문장이 행간 보정 없이 쌓인 것이었다. footnote(13pt)는 문장에도 라벨에도 맞지 않는
+// 어중간한 역할이라 통째로 금지한다 — 문장은 `proseStyle()/detailStyle()`, 라벨·단위는
+// `BaseballType.annotation`(caption)을 쓴다. 공유 카드 렌더러는 고정 캔버스라 예외로 둔다.
+const footnoteAllowlist = new Set(["CareerShareCard.swift"]);
+for (const path of filesUnder(iosSource, new Set([".swift"]))) {
+  if (footnoteAllowlist.has(path.split("/").pop())) continue;
+  const source = readFileSync(path, "utf8");
+  const hits = source.match(/\.font\(\.footnote/g);
+  if (hits) {
+    failures.push(
+      `${relative(root, path)}: .font(.footnote) ${hits.length}곳 — 문장은 proseStyle()/detailStyle(), 라벨은 BaseballType.annotation을 쓴다`
+    );
+  }
+}
 // 디자인 시스템은 다크 전용이다(design-system.css 첫 줄의 `color-scheme: dark`). iOS가 기기
 // 설정을 따라 라이트로 렌더하면 "Midnight Dugout" 방향이 통째로 사라진다. 색 토큰이 한 파일에서
 // 온다는 것만으로는 이 사고를 못 잡아서, 명암 모드 분기 자체를 금지한다.

@@ -44,6 +44,8 @@ enum MetaUICopyKey: String, CaseIterable, Sendable {
     case weeklySummaryAccessibilityReady = "meta.weekly.summary.accessibility.ready"
     case weeklySummaryAccessibilityProgress = "meta.weekly.summary.accessibility.progress"
     case weeklyInstructions = "meta.weekly.instructions"
+    case weeklyRulesTitle = "meta.weekly.rules.title"
+    case weeklyRulesSummary = "meta.weekly.rules.summary"
     case weeklyTaskAccessibility = "meta.weekly.task.accessibility"
     case weeklyTaskAccessibilityComplete = "meta.weekly.task.accessibility.complete"
     case weeklyOneForStamp = "meta.weekly.one-for-stamp"
@@ -83,9 +85,15 @@ enum MetaUICopyKey: String, CaseIterable, Sendable {
     case settingsCopyDensityExpanded = "settings.copy.density.expanded"
     case settingsCopyDensityCompact = "settings.copy.density.compact"
     case settingsCopyDensityFooter = "settings.copy.density.footer"
+    case settingsReadingSize = "settings.reading-size"
+    case settingsReadingSizeStandard = "settings.reading-size.standard"
+    case settingsReadingSizeLarge = "settings.reading-size.large"
+    case settingsReadingSizeExtraLarge = "settings.reading-size.extra-large"
+    case settingsReadingSizeFooter = "settings.reading-size.footer"
     case settingsGlossaryTitle = "settings.glossary.title"
     case settingsGlossaryFooter = "settings.glossary.footer"
     case glossaryTermHint = "glossary.term.hint"
+    case glossaryTermAction = "glossary.term.action"
     case glossarySheetClose = "glossary.sheet.close"
     case disclosureAccessibilityExpanded = "meta.disclosure.accessibility.expanded"
     case disclosureAccessibilityCollapsed = "meta.disclosure.accessibility.collapsed"
@@ -113,6 +121,16 @@ extension CopyDensity {
         case .automatic: .settingsCopyDensityAutomatic
         case .expanded: .settingsCopyDensityExpanded
         case .compact: .settingsCopyDensityCompact
+        }
+    }
+}
+
+extension ReadingSize {
+    var copyKey: MetaUICopyKey {
+        switch self {
+        case .standard: .settingsReadingSizeStandard
+        case .large: .settingsReadingSizeLarge
+        case .extraLarge: .settingsReadingSizeExtraLarge
         }
     }
 }

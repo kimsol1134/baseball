@@ -108,12 +108,11 @@ struct HighSchoolCareerView: View {
                     } label: {
                         Text(verbatim: copyResolver.resolve(.careerErrorRestart))
                     }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .accessibilityIdentifier("hs.restart")
-                    .confirmationDialog(
+                    .alert(
                         copyResolver.resolve(.careerErrorResetTitle),
-                        isPresented: $confirmingReset,
-                        titleVisibility: .visible
+                        isPresented: $confirmingReset
                     ) {
                         Button(role: .destructive) {
                             career.deleteCareer()
@@ -328,7 +327,7 @@ struct HighSchoolCareerView: View {
                                                       onDismiss: career.acknowledgeGains)
                                     .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                             } else if let summary = career.lastSummary {
-                                SummaryBanner(
+                                SummaryLine(
                                     summary: HighSchoolPresentation.localizedStoreSummary(
                                         summary,
                                         inheritance: career.inheritance,
@@ -390,7 +389,7 @@ struct HighSchoolCareerView: View {
                                             ))]
                                         )
                                     )
-                                        .font(.footnote.weight(.bold))
+                                        .font(BaseballType.detail.weight(.bold))
                                     Spacer(minLength: 0)
                                     Text("\(progress.ratioPermille / 10)%")
                                         .font(.caption.monospacedDigit().weight(.bold))
@@ -401,7 +400,7 @@ struct HighSchoolCareerView: View {
                                         progress, resolver: copyResolver
                                     )
                                 )
-                                    .font(.footnote.monospacedDigit())
+                                    .font(BaseballType.annotation.monospacedDigit())
                                     .foregroundStyle(BaseballTheme.textSecondary)
                                 ProgressView(value: Double(progress.ratioPermille), total: 1_000)
                                     .tint(BaseballTheme.milestone)

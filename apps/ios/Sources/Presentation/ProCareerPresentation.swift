@@ -190,6 +190,34 @@ enum ProCareerPresentation {
         )
     }
 
+    /// 주간 진행 요약 한 줄("1주차 · 1주 · 0경기(선발 0) · 0이닝 · 감독의 믿음 -1 · 피로 +0 · …")을
+    /// 분해한다. 1.2.9 가독성 교정: 같은 값이 요약 줄과 아래 상태 타일에 두 번 찍히던 것을
+    /// 타일 캡션 하나로 모으기 위한 것이다. 요약 형식이 아니면 nil.
+    struct WeekProgressSummary: Equatable {
+        let managerTrustDelta: Int
+        let fatigueDelta: Int
+        /// 승격·역할 변경·주요 기록처럼 숫자 타일에 담기지 않는 나머지 항목.
+        let extras: [String]
+    }
+
+    static func weekProgress(_ raw: String) -> WeekProgressSummary? {
+        let parts = raw.components(separatedBy: " · ")
+        guard parts.count >= 6,
+              parts[1].hasSuffix("주"),
+              parts[3].hasSuffix("이닝"),
+              let trustIndex = parts.firstIndex(where: { $0.hasPrefix("감독의 믿음 ") }),
+              trustIndex + 1 < parts.count,
+              parts[trustIndex + 1].hasPrefix("피로 "),
+              let trust = Int(parts[trustIndex].dropFirst("감독의 믿음 ".count)),
+              let fatigue = Int(parts[trustIndex + 1].dropFirst("피로 ".count))
+        else { return nil }
+        return WeekProgressSummary(
+            managerTrustDelta: trust,
+            fatigueDelta: fatigue,
+            extras: Array(parts[(trustIndex + 2)...])
+        )
+    }
+
     static func storeSummary(
         _ raw: String,
         state: ProCareerSnapshot,
@@ -777,6 +805,84 @@ enum ProCareerPresentation {
             parts.append(journey)
         }
         return parts.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    /// 시즌 결정 선택지의 효과를 칩 하나당 항목 하나로 나눈다(1.2.9 가독성 교정).
+    /// 문장("구위 +1 · 피로 +12")에 섞여 있던 비용을 이득과 색으로 분리하기 위한 것이다.
+    struct EffectChipModel: Identifiable, Equatable {
+        let id: String
+        let text: String
+        let tone: EffectChip.Tone
+    }
+
+    static func effectChips(
+        _ effect: ProDecisionEffect,
+        journeyEffect: ProJourneyEffect?,
+        resolver: GameCopyResolver
+    ) -> [EffectChipModel] {
+        var chips: [EffectChipModel] = []
+        func ability(_ id: String, _ delta: Int, gain: ProUICopyKey, loss: ProUICopyKey) {
+            guard delta != 0 else { return }
+            chips.append(EffectChipModel(
+                id: id,
+                text: resolver.resolve(delta > 0 ? gain : loss, arguments: [.integer(abs(delta))]),
+                tone: delta > 0 ? .gain : .cost
+            ))
+        }
+        ability("stuff", effect.stuffDelta, gain: .effectStuffGain, loss: .effectStuffLoss)
+        ability("command", effect.commandDelta, gain: .effectCommandGain, loss: .effectCommandLoss)
+        ability("movement", effect.movementDelta, gain: .effectMovementGain, loss: .effectMovementLoss)
+        ability("stamina", effect.staminaDelta, gain: .effectStaminaGain, loss: .effectStaminaLoss)
+        ability("manager", effect.managerTrustDelta, gain: .effectManagerGain, loss: .effectManagerLoss)
+        ability("catcher", effect.catcherTrustDelta, gain: .effectCatcherGain, loss: .effectCatcherLoss)
+        if effect.fatigueDelta != 0 {
+            // 피로는 부호가 반대다 — 오르면 비용, 내리면 이득.
+            chips.append(EffectChipModel(
+                id: "fatigue",
+                text: resolver.resolve(
+                    effect.fatigueDelta > 0 ? .effectFatigueGain : .effectFatigueLoss,
+                    arguments: [.integer(abs(effect.fatigueDelta))]
+                ),
+                tone: effect.fatigueDelta > 0 ? .cost : .gain
+            ))
+        }
+        if let role = effect.roleTarget {
+            chips.append(EffectChipModel(
+                id: "role",
+                text: resolver.resolve(.effectRole, arguments: [.userText(resolver.resolve(role.displayCopyToken))]),
+                tone: .neutral
+            ))
+        }
+        if let journey = journeyEffect {
+            if journey.income != 0 {
+                chips.append(EffectChipModel(
+                    id: "income",
+                    text: resolver.resolve(
+                        .journeyEffectIncome,
+                        arguments: [.userText(GameFormatters.krw(Int(clamping: journey.income), language: resolver.language))]
+                    ),
+                    tone: journey.income > 0 ? .gain : .cost
+                ))
+            }
+            if journey.fanDelta != 0 {
+                chips.append(EffectChipModel(
+                    id: "fan",
+                    text: resolver.resolve(.journeyEffectFan, arguments: [.integer(journey.fanDelta)]),
+                    tone: journey.fanDelta > 0 ? .gain : .cost
+                ))
+            }
+            if journey.communityDelta != 0 {
+                chips.append(EffectChipModel(
+                    id: "community",
+                    text: resolver.resolve(.journeyEffectCommunity, arguments: [.integer(journey.communityDelta)]),
+                    tone: journey.communityDelta > 0 ? .gain : .cost
+                ))
+            }
+        }
+        if chips.isEmpty {
+            chips.append(EffectChipModel(id: "none", text: resolver.resolve(.journeyEffectNone), tone: .neutral))
+        }
+        return chips
     }
 
     static func effect(_ effect: ProDecisionEffect, resolver: GameCopyResolver) -> String {

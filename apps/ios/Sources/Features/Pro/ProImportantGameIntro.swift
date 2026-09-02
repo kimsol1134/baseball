@@ -50,10 +50,9 @@ struct ImportantGameIntro: View {
                             // localization-safe: resolved-copy
                             Text(rivalCopy.archetype).font(.subheadline).foregroundStyle(BaseballTheme.textSecondary)
                             // localization-safe: resolved-copy
-                            Text(rivalCopy.profile).font(.footnote).foregroundStyle(BaseballTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                            Text(rivalCopy.profile).detailStyle()
                             // localization-safe: resolved-copy
-                            Text(rivalCopy.record).font(.footnote.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
+                            Text(rivalCopy.record).font(BaseballType.annotation.monospacedDigit()).foregroundStyle(BaseballTheme.textSecondary)
                         }
                     }
                     .accessibilityElement(children: .combine)
@@ -77,7 +76,7 @@ struct ImportantGameIntro: View {
                         copyResolver.resolve(.postseasonAvailabilityCommitted),
                         systemImage: "flame.fill"
                     )
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .foregroundStyle(BaseballTheme.warning)
                     .fixedSize(horizontal: false, vertical: true)
                 } else {
@@ -86,8 +85,7 @@ struct ImportantGameIntro: View {
                             ? .importantNationalFinalBody
                             : .importantBody
                     ))
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                 }
 
                 PrimaryPill(
@@ -97,14 +95,13 @@ struct ImportantGameIntro: View {
                 )
             }
         }
-        .confirmationDialog(
+        .alert(
             pendingAvailabilityChoice.map(availabilityTitle)
                 ?? copyResolver.resolve(.decisionConfirmTitle),
             isPresented: Binding(
                 get: { pendingAvailabilityChoice != nil },
                 set: { if !$0 { pendingAvailabilityChoice = nil } }
-            ),
-            titleVisibility: .visible
+            )
         ) {
             Button(copyResolver.resolve(.decisionConfirmAction)) {
                 guard let pendingAvailabilityChoice else { return }
@@ -232,9 +229,7 @@ struct ImportantGameIntro: View {
                 pitches: pitches,
                 resolver: copyResolver
             ))
-            .font(.footnote)
-            .foregroundStyle(BaseballTheme.textSecondary)
-            .fixedSize(horizontal: false, vertical: true)
+            .detailStyle()
 
             availabilityButton(
                 choice: .pitchAgain,
@@ -278,9 +273,7 @@ struct ImportantGameIntro: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(verbatim: title).font(.headline)
                     Text(verbatim: detail)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .detailStyle()
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right")

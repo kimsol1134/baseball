@@ -51,14 +51,12 @@ struct ChallengeEndCard: View {
                     Text(verbatim: score)
                         .font(.title3.weight(.heavy).monospacedDigit())
                     Text(verbatim: stats)
-                        .font(.footnote.monospacedDigit())
+                        .font(BaseballType.annotation.monospacedDigit())
                         .foregroundStyle(BaseballTheme.textSecondary)
                 }
             }
             Text(verbatim: disclaimer)
-                .font(.footnote)
-                .foregroundStyle(BaseballTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
+                .detailStyle(BaseballTheme.textTertiary)
             PrimaryButton(title: closeAction, identifier: "hs.challenge.close", action: onClose)
                 .accessibilityHint(Text(verbatim: closeHint))
         }

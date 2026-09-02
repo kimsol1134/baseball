@@ -44,7 +44,10 @@ struct CareerFlowView: View {
                             ProInjuryResultCard(event: injury, onAcknowledge: career.acknowledgeInjuryEvent)
                                 .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         }
-                        if !career.pendingGains.isEmpty {
+                        // 시즌 결산은 리뷰 제목이 먼저 서고 성장 타일이 그 아래에 온다(Peak-End).
+                        // 그 국면에서는 결산 화면이 성장 카드를 직접 그린다.
+                        let settlementOwnsGrowth = state.phase == .seasonSettlement && state.journeyState != nil
+                        if !career.pendingGains.isEmpty, !settlementOwnsGrowth {
                             GrowthCelebrationView(
                                 gains: career.pendingGains,
                                 stageContext: .pro,
@@ -52,20 +55,36 @@ struct CareerFlowView: View {
                             )
                                 .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
                         }
-                        if let summary = career.lastSummary, career.pendingGains.isEmpty {
-                            ResultBanner(
-                                summary: ProCareerPresentation.storeSummary(
-                                    summary,
-                                    state: state,
-                                    resolver: copyResolver
-                                ),
-                                cue: career.feedbackCue
-                            )
+                        // 주간 진행 요약("N주차 · 감독의 믿음 -1 · 피로 +0")은 아래 상태 타일과 같은 값이라
+                        // 배너로 다시 찍지 않는다 — 타일 캡션으로 한 번만 보여 준다. 승격·역할 변경·
+                        // 주요 기록처럼 타일에 없는 항목만 배너에 남긴다. 결정 국면에서는 키아트 눈썹이
+                        // 같은 주차를 이미 말하므로 배너를 숨긴다.
+                        let weekProgress = career.lastSummary.flatMap(ProCareerPresentation.weekProgress)
+                        if let summary = career.lastSummary,
+                           career.pendingGains.isEmpty,
+                           state.phase != .seasonDecision,
+                           let bannerText = Self.bannerText(
+                               summary,
+                               weekProgress: weekProgress,
+                               state: state,
+                               resolver: copyResolver
+                           ) {
+                            ResultBanner(summary: bannerText, cue: career.feedbackCue)
                                 .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                         }
 
-                        if state.phase == .seasonSettlement, state.journeyState != nil {
-                            ProSeasonSettlementView(career: career, state: state)
+                        // 국면 화면은 하나만 그린다. `.animation(value: feedbackTrigger)`가 걸린 컨테이너 안에서
+                        // 국면이 바뀌면 SwiftUI가 옛 화면과 새 화면을 같은 자리에 겹쳐 크로스페이드했고,
+                        // 그 반투명 겹침이 "화면이 어긋나서 글자가 깨진다"(1.0.x 리뷰)로 보였다.
+                        // 국면을 identity로 못 박고 전환을 끄면 겹치는 프레임 자체가 없다.
+                        Group {
+                        if settlementOwnsGrowth {
+                            ProSeasonSettlementView(
+                                career: career,
+                                state: state,
+                                pendingGains: career.pendingGains,
+                                onAcknowledgeGains: career.acknowledgeGains
+                            )
                                 .background(BaseballTheme.canvas)
                         } else {
                             switch state.phase {
@@ -74,7 +93,23 @@ struct CareerFlowView: View {
                             case .offseasonInvestment:
                                 ProOffseasonInvestmentView(career: career, state: state)
                             case .weeklyPlan:
-                                WeeklyPlanView(career: career, state: state)
+#if DEBUG
+                                if ProcessInfo.processInfo.environment["BASEBALL_UI_RECORD_SHARE"] == "1" {
+                                    recordShareCaptureCards(state: state)
+                                } else {
+                                    WeeklyPlanView(
+                                        career: career,
+                                        state: state,
+                                        weekProgress: weekProgress
+                                    )
+                                }
+#else
+                                WeeklyPlanView(
+                                    career: career,
+                                    state: state,
+                                    weekProgress: weekProgress
+                                )
+#endif
                             case .seasonDecision:
                                 if let pending = state.pendingDecision {
                                     ProSeasonDecisionView(career: career, decision: pending)
@@ -143,6 +178,10 @@ struct CareerFlowView: View {
                                 )
                             }
                         }
+                        }
+                        .id(state.phase)
+                        .transition(.identity)
+                        .background(BaseballTheme.canvas)
                     }
                     .padding(BaseballMetrics.gutter)
                     // 고교 화면과 같은 이유 — 떠 있는 탭 바가 마지막 행동을 덮는다.
@@ -155,4 +194,57 @@ struct CareerFlowView: View {
             ProgressView()
         }
     }
+
+    /// 배너에 실을 문장. 주간 진행 요약이면 타일에 없는 나머지 항목만 남기고, 없으면 nil.
+    /// 한국어 저장본의 나머지 항목은 한국어 문장이라 다른 언어에서는 기존 번역 경로를 탄다.
+    private static func bannerText(
+        _ summary: String,
+        weekProgress: ProCareerPresentation.WeekProgressSummary?,
+        state: ProCareerSnapshot,
+        resolver: GameCopyResolver
+    ) -> String? {
+        guard let weekProgress else {
+            return ProCareerPresentation.storeSummary(summary, state: state, resolver: resolver)
+        }
+        if weekProgress.extras.isEmpty { return nil }
+        if resolver.language == .korean {
+            return weekProgress.extras.joined(separator: " · ")
+        }
+        return ProCareerPresentation.storeSummary(summary, state: state, resolver: resolver)
+    }
+
+#if DEBUG
+    @ViewBuilder
+    private func recordShareCaptureCards(state: ProCareerSnapshot) -> some View {
+        if let milestoneShare = CareerSharePresentation.recordMilestone(
+            state: state,
+            stamp: career.challengeStamp(),
+            resolver: copyResolver
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(verbatim: milestoneShare.detail)
+                    .font(.subheadline)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .accessibilityIdentifier("pro.weekly.recordShare")
+                CareerShareButton(model: milestoneShare)
+            }
+        }
+        ForEach(state.resolvedFollowUps ?? []) { followUp in
+            VStack(alignment: .leading, spacing: 8) {
+                Text(verbatim: ProCareerPresentation.followUpSummary(followUp, resolver: copyResolver))
+                    .font(.subheadline)
+                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .accessibilityIdentifier("pro.weekly.decisionFollowUp.\(followUp.type.rawValue)")
+                if let qsShare = CareerSharePresentation.recordQS(
+                    followUp: followUp,
+                    state: state,
+                    stamp: career.challengeStamp(),
+                    resolver: copyResolver
+                ) {
+                    CareerShareButton(model: qsShare)
+                }
+            }
+        }
+    }
+#endif
 }

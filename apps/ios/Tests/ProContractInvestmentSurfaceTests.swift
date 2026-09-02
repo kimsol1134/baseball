@@ -28,7 +28,9 @@ final class ProContractInvestmentSurfaceTests: XCTestCase {
         XCTAssertTrue(flow.contains("selectable: market.kind != .rookie,"))
         XCTAssertTrue(flow.contains("enabled: goalSelectionComplete"))
         XCTAssertTrue(flow.contains("if market.kind == .rookie, let offer"))
-        XCTAssertTrue(flow.contains(".confirmationDialog("))
+        // 1.2.9: iOS 26에서 confirmationDialog가 팝오버로 떠 취소가 안 보여 알럿으로 바꿨다.
+        // 계약 수락에 명시적 확인 단계가 있다는 계약은 그대로다.
+        XCTAssertTrue(flow.contains(".alert(") || flow.contains(".confirmationDialog("))
         XCTAssertTrue(flow.contains("career.acceptContract(\n                            marketID: market.id"))
         XCTAssertTrue(flow.contains("identifier: \"\\(prefix).duration\""))
         XCTAssertTrue(flow.contains("identifier: \"\\(prefix).annualSalary\""))

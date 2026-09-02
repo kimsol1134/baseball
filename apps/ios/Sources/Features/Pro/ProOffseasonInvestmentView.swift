@@ -27,22 +27,19 @@ struct ProOffseasonInvestmentView: View {
                 accent: BaseballTheme.milestone
             )
 
-            BaseballCard(title: copyResolver.resolve(.offseasonInvestmentBody), tone: .raised) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(verbatim: ProOffseasonCopy.investmentDetail(
-                        nextSeason: state.season + 1,
-                        resolver: copyResolver
-                    ))
-                    Text(verbatim: ProOffseasonCopy.investmentFunds(
-                        available: availableFunds,
-                        resolver: copyResolver
-                    ))
-                    .font(.headline.monospacedDigit())
-                    .foregroundStyle(BaseballTheme.information)
-                }
-                .font(.subheadline)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            // 안내 한 문장과 가용 자금. 눈썹 카드 없이 본문과 큰 숫자로.
+            VStack(alignment: .leading, spacing: 8) {
+                Text(verbatim: ProOffseasonCopy.investmentDetail(
+                    nextSeason: state.season + 1,
+                    resolver: copyResolver
+                ))
+                .proseStyle(BaseballTheme.textSecondary)
+                Text(verbatim: ProOffseasonCopy.investmentFunds(
+                    available: availableFunds,
+                    resolver: copyResolver
+                ))
+                .proseLeadStyle()
+                .monospacedDigit()
             }
 
             ForEach(options, id: \.rawValue) { investment in
@@ -50,16 +47,14 @@ struct ProOffseasonInvestmentView: View {
             }
 
             if selectedInvestment == .pitchLab {
-                BaseballCard(title: copyResolver.resolve(.offseasonInvestmentFocus), tone: .raised) {
-                    Picker(copyResolver.resolve(.offseasonInvestmentFocus), selection: $selectedFocus) {
-                        ForEach(ProDevelopmentFocus.allCases, id: \.rawValue) { focus in
-                            // localization-safe: resolved-copy
-                            Text(focusTitle(focus)).tag(focus)
-                        }
+                Picker(copyResolver.resolve(.offseasonInvestmentFocus), selection: $selectedFocus) {
+                    ForEach(ProDevelopmentFocus.allCases, id: \.rawValue) { focus in
+                        // localization-safe: resolved-copy
+                        Text(focusTitle(focus)).tag(focus)
                     }
-                    .pickerStyle(.menu)
-                    .accessibilityIdentifier("pro.offseasonInvestment.focus")
                 }
+                .pickerStyle(.menu)
+                .accessibilityIdentifier("pro.offseasonInvestment.focus")
             }
 
             if let selectedInvestment {
@@ -75,10 +70,9 @@ struct ProOffseasonInvestmentView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("pro.offseasonInvestment")
-        .confirmationDialog(
+        .alert(
             copyResolver.resolve(.offseasonInvestmentConfirmTitle),
-            isPresented: $showingConfirmation,
-            titleVisibility: .visible
+            isPresented: $showingConfirmation
         ) {
             Button(copyResolver.resolve(.offseasonInvestmentConfirmAction)) {
                 guard let selectedInvestment else { return }
@@ -108,7 +102,7 @@ struct ProOffseasonInvestmentView: View {
         Button {
             selectedInvestment = investment
         } label: {
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     // localization-safe: resolved-copy
                     Text(verbatim: choiceTitle(investment))
@@ -116,21 +110,28 @@ struct ProOffseasonInvestmentView: View {
                     Spacer(minLength: 8)
                     Text(verbatim: GameFormatters.krw(Int(clamping: cost), language: copyResolver.language))
                         .font(.subheadline.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(affordable ? BaseballTheme.information : BaseballTheme.textTertiary)
+                        .foregroundStyle(affordable ? BaseballTheme.textPrimary : BaseballTheme.textTertiary)
                 }
-                Text(verbatim: ProOffseasonCopy.investmentCost(amount: cost, resolver: copyResolver))
-                .font(.footnote)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                Text(verbatim: ProOffseasonCopy.investmentBenefit(benefitText(investment), resolver: copyResolver))
-                .font(.footnote)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                Text(verbatim: ProOffseasonCopy.investmentDuration(durationText(investment), resolver: copyResolver))
-                .font(.caption)
-                .foregroundStyle(BaseballTheme.textTertiary)
-                if !affordable {
-                    Label(copyResolver.resolve(.offseasonInvestmentInsufficient), systemImage: "lock.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.warning)
+                // 효과는 문장으로, 비용·기간은 칩으로.
+                Text(verbatim: benefitText(investment))
+                    .detailStyle(BaseballTheme.textPrimary)
+                EffectChipFlow {
+                    EffectChip(
+                        text: ProOffseasonCopy.investmentCost(amount: cost, resolver: copyResolver),
+                        tone: cost > 0 ? .cost : .neutral
+                    )
+                    EffectChip(
+                        text: ProOffseasonCopy.investmentDuration(durationText(investment), resolver: copyResolver),
+                        tone: .neutral,
+                        systemImage: "calendar"
+                    )
+                    if !affordable {
+                        EffectChip(
+                            text: copyResolver.resolve(.offseasonInvestmentInsufficient),
+                            tone: .risk,
+                            systemImage: "lock.fill"
+                        )
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

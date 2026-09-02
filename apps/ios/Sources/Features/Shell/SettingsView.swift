@@ -23,6 +23,7 @@ struct SettingsView: View {
     @AppStorage(PitchControlPreferences.autoReleaseKey)
     private var autoRelease = PitchControlPreferences.defaultAutoRelease
     @AppStorage(CopyDensity.storageKey) private var copyDensityRaw = CopyDensity.automatic.rawValue
+    @AppStorage(ReadingSize.storageKey) private var readingSizeRaw = ReadingSize.standard.rawValue
     @AppStorage(DailyReminder.enabledKey) private var reminderOn = false
     @State private var audio = GameAudio.shared
     @State private var achievements = AchievementStore.shared
@@ -33,9 +34,6 @@ struct SettingsView: View {
         List {
             Section {
                 Toggle(copyResolver.resolve(AppCopyKey.settingsAutoRelease), isOn: $autoRelease)
-                GameCopyText(AppCopyKey.settingsAutoReleaseDescription)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
             } header: {
                 GameCopyText(AppCopyKey.settingsControlTitle)
             } footer: {
@@ -54,10 +52,24 @@ struct SettingsView: View {
                     }
                 }
                 .accessibilityIdentifier("settings.copyDensity")
+                // 글자 크기는 시스템 설정을 낮추지 않고 하한만 올린다 — 기기 설정을
+                // 찾아 들어가지 않아도 앱 안에서 바로 키울 수 있어야 한다.
+                Picker(copyResolver.resolve(.settingsReadingSize), selection: Binding(
+                    get: { ReadingSize(rawValue: readingSizeRaw) ?? .standard },
+                    set: { readingSizeRaw = $0.rawValue }
+                )) {
+                    ForEach(ReadingSize.allCases) { size in
+                        Text(copyResolver.resolve(size.copyKey)).tag(size)
+                    }
+                }
+                .accessibilityIdentifier("settings.readingSize")
             } header: {
                 GameCopyText(MetaUICopyKey.settingsCopySectionTitle.gameCopyKey)
             } footer: {
-                GameCopyText(MetaUICopyKey.settingsCopyDensityFooter.gameCopyKey)
+                VStack(alignment: .leading, spacing: 4) {
+                    GameCopyText(MetaUICopyKey.settingsCopyDensityFooter.gameCopyKey)
+                    GameCopyText(MetaUICopyKey.settingsReadingSizeFooter.gameCopyKey)
+                }
             }
 
             Section {
@@ -75,14 +87,11 @@ struct SettingsView: View {
                 Toggle(copyResolver.resolve(.settingsAudioSound), isOn: Binding(get: { audio.soundEnabled }, set: { audio.soundEnabled = $0 }))
                 Toggle(copyResolver.resolve(AppCopyKey.settingsMusic), isOn: Binding(get: { audio.musicEnabled }, set: { audio.musicEnabled = $0 }))
                 Toggle(copyResolver.resolve(AppCopyKey.settingsHaptics), isOn: Binding(get: { audio.hapticsEnabled }, set: { audio.hapticsEnabled = $0 }))
-                GameCopyText(SettingsCopy.hapticsFooterKey)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                GameCopyText(AppCopyKey.settingsAudioFooter)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
             } header: {
                 GameCopyText(AppCopyKey.settingsAudioSectionTitle)
+            } footer: {
+                // 진동·소리 안내를 한 푸터로 합쳤다(settings.audio.haptics.footer 값이 둘을 담는다).
+                GameCopyText(SettingsCopy.hapticsFooterKey)
             }
 
             // 복귀 알림은 언제든 끌 수 있도록 설정에 둔다.
@@ -176,10 +185,9 @@ struct SettingsView: View {
         .background(BaseballTheme.canvas)
         .navigationTitle(copyResolver.resolve(AppCopyKey.settingsNavigationTitle))
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog(
+        .alert(
             copyResolver.resolve(AppCopyKey.settingsDeleteConfirmationTitle),
-            isPresented: $confirmingReset,
-            titleVisibility: .visible
+            isPresented: $confirmingReset
         ) {
             Button(copyResolver.resolve(AppCopyKey.settingsDeleteConfirmationAction), role: .destructive) {
                 deleteAllProgress()

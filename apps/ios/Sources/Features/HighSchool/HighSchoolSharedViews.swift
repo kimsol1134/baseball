@@ -60,6 +60,44 @@ struct PrimaryButton: View {
     }
 }
 
+/// 직전 행동의 결과 한 줄. 눈썹 없이 첫 어절(성과·성장·차질)만 굵고 색이 있다.
+///
+/// 예전 `SummaryBanner`는 눈썹 한 줄 + 본문 한 줄이라, 본문이 한 줄뿐인 눈썹이었다.
+/// 챕터 시작 화면에 눈썹이 넷 이상 늘어서던 원인 하나를 여기서 뺀다(1.2.9 가독성 교정).
+struct SummaryLine: View {
+    let summary: String
+    let cue: FeedbackCue
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var accent: Color {
+        switch cue {
+        case .setback: BaseballTheme.negative
+        case .growth: BaseballTheme.positive
+        case .success: BaseballTheme.positive
+        case .neutral: BaseballTheme.textSecondary
+        }
+    }
+
+    /// 무슨 일이 있었는지를 한 낱말로. 색만으로는 색각 이상이 있는 사람에게 전달되지 않는다.
+    private var label: String {
+        HighSchoolPresentation.localizedSummaryCue(cue, resolver: copyResolver)
+    }
+
+    var body: some View {
+        (
+            Text(verbatim: label).font(BaseballType.proseLead).foregroundStyle(accent)
+            + Text(verbatim: " ")
+            + Text(verbatim: summary).font(BaseballType.prose).foregroundStyle(BaseballTheme.textPrimary)
+        )
+            .lineSpacing(BaseballMetrics.proseLineSpacing)
+            .kerning(-0.2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(verbatim: "\(label). \(summary)"))
+    }
+}
+
 /// 고교 3년의 경기 기록.
 ///
 /// 직접 던진 경기와 자동으로 흘러간 팀 경기를 나눠서 보여 준다. 섞어 놓으면 "내가 만든
@@ -87,7 +125,8 @@ struct SeasonRecordCard: View {
                     )
                 }
                 Text(copyResolver.resolve(AppCopyKey.conclusionRecentGames))
-                    .eyebrowStyle(BaseballTheme.textTertiary)
+                    .font(BaseballType.annotation.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textTertiary)
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(log.suffix(5).reversed()) { line in
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -100,11 +139,11 @@ struct SeasonRecordCard: View {
                             Text(HighSchoolConclusionPresentation.localizedSeasonRole(
                                 line, resolver: copyResolver
                             ))
-                                .font(.footnote.weight(.semibold).monospacedDigit())
+                                .font(BaseballType.annotation.weight(.semibold).monospacedDigit())
                             Spacer()
                             // localization-safe: numeric
                             Text(GameLineFormat.score(line))
-                                .font(.footnote.weight(.bold).monospacedDigit())
+                                .font(BaseballType.annotation.weight(.bold).monospacedDigit())
                                 .foregroundStyle(BaseballTheme.textSecondary)
                             if let decision = HighSchoolConclusionPresentation.localizedSeasonDecision(
                                 line.decision, resolver: copyResolver
@@ -129,17 +168,19 @@ struct SeasonRecordCard: View {
     private func summary(title: String, lines: [ProGameLine], accent: Color) -> some View {
         return VStack(alignment: .leading, spacing: 3) {
             // localization-safe: resolved-copy
-            Text(title).eyebrowStyle(accent)
+            Text(title)
+                .font(BaseballType.annotation.weight(.semibold))
+                .foregroundStyle(accent)
             Text(HighSchoolConclusionPresentation.localizedSeasonSummary(
                 lines: lines, resolver: copyResolver
             ))
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(BaseballTheme.textSecondary)
+                .detailStyle(BaseballTheme.textPrimary)
+                .monospacedDigit()
             Text(HighSchoolConclusionPresentation.localizedSeasonRA9(
                 lines: lines, resolver: copyResolver
             ))
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(BaseballTheme.textTertiary)
+                .detailStyle()
+                .monospacedDigit()
         }
         .accessibilityElement(children: .combine)
     }
@@ -158,7 +199,7 @@ struct FlowRow: View {
                     ForEach(items[index..<min(index + 2, items.count)], id: \.self) { item in
                         // localization-safe: resolved-copy
                         Text(item)
-                            .font(.footnote.monospacedDigit())
+                            .font(BaseballType.annotation.monospacedDigit())
                             .foregroundStyle(
                                 item.contains("-") ? BaseballTheme.negative : BaseballTheme.textSecondary
                             )
@@ -207,10 +248,9 @@ struct WindSettlementCard: View {
                     }
                     // localization-safe: resolved-copy
                     Text(localizedWind.detail)
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
                 }
-                .font(.footnote.monospacedDigit().weight(.semibold))
+                .font(BaseballType.detail.monospacedDigit().weight(.semibold))
                 .accessibilityElement(children: .combine)
             }
         }
@@ -239,8 +279,7 @@ struct PledgeCard: View {
                         isFirstLife ? .pledgeIntroFirst : .pledgeIntroRepeat
                     )
                 )
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
+                    .detailStyle()
                 // **누르라고 말한다.**
                 //
                 // 목표 카드들은 색 있는 면에 테두리까지 둘러 "정보 패널"로 읽혔다 —
@@ -251,7 +290,7 @@ struct PledgeCard: View {
                 } icon: {
                     Image(systemName: "hand.tap.fill")
                 }
-                    .font(.footnote.weight(.heavy))
+                    .font(BaseballType.detail.weight(.heavy))
                     .foregroundStyle(BaseballTheme.milestone)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("hs.pledge.hint")
@@ -306,15 +345,13 @@ struct PledgeCard: View {
                                     pledge, resolver: copyResolver
                                 )
                             )
-                            .font(.caption)
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
                             Text(
                                 verbatim: LegacyPresentation.pledgeAlignment(
                                     pledge, state: state, resolver: copyResolver
                                 )
                             )
-                                .font(.caption2)
-                                .foregroundStyle(BaseballTheme.textTertiary)
+                                .detailStyle(BaseballTheme.textTertiary)
                         }
                         .padding(10)
                         .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget, alignment: .leading)
@@ -337,7 +374,7 @@ struct PledgeCard: View {
                 Button { onChoose(nil) } label: {
                     Text(verbatim: copyResolver.resolve(.pledgeSkip))
                 }
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textTertiary)
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
                     .accessibilityIdentifier("hs.pledge.skip")

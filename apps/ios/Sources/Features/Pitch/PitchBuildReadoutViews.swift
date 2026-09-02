@@ -9,22 +9,35 @@ struct PitchBuildCompactReadoutView: View {
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(verbatim: copyResolver.resolve(.buildCompact, arguments: [
-                .userText(GameFormatters.velocity(
-                    tenthsKPH: readout.nominalVelocityTenthsKPH,
-                    language: copyResolver.language
-                )),
-                .integer(readout.movementRating), .integer(readout.commandRating),
-                .integer(readout.effectiveFatigue),
-            ]))
-            .font(.caption.weight(.semibold).monospacedDigit())
-            .foregroundStyle(BaseballTheme.milestone)
+        // 수치 네 개를 한 문장으로 잇던 줄은 칩 넷으로(1.2.9 가독성 교정 규칙 5).
+        // 피로만 비용 톤, 나머지는 중립 — 색은 의미에만 쓴다.
+        VStack(alignment: .leading, spacing: 6) {
+            EffectChipFlow {
+                EffectChip(
+                    text: GameFormatters.velocity(
+                        tenthsKPH: readout.nominalVelocityTenthsKPH,
+                        language: copyResolver.language
+                    ),
+                    tone: .neutral,
+                    systemImage: "gauge.with.needle"
+                )
+                EffectChip(
+                    text: copyResolver.resolve(.buildChipMovement, arguments: [.integer(readout.movementRating)]),
+                    tone: .neutral
+                )
+                EffectChip(
+                    text: copyResolver.resolve(.buildChipCommand, arguments: [.integer(readout.commandRating)]),
+                    tone: .neutral
+                )
+                EffectChip(
+                    text: copyResolver.resolve(.buildChipFatigue, arguments: [.integer(readout.effectiveFatigue)]),
+                    tone: .cost
+                )
+            }
             Text(verbatim: PitchBuildCopy.localizedSynergy(readout, resolver: copyResolver))
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(BaseballTheme.textSecondary)
+                .detailStyle()
         }
-        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(PitchBuildCopy.localizedAccessibilitySummary(readout, resolver: copyResolver))
         .accessibilityIdentifier("pitch.buildSummary")
     }
@@ -55,9 +68,7 @@ struct PitchBuildReadoutView: View {
                 .integer(readout.fatigueCost),
                 .userText(PitchBuildCopy.localizedSynergy(readout, resolver: copyResolver)),
             ]))
-                .font(.caption)
-                .foregroundStyle(BaseballTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .detailStyle()
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(PitchBuildCopy.localizedAccessibilitySummary(readout, resolver: copyResolver))
@@ -67,10 +78,10 @@ struct PitchBuildReadoutView: View {
     private func metric(_ label: String, _ value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
             Text(verbatim: label)
-                .font(.caption2.weight(.semibold))
+                .font(BaseballType.annotation.weight(.semibold))
                 .foregroundStyle(BaseballTheme.textTertiary)
             Text(verbatim: value)
-                .font(.footnote.weight(.bold).monospacedDigit())
+                .font(BaseballType.detail.weight(.bold).monospacedDigit())
                 .foregroundStyle(BaseballTheme.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -103,13 +114,21 @@ struct AdaptationBar: View {
         PitchPresentation.adaptationWarning(adaptation, batSide: batSide, resolver: copyResolver)
     }
 
+    /// 문장은 읽힌 구종·코스가 잡혔을 때만 붙는다. "아직 충분히 보지 못했다" 같은 빈 말은
+    /// 오른쪽 상태 한 단어가 이미 하고 있다(1.2.9 가독성 교정).
+    private var showsWarning: Bool {
+        !warning.isEmpty && (adaptation.detectedPitch != nil || adaptation.detectedZone != nil)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(verbatim: copyResolver.resolve(.adaptationTitle)).eyebrowStyle(BaseballTheme.textTertiary)
+            HStack(alignment: .firstTextBaseline) {
+                Text(verbatim: copyResolver.resolve(.adaptationTitle))
+                    .font(BaseballType.annotation.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textTertiary)
                 Spacer()
                 Text(verbatim: PitchCopy.localized(adaptation.band, resolver: copyResolver))
-                    .font(.caption.weight(.bold))
+                    .font(BaseballType.annotation.weight(.bold))
                     .foregroundStyle(PitchCopy.adaptationTone(adaptation.band))
             }
             GeometryReader { proxy in
@@ -121,11 +140,9 @@ struct AdaptationBar: View {
                 }
             }
             .frame(height: 6)
-            if !warning.isEmpty {
+            if showsWarning {
                 Text(verbatim: warning)
-                    .font(.caption)
-                    .foregroundStyle(PitchCopy.adaptationTone(adaptation.band))
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle(BaseballTheme.textPrimary)
             }
         }
         .accessibilityElement(children: .ignore)

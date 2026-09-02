@@ -165,9 +165,7 @@ struct RunRecapView: View {
                                 .font(.headline.weight(.heavy))
                                 .foregroundStyle(BaseballTheme.textPrimary)
                             Text(verbatim: localizedSignature.evidence)
-                                .font(.footnote)
-                                .foregroundStyle(BaseballTheme.information)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .detailStyle(BaseballTheme.information)
                             Text(
                                 verbatim: HighSchoolConclusionPresentation.localizedSignatureEffect(
                                     signature.effect, resolver: copyResolver
@@ -210,7 +208,7 @@ struct RunRecapView: View {
                                 arguments: [.integer(recap.soulBalance), .integer(recap.soulAutoApplied)]
                             )
                         )
-                            .font(.footnote.weight(.semibold).monospacedDigit())
+                            .font(BaseballType.annotation.weight(.semibold).monospacedDigit())
                             .foregroundStyle(BaseballTheme.textPrimary)
                             .opacity(soulDone ? 1 : 0)
                         // 조건부 문구 — 최저가(90혼)에 못 미치는 잔액에 상점을 약속하면
@@ -220,8 +218,7 @@ struct RunRecapView: View {
                                 recap.soulBalance >= 90 ? .recapPointsSpend : .recapPointsSave
                             )
                         )
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
                             .opacity(soulDone ? 1 : 0)
                     }
                     .padding(.top, 6)
@@ -239,7 +236,7 @@ struct RunRecapView: View {
                                 .font(.subheadline.weight(.heavy))
                                 .foregroundStyle(BaseballTheme.milestone)
                             Text(verbatim: pledgeTitle)
-                                .font(.footnote.weight(.bold))
+                                .font(BaseballType.detail.weight(.bold))
                                 .foregroundStyle(BaseballTheme.textPrimary)
                             Text(verbatim: reason)
                                 .font(.caption)
@@ -254,7 +251,7 @@ struct RunRecapView: View {
                                     )
                                 )
                             }
-                            .font(.footnote.weight(.bold))
+                            .font(BaseballType.detail.weight(.bold))
                             .foregroundStyle(BaseballTheme.milestone)
                             .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                             .background(BaseballTheme.milestone.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
@@ -321,7 +318,7 @@ struct RunRecapView: View {
                     } label: {
                         Text(verbatim: copyResolver.resolve(.recapCustomize))
                     }
-                        .font(.footnote.weight(.semibold))
+                        .font(BaseballType.detail.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textSecondary)
                         .frame(maxWidth: .infinity, minHeight: BaseballMetrics.minimumTapTarget)
                         .opacity(soulDone ? 1 : 0.25)

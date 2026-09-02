@@ -16,6 +16,8 @@ private extension TalentAbility {
 struct WeeklyPlanView: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
+    /// 직전 주의 변화. 요약 줄 대신 상태 타일 캡션으로 보여 준다(1.2.9 가독성 교정).
+    var weekProgress: ProCareerPresentation.WeekProgressSummary? = nil
     @Environment(\.gameCopyResolver) private var copyResolver
     @Environment(\.appTabSelection) private var appTabSelection
     @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
@@ -30,6 +32,10 @@ struct WeeklyPlanView: View {
         let cost: String
         let risk: String
         let symbol: String
+        /// 이득 칩에 들어갈 능력 이름들.
+        let gains: [String]
+        let forecast: ProWeekHealthForecast
+        let gauge: (current: Int, required: Int)?
     }
 
     static func segmentName(_ segment: ProSeasonSegment?) -> String {
@@ -90,11 +96,17 @@ struct WeeklyPlanView: View {
     private static func plans(for state: ProCareerSnapshot, resolver: GameCopyResolver) -> [PlanCopy] {
         let reliefRole = state.role != .starter
         let veteran = state.season >= 9
+        func forecast(_ plan: ProWeekPlan) -> ProWeekHealthForecast {
+            ProWeekHealthForecast.forecast(state: state, plan: plan)
+        }
         func risk(_ plan: ProWeekPlan) -> String {
-            ProWeeklyCopy.injuryRisk(
-                forecast: ProWeekHealthForecast.forecast(state: state, plan: plan),
-                resolver: resolver
-            )
+            ProWeeklyCopy.injuryRisk(forecast: forecast(plan), resolver: resolver)
+        }
+        func gains(_ plan: ProWeekPlan) -> [String] {
+            ProWeeklyCopy.gainNames(plan, resolver: resolver)
+        }
+        func gauge(_ plan: ProWeekPlan) -> (current: Int, required: Int)? {
+            ProWeeklyCopy.progressValues(plan, state: state)
         }
         return [
             PlanCopy(
@@ -106,7 +118,10 @@ struct WeeklyPlanView: View {
                 ),
                 cost: resolver.resolve(.weeklyDevelopStuffCost),
                 risk: risk(.developStuff),
-                symbol: "flame"
+                symbol: "flame",
+                gains: gains(.developStuff),
+                forecast: forecast(.developStuff),
+                gauge: gauge(.developStuff)
             ),
             PlanCopy(
                 plan: .developMovement,
@@ -117,7 +132,10 @@ struct WeeklyPlanView: View {
                 ),
                 cost: resolver.resolve(.weeklyDevelopMovementCost),
                 risk: risk(.developMovement),
-                symbol: "hurricane"
+                symbol: "hurricane",
+                gains: gains(.developMovement),
+                forecast: forecast(.developMovement),
+                gauge: gauge(.developMovement)
             ),
             PlanCopy(
                 plan: .refineCommand,
@@ -128,7 +146,10 @@ struct WeeklyPlanView: View {
                 ),
                 cost: resolver.resolve(.weeklyCommandCost),
                 risk: risk(.refineCommand),
-                symbol: "scope"
+                symbol: "scope",
+                gains: gains(.refineCommand),
+                forecast: forecast(.refineCommand),
+                gauge: gauge(.refineCommand)
             ),
             PlanCopy(
                 plan: .buildStamina,
@@ -139,7 +160,10 @@ struct WeeklyPlanView: View {
                 ),
                 cost: resolver.resolve(.weeklyStaminaCost),
                 risk: risk(.buildStamina),
-                symbol: "figure.run"
+                symbol: "figure.run",
+                gains: gains(.buildStamina),
+                forecast: forecast(.buildStamina),
+                gauge: gauge(.buildStamina)
             ),
             PlanCopy(
                 plan: .recover,
@@ -155,7 +179,10 @@ struct WeeklyPlanView: View {
                         : .weeklyRecoveryCost
                 ),
                 risk: risk(.recover),
-                symbol: "bed.double"
+                symbol: "bed.double",
+                gains: gains(.recover),
+                forecast: forecast(.recover),
+                gauge: gauge(.recover)
             ),
             PlanCopy(
                 plan: .earnTrust,
@@ -163,7 +190,10 @@ struct WeeklyPlanView: View {
                 effect: resolver.resolve(.weeklyTrustEffect),
                 cost: resolver.resolve(.weeklyTrustCost),
                 risk: risk(.earnTrust),
-                symbol: "person.2"
+                symbol: "person.2",
+                gains: gains(.earnTrust),
+                forecast: forecast(.earnTrust),
+                gauge: gauge(.earnTrust)
             ),
         ]
     }
@@ -222,9 +252,7 @@ struct WeeklyPlanView: View {
                 ) {
                     HStack(alignment: .center, spacing: 8) {
                         Text(verbatim: milestoneShare.detail)
-                            .font(.subheadline)
-                            .foregroundStyle(BaseballTheme.textSecondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
                         Spacer(minLength: 0)
                         CareerShareButton(model: milestoneShare, style: .icon)
                     }
@@ -238,36 +266,31 @@ struct WeeklyPlanView: View {
                     title: copyResolver.resolve(.decisionFollowUpCardTitle),
                     tone: .milestone
                 ) {
-                    ProgressiveDisclosure(
-                        contentID: seenID,
-                        title: copyResolver.resolve(followUp.type.displayCopyToken),
-                        summary: ProCareerPresentation.followUpSummary(followUp, resolver: copyResolver)
-                    ) {
-                        VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .top, spacing: 8) {
+                        // 결과 한 줄(제목) → 세부(접기). 제목을 세부 안에 다시 쓰지 않는다.
+                        ProgressiveDisclosure(
+                            contentID: seenID,
+                            title: copyResolver.resolve(followUp.type.displayCopyToken),
+                            summary: ProCareerPresentation.followUpSummary(followUp, resolver: copyResolver),
+                            important: true
+                        ) {
                             Label(
-                                copyResolver.resolve(followUp.type.displayCopyToken),
+                                ProCareerPresentation.followUpSummary(followUp, resolver: copyResolver),
                                 systemImage: Self.followUpSymbol(followUp.type)
                             )
-                            .font(.headline)
-                            Text(ProCareerPresentation.followUpSummary(followUp, resolver: copyResolver))
-                                .font(.footnote)
-                                .foregroundStyle(BaseballTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                            .detailStyle()
+                        }
+                        if let qsShare = CareerSharePresentation.recordQS(
+                            followUp: followUp,
+                            state: state,
+                            stamp: career.challengeStamp(),
+                            resolver: copyResolver
+                        ) {
+                            CareerShareButton(model: qsShare, style: .icon)
                         }
                     }
                 }
                 .accessibilityIdentifier("pro.weekly.decisionFollowUp.\(followUp.type.rawValue)")
-                .overlay(alignment: .topTrailing) {
-                    if let qsShare = CareerSharePresentation.recordQS(
-                        followUp: followUp,
-                        state: state,
-                        stamp: career.challengeStamp(),
-                        resolver: copyResolver
-                    ) {
-                        CareerShareButton(model: qsShare, style: .icon)
-                            .padding(6)
-                    }
-                }
                 .onAppear {
                     CareerTelemetry.logOnce(
                         .proWeeklyDecisionFollowUpShown,
@@ -280,10 +303,24 @@ struct WeeklyPlanView: View {
                 }
             }
 
-            HStack(spacing: 10) {
-                Metric(title: copyResolver.resolve(.weeklyFatigue), value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
-                Metric(title: copyResolver.resolve(.weeklyManagerTrust), value: "\(state.managerTrust)", tone: state.managerTrust >= 60 ? .positive : .standard)
-                Metric(title: copyResolver.resolve(.weeklyRole), value: copyResolver.resolve(state.role.displayCopyToken))
+            // 직전 주의 변화는 요약 줄 대신 타일 캡션으로 한 번만 보여 준다.
+            HStack(alignment: .top, spacing: 10) {
+                StatTile(
+                    label: copyResolver.resolve(.weeklyFatigue),
+                    value: "\(state.fatigue)",
+                    caption: weekProgress.map { ProWeeklyCopy.deltaCaption($0.fatigueDelta, resolver: copyResolver) },
+                    tone: state.fatigue >= 70 ? BaseballTheme.warning : BaseballTheme.textPrimary
+                )
+                StatTile(
+                    label: copyResolver.resolve(.weeklyManagerTrust),
+                    value: "\(state.managerTrust)",
+                    caption: weekProgress.map { ProWeeklyCopy.deltaCaption($0.managerTrustDelta, resolver: copyResolver) },
+                    tone: state.managerTrust >= 60 ? BaseballTheme.positive : BaseballTheme.textPrimary
+                )
+                StatTile(
+                    label: copyResolver.resolve(.weeklyRole),
+                    value: copyResolver.resolve(state.role.displayCopyToken)
+                )
             }
 
             if let climate = CareerDisplayRules.liveClimate(for: state) {
@@ -294,9 +331,8 @@ struct WeeklyPlanView: View {
                 case .adapted: .weeklyClimateAdapted
                 }
                 Text(copyResolver.resolve(key))
-                    .font(.footnote.weight(climate == .slump || climate == .adapted ? .semibold : .regular))
-                    .foregroundStyle(climate == .slump ? BaseballTheme.warning : BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
+                    .fontWeight(climate == .slump || climate == .adapted ? .semibold : .regular)
                     .accessibilityIdentifier("pro.weekly.climate")
             }
 
@@ -320,38 +356,38 @@ struct WeeklyPlanView: View {
                 )
             }
 
+            // 청사진: 눈썹 카드 없이 접기 하나로. 제목이 눈썹과 접기에 두 번 찍히던 것을 지웠다.
             let identity = CareerDisplayRules.pitcherIdentity(for: state.pitcher)
-            BaseballCard(title: ProWeeklyCopy.blueprint(
-                ProCareerPresentation.buildLabel(identity, resolver: copyResolver),
-                resolver: copyResolver
-            ), tone: .raised) {
-                ProgressiveDisclosure(
-                    contentID: "pro.weekly.blueprint.v1",
-                    title: ProCareerPresentation.buildLabel(identity, resolver: copyResolver),
-                    summary: ProCareerPresentation.buildStrength(identity, resolver: copyResolver)
-                ) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver)).font(.footnote)
-                        Text(ProCareerPresentation.buildTradeoff(identity, resolver: copyResolver))
-                            .font(.footnote)
-                            .foregroundStyle(BaseballTheme.warning)
-                        if let rolePreference = state.rolePreference {
-                            Label(
-                                ProWeeklyCopy.rolePromise(
-                                    copyResolver.resolve(rolePreference.displayCopyToken),
-                                    resolver: copyResolver
-                                ),
-                                systemImage: "checkmark.seal.fill"
-                            )
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.positive)
-                        }
+            ProgressiveDisclosure(
+                contentID: "pro.weekly.blueprint.v1",
+                title: ProWeeklyCopy.blueprint(
+                    ProCareerPresentation.buildLabel(identity, resolver: copyResolver),
+                    resolver: copyResolver
+                ),
+                summary: ProCareerPresentation.buildStrength(identity, resolver: copyResolver)
+            ) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(ProCareerPresentation.buildStrength(identity, resolver: copyResolver))
+                        .detailStyle()
+                    Text(ProCareerPresentation.buildTradeoff(identity, resolver: copyResolver))
+                        .detailStyle()
+                    if let rolePreference = state.rolePreference {
+                        Label(
+                            ProWeeklyCopy.rolePromise(
+                                copyResolver.resolve(rolePreference.displayCopyToken),
+                                resolver: copyResolver
+                            ),
+                            systemImage: "checkmark.seal.fill"
+                        )
+                        .detailStyle()
                     }
                 }
             }
 
             let standing = MobileCareerStore.careerStanding(for: state)
             BaseballCard(title: copyResolver.resolve(.weeklyStandingTitle), tone: .milestone) {
+                // 접기 제목이 곧 자리 이름이다. 예전에는 세부 안에 방패 아이콘과 같은 이름을
+                // 한 번 더 그려서 작은 화면에서 제목이 두 번 보였다.
                 ProgressiveDisclosure(
                     contentID: "pro.weekly.standing.v1",
                     title: Self.standingLabel(standing, resolver: copyResolver),
@@ -362,23 +398,17 @@ struct WeeklyPlanView: View {
                     )
                 ) {
                     VStack(alignment: .leading, spacing: 5) {
-                        Label(
-                            Self.standingLabel(standing, resolver: copyResolver),
-                            systemImage: standing == .clubSymbol ? "star.circle.fill" : "shield.lefthalf.filled"
+                        GlossaryText(
+                            text: ProWeeklyCopy.standingSchedule(
+                                roleName: copyResolver.resolve(state.role.displayCopyToken),
+                                remainingOutings: MobileCareerStore.expectedRemainingOutings(for: state),
+                                resolver: copyResolver
+                            ),
+                            font: BaseballType.detail
                         )
-                        .font(.headline)
-                        .foregroundStyle(BaseballTheme.milestone)
-                        Text(ProWeeklyCopy.standingSchedule(
-                            roleName: copyResolver.resolve(state.role.displayCopyToken),
-                            remainingOutings: MobileCareerStore.expectedRemainingOutings(for: state),
-                            resolver: copyResolver
-                        ))
-                        .font(.footnote.monospacedDigit())
-                        .foregroundStyle(BaseballTheme.textSecondary)
                         if state.age >= 33 {
                             Text(copyResolver.resolve(.weeklyStandingVeteran))
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(BaseballTheme.positive)
+                                .detailStyle()
                         }
                     }
                     .accessibilityElement(children: .combine)
@@ -392,7 +422,7 @@ struct WeeklyPlanView: View {
                     roleName: copyResolver.resolve(state.role.displayCopyToken),
                     resolver: copyResolver
                 ))
-                    .font(.caption.weight(.semibold))
+                    .font(BaseballType.annotation.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textSecondary)
             }
 
@@ -400,8 +430,7 @@ struct WeeklyPlanView: View {
 
             if career.selectedPlan == nil {
                 Label(copyResolver.resolve(.weeklyChoosePlan), systemImage: "hand.tap")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.information)
+                    .detailStyle()
                     .accessibilityIdentifier("pro.plan.required")
             }
 
@@ -409,6 +438,7 @@ struct WeeklyPlanView: View {
                 PlanCard(
                     copy: copy,
                     selected: career.selectedPlan == copy.plan,
+                    currentFatigue: state.fatigue,
                     recommendation: copy.plan == recommendation.plan ? recommendation.reason : nil
                 ) {
                     career.selectedPlan = copy.plan
@@ -421,20 +451,22 @@ struct WeeklyPlanView: View {
                     .filter { $0 != .fourSeam }
                 if !breakingBalls.isEmpty {
                     if let project = state.pitchLearningProject {
-                        BaseballCard(
-                            title: ProWeeklyCopy.pitchLearningTitle(
-                                PitchCopy.localized(project.pitchType, resolver: copyResolver),
-                                resolver: copyResolver
-                            ),
-                            tone: project.isCompleted ? .positive : .milestone
-                        ) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Label(
+                                ProWeeklyCopy.pitchLearningTitle(
+                                    PitchCopy.localized(project.pitchType, resolver: copyResolver),
+                                    resolver: copyResolver
+                                ),
+                                systemImage: project.isCompleted ? "checkmark.seal.fill" : "baseball"
+                            )
+                            .proseLeadStyle(project.isCompleted ? BaseballTheme.positive : BaseballTheme.textPrimary)
                             Text(verbatim: ProWeeklyCopy.pitchLearningProgress(
                                 practiceCredits: project.practiceCredits,
                                 qualityUses: project.qualityUses,
                                 resolver: copyResolver
                             ))
-                            .font(.footnote.monospacedDigit())
-                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .detailStyle()
+                            .monospacedDigit()
                         }
                     }
                     Picker(copyResolver.resolve(.weeklyDevelopmentPitch), selection: Binding(
@@ -465,8 +497,8 @@ struct WeeklyPlanView: View {
                             ? .weeklyRecoverySingleWeek
                             : .weeklyAdvanceStop
                     ))
-                        .font(.caption)
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .detailStyle()
+                        .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -485,8 +517,22 @@ struct WeeklyPlanView: View {
     private struct PlanCard: View {
         let copy: PlanCopy
         let selected: Bool
+        let currentFatigue: Int
         let recommendation: String?
         let onSelect: () -> Void
+        @Environment(\.gameCopyResolver) private var copyResolver
+
+        private var riskTone: EffectChip.Tone {
+            switch copy.forecast.band {
+            case .low: .neutral
+            case .caution: .cost
+            case .high: .risk
+            }
+        }
+
+        private var fatigueDelta: Int {
+            copy.forecast.expectedEffectiveFatigue - currentFatigue
+        }
 
         var body: some View {
             HStack(alignment: .top, spacing: 12) {
@@ -494,7 +540,7 @@ struct WeeklyPlanView: View {
                     .font(.title3)
                     .foregroundStyle(selected ? BaseballTheme.selection : BaseballTheme.textSecondary)
                     .frame(width: 28)
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 8) {
                     Button(action: onSelect) {
                         HStack(spacing: 6) {
                             // localization-safe: resolved-copy
@@ -518,20 +564,54 @@ struct WeeklyPlanView: View {
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(selected ? .isSelected : [])
                     .accessibilityIdentifier("pro.plan.\(copy.plan.rawValue)")
-                    GlossaryText(
-                        text: copy.effect,
-                        font: .footnote,
-                        color: BaseballTheme.positive
-                    )
-                    // localization-safe: resolved-copy
-                    Text(verbatim: copy.cost)
-                        .font(.footnote)
-                        .foregroundStyle(BaseballTheme.warning)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(verbatim: copy.risk)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(copy.risk.contains("높음") || copy.risk.contains("High") || copy.risk.contains("高") ? BaseballTheme.warning : BaseballTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+
+                    // 효과 문장 대신 칩: 이득(능력 ▲) · 비용(피로 ±N) · 위험(부상 낮음/주의/높음).
+                    EffectChipFlow {
+                        ForEach(copy.gains, id: \.self) { name in
+                            EffectChip(
+                                text: ProWeeklyCopy.gainChip(name, resolver: copyResolver),
+                                tone: .gain
+                            )
+                        }
+                        EffectChip(
+                            text: ProWeeklyCopy.fatigueChip(delta: fatigueDelta, resolver: copyResolver),
+                            tone: fatigueDelta > 0 ? .cost : (fatigueDelta < 0 ? .gain : .neutral)
+                        )
+                        EffectChip(
+                            text: ProWeeklyCopy.injuryChip(copy.forecast.band, resolver: copyResolver),
+                            tone: riskTone,
+                            systemImage: copy.forecast.band == .high ? "exclamationmark.triangle.fill" : nil
+                        )
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(Text(verbatim: "\(copy.effect) \(copy.risk)"))
+
+                    if let gauge = copy.gauge {
+                        HStack(spacing: 8) {
+                            ProgressView(value: Double(gauge.current), total: Double(gauge.required))
+                                .tint(BaseballTheme.positive)
+                            // localization-safe: numeric
+                            Text(verbatim: "\(gauge.current)/\(gauge.required)")
+                                .font(BaseballType.annotation.monospacedDigit())
+                                .foregroundStyle(BaseballTheme.textSecondary)
+                        }
+                    }
+
+                    // 긴 설명·주의 문장은 접는다. 선택지·칩·게이지는 접지 않는다.
+                    ProgressiveDisclosure(
+                        contentID: "pro.week.option.\(copy.plan.rawValue)",
+                        title: copyResolver.resolve(.weeklyOptionDetailTitle),
+                        summary: copy.cost
+                    ) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            GlossaryText(text: copy.effect, font: BaseballType.detail)
+                            Text(verbatim: copy.cost)
+                                .detailStyle()
+                            Text(verbatim: copy.risk)
+                                .detailStyle()
+                                .monospacedDigit()
+                        }
+                    }
                 }
             }
             .padding(12)
@@ -556,10 +636,10 @@ private struct ProRoleRequestCard: View {
     var body: some View {
         BaseballCard(title: copyResolver.resolve(.roleRequestTitle), tone: .milestone) {
             VStack(alignment: .leading, spacing: 10) {
-                Text(verbatim: copyResolver.resolve(.roleRequestBody))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                GlossaryText(
+                    text: copyResolver.resolve(.roleRequestBody),
+                    font: BaseballType.detail
+                )
                 ForEach(CareerDisplayRules.roleRequestRoles, id: \.rawValue) { role in
                     let evaluation = CareerDisplayRules.roleRequestEvaluation(state: state, requested: role)
                     VStack(alignment: .leading, spacing: 4) {
@@ -585,8 +665,7 @@ private struct ProRoleRequestCard: View {
                                 state: state,
                                 resolver: copyResolver
                             ),
-                            font: .footnote,
-                            color: BaseballTheme.textSecondary
+                            font: BaseballType.detail
                         )
                     }
                     .padding(12)
@@ -614,6 +693,7 @@ private struct ProRoleRequestCard: View {
     }
 }
 
+/// 다음 목표 한 줄. 눈썹 카드 대신 과녁 아이콘 + 결과 한 줄로 선다(눈썹 수 줄이기).
 private struct ProWeeklyGoalBoardCard: View {
     let state: ProCareerSnapshot
     let hidesHint: Bool
@@ -625,31 +705,35 @@ private struct ProWeeklyGoalBoardCard: View {
     }
 
     var body: some View {
-        BaseballCard(title: copyResolver.resolve(.weeklyGoalBoardTitle), tone: .raised) {
-            Button(action: onOpenRecords) {
-                VStack(alignment: .leading, spacing: 6) {
+        Button(action: onOpenRecords) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "target")
+                    .font(.title3)
+                    .foregroundStyle(BaseballTheme.milestone)
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 4) {
                     if let nearest = board.nearest {
                         Text(verbatim: ProWeeklyCopy.goalBoardLine(nearest, resolver: copyResolver))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.textPrimary)
+                            .proseLeadStyle()
                         if !hidesHint {
                             Text(verbatim: copyResolver.resolve(.weeklyGoalBoardHint))
-                                .font(.caption)
-                                .foregroundStyle(BaseballTheme.textTertiary)
-                                .fixedSize(horizontal: false, vertical: true)
+                                .detailStyle(BaseballTheme.textTertiary)
                         }
                     } else {
                         Text(verbatim: copyResolver.resolve(.weeklyGoalBoardComplete))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.milestone)
+                            .proseLeadStyle(BaseballTheme.milestone)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(BaseballTheme.textTertiary)
             }
-            .buttonStyle(.plain)
-            .accessibilityHint(copyResolver.resolve(.weeklyGoalBoardHint))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityHint(copyResolver.resolve(.weeklyGoalBoardHint))
         .accessibilityIdentifier("pro.weekly.goalBoard")
     }
 }

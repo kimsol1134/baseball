@@ -106,9 +106,7 @@ struct ChapterHeader: View {
                             Text(copyResolver.resolve(AppCopyKey.prologueWindNeutralExplanation))
                         }
                     }
-                    .font(.caption)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
                     .accessibilityElement(children: .combine)
                 }
             }
@@ -141,16 +139,20 @@ struct SummaryBanner: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // localization-safe: resolved-copy
-            Text(label).eyebrowStyle(accent)
+        // "성과 / 결과 한 줄"처럼 눈썹이 본문보다 많던 화면을 줄인다(1.2.9 가독성 교정).
+        // 중립이면 문장만, 좋고 나쁨이 있으면 낱말 하나를 색으로 앞에 붙인다.
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if cue != .neutral {
+                // localization-safe: resolved-copy
+                Text(verbatim: "\(label) ·")
+                    .font(BaseballType.annotation.weight(.bold))
+                    .foregroundStyle(accent)
+            }
             // localization-safe: resolved-copy
             Text(summary)
-                .font(.subheadline)
-                .foregroundStyle(BaseballTheme.textSecondary)
+                .detailStyle(BaseballTheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label). \(summary)")
     }

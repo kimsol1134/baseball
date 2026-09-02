@@ -68,7 +68,7 @@ struct GrowthCelebrationView: View {
             }
             if jackpot {
                 Text(verbatim: copyResolver.resolve(.growthJackpotBody))
-                    .font(.footnote.weight(.semibold))
+                    .font(BaseballType.detail.weight(.semibold))
                     .foregroundStyle(BaseballTheme.milestone)
             }
         }

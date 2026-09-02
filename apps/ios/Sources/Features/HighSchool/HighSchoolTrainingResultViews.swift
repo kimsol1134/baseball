@@ -41,10 +41,9 @@ struct HighSchoolArmHealthResultCard: View {
     var body: some View {
         BaseballCard(title: title, tone: receipt.healthAfter == .warning ? .negative : .warning) {
             VStack(alignment: .leading, spacing: 6) {
-                Text(verbatim: cause).font(.subheadline)
-                Text(verbatim: nextAction)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(BaseballTheme.warning)
+                // 결과 한 줄이 먼저, 다음 행동이 그 아래. 둘 다 읽는 문장이라 본문 크기다.
+                Text(verbatim: cause).proseLeadStyle()
+                Text(verbatim: nextAction).detailStyle(BaseballTheme.textPrimary)
             }
         }
         .accessibilityElement(children: .combine)
@@ -93,7 +92,7 @@ struct TrainingResultPanel: View {
                 }
                 Spacer(minLength: 0)
                 Button(copyResolver.resolve(AppCopyKey.trainingResultDismiss), action: onDismiss)
-                    .font(.footnote.weight(.bold))
+                    .font(BaseballType.detail.weight(.bold))
                     .frame(minHeight: BaseballMetrics.minimumTapTarget)
                     .accessibilityIdentifier("hs.training.result.dismiss")
             }
@@ -105,17 +104,19 @@ struct TrainingResultPanel: View {
                 .accessibilityIdentifier("hs.training.result.headline")
 
             if !compact {
-                ForEach(receipt.gains.filter { $0.after > $0.before }) { gain in
-                    Text(HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver))
-                        .font(.footnote.monospacedDigit())
-                        .foregroundStyle(BaseballTheme.textSecondary)
+                // 결과 한 줄(위의 큰 숫자) 다음에 세부. 능력별 이동은 칩으로 훑는다.
+                EffectChipFlow {
+                    ForEach(receipt.gains.filter { $0.after > $0.before }) { gain in
+                        EffectChip(
+                            text: HighSchoolPresentation.localizedTrainingGainRow(gain, resolver: copyResolver),
+                            tone: .gain
+                        )
+                    }
                 }
 
                 if let bloom = receipt.bloom {
                     Text(HighSchoolPresentation.localizedTrainingResultBloom(bloom, resolver: copyResolver))
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(BaseballTheme.milestone)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .proseLeadStyle()
                 }
             }
 
@@ -129,7 +130,7 @@ struct TrainingResultPanel: View {
                         .integer(CareerDisplayRules.pitchLearningPracticeCap),
                     ]
                 )
-                .font(.footnote.weight(.semibold).monospacedDigit())
+                .font(BaseballType.annotation.weight(.semibold).monospacedDigit())
                 .foregroundStyle(
                     learning.justCompleted || learning.justUnlockedForGames
                         ? BaseballTheme.milestone : BaseballTheme.information
@@ -139,17 +140,14 @@ struct TrainingResultPanel: View {
 
             if !compact {
                 Text(HighSchoolPresentation.localizedTrainingResultDetail(receipt, resolver: copyResolver))
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
 
                 // 피로는 훈련의 가격이다. 결과와 같은 자리에서 보여야 다음 강도를 고를 수 있다.
-                HStack(spacing: 6) {
-                    Image(systemName: "battery.50").font(.caption2)
-                    Text(HighSchoolPresentation.localizedTrainingFatigue(receipt, resolver: copyResolver))
-                        .font(.caption.monospacedDigit().weight(.semibold))
-                }
-                .foregroundStyle(receipt.fatigueAfter >= 70 ? BaseballTheme.warning : BaseballTheme.textTertiary)
+                EffectChip(
+                    text: HighSchoolPresentation.localizedTrainingFatigue(receipt, resolver: copyResolver),
+                    tone: receipt.fatigueAfter >= 70 ? .cost : .neutral,
+                    systemImage: "battery.50"
+                )
             }
         }
         .padding(compact ? 10 : BaseballMetrics.gutter)
@@ -193,15 +191,13 @@ struct ReminderNudgeCard: View {
         BaseballCard(title: title, tone: .raised) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(verbatim: body)
-                    .font(.footnote)
-                    .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .detailStyle()
                 HStack(spacing: 10) {
                     PrimaryPill(title: enable, identifier: "hs.reminder.enable", action: onEnable)
                     Button { onDismiss() } label: {
                         Text(verbatim: decline)
                     }
-                        .font(.footnote.weight(.semibold))
+                        .font(BaseballType.detail.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textSecondary)
                         .frame(minHeight: BaseballMetrics.minimumTapTarget)
                         .accessibilityIdentifier("hs.reminder.decline")
