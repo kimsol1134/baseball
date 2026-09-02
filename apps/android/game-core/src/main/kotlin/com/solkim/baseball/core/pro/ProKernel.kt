@@ -46,6 +46,13 @@ public class ProKernel(
 ) {
     public companion object {
         public const val CURRENT_RULES_VERSION: Int = ProCatalog.RULES_VERSION
+        public const val AGENCY_RULES_VERSION: Int = 3
+        public const val CAREER_ARC_RULES_VERSION: Int = 5
+        public const val AUTUMN_RULES_VERSION: Int = 6
+        public const val FINAL_SERIES_RULES_VERSION: Int = 7
+        public const val CAREER_CHALLENGE_RULES_VERSION: Int = 8
+        public const val WEEKLY_DECISION_RULES_VERSION: Int = 9
+        public const val HALL_OF_FAME_FORMULA_VERSION: Int = 3
 
         public fun developmentTicksRequired(ability: Int): Int = when {
             ability < 55 -> 2
@@ -54,9 +61,85 @@ public class ProKernel(
             else -> 6
         }
 
-        public fun liveOutingOffset(season: Int): Int = min(8, max(0, season - 1))
+        public fun liveOutingOffset(season: Int): Int = DifficultyScale.pro(season)
 
-        public fun usesLiveOutingRules(state: ProState): Boolean = state.proRulesVersion >= CURRENT_RULES_VERSION
+        public fun usesAgencyRules(state: ProState): Boolean = state.proRulesVersion >= AGENCY_RULES_VERSION
+        public fun usesRetiredNumberLiveRules(state: ProState): Boolean = state.proRulesVersion >= 4
+        public fun usesLiveOutingRules(state: ProState): Boolean = usesRetiredNumberLiveRules(state)
+        public fun usesCareerArcRules(state: ProState): Boolean = state.proRulesVersion >= CAREER_ARC_RULES_VERSION
+        public fun usesAutumnRules(state: ProState): Boolean = state.proRulesVersion >= AUTUMN_RULES_VERSION
+        public fun usesFinalSeriesRules(state: ProState): Boolean = state.proRulesVersion >= FINAL_SERIES_RULES_VERSION
+        public fun usesChallengeRules(state: ProState): Boolean = state.proRulesVersion >= CAREER_CHALLENGE_RULES_VERSION
+        public fun usesWeeklyDecisionRules(state: ProState): Boolean = state.proRulesVersion >= WEEKLY_DECISION_RULES_VERSION
+
+        public fun injuryPressure(rawFatigue: Int, stamina: Int, mastery: Int, challengeRules: Boolean): Int {
+            val effective = PitchAbilityRules.effectiveFatigue(rawFatigue, stamina, mastery)
+            if (!challengeRules) return effective
+            return max(effective, min(100, max(0, rawFatigue)) * 800 / 1_000)
+        }
+
+        public fun liveClimate(state: ProState, week: Int? = null): ProSeasonClimate? {
+            if (!usesCareerArcRules(state)) return null
+            val stabilize = if (state.journeyState?.activeSeasonBenefit?.kind == ProSeasonBenefitKind.CLIMATE_STABILIZATION) {
+                state.journeyState.activeSeasonBenefit?.remainingCharges ?: 0
+            } else 0
+            return ProSeasonClimateRules.climate(
+                careerId = state.careerId,
+                season = state.season,
+                week = week ?: max(1, state.week),
+                strikeouts = state.currentStats.strikeouts,
+                inningsOuts = state.currentStats.inningsOuts,
+                stabilizeCharges = stabilize,
+            )
+        }
+
+        public fun liveBatterOffset(state: ProState, week: Int? = null): Int {
+            val skill = (state.pitcher.stuff + state.pitcher.command + state.pitcher.movement + state.pitcher.stamina) / 4
+            if (usesCareerArcRules(state)) {
+                val climate = liveClimate(state, week) ?: return DifficultyScale.pro(state.season)
+                return DifficultyScale.proArc(
+                    season = state.season,
+                    level = state.level,
+                    skill = skill,
+                    climate = climate,
+                    challenge = usesChallengeRules(state),
+                )
+            }
+            return if (usesRetiredNumberLiveRules(state)) DifficultyScale.pro(state.season) else 0
+        }
+
+        public fun projectedPitcher(
+            pitcher: PitcherSnapshot,
+            effectiveAge: Int,
+            proRulesVersion: Int = CURRENT_RULES_VERSION,
+            recoveryYear: Boolean = false,
+        ): PitcherSnapshot {
+            val usesArc = proRulesVersion >= CAREER_ARC_RULES_VERSION
+            val usesChallenge = proRulesVersion >= CAREER_CHALLENGE_RULES_VERSION
+            if (usesChallenge) {
+                val primary = if (effectiveAge < 31) 0 else if (effectiveAge < 34) 1 else 2
+                val secondary = if (effectiveAge < 34) 0 else 1
+                val primaryDecline = if (recoveryYear) max(0, primary - 1) else primary
+                val secondaryDecline = if (recoveryYear) 0 else secondary
+                if (primaryDecline <= 0 && secondaryDecline <= 0) return pitcher
+                return pitcher.copy(
+                    stuff = (pitcher.stuff - primaryDecline).coerceIn(20, 80),
+                    command = (pitcher.command - secondaryDecline).coerceIn(20, 80),
+                    movement = (pitcher.movement - primaryDecline).coerceIn(20, 80),
+                    stamina = (pitcher.stamina - secondaryDecline).coerceIn(20, 80),
+                )
+            }
+            val decline = when {
+                effectiveAge < 33 -> 0
+                usesArc && effectiveAge >= 35 -> if (recoveryYear) 1 else 2
+                else -> 1
+            }
+            if (decline <= 0) return pitcher
+            return pitcher.copy(
+                stuff = (pitcher.stuff - decline).coerceIn(20, 80),
+                movement = (pitcher.movement - decline).coerceIn(20, 80),
+            )
+        }
     }
 
     private val automaticOuting = ProAutomaticOutingSimulator(pitch)
@@ -139,6 +222,13 @@ public class ProKernel(
         var homeRuns = 0
         var pitches = 0
         var rng = SplitMix64(seed.value)
+        val weekClimate = liveClimate(state, nextWeek)
+        val weekOffset = liveBatterOffset(state, nextWeek)
+        val weekCallPolicy = if (usesCareerArcRules(state)) {
+            ProSeasonClimateRules.callPolicy(weekClimate ?: ProSeasonClimate.EVEN)
+        } else {
+            AutoCallPolicy.PERFECT
+        }
         if (!recovering) {
             repeat(roles.first) { outingIndex ->
                 val weekSalt = nextWeek.toULong() * 0x9E37UL
@@ -149,7 +239,9 @@ public class ProKernel(
                     outsTarget = roles.second,
                     pitchCap = roles.third,
                     baseSeed = baseSeed,
-                    batterOffset = if (usesLiveOutingRules(state)) liveOutingOffset(state.season) else 0,
+                    batterOffset = weekOffset,
+                    callPolicy = weekCallPolicy,
+                    diverseScouting = usesWeeklyDecisionRules(state),
                 )
                 outs += line.outs
                 strikeouts += line.strikeouts
@@ -196,31 +288,42 @@ public class ProKernel(
         val fatigueDelta = if (recovering) -20 else trainingLoad + outingLoad - staminaRelief
         val fatigue = clamp(state.fatigue + fatigueDelta, 0, 100)
         val injuryRoll = rng.nextInt(100)
-        val fatiguePressure = PitchAbilityRules.effectiveFatigue(
+        val fatiguePressure = injuryPressure(
             rawFatigue = fatigue,
             stamina = state.pitcher.stamina,
             mastery = state.pitcher.effectiveMastery.stamina,
+            challengeRules = usesChallengeRules(state),
         )
         // A healthy, low-fatigue week is safe. The former minimum-percent floor left a hidden
         // two-percent roll even when the player managed workload well. An overload
         // event also requires a real outing so recovery is an actionable answer.
         val injuryChancePercent = max(0, fatiguePressure - 72)
-        val injuryWeeks = if (!recovering && pitches > 0 && injuryRoll < injuryChancePercent) {
+        val generatedInjury = if (!recovering && pitches > 0 && injuryRoll < injuryChancePercent) {
             2 + rng.nextInt(4)
         } else {
             max(0, state.injuryWeeks - 1)
         }
+        val injuryMitigationConsumed = state.injuryWeeks == 0
+            && generatedInjury > 0
+            && state.journeyState?.activeSeasonBenefit?.kind == ProSeasonBenefitKind.INJURY_MITIGATION
+            && state.journeyState?.activeSeasonBenefit?.remainingCharges == 1
+        val injuryWeeks = if (injuryMitigationConsumed) max(0, generatedInjury - 1) else generatedInjury
         val performanceTrust = when {
             runsAllowed <= 2 -> 3
             runsAllowed == 3 -> 0
             runsAllowed <= 5 -> -3
             else -> -6
         }
-        val trustGain = when {
+        val rawTrustGain = when {
             recovering -> -1
             plan == ProWeekPlan.EARN_TRUST -> 5
             plan == ProWeekPlan.RECOVER -> 0
             else -> performanceTrust
+        }
+        val trustGain = if (usesChallengeRules(state) && state.managerTrust >= 85 && rawTrustGain > 0) {
+            rawTrustGain / 2
+        } else {
+            rawTrustGain
         }
         val managerTrust = clamp(state.managerTrust + trustGain, 0, 100)
         val currentStats = state.currentStats.copy(
@@ -251,21 +354,40 @@ public class ProKernel(
         val role = state.rolePreference ?: assignedRole
         val development = resolveDevelopment(state.pitcher, state.developmentProgress, plan, targetPitch, recovering, usesLiveOutingRules(state))
         val priorImportantGames = state.importantGames
-        val trigger = if (nextWeek >= ProCatalog.WEEKS_PER_SEASON || lines.isEmpty()) null else importantGameTrigger(
-            state, nextWeek, level, managerTrust, currentStats, skill, priorImportantGames,
-        )
+        val regularTrigger = if (nextWeek >= ProCatalog.WEEKS_PER_SEASON || lines.isEmpty() || injuryWeeks > 0) {
+            null
+        } else {
+            importantGameTrigger(state, nextWeek, level, managerTrust, currentStats, skill, priorImportantGames)
+        }
+        val postseasonEvaluation = state.copy(week = nextWeek, currentStats = currentStats, currentGameLines = state.currentGameLines + lines)
+        val endOfSeasonPostseason = if (nextWeek >= ProCatalog.WEEKS_PER_SEASON && usesAutumnRules(state)) {
+            val evaluated = ProPostseasonRules.playerPath(
+                ProPostseasonRules.evaluateEndOfSeason(postseasonEvaluation),
+                level,
+                injuryWeeks,
+            )
+            if (usesFinalSeriesRules(state)) ProPostseasonRules.preparingSeries(evaluated, postseasonEvaluation) else evaluated
+        } else null
+        val autumnTrigger = endOfSeasonPostseason
+            ?.takeIf { it.result == ProPostseasonResult.IN_PROGRESS }
+            ?.currentRound
+            ?.let { ProPostseasonRules.trigger(it) }
+        val trigger = autumnTrigger ?: regularTrigger
         val decisionsThisSeason = state.decisionHistory.count { it.season == state.season }
         val openDecision = nextWeek < ProCatalog.WEEKS_PER_SEASON &&
             ProCatalog.SEASON_DECISION_WEEKS.contains(nextWeek) && trigger == null &&
             !recovering && injuryWeeks == 0 && decisionsThisSeason < 3
-        val pending = if (openDecision) seasonDecision(state, nextWeek) else null
+        val pending = if (openDecision) seasonDecision(state, nextWeek, weekClimate, managerTrust) else null
         val phase = when {
-            nextWeek >= ProCatalog.WEEKS_PER_SEASON -> ProCareerPhase.SEASON_REVIEW
+            nextWeek >= ProCatalog.WEEKS_PER_SEASON ->
+                if (autumnTrigger != null) ProCareerPhase.IMPORTANT_GAME else ProCareerPhase.SEASON_REVIEW
             trigger != null -> ProCareerPhase.IMPORTANT_GAME
             pending != null -> ProCareerPhase.SEASON_DECISION
             else -> ProCareerPhase.WEEKLY_PLAN
         }
-        val rival = trigger?.let { ProCatalog.rivalFor(state.team.id, state.season, nextWeek, it) }
+        val rival = trigger?.let {
+            ProCatalog.rivalFor(state.team.id, state.season, nextWeek, it, endOfSeasonPostseason?.series?.opponentTeamId)
+        }
         val segment = ProCatalog.segment(nextWeek)
         val news = state.news.toMutableList()
         val milestones = state.milestones.toMutableList()
@@ -298,7 +420,38 @@ public class ProKernel(
         if (injuryWeeks > 0 && state.injuryWeeks == 0) news.add(0, "과부하로 ${injuryWeeks}주 부상자 명단에 올랐습니다.")
         if (development.labels.isNotEmpty()) news.add(0, "주간 성장 완성 · ${development.labels.joinToString(" · ")}")
         if (segment != state.seasonSegment) news.add(0, ProCatalog.segmentEntryNews(segment))
+        if (usesCareerArcRules(state) && weekClimate != null && weekClimate != ProSeasonClimate.EVEN) {
+            news.add(0, ProSeasonClimateRules.newsLine(weekClimate, nextWeek))
+        }
+        if (endOfSeasonPostseason != null) {
+            when (endOfSeasonPostseason.result) {
+                ProPostseasonResult.DID_NOT_QUALIFY ->
+                    news.add(0, "정규시즌이 끝났습니다. 올해는 플레이오프에 들지 못했습니다.")
+                ProPostseasonResult.IN_PROGRESS ->
+                    news.add(0, ProPostseasonRules.qualificationNews(endOfSeasonPostseason.seed))
+                ProPostseasonResult.UNAVAILABLE ->
+                    news.add(0, ProPostseasonRules.unavailableNews(level))
+                else -> Unit
+            }
+        }
         if (phase == ProCareerPhase.IMPORTANT_GAME && trigger != null) news.add(0, importantHeadline(trigger, rival, level))
+        var nextJourney = state.journeyState
+        if (injuryMitigationConsumed) {
+            nextJourney = nextJourney?.copy(activeSeasonBenefit = null)
+        } else if (
+            usesCareerArcRules(state) &&
+            nextJourney?.activeSeasonBenefit?.kind == ProSeasonBenefitKind.CLIMATE_STABILIZATION
+        ) {
+            val charges = nextJourney.activeSeasonBenefit?.remainingCharges ?: 0
+            if (charges > 0) {
+                val remaining = charges - 1
+                nextJourney = nextJourney.copy(
+                    activeSeasonBenefit = if (remaining > 0) {
+                        ProSeasonBenefit(ProSeasonBenefitKind.CLIMATE_STABILIZATION, null, remaining)
+                    } else null,
+                )
+            }
+        }
         val updated = state.copy(
             revision = state.revision + 1UL,
             pitcher = development.pitcher,
@@ -318,8 +471,10 @@ public class ProKernel(
             seasonTrigger = trigger,
             currentRival = rival,
             seasonTensions = if (state.seasonTensions.isEmpty()) seasonTensions(state) else state.seasonTensions,
-            importantGames = priorImportantGames + if (phase == ProCareerPhase.IMPORTANT_GAME) 1 else 0,
+            importantGames = priorImportantGames + if (phase == ProCareerPhase.IMPORTANT_GAME && autumnTrigger == null) 1 else 0,
             pendingDecision = pending,
+            journeyState = nextJourney,
+            postseason = endOfSeasonPostseason,
             standings = deriveStandings(state.copy(week = nextWeek, currentGameLines = state.currentGameLines + lines, currentStats = currentStats)),
             leaderboards = deriveLeaderboards(state.copy(week = nextWeek, currentStats = currentStats, currentGameLines = state.currentGameLines + lines)),
             activePitch = null,
@@ -388,7 +543,11 @@ public class ProKernel(
         val history = state.decisionHistory + ProDecisionRecord(
             pending.id, pending.type, pending.season, pending.week, choice.id, choice.title, effect,
         )
-        val rolePreference = if (pending.type == ProSeasonDecisionType.ROLE_MEETING) effect.roleTarget ?: state.role else state.rolePreference
+        val rolePreference = if (pending.type == ProSeasonDecisionType.ROLE_MEETING || pending.type == ProSeasonDecisionType.FORM_CRISIS || pending.type == ProSeasonDecisionType.AGING_CROSSROADS) {
+            effect.roleTarget ?: state.role
+        } else {
+            state.rolePreference
+        }
         val next = state.copy(
             revision = state.revision + 1UL,
             phase = ProCareerPhase.WEEKLY_PLAN,
@@ -409,8 +568,17 @@ public class ProKernel(
     public fun reserveImportantGame(state: ProState, seedText: String): ProResult {
         validate(state, ProCareerPhase.IMPORTANT_GAME)
         require(state.activePitch == null) { "pro.pitch_already_reserved" }
+        var availabilityState = state
+        if (
+            usesFinalSeriesRules(state) &&
+            ProPostseasonRules.isAutumn(state.seasonTrigger) &&
+            state.postseason != null &&
+            ProPostseasonRules.requiresAvailabilityDecision(state.postseason, state.role)
+        ) {
+            availabilityState = choosePostseasonAvailability(state, seedText, ProPostseasonAvailabilityChoice.PITCH_AGAIN).state
+        }
         val seed = seed(seedText)
-        val rival = state.currentRival ?: ProCatalog.rivalFor(state.team.id, state.season, state.week, state.seasonTrigger ?: ProSeasonTrigger.STANDINGS_RACE)
+        val rival = availabilityState.currentRival ?: ProCatalog.rivalFor(availabilityState.team.id, availabilityState.season, availabilityState.week, availabilityState.seasonTrigger ?: ProSeasonTrigger.STANDINGS_RACE)
         val batter = BatterSnapshot(
             id = rival.id,
             name = rival.name,
@@ -426,31 +594,32 @@ public class ProKernel(
             pitchWeakness = PitchKind.CURVEBALL,
             chaseTendency = batter.discipline.coerceIn(20, 80),
         )
+        val entryInning = postseasonEntryInning(availabilityState)
         val context = PlateAppearanceContext(
-            plateAppearanceId = "${state.careerId}:season:${state.season}:week:${state.week}:important",
+            plateAppearanceId = "${availabilityState.careerId}:season:${availabilityState.season}:week:${availabilityState.week}:important",
             revision = 0UL,
-            inning = 7,
+            inning = entryInning,
             outs = 1,
             balls = 0,
             strikes = 0,
             pitchNumber = 1,
             scoreDifferential = -1,
             leverage = 850,
-            fatigue = state.fatigue,
+            fatigue = availabilityState.fatigue,
         )
-        val memory = RivalMemorySnapshot("${state.pitcher.id}:${batter.id}", 0UL, 0, 0, emptyList())
+        val memory = RivalMemorySnapshot("${availabilityState.pitcher.id}:${batter.id}", 0UL, 0, 0, emptyList())
         val game = GameStateSnapshot(
             defense = DefenseSnapshot(50, 50, 50, listOf("pitcher", "catcher", "first_base", "second_base", "third_base", "shortstop", "left_field", "center_field", "right_field").map { FielderSnapshot("$it", it, it, 50, 50, 50) }),
             park = ParkSnapshot("pro-important-park", "중립 구장", 1_000, 1_000),
             runners = BaserunnerStateSnapshot(false, true, false, 52),
             runsAllowed = 0,
-            inningState = InningStateSnapshot(7, HalfInning.TOP, 1),
+            inningState = InningStateSnapshot(entryInning, HalfInning.TOP, 1),
         )
-        val log = GameLogSnapshot("${state.careerId}:important:${state.importantGames}", 0UL, 0, emptyList())
-        val preparation = pitch.prepare(PitchKernel.PrepareRequest(seedText, state.pitcher, batter, scouting, context, memory, game, log))
+        val log = GameLogSnapshot("${availabilityState.careerId}:important:${availabilityState.importantGames}", 0UL, 0, emptyList())
+        val preparation = pitch.prepare(PitchKernel.PrepareRequest(seedText, availabilityState.pitcher, batter, scouting, context, memory, game, log))
         val session = ProPitchSession(
-            sessionId = "${state.careerId}:important:${state.importantGames}",
-            week = state.week,
+            sessionId = "${availabilityState.careerId}:important:${availabilityState.importantGames}",
+            week = availabilityState.week,
             seed = seedText,
             pitchIndex = 0,
             preparationToken = preparation.preparationToken,
@@ -462,8 +631,20 @@ public class ProKernel(
             scouting = scouting,
             boundary = ProPitchBoundary.RESERVED,
         )
-        val next = state.copy(revision = state.revision + 1UL, activePitch = session, lastPresentation = null, commitment = "")
+        val next = availabilityState.copy(revision = availabilityState.revision + 1UL, activePitch = session, lastPresentation = null, commitment = "")
         return result(next, seedText, listOf("pro_pitch_reserved"), preparation)
+    }
+
+    private fun postseasonEntryInning(state: ProState): Int = when (state.seasonTrigger) {
+        ProSeasonTrigger.AUTUMN_WILD_CARD -> 9
+        ProSeasonTrigger.AUTUMN_SEMIFINAL, ProSeasonTrigger.AUTUMN_PLAYOFF -> 8
+        ProSeasonTrigger.AUTUMN_FINAL -> when (state.role) {
+            ProRole.STARTER -> 6
+            ProRole.LONG_RELIEF -> 5
+            ProRole.SETUP -> 8
+            ProRole.CLOSER -> 9
+        }
+        else -> 7
     }
 
     public fun submitPitch(state: ProState, sessionId: String, call: PitchCall, delivery: PitchDelivery = PitchDelivery.NEUTRAL): ProResult {
@@ -531,6 +712,9 @@ public class ProKernel(
         validate(state, ProCareerPhase.IMPORTANT_GAME)
         val session = state.activePitch ?: throw ProKernelException("pro.pitch_missing")
         require(session.ended) { "pro.pitch_in_progress" }
+        if (ProPostseasonRules.isAutumn(state.seasonTrigger)) {
+            return finishAutumnGame(state, session)
+        }
         val scheduledIndex = state.currentGameLines.indexOfLast { it.week == state.week && !it.played }
         val scheduled = scheduledIndex.takeIf { it >= 0 }?.let { state.currentGameLines[it] }
         val started = scheduled?.started ?: (state.role == ProRole.STARTER)
@@ -538,7 +722,8 @@ public class ProKernel(
         val directOuts = session.outs
         val scheduledOuts = scheduled?.outs ?: 0
         val complementOuts = max(0, scheduledOuts - directOuts)
-        fun retained(value: Int): Int = if (scheduledOuts > 0) value * complementOuts / scheduledOuts else 0
+        fun retained(value: Int): Int =
+            if (scheduledOuts > 0) (value * complementOuts + scheduledOuts / 2) / scheduledOuts else 0
         val outs = if (scheduled == null) directOuts else complementOuts + directOuts
         val strikeouts = retained(scheduled?.strikeouts ?: 0) + session.strikeouts
         val walks = retained(scheduled?.walks ?: 0) + session.walks
@@ -614,10 +799,309 @@ public class ProKernel(
         return result(next, rng.next().toString(), listOf("pro_important_game_resolved"))
     }
 
+    private fun finishAutumnGame(state: ProState, session: ProPitchSession): ProResult {
+        var rng = SplitMix64(seed(session.seed).value)
+        val rawPostseason = state.postseason ?: ProPostseasonRules.evaluateEndOfSeason(state)
+        val usesSeriesRules = usesFinalSeriesRules(state)
+        val current = if (usesSeriesRules) ProPostseasonRules.preparingSeries(rawPostseason, state) else rawPostseason
+        val support = max(0, session.context.scoreDifferential + session.runsAllowed + 1)
+        val opponent = session.runsAllowed + max(0, -session.context.scoreDifferential)
+        val legacyWon = support > opponent || (support == opponent && session.runsAllowed <= 1)
+        val strengthEdge = ProPostseasonRules.teamStrengthEdgePermille(state)
+        val resolvedGame = if (usesSeriesRules) {
+            resolvePostseasonGame(state, session, strengthEdge, rng)
+        } else null
+        val won = resolvedGame?.won ?: legacyWon
+        var automaticSummaries = emptyList<String>()
+        var automaticGames = 0
+        val nextPostseason: ProPostseasonState
+        if (usesSeriesRules) {
+            val game = resolvedGame ?: throw ProKernelException("pro.postseason_remainder_missing")
+            val gameNumber = current.series?.nextGameNumber ?: 1
+            val played = ProPostseasonRules.resolvingSeriesGame(
+                current,
+                won = game.won,
+                directlyPlayed = true,
+                pitches = session.pitches,
+                outs = session.outs,
+                runsAllowed = session.runsAllowed,
+                teamRuns = game.teamRuns,
+                opponentRuns = game.opponentRuns,
+                rivalMemory = session.memory,
+                strikeouts = session.strikeouts,
+                walks = session.walks,
+                hits = session.hits,
+                started = state.role == ProRole.STARTER,
+            )
+            val prepared = if (played.result == ProPostseasonResult.IN_PROGRESS) {
+                ProPostseasonRules.preparingSeries(played, state)
+            } else played
+            val simulated = simulatePostseasonTeamGames(prepared, state, state.role, strengthEdge, forceCurrentGame = false, rng)
+            nextPostseason = simulated.state
+            val directSummary = if (current.currentRound == ProAutumnRound.FINAL) {
+                "우승 결정전 ${gameNumber}차전 잔여 경기 진행 · ${game.teamRuns}-${game.opponentRuns} ${if (game.won) "승" else "패"}"
+            } else {
+                "가을 직접 등판 뒤 잔여 경기 진행 · ${game.teamRuns}-${game.opponentRuns} ${if (game.won) "승" else "패"}"
+            }
+            automaticSummaries = listOf(directSummary) + simulated.summaries
+            automaticGames = simulated.count
+        } else {
+            nextPostseason = ProPostseasonRules.resolving(current, won)
+        }
+        val nextRound = nextPostseason.currentRound
+        val continues = nextPostseason.result == ProPostseasonResult.IN_PROGRESS && nextRound != null
+        val nextTrigger = nextRound?.let { ProPostseasonRules.trigger(it) }
+        val rival = nextTrigger?.let {
+            ProCatalog.rivalFor(state.team.id, state.season, state.week, it, nextPostseason.series?.opponentTeamId)
+        }
+        val sound = session.actualDamage <= session.expectedDamage + 150 || session.recommendationAccepted * 2 >= session.pitches
+        val sequenceReward = session.sequenceMasteryCount.coerceIn(0, 3)
+        val unresolved = state.decisionHistory.indices.filter {
+            state.decisionHistory[it].season == state.season && state.decisionHistory[it].followUpResolvedWeek == null
+        }
+        val followUpReward = unresolved.size * if (sound) 2 else -1
+        val trust = clamp(
+            state.managerTrust + session.strikeouts * 2 - session.walks * 2 - session.runsAllowed * 3 +
+                (if (sound) 2 else 0) + sequenceReward + followUpReward,
+            0, 100,
+        )
+        val history = state.decisionHistory.toMutableList()
+        unresolved.forEach { index -> history[index] = history[index].copy(followUpResolvedWeek = state.week) }
+        val trustDelta = trust - state.managerTrust
+        val headline = when (nextPostseason.result) {
+            ProPostseasonResult.CHAMPION -> "플레이오프 우승. 올해의 마지막 공이 남았습니다."
+            ProPostseasonResult.RUNNER_UP -> "결승에서 멈췄습니다. 가을은 여기까지입니다."
+            ProPostseasonResult.ELIMINATED -> ProPostseasonRules.eliminationNews(nextPostseason.currentRound)
+            ProPostseasonResult.IN_PROGRESS -> {
+                val series = nextPostseason.series
+                if (usesSeriesRules && series != null) {
+                    val roundTitle = when (nextPostseason.currentRound) {
+                        ProAutumnRound.WILD_CARD -> "와일드카드"
+                        ProAutumnRound.SEMIFINAL -> "준플레이오프"
+                        ProAutumnRound.PLAYOFF -> "플레이오프"
+                        ProAutumnRound.FINAL -> "우승 결정전"
+                        null -> "가을 시리즈"
+                    }
+                    "$roundTitle ${series.nextGameNumber}차전이 남았습니다. 시리즈 ${series.playerWins}-${series.opponentWins}."
+                } else if (nextTrigger == ProSeasonTrigger.AUTUMN_WILD_CARD) {
+                    "와일드카드 2차전이 남았습니다."
+                } else if (won) {
+                    "다음 라운드가 열립니다."
+                } else {
+                    "가을이 이어집니다."
+                }
+            }
+            ProPostseasonResult.DID_NOT_QUALIFY, ProPostseasonResult.UNAVAILABLE -> "가을이 닫혔습니다."
+        }
+        val trustLine = "가을 승부 · ${session.strikeouts}탈삼진 · ${session.walks}볼넷 · ${session.runsAllowed}실점 · 감독의 믿음 ${if (trustDelta >= 0) "+" else ""}$trustDelta."
+        val phase = if (continues) ProCareerPhase.IMPORTANT_GAME else ProCareerPhase.SEASON_REVIEW
+        val appearanceLoad = if (usesSeriesRules) max(1, (session.pitches + 14) / 15) else 0
+        val postseasonFatigue = clamp(state.fatigue + appearanceLoad - automaticGames * 4, 0, 100)
+        rng.next()
+        val next = state.copy(
+            revision = state.revision + 1UL,
+            phase = phase,
+            managerTrust = trust,
+            catcherTrust = clamp(state.catcherTrust + (if (sound) 2 else -1) + sequenceReward, 0, 100),
+            fatigue = postseasonFatigue,
+            news = (listOf(headline) + automaticSummaries + listOf(trustLine) + state.news).take(30),
+            seasonTrigger = if (continues) nextTrigger else null,
+            currentRival = if (continues) rival else null,
+            decisionHistory = history,
+            postseason = nextPostseason,
+            activePitch = null,
+            lastPresentation = null,
+            commitment = "",
+        )
+        return result(
+            next,
+            rng.next().toString(),
+            listOf("pro_autumn_game_resolved") +
+                (if (automaticGames > 0) listOf("pro_autumn_team_game_simulated") else emptyList()) +
+                listOf(if (continues) "pro_autumn_advanced" else "pro_autumn_finished"),
+        )
+    }
+
+    public fun choosePostseasonAvailability(
+        state: ProState,
+        seedText: String,
+        choice: ProPostseasonAvailabilityChoice,
+    ): ProResult {
+        validate(state, ProCareerPhase.IMPORTANT_GAME)
+        val postseason = state.postseason
+        require(usesFinalSeriesRules(state) && postseason != null && postseason.currentRound != null && postseason.result == ProPostseasonResult.IN_PROGRESS) {
+            "pro.postseason_availability_not_pending"
+        }
+        require(ProPostseasonRules.requiresAvailabilityDecision(postseason, state.role)) { "pro.postseason_availability_not_pending" }
+        val rng = SplitMix64(seed(seedText).value)
+        return when (choice) {
+            ProPostseasonAvailabilityChoice.PITCH_AGAIN -> {
+                val selected = ProPostseasonRules.choosingAvailability(postseason, ProPostseasonAvailabilityChoice.PITCH_AGAIN)
+                val pitches = postseason.series?.lastAppearancePitches ?: 0
+                val penalty = ProPostseasonRules.consecutiveAppearanceFatiguePenalty(state.role, pitches)
+                result(
+                    state.copy(
+                        revision = state.revision + 1UL,
+                        fatigue = clamp(state.fatigue + penalty, 0, 100),
+                        news = (listOf("연투를 택했습니다. 다음 경기에도 마운드에 오릅니다.") + state.news).take(30),
+                        postseason = selected,
+                        commitment = "",
+                    ),
+                    rng.next().toString(),
+                    listOf("pro_autumn_availability_pitch_again"),
+                )
+            }
+            ProPostseasonAvailabilityChoice.REST_FOR_DECIDER -> {
+                val simulated = simulatePostseasonTeamGames(
+                    postseason, state, state.role,
+                    ProPostseasonRules.teamStrengthEdgePermille(state),
+                    forceCurrentGame = true,
+                    rng,
+                )
+                val continues = simulated.state.result == ProPostseasonResult.IN_PROGRESS
+                val trigger = if (continues) simulated.state.currentRound?.let { ProPostseasonRules.trigger(it) } else null
+                val rival = if (continues && trigger != null) {
+                    ProCatalog.rivalFor(state.team.id, state.season, state.week, trigger, simulated.state.series?.opponentTeamId)
+                } else null
+                val headline = when (simulated.state.result) {
+                    ProPostseasonResult.CHAMPION -> "플레이오프 우승. 올해의 마지막 공이 남았습니다."
+                    ProPostseasonResult.RUNNER_UP -> "결승에서 멈췄습니다. 가을은 여기까지입니다."
+                    ProPostseasonResult.IN_PROGRESS -> {
+                        val series = simulated.state.series
+                        val roundTitle = when (simulated.state.currentRound) {
+                            ProAutumnRound.WILD_CARD -> "와일드카드"
+                            ProAutumnRound.SEMIFINAL -> "준플레이오프"
+                            ProAutumnRound.PLAYOFF -> "플레이오프"
+                            ProAutumnRound.FINAL -> "우승 결정전"
+                            null -> "가을 시리즈"
+                        }
+                        "한 경기를 쉬었습니다. $roundTitle ${series?.nextGameNumber ?: 1}차전을 준비합니다."
+                    }
+                    else -> "가을이 닫혔습니다."
+                }
+                result(
+                    state.copy(
+                        revision = state.revision + 1UL,
+                        phase = if (continues) ProCareerPhase.IMPORTANT_GAME else ProCareerPhase.SEASON_REVIEW,
+                        fatigue = clamp(state.fatigue - 12, 0, 100),
+                        news = (listOf(headline) + simulated.summaries + state.news).take(30),
+                        seasonTrigger = trigger,
+                        currentRival = rival,
+                        postseason = simulated.state,
+                        commitment = "",
+                    ),
+                    rng.next().toString(),
+                    listOf("pro_autumn_availability_rest") +
+                        (if (simulated.count > 0) listOf("pro_autumn_team_game_simulated") else emptyList()) +
+                        listOf(if (continues) "pro_autumn_advanced" else "pro_autumn_finished"),
+                )
+            }
+        }
+    }
+
+    private data class PostseasonGameScore(val teamRuns: Int, val opponentRuns: Int, val won: Boolean)
+    private data class PostseasonSimulation(val state: ProPostseasonState, val summaries: List<String>, val count: Int)
+
+    private fun simulatePostseasonTeamGames(
+        initial: ProPostseasonState,
+        careerState: ProState,
+        role: ProRole,
+        strengthEdgePermille: Int,
+        forceCurrentGame: Boolean,
+        rng: SplitMix64,
+    ): PostseasonSimulation {
+        var state = initial
+        val summaries = mutableListOf<String>()
+        var force = forceCurrentGame
+        while (state.result == ProPostseasonResult.IN_PROGRESS && (force || !ProPostseasonRules.shouldDirectlyPlayNextGame(state, role))) {
+            force = false
+            var teamRuns = ProLeagueBaseline.teamRuns(rng)
+            var opponentRuns = ProLeagueBaseline.teamRuns(rng)
+            val liveStrengthEdge = ProPostseasonRules.teamStrengthEdgePermille(careerState, state.series?.opponentTeamId)
+            val applied = applyPostseasonStrength(
+                if (state.series?.opponentTeamId == null) strengthEdgePermille else liveStrengthEdge,
+                teamRuns,
+                opponentRuns,
+                rng,
+            )
+            teamRuns = applied.first
+            opponentRuns = applied.second
+            if (teamRuns == opponentRuns) {
+                if (rng.nextInt(2) == 0) teamRuns += 1 else opponentRuns += 1
+            }
+            val won = teamRuns > opponentRuns
+            val gameNumber = state.series?.nextGameNumber ?: 1
+            state = ProPostseasonRules.resolvingSeriesGame(state, won, directlyPlayed = false, teamRuns = teamRuns, opponentRuns = opponentRuns)
+            if (state.result == ProPostseasonResult.IN_PROGRESS) {
+                state = ProPostseasonRules.preparingSeries(state, careerState)
+            }
+            summaries += "우승 결정전 ${gameNumber}차전 자동 진행 · $teamRuns-$opponentRuns ${if (won) "승" else "패"}"
+        }
+        return PostseasonSimulation(state, summaries, summaries.size)
+    }
+
+    private fun resolvePostseasonGame(
+        state: ProState,
+        session: ProPitchSession,
+        strengthEdgePermille: Int,
+        rng: SplitMix64,
+    ): PostseasonGameScore {
+        val inning = min(9, max(1, session.context.inning))
+        val entryOuts = min(2, max(0, session.context.outs))
+        val directOuts = min(27, max(0, session.outs))
+        val differential = session.context.scoreDifferential
+        var opponentAtEntry = ProLeagueBaseline.teamRuns(rng) * max(0, inning - 1) / 9
+        var teamAtEntry = opponentAtEntry + differential
+        if (teamAtEntry < 0) {
+            opponentAtEntry += -teamAtEntry
+            teamAtEntry = 0
+        }
+        var teamRuns = max(0, teamAtEntry)
+        var opponentRuns = max(0, opponentAtEntry) + session.runsAllowed
+        val opponentOutsRemaining = max(0, (10 - inning) * 3 - entryOuts - directOuts)
+        if (opponentOutsRemaining > 0) {
+            opponentRuns += ProLeagueBaseline.restOfTeamRuns(opponentOutsRemaining, rng)
+        }
+        val teamOutsRemaining = max(0, (10 - inning) * 3)
+        val gameAlreadyEnded = inning == 9 && opponentOutsRemaining == 0 && teamRuns > opponentRuns
+        if (teamOutsRemaining > 0 && !gameAlreadyEnded) {
+            teamRuns += ProLeagueBaseline.restOfTeamRuns(teamOutsRemaining, rng)
+        }
+        val applied = applyPostseasonStrength(strengthEdgePermille, teamRuns, opponentRuns, rng)
+        teamRuns = applied.first
+        opponentRuns = applied.second
+        repeat(3) {
+            if (teamRuns == opponentRuns) {
+                teamRuns += ProLeagueBaseline.restOfTeamRuns(3, rng)
+                opponentRuns += ProLeagueBaseline.restOfTeamRuns(3, rng)
+            }
+        }
+        if (teamRuns == opponentRuns) {
+            if (rng.nextInt(2) == 0) teamRuns += 1 else opponentRuns += 1
+        }
+        return PostseasonGameScore(teamRuns, opponentRuns, teamRuns > opponentRuns)
+    }
+
+    private fun applyPostseasonStrength(
+        edgePermille: Int,
+        teamRuns: Int,
+        opponentRuns: Int,
+        rng: SplitMix64,
+    ): Pair<Int, Int> {
+        val edge = min(180, max(-180, edgePermille))
+        if (edge == 0) return teamRuns to opponentRuns
+        val roll = rng.nextInt(1_000)
+        return when {
+            edge > 0 && roll < edge -> (teamRuns + 1) to opponentRuns
+            edge < 0 && roll < -edge -> teamRuns to (opponentRuns + 1)
+            else -> teamRuns to opponentRuns
+        }
+    }
+
     public fun reviewSeason(state: ProState, seedText: String): ProResult {
         validate(state, ProCareerPhase.SEASON_REVIEW)
         val seed = seed(seedText)
-        val stats = state.currentStats
+        val stats = state.currentStats.archivingPostseason(state.postseason?.gameHistory)
         var awards = state.awards
         val honorVersion = if (usesLiveOutingRules(state)) 2 else 1
         ProCareerRecognitionRules.awardContentIDs(stats, honorVersion).forEach { contentId ->
@@ -689,12 +1173,7 @@ public class ProKernel(
             OffseasonDecision.RETIRE -> error("unreachable")
         }
         val season = state.season + 1
-        val decline = if (age >= 33) 1 else 0
-        val pitcher = if (decline == 0) state.pitcher else state.pitcher.copy(
-            stuff = clamp(state.pitcher.stuff - decline, 20, 80),
-            movement = clamp(state.pitcher.movement - decline, 20, 80),
-            stamina = clamp(state.pitcher.stamina - decline, 20, 80),
-        )
+        val pitcher = projectedPitcher(state.pitcher, age, CURRENT_RULES_VERSION, recoveryYear = false)
         val contract = ProContract(
             yearsRemaining = max(1, (state.contract?.yearsRemaining ?: 1) - 1),
             annualSalary = max(state.contract?.annualSalary ?: 40_000_000, 40_000_000 + service * 50_000_000),
@@ -708,7 +1187,7 @@ public class ProKernel(
             age = age,
             season = season,
             week = 0,
-            rolePreference = null,
+            rolePreference = state.role,
             fatigue = 0,
             injuryWeeks = 0,
             serviceYears = service,
@@ -727,10 +1206,15 @@ public class ProKernel(
             news = news.take(30),
             commitment = "",
             proRulesVersion = max(state.proRulesVersion, CURRENT_RULES_VERSION),
+            postseason = null,
+            activeDecisionModifiers = null,
+            resolvedFollowUps = null,
+            roleRequest = null,
         )
+        val declineNews = if (age >= 31) listOf("${age}세 · 전성기가 기울며 구위가 한 단계 떨어졌습니다.") else emptyList()
         val next = base.copy(
             seasonTensions = seasonTensions(base),
-            news = (listOf(tensionHeadline(seasonTensions(base))) + base.news).take(30),
+            news = (declineNews + listOf(tensionHeadline(seasonTensions(base))) + base.news).take(30),
             standings = deriveStandings(base),
             leaderboards = deriveLeaderboards(base),
             commitment = "",
@@ -939,6 +1423,17 @@ public class ProKernel(
             add(state.commandReceipts.joinToString(";") { it.toString() })
             add("proRules:${state.proRulesVersion}")
             state.journeyState?.let { add("journey:v1:${ProJourneyStateCodec.canonicalToken(it)}") }
+            state.postseason?.let { postseason ->
+                add("postseason:${postseason.seed}:${postseason.currentRound?.wire ?: "none"}:${postseason.result.wire}:${postseason.gamesPlayed}")
+                postseason.series?.let { series ->
+                    add(
+                        "postseason_series:${series.round?.wire ?: "none"}:${series.opponentTeamId ?: "none"}:${series.playerWinsRequired ?: "none"}:${series.opponentWinsRequired ?: "none"}:${series.playerWins}:${series.opponentWins}:${series.nextGameNumber}:${series.totalDirectAppearances}:${series.lastAppearancePitches ?: "none"}:${series.lastAppearanceGameNumber ?: "none"}:${series.availabilityDecision?.wire ?: "none"}",
+                    )
+                }
+            }
+            state.activeDecisionModifiers?.takeIf { it.isNotEmpty() }?.let { add("decision_modifiers:${it.size}") }
+            state.resolvedFollowUps?.takeIf { it.isNotEmpty() }?.let { add("resolved_followups:${it.size}") }
+            state.roleRequest?.let { add("role_request:${it.season}:${it.reviewWeek}:${it.requested.wire}:${it.outcome.wire}") }
         }
         return StableHash.fnv1a64(values.joinToString("|"))
     }
@@ -1061,10 +1556,33 @@ public class ProKernel(
 
     private fun signed(state: ProState): ProState = state.copy(commitment = commitment(state.copy(commitment = "")))
 
-    private fun seasonDecision(state: ProState, week: Int): ProSeasonDecision {
+    private fun seasonDecision(
+        state: ProState,
+        week: Int,
+        climate: ProSeasonClimate? = null,
+        trust: Int? = null,
+    ): ProSeasonDecision {
         val slot = ProCatalog.SEASON_DECISION_WEEKS.indexOf(week)
         require(slot >= 0) { "pro.decision_week" }
-        val types = ProSeasonDecisionType.entries
+        if (usesCareerArcRules(state)) {
+            val history = state.decisionHistory
+            val hadFormCrisis = history.any { it.season == state.season && it.type == ProSeasonDecisionType.FORM_CRISIS }
+            if (!hadFormCrisis && climate == ProSeasonClimate.SLUMP && (trust ?: state.managerTrust) < 55) {
+                return makeArcDecision(ProSeasonDecisionType.FORM_CRISIS, state, week)
+            }
+            val hadAging = history.any { it.season == state.season && it.type == ProSeasonDecisionType.AGING_CROSSROADS }
+            if (!hadAging && week == 20 && state.age >= 32) {
+                return makeArcDecision(ProSeasonDecisionType.AGING_CROSSROADS, state, week)
+            }
+        }
+        val types = listOf(
+            ProSeasonDecisionType.EXTRA_BULLPEN,
+            ProSeasonDecisionType.CATCHER_GAME_PLAN,
+            ProSeasonDecisionType.ROLE_MEETING,
+            ProSeasonDecisionType.RECORD_CHASE,
+            ProSeasonDecisionType.RIVAL_ANALYSIS,
+            ProSeasonDecisionType.SEASON_FINALE,
+        )
         val type = types[(proHash("${state.careerId}|season${state.season}|season-decisions") % types.size.toULong()).toInt().plus(slot).mod(types.size)]
         val choices = when (type) {
             ProSeasonDecisionType.EXTRA_BULLPEN -> listOf(
@@ -1097,6 +1615,8 @@ public class ProKernel(
                 choice(type, "recover_first", "회복을 우선한다", "출전 의지를 의심받더라도 몸을 회복합니다.", ProDecisionEffect(managerTrustDelta = -2, fatigueDelta = -18)),
                 choice(type, "support_youth", "젊은 선수를 돕는다", "벤치와 배터리의 신뢰를 함께 쌓습니다.", ProDecisionEffect(managerTrustDelta = 4, catcherTrustDelta = 6, fatigueDelta = 3)),
             )
+            ProSeasonDecisionType.FORM_CRISIS, ProSeasonDecisionType.AGING_CROSSROADS ->
+                error("arc decisions are built by makeArcDecision")
         }
         val title = type.title
         return ProSeasonDecision("season-${state.season}-week-$week-${type.wire}", type, state.season, week, title, type.detail, choices)
@@ -1104,6 +1624,31 @@ public class ProKernel(
 
     private fun choice(type: ProSeasonDecisionType, suffix: String, title: String, detail: String, effect: ProDecisionEffect) =
         ProDecisionChoice("${type.wire}.$suffix", title, detail, effect)
+
+    private fun makeArcDecision(type: ProSeasonDecisionType, state: ProState, week: Int): ProSeasonDecision {
+        val (title, detail, choices) = when (type) {
+            ProSeasonDecisionType.FORM_CRISIS -> Triple(
+                "슬럼프 갈림길",
+                "최근 등판이 흔들리고 감독의 믿음도 얇아졌습니다. 남은 주를 어떻게 버티겠습니까.",
+                listOf(
+                    choice(type, "recover", "회복 주를 택한다", "다음 이틀을 평온하게 만들고 몸을 낮춥니다.", ProDecisionEffect(managerTrustDelta = -2, fatigueDelta = -16)),
+                    choice(type, "push_through", "밀어붙인다", "피로를 감수하고 선발 자리를 지킵니다.", ProDecisionEffect(managerTrustDelta = 3, fatigueDelta = 12)),
+                    choice(type, "move_bullpen", "구원으로 몸을 낮춘다", "짧은 이닝으로 슬럼프 피해를 줄입니다.", ProDecisionEffect(managerTrustDelta = 1, fatigueDelta = -8, roleTarget = ProRole.LONG_RELIEF)),
+                ),
+            )
+            ProSeasonDecisionType.AGING_CROSSROADS -> Triple(
+                "전성기가 기울고 있다",
+                "몸이 예전 같지 않습니다. 다음 시즌을 어떤 자세로 맞겠습니까.",
+                listOf(
+                    choice(type, "keep_starter", "선발을 지킨다", "하락을 감수하고 로테이션에 남습니다.", ProDecisionEffect(staminaDelta = 1, managerTrustDelta = 2, fatigueDelta = 6, roleTarget = ProRole.STARTER)),
+                    choice(type, "move_bullpen", "불펜으로 옮긴다", "짧은 승부로 몸을 아끼며 남습니다.", ProDecisionEffect(commandDelta = 1, fatigueDelta = -8, roleTarget = ProRole.LONG_RELIEF)),
+                    choice(type, "recovery_year", "회복 연도를 택한다", "성장을 멈추고 하락을 한 단계 줄입니다.", ProDecisionEffect(managerTrustDelta = -2, fatigueDelta = -16)),
+                ),
+            )
+            else -> error("not an arc decision")
+        }
+        return ProSeasonDecision("season-${state.season}-week-$week-${type.wire}", type, state.season, week, title, detail, choices)
+    }
 
     private val ProSeasonDecisionType.title: String
         get() = when (this) {
@@ -1113,6 +1658,8 @@ public class ProKernel(
             ProSeasonDecisionType.RECORD_CHASE -> "기록 추격"
             ProSeasonDecisionType.RIVAL_ANALYSIS -> "라이벌 분석"
             ProSeasonDecisionType.SEASON_FINALE -> "시즌 막바지"
+            ProSeasonDecisionType.FORM_CRISIS -> "슬럼프 갈림길"
+            ProSeasonDecisionType.AGING_CROSSROADS -> "전성기가 기울고 있다"
         }
 
     private val ProSeasonDecisionType.detail: String
@@ -1123,6 +1670,8 @@ public class ProKernel(
             ProSeasonDecisionType.RECORD_CHASE -> "개인 기록과 팀에 필요한 투구 사이에서 훈련 방향을 고릅니다."
             ProSeasonDecisionType.RIVAL_ANALYSIS -> "다음 맞대결을 앞두고 분석 시간을 어디에 쓸지 정합니다."
             ProSeasonDecisionType.SEASON_FINALE -> "순위 경쟁과 회복, 동료 지원 사이에서 마지막 힘을 배분합니다."
+            ProSeasonDecisionType.FORM_CRISIS -> "최근 등판이 흔들리고 감독의 믿음도 얇아졌습니다. 남은 주를 어떻게 버티겠습니까."
+            ProSeasonDecisionType.AGING_CROSSROADS -> "몸이 예전 같지 않습니다. 다음 시즌을 어떤 자세로 맞겠습니까."
         }
 
     private fun validateDecision(value: ProSeasonDecision, season: Int, week: Int) {
@@ -1138,12 +1687,13 @@ public class ProKernel(
             listOf(effect.managerTrustDelta, effect.catcherTrustDelta).all { it in -20..20 } && effect.fatigueDelta in -30..30
 
     private fun importantGameTrigger(state: ProState, nextWeek: Int, level: ProLevel, trust: Int, stats: ProSeasonStats, skill: Int, prior: Int): ProSeasonTrigger? {
-        if (prior >= 3) return null
+        val maximum = if (usesAutumnRules(state)) 2 else 3
+        if (prior >= maximum) return null
         val segment = ProCatalog.segment(nextWeek)
-        if (state.level == ProLevel.MINOR && level == ProLevel.MAJOR && (segment == ProSeasonSegment.SEASON_FINALE || prior < 2)) return ProSeasonTrigger.MAJOR_DEBUT
+        if (state.level == ProLevel.MINOR && level == ProLevel.MAJOR && (segment == ProSeasonSegment.SEASON_FINALE || prior < maximum - 1)) return ProSeasonTrigger.MAJOR_DEBUT
         if (segment == ProSeasonSegment.OPENING && nextWeek == anchorWeek(state, "opening", 2, 4)) return ProSeasonTrigger.OPENING_STATEMENT
         if (segment == ProSeasonSegment.SEASON_FINALE && nextWeek == anchorWeek(state, "finale", 21, 23)) return ProSeasonTrigger.STANDINGS_RACE
-        if (prior >= 2) return null
+        if (prior >= maximum - 1) return null
         if (level == ProLevel.MINOR && skill >= 44 && state.managerTrust < 57 && trust >= 57) return ProSeasonTrigger.CALL_UP_AUDITION
         if (state.pitcher.stuff >= maxOf(state.pitcher.command, state.pitcher.movement, state.pitcher.stamina)) {
             listOf(45, 85, 125).firstOrNull { state.currentStats.strikeouts < it && stats.strikeouts >= it }?.let { return ProSeasonTrigger.RECORD_CHASE }
@@ -1166,6 +1716,10 @@ public class ProKernel(
             ProSeasonTrigger.RECORD_CHASE -> "기록에 다가서는 등판. ${foe}를 상대로 자신의 투구를 증명합니다."
             ProSeasonTrigger.ROLE_SHOWDOWN -> "${foe}와의 승부로 다음 역할이 갈립니다."
             ProSeasonTrigger.STANDINGS_RACE -> "순위가 걸린 한 경기. ${foe}를 넘어야 가을이 보입니다."
+            ProSeasonTrigger.AUTUMN_WILD_CARD -> "와일드카드 한 판. ${foe}를 막아야 가을이 이어집니다."
+            ProSeasonTrigger.AUTUMN_SEMIFINAL -> "준플레이오프. ${foe}와의 승부가 다음 라운드를 엽니다."
+            ProSeasonTrigger.AUTUMN_PLAYOFF -> "플레이오프. ${foe}를 넘어야 우승 결정전이 열립니다."
+            ProSeasonTrigger.AUTUMN_FINAL -> "우승 결정전. ${foe} 앞에서 올해의 마지막 공을 던집니다."
         }
     }
 
@@ -1427,7 +1981,19 @@ public class ProKernel(
         val outs = state.careerStats.sumOf { it.inningsOuts }
         val decisions = state.careerStats.sumOf { it.wins + it.saves }
         val quality = state.careerStats.count { it.inningsOuts >= 180 && it.runPerNinePermille < 4_000 }
-        return (strikeouts / 150 + outs / 300 + decisions / 12 + quality * 2 + state.awards.size * 8 + state.serviceYears * 3).coerceIn(0, 100)
+        val autumnBonus = if (usesAutumnRules(state)) {
+            ProPostseasonRules.hofBonus(state.postseason?.result ?: ProPostseasonResult.DID_NOT_QUALIFY)
+        } else 0
+        if (state.proRulesVersion < HALL_OF_FAME_FORMULA_VERSION) {
+            return (strikeouts / 150 + outs / 300 + decisions / 12 + quality * 2 + state.awards.size * 8 + state.serviceYears * 3).coerceIn(0, 100)
+        }
+        val longevity = min(15, max(0, state.serviceYears))
+        val strikeoutContribution = min(22, max(0, strikeouts) / 200)
+        val workloadContribution = min(15, max(0, outs) / 600)
+        val decisionContribution = min(9, max(0, decisions) / 25)
+        val qualityContribution = min(10, max(0, quality) / 2)
+        val awardContribution = if (state.awards.size >= 3) min(12, 2 + (state.awards.size - 3) / 8) else 0
+        return (longevity + strikeoutContribution + workloadContribution + decisionContribution + qualityContribution + awardContribution + autumnBonus).coerceIn(0, 100)
     }
 
     private fun retirementNews(state: ProState, score: Int): List<String> = buildList {

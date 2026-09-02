@@ -109,6 +109,10 @@ public enum class ProSeasonTrigger(public val wire: String) {
     RECORD_CHASE("record_chase"),
     ROLE_SHOWDOWN("role_showdown"),
     STANDINGS_RACE("standings_race"),
+    AUTUMN_WILD_CARD("autumn_wild_card"),
+    AUTUMN_SEMIFINAL("autumn_semifinal"),
+    AUTUMN_PLAYOFF("autumn_playoff"),
+    AUTUMN_FINAL("autumn_final"),
 }
 
 public enum class ProSeasonDecisionType(public val wire: String) {
@@ -118,6 +122,8 @@ public enum class ProSeasonDecisionType(public val wire: String) {
     RECORD_CHASE("record_chase"),
     RIVAL_ANALYSIS("rival_analysis"),
     SEASON_FINALE("season_finale"),
+    FORM_CRISIS("form_crisis"),
+    AGING_CROSSROADS("aging_crossroads"),
 }
 
 public enum class ProPitchBoundary(public val wire: String) {
@@ -243,9 +249,13 @@ public data class ProSeasonStats(
     val wins: Int = 0,
     val losses: Int = 0,
     val saves: Int = 0,
+    val postseasonGames: List<ProPostseasonGameLine>? = null,
 ) {
     public val runPerNinePermille: Int
         get() = if (inningsOuts == 0) 9_990 else runsAllowed * 27_000 / inningsOuts
+
+    public fun archivingPostseason(games: List<ProPostseasonGameLine>?): ProSeasonStats =
+        copy(postseasonGames = if (games.isNullOrEmpty()) null else games)
 }
 
 public enum class ProPitchingDecision(public val wire: String) {
@@ -480,10 +490,70 @@ public data class ProState(
     val news: List<String>,
     val commandReceipts: List<ProCommandReceipt> = emptyList(),
     val commitment: String = "",
-    /** Live outing offset and weekly ticks. 1 = frozen, 4 = current iOS live rules. */
+    /** Live outing offset and weekly ticks. 1 = frozen, 8 = current Android/iOS v8 live rules. */
     val proRulesVersion: Int = 1,
     /** Optional Wave 6 journey block. Legacy ProState callers and v1 saves remain nil. */
     val journeyState: ProCareerJourneyState? = null,
+    /** v6 autumn series. Missing on legacy saves. */
+    val postseason: ProPostseasonState? = null,
+    /** v9 weekly-decision modifiers. Preserved on decode; unused by v8 simulation. */
+    val activeDecisionModifiers: List<ProDecisionModifier>? = null,
+    /** v9 weekly-decision follow-ups. Preserved on decode; unused by v8 simulation. */
+    val resolvedFollowUps: List<ProDecisionFollowUp>? = null,
+    /** v9 spring-camp role request. Preserved on decode; unused by v8 simulation. */
+    val roleRequest: ProRoleRequestState? = null,
+)
+
+/** v9 weekly decision temporary effects. Missing on legacy saves; decodeIfPresent keeps v8 bytes. */
+public data class ProDecisionModifier(
+    val decisionId: String,
+    val type: ProSeasonDecisionType,
+    val expiresWeek: Int,
+    val commandDelta: Int = 0,
+    val trainingEfficiencyPermille: Int? = null,
+    val extraOutingChance: Int = 0,
+    val extraOutingsGranted: Int? = null,
+    val suppressOutings: Boolean = false,
+    val injuryPressureFloor: Int? = null,
+    val targetPitch: PitchKind? = null,
+    val qualityStarts: Int = 0,
+    val runsAllowed: Int = 0,
+    val baselineStuff: Int = 0,
+    val baselineCommand: Int = 0,
+    val baselineMovement: Int = 0,
+    val baselineStamina: Int = 0,
+    val choiceId: String = "",
+)
+
+/** v9 weekly decision follow-up cards. Missing on legacy saves. */
+public data class ProDecisionFollowUp(
+    val decisionId: String,
+    val type: ProSeasonDecisionType,
+    val season: Int,
+    val week: Int,
+    val summaryKey: String,
+    val qualityStarts: Int? = null,
+    val runsAllowed: Int? = null,
+    val commandRestored: Int? = null,
+    val managerTrustDelta: Int? = null,
+    val stuffDelta: Int? = null,
+    val commandDelta: Int? = null,
+    val movementDelta: Int? = null,
+    val staminaDelta: Int? = null,
+    val choiceId: String? = null,
+)
+
+public enum class ProRoleRequestOutcome(public val wire: String) {
+    ACCEPTED("accepted"),
+    CONDITIONAL("conditional"),
+    REJECTED("rejected"),
+}
+
+public data class ProRoleRequestState(
+    val requested: ProRole,
+    val outcome: ProRoleRequestOutcome,
+    val reviewWeek: Int,
+    val season: Int,
 )
 
 public typealias ProCareerSnapshot = ProState

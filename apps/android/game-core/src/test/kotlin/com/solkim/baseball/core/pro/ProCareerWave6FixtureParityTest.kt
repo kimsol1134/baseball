@@ -10,9 +10,6 @@ import kotlin.test.assertTrue
 
 /** Exact Swift-authority hash and semantic parity checks for the checked-in Wave 6 fixture. */
 class ProCareerWave6FixtureParityTest {
-    // Swift authority가 792d728 이후 진행됐다(시즌 climate·콜 정책 등 미포팅). 픽스처는
-    // 2026-09-02 아웃 유실 수정과 함께 현재 Swift로 재생성 — climate 포팅 후 @Ignore 해제.
-    @org.junit.Ignore("Kotlin port lags Swift authority (season climate/call policy); re-enable after porting")
     @Test
     fun swiftV2FixtureHashesAndSemanticRowsAreStable() {
         val root = fixture()

@@ -12,7 +12,7 @@ import kotlin.math.max
 /** Frozen fictional pro catalog copied from the current Swift/C# source set. */
 public object ProCatalog {
     /** Pro schedule, fatigue, and overload-injury rules currently used by new careers. */
-    public const val RULES_VERSION: Int = 4
+    public const val RULES_VERSION: Int = 8
     public const val BALANCE_VERSION: Int = 4
     public const val MAXIMUM_CAREER_SEASONS: Int = 20
     public const val WEEKS_PER_SEASON: Int = 24
@@ -115,11 +115,19 @@ public object ProCatalog {
         rival("pro-rival-jeju", "한도결", "득점권 해결사형", "jeju_storm", "제주 스톰", "득점권 타율 .352 · 끝내기 다수", "주자가 있을 때 스윙이 더 단단해집니다. 넓은 존을 커버하는 배드볼 히터입니다."),
     )
 
-    public fun rivalFor(teamId: String, season: Int, week: Int, trigger: ProSeasonTrigger): ProRivalBatter {
+    public fun rivalFor(
+        teamId: String,
+        season: Int,
+        week: Int,
+        trigger: ProSeasonTrigger,
+        opponentTeamId: String? = null,
+    ): ProRivalBatter {
+        val matched = opponentTeamId?.let { id -> rivals.filter { it.teamId == id } } ?: emptyList()
+        val pool = if (matched.isEmpty()) rivals else matched
         val value = StableHash.fnv1a64("$teamId|season$season|week$week|${trigger.wire}").toULong(16)
-        var index = (value % rivals.size.toULong()).toInt()
-        if (rivals[index].teamId == teamId) index = (index + 1) % rivals.size
-        return rivals[index]
+        var index = (value % pool.size.toULong()).toInt()
+        if (pool[index].teamId == teamId) index = (index + 1) % pool.size
+        return pool[index]
     }
 
     public fun profile(
@@ -186,3 +194,10 @@ private fun ProState.completedCareerStats(): List<ProSeasonStats> =
 
 public fun ProState.careerGames(): Int = completedCareerStats().sumOf { it.games }
 public fun ProState.careerStrikeouts(): Int = completedCareerStats().sumOf { it.strikeouts }
+public fun ProState.careerHits(): Int = completedCareerStats().sumOf { it.hits }
+public fun ProState.careerWalks(): Int = completedCareerStats().sumOf { it.walks }
+public fun ProState.careerWhipPermille(): Int {
+    val outs = completedCareerStats().sumOf { it.inningsOuts }
+    if (outs == 0) return 9_990
+    return (careerHits() + careerWalks()) * 3_000 / outs
+}

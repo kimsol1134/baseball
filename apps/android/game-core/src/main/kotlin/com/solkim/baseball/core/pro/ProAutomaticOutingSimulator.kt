@@ -1,7 +1,10 @@
 package com.solkim.baseball.core.pro
 
 import com.solkim.baseball.core.SplitMix64
+import com.solkim.baseball.core.StableHash
 import com.solkim.baseball.core.pitch.BatSide
+import com.solkim.baseball.core.pitch.BatterScoutingArchetype
+import com.solkim.baseball.core.pitch.BatterScoutingProfileRules
 import com.solkim.baseball.core.pitch.BatterScoutingSnapshot
 import com.solkim.baseball.core.pitch.BatterSnapshot
 import com.solkim.baseball.core.pitch.BaserunnerStateSnapshot
@@ -34,8 +37,16 @@ internal class ProAutomaticOutingSimulator(
         val pitches: Int,
         val hits: Int,
         val homeRuns: Int,
+        val doubles: Int = 0,
+        val triples: Int = 0,
     )
 
+    /**
+     * @param callPolicy PERFECT keeps the existing seed stream. Other policies draw one extra
+     *   integer per plate appearance.
+     * @param diverseScouting defaults to false so v8 careers and fixtures keep the same RNG
+     *   count. Existing nextInt calls stay in the same order even when this is true.
+     */
     internal fun simulate(
         pitcher: PitcherSnapshot,
         startingFatigue: Int,
@@ -43,6 +54,8 @@ internal class ProAutomaticOutingSimulator(
         pitchCap: Int,
         baseSeed: ULong,
         batterOffset: Int = 0,
+        callPolicy: AutoCallPolicy = AutoCallPolicy.PERFECT,
+        diverseScouting: Boolean = false,
     ): Line {
         val rng = SplitMix64(baseSeed)
         val fielders = listOf(
@@ -62,6 +75,8 @@ internal class ProAutomaticOutingSimulator(
         var pitches = 0
         var hits = 0
         var homeRuns = 0
+        var doubles = 0
+        var triples = 0
         var plateAppearanceIndex = 0
         val extensionOuts = if (outsTarget >= 18) starterExtensionOuts(pitcher) else 0
         val effectiveOutsTarget = outsTarget + extensionOuts
@@ -78,18 +93,34 @@ internal class ProAutomaticOutingSimulator(
                 batSide = if (rng.nextInt(100) < 32) BatSide.LEFT else BatSide.RIGHT,
             )
             val hotZone = com.solkim.baseball.core.pitch.PitchZone(rng.nextInt(3), rng.nextInt(3))
-            val coldZone = if (hotZone == com.solkim.baseball.core.pitch.PitchZone(1, 1)) {
-                com.solkim.baseball.core.pitch.PitchZone(2, 0)
+            val mirrored = com.solkim.baseball.core.pitch.PitchZone(2 - hotZone.row, 2 - hotZone.column)
+            val weaknessDraw = rng.nextInt(2)
+            val chaseTendency = (48 + rng.nextInt(9) - 4).coerceIn(20, 80)
+            val scouting: BatterScoutingSnapshot = if (diverseScouting) {
+                val seedToken = "${batter.id}|$baseSeed"
+                val archetypes = BatterScoutingArchetype.entries
+                val archetype = archetypes[
+                    (StableHash.fnv1a64Value("$seedToken|archetype") % archetypes.size.toULong()).toInt(),
+                ]
+                val profile = BatterScoutingProfileRules.profile(archetype, seedToken)
+                val mixedWeakness = listOf(PitchKind.SLIDER, PitchKind.CHANGEUP, PitchKind.CURVEBALL, PitchKind.FOUR_SEAM)
+                val hashBit = (StableHash.fnv1a64Value("$seedToken|mix") % 2UL).toInt()
+                BatterScoutingSnapshot(
+                    hotZone = profile.hotZone,
+                    coldZone = profile.coldZone,
+                    pitchStrength = profile.pitchStrength,
+                    pitchWeakness = mixedWeakness[weaknessDraw + hashBit * 2],
+                    chaseTendency = chaseTendency,
+                )
             } else {
-                com.solkim.baseball.core.pitch.PitchZone(2 - hotZone.row, 2 - hotZone.column)
+                BatterScoutingSnapshot(
+                    hotZone = hotZone,
+                    coldZone = if (mirrored == hotZone) com.solkim.baseball.core.pitch.PitchZone(2, 0) else mirrored,
+                    pitchStrength = PitchKind.FOUR_SEAM,
+                    pitchWeakness = if (weaknessDraw == 0) PitchKind.SLIDER else PitchKind.CHANGEUP,
+                    chaseTendency = chaseTendency,
+                )
             }
-            val scouting = BatterScoutingSnapshot(
-                hotZone = hotZone,
-                coldZone = coldZone,
-                pitchStrength = PitchKind.FOUR_SEAM,
-                pitchWeakness = if (rng.nextInt(2) == 0) PitchKind.SLIDER else PitchKind.CHANGEUP,
-                chaseTendency = (48 + rng.nextInt(9) - 4).coerceIn(20, 80),
-            )
             var game = GameStateSnapshot(
                 defense = DefenseSnapshot(50, 50, 50, fielders),
                 park = ParkSnapshot("league-week-park", "리그 구장", 1_000, 1_000),
@@ -99,8 +130,6 @@ internal class ProAutomaticOutingSimulator(
             )
             if (benchMemory == null) benchMemory = RivalMemorySnapshot("${pitcher.id}:bench:outing", 0UL, 0, 0, emptyList())
             var memory = benchMemory
-            // 초말을 포함한 절대 아웃 수. 초가 끝나면 같은 회의 말(아웃 0)로 넘어가므로,
-            // 초말을 무시하면 초의 세 번째 아웃이 통째로 사라진다.
             val outsBefore = absoluteOuts(inning)
             var context = PlateAppearanceContext(
                 plateAppearanceId = "week-pa-$plateAppearanceIndex",
@@ -118,11 +147,22 @@ internal class ProAutomaticOutingSimulator(
             var preparation = pitch.prepare(
                 PitchKernel.PrepareRequest(seedText, pitcher, batter, scouting, context, memory, game, carriedLog),
             )
+            val missThisPa = if (callPolicy == AutoCallPolicy.PERFECT) {
+                false
+            } else {
+                val threshold = if (callPolicy == AutoCallPolicy.SLUMP) 35 else 18
+                rng.nextInt(100) < threshold
+            }
             while (true) {
+                val call = if (missThisPa) {
+                    preparation.alternativeRecommendation.call
+                } else {
+                    preparation.primaryRecommendation.call
+                }
                 val result: PitchKernelResult = pitch.submit(
                     PitchKernel.SubmitRequest(
                         seedText, pitcher, batter, scouting, context,
-                        preparation.preparationToken, preparation.primaryRecommendation.call,
+                        preparation.preparationToken, call,
                         memory, game, carriedLog,
                     ),
                 )
@@ -132,7 +172,12 @@ internal class ProAutomaticOutingSimulator(
                 if (snapshot.result == PlateAppearanceResult.WALK) walks += 1
                 if (snapshot.result == PlateAppearanceResult.HIT) {
                     hits += 1
-                    if (snapshot.outcome == PitchOutcome.HOME_RUN) homeRuns += 1
+                    when (snapshot.outcome) {
+                        PitchOutcome.HOME_RUN -> homeRuns += 1
+                        PitchOutcome.TRIPLE -> triples += 1
+                        PitchOutcome.DOUBLE -> doubles += 1
+                        else -> Unit
+                    }
                 }
                 currentFatigue = snapshot.fatigueAfterPitch.coerceIn(0, 95)
                 memory = result.rivalMemory
@@ -160,7 +205,7 @@ internal class ProAutomaticOutingSimulator(
                 preparation = result.nextPreparation ?: break
             }
         }
-        return Line(outsTotal, strikeouts, walks, runsAllowed, pitches, hits, homeRuns)
+        return Line(outsTotal, strikeouts, walks, runsAllowed, pitches, hits, homeRuns, doubles, triples)
     }
 
     private fun starterExtensionOuts(pitcher: PitcherSnapshot): Int {

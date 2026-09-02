@@ -8,10 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ProCareerFixtureTest {
-    // Swift authority가 792d728 이후 진행됐다(시즌 climate·콜 정책 등 미포팅 — 등판 시뮬레이션이
-    // 타석당 난수 소비량부터 다르다). 픽스처는 2026-09-02 아웃 유실 수정과 함께 현재 Swift로
-    // 재생성했으므로, climate 포팅이 끝나면 @Ignore를 풀어 패리티를 복구한다.
-    @org.junit.Ignore("Kotlin port lags Swift authority (season climate/call policy); re-enable after porting")
     @Test
     fun committedCurrentSwiftMultiSeedFixtureMatchesKotlinProBoundary() {
         val root = StrictJson.parseUtf8(

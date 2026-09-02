@@ -9,7 +9,7 @@ import kotlin.math.min
 /** Pure Wave 6 rules. No UI-facing localized strings or implicit RNG are used here. */
 public object ProJourneyKernel {
     public const val JOURNEY_RULES_VERSION: Int = 1
-    public const val CURRENT_JOURNEY_RULES_VERSION: Int = 2
+    public const val CURRENT_JOURNEY_RULES_VERSION: Int = 3
     public const val RETIRED_NUMBER_SEASONS: Int = 8
     public const val RETIRED_NUMBER_LEGACY: Int = 80
     public const val RETIRED_NUMBER_FAN: Int = 60

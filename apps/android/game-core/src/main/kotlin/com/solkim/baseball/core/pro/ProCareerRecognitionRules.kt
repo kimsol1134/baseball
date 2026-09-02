@@ -10,20 +10,25 @@ public object ProCareerRecognitionRules {
 
     public fun awardContentIDs(stats: ProSeasonStats, rulesVersion: Int): List<String> {
         val ids = mutableListOf<String>()
-        if (rulesVersion >= 2) {
+        val ra9 = ninePermille(stats.runsAllowed, stats.inningsOuts)
+        val bb9 = ninePermille(stats.walks, stats.inningsOuts)
+        val h9 = ninePermille(stats.hits, stats.inningsOuts)
+        if (rulesVersion >= 3) {
             if (stats.strikeouts >= 180) ids += STRIKEOUTS
-            if (stats.games >= 20 && stats.inningsOuts >= 360 && stats.runPerNinePermille < 2_700) ids += RUN_PREVENTION
-            val bb9 = ninePermille(stats.walks, stats.inningsOuts)
+            if (ra9 < 2_400 && stats.games >= 20 && stats.inningsOuts >= 380) ids += RUN_PREVENTION
+            if (bb9 < 1_500 && stats.inningsOuts >= 380) ids += COMMAND
+            if (h9 < 6_800 && stats.inningsOuts >= 380) ids += HITS
+            if (stats.inningsOuts >= 540) ids += INNINGS
+        } else if (rulesVersion >= 2) {
+            if (stats.strikeouts >= 180) ids += STRIKEOUTS
+            if (ra9 < 2_700 && stats.games >= 20 && stats.inningsOuts >= 360) ids += RUN_PREVENTION
             if (bb9 < 1_800 && stats.inningsOuts >= 360) ids += COMMAND
-            val h9 = ninePermille(stats.hits, stats.inningsOuts)
             if (h9 < 7_500 && stats.inningsOuts >= 360) ids += HITS
             if (stats.inningsOuts >= 486) ids += INNINGS
         } else {
             if (stats.strikeouts >= 120) ids += STRIKEOUTS
-            if (stats.runPerNinePermille < 3_000 && stats.games >= 20) ids += RUN_PREVENTION
-            val bb9 = ninePermille(stats.walks, stats.inningsOuts)
+            if (ra9 < 3_000 && stats.games >= 20) ids += RUN_PREVENTION
             if (bb9 < 2_500 && stats.inningsOuts >= 180) ids += COMMAND
-            val h9 = ninePermille(stats.hits, stats.inningsOuts)
             if (h9 < 8_500 && stats.inningsOuts >= 180) ids += HITS
             if (stats.inningsOuts >= 360) ids += INNINGS
         }

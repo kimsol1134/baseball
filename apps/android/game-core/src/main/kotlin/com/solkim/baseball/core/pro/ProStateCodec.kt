@@ -93,6 +93,10 @@ public object ProStateCodec {
         out.writeNullable(state.highSchoolArchiveSettlement) { writeSettlement(it) }; out.writeNullable(state.activePitch) { writePitchSession(it) }; out.writeNullable(state.lastPresentation) { writePresentation(it) }; out.writeNullable(state.lastSegmentProgress) { writeSegmentProgress(it) }; out.writeNullableInt(state.hallOfFameScore); out.writeStrings(state.news)
         out.writeList(state.commandReceipts) { writeReceipt(it) }; out.writeString(state.commitment)
         out.writeInt(state.proRulesVersion)
+        out.writeNullable(state.postseason) { writePostseason(it) }
+        out.writeNullable(state.activeDecisionModifiers) { writeList(it) { writeModifier(it) } }
+        out.writeNullable(state.resolvedFollowUps) { writeList(it) { writeFollowUp(it) } }
+        out.writeNullable(state.roleRequest) { writeRoleRequest(it) }
     }
 
     private fun readState(input: DataInputStream, version: Int): ProState {
@@ -109,8 +113,12 @@ public object ProStateCodec {
         val settlement = input.readNullable { readSettlement() }; val activePitch = input.readNullable { readPitchSession() }; val presentation = input.readNullable { readPresentation() }; val lastSegment = input.readNullable { readSegmentProgress() }; val hof = input.readNullableInt(); val news = input.readStrings()
         val receipts = input.readList { readReceipt() }; val commitment = input.readString()
         val proRulesVersion = if (input.available() >= 4) input.readInt() else 1
+        val postseason = if (input.available() > 0) input.readNullable { readPostseason() } else null
+        val modifiers = if (input.available() > 0) input.readNullable { readList { readModifier() } } else null
+        val followUps = if (input.available() > 0) input.readNullable { readList { readFollowUp() } } else null
+        val roleRequest = if (input.available() > 0) input.readNullable { readRoleRequest() } else null
         if (input.available() != 0) fail("pro.state.trailing_bytes")
-        return ProState(careerId, revision, mode, source, legacyContext, activePreserved, seed, name, pitcher, team, entitlement, age, season, week, phase, level, role, rolePreference, managerTrust, catcherTrust, fatigue, injuryWeeks, serviceYears, military, contract, currentStats, currentLines, careerStats, ledgers, awards, milestones, decisions, pending, development, segment, trigger, rival, tensions, importantGames, standings, leaderboards, legacy, selectedLegacy, settlement, activePitch, presentation, lastSegment, hof, news, receipts, commitment, proRulesVersion)
+        return ProState(careerId, revision, mode, source, legacyContext, activePreserved, seed, name, pitcher, team, entitlement, age, season, week, phase, level, role, rolePreference, managerTrust, catcherTrust, fatigue, injuryWeeks, serviceYears, military, contract, currentStats, currentLines, careerStats, ledgers, awards, milestones, decisions, pending, development, segment, trigger, rival, tensions, importantGames, standings, leaderboards, legacy, selectedLegacy, settlement, activePitch, presentation, lastSegment, hof, news, receipts, commitment, proRulesVersion, postseason = postseason, activeDecisionModifiers = modifiers, resolvedFollowUps = followUps, roleRequest = roleRequest)
     }
 
     private fun DataOutputStream.writeTeam(value: ProTeam) { writeString(value.id); writeString(value.name); writeString(value.positionCompetitor); writeString(value.developmentPlan); writeInt(value.demand) }
@@ -174,6 +182,71 @@ public object ProStateCodec {
     private fun DataInputStream.readSegmentProgress(): ProSegmentProgress = ProSegmentProgress(readInt(), segment(readString()), segment(readString()), readString(), plan(readString()), readNullableString()?.let(::pitchKind))
     private fun DataOutputStream.writeReceipt(value: ProCommandReceipt) { writeString(value.commandId); writeString(value.sessionId); writeString(value.commandHash); writeString(value.resultHash); writeULong(value.revision) }
     private fun DataInputStream.readReceipt(): ProCommandReceipt = ProCommandReceipt(readString(), readString(), readString(), readString(), readULong())
+    private fun DataOutputStream.writePostseason(value: ProPostseasonState) {
+        writeInt(value.seed); writeNullableString(value.currentRound?.wire); writeString(value.result.wire); writeInt(value.gamesPlayed)
+        writeNullable(value.series) { writeSeries(it) }; writeNullable(value.gameHistory) { writeList(it) { writePostseasonLine(it) } }
+    }
+    private fun DataInputStream.readPostseason(): ProPostseasonState = ProPostseasonState(
+        readInt(), readNullableString()?.let(::autumnRound), postseasonResult(readString()), readInt(),
+        readNullable { readSeries() }, readNullable { readList { readPostseasonLine() } },
+    )
+    private fun DataOutputStream.writeSeries(value: ProPostseasonSeriesState) {
+        writeNullableString(value.round?.wire); writeNullableString(value.opponentTeamId)
+        writeNullableInt(value.playerWinsRequired); writeNullableInt(value.opponentWinsRequired)
+        writeInt(value.playerWins); writeInt(value.opponentWins); writeInt(value.nextGameNumber); writeInt(value.totalDirectAppearances)
+        writeNullableInt(value.lastAppearancePitches); writeNullableInt(value.lastAppearanceGameNumber)
+        writeNullableString(value.availabilityDecision?.wire)
+        writeNullable(value.gameLines) { writeList(it) { writePostseasonLine(it) } }
+        writeNullable(value.rivalMemory) { writeMemory(it) }
+    }
+    private fun DataInputStream.readSeries(): ProPostseasonSeriesState = ProPostseasonSeriesState(
+        readNullableString()?.let(::autumnRound), readNullableString(), readNullableInt(), readNullableInt(),
+        readInt(), readInt(), readInt(), readInt(), readNullableInt(), readNullableInt(),
+        readNullableString()?.let(::availabilityChoice), readNullable { readList { readPostseasonLine() } },
+        readNullable { readMemory() },
+    )
+    private fun DataOutputStream.writePostseasonLine(value: ProPostseasonGameLine) {
+        writeNullableString(value.round?.wire); writeInt(value.gameNumber); writeInt(value.teamRuns); writeInt(value.opponentRuns)
+        writeBoolean(value.directlyPlayed); writeNullableInt(value.playerPitches); writeNullableInt(value.playerOuts)
+        writeNullableInt(value.playerRunsAllowed); writeNullableInt(value.playerStrikeouts); writeNullableInt(value.playerWalks)
+        writeNullableInt(value.playerHits); writeNullable(value.playerStarted) { writeBoolean(it) }
+    }
+    private fun DataInputStream.readPostseasonLine(): ProPostseasonGameLine = ProPostseasonGameLine(
+        readNullableString()?.let(::autumnRound), readInt(), readInt(), readInt(), readBoolean(),
+        readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(),
+        readNullable { readBoolean() },
+    )
+    private fun DataOutputStream.writeModifier(value: ProDecisionModifier) {
+        writeString(value.decisionId); writeString(value.type.wire); writeInt(value.expiresWeek); writeInt(value.commandDelta)
+        writeNullableInt(value.trainingEfficiencyPermille); writeInt(value.extraOutingChance); writeNullableInt(value.extraOutingsGranted)
+        writeBoolean(value.suppressOutings); writeNullableInt(value.injuryPressureFloor); writeNullableString(value.targetPitch?.wire)
+        writeInt(value.qualityStarts); writeInt(value.runsAllowed); writeInt(value.baselineStuff); writeInt(value.baselineCommand)
+        writeInt(value.baselineMovement); writeInt(value.baselineStamina); writeString(value.choiceId)
+    }
+    private fun DataInputStream.readModifier(): ProDecisionModifier = ProDecisionModifier(
+        readString(), decisionType(readString()), readInt(), readInt(), readNullableInt(), readInt(), readNullableInt(),
+        readBoolean(), readNullableInt(), readNullableString()?.let(::pitchKind), readInt(), readInt(), readInt(), readInt(),
+        readInt(), readInt(), readString(),
+    )
+    private fun DataOutputStream.writeFollowUp(value: ProDecisionFollowUp) {
+        writeString(value.decisionId); writeString(value.type.wire); writeInt(value.season); writeInt(value.week); writeString(value.summaryKey)
+        writeNullableInt(value.qualityStarts); writeNullableInt(value.runsAllowed); writeNullableInt(value.commandRestored)
+        writeNullableInt(value.managerTrustDelta); writeNullableInt(value.stuffDelta); writeNullableInt(value.commandDelta)
+        writeNullableInt(value.movementDelta); writeNullableInt(value.staminaDelta); writeNullableString(value.choiceId)
+    }
+    private fun DataInputStream.readFollowUp(): ProDecisionFollowUp = ProDecisionFollowUp(
+        readString(), decisionType(readString()), readInt(), readInt(), readString(), readNullableInt(), readNullableInt(),
+        readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(), readNullableInt(), readNullableString(),
+    )
+    private fun DataOutputStream.writeRoleRequest(value: ProRoleRequestState) {
+        writeString(value.requested.wire); writeString(value.outcome.wire); writeInt(value.reviewWeek); writeInt(value.season)
+    }
+    private fun DataInputStream.readRoleRequest(): ProRoleRequestState =
+        ProRoleRequestState(role(readString()), roleRequestOutcome(readString()), readInt(), readInt())
+    private fun autumnRound(value: String): ProAutumnRound = ProAutumnRound.entries.firstOrNull { it.wire == value } ?: fail("pro.state.autumn_round")
+    private fun postseasonResult(value: String): ProPostseasonResult = ProPostseasonResult.entries.firstOrNull { it.wire == value } ?: fail("pro.state.postseason_result")
+    private fun availabilityChoice(value: String): ProPostseasonAvailabilityChoice = ProPostseasonAvailabilityChoice.entries.firstOrNull { it.wire == value } ?: fail("pro.state.availability")
+    private fun roleRequestOutcome(value: String): ProRoleRequestOutcome = ProRoleRequestOutcome.entries.firstOrNull { it.wire == value } ?: fail("pro.state.role_request_outcome")
 
     private fun DataOutputStream.writePitchSession(value: ProPitchSession) {
         writeString(value.sessionId); writeInt(value.week); writeString(value.seed); writeInt(value.pitchIndex); writeString(value.preparationToken); writeContext(value.context); writeMemory(value.memory); writeGame(value.game); writeLog(value.log); writeBatter(value.batter); writeScouting(value.scouting)
