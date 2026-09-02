@@ -6,7 +6,7 @@ final class ProWeeklyDecisionHookTests: XCTestCase {
 
     func testNewCareerUsesWeeklyDecisionRules() throws {
         let started = try engine.start(startParams(seed: "910201"))
-        XCTAssertEqual(started.snapshot.proRulesVersion, 9)
+        XCTAssertEqual(started.snapshot.proRulesVersion, ProCareerEngine.currentRulesVersion)
         XCTAssertTrue(ProCareerEngine.usesWeeklyDecisionRules(started.snapshot))
         XCTAssertEqual(ProCareerEngine.decisionWeeks(for: started.snapshot), [3, 6, 9, 12, 15, 18, 21])
         XCTAssertEqual(ProCareerEngine.maximumDecisions(for: started.snapshot), 7)

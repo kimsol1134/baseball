@@ -104,7 +104,7 @@ final class ProRoleRequestTests: XCTestCase {
     func testAcceptedStarterIsRoleOnFirstWeek() throws {
         var result = try signedCareer(seed: "920101", stamina: 60, stuff: 50, managerTrust: 50)
         XCTAssertTrue(ProRoleRequestRules.shouldOffer(result.snapshot))
-        XCTAssertEqual(result.snapshot.proRulesVersion, 9)
+        XCTAssertEqual(result.snapshot.proRulesVersion, ProCareerEngine.currentRulesVersion)
         result = try engine.requestRole(.init(
             seed: result.nextSeed,
             state: result.snapshot,

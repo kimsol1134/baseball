@@ -1895,7 +1895,7 @@ public struct ProCareerEngine: Sendable {
     public static let maximumCareerSeasons = 20
     /// Live schedule/fatigue/agency rules. New careers start here. Offseason may raise an
     /// in-progress save to this value without rewriting already stored season records.
-    public static let currentRulesVersion = 9
+    public static let currentRulesVersion = 10
     /// First version that owns the agency weekly-plan and important-game contracts.
     /// Must stay below `currentRulesVersion` so a version bump cannot turn agency off.
     public static let agencyRulesVersion = 3
@@ -1943,6 +1943,19 @@ public struct ProCareerEngine: Sendable {
 
     public static func usesWeeklyDecisionRules(_ state: ProCareerSnapshot) -> Bool {
         (state.proRulesVersion ?? 1) >= weeklyDecisionRulesVersion
+    }
+
+    /// v10: FA 다년 계약·계약금·잔류 협상·연봉 사용처 확장 (P1-3).
+    public static let contractDepthRulesVersion = 10
+    /// v10: 국가대표 대회 (P1-4). contractDepth와 같은 세대에 출시된다.
+    public static let nationalTeamRulesVersion = 10
+
+    public static func usesContractDepthRules(_ state: ProCareerSnapshot) -> Bool {
+        (state.proRulesVersion ?? 1) >= contractDepthRulesVersion
+    }
+
+    public static func usesNationalTeamRules(_ state: ProCareerSnapshot) -> Bool {
+        (state.proRulesVersion ?? 1) >= nationalTeamRulesVersion
     }
 
     public static func decisionWeeks(for state: ProCareerSnapshot) -> [Int] {
