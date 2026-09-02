@@ -346,6 +346,119 @@ private func investment(
     return (selected, selected == .pitchLab ? weakestFocus(for: state.pitcher) : nil)
 }
 
+/// Headless national-team call policy. The product still presents accept/decline;
+/// the runner only needs a deterministic choice per cohort.
+/// - `role_first`, `legacy_first`, `stable_random`: accept (international stage, HOF gold, sample the path)
+/// - `security_first`, `salary_first`: decline (fatigue/injury carry, no immediate pay)
+private func acceptsNationalTeamCall(_ policy: DistributionPolicy) -> Bool {
+    switch policy {
+    case .roleFirst, .legacyFirst, .stableRandom: return true
+    case .securityFirst, .salaryFirst: return false
+    }
+}
+
+private func walkNationalTeamIfNeeded(
+    _ initial: ProCareerResult,
+    engine: ProCareerEngine,
+    policy: DistributionPolicy
+) throws -> ProCareerResult {
+    var result = initial
+    if result.snapshot.phase == .nationalTeamCall {
+        result = try engine.respondToNationalTeamCall(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            accepted: acceptsNationalTeamCall(policy)
+        ))
+    }
+    guard result.snapshot.phase == .nationalTournament else { return result }
+    if result.snapshot.nationalTournament?.stage == .awaitingFinal,
+       result.snapshot.nationalTournament?.result == nil {
+        result = try engine.resolveNationalFinalAutomatically(.init(
+            seed: result.nextSeed,
+            state: result.snapshot
+        ))
+    }
+    guard result.snapshot.nationalTournament?.result != nil else {
+        throw RunnerError.invalidArgument("national_tournament_unresolved")
+    }
+    return try engine.acknowledgeNationalTeamResult(.init(
+        seed: result.nextSeed,
+        state: result.snapshot
+    ))
+}
+
+/// v10 FA stay-counter. Interest is a market attribute the product shows; the runner
+/// does not re-rank offers by interest so salary/legacy/role/security axes stay distinct.
+/// - `salary_first`: ask for +10% salary
+/// - `security_first`: extra year if legal, else +10% salary
+/// - `legacy_first`: extra year if legal (tenure), else skip
+/// - `role_first`: skip (role promise is the axis)
+/// - `stable_random`: hash lane none / extra year / raise
+private func stayCounterKind(
+    for policy: DistributionPolicy,
+    market: ProContractMarket,
+    state: ProCareerSnapshot,
+    seed: Int
+) -> ProContractCounterKind? {
+    guard ProCareerEngine.usesContractDepthRules(state),
+          market.kind == .freeAgency,
+          market.counterOffer == nil,
+          let stay = market.offers.first(where: { $0.preservesTeamLegacy && $0.teamID == state.team.id }) else {
+        return nil
+    }
+    let remaining = ProCareerEngine.maximumCareerSeasons - market.forSeason + 1
+    let extraYearAvailable = stay.years < 5 && stay.years < remaining
+    switch policy {
+    case .salaryFirst:
+        return .raiseSalary
+    case .securityFirst:
+        return extraYearAvailable ? .extraYear : .raiseSalary
+    case .legacyFirst:
+        return extraYearAvailable ? .extraYear : nil
+    case .roleFirst:
+        return nil
+    case .stableRandom:
+        let lane = stableHashValue("counter|\(seed)|\(market.id)") % 3
+        if lane == 0 { return nil }
+        if lane == 1 { return extraYearAvailable ? .extraYear : .raiseSalary }
+        return .raiseSalary
+    }
+}
+
+/// An accepted stay raise can make the stay offer dominate another slot, or push the
+/// stay salary off the validator's allowed band. The engine then rejects the counter.
+private func stayCounterKeepsMarketValid(
+    kind: ProContractCounterKind,
+    market: ProContractMarket,
+    state: ProCareerSnapshot
+) -> Bool {
+    let accepted = ProContractMarketRules.evaluateStayCounter(
+        fanSupport: state.journeyState?.reputation.fanSupport ?? 0,
+        marketScore: ProContractMarketRules.marketScore(state: state)
+    )
+    guard accepted else { return true }
+    let probed = ProContractMarketRules.applyingStayCounter(
+        .init(kind: kind, accepted: true, applied: true),
+        to: market,
+        generatedAtRevision: state.revision + 1
+    )
+    let projected = ProContractMarketRules.projectedPitcher(
+        for: state.pitcher,
+        effectiveAge: state.age + (state.journeyState?.offseasonTransition?.ageAdvanceYears ?? 0),
+        proRulesVersion: state.proRulesVersion
+    )
+    return ProContractMarketRules.isValid(
+        market: probed,
+        currentTeamID: state.team.id,
+        currentRole: state.role,
+        maximumCareerSeasons: ProCareerEngine.maximumCareerSeasons,
+        marketScore: ProContractMarketRules.marketScore(state: state),
+        pitcher: projected,
+        usesContractDepth: ProCareerEngine.usesContractDepthRules(state),
+        lastTeamLegacy: ProContractMarketRules.lastTeamLegacy(for: state)
+    )
+}
+
 private func offseasonDecision(for state: ProCareerSnapshot, policy: DistributionPolicy, seed: Int) -> OffseasonDecision {
     guard state.contract?.yearsRemaining == 0 else { return .continueCareer }
     guard state.serviceYears >= 6 else { return .continueCareer }
@@ -606,6 +719,9 @@ private func runCareer(seed: Int, policy: DistributionPolicy, seasons: Int) -> C
             if metrics.completedSeasons == 8 {
                 recordSeason8Honor(result.snapshot, into: &metrics)
             }
+            result = try runnerStep("national_team", phase: result.snapshot.phase, season: result.snapshot.season) {
+                try walkNationalTeamIfNeeded(result, engine: engine, policy: policy)
+            }
             if isFinal {
                 if seasons >= ProCareerEngine.maximumCareerSeasons {
                     guard result.snapshot.phase == .retirementDecision,
@@ -618,8 +734,10 @@ private func runCareer(seed: Int, policy: DistributionPolicy, seasons: Int) -> C
             }
 
             let decision = offseasonDecision(for: result.snapshot, policy: policy, seed: seed)
-            result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: decision, expectedRevision: result.snapshot.revision))
-            if let market = result.snapshot.journeyState?.pendingContractMarket {
+            result = try runnerStep("choose_offseason", phase: result.snapshot.phase, season: result.snapshot.season) {
+                try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: decision, expectedRevision: result.snapshot.revision))
+            }
+            if var market = result.snapshot.journeyState?.pendingContractMarket {
                 if market.kind == .renewal { metrics.renewalMarkets += 1; if market.offers.count != 2 { metrics.renewalOfferCountMismatch += 1 } }
                 let expectedFreeAgencyCount = ProCareerEngine.usesContractDepthRules(result.snapshot) ? 4 : 3
                 if market.kind == .freeAgency { metrics.freeAgencyMarkets += 1; if market.offers.count != expectedFreeAgencyCount { metrics.freeAgencyOfferCountMismatch += 1 } }
@@ -630,16 +748,38 @@ private func runCareer(seed: Int, policy: DistributionPolicy, seasons: Int) -> C
                     currentRole: result.snapshot.role,
                     usesContractDepth: ProCareerEngine.usesContractDepthRules(result.snapshot)
                 ) { metrics.dominatedMarkets += 1 }
+                if let kind = stayCounterKind(
+                    for: policy,
+                    market: market,
+                    state: result.snapshot,
+                    seed: seed + result.snapshot.season
+                ), stayCounterKeepsMarketValid(kind: kind, market: market, state: result.snapshot) {
+                    do {
+                        result = try engine.requestContractCounter(.init(
+                            seed: result.nextSeed,
+                            state: result.snapshot,
+                            expectedRevision: result.snapshot.revision,
+                            kind: kind
+                        ))
+                        market = try unwrapMarket(result.snapshot)
+                    } catch SimulationError.invalidProCareer("invalid_offer") {
+                        // Optional UI action: skip when the validator rejects the applied stay.
+                    }
+                }
                 let selected = selectedOffer(from: market, state: result.snapshot, policy: policy, seed: seed + result.snapshot.season)
                 let chosenAmbition = selectedAmbition(for: result.snapshot, market: market, seed: seed + result.snapshot.season)
                 recordOffer(selected, state: result.snapshot, policy: policy, metrics: &metrics, sequence: &selectionSequence)
                 let beforeAccept = result.snapshot
-                result = try engine.acceptContract(.init(seed: result.nextSeed, state: result.snapshot, expectedRevision: result.snapshot.revision, marketID: market.id, offerID: selected.id, ambition: chosenAmbition))
+                result = try runnerStep("accept_contract", phase: result.snapshot.phase, season: result.snapshot.season) {
+                    try engine.acceptContract(.init(seed: result.nextSeed, state: result.snapshot, expectedRevision: result.snapshot.revision, marketID: market.id, offerID: selected.id, ambition: chosenAmbition))
+                }
                 recordGoalAttempt(before: beforeAccept, after: result.snapshot, metrics: &metrics, attemptedGoalIDs: &attemptedGoalIDs)
             }
             if result.snapshot.phase == .offseasonInvestment {
                 let selectedInvestment = investment(for: result.snapshot, seed: seed)
-                result = try engine.chooseInvestment(.init(seed: result.nextSeed, state: result.snapshot, expectedRevision: result.snapshot.revision, investment: selectedInvestment.0, focus: selectedInvestment.1))
+                result = try runnerStep("choose_investment", phase: result.snapshot.phase, season: result.snapshot.season) {
+                    try engine.chooseInvestment(.init(seed: result.nextSeed, state: result.snapshot, expectedRevision: result.snapshot.revision, investment: selectedInvestment.0, focus: selectedInvestment.1))
+                }
             }
         }
         if seasons >= ProCareerEngine.maximumCareerSeasons {
@@ -667,6 +807,19 @@ private func runCareer(seed: Int, policy: DistributionPolicy, seasons: Int) -> C
         metrics.failedRuns = 1
         metrics.errors = ["policy=\(policy.rawValue) seed=\(seed) error=\(error)"]
         return CareerRun(seed: seed, policy: policy, metrics: metrics, selectionSequence: selectionSequence)
+    }
+}
+
+private func runnerStep<T>(
+    _ label: String,
+    phase: ProCareerPhase,
+    season: Int,
+    _ body: () throws -> T
+) throws -> T {
+    do {
+        return try body()
+    } catch {
+        throw RunnerError.invalidArgument("step=\(label) season=\(season) phase=\(phase.rawValue) error=\(error)")
     }
 }
 

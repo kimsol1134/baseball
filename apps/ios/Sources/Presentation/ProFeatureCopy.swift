@@ -677,4 +677,26 @@ enum ProNationalTeamCopy {
         }
         return resolver.resolve(key)
     }
+
+    static func callSummary(
+        marketScore: Int,
+        fanSupport: Int,
+        resolver: GameCopyResolver
+    ) -> String {
+        resolver.resolve(
+            .nationalTeamCallSummary,
+            arguments: [.integer(marketScore), .integer(fanSupport)]
+        )
+    }
+
+    static func groupRecord(wins: Int, games: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .nationalTournamentGroupRecord,
+            arguments: [.integer(wins), .integer(games)]
+        )
+    }
+
+    static func resultFan(delta: Int, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.nationalTeamResultFan, arguments: [.integer(delta)])
+    }
 }

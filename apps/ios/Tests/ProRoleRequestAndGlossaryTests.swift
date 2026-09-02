@@ -230,8 +230,8 @@ final class ProRoleRequestAndGlossaryTests: XCTestCase {
         let matches = GlossaryCatalog.matches(in: text, names: names)
         XCTAssertEqual(matches.map(\.id), ["manager-faith", "stuff"])
         XCTAssertEqual(matches.first?.location, 0)
-        XCTAssertEqual(GlossaryCatalog.terms.count, 22)
-        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 22)
+        XCTAssertEqual(GlossaryCatalog.terms.count, 24)
+        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 24)
     }
 
     func testGlossaryLatinTermsStayWholeWords() {

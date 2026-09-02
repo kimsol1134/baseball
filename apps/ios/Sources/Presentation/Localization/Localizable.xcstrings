@@ -23321,7 +23321,7 @@
         }
       }
     },
-    "pro.nationalTeam.call.accept": {
+    "pro.national-team.call.accept": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23343,7 +23343,7 @@
         }
       }
     },
-    "pro.nationalTeam.call.body": {
+    "pro.national-team.call.body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23365,7 +23365,7 @@
         }
       }
     },
-    "pro.nationalTeam.call.conditions": {
+    "pro.national-team.call.conditions": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23387,7 +23387,7 @@
         }
       }
     },
-    "pro.nationalTeam.call.cost": {
+    "pro.national-team.call.cost": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23409,7 +23409,7 @@
         }
       }
     },
-    "pro.nationalTeam.call.decline": {
+    "pro.national-team.call.decline": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23431,7 +23431,7 @@
         }
       }
     },
-    "pro.nationalTeam.call.eyebrow": {
+    "pro.national-team.call.eyebrow": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23453,7 +23453,7 @@
         }
       }
     },
-    "pro.nationalTeam.call.summary": {
+    "pro.national-team.call.summary": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23475,7 +23475,7 @@
         }
       }
     },
-    "pro.nationalTeam.call.title": {
+    "pro.national-team.call.title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23497,7 +23497,7 @@
         }
       }
     },
-    "pro.nationalTeam.record.empty": {
+    "pro.national-team.record.empty": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23519,7 +23519,7 @@
         }
       }
     },
-    "pro.nationalTeam.record.title": {
+    "pro.national-team.record.title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23541,7 +23541,7 @@
         }
       }
     },
-    "pro.nationalTeam.result.bronze": {
+    "pro.national-team.result.bronze": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23563,7 +23563,7 @@
         }
       }
     },
-    "pro.nationalTeam.result.continue": {
+    "pro.national-team.result.continue": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23585,7 +23585,7 @@
         }
       }
     },
-    "pro.nationalTeam.result.exempted": {
+    "pro.national-team.result.exempted": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23607,7 +23607,7 @@
         }
       }
     },
-    "pro.nationalTeam.result.fan": {
+    "pro.national-team.result.fan": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23629,7 +23629,7 @@
         }
       }
     },
-    "pro.nationalTeam.result.gold": {
+    "pro.national-team.result.gold": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23651,7 +23651,7 @@
         }
       }
     },
-    "pro.nationalTeam.result.group-exit": {
+    "pro.national-team.result.group-exit": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23673,7 +23673,7 @@
         }
       }
     },
-    "pro.nationalTeam.result.silver": {
+    "pro.national-team.result.silver": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23695,7 +23695,7 @@
         }
       }
     },
-    "pro.nationalTeam.result.title": {
+    "pro.national-team.result.title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23717,7 +23717,7 @@
         }
       }
     },
-    "pro.nationalTeam.tournament.eyebrow": {
+    "pro.national-team.tournament.eyebrow": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23739,7 +23739,7 @@
         }
       }
     },
-    "pro.nationalTeam.tournament.final-ready": {
+    "pro.national-team.tournament.final-ready": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23761,7 +23761,7 @@
         }
       }
     },
-    "pro.nationalTeam.tournament.group": {
+    "pro.national-team.tournament.group": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23783,7 +23783,7 @@
         }
       }
     },
-    "pro.nationalTeam.tournament.group-record": {
+    "pro.national-team.tournament.group-record": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23805,7 +23805,7 @@
         }
       }
     },
-    "pro.nationalTeam.tournament.loss": {
+    "pro.national-team.tournament.loss": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23827,7 +23827,7 @@
         }
       }
     },
-    "pro.nationalTeam.tournament.start-final": {
+    "pro.national-team.tournament.start-final": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23849,7 +23849,7 @@
         }
       }
     },
-    "pro.nationalTeam.tournament.win": {
+    "pro.national-team.tournament.win": {
       "localizations": {
         "en": {
           "stringUnit": {

@@ -1681,14 +1681,14 @@ final class LocalizationCoverageTests: XCTestCase {
             (.relationshipResponse, ["먼저 듣는다", "내 생각을 말한다", "다음 승부로 증명한다"]),
             (.draftOutcome, ["지명", "미지명"]),
             (.armHealth, ["팔 상태 정상", "팔에 부담이 쌓임", "팔 상태 경고", "회복 중"]),
-            (.proCareerPhase, ["계약 제안", "주간 계획", "시즌 결정", "중요 경기", "시즌 복기", "시즌 결산", "오프시즌 결정", "오프시즌 투자", "은퇴 결정", "완료"]),
+            (.proCareerPhase, ["계약 제안", "주간 계획", "시즌 결정", "중요 경기", "시즌 복기", "시즌 결산", "오프시즌 결정", "오프시즌 투자", "은퇴 결정", "국가대표 소집", "국가대표 대회", "완료"]),
             (.proLevel, ["2군", "1군"]),
             (.proRole, ["선발", "긴 이닝 구원", "필승조", "마무리"]),
             (.proWeekPlan, ["구위 개발", "변화구 개발", "무기 개발", "제구 다듬기", "체력 만들기", "회복", "신뢰 쌓기"]),
             (.offseasonDecision, ["현재 구단에 남는다", "군 복무를 다녀온다", "FA를 신청한다", "은퇴한다"]),
             (.proSeasonDecisionType, ["추가 불펜", "포수와 경기 계획", "역할 면담", "기록 추격", "라이벌 분석", "시즌 막바지", "미디어 기회", "슬럼프 갈림길", "전성기 갈림길", "등판 간격 단축", "신구종 실전 투입", "2군 재정비", "베테랑 조언"]),
             (.proSeasonSegment, ["스프링캠프", "개막", "전반기", "올스타 휴식기", "순위 싸움", "시즌 막바지"]),
-            (.proSeasonTrigger, ["개막 선언", "콜업 오디션", "1군 데뷔", "기록 추격", "보직 승부", "순위 경쟁", "와일드카드", "준플레이오프", "플레이오프", "우승 결정전"]),
+            (.proSeasonTrigger, ["개막 선언", "콜업 오디션", "1군 데뷔", "기록 추격", "보직 승부", "순위 경쟁", "와일드카드", "준플레이오프", "플레이오프", "우승 결정전", "국가대표 결승"]),
         ]
 
         for (family, values) in expectedKorean {
@@ -2641,11 +2641,11 @@ final class LocalizationCoverageTests: XCTestCase {
     }
 
     func testGlossaryCatalogHasKoreanEnglishJapaneseParity() throws {
-        XCTAssertEqual(GlossaryCatalog.terms.count, 22)
-        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 22)
+        XCTAssertEqual(GlossaryCatalog.terms.count, 24)
+        XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 24)
         let entries = try gameContentEntries()
         let expectedKeys = Set(GlossaryCatalog.terms.flatMap { [$0.nameKey, $0.definitionKey] })
-        XCTAssertEqual(expectedKeys.count, 44)
+        XCTAssertEqual(expectedKeys.count, 48)
         let glossaryKeys = Set(entries.keys.filter { $0.hasPrefix("content.glossary.") })
         XCTAssertEqual(glossaryKeys, expectedKeys)
 

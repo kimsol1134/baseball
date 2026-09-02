@@ -26,12 +26,10 @@ struct ProNationalTeamCallView: View {
                         .foregroundStyle(BaseballTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(
-                        copyResolver.resolve(
-                            .nationalTeamCallSummary,
-                            arguments: [
-                                .integer(CareerDisplayRules.nationalTeamMarketScore(state)),
-                                .integer(CareerDisplayRules.nationalTeamFanSupport(state)),
-                            ]
+                        verbatim: ProNationalTeamCopy.callSummary(
+                            marketScore: CareerDisplayRules.nationalTeamMarketScore(state),
+                            fanSupport: CareerDisplayRules.nationalTeamFanSupport(state),
+                            resolver: copyResolver
                         )
                     )
                     .font(.footnote.monospacedDigit())
@@ -88,9 +86,10 @@ struct ProNationalTournamentView: View {
                             .accessibilityElement(children: .combine)
                         }
                         Text(
-                            copyResolver.resolve(
-                                .nationalTournamentGroupRecord,
-                                arguments: [.integer(tournament.groupWins), .integer(tournament.groupGames.count)]
+                            verbatim: ProNationalTeamCopy.groupRecord(
+                                wins: tournament.groupWins,
+                                games: tournament.groupGames.count,
+                                resolver: copyResolver
                             )
                         )
                         .font(.footnote)
@@ -127,7 +126,7 @@ struct ProNationalTeamResultCard: View {
     var body: some View {
         BaseballCard(title: copyResolver.resolve(.nationalTeamResultTitle), tone: .milestone) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(ProNationalTeamCopy.resultTitle(tournament.result, resolver: copyResolver))
+                Text(verbatim: ProNationalTeamCopy.resultTitle(tournament.result, resolver: copyResolver))
                     .font(.headline)
                 if tournament.exempted {
                     Text(copyResolver.resolve(.nationalTeamResultExempted))
@@ -135,9 +134,9 @@ struct ProNationalTeamResultCard: View {
                         .foregroundStyle(BaseballTheme.positive)
                 }
                 Text(
-                    copyResolver.resolve(
-                        .nationalTeamResultFan,
-                        arguments: [.integer(tournament.fanDelta)]
+                    verbatim: ProNationalTeamCopy.resultFan(
+                        delta: tournament.fanDelta,
+                        resolver: copyResolver
                     )
                 )
                 .font(.footnote)

@@ -187,6 +187,11 @@ public enum ProNationalTeamRules {
         StableHash.fnv1a64Value("national-tournament:\(nextSeed)")
     }
 
+    /// Separate stream from group-stage draws so a headless final does not replay game 1.
+    public static func derivedFinalSeed(from nextSeed: String) -> UInt64 {
+        StableHash.fnv1a64Value("national-final:\(nextSeed)")
+    }
+
     public static func shouldOfferCall(_ state: ProCareerSnapshot) -> Bool {
         guard ProCareerEngine.usesNationalTeamRules(state) else { return false }
         guard state.season >= minimumSeason, state.season % callInterval == 0 else { return false }

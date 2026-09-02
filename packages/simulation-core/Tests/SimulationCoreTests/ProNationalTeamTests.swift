@@ -189,6 +189,45 @@ final class ProNationalTeamTests: XCTestCase {
         XCTAssertEqual(ProNationalTeamRules.finalBatterOffset, 6)
     }
 
+    func testHeadlessFinalResolvesFromTournamentSeedWithoutConsumingCareerSeed() throws {
+        var result = try eligibleCall(seed: "940108", fanSupport: 70)
+        result = try engine.respondToNationalTeamCall(.init(
+            seed: result.nextSeed,
+            state: result.snapshot,
+            accepted: true
+        ))
+        if result.snapshot.nationalTournament?.stage != .awaitingFinal {
+            result = try forceAwaitingFinal(result)
+        }
+        let seed = result.nextSeed
+        let first = try engine.resolveNationalFinalAutomatically(.init(
+            seed: seed,
+            state: result.snapshot
+        ))
+        let replayed = try engine.resolveNationalFinalAutomatically(.init(
+            seed: seed,
+            state: result.snapshot
+        ))
+        XCTAssertEqual(first.nextSeed, seed)
+        XCTAssertEqual(replayed.nextSeed, seed)
+        XCTAssertEqual(first.snapshot.phase, .nationalTournament)
+        XCTAssertEqual(first.snapshot.nationalTournament?.finalLine?.directlyPlayed, false)
+        XCTAssertTrue(
+            first.snapshot.nationalTournament?.result == .gold
+                || first.snapshot.nationalTournament?.result == .silver
+        )
+        XCTAssertEqual(first.snapshot.nationalTournament?.result, replayed.snapshot.nationalTournament?.result)
+        XCTAssertEqual(first.snapshot.nationalTournament?.finalLine, replayed.snapshot.nationalTournament?.finalLine)
+        XCTAssertTrue(first.events.contains("pro_national_final_simulated"))
+        let acknowledged = try engine.acknowledgeNationalTeamResult(.init(
+            seed: first.nextSeed,
+            state: first.snapshot
+        ))
+        XCTAssertEqual(acknowledged.snapshot.phase, .offseasonDecision)
+        XCTAssertEqual(acknowledged.nextSeed, seed)
+        XCTAssertNil(acknowledged.snapshot.nationalTournament)
+    }
+
     private func eligibleCall(
         seed: String,
         fanSupport: Int,

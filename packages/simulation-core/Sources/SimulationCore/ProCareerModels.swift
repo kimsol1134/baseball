@@ -925,6 +925,17 @@ public struct AcknowledgeNationalTeamResultParams: Codable, Equatable, Sendable 
         self.state = state
     }
 }
+/// Headless substitute for the direct-play national final. Uses the tournament-derived
+/// SplitMix64 stream, not the career `nextSeed`.
+public struct ResolveNationalFinalAutomaticallyParams: Codable, Equatable, Sendable {
+    public let seed: String
+    public let state: ProCareerSnapshot
+
+    public init(seed: String, state: ProCareerSnapshot) {
+        self.seed = seed
+        self.state = state
+    }
+}
 public struct AcceptProContractParams: Codable, Equatable, Sendable {
     public let seed: String
     public let state: ProCareerSnapshot

@@ -1056,6 +1056,51 @@ public struct ProCareerEngine: Sendable {
         return result(next, nextSeed: params.seed, events: ["pro_national_final_ready"])
     }
 
+    /// Resolves the national final without a direct-play report, the way postseason
+    /// auto games resolve a series game the player is not on the mound for.
+    /// Career `nextSeed` is not consumed; the outing is drawn from `derivedFinalSeed`.
+    public func resolveNationalFinalAutomatically(
+        _ params: ResolveNationalFinalAutomaticallyParams
+    ) throws -> ProCareerResult {
+        _ = try generator(params.seed)
+        try validate(params.state, phase: .nationalTournament)
+        guard let tournament = params.state.nationalTournament,
+              tournament.stage == .awaitingFinal,
+              tournament.result == nil else {
+            throw SimulationError.invalidProCareer("결승에 오를 수 없습니다.")
+        }
+        var rng = SplitMix64(seed: ProNationalTeamRules.derivedFinalSeed(from: tournament.resumeSeed))
+        let opponent = ProNationalTeamRules.opponent(id: tournament.finalOpponentID)
+            ?? ProNationalTeamRules.finalOpponent()
+        let line = simulateNationalGameLine(
+            state: params.state,
+            opponent: opponent,
+            gameNumber: 4,
+            directlyPlayed: false,
+            using: &rng
+        )
+        let resolved = ProNationalTournamentState(
+            seed: tournament.seed,
+            resumeSeed: tournament.resumeSeed,
+            startingFatigue: tournament.startingFatigue,
+            groupGames: tournament.groupGames,
+            stage: .result,
+            finalOpponentID: tournament.finalOpponentID,
+            finalLine: line,
+            result: line.won ? .gold : .silver,
+            fatigueCarry: ProNationalTeamRules.fatigueCarry(pitches: line.playerPitches),
+            injuryWeeks: tournament.injuryWeeks
+        )
+        let next = replacing(
+            params.state,
+            revision: params.state.revision + 1,
+            phase: .nationalTournament,
+            seasonTrigger: .some(nil),
+            nationalTournament: .some(resolved)
+        )
+        return try finishNationalTournament(next, seed: params.seed, events: ["pro_national_final_simulated"])
+    }
+
     public func acknowledgeNationalTeamResult(_ params: AcknowledgeNationalTeamResultParams) throws -> ProCareerResult {
         _ = try generator(params.seed)
         try validate(params.state, phase: .nationalTournament)
@@ -3814,6 +3859,46 @@ public struct ProCareerEngine: Sendable {
         return (clamp(carry.fatigue, 0, 100), max(0, carry.injuryWeeks))
     }
 
+    private func simulateNationalGameLine(
+        state: ProCareerSnapshot,
+        opponent: ProNationalOpponent,
+        gameNumber: Int,
+        directlyPlayed: Bool,
+        using rng: inout SplitMix64
+    ) -> ProNationalTournamentGameLine {
+        let outing = simulateWeeklyOuting(
+            pitcher: state.pitcher,
+            startingFatigue: state.fatigue,
+            outsTarget: ProNationalTeamRules.groupOutsTarget,
+            pitchCap: ProNationalTeamRules.groupPitchCap,
+            batterOffset: opponent.batterOffset,
+            callPolicy: .perfect,
+            baseSeed: rng.next(),
+            diverseScouting: false
+        )
+        let support = LeagueBaseline.teamRuns(using: &rng)
+        let othersOuts = max(0, 27 - outing.outs)
+        let opponentRuns = outing.runsAllowed + LeagueBaseline.restOfTeamRuns(
+            outsCovered: othersOuts,
+            using: &rng
+        )
+        var teamRuns = support
+        if teamRuns == opponentRuns { teamRuns += 1 }
+        return ProNationalTournamentGameLine(
+            opponentID: opponent.id,
+            gameNumber: gameNumber,
+            teamRuns: teamRuns,
+            opponentRuns: opponentRuns,
+            directlyPlayed: directlyPlayed,
+            playerPitches: outing.pitches,
+            playerOuts: outing.outs,
+            playerRunsAllowed: outing.runsAllowed,
+            playerStrikeouts: outing.strikeouts,
+            playerWalks: outing.walks,
+            playerHits: outing.hits
+        )
+    }
+
     private func simulateNationalGroupStage(
         state: ProCareerSnapshot,
         resumeSeed: String
@@ -3822,37 +3907,13 @@ public struct ProCareerEngine: Sendable {
         let groupOpponents = ProNationalTeamRules.groupOpponents()
         var games: [ProNationalTournamentGameLine] = []
         for (index, opponent) in groupOpponents.enumerated() {
-            let outing = simulateWeeklyOuting(
-                pitcher: state.pitcher,
-                startingFatigue: state.fatigue,
-                outsTarget: ProNationalTeamRules.groupOutsTarget,
-                pitchCap: ProNationalTeamRules.groupPitchCap,
-                batterOffset: opponent.batterOffset,
-                callPolicy: .perfect,
-                baseSeed: rng.next(),
-                diverseScouting: false
-            )
-            let support = LeagueBaseline.teamRuns(using: &rng)
-            let othersOuts = max(0, 27 - outing.outs)
-            let opponentRuns = outing.runsAllowed + LeagueBaseline.restOfTeamRuns(
-                outsCovered: othersOuts,
-                using: &rng
-            )
-            var teamRuns = support
-            if teamRuns == opponentRuns { teamRuns += 1 }
             games.append(
-                ProNationalTournamentGameLine(
-                    opponentID: opponent.id,
+                simulateNationalGameLine(
+                    state: state,
+                    opponent: opponent,
                     gameNumber: index + 1,
-                    teamRuns: teamRuns,
-                    opponentRuns: opponentRuns,
                     directlyPlayed: false,
-                    playerPitches: outing.pitches,
-                    playerOuts: outing.outs,
-                    playerRunsAllowed: outing.runsAllowed,
-                    playerStrikeouts: outing.strikeouts,
-                    playerWalks: outing.walks,
-                    playerHits: outing.hits
+                    using: &rng
                 )
             )
         }
@@ -3880,25 +3941,13 @@ public struct ProCareerEngine: Sendable {
             )
         }
         let bronzeOpponent = groupOpponents.last ?? finalOpponent
-        let bronze = simulateWeeklyOuting(
-            pitcher: state.pitcher,
-            startingFatigue: state.fatigue,
-            outsTarget: ProNationalTeamRules.groupOutsTarget,
-            pitchCap: ProNationalTeamRules.groupPitchCap,
-            batterOffset: bronzeOpponent.batterOffset,
-            callPolicy: .perfect,
-            baseSeed: rng.next(),
-            diverseScouting: false
-        )
-        let bronzeSupport = LeagueBaseline.teamRuns(using: &rng)
-        let bronzeOthers = max(0, 27 - bronze.outs)
-        let bronzeOpponentRuns = bronze.runsAllowed + LeagueBaseline.restOfTeamRuns(
-            outsCovered: bronzeOthers,
+        let bronze = simulateNationalGameLine(
+            state: state,
+            opponent: bronzeOpponent,
+            gameNumber: 4,
+            directlyPlayed: false,
             using: &rng
         )
-        var bronzeTeamRuns = bronzeSupport
-        if bronzeTeamRuns == bronzeOpponentRuns { bronzeTeamRuns += 1 }
-        let bronzeWon = bronzeTeamRuns > bronzeOpponentRuns
         return ProNationalTournamentState(
             seed: ProNationalTeamRules.derivedSeed(from: resumeSeed),
             resumeSeed: resumeSeed,
@@ -3906,20 +3955,8 @@ public struct ProCareerEngine: Sendable {
             groupGames: games,
             stage: .result,
             finalOpponentID: finalOpponent.id,
-            finalLine: ProNationalTournamentGameLine(
-                opponentID: bronzeOpponent.id,
-                gameNumber: 4,
-                teamRuns: bronzeTeamRuns,
-                opponentRuns: bronzeOpponentRuns,
-                directlyPlayed: false,
-                playerPitches: bronze.pitches,
-                playerOuts: bronze.outs,
-                playerRunsAllowed: bronze.runsAllowed,
-                playerStrikeouts: bronze.strikeouts,
-                playerWalks: bronze.walks,
-                playerHits: bronze.hits
-            ),
-            result: bronzeWon ? .bronze : .groupExit,
+            finalLine: bronze,
+            result: bronze.won ? .bronze : .groupExit,
             fatigueCarry: ProNationalTeamRules.fatigueCarry,
             injuryWeeks: injuryWeeks
         )

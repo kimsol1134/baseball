@@ -29,8 +29,9 @@ extension MobileCareerStore {
     /// 고르는 일이 시즌마다 24번, 20시즌이면 480번이다. 구간(스프링캠프·개막·전반기·올스타
     /// 브레이크·페넌트레이스·시즌 막바지)은 이미 코어가 알고 있으니, **결정이 필요한 자리에서만
     /// 멈추게** 한다 — 구간이 바뀌거나, 중요 경기가 잡히거나, 역할·소속이 움직이거나, 다치거나.
+    /// 소집·대회 페이즈는 주간 계획이 아니므로 여기서 한 주도 넘기지 않는다.
     func advanceSegment() {
-        guard let result, let selectedPlan,
+        guard let result, result.snapshot.phase == .weeklyPlan, let selectedPlan,
               selectedPlan != .recover || ProCareerEngine.usesAgencyRules(result.snapshot) else { return }
         let beforeRevision = result.snapshot.revision
         var advancedWeeks = 0
@@ -58,7 +59,7 @@ extension MobileCareerStore {
     }
 
     func advanceBlock() {
-        guard let result, let selectedPlan,
+        guard let result, result.snapshot.phase == .weeklyPlan, let selectedPlan,
               selectedPlan != .recover || ProCareerEngine.usesAgencyRules(result.snapshot) else { return }
         let beforeRevision = result.snapshot.revision
         var advancedWeeks = 0

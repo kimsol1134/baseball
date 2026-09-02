@@ -170,7 +170,150 @@ npm run check
 ## 6. 미해결
 
 - 해외 진출(`overseasInterest`)은 뉴스·플래그만. 실제 이적 시장은 범위 밖.
-- 분포 러너는 소집 페이즈를 자동 진행하지 않는다. 시즌 루프가 `acknowledgeSettlement` 직후 `chooseOffseason`을 호출하면 v10 자격 시즌에서 실패할 수 있다. 제품 경로(화면)는 소집→대회→오프시즌 순서다.
+- 분포 러너는 소집·대회·헤드리스 결승을 정책별로 걷는다. 아래 라운드 I 참고.
 - Android Kotlin 포팅은 스펙 범위 밖.
-- iOS xcodebuild·npm은 실행하지 않음.
 - 커밋하지 않음.
+
+## 수정 라운드 I (병합 후)
+
+병합 트리(`/Users/solkim/Dev/baseball`, main)에서 분포 스모크와 iOS 로컬라이제이션 게이트를 고쳤다. 커밋·stash·reset·checkout 없음. `planWeek` RNG 무삽입. 골든 픽스처 미재생성. v9 이하는 소집 페이즈에 들어가지 않는다.
+
+### 진단
+
+`npm run run:pro-career:distribution:smoke`가 다섯 정책 모두 `failedRuns`로 중단했다. 원인은 두 겹이다.
+
+1. 헤드리스 러너가 `acknowledgeSettlement` 직후 `chooseOffseason`을 호출한다. v10 자격 시즌(짝수, season ≥ 2, age ≤ 31)은 `.nationalTeamCall`에 멈추므로 `chooseOffseason`이 거부된다. 수락 뒤 `.nationalTournament`와 결승 직접 등판(`.importantGame` + `.nationalFinal`)도 워커가 모른다.
+2. 결승은 플레이어 `ImportantInningReport`를 기대한다. 헤드리스에는 투구 UI가 없다.
+
+부가로 v10 FA 잔류 협상(`requestContractCounter` + 연봉 +10%)은 적용 후 잔류 오퍼가 다른 슬롯을 지배하거나 연봉 밴드 검증을 벗어나면 `invalid_offer`를 던진다. 앱은 버튼을 눌러 실패해도 오퍼 화면에 남는다. 러너는 그 경우 협상을 건너뛰고 기존 오퍼를 고른다.
+
+제품 경로: `CareerFlowView`는 `.nationalTeamCall` / `.nationalTournament`를 이미 라우트한다. `advanceSegment` / `advanceBlock`은 `.weeklyPlan`에서만 주를 넘긴다. 소집 페이즈에서 호출하면 리비전을 올리지 않는다. 스토어 테스트로 확인했다.
+
+### 엔진
+
+`ProCareerEngine.resolveNationalFinalAutomatically` — 조별에서 자격한 뒤 직접 등판이 없을 때 대회 시드에서 결승을 돌린다.
+
+```
+derivedFinalSeed = FNV-1a64("national-final:\(resumeSeed)")
+```
+
+조별 스트림(`national-tournament:`)과 분리한다. 커리어 `nextSeed`는 소비하지 않는다. `directlyPlayed = false`. 승패는 금/은. 포스트시즌 자동 경기와 같은 패턴이다. 앱 경로는 그대로 `startNationalFinal` → 중요 경기.
+
+### 러너 정책
+
+소집:
+
+| 정책 | 소집 |
+|---|---|
+| `role_first` | 수락 (국제 무대) |
+| `legacy_first` | 수락 (금메달 HOF +4) |
+| `stable_random` | 수락 (밸런스 코호트가 경로를 샘플) |
+| `security_first` | 사양 (피로·부상 캐리) |
+| `salary_first` | 사양 (즉시 연봉 없음) |
+
+FA 잔류 협상 (v10 자유계약, 잔류 오퍼가 있을 때만):
+
+| 정책 | 협상 |
+|---|---|
+| `salary_first` | 연봉 +10% |
+| `security_first` | 연수 +1, 불가하면 연봉 +10% |
+| `legacy_first` | 연수 +1, 불가하면 생략 |
+| `role_first` | 생략 (보직 축) |
+| `stable_random` | 해시 레인 none / extra year / raise |
+
+관심(`interest`)은 v10 오퍼 속성이다. 러너는 관심으로 오퍼를 다시 정렬하지 않아 급여·유산·보직·안정 축이 섞이지 않는다. 계약 수락 뒤 `.offseasonInvestment`는 기존처럼 걷는다.
+
+수락된 협상이 시장 비지배/연봉 밴드를 깨면 엔진이 `invalid_offer`를 낸다. 러너는 적용 시장을 `isValid`로 먼저 보고, 그래도 거부되면 협상을 건너뛴다.
+
+### 로컬라이제이션
+
+`ProNationalTeamCopy.resultTitle`을 `Text(verbatim:)`로 넘겼다(기록 화면 포스트시즌 줄과 동일). 뷰의 `arguments:` 조립은 `ProNationalTeamCopy` 헬퍼로 옮겼다. `pro.nationalTeam.*` 키는 `GameCopyKey.isSemanticID`가 카멜케이스를 거부하므로 `pro.national-team.*`로 바꿨다. 닫힌 enum 한국어 목록에 소집/대회/결승을 넣었고, 용어 사전 기대값을 24항·48키에 맞췄다.
+
+### 게이트 원문
+
+시뮬레이터: `iPhone 17 (641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF) (Booted)`. xcodebuild는 한 번에 하나만.
+
+```
+swift test --package-path packages/simulation-core --filter "ProNationalTeam|ProContractDepth|ProContractMarket|ProCareerBootstrapCharacterization|ProCareerLegacyRules"
+```
+
+종료 코드 0.
+
+```
+Test Suite 'Selected tests' passed at 2026-09-02 21:23:58.280.
+	 Executed 57 tests, with 1 test skipped and 0 failures (0 unexpected) in 18.091 (18.097) seconds
+```
+
+`ProNationalTeamTests` 8/8 (헤드리스 결승 1건 포함).
+
+```
+npm run run:pro-career:distribution:smoke
+```
+
+종료 코드 0.
+
+```
+PRO_CAREER_DISTRIBUTION output=artifacts/analysis/pro-career-wave6/swift-distribution-smoke.json valid=true failures=
+```
+
+```
+npm run check:ios-localization
+```
+
+종료 코드 0.
+
+```
+iOS localization release check passed: 3832 catalog entries and zero pending surfaces
+```
+
+```
+npm run check:copy
+```
+
+```
+문구 품질 검사 통과 (전체 제품): 내부 용어 38종·실존 야구 IP 42종 미노출
+```
+
+```
+npm run check:design-system
+```
+
+```
+디자인 시스템 검사 통과: 원시 색상·레거시 토큰·scene/milestone 역할 오용 0, 고정 본문 크기 0, 고대비 토큰 대응 및 WCAG AA 대비, 공통 컴포넌트 계약 확인
+```
+
+iOS `BaseballIOSTests` (iPhone 17):
+
+```
+cd apps/ios && xcodebuild -project Baseball.xcodeproj -scheme BaseballIOS \
+  -destination 'platform=iOS Simulator,id=641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF' \
+  -only-testing:BaseballIOSTests test CODE_SIGNING_ALLOWED=NO
+```
+
+종료 코드 0.
+
+```
+Test Suite 'BaseballIOSTests.xctest' passed at 2026-09-02 21:41:44.877.
+	 Executed 551 tests, with 0 failures (0 unexpected) in 111.795 (111.973) seconds
+Test Suite 'All tests' passed at 2026-09-02 21:41:44.878.
+	 Executed 551 tests, with 0 failures (0 unexpected) in 111.795 (111.974) seconds
+** TEST SUCCEEDED **
+```
+
+UI 테스트:
+
+```
+cd apps/ios && xcodebuild -project Baseball.xcodeproj -scheme BaseballIOS \
+  -destination 'platform=iOS Simulator,id=641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF' \
+  -only-testing:BaseballIOSUITests/Release128JourneyUITests/testKoreanProJourneyRoleDecisionFollowUpSeasonRestore \
+  test CODE_SIGNING_ALLOWED=NO
+```
+
+종료 코드 0.
+
+```
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testKoreanProJourneyRoleDecisionFollowUpSeasonRestore]' passed (238.134 seconds).
+** TEST SUCCEEDED **
+```
+
+시즌 정산 → 오프시즌 → 투자(없음) → 다음 스프링캠프 → 저장 복귀까지 통과. 시즌 1은 홀수라 소집 페이즈는 열리지 않는다.

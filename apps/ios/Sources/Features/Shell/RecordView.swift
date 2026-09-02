@@ -339,7 +339,7 @@ private struct RecordBoard: View {
                                 HStack {
                                     Text("\(record.season)")
                                         .font(.body.monospacedDigit())
-                                    Text(ProNationalTeamCopy.resultTitle(record.result, resolver: copyResolver))
+                                    Text(verbatim: ProNationalTeamCopy.resultTitle(record.result, resolver: copyResolver))
                                     Spacer()
                                     if let line = record.directGameLine {
                                         Text("\(line.teamRuns)-\(line.opponentRuns)")
