@@ -249,6 +249,13 @@ extension MobileCareerStore {
         CareerDisplayRules.totalGuaranteedSalary(for: offer)
     }
 
+    nonisolated static func counterAvailability(
+        for state: ProCareerSnapshot,
+        kind: ProContractCounterKind
+    ) -> ProCounterAvailability {
+        CareerDisplayRules.counterAvailability(for: state, kind: kind)
+    }
+
     nonisolated static func masteryBonusPermille(level: Int) -> Int {
         CareerDisplayRules.masteryBonusPermille(level: level)
     }

@@ -408,6 +408,13 @@ public struct ProCareerEngine: Sendable {
                 throw SimulationError.invalidProCareer("invalid_offer")
             }
         }
+        if case .unavailable = ProContractMarketRules.counterAvailability(
+            market: market,
+            state: params.state,
+            kind: params.kind
+        ) {
+            throw SimulationError.invalidProCareer("invalid_offer")
+        }
         let accepted = ProContractMarketRules.evaluateStayCounter(
             fanSupport: journey.reputation.fanSupport,
             marketScore: ProContractMarketRules.marketScore(state: params.state)

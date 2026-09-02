@@ -192,6 +192,10 @@ enum ProContractCopy {
         case .raiseSalary: resolver.resolve(.contractOfferCounterRaiseSalary)
         }
     }
+
+    static func counterUnavailable(_ reason: ProCounterUnavailableReason, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.gameContent("content.contract.counter.unavailable.\(reason.rawValue)"))
+    }
 }
 
 enum ProWeeklyCopy {

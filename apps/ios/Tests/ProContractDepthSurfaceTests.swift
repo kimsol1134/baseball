@@ -20,6 +20,7 @@ final class ProContractDepthSurfaceTests: XCTestCase {
         XCTAssertTrue(source.contains("pro.contractOffer.counter.extra_year"))
         XCTAssertTrue(source.contains("pro.contractOffer.counter.raise_salary"))
         XCTAssertTrue(source.contains("CareerDisplayRules.canRequestContractCounter"))
+        XCTAssertTrue(source.contains("MobileCareerStore.counterAvailability"))
         XCTAssertTrue(source.contains("career.requestContractCounter(kind:"))
         XCTAssertTrue(source.contains("CareerDisplayRules.totalGuaranteedSalary"))
         XCTAssertFalse(source.contains("ProContractMarketRules."))

@@ -4797,6 +4797,72 @@
         }
       }
     },
+    "content.contract.counter.unavailable.dominance": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This demand would unbalance the other offers."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この要求は他の提示とのバランスを崩します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 요구는 다른 제안과 균형을 깨뜨립니다."
+          }
+        }
+      }
+    },
+    "content.contract.counter.unavailable.salary-band": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This demand would leave the allowed salary range."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この要求は認められる年俸の範囲を外れます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 요구는 허용된 연봉 범위를 벗어납니다."
+          }
+        }
+      }
+    },
+    "content.contract.counter.unavailable.years": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The deal cannot add another year."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "契約年数はこれ以上増やせません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계약 연수를 더 늘릴 수 없습니다."
+          }
+        }
+      }
+    },
     "content.contract.interest.cool.depth": {
       "localizations": {
         "en": {

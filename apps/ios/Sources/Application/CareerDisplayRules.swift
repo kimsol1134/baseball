@@ -62,6 +62,24 @@ enum CareerDisplayRules {
         return stay.years < 5 && stay.years < remaining
     }
 
+    nonisolated static func counterAvailability(
+        market: ProContractMarket,
+        state: ProCareerSnapshot,
+        kind: ProContractCounterKind
+    ) -> ProCounterAvailability {
+        ProContractMarketRules.counterAvailability(market: market, state: state, kind: kind)
+    }
+
+    nonisolated static func counterAvailability(
+        for state: ProCareerSnapshot,
+        kind: ProContractCounterKind
+    ) -> ProCounterAvailability {
+        guard let market = state.journeyState?.pendingContractMarket else {
+            return .unavailable(.years)
+        }
+        return counterAvailability(market: market, state: state, kind: kind)
+    }
+
     nonisolated static func offseasonInvestmentOptions(for state: ProCareerSnapshot) -> [ProOffseasonInvestment] {
         var options: [ProOffseasonInvestment] = [.pitchLab, .recoveryTeam, .fanFoundation]
         if usesContractDepthRules(state) {

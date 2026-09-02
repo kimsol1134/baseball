@@ -252,7 +252,7 @@ extension MobileCareerStore {
     func requestContractCounter(kind: ProContractCounterKind) -> Bool {
         guard featureConfiguration.proCareerJourneyV1, let current = result else { return false }
         guard CareerDisplayRules.canRequestContractCounter(current.snapshot) else { return false }
-        if kind == .extraYear, !CareerDisplayRules.canRequestExtraYear(current.snapshot) { return false }
+        guard CareerDisplayRules.counterAvailability(for: current.snapshot, kind: kind).isAvailable else { return false }
         let requested = perform(summary: nil, cue: .success) {
             try engine.requestContractCounter(.init(
                 seed: current.nextSeed,

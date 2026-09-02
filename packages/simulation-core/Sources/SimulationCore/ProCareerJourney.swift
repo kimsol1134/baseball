@@ -658,6 +658,27 @@ public struct ProContractCounterState: Codable, Equatable, Sendable {
     }
 }
 
+public enum ProCounterUnavailableReason: String, Equatable, Sendable {
+    case years
+    case dominance
+    case salaryBand = "salary-band"
+}
+
+public enum ProCounterAvailability: Equatable, Sendable {
+    case available
+    case unavailable(ProCounterUnavailableReason)
+
+    public var isAvailable: Bool {
+        if case .available = self { return true }
+        return false
+    }
+
+    public var reason: ProCounterUnavailableReason? {
+        if case .unavailable(let reason) = self { return reason }
+        return nil
+    }
+}
+
 public struct ProContractExpectation: Codable, Equatable, Sendable {
     public let kind: ProContractExpectationKind
     public let target: Int

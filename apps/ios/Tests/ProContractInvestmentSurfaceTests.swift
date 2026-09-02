@@ -45,6 +45,41 @@ final class ProContractInvestmentSurfaceTests: XCTestCase {
         XCTAssertTrue(flow.contains("pro.offseasonInvestment.continue"))
     }
 
+    func testCounterChoicesDisableWhenUnavailableAndHideActionWhenBothBlocked() throws {
+        let source = try IOSSourceScan.read("apps/ios/Sources/ProContractOfferView.swift")
+        XCTAssertTrue(source.contains("MobileCareerStore.counterAvailability(for: state, kind: .extraYear)"))
+        XCTAssertTrue(source.contains("MobileCareerStore.counterAvailability(for: state, kind: .raiseSalary)"))
+        XCTAssertTrue(source.contains(".disabled(!isAvailable)"))
+        XCTAssertTrue(source.contains("if extraYearAvailable || raiseSalaryAvailable"))
+        XCTAssertTrue(source.contains("stayCounterUnavailableReasons"))
+        XCTAssertTrue(source.contains("pro.contractOffer.counter.unavailable"))
+        XCTAssertTrue(source.contains("ProContractCopy.counterUnavailable"))
+        XCTAssertFalse(source.contains("ProContractMarketRules."))
+        XCTAssertFalse(source.contains("arguments:"))
+
+        let store = try IOSSourceScan.read("apps/ios/Sources/Application/MobileCareerStore+Season.swift")
+        XCTAssertTrue(store.contains("CareerDisplayRules.counterAvailability(for: current.snapshot, kind: kind).isAvailable"))
+
+        let catalogURL = repositoryRoot().appendingPathComponent("apps/ios/Sources/Presentation/Localization/GameContent.xcstrings")
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [String: Any])
+        let strings = try XCTUnwrap(object["strings"] as? [String: Any])
+        for key in [
+            "content.contract.counter.unavailable.years",
+            "content.contract.counter.unavailable.dominance",
+            "content.contract.counter.unavailable.salary-band",
+        ] {
+            let entry = try XCTUnwrap(strings[key] as? [String: Any], key)
+            let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any], key)
+            for language in ["ko", "en", "ja"] {
+                let label = "\(key):\(language)"
+                let localization = try XCTUnwrap(localizations[language] as? [String: Any], label)
+                let unit = try XCTUnwrap(localization["stringUnit"] as? [String: Any], label)
+                XCTAssertEqual(unit["state"] as? String, "translated", label)
+                XCTAssertFalse((unit["value"] as? String ?? "").isEmpty, label)
+            }
+        }
+    }
+
     func testRenewalRequiresGoalBeforeOfferAndKeepsConfirmationGuarded() throws {
         let source = try IOSSourceScan.read("apps/ios/Sources/ProContractOfferView.swift")
         let goalBeforeOffers = try XCTUnwrap(source.range(of: "if market.kind != .rookie {\n                    goalSelectionSection(market)"))

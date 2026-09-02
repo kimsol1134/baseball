@@ -631,6 +631,207 @@ final class ProContractMarketRulesTests: XCTestCase {
         fatalError("unreachable")
     }
 
+    func testStayCounterAvailabilityMatchesApplySuccessAcrossSweep() throws {
+        let pitcher = PitcherSnapshot(id: "counter-sweep", name: "Sweep", stuff: 64, command: 59, movement: 61, stamina: 63)
+        var availableCount = 0
+        var unavailableCount = 0
+        var probed = 0
+        for team in ProCareerEngine.proTeams.prefix(4) {
+            for role in [ProRole.starter, .setup] {
+                for score in [40, 62, 70, 85, 100] {
+                    for fans in [20, 55, 80] {
+                        for legacy in [0, 70] {
+                            for forSeason in [7, 20] {
+                                guard let market = ProContractMarketRules.makeFreeAgencyMarket(
+                                    careerID: "counter-sweep-\(team.id)-\(role.rawValue)-\(score)-\(fans)-\(legacy)-\(forSeason)",
+                                    currentTeam: team,
+                                    pitcher: pitcher,
+                                    level: .major,
+                                    role: role,
+                                    previousStats: .init(
+                                        season: forSeason - 1,
+                                        teamID: team.id,
+                                        games: 28,
+                                        starts: 24,
+                                        inningsOuts: 420,
+                                        strikeouts: 150,
+                                        walks: 36,
+                                        runsAllowed: 52
+                                    ),
+                                    marketScore: score,
+                                    fanSupport: fans,
+                                    forSeason: forSeason,
+                                    generatedAtRevision: 11,
+                                    maximumCareerSeasons: 20,
+                                    usesContractDepth: true,
+                                    lastTeamLegacy: legacy
+                                ) else { continue }
+                                let state = counterProbeState(
+                                    market: market,
+                                    team: team,
+                                    role: role,
+                                    pitcher: pitcher,
+                                    fanSupport: fans,
+                                    lastTeamLegacy: legacy
+                                )
+                                for kind in [ProContractCounterKind.extraYear, .raiseSalary] {
+                                    probed += 1
+                                    let availability = ProContractMarketRules.counterAvailability(
+                                        market: market,
+                                        state: state,
+                                        kind: kind
+                                    )
+                                    let applySucceeds = stayCounterApplyWouldSucceed(
+                                        kind: kind,
+                                        market: market,
+                                        state: state
+                                    )
+                                    XCTAssertEqual(
+                                        availability.isAvailable,
+                                        applySucceeds,
+                                        "\(market.id) \(kind.rawValue) score=\(score) fans=\(fans) legacy=\(legacy)"
+                                    )
+                                    if availability.isAvailable {
+                                        availableCount += 1
+                                    } else {
+                                        unavailableCount += 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        XCTAssertGreaterThan(probed, 200)
+        XCTAssertGreaterThan(availableCount, 0)
+        XCTAssertGreaterThan(unavailableCount, 0)
+    }
+
+    private func stayCounterApplyWouldSucceed(
+        kind: ProContractCounterKind,
+        market: ProContractMarket,
+        state: ProCareerSnapshot
+    ) -> Bool {
+        guard ProCareerEngine.usesContractDepthRules(state),
+              market.kind == .freeAgency,
+              market.counterOffer == nil,
+              let stay = market.offers.first(where: { $0.preservesTeamLegacy && $0.teamID == state.team.id }) else {
+            return false
+        }
+        let remaining = ProCareerEngine.maximumCareerSeasons - market.forSeason + 1
+        if kind == .extraYear, !(stay.years < 5 && stay.years < remaining) {
+            return false
+        }
+        let score = ProContractMarketRules.marketScore(state: state)
+        let accepted = ProContractMarketRules.evaluateStayCounter(
+            fanSupport: state.journeyState?.reputation.fanSupport ?? 0,
+            marketScore: score
+        )
+        guard accepted else { return true }
+        let probed = ProContractMarketRules.applyingStayCounter(
+            .init(kind: kind, accepted: true, applied: true),
+            to: market,
+            generatedAtRevision: state.revision + 1
+        )
+        let projected = ProContractMarketRules.projectedPitcher(
+            for: state.pitcher,
+            effectiveAge: state.age + (state.journeyState?.offseasonTransition?.ageAdvanceYears ?? 0)
+        )
+        return ProContractMarketRules.isValid(
+            market: probed,
+            currentTeamID: state.team.id,
+            currentRole: state.role,
+            maximumCareerSeasons: ProCareerEngine.maximumCareerSeasons,
+            marketScore: score,
+            pitcher: projected,
+            usesContractDepth: true,
+            lastTeamLegacy: ProContractMarketRules.lastTeamLegacy(for: state)
+        )
+    }
+
+    private func counterProbeState(
+        market: ProContractMarket,
+        team: DraftTeamSnapshot,
+        role: ProRole,
+        pitcher: PitcherSnapshot,
+        fanSupport: Int,
+        lastTeamLegacy: Int
+    ) -> ProCareerSnapshot {
+        let records: [ProTeamCareerRecord]
+        if lastTeamLegacy >= 65 {
+            records = [
+                ProTeamCareerRecord(
+                    teamID: team.id,
+                    completedSeasons: 10,
+                    consecutiveSeasons: 8,
+                    games: 300,
+                    starts: 250,
+                    inningsOuts: 4000,
+                    strikeouts: 1600,
+                    wins: 100,
+                    saves: 0,
+                    awardCount: 4,
+                    communityPoints: 8,
+                    lastSeason: market.forSeason - 1
+                ),
+            ]
+        } else {
+            records = []
+        }
+        return ProCareerSnapshot(
+            proCareerID: "counter-probe",
+            revision: market.generatedAtRevision,
+            phase: .contractOffer,
+            identity: .defaultPitcher,
+            pitcher: pitcher,
+            team: team,
+            entitlement: .init(status: .active, source: .development, verifiedAt: "2026-09-02"),
+            age: 26,
+            season: max(1, market.forSeason - 1),
+            week: 24,
+            level: .major,
+            role: role,
+            managerTrust: 50,
+            catcherTrust: 50,
+            fatigue: 0,
+            injuryWeeks: 0,
+            serviceYears: 6,
+            militaryCompleted: false,
+            contract: .init(yearsRemaining: 0, annualSalary: 100_000_000, rolePromise: role),
+            currentStats: .init(
+                season: max(1, market.forSeason - 1),
+                teamID: team.id,
+                games: 28,
+                starts: 24,
+                inningsOuts: 420,
+                strikeouts: 150,
+                walks: 36,
+                runsAllowed: 52
+            ),
+            careerStats: [],
+            awards: [],
+            milestones: [],
+            news: [],
+            hallOfFameScore: nil,
+            commitment: "",
+            proRulesVersion: 10,
+            journeyState: ProCareerJourneyState(
+                rulesVersion: ProCareerEngine.currentJourneyRulesVersion,
+                pendingContractMarket: market,
+                teamRecords: records,
+                reputation: .init(fanSupport: fanSupport),
+                offseasonTransition: ProOffseasonTransition(
+                    afterSeason: max(1, market.forSeason - 1),
+                    nextSeason: market.forSeason,
+                    ageAdvanceYears: 1,
+                    includesMilitaryService: false,
+                    route: .freeAgencyMarket
+                )
+            )
+        )
+    }
+
     private func replacing(
         _ offer: ProContractOffer,
         id: String? = nil,

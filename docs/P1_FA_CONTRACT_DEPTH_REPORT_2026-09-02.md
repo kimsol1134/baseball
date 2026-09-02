@@ -226,6 +226,83 @@ cmp /tmp/swift-pro-career-contract-wave3-oracle-v1.json \
 ## 4. 미해결
 
 - 잔류 5년은 마지막 팀 레거시 ≥ 65일 때만 열린다. 3년 신인 계약이 막 끝난 직후는 대개 3–4년이다.
-- 이미 연수가 5이거나 남은 시즌이 없으면 연수 +1 버튼은 숨긴다. 연봉 +10%는 그대로 열려 있다.
+- 연수 +1이 한도에 걸리거나, 수락 시 시장 비지배/연봉 밴드를 깨면 해당 선택지는 비활성 + 한 줄 사유다. 둘 다 불가면 「요구하기」를 숨긴다. 적용 경로의 `invalid_offer`는 안전망으로 남긴다.
 - 오프시즌 투자 단계는 예전부터 진행 중 저장의 `proRulesVersion`을 `currentRulesVersion`(지금 10)으로 올린다. 투자 전이면 v9 pending 시장은 3오퍼로 재생성되고, 투자를 마친 저장은 다음 시장부터 v10 규칙을 쓴다. 이번 작업에서 그 승격 시점을 바꾸지는 않았다.
 - 국가대표 대회는 다른 엔지니어 워크트리. 이 작업은 손대지 않았다.
+
+## 수정 라운드 J (잔류 협상 사전 검증)
+
+라운드 I에서 지적한 FA 잔류 협상 UX: 수락된 연수 +1 / 연봉 +10%가 다른 슬롯을 지배하거나 연봉 밴드를 벗어나면 엔진이 `invalid_offer`를 던지고, 앱은 오퍼 화면에 아무 피드백 없이 남았다.
+
+`ProContractMarketRules.counterAvailability(market:state:kind:) -> ProCounterAvailability`를 추가했다. 적용 경로와 같은 연수 한도·수락 판정·적용 시장 `isValid`·비지배 검사를 순수하게 돌린다. 거절될 협상은 오퍼를 바꾸지 않으므로 가능으로 둔다. 사유: `years` / `dominance` / `salary-band`. `CareerDisplayRules`와 `MobileCareerStore` 프로젝션으로 노출한다. `ProContractOfferView`는 불가 선택지를 비활성 + 한 줄 사유(`content.contract.counter.unavailable.*`, ko/en/ja)로 보여 주고, 둘 다 불가이면 「요구하기」를 숨긴다. `requestContractCounter`의 throw는 안전망으로 남긴다.
+
+커밋·stash·reset·checkout 없음. 픽스처 재생성 없음. v9 이하 시장 생성·검증은 그대로다. xcodebuild는 부팅된 iPhone 17만, 한 번에 하나.
+
+시뮬레이터: `iPhone 17 (641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF) (Booted)`.
+
+### 게이트 원문
+
+```
+swift test --package-path packages/simulation-core --filter "ProContract"
+```
+
+종료 코드 0.
+
+```
+Test Suite 'Selected tests' passed at 2026-09-02 22:03:05.394.
+	 Executed 43 tests, with 0 failures (0 unexpected) in 29.377 (29.381) seconds
+```
+
+```
+npm run check:ios-localization
+```
+
+종료 코드 0.
+
+```
+iOS localization release check passed: 3881 catalog entries and zero pending surfaces
+```
+
+```
+npm run check:copy
+```
+
+종료 코드 0.
+
+```
+문구 품질 검사 통과 (전체 제품): 내부 용어 38종·실존 야구 IP 42종 미노출
+```
+
+```
+cd apps/ios && xcodebuild -project Baseball.xcodeproj -scheme BaseballIOS \
+  -destination 'platform=iOS Simulator,id=641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF' \
+  -only-testing:BaseballIOSTests/ProContractInvestmentSurfaceTests \
+  -only-testing:BaseballIOSTests/LocalizationCoverageTests \
+  -only-testing:BaseballIOSTests/ProCareerJourneyStoreTests \
+  test CODE_SIGNING_ALLOWED=NO
+```
+
+종료 코드 0.
+
+```
+Test Suite 'Selected tests' passed at 2026-09-02 22:04:09.875.
+	 Executed 69 tests, with 0 failures (0 unexpected) in 6.254 (6.270) seconds
+** TEST SUCCEEDED **
+```
+
+```
+cd apps/ios && xcodebuild -project Baseball.xcodeproj -scheme BaseballIOS \
+  -destination 'platform=iOS Simulator,id=641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF' \
+  -only-testing:BaseballIOSTests test CODE_SIGNING_ALLOWED=NO
+```
+
+종료 코드 0.
+
+```
+Test Suite 'BaseballIOSTests.xctest' passed at 2026-09-02 22:06:25.471.
+	 Executed 553 tests, with 0 failures (0 unexpected) in 116.905 (117.080) seconds
+Test Suite 'All tests' passed at 2026-09-02 22:06:25.471.
+	 Executed 553 tests, with 0 failures (0 unexpected) in 116.905 (117.080) seconds
+** TEST SUCCEEDED **
+```
+

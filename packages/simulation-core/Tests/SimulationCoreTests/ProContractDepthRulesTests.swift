@@ -339,6 +339,33 @@ final class ProContractDepthRulesTests: XCTestCase {
         }, "invalid_transition")
     }
 
+    func testStayCounterAvailabilityMatchesEngineApply() throws {
+        for seed in ["810201", "810202", "810203", "810204"] {
+            let opened = try openedFreeAgency(seed: seed)
+            let market = try XCTUnwrap(opened.snapshot.journeyState?.pendingContractMarket)
+            for kind in [ProContractCounterKind.extraYear, .raiseSalary] {
+                let availability = ProContractMarketRules.counterAvailability(
+                    market: market,
+                    state: opened.snapshot,
+                    kind: kind
+                )
+                let code = errorCode {
+                    _ = try engine.requestContractCounter(.init(
+                        seed: opened.nextSeed,
+                        state: opened.snapshot,
+                        expectedRevision: opened.snapshot.revision,
+                        kind: kind
+                    ))
+                }
+                if availability.isAvailable {
+                    XCTAssertEqual(code, "no_error", "\(seed) \(kind.rawValue)")
+                } else {
+                    XCTAssertEqual(code, "invalid_offer", "\(seed) \(kind.rawValue)")
+                }
+            }
+        }
+    }
+
     func testCanonicalTokenOmitsNilV10Fields() throws {
         let team = ProCareerEngine.proTeams[0]
         let legacy = try XCTUnwrap(ProContractMarketRules.makeFreeAgencyMarket(

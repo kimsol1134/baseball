@@ -92,12 +92,7 @@ struct ProContractOfferView: View {
                     if offer.preservesTeamLegacy,
                        offer.teamID == state.team.id,
                        CareerDisplayRules.canRequestContractCounter(state) {
-                        PrimaryPill(
-                            title: copyResolver.resolve(.contractOfferCounterAction),
-                            identifier: "pro.contractOffer.counter.open"
-                        ) {
-                            showingCounterSheet = true
-                        }
+                        stayCounterControls
                     }
                     if let counter = market.counterOffer,
                        offer.preservesTeamLegacy,
@@ -135,29 +130,13 @@ struct ProContractOfferView: View {
                 // the next negotiation.
                 pendingOfferID = nil
                 selectedAmbition = nil
+                showingCounterSheet = false
                 guard market.kind != .rookie,
                       let activeGoal = state.journeyState?.activeGoal,
                       activeGoal.completedSeason == nil else {
                     return
                 }
                 selectedAmbition = activeGoal.ambition
-            }
-            .confirmationDialog(
-                copyResolver.resolve(.contractOfferCounterTitle),
-                isPresented: $showingCounterSheet,
-                titleVisibility: .visible
-            ) {
-                if CareerDisplayRules.canRequestExtraYear(state) {
-                    Button(copyResolver.resolve(.contractOfferCounterExtraYear)) {
-                        _ = career.requestContractCounter(kind: .extraYear)
-                    }
-                    .accessibilityIdentifier("pro.contractOffer.counter.extra_year")
-                }
-                Button(copyResolver.resolve(.contractOfferCounterRaiseSalary)) {
-                    _ = career.requestContractCounter(kind: .raiseSalary)
-                }
-                .accessibilityIdentifier("pro.contractOffer.counter.raise_salary")
-                Button(copyResolver.resolve(.contractOfferConfirmCancel), role: .cancel) { }
             }
             .confirmationDialog(
                 copyResolver.resolve(.contractOfferConfirmTitle),
@@ -190,6 +169,90 @@ struct ProContractOfferView: View {
             ContentUnavailableView(copyResolver.resolve(.scheduleComplete), systemImage: "exclamationmark.triangle")
                 .accessibilityIdentifier("pro.contractOffer.invalid")
         }
+    }
+
+    private var extraYearAvailability: ProCounterAvailability {
+        MobileCareerStore.counterAvailability(for: state, kind: .extraYear)
+    }
+
+    private var raiseSalaryAvailability: ProCounterAvailability {
+        MobileCareerStore.counterAvailability(for: state, kind: .raiseSalary)
+    }
+
+    private var extraYearAvailable: Bool { extraYearAvailability.isAvailable }
+    private var raiseSalaryAvailable: Bool { raiseSalaryAvailability.isAvailable }
+
+    @ViewBuilder
+    private var stayCounterControls: some View {
+        if extraYearAvailable || raiseSalaryAvailable {
+            PrimaryPill(
+                title: copyResolver.resolve(.contractOfferCounterAction),
+                identifier: "pro.contractOffer.counter.open"
+            ) {
+                showingCounterSheet = true
+            }
+            if showingCounterSheet {
+                stayCounterChoice(
+                    kind: .extraYear,
+                    title: copyResolver.resolve(.contractOfferCounterExtraYear),
+                    availability: extraYearAvailability,
+                    identifier: "pro.contractOffer.counter.extra_year",
+                    isAvailable: extraYearAvailable
+                )
+                stayCounterChoice(
+                    kind: .raiseSalary,
+                    title: copyResolver.resolve(.contractOfferCounterRaiseSalary),
+                    availability: raiseSalaryAvailability,
+                    identifier: "pro.contractOffer.counter.raise_salary",
+                    isAvailable: raiseSalaryAvailable
+                )
+            }
+        } else {
+            stayCounterUnavailableReasons
+        }
+    }
+
+    @ViewBuilder
+    private func stayCounterChoice(
+        kind: ProContractCounterKind,
+        title: String,
+        availability: ProCounterAvailability,
+        identifier: String,
+        isAvailable: Bool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button(title) {
+                _ = career.requestContractCounter(kind: kind)
+                showingCounterSheet = false
+            }
+            .disabled(!isAvailable)
+            .accessibilityIdentifier(identifier)
+            if case .unavailable(let reason) = availability {
+                Text(verbatim: ProContractCopy.counterUnavailable(reason, resolver: copyResolver))
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.warning)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("pro.contractOffer.counter.unavailable.\(kind.rawValue)")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var stayCounterUnavailableReasons: some View {
+        let reasons = [extraYearAvailability.reason, raiseSalaryAvailability.reason]
+            .compactMap { $0 }
+        let unique = reasons.reduce(into: [ProCounterUnavailableReason]()) { values, reason in
+            if !values.contains(reason) { values.append(reason) }
+        }
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(unique, id: \.rawValue) { reason in
+                Text(verbatim: ProContractCopy.counterUnavailable(reason, resolver: copyResolver))
+                    .font(.footnote)
+                    .foregroundStyle(BaseballTheme.warning)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityIdentifier("pro.contractOffer.counter.unavailable")
     }
 
     @ViewBuilder

@@ -1057,6 +1057,57 @@ public enum ProContractMarketRules {
         return fanSupport >= 55 && marketScore >= 60
     }
 
+    /// Pure pre-check for the FA stay counter. Uses the same extra-year cap, acceptance
+    /// rule, applied-market `isValid`, and non-dominance test as `requestContractCounter`.
+    public static func counterAvailability(
+        market: ProContractMarket,
+        state: ProCareerSnapshot,
+        kind: ProContractCounterKind
+    ) -> ProCounterAvailability {
+        guard ProCareerEngine.usesContractDepthRules(state),
+              market.kind == .freeAgency,
+              market.counterOffer == nil,
+              let stay = market.offers.first(where: { $0.preservesTeamLegacy && $0.teamID == state.team.id }) else {
+            return .unavailable(.years)
+        }
+        let remainingSeasons = ProCareerEngine.maximumCareerSeasons - market.forSeason + 1
+        if kind == .extraYear, !(stay.years < 5 && stay.years < remainingSeasons) {
+            return .unavailable(.years)
+        }
+        let score = marketScore(state: state)
+        let accepted = evaluateStayCounter(
+            fanSupport: state.journeyState?.reputation.fanSupport ?? 0,
+            marketScore: score
+        )
+        guard accepted else { return .available }
+        let probed = applyingStayCounter(
+            ProContractCounterState(kind: kind, accepted: true, applied: true),
+            to: market,
+            generatedAtRevision: state.revision + 1
+        )
+        let projected = projectedPitcher(
+            for: state.pitcher,
+            effectiveAge: state.age + (state.journeyState?.offseasonTransition?.ageAdvanceYears ?? 0)
+        )
+        let lastTeamLegacy = lastTeamLegacy(for: state)
+        if isValid(
+            market: probed,
+            currentTeamID: state.team.id,
+            currentRole: state.role,
+            maximumCareerSeasons: ProCareerEngine.maximumCareerSeasons,
+            marketScore: score,
+            pitcher: projected,
+            usesContractDepth: true,
+            lastTeamLegacy: lastTeamLegacy
+        ) {
+            return .available
+        }
+        if !isNonDominated(probed.offers, currentRole: state.role, usesContractDepth: true) {
+            return .unavailable(.dominance)
+        }
+        return .unavailable(.salaryBand)
+    }
+
     public static func applyingStayCounter(
         _ counter: ProContractCounterState,
         to market: ProContractMarket,

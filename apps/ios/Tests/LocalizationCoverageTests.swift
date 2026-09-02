@@ -2640,6 +2640,30 @@ final class LocalizationCoverageTests: XCTestCase {
         )
     }
 
+    func testContractCounterUnavailableCopyHasKoreanEnglishJapaneseParity() throws {
+        let keys = [
+            "content.contract.counter.unavailable.years",
+            "content.contract.counter.unavailable.dominance",
+            "content.contract.counter.unavailable.salary-band",
+        ]
+        let entries = try gameContentEntries()
+        let japanese = try gameContentJapanese()
+        for key in keys {
+            let entry = try XCTUnwrap(entries[key], key)
+            XCTAssertFalse(entry.korean.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            XCTAssertFalse(entry.english.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            assertNoHangul(entry.english, key)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: entry.korean),
+                GameCopyResolver.placeholderKinds(in: entry.english),
+                key
+            )
+            let ja = try XCTUnwrap(japanese[key], key)
+            XCTAssertFalse(ja.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            assertNoHangul(ja, key)
+        }
+    }
+
     func testGlossaryCatalogHasKoreanEnglishJapaneseParity() throws {
         XCTAssertEqual(GlossaryCatalog.terms.count, 24)
         XCTAssertEqual(Set(GlossaryCatalog.terms.map(\.id)).count, 24)
