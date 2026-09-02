@@ -10,9 +10,9 @@ struct ProOffseasonInvestmentView: View {
     @State private var showingConfirmation = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
-    private static let options: [ProOffseasonInvestment] = [
-        .pitchLab, .recoveryTeam, .fanFoundation, .none,
-    ]
+    private var options: [ProOffseasonInvestment] {
+        CareerDisplayRules.offseasonInvestmentOptions(for: state)
+    }
 
     private var availableFunds: Int64 {
         state.journeyState?.finances.availableFunds ?? 0
@@ -45,7 +45,7 @@ struct ProOffseasonInvestmentView: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
 
-            ForEach(Self.options, id: \.rawValue) { investment in
+            ForEach(options, id: \.rawValue) { investment in
                 investmentCard(investment)
             }
 
@@ -168,6 +168,8 @@ struct ProOffseasonInvestmentView: View {
         case .pitchLab: .offseasonInvestmentChoicePitchLab
         case .recoveryTeam: .offseasonInvestmentChoiceRecoveryTeam
         case .fanFoundation: .offseasonInvestmentChoiceFanFoundation
+        case .equipment: .offseasonInvestmentChoiceEquipment
+        case .personalTrainer: .offseasonInvestmentChoicePersonalTrainer
         case .none: .offseasonInvestmentChoiceNone
         }
     }
@@ -183,6 +185,10 @@ struct ProOffseasonInvestmentView: View {
             return copyResolver.resolve(.offseasonInvestmentRecoveryTeamBenefit)
         case .fanFoundation:
             return copyResolver.resolve(.offseasonInvestmentFoundationBenefit)
+        case .equipment:
+            return copyResolver.resolve(.offseasonInvestmentEquipmentBenefit)
+        case .personalTrainer:
+            return copyResolver.resolve(.offseasonInvestmentTrainerBenefit)
         case .none:
             return copyResolver.resolve(.journeyEffectNone)
         }
@@ -192,6 +198,7 @@ struct ProOffseasonInvestmentView: View {
         switch investment {
         case .pitchLab: copyResolver.resolve(.offseasonInvestmentDurationSeason)
         case .recoveryTeam: copyResolver.resolve(.offseasonInvestmentDurationCharge)
+        case .equipment, .personalTrainer: copyResolver.resolve(.offseasonInvestmentDurationSeason)
         case .fanFoundation, .none: copyResolver.resolve(.offseasonInvestmentDurationImmediate)
         }
     }

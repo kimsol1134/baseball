@@ -28,6 +28,49 @@ enum CareerDisplayRules {
         ProFinanceRules.investmentCost(for: investment)
     }
 
+    nonisolated static func usesContractDepthRules(_ state: ProCareerSnapshot) -> Bool {
+        ProCareerEngine.usesContractDepthRules(state)
+    }
+
+    nonisolated static func totalGuaranteedSalary(for offer: ProContractOffer) -> Int {
+        ProContractMarketRules.totalGuaranteedSalary(for: offer)
+    }
+
+    nonisolated static func signingBonusBand(for offer: ProContractOffer) -> String {
+        ProContractMarketRules.signingBonusBand(for: offer)
+    }
+
+    nonisolated static func canRequestContractCounter(_ state: ProCareerSnapshot) -> Bool {
+        guard usesContractDepthRules(state) else { return false }
+        guard state.phase == .contractOffer else { return false }
+        guard let market = state.journeyState?.pendingContractMarket,
+              market.kind == .freeAgency,
+              market.counterOffer == nil,
+              let stay = market.offers.first(where: { $0.preservesTeamLegacy && $0.teamID == state.team.id }) else {
+            return false
+        }
+        return stay.years >= 1
+    }
+
+    nonisolated static func canRequestExtraYear(_ state: ProCareerSnapshot) -> Bool {
+        guard canRequestContractCounter(state),
+              let market = state.journeyState?.pendingContractMarket,
+              let stay = market.offers.first(where: { $0.preservesTeamLegacy && $0.teamID == state.team.id }) else {
+            return false
+        }
+        let remaining = ProCareerEngine.maximumCareerSeasons - market.forSeason + 1
+        return stay.years < 5 && stay.years < remaining
+    }
+
+    nonisolated static func offseasonInvestmentOptions(for state: ProCareerSnapshot) -> [ProOffseasonInvestment] {
+        var options: [ProOffseasonInvestment] = [.pitchLab, .recoveryTeam, .fanFoundation]
+        if usesContractDepthRules(state) {
+            options.append(contentsOf: [.equipment, .personalTrainer])
+        }
+        options.append(.none)
+        return options
+    }
+
     nonisolated static var nicknameCatalogCount: Int {
         NicknameRules.catalogCount
     }

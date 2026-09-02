@@ -9,6 +9,7 @@ struct ProContractOfferView: View {
     @Environment(\.gameCopyResolver) private var copyResolver
     @State private var selectedAmbition: ProCareerAmbition?
     @State private var pendingOfferID: String?
+    @State private var showingCounterSheet = false
 
     private static let ambitions: [ProCareerAmbition] = [
         .franchiseIcon,
@@ -88,6 +89,27 @@ struct ProContractOfferView: View {
                         selectable: market.kind != .rookie,
                         enabled: goalSelectionComplete
                     )
+                    if offer.preservesTeamLegacy,
+                       offer.teamID == state.team.id,
+                       CareerDisplayRules.canRequestContractCounter(state) {
+                        PrimaryPill(
+                            title: copyResolver.resolve(.contractOfferCounterAction),
+                            identifier: "pro.contractOffer.counter.open"
+                        ) {
+                            showingCounterSheet = true
+                        }
+                    }
+                    if let counter = market.counterOffer,
+                       offer.preservesTeamLegacy,
+                       offer.teamID == state.team.id {
+                        Text(copyResolver.resolve(
+                            counter.accepted ? .contractOfferCounterAccepted : .contractOfferCounterRejected
+                        ))
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(counter.accepted ? BaseballTheme.information : BaseballTheme.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("pro.contractOffer.counter.result")
+                    }
                 }
 
                 if market.kind == .rookie {
@@ -119,6 +141,23 @@ struct ProContractOfferView: View {
                     return
                 }
                 selectedAmbition = activeGoal.ambition
+            }
+            .confirmationDialog(
+                copyResolver.resolve(.contractOfferCounterTitle),
+                isPresented: $showingCounterSheet,
+                titleVisibility: .visible
+            ) {
+                if CareerDisplayRules.canRequestExtraYear(state) {
+                    Button(copyResolver.resolve(.contractOfferCounterExtraYear)) {
+                        _ = career.requestContractCounter(kind: .extraYear)
+                    }
+                    .accessibilityIdentifier("pro.contractOffer.counter.extra_year")
+                }
+                Button(copyResolver.resolve(.contractOfferCounterRaiseSalary)) {
+                    _ = career.requestContractCounter(kind: .raiseSalary)
+                }
+                .accessibilityIdentifier("pro.contractOffer.counter.raise_salary")
+                Button(copyResolver.resolve(.contractOfferConfirmCancel), role: .cancel) { }
             }
             .confirmationDialog(
                 copyResolver.resolve(.contractOfferConfirmTitle),
@@ -186,7 +225,7 @@ struct ProContractOfferView: View {
                 .accessibilityIdentifier("\(prefix).role")
                 contractValue(
                     title: copyResolver.resolve(.contractOfferGuaranteedSalary),
-                    value: GameFormatters.krw(totalGuaranteedSalary(for: offer), language: copyResolver.language),
+                    value: GameFormatters.krw(CareerDisplayRules.totalGuaranteedSalary(for: offer), language: copyResolver.language),
                     identifier: "\(prefix).guarantee"
                 )
                 if let signingBonus = offer.signingBonus {
@@ -195,6 +234,18 @@ struct ProContractOfferView: View {
                         value: GameFormatters.krw(signingBonus, language: copyResolver.language),
                         identifier: "\(prefix).signingBonus"
                     )
+                }
+                if let interest = offer.interest {
+                    Text(verbatim: ProContractCopy.interestLevel(interest.level, resolver: copyResolver))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.information)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("pro.contractOffer.interest.\(interest.level.rawValue)")
+                    Text(verbatim: ProContractCopy.interestReason(interest, resolver: copyResolver))
+                        .font(.footnote)
+                        .foregroundStyle(BaseballTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("\(prefix).interest.reason")
                 }
                 Text(verbatim: ProContractCopy.expectation(
                     kindName: expectationName(offer.expectation.kind),
@@ -351,10 +402,6 @@ struct ProContractOfferView: View {
             isTransfer: offer.teamID != state.team.id,
             resolver: copyResolver
         )
-    }
-
-    private func totalGuaranteedSalary(for offer: ProContractOffer) -> Int {
-        Int(clamping: Int64(offer.annualSalary) * Int64(offer.years))
     }
 
     private func ambitionName(_ ambition: ProCareerAmbition) -> String {

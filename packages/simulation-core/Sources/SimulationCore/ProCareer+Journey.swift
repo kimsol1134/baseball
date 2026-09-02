@@ -865,6 +865,8 @@ extension ProCareerEngine {
             for: state.pitcher,
             effectiveAge: state.age + (state.journeyState?.offseasonTransition?.ageAdvanceYears ?? 0)
         )
+        let usesDepth = Self.usesContractDepthRules(state)
+        let lastTeamLegacy = ProContractMarketRules.lastTeamLegacy(for: state)
         switch market.kind {
         case .rookie:
             _ = try rookieOffer(in: market, state: state)
@@ -877,20 +879,52 @@ extension ProCareerEngine {
                       currentRole: state.role,
                       maximumCareerSeasons: Self.maximumCareerSeasons,
                       marketScore: ProContractMarketRules.marketScore(state: state),
-                      pitcher: projectedPitcher
+                      pitcher: projectedPitcher,
+                      usesContractDepth: usesDepth,
+                      lastTeamLegacy: lastTeamLegacy
                   ) else {
                 throw SimulationError.invalidProCareer("invalid_offer")
             }
         case .freeAgency:
-            guard let expected = ProContractMarketRules.freeAgencyMarket(state: state),
-                  expected == market,
+            let generationState: ProCareerSnapshot
+            if let counter = market.counterOffer, !counter.accepted,
+               let journey = state.journeyState {
+                let restoredFan = min(100, journey.reputation.fanSupport + 1)
+                generationState = replacing(
+                    state,
+                    journeyState: .some(replacingJourney(
+                        journey,
+                        pendingContractMarket: .some(nil),
+                        reputation: ProReputationState(
+                            fanSupport: restoredFan,
+                            lastMerchandiseTier: journey.reputation.lastMerchandiseTier,
+                            endorsementSeasons: journey.reputation.endorsementSeasons
+                        )
+                    ))
+                )
+            } else {
+                generationState = state
+            }
+            guard var expected = ProContractMarketRules.freeAgencyMarket(state: generationState) else {
+                throw SimulationError.invalidProCareer("invalid_offer")
+            }
+            if let counter = market.counterOffer {
+                expected = ProContractMarketRules.applyingStayCounter(
+                    counter,
+                    to: expected,
+                    generatedAtRevision: state.revision
+                )
+            }
+            guard expected == market,
                   ProContractMarketRules.isValid(
                       market: market,
                       currentTeamID: state.team.id,
                       currentRole: state.role,
                       maximumCareerSeasons: Self.maximumCareerSeasons,
-                      marketScore: ProContractMarketRules.marketScore(state: state),
-                      pitcher: projectedPitcher
+                      marketScore: ProContractMarketRules.marketScore(state: generationState),
+                      pitcher: projectedPitcher,
+                      usesContractDepth: usesDepth,
+                      lastTeamLegacy: lastTeamLegacy
                   ) else {
                 throw SimulationError.invalidProCareer("invalid_offer")
             }
@@ -923,7 +957,7 @@ extension ProCareerEngine {
             let validBenefit = switch benefit.kind {
             case .developmentHeadStart:
                 benefit.focus != nil && benefit.remainingCharges == 1
-            case .injuryMitigation:
+            case .injuryMitigation, .equipmentEdge, .trainingEfficiency:
                 benefit.focus == nil && benefit.remainingCharges == 1
             case .climateStabilization:
                 benefit.focus == nil && (1...2).contains(benefit.remainingCharges)
@@ -1125,13 +1159,13 @@ extension ProCareerEngine {
                 throw SimulationError.invalidProCareer("finance funds exceed earnings")
             }
         }
-        let rookieRecords = journey.contractHistory.filter { $0.kind == .rookie }
         for transaction in journey.finances.transactions where transaction.kind == .signingBonus {
-            guard let record = rookieRecords.first(where: {
+            guard let record = journey.contractHistory.first(where: {
                 transaction.id == "signing:\(state.proCareerID):\($0.contractID)"
             }),
             transaction.season == record.signedSeason,
-            transaction.amount == Int64(record.signingBonus ?? 0) else {
+            transaction.amount == Int64(record.signingBonus ?? 0),
+            (record.kind == .rookie || (Self.usesContractDepthRules(state) && record.kind == .freeAgent) || (Self.usesContractDepthRules(state) && record.kind == .longTerm)) else {
                 throw SimulationError.invalidProCareer("rookie contract finance is inconsistent")
             }
         }
@@ -1181,7 +1215,7 @@ extension ProCareerEngine {
             guard !record.contractID.isEmpty,
                   !record.teamID.isEmpty,
                   record.signedSeason >= 1,
-                  (1...4).contains(record.totalYears),
+                  (1...Self.maximumContractYears(for: state)).contains(record.totalYears),
                   record.annualSalary > 0,
                   record.coveredSeasons == Array(Set(record.coveredSeasons)).sorted(),
                   record.coveredSeasons.count <= record.totalYears,
@@ -1340,7 +1374,7 @@ extension ProCareerEngine {
                         && contract.kind == nil
                         && contract.expectation == nil)),
                   journey.contractHistory.contains(where: { $0.contractID == contractID }),
-                  (contract.kind == .rookie ? totalYears == 3 : (1...4).contains(totalYears))
+                  (contract.kind == .rookie ? totalYears == 3 : (1...Self.maximumContractYears(for: state)).contains(totalYears))
                     || journey.migration.source == .legacySafeBoundary,
                   signedSeason >= 1 else {
                 throw SimulationError.invalidProCareer("active journey phase requires a full contract")
@@ -1352,7 +1386,7 @@ extension ProCareerEngine {
         if let contract = state.contract {
             guard contract.yearsRemaining >= 0,
                   contract.annualSalary > 0,
-                  contract.totalYears.map({ (1...4).contains($0) }) ?? true,
+                  contract.totalYears.map({ (1...Self.maximumContractYears(for: state)).contains($0) }) ?? true,
                   contract.teamID.map({ $0 == state.team.id }) ?? true else {
                 throw SimulationError.invalidProCareer("invalid journey contract snapshot")
             }
@@ -1370,7 +1404,7 @@ extension ProCareerEngine {
                 let covered = record.coveredSeasons
                 guard covered == Array(Set(covered)).sorted(),
                       record.signedSeason >= 1,
-                      (1...4).contains(record.totalYears),
+                      (1...Self.maximumContractYears(for: state)).contains(record.totalYears),
                       record.annualSalary > 0,
                       covered.allSatisfy({ $0 >= record.signedSeason }),
                       covered.count <= record.totalYears,
@@ -1465,7 +1499,7 @@ extension ProCareerEngine {
                   (0...100).contains(settlement.hallOfFameBefore),
                   (0...100).contains(settlement.hallOfFameAfter),
                   settlement.contractYearsBefore >= 1,
-                  settlement.contractYearsBefore <= 4,
+                  settlement.contractYearsBefore <= Self.maximumContractYears(for: state),
                   settlement.contractYearsAfter >= 0,
                   settlement.contractYearsAfter <= settlement.contractYearsBefore,
                   state.careerStats.contains(where: { $0.season == state.season && $0.teamID == settlement.teamID }) else {
@@ -1698,6 +1732,10 @@ extension ProCareerEngine {
         if params.investment != .pitchLab, params.focus != nil {
             throw SimulationError.invalidProCareer("invalid_transition")
         }
+        if (params.investment == .equipment || params.investment == .personalTrainer),
+           !Self.usesContractDepthRules(params.state) {
+            throw SimulationError.invalidProCareer("invalid_transition")
+        }
 
         let nextSeason = transition.nextSeason
         let nextAge = params.state.age + transition.ageAdvanceYears
@@ -1745,16 +1783,18 @@ extension ProCareerEngine {
                 throw SimulationError.invalidProCareer("investment_focus_required")
             }
             developmentProgress = seededDevelopmentProgress(developmentProgress, focus: focus)
-        case .recoveryTeam, .fanFoundation, .none:
+        case .recoveryTeam, .fanFoundation, .equipment, .personalTrainer, .none:
             break
         }
         let activeBenefit: ProSeasonBenefit?
         switch params.investment {
         case .recoveryTeam:
             activeBenefit = ProSeasonBenefit(kind: .injuryMitigation, focus: nil, remainingCharges: 1)
-        case .pitchLab:
-            activeBenefit = nil
-        case .fanFoundation, .none:
+        case .equipment:
+            activeBenefit = ProSeasonBenefit(kind: .equipmentEdge, focus: nil, remainingCharges: 1)
+        case .personalTrainer:
+            activeBenefit = ProSeasonBenefit(kind: .trainingEfficiency, focus: nil, remainingCharges: 1)
+        case .pitchLab, .fanFoundation, .none:
             activeBenefit = nil
         }
 

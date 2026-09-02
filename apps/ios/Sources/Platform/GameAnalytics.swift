@@ -183,6 +183,8 @@ enum GameAnalytics {
         case proEndorsementSelected = "pro_endorsement_selected"
         /// 신인 계약 제안을 저장 성공으로 확정한 시점.
         case proContractSigned = "pro_contract_signed"
+        /// FA 잔류 오퍼에 대한 요구하기가 저장 성공으로 확정된 시점.
+        case proContractCounterRequested = "pro_contract_counter_requested"
         /// 프로 은퇴 기록·야구혼·대표 유산 후보가 고교 저장에 원자적으로 접힌 시점.
         case proLegacyRecorded = "pro_legacy_recorded"
         /// 결산·기록·다음 회차에서 전 선수가 남긴 말을 실제로 본 시점.

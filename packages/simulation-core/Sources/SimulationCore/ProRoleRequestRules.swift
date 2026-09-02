@@ -23,7 +23,7 @@ public enum ProRoleRequestRules {
 
     public static func hasBindingOffseasonRolePromise(_ state: ProCareerSnapshot) -> Bool {
         switch state.contract?.kind {
-        case .renewalLong, .proveIt, .freeAgent: true
+        case .renewalLong, .proveIt, .freeAgent, .longTerm: true
         case .rookie, nil: false
         }
     }

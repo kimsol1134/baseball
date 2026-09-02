@@ -332,7 +332,11 @@ private func investment(
     seed: Int
 ) -> (ProOffseasonInvestment, ProDevelopmentFocus?) {
     let funds = state.journeyState?.finances.availableFunds ?? 0
-    let affordable: [ProOffseasonInvestment] = [.fanFoundation, .recoveryTeam, .pitchLab].filter {
+    var candidates: [ProOffseasonInvestment] = [.fanFoundation, .recoveryTeam, .pitchLab]
+    if ProCareerEngine.usesContractDepthRules(state) {
+        candidates.append(contentsOf: [.equipment, .personalTrainer])
+    }
+    let affordable: [ProOffseasonInvestment] = candidates.filter {
         funds >= ProFinanceRules.investmentCost(for: $0)
     }
     guard !affordable.isEmpty else { return (.none, nil) }
@@ -617,10 +621,15 @@ private func runCareer(seed: Int, policy: DistributionPolicy, seasons: Int) -> C
             result = try engine.chooseOffseason(.init(seed: result.nextSeed, state: result.snapshot, decision: decision, expectedRevision: result.snapshot.revision))
             if let market = result.snapshot.journeyState?.pendingContractMarket {
                 if market.kind == .renewal { metrics.renewalMarkets += 1; if market.offers.count != 2 { metrics.renewalOfferCountMismatch += 1 } }
-                if market.kind == .freeAgency { metrics.freeAgencyMarkets += 1; if market.offers.count != 3 { metrics.freeAgencyOfferCountMismatch += 1 } }
-                let expectedCount = market.kind == .renewal ? 2 : 3
+                let expectedFreeAgencyCount = ProCareerEngine.usesContractDepthRules(result.snapshot) ? 4 : 3
+                if market.kind == .freeAgency { metrics.freeAgencyMarkets += 1; if market.offers.count != expectedFreeAgencyCount { metrics.freeAgencyOfferCountMismatch += 1 } }
+                let expectedCount = market.kind == .renewal ? 2 : expectedFreeAgencyCount
                 if market.offers.count != expectedCount { metrics.marketOfferCountMismatch += 1 }
-                if !ProContractMarketRules.isNonDominated(market.offers, currentRole: result.snapshot.role) { metrics.dominatedMarkets += 1 }
+                if !ProContractMarketRules.isNonDominated(
+                    market.offers,
+                    currentRole: result.snapshot.role,
+                    usesContractDepth: ProCareerEngine.usesContractDepthRules(result.snapshot)
+                ) { metrics.dominatedMarkets += 1 }
                 let selected = selectedOffer(from: market, state: result.snapshot, policy: policy, seed: seed + result.snapshot.season)
                 let chosenAmbition = selectedAmbition(for: result.snapshot, market: market, seed: seed + result.snapshot.season)
                 recordOffer(selected, state: result.snapshot, policy: policy, metrics: &metrics, sequence: &selectionSequence)

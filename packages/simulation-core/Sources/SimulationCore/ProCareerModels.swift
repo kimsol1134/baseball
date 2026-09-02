@@ -902,6 +902,20 @@ public struct AcceptProContractParams: Codable, Equatable, Sendable {
     }
 }
 
+public struct RequestProContractCounterParams: Codable, Equatable, Sendable {
+    public let seed: String
+    public let state: ProCareerSnapshot
+    public let expectedRevision: UInt64
+    public let kind: ProContractCounterKind
+
+    public init(seed: String, state: ProCareerSnapshot, expectedRevision: UInt64, kind: ProContractCounterKind) {
+        self.seed = seed
+        self.state = state
+        self.expectedRevision = expectedRevision
+        self.kind = kind
+    }
+}
+
 public struct AcknowledgeProSettlementParams: Codable, Equatable, Sendable {
     public let seed: String
     public let state: ProCareerSnapshot

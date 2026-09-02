@@ -171,10 +171,12 @@ public struct ProCareerEngine: Sendable {
                 throw SimulationError.invalidProCareer("invalid_offer")
             }
         } else {
+            let maxYears = Self.usesContractDepthRules(params.state) ? 5 : 4
+            let signingBonusAllowed = Self.usesContractDepthRules(params.state) && market.kind == .freeAgency
             guard params.state.contract?.yearsRemaining == 0,
-                  offer.signingBonus == nil,
-                  (1...4).contains(offer.years),
-                  journey.offseasonTransition?.route != .underContract else {
+                  (1...maxYears).contains(offer.years),
+                  journey.offseasonTransition?.route != .underContract,
+                  signingBonusAllowed ? (offer.signingBonus ?? 0) > 0 : offer.signingBonus == nil else {
                 throw SimulationError.invalidProCareer("invalid_offer")
             }
         }
@@ -305,7 +307,9 @@ public struct ProCareerEngine: Sendable {
 
         let bonus: Int64
         let finances: ProFinanceState
-        if isRookie {
+        let creditSigningBonus = isRookie
+            || (Self.usesContractDepthRules(params.state) && market.kind == .freeAgency)
+        if creditSigningBonus {
             guard let signingBonus = offer.signingBonus,
                   signingBonus > 0 else {
                 throw SimulationError.invalidProCareer("invalid_offer")
@@ -316,6 +320,9 @@ public struct ProCareerEngine: Sendable {
                 throw SimulationError.invalidProCareer("finance_overflow")
             }
             let transactionID = "signing:\(params.state.proCareerID):\(contractID)"
+            guard !journey.finances.transactions.contains(where: { $0.id == transactionID }) else {
+                throw SimulationError.invalidProCareer("invalid_offer")
+            }
             let transaction = ProFinanceTransaction(id: transactionID, season: market.forSeason, kind: .signingBonus, amount: bonus)
             finances = ProFinanceState(
                 careerEarnings: journey.finances.careerEarnings + bonus,
@@ -378,6 +385,66 @@ public struct ProCareerEngine: Sendable {
         let canonical = signed(nextState)
         try validateState(canonical)
         return ProCareerResult(snapshot: canonical, nextSeed: params.seed, events: ["pro_contract_signed"])
+    }
+
+    public func requestContractCounter(_ params: RequestProContractCounterParams) throws -> ProCareerResult {
+        guard Self.usesContractDepthRules(params.state) else {
+            throw SimulationError.invalidProCareer("invalid_transition")
+        }
+        guard params.expectedRevision == params.state.revision else {
+            throw SimulationError.invalidProCareer("stale_revision")
+        }
+        guard params.state.phase == .contractOffer else {
+            throw SimulationError.invalidProCareer("invalid_transition")
+        }
+        try validate(params.state, phase: .contractOffer)
+        guard let journey = params.state.journeyState,
+              let market = journey.pendingContractMarket,
+              market.kind == .freeAgency,
+              market.counterOffer == nil,
+              let stay = market.offers.first(where: { $0.preservesTeamLegacy && $0.teamID == params.state.team.id }) else {
+            throw SimulationError.invalidProCareer("invalid_offer")
+        }
+        try validateStoredJourneyMarket(market, state: params.state)
+        let remainingSeasons = Self.maximumCareerSeasons - market.forSeason + 1
+        if params.kind == .extraYear {
+            guard stay.years < 5, stay.years < remainingSeasons else {
+                throw SimulationError.invalidProCareer("invalid_offer")
+            }
+        }
+        let accepted = ProContractMarketRules.evaluateStayCounter(
+            fanSupport: journey.reputation.fanSupport,
+            marketScore: ProContractMarketRules.marketScore(state: params.state)
+        )
+        let counter = ProContractCounterState(kind: params.kind, accepted: accepted, applied: accepted)
+        let updatedMarket = ProContractMarketRules.applyingStayCounter(
+            counter,
+            to: market,
+            generatedAtRevision: params.state.revision + 1
+        )
+        let fanSupport: Int
+        if accepted {
+            fanSupport = journey.reputation.fanSupport
+        } else {
+            fanSupport = max(0, journey.reputation.fanSupport - 1)
+        }
+        let nextJourney = replacingJourney(
+            journey,
+            pendingContractMarket: .some(updatedMarket),
+            reputation: ProReputationState(
+                fanSupport: fanSupport,
+                lastMerchandiseTier: journey.reputation.lastMerchandiseTier,
+                endorsementSeasons: journey.reputation.endorsementSeasons
+            )
+        )
+        let nextState = replacing(
+            params.state,
+            revision: params.state.revision + 1,
+            journeyState: .some(nextJourney)
+        )
+        let canonical = signed(nextState)
+        try validateState(canonical)
+        return ProCareerResult(snapshot: canonical, nextSeed: params.seed, events: ["pro_contract_counter_requested"])
     }
 
     public func acknowledgeSettlement(_ params: AcknowledgeProSettlementParams) throws -> ProCareerResult {
@@ -578,6 +645,9 @@ public struct ProCareerEngine: Sendable {
         if let injuryFloor = activeModifiers.compactMap(\.injuryPressureFloor).max() {
             fatiguePressure = max(fatiguePressure, injuryFloor)
         }
+        if state.journeyState?.activeSeasonBenefit?.kind == .equipmentEdge {
+            fatiguePressure = max(0, fatiguePressure - 6)
+        }
         // A low-fatigue week is safe.  The old `max(2, …)` made every healthy pitcher roll a
         // hidden injury event, so the result could not be connected to a choice.  A week without
         // an outing cannot be an overload event either; recovery is allowed to be a reliable
@@ -645,6 +715,8 @@ public struct ProCareerEngine: Sendable {
         // 역할 면담은 '남은 시즌'에 대한 약속이다. 다음 주 신뢰도 밴드가 곧바로 덮어쓰면
         // 선택이 가짜가 되므로, 오프시즌 전까지는 명시한 보직을 우선한다.
         let role = state.rolePreference ?? trustAssignedRole
+        let modifierEfficiency = activeModifiers.compactMap(\.trainingEfficiencyPermille).min() ?? 1_000
+        let trainerBoost = state.journeyState?.activeSeasonBenefit?.kind == .trainingEfficiency ? 1_100 : 1_000
         let development = try resolveDevelopment(
             pitcher: state.pitcher,
             progress: state.developmentProgress ?? .init(),
@@ -653,7 +725,7 @@ public struct ProCareerEngine: Sendable {
             targetPitch: params.targetPitch,
             paused: recovering || state.journeyState?.recoveryYearPending == true,
             proRulesVersion: state.proRulesVersion,
-            trainingEfficiencyPermille: activeModifiers.compactMap(\.trainingEfficiencyPermille).min() ?? 1_000
+            trainingEfficiencyPermille: modifierEfficiency * trainerBoost / 1_000
         )
         let pitcher = development.pitcher
         let callUpGame = state.level != level && level == .major
@@ -1956,6 +2028,10 @@ public struct ProCareerEngine: Sendable {
 
     public static func usesNationalTeamRules(_ state: ProCareerSnapshot) -> Bool {
         (state.proRulesVersion ?? 1) >= nationalTeamRulesVersion
+    }
+
+    public static func maximumContractYears(for state: ProCareerSnapshot) -> Int {
+        usesContractDepthRules(state) ? 5 : 4
     }
 
     public static func decisionWeeks(for state: ProCareerSnapshot) -> [Int] {
@@ -3556,10 +3632,13 @@ public struct ProCareerEngine: Sendable {
             case .stamina: value.stamina
             }
             let needed = usesLiveTicks ? Self.developmentTicksRequired(for: currentRating) : 2
-            let efficiency = min(1_000, max(1, trainingEfficiencyPermille))
-            let scaledNeeded = efficiency >= 1_000
-                ? needed
-                : max(needed, (needed * 1_000 + efficiency - 1) / efficiency)
+            let efficiency = max(1, trainingEfficiencyPermille)
+            let scaledNeeded: Int
+            if efficiency >= 1_000 {
+                scaledNeeded = max(1, needed * 1_000 / efficiency)
+            } else {
+                scaledNeeded = max(needed, (needed * 1_000 + efficiency - 1) / efficiency)
+            }
             current += 1
             if current >= scaledNeeded {
                 current = 0

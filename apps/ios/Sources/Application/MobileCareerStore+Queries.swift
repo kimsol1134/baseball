@@ -245,6 +245,10 @@ extension MobileCareerStore {
         CareerDisplayRules.investmentCost(for: investment)
     }
 
+    nonisolated static func totalGuaranteedSalary(for offer: ProContractOffer) -> Int {
+        CareerDisplayRules.totalGuaranteedSalary(for: offer)
+    }
+
     nonisolated static func masteryBonusPermille(level: Int) -> Int {
         CareerDisplayRules.masteryBonusPermille(level: level)
     }

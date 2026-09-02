@@ -183,12 +183,16 @@ final class ProContractMarketRulesTests: XCTestCase {
         let opened = try engine.chooseOffseason(.init(seed: expired.nextSeed, state: eligible, decision: .freeAgency, expectedRevision: eligible.revision))
         let market = try XCTUnwrap(opened.snapshot.journeyState?.pendingContractMarket)
         XCTAssertEqual(market.kind, .freeAgency)
-        XCTAssertEqual(market.offers.count, 3)
-        XCTAssertEqual(Set(market.offers.map(\.teamID)).count, 3)
+        XCTAssertEqual(market.offers.count, 4)
+        XCTAssertEqual(Set(market.offers.map(\.teamID)).count, 4)
         XCTAssertTrue(market.offers.contains { $0.teamID == eligible.team.id && $0.preservesTeamLegacy })
-        XCTAssertEqual(market.offers.filter { $0.teamID != eligible.team.id }.count, 2)
-        XCTAssertTrue(ProContractMarketRules.isNonDominated(market.offers, currentRole: eligible.role))
-        XCTAssertTrue(market.offers.allSatisfy { $0.annualSalary % 10_000_000 == 0 && $0.years <= 4 })
+        XCTAssertEqual(market.offers.filter { $0.teamID != eligible.team.id }.count, 3)
+        XCTAssertTrue(ProContractMarketRules.isNonDominated(
+            market.offers,
+            currentRole: eligible.role,
+            usesContractDepth: true
+        ))
+        XCTAssertTrue(market.offers.allSatisfy { $0.annualSalary % 10_000_000 == 0 && $0.years <= 5 })
         XCTAssertEqual(opened.nextSeed, expired.nextSeed)
     }
 
@@ -592,7 +596,13 @@ final class ProContractMarketRulesTests: XCTestCase {
     }
 
     private func startParams(seed: String) -> StartProCareerParams {
-        .init(seed: seed, identity: .defaultPitcher, pitcher: .init(id: "wave3-pitcher", name: "Wave 3", stuff: 58, command: 55, movement: 56, stamina: 57), draftResult: .init(outcome: .drafted, evaluationScore: 72, projectedRange: "2~3라운드", team: ProCareerEngine.proTeams[0], round: 2, overallPick: 18, signingBonus: 120_000_000, firstSeasonGoal: "2군 선발", summary: "지명"), entitlement: .init(status: .active, source: .development, verifiedAt: "2026-08-15"))
+        .init(
+            seed: seed,
+            identity: .defaultPitcher,
+            pitcher: .init(id: "wave3-pitcher", name: "Wave 3", stuff: 58, command: 55, movement: 56, stamina: 57),
+            draftResult: .init(outcome: .drafted, evaluationScore: 72, projectedRange: "2~3라운드", team: ProCareerEngine.proTeams[0], round: 2, overallPick: 18, signingBonus: 120_000_000, firstSeasonGoal: "2군 선발", summary: "지명"),
+            entitlement: .init(status: .active, source: .development, verifiedAt: "2026-08-15")
+        )
     }
 
     private func acceptRookie(_ started: ProCareerResult, ambition: ProCareerAmbition) throws -> ProCareerResult {

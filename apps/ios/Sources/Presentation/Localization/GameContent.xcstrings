@@ -45298,6 +45298,226 @@
           }
         }
       }
+    },
+    "content.contract.interest.hot.demand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This club needs pitching and is pressing hard."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この球団は今投手需要が大きく、強く接触しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 구단은 지금 투수 수요가 커서 강하게 접촉합니다."
+          }
+        }
+      }
+    },
+    "content.contract.interest.hot.contention": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A contender, so the pursuit is hot."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "優勝を狙う球団なので獲得の温度が高いです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "우승을 노리는 구단이라 영입 온도가 높습니다."
+          }
+        }
+      }
+    },
+    "content.contract.interest.warm.loyalty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared seasons keep the stay talks steady."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一緒に過ごしたシーズンがあり、残留の接触は安定しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "함께 한 시즌이 있어 잔류 접촉은 꾸준합니다."
+          }
+        }
+      }
+    },
+    "content.contract.interest.warm.demand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They could use the help, but it is not their top chase."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "戦力にはなりますが、最優先ではありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전력에 보탤 여지는 있지만 최우선은 아닙니다."
+          }
+        }
+      }
+    },
+    "content.contract.interest.cool.opportunity": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A rebuilding club, so the outreach is light."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再建中の球団なので接触は軽めです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "재건 중인 구단이라 접촉은 가벼운 편입니다."
+          }
+        }
+      }
+    },
+    "content.contract.interest.cool.depth": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their pitching depth is already thick, so interest is low."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すでに投手陣が厚く、関心は低めです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이미 투수진이 두터워 관심은 낮습니다."
+          }
+        }
+      }
+    },
+    "content.glossary.signing-bonus.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing bonus"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "契約金"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계약금"
+          }
+        }
+      }
+    },
+    "content.glossary.signing-bonus.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Money paid up front when you sign, separate from annual salary."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "契約を結ぶときに先に受け取るお金です。年俸とは別に口座に入ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계약을 맺을 때 먼저 받는 돈입니다. 연봉과 별도로 통장에 들어옵니다."
+          }
+        }
+      }
+    },
+    "content.glossary.club-interest.name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Club interest"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球団の関心"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구단 관심"
+          }
+        }
+      }
+    },
+    "content.glossary.club-interest.definition": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How badly the club wants you right now, shown as high, moderate, or low."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今この選手をどれだけ欲しいかです。高い・普通・低いで示されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금 이 선수를 얼마나 원하는지입니다. 높음·보통·낮음으로 표시됩니다."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

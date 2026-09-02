@@ -409,6 +409,8 @@ public enum ProOffseasonInvestment: String, Codable, Sendable {
     case pitchLab = "pitch_lab"
     case recoveryTeam = "recovery_team"
     case fanFoundation = "fan_foundation"
+    case equipment
+    case personalTrainer = "personal_trainer"
     case none
 }
 
@@ -423,6 +425,8 @@ public enum ProSeasonBenefitKind: String, Codable, Sendable {
     case developmentHeadStart = "development_head_start"
     case injuryMitigation = "injury_mitigation"
     case climateStabilization = "climate_stabilization"
+    case equipmentEdge = "equipment_edge"
+    case trainingEfficiency = "training_efficiency"
 }
 
 public struct ProSeasonBenefit: Codable, Equatable, Sendable {
@@ -608,12 +612,46 @@ public enum ProContractKind: String, Codable, Sendable {
     case renewalLong = "renewal_long"
     case proveIt = "prove_it"
     case freeAgent = "free_agent"
+    case longTerm = "long_term"
 }
 
 public enum ProTeamOutlook: String, Codable, Sendable {
     case opportunity
     case balanced
     case contender
+}
+
+public enum ProClubInterest: String, Codable, Sendable {
+    case hot
+    case warm
+    case cool
+}
+
+public struct ProClubInterestSignal: Codable, Equatable, Sendable {
+    public let level: ProClubInterest
+    public let reason: String
+
+    public init(level: ProClubInterest, reason: String) {
+        self.level = level
+        self.reason = reason
+    }
+}
+
+public enum ProContractCounterKind: String, Codable, Sendable {
+    case extraYear = "extra_year"
+    case raiseSalary = "raise_salary"
+}
+
+public struct ProContractCounterState: Codable, Equatable, Sendable {
+    public let kind: ProContractCounterKind
+    public let accepted: Bool
+    public let applied: Bool
+
+    public init(kind: ProContractCounterKind, accepted: Bool, applied: Bool) {
+        self.kind = kind
+        self.accepted = accepted
+        self.applied = applied
+    }
 }
 
 public struct ProContractExpectation: Codable, Equatable, Sendable {
@@ -653,6 +691,8 @@ public struct ProContractOffer: Codable, Equatable, Identifiable, Sendable {
     public let outlook: ProTeamOutlook
     public let expectation: ProContractExpectation
     public let preservesTeamLegacy: Bool
+    /// v10 FA contact signal. Missing on v9 and earlier markets.
+    public let interest: ProClubInterestSignal?
 
     public init(
         id: String,
@@ -664,7 +704,8 @@ public struct ProContractOffer: Codable, Equatable, Identifiable, Sendable {
         rolePromise: ProRole,
         outlook: ProTeamOutlook,
         expectation: ProContractExpectation,
-        preservesTeamLegacy: Bool
+        preservesTeamLegacy: Bool,
+        interest: ProClubInterestSignal? = nil
     ) {
         self.id = id
         self.teamID = teamID
@@ -676,6 +717,43 @@ public struct ProContractOffer: Codable, Equatable, Identifiable, Sendable {
         self.outlook = outlook
         self.expectation = expectation
         self.preservesTeamLegacy = preservesTeamLegacy
+        self.interest = interest
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, teamID, years, annualSalary, signingBonus, contractKind, rolePromise, outlook, expectation, preservesTeamLegacy, interest
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try container.decode(String.self, forKey: .id),
+            teamID: try container.decode(String.self, forKey: .teamID),
+            years: try container.decode(Int.self, forKey: .years),
+            annualSalary: try container.decode(Int.self, forKey: .annualSalary),
+            signingBonus: try container.decodeIfPresent(Int.self, forKey: .signingBonus),
+            contractKind: try container.decode(ProContractKind.self, forKey: .contractKind),
+            rolePromise: try container.decode(ProRole.self, forKey: .rolePromise),
+            outlook: try container.decode(ProTeamOutlook.self, forKey: .outlook),
+            expectation: try container.decode(ProContractExpectation.self, forKey: .expectation),
+            preservesTeamLegacy: try container.decode(Bool.self, forKey: .preservesTeamLegacy),
+            interest: try container.decodeIfPresent(ProClubInterestSignal.self, forKey: .interest)
+        )
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(teamID, forKey: .teamID)
+        try container.encode(years, forKey: .years)
+        try container.encode(annualSalary, forKey: .annualSalary)
+        try container.encode(signingBonus, forKey: .signingBonus)
+        try container.encode(contractKind, forKey: .contractKind)
+        try container.encode(rolePromise, forKey: .rolePromise)
+        try container.encode(outlook, forKey: .outlook)
+        try container.encode(expectation, forKey: .expectation)
+        try container.encode(preservesTeamLegacy, forKey: .preservesTeamLegacy)
+        try container.encodeIfPresent(interest, forKey: .interest)
     }
 }
 
@@ -690,6 +768,8 @@ public struct ProContractMarket: Codable, Equatable, Sendable {
     /// screen to explain the player's round/pick after a reload.
     public let draftRound: Int?
     public let overallPick: Int?
+    /// v10 stay negotiation. Missing on v9 and earlier markets.
+    public let counterOffer: ProContractCounterState?
 
     public init(
         id: String,
@@ -698,7 +778,8 @@ public struct ProContractMarket: Codable, Equatable, Sendable {
         generatedAtRevision: UInt64,
         offers: [ProContractOffer],
         draftRound: Int? = nil,
-        overallPick: Int? = nil
+        overallPick: Int? = nil,
+        counterOffer: ProContractCounterState? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -707,6 +788,37 @@ public struct ProContractMarket: Codable, Equatable, Sendable {
         self.offers = offers
         self.draftRound = draftRound
         self.overallPick = overallPick
+        self.counterOffer = counterOffer
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, kind, forSeason, generatedAtRevision, offers, draftRound, overallPick, counterOffer
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try container.decode(String.self, forKey: .id),
+            kind: try container.decode(ProContractMarketKind.self, forKey: .kind),
+            forSeason: try container.decode(Int.self, forKey: .forSeason),
+            generatedAtRevision: try container.decode(UInt64.self, forKey: .generatedAtRevision),
+            offers: try container.decode([ProContractOffer].self, forKey: .offers),
+            draftRound: try container.decodeIfPresent(Int.self, forKey: .draftRound),
+            overallPick: try container.decodeIfPresent(Int.self, forKey: .overallPick),
+            counterOffer: try container.decodeIfPresent(ProContractCounterState.self, forKey: .counterOffer)
+        )
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(kind, forKey: .kind)
+        try container.encode(forSeason, forKey: .forSeason)
+        try container.encode(generatedAtRevision, forKey: .generatedAtRevision)
+        try container.encode(offers, forKey: .offers)
+        try container.encodeIfPresent(draftRound, forKey: .draftRound)
+        try container.encodeIfPresent(overallPick, forKey: .overallPick)
+        try container.encodeIfPresent(counterOffer, forKey: .counterOffer)
     }
 }
 
@@ -1486,9 +1598,16 @@ public enum ProCareerJourneyRules {
         })
         if let market = journey.pendingContractMarket {
             values.append("market:\(market.id):\(market.kind.rawValue):\(market.forSeason):\(market.generatedAtRevision):round:\(market.draftRound.map(String.init) ?? "none"):pick:\(market.overallPick.map(String.init) ?? "none")")
-            values.append(contentsOf: market.offers.sorted { $0.id < $1.id }.map {
-                "offer:\($0.id):\($0.teamID):\($0.years):\($0.annualSalary):\($0.signingBonus.map(String.init) ?? "none"):\($0.contractKind.rawValue):\($0.rolePromise.rawValue):\($0.outlook.rawValue):\($0.expectation.kind.rawValue):\($0.expectation.target):\($0.expectation.difficulty.rawValue):\($0.preservesTeamLegacy ? 1 : 0)"
+            values.append(contentsOf: market.offers.sorted { $0.id < $1.id }.map { offer in
+                var token = "offer:\(offer.id):\(offer.teamID):\(offer.years):\(offer.annualSalary):\(offer.signingBonus.map(String.init) ?? "none"):\(offer.contractKind.rawValue):\(offer.rolePromise.rawValue):\(offer.outlook.rawValue):\(offer.expectation.kind.rawValue):\(offer.expectation.target):\(offer.expectation.difficulty.rawValue):\(offer.preservesTeamLegacy ? 1 : 0)"
+                if let interest = offer.interest {
+                    token += ":interest:\(interest.level.rawValue):\(interest.reason)"
+                }
+                return token
             })
+            if let counter = market.counterOffer {
+                values.append("counter:\(counter.kind.rawValue):\(counter.accepted ? 1 : 0):\(counter.applied ? 1 : 0)")
+            }
         } else {
             values.append("market:none")
         }
@@ -1549,6 +1668,8 @@ public enum ProFinanceRules {
         case .pitchLab: 50_000_000
         case .recoveryTeam: 40_000_000
         case .fanFoundation: 20_000_000
+        case .equipment: 30_000_000
+        case .personalTrainer: 40_000_000
         case .none: 0
         }
     }

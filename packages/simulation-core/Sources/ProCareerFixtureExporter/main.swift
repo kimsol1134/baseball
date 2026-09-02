@@ -186,6 +186,8 @@ private func writeWave3MarketFixture(to path: String) throws {
         let market: ProContractMarket?
         switch item.kind {
         case .renewal:
+            // Wave3 oracle is the v9-and-earlier market. Pin the legacy path so v10
+            // contract-depth offers cannot change this fixture's bytes.
             market = ProContractMarketRules.makeRenewalMarket(
                 careerID: "fixture-wave3-\(item.seed)",
                 team: team,
@@ -196,7 +198,8 @@ private func writeWave3MarketFixture(to path: String) throws {
                 marketScore: item.score,
                 forSeason: item.season,
                 generatedAtRevision: item.revision,
-                maximumCareerSeasons: maximumCareerSeasons
+                maximumCareerSeasons: maximumCareerSeasons,
+                usesContractDepth: false
             )
         case .freeAgency:
             market = ProContractMarketRules.makeFreeAgencyMarket(
@@ -210,7 +213,8 @@ private func writeWave3MarketFixture(to path: String) throws {
                 fanSupport: min(100, 20 + item.score / 2),
                 forSeason: item.season,
                 generatedAtRevision: item.revision,
-                maximumCareerSeasons: maximumCareerSeasons
+                maximumCareerSeasons: maximumCareerSeasons,
+                usesContractDepth: false
             )
         case .rookie:
             market = nil

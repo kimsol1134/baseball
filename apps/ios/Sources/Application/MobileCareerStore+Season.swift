@@ -198,8 +198,33 @@ extension MobileCareerStore {
             "role": offer?.rolePromise.rawValue ?? updated.role.rawValue,
             "transfer": offer?.teamID != current.snapshot.team.id,
             "ambition_selected": ambition != nil,
+            "years": offer?.years ?? 0,
+            "signing_bonus_band": offer.map { CareerDisplayRules.signingBonusBand(for: $0) } ?? "none",
+            "interest": offer?.interest?.level.rawValue ?? "none",
         ])
         return accepted
+    }
+
+    @discardableResult
+    func requestContractCounter(kind: ProContractCounterKind) -> Bool {
+        guard featureConfiguration.proCareerJourneyV1, let current = result else { return false }
+        guard CareerDisplayRules.canRequestContractCounter(current.snapshot) else { return false }
+        if kind == .extraYear, !CareerDisplayRules.canRequestExtraYear(current.snapshot) { return false }
+        let requested = perform(summary: nil, cue: .success) {
+            try engine.requestContractCounter(.init(
+                seed: current.nextSeed,
+                state: current.snapshot,
+                expectedRevision: current.snapshot.revision,
+                kind: kind
+            ))
+        }
+        guard requested,
+              let counter = result?.snapshot.journeyState?.pendingContractMarket?.counterOffer else { return requested }
+        CareerTelemetry.log(.proContractCounterRequested, [
+            "kind": kind.rawValue,
+            "accepted": counter.accepted,
+        ])
+        return requested
     }
 
     /// Investment selection is persisted before the store publishes the new season. The event

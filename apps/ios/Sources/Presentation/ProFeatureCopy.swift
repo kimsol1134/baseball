@@ -169,6 +169,29 @@ enum ProContractCopy {
             arguments: arguments
         )
     }
+
+    static func interestLevel(_ level: ProClubInterest, resolver: GameCopyResolver) -> String {
+        switch level {
+        case .hot: resolver.resolve(.contractOfferInterestHot)
+        case .warm: resolver.resolve(.contractOfferInterestWarm)
+        case .cool: resolver.resolve(.contractOfferInterestCool)
+        }
+    }
+
+    static func interestReasonKey(_ signal: ProClubInterestSignal) -> String {
+        "content.contract.interest.\(signal.level.rawValue).\(signal.reason)"
+    }
+
+    static func interestReason(_ signal: ProClubInterestSignal, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.gameContent(interestReasonKey(signal)))
+    }
+
+    static func counterKindTitle(_ kind: ProContractCounterKind, resolver: GameCopyResolver) -> String {
+        switch kind {
+        case .extraYear: resolver.resolve(.contractOfferCounterExtraYear)
+        case .raiseSalary: resolver.resolve(.contractOfferCounterRaiseSalary)
+        }
+    }
 }
 
 enum ProWeeklyCopy {
