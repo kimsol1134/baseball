@@ -30,6 +30,21 @@ const localizable = {
 };
 
 const gameContent = {
+  "content.contract.counter.unavailable.years": entry(
+    "계약 연수를 더 늘릴 수 없습니다.",
+    "The deal cannot add another year.",
+    "契約年数はこれ以上増やせません。"
+  ),
+  "content.contract.counter.unavailable.dominance": entry(
+    "이 요구는 다른 제안과 균형을 깨뜨립니다.",
+    "This demand would unbalance the other offers.",
+    "この要求は他の提示とのバランスを崩します。"
+  ),
+  "content.contract.counter.unavailable.salary-band": entry(
+    "이 요구는 허용된 연봉 범위를 벗어납니다.",
+    "This demand would leave the allowed salary range.",
+    "この要求は認められる年俸の範囲を外れます。"
+  ),
   "content.contract.interest.hot.demand": entry(
     "이 구단은 지금 투수 수요가 커서 강하게 접촉합니다.",
     "This club needs pitching and is pressing hard.",
