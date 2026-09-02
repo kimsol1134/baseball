@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "scanner_version": 2,
-  "source_snapshot": "74b554be6850fa3a",
+  "source_snapshot": "d894436c2cadc103",
   "source_roots": [
     {
       "platform": "ios",
@@ -1981,12 +1981,102 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Application.MobileCareerStore.Lifecycle.swift.364.27.13",
+      "id": "inventory.ios.apps.ios.Sources.Application.MobileCareerStore.Lifecycle.swift.338.29.13",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Application/MobileCareerStore+Lifecycle.swift",
-        "line": 364,
+        "line": 338,
+        "column": 29
+      },
+      "source_hash": "141f57b5d3254e94",
+      "source_kind": "literal",
+      "copy_class": "user_input",
+      "persisted_candidate": false,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.ios.apps.ios.Sources.Application.MobileCareerStore.Lifecycle.swift.366.37.14",
+      "platform": "ios",
+      "surface": "app_ui",
+      "source_anchor": {
+        "path": "apps/ios/Sources/Application/MobileCareerStore+Lifecycle.swift",
+        "line": 366,
+        "column": 37
+      },
+      "source_hash": "4b4d7f97ccd59728",
+      "source_kind": "literal",
+      "copy_class": "static_ui",
+      "persisted_candidate": true,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.ios.apps.ios.Sources.Application.MobileCareerStore.Lifecycle.swift.366.46.15",
+      "platform": "ios",
+      "surface": "app_ui",
+      "source_anchor": {
+        "path": "apps/ios/Sources/Application/MobileCareerStore+Lifecycle.swift",
+        "line": 366,
+        "column": 46
+      },
+      "source_hash": "8641274907e6b17d",
+      "source_kind": "literal",
+      "copy_class": "static_ui",
+      "persisted_candidate": true,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.ios.apps.ios.Sources.Application.MobileCareerStore.Lifecycle.swift.366.60.16",
+      "platform": "ios",
+      "surface": "app_ui",
+      "source_anchor": {
+        "path": "apps/ios/Sources/Application/MobileCareerStore+Lifecycle.swift",
+        "line": 366,
+        "column": 60
+      },
+      "source_hash": "13053485c8e9bee3",
+      "source_kind": "literal",
+      "copy_class": "static_ui",
+      "persisted_candidate": true,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.ios.apps.ios.Sources.Application.MobileCareerStore.Lifecycle.swift.366.75.17",
+      "platform": "ios",
+      "surface": "app_ui",
+      "source_anchor": {
+        "path": "apps/ios/Sources/Application/MobileCareerStore+Lifecycle.swift",
+        "line": 366,
+        "column": 75
+      },
+      "source_hash": "ccc3d3cac849c737",
+      "source_kind": "literal",
+      "copy_class": "static_ui",
+      "persisted_candidate": true,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.ios.apps.ios.Sources.Application.MobileCareerStore.Lifecycle.swift.429.27.18",
+      "platform": "ios",
+      "surface": "app_ui",
+      "source_anchor": {
+        "path": "apps/ios/Sources/Application/MobileCareerStore+Lifecycle.swift",
+        "line": 429,
         "column": 27
       },
       "source_hash": "ca520d07b8f3033e",
@@ -2539,12 +2629,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.HighSchool.HighSchoolDraftLegacyViews.swift.567.69.2",
+      "id": "inventory.ios.apps.ios.Sources.Features.HighSchool.HighSchoolDraftLegacyViews.swift.574.69.2",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/HighSchool/HighSchoolDraftLegacyViews.swift",
-        "line": 567,
+        "line": 574,
         "column": 69
       },
       "source_hash": "375745740097d3a9",
@@ -5923,12 +6013,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.501.61.6",
+      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.533.61.6",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/Pro/ProWeeklyPlanView.swift",
-        "line": 501,
+        "line": 533,
         "column": 61
       },
       "source_hash": "5327dee9abb508b4",
@@ -6976,6 +7066,60 @@
         "column": 31
       },
       "source_hash": "fbbaa09352595144",
+      "source_kind": "literal",
+      "copy_class": "static_ui",
+      "persisted_candidate": false,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.ios.apps.ios.Sources.Presentation.CareerSharePresentation.swift.340.23.0",
+      "platform": "ios",
+      "surface": "share",
+      "source_anchor": {
+        "path": "apps/ios/Sources/Presentation/CareerSharePresentation.swift",
+        "line": 340,
+        "column": 23
+      },
+      "source_hash": "7d964254917ef561",
+      "source_kind": "literal",
+      "copy_class": "static_ui",
+      "persisted_candidate": false,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.ios.apps.ios.Sources.Presentation.CareerSharePresentation.swift.340.50.1",
+      "platform": "ios",
+      "surface": "share",
+      "source_anchor": {
+        "path": "apps/ios/Sources/Presentation/CareerSharePresentation.swift",
+        "line": 340,
+        "column": 50
+      },
+      "source_hash": "e56314e9a18b80c1",
+      "source_kind": "literal",
+      "copy_class": "static_ui",
+      "persisted_candidate": false,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Korean-locale copy, legacy-save mapping, or compatibility producer retained in iOS source; English display must cross a semantic resolver/presentation boundary verified by the direct-display audit.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.ios.apps.ios.Sources.Presentation.CareerSharePresentation.swift.340.73.2",
+      "platform": "ios",
+      "surface": "share",
+      "source_anchor": {
+        "path": "apps/ios/Sources/Presentation/CareerSharePresentation.swift",
+        "line": 340,
+        "column": 73
+      },
+      "source_hash": "1df21af2c1685b3e",
       "source_kind": "literal",
       "copy_class": "static_ui",
       "persisted_candidate": false,
@@ -80385,6 +80529,270 @@
       "status": "ui_verified"
     },
     {
+      "key": "share.card.action",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "카드 공유",
+      "en": "Share card",
+      "ja": "カードを共有",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.body.challenge",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "도전 코드 %@-%lld",
+      "en": "Challenge code %@-%lld",
+      "ja": "チャレンジコード %@-%lld",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.draft.grade",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "등급",
+      "en": "Grade",
+      "ja": "評価",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.draft.pick",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "순번",
+      "en": "Pick",
+      "ja": "順位",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.draft.round",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "라운드",
+      "en": "Round",
+      "ja": "巡目",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.headline.draft",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "드래프트 지명",
+      "en": "Drafted",
+      "ja": "ドラフト指名",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.headline.draft-undrafted",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "미지명",
+      "en": "Undrafted",
+      "ja": "指名なし",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.headline.national",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "국가대표",
+      "en": "National team",
+      "ja": "代表",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.headline.record",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "신기록",
+      "en": "New mark",
+      "ja": "新記録",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.headline.retirement",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "은퇴",
+      "en": "Retirement",
+      "ja": "引退",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.national.exempted",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "병역 면제",
+      "en": "Service exemption",
+      "ja": "兵役免除",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.national.final",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "결승 %@ %lld-%lld",
+      "en": "Final %@ %lld-%lld",
+      "ja": "決勝 %@ %lld-%lld",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.preview.share",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "공유",
+      "en": "Share",
+      "ja": "共有",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.preview.title",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "공유 미리보기",
+      "en": "Share preview",
+      "ja": "共有プレビュー",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.record.qs",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "QS",
+      "en": "QS",
+      "ja": "QS",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.record.runs",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "실점",
+      "en": "Runs allowed",
+      "ja": "失点",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.render-failed",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "카드를 그리지 못했습니다. 문구만 공유합니다.",
+      "en": "Couldn't draw the card. Sharing the text only.",
+      "ja": "カードを描けませんでした。テキストだけ共有します。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.stamp",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "시드 %@-%lld · 같은 시드로 도전",
+      "en": "Seed %@-%lld · Challenge the same seed",
+      "ja": "シード %@-%lld · 同じシードで挑戦",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.store-badge",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "App Store에서 받기",
+      "en": "On the App Store",
+      "ja": "App Storeで入手",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.summary.draft",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%@, %lld라운드 %lld순번 지명",
+      "en": "%@ drafted in round %lld, pick %lld",
+      "ja": "%@、%lld巡目%lld位指名",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.summary.draft-undrafted",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%@, 드래프트 미지명",
+      "en": "%@ went undrafted",
+      "ja": "%@、ドラフト指名なし",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.summary.national",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%@, %@",
+      "en": "%@, %@",
+      "ja": "%@、%@",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.summary.record",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%@, %@",
+      "en": "%@, %@",
+      "ja": "%@、%@",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "share.card.summary.retirement",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%@, 프로 %lld시즌 은퇴",
+      "en": "%@, retired after %lld pro seasons",
+      "ja": "%@、プロ%lldシーズンで引退",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "share.career.summary",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "%lld번째 선수: %@",
@@ -103820,14 +104228,16 @@
       "accessibility",
       "app_ui",
       "notification",
+      "share",
       "simulation_core_game_copy"
     ],
     "pending_count": 0,
-    "verified_count": 3393,
+    "verified_count": 3401,
     "pending_by_surface": {
       "accessibility": 0,
       "app_ui": 0,
       "notification": 0,
+      "share": 0,
       "simulation_core_game_copy": 0
     }
   }

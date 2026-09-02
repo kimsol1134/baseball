@@ -108,7 +108,11 @@ struct ProNationalTournamentView: View {
                         career.startNationalFinal()
                     }
                 } else if tournament.result != nil {
-                    ProNationalTeamResultCard(state: state, tournament: tournament) {
+                    ProNationalTeamResultCard(
+                        state: state,
+                        tournament: tournament,
+                        challengeStamp: career.challengeStamp()
+                    ) {
                         career.acknowledgeNationalTeamResult()
                     }
                 }
@@ -120,6 +124,7 @@ struct ProNationalTournamentView: View {
 struct ProNationalTeamResultCard: View {
     let state: ProCareerSnapshot
     let tournament: ProNationalTournamentState
+    var challengeStamp: CareerDisplayRules.ChallengeStamp? = nil
     var onContinue: () -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -144,6 +149,15 @@ struct ProNationalTeamResultCard: View {
             }
         }
         .accessibilityIdentifier("pro.nationalTeam.result")
+
+        CareerShareButton(
+            model: CareerSharePresentation.national(
+                state: state,
+                tournament: tournament,
+                stamp: challengeStamp,
+                resolver: copyResolver
+            )
+        )
 
         PrimaryPill(
             title: copyResolver.resolve(.nationalTeamResultContinue),

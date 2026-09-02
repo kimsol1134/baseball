@@ -225,6 +225,13 @@ extension MobileCareerStore {
         CareerDisplayRules.goalPermilleBand(permille)
     }
 
+    func challengeStamp() -> CareerDisplayRules.ChallengeStamp? {
+        CareerDisplayRules.challengeStamp(
+            highSchoolCareerID: sourceHighSchoolCareerID,
+            fallbackSeed: result?.nextSeed
+        )
+    }
+
     nonisolated static func recommendedRepertoire(presetID: String) -> StartingRepertoireSelection {
         CareerDisplayRules.recommendedRepertoire(presetID: presetID)
     }

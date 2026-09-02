@@ -172,4 +172,35 @@ enum CareerDisplayRules {
     nonisolated static func goalPermilleBand(_ permille: Int) -> String {
         ProCareerGoalBoardRules.permilleBand(permille)
     }
+
+    struct ChallengeStamp: Equatable, Sendable {
+        let seed: String
+        let lifeNumber: Int
+
+        var code: String { "\(seed)-\(lifeNumber)" }
+    }
+
+    /// Existing imprint `"<seed>-<life>"`. Parses `career-<seed>-life-<n>` or a fallback seed.
+    nonisolated static func challengeStamp(
+        highSchoolCareerID: String?,
+        lifeNumber: Int? = nil,
+        fallbackSeed: String? = nil
+    ) -> ChallengeStamp? {
+        if let careerID = highSchoolCareerID, careerID.hasPrefix("career-") {
+            let parts = careerID.split(separator: "-")
+            if parts.count >= 2 {
+                let seed = String(parts[1])
+                if parts.count >= 4, parts[2] == "life", let parsed = Int(parts[3]) {
+                    return ChallengeStamp(seed: seed, lifeNumber: parsed)
+                }
+                if let lifeNumber {
+                    return ChallengeStamp(seed: seed, lifeNumber: lifeNumber)
+                }
+            }
+        }
+        if let fallbackSeed, !fallbackSeed.isEmpty {
+            return ChallengeStamp(seed: fallbackSeed, lifeNumber: lifeNumber ?? 1)
+        }
+        return nil
+    }
 }

@@ -100,6 +100,7 @@ struct RetirementPreviewCard: View {
 struct RetiredView: View {
     let state: ProCareerSnapshot
     let retiresIntoSignatureLegacy: Bool
+    var challengeStamp: CareerDisplayRules.ChallengeStamp? = nil
     let onStartNewPlayer: () -> Void
 
     @State private var confirming = false
@@ -141,6 +142,14 @@ struct RetiredView: View {
             }
 
             CareerTotals(state: state)
+
+            CareerShareButton(
+                model: CareerSharePresentation.retirement(
+                    state: state,
+                    stamp: challengeStamp,
+                    resolver: copyResolver
+                )
+            )
 
             if state.journeyState != nil {
                 ProTeamCareerRecordsCard(state: state, accessibilityPrefix: "pro.retirement")

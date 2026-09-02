@@ -129,6 +129,7 @@ struct CareerFlowView: View {
                                 RetiredView(
                                     state: state,
                                     retiresIntoSignatureLegacy: retiresIntoSignatureLegacy,
+                                    challengeStamp: career.challengeStamp(),
                                     onStartNewPlayer: onStartNewPlayer
                                 )
                             case .nationalTeamCall:

@@ -15,6 +15,34 @@ final class Release128JourneyUITests: XCTestCase {
         shotIndex = 0
     }
 
+    func testRetirementSharePreviewOpens() throws {
+        executionTimeAllowance = 180
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-uiTestProCareerJourneyV1",
+            "-baseball.audio.sound", "NO",
+            "-AppleLanguages", "(ko)",
+            "-AppleLocale", "ko_KR",
+        ]
+        app.launchEnvironment = ["BASEBALL_UI_RETIRED_SHARE": "1"]
+        app.launch()
+        selectProWeekTab(app, label: "이번 주")
+        let share = identified(app, "share.card.retirement")
+        XCTAssertTrue(
+            share.waitForExistence(timeout: 20),
+            "은퇴 카드 공유 버튼이 없습니다. \(visibleIdentifiers(app))"
+        )
+        XCTAssertTrue(bringIntoView(share))
+        share.tap()
+        XCTAssertTrue(
+            identified(app, "share.card.preview").waitForExistence(timeout: timeout),
+            "은퇴 카드 미리보기가 열리지 않았습니다."
+        )
+        writeShareScreenshot(name: "retirement-preview.png")
+    }
+
     func testNewCareerSetupShowsLeftAndRightHand() {
         let app = launch(language: "ko")
         dismissOpening(app)
@@ -857,6 +885,23 @@ final class Release128JourneyUITests: XCTestCase {
         let directory = shotRoot.appendingPathComponent(scenario, isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent(name)
+        try? screenshot.pngRepresentation.write(to: url)
+        print("QA_SHOT \(url.path)")
+    }
+
+    private func writeShareScreenshot(name: String) {
+        let screenshot = XCUIScreen.main.screenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = "share/\(name)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        let url = URL(
+            fileURLWithPath: "/Users/solkim/Dev/baseball/apps/ios/releases/qa-1.2.9/share/\(name)"
+        )
+        try? FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         try? screenshot.pngRepresentation.write(to: url)
         print("QA_SHOT \(url.path)")
     }

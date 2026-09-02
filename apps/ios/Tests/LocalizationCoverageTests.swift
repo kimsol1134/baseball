@@ -2754,6 +2754,30 @@ final class LocalizationCoverageTests: XCTestCase {
         }
     }
 
+    func testShareCardCopyHasKoreanEnglishJapaneseParity() throws {
+        let localizable = try localizableEntries()
+        let localizableJapanese = try localizableJapanese()
+        for key in ShareUICopyKey.allCases.map(\.rawValue) {
+            let entry = try XCTUnwrap(localizable[key], key)
+            XCTAssertFalse(entry.korean.isEmpty, key)
+            XCTAssertFalse(entry.english.isEmpty, key)
+            assertNoHangul(entry.english, key)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: entry.korean),
+                GameCopyResolver.placeholderKinds(in: entry.english),
+                key
+            )
+            let ja = try XCTUnwrap(localizableJapanese[key], key)
+            XCTAssertFalse(ja.isEmpty, key)
+            assertNoHangul(ja, key)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: entry.korean),
+                GameCopyResolver.placeholderKinds(in: ja),
+                key
+            )
+        }
+    }
+
     private func gameContentEntries() throws -> [String: CatalogEntry] {
         let repositoryRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

@@ -211,6 +211,27 @@ struct WeeklyPlanView: View {
                 onOpenRecords: { appTabSelection?.wrappedValue = .records }
             )
 
+            if let milestoneShare = CareerSharePresentation.recordMilestone(
+                state: state,
+                stamp: career.challengeStamp(),
+                resolver: copyResolver
+            ) {
+                BaseballCard(
+                    title: copyResolver.resolve(ShareUICopyKey.headlineRecord),
+                    tone: .milestone
+                ) {
+                    HStack(alignment: .center, spacing: 8) {
+                        Text(verbatim: milestoneShare.detail)
+                            .font(.subheadline)
+                            .foregroundStyle(BaseballTheme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        CareerShareButton(model: milestoneShare, style: .icon)
+                    }
+                }
+                .accessibilityIdentifier("pro.weekly.recordShare")
+            }
+
             ForEach(state.resolvedFollowUps ?? []) { followUp in
                 let seenID = "pro.decision.followup.\(followUp.type.rawValue).v1"
                 BaseballCard(
@@ -236,6 +257,17 @@ struct WeeklyPlanView: View {
                     }
                 }
                 .accessibilityIdentifier("pro.weekly.decisionFollowUp.\(followUp.type.rawValue)")
+                .overlay(alignment: .topTrailing) {
+                    if let qsShare = CareerSharePresentation.recordQS(
+                        followUp: followUp,
+                        state: state,
+                        stamp: career.challengeStamp(),
+                        resolver: copyResolver
+                    ) {
+                        CareerShareButton(model: qsShare, style: .icon)
+                            .padding(6)
+                    }
+                }
                 .onAppear {
                     CareerTelemetry.logOnce(
                         .proWeeklyDecisionFollowUpShown,

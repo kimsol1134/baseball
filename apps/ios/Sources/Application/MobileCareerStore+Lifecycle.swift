@@ -327,6 +327,71 @@ extension MobileCareerStore {
             return false
         }
     }
+
+    /// Retired career for opening the share-card preview without a 20-season UI walk.
+    @discardableResult
+    func installRetiredShareFixtureForUITesting() -> Bool {
+        do {
+            let preset = PitcherPresetCatalog.all[0]
+            let base = try CareerBootstrap.startCareer(
+                preset: preset,
+                playerName: "은퇴 카드",
+                seed: 202_607_23,
+                startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
+                engine: engine
+            )
+            var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(base.snapshot)) as! [String: Any]
+            let stats = ProSeasonStats(
+                season: 8,
+                teamID: base.snapshot.team.id,
+                games: 210,
+                starts: 180,
+                inningsOuts: 1620,
+                strikeouts: 520,
+                walks: 140,
+                runsAllowed: 180,
+                hits: 430,
+                wins: 72,
+                losses: 48,
+                saves: 4
+            )
+            object["phase"] = ProCareerPhase.completed.rawValue
+            object["season"] = 8
+            object["week"] = 26
+            object["age"] = 26
+            object["level"] = ProLevel.major.rawValue
+            object["careerStats"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode([stats]))
+            object["currentStats"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(stats))
+            object["hallOfFameScore"] = 74
+            object["milestones"] = ["프로 지명", "프로 통산 50경기", "프로 통산 100경기", "프로 통산 200탈삼진"]
+            let decoded = try JSONDecoder().decode(
+                ProCareerSnapshot.self,
+                from: JSONSerialization.data(withJSONObject: object)
+            )
+            let signed = engine.resignFixtureForTesting(decoded)
+            let fixture = ProCareerResult(
+                snapshot: signed,
+                nextSeed: "20260723",
+                events: ["ui_retired_share_fixture"]
+            )
+            updatePersisted {
+                $0.result = fixture
+                $0.gameResume = nil
+                $0.sourceHighSchoolCareerID = "career-20260723-life-1"
+                $0.careerOrigin = .highSchool
+            }
+            selectedPlan = nil
+            pendingGains = []
+            lastSummary = nil
+            feedbackCue = .neutral
+            feedbackTrigger += 1
+            loadState = .ready
+            return save()
+        } catch {
+            loadState = .failed(error.localizedDescription)
+            return false
+        }
+    }
 #endif
 
     @discardableResult

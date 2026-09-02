@@ -358,6 +358,14 @@ struct AppShell: View {
         .tint(BaseballTheme.action)
         .foregroundStyle(BaseballTheme.textPrimary)
         .background(BaseballTheme.canvas.ignoresSafeArea())
+        .task {
+#if DEBUG
+            guard ProcessInfo.processInfo.environment["BASEBALL_UI_RETIRED_SHARE"] == "1" else { return }
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            _ = pro.installRetiredShareFixtureForUITesting()
+            selection = .pro
+#endif
+        }
         .modifier(ReturnWelcomeInset(
             plan: returnWelcomePlan,
             onShown: {
@@ -791,7 +799,10 @@ private struct ProCareerTabs: View {
         }
         .background(BaseballTheme.canvas)
         .onChange(of: career.state?.phase) { _, phase in
-            if phase == .importantGame { showsToday = false }
+            if phase == .importantGame || phase == .completed { showsToday = false }
+        }
+        .onAppear {
+            if career.state?.phase == .completed { showsToday = false }
         }
     }
 }

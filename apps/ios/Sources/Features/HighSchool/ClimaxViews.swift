@@ -117,6 +117,13 @@ struct DraftRevealView: View {
                 // 자랑이 먼저, 별점은 나중이다. 순서를 뒤집으면 별점 창이 감정을 끊고
                 // 그 뒤에 남는 공유 버튼은 이미 식은 자리가 된다.
                 if stage == .revealed, let shareRecord {
+                    CareerShareButton(
+                        model: CareerSharePresentation.draft(
+                            result: result,
+                            record: shareRecord,
+                            resolver: copyResolver
+                        )
+                    )
                     LifeCardShareButton(record: shareRecord)
                 }
                 PrimaryPill(

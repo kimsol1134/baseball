@@ -452,6 +452,13 @@ struct CompletionCard: View {
             // 다시 살아났다. 같은 지명으로 프로 커리어를 무한히 새로 만들 수 있었고, 은퇴
             // 계승(야구혼)도 그때마다 다시 적립될 여지가 있었다.
             if let draft = state.draftResult, draft.outcome == .drafted, !legacyConfirmed, !hasEnteredPro {
+                CareerShareButton(
+                    model: CareerSharePresentation.draft(
+                        result: draft,
+                        state: state,
+                        resolver: copyResolver
+                    )
+                )
                 PrimaryButton(title: copyResolver.resolve(AppCopyKey.conclusionEnterPro), identifier: "hs.enterPro") {
                     onEnterPro(draft, state.pitcher, state.identity)
                 }
