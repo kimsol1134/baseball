@@ -335,7 +335,7 @@ extension MobileCareerStore {
             let preset = PitcherPresetCatalog.all[0]
             let base = try CareerBootstrap.startCareer(
                 preset: preset,
-                playerName: "은퇴 카드",
+                playerName: "민서준",
                 seed: 202_607_23,
                 startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
                 engine: engine

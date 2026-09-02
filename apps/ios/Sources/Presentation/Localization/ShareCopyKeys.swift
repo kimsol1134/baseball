@@ -10,6 +10,7 @@ enum ShareUICopyKey: String, CaseIterable, Sendable {
     case storeBadge = "share.card.store-badge"
     case stamp = "share.card.stamp"
     case bodyChallenge = "share.card.body.challenge"
+    case bodyLink = "share.card.body.link"
     case summaryRetirement = "share.card.summary.retirement"
     case summaryDraft = "share.card.summary.draft"
     case summaryDraftUndrafted = "share.card.summary.draft-undrafted"

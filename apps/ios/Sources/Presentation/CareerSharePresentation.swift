@@ -4,6 +4,36 @@ import BaseballIOSDomain
 
 /// Builds share-card models from snapshots. Views pass the result to `CareerShareButton`.
 enum CareerSharePresentation {
+    static func shareText(
+        for model: CareerShareCardModel,
+        resolver: GameCopyResolver,
+        host: String? = ChallengeLink.host(from: Bundle.main.infoDictionary)
+    ) -> String {
+        var lines = [model.summary]
+        if let stamp = model.stamp {
+            lines.append(
+                resolver.resolve(
+                    ShareUICopyKey.bodyChallenge,
+                    arguments: [.userText(stamp.seed), .integer(stamp.lifeNumber)]
+                )
+            )
+            if let url = ChallengeLink.shareURL(
+                seed: stamp.seed,
+                life: stamp.lifeNumber,
+                host: host
+            ) {
+                lines.append(
+                    resolver.resolve(
+                        ShareUICopyKey.bodyLink,
+                        arguments: [.userText(url.absoluteString)]
+                    )
+                )
+            }
+        }
+        lines.append(CareerShareCopy.storeURL)
+        return lines.joined(separator: "\n")
+    }
+
     static func retirement(
         state: ProCareerSnapshot,
         stamp: CareerDisplayRules.ChallengeStamp?,

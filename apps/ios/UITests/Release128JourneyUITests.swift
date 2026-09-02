@@ -40,6 +40,13 @@ final class Release128JourneyUITests: XCTestCase {
             identified(app, "share.card.preview").waitForExistence(timeout: timeout),
             "은퇴 카드 미리보기가 열리지 않았습니다."
         )
+        let playerName = identified(app, "share.card.preview.playerName")
+        XCTAssertTrue(
+            playerName.waitForExistence(timeout: timeout),
+            "은퇴 카드 미리보기에 선수 이름이 없습니다."
+        )
+        XCTAssertEqual(playerName.label, "민서준")
+        XCTAssertNotEqual(playerName.label, "은퇴 카드")
         writeShareScreenshot(name: "retirement-preview.png")
     }
 

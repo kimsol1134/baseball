@@ -17,7 +17,10 @@ PM(Claude) 스펙·검수 + grok-4.6 구현. 보고서: docs/PRO_WEEKLY_DECISION
 - [x] P1-3 FA 다년 계약·계약금·접촉 구단·잔류 협상·장비/트레이너 투자 (d65337f2, v10 게이트, wave3 오라클 무변경)
 - [x] P1-4 국가대표 대회 (fbba1194 병합 de790f4d): 짝수 시즌 소집, 조별 3경기 자동 + 결승 직접 등판, 금메달 병역 면제, 스키마 6
 - [x] Android 코어 패리티 1차 (3517be72 병합): Kotlin 규칙 v4→v8, 패리티 테스트 2개 @Ignore 해제·통과. 2차(v9~v10, Compose UI, 현지화)는 미착수
-- [ ] P2 진행 중(2026-09-02 밤): 커리어 카드 공유(main grok), 시드 도전 링크(워크트리 grok). **타자 모드는 사용자 결정으로 보류** — 스펙 docs/P2_BATTER_MODE_PHASE0_SPEC_2026-09-02.md만 남김. 폴리시: 국가대표 선발 조건(팬 60만으로 소집) 실플레이 분포 후 조정
+- [x] P2-1 커리어 카드 공유 (103f5e4f + 라운드 K): 은퇴·드래프트·신기록·국가대표 4종 1080×1350 카드, 미리보기, 공유 텍스트(도전 코드·도전 링크·스토어 링크)
+- [x] P2-2 시드 도전 링크 (5db3675a 병합): `yagurebirth://challenge/<시드-회차>` 즉시 동작, 유니버설 링크는 CHALLENGE_LINK_HOST 설정 + 랜딩 AASA 배포 필요(docs/P2_SEED_CHALLENGE_LINK_REPORT 절차)
+- [ ] 타자 모드: 사용자 결정으로 보류 (스펙 docs/P2_BATTER_MODE_PHASE0_SPEC_2026-09-02.md)
+- [ ] 랜딩 빌드 미검증(apps/landing에 next 미설치) — 도전 페이지·AASA 배포 전 `npm install && npm run build` 필요 폴리시: 국가대표 선발 조건(팬 60만으로 소집) 실플레이 분포 후 조정
 - [ ] 폴리시: 목표판 "구단 명예의 전당" 힌트를 규칙 설명 대신 다음 행동으로
 
 

@@ -39667,6 +39667,28 @@
         }
       }
     },
+    "share.card.body.link": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Challenge link %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チャレンジリンク %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "도전 링크 %@"
+          }
+        }
+      }
+    },
     "share.card.summary.retirement": {
       "localizations": {
         "en": {

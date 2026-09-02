@@ -68,6 +68,7 @@
 		3C9E24879261D7CA41CA6C7A /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3B1E165D2FB4F86CA2FDAAE7 /* InfoPlist.strings */; };
 		3E0AD2D01CCD6A8861750E76 /* LayerBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECBE82D5373D726A9CB4C0C /* LayerBoundaryTests.swift */; };
 		3EF48524962C7A261639F50B /* HighSchoolTrainingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4292A153699FD5D420CB6293 /* HighSchoolTrainingViews.swift */; };
+		4007C044B3FC17252B2F57BD /* ChallengeLinkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6734EBAE4F8543521F75256 /* ChallengeLinkSession.swift */; };
 		408815EE8F8E1D0A7BBAAF95 /* LocalizationBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D65316383BBE0A5F9FA760 /* LocalizationBoundaryTests.swift */; };
 		4296FBD9368F0F13CA3D8CD1 /* CareerSaveSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E021CB348255CD311720B67 /* CareerSaveSync.swift */; };
 		44A4A7971C924410F34CD4EB /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522B58C073F60CA2BAEC84CB /* Haptics.swift */; };
@@ -138,6 +139,7 @@
 		98BC7F8B4F78EB4EFF10B6C5 /* HighSchoolPresentation+Drama.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7A6E042695F9960932FF9CC /* HighSchoolPresentation+Drama.swift */; };
 		98FCD81806B401B51B4B5B62 /* ScopedPresentationLocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38A2E681F2B770AB87B7521 /* ScopedPresentationLocalizationTests.swift */; };
 		9D18CDE2EFA87398AB6D3264 /* ProNationalTeamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13DCAAB45835A7DC1682684 /* ProNationalTeamTests.swift */; };
+		9D3BD29F23FF24C31683863A /* ChallengeLinkSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0343E1B7143DB79A8561F05D /* ChallengeLinkSessionTests.swift */; };
 		9D49950667363EA2FD508C6C /* PitchCopyKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C41F754FE3CEEA605A450A /* PitchCopyKeys.swift */; };
 		9D4EF036DCF8995AAD5F1ED9 /* RivalAdaptationSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B4D291F1E68F84823F3AD13 /* RivalAdaptationSessionTests.swift */; };
 		A1DB7337BB636ED8C3266AFE /* CareerShareCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98B7758D2232E4C391A3F7FA /* CareerShareCardTests.swift */; };
@@ -239,6 +241,7 @@
 
 /* Begin PBXFileReference section */
 		031AF0C77B9C167675883FE4 /* HighSchoolCareerStore+ImportantGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HighSchoolCareerStore+ImportantGame.swift"; sourceTree = "<group>"; };
+		0343E1B7143DB79A8561F05D /* ChallengeLinkSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLinkSessionTests.swift; sourceTree = "<group>"; };
 		03DE1F860F9A238F0AACC792 /* MobileCareerStore+Lifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MobileCareerStore+Lifecycle.swift"; sourceTree = "<group>"; };
 		04BC3B3AEB0F9B2CADB763A2 /* DailyStreak.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyStreak.swift; sourceTree = "<group>"; };
 		04F3FD616DF1F03A14D4C714 /* HighSchoolCareerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighSchoolCareerView.swift; sourceTree = "<group>"; };
@@ -445,6 +448,7 @@
 		F3C8689B19D0F432707E411E /* CareerFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CareerFlowView.swift; sourceTree = "<group>"; };
 		F6362A064D2F2E833CD8AC34 /* ProWeeklyPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProWeeklyPlanView.swift; sourceTree = "<group>"; };
 		F6526F986EB9E4B84BFD6792 /* Audio */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Audio; sourceTree = SOURCE_ROOT; };
+		F6734EBAE4F8543521F75256 /* ChallengeLinkSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeLinkSession.swift; sourceTree = "<group>"; };
 		F719970C433C878DADF7185C /* PitchOptionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchOptionRow.swift; sourceTree = "<group>"; };
 		F783EBFCAD3BE2DC0E72CF04 /* PitchStrikeZoneViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitchStrikeZoneViews.swift; sourceTree = "<group>"; };
 		FA52EE4D184D5AFF50D09209 /* LifeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeCardView.swift; sourceTree = "<group>"; };
@@ -740,6 +744,7 @@
 				0B07031984E281C6A1E29EDA /* CareerPacingTests.swift */,
 				98B7758D2232E4C391A3F7FA /* CareerShareCardTests.swift */,
 				B344405949FBBB38FD06B6EC /* CareerWindIntegrationTests.swift */,
+				0343E1B7143DB79A8561F05D /* ChallengeLinkSessionTests.swift */,
 				751AE8B50E946BB684D3670B /* CopyCallerContractTests.swift */,
 				902334DCFD6C688F66710F0E /* DeliveryControlTests.swift */,
 				87C79C02C912900DB7953621 /* DramaSnapshotExportTests.swift */,
@@ -800,6 +805,7 @@
 				ECD5FEC56A378594C7271713 /* CareerDisplayRules.swift */,
 				7E021CB348255CD311720B67 /* CareerSaveSync.swift */,
 				23DFF96505CFE55610B259B6 /* CareerTelemetry.swift */,
+				F6734EBAE4F8543521F75256 /* ChallengeLinkSession.swift */,
 				21E3CBB1059BC96FD07FC11D /* HighSchoolCareerStore.swift */,
 				031AF0C77B9C167675883FE4 /* HighSchoolCareerStore+ImportantGame.swift */,
 				E1BDBF16E1837D6A79A95D26 /* HighSchoolCareerStore+Lifecycle.swift */,
@@ -965,6 +971,7 @@
 				D3079C5E27CB2BEDC3EABCEE /* CareerPacingTests.swift in Sources */,
 				A1DB7337BB636ED8C3266AFE /* CareerShareCardTests.swift in Sources */,
 				0FA9962AE598131FB9B014B9 /* CareerWindIntegrationTests.swift in Sources */,
+				9D3BD29F23FF24C31683863A /* ChallengeLinkSessionTests.swift in Sources */,
 				4B220D4518FCF87400A377EF /* CopyCallerContractTests.swift in Sources */,
 				539AC44A52E0B08CD1390416 /* DeliveryControlTests.swift in Sources */,
 				1EF93DE58ADDDBAB32C52EAA /* DramaSnapshotExportTests.swift in Sources */,
@@ -1039,6 +1046,7 @@
 				F2A9A832E76FC72218AF9FCC /* CareerShareCard.swift in Sources */,
 				C28AAFF6E46BA7D5EED9599F /* CareerSharePresentation.swift in Sources */,
 				189F0CDD33F802B12E4F0E56 /* CareerTelemetry.swift in Sources */,
+				4007C044B3FC17252B2F57BD /* ChallengeLinkSession.swift in Sources */,
 				2B260BCB143A1D2B07D06826 /* ClimaxViews.swift in Sources */,
 				91A17C830702DC2B439C314B /* DailyReminder.swift in Sources */,
 				939E657D190BF1B541B237A6 /* DailyStreak.swift in Sources */,
@@ -1390,6 +1398,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CHALLENGE_LINK_HOST = "";
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = 0AD1EB1475150FF6292A94B1DBA67478BEE6DFB8;
 				CODE_SIGN_STYLE = Manual;
@@ -1434,6 +1443,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CHALLENGE_LINK_HOST = "";
 				CODE_SIGN_ENTITLEMENTS = Sources/BaseballIOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;

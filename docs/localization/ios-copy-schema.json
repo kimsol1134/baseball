@@ -80606,6 +80606,17 @@
       "status": "ui_verified"
     },
     {
+      "key": "share.card.body.link",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "도전 링크 %@",
+      "en": "Challenge link %@",
+      "ja": "チャレンジリンク %@",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "share.card.draft.grade",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "등급",

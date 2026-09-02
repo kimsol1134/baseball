@@ -145,7 +145,79 @@ DEBUG 환경 `BASEBALL_UI_RETIRED_SHARE=1`로 은퇴 픽스처를 심고, 「이
 
 ## 5. 미해결
 
-- 시드 도전 **링크**(URL 스킴·유니버설 링크)는 다른 엔지니어 예약. 공유 텍스트는 각인 문자열과 스토어 URL만.
+- 시드 도전 **링크**는 공유 텍스트에 연결됨(라운드 K). `CHALLENGE_LINK_HOST`가 비면 스킴 URL. 유니버설 링크 entitlement는 여전히 빈 배열.
 - 카드의 실점 지표는 스펙 문구 ERA가 아니라 제품 RA9.
 - 고교 `LifeRecord`에는 투구 손이 없어 드래프트 카드(호명 화면) 손은 우완 기본. 결론 화면은 스냅샷 손을 쓴다.
 - 커밋하지 않음.
+
+## 수정 라운드 K
+
+진단·수정. 커밋·stash·reset·checkout 없음. 코어 시뮬레이션 무변경. 시뮬레이터는 부팅된 iPhone 17 (`641C2F6D-BF5F-406F-B22C-FEB35CB4E4BF`)만. xcodebuild는 한 번에 하나.
+
+### 진단
+
+1. 큰 제목 슬롯의 「은퇴 카드」는 시트 제목/kind 라벨이 `playerName`으로 들어간 것이 아니다. `CareerSharePresentation.retirement`은 이미 `state.identity.name`을 넣고, 헤드라인은 `share.card.headline.retirement`(「은퇴」). DEBUG UI 픽스처 `installRetiredShareFixtureForUITesting()`가 `playerName: "은퇴 카드"`로 커리어를 만들어 미리보기에 그대로 찍혔다. 샘플 PNG의 「민서준」은 유닛 테스트 샘플 이름.
+2. 5칸 2열 그리드 + 훈장 `Label`이 450pt를 넘어 하단 테두리에서 「전력의 한 축」이 잘렸다.
+
+### 수정
+
+- 픽스처 이름을 `민서준`으로 바꿈. `testRetirementCardTitleIsPlayerNameNotKindLabel`이 identity.name / 「은퇴」 헤드라인 / 미리보기 제목 분리를 단언. UI 테스트는 `share.card.preview.playerName` 라벨이 `민서준`이고 「은퇴 카드」가 아님을 단언.
+- 레이아웃: 통계 최대 5개(2×2 + 5번째 시즌 전폭), 훈장 고정 높이 1줄(최대 3개 + `+N`). 최대 콘텐츠로 4종 재렌더. unconstrained ImageRenderer 높이가 1350px를 넘지 않음(실측 1324).
+- `CareerSharePresentation.shareText`가 `ChallengeLink.shareURL(seed:life:host:)`를 넣음. 호스트는 `CHALLENGE_LINK_HOST`(Info.plist, 빈 값이면 스킴). 공유 문구는 요약 + `도전 코드 <seed>-<life>` + 도전 링크 + App Store URL. 키 `share.card.body.link` ko/en/ja.
+
+`apps/landing`의 `node_modules`에는 `typescript`만 있고 `next`가 없어 `npm --prefix apps/landing run build`는 건너뜀.
+
+### 게이트 원문
+
+`swift test --package-path packages/ios-layers` 종료 코드 0.
+
+```
+Test Suite 'All tests' passed at 2026-09-02 22:58:42.288.
+	 Executed 24 tests, with 0 failures (0 unexpected) in 0.012 (0.016) seconds
+```
+
+`ChallengeLinkSessionTests` + `LocalizationCoverageTests` 종료 코드 0.
+
+```
+Test Suite 'ChallengeLinkSessionTests' passed at 2026-09-02 22:59:36.279.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.003 (0.005) seconds
+Test Suite 'LocalizationCoverageTests' passed at 2026-09-02 22:59:37.036.
+	 Executed 43 tests, with 0 failures (0 unexpected) in 0.745 (0.756) seconds
+Test Suite 'Selected tests' passed at 2026-09-02 22:59:37.036.
+	 Executed 49 tests, with 0 failures (0 unexpected) in 0.749 (0.762) seconds
+```
+
+`BaseballIOSTests` 전체 종료 코드 0.
+
+```
+Test Suite 'BaseballIOSTests.xctest' passed at 2026-09-02 23:04:59.002.
+	 Executed 569 tests, with 0 failures (0 unexpected) in 111.165 (111.350) seconds
+Test Suite 'All tests' passed at 2026-09-02 23:04:59.002.
+	 Executed 569 tests, with 0 failures (0 unexpected) in 111.165 (111.350) seconds
+```
+
+`npm run check:ios-localization` 종료 코드 0.
+
+```
+iOS localization release check passed: 3911 catalog entries and zero pending surfaces
+```
+
+`npm run check:copy` 종료 코드 0.
+
+```
+문구 품질 검사 통과 (전체 제품): 내부 용어 38종·실존 야구 IP 42종 미노출
+```
+
+`npm run check:design-system` 종료 코드 0.
+
+```
+디자인 시스템 검사 통과: 원시 색상·레거시 토큰·scene/milestone 역할 오용 0, 고정 본문 크기 0, 고대비 토큰 대응 및 WCAG AA 대비, 공통 컴포넌트 계약 확인
+```
+
+UI `testRetirementSharePreviewOpens` 종료 코드 0. `retirement-preview.png` 재캡처.
+
+```
+Test Case '-[BaseballIOSUITests.Release128JourneyUITests testRetirementSharePreviewOpens]' passed (13.394 seconds).
+Test Suite 'Release128JourneyUITests' passed at 2026-09-02 23:05:48.686.
+	 Executed 1 test, with 0 failures (0 unexpected) in 13.394 (13.395) seconds
+```

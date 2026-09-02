@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import BaseballIOSDomain
 
-enum CareerShareCardKind: String, Equatable, Sendable {
+enum CareerShareCardKind: String, Equatable, CaseIterable, Sendable {
     case retirement
     case draft
     case record
@@ -36,24 +36,48 @@ enum CareerShareCardLayout {
     static let pixelWidth: CGFloat = 1080
     static let pixelHeight: CGFloat = 1350
     static let renderScale: CGFloat = 3
+    static let maxGridStats = 4
+    static let maxStats = 5
+    static let maxNamedBadges = 3
+    static let badgeRowHeight: CGFloat = 24
+    static let portraitSize: CGFloat = 56
+
+    static func gridStats(_ stats: [CareerShareStat]) -> [CareerShareStat] {
+        Array(stats.prefix(maxGridStats))
+    }
+
+    static func fifthStat(_ stats: [CareerShareStat]) -> CareerShareStat? {
+        guard stats.count > maxGridStats else { return nil }
+        return stats[maxGridStats]
+    }
+
+    static func visibleBadges(_ badges: [String]) -> [String] {
+        if badges.count <= maxNamedBadges { return badges }
+        let overflow = badges.count - maxNamedBadges
+        return Array(badges.prefix(maxNamedBadges)) + ["+\(overflow)"]
+    }
 }
 
 /// 1080×1350 (4:5) share card. Dark background is fixed so community posts ignore the app theme.
 struct CareerShareCard: View {
     let model: CareerShareCardModel
+    var fillsCanvas: Bool = true
 
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(verbatim: copyResolver.resolve(.appTitle))
                     .font(.caption.weight(.bold))
                     .foregroundStyle(BaseballTheme.action)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Spacer(minLength: 8)
                 Text(verbatim: copyResolver.resolve(ShareUICopyKey.storeBadge))
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(BaseballTheme.textTertiary)
+                    .lineLimit(1)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .overlay(
@@ -61,99 +85,145 @@ struct CareerShareCard: View {
                     )
             }
 
-            HStack(alignment: .center, spacing: 14) {
+            HStack(alignment: .center, spacing: BaseballMetrics.tightSpacing) {
                 PortraitView(
                     seed: model.portraitSeed,
                     role: .player,
-                    size: 64,
+                    size: CareerShareCardLayout.portraitSize,
                     playerStage: model.isPro ? .pro : .ace
                 )
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: model.playerName)
                         .font(BaseballType.display)
                         .foregroundStyle(BaseballTheme.textPrimary)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.6)
                         .lineLimit(1)
                     Text(verbatim: model.throwingHand)
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(BaseballTheme.textSecondary)
+                        .lineLimit(1)
                 }
                 Spacer(minLength: 0)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(verbatim: model.headline)
-                    .font(.title3.weight(.heavy))
+                    .font(.headline.weight(.heavy))
                     .foregroundStyle(BaseballTheme.milestone)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                 Text(verbatim: model.detail)
-                    .font(.subheadline)
+                    .font(.footnote)
                     .foregroundStyle(BaseballTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
+            .padding(10)
             .background(BaseballTheme.milestoneSoft, in: RoundedRectangle(cornerRadius: 12))
 
-            if !model.stats.isEmpty {
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: 8),
-                        GridItem(.flexible(), spacing: 8),
-                    ],
-                    spacing: 8
-                ) {
-                    ForEach(Array(model.stats.enumerated()), id: \.offset) { _, stat in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(verbatim: stat.label)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(BaseballTheme.textTertiary)
-                            Text(verbatim: stat.value)
-                                .font(.headline.monospacedDigit().weight(.bold))
-                                .foregroundStyle(BaseballTheme.textPrimary)
-                                .minimumScaleFactor(0.7)
-                                .lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(10)
-                        .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: 10))
-                    }
-                }
+            statsBlock
+
+            badgeRow
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: CareerShareCardLayout.badgeRowHeight,
+                    maxHeight: CareerShareCardLayout.badgeRowHeight,
+                    alignment: .leading
+                )
+
+            if fillsCanvas {
+                Spacer(minLength: 0)
             }
 
-            if !model.badges.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(model.badges, id: \.self) { badge in
-                        Label(badge, systemImage: "seal.fill")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(BaseballTheme.milestone)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 if let stamp = model.stamp {
                     Text(verbatim: CareerShareCopy.stampLine(stamp, resolver: copyResolver))
                         .font(BaseballType.scoreboardLabel)
                         .foregroundStyle(BaseballTheme.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
                 }
                 Text(verbatim: copyResolver.resolve(.appTitle))
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(BaseballTheme.textTertiary)
+                    .lineLimit(1)
             }
         }
-        .padding(20)
-        .frame(width: CareerShareCardLayout.width, height: CareerShareCardLayout.height, alignment: .top)
+        .padding(BaseballMetrics.gutter)
+        .frame(
+            width: CareerShareCardLayout.width,
+            height: fillsCanvas ? CareerShareCardLayout.height : nil,
+            alignment: .top
+        )
         .background(BaseballTheme.fieldNight)
         .overlay(
             RoundedRectangle(cornerRadius: 20)
                 .strokeBorder(BaseballTheme.border.opacity(0.6), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
+    }
+
+    @ViewBuilder
+    private var statsBlock: some View {
+        let grid = CareerShareCardLayout.gridStats(model.stats)
+        let fifth = CareerShareCardLayout.fifthStat(model.stats)
+        if !grid.isEmpty {
+            VStack(spacing: BaseballMetrics.tightSpacing) {
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(), spacing: BaseballMetrics.tightSpacing),
+                        GridItem(.flexible(), spacing: BaseballMetrics.tightSpacing),
+                    ],
+                    spacing: BaseballMetrics.tightSpacing
+                ) {
+                    ForEach(Array(grid.enumerated()), id: \.offset) { _, stat in
+                        statTile(stat)
+                    }
+                }
+                if let fifth {
+                    statTile(fifth)
+                }
+            }
+        }
+    }
+
+    private func statTile(_ stat: CareerShareStat) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: stat.label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(BaseballTheme.textTertiary)
+                .lineLimit(1)
+            Text(verbatim: stat.value)
+                .font(.headline.monospacedDigit().weight(.bold))
+                .foregroundStyle(BaseballTheme.textPrimary)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    @ViewBuilder
+    private var badgeRow: some View {
+        let badges = CareerShareCardLayout.visibleBadges(model.badges)
+        if badges.isEmpty {
+            Color.clear
+        } else {
+            HStack(spacing: 6) {
+                ForEach(Array(badges.enumerated()), id: \.offset) { _, badge in
+                    Text(verbatim: badge)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(BaseballTheme.milestoneSoft, in: Capsule())
+                }
+            }
+        }
     }
 }
 
@@ -183,6 +253,29 @@ enum CareerShareCardRenderer {
     ) -> Data? {
         image(for: model, resolver: resolver)?.pngData()
     }
+
+    /// Intrinsic pixel size with the canvas height unlocked, used to catch clipped content.
+    @MainActor
+    static func unconstrainedPixelSize(
+        for model: CareerShareCardModel,
+        resolver: GameCopyResolver = GameCopyResolver()
+    ) -> CGSize? {
+        let renderer = ImageRenderer(
+            content: CareerShareCard(model: model, fillsCanvas: false)
+                .environment(\.gameCopyResolver, resolver)
+        )
+        renderer.scale = CareerShareCardLayout.renderScale
+        renderer.isOpaque = true
+        renderer.proposedSize = ProposedViewSize(
+            width: CareerShareCardLayout.width,
+            height: nil
+        )
+        guard let image = renderer.uiImage else { return nil }
+        return CGSize(
+            width: image.size.width * image.scale,
+            height: image.size.height * image.scale
+        )
+    }
 }
 
 enum CareerShareCopy {
@@ -202,17 +295,7 @@ enum CareerShareCopy {
         for model: CareerShareCardModel,
         resolver: GameCopyResolver
     ) -> String {
-        var lines = [model.summary]
-        if let stamp = model.stamp {
-            lines.append(
-                resolver.resolve(
-                    ShareUICopyKey.bodyChallenge,
-                    arguments: [.userText(stamp.seed), .integer(stamp.lifeNumber)]
-                )
-            )
-        }
-        lines.append(storeURL)
-        return lines.joined(separator: "\n")
+        CareerSharePresentation.shareText(for: model, resolver: resolver)
     }
 }
 
@@ -233,6 +316,8 @@ struct CareerSharePreviewSheet: View {
                         .scaledToFit()
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("share.card.preview.playerName")
+                        .accessibilityLabel(model.playerName)
                 } else if renderFailed {
                     Text(verbatim: copyResolver.resolve(ShareUICopyKey.renderFailed))
                         .font(.subheadline)
