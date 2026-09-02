@@ -143,6 +143,19 @@ final class CopyCallerContractTests: XCTestCase {
                 ProCareerPresentation.weekSpanLabel(beforeWeek: 2, afterWeek: 3, resolver: resolver),
                 ProCareerPresentation.weekSpanLabel(beforeWeek: 0, afterWeek: 3, resolver: resolver),
                 ProRoleRequestCopy.outlook(.likely, resolver: resolver),
+                ProWeeklyCopy.goalBoardLine(
+                    ProGoalBoardRow(
+                        id: "hallOfFame",
+                        kind: .hallOfFame,
+                        titleKey: "content.goal-board.hall-of-fame.title",
+                        current: 42,
+                        target: 70,
+                        permille: 600,
+                        completed: false,
+                        hintKey: "content.goal-board.hall-of-fame.hint"
+                    ),
+                    resolver: resolver
+                ),
                 ProCareerPresentation.followUpSummary(
                     ProDecisionFollowUp(
                         decisionID: "rotation_push.week3",

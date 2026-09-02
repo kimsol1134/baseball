@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "scanner_version": 2,
-  "source_snapshot": "2bffecfa4cf8d9c9",
+  "source_snapshot": "920f328a29aaea03",
   "source_roots": [
     {
       "platform": "ios",
@@ -1881,7 +1881,7 @@
         "line": 181,
         "column": 23
       },
-      "source_hash": "b427fe065470a497",
+      "source_hash": "7cadc4e54444eaeb",
       "source_kind": "literal",
       "copy_class": "static_ui",
       "persisted_candidate": false,
@@ -5761,12 +5761,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.32.27.0",
+      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.37.27.0",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/Pro/ProWeeklyPlanView.swift",
-        "line": 32,
+        "line": 37,
         "column": 27
       },
       "source_hash": "56fc7aa4d4e36dea",
@@ -5779,12 +5779,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.33.24.1",
+      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.38.24.1",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/Pro/ProWeeklyPlanView.swift",
-        "line": 33,
+        "line": 38,
         "column": 24
       },
       "source_hash": "1c7da53aeee0de6d",
@@ -5797,12 +5797,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.34.26.2",
+      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.39.26.2",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/Pro/ProWeeklyPlanView.swift",
-        "line": 34,
+        "line": 39,
         "column": 26
       },
       "source_hash": "9cfed00b96c0c677",
@@ -5815,12 +5815,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.35.29.3",
+      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.40.29.3",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/Pro/ProWeeklyPlanView.swift",
-        "line": 35,
+        "line": 40,
         "column": 29
       },
       "source_hash": "ade968a85ad4987b",
@@ -5833,12 +5833,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.36.28.4",
+      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.41.28.4",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/Pro/ProWeeklyPlanView.swift",
-        "line": 36,
+        "line": 41,
         "column": 28
       },
       "source_hash": "1234a8e599599cf8",
@@ -5851,12 +5851,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.37.36.5",
+      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.42.36.5",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/Pro/ProWeeklyPlanView.swift",
-        "line": 37,
+        "line": 42,
         "column": 36
       },
       "source_hash": "58b7837e09853a43",
@@ -5869,12 +5869,12 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.486.61.6",
+      "id": "inventory.ios.apps.ios.Sources.Features.Pro.ProWeeklyPlanView.swift.501.61.6",
       "platform": "ios",
       "surface": "app_ui",
       "source_anchor": {
         "path": "apps/ios/Sources/Features/Pro/ProWeeklyPlanView.swift",
-        "line": 486,
+        "line": 501,
         "column": 61
       },
       "source_hash": "5327dee9abb508b4",
@@ -41527,7 +41527,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1095.23.34",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1095.23.32",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41545,7 +41545,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1134.52.35",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1134.52.33",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41581,7 +41581,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1271.41.36",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1271.41.34",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41599,7 +41599,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1271.72.37",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1271.72.35",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41617,7 +41617,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1272.59.38",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1272.59.36",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41635,7 +41635,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1278.34.39",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1278.34.37",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41671,7 +41671,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1303.23.40",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1303.23.38",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41689,7 +41689,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1304.23.41",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1304.23.39",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41707,7 +41707,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1310.51.42",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1310.51.40",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41725,7 +41725,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1311.22.43",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1311.22.41",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41743,7 +41743,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1314.69.44",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1314.69.42",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41761,7 +41761,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1396.19.45",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1396.19.43",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41779,7 +41779,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1397.19.46",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1397.19.44",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41797,7 +41797,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1459.34.47",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1459.34.45",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41815,7 +41815,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1464.24.48",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1464.24.46",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41833,7 +41833,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1466.24.49",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1466.24.47",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41851,7 +41851,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1472.33.50",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1472.33.48",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41869,7 +41869,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1473.34.51",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1473.34.49",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41887,7 +41887,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1474.32.52",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1474.32.50",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41905,7 +41905,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1475.30.53",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1475.30.51",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41923,7 +41923,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1476.27.54",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1476.27.52",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41941,7 +41941,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1478.28.55",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1478.28.53",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41959,7 +41959,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1481.23.56",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1481.23.54",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41977,7 +41977,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1482.30.57",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1482.30.55",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -41995,7 +41995,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1482.48.58",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1482.48.56",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42013,7 +42013,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1485.24.59",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1485.24.57",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42031,7 +42031,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1487.25.60",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1487.25.58",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42049,7 +42049,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1542.31.61",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1542.31.59",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42067,7 +42067,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1576.40.62",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1576.40.60",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42085,7 +42085,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1577.40.63",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1577.40.61",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42103,7 +42103,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1581.33.64",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1581.33.62",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42121,7 +42121,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1582.34.65",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1582.34.63",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42139,7 +42139,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1583.32.66",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1583.32.64",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42157,7 +42157,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1584.30.67",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1584.30.65",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42175,7 +42175,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1585.27.68",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1585.27.66",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42193,7 +42193,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1587.28.69",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1587.28.67",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42211,7 +42211,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1589.28.70",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1589.28.68",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42229,7 +42229,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1653.17.71",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1653.17.69",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42247,7 +42247,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1788.35.72",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1788.35.70",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42265,7 +42265,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1791.35.73",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1791.35.71",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42283,7 +42283,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1794.35.74",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1794.35.72",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42301,7 +42301,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1797.35.75",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1797.35.73",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42319,7 +42319,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1800.35.76",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1800.35.74",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42337,7 +42337,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1802.35.77",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1802.35.75",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42355,7 +42355,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1805.21.78",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1805.21.76",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42373,7 +42373,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1813.162.79",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1813.162.77",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42391,7 +42391,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1845.42.80",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1845.42.78",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42409,7 +42409,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1855.75.81",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1855.75.79",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42427,7 +42427,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1856.52.82",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1856.52.80",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42445,7 +42445,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1858.78.83",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1858.78.81",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42463,7 +42463,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1860.25.84",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1860.25.82",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42481,7 +42481,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1887.40.85",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.1887.40.83",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42499,7 +42499,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2262.17.86",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2262.17.84",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42517,7 +42517,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2263.17.87",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2263.17.85",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42535,7 +42535,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2265.52.88",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2265.52.86",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42553,7 +42553,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2265.65.89",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2265.65.87",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42571,7 +42571,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2266.48.90",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2266.48.88",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42589,7 +42589,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2266.61.91",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2266.61.89",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42607,7 +42607,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2267.42.92",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2267.42.90",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42625,7 +42625,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2267.53.93",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2267.53.91",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42643,7 +42643,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2272.17.94",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2272.17.92",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42661,7 +42661,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2273.17.95",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2273.17.93",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42679,7 +42679,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2275.50.96",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2275.50.94",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42697,7 +42697,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2275.63.97",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2275.63.95",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42715,7 +42715,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2276.50.98",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2276.50.96",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42733,7 +42733,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2276.65.99",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2276.65.97",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42751,7 +42751,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2277.50.100",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2277.50.98",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42769,7 +42769,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2277.64.101",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2277.64.99",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42787,7 +42787,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2282.17.102",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2282.17.100",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42805,7 +42805,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2283.17.103",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2283.17.101",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42823,7 +42823,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2285.55.104",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2285.55.102",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42841,7 +42841,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2285.67.105",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2285.67.103",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42859,7 +42859,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2286.50.106",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2286.50.104",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42877,7 +42877,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2286.62.107",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2286.62.105",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42895,7 +42895,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2287.49.108",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2287.49.106",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42913,7 +42913,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2287.61.109",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2287.61.107",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42931,7 +42931,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2292.17.110",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2292.17.108",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42949,7 +42949,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2293.17.111",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2293.17.109",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42967,7 +42967,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2295.48.112",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2295.48.110",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -42985,7 +42985,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2295.60.113",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2295.60.111",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43003,7 +43003,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2296.52.114",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2296.52.112",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43021,7 +43021,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2296.66.115",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2296.66.113",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43039,7 +43039,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2297.53.116",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2297.53.114",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43057,7 +43057,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2297.64.117",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2297.64.115",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43075,7 +43075,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2302.17.118",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2302.17.116",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43093,7 +43093,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2303.17.119",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2303.17.117",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43111,7 +43111,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2305.53.120",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2305.53.118",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43129,7 +43129,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2305.66.121",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2305.66.119",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43147,7 +43147,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2306.51.122",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2306.51.120",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43165,7 +43165,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2306.65.123",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2306.65.121",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43183,7 +43183,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2307.43.124",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2307.43.122",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43201,7 +43201,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2307.57.125",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2307.57.123",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43219,7 +43219,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2312.17.126",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2312.17.124",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43237,7 +43237,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2313.17.127",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2313.17.125",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43255,7 +43255,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2315.47.128",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2315.47.126",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43273,7 +43273,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2315.60.129",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2315.60.127",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43291,7 +43291,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2316.51.130",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2316.51.128",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43309,7 +43309,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2316.63.131",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2316.63.129",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43327,7 +43327,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2317.51.132",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2317.51.130",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43345,7 +43345,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2317.65.133",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2317.65.131",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43363,7 +43363,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2353.17.134",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2353.17.132",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43381,7 +43381,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2354.17.135",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2354.17.133",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43399,7 +43399,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2356.45.136",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2356.45.134",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43417,7 +43417,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2356.58.137",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2356.58.135",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43435,7 +43435,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2357.50.138",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2357.50.136",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43453,7 +43453,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2357.59.139",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2357.59.137",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43471,7 +43471,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2358.50.140",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2358.50.138",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43489,7 +43489,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2358.65.141",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2358.65.139",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43507,7 +43507,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2363.17.142",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2363.17.140",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43525,7 +43525,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2364.17.143",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2364.17.141",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43543,7 +43543,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2366.50.144",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2366.50.142",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43561,7 +43561,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2366.61.145",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2366.61.143",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43579,7 +43579,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2367.50.146",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2367.50.144",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43597,7 +43597,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2367.62.147",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2367.62.145",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43615,7 +43615,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2368.51.148",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2368.51.146",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43633,7 +43633,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2368.65.149",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2368.65.147",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43651,7 +43651,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2583.24.150",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2583.24.148",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43669,7 +43669,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2586.24.151",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2586.24.149",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43687,7 +43687,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2589.24.152",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2589.24.150",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43705,7 +43705,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2592.24.153",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2592.24.151",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43723,7 +43723,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2595.24.154",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.2595.24.152",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43759,7 +43759,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3252.36.155",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3252.36.153",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43777,7 +43777,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3252.59.156",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3252.59.154",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43795,7 +43795,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3260.26.157",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3260.26.155",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43813,7 +43813,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3262.30.158",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3262.30.156",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43831,7 +43831,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3266.53.159",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3266.53.157",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43849,7 +43849,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3267.26.160",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3267.26.158",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43867,7 +43867,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3269.22.161",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3269.22.159",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43885,7 +43885,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3291.34.162",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3291.34.160",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43903,7 +43903,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3292.31.163",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3292.31.161",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43921,7 +43921,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3293.33.164",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3293.33.162",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43939,7 +43939,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3294.36.165",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3294.36.163",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43957,7 +43957,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3295.35.166",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3295.35.164",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -43975,7 +43975,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3296.36.167",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3296.36.165",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44011,7 +44011,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3302.34.168",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3302.34.166",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44029,7 +44029,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3303.31.169",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3303.31.167",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44047,7 +44047,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3304.33.170",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3304.33.168",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44065,7 +44065,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3305.36.171",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3305.36.169",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44083,7 +44083,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3306.35.172",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3306.35.170",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44101,7 +44101,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3307.36.173",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3307.36.171",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44119,7 +44119,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3383.64.174",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3383.64.172",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44137,7 +44137,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3385.34.175",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3385.34.173",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44155,7 +44155,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3386.40.176",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3386.40.174",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44173,7 +44173,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3387.38.177",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3387.38.175",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44191,7 +44191,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3390.26.178",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3390.26.176",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44209,7 +44209,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3391.28.179",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3391.28.177",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44227,7 +44227,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3392.29.180",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3392.29.178",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44245,7 +44245,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3393.28.181",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3393.28.179",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44263,7 +44263,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3395.20.182",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3395.20.180",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44281,7 +44281,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3396.36.183",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3396.36.181",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44299,7 +44299,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3397.37.184",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3397.37.182",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44317,7 +44317,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3398.38.185",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3398.38.183",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44335,7 +44335,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3399.39.186",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3399.39.184",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44353,7 +44353,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3400.37.187",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3400.37.185",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44371,7 +44371,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3401.35.188",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3401.35.186",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44389,7 +44389,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3433.20.189",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3433.20.187",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44407,7 +44407,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3434.21.190",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3434.21.188",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44425,7 +44425,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3439.62.191",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3439.62.189",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44443,7 +44443,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3440.25.192",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3440.25.190",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44461,7 +44461,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3443.62.193",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3443.62.191",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44479,7 +44479,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3444.25.194",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3444.25.192",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44497,7 +44497,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3447.62.195",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3447.62.193",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44515,7 +44515,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3448.25.196",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3448.25.194",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44533,7 +44533,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3451.62.197",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3451.62.195",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44551,7 +44551,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3452.25.198",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3452.25.196",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44569,7 +44569,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3456.20.199",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3456.20.197",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44587,7 +44587,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3457.21.200",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3457.21.198",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44605,7 +44605,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3462.9.201",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3462.9.199",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44623,7 +44623,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3466.28.202",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3466.28.200",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44641,7 +44641,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3466.57.203",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3466.57.201",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44659,7 +44659,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3466.86.204",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3466.86.202",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44677,7 +44677,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3466.94.205",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3466.94.203",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44695,7 +44695,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3477.110.208",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3477.110.206",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44713,7 +44713,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3477.44.206",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3477.44.204",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44731,7 +44731,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3477.62.207",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3477.62.205",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44749,7 +44749,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3478.21.209",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3478.21.207",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44767,7 +44767,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3478.56.210",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3478.56.208",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44785,7 +44785,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3479.110.213",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3479.110.211",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44803,7 +44803,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3479.44.211",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3479.44.209",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44821,7 +44821,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3479.62.212",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3479.62.210",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44839,7 +44839,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3480.21.214",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3480.21.212",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44857,7 +44857,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3480.56.215",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3480.56.213",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44875,7 +44875,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3481.109.218",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3481.109.216",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44893,7 +44893,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3481.46.216",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3481.46.214",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44911,7 +44911,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3481.64.217",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3481.64.215",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44929,7 +44929,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3482.21.219",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3482.21.217",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44947,7 +44947,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3482.58.220",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3482.58.218",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44965,7 +44965,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3483.107.223",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3483.107.221",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -44983,7 +44983,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3483.44.221",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3483.44.219",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45001,7 +45001,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3483.62.222",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3483.62.220",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45019,7 +45019,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3484.21.224",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3484.21.222",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45037,7 +45037,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3484.52.225",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3484.52.223",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45055,7 +45055,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3485.112.228",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3485.112.226",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45073,7 +45073,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3485.46.226",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3485.46.224",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45091,7 +45091,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3485.64.227",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3485.64.225",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45109,7 +45109,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3486.21.229",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3486.21.227",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45127,7 +45127,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3486.50.230",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3486.50.228",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45145,7 +45145,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3487.115.233",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3487.115.231",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45163,7 +45163,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3487.46.231",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3487.46.229",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45181,7 +45181,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3487.64.232",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3487.64.230",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45199,7 +45199,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3488.21.234",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3488.21.232",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45217,7 +45217,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3488.51.235",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3488.51.233",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45235,7 +45235,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3489.110.238",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3489.110.236",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45253,7 +45253,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3489.44.236",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3489.44.234",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45271,7 +45271,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3489.62.237",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3489.62.235",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45289,7 +45289,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3490.21.239",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3490.21.237",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45307,7 +45307,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3490.51.240",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3490.51.238",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45325,7 +45325,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3491.113.243",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3491.113.241",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45343,7 +45343,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3491.47.241",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3491.47.239",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45361,7 +45361,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3491.65.242",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3491.65.240",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45379,7 +45379,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3492.21.244",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3492.21.242",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45397,7 +45397,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3492.55.245",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3492.55.243",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45415,7 +45415,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3493.111.248",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3493.111.246",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45433,7 +45433,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3493.45.246",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3493.45.244",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45451,7 +45451,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3493.63.247",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3493.63.245",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45469,7 +45469,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3494.21.249",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3494.21.247",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45487,7 +45487,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3494.47.250",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3494.47.248",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45505,7 +45505,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3495.105.253",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3495.105.251",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45523,7 +45523,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3495.43.251",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3495.43.249",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45541,7 +45541,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3495.61.252",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3495.61.250",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45559,7 +45559,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3496.21.254",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3496.21.252",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45577,7 +45577,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3496.54.255",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3496.54.253",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45595,7 +45595,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3570.72.256",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3570.72.254",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45613,7 +45613,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3572.75.257",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3572.75.255",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45631,7 +45631,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3574.82.258",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3574.82.256",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45649,7 +45649,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3576.75.259",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3576.75.257",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45667,7 +45667,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3579.72.260",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3579.72.258",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45685,7 +45685,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3580.82.261",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.3580.82.259",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45937,43 +45937,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.766.39.19",
-      "platform": "simulation-core",
-      "surface": "simulation_core_game_copy",
-      "source_anchor": {
-        "path": "packages/simulation-core/Sources/SimulationCore/ProCareer.swift",
-        "line": 766,
-        "column": 39
-      },
-      "source_hash": "533286f369f550e4",
-      "source_kind": "interpolated_literal",
-      "copy_class": "dynamic",
-      "persisted_candidate": false,
-      "production_key": null,
-      "disposition": "compatibility_boundary",
-      "exclusion_reason": "Legacy Korean compatibility producer retained for shared clients and save parity; English iOS consumes semantic CopyToken/presentation output, and the direct-display audit forbids raw model fields.",
-      "status": "ui_verified"
-    },
-    {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.769.39.20",
-      "platform": "simulation-core",
-      "surface": "simulation_core_game_copy",
-      "source_anchor": {
-        "path": "packages/simulation-core/Sources/SimulationCore/ProCareer.swift",
-        "line": 769,
-        "column": 39
-      },
-      "source_hash": "230ef0f30289b1f2",
-      "source_kind": "interpolated_literal",
-      "copy_class": "dynamic",
-      "persisted_candidate": true,
-      "production_key": null,
-      "disposition": "compatibility_boundary",
-      "exclusion_reason": "Legacy Korean compatibility producer retained for shared clients and save parity; English iOS consumes semantic CopyToken/presentation output, and the direct-display audit forbids raw model fields.",
-      "status": "ui_verified"
-    },
-    {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.786.25.21",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.786.25.19",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -45991,7 +45955,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.789.25.22",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.789.25.20",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46009,7 +45973,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.793.19.23",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.793.19.21",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46027,7 +45991,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.795.23.24",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.795.23.22",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46045,7 +46009,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.796.23.25",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.796.23.23",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46063,7 +46027,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.806.29.26",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.806.29.24",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46081,7 +46045,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.890.52.27",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.890.52.25",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46099,7 +46063,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.894.52.28",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.894.52.26",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46153,7 +46117,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.938.52.29",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.938.52.27",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46171,7 +46135,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.941.52.30",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.941.52.28",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46189,7 +46153,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.944.52.31",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.944.52.29",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46207,7 +46171,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.950.52.32",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.950.52.30",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46225,7 +46189,7 @@
       "status": "ui_verified"
     },
     {
-      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.953.52.33",
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareer.swift.953.52.31",
       "platform": "simulation-core",
       "surface": "simulation_core_game_copy",
       "source_anchor": {
@@ -46452,6 +46416,42 @@
       "source_hash": "1df21af2c1685b3e",
       "source_kind": "literal",
       "copy_class": "content",
+      "persisted_candidate": false,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Legacy Korean compatibility producer retained for shared clients and save parity; English iOS consumes semantic CopyToken/presentation output, and the direct-display audit forbids raw model fields.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareerMilestoneRules.swift.11.9.0",
+      "platform": "simulation-core",
+      "surface": "simulation_core_game_copy",
+      "source_anchor": {
+        "path": "packages/simulation-core/Sources/SimulationCore/ProCareerMilestoneRules.swift",
+        "line": 11,
+        "column": 9
+      },
+      "source_hash": "533286f369f550e4",
+      "source_kind": "interpolated_literal",
+      "copy_class": "dynamic",
+      "persisted_candidate": false,
+      "production_key": null,
+      "disposition": "compatibility_boundary",
+      "exclusion_reason": "Legacy Korean compatibility producer retained for shared clients and save parity; English iOS consumes semantic CopyToken/presentation output, and the direct-display audit forbids raw model fields.",
+      "status": "ui_verified"
+    },
+    {
+      "id": "inventory.simulation-core.packages.simulation.core.Sources.SimulationCore.ProCareerMilestoneRules.swift.15.9.1",
+      "platform": "simulation-core",
+      "surface": "simulation_core_game_copy",
+      "source_anchor": {
+        "path": "packages/simulation-core/Sources/SimulationCore/ProCareerMilestoneRules.swift",
+        "line": 15,
+        "column": 9
+      },
+      "source_hash": "230ef0f30289b1f2",
+      "source_kind": "interpolated_literal",
+      "copy_class": "dynamic",
       "persisted_candidate": false,
       "production_key": null,
       "disposition": "compatibility_boundary",
@@ -71271,7 +71271,7 @@
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "시즌 기록 확인",
       "en": "Review Season",
-      "ja": "レビューシーズン",
+      "ja": "シーズンの記録を見る",
       "ko_state": "translated",
       "en_state": "translated",
       "ja_state": "translated",
@@ -75271,6 +75271,50 @@
       "status": "ui_verified"
     },
     {
+      "key": "pro.weekly.goal-board.complete",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "칸을 다 채웠습니다",
+      "en": "Every cell is filled",
+      "ja": "マスをすべて埋めました",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pro.weekly.goal-board.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "기록 탭에서 목표판을 엽니다",
+      "en": "Opens the goal board on Records",
+      "ja": "記録タブで目標板を開きます",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pro.weekly.goal-board.line",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%@ %lld/%lld",
+      "en": "%@ %lld/%lld",
+      "ja": "%@ %lld/%lld",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "pro.weekly.goal-board.title",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "다음 목표",
+      "en": "Next goal",
+      "ja": "次の目標",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
       "key": "pro.weekly.injury-risk",
       "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
       "ko": "부상 위험 %@ · 유효 피로 %lld",
@@ -76431,6 +76475,50 @@
       "ko": "%lld주차",
       "en": "Week %lld",
       "ja": "週 %lld",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.goal-board.completed",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "완료",
+      "en": "Done",
+      "ja": "達成",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.goal-board.conditions",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "조건",
+      "en": "Conditions",
+      "ja": "条件",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.goal-board.progress",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "%lld/%lld",
+      "en": "%lld/%lld",
+      "ja": "%lld/%lld",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "record.goal-board.title",
+      "file": "apps/ios/Sources/Presentation/Localization/Localizable.xcstrings",
+      "ko": "커리어 목표판",
+      "en": "Career goal board",
+      "ja": "キャリア目標板",
       "ko_state": "translated",
       "en_state": "translated",
       "ja_state": "translated",
@@ -84692,6 +84780,325 @@
       "ko": "WHIP",
       "en": "WHIP",
       "ja": "WHIP",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.anchor-team-legacy.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "한 팀의 레거시 점수를 80까지 올립니다.",
+      "en": "Raise one club's legacy score to 80.",
+      "ja": "1チームのレガシースコアを80まで上げます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.anchor-team-legacy.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "기준 구단 유산",
+      "en": "Anchor-team legacy",
+      "ja": "アンカーチームのレガシー",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.anchor-team-seasons.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "같은 팀에서 시즌을 이어 한 구단의 상징에 다가갑니다.",
+      "en": "Stay with the same club to close in on franchise icon.",
+      "ja": "同じチームでシーズンを重ね、球団の象徴に近づきます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.anchor-team-seasons.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "기준 구단 시즌",
+      "en": "Anchor-team seasons",
+      "ja": "アンカーチーム在籍年数",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.awards.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "시즌 수상을 모아 기록으로 남깁니다.",
+      "en": "Collect season awards to land in the record book.",
+      "ja": "シーズンの受賞を集めて記録に残します。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.awards.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "인정 수상",
+      "en": "Recognized awards",
+      "ja": "認定された受賞",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.hall-of-fame-projection.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "통산 성적과 수상으로 명예의 전당 예측을 올립니다.",
+      "en": "Build counting stats and awards to lift the Hall of Fame projection.",
+      "ja": "通算成績と受賞で殿堂入り予想を上げます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.hall-of-fame-projection.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "명예의 전당 예상",
+      "en": "Hall of Fame projection",
+      "ja": "殿堂入り予想",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.major-service-years.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "1군 시즌을 쌓아 근속을 채웁니다.",
+      "en": "Stack major-level seasons to fill service time.",
+      "ja": "一軍シーズンを積んで在籍年数を満たします。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.major-service-years.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "1군 등록",
+      "en": "Major-league service",
+      "ja": "一軍在籍",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.pro-seasons.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "시즌을 이어 프로 생활을 길게 가져갑니다.",
+      "en": "Keep taking seasons to stretch a long pro career.",
+      "ja": "シーズンを重ねて長いプロ生活を続けます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.ambition-metric.pro-seasons.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "프로 시즌",
+      "en": "Pro seasons",
+      "ja": "プロ在籍シーズン",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.club-hall.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "영구결번을 받은 팀은 구단 명예의 전당에서 빠집니다.",
+      "en": "A retired-number club is left out of club hall.",
+      "ja": "永久欠番になったチームは球団殿堂から外れます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.club-hall.legacy.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "구단 레거시",
+      "en": "Club legacy",
+      "ja": "球団レガシー",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.club-hall.seasons.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "구단 시즌",
+      "en": "Club seasons",
+      "ja": "球団在籍年数",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.club-hall.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "구단 명예의 전당",
+      "en": "Club hall",
+      "ja": "球団殿堂",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.hall-of-fame.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "시즌을 쌓고 수상하면 예측 점수가 오릅니다.",
+      "en": "More seasons and awards raise the projection.",
+      "ja": "シーズンと受賞を重ねると予想点が上がります。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.hall-of-fame.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "명예의 전당",
+      "en": "Hall of Fame",
+      "ja": "殿堂入り",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.milestone-games.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "등판을 이어 다음 경기 기록에 닿습니다.",
+      "en": "Keep taking the mound to reach the next game mark.",
+      "ja": "登板を重ねて次の試合記録に届きます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.milestone-games.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "통산 경기",
+      "en": "Career games",
+      "ja": "通算登板",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.milestone-strikeouts.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "삼진을 모아 다음 탈삼진 기록에 닿습니다.",
+      "en": "Keep striking hitters out to reach the next mark.",
+      "ja": "三振を集めて次の奪三振記録に届きます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.milestone-strikeouts.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "통산 탈삼진",
+      "en": "Career strikeouts",
+      "ja": "通算奪三振",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.retired-number.fan.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "팬 지지",
+      "en": "Fan support",
+      "ja": "ファン支持",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.retired-number.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "이적하면 마지막 팀 시즌과 레거시가 다시 쌓입니다.",
+      "en": "A transfer resets last-team seasons and legacy.",
+      "ja": "移籍すると最後のチームの在籍年数とレガシーが積み直しになります。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.retired-number.legacy.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "마지막 팀 레거시",
+      "en": "Last-team legacy",
+      "ja": "最後のチームレガシー",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.retired-number.seasons.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "마지막 팀 시즌",
+      "en": "Last-team seasons",
+      "ja": "最後のチーム在籍年数",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.retired-number.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "영구결번",
+      "en": "Retired number",
+      "ja": "永久欠番",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.team-legacy-tier.hint",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "한 팀에서 시즌을 이어 레거시 점수를 올립니다.",
+      "en": "Stay with one club and raise its legacy score.",
+      "ja": "1チームでシーズンを重ねレガシースコアを上げます。",
+      "ko_state": "translated",
+      "en_state": "translated",
+      "ja_state": "translated",
+      "status": "ui_verified"
+    },
+    {
+      "key": "content.goal-board.team-legacy-tier.title",
+      "file": "apps/ios/Sources/Presentation/Localization/GameContent.xcstrings",
+      "ko": "팀 레거시",
+      "en": "Team legacy",
+      "ja": "チームレガシー",
       "ko_state": "translated",
       "en_state": "translated",
       "ja_state": "translated",

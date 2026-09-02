@@ -260,21 +260,21 @@ extension ProCareerEngine {
         let priorStrikeouts = strikeouts(state.careerStats)
         let nextStrikeouts = strikeouts(completedCareerStats)
         var values: [ProCareerRecognition] = []
-        for mark in [50, 100, 300] where priorGames < mark && nextGames >= mark {
+        for mark in ProCareerMilestoneRules.gameMarks where priorGames < mark && nextGames >= mark {
             values.append(.init(
                 careerID: state.proCareerID,
                 kind: .milestone,
-                contentID: "pro.milestone.career.games.\(mark)",
+                contentID: ProCareerMilestoneRules.gamesContentID(mark),
                 season: state.season,
                 teamID: state.team.id,
                 value: mark
             ))
         }
-        for mark in [50, 100, 200, 500] where priorStrikeouts < mark && nextStrikeouts >= mark {
+        for mark in ProCareerMilestoneRules.strikeoutMarks where priorStrikeouts < mark && nextStrikeouts >= mark {
             values.append(.init(
                 careerID: state.proCareerID,
                 kind: .milestone,
-                contentID: "pro.milestone.career.strikeouts.\(mark)",
+                contentID: ProCareerMilestoneRules.strikeoutsContentID(mark),
                 season: state.season,
                 teamID: state.team.id,
                 value: mark

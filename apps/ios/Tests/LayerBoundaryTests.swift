@@ -21,6 +21,9 @@ final class LayerBoundaryTests: XCTestCase {
         let source = try IOSSourceScan.readAll(try files(under: "apps/ios/Sources/Features", suffix: ".swift"))
         XCTAssertFalse(source.contains("ProTeamLegacyRules."), "views must use MobileCareerStore projections")
         XCTAssertFalse(source.contains("ProCareerGoalRules."), "views must use MobileCareerStore projections")
+        XCTAssertFalse(source.contains("ProCareerGoalBoardRules."), "views must use MobileCareerStore projections")
+        XCTAssertFalse(source.contains("ProCareerMilestoneRules."), "views must use MobileCareerStore projections")
+        XCTAssertFalse(source.contains("ProRetirementRules."), "views must use MobileCareerStore projections")
         XCTAssertFalse(source.contains("PitchLearningRules."), "views must use CareerDisplayRules")
         XCTAssertFalse(source.contains("PitcherBuildRules."), "views must use CareerDisplayRules")
         XCTAssertFalse(source.contains("ProFinanceRules."), "views must use CareerDisplayRules")
@@ -56,6 +59,9 @@ final class LayerBoundaryTests: XCTestCase {
         XCTAssertFalse(source.contains("NicknameRules."))
         XCTAssertFalse(source.contains("MasteryEffectRules."))
         XCTAssertFalse(source.contains("PitchAbilityRules."))
+        XCTAssertFalse(source.contains("ProCareerGoalBoardRules."))
+        XCTAssertFalse(source.contains("ProCareerMilestoneRules."))
+        XCTAssertFalse(source.contains("ProRetirementRules."))
         XCTAssertFalse(source.contains("import BaseballIOSPersistence"))
     }
 

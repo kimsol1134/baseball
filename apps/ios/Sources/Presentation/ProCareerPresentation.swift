@@ -1090,6 +1090,26 @@ enum ProCareerPresentation {
     }
 }
 
+struct GoalPermilleBar: View {
+    let permille: Int
+    let completed: Bool
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule().fill(BaseballTheme.surfaceRaised)
+                Capsule()
+                    .fill(completed ? BaseballTheme.milestone : BaseballTheme.action)
+                    .frame(
+                        width: max(4, proxy.size.width * CGFloat(min(1000, max(0, permille))) / 1000)
+                    )
+            }
+        }
+        .frame(height: 8)
+        .accessibilityHidden(true)
+    }
+}
+
 struct ProCareerGoalMetricsView: View {
     let progress: ProCareerGoalProgress
     var identifierPrefix = "pro.goal"
@@ -1098,16 +1118,27 @@ struct ProCareerGoalMetricsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach(Array(progress.metrics.enumerated()), id: \.offset) { index, metric in
-                Text(copyResolver.resolve(
-                    .directionGoalMetric,
-                    arguments: [
-                        .userText(ProCareerPresentation.goalMetricTitle(metric.kind, resolver: copyResolver)),
-                        .integer(metric.current),
-                        .integer(metric.target),
-                    ]
-                ))
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(metric.current >= metric.target ? BaseballTheme.milestone : BaseballTheme.textSecondary)
+                let filled = progress.completed || metric.current >= metric.target
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(copyResolver.resolve(
+                        .directionGoalMetric,
+                        arguments: [
+                            .userText(ProCareerPresentation.goalMetricTitle(metric.kind, resolver: copyResolver)),
+                            .integer(metric.current),
+                            .integer(metric.target),
+                        ]
+                    ))
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(filled ? BaseballTheme.milestone : BaseballTheme.textSecondary)
+                    GoalPermilleBar(
+                        permille: CareerDisplayRules.goalPermille(
+                            current: metric.current,
+                            target: metric.target,
+                            completed: progress.completed
+                        ),
+                        completed: filled
+                    )
+                }
                 .accessibilityIdentifier("\(identifierPrefix).metric.\(index)")
             }
         }

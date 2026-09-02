@@ -17,6 +17,11 @@ struct WeeklyPlanView: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.appTabSelection) private var appTabSelection
+    @AppStorage(CopyDensity.storageKey) private var densityRaw = CopyDensity.automatic.rawValue
+
+    private var copyDensity: CopyDensity { CopyDensity(rawValue: densityRaw) ?? .automatic }
+    private var hidesGoalHint: Bool { copyDensity == .compact }
 
     private struct PlanCopy {
         let plan: ProWeekPlan
@@ -199,6 +204,12 @@ struct WeeklyPlanView: View {
                 }
             }
             .animation(nil, value: state.roleRequest != nil)
+
+            ProWeeklyGoalBoardCard(
+                state: state,
+                hidesHint: hidesGoalHint,
+                onOpenRecords: { appTabSelection?.wrappedValue = .records }
+            )
 
             ForEach(state.resolvedFollowUps ?? []) { followUp in
                 let seenID = "pro.decision.followup.\(followUp.type.rawValue).v1"
@@ -568,5 +579,45 @@ private struct ProRoleRequestCard: View {
         case .conditional: BaseballTheme.warning
         case .difficult: BaseballTheme.negative
         }
+    }
+}
+
+private struct ProWeeklyGoalBoardCard: View {
+    let state: ProCareerSnapshot
+    let hidesHint: Bool
+    let onOpenRecords: () -> Void
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var board: ProCareerGoalBoard {
+        MobileCareerStore.goalBoard(state: state)
+    }
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.weeklyGoalBoardTitle), tone: .raised) {
+            Button(action: onOpenRecords) {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let nearest = board.nearest {
+                        Text(verbatim: ProWeeklyCopy.goalBoardLine(nearest, resolver: copyResolver))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                        if !hidesHint {
+                            Text(verbatim: copyResolver.resolve(.weeklyGoalBoardHint))
+                                .font(.caption)
+                                .foregroundStyle(BaseballTheme.textTertiary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    } else {
+                        Text(verbatim: copyResolver.resolve(.weeklyGoalBoardComplete))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(BaseballTheme.milestone)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(copyResolver.resolve(.weeklyGoalBoardHint))
+        }
+        .accessibilityIdentifier("pro.weekly.goalBoard")
     }
 }

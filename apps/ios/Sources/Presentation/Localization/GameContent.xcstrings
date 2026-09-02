@@ -44660,6 +44660,644 @@
           }
         }
       }
+    },
+    "content.goal-board.ambition-metric.anchor-team-seasons.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anchor-team seasons"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アンカーチーム在籍年数"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기준 구단 시즌"
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.anchor-team-seasons.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stay with the same club to close in on franchise icon."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同じチームでシーズンを重ね、球団の象徴に近づきます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "같은 팀에서 시즌을 이어 한 구단의 상징에 다가갑니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.anchor-team-legacy.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anchor-team legacy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アンカーチームのレガシー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기준 구단 유산"
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.anchor-team-legacy.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raise one club's legacy score to 80."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1チームのレガシースコアを80まで上げます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한 팀의 레거시 점수를 80까지 올립니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.hall-of-fame-projection.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hall of Fame projection"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "殿堂入り予想"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "명예의 전당 예상"
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.hall-of-fame-projection.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build counting stats and awards to lift the Hall of Fame projection."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通算成績と受賞で殿堂入り予想を上げます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "통산 성적과 수상으로 명예의 전당 예측을 올립니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.awards.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recognized awards"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "認定された受賞"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "인정 수상"
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.awards.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collect season awards to land in the record book."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "シーズンの受賞を集めて記録に残します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시즌 수상을 모아 기록으로 남깁니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.pro-seasons.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro seasons"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロ在籍シーズン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프로 시즌"
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.pro-seasons.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep taking seasons to stretch a long pro career."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "シーズンを重ねて長いプロ生活を続けます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시즌을 이어 프로 생활을 길게 가져갑니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.major-service-years.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Major-league service"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一軍在籍"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1군 등록"
+          }
+        }
+      }
+    },
+    "content.goal-board.ambition-metric.major-service-years.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stack major-level seasons to fill service time."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一軍シーズンを積んで在籍年数を満たします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1군 시즌을 쌓아 근속을 채웁니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.retired-number.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retired number"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久欠番"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영구결번"
+          }
+        }
+      }
+    },
+    "content.goal-board.retired-number.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A transfer resets last-team seasons and legacy."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移籍すると最後のチームの在籍年数とレガシーが積み直しになります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이적하면 마지막 팀 시즌과 레거시가 다시 쌓입니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.retired-number.seasons.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last-team seasons"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後のチーム在籍年数"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마지막 팀 시즌"
+          }
+        }
+      }
+    },
+    "content.goal-board.retired-number.legacy.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last-team legacy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後のチームレガシー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마지막 팀 레거시"
+          }
+        }
+      }
+    },
+    "content.goal-board.retired-number.fan.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fan support"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ファン支持"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팬 지지"
+          }
+        }
+      }
+    },
+    "content.goal-board.club-hall.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Club hall"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球団殿堂"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구단 명예의 전당"
+          }
+        }
+      }
+    },
+    "content.goal-board.club-hall.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A retired-number club is left out of club hall."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "永久欠番になったチームは球団殿堂から外れます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "영구결번을 받은 팀은 구단 명예의 전당에서 빠집니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.club-hall.seasons.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Club seasons"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球団在籍年数"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구단 시즌"
+          }
+        }
+      }
+    },
+    "content.goal-board.club-hall.legacy.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Club legacy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "球団レガシー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구단 레거시"
+          }
+        }
+      }
+    },
+    "content.goal-board.hall-of-fame.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hall of Fame"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "殿堂入り"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "명예의 전당"
+          }
+        }
+      }
+    },
+    "content.goal-board.hall-of-fame.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More seasons and awards raise the projection."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "シーズンと受賞を重ねると予想点が上がります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시즌을 쌓고 수상하면 예측 점수가 오릅니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.milestone-games.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Career games"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通算登板"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "통산 경기"
+          }
+        }
+      }
+    },
+    "content.goal-board.milestone-games.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep taking the mound to reach the next game mark."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登板を重ねて次の試合記録に届きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "등판을 이어 다음 경기 기록에 닿습니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.milestone-strikeouts.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Career strikeouts"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通算奪三振"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "통산 탈삼진"
+          }
+        }
+      }
+    },
+    "content.goal-board.milestone-strikeouts.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep striking hitters out to reach the next mark."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "三振を集めて次の奪三振記録に届きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "삼진을 모아 다음 탈삼진 기록에 닿습니다."
+          }
+        }
+      }
+    },
+    "content.goal-board.team-legacy-tier.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next legacy tier"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次のレガシー段階"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음 레거시 등급"
+          }
+        }
+      }
+    },
+    "content.goal-board.team-legacy-tier.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stay with one club and raise its legacy score."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1チームでシーズンを重ねレガシースコアを上げます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한 팀에서 시즌을 이어 레거시 점수를 올립니다."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

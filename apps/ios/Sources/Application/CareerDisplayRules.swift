@@ -79,4 +79,16 @@ enum CareerDisplayRules {
     ) -> Bool {
         ProRoleRequestRules.isAlreadyAssigned(requested, state: state)
     }
+
+    nonisolated static func goalBoard(for state: ProCareerSnapshot) -> ProCareerGoalBoard {
+        ProCareerGoalBoardRules.board(state: state)
+    }
+
+    nonisolated static func goalPermille(current: Int, target: Int, completed: Bool = false) -> Int {
+        ProCareerGoalBoardRules.permille(current: current, target: target, completed: completed)
+    }
+
+    nonisolated static func goalPermilleBand(_ permille: Int) -> String {
+        ProCareerGoalBoardRules.permilleBand(permille)
+    }
 }

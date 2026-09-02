@@ -762,11 +762,11 @@ public struct ProCareerEngine: Sendable {
         let nextGames = priorGames + games
         let priorStrikeouts = careerStrikeouts(state)
         let nextStrikeouts = priorStrikeouts + strikeouts
-        for mark in [50, 100, 300] where priorGames < mark && nextGames >= mark {
-            milestones = addingUnique("프로 통산 \(mark)경기", to: milestones)
+        for mark in ProCareerMilestoneRules.gameMarks where priorGames < mark && nextGames >= mark {
+            milestones = addingUnique(ProCareerMilestoneRules.gamesLine(mark), to: milestones)
         }
-        for mark in [50, 100, 200, 500] where priorStrikeouts < mark && nextStrikeouts >= mark {
-            milestones = addingUnique("프로 통산 \(mark)탈삼진", to: milestones)
+        for mark in ProCareerMilestoneRules.strikeoutMarks where priorStrikeouts < mark && nextStrikeouts >= mark {
+            milestones = addingUnique(ProCareerMilestoneRules.strikeoutsLine(mark), to: milestones)
         }
         let injuryEvent: ProInjuryEventSnapshot? = newInjury > 0 && state.injuryWeeks == 0
             ? ProInjuryEventSnapshot(

@@ -331,6 +331,7 @@ private struct RecordBoard: View {
                     store: weekly,
                     highSchool: highSchool
                 )
+                ProGoalBoardCard(state: state)
                 if let decisions = state.decisionHistory, !decisions.isEmpty {
                     ProDecisionHistoryCard(decisions: decisions)
                 }
@@ -524,6 +525,109 @@ private struct RecordBoard: View {
             .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
         }
         .background(BaseballTheme.canvas)
+    }
+}
+
+struct ProGoalBoardCard: View {
+    let state: ProCareerSnapshot
+    @Environment(\.gameCopyResolver) private var copyResolver
+    @State private var expandedRowIDs: Set<String> = []
+
+    private var board: ProCareerGoalBoard {
+        MobileCareerStore.goalBoard(state: state)
+    }
+
+    var body: some View {
+        BaseballCard(title: copyResolver.resolve(.goalBoardTitle), tone: .raised) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(board.rows) { row in
+                    goalRow(row)
+                }
+            }
+        }
+        .accessibilityIdentifier("pro.goalBoard")
+        .onAppear {
+            CareerTelemetry.logOnce(
+                .proGoalBoardViewed,
+                scope: state.proCareerID,
+                properties: [
+                    "nearest_kind": board.nearest?.kind.rawValue ?? "none",
+                    "nearest_permille": MobileCareerStore.goalPermilleBand(board.nearest?.permille ?? 1000),
+                ]
+            )
+        }
+    }
+
+    @ViewBuilder
+    private func goalRow(_ row: ProGoalBoardRow) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: ProWeeklyCopy.goalBoardTitle(row, resolver: copyResolver))
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text(verbatim: copyResolver.resolve(
+                    .goalBoardProgress,
+                    arguments: [.integer(row.current), .integer(row.target)]
+                ))
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(row.completed ? BaseballTheme.milestone : BaseballTheme.textSecondary)
+                if row.completed {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(BaseballTheme.milestone)
+                        .accessibilityLabel(copyResolver.resolve(.goalBoardCompleted))
+                }
+            }
+            GoalPermilleBar(permille: row.permille, completed: row.completed)
+            if !row.hintKey.isEmpty {
+                Text(verbatim: ProWeeklyCopy.goalBoardHint(row, resolver: copyResolver))
+                    .font(.caption)
+                    .foregroundStyle(BaseballTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if !row.subRows.isEmpty {
+                DisclosureGroup(isExpanded: expansion(row.id)) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(row.subRows) { sub in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(verbatim: ProWeeklyCopy.goalBoardTitle(sub, resolver: copyResolver))
+                                        .font(.caption.weight(.semibold))
+                                    Spacer()
+                                    Text(verbatim: copyResolver.resolve(
+                                        .goalBoardProgress,
+                                        arguments: [.integer(sub.current), .integer(sub.target)]
+                                    ))
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(sub.completed ? BaseballTheme.milestone : BaseballTheme.textSecondary)
+                                }
+                                GoalPermilleBar(permille: sub.permille, completed: sub.completed)
+                            }
+                            .accessibilityIdentifier("pro.goalBoard.row.\(sub.id)")
+                        }
+                    }
+                    .padding(.top, 4)
+                } label: {
+                    Text(verbatim: copyResolver.resolve(.goalBoardConditions))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(BaseballTheme.action)
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("pro.goalBoard.row.\(row.id)")
+    }
+
+    private func expansion(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { expandedRowIDs.contains(id) },
+            set: { isExpanded in
+                if isExpanded {
+                    expandedRowIDs.insert(id)
+                } else {
+                    expandedRowIDs.remove(id)
+                }
+            }
+        )
     }
 }
 

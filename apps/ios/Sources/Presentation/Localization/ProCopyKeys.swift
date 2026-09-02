@@ -270,6 +270,11 @@ enum ProUICopyKey: String, CaseIterable, Sendable {
     case summaryWeekSpanRange = "pro.summary.week-span.range"
     case decisionFollowUpRuns = "pro.decision.followup.runs"
 
+    case weeklyGoalBoardTitle = "pro.weekly.goal-board.title"
+    case weeklyGoalBoardLine = "pro.weekly.goal-board.line"
+    case weeklyGoalBoardComplete = "pro.weekly.goal-board.complete"
+    case weeklyGoalBoardHint = "pro.weekly.goal-board.hint"
+
     case weeklyFatigue = "pro.weekly.metric.fatigue"
     case weeklyManagerTrust = "pro.weekly.metric.manager-trust"
     case weeklyRole = "pro.weekly.metric.role"

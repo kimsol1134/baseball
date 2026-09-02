@@ -167,6 +167,8 @@ enum GameAnalytics {
         case proWeeklyDecisionFollowUpShown = "pro_weekly_decision_followup_shown"
         /// 스프링캠프 보직 지원을 확정한 시점.
         case proRoleRequested = "pro_role_requested"
+        /// 기록 탭 커리어 목표판이 실제로 보인 시점.
+        case proGoalBoardViewed = "pro_goal_board_viewed"
         /// 포스트시즌 불펜이 연투 또는 휴식을 저장 성공으로 확정한 시점.
         case postseasonAvailabilitySelected = "postseason_availability_selected"
         /// 직접 등판 또는 자동 진행 뒤 포스트시즌 한 경기의 최종 점수가 확정된 시점.

@@ -213,6 +213,18 @@ extension MobileCareerStore {
         ProCareerGoalRules.progress(state: state, goal: goal)
     }
 
+    nonisolated static func goalBoard(state: ProCareerSnapshot) -> ProCareerGoalBoard {
+        CareerDisplayRules.goalBoard(for: state)
+    }
+
+    nonisolated static func goalPermille(current: Int, target: Int, completed: Bool = false) -> Int {
+        CareerDisplayRules.goalPermille(current: current, target: target, completed: completed)
+    }
+
+    nonisolated static func goalPermilleBand(_ permille: Int) -> String {
+        CareerDisplayRules.goalPermilleBand(permille)
+    }
+
     nonisolated static func recommendedRepertoire(presetID: String) -> StartingRepertoireSelection {
         CareerDisplayRules.recommendedRepertoire(presetID: presetID)
     }

@@ -214,6 +214,25 @@ enum ProWeeklyCopy {
         resolver.resolve(.weeklyCommandEffect, arguments: [.userText(progress)])
     }
 
+    static func goalBoardTitle(_ row: ProGoalBoardRow, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.gameContent(row.titleKey))
+    }
+
+    static func goalBoardHint(_ row: ProGoalBoardRow, resolver: GameCopyResolver) -> String {
+        resolver.resolve(.gameContent(row.hintKey))
+    }
+
+    static func goalBoardLine(_ row: ProGoalBoardRow, resolver: GameCopyResolver) -> String {
+        resolver.resolve(
+            .weeklyGoalBoardLine,
+            arguments: [
+                .userText(goalBoardTitle(row, resolver: resolver)),
+                .integer(row.current),
+                .integer(row.target),
+            ]
+        )
+    }
+
     static func staminaEffect(progress: String, resolver: GameCopyResolver) -> String {
         resolver.resolve(.weeklyStaminaEffect, arguments: [.userText(progress)])
     }

@@ -2,6 +2,17 @@ import SwiftUI
 import SimulationCore
 import BaseballIOSDomain
 
+private struct AppTabSelectionKey: EnvironmentKey {
+    static let defaultValue: Binding<AppTab>? = nil
+}
+
+extension EnvironmentValues {
+    var appTabSelection: Binding<AppTab>? {
+        get { self[AppTabSelectionKey.self] }
+        set { self[AppTabSelectionKey.self] = newValue }
+    }
+}
+
 enum AppTab: Hashable, CaseIterable, Identifiable {
     case highSchool, pro, records, settings
     var id: Self { self }
@@ -343,6 +354,7 @@ struct AppShell: View {
                 }
                 .tag(AppTab.settings)
         }
+        .environment(\.appTabSelection, $selection)
         .tint(BaseballTheme.action)
         .foregroundStyle(BaseballTheme.textPrimary)
         .background(BaseballTheme.canvas.ignoresSafeArea())

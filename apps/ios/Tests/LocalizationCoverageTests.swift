@@ -2674,6 +2674,62 @@ final class LocalizationCoverageTests: XCTestCase {
         }
     }
 
+    func testGoalBoardCopyHasKoreanEnglishJapaneseParity() throws {
+        let expected = Set(ProCareerGoalBoardRules.contentKeys)
+        XCTAssertFalse(expected.isEmpty)
+        let entries = try gameContentEntries()
+        let japanese = try gameContentJapanese()
+        let boardKeys = Set(entries.keys.filter { $0.hasPrefix("content.goal-board.") })
+        XCTAssertEqual(boardKeys, expected)
+
+        for key in expected.sorted() {
+            let entry = try XCTUnwrap(entries[key], key)
+            XCTAssertFalse(entry.korean.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            XCTAssertFalse(entry.english.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            assertNoHangul(entry.english, key)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: entry.korean),
+                GameCopyResolver.placeholderKinds(in: entry.english),
+                key
+            )
+            let ja = try XCTUnwrap(japanese[key], key)
+            XCTAssertFalse(ja.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, key)
+            assertNoHangul(ja, key)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: entry.korean),
+                GameCopyResolver.placeholderKinds(in: ja),
+                key
+            )
+        }
+
+        let localizable = try localizableEntries()
+        let localizableJapanese = try localizableJapanese()
+        let uiKeys = [
+            RecordUICopyKey.goalBoardTitle.rawValue,
+            RecordUICopyKey.goalBoardProgress.rawValue,
+            RecordUICopyKey.goalBoardCompleted.rawValue,
+            RecordUICopyKey.goalBoardConditions.rawValue,
+            ProUICopyKey.weeklyGoalBoardTitle.rawValue,
+            ProUICopyKey.weeklyGoalBoardLine.rawValue,
+            ProUICopyKey.weeklyGoalBoardComplete.rawValue,
+            ProUICopyKey.weeklyGoalBoardHint.rawValue,
+        ]
+        for key in uiKeys {
+            let entry = try XCTUnwrap(localizable[key], key)
+            XCTAssertFalse(entry.korean.isEmpty, key)
+            XCTAssertFalse(entry.english.isEmpty, key)
+            assertNoHangul(entry.english, key)
+            XCTAssertEqual(
+                GameCopyResolver.placeholderKinds(in: entry.korean),
+                GameCopyResolver.placeholderKinds(in: entry.english),
+                key
+            )
+            let ja = try XCTUnwrap(localizableJapanese[key], key)
+            XCTAssertFalse(ja.isEmpty, key)
+            assertNoHangul(ja, key)
+        }
+    }
+
     private func gameContentEntries() throws -> [String: CatalogEntry] {
         let repositoryRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
