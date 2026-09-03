@@ -50,6 +50,100 @@ final class Release128JourneyUITests: XCTestCase {
         writeShareScreenshot(name: "retirement-preview.png")
     }
 
+    func testDraftSharePreviewOpens() throws {
+        executionTimeAllowance = 180
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-baseball.audio.sound", "NO",
+            "-AppleLanguages", "(ko)",
+            "-AppleLocale", "ko_KR",
+        ]
+        app.launchEnvironment = ["BASEBALL_UI_DRAFT_SHARE": "1"]
+        app.launch()
+        // 2차 B1에서 고교/프로 탭이 "커리어" 하나로 합쳐졌다.
+        if app.tabBars.buttons["커리어"].waitForExistence(timeout: timeout) {
+            app.tabBars.buttons["커리어"].tap()
+        }
+        if app.buttons["hs.draft.reveal.done"].waitForExistence(timeout: 12) {
+            app.buttons["hs.draft.reveal.done"].tap()
+        }
+        let share = identified(app, "share.card.draft")
+        XCTAssertTrue(
+            share.waitForExistence(timeout: 20),
+            "드래프트 카드 공유 버튼이 없습니다. \(visibleIdentifiers(app))"
+        )
+        openSharePreview(app, share: share, expectedName: "박하준")
+        writeShareScreenshot(name: "draft-preview.png")
+    }
+
+    func testRecordSharePreviewsOpen() throws {
+        executionTimeAllowance = 180
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-uiTestProCareerJourneyV1",
+            "-uiTestOpenProWeek",
+            "-baseball.audio.sound", "NO",
+            "-AppleLanguages", "(ko)",
+            "-AppleLocale", "ko_KR",
+        ]
+        app.launchEnvironment = ["BASEBALL_UI_RECORD_SHARE": "1"]
+        app.launch()
+        _ = identified(app, "app.loading.progress").waitForNonExistence(timeout: 10)
+        RunLoop.current.run(until: Date().addingTimeInterval(1.5))
+        selectProWeekTab(app, label: "이번 주")
+        XCTAssertTrue(
+            identified(app, "pro.weekly.recordShare").waitForExistence(timeout: 25),
+            "탈삼진 마일스톤 공유 카드가 없습니다. \(visibleIdentifiers(app))"
+        )
+        let recordShares = app.buttons.matching(identifier: "share.card.record")
+        XCTAssertTrue(
+            recordShares.element(boundBy: 0).waitForExistence(timeout: timeout),
+            "탈삼진 마일스톤 공유 버튼이 없습니다. \(visibleIdentifiers(app))"
+        )
+        openSharePreview(app, share: recordShares.element(boundBy: 0), expectedName: "김도윤")
+        writeShareScreenshot(name: "record-milestone-preview.png")
+        dismissSharePreview(app)
+
+        XCTAssertTrue(
+            identified(app, "pro.weekly.decisionFollowUp.rotation_push").waitForExistence(timeout: timeout),
+            "QS 후속 카드가 없습니다. \(visibleIdentifiers(app))"
+        )
+        XCTAssertGreaterThanOrEqual(recordShares.count, 2, "QS 공유 버튼이 없습니다. \(visibleIdentifiers(app))")
+        openSharePreview(app, share: recordShares.element(boundBy: 1), expectedName: "김도윤")
+        writeShareScreenshot(name: "record-qs-preview.png")
+    }
+
+    func testNationalSharePreviewOpens() throws {
+        executionTimeAllowance = 180
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-uiTestResetCareer",
+            "-uiTestAutoRelease",
+            "-uiTestProCareerJourneyV1",
+            "-baseball.audio.sound", "NO",
+            "-AppleLanguages", "(ko)",
+            "-AppleLocale", "ko_KR",
+        ]
+        app.launchEnvironment = ["BASEBALL_UI_NATIONAL_SHARE": "1"]
+        app.launch()
+        selectProWeekTab(app, label: "이번 주")
+        XCTAssertTrue(
+            identified(app, "pro.nationalTeam.result").waitForExistence(timeout: 20),
+            "국가대표 결과 카드가 없습니다. \(visibleIdentifiers(app))"
+        )
+        let share = identified(app, "share.card.national")
+        XCTAssertTrue(
+            share.waitForExistence(timeout: timeout),
+            "국가대표 카드 공유 버튼이 없습니다. \(visibleIdentifiers(app))"
+        )
+        openSharePreview(app, share: share, expectedName: "이시우")
+        writeShareScreenshot(name: "national-preview.png")
+    }
+
     func testNewCareerSetupShowsLeftAndRightHand() {
         let app = launch(language: "ko")
         dismissOpening(app)
@@ -500,7 +594,7 @@ final class Release128JourneyUITests: XCTestCase {
     }
 
     private func selectProWeekTab(_ app: XCUIApplication, label: String) {
-        for tab in ["프로", "Pro", "プロ"] where app.tabBars.buttons[tab].exists {
+        for tab in ["커리어", "Career", "キャリア"] where app.tabBars.buttons[tab].exists {
             app.tabBars.buttons[tab].tap()
             break
         }
@@ -866,7 +960,10 @@ final class Release128JourneyUITests: XCTestCase {
     }
 
     private func visibleIdentifiers(_ app: XCUIApplication) -> String {
-        app.buttons.allElementsBoundByIndex.prefix(25).map { element in
+        guard app.state == .runningForeground || app.state == .runningBackground else {
+            return "<app \(app.state.rawValue)>"
+        }
+        return app.buttons.allElementsBoundByIndex.prefix(25).map { element in
             element.identifier.isEmpty ? "<\(element.label)>" : element.identifier
         }
         .joined(separator: ", ")
@@ -894,6 +991,39 @@ final class Release128JourneyUITests: XCTestCase {
         let url = directory.appendingPathComponent(name)
         try? screenshot.pngRepresentation.write(to: url)
         print("QA_SHOT \(url.path)")
+    }
+
+    private func openSharePreview(
+        _ app: XCUIApplication,
+        share: XCUIElement,
+        expectedName: String
+    ) {
+        XCTAssertTrue(bringIntoView(share))
+        share.tap()
+        XCTAssertTrue(
+            identified(app, "share.card.preview").waitForExistence(timeout: timeout),
+            "카드 미리보기가 열리지 않았습니다. \(visibleIdentifiers(app))"
+        )
+        let playerName = identified(app, "share.card.preview.playerName")
+        XCTAssertTrue(
+            playerName.waitForExistence(timeout: timeout),
+            "카드 미리보기에 선수 이름이 없습니다."
+        )
+        XCTAssertEqual(playerName.label, expectedName)
+    }
+
+    private func dismissSharePreview(_ app: XCUIApplication) {
+        for label in ["닫기", "Close", "閉じる"] {
+            let close = app.buttons[label]
+            if close.exists {
+                close.tap()
+                break
+            }
+        }
+        XCTAssertTrue(
+            identified(app, "share.card.preview").waitForNonExistence(timeout: timeout),
+            "카드 미리보기가 닫히지 않았습니다."
+        )
     }
 
     private func writeShareScreenshot(name: String) {

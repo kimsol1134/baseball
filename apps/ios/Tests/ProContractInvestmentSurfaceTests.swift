@@ -294,9 +294,11 @@ final class ProContractInvestmentSurfaceTests: XCTestCase {
             (
                 "pro.offseason.investment.benefit.recovery-team",
                 [
-                    "ko": ["첫 부상", "1주", "1회 충전", "RNG", "다시 굴리지"],
-                    "en": ["first injury", "1 week", "one charge", "RNG", "reroll"],
-                    "ja": ["最初の負傷", "1週間", "1チャージ", "RNG", "振り直"],
+                    // "RNG"는 내부 용어라 화면에 두지 않는다(4차 검수). 한 번만 쓰고 결과를
+                    // 다시 뽑지 않는다는 뜻은 그대로 담는다.
+                    "ko": ["첫 부상", "1주", "한 번", "다시 뽑지"],
+                    "en": ["first injury", "1 week", "once", "no reroll"],
+                    "ja": ["最初の負傷", "1週間", "1回", "引き直"],
                 ]
             ),
             (

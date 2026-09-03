@@ -205,7 +205,10 @@ struct AppShell: View {
     /// 이미 프로 선수인데 탭 바에 "고교"가 남아 있으면, 그 탭이 무엇인지 알 수 없다.
     /// 고교 3년은 끝난 이야기다. 다시 고교로 돌아가는 길은 은퇴 화면의 "새 선수로 다시
     /// 시작"뿐이고, 그건 되돌릴 수 없는 선택이라 확인을 거쳐 간다.
-    private var showsHighSchool: Bool { pro.loadState != .ready }
+    /// 프로 커리어가 **없을 때만** 고교를 보여 준다. `!= .ready`로 두면 프로 저장 실패(.failed)나
+    /// 로딩 중에 고교 분기로 떨어져, 프로 커리어가 있는데 오프닝 화면이 뜬다(4차 스모크에서
+    /// 시즌 기록 확인 직후 재현). 실패는 proTab의 CareerFailureView가 보여 줘야 한다.
+    private var showsHighSchool: Bool { pro.loadState == .needsSetup }
 
     /// 첫 회차의 도입부(오프닝·선수 만들기·프롤로그)에는 탭 바를 감춘다.
     ///
@@ -432,6 +435,8 @@ struct AppShell: View {
                 careerTab
                     .toolbar(hidesCareerTabBar ? .hidden : .visible, for: .tabBar)
                     .id(firstLaunchToken)
+                    // 커리어 탭은 내비게이션 바가 없어 스크롤한 글이 시계 뒤로 올라왔다(4차 검수).
+                    .overlay(alignment: .top) { StatusBarScrim() }
             }
             .tabItem {
                 Label(copyResolver.resolve(AppTab.career.titleKey), systemImage: AppTab.career.icon)

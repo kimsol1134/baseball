@@ -51,6 +51,8 @@ struct BaseballApp: App {
     nonisolated static let trainingFixtureLaunchArgument = "-uiTestTrainingFixture"
     /// 프로 1시즌 6주차 결정 대기를 바로 여는 Debug 전용 픽스처.
     nonisolated static let seasonDecisionFixtureLaunchArgument = "-uiTestSeasonDecisionFixture"
+    /// 프로 1시즌 24주차 시즌 리뷰 대기(계약 있음). 결산·오프시즌 스모크용.
+    nonisolated static let seasonReviewFixtureLaunchArgument = "-uiTestSeasonReviewFixture"
     /// 은퇴 화면 미리보기 Debug 전용 픽스처.
     nonisolated static let retiredShareFixtureLaunchArgument = "-uiTestRetiredShareFixture"
 #endif
@@ -371,6 +373,8 @@ struct BaseballApp: App {
                         } else if arguments.contains(Self.seasonDecisionFixtureLaunchArgument) {
                             SeenContentStore.reset()
                             _ = pro.installSeasonDecisionFixtureForUITesting()
+                        } else if arguments.contains(Self.seasonReviewFixtureLaunchArgument) {
+                            _ = pro.installSeasonReviewFixtureForUITesting()
                         } else if arguments.contains(Self.retiredShareFixtureLaunchArgument) {
                             _ = pro.installRetiredShareFixtureForUITesting()
                         }

@@ -270,6 +270,7 @@ struct HighSchoolCareerView: View {
     @State private var confirmingReset = false
     /// 훈련 화면의 선택. 카드가 고르고 스크롤 밖 고정 바가 커밋한다. 훈련 국면에
     /// 들어올 때 직전 훈련에서 다시 시작한다(`TrainingCard.onAppear`).
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var trainingSelection = TrainingSelection.placeholder
     /// 드래프트 결과 1화면 → 유산 2화면. 저장하지 않는다 — 앱을 다시 열면 1화면부터.
     @State private var draftLegacyStep = 0
@@ -296,6 +297,19 @@ struct HighSchoolCareerView: View {
             && state.draftResult != nil
             && draftLegacyStep == 0
             && !career.isChallengeRun
+    }
+
+
+    /// 훈련 고정 바. 표준 크기에서는 safeAreaInset, 접근성 큰 글씨에서는 스크롤 본문 끝.
+    private func trainingCommitBar(state: HighSchoolCareerSnapshot) -> some View {
+        TrainingCommitBar(
+            selection: trainingSelection,
+            recommendedFocus: HighSchoolCareerStore.recommendedTraining(state: state),
+            pendingNotice: currentHighSchoolNotice() != nil,
+            onAcknowledgeNotice: acknowledgeHighSchoolNotice,
+            onCommit: commitTraining,
+            onCommitBlock: commitTrainingBlock
+        )
     }
 
     private func commitTraining(focus: TrainingFocus, intensity: TrainingIntensity, targetPitch: PitchType?) {
@@ -504,6 +518,11 @@ struct HighSchoolCareerView: View {
                                 bondMemories: career.bondMemories
                             )
                         }
+                        // 접근성 큰 글씨에서는 고정 바가 화면의 절반을 먹어(4차 D3 XXXL 캡처)
+                        // 스크롤 안, 본문 맨 아래에 둔다. 표준 크기에서는 아래 safeAreaInset이 맡는다.
+                        if state.phase == .training, typeSize.isAccessibilitySize {
+                            trainingCommitBar(state: state)
+                        }
                     }
                     .padding(BaseballMetrics.gutter)
                     // 완료·유산처럼 긴 화면의 마지막 CTA가 떠 있는 탭 바 뒤로 숨지 않게
@@ -520,15 +539,8 @@ struct HighSchoolCareerView: View {
                 // 라이트 유저가 "할 게 없다"고 멈췄다(페르소나 보고서 §2-1). 탭 바 위에
                 // 고정 바로 얹고, 스크롤 콘텐츠는 그만큼 자동으로 비워진다.
                 .safeAreaInset(edge: .bottom) {
-                    if state.phase == .training {
-                        TrainingCommitBar(
-                            selection: trainingSelection,
-                            recommendedFocus: HighSchoolCareerStore.recommendedTraining(state: state),
-                            pendingNotice: currentHighSchoolNotice() != nil,
-                            onAcknowledgeNotice: acknowledgeHighSchoolNotice,
-                            onCommit: commitTraining,
-                            onCommitBlock: commitTrainingBlock
-                        )
+                    if state.phase == .training, !typeSize.isAccessibilitySize {
+                        trainingCommitBar(state: state)
                     }
                 }
                 .background(BaseballTheme.canvas)

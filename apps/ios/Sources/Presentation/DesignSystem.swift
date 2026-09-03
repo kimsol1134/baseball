@@ -185,6 +185,21 @@ extension View {
     }
 }
 
+/// 내비게이션 바를 숨긴 화면에서 스크롤 콘텐츠가 시계·배터리 뒤로 올라올 때 글자가
+/// 겹치지 않게 상태 막대 높이만큼 캔버스색을 얹는다. 탭·스크롤은 통과시킨다.
+struct StatusBarScrim: View {
+    var body: some View {
+        GeometryReader { proxy in
+            BaseballTheme.canvas.opacity(0.94)
+                .frame(height: proxy.safeAreaInsets.top)
+                .frame(maxWidth: .infinity, alignment: .top)
+                .ignoresSafeArea(edges: .top)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 /// 이득·비용·위험을 문장 대신 보여 주는 작은 칩. "구위·포심 구속·헛스윙 성장 · 현재 0/4 ·
 /// 게이지를 채우면 능력 +1" 같은 네 줄짜리 효과 문장을 칩 셋으로 바꾸기 위한 부품이다.
 /// 색은 의미에만 쓴다 — 이득은 positive, 비용·경고는 warning, 중립은 textSecondary.

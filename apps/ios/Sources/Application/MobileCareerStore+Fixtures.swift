@@ -81,5 +81,71 @@ extension MobileCareerStore {
             return false
         }
     }
+    /// 프로 1시즌 24주차, 시즌 리뷰 대기. 계약을 실제로 수락한 상태라 `reviewSeason` →
+    /// 결산 → 오프시즌까지 엔진 검증을 통과한다(기존 포스트시즌 픽스처는 계약이 없어
+    /// `missing_contract`로 막혔다 — 4차 검수). 주간 진행 RNG는 소비하지 않는다.
+    @discardableResult
+    func installSeasonReviewFixtureForUITesting() -> Bool {
+        do {
+            let preset = PitcherPresetCatalog.all[1]
+            let base = try CareerBootstrap.startCareer(
+                preset: preset,
+                playerName: "민서준",
+                seed: 202_609_04,
+                startingRepertoire: PitchLearningRules.recommendedSelection(presetID: preset.id),
+                engine: engine
+            )
+            guard let market = base.snapshot.journeyState?.pendingContractMarket,
+                  let offer = market.offers.first else {
+                NSLog("[fixture] season review: no rookie market (journey=%@)", base.snapshot.journeyState == nil ? "nil" : "present")
+                loadState = .failed("season review fixture: no rookie market")
+                return false
+            }
+            let signedContract = try engine.acceptContract(.init(
+                seed: base.nextSeed,
+                state: base.snapshot,
+                expectedRevision: base.snapshot.revision,
+                marketID: market.id,
+                offerID: offer.id,
+                ambition: .franchiseIcon
+            ))
+            var object = try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(signedContract.snapshot)
+            ) as! [String: Any]
+            object["phase"] = ProCareerPhase.seasonReview.rawValue
+            object["season"] = 1
+            object["week"] = 24
+            object["fatigue"] = 41
+            object.removeValue(forKey: "postseason")
+            object.removeValue(forKey: "pendingDecision")
+            let decoded = try JSONDecoder().decode(
+                ProCareerSnapshot.self,
+                from: JSONSerialization.data(withJSONObject: object)
+            )
+            let signed = engine.resignFixtureForTesting(decoded)
+            let fixture = ProCareerResult(
+                snapshot: signed,
+                nextSeed: signedContract.nextSeed,
+                events: ["ui_season_review_fixture"]
+            )
+            updatePersisted {
+                $0.result = fixture
+                $0.gameResume = nil
+                $0.sourceHighSchoolCareerID = nil
+                $0.careerOrigin = .direct
+            }
+            selectedPlan = nil
+            pendingGains = []
+            lastSummary = nil
+            feedbackCue = .neutral
+            feedbackTrigger += 1
+            loadState = .ready
+            return save()
+        } catch {
+            NSLog("[fixture] season review failed: %@", String(describing: error))
+            loadState = .failed(error.localizedDescription)
+            return false
+        }
+    }
 #endif
 }

@@ -226,6 +226,9 @@ struct CareerFlowView: View {
             // 고교 화면과 같은 이유 — 떠 있는 탭 바가 마지막 행동을 덮는다.
             .safeAreaPadding(.bottom, BaseballMetrics.floatingTabBarClearance)
         }
+        // 국면이 바뀌면 스크롤을 맨 위로. 결산에서 내린 위치가 오프시즌 투자 화면에 남아
+        // 제목이 시계 뒤에 있었다(4차 검수).
+        .id("pro-phase-\(state.phase.rawValue)")
         .background(BaseballTheme.canvas)
         .animation(reduceMotion ? nil : .snappy, value: career.feedbackTrigger)
         .onChange(of: career.lastSummary) { _, _ in dismissedBanner = false }

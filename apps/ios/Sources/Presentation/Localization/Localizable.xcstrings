@@ -24624,19 +24624,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reduces the first injury duration next season by 1 week. One charge; no RNG reroll."
+            "value": "Cuts next season's first injury by 1 week. Usable once, with no reroll of the outcome."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "次シーズン最初の負傷期間を1週間短縮します。1チャージを消費し、RNGを振り直しません。"
+            "value": "来季最初の負傷期間を1週間短縮します。1回だけ使え、結果は引き直しません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "다음 시즌 첫 부상 기간을 1주 줄입니다. 1회 충전을 사용하며 RNG를 다시 굴리지 않습니다."
+            "value": "다음 시즌 첫 부상 기간을 1주 줄입니다. 한 번만 쓸 수 있고, 결과를 다시 뽑지 않습니다."
           }
         }
       }
@@ -24910,19 +24910,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your saved transition is ready. Season %lld will begin after this boundary."
+            "value": "Season %lld is ready. Choose an investment to begin."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "保存された移行準備ができました。この境界の後にシーズン %lld が始まります。"
+            "value": "%lldシーズンの準備ができました。投資を選ぶとシーズンが始まります。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "저장된 전환이 준비됐습니다. 이 경계를 지나 %lld시즌을 시작합니다."
+            "value": "%lld시즌 준비가 끝났습니다. 투자를 고르면 시즌이 시작됩니다."
           }
         }
       }

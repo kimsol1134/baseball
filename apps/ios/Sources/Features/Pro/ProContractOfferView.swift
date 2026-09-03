@@ -10,6 +10,7 @@ struct ProContractOfferView: View {
     var notices: CareerFlowNotices? = nil
 
     @Environment(\.gameCopyResolver) private var copyResolver
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var selectedAmbition: ProCareerAmbition?
     @State private var pendingOfferID: String?
     @State private var showingCounterSheet = false
@@ -177,7 +178,8 @@ struct ProContractOfferView: View {
         // 서명이 스크롤 맨 아래 탭 바 뒤에 있어 "목표 하나를 고르세요"가 접힌 아래에
         // 있었다(페르소나 보고서 §2-1, §3 P2/P3).
         .safeAreaInset(edge: .bottom) {
-            if market.kind == .rookie, let offer {
+            // 접근성 큰 글씨에서는 고정 바가 화면의 절반을 먹으므로 본문 끝으로 보낸다(4차 D3).
+            if market.kind == .rookie, let offer, !typeSize.isAccessibilitySize {
                 rookieSignBar(offer)
             }
         }
