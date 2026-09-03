@@ -19,6 +19,21 @@ struct ProSeasonDecisionView: View {
 
     private var seenContentID: String { "pro.decision.\(decision.type.rawValue).v1" }
 
+    /// 주간 화면이 피로 타일을 경고색으로 바꾸는 기준과 같다. "강하게 더 던진다"의 피로 +14가
+    /// 이 선을 넘기면 결정 카드에서 바로 부상 위험이 보여야 한다(페르소나 보고서 §3 P2).
+    static let injuryRiskFatigueThreshold = 70
+
+    static func projectsInjuryRisk(_ choice: ProSeasonDecisionChoice, currentFatigue: Int?) -> Bool {
+        guard let currentFatigue, choice.effect.fatigueDelta > 0 else { return false }
+        return currentFatigue + choice.effect.fatigueDelta >= injuryRiskFatigueThreshold
+    }
+
+    private func injuryRiskLabel(for choice: ProSeasonDecisionChoice) -> String? {
+        Self.projectsInjuryRisk(choice, currentFatigue: career.state?.fatigue)
+            ? copyResolver.resolve(.decisionChipInjuryRisk)
+            : nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
             KeyArtHeader(
@@ -86,13 +101,19 @@ struct ProSeasonDecisionView: View {
                                 )) { chip in
                                     EffectChip(text: chip.text, tone: chip.tone)
                                 }
+                                if let risk = injuryRiskLabel(for: choice) {
+                                    EffectChip(text: risk, tone: .risk, systemImage: "exclamationmark.triangle.fill")
+                                }
                             }
                             .accessibilityElement(children: .combine)
-                            .accessibilityLabel(Text(verbatim: ProCareerPresentation.combinedEffect(
-                                choice.effect,
-                                journeyEffect: choice.journeyEffect,
-                                resolver: copyResolver
-                            )))
+                            .accessibilityLabel(Text(verbatim: [
+                                ProCareerPresentation.combinedEffect(
+                                    choice.effect,
+                                    journeyEffect: choice.journeyEffect,
+                                    resolver: copyResolver
+                                ),
+                                injuryRiskLabel(for: choice),
+                            ].compactMap { $0 }.joined(separator: " · ")))
                             .accessibilityIdentifier("pro.seasonDecision.effect.\(choice.id)")
                             if decision.type.isWeeklyBinaryDecision {
                                 Label(

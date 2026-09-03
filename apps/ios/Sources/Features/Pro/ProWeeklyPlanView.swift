@@ -530,8 +530,9 @@ struct WeeklyPlanView: View {
             }
         }
 
+        /// 훈련·등판이 올리는 원피로. 다음 주 피로 타일에 찍히는 값과 같은 기준이다.
         private var fatigueDelta: Int {
-            copy.forecast.expectedEffectiveFatigue - currentFatigue
+            copy.forecast.expectedRawFatigue - currentFatigue
         }
 
         var body: some View {
@@ -577,6 +578,14 @@ struct WeeklyPlanView: View {
                             text: ProWeeklyCopy.fatigueChip(delta: fatigueDelta, resolver: copyResolver),
                             tone: fatigueDelta > 0 ? .cost : (fatigueDelta < 0 ? .gain : .neutral)
                         )
+                        // 체력이 덜어 주는 몫은 중립 칩으로 따로 — 비용과 섞이면 강훈련이 초록으로 보인다.
+                        if let offset = ProWeeklyCopy.staminaOffsetChip(
+                            rawFatigue: copy.forecast.expectedRawFatigue,
+                            effectiveFatigue: copy.forecast.expectedEffectiveFatigue,
+                            resolver: copyResolver
+                        ) {
+                            EffectChip(text: offset, tone: .neutral)
+                        }
                         EffectChip(
                             text: ProWeeklyCopy.injuryChip(copy.forecast.band, resolver: copyResolver),
                             tone: riskTone,

@@ -319,11 +319,14 @@ public enum AppCopyKey {
     public static let chapterWindCollapse = GameCopyKey.localizable("chapter.wind.collapse")
     public static let chapterWindAccessibility = GameCopyKey.localizable("chapter.wind.accessibility")
     public static let chapterWindEffect = GameCopyKey.localizable("chapter.wind.effect")
+    /// 고교 HUD의 드래프트 거리 한 줄 — "전망 61 / 당락선 66"(페르소나 보고서 §2-3).
+    public static let chapterHeaderDraftForecast = GameCopyKey.localizable("chapter.header.draft-forecast")
 
     public static let chapterHeaderKeys: [GameCopyKey] = [
         chapterHeaderEyebrowFirst, chapterHeaderEyebrowRepeat, chapterHeaderTitle,
         chapterMetricFatigue, chapterMetricTeamTrust, chapterMetricTraining,
         chapterWindExpand, chapterWindCollapse, chapterWindAccessibility, chapterWindEffect,
+        chapterHeaderDraftForecast,
     ]
 
     public static let chapterReviewCardTitle = GameCopyKey.localizable("chapter.review.card.title")
@@ -794,6 +797,9 @@ public enum AppCopyKey {
     public static let trainingChipRiskHigh = GameCopyKey.localizable("training.chip.risk.high")
     public static let trainingChipRiskSome = GameCopyKey.localizable("training.chip.risk.some")
     public static let trainingChipNoGrowth = GameCopyKey.localizable("training.chip.no-growth")
+    /// 피로 70 이상일 때 훈련 카드에 붙는 경고·권장 칩(페르소나 보고서 §4-9).
+    public static let trainingChipFatigueHigh = GameCopyKey.localizable("training.chip.fatigue-high")
+    public static let trainingChipRecoverySafe = GameCopyKey.localizable("training.chip.recovery-safe")
     public static let trainingOptionDetailTitle = GameCopyKey.localizable("training.option.detail.title")
     public static let trainingOptionDetailSummary = GameCopyKey.localizable("training.option.detail.summary")
     public static let setupRegionGroupTitle = GameCopyKey.localizable("setup.region.group.title")
@@ -812,7 +818,8 @@ public enum AppCopyKey {
 
     public static let readabilityKeys: [GameCopyKey] = [
         trainingChipGain, trainingChipFatigue, trainingChipArmRecovery, trainingChipRiskHigh,
-        trainingChipRiskSome, trainingChipNoGrowth, trainingOptionDetailTitle,
+        trainingChipRiskSome, trainingChipNoGrowth, trainingChipFatigueHigh,
+        trainingChipRecoverySafe, trainingOptionDetailTitle,
         trainingOptionDetailSummary, setupRegionGroupTitle, setupRegionGroupCapital,
         setupRegionGroupChungcheong, setupRegionGroupHonam, setupRegionGroupYeongnam,
         setupRegionGroupGangwonJeju, setupInheritanceShopGuideTitle, setupInheritanceShopSummary,

@@ -18,7 +18,11 @@ struct CareerDirectionCard: View {
             )
             BaseballCard(title: copyResolver.resolve(.directionTitle), tone: .raised) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(verbatim: copyResolver.resolve(.directionContract, arguments: contractText(for: state, resolver: copyResolver)))
+                    // 계약 전(신인 제안 확인 단계)에는 "장기 목표 없음 · 잔여 0시즌 · —"가 목표 줄과
+                    // 겹쳐 같은 말이 두 번 나왔다(페르소나 보고서 스크린샷). 계약이 있을 때만 그린다.
+                    if state.contract != nil {
+                        Text(verbatim: copyResolver.resolve(.directionContract, arguments: contractText(for: state, resolver: copyResolver)))
+                    }
                     if let goal = journey.activeGoal {
                         Text(verbatim: ProCareerPresentation.goalTitle(goal.ambition, resolver: copyResolver))
                             .font(.subheadline.weight(.semibold))
@@ -58,6 +62,7 @@ struct CareerDirectionCard: View {
                         .directionFan,
                         arguments: [.integer(journey.reputation.fanSupport)]
                     ))
+                    if state.contract != nil || journey.finances.careerEarnings > 0 {
                     Text(verbatim: copyResolver.resolve(
                         .directionFinance,
                         arguments: [
@@ -65,6 +70,7 @@ struct CareerDirectionCard: View {
                             .userText(GameFormatters.krw(Int(clamping: journey.finances.availableFunds), language: copyResolver.language)),
                         ]
                     ))
+                    }
                     Button {
                         withAnimation(reduceMotion ? nil : .snappy) { isExpanded.toggle() }
                     } label: {

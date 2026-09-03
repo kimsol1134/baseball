@@ -35,6 +35,8 @@ enum MetaUICopyKey: String, CaseIterable, Sendable {
     case careerSetupExplanation = "meta.career-setup.explanation"
     case careerSetupAction = "meta.career-setup.action"
 
+    /// 오늘 탭에서 이번 주 계획으로 바로 넘어가는 버튼(페르소나 보고서 §2-5).
+    case proTodayOpenWeek = "pro.today.open-week"
     case weeklyPreparing = "meta.weekly.preparing"
     case weeklyProgramTitle = "meta.weekly.title"
     case weeklyClaimed = "meta.weekly.status.claimed"

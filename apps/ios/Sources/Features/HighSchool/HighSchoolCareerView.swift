@@ -254,6 +254,37 @@ struct HighSchoolCareerView: View {
 
     /// 전체 삭제 확인. 파괴적 출구는 반드시 한 번 더 묻는다.
     @State private var confirmingReset = false
+    /// 훈련 화면의 선택. 카드가 고르고 스크롤 밖 고정 바가 커밋한다. 훈련 국면에
+    /// 들어올 때 직전 훈련에서 다시 시작한다(`TrainingCard.onAppear`).
+    @State private var trainingSelection = TrainingSelection.placeholder
+
+    /// 관계 국면에서는 선택지가 뉴스·버즈보다 먼저다(페르소나 보고서 §2-2). 다른
+    /// 국면에서는 예전대로 주 행동 위에 둔다.
+    static func newsSitsBelowPhaseBody(phase: HighSchoolCareerPhase) -> Bool {
+        phase == .relationship
+    }
+
+    private func commitTraining(focus: TrainingFocus, intensity: TrainingIntensity, targetPitch: PitchType?) {
+        audio.play(.uiSelect)
+        career.commitTraining(focus: focus, intensity: intensity, targetPitch: targetPitch)
+    }
+
+    private func commitTrainingBlock(focus: TrainingFocus, intensity: TrainingIntensity, targetPitch: PitchType?) {
+        audio.play(.uiSelect)
+        career.commitTrainingBlock(focus: focus, intensity: intensity, targetPitch: targetPitch)
+    }
+
+    /// 버즈·전국 소식 카드. 각성 국면에서는 소음을 접는다.
+    @ViewBuilder private func newsCards(state: HighSchoolCareerSnapshot) -> some View {
+        if state.phase != .awakening {
+            if !career.buzz.isEmpty {
+                CommunityBuzzCard(reactionLines: career.buzz)
+            }
+            if !career.worldNews.isEmpty {
+                CommunityBuzzCard(newsLines: career.worldNews)
+            }
+        }
+    }
 
     @ViewBuilder private var content: some View {
         if let state = career.state {
@@ -285,7 +316,13 @@ struct HighSchoolCareerView: View {
                         // "다음에 시작할 회차"의 번호라, 기억을 확정한 순간 1 늘어난다. 그래서
                         // 1회차의 마지막 화면(완료)에 "2회차"라고 적혀 있었다 — 아직 끝나지도
                         // 않은 회차가 다음 번호를 미리 달고 있었던 셈이다.
-                        ChapterHeader(state: state, lifeNumber: state.lifeNumber)
+                        ChapterHeader(
+                            state: state,
+                            lifeNumber: state.lifeNumber,
+                            forecast: career.draftForecast,
+                            // 각성은 자기 키아트를 그린다. 머리말 그림까지 서면 두 장이 겹친다.
+                            compact: state.phase == .awakening
+                        )
 
                         if state.phase != .awakening {
                             SkillTreeSummaryRow(selected: state.selectedAwakenings) {
@@ -343,13 +380,8 @@ struct HighSchoolCareerView: View {
                         }
                         // 3년에 세 번뿐인 각성 앞에서는 주변 소음을 접는다(QA P2-2) —
                         // 되돌릴 수 없는 선택이 목록 한 줄로 보이면 무게가 사라진다.
-                        if state.phase != .awakening {
-                            if !career.buzz.isEmpty {
-                                CommunityBuzzCard(reactionLines: career.buzz)
-                            }
-                            if !career.worldNews.isEmpty {
-                                CommunityBuzzCard(newsLines: career.worldNews)
-                            }
+                        if !Self.newsSitsBelowPhaseBody(phase: state.phase) {
+                            newsCards(state: state)
                         }
                         if state.performance.importantGamesCompleted >= 1,
                            state.phase != .importantGame, state.phase != .awakening,
@@ -452,6 +484,10 @@ struct HighSchoolCareerView: View {
 
                         phaseBody(state: state)
                             .id(Self.phaseAnchor)
+                        // 관계 선택지 아래로 내려온 소식. 대사와 선택지가 먼저 읽힌다.
+                        if Self.newsSitsBelowPhaseBody(phase: state.phase) {
+                            newsCards(state: state)
+                        }
                         // 선수의 말은 첫 경기 이후 실제 갈림길·건강 신호에서만 보이고,
                         // 그 국면의 주 행동보다 아래에 둔다. 상시 상단 카드가 진행을 밀어내지 않는다.
                         if let presentation = PlayerBondStory.heartlinePresentation(
@@ -476,6 +512,18 @@ struct HighSchoolCareerView: View {
                 // 스크롤 정체성에 넣어, 훈련 화면의 깊은 하단 위치가 더 짧은 관계·각성
                 // 화면에 남아 빈 캔버스를 보여 주지 않게 한다.
                 .id("\(state.careerID)|\(state.phase.rawValue)")
+                // 주 행동은 항상 손 닿는 곳에. 훈련하기가 스크롤 맨 아래 탭 바 뒤에 있어
+                // 라이트 유저가 "할 게 없다"고 멈췄다(페르소나 보고서 §2-1). 탭 바 위에
+                // 고정 바로 얹고, 스크롤 콘텐츠는 그만큼 자동으로 비워진다.
+                .safeAreaInset(edge: .bottom) {
+                    if state.phase == .training {
+                        TrainingCommitBar(
+                            selection: trainingSelection,
+                            onCommit: commitTraining,
+                            onCommitBlock: commitTrainingBlock
+                        )
+                    }
+                }
                 .background(BaseballTheme.canvas)
                 // 스크롤 콘텐츠가 상태바 밑을 그대로 지나면 시계와 제목이 겹친다(QA P2-3).
                 .topStatusScrim()
@@ -589,15 +637,11 @@ struct HighSchoolCareerView: View {
             TrainingCard(
                 state: state,
                 armHealth: career.armHealth,
-                onCommit: { focus, intensity, targetPitch in
-                    audio.play(.uiSelect)
-                    career.commitTraining(focus: focus, intensity: intensity, targetPitch: targetPitch)
-                },
-                onCommitBlock: { focus, intensity, targetPitch in
-                    audio.play(.uiSelect)
-                    career.commitTrainingBlock(focus: focus, intensity: intensity, targetPitch: targetPitch)
-                }
+                selection: $trainingSelection
             )
+            // 국면이 바뀌면 스크롤 뷰 id가 바뀌어 카드가 새로 만들어진다. 그때마다 직전
+            // 훈련에서 다시 시작한다 — 같은 국면 안의 연속 훈련은 고른 값을 그대로 잇는다.
+            .onAppear { trainingSelection = TrainingSelection.initial(state: state) }
         case .relationship:
             RelationshipCard(state: state, onRespond: career.resolveRelationship)
         case .importantGame:

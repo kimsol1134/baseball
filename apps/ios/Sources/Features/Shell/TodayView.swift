@@ -4,11 +4,14 @@ import BaseballIOSDomain
 
 struct TodayView: View {
     let career: MobileCareerStore
+    /// "위의 '이번 주'에서 확인하세요"는 길만 가리키고 데려다주지 않았다(페르소나 보고서 §2-5).
+    /// 버튼 하나로 세그먼트를 넘긴다. 셸이 넘겨주지 않으면 무동작.
+    var onOpenWeek: () -> Void = {}
 
     var body: some View {
         Group {
             if let state = career.state {
-                TodayDashboard(state: state)
+                TodayDashboard(state: state, onOpenWeek: onOpenWeek)
             } else {
                 ContentUnavailableView {
                     Label {
@@ -26,6 +29,7 @@ struct TodayView: View {
 
 private struct TodayDashboard: View {
     let state: ProCareerSnapshot
+    var onOpenWeek: () -> Void = {}
     @Environment(\.gameCopyResolver) private var copyResolver
 
     var body: some View {
@@ -83,7 +87,15 @@ private struct TodayDashboard: View {
                 }
 
                 BaseballCard(title: copyResolver.resolve(AppCopyKey.proNextActionTitle), tone: .raised) {
-                    GameCopyText(Self.actionKey(state.phase)).proseLeadStyle()
+                    VStack(alignment: .leading, spacing: 10) {
+                        GameCopyText(Self.actionKey(state.phase)).proseLeadStyle()
+                        PrimaryPill(
+                            title: copyResolver.resolve(MetaUICopyKey.proTodayOpenWeek.gameCopyKey),
+                            identifier: "pro.today.openWeek"
+                        ) {
+                            onOpenWeek()
+                        }
+                    }
                 }
 
                 if let tensions = state.seasonTensions, !tensions.isEmpty {

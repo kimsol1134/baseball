@@ -254,6 +254,9 @@ struct HighSchoolSetupView: View {
                 }
                 .padding(BaseballMetrics.gutter)
             }
+            // 단계가 바뀌어도 이전 단계의 스크롤 위치가 남아 새 단계 제목이 머리 밑으로
+            // 들어갔다(페르소나 플레이테스트 05-setup-repertoire). 단계마다 새 스크롤뷰로 시작한다.
+            .id("setup-step-\(step)")
             footer
         }
         .background(BaseballTheme.canvas)

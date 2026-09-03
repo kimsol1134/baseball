@@ -358,8 +358,12 @@ struct RunRecapView: View {
             soulDone = true
             return
         }
+        // 판정(지명/미지명)은 첫 프레임에 선다. 제목만 있는 빈 화면이 한동안 이어지면
+        // "깜깜하다가 갑자기 미지명"이 된다(페르소나 보고서 §2-5). 나머지 도장은 박자대로.
+        revealed = min(1, stamps.count)
+        logLegacyIfVisible(revealed: revealed)
         // 도장 → 야구혼 카운트업 → 계속 버튼. 손맛의 박자는 슬롯 정산과 같다.
-        for index in 0..<stamps.count {
+        for index in 1..<max(1, stamps.count) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + 0.5 * Double(index)) {
                 withAnimation(.spring(response: 0.34, dampingFraction: 0.5)) { revealed = index + 1 }
                 logLegacyIfVisible(revealed: index + 1)

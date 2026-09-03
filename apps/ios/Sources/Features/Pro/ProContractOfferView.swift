@@ -5,6 +5,9 @@ import BaseballIOSDomain
 struct ProContractOfferView: View {
     let career: MobileCareerStore
     let state: ProCareerSnapshot
+    /// 부상·성장 카드처럼 국면 위에 얹는 알림. 이 화면은 스크롤을 직접 가지므로 흐름 화면이
+    /// 알림을 넘겨 준다.
+    var notices: CareerFlowNotices? = nil
 
     @Environment(\.gameCopyResolver) private var copyResolver
     @State private var selectedAmbition: ProCareerAmbition?
@@ -38,7 +41,20 @@ struct ProContractOfferView: View {
 
     var body: some View {
         if let market, !market.offers.isEmpty {
+            marketScreen(market)
+        } else {
+            ContentUnavailableView(copyResolver.resolve(.scheduleComplete), systemImage: "exclamationmark.triangle")
+                .accessibilityIdentifier("pro.contractOffer.invalid")
+        }
+    }
+
+    /// 스크롤 + 하단 고정 서명 바. 목표 선택·제안 카드 순서는 시장 종류가 정한다.
+    private func marketScreen(_ market: ProContractMarket) -> some View {
+        ScrollView {
             VStack(alignment: .leading, spacing: BaseballMetrics.stackSpacing) {
+                if let notices {
+                    notices
+                }
                 KeyArtHeader(
                     art: .stadiumNight,
                     eyebrow: market.kind == .rookie
@@ -104,23 +120,17 @@ struct ProContractOfferView: View {
                     }
                 }
 
+                // 신인은 제안 숫자 → 장기 목표 → (하단 고정) 서명 순서로 위에서 아래로 읽힌다.
                 if market.kind == .rookie {
                     goalSelectionSection(market)
-                }
-
-                if market.kind == .rookie, let offer {
-                    PrimaryPill(
-                        title: copyResolver.resolve(.contractOfferSign),
-                        identifier: "pro.contractOffer.sign",
-                        enabled: goalSelectionComplete
-                    ) {
-                        pendingOfferID = offer.id
-                    }
                 }
             }
             .padding(.bottom, 28)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("pro.contractOffer")
+            .padding(BaseballMetrics.gutter)
+            // 서명 바가 없는 재계약·FA 시장에서는 떠 있는 탭 바가 마지막 카드를 덮는다.
+            .safeAreaPadding(.bottom, market.kind == .rookie ? 0 : BaseballMetrics.floatingTabBarClearance)
             .task(id: market.id) {
                 // A contract screen normally disappears between markets, but resetting here
                 // keeps a reused SwiftUI identity from carrying an old ambition or dialog into
@@ -161,10 +171,48 @@ struct ProContractOfferView: View {
             } message: {
                 Text(verbatim: confirmationMessage(for: pendingOffer))
             }
-        } else {
-            ContentUnavailableView(copyResolver.resolve(.scheduleComplete), systemImage: "exclamationmark.triangle")
-                .accessibilityIdentifier("pro.contractOffer.invalid")
         }
+        .background(BaseballTheme.canvas)
+        // 주 행동은 항상 손 닿는 곳에 — 서명 버튼과 비활성 이유를 탭 바 위에 고정한다.
+        // 서명이 스크롤 맨 아래 탭 바 뒤에 있어 "목표 하나를 고르세요"가 접힌 아래에
+        // 있었다(페르소나 보고서 §2-1, §3 P2/P3).
+        .safeAreaInset(edge: .bottom) {
+            if market.kind == .rookie, let offer {
+                rookieSignBar(offer)
+            }
+        }
+    }
+
+    /// 탭 바 위에 고정되는 서명 바. 비활성일 때는 이유가 버튼 바로 위에 붙는다.
+    @ViewBuilder
+    private func rookieSignBar(_ offer: ProContractOffer) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if !goalSelectionComplete {
+                Label(copyResolver.resolve(.contractOfferAmbitionRequired), systemImage: "hand.tap")
+                    .detailStyle()
+                    .accessibilityIdentifier("pro.contractOffer.ambition.required")
+            }
+            PrimaryPill(
+                title: copyResolver.resolve(.contractOfferSign),
+                identifier: "pro.contractOffer.sign",
+                enabled: goalSelectionComplete
+            ) {
+                pendingOfferID = offer.id
+            }
+            // 확인 알럿이 떠 있는 동안 뒤의 서명 버튼을 접근성 트리에서 빼, 알럿 버튼과
+            // 같은 이름이 두 번 잡히지 않게 한다(페르소나 보고서 §2-4).
+            .accessibilityHidden(pendingOffer != nil)
+        }
+        .padding(.horizontal, BaseballMetrics.gutter)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity)
+        .background(BaseballTheme.canvas)
+        .overlay(alignment: .top) {
+            Rectangle().fill(BaseballTheme.border.opacity(0.45)).frame(height: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("pro.contractOffer.signBar")
     }
 
     private var extraYearAvailability: ProCounterAvailability {
@@ -369,7 +417,8 @@ struct ProContractOfferView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
 
-        if !goalSelectionComplete {
+        // 신인 시장의 같은 안내는 하단 서명 바가 버튼 바로 위에 붙인다.
+        if !goalSelectionComplete, market.kind != .rookie {
             Label(copyResolver.resolve(.contractOfferAmbitionRequired), systemImage: "hand.tap")
                 .detailStyle()
                 .accessibilityIdentifier("pro.contractOffer.ambition.required")

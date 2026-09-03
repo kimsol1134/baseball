@@ -284,7 +284,7 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.awakeningNodeVoiceAvailableNext: "%@ 갈래 %lld단, %@, %@, 다음 각성에서 선택 가능",
             AppCopyKey.awakeningNodeVoiceLocked: "%@ 갈래 %lld단, %@, 잠김. %@",
             AppCopyKey.awakeningSummaryTitle: "스킬트리 · %lld/%lld",
-            AppCopyKey.awakeningSummaryEmpty: "아직 찍은 스킬 없음 · 다음 경로 확인",
+            AppCopyKey.awakeningSummaryEmpty: "아직 찍은 스킬 없음 · 경로 보기",
             AppCopyKey.awakeningSheetTitle: "내 스킬트리",
             AppCopyKey.awakeningSheetDone: "완료",
         ]
@@ -441,7 +441,7 @@ final class LocalizationCoverageTests: XCTestCase {
         )
         XCTAssertEqual(
             HighSchoolPresentation.localizedAwakeningSummaryEmpty(resolver: resolver),
-            "No skills chosen yet · See your next path"
+            "No skills chosen yet · View paths"
         )
 
         for descriptor in CopyToken.awakeningDescriptors {
@@ -2927,7 +2927,7 @@ final class LocalizationCoverageTests: XCTestCase {
             AppCopyKey.setupNameDescription: "고교 3년 동안 이 이름으로 불립니다.",
             AppCopyKey.setupNameDefault: "이름",
             AppCopyKey.setupNameSuggestionAction: "%@ 쓰기",
-            AppCopyKey.setupSeedPlaceholder: "시드 또는 카드 공유 코드 (선택)",
+            AppCopyKey.setupSeedPlaceholder: "친구 코드가 있으면 붙여 넣으세요 (없어도 됩니다)",
             AppCopyKey.setupSeedError: "숫자 시드나 카드에 적힌 공유 코드를 그대로 입력해 주세요.",
             AppCopyKey.setupSeedChallengeSummary: "기록 없는 도전 — %lld번째 선수와 같은 조건을 계승 도움 없이 엽니다. 결과는 선수 기록·계승 포인트에 남지 않습니다.",
             AppCopyKey.setupSeedSummary: "숫자만 입력하면 지금 만들 %lld번째 선수의 조건입니다. 카드와 똑같이 도전하려면 카드의 공유 코드를 입력하세요.",

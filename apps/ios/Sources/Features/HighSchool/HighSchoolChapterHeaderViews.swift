@@ -7,6 +7,11 @@ import BaseballIOSDomain
 struct ChapterHeader: View {
     let state: HighSchoolCareerSnapshot
     let lifeNumber: Int
+    /// 고교 3년 내내 보이는 드래프트 거리. nil이면 줄을 그리지 않는다.
+    var forecast: DraftForecastSnapshot? = nil
+    /// 국면 화면이 자기 키아트를 그릴 때(각성) 머리말은 눈썹+제목 한 덩어리로 줄인다 —
+    /// 그림 두 장이 겹쳐 서면 어느 쪽도 무대가 아니다.
+    var compact = false
     @State private var windExpanded = false
     @Environment(\.gameCopyResolver) private var copyResolver
 
@@ -34,22 +39,36 @@ struct ChapterHeader: View {
                     ? [.integer(lifeNumber), .userText(actTitle), .integer(state.chapter.schoolYear), .userText(season)]
                     : [.userText(actTitle), .integer(state.chapter.schoolYear), .userText(season)]
             )
+            let title = state.school.map {
+                copyResolver.resolve(
+                    AppCopyKey.chapterHeaderTitle,
+                    arguments: [
+                        .userText(HighSchoolPresentation.localizedSchoolName(
+                            $0, rawRegion: state.identity.region, resolver: copyResolver
+                        )),
+                        .userText(copyResolver.resolve(chapterCopy.titleToken)),
+                    ]
+                )
+            } ?? copyResolver.resolve(chapterCopy.titleToken)
+            if compact {
+                VStack(alignment: .leading, spacing: 4) {
+                    // localization-safe: resolved-copy
+                    Text(eyebrow).eyebrowStyle(BaseballTheme.action)
+                    // localization-safe: resolved-copy
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(BaseballTheme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("hs.chapter.header.compact")
+            } else {
             KeyArtHeader(
                 art: Self.art(for: state.phase),
                 // 1회차에는 회차 표시를 하지 않는다. 처음 하는 사람에게 "1회차"는 아무 뜻이 없고,
                 // 반복하는 게임이라는 사실은 한 번 죽어 봐야 의미가 생긴다.
                 eyebrow: eyebrow,
-                title: state.school.map {
-                    copyResolver.resolve(
-                        AppCopyKey.chapterHeaderTitle,
-                        arguments: [
-                            .userText(HighSchoolPresentation.localizedSchoolName(
-                                $0, rawRegion: state.identity.region, resolver: copyResolver
-                            )),
-                            .userText(copyResolver.resolve(chapterCopy.titleToken)),
-                        ]
-                    )
-                } ?? copyResolver.resolve(chapterCopy.titleToken)
+                title: title
             )
             HStack(spacing: 10) {
                 // 주인공의 얼굴. 게임에서 가장 자주 보는 화면인데 정작 주인공이 없었다.
@@ -59,6 +78,19 @@ struct ChapterHeader: View {
                 Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricFatigue), value: "\(state.fatigue)", tone: state.fatigue >= 70 ? .warning : .standard)
                 Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTeamTrust), value: "\(state.relationshipTrust)")
                 Metric(title: copyResolver.resolve(AppCopyKey.chapterMetricTraining), value: "\(state.totalTrainingsCompleted)")
+            }
+            // 드래프트 거리는 1학년 봄부터 보인다. 3년을 닫고 나서야 "당락선 66"을
+            // 처음 보면 지명 실패가 허무하다(페르소나 보고서 §2-3, §4-2).
+            if state.phase != .prologue, let forecast {
+                EffectChip(
+                    text: copyResolver.resolve(
+                        AppCopyKey.chapterHeaderDraftForecast,
+                        arguments: [.integer(forecast.score), .integer(forecast.threshold)]
+                    ),
+                    tone: Self.forecastTone(score: forecast.score, threshold: forecast.threshold),
+                    systemImage: "flag.checkered"
+                )
+                .accessibilityIdentifier("hs.chapter.draftForecast")
             }
             if state.phase != .prologue {
                 let wind = CareerWindPresentationCatalog.descriptor(for: state.careerWind)
@@ -110,7 +142,15 @@ struct ChapterHeader: View {
                     .accessibilityElement(children: .combine)
                 }
             }
+            }
         }
+    }
+
+    /// 당락선 위면 이득, 10점 안쪽이면 비용(아직 닿을 수 있다), 그 아래면 위험.
+    static func forecastTone(score: Int, threshold: Int) -> EffectChip.Tone {
+        if score >= threshold { return .gain }
+        if score >= threshold - 10 { return .cost }
+        return .risk
     }
 }
 

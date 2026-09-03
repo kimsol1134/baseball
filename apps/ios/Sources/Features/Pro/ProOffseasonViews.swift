@@ -76,8 +76,7 @@ struct OffseasonView: View {
                 }
             }
 
-            RetirementPreviewCard(state: state)
-
+            // 선택지가 먼저, 은퇴 미리보기는 그 아래(주 행동은 항상 손 닿는 곳에).
             OffseasonChoice(
                 title: journeyContractExpired
                     ? copyResolver.resolve(.offseasonRenewalChoice)
@@ -131,6 +130,8 @@ struct OffseasonView: View {
                 enabled: true,
                 note: copyResolver.resolve(.offseasonIrreversible)
             ) { pending = .retire }
+
+            RetirementPreviewCard(state: state)
         }
         .alert(
             confirmTitle,

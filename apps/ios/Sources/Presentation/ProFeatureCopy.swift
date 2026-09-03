@@ -263,12 +263,24 @@ enum ProWeeklyCopy {
         resolver.resolve(.weeklyGainChip, arguments: [.userText(name)])
     }
 
-    /// 이번 주 예상 피로 변화 칩 — 유효 피로와 현재 피로의 차이.
+    /// 이번 주 예상 피로 변화 칩 — 원피로(다음 주 피로 타일에 찍힐 값)와 현재 피로의 차이.
+    /// 오르면 "훈련 피로 +N", 내리면(회복) "피로 −N".
     static func fatigueChip(delta: Int, resolver: GameCopyResolver) -> String {
-        resolver.resolve(
+        if delta > 0 {
+            return resolver.resolve(.weeklyTrainingFatigueChip, arguments: [.integer(delta)])
+        }
+        return resolver.resolve(
             delta < 0 ? .effectFatigueLoss : .effectFatigueGain,
             arguments: [.integer(abs(delta))]
         )
+    }
+
+    /// 체력이 덜어 주는 몫 — 원피로와 부상 판정용 유효 피로의 차이. 예전에는 이 몫이
+    /// 피로 칩에 섞여 강훈련이 "피로 −12"(초록)로 보였다. 0 이하면 nil.
+    static func staminaOffsetChip(rawFatigue: Int, effectiveFatigue: Int, resolver: GameCopyResolver) -> String? {
+        let offset = rawFatigue - effectiveFatigue
+        guard offset > 0 else { return nil }
+        return resolver.resolve(.weeklyStaminaOffsetChip, arguments: [.integer(offset)])
     }
 
     /// 상태 타일 아래 변화 캡션 — "이번 주 +3".

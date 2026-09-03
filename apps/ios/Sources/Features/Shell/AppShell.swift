@@ -234,7 +234,17 @@ struct AppShell: View {
             isOnboarding: hidesTabBarForOnboarding,
             hasPitchSession: highSchool.pitchSession != nil,
             hasTutorialSession: highSchool.tutorialSession != nil
-        )
+        ) || Self.isChoicePhase(highSchool.state?.phase)
+    }
+
+    /// 학교·관계·각성처럼 카드 하나를 골라야 넘어가는 국면에는 탭 바를 감춘다.
+    /// 페르소나 플레이테스트에서 목표 카드 아래쪽을 누르면 떠 있는 탭 바의 '프로' 탭이
+    /// 먼저 먹어 프로 허브로 튕겼고, 학교 카드는 탭 바 위로 한 줄만 보였다(2026-09-03 보고서 §2-1).
+    static func isChoicePhase(_ phase: HighSchoolCareerPhase?) -> Bool {
+        switch phase {
+        case .schoolSelection, .relationship, .awakening: true
+        default: false
+        }
     }
 
     /// 주간 목표는 지금 실제로 열려 있거나 이번 회차 안에서 도달 가능한 행동만 뽑는다.
@@ -878,7 +888,7 @@ private struct ProCareerTabs: View {
             .padding(.vertical, 8)
 
             if showsToday {
-                TodayView(career: career)
+                TodayView(career: career, onOpenWeek: { showsToday = false })
             } else {
                 CareerFlowView(
                     career: career,

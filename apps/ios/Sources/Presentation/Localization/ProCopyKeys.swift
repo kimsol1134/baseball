@@ -245,6 +245,8 @@ enum ProUICopyKey: String, CaseIterable, Sendable {
     case decisionConfirmAction = "pro.decision.confirm.action"
     case decisionConfirmCancel = "pro.decision.confirm.cancel"
     case decisionConfirmMessage = "pro.decision.confirm.message"
+    /// 선택의 피로 증가가 부상 임계(피로 70)를 넘길 때 선택지에 붙는 위험 칩.
+    case decisionChipInjuryRisk = "pro.decision.chip.injury-risk"
     case effectStuffGain = "pro.effect.stuff.gain"
     case effectStuffLoss = "pro.effect.stuff.loss"
     case effectCommandGain = "pro.effect.command.gain"
@@ -336,6 +338,9 @@ enum ProUICopyKey: String, CaseIterable, Sendable {
     case weeklyTrustStarterTitle = "pro.weekly.plan.trust.starter.title"
     case weeklyTrustEffect = "pro.weekly.plan.trust.effect"
     case weeklyTrustCost = "pro.weekly.plan.trust.cost"
+    /// 주간 계획 칩 — 훈련·등판이 올리는 원피로(비용)와 체력이 덜어 주는 몫(중립)을 따로 보인다.
+    case weeklyTrainingFatigueChip = "pro.weekly.chip.training-fatigue"
+    case weeklyStaminaOffsetChip = "pro.weekly.chip.stamina-offset"
     case weeklyRecommendInjury = "pro.weekly.recommendation.injury"
     case weeklyRecommendCallUp = "pro.weekly.recommendation.call-up"
     case weeklyRecommendPower = "pro.weekly.recommendation.power"

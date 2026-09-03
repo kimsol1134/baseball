@@ -886,19 +886,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No skills chosen yet · See your next path"
+            "value": "No skills chosen yet · View paths"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "まだスキルが選択されていません · 次の道を見てください"
+            "value": "まだスキルなし · 経路を見る"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "아직 찍은 스킬 없음 · 다음 경로 확인"
+            "value": "아직 찍은 스킬 없음 · 경로 보기"
           }
         }
       }
@@ -18794,19 +18794,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose one ambition to sign."
+            "value": "Pick one long-term ambition to unlock signing."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "サインするには目標を1つ選んでください。"
+            "value": "長期目標を1つ選ぶとサインできます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "서명하려면 목표 하나를 선택하세요."
+            "value": "장기 목표를 하나 고르면 서명할 수 있습니다."
           }
         }
       }
@@ -20840,19 +20840,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Media choices take effect right away, without waiting for the next game."
+            "value": "This media choice takes effect immediately. It does not wait for the next direct matchup."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "メディアの選択はすぐに効果が出ます。次の試合を待ちません。"
+            "value": "このメディア選択の効果はすぐに適用されます。次の直接対決を待ちません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "미디어 선택은 효과가 바로 적용됩니다. 다음 승부를 기다리지 않습니다."
+            "value": "미디어 선택의 효과는 즉시 적용됩니다. 다음 직접 승부를 기다리지 않습니다."
           }
         }
       }
@@ -37868,19 +37868,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Seed or card share code (optional)"
+            "value": "Paste a friend's code if you have one (optional)"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "シードまたはカード共有コード (オプション)"
+            "value": "友達のコードがあれば貼り付けてください（なくても大丈夫）"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "시드 또는 카드 공유 코드 (선택)"
+            "value": "친구 코드가 있으면 붙여 넣으세요 (없어도 됩니다)"
           }
         }
       }
@@ -40917,6 +40917,160 @@
           "stringUnit": {
             "state": "translated",
             "value": "고른 하나는 바로 이어지고, 나머지는 발견 목록에 남습니다."
+          }
+        }
+      }
+    },
+    "pro.today.open-week": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open this week's plan"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今週の計画を開く"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 계획 열기"
+          }
+        }
+      }
+    },
+    "chapter.header.draft-forecast": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft outlook %1$lld / cut line %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラフト見込み %1$lld / 当落線 %2$lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "드래프트 전망 %1$lld / 당락선 %2$lld"
+          }
+        }
+      }
+    },
+    "training.chip.fatigue-high": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fatigue high · rest advised"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "疲労が高い · 回復推奨"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "피로 높음 · 회복 권장"
+          }
+        }
+      }
+    },
+    "training.chip.recovery-safe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recovery is the safe call now"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今は回復が安全"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금 회복이 안전"
+          }
+        }
+      }
+    },
+    "pro.decision.chip.injury-risk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Injury risk"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "故障リスク"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부상 위험"
+          }
+        }
+      }
+    },
+    "pro.weekly.chip.training-fatigue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training fatigue +%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "練習疲労 +%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "훈련 피로 +%lld"
+          }
+        }
+      }
+    },
+    "pro.weekly.chip.stamina-offset": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stamina offset −%lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スタミナ補正 −%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "체력 보정 −%lld"
           }
         }
       }

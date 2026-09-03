@@ -88,6 +88,8 @@ struct SchoolSelectionCard: View {
                         RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius)
                             .stroke(BaseballTheme.border, lineWidth: 1)
                     }
+                    // 히트 영역은 카드 면 그대로다 — 카드 밖으로 새면 탭 바와 겹친다.
+                    .contentShape(RoundedRectangle(cornerRadius: BaseballMetrics.cardRadius))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("hs.school.\(school.id.rawValue)")
@@ -127,35 +129,90 @@ struct SchoolSelectionCard: View {
     }
 }
 
-struct TrainingCard: View {
-    let state: HighSchoolCareerSnapshot
-    let armHealth: ArmHealthState
+/// 훈련 화면의 선택 상태. 카드(고르기)와 고정 하단 바(훈련하기)가 같은 값을 본다 —
+/// 주 버튼을 스크롤 밖으로 빼려면 상태가 카드 밖에 있어야 한다(페르소나 보고서 §2-1).
+struct TrainingSelection: Equatable {
+    var focus: TrainingFocus
+    var intensity: TrainingIntensity
+    var targetPitch: PitchType
+
+    /// 변화구 훈련일 때만 대상 구종이 의미 있다.
+    var selectedTarget: PitchType? { focus == .breakingBall ? targetPitch : nil }
+
+    /// 직전 선택에서 시작한다. 국면이 오갈 때마다 기본값으로 리셋되면
+    /// 같은 훈련을 이어가려는 사람이 회차당 16번 재선택을 강요당한다.
+    static func initial(state: HighSchoolCareerSnapshot) -> TrainingSelection {
+        let activeProjectPitch = state.pitchLearningProject.flatMap {
+            $0.isCompleted ? nil : $0.pitchType
+        }
+        return TrainingSelection(
+            focus: state.lastTraining?.focus ?? .command,
+            intensity: state.lastTraining?.intensity ?? .standard,
+            targetPitch: activeProjectPitch
+                ?? state.pitcher.pitchProfiles?.first(where: { $0.pitchType != .fourSeam })?.pitchType
+                ?? .slider
+        )
+    }
+
+    static let placeholder = TrainingSelection(focus: .command, intensity: .standard, targetPitch: .slider)
+}
+
+/// 훈련하기 · 같은 훈련 3번 연속 — 스크롤 밖 고정 하단 바. 탭 바 위에 항상 보인다.
+struct TrainingCommitBar: View {
+    let selection: TrainingSelection
     let onCommit: (TrainingFocus, TrainingIntensity, PitchType?) -> Void
     let onCommitBlock: (TrainingFocus, TrainingIntensity, PitchType?) -> Void
     @Environment(\.gameCopyResolver) private var copyResolver
 
-    // 직전 선택에서 시작한다. 국면이 오갈 때마다 기본값으로 리셋되면
-    // 같은 훈련을 이어가려는 사람이 회차당 16번 재선택을 강요당한다.
-    @State private var focus: TrainingFocus
-    @State private var intensity: TrainingIntensity
-    @State private var targetPitch: PitchType
-
-    init(state: HighSchoolCareerSnapshot, armHealth: ArmHealthState,
-         onCommit: @escaping (TrainingFocus, TrainingIntensity, PitchType?) -> Void,
-         onCommitBlock: @escaping (TrainingFocus, TrainingIntensity, PitchType?) -> Void) {
-        self.state = state
-        self.armHealth = armHealth
-        self.onCommit = onCommit
-        self.onCommitBlock = onCommitBlock
-        _focus = State(initialValue: state.lastTraining?.focus ?? .command)
-        _intensity = State(initialValue: state.lastTraining?.intensity ?? .standard)
-        let activeProjectPitch = state.pitchLearningProject.flatMap {
-            $0.isCompleted ? nil : $0.pitchType
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            PrimaryButton(title: copyResolver.resolve(AppCopyKey.trainingCommit), identifier: "hs.training.commit") {
+                onCommit(selection.focus, selection.intensity, selection.selectedTarget)
+            }
+            Button {
+                onCommitBlock(selection.focus, selection.intensity, selection.selectedTarget)
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(copyResolver.resolve(AppCopyKey.trainingRepeatTitle))
+                        .font(.subheadline.weight(.semibold))
+                    Text(copyResolver.resolve(AppCopyKey.trainingRepeatStopExplanation))
+                        .detailStyle()
+                        .multilineTextAlignment(.leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .frame(minHeight: BaseballMetrics.minimumTapTarget)
+                // 반투명 bordered 스타일은 아래 스크롤 내용이 비쳐 글자가 겹쳐 보였다. 불투명 면으로.
+                .background(BaseballTheme.surfaceRaised, in: RoundedRectangle(cornerRadius: BaseballMetrics.controlRadius))
+                .foregroundStyle(BaseballTheme.textPrimary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("hs.training.commitBlock")
         }
-        _targetPitch = State(initialValue: activeProjectPitch
-            ?? state.pitcher.pitchProfiles?.first(where: { $0.pitchType != .fourSeam })?.pitchType
-            ?? .slider)
+        .padding(.horizontal, BaseballMetrics.gutter)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity)
+        .background(BaseballTheme.canvas)
+        .overlay(alignment: .top) {
+            Rectangle().fill(BaseballTheme.border.opacity(0.45)).frame(height: 1)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("hs.training.commitBar")
     }
+}
+
+struct TrainingCard: View {
+    let state: HighSchoolCareerSnapshot
+    let armHealth: ArmHealthState
+    /// 고르기의 결과. 커밋은 `TrainingCommitBar`가 같은 값으로 한다.
+    @Binding var selection: TrainingSelection
+    @Environment(\.gameCopyResolver) private var copyResolver
+
+    private var focus: TrainingFocus { selection.focus }
+    private var intensity: TrainingIntensity { selection.intensity }
+    private var targetPitch: PitchType { selection.targetPitch }
 
     /// 학교 특기와 오늘의 기회가 이 훈련에서 겹치는가 — 이 턴이 몰아붙일 턴이다.
     private var doubleBonus: Bool {
@@ -169,8 +226,6 @@ struct TrainingCard: View {
     private var breakingBalls: [PitchType] {
         (state.pitcher.pitchProfiles ?? []).map(\.pitchType).filter { $0 != .fourSeam }
     }
-
-    private var selectedTarget: PitchType? { focus == .breakingBall ? targetPitch : nil }
 
     private func learningStageKey(_ stage: PitchLearningStage) -> GameCopyKey {
         switch stage {
@@ -236,12 +291,23 @@ struct TrainingCard: View {
     /// 피한다. 각 행은 고정된 View로 만들고, actor-bound 상태는 Binding으로만 넘긴다.
     /// 효과·비용·위험 칩. 네 줄짜리 효과 문장 대신 칩 셋으로 읽힌다(1.2.9 가독성 교정).
     /// 피로 값은 현재 고른 강도 기준이라 강도를 바꾸면 여섯 카드의 칩이 함께 바뀐다.
+    /// 피로 70부터는 "구위만 누르면 되더라"가 팔과 목표를 동시에 깨뜨린다(페르소나 §4-9).
+    static let fatigueWarningThreshold = 70
+
+    private var fatigueIsHigh: Bool { state.fatigue >= Self.fatigueWarningThreshold }
+
     private func effectChips(for option: TrainingFocus) -> [TrainingEffectChip] {
         var chips: [TrainingEffectChip] = []
         let fatigue = HighSchoolPresentation.trainingFatigueEstimate(
             state: state, focus: option, intensity: intensity
         )
         if option == .recovery {
+            if fatigueIsHigh {
+                chips.append(TrainingEffectChip(
+                    text: copyResolver.resolve(AppCopyKey.trainingChipRecoverySafe),
+                    tone: .gain, systemImage: "checkmark.shield"
+                ))
+            }
             chips.append(TrainingEffectChip(
                 text: copyResolver.resolve(AppCopyKey.trainingChipFatigue, arguments: [.integer(fatigue)]),
                 tone: fatigue < 0 ? .gain : .cost, systemImage: "battery.100"
@@ -253,6 +319,12 @@ struct TrainingCard: View {
                 text: copyResolver.resolve(AppCopyKey.trainingChipNoGrowth), tone: .neutral, systemImage: nil
             ))
             return chips
+        }
+        if fatigueIsHigh {
+            chips.append(TrainingEffectChip(
+                text: copyResolver.resolve(AppCopyKey.trainingChipFatigueHigh),
+                tone: .risk, systemImage: "exclamationmark.triangle"
+            ))
         }
         chips.append(TrainingEffectChip(
             text: copyResolver.resolve(
@@ -295,7 +367,7 @@ struct TrainingCard: View {
             schoolStrengthBadge: copyResolver.resolve(AppCopyKey.trainingBadgeSchoolStrength),
             isOpportunity: state.trainingOpportunity?.focus == option,
             isSchoolStrength: state.school?.strength == option,
-            selection: $focus
+            selection: $selection.focus
         )
     }
 
@@ -303,7 +375,7 @@ struct TrainingCard: View {
         TrainingIntensityOptionButton(
             option: option,
             title: HighSchoolPresentation.localized(option, focus: focus, resolver: copyResolver),
-            selection: $intensity
+            selection: $selection.intensity
         )
     }
 
@@ -314,7 +386,7 @@ struct TrainingCard: View {
             sliderTitle: PitchCopy.localized(.slider, resolver: copyResolver),
             curveballTitle: PitchCopy.localized(.curveball, resolver: copyResolver),
             changeupTitle: PitchCopy.localized(.changeup, resolver: copyResolver),
-            selection: $targetPitch
+            selection: $selection.targetPitch
         )
     }
 
@@ -409,23 +481,7 @@ struct TrainingCard: View {
                         .accessibilityIdentifier("hs.training.outlook")
                 }
             }
-
-            PrimaryButton(title: copyResolver.resolve(AppCopyKey.trainingCommit), identifier: "hs.training.commit") { onCommit(focus, intensity, selectedTarget) }
-            Button {
-                onCommitBlock(focus, intensity, selectedTarget)
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(copyResolver.resolve(AppCopyKey.trainingRepeatTitle))
-                        .font(.subheadline.weight(.semibold))
-                    Text(copyResolver.resolve(AppCopyKey.trainingRepeatStopExplanation))
-                        .detailStyle()
-                        .multilineTextAlignment(.leading)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.bordered)
-            .frame(minHeight: BaseballMetrics.minimumTapTarget)
-            .accessibilityIdentifier("hs.training.commitBlock")
+            // 훈련하기 · 3번 연속은 여기 없다 — 스크롤 밖 `TrainingCommitBar`가 탭 바 위에 고정한다.
         }
     }
 }
