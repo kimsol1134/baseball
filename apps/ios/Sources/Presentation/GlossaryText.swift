@@ -128,6 +128,7 @@ struct GlossaryDefinitionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(copyResolver.resolve(MetaUICopyKey.glossarySheetClose)) { dismiss() }
+                        .accessibilityIdentifier("glossary.sheet.close")
                 }
             }
         }

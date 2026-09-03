@@ -19,6 +19,8 @@ PM(Claude) 스펙·검수 + grok-4.6 구현. 보고서: docs/PRO_WEEKLY_DECISION
 - [x] Android 코어 패리티 1차 (3517be72 병합): Kotlin 규칙 v4→v8, 패리티 테스트 2개 @Ignore 해제·통과. 2차(v9~v10, Compose UI, 현지화)는 미착수
 - [x] P2-1 커리어 카드 공유 (103f5e4f + 라운드 K): 은퇴·드래프트·신기록·국가대표 4종 1080×1350 카드, 미리보기, 공유 텍스트(도전 코드·도전 링크·스토어 링크)
 - [x] P2-2 시드 도전 링크 (5db3675a 병합): 스킴 즉시 동작. 유니버설 링크는 2026-09-03 도메인 `baseball-reincarnation.vercel.app` 설정·랜딩 배포·AASA 200 확인 완료 → 1.2.9 빌드부터 동작
+- [x] 세이버메트릭스 1단계 + 표시 전용 FIP WAR (a1a08bc6): 기록 탭 세이버 표, 정산·은퇴·카드 WAR, 용어 7종, 밸런스 WAR 밴드. 2단계(자책점·사구·타구 유형·WPA) 미착수
+- [ ] Android 코어 2차: 브랜치 android/core-parity-v10에 WIP. 막힌 지점 = Kotlin 투구 프로필 availability 부재 + PitchLearning 미이식 (docs/ANDROID_CORE_PARITY_WAVE2_REPORT_2026-09-03.md)
 - [ ] 타자 모드: 사용자 결정으로 보류 (스펙 docs/P2_BATTER_MODE_PHASE0_SPEC_2026-09-02.md)
 - [x] 랜딩 Vercel 프로덕션 배포 완료(2026-09-03), `/challenge/<token>` 200 폴리시: 국가대표 선발 조건(팬 60만으로 소집) 실플레이 분포 후 조정
 - [ ] 폴리시: 목표판 "구단 명예의 전당" 힌트를 규칙 설명 대신 다음 행동으로

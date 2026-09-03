@@ -558,6 +558,12 @@ final class Release128JourneyUITests: XCTestCase {
     }
 
     private func enterProFromDraftedFixture(_ app: XCUIApplication) {
+        // UX 3차 드래프트 2화면: 결과 화면의 "계속"을 먼저 지나야 프로 진입 버튼이 보인다.
+        let draftContinue = identified(app, "hs.draft.result.continue")
+        if draftContinue.waitForExistence(timeout: 4), !app.buttons["hs.enterPro"].exists {
+            _ = bringIntoView(draftContinue)
+            draftContinue.tap()
+        }
         let enterPro = app.buttons["hs.enterPro"]
         XCTAssertTrue(enterPro.waitForExistence(timeout: timeout), "프로 진입 버튼이 없습니다. \(visibleIdentifiers(app))")
         XCTAssertTrue(bringIntoView(enterPro))
@@ -853,9 +859,15 @@ final class Release128JourneyUITests: XCTestCase {
     }
 
     private func dismissGlossary(_ app: XCUIApplication) {
-        for label in ["닫기", "Close", "閉じる"] {
-            let close = app.buttons[label]
-            if close.exists { close.tap(); break }
+        // 알림 큐 배너에도 "닫기"가 있어 라벨 매칭이 모호하다. 시트 전용 식별자를 먼저 쓴다.
+        let close = app.buttons["glossary.sheet.close"]
+        if close.waitForExistence(timeout: 2) {
+            close.tap()
+        } else {
+            for label in ["닫기", "Close", "閉じる"] {
+                let fallback = app.buttons.matching(identifier: label).firstMatch
+                if fallback.exists { fallback.tap(); break }
+            }
         }
         RunLoop.current.run(until: Date().addingTimeInterval(0.2))
     }
